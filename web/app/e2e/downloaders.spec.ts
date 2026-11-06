@@ -79,13 +79,13 @@ test('the settings for downloads that go wrong are saved and checked', async () 
 	await expect(page.getByRole('alert')).toContainText('no sooner than it counts as stalled');
 	await page.getByLabel('Try the next Release after (hours)').fill('30');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Downloader settings saved.')).toBeVisible();
+	await expect(page.getByText('Downloader settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Stalled after (hours)')).toHaveValue('8');
 	await page.getByLabel('Stalled after (hours)').fill('6');
 	await page.getByLabel('Try the next Release after (hours)').fill('24');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Downloader settings saved.')).toBeVisible();
+	await expect(page.getByText('Downloader settings saved')).toBeVisible();
 });
 
 test('a movie downloads through qBittorrent; Mark failed sends the next Release by itself', async () => {
@@ -120,7 +120,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await dl.getByTestId('dl-line').click();
 	await page.getByTestId('dl-pane').getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Mark failed' }).click();
-	await expect(page.getByText('Marked failed. HolyArrs looks for the next Release.')).toBeVisible();
+	await expect(page.getByText('Marked failed')).toBeVisible();
 	// The failed one leaves qBittorrent and the 720p copy is sent instead.
 	await expect.poll(async () => {
 		const state = await (await fetch(`${qbit}/state`)).json();

@@ -234,12 +234,12 @@
 			if (id === null) {
 				const d = await api.post<PickRulesDetail>('/pick-rules', payload);
 				show(d);
-				toasts.push(`${d.name} made.`, 'ok');
+				toasts.push(`${d.name} made`, 'ok');
 				shownKey = `${d.id}|`;
 				await goto(to(`/settings/pick-rules/${d.id}`), { replace: true, reset: false });
 			} else {
 				show(await api.put<PickRulesDetail>(`/pick-rules/${id}`, payload));
-				toasts.push('Pick rules saved.', 'ok');
+				toasts.push('Pick rules saved', 'ok');
 			}
 		} catch (err) {
 			// A trait of yours removed meanwhile: show its chip as removed too.

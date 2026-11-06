@@ -336,7 +336,7 @@
 			await readDetail(r, 'Trackers');
 			return true;
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update trackers", 'fail', { body: message(e) });
 			return false;
 		} finally {
 			trBusy = false;
@@ -345,18 +345,18 @@
 	const trPath = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${r.hash}/trackers`;
 	async function addTrackers(r: DownloadRow) {
 		const { urls, bad } = splitTrackers(trAdd);
-		if (bad.length) return toasts.push(`Not a tracker address: ${bad[0]}`, 'fail');
+		if (bad.length) return toasts.push('Not a tracker address', 'fail', { body: bad[0] });
 		if (!urls.length) return;
-		if (await trackerCall(r, () => api.post(trPath(r), { urls }), urls.length === 1 ? 'Tracker added.' : `${urls.length} trackers added.`)) trAdd = '';
+		if (await trackerCall(r, () => api.post(trPath(r), { urls }), urls.length === 1 ? 'Tracker added' : `${urls.length} trackers added`)) trAdd = '';
 	}
 	function saveTracker(r: DownloadRow, x: Tracker) {
 		const url = trUrl.trim();
 		const tier = Number(trTier);
-		if (url && splitTrackers(url).bad.length) return toasts.push('Not a tracker address.', 'fail');
-		void trackerCall(r, () => api.put(trPath(r), { ref: x.ref, url, ...(tier !== x.tier ? { tier } : {}) }), 'Tracker saved.');
+		if (url && splitTrackers(url).bad.length) return toasts.push('Not a tracker address', 'fail');
+		void trackerCall(r, () => api.put(trPath(r), { ref: x.ref, url, ...(tier !== x.tier ? { tier } : {}) }), 'Tracker saved');
 	}
 	function removeTracker(r: DownloadRow, x: Tracker) {
-		void trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), 'Tracker removed.');
+		void trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), 'Tracker removed');
 	}
 	// A priority change is a control route: an old sign-in is asked for the
 	// password first (inline, in the Files tab), then the change is sent again.
@@ -374,7 +374,7 @@
 				void readDetail(r, 'Files');
 				return;
 			}
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't set file priority", 'fail', { body: message(e) });
 		} finally {
 			filesBusy = false;
 		}
@@ -400,10 +400,9 @@
 		slowBusy = c.id;
 		try {
 			await api.post(`/downloaders/${c.id}/slow-mode`, { on });
-			toasts.push(on ? `Slow mode on for ${c.name}.` : `Slow mode off for ${c.name}.`, 'ok');
 			await readClients();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't change slow mode", 'fail', { body: message(e) });
 		} finally {
 			slowBusy = 0;
 		}
@@ -549,7 +548,7 @@
 	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Start', retry: 'Download again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', priority: 'Priority', library: 'Open in Library', remove: 'Remove' };
 	// Usenet jobs move and take a priority one job at a time (no bulk call).
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
-	const MOVED: Record<string, string> = { up: 'Moved up.', down: 'Moved down.', top: 'Moved to top.', bottom: 'Moved to bottom.' };
+	const MOVED: Record<string, string> = { up: 'Moved up', down: 'Moved down', top: 'Moved to top', bottom: 'Moved to bottom' };
 	let queueBusy = $state(0);
 	async function usenetCall(r: DownloadRow, run: () => Promise<unknown>, done: string) {
 		queueBusy = r.id;
@@ -557,13 +556,13 @@
 			await run();
 			toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update download", 'fail', { body: message(e) });
 		} finally {
 			if (queueBusy === r.id) queueBusy = 0;
 		}
 	}
-	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? 'Moved.');
-	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), `Priority set to ${label}.`);
+	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? 'Moved');
+	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), `Priority set to ${label}`);
 	// menuItems turns row keys into menu entries; the row ⋯ and the pane ⋯ share it.
 	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
@@ -872,7 +871,7 @@
 			if (!target) return;
 			e.preventDefault();
 			if (target.can_act) onremove(target, e.shiftKey);
-			else toasts.push('This download cannot be removed from here.', 'info');
+			else toasts.push("Can't remove this download", 'info', { body: 'Not from here' });
 			return;
 		}
 		if (!list.length) return;

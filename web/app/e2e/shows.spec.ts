@@ -67,7 +67,7 @@ test('the owner finds a show and adds it with only the latest season kept', asyn
 	await axe(own, 'add show dialog');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(own.getByRole('status')).toContainText('Harbour Lights is in your Library.');
+	await expect(own.getByRole('status')).toContainText('Harbour Lights added');
 	await expect(own).toHaveURL(/\/library\/\d+/);
 
 	// The show page: seasons and their switches; Search now is there (3.2).
@@ -177,7 +177,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await axe(max, 'ask show dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for seasons 1 and 2' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(max.getByRole('status')).toContainText('Asked for Lantern Street');
+	await expect(max.getByRole('status')).toContainText('requested');
 
 	// A show already in the Library opens as a Library title for a member (no Add, no tools):
 	// More holds only Report a problem (#95).

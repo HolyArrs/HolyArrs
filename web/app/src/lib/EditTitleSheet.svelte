@@ -79,9 +79,9 @@
 			}
 			if (moving) {
 				await api.post(`/titles/${title.id}/move`, { library_folder_id: folder, apply: true });
-				toasts.push('Moving the files to the new folder now.', 'ok');
+				toasts.push('Moving files to the new folder', 'info');
 			}
-			toasts.push('Saved.', 'ok');
+			toasts.push(`${title.name} saved`, 'ok');
 			open = false;
 			onsaved?.();
 		} catch (e) {

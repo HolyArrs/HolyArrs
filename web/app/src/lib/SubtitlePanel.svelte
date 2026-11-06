@@ -147,7 +147,7 @@
 			const body: Record<string, unknown> = own ? { languages: draft } : { inherit: true };
 			if (itemId) body.item_id = itemId;
 			await api.put(`/titles/${titleId}/subtitle-wish`, body);
-			toasts.push(own ? 'Subtitle languages saved.' : 'Subtitle languages now follow the default.', 'ok');
+			toasts.push(own ? 'Subtitle languages saved' : 'Using default languages', 'ok');
 			editing = false;
 			await load();
 		} catch (err) {
@@ -163,9 +163,9 @@
 			const body: Record<string, number> = { title_id: titleId };
 			if (itemId) body.item_id = itemId;
 			const r = await api.post<{ queued: number }>('/subtitles/search', body);
-			toasts.push(r.queued ? 'Looking for subtitles now.' : 'No file to look for subtitles for yet.', 'ok');
+			toasts.push(r.queued ? 'Searching for subtitles' : 'No file to search yet', r.queued ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
 		} finally {
 			searching = false;
 		}
@@ -193,7 +193,7 @@
 		choosingKey = key;
 		try {
 			const r = await api.post<{ path: string }>(`/files/${fileId}/subtitles/choose`, { site, key });
-			toasts.push(`Saved ${fileName(r.path)}.`, 'ok');
+			toasts.push('Subtitle saved', 'ok', { body: fileName(r.path) });
 			choosing = 0;
 			await load();
 		} catch (e) {
@@ -221,7 +221,7 @@
 		busy = true;
 		try {
 			await api.post(`/subtitles/${syncing}/sync`, body);
-			toasts.push('Timing fixed. The old file is in the holding folder.', 'ok');
+			toasts.push('Timing fixed', 'ok', { body: 'Old file in the holding folder' });
 			syncing = 0;
 			await load();
 		} catch (err) {
@@ -243,7 +243,7 @@
 		busy = true;
 		try {
 			await api.post(`/subtitles/${turning}/turn-down`, { reason: reason.trim() });
-			toasts.push('Subtitle turned down; HolyArrs looks for another one.', 'ok');
+			toasts.push('Subtitle turned down', 'ok', { body: 'Searching for the next Release' });
 			turning = 0;
 			await load();
 		} catch (err) {

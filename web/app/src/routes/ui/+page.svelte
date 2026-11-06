@@ -116,7 +116,7 @@
 			<Chip label="Movies" icon="film" selected={chips.movies} onclick={() => (chips.movies = !chips.movies)} />
 			<Chip label="TV shows" icon="tv" selected={chips.shows} onclick={() => (chips.shows = !chips.shows)} />
 			<Chip label="Music" icon="music" selected={chips.music} count={12} onclick={() => (chips.music = !chips.music)} />
-			<Chip label="Genre: Drama" onremove={() => toasts.push('Removed the Drama filter.')} />
+			<Chip label="Genre: Drama" onremove={() => toasts.push('Removed the Drama filter')} />
 		</div>
 		<div class="line">
 			{#if theme === 'light'}
@@ -132,7 +132,7 @@
 		<h2 class="bh">Menu, popover and sheet</h2>
 		<div class="line">
 			<Menu label="Title actions ({theme})" items={[
-				{ label: 'Search now', icon: 'search', onselect: () => toasts.push('Searching.') },
+				{ label: 'Search now', icon: 'search', onselect: () => toasts.push('Searching') },
 				{ label: 'Keep up to date', icon: 'refresh', checked: true },
 				{ kind: 'separator' },
 				{ kind: 'heading', label: 'Library' },
@@ -157,7 +157,7 @@
 			</div>
 			{#snippet footer()}
 				<Button variant="plain" onclick={() => (sheet[theme] = false)}>Cancel</Button>
-				<Button variant="primary" onclick={() => { sheet[theme] = false; toasts.push('Asked for Quiet Harbour.', 'ok'); }}>Get it</Button>
+				<Button variant="primary" onclick={() => { sheet[theme] = false; toasts.push('Asked for Quiet Harbour', 'ok'); }}>Get it</Button>
 			{/snippet}
 		</Sheet>
 	</section>
@@ -223,7 +223,7 @@
 			<ListRow title="The Long Field" subtitle="Asked by Sam · 2 days ago" image={art('#264653', '#2a9d8f')}>
 				{#snippet trailing()}<Button size="sm" variant="plain">Turn down</Button><Button size="sm" variant="primary">Approve</Button>{/snippet}
 			</ListRow>
-			<ListRow title="Library folders" subtitle="3 folders, 2.1 TB free" icon="folder" onclick={() => toasts.push('Opened.')}>
+			<ListRow title="Library folders" subtitle="3 folders, 2.1 TB free" icon="folder" onclick={() => toasts.push('Opened')}>
 				{#snippet trailing()}<IconButton icon="chevronRight" label="Open Library folders" tooltip={false} />{/snippet}
 			</ListRow>
 		</div>
@@ -264,8 +264,8 @@
 			<ProgressBar value={100} label="Finished example ({theme})" />
 			<div class="line"><Button size="sm" variant="secondary" onclick={() => (progress = progress >= 100 ? 12 : Math.min(100, progress + 22))}>Advance</Button></div>
 			<div class="skels"><Skeleton shape="poster" /><Skeleton shape="poster" /><Skeleton shape="poster" /><div class="col"><Skeleton lines={3} /><Skeleton shape="circle" /></div></div>
-			<LoadError hasData message="Could not refresh downloads." onretry={() => toasts.push('Trying again.')} />
-			<LoadError hasData={false} message="Could not load the Library." onretry={() => toasts.push('Trying again.')} />
+			<LoadError hasData message="Could not refresh downloads." onretry={() => toasts.push('Trying again')} />
+			<LoadError hasData={false} message="Could not load the Library." onretry={() => toasts.push('Trying again')} />
 		</div>
 	</section>
 
@@ -277,8 +277,8 @@
 			<Toast text="Could not reach the downloader." tone="fail" ondismiss={() => undefined} />
 			<Toast text="Searching for Quiet Harbour." />
 			<div class="line">
-				<Button size="sm" variant="secondary" onclick={() => toasts.push('Saved.', 'ok')}>Show a toast</Button>
-				<Button size="sm" variant="secondary" onclick={() => toasts.push('Could not save.', 'fail')}>Show a failure</Button>
+				<Button size="sm" variant="secondary" onclick={() => toasts.push('Saved', 'ok')}>Show a toast</Button>
+				<Button size="sm" variant="secondary" onclick={() => toasts.push("Couldn't save", 'fail')}>Show a failure</Button>
 			</div>
 		</div>
 	</section>

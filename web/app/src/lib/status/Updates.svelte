@@ -44,7 +44,7 @@
 		try {
 			onupd(await api.post<Update>('/app/update/check'));
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't check for updates", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

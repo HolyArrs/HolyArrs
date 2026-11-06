@@ -2,9 +2,9 @@ import { api } from '#lib/api.ts';
 import { nextCheckIn, outageDismiss, outageShown, outageStart, outageStep, type OutageState } from '#lib/outage.ts';
 
 /** The words of the notification shown while the metadata server is not answering. */
-export const METADATA_DOWN_TITLE = "Can't reach HolyArrs metadata";
+export const METADATA_DOWN_TITLE = 'Metadata offline';
 export const METADATA_DOWN = "Search and new artwork pause until it's back. Your Library still works.";
-export const METADATA_BACK = 'Back online';
+export const METADATA_BACK = 'Metadata back online';
 
 const TTL = 60_000;
 /** Dev only: set localStorage `holyarrs.dev.metadataDown` to "1" to act as if checks fail. */

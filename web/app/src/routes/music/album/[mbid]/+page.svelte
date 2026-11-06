@@ -198,19 +198,19 @@
 		try {
 			following = await setFollow(api, { titleId }, !following);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
 		} finally {
 			followBusy = false;
 		}
 	}
 	function copy(text: string, what: string) {
-		void navigator.clipboard?.writeText(text).then(() => toasts.push(`Copied the ${what}.`, 'ok'), () => toasts.push('Could not copy.', 'fail'));
+		void navigator.clipboard?.writeText(text).then(() => toasts.push(`${what} copied`, 'ok'), () => toasts.push(`Couldn't copy ${what.toLowerCase()}`, 'fail', { body: 'Select it instead' }));
 	}
 	const albumLink = $derived(typeof location === 'undefined' ? '' : location.href);
 	function trackItems(t: PageTrack): MenuItem[] {
 		const items: MenuItem[] = [
-			{ label: 'Copy song name', icon: 'copy', onselect: () => copy(`${t.name} · ${hero?.artist.name ?? ''}`, 'song name') },
-			{ label: 'Copy album link', icon: 'copy', onselect: () => copy(albumLink, 'album link') }
+			{ label: 'Copy song name', icon: 'copy', onselect: () => copy(`${t.name} · ${hero?.artist.name ?? ''}`, 'Song name') },
+			{ label: 'Copy album link', icon: 'copy', onselect: () => copy(albumLink, 'Album link') }
 		];
 		if (titleId) items.push({ label: 'Open in Library', icon: 'library', onselect: () => void goto(to(data?.part_id ? `/library/${titleId}/albums/${data.part_id}` : `/library/${titleId}`)) });
 		return items;
@@ -249,7 +249,7 @@
 
 	function act() {
 		if (titleId) return void goto(to(data?.part_id ? `/library/${titleId}/albums/${data.part_id}` : `/library/${titleId}`));
-		if (!lookup) return void toasts.push('Still reading this artist; try again in a moment.', 'fail');
+		if (!lookup) return void toasts.push('Still reading artist', 'fail', { body: 'Try again in a moment' });
 		if (manage) addDialog?.open(lookup);
 		else if (edition) void askEdition();
 		else askDialog?.open(lookup, mbid);
@@ -263,7 +263,7 @@
 			const r = await api.post<{ ask: Ask; joined: boolean }>('/asks', { kind: 'artist', id: `mbid:${artist}`, albums: [mbid], editions: { [mbid]: edition } });
 			onAsked(lookup, r);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't send request", 'fail', { body: message(e) });
 		} finally {
 			asking = false;
 		}
@@ -271,7 +271,7 @@
 
 	function onAsked(_a: LookupArtist, r: { ask: { name: string }; joined: boolean }) {
 		askedHere = true;
-		toasts.push(r.joined ? 'Someone asked already; you are on the ask too.' : `Asked for ${hero?.name}. You will hear when it is approved.`, 'ok');
+		toasts.push(r.joined ? `${hero?.name} already requested` : `${hero?.name} requested`, 'ok', { body: r.joined ? "You're on the request too" : 'Waiting for approval' });
 		void refreshInbox();
 	}
 
@@ -393,7 +393,7 @@
 </div>
 
 {#if manage}
-	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} is in your Library. Albums and tracks are being filled in.`, 'ok'); void load(); }} />
+	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' }); void load(); }} />
 {:else if mayAsk}
 	<AskArtistDialog bind:this={askDialog} onasked={onAsked} />
 {/if}

@@ -163,7 +163,7 @@
 			}
 			results = next;
 			const n = r.placed;
-			toasts.push(n === 1 ? '1 file imported.' : `${n} files imported.`, n ? 'ok' : 'info');
+			toasts.push(n === 1 ? '1 file imported' : `${n} files imported`, n ? 'ok' : 'info');
 		} catch (err) {
 			error = message(err);
 		} finally {

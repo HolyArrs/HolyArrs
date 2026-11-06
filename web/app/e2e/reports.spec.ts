@@ -142,7 +142,7 @@ test('the owner finds it from Requests and marks it fixed with a reply', async (
 	await sheet.getByLabel(new RegExp(`^Reply to ${memberName}`)).fill(reply);
 	await sheet.getByRole('button', { name: 'Mark fixed' }).click();
 	await expect(sheet).toBeHidden();
-	await expect(own.getByText(`Marked fixed. ${memberName} gets a message.`)).toBeVisible();
+	await expect(own.getByText(`${memberName} gets a message`)).toBeVisible();
 
 	// Off the Open list, on the Fixed list with the reply.
 	await expect(card).toHaveCount(0);

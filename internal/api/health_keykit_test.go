@@ -14,7 +14,7 @@ import (
 func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 	a, _ := signinRig(t, nil)
 	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
-		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download the key kit on the Backups page: backups do not hold the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
+		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
 	msg := func(who auth.Who) string {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/health/checks", nil)
@@ -32,7 +32,7 @@ func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 		t.Fatalf("no backups:key in %s", w.Body.String())
 		return ""
 	}
-	if m := msg(auth.Who{UserID: 1, Role: auth.RoleOwner}); !strings.HasPrefix(m, "Download the key kit") {
+	if m := msg(auth.Who{UserID: 1, Role: auth.RoleOwner}); !strings.HasPrefix(m, "Download your key kit") {
 		t.Errorf("owner: %q", m)
 	}
 	admin := msg(auth.Who{UserID: 3, Role: "admin", Perms: []auth.Perm{auth.PermSettings}})
@@ -46,7 +46,7 @@ func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 func TestKeyKitStatusNamesTheOwner(t *testing.T) {
 	a, _ := signinRig(t, nil)
 	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
-		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download the key kit on the Backups page: backups do not hold the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
+		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
 	text := func(who auth.Who) string {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/settings/status", nil)
@@ -65,13 +65,13 @@ func TestKeyKitStatusNamesTheOwner(t *testing.T) {
 		return ""
 	}
 	owner := auth.Who{UserID: 1, Role: auth.RoleOwner}
-	if m := text(owner); !strings.Contains(m, "Download the key kit") {
+	if m := text(owner); !strings.Contains(m, "Download your key kit") {
 		t.Errorf("owner: %q", m)
 	}
-	if m := text(auth.Who{UserID: 3, Role: "admin", Perms: []auth.Perm{auth.PermSettings}}); !strings.Contains(m, "The owner should") || strings.Contains(m, "Download the key kit") {
+	if m := text(auth.Who{UserID: 3, Role: "admin", Perms: []auth.Perm{auth.PermSettings}}); !strings.Contains(m, "Ask the owner") || strings.Contains(m, "Download your key kit") {
 		t.Errorf("admin: %q", m)
 	}
-	if m := text(owner); !strings.Contains(m, "Download the key kit") {
+	if m := text(owner); !strings.Contains(m, "Download your key kit") {
 		t.Errorf("owner after admin: %q", m)
 	}
 }

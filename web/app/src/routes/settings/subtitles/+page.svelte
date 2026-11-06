@@ -101,7 +101,7 @@
 			for (const k of ['pass_mark_movie', 'pass_mark_episode', 'search_hours', 'better_hours', 'better_days', 'batch', 'sync_from_fps', 'sync_to_fps', 'sync_step_ms'] as const) body[k] = Number(body[k]);
 			settings = await api.put<SubtitleSettings>('/settings/subtitles', body);
 			saved = JSON.stringify(settings);
-			toasts.push('Subtitle settings saved.', 'ok');
+			toasts.push('Subtitle settings saved', 'ok');
 		} catch (err) {
 			setError = message(err);
 		} finally {
@@ -143,7 +143,7 @@
 		try {
 			const body = siteBody(form);
 			const saved = isNew ? await api.post<SiteView>('/subtitle-sites', body) : await api.put<SiteView>(`/subtitle-sites/${editing!.ID}`, body);
-			toasts.push(`Subtitle site ${saved.name} saved.`, 'ok');
+			toasts.push(`${saved.name} saved`, 'ok');
 			editing = null;
 			form = null;
 			await loadSites();
@@ -173,10 +173,10 @@
 		try {
 			// A change without account details keeps the stored ones.
 			await api.put(`/subtitle-sites/${s.ID}`, { ...siteBody(siteForm(k, s)), enabled: !paused });
-			toasts.push(paused ? `${s.name} paused: searches skip it.` : `${s.name} is on again.`, 'ok');
+			toasts.push(paused ? `${s.name} paused` : `${s.name} resumed`, 'ok', paused ? { body: 'Searches skip it' } : undefined);
 			await loadSites();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Subtitle site`, 'fail', { body: message(err) });
 		}
 	}
 
@@ -186,7 +186,7 @@
 			await api.del(`/subtitle-sites/${s.ID}`);
 			await loadSites();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove Subtitle site", 'fail', { body: message(err) });
 		}
 	}
 </script>

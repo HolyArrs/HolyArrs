@@ -86,7 +86,7 @@
 				music_per_week: Number(settings.music_per_week)
 			});
 			saved = JSON.stringify(settings);
-			toasts.push('Request settings saved.', 'ok');
+			toasts.push('Request settings saved', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {

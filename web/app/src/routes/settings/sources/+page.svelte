@@ -72,7 +72,7 @@
 		try {
 			const body = formBody(form);
 			const saved = isNew ? await api.post<SourceView>('/sources', body) : await api.put<SourceView>(`/sources/${editing!.id}`, body);
-			toasts.push(`Source ${saved.name} saved.`, 'ok');
+			toasts.push(`${saved.name} saved`, 'ok');
 			forgetTags();
 			editing = null;
 			await load();
@@ -102,7 +102,7 @@
 			await api.post(`/sources/${s.id}/${paused ? 'pause' : 'resume'}`);
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Source`, 'fail', { body: message(err) });
 		}
 	}
 
@@ -112,7 +112,7 @@
 			await api.del(`/sources/${s.id}`);
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove Source", 'fail', { body: message(err) });
 		}
 	}
 

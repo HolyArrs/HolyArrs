@@ -79,7 +79,7 @@ test('Rename files on the show page renames the adopted episodes to the episode 
 	await expect(sheet).toContainText('Quarry Bells - S01E02-E03 - Dust + Granite 1080p WEB.mkv');
 	await axe(page, 'show rename preview');
 	await sheet.getByRole('button', { name: 'Rename 2 files' }).click();
-	await expect(page.getByText('2 files renamed.')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('2 files renamed')).toBeVisible({ timeout: 30_000 });
 	// The sheet closes itself when the rename is done; opened again, nothing is left to rename.
 	await expect(sheet).toBeHidden();
 	await titleAction(page, 'Library', 'Rename files');
@@ -113,7 +113,8 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files move to the holding folder');
 	await dialog.getByRole('button', { name: 'Delete Season 1' }).click();
-	await expect(page.getByText(/Quarry Bells Season 1 is deleted\. Their files are in the holding folder/)).toBeVisible();
+	await expect(page.getByText("Quarry Bells Season 1 deleted")).toBeVisible();
+	await expect(page.getByText(/Files kept/)).toBeVisible();
 	expect(existsSync(join(folder, 'Season 1', 'Quarry Bells - S01E01 - Echo 1080p WEB.mkv'))).toBe(false);
 	// The season folder it emptied goes; the person's Extras folder stays.
 	expect(existsSync(join(folder, 'Season 1'))).toBe(false);
@@ -182,11 +183,11 @@ test('Settings > Alerts: one Alert per pack, or one per episode', async () => {
 	const card = page.getByTestId('pack-alerts');
 	await expect(card.getByRole('radio', { name: /One Alert for the pack/ })).toBeChecked();
 	await card.getByRole('radio', { name: /One Alert per episode/ }).check();
-	await expect(page.getByText('A pack now sends one Alert per episode.')).toBeVisible();
+	await expect(page.getByText('One Alert per episode')).toBeVisible();
 	await page.reload();
 	await expect(card.getByRole('radio', { name: /One Alert per episode/ })).toBeChecked();
 	await card.getByRole('radio', { name: /One Alert for the pack/ }).check();
-	await expect(page.getByText('A pack now sends one Alert listing its episodes.')).toBeVisible();
+	await expect(page.getByText('One Alert per pack')).toBeVisible();
 	await axe(page, 'alerts with packs');
 });
 
@@ -224,7 +225,8 @@ test('deleting the whole show with Never-add keeps its files and leaves the Libr
 	await expect(del.getByTestId('delete-plan')).toContainText('The show leaves the Library');
 	await expect(del.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
 	await del.getByRole('button', { name: 'Delete show', exact: true }).click();
-	await expect(page.getByText('Quarry Bells is deleted. Its files stay on disk.')).toBeVisible();
+	await expect(page.getByText('Quarry Bells deleted')).toBeVisible();
+	await expect(page.getByText('Files stay on disk')).toBeVisible();
 	// The title page stays open, now without its Library tab; the Library no longer lists the show.
 	await expect(page.getByTestId('own-tabs')).toHaveCount(0);
 	expect(existsSync(files.extra)).toBe(true);

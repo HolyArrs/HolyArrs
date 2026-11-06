@@ -81,7 +81,7 @@ test('music adoption and rename stay on one fixture and prove the exact disk res
 	await page.goto('/settings/naming');
 	await page.getByTestId('music-naming').getByRole('textbox', { name: 'Album folder pattern', exact: true }).fill('{year} - {album}');
 	await page.getByRole('button', { name: /^Save/ }).click();
-	await expect(page.getByText('Naming and file settings saved.')).toBeVisible();
+	await expect(page.getByText('Naming settings saved')).toBeVisible();
 
 	await adopt('Music: ', 'Copper Wren', 'Adopt 1 artist', '1 artist is now in the Library.');
 	for (const file of Object.values(musicFiles)) expect(existsSync(file), `adoption moved ${file}`).toBe(true);
@@ -104,7 +104,7 @@ test('music adoption and rename stay on one fixture and prove the exact disk res
 	await expect(steps.nth(1)).toContainText('Copper Wren/Low Orbit (2018)/02 - Song 1.2.mp3');
 	await expect(steps.nth(1)).toContainText('Copper Wren/2018 - Low Orbit/02 - Song 1.2.mp3');
 	await dialog.getByRole('button', { name: 'Rename 2 files' }).click();
-	await expect(page.getByText('2 files renamed.')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('2 files renamed')).toBeVisible({ timeout: 30_000 });
 	await expect(dialog.getByTestId('rename-none')).toBeVisible();
 
 	expect(existsSync(sourceAlbum), 'old album folder remains').toBe(false);
@@ -118,7 +118,7 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await page.getByRole('button', { name: 'Add a language' }).click();
 	await page.locator('#def-lang-0').selectOption('en');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Subtitle settings saved.')).toBeVisible();
+	await expect(page.getByText('Subtitle settings saved')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Add a Subtitle site' }).click();
 	await page.getByRole('radio', { name: /^Lab subtitle site \(/ }).check();
@@ -148,7 +148,7 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await expect(choices.getByRole('heading', { name: 'English' })).toBeVisible({ timeout: 30_000 });
 	await expect(choices.getByTestId('subtitle-choice').first()).toContainText('Lab subtitle site');
 	await choices.locator('ul[data-lang="en"]').getByRole('button', { name: /^Choose / }).first().click();
-	await expect(page.getByText(/Saved Fennel\.Clock\.S01E01\.1080p\.WEB-DL\.H264-LAB\.en\.srt\./)).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByRole('status').filter({ hasText: 'Subtitle saved' })).toContainText('Fennel.Clock.S01E01.1080p.WEB-DL.H264-LAB.en.srt', { timeout: 30_000 });
 	await expect(dialog.getByTestId('subtitle-row').filter({ hasText: 'English' })).toContainText('Chosen by hand from Lab subtitle site');
 
 	expect(existsSync(episodeSubtitle), episodeSubtitle).toBe(true);

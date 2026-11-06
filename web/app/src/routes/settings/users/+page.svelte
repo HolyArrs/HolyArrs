@@ -206,7 +206,7 @@
 			inviteOpen = false;
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't make invite", 'fail', { body: message(err) });
 		} finally {
 			making = false;
 		}
@@ -215,9 +215,9 @@
 	async function copyLink() {
 		try {
 			await navigator.clipboard.writeText(link);
-			toasts.push('Copied.', 'ok');
+			toasts.push('Link copied', 'ok');
 		} catch {
-			toasts.push('Copy did not work here; select the link and copy it by hand.', 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 
@@ -225,9 +225,9 @@
 		try {
 			await api.del(`/users/invites/${i.id}`);
 			invites = invites.filter((x) => x.id !== i.id);
-			toasts.push('Invite taken back.', 'ok');
+			toasts.push('Invite taken back', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't take back invite", 'fail', { body: message(e) });
 		}
 	}
 
@@ -258,10 +258,10 @@
 		if (!u) return;
 		try {
 			await api.post(`/users/${u.id}/password`, { password: pwNew });
-			toasts.push(`New password set for ${u.name}. They are signed out everywhere.`, 'ok');
+			toasts.push(`Password set for ${u.name}`, 'ok', { body: 'Signed out everywhere' });
 			pwDialog?.close();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't set password", 'fail', { body: message(err) });
 		}
 	}
 
@@ -292,7 +292,7 @@
 			await load();
 			return true;
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 			return false;
 		} finally {
 			saving = false;
@@ -308,32 +308,32 @@
 		if (limits[u.id] && !limits[u.id].no_limit) {
 			const own = { movies_per_week: limitValue(editLimits.movies), shows_per_week: limitValue(editLimits.shows), music_per_week: limitValue(editLimits.music) };
 			if (Object.values(own).includes(undefined)) {
-				toasts.push('Each weekly limit is a whole number from 0 to 1000, or empty for the default.', 'fail');
+				toasts.push('Weekly limit not valid', 'fail', { body: 'Use 0 to 1000, or leave empty' });
 				return;
 			}
 			try {
 				await api.put(`/ask-limits/${u.id}`, own);
 			} catch (err) {
-				toasts.push(message(err), 'fail');
+				toasts.push("Couldn't save", 'fail', { body: message(err) });
 				return;
 			}
 		}
-		if (await put(u, body, `${u.name} saved.`)) dialog?.close();
+		if (await put(u, body, `${u.name} saved`)) dialog?.close();
 	}
 
 	async function setState(u: User, state: 'active' | 'disabled') {
 		if (state === 'disabled' && !confirm(`Turn off ${u.name}? They're signed out until you turn them on.`)) return;
-		await put(u, { state }, state === 'disabled' ? `${u.name} turned off.` : `${u.name} turned on.`);
+		await put(u, { state }, state === 'disabled' ? `${u.name} turned off` : `${u.name} turned on`);
 	}
 
 	async function resetTwoFactor(u: User) {
 		if (!confirm(`Reset two-factor for ${u.name}? Password only until they set it up.`)) return;
 		try {
 			await api.post(`/users/${u.id}/two-factor/reset`);
-			toasts.push(`Two-factor sign-in reset for ${u.name}.`, 'ok');
+			toasts.push(`Two-factor reset for ${u.name}`, 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't reset two-factor", 'fail', { body: message(e) });
 		}
 	}
 
@@ -358,10 +358,10 @@
 				if (!confirm(`${u.name} has no password and will be locked out. Unlink anyway?`)) return;
 				await api.post(`/users/${u.id}/sso/unlink`, { ...body, confirm_no_way_in: true });
 			}
-			toasts.push(`Unlinked the ${ssoWord(l.kind)} sign-in of ${u.name}.`, 'ok');
+			toasts.push(`Sign-in unlinked for ${u.name}`, 'ok', { body: ssoWord(l.kind) });
 			await load();
 		} catch (e) {
-			toasts.push(e instanceof ApiError && e.body.code === 'reauth' ? 'Confirm your password in My account first, then try again.' : message(e), 'fail');
+			toasts.push("Couldn't unlink sign-in", 'fail', { body: e instanceof ApiError && e.body.code === 'reauth' ? 'Confirm password in My account' : message(e) });
 		}
 	}
 

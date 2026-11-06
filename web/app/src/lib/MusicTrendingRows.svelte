@@ -218,15 +218,15 @@
 			// A name never searched before answers "pending" while the search runs: ask again quietly.
 			const r = await reaskWhileFilling(await ask(), ask, () => {});
 			const a = r.artists?.find((x) => x.mbid === c.artist_mbid);
-			if (!a) return void toasts.push(`Could not find ${artist}. Try Search.`, 'fail');
+			if (!a) return void toasts.push(`Couldn't find ${artist}`, 'fail', { body: 'Try Search' });
 			if (a.title_id) {
 				addedHere = new Map([...addedHere, [a.mbid, a.title_id]]);
-				return void toasts.push(`${a.name} is in your Library already.`, 'ok');
+				return void toasts.push(`${a.name} already in Library`, 'ok');
 			}
 			if (manage) addArtist?.open(a);
 			else askArtist?.open(a);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't add artist", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -234,14 +234,14 @@
 
 	function added(a: LookupArtist, t: TitleView) {
 		addedHere = new Map([...addedHere, [a.mbid, t.id]]);
-		toasts.push(`${t.name} is in your Library. Albums, Pressings and tracks are being filled in.`, 'ok');
+		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
 		onadded?.(t);
 	}
 
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
-		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.ask.state === 'asked' && r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too.`, 'ok');
-		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
+		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Kept up to date' });
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: "You're on the request too" });
+		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 		void load();
 	}

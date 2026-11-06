@@ -107,7 +107,7 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 
 	await page.getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Refresh details' }).click();
-	await expect(page.getByText('Refreshing names, dates and posters')).toBeVisible();
+	await expect(page.getByText('Names, dates and posters')).toBeVisible();
 
 	await page.getByRole('button', { name: 'More actions' }).click();
 	// The Edit panel left the movie page (6e4a82053); Keep up to date is a More actions item.

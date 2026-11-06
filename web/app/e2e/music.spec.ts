@@ -79,7 +79,7 @@ test('the owner adds a music folder and looks at Settings > Music', async () => 
 	await expect(own.getByLabel('Which Pressing an album follows')).toHaveValue('common');
 	await own.getByLabel('Cache answers for (hours)').fill('48');
 	await own.getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByRole('status')).toContainText('Music settings saved.');
+	await expect(own.getByRole('status')).toContainText('Music settings saved');
 	await own.reload();
 	await expect(own.getByLabel('Cache answers for (hours)')).toHaveValue('48');
 	await axe(own, 'settings music');
@@ -105,7 +105,7 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await axe(own, 'add artist dialog');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(dialog).toBeHidden(slow);
-	await expect(own.getByRole('status')).toContainText('Tin Lanterns is in your Library.');
+	await expect(own.getByRole('status')).toContainText('Tin Lanterns added');
 	await own.getByRole('main').getByRole('link', { name: 'Tin Lanterns,' }).first().click();
 
 	// The artist page: the hero, then the Library tab with the albums, their kinds, dates and state, and Search.
@@ -142,7 +142,7 @@ test('the owner finds an artist and adds it from Search', async () => {
 
 	// An album turns off and on.
 	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
-	await expect(own.getByRole('status')).toContainText('Night Ferry: HolyArrs stops looking after it.');
+	await expect(own.getByRole('status')).toContainText('Stopped updating Night Ferry');
 	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Not kept');
 	await expect(lib.getByRole('button', { name: 'Keep Night Ferry up to date' })).toHaveAttribute('aria-pressed', 'false');
 	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
@@ -185,7 +185,7 @@ test('the album page lists tracks and Pressings, and the owner picks another Pre
 	await own.getByTestId('chosen-pressing').getByRole('button', { name: 'Edition' }).click();
 	await own.getByRole('menuitemradio', { name: 'Harbour Songs (deluxe) · 2019 · GB · CD · 4 tracks' }).or(own.getByRole('menuitem', { name: 'Harbour Songs (deluxe) · 2019 · GB · CD · 4 tracks' })).click();
 	await own.getByRole('dialog', { name: 'Follow this edition?' }).getByRole('button', { name: 'Use this edition' }).click();
-	await expect(own.getByRole('status')).toContainText('The tracks now follow Harbour Songs.');
+	await expect(own.getByRole('status')).toContainText('Pressing changed');
 	await expect(own.getByTestId('track')).toHaveCount(4);
 	await expect(own.getByTestId('chosen-pressing')).toContainText('By hand');
 	await own.getByRole('link', { name: 'Tin Lanterns', exact: true }).first().click();
@@ -242,7 +242,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await axe(ivy, 'ask artist dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for Fern Hymns' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(ivy.getByRole('status')).toContainText('Asked for Moss Choir');
+	await expect(ivy.getByRole('status')).toContainText('Moss Choir (Fern Hymns) requested');
 
 	// An artist in the Library offers to ask for the albums it does not keep (on its page).
 	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');
@@ -292,7 +292,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 		await phone.keyboard.press('Escape');
 		await expect(still).toHaveCount(0);
 	}
-	await expect(phone.getByRole('status').filter({ hasText: 'Approved Moss Choir.' }).getByRole('button', { name: 'Undo' })).toBeVisible();
+	await expect(phone.getByRole('status').filter({ hasText: 'Moss Choir approved' }).getByRole('button', { name: 'Undo' })).toBeVisible();
 	// Sent once the Undo time is over.
 	await expect
 		.poll(async () => ((await (await phone.request.get('/api/v1/asks?state=approved')).json()) as { asks: { name: string }[] }).asks.some((a) => a.name === 'Moss Choir'), slow)

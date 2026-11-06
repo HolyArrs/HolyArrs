@@ -50,7 +50,7 @@
 			albums = a.albums ?? [];
 			events = e.events ?? [];
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't load artist", 'fail', { body: message(err) });
 		}
 	}
 	$effect(() => {
@@ -113,7 +113,7 @@
 			await fn();
 			if (done) toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -126,7 +126,7 @@
 				await api.put(`/albums/${a.id}`, { keep_up_to_date: !a.keep_up_to_date });
 				await load();
 			},
-			`${a.name}: ${a.keep_up_to_date ? 'HolyArrs stops looking after it.' : 'HolyArrs keeps it up to date.'}`
+			a.keep_up_to_date ? `Stopped updating ${a.name}` : `Keeping ${a.name} up to date`
 		);
 	const keepTitle = () =>
 		run(
@@ -136,9 +136,9 @@
 				await api.put(`/titles/${titleId}`, { keep_up_to_date: !title.keep_up_to_date });
 				await load();
 			},
-			title?.keep_up_to_date ? 'HolyArrs stops looking after this artist.' : 'HolyArrs keeps this artist up to date.'
+			title?.keep_up_to_date ? 'Stopped updating artist' : 'Keeping artist up to date'
 		);
-	const refresh = () => run('refresh', () => api.post(`/titles/${titleId}/refresh`), 'Refreshing albums, tracks, names and pictures.');
+	const refresh = () => run('refresh', () => api.post(`/titles/${titleId}/refresh`), 'Refreshing artist');
 	const albumPage = (a: AlbumSummary) => to(`/library/${titleId}/albums/${a.id}`);
 
 	// Album kinds: what counts for this artist, and what happens to albums
@@ -166,7 +166,7 @@
 		return run('kinds', async () => {
 			await api.put(`/titles/${titleId}/artist`, { new_albums: title?.artist?.new_albums ?? 'all', album_types: kindSets[k], secondary_types: ['studio'], release_statuses: ['official'] });
 			await load();
-		}, 'Saved. A refresh brings in the albums it now includes.');
+		}, 'Album kinds saved');
 	};
 	const kindMenu = $derived<MenuItem[]>([{ label: 'Choose kinds…', icon: 'tools', onselect: openKinds }]);
 	let moreKinds = $state(false);
@@ -187,7 +187,7 @@
 		try {
 			await api.put(`/titles/${titleId}/artist`, { new_albums: eNew, album_types: eTypes, secondary_types: eExtras, release_statuses: eStatuses });
 			kindsOpen = false;
-			toasts.push('Saved. A refresh brings in the albums the new kinds include.', 'ok');
+			toasts.push('Album kinds saved', 'ok', { body: 'Refresh to add albums' });
 			await load();
 		} catch (err) {
 			kindsError = message(err);
@@ -247,7 +247,7 @@
 			await api.post(`/titles/${titleId}/move`, { library_folder_id: f.id, apply: true });
 			moveTo = null;
 			await load();
-		}, `Moving the files to ${f.label} now.`);
+		}, `Moving files to ${f.label}`);
 	}
 </script>
 
@@ -264,7 +264,7 @@
 					<p class="al-facts">{#each facts as f (f.k)}<span class="al-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
 				</div>
 				{#if manage}
-					{#if missing}<button type="button" class="al-btn primary" disabled={busy === 'all'} onclick={() => search({}, 'all', 'Looking for every missing track.')}><Icon name="search" size={16} />Get all missing</button>{/if}
+					{#if missing}<button type="button" class="al-btn primary" disabled={busy === 'all'} onclick={() => search({}, 'all', 'Searching for all missing tracks')}><Icon name="search" size={16} />Get all missing</button>{/if}
 				{/if}
 			</section>
 
@@ -299,7 +299,7 @@
 								</button>
 								{#if manage}
 									<span class="al-acts">
-										<button type="button" class="al-ico" title="Get the missing tracks" aria-label="Get the missing tracks of {a.name}" disabled={!a.missing || busy === `a${a.id}`} onclick={() => search({ album_id: a.id }, `a${a.id}`, `Looking for ${a.name}.`)}><Icon name="search" size={15} /></button>
+										<button type="button" class="al-ico" title="Get the missing tracks" aria-label="Get the missing tracks of {a.name}" disabled={!a.missing || busy === `a${a.id}`} onclick={() => search({ album_id: a.id }, `a${a.id}`, `Searching for ${a.name}`)}><Icon name="search" size={15} /></button>
 										<button type="button" class="al-ico" title="Choose a release" aria-label="Choose a release for {a.name}" onclick={() => pick({ label: a.name, query: `album_id=${a.id}`, body: { album_id: a.id } })}><Icon name="grid" size={15} /></button>
 									</span>
 								{/if}
@@ -314,7 +314,7 @@
 											<span class="al-tr-name">{tr.name ?? `Track ${tr.number}`}</span>
 											<span class="al-tr-len">{len(tr.length_ms)}</span>
 											<span class="al-tr-st {tn}"><span class="dot {tn}" aria-hidden="true"></span>{st?.state_label ?? 'Missing'}</span>
-											{#if manage && st}<button type="button" class="al-ico" title="Look for it now" aria-label="Look for {tr.name}" disabled={tn === 'have' || tn === 'downloading' || busy === `t${tr.id}`} onclick={() => search({ slot_id: st.id }, `t${tr.id}`, `Looking for ${tr.name ?? 'the track'}.`)}><Icon name="search" size={14} /></button>{/if}
+											{#if manage && st}<button type="button" class="al-ico" title="Look for it now" aria-label="Look for {tr.name}" disabled={tn === 'have' || tn === 'downloading' || busy === `t${tr.id}`} onclick={() => search({ slot_id: st.id }, `t${tr.id}`, `Searching for ${tr.name ?? 'track'}`)}><Icon name="search" size={14} /></button>{/if}
 										</li>
 									{:else}
 										{#each [0, 1, 2] as i (i)}<li class="al-tr skel"></li>{/each}

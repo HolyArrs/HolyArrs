@@ -83,7 +83,7 @@
 				const id = editing!.id;
 				results = Object.fromEntries(Object.entries(results).filter(([k]) => Number(k) !== id));
 			}
-			toasts.push(`${form.name} saved.`, 'ok');
+			toasts.push(`${form.name} saved`, 'ok');
 			editing = null;
 			await load();
 		} catch (err) {
@@ -115,7 +115,7 @@
 			await api.del(`/media-servers/${m.id}`);
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove Media server", 'fail', { body: message(err) });
 		}
 	}
 

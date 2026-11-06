@@ -18,7 +18,7 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { alertsPanel, toasts } from '#lib/toasts.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/requests.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
@@ -291,7 +291,7 @@
 		}
 		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
-		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: (inbox.waiting + decisions.count > 0 || settingsAttention) && manager, onclick: () => (moreOpen = true) });
+		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: ((inbox.waiting + decisions.count > 0 || settingsAttention) && manager) || toasts.unseen() > 0, onclick: () => (moreOpen = true) });
 		return t;
 	});
 
@@ -299,6 +299,10 @@
 	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
 	// An id-like account name (preview-…, e2e-…) reads as "You".
 	const shownName = $derived(personName(session.s.name, 'You'));
+	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
+	const openFixes = $derived(settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0);
+	const unseenAlerts = $derived(toasts.unseen() + openFixes);
+	const hasFailAlert = $derived(openFixes > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
 	const accountItems = $derived<MenuItem[]>([
 		{ label: 'Account', icon: 'user', href: to('/account') },
 		{ kind: 'separator' },
@@ -443,7 +447,7 @@
 		try {
 			await session.logout();
 		} catch {
-			toasts.push('Couldn’t confirm sign-out', 'fail');
+			toasts.push("Couldn't confirm sign-out", 'fail');
 		}
 		void goto(to('/login'));
 	}
@@ -451,9 +455,9 @@
 	async function signOut() {
 		try {
 			await session.logout();
-			toasts.push('Signed out');
+			toasts.push('Signed out', 'ok');
 		} catch {
-			toasts.push('Couldn’t confirm sign-out', 'fail');
+			toasts.push("Couldn't confirm sign-out", 'fail');
 		}
 	}
 
@@ -474,6 +478,11 @@
 			</span>
 		{/snippet}
 	</Menu>
+	<!-- Recent alerts: a bell beside your name, with how many arrived since you last looked. -->
+	<button type="button" class="alerts-bell" class:only={collapsed} data-alerts-open aria-label={unseenAlerts ? `Recent alerts, ${unseenAlerts} new` : 'Recent alerts'} aria-expanded={alertsPanel.open} onclick={() => (alertsPanel.open = !alertsPanel.open)}>
+		<Icon name="bell" size={18} />
+		{#if unseenAlerts}<span class="alerts-count" class:bad={hasFailAlert}>{unseenAlerts > 9 ? '9+' : unseenAlerts}</span>{/if}
+	</button>
 {/snippet}
 
 {#if session.s.safeMode}
@@ -541,6 +550,9 @@
 				</div>
 			{/each}
 			<div class="more-sec">
+				<ul><li><SidebarItem href="#alerts" label="Recent alerts" icon="bell" current={false} badge={unseenAlerts} badgeLabel="new" onclick={(e) => { e.preventDefault(); moreOpen = false; alertsPanel.open = true; }} /></li></ul>
+			</div>
+			<div class="more-sec">
 				<h3>You</h3>
 				<ul><li><SidebarItem href={to('/account')} label="Account · {session.s.name}" icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li></ul>
 				<div class="more-theme"><SegmentedControl label="Appearance" options={themeOptions} bind:value={themeChoice} onchange={(v) => setTheme(v)} /></div>
@@ -571,7 +583,15 @@
 	.who-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
 	.who-name { color: var(--text); font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.who-role { font: var(--t-footnote); color: var(--text-muted); }
-	:global(.ui-sidebar .foot .ui-pop) { display: flex; width: 100%; }
+	:global(.ui-sidebar .foot) { display: flex; align-items: center; gap: 4px; }
+	:global(.ui-sidebar .foot .ui-pop) { display: flex; flex: 1; min-width: 0; }
+	/* Collapsed menu: the bell sits under the picture. */
+	:global(.ui-sidebar .foot:has(.alerts-bell.only)) { flex-direction: column; }
+	.alerts-bell { position: relative; flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--text-muted); }
+	.alerts-bell:hover, .alerts-bell[aria-expanded='true'] { color: var(--text); background: var(--surface-2); }
+	.alerts-bell:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.alerts-count { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; display: grid; place-items: center; font: 700 10px/1 var(--font-ui); font-variant-numeric: tabular-nums; color: #fff; background: var(--text-muted); box-shadow: 0 0 0 2px var(--sidebar-solid, var(--bg)); }
+	.alerts-count.bad { background: var(--fail, #d70015); }
 	.more { display: flex; flex-direction: column; gap: 16px; }
 	.more h3 { padding: 0 12px 4px; color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); }
 	.more ul { display: flex; flex-direction: column; gap: 2px; }

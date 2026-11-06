@@ -201,7 +201,7 @@ test('make a backup and see it listed', async () => {
 	await page.getByRole('button', { name: 'Back up now' }).click();
 	await expect(page.getByRole('link', { name: 'Download' }).first()).toBeVisible();
 	await page.getByRole('radio', { name: /Careful/ }).check();
-	await expect(page.getByText('Backups: Careful.')).toBeVisible();
+	await expect(page.getByText('Backup plan saved')).toBeVisible();
 });
 
 test('download the key kit from Backups', async () => {
@@ -209,7 +209,7 @@ test('download the key kit from Backups', async () => {
 	const got = page.waitForEvent('download');
 	await page.getByRole('button', { name: 'Download key kit' }).click();
 	expect((await got).suggestedFilename()).toMatch(/\.key$/);
-	await expect(page.getByText('Key kit downloaded.')).toBeVisible();
+	await expect(page.getByText('Key kit downloaded')).toBeVisible();
 });
 
 test('search, add a movie, and the Library updates live', async ({ browser }) => {

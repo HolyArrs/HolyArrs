@@ -68,7 +68,7 @@
 			if (isConfirm(r)) asking = { key, label, path, confirm: r, then };
 			else then(r);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${label.charAt(0).toLowerCase()}${label.slice(1)}`, 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -84,7 +84,7 @@
 			a.then(r);
 		} catch (err) {
 			asking = null;
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${a.label.charAt(0).toLowerCase()}${a.label.slice(1)}`, 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -100,16 +100,16 @@
 	}
 
 	function switchPart(p: PartView, on: boolean) {
-		run(`part-${p.part}`, on ? `Turn ${p.name} on` : `Turn ${p.name} off`, `/parts/${p.part}/${on ? 'on' : 'off'}`, done(`${p.name} is ${on ? 'on' : 'off'}.`));
+		run(`part-${p.part}`, on ? `Turn ${p.name} on` : `Turn ${p.name} off`, `/parts/${p.part}/${on ? 'on' : 'off'}`, done(`${p.name} turned ${on ? 'on' : 'off'}`));
 	}
 
 	function restartPart(p: PartView) {
-		run(`restart-${p.part}`, `Restart ${p.name}`, `/parts/${p.part}/restart`, done(`${p.name} restarted.`));
+		run(`restart-${p.part}`, `Restart ${p.name}`, `/parts/${p.part}/restart`, done(`${p.name} restarted`));
 	}
 
 	function stage(s: StageState, action: 'pause' | 'resume' | 'restart') {
 		const name = s.key.replace(/^stage:/, '');
-		run(`stage-${name}-${action}`, `${action[0].toUpperCase()}${action.slice(1)} ${s.name}`, `/stages/${encodeURIComponent(name)}/${action}`, done(`${s.name}: done.`));
+		run(`stage-${name}-${action}`, `${action[0].toUpperCase()}${action.slice(1)} ${s.name}`, `/stages/${encodeURIComponent(name)}/${action}`, done(`${s.name} done`));
 	}
 
 	function reconnect(l: StageState) {
@@ -119,7 +119,7 @@
 			// The answer of the link's own test: the same words as its tag ("qBittorrent v5.1.2"), or Not connected and why.
 			const o = (r ?? {}) as { ok?: boolean; text?: string; message?: string; error?: string; found?: string };
 			const said = o.text || o.message || o.error || o.found || '';
-			toasts.push(o.ok === false ? `${l.name}: Not connected. ${said}`.trim() : `${l.name}: ${testLabel(said)}`, o.ok === false ? 'fail' : 'ok');
+			toasts.push(o.ok === false ? `Couldn't connect ${l.name}` : `${l.name} connected`, o.ok === false ? 'fail' : 'ok', { body: o.ok === false ? said || undefined : testLabel(said) });
 			void load();
 		});
 	}

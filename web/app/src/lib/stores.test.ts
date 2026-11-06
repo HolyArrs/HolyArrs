@@ -83,24 +83,118 @@ describe('live', () => {
 describe('toasts', () => {
 	afterEach(() => vi.useRealTimers());
 
-	it('adds, caps at four and clears itself', () => {
+	it('shows the newest two at once, counts the rest and clears itself', () => {
 		vi.useFakeTimers();
 		const t = createToasts(1000);
-		for (let i = 0; i < 6; i++) t.push(`m${i}`);
-		expect(t.list.map((x) => x.text)).toEqual(['m2', 'm3', 'm4', 'm5']);
+		for (let i = 0; i < 4; i++) t.push(`m${i}`);
+		expect(t.list.map((x) => x.text)).toEqual(['m2', 'm3']);
+		expect(t.counts.waiting).toBe(2);
 		vi.advanceTimersByTime(1001);
+		expect(t.list).toHaveLength(0);
+		expect(t.counts.waiting).toBe(0);
+	});
+
+	it('waits only behind two that both offer Undo', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		const undo = { label: 'Undo', run: () => {} };
+		t.push('a', 'ok', { action: undo, ms: 5000 });
+		t.push('b', 'ok', { action: undo, ms: 5000 });
+		t.push('c');
+		expect(t.list.map((x) => x.text)).toEqual(['a', 'b']);
+		expect(t.counts.waiting).toBe(1);
+		vi.advanceTimersByTime(5001);
+		expect(t.list.map((x) => x.text)).toEqual(['c']);
+	});
+
+	it('refreshes the same message instead of stacking it', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		const a = t.push('Copied', 'ok');
+		vi.advanceTimersByTime(800);
+		const b = t.push('Copied', 'ok');
+		expect(b).toBe(a);
+		expect(t.list).toHaveLength(1);
+		expect(t.list[0].seen).toBe(1);
+		vi.advanceTimersByTime(800);
+		expect(t.list).toHaveLength(1);
+		vi.advanceTimersByTime(300);
 		expect(t.list).toHaveLength(0);
 	});
 
-	it('keeps failures longer and can be closed by hand', () => {
+	it('keeps failures longer, longer for more text, and can be closed by hand', () => {
 		vi.useFakeTimers();
 		const t = createToasts(1000);
 		const id = t.push('bad', 'fail');
-		t.push('ok', 'ok');
-		vi.advanceTimersByTime(1001);
-		expect(t.list.map((x) => x.text)).toEqual(['bad']);
-		t.dismiss(id);
+		const long = t.push('x'.repeat(200), 'fail');
+		vi.advanceTimersByTime(8001);
+		expect(t.list.map((x) => x.id)).toEqual([long]);
+		vi.advanceTimersByTime(7000);
 		expect(t.list).toHaveLength(0);
+		const again = t.push('bad', 'fail');
+		t.dismiss(again);
+		expect(t.list).toHaveLength(0);
+		expect(id).not.toBe(again);
+	});
+
+	it('holds while hovered and gives back the time left', () => {
+		vi.useFakeTimers();
+		const t = createToasts(4000);
+		const id = t.push('hi');
+		vi.advanceTimersByTime(1000);
+		t.pause(id);
+		vi.advanceTimersByTime(60000);
+		expect(t.list).toHaveLength(1);
+		t.resume(id);
+		vi.advanceTimersByTime(2999);
+		expect(t.list).toHaveLength(1);
+		vi.advanceTimersByTime(2);
+		expect(t.list).toHaveLength(0);
+	});
+
+	it('keeps every alert in Recent alerts, even ones a burst drops', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		for (let i = 0; i < 12; i++) t.push(`n${i}`);
+		expect(t.list.map((x) => x.text)).toEqual(['n10', 'n11']);
+		expect(t.counts.waiting).toBe(10);
+		expect(t.past.map((p) => p.text)).toHaveLength(12);
+		expect(t.past[0].text).toBe('n11');
+		expect(t.unseen()).toBe(12);
+		t.seeAll();
+		expect(t.counts.waiting).toBe(0);
+		expect(t.unseen()).toBe(0);
+		t.forget(t.past[0].id);
+		expect(t.past).toHaveLength(11);
+		t.forgetAll();
+		expect(t.past).toHaveLength(0);
+	});
+
+	it('runs Undo from the list once, while it still works', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		const run = vi.fn();
+		const id = t.push('Severance deleted', 'ok', { action: { label: 'Undo', run }, ms: 2000 });
+		t.runPast(id);
+		t.runPast(id);
+		expect(run).toHaveBeenCalledTimes(1);
+		expect(t.list).toHaveLength(0);
+		const late = vi.fn();
+		const id2 = t.push('Andor deleted', 'ok', { action: { label: 'Undo', run: late }, ms: 2000 });
+		vi.advanceTimersByTime(10_000);
+		t.runPast(id2);
+		expect(late).not.toHaveBeenCalled();
+	});
+
+	it('never drops an Undo from the queue in a burst', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		t.push('a');
+		t.push('b');
+		t.push('Deleted', 'ok', { action: { label: 'Undo', run: () => {} }, ms: 5000 });
+		for (let i = 0; i < 10; i++) t.push(`n${i}`);
+		vi.advanceTimersByTime(1001);
+		expect(t.list.map((x) => x.text)).toContain('Deleted');
 	});
 
 	it('carries an action and its own time', () => {

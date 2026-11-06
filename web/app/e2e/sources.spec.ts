@@ -93,7 +93,7 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		await card.getByTestId('bridge-test').click();
 		await expect(card.getByTestId('bridge-result')).toContainText('Jackett · 1 indexer');
 		await card.getByTestId('bridge-connect').click();
-		await expect(page.getByText('Jackett connected: 1 Source added.')).toBeVisible();
+		await expect(page.getByText('1 Source added')).toBeVisible();
 		const row = card.getByTestId('bridge');
 		await expect(row).toContainText('1 indexer');
 		// The fake Jackett runs on this machine: its Sources may reach the local network, and each Source says so.
@@ -101,7 +101,7 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		await expect(src).toContainText('/jackett/api/v2.0/indexers/labsite/results/torznab/');
 		await expect(src).toContainText('may reach the local network');
 		await row.getByTestId('bridge-check').click();
-		await expect(page.getByText('Already up to date.')).toBeVisible();
+		await expect(page.getByText('Already up to date')).toBeVisible();
 
 		// A site behind a bot check says so, and points here.
 		await addSource('Lab Guarded', 'torznab', `${base}/guarded/api`, indexerKey);
@@ -113,7 +113,7 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		const sheet = page.getByRole('dialog', { name: 'Unlink Jackett?' });
 		await expect(sheet).toContainText('Remove its 1 Source');
 		await sheet.getByRole('button', { name: 'Unlink', exact: true }).click();
-		await expect(page.getByText('Jackett disconnected.')).toBeVisible();
+		await expect(page.getByText('Jackett disconnected')).toBeVisible();
 		await expect(card.getByTestId('bridge')).toHaveCount(0);
 		await expect(page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' })).toHaveCount(0);
 	} finally {

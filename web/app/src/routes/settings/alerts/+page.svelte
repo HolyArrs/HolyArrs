@@ -84,9 +84,9 @@
 		packBusy = true;
 		try {
 			pack = (await api.put<{ pack_alerts: 'one' | 'each' }>('/settings/alerts', { pack_alerts: v })).pack_alerts;
-			toasts.push(v === 'one' ? 'A pack now sends one Alert listing its episodes.' : 'A pack now sends one Alert per episode.', 'ok');
+			toasts.push('Pack Alerts saved', 'ok', { body: v === 'one' ? 'One Alert per pack' : 'One Alert per episode' });
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			packBusy = false;
 		}
@@ -161,7 +161,7 @@
 			const body = { ...form, smtp_port: Number(form.smtp_port) };
 			if (isNew) await api.post('/alerts', body);
 			else await api.put(`/alerts/${editing!.id}`, body);
-			toasts.push(`Alert ${form.name} saved.`, 'ok');
+			toasts.push(`${form.name} saved`, 'ok');
 			editing = null;
 			await load();
 		} catch (err) {
@@ -190,7 +190,7 @@
 			await api.del(`/alerts/${a.id}`);
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove Alert", 'fail', { body: message(err) });
 		}
 	}
 </script>

@@ -79,10 +79,9 @@
 		try {
 			if (editing) {
 				await api.put(`/titles/${title.id}/versions/${editing.id}`, { label, pick_rules_id: vRules, keep_up_to_date: vKeep, audio_languages: vAudio.split(/[,\s]+/).filter(Boolean) });
-				toasts.push(`The ${label} Version is saved.`, 'ok');
+				toasts.push(`${label} saved`, 'ok');
 			} else {
 				await api.post(`/titles/${title.id}/versions`, { label, pick_rules_id: vRules, library_folder_id: vFolder, keep_up_to_date: vKeep, audio_languages: vAudio.split(/[,\s]+/).filter(Boolean) });
-				toasts.push(`The ${label} Version is added. Each episode gets its own Slot for it.`, 'ok');
 				all = true;
 			}
 			dialog?.close();
@@ -98,10 +97,9 @@
 		if (!confirm(`Stop keeping the ${v.label} Version of this show? Files on disk are not touched.`)) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
-			toasts.push(`The ${v.label} Version is removed.`, 'ok');
 			await onchange();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
 		}
 	}
 </script>

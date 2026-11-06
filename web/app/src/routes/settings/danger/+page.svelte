@@ -26,7 +26,7 @@
 			if (isConfirm(r)) asking = { key, label, path: `/app/${how}`, confirm: r };
 			else stopped(r);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${label.charAt(0).toLowerCase()}${label.slice(1)}`, 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -42,7 +42,7 @@
 			stopped(r);
 		} catch (err) {
 			asking = null;
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${a.label.charAt(0).toLowerCase()}${a.label.slice(1)}`, 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}

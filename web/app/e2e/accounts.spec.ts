@@ -72,7 +72,7 @@ test('a member links their Plex account from My account for the watchlist, and u
 	const popup = ana.waitForEvent('popup');
 	await row.getByRole('button', { name: 'Plex', exact: true }).click();
 	await (await popup).waitForLoadState().catch(() => {});
-	await expect(ana.getByText('Plex account plexkid linked.')).toBeVisible({ timeout: 15_000 });
+	await expect(ana.getByText('Plex plexkid linked')).toBeVisible({ timeout: 15_000 });
 	const mine = row.getByTestId('my-plex-link');
 	await expect(mine).toContainText('Plex, as plexkid');
 	await mine.getByRole('button', { name: 'Unlink Plex' }).click();
@@ -82,7 +82,7 @@ test('a member links their Plex account from My account for the watchlist, and u
 		await again.getByRole('button', { name: 'Confirm' }).click();
 	}
 	await mine.getByRole('button', { name: 'Unlink', exact: true }).click();
-	await expect(ana.getByText('Plex account unlinked.', { exact: false })).toBeVisible();
+	await expect(ana.getByText('Plex unlinked', { exact: false })).toBeVisible();
 	await expect(mine).toHaveCount(0);
 });
 
@@ -149,19 +149,19 @@ test('the owner changes what a member may do, and can turn them off', async () =
 	const dlg = own.getByRole('dialog');
 	await dlg.getByLabel('Run the Library').check();
 	await dlg.getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('ana saved.')).toBeVisible();
+	await expect(own.getByText('ana saved')).toBeVisible();
 	await ana.reload();
 	await expect(ana.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Downloads' })).toBeVisible();
 
 	await own.getByRole('button', { name: 'Reset two-factor sign-in for ana' }).click({ trial: true });
 	own.once('dialog', (d) => d.accept());
 	await own.getByRole('button', { name: 'Turn off ana' }).click();
-	await expect(own.getByText('ana turned off.')).toBeVisible();
+	await expect(own.getByText('ana turned off')).toBeVisible();
 	await ana.goto('/library');
 	await expect(ana).toHaveURL(/\/login/);
 	own.once('dialog', (d) => d.accept());
 	await own.getByRole('button', { name: 'Turn on ana' }).click();
-	await expect(own.getByText('ana turned on.')).toBeVisible();
+	await expect(own.getByText('ana turned on')).toBeVisible();
 });
 
 test('the owner sets a forgotten password, and ana switches account on a shared screen', async () => {
@@ -207,7 +207,7 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await card.getByRole('button', { name: 'Save' }).click();
 	// Letting everyone join asks once before it is saved.
 	await own.getByRole('button', { name: 'Let everyone join' }).click();
-	await expect(own.getByText('Jellyfin sign-in saved.')).toBeVisible();
+	await expect(own.getByText('Jellyfin sign-in saved')).toBeVisible();
 
 	const mum = await fresh(browser);
 	await mum.goto('/login');
@@ -229,7 +229,7 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await mum.getByLabel('New password', { exact: true }).fill(first);
 	await mum.getByLabel('Confirm new password').fill(first);
 	await mum.getByRole('button', { name: 'Set password' }).click();
-	await expect(mum.getByText('Password set.', { exact: false })).toBeVisible();
+	await expect(mum.getByText('Password set', { exact: false })).toBeVisible();
 	const back = await fresh(browser);
 	await back.goto('/login');
 	await back.getByLabel('Name').fill('Mum');
@@ -246,7 +246,7 @@ test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) =
 	await card.getByLabel('Who may join the first time').selectOption('everyone');
 	await card.getByRole('button', { name: 'Save' }).click();
 	await own.getByRole('button', { name: 'Let everyone join' }).click();
-	await expect(own.getByText('Emby sign-in saved.')).toBeVisible();
+	await expect(own.getByText('Emby sign-in saved')).toBeVisible();
 
 	const gran = await fresh(browser);
 	await gran.goto('/login');
@@ -290,7 +290,7 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	await expect(form.getByRole('alert')).toContainText('password or code is wrong');
 	await form.getByLabel('Your HolyArrs password').fill(owner().password);
 	await form.getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('Single sign-on saved.')).toBeVisible();
+	await expect(own.getByText('Single sign-on saved')).toBeVisible();
 	await expect(form.getByLabel('Client secret')).toHaveValue('');
 	// The secret typed before the wrong password was saved with the right one.
 	await expect(form.getByText('A secret is saved; it is never shown.')).toBeVisible();
@@ -303,7 +303,7 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	await form.getByText('Show the single sign-on button on the sign-in page').click();
 	await form.getByLabel('Your HolyArrs password').fill(owner().password);
 	await form.getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
+	await expect(own.getByText('Single sign-on saved').first()).toBeVisible();
 });
 
 // The owner's fresh-password box, where a page asks for it first.
@@ -325,7 +325,7 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 	await form.getByTestId('sso-confirm-everyone').check();
 	await form.getByLabel('Your HolyArrs password').fill(owner().password);
 	await form.getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
+	await expect(own.getByText('Single sign-on saved').first()).toBeVisible();
 
 	// Pat joins through the provider and has no HolyArrs password.
 	const pat = await fresh(browser);
@@ -343,7 +343,7 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 	own.removeAllListeners('dialog'); // a once() above may still wait for a dialog that never came
 	own.on('dialog', yes);
 	await own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' }).click();
-	await expect(own.getByText('Unlinked the single sign-on sign-in of pat.')).toBeVisible();
+	await expect(own.getByText('Sign-in unlinked for pat')).toBeVisible();
 	own.off('dialog', yes);
 	expect(asked).toHaveLength(2);
 	expect(asked[1]).toContain('no HolyArrs password');
@@ -359,13 +359,13 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 	await own.locator('#linked-me').getByRole('button', { name: 'Single sign-on' }).click();
 	await own.getByLabel('Username').fill('boss');
 	await own.getByRole('button', { name: 'Sign in' }).click();
-	await expect(own.getByText('Single sign-on linked.')).toBeVisible({ timeout: 15_000 });
+	await expect(own.getByText('Single sign-on linked')).toBeVisible({ timeout: 15_000 });
 	const mine = own.getByTestId('my-sso-links');
 	await expect(mine).toContainText('as boss');
 	await mine.getByRole('button', { name: /^Unlink Single sign-on at / }).click();
 	await confirmIfAsked(mine);
 	await mine.getByRole('button', { name: 'Unlink', exact: true }).click();
-	await expect(own.getByText('Single sign-on unlinked.', { exact: false })).toBeVisible();
+	await expect(own.getByText('Single sign-on unlinked', { exact: false })).toBeVisible();
 	await expect(mine).toHaveCount(0);
 	// The owner's password session is not one single sign-on made, so it stays.
 	await own.reload();
@@ -377,7 +377,7 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 	await form.getByLabel(/New people the provider signs in may join/).uncheck();
 	await form.getByLabel('Your HolyArrs password').fill(owner().password);
 	await form.getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
+	await expect(own.getByText('Single sign-on saved').first()).toBeVisible();
 });
 
 test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
@@ -389,7 +389,7 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await card.getByLabel('Who may join the first time').selectOption('everyone');
 	await card.getByRole('button', { name: 'Save' }).click();
 	await own.getByRole('button', { name: 'Let everyone join' }).click();
-	await expect(own.getByText('Plex sign-in saved.')).toBeVisible();
+	await expect(own.getByText('Plex sign-in saved')).toBeVisible();
 
 	const kid = await fresh(browser);
 	await kid.goto('/login');
