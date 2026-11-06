@@ -85,9 +85,9 @@
 		for (const beat of dlg.querySelectorAll('.story > section')) {
 			if (id !== run) return;
 			if (beat.classList.contains('thanks')) { slam(beat); await wait(260); }
-			slam(beat.querySelector('.tag'));
+			slam(beat.querySelector('.wtag'));
 			await wait(420);
-			for (const el of beat.querySelectorAll('.typed, .chip, .one')) {
+			for (const el of beat.querySelectorAll('.typed, .wchip, .wone')) {
 				if (id !== run) return;
 				if (el.classList.contains('typed')) await typeIn(el, el.classList.contains('big') ? 42 : el.tagName === 'LI' ? 22 : 24, id);
 				else { slam(el); await wait(200); }
@@ -109,26 +109,30 @@
 	function resetScene() {
 		scene++;
 		cancelAnimationFrame(raf);
+		clearTimeout(sceneTimer);
 		const r = dlg?.querySelector('.run');
 		if (!r) return;
 		r.querySelectorAll<HTMLElement>('.runner').forEach((el) => { el.style.opacity = '0'; el.style.clipPath = 'none'; el.style.transform = 'none'; });
 		r.querySelectorAll('.dust, .streak').forEach((p) => p.remove());
 		const portal = r.querySelector('.portal');
 		if (portal) portal.className = 'portal';
-		dlg?.querySelectorAll('.bar .x, .bar .skip').forEach((b) => b.classList.remove('lift', 'bonk'));
+		dlg?.querySelectorAll('.wbar .wx, .wbar .wskip').forEach((b) => b.classList.remove('lift', 'bonk'));
 	}
+	let sceneTimer: ReturnType<typeof setTimeout> | undefined;
+	/** sceneLater starts the run after a while; it has its own timer, apart from the letter's. */
 	function sceneLater(ms = 5000) {
+		clearTimeout(sceneTimer);
 		const sc = scene;
-		later(ms, () => { if (sc === scene) runScene(); });
+		sceneTimer = setTimeout(() => { if (sc === scene) runScene(); }, ms);
 	}
 	function runScene() {
 		if (reduce() || !dlg?.open) return;
 		const id = ++scene;
-		const bar = dlg.querySelector('.bar') as HTMLElement;
+		const bar = dlg.querySelector('.wbar') as HTMLElement;
 		const r = bar.querySelector('.run') as HTMLElement;
 		const portal = r.querySelector('.portal') as HTMLElement;
-		const sk = bar.querySelector('.skip');
-		const x = (sk && playing ? sk : bar.querySelector('.x')) as HTMLElement;
+		const sk = bar.querySelector('.wskip');
+		const x = (sk && playing ? sk : bar.querySelector('.wx')) as HTMLElement;
 		const luis = r.querySelector('.luis') as HTMLImageElement;
 		const dog = r.querySelector('.dog') as HTMLImageElement;
 		const br = bar.getBoundingClientRect();
@@ -203,11 +207,11 @@
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog bind:this={dlg} class="why" class:closing aria-labelledby="why-h" oncancel={(e) => { e.preventDefault(); close(); }} onclick={(e) => { if (e.target === dlg) close(); }} onkeydown={onKey} data-testid="why-note">
 	<div class="win">
-		<div class="bar">
-			<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+		<div class="wbar">
+			<span class="wdots" aria-hidden="true"><i></i><i></i><i></i></span>
 			<h2 id="why-h"><span aria-hidden="true">{title}</span><span class="sr-only">{TITLE}</span><span class="caret" aria-hidden="true"></span></h2>
-			{#if playing}<button class="skip" type="button" onclick={skip}>Skip <span aria-hidden="true">&gt;&gt;</span></button>{/if}
-			<button class="x" type="button" aria-label="Close" onclick={close}>X</button>
+			{#if playing}<button class="wskip" type="button" onclick={skip}>Skip <span aria-hidden="true">&gt;&gt;</span></button>{/if}
+			<button class="wx" type="button" aria-label="Close" onclick={close}>X</button>
 			<div class="run" aria-hidden="true"><i class="portal"></i><img class="runner luis" alt="" src={luisF[0]} /><img class="runner dog" alt="" src={dogF[0]} /></div>
 		</div>
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -219,26 +223,26 @@
 			</aside>
 			<div class="story">
 				<section>
-					<span class="tag stk">Then</span>
+					<span class="wtag stk">Then</span>
 					<p class="big typed">For years, running my media server meant babysitting <em>six apps</em> next to my downloader.</p>
-					<div class="apps">
-						<span class="chip stk" style="--c:#4f8cff"><i></i>Shows</span>
-						<span class="chip stk" style="--c:#f2b33d"><i></i>Movies</span>
-						<span class="chip stk" style="--c:#2fbf71"><i></i>Music</span>
-						<span class="chip stk" style="--c:#a78bfa"><i></i>Subtitles</span>
-						<span class="chip stk" style="--c:#38bdf8"><i></i>Indexers</span>
-						<span class="chip stk" style="--c:#fb7185"><i></i>Requests</span>
+					<div class="wapps">
+						<span class="wchip stk" style="--c:#4f8cff"><i></i>Shows</span>
+						<span class="wchip stk" style="--c:#f2b33d"><i></i>Movies</span>
+						<span class="wchip stk" style="--c:#2fbf71"><i></i>Music</span>
+						<span class="wchip stk" style="--c:#a78bfa"><i></i>Subtitles</span>
+						<span class="wchip stk" style="--c:#38bdf8"><i></i>Indexers</span>
+						<span class="wchip stk" style="--c:#fb7185"><i></i>Requests</span>
 					</div>
 					<p class="say typed">I loved what they made possible. But six apps meant six settings pages, six logins, and six different ideas of what was going on.</p>
 				</section>
 				<section>
-					<span class="tag stk">Now</span>
+					<span class="wtag stk">Now</span>
 					<p class="big typed">So I built the one place I always wanted.</p>
-					<div class="onerow"><span class="one stk">HolyArrs</span></div>
+					<div class="onerow"><span class="wone stk">HolyArrs</span></div>
 					<p class="say typed">Someone asks for a title, and it shows up on your media server. One place for the whole trip. I sweated every screen.</p>
 				</section>
 				<section>
-					<span class="tag stk">What I'm building</span>
+					<span class="wtag stk">What I'm building</span>
 					<ul class="vision">
 						<li class="typed">Your family asks for a show, and it just shows up. Nobody has to know how.</li>
 						<li class="typed">A library that looks and feels as good as the streaming apps you pay for.</li>
@@ -247,7 +251,7 @@
 					</ul>
 				</section>
 				<section class="thanks stk" style="--r0:-4deg">
-					<span class="tag tag-heart stk"><span class="heart" aria-hidden="true">{#each '01101101111111011111000111000001000' as c, i (i)}{#if c === '1'}<b></b>{:else}<s></s>{/if}{/each}</span>Thank you</span>
+					<span class="wtag tag-heart stk"><span class="heart" aria-hidden="true">{#each '01101101111111011111000111000001000' as c, i (i)}{#if c === '1'}<b></b>{:else}<s></s>{/if}{/each}</span>Thank you</span>
 					<p class="big typed">For running it, breaking it, and trusting it with your library.</p>
 					<p class="say typed">Every bug you send and every idea you share makes it better for all of us.<span class="cur" aria-hidden="true"></span></p>
 				</section>
@@ -265,18 +269,18 @@
 	.why.closing .win { animation: power-off 260ms cubic-bezier(.4, 0, 1, 1) both; }
 	.win:global(.thud) { animation: thud 180ms ease-out; }
 
-	.bar { position: relative; flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; background: var(--cream); color: var(--coal); }
-	.bar h2 { margin: 0; flex: 1; min-width: 0; font: 400 15px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; padding: 4px 0; white-space: nowrap; }
+	.wbar { position: relative; flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; background: var(--cream); color: var(--coal); }
+	.wbar h2 { margin: 0; flex: 1; min-width: 0; font: 400 15px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; padding: 4px 0; white-space: nowrap; }
 	.caret { display: inline-block; width: .6em; height: 1em; background: var(--red); vertical-align: -2px; margin-left: 3px; animation: blink 1s steps(1) infinite; }
-	.dots { display: flex; gap: 6px; } .dots i { width: 10px; height: 10px; background: var(--coal); } .dots i:first-child { background: var(--red); }
-	.x, .skip { all: unset; cursor: pointer; position: relative; z-index: 2; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; border: 2px solid var(--coal); background: var(--cream); color: var(--coal); font: 400 11px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; transform-origin: 100% 100%; transition: transform 160ms cubic-bezier(.2, 1.4, .4, 1); }
-	.x { width: 30px; font-size: 14px; letter-spacing: 0; }
-	.skip { padding: 0 10px; }
-	.x:hover, .skip:hover { background: var(--coal); color: var(--cream); }
-	.x:focus-visible, .skip:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-	.bar :global(.lift) { transform: translateY(-5px) rotate(-14deg); box-shadow: 0 3px 0 var(--coal); }
-	.bar :global(.bonk) { animation: bonk 260ms ease-out; }
-	@media (pointer: coarse) { .x { width: 44px; height: 44px; } .skip { height: 44px; } }
+	.wdots { display: flex; gap: 6px; } .wdots i { width: 10px; height: 10px; background: var(--coal); } .wdots i:first-child { background: var(--red); }
+	.wx, .wskip { all: unset; cursor: pointer; position: relative; z-index: 2; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; border: 2px solid var(--coal); background: var(--cream); color: var(--coal); font: 400 11px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; transform-origin: 100% 100%; transition: transform 160ms cubic-bezier(.2, 1.4, .4, 1); }
+	.wx { width: 30px; font-size: 14px; letter-spacing: 0; }
+	.wskip { padding: 0 10px; }
+	.wx:hover, .wskip:hover { background: var(--coal); color: var(--cream); }
+	.wx:focus-visible, .wskip:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+	.wbar :global(.lift) { transform: translateY(-5px) rotate(-14deg); box-shadow: 0 3px 0 var(--coal); }
+	.wbar :global(.bonk) { animation: bonk 260ms ease-out; }
+	@media (pointer: coarse) { .wx { width: 44px; height: 44px; } .wskip { height: 44px; } }
 
 	.run { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 	.portal { position: absolute; bottom: 2px; width: 26px; height: 38px; transform: scaleY(0); transform-origin: bottom; background: radial-gradient(ellipse at 50% 55%, #fff 0 12%, var(--red-soft) 13% 30%, var(--red) 31% 55%, #5b1712 56% 70%, transparent 71%); filter: drop-shadow(0 0 6px rgb(207 48 37 / 70%)); }
@@ -307,20 +311,20 @@
 	.support a { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; background: var(--cream); color: var(--coal); border: 2px solid var(--coal); box-shadow: 4px 4px 0 var(--red); text-decoration: none; font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; --r1: -2deg; }
 
 	.story { position: relative; display: grid; gap: 18px; }
-	.tag { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 2px 0; font: 400 11px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--red-soft); }
-	.tag::before { content: ''; width: 8px; height: 8px; background: var(--red); }
+	.wtag { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 2px 0; font: 400 11px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--red-soft); }
+	.wtag::before { content: ''; width: 8px; height: 8px; background: var(--red); }
 	.tag-heart::before { display: none; }
 	.heart { display: inline-grid; grid-template-columns: repeat(7, 3px); grid-auto-rows: 3px; margin-right: 2px; }
 	.heart b { background: var(--red); }
 	.big { margin: 0; font: 600 21px/1.3 var(--font-ui); letter-spacing: -.01em; color: var(--cream); text-wrap: balance; }
 	.big em { font-style: normal; color: var(--red-soft); }
 	.say { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: color-mix(in srgb, var(--cream) 78%, transparent); }
-	.apps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-	.chip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 2px solid rgb(243 239 229 / 35%); background: var(--coal-2); font: 400 10.5px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); transform: rotate(var(--r1, 0deg)); }
-	.chip i { width: 7px; height: 7px; background: var(--c, #888); }
-	.chip:nth-child(odd) { --r1: -2deg; } .chip:nth-child(3n) { --r1: 3deg; translate: 0 3px; } .chip:nth-child(even) { --r0: 12deg; }
+	.wapps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+	.wchip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 2px solid rgb(243 239 229 / 35%); background: var(--coal-2); font: 400 10.5px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); transform: rotate(var(--r1, 0deg)); }
+	.wchip i { width: 7px; height: 7px; background: var(--c, #888); }
+	.wchip:nth-child(odd) { --r1: -2deg; } .wchip:nth-child(3n) { --r1: 3deg; translate: 0 3px; } .wchip:nth-child(even) { --r0: 12deg; }
 	.onerow { margin-top: 10px; }
-	.one { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; background: var(--red); color: var(--cream); border: 2px solid var(--cream); box-shadow: 4px 4px 0 var(--shade); font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; --r1: -3deg; --r0: 14deg; transform: rotate(-3deg); }
+	.wone { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; background: var(--red); color: var(--cream); border: 2px solid var(--cream); box-shadow: 4px 4px 0 var(--shade); font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; --r1: -3deg; --r0: 14deg; transform: rotate(-3deg); }
 	.vision { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.vision li { position: relative; padding-left: 20px; font-size: 15px; line-height: 1.55; color: color-mix(in srgb, var(--cream) 86%, transparent); }
 	.vision li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 8px; height: 8px; background: var(--red); box-shadow: 2px 2px 0 var(--shade); }
