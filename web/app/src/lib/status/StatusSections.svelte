@@ -57,13 +57,11 @@
 	let upd = $state<Update | null>(null);
 	let updFailed = $state(false);
 	/** uptime says how long the app has run in the page's words: "12 min", "5 h 12 min", "3 d 4 h". */
+	/** uptime is a running clock, "0d 00:27:14" (days, then hours, minutes and seconds). */
 	function uptime(s: number): string {
-		const m = Math.floor(Math.max(0, s) / 60);
-		const h = Math.floor(m / 60);
-		const d = Math.floor(h / 24);
-		if (d) return `${d} d${h % 24 ? ` ${h % 24} h` : ''}`;
-		if (h) return `${h} h${m % 60 ? ` ${m % 60} min` : ''}`;
-		return m ? `${m} min` : 'under 1 min';
+		const t = Math.floor(Math.max(0, s));
+		const two = (n: number) => String(n).padStart(2, '0');
+		return `${Math.floor(t / 86400)}d ${two(Math.floor(t / 3600) % 24)}:${two(Math.floor(t / 60) % 60)}:${two(t % 60)}`;
 	}
 	type About = { version: string; go: string; os: string; docker: boolean; sqlite: string; migration: number; config_dir: string; start_dir: string; uptime_s: number; started_at: string };
 	let about = $state<About | null>(null);
@@ -164,7 +162,7 @@
 	onMount(() => {
 		loadUpdate();
 		loadAbout();
-		const t = setInterval(() => (now = Date.now()), 30_000);
+		const t = setInterval(() => (now = Date.now()), 1000);
 		return () => clearInterval(t);
 	});
 </script>
@@ -297,7 +295,7 @@
 					<dt>Database migration</dt><dd>{about.migration}</dd>
 					<dt>Config folder</dt><dd><code>{about.config_dir}</code></dd>
 					<dt>Start folder</dt><dd><code>{about.start_dir}</code></dd>
-					<dt>Uptime</dt><dd>{uptime(about.uptime_s + Math.max(0, now - aboutAt) / 1000)} <span class="muted">· since {dateTime(about.started_at)}</span></dd>
+					<dt>Uptime</dt><dd><time class="clock" datetime={about.started_at} title="Started {dateTime(about.started_at)}">{uptime(about.uptime_s + Math.max(0, now - aboutAt) / 1000)}</time></dd>
 				{/if}
 			</dl>
 		</section>
@@ -429,4 +427,5 @@
 		.tbl.jobs .k { position: static; width: auto; height: auto; overflow: visible; clip: auto; color: var(--text-faint, var(--text-muted)); }
 		.tbl.jobs .k::after { content: ' '; }
 	}
+	.clock { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
 </style>
