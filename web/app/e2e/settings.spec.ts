@@ -46,6 +46,14 @@ test('search finds one setting, and its link scrolls to it, opens Advanced and h
 	await expect(page.locator('#where-files-go details.advanced')).toHaveAttribute('open', '');
 });
 
+test('a direct link to a field inside More options opens it, scrolls there and focuses it', async () => {
+	await page.goto('/settings/sign-in#hosts-card');
+	await expect(page.locator('details[data-testid="more-options"]').filter({ has: page.locator('#hosts-card') })).toHaveAttribute('open', '');
+	await expect(page.locator('#hosts-card')).toBeInViewport();
+	await page.goto('/settings/users#inv-note');
+	await expect(page.locator('#inv-note')).toBeVisible();
+});
+
 test('search by another word, and the keyboard reaches the result', async () => {
 	await page.goto('/settings');
 	const box = page.getByLabel('Search settings');

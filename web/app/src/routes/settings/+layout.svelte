@@ -97,15 +97,16 @@
 	function highlight(id: string) {
 		const mine = ++seek;
 		let tries = 0;
+		let done: HTMLElement | null = null;
 		const look = () => {
 			if (mine !== seek) return;
 			const el = document.getElementById(id);
-			if (!el) {
-				if (tries++ < 50) setTimeout(look, 100);
-				return;
-			}
-			const details = el.closest('details');
-			if (details && !details.open) details.open = true;
+			// Keep watching for a few seconds: a page that finishes loading
+			// can redraw the field (closed again, focus lost), so redo it.
+			if (tries++ < 50) setTimeout(look, 100);
+			if (!el || el === done) return;
+			done = el;
+			for (let d = el.closest('details'); d; d = d.parentElement?.closest('details') ?? null) if (!d.open) d.open = true;
 			const spot = (el.closest('.field, .checkline, fieldset') as HTMLElement | null) ?? el;
 			spot.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 			const focusable = el.matches('input, select, textarea, button, a[href], [tabindex]') ? el : (el.querySelector('input, select, textarea, button') as HTMLElement | null);
@@ -117,6 +118,11 @@
 		};
 		look();
 	}
+	// A direct load or reload of page#field: this layout can mount after
+	// the first navigation has finished, so afterNavigate never sees it.
+	onMount(() => {
+		if (location.hash) highlight(decodeURIComponent(location.hash.slice(1)));
+	});
 	afterNavigate(() => {
 		const id = decodeURIComponent(page.url.hash.slice(1));
 		if (id) highlight(id);

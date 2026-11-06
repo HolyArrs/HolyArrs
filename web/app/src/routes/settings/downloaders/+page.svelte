@@ -86,6 +86,8 @@
 			list = next;
 			listOk = true;
 			error = '';
+			// Show the list now; uncertain sends fill in when they arrive.
+			loaded = true;
 			await Promise.all(next.map(loadAttempts));
 		} catch (e) {
 			error = message(e);

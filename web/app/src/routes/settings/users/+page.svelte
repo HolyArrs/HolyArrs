@@ -6,6 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { session, type Perm, type Role } from '#lib/session.svelte.ts';
 	import { presetOf, presetPerms, presetsFor, type PresetId } from '#lib/presets.ts';
@@ -137,7 +138,15 @@
 			loaded = true;
 		}
 	}
-	onMount(load);
+	// Settings search links to #inv-note: open the invite sheet so the
+	// layout can find and focus that field.
+	afterNavigate(({ to: dest }) => {
+		if (dest?.url.hash === '#inv-note') inviteOpen = true;
+	});
+	onMount(() => {
+		if (location.hash === '#inv-note') inviteOpen = true;
+		void load();
+	});
 
 	function loadLimits() {
 		api
