@@ -160,7 +160,7 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   await expect(rows.first()).toContainText("1 movie");
 
   sheet = await addApp(page, "seerr", oldSeerrPort);
-  await sheet.getByRole("button", { name: "Read Seerr" }).click();
+  await sheet.getByRole("button", { name: "Add Seerr" }).click();
   await expect(sheet).toBeHidden();
   await expect(rows.filter({ hasText: "Seerr" })).toBeVisible();
   await measuredSymmetry(page);
