@@ -261,7 +261,6 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   // Step 4: what to do now, results, the report.
   await expect(current(page)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
   await expect(page).toHaveURL(/move=\d+/);
-  await expect(page.getByText("Keep the old apps until you're happy.")).toBeVisible();
   await page.getByRole("button", { name: "Show Titles" }).click();
   await expect(page.getByRole("dialog", { name: "Titles" })).toContainText("Using the one here");
   await page.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close", exact: true }).click();

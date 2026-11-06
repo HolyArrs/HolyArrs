@@ -6,7 +6,7 @@
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { to } from '../paths.ts';
 	import { dateTime } from '../format.ts';
-	import { moveCounts, needsGroups, plural, running as isRunning, type Bucket, type Move } from '../move.ts';
+	import { moveCounts, plural, running as isRunning, type Bucket, type Move } from '../move.ts';
 
 	// Step 5: what the move did, what to do now, and the results per group.
 	// Also what "Open" shows for an earlier move.
@@ -38,11 +38,6 @@
 	const undone = $derived(move.state === 'undone');
 	const undoFailed = $derived(move.undo_state === 'failed' && !undone);
 	const lines = $derived(rep?.lines ?? []);
-	const made = (l: { result: string }) => l.result === 'create' || l.result === 'created';
-	const links = $derived(lines.some((l) => (l.group === 'sources' || l.group === 'downloaders') && made(l)));
-	const lists = $derived(lines.some((l) => l.group === 'outside_lists' && made(l)));
-	const newPeople = $derived(lines.filter((l) => l.group === 'people' && made(l)).length);
-	const needs = $derived(needsGroups(rep?.needs_input ?? []).flatMap((g) => g.items.map((t, i) => ({ key: `${g.label}-${i}`, name: t, hint: g.label }))));
 	const detail = $derived(note.replace(/\s+(moved|undone)\.?$/, ''));
 	// An undo report, or a move that never started, says its own few lines.
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
@@ -71,7 +66,8 @@
 </SettingsCard>
 
 {#if rep && !busy}
-	<SettingsCard id="move-todo" title="Next">
+	{#if plainNext || (counts.not_found ?? 0) > 0 || openChoices > 0 || (counts.failed ?? 0) > 0}
+	<SettingsCard id="move-todo" title="Needs you">
 		{#if plainNext}
 			{#each rep.next as n (n)}
 				<div class="srow"><p class="txt">{n}</p></div>
@@ -85,19 +81,7 @@
 					</div>
 				{/snippet}
 				{#if (counts.not_found ?? 0) > 0}
-					{@render card(`${plural(counts.not_found ?? 0, 'title')} have no folder here`, 'Add their Library folder, then move again.', 'Folders', to('/settings/library-folders'))}
-				{/if}
-				{#if needs.length > 0}
-					{@render card(`Add ${plural(needs.length, 'key', 'keys')}`, 'Sources, Downloaders and Alerts wait for them.', 'Show', () => onshow('Keys to add', needs, (n) => n))}
-				{/if}
-				{#if links}
-					{@render card('Resume Sources and Downloaders', 'They arrived paused.', 'Open', to('/settings/sources'))}
-				{/if}
-				{#if lists}
-					{@render card('Resume Outside lists', 'They arrived paused.', 'Open', to('/settings/outside-lists'))}
-				{/if}
-				{#if newPeople > 0}
-					{@render card(`Invite ${plural(newPeople, 'person', 'people')}`, '', 'Open', to('/settings/users'))}
+					{@render card(`${plural(counts.not_found ?? 0, 'title')} have no folder here`, 'Add their folder, then move again.', 'Folders', to('/settings/library-folders'))}
 				{/if}
 				{#if openChoices > 0}
 					{@render card(`Choose for ${plural(openChoices, 'person', 'people')}`, 'They stay behind until you do.', 'Choose', onchoose)}
@@ -106,9 +90,9 @@
 					{@render card(`${plural(counts.failed ?? 0, 'item')} failed`, 'Reasons are in Results.', '', () => {})}
 				{/if}
 			</div>
-			<p class="foot">Keep the old apps until you're happy.</p>
 		{/if}
 	</SettingsCard>
+	{/if}
 	{#if groups.length > 0}
 		<SettingsCard id="move-results" title="Results">
 			<ResultGroups report={rep} {groups} after {onshow} />
