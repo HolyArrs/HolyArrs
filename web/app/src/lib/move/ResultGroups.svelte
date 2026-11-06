@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Button from '../ui/Button.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { groupLabels, needsGroups, needsLook, plural, resultWords, summary, tone, type Bucket, type Line, type Report } from '../move.ts';
 
@@ -31,27 +30,45 @@
 	}
 </script>
 
-{#each groups as g (g.group)}
-	<div class="srow" data-testid="result-group">
-		<div class="txt"><span class="label">{g.label}</span><span class="hint">{summary(g.counts, after, undo)}</span></div>
-		<div class="ctl"><Button onclick={() => onshow(g.label, g.lines, lineRow)} aria-label="Show {g.label}">Show</Button></div>
-	</div>
-{/each}
-{#if report.not_moved.length > 0}
-	<div class="srow">
-		<div class="txt"><span class="label">Not moved</span><span class="hint">{plural(report.not_moved.length, 'setting')} with no match here</span></div>
-		<div class="ctl"><Button onclick={() => onshow('Not moved', report.not_moved, (n, i) => ({ key: n.from + i, name: n.what, hint: `${groupLabels[n.group] ?? 'Other settings'} · ${n.why}` }))} aria-label="Show Not moved">Show</Button></div>
-	</div>
-{/if}
-{#if needs.length > 0}
-	<div class="srow">
-		<div class="txt"><span class="label">Keys to type again</span><span class="hint">{plural(needs.length, 'key or password', 'keys and passwords')} never {needs.length === 1 ? 'comes' : 'come'} over</span></div>
-		<div class="ctl"><Button onclick={() => onshow('Keys to type again', needs, (n) => n)} aria-label="Show Keys to type again">Show</Button></div>
-	</div>
-{/if}
-{#if (report.notes?.length ?? 0) > 0}
-	<div class="srow">
-		<div class="txt"><span class="label">Notes from the apps</span><span class="hint">{plural(report.notes?.length ?? 0, 'note')}</span></div>
-		<div class="ctl"><Button onclick={() => onshow('Notes from the apps', report.notes ?? [], (n, i) => ({ key: String(i), name: n }))} aria-label="Show Notes from the apps">Show</Button></div>
-	</div>
-{/if}
+<ul class="rg">
+	{#each groups as g (g.group)}
+		<li class="rg-row" data-testid="result-group">
+			<span class="rg-txt"><b>{g.label}</b><span class="rg-sub">{summary(g.counts, after, undo)}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow(g.label, g.lines, lineRow)} aria-label="Show {g.label}">Show</button>
+		</li>
+	{/each}
+	{#if report.not_moved.length > 0}
+		<li class="rg-row">
+			<span class="rg-txt"><b>Not moved</b><span class="rg-sub">{plural(report.not_moved.length, 'setting')}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow('Not moved', report.not_moved, (n, i) => ({ key: n.from + i, name: n.what, hint: `${groupLabels[n.group] ?? 'Other settings'} · ${n.why}` }))} aria-label="Show Not moved">Show</button>
+		</li>
+	{/if}
+	{#if needs.length > 0}
+		<li class="rg-row">
+			<span class="rg-txt"><b>Keys to add again</b><span class="rg-sub">{needs.length}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow('Keys to add again', needs, (n) => n)} aria-label="Show Keys to type again">Show</button>
+		</li>
+	{/if}
+	{#if (report.notes?.length ?? 0) > 0}
+		<li class="rg-row">
+			<span class="rg-txt"><b>Notes from the apps</b><span class="rg-sub">{report.notes?.length}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow('Notes from the apps', report.notes ?? [], (n, i) => ({ key: String(i), name: n }))} aria-label="Show Notes from the apps">Show</button>
+		</li>
+	{/if}
+</ul>
+
+<style>
+	/* One box, one line per group (its own layout, so it holds in the wizard too). */
+	.rg { list-style: none; margin: 0; padding: 0 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+	.rg-row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; border-top: 1px solid var(--line); }
+	.rg-row:first-child { border-top: 0; }
+	.rg-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--t-callout); color: var(--text); }
+	.rg-txt b { font-weight: 600; }
+	.rg-sub { margin-left: 10px; color: var(--text-muted); font: var(--t-footnote); }
+	.rg-show { flex: none; border: 0; padding: 4px 0; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
+	.rg-show:hover { color: var(--text); }
+	.rg-show:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
+	@media (max-width: 600px), (pointer: coarse) {
+		.rg-show { min-height: 44px; padding: 0 4px; }
+	}
+</style>
