@@ -57,7 +57,7 @@
 		<ul class="sent">
 			<li>Your files, folder paths or file names.</li>
 			<li>Your library: which titles you have, what is downloading, your history.</li>
-			<li>Accounts: user names, passwords, sign-in sessions, who asked for what.</li>
+			<li>Accounts: user names, passwords, sign-in sessions, who requested what.</li>
 			<li>Keys and addresses of your Downloaders, Sources, media servers and lists.</li>
 		</ul>
 	</section>

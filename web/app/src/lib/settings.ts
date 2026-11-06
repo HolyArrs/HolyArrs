@@ -45,7 +45,7 @@ export const groups: Group[] = [
 	{ id: 'general', label: 'General', icon: 'settings', about: 'This HolyArrs, how it looks, which parts are on and where names and posters come from.' },
 	{ id: 'library', label: 'Library', icon: 'library', about: 'Where titles live, how files are named, what new titles get, and subtitles.' },
 	{ id: 'downloads', label: 'Downloads', icon: 'download', about: 'Which Release to take, where to look, who downloads, and lists that add titles.' },
-	{ id: 'users', label: 'Users', icon: 'people', about: 'Who may do what, what they may ask for, and how they sign in.' },
+	{ id: 'users', label: 'Users', icon: 'people', about: 'Who may do what, what they may request, and how they sign in.' },
 	{ id: 'services', label: 'Services', icon: 'tv', about: 'Media servers, other apps that call HolyArrs, and moving over.' },
 	{ id: 'notifications', label: 'Notifications', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages.' },
 	{ id: 'logs', label: 'Logs', icon: 'copy', about: 'The app log and health checks.' },
@@ -72,12 +72,12 @@ export const sections: Section[] = [
 	{ href: '/settings/outside-lists', group: 'downloads', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'TMDB and Trakt lists that add movies and shows by themselves, and the Never-add list.' },
 
 	{ href: '/settings/users', group: 'users', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite family and friends, roles, permissions and devices.', need: 'users' },
-	{ href: '/settings/wishlist', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Weekly limits, and the folder and Pick rules approved asks get.' },
+	{ href: '/settings/wishlist', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Weekly limits, and the folder and Pick rules approved requests get.' },
 	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Plex, Jellyfin and Emby sign-in, two-factor rules, the local network and API keys.' },
 
 	{ href: '/settings/media-servers', group: 'services', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Tell Plex, Jellyfin or Emby about imports, renames and deletes.' },
-	{ href: '/settings/alerts', group: 'notifications', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages for asks, imports and health.' },
-	{ href: '/settings/ai', group: 'services', tint: 'indigo', label: 'AI connections', icon: 'sparkle', about: 'Let AI assistants like Claude check your library and ask for titles, with keys you can revoke.' },
+	{ href: '/settings/alerts', group: 'notifications', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages for requests, imports and health.' },
+	{ href: '/settings/ai', group: 'services', tint: 'indigo', label: 'AI connections', icon: 'sparkle', about: 'Let AI assistants like Claude check your library and request titles, with keys you can revoke.' },
 	{ href: '/settings/api', group: 'services', tint: 'gray', label: 'API for other apps', icon: 'key', about: 'The base address, scopes, example calls and every route.' },
 	{ href: '/settings/move', group: 'services', tint: 'teal', label: 'Move from other apps', icon: 'upload', about: 'Bring a setup over from Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr and the Downloaders.', need: 'users' },
 

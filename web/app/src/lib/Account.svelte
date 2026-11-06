@@ -537,7 +537,7 @@
 			<span class="label">Role</span>
 			<div class="line">
 				<span class="value">{roleWord(session.s.role)}</span>
-				<span class="lock" title="Only the owner can change this" role="img" aria-label="Locked: ask an owner to change your role"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+				<span class="lock" title="Only the owner can change this" role="img" aria-label="Locked: only the owner can change your role"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
 			</div>
 		</div>
 		<div class="box" data-testid="box-sign-in">

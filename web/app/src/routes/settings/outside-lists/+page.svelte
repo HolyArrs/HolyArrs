@@ -75,7 +75,8 @@
 			folders = f.library_folders;
 			rules = r.pick_rules;
 			never = n.never_add;
-			traktMasked = (await api.get<{ key: string }>('/settings/trakt-key')).key;
+			// The key read needs a recent password check; without one the lists still show.
+			traktMasked = (await api.get<{ key: string }>('/settings/trakt-key').catch(() => ({ key: '' }))).key;
 			hasData = true;
 			error = '';
 		} catch (e) {

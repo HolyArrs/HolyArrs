@@ -364,7 +364,7 @@
 {:else}
 	<SettingsCard id="ai-switch" title="AI apps">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-3)">
-			AI apps like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and ask for titles for you. They can only do what you allow,
+			AI apps like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and request titles for you. They can only do what you allow,
 			and every request they make shows in History.
 		</p>
 		<label class="switch">

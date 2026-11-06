@@ -158,14 +158,14 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await page.getByLabel('Secret', { exact: true }).fill(['e2e', 'hook'].join('-'));
 	await expect(page.getByLabel('What the secret does')).toHaveValue('sign');
 	await page.getByTestId('moments-requests').getByRole('button', { name: 'None of these' }).click();
-	await expect(page.getByTestId('moments-requests').getByRole('checkbox', { name: /Someone asks/ })).not.toBeChecked();
+	await expect(page.getByTestId('moments-requests').getByRole('checkbox', { name: /New request/ })).not.toBeChecked();
 	await expect(page.getByTestId('moments-library').getByRole('checkbox', { name: /Sent to download/ })).toBeChecked();
 	await page.getByRole('checkbox', { name: /Reach the local network/ }).check();
 	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('alert').filter({ hasText: 'Home server hook' });
 	await expect(card).toContainText('Webhook');
 	await expect(card).toContainText('Sent to download · In the Library · Renamed');
-	await expect(card).not.toContainText('Someone asks');
+	await expect(card).not.toContainText('New request');
 	await card.getByRole('button', { name: 'Send a test' }).click();
 	await expect(card.getByTestId('alert-test')).toHaveText('Webhook');
 	const hooks = (await (await page.request.get(`http://127.0.0.1:${discordPort}/hooks`)).json()) as { body: { moment: string }; event: string; signature: string }[];

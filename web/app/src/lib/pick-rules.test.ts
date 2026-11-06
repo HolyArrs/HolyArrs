@@ -133,7 +133,7 @@ describe('checkBody', () => {
 	});
 
 	it('needs one to three kinds, and music alone', () => {
-		expect(checkBody('A', [], good()).kinds).toBe('Pick what these rules are for: movies, TV shows or music.');
+		expect(checkBody('A', [], good()).kinds).toBe('Pick movies, shows or music.');
 		expect(checkBody('A', ['movie', 'music'], good()).kinds).toBe('Music Pick rules are for music alone.');
 		expect(checkBody('A', ['movie', 'movie'], good()).kinds).toBe('Each kind can be picked once.');
 	});

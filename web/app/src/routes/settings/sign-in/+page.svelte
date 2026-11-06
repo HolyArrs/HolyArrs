@@ -218,7 +218,7 @@
 	function everyoneText(w: WayName): string {
 		const n = lastCount[w];
 		const who = w === 'plex' ? (ways.plex.server_id ? 'everyone your Plex server is shared with' : 'every Plex account') : `everyone with an account on your ${wayWord[w]} server`;
-		return `This lets ${who} make a HolyArrs account the first time they sign in${n !== undefined ? ` (the last import list showed ${n} ${n === 1 ? 'person' : 'people'})` : ''}. They join as Members who may ask for titles.`;
+		return `This lets ${who} make a HolyArrs account the first time they sign in${n !== undefined ? ` (the last import list showed ${n} ${n === 1 ? 'person' : 'people'})` : ''}. They join as Members who may request titles.`;
 	}
 
 	function took(r: SignInSettings) {
@@ -443,8 +443,7 @@
 			<span>Admins must use two-factor sign-in</span>
 		</label>
 		<p class="hint">
-			An admin without it can open only My account until they turn it on. Anyone can turn it on for themselves in My account.{#if !isOwner}
-				Only the owner can change this.{/if}
+			An admin without it can open only My account until they turn it on. Anyone can turn it on for themselves in My account.{#if !isOwner}{' '}Only the owner can change this.{/if}
 		</p>
 	</SettingsCard>
 
@@ -516,14 +515,14 @@
 					{:else}
 						<Field id="{w}-url" label="{wayWord[w]} server address">
 							<div class="row">
-								<input id="{w}-url" class="input mono grow" bind:value={ways[w].url} oninput={() => (tested[w] = undefined)} placeholder="http://192.168.1.10:8096" maxlength="500" spellcheck="false" />
+								<input id="{w}-url" class="input mono grow" bind:value={ways[w].url} oninput={() => (tested[w] = undefined)} placeholder="http://10.0.0.5:8096" maxlength="500" spellcheck="false" />
 								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>Test</Button>
 							</div>
 						</Field>
 						{#if tested[w]}{@const t = tested[w]}<div class="testline" data-testid="{w}-tested"><TestTag ok={t.ok} text={t.text} app={t.app} />{#if !t.ok}<span class="small bad-text">{t.text}</span>{/if}</div>
 						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested. Saving tests it.</p>{/if}
 					{/if}
-					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members. Plex managed users join as Kid (up to PG).">
+					<Field id="{w}-join" label="Who may join the first time" hint={w === 'plex' ? 'New people join as Members. Plex managed users join as Kid (up to PG).' : 'New people join as Members.'}>
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
 							<option value="nobody">Only people already linked</option>
 							<option value="list">Only the names or emails below</option>

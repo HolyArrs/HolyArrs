@@ -116,9 +116,8 @@
 					{/each}
 				</div>
 				<span class="hint">
-					These are the defaults; give one person their own limits on the
-					{#if session.can('users')}<a href={to(`/settings/users`)}>Users and roles</a>{:else}Users and roles{/if} page. 0 means no limit. People who may approve
-					have no limit. Taking a request back or a turned down request frees it up; joining someone else's request costs nothing.
+					Defaults for everyone; set one person's own limits on the
+					{#if session.can('users')}<a href={to(`/settings/users`)}>Users and roles</a>{:else}Users and roles{/if} page. 0 means no limit. Approvers have none. Taken-back and turned-down requests don't count, nor does joining someone else's.
 				</span>
 			</fieldset>
 		</SettingsCard>

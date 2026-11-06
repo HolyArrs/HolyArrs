@@ -222,7 +222,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await expect(ivy).toHaveURL(/\/$/);
 
 	await ivy.goto('/requests');
-	await expect(ivy.getByTestId('ask-limit')).toContainText('music asks left this week');
+	await expect(ivy.getByTestId('ask-limit')).toContainText('music requests left this week');
 	await searchMusic(ivy, 'moss');
 	const hit = artistCard(ivy, 'Moss Choir');
 	await expect(hit).toBeVisible();

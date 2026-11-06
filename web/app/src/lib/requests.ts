@@ -72,7 +72,7 @@ export const limitKinds: LimitKind[] = ['movies', 'shows', 'music'];
 /** kindAsks names asks of one kind: "1 movie ask", "3 show asks". */
 export function kindAsks(kind: LimitKind, n: number): string {
 	const word = { movies: 'movie', shows: 'show', music: 'music' }[kind];
-	return `${n} ${word} ask${n === 1 ? '' : 's'}`;
+	return `${n} ${word} request${n === 1 ? '' : 's'}`;
 }
 
 /**
@@ -94,18 +94,18 @@ export function limitLines(l: AskLimit | null, kinds: LimitKind[] = limitKinds, 
 }
 
 export const momentWords: Record<string, [string, string]> = {
-	ask_waiting: ['Someone asks', 'To the staff: a movie, show or artist waits for approval.'],
-	ask_approved: ['Approved', 'To the people who asked.'],
-	ask_turned_down: ['Declined', 'To the people who asked, with the note.'],
-	ask_ready: ['Ready', 'To the people who asked, once the files are in the Library (ready to watch or listen to).'],
-	new_episodes: ['New episodes', 'To the people who asked for or follow a show: new episodes and seasons are in the Library, one notice per show per hour. Each person can turn these off in Account.'],
+	ask_waiting: ['New request', 'To the staff: a movie, show or artist waits for approval.'],
+	ask_approved: ['Approved', 'To the people who requested it.'],
+	ask_turned_down: ['Declined', 'To the people who requested it, with the note.'],
+	ask_ready: ['Ready', 'To the people who requested it, once the files are in the Library (ready to watch or listen to).'],
+	new_episodes: ['New episodes', 'To the people who requested or follow a show: new episodes and seasons are in the Library, one notice per show per hour. Each person can turn these off in Account.'],
 	new_albums: ['New albums', 'To the people who follow an artist: a new album is in the Library, one notice per artist per hour.'],
 	report_made: ['Problem reported', 'To the staff: someone reported a problem with a title in the Library.'],
 	report_fixed: ['Problem fixed', 'To the person who reported it: the problem was marked fixed, with your reply.'],
 	grab: ['Sent to download', 'To the staff: a Release went to a Downloader.'],
 	import: ['In the Library', 'To the staff: files were placed (a better copy counts too).'],
 	rename: ['Renamed', 'To the staff: files got new names.'],
-	add: ['Added', 'To the staff: a movie or show added by hand, from a list or an approved ask.'],
+	add: ['Added', 'To the staff: a movie or show added by hand, from a list or an approved request.'],
 	delete: ['Deleted', 'To the staff: a movie, a show, or a season or episodes of a show left the Library.'],
 	health: ['Health', 'To the staff: a health check broke, or is fixed again.'],
 	needs_decision: ['Needs a decision', 'To the staff: a download or import needs you.']

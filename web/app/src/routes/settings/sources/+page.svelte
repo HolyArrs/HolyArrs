@@ -130,8 +130,7 @@
 </PageHeader>
 
 <p class="small muted lead">
-	Sources are asked in priority order, 1 first. A Source that fails rests for a while and is tried again on its own: one minute, then twice as long each time, up to six hours.
-	For sites without a feed of their own, run Jackett or Prowlarr as a bridge and add it here as a Torznab feed.
+	Priority 1 goes first. A Source that fails is skipped for up to six hours. For sites without a feed, add Jackett or Prowlarr as a Torznab feed.
 </p>
 
 {#if editing}

@@ -1,7 +1,7 @@
 // Health checks: words for their kinds and results.
 import type { HealthCheck, StageState } from './types.ts';
 
-const kinds: Record<HealthCheck['kind'], string> = {
+const kinds: Record<string, string> = {
 	library_folder: 'Library folder',
 	disk_space: 'Free space',
 	source: 'Source',
@@ -10,12 +10,22 @@ const kinds: Record<HealthCheck['kind'], string> = {
 	update: 'Update',
 	config_disk: 'Config folder space',
 	config_folder: 'Config folder',
-	waiting_downloads: 'Downloads waiting for files'
+	waiting_downloads: 'Downloads waiting for files',
+	trailers: 'Trailer reader'
 };
 
 /** checkLabel names what a check looks at. */
 export function checkLabel(kind: string): string {
 	return kinds[kind as HealthCheck['kind']] ?? kind;
+}
+
+/** checkName drops the subject or the label when one repeats the other ("Backups Backups"). */
+export function checkName(kind: string, subject: string): { label: string; subject: string } {
+	const label = checkLabel(kind);
+	const s = (subject ?? '').trim();
+	if (s && s.toLowerCase().startsWith(label.toLowerCase())) return { label: s, subject: '' };
+	if (s && label.toLowerCase().startsWith(s.toLowerCase())) return { label, subject: '' };
+	return { label, subject: s };
 }
 
 /** stateWord says a result in a word. */

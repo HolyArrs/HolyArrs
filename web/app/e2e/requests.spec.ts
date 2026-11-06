@@ -58,7 +58,7 @@ test('the owner adds a Discord Alert and sends a test', async () => {
 	await own.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const row = own.getByTestId('alert');
 	await expect(row).toContainText('Family Discord');
-	await expect(row).toContainText('Someone asks · Approved · Declined · Ready');
+	await expect(row).toContainText('New request · Approved · Declined · Ready');
 	await expect(own.locator('body')).not.toContainText('stand-in');
 	await row.getByRole('button', { name: 'Send a test' }).click();
 	await expect(row.getByTestId('alert-result')).toContainText('Last sent');
@@ -85,7 +85,7 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await expect(kim.getByText('Alert settings saved')).toBeVisible();
 
 	await kim.goto('/requests');
-	await expect(kim.getByTestId('ask-limit')).toContainText('You have 10 movie asks left this week');
+	await expect(kim.getByTestId('ask-limit')).toContainText('You have 10 movie requests left this week');
 	const askCopper = await askButton(kim, 'copper', 'Copper Lighthouse');
 	await askCopper.click();
 	// Ask never fires in one click: a confirm sheet opens with focus inside.
@@ -106,7 +106,7 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await expect(kim.getByRole('button', { name: /^Ask for Quiet Orchard( too)?$/ })).toHaveCount(0);
 
 	await kim.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
-	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
+	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie requests left this week');
 	const ask = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
@@ -234,14 +234,14 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	// it (the turned down one does not count). Shows and music keep the default.
 	await own.goto('/settings/users');
 	const row = own.locator('li.person', { hasText: 'kim' });
-	await expect(row.getByTestId('user-limits')).toContainText('1 movie ask of 10');
+	await expect(row.getByTestId('user-limits')).toContainText('1 movie request of 10');
 	await row.getByRole('button', { name: 'Change kim' }).click();
 	const dlg = own.getByRole('dialog');
 	await expect(dlg.getByLabel('Show requests')).toHaveAttribute('placeholder', 'Default (10)');
 	await dlg.getByLabel('Movie requests').fill('1');
 	await dlg.getByRole('button', { name: 'Save' }).click();
-	await expect(row.getByTestId('user-limits')).toContainText('1 movie ask of 1 (own)');
-	await expect(row.getByTestId('user-limits')).toContainText('0 show asks of 10');
+	await expect(row.getByTestId('user-limits')).toContainText('1 movie request of 1 (own)');
+	await expect(row.getByTestId('user-limits')).toContainText('0 show requests of 10');
 	await noSidewaysScroll(own);
 
 	await kim.goto('/requests');

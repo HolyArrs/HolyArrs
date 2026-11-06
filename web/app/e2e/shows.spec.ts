@@ -160,7 +160,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await expect(max).toHaveURL(/\/$/);
 
 	await max.goto('/requests');
-	await expect(max.getByTestId('ask-limit')).toContainText('show asks left this week');
+	await expect(max.getByTestId('ask-limit')).toContainText('show requests left this week');
 	await openFromSearch(max, 'lantern', 'Lantern Street', 'show');
 	await noSidewaysScroll(max);
 	const askLantern = max.getByTestId('title-detail').getByRole('button', { name: /^Ask for Lantern Street/ });

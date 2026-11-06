@@ -76,7 +76,7 @@ export const partStops: Record<PartName, string> = {
 	shows: 'Show pages, episode searches and show downloads stop. Episode files stay where they are.',
 	music: 'Artist and album pages, music searches and music downloads stop. Music files stay where they are.',
 	subtitles: 'Subtitles are no longer looked for or fetched. Subtitle files already saved stay.',
-	wishlist: 'Family and friends can no longer ask for titles. Asks already made are kept.'
+	wishlist: 'Family and friends can no longer request titles. Requests already made are kept.'
 };
 
 /** partNeeds says what a part needs, or '' when it needs nothing. */

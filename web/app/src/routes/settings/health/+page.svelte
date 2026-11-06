@@ -12,7 +12,7 @@
 	import { ago } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { checkLabel, stateWord } from '#lib/health.ts';
+	import { checkName, stateWord } from '#lib/health.ts';
 	import { refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import type { HealthChecks, HealthSettings, UpdateInfo } from '#lib/types.ts';
 	import { updatePrivacy } from '#lib/update.ts';
@@ -110,7 +110,7 @@
 			<h2 id="h-checks" class="h2">Results</h2>
 			<span class="chip {checks.worst === 'ok' ? 'ok' : checks.worst === 'warning' ? 'wait' : 'fail'}" data-testid="health-worst">{stateWord(checks.worst)}</span>
 		</div>
-		<p class="small muted">Health Alerts hear about breaks and fixes</p>
+		<p class="small muted">Health Alerts send each break and fix</p>
 		{#if checks.sync?.length}
 			<ul class="rows checks" data-testid="health-sync">
 				{#each checks.sync as c (c.id)}
@@ -137,7 +137,7 @@
 					<li data-testid="health-check" data-state={c.state}>
 						<span class="chip {c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
 						<span class="grow small">
-							<b>{checkLabel(c.kind)}</b> {c.subject}
+							<b>{checkName(c.kind, c.subject).label}</b>{#if checkName(c.kind, c.subject).subject}{' '}{checkName(c.kind, c.subject).subject}{/if}
 							{#if c.message}<br /><span class="muted">{c.message}</span>{/if}
 						</span>
 						<time class="mono xs muted" datetime={c.since} title="Since">{ago(c.since)}</time>

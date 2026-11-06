@@ -49,10 +49,10 @@ describe('requests words', () => {
 		const l = lim(k(10, 9), k(3, 3, '2026-10-15T15:00:00Z'), k(0, 4));
 		expect(limitLine(null, 'movies')).toBe('');
 		expect(limitLine({ ...l, no_limit: true }, 'movies')).toBe('');
-		expect(limitLine(l, 'movies')).toBe('You have 1 movie ask left this week (your limit is 10).');
-		expect(limitLine(lim(k(10, 8), k(1, 0), k(5, 0)), 'shows')).toBe('You have 1 show ask left this week (your limit is 1).');
-		expect(limitLine(lim(k(10, 8), k(1, 0), k(5, 0)), 'music')).toBe('You have 5 music asks left this week (your limit is 5).');
-		expect(limitLine(l, 'shows', now)).toBe('You have used your 3 show asks this week. Try again in 2 days and 3 hours.');
+		expect(limitLine(l, 'movies')).toBe('You have 1 movie request left this week (your limit is 10).');
+		expect(limitLine(lim(k(10, 8), k(1, 0), k(5, 0)), 'shows')).toBe('You have 1 show request left this week (your limit is 1).');
+		expect(limitLine(lim(k(10, 8), k(1, 0), k(5, 0)), 'music')).toBe('You have 5 music requests left this week (your limit is 5).');
+		expect(limitLine(l, 'shows', now)).toBe('You have used your 3 show requests this week. Try again in 2 days and 3 hours.');
 		// 0 is no limit for that kind: no line.
 		expect(limitLine(l, 'music')).toBe('');
 		expect(limitLines(l, undefined, now).map((x) => x.kind)).toEqual(['movies', 'shows']);

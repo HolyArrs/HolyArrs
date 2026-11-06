@@ -242,9 +242,9 @@ export function checkBody(name: string, kinds: string[], body: PickRulesBody, mi
 	if (!n) err.name = 'Give these Pick rules a name.';
 	else if ([...n].length > 200) err.name = 'A name can be at most 200 characters.';
 
-	if (kinds.length === 0 || kinds.length > 3) err.kinds = 'Pick what these rules are for: movies, TV shows or music.';
+	if (kinds.length === 0 || kinds.length > 3) err.kinds = 'Pick movies, shows or music.';
 	else if (new Set(kinds).size !== kinds.length) err.kinds = 'Each kind can be picked once.';
-	else if (kinds.some((k) => !kindChoices.some(([c]) => c === k))) err.kinds = 'Pick movies, TV shows or music.';
+	else if (kinds.some((k) => !kindChoices.some(([c]) => c === k))) err.kinds = 'Pick movies, shows or music.';
 	else if (isMusic(kinds) && kinds.length > 1) err.kinds = 'Music Pick rules are for music alone.';
 
 	const ladder = ladderFor(kinds);

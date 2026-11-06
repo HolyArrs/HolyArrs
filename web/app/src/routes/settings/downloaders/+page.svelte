@@ -273,8 +273,7 @@
 </PageHeader>
 
 <p class="small muted lead" id="downloaders-card" tabindex="-1">
-	A Release goes to a Downloader of its kind, priority 1 first; Downloaders with the same priority take turns. One that does not answer rests for a while
-	(one minute, then twice as long each time, up to 30 minutes) and the next one is used. Every Downloader is checked once a minute.
+	Priority 1 goes first; equal priorities take turns. One that stops answering is skipped for up to 30 minutes.
 </p>
 
 {#snippet moreFields()}
