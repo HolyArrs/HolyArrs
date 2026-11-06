@@ -86,7 +86,11 @@
 			await session.reauth(pwA);
 			pwA = pwB = '';
 			mustSetPw = false;
-			toasts.push('Password set. Press Move again.', 'ok');
+			pwSheet = false;
+			if (resumeMove) {
+				resumeMove = false;
+				await start();
+			} else toasts.push('Password set.', 'ok');
 		} catch (err) {
 			// A first password needs a fresh sign-in with the media server (the server's rule).
 			if (err instanceof ApiError && err.body?.code === 'reauth') pwStale = true;
@@ -96,6 +100,8 @@
 		}
 	}
 	let pwStale = $state(false);
+	let pwSheet = $state(false);
+	let resumeMove = $state(false);
 	async function signInAgain() {
 		const back = location.pathname + location.search;
 		await session.logout();
@@ -104,7 +110,16 @@
 	onMount(() => {
 		const onReauth = (e: Event) => {
 			const path = (e as CustomEvent<{ path?: string }>).detail?.path ?? '';
-			if (!session.s.hasPassword && path.startsWith('/migrate')) mustSetPw = true;
+			if (!session.s.hasPassword && path.startsWith('/migrate')) {
+				mustSetPw = true;
+				// Pressed Move (in Before you move or the confirm): ask right there, then carry on.
+				if (beforeOpen || confirmMove || path === '/migrate/moves') {
+					beforeOpen = false;
+					confirmMove = false;
+					resumeMove = true;
+					pwSheet = true;
+				}
+			}
 		};
 		window.addEventListener('holyarrs:reauth', onReauth);
 		return () => window.removeEventListener('holyarrs:reauth', onReauth);
@@ -785,7 +800,7 @@
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
-	{#if mustSetPw}
+	{#if mustSetPw && !pwSheet}
 		<SettingsCard id="move-password" title="Set a password first" description="Moving needs a HolyArrs password." icon="shield">
 			<form class="setpw" onsubmit={setFirstPw}>
 				<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="New password" autocomplete="new-password" />
@@ -899,6 +914,18 @@
 	{/snippet}
 </Sheet>
 
+<Sheet bind:open={pwSheet} title="Set a password first" description="Moving needs a HolyArrs password." size="sm">
+	<form class="setpw one-col" onsubmit={setFirstPw}>
+		<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="New password" autocomplete="new-password" />
+		<input class="input" type="password" bind:value={pwB} placeholder="Password again" aria-label="New password again" autocomplete="new-password" />
+		{#if pwStale}
+			<p class="form-error" role="alert">Sign in again first. You'll come straight back here.</p>
+			<Button onclick={signInAgain}>Sign in again</Button>
+		{:else if pwErr}<p class="form-error" role="alert">{pwErr}</p>{/if}
+		<Button variant="primary" type="submit" busy={pwBusy} disabled={pwBusy}>Set password and move</Button>
+	</form>
+</Sheet>
+
 <BeforeSheet
 	bind:open={beforeOpen}
 	groups={tried.groups}
@@ -936,6 +963,7 @@
 
 <style>
 	.setpw { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+	.setpw.one-col { grid-template-columns: 1fr; }
 	@media (max-width: 600px) { .setpw { grid-template-columns: 1fr; } }
 	.sk-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 	.sk-rail .sk { display: block; height: 40px; border-radius: 12px; }
