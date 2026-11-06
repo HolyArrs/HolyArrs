@@ -39,7 +39,7 @@ export function visible(all: Section[], can: Can): Section[] {
 }
 
 // Six groups in setup order (settings-order proposal, Luis 2026-11-06):
-// Library, Downloads, People, Connections, Look, System, then My account,
+// Library, Downloads, People, Linked apps, Look, System, then My account,
 // which the hub shows as its own card on top. Pages keep their routes; only
 // the grouping changed, so old links still open the same page. Group lines
 // are for search only; the hub shows just the row lines.
@@ -47,7 +47,7 @@ export const groups: Group[] = [
 	{ id: 'library', label: 'Library', icon: 'library', about: 'Folders, defaults, subtitles and file names.' },
 	{ id: 'downloads', label: 'Downloads', icon: 'download', about: 'Downloaders, Sources, Pick rules and search.' },
 	{ id: 'users', label: 'People', icon: 'people', about: 'Users, request rules and sign-in.' },
-	{ id: 'connections', label: 'Connections', icon: 'tv', about: 'Media servers, alerts, other apps and the API.' },
+	{ id: 'connections', label: 'Linked apps', icon: 'tv', about: 'Media servers, alerts, other apps and the API.' },
 	{ id: 'look', label: 'Look', icon: 'appearance', about: 'Appearance and metadata.' },
 	{ id: 'system', label: 'System', icon: 'tools', about: 'Health, schedules, backups, logs and the danger zone.' },
 	{ id: 'account', label: 'My account', icon: 'user', about: 'Password, two-factor, devices.' }
