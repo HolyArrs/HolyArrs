@@ -103,7 +103,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const lab = page.getByTestId('subtitle-site').filter({ hasText: 'Lab subtitle site' }).first();
 	await expect(lab.getByTestId('subtitle-site-state')).toHaveText('On');
-	await expect(lab.getByTestId('subtitle-site-test')).toContainText('The site answered', { timeout: 15_000 });
+	await expect(lab.getByTestId('subtitle-site-test')).toHaveText(/· \d+ subtitles?$/, { timeout: 15_000 });
 
 	// A site that needs your account: refused until the key is there; the key field is masked.
 	await page.getByRole('button', { name: 'Add a Subtitle site' }).click();
@@ -120,7 +120,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const acct = page.getByTestId('subtitle-site').filter({ hasText: 'with an account' });
 	await expect(acct).toContainText('account saved');
-	await expect(acct.getByTestId('subtitle-site-test')).toContainText('The site answered', { timeout: 15_000 });
+	await expect(acct.getByTestId('subtitle-site-test')).toHaveText(/· \d+ subtitles?$/, { timeout: 15_000 });
 	await expect(page.locator('body')).not.toContainText('xxxx-xxxx');
 	await acct.getByRole('button', { name: /^Pause / }).click();
 	await expect(acct.getByTestId('subtitle-site-state')).toHaveText('Paused');

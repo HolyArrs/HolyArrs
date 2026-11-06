@@ -4,6 +4,7 @@
 	import SettingsCard from './SettingsCard.svelte';
 	import Field from './Field.svelte';
 	import Button from './Button.svelte';
+	import TestTag from './TestTag.svelte';
 	import { api, message } from '../api.ts';
 	import { to } from '../paths.ts';
 	import { session } from '../session.svelte.ts';
@@ -61,9 +62,9 @@
 						<span class="name">
 							{#if !c.answered}<a href={to(`/settings/sources/${c.id}`)}>{c.name}</a>{:else}{c.name}{/if}
 						</span>
-						<span class="chip {checkTone(c)}">{checkWord(c)}</span>
-						<span class="meta">
-							{#if c.answered}{checkCount(c)} · {ms(c.ms)}{:else if c.paused}{c.health.text}{:else}{c.error}{#if c.ms} · {ms(c.ms)}{/if}{/if}
+						{#if c.paused}<span class="chip {checkTone(c)}">{checkWord(c)}</span>{:else}<TestTag ok={c.answered} text={c.answered ? '' : (c.error ?? '')} hover={c.answered ? `${checkCount(c)} in ${ms(c.ms)}` : ''} extra={checkCount(c)} />{/if}
+						<span class="meta" class:bad-text={!c.answered && !c.paused}>
+							{#if c.answered}{ms(c.ms)}{:else if c.paused}{c.health.text}{:else}{c.error}{#if c.ms} · {ms(c.ms)}{/if}{/if}
 						</span>
 					</li>
 				{/each}
@@ -110,6 +111,9 @@
 		color: var(--text-muted);
 		overflow-wrap: anywhere;
 		min-width: 0;
+	}
+	.meta.bad-text {
+		color: var(--fail-text);
 	}
 	@media (max-width: 560px) {
 		.ask {

@@ -16,7 +16,7 @@ const saved: DownloaderView = {
 	allow_local_network: true,
 	writable: true,
 	writable_locked: false,
-	health: { state: 'working', label: 'Working', text: 'It answered the last check.' },
+	health: { state: 'working', label: 'Working', text: '' },
 	active_downloads: 1
 };
 

@@ -85,12 +85,7 @@ export interface DownloadView {
 	active: boolean;
 }
 
-/** testVersion picks the version out of a connection test's answer
- * ("... qbittorrent v5.1.2.", "... sabnzbd 5.1.3."), as "v5.1.2"; empty when none. */
-export function testVersion(text: string): string {
-	const m = text.match(/\d+(?:\.\d+)+/);
-	return m ? `v${m[0]}` : '';
-}
+export { testVersion } from './test-tag.ts';
 
 export const kindWords: Record<DownloaderView['kind'], string> = {
 	qbittorrent: 'qBittorrent',

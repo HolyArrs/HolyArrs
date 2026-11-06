@@ -28,7 +28,7 @@ export const defaultQuery: Record<CheckKind, string> = { movie: 'The Matrix', sh
 /** checkWord is the row's one word. */
 export function checkWord(c: SourceCheck): string {
 	if (c.paused) return 'Paused';
-	return c.answered ? 'Answered' : 'Failed';
+	return c.answered ? 'Connected' : 'Not connected';
 }
 
 /** checkTone colours the row with the same tones as a Source's health chip. */
@@ -49,7 +49,7 @@ export function checkSummary(list: SourceCheck[]): string {
 	const ok = list.filter((c) => c.answered).length;
 	const paused = list.filter((c) => c.paused).length;
 	const failed = list.length - ok - paused;
-	const parts = [`${ok} of ${list.length} answered`];
+	const parts = [`${ok} of ${list.length} connected`];
 	if (failed) parts.push(`${failed} failed`);
 	if (paused) parts.push(`${paused} paused`);
 	return parts.join(', ') + '.';

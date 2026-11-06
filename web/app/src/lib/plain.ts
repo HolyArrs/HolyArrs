@@ -18,8 +18,8 @@ export function personName(name: string | null | undefined, fallback = 'Someone 
 const sentences: Record<HealthCheck['kind'], [error: string, warning: string]> = {
 	library_folder: ['HolyArrs cannot reach a Library folder.', 'A Library folder needs a look.'],
 	disk_space: ['A Library folder is out of space.', 'A Library folder is running low on space.'],
-	source: ['A Source is not answering.', 'A Source answered with a problem.'],
-	downloader: ['A Downloader is not answering.', 'A Downloader answered with a problem.'],
+	source: ['A Source is not answering.', 'A Source has a problem.'],
+	downloader: ['A Downloader is not answering.', 'A Downloader has a problem.'],
 	backups: ['Backups are not being made.', 'The last backup is getting old.'],
 	update: ['HolyArrs could not check for an update.', 'An update for HolyArrs is waiting.'],
 	config_disk: ['The disk that holds the config folder is almost full.', 'The disk that holds the config folder is running low on space.'],

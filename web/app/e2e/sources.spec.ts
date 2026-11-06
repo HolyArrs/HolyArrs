@@ -29,7 +29,7 @@ test('a Source is added, tested, shows a wrong key in plain words, pauses and re
 
 	await addSource('Lab Torznab', 'torznab', `${base}/api`, indexerKey);
 	const row = page.getByTestId('source').filter({ hasText: 'Lab Torznab' });
-	await expect(row.getByTestId('source-test')).toContainText('The Source answered');
+	await expect(row.getByTestId('source-test')).toHaveText('Connected');
 	await expect(row.getByTestId('source-state')).toHaveText('Working');
 	await expect(row).not.toContainText(indexerKey);
 
@@ -54,7 +54,7 @@ test('a Source is added, tested, shows a wrong key in plain words, pauses and re
 test('an rss feed is read and its passkey stays hidden', async () => {
 	await addSource('Lab feed', 'rss', `${base}/rss?passkey=hidden-lab-pk`);
 	const row = page.getByTestId('source').filter({ hasText: 'Lab feed' });
-	await expect(row.getByTestId('source-test')).toContainText('The feed answered with 2 Releases');
+	await expect(row.getByTestId('source-test')).toHaveText('Connected · 2 Releases');
 	await expect(row).not.toContainText('hidden-lab-pk');
 });
 

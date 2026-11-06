@@ -142,9 +142,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   // Check connection answers in seconds, then the read.
   await sheet.getByLabel("API key", { exact: true }).fill(oldKey);
   await sheet.getByRole("button", { name: "Check connection" }).click();
-  await expect(sheet.getByTestId("probe-ok")).toContainText(
-    "Radarr 6.4.4 answered. Ready to read.",
-  );
+  await expect(sheet.getByTestId("probe-ok")).toHaveText("Radarr v6.4.4");
   await sheet.getByRole("button", { name: "Read Radarr" }).click();
   await expect(sheet).toBeHidden();
   const rows = page.getByTestId("read-row");

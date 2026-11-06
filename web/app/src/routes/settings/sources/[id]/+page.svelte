@@ -10,6 +10,8 @@
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
+	import { testCount } from '#lib/test-tag.ts';
 	import type { SourceCall, SourceDay, SourceView } from '#lib/types.ts';
 
 	let src = $state<SourceView | null>(null);
@@ -18,14 +20,14 @@
 	let span = $state(14);
 	let error = $state('');
 	let trying = $state(false);
-	let tried = $state<{ ok: boolean; text: string } | null>(null);
+	let tried = $state<{ ok: boolean; text: string; extra?: string; hover?: string } | null>(null);
 
 	async function tryNow() {
 		if (!src) return;
 		trying = true;
 		try {
 			const r = await api.post<{ ok: boolean; text: string; ms: number }>(`/sources/${src.id}/try`);
-			tried = { ok: r.ok, text: r.ok ? `${r.text} (${ms(r.ms)})` : r.text };
+			tried = { ok: r.ok, text: r.text, hover: r.ok ? `${r.text} (${ms(r.ms)})` : '', extra: r.ok ? testCount(r.text) : '' };
 		} catch (e) {
 			tried = { ok: false, text: message(e) };
 		} finally {
@@ -87,7 +89,7 @@
 			<span class="label">State</span>
 			<span class="big">{healthWord(src.health)}</span>
 			<span class="xs muted">{src.health.text}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
-			{#if tried}<span class="xs" class:bad-text={!tried.ok} class:ok-text={tried.ok} role="status" data-testid="source-tried">{tried.text}</span>{/if}
+			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{tried.text}</span>{/if}</span>{/if}
 		</div>
 		<div class="card tile">
 			<span class="label">Last answer</span>
@@ -169,6 +171,7 @@
 {/if}
 
 <style>
+	.testline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; }
 	.tiles {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));

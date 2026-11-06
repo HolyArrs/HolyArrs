@@ -6,6 +6,8 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
+	import { testCount } from '#lib/test-tag.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { dateTime } from '#lib/format.ts';
@@ -416,7 +418,7 @@
 							{#if s.limits.downloads_per_day} · {s.downloads_today} of {s.limits.downloads_per_day} downloads today{/if}
 						</p>
 						{#if results[s.ID]}
-							<p class="small" class:bad-text={!results[s.ID].ok} class:ok-text={results[s.ID].ok} role="status" data-testid="subtitle-site-test">{results[s.ID].text}</p>
+							<div class="testline" data-testid="subtitle-site-test"><TestTag ok={results[s.ID].ok} text={results[s.ID].text} app={k?.name} extra={results[s.ID].ok ? testCount(results[s.ID].text) : ''} />{#if !results[s.ID].ok}<span class="small bad-text">{results[s.ID].text}</span>{/if}</div>
 						{/if}
 						<div class="row actions">
 							<Button type="button" disabled={testing === s.ID} aria-busy={testing === s.ID} onclick={() => test(s)} aria-label="Test {s.name}">Test</Button>
@@ -436,6 +438,7 @@
 {/if}
 
 <style>
+	.testline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 	.sec {
 		margin-top: var(--s-6, 32px);
 	}

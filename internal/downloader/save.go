@@ -378,5 +378,5 @@ func HealthOf(d domain.Downloader, now time.Time) HealthView {
 	case d.State == "unreachable":
 		return HealthView{"not_answering", "Not answering", "It did not answer the last check. " + d.LastError}
 	}
-	return HealthView{"working", "Working", "It answered the last check."}
+	return HealthView{"working", "Working", ""}
 }

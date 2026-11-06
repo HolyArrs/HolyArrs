@@ -132,7 +132,7 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await page.getByLabel(/May reach the local network/).check();
 	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const site = page.getByTestId('subtitle-site').filter({ hasText: 'Lab subtitle site' }).first();
-	await expect(site.getByTestId('subtitle-site-test')).toContainText('The site answered', { timeout: 15_000 });
+	await expect(site.getByTestId('subtitle-site-test')).toHaveText(/· \d+ subtitles?$/, { timeout: 15_000 });
 
 	await adopt('Shows: ', 'Fennel Clock', 'Adopt 1 show', '1 show is now in the Library');
 	await page.goto('/library');

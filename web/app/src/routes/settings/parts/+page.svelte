@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { testLabel } from '#lib/test-tag.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -112,8 +113,10 @@
 		const t = linkTarget(l.key);
 		if (!t) return;
 		run(`link-${l.key}`, `${linkAction[t.kind]} ${l.name}`, `/links/${t.kind}/${encodeURIComponent(t.id)}/restart`, (r) => {
-			const o = (r ?? {}) as { ok?: boolean; text?: string; message?: string; error?: string };
-			toasts.push(`${l.name}: ${o.text || o.message || o.error || 'answered.'}`, o.ok === false ? 'fail' : 'ok');
+			// The answer of the link's own test: the same words as its tag ("qBittorrent v5.1.2"), or Not connected and why.
+			const o = (r ?? {}) as { ok?: boolean; text?: string; message?: string; error?: string; found?: string };
+			const said = o.text || o.message || o.error || o.found || '';
+			toasts.push(o.ok === false ? `${l.name}: Not connected. ${said}`.trim() : `${l.name}: ${testLabel(said)}`, o.ok === false ? 'fail' : 'ok');
 			void load();
 		});
 	}

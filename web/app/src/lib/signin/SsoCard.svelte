@@ -6,7 +6,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -84,7 +84,7 @@
 		tested = null;
 		try {
 			await api.post('/auth/sso/test', { issuer: issuer.trim() });
-			tested = { ok: true, text: 'An OpenID Connect provider answered at this issuer.' };
+			tested = { ok: true, text: issuer.trim() };
 		} catch (e) {
 			tested = { ok: false, text: message(e) };
 		} finally {
@@ -173,8 +173,7 @@
 							<Button type="button" onclick={test} disabled={!issuer.trim() || testing} aria-busy={testing}>Test</Button>
 						</div>
 					</Field>
-					{#if tested?.ok}<p class="notice" role="status"><span class="ok-mark"><Icon name="check" size={17} /></span><span>{tested.text}</span></p>
-					{:else if tested}<p class="notice warn" role="status">{tested.text}</p>{/if}
+					{#if tested}<div class="testline" data-testid="sso-tested"><TestTag ok={tested.ok} text={tested.text} app="OpenID Connect" />{#if !tested.ok}<span class="small bad-text">{tested.text}</span>{/if}</div>{/if}
 					<Field id="sso-client" label="Client id">
 						<input id="sso-client" class="input mono" bind:value={clientId} maxlength="1000" spellcheck="false" autocomplete="off" />
 					</Field>
@@ -233,6 +232,7 @@
 </SettingsCard>
 
 <style>
+	.testline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 	.sso fieldset {
 		border: 0;
 		padding: 0;

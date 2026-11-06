@@ -9,6 +9,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ago } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests.ts';
@@ -57,6 +58,8 @@
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
+	// The last test of each Alert, shown as a tag on its card.
+	let results = $state<Record<number, { ok: boolean; text: string }>>({});
 
 	// How a pack of several episodes is told (5.2.5).
 	// Null until the stored value is loaded, so no made-up default shows.
@@ -171,9 +174,9 @@
 		testing = a.id;
 		try {
 			await api.post(`/alerts/${a.id}/test`);
-			toasts.push(`Test sent through ${a.name}.`, 'ok');
+			results = { ...results, [a.id]: { ok: true, text: `Test sent through ${a.name}.` } };
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			results = { ...results, [a.id]: { ok: false, text: message(err) } };
 		} finally {
 			testing = 0;
 			await load();
@@ -353,9 +356,12 @@
 					<h2 class="h3">{a.name}</h2>
 					<span class="chip">{kindWord[a.kind] ?? a.kind}</span>
 					{#if !a.enabled}<span class="chip">Off</span>{/if}
+					{#if results[a.id]}<TestTag ok={results[a.id].ok} text={results[a.id].text} app={kindWord[a.kind] ?? a.kind} testid="alert-test" />{/if}
 				</div>
 				<p class="small muted">{a.moments.length ? a.moments.map((m) => momentWords[m]?.[0] ?? m).join(' · ') : 'No moments chosen'}</p>
-				{#if a.last_error}
+				{#if results[a.id] && !results[a.id].ok}
+					<p class="small bad-text" data-testid="alert-result">{results[a.id].text}</p>
+				{:else if a.last_error}
 					<p class="small bad-text" data-testid="alert-result">Last try failed: {a.last_error}</p>
 				{:else if a.last_sent_at}
 					<p class="small muted" data-testid="alert-result">Last sent {ago(a.last_sent_at)}</p>

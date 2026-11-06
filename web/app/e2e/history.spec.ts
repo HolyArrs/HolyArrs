@@ -167,7 +167,7 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await expect(card).toContainText('Sent to download · In the Library · Renamed');
 	await expect(card).not.toContainText('Someone asks');
 	await card.getByRole('button', { name: 'Send a test' }).click();
-	await expect(page.getByText('Test sent through Home server hook.')).toBeVisible();
+	await expect(card.getByTestId('alert-test')).toHaveText('Webhook');
 	const hooks = (await (await page.request.get(`http://127.0.0.1:${discordPort}/hooks`)).json()) as { body: { moment: string }; event: string; signature: string }[];
 	const last = hooks.at(-1)!;
 	expect(last.event).toBe('test');
@@ -192,7 +192,7 @@ test('alerts: add a Telegram bot, send a test, the chat gets the text', async ()
 	const card = page.getByTestId('alert').filter({ hasText: 'Family Telegram' });
 	await expect(card).toContainText('Telegram');
 	await card.getByRole('button', { name: 'Send a test' }).click();
-	await expect(page.getByText('Test sent through Family Telegram.')).toBeVisible();
+	await expect(card.getByTestId('alert-test')).toHaveText('Telegram');
 	const sent = (await (await page.request.get(`http://127.0.0.1:${discordPort}/telegram`)).json()) as { chat_id: string; text: string; disable_web_page_preview: boolean }[];
 	const last = sent.at(-1)!;
 	expect(last.chat_id).toBe('-1001234567890');
@@ -217,7 +217,7 @@ test('alerts: add an ntfy topic, send a test, the topic gets the text', async ()
 	const card = page.getByTestId('alert').filter({ hasText: 'Phone ntfy' });
 	await expect(card).toContainText('ntfy');
 	await card.getByRole('button', { name: 'Send a test' }).click();
-	await expect(page.getByText('Test sent through Phone ntfy.')).toBeVisible();
+	await expect(card.getByTestId('alert-test')).toHaveText('ntfy');
 	const sent = (await (await page.request.get(`http://127.0.0.1:${discordPort}/apps`)).json()) as { app: string; path: string; title: string; auth: boolean; body: string }[];
 	const last = sent.filter((x) => x.app === 'ntfy').at(-1)!;
 	expect(last.path).toBe('/holyarrs-e2e');
@@ -245,14 +245,14 @@ test('media servers: add Jellyfin, test it, a wrong key is said plainly', async 
 	const card = page.getByTestId('media-server').filter({ hasText: 'Lab Jellyfin' });
 	await expect(card).toContainText('Told about imports, renames, deletes');
 	await card.getByRole('button', { name: 'Test' }).click();
-	await expect(page.getByText('Lab Jellyfin answered: Fake Jellyfin 10.9.0.')).toBeVisible();
-	await expect(card.getByTestId('media-result')).toContainText('Last answered');
+	await expect(card.getByTestId('media-test')).toHaveText('Jellyfin v10.9.0');
+	await expect(card.getByTestId('media-result')).toContainText('Last checked');
 	await card.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key').fill('wrong-key');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await card.getByRole('button', { name: 'Test' }).click();
-	await expect(page.getByText('Lab Jellyfin: the server turned down the token')).toBeVisible();
-	await expect(card.getByTestId('media-result')).toContainText('Last try failed: the server turned down the token');
+	await expect(card.getByTestId('media-test')).toHaveText('Not connected');
+	await expect(card.getByTestId('media-result')).toContainText('the server turned down the token');
 });
 
 test('red buttons keep their contrast on hover', async () => {

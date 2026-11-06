@@ -9,6 +9,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ago } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import type { MediaServerView } from '#lib/types.ts';
@@ -40,6 +41,8 @@
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
+	// The last Test of each server, shown as a tag on its card.
+	let results = $state<Record<number, { ok: boolean; text: string; extra?: string; hover?: string }>>({});
 
 	async function load() {
 		try {
@@ -74,7 +77,11 @@
 		formError = '';
 		try {
 			if (isNew) await api.post('/media-servers', form);
-			else await api.put(`/media-servers/${editing!.id}`, form);
+			else {
+				await api.put(`/media-servers/${editing!.id}`, form);
+				const id = editing!.id;
+				results = Object.fromEntries(Object.entries(results).filter(([k]) => Number(k) !== id));
+			}
 			toasts.push(`${form.name} saved.`, 'ok');
 			editing = null;
 			await load();
@@ -89,9 +96,12 @@
 		testing = m.id;
 		try {
 			const r = await api.post<{ found: string }>(`/media-servers/${m.id}/test`);
-			toasts.push(`${m.name} answered${r.found ? ': ' + r.found : ''}.`, 'ok');
+			// Plex names its libraries instead of a version: the tag counts them.
+			const libs = /^Libraries:/i.test(r.found ?? '') ? r.found.slice(10).split(',').filter((x) => x.trim()).length : 0;
+			// Jellyfin/Emby answer "<server name> <version>": only the last word is read for the version (a name like "HTPC 2.0" is not).
+			results = { ...results, [m.id]: { ok: true, text: libs ? '' : (r.found ?? '').trim().split(/\s+/).pop() ?? '', hover: r.found ?? '', extra: libs ? `${libs} ${libs === 1 ? 'library' : 'libraries'}` : '' } };
 		} catch (err) {
-			toasts.push(`${m.name}: ${message(err)}`, 'fail');
+			results = { ...results, [m.id]: { ok: false, text: message(err) } };
 		} finally {
 			testing = 0;
 			await load();
@@ -195,13 +205,16 @@
 					<h2 class="h3">{m.name}</h2>
 					<span class="chip">{kindWord[m.kind]}</span>
 					{#if !m.enabled}<span class="chip">Off</span>{/if}
+					{#if results[m.id]}<TestTag ok={results[m.id].ok} text={results[m.id].text} hover={results[m.id].hover} app={kindWord[m.kind]} extra={results[m.id].extra} testid="media-test" />{/if}
 				</div>
 				<p class="small muted mono addr">{m.url}</p>
 				<p class="small muted">{moments(m)}{m.path_from ? ` · ${m.path_from} is ${m.path_to} there` : ''}</p>
-				{#if m.last_error}
+				{#if results[m.id] && !results[m.id].ok}
+					<p class="small bad-text" data-testid="media-result">{results[m.id].text}</p>
+				{:else if m.last_error}
 					<p class="small bad-text" data-testid="media-result">Last try failed: {m.last_error}</p>
 				{:else if m.last_ok_at}
-					<p class="small muted" data-testid="media-result">Last answered {ago(m.last_ok_at)}</p>
+					<p class="small muted" data-testid="media-result">Last checked {ago(m.last_ok_at)}</p>
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === m.id} aria-busy={testing === m.id} onclick={() => test(m)}>Test</Button>

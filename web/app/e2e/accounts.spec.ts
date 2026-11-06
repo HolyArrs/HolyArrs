@@ -278,7 +278,7 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	const issuer = `http://127.0.0.1:${jellyfinPort}/oidc`;
 	await form.getByLabel('Issuer').fill(issuer);
 	await form.getByRole('button', { name: 'Test' }).click();
-	await expect(form.getByText('An OpenID Connect provider answered at this issuer.')).toBeVisible();
+	await expect(form.getByTestId('sso-tested')).toHaveText('OpenID Connect');
 	await form.getByText('Show the single sign-on button on the sign-in page').click();
 	await form.getByLabel('Client id').fill('holyarrs');
 	await form.getByLabel('Client secret').fill(`${owner().password}-client`);

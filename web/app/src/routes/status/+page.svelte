@@ -17,6 +17,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
+	import { testLabel } from '#lib/test-tag.ts';
 	import Sections from '#lib/status/StatusSections.svelte';
 	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
@@ -144,7 +145,7 @@
 				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
-				toasts.push(res.ok ? `${r.name} answered.` : res.text || `${r.name} did not answer.`, res.ok ? 'ok' : 'fail');
+				toasts.push(res.ok ? `${r.name}: ${testLabel(res.text)}` : `${r.name}: Not connected. ${res.text}`.trim(), res.ok ? 'ok' : 'fail');
 				await load(true);
 			}
 		} catch (e) {

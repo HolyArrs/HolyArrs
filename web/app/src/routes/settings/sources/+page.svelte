@@ -13,6 +13,8 @@
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
+	import { testCount } from '#lib/test-tag.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
 	import SourceCheck from '#lib/ui/SourceCheck.svelte';
@@ -30,7 +32,7 @@
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
-	let results = $state<Record<number, { ok: boolean; text: string }>>({});
+	let results = $state<Record<number, { ok: boolean; text: string; extra?: string; hover?: string }>>({});
 
 	async function load() {
 		try {
@@ -85,7 +87,7 @@
 		testing = s.id;
 		try {
 			const r = await api.post<{ ok: boolean; text: string; ms: number; health: SourceHealth }>(`/sources/${s.id}/${how}`);
-			results[s.id] = { ok: r.ok, text: r.ok ? `${r.text} (${ms(r.ms)})` : r.text };
+			results[s.id] = { ok: r.ok, text: r.text, hover: r.ok ? `${r.text} (${ms(r.ms)})` : '', extra: r.ok ? testCount(r.text) : '' };
 		} catch (err) {
 			results[s.id] = { ok: false, text: message(err) };
 		} finally {
@@ -273,7 +275,7 @@
 					{s.summary.failures_24h} of {s.summary.calls_24h} calls failed today
 				</p>
 				{#if results[s.id]}
-					<p class="small" class:bad-text={!results[s.id].ok} class:ok-text={results[s.id].ok} role="status" data-testid="source-test">{results[s.id].text}</p>
+					<div class="testline" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{results[s.id].text}</span>{/if}</div>
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</Button>
@@ -295,6 +297,7 @@
 {/if}
 
 <style>
+	.testline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 	.lead {
 		margin-bottom: var(--s-5);
 	}

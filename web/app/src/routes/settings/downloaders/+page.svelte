@@ -13,6 +13,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import {
@@ -21,7 +22,6 @@
 		formFrom,
 		healthTone,
 		kindWords,
-		testVersion,
 		pendingAttempts,
 		type DownloaderAttempt,
 		type DownloaderForm,
@@ -376,7 +376,7 @@
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
 				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test connection</Button>{/if}
-				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<span class="small" class:muted={r.ok} class:bad-text={!r.ok} role="status">{r.ok ? ['Connected', testVersion(r.text)].filter(Boolean).join(' · ') : r.text}</span>{/if}
+				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<TestTag ok={r.ok} text={r.text} app={kindWords[editing.kind]} />{#if !r.ok}<span class="small bad-text">{r.text}</span>{/if}{/if}
 			</div>
 		</SettingsCard>
 	</form>
@@ -399,10 +399,10 @@
 						<h2 class="h3">{d.name}</h2>
 						<div class="mono xs muted ellipsis">{d.url}</div>
 					</div>
-					{#if results[d.id]?.ok && testVersion(results[d.id].text)}<span class="chip mono" data-testid="downloader-version">{testVersion(results[d.id].text)}</span>{/if}
+					{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
 					<span class="chip {healthTone(d.health.state)}" data-testid="downloader-state">{d.health.label}</span>
 				</div>
-				<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>
+				{#if d.health.text}<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>{/if}
 				<p class="xs muted">
 					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
 					{#if d.secret} · {d.kind === 'sabnzbd' || (d.kind === 'qbittorrent' && !d.username) ? 'key' : 'password'} {d.secret}{/if}

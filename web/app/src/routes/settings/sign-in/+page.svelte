@@ -9,6 +9,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, date } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import type { ApiKey } from '#lib/types.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -134,12 +135,14 @@
 
 	// (b) Test a Jellyfin or Emby address from the server side.
 	let testing = $state<WayName | ''>('');
-	let tested = $state<Partial<Record<WayName, { ok: boolean; text: string }>>>({});
+	let tested = $state<Partial<Record<WayName, { ok: boolean; text: string; app?: string }>>>({});
 	async function testUrl(w: WayName) {
 		testing = w;
 		try {
 			const r = await api.post<{ ok: boolean; name?: string; version?: string; product?: string; message?: string }>(`/auth/media-server/${w}/test`, { url: ways[w].url });
-			tested[w] = r.ok ? { ok: true, text: `Found ${r.name || 'a server'}${r.version ? ` (${r.product || wayWord[w]} ${r.version})` : ''}.` } : { ok: false, text: r.message || 'No answer.' };
+			// The version leads the tooltip, so a server name with numbers in it is never read as one.
+			const app = r.product || wayWord[w];
+			tested[w] = r.ok ? { ok: true, app, text: `${app}${r.version ? ` ${r.version}` : ''}${r.name ? ` (${r.name})` : ''}` } : { ok: false, text: r.message || 'No answer.' };
 		} catch (err) {
 			tested[w] = { ok: false, text: strongNote(err) };
 		} finally {
@@ -517,8 +520,7 @@
 								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>Test</Button>
 							</div>
 						</Field>
-						{#if tested[w]?.ok}<p class="notice" role="status"><span class="ok-mark"><Icon name="check" size={17} /></span><span>{tested[w]?.text}</span></p>
-						{:else if tested[w]}<p class="notice warn" role="status">{tested[w]?.text}</p>
+						{#if tested[w]}{@const t = tested[w]}<div class="testline" data-testid="{w}-tested"><TestTag ok={t.ok} text={t.text} app={t.app} />{#if !t.ok}<span class="small bad-text">{t.text}</span>{/if}</div>
 						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested yet. Save runs the test; you can save even if it fails.</p>{/if}
 					{/if}
 					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Someone the server limits (a Plex managed user, a parental rating) joins as a Kid, up to PG. Change them on Users and roles.">
@@ -727,10 +729,11 @@
 	.name {
 		font-weight: var(--weight-semibold);
 	}
-	.ok-mark {
-		display: inline-flex;
-		flex: none;
-		color: var(--ok-text);
+	.testline {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px 10px;
 	}
 	.fresh {
 		padding: var(--s-4);

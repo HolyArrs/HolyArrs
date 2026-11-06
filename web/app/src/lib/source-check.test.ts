@@ -5,9 +5,9 @@ const row = (o: Partial<SourceCheck>): SourceCheck => ({ id: 1, name: 'A', answe
 
 describe('source check', () => {
 	it('says each row in one word with the health tones', () => {
-		expect(checkWord(row({ answered: true }))).toBe('Answered');
+		expect(checkWord(row({ answered: true }))).toBe('Connected');
 		expect(checkTone(row({ answered: true }))).toBe('ok');
-		expect(checkWord(row({}))).toBe('Failed');
+		expect(checkWord(row({}))).toBe('Not connected');
 		expect(checkTone(row({}))).toBe('fail');
 		expect(checkWord(row({ paused: true, health: { state: 'unreachable', text: '' } }))).toBe('Paused');
 	});
@@ -18,6 +18,6 @@ describe('source check', () => {
 	});
 	it('sums up a run', () => {
 		expect(checkSummary([])).toBe('No enabled Sources to ask.');
-		expect(checkSummary([row({ answered: true }), row({}), row({ paused: true })])).toBe('1 of 3 answered, 1 failed, 1 paused.');
+		expect(checkSummary([row({ answered: true }), row({}), row({ paused: true })])).toBe('1 of 3 connected, 1 failed, 1 paused.');
 	});
 });

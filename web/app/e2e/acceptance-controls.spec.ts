@@ -22,12 +22,12 @@ test('the Downloaders Test button reaches the preserved lab qBittorrent with its
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 
 	const downloader = page.getByTestId('downloader').filter({ hasText: 'Preserved lab qBittorrent' });
-	await expect(downloader.getByTestId('downloader-version')).toHaveText('v5.2.4');
+	await expect(downloader.getByTestId('downloader-version')).toHaveText('qBittorrent v5.2.4');
 	await expect(downloader.getByTestId('downloader-state')).toHaveText('Working');
 	await expect(downloader).toContainText('may reach the local network');
 	await expect(downloader).not.toContainText('password');
 
 	await downloader.getByRole('button', { name: 'Test', exact: true }).click();
-	await expect(downloader.getByTestId('downloader-version')).toHaveText('v5.2.4');
+	await expect(downloader.getByTestId('downloader-version')).toHaveText('qBittorrent v5.2.4');
 	await expect(downloader.getByTestId('downloader-state')).toHaveText('Working');
 });

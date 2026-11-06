@@ -13,6 +13,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Icon from '#lib/Icon.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
@@ -55,7 +56,8 @@
 	let testing = $state(false);
 	let connecting = $state(false);
 	// A test or connect answer; a good test shows as a short tag ("Prowlarr v2.0.5 · 12 sites").
-	let result = $state<{ ok: boolean; text: string; tag?: string } | null>(null);
+	// tested: the answer of Test, shown as a tag; otherwise a plain line (Connect's errors).
+	let result = $state<{ ok: boolean; text: string; tested?: boolean; extra?: string } | null>(null);
 	let errors = $state<Record<string, string>>({});
 	let keysNeeded = $state<string[]>([]);
 	let newKeys = $state(false);
@@ -145,14 +147,13 @@
 			const r = await api.post<{ text: string; sites?: string[]; keys?: Record<string, string> }>('/bridges/test', body());
 			let text = r.text;
 			if (r.sites?.length) text += ` ${r.sites.slice(0, 8).join(', ')}${r.sites.length > 8 ? '…' : ''}.`;
-			const ver = r.text.match(/\d+(?:\.\d+){1,2}/)?.[0];
-			const tag = [`${names[kind]}${ver ? ` v${ver}` : ''}`, r.sites?.length ? `${r.sites.length} ${r.sites.length === 1 ? 'indexer' : 'indexers'}` : ''].filter(Boolean).join(' · ');
+			const extra = r.sites?.length ? `${r.sites.length} ${r.sites.length === 1 ? 'indexer' : 'indexers'}` : '';
 			const have = Object.entries(r.keys ?? {}).filter(([, v]) => v === 'have').map(([k]) => k);
 			keysNeeded = have;
-			result = { ok: true, text, tag };
+			result = { ok: true, text, tested: true, extra };
 		} catch (e) {
 			if (isReauth(e)) askPassword('test');
-			else if (!fieldError(e)) result = { ok: false, text: message(e) };
+			else if (!fieldError(e)) result = { ok: false, text: message(e), tested: true };
 		} finally {
 			testing = false;
 		}
@@ -299,7 +300,7 @@
 						</div>
 					{/if}
 				{/if}
-				{#if result && !result.tag}<p class="small" class:bad-text={!result.ok} class:ok-text={result.ok} role="status" data-testid="bridge-result">{result.text}</p>{/if}
+				{#if result && !(result.tested && result.ok)}<p class="small" class:bad-text={!result.ok} class:ok-text={result.ok} role="status" data-testid="bridge-result">{result.text}</p>{/if}
 				{#if reauthFor}
 					{#if session.s.hasPassword}
 						<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
@@ -308,7 +309,7 @@
 					{/if}
 				{/if}
 				<div class="acts">
-					{#if result?.tag}<span class="tag" role="status" data-testid="bridge-result" title={result.text}><Icon name="check" size={12} stroke={2.5} />{result.tag}</span>{/if}
+					{#if result?.tested}<span class="tag"><TestTag ok={result.ok} text={result.text} app={names[kind]} extra={result.extra} testid={result.ok ? 'bridge-result' : undefined} /></span>{/if}
 					<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>
 					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
 					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Connect'}</Button>
@@ -358,7 +359,7 @@
 	.link { border: 0; padding: 0 0 0 4px; background: none; color: var(--accent-text, var(--accent)); font: inherit; cursor: pointer; }
 	.link:hover { text-decoration: underline; }
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
-	.tag { margin-right: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-ui); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
+	.tag { margin-right: auto; display: inline-flex; min-width: 0; }
 	.keys { display: flex; flex-direction: column; gap: 12px; }
 	.check { display: flex; gap: 8px; align-items: flex-start; font: var(--t-callout); }
 	.check input { margin-top: 3px; flex: none; }

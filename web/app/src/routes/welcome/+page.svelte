@@ -2,6 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon, { type IconName } from '#lib/Icon.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
 	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
 	import MoveFlow from '../settings/move/+page.svelte';
@@ -17,7 +18,7 @@
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import { emptyForm, formBody, formFrom, kindWords, testVersion, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
+	import { emptyForm, formBody, formFrom, kindWords, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
 	import type { LibraryFolder } from '#lib/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
@@ -355,11 +356,7 @@
 						<li>
 							<div class="conn-row">
 							<div class="conn-text"><b>{d.name}</b><span class="addr mono">{d.url}</span></div>
-							{#if test && !test.ok}
-								<span class="tag bad">Not connected</span>
-							{:else if test && testVersion(test.text)}
-								<span class="tag ok mono"><Icon name="check" size={12} stroke={2.5} />{testVersion(test.text)}</span>
-							{/if}
+							{#if test}<TestTag ok={test.ok} text={test.text} app={kindWords[d.kind]} />{/if}
 							</div>
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
 							{#if !dlForm}
@@ -613,10 +610,6 @@
 	.conn-text { flex: 1; min-width: 0; }
 	.conn-text b { display: block; font: 600 15px/1.3 var(--font-ui); color: var(--text); }
 	.conn-text .addr { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); overflow-wrap: anywhere; }
-	.tag { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
-	.tag.mono { font-family: var(--font-mono); }
-	.tag.ok { color: var(--ok-text, #30d158); border-color: color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
-	.tag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
 	.quiet { flex: none; align-self: center; border: 0; padding: 4px 2px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
 	.quiet:hover:not(:disabled) { color: var(--text); }
 	.quiet.danger:hover:not(:disabled) { color: var(--danger-text, #ff6961); }

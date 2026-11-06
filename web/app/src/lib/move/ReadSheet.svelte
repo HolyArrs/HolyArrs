@@ -17,6 +17,7 @@
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
 	import StepCapsule from '../ui/StepCapsule.svelte';
+	import TestTag from '../ui/TestTag.svelte';
 	import { api, ApiError, message } from '../api.ts';
 	import { toasts } from '../toasts.svelte.ts';
 	import { getContext } from 'svelte';
@@ -59,7 +60,8 @@
 	let local = $state(true);
 	let useSaved = $state(true);
 	let error = $state('');
-	let answered = $state('');
+	// The answer of Check connection, shown as a tag.
+	let probe = $state<{ ok: boolean; text: string } | null>(null);
 	let checking = $state(false);
 	let ctrl: AbortController | null = null;
 	let form = $state<HTMLFormElement>();
@@ -82,7 +84,7 @@
 				backupPath = '';
 				local = true;
 				error = '';
-				answered = '';
+				probe = null;
 			}
 		}
 		wasOpen = open;
@@ -90,7 +92,7 @@
 
 	function changed() {
 		error = '';
-		answered = '';
+		probe = null;
 	}
 
 	function body(): Record<string, unknown> {
@@ -123,9 +125,12 @@
 		changed();
 		try {
 			const r = await api.post<{ app: { kind: string; version?: string } }>('/migrate/probe', body());
-			answered = `${appName(kind)}${r.app?.version ? ' ' + r.app.version : ''} answered. Ready to read.`;
+			probe = { ok: true, text: `${appName(kind)}${r.app?.version ? ' ' + r.app.version : ''}` };
 		} catch (err) {
-			if (!quiet(err)) error = message(err);
+			if (!quiet(err)) {
+				error = message(err);
+				probe = { ok: false, text: error };
+			}
 		} finally {
 			checking = false;
 		}
@@ -221,7 +226,7 @@
 	{#if busy}
 		<div class="cap" role="status"><StepCapsule tone="go" live fill={0.4} status="processing" word="Reading {appName(reading)}" detail="this can take a few minutes" testid="read-capsule" /></div>
 	{/if}
-	{#if answered}<p class="notice" role="status" data-testid="probe-ok">{answered}</p>{/if}
+	{#if probe}<p class="probe" data-testid={probe.ok ? 'probe-ok' : undefined}><TestTag ok={probe.ok} text={probe.text} app={appName(kind)} /></p>{/if}
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
@@ -245,7 +250,8 @@
 	}
 	.addr { display: block; max-width: min(260px, 46vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.cap { margin-top: 12px; }
-	.notice, .form-error { margin-top: 12px; }
+	.probe, .form-error { margin-top: 12px; }
+	.probe { margin-bottom: 0; display: flex; }
 	select.input { width: 260px; }
 	@media (max-width: 600px) {
 		select.input { width: min(260px, 46vw); }
