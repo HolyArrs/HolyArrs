@@ -586,7 +586,7 @@ test("Before you move lists only the problem groups, one line each, with Show", 
   await expect(before).toBeVisible();
   const rows = before.getByTestId("problem-row");
   await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText("Titles · 345 · folder not found here");
+  await expect(rows.first()).toContainText("345 titles · no folder here");
   await rows.first().getByRole("button", { name: /^Show Titles/ }).click();
   const list = p.getByRole("dialog", { name: "Titles" });
   await expect(list).toContainText("Missing 0");

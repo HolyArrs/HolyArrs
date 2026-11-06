@@ -49,18 +49,18 @@
 		)
 	);
 	function lineRow(l: Line, i: number) {
-		return { key: l.key + ':' + i, name: l.name, hint: l.detail, pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
+		return { key: l.key + ':' + i, name: l.name, hint: l.result === 'not_found' ? undefined : l.detail, pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
 	}
 </script>
 
-<Sheet bind:open title="Before you move" description="{plural(total, 'item')} will move. These need a look." size="md" placement="auto">
+<Sheet bind:open title="Before you move" description="{total} will move. These won't:" size="md" placement="auto">
 	<div data-testid="before-sheet">
 		{#if notice}<p class="notice warn" role="status">{notice}</p>{/if}
 		{#if problems.length > 0}
 			<ul class="rg">
 				{#each problems as p (p.key)}
 					<li class="rg-row" data-testid="problem-row">
-						<span class="rg-txt"><b>{p.label}</b> · {p.lines.length} · {resultWords(p.result).toLowerCase()}</span>
+						<span class="rg-txt"><b>{p.lines.length} {p.label.toLowerCase()}</b> · {resultWords(p.result).toLowerCase()}</span>
 						<button type="button" class="rg-show" onclick={() => onshow(p.label, p.lines, lineRow)} aria-label="Show {p.label}, {resultWords(p.result).toLowerCase()}">Show</button>
 					</li>
 				{/each}

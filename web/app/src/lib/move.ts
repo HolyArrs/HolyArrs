@@ -186,7 +186,7 @@ const words: Record<string, [string, string]> = {
 	matched: ['Matches one here', 'Matched'],
 	already: ['Already here', 'Already here'],
 	skipped: ['Left out', 'Left out'],
-	not_found: ['Folder not found here', 'Folder not found here'],
+	not_found: ['No folder here', 'No folder here'],
 	failed: ["Won't work", 'Failed']
 };
 const pastToBase: Record<string, string> = { created: 'create', adopted: 'adopt', changed: 'change' };

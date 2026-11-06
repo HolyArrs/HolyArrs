@@ -23,7 +23,8 @@
 		return {
 			key: l.key + ':' + i,
 			name: l.name,
-			hint: l.detail,
+			// The pill already says what happens; a missing folder needs no path text.
+			hint: l.result === 'not_found' ? undefined : l.detail,
 			pill: { word: resultWords(l.result, after, undo), tone: tone(l.result) },
 			look: needsLook(l.result)
 		};
