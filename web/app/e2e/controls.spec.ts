@@ -106,13 +106,15 @@ test('the whole-app restart asks first and can be cancelled', async () => {
 	await expect(page.getByRole('heading', { name: 'Danger zone', level: 1 })).toBeVisible();
 });
 
-test('"Just movies" on the first-run step is one click, and everything comes back', async () => {
+test('the parts step turns parts off, and everything comes back', async () => {
 	await page.goto('/welcome');
 	await expect(page.getByRole('heading', { name: 'What do you use?', level: 1 })).toBeVisible();
 	await expect(page.getByLabel('Movies', { exact: true })).toBeChecked();
 	await expect(page.getByLabel('TV shows', { exact: true })).toBeChecked();
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
-	await page.getByRole('button', { name: 'Just movies' }).click();
+	await page.getByLabel('TV shows', { exact: true }).uncheck();
+	await page.getByLabel('Subtitles', { exact: true }).uncheck();
+	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
 	for (const off of ['TV shows', 'Music', 'Subtitles', 'Requests']) await expect(part(off)).toHaveAttribute('data-state', 'off');
