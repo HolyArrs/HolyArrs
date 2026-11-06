@@ -5,12 +5,13 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
-	import EditTitleSheet from '#lib/EditTitleSheet.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import { splitSteps, type RenameStep } from '#lib/organise.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/format.ts';
-	import type { AlbumSummary, TitleView, TrackView } from '#lib/types.ts';
+	import type { AlbumSummary, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/types.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { albumChoices, albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind, word } from '#lib/music/music.ts';
@@ -171,9 +172,56 @@
 	let pickOpen = $state(false);
 	let pickScope = $state<{ label: string; query: string; body: Record<string, unknown> } | null>(null);
 	const pick = (s: typeof pickScope) => ((pickScope = s), (pickOpen = true));
-	let editOpen = $state(false);
 	let deleteOpen = $state(false);
 	let renameOpen = $state(false);
+
+	// Settings the movie way (Luis 2026-11-05): choices on the row, a row only when it can do something.
+	let rules = $state<PickRulesView[]>([]);
+	let folders = $state<LibraryFolder[]>([]);
+	let renameCount = $state(0);
+	$effect(() => {
+		if (!manage) return;
+		void api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules.filter((x) => x.kinds.includes('artist') || x.kinds.includes('music'))), () => {});
+		void api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders.filter((f) => f.kind === 'music')), () => {});
+	});
+	$effect(() => {
+		if (!manage || renameOpen) return;
+		void title?.id;
+		void api.get<{ steps: RenameStep[] }>(`/titles/${titleId}/rename`).then((r) => (renameCount = splitSteps(r.steps).change.length), () => (renameCount = 0));
+	});
+	// Quality: the three ready-made music sets, low to high, with short names on the control.
+	const qOrder = ['Any music', 'Lossy 320 or V0', 'Lossless first'];
+	const qShort: Record<string, string> = { 'Any music': 'Any', 'Lossy 320 or V0': 'Lossy', 'Lossless first': 'Lossless' };
+	const qHints: Record<string, string> = { 'Any music': 'Any quality, up to lossless', 'Lossy 320 or V0': 'MP3 320 or V0, small files', 'Lossless first': 'FLAC, MP3 320 until found' };
+	const qPresets = $derived(rules.filter((r) => r.preset && qOrder.includes(r.name)).sort((a, b) => qOrder.indexOf(a.name) - qOrder.indexOf(b.name)));
+	const qOthers = $derived(rules.filter((r) => !qPresets.includes(r)));
+	const qCustom = $derived(qOthers.find((r) => r.id === title?.pick_rules_id));
+	const qHint = $derived(qHints[title?.pick_rules_name ?? ''] ?? (qCustom ? 'Your set' : ''));
+	const setRules = (id: number) => {
+		if (id === title?.pick_rules_id) return;
+		return run('rules', async () => {
+			await api.put(`/titles/${titleId}`, { pick_rules_id: id });
+			await load();
+		}, '');
+	};
+	const qMenu = $derived<MenuItem[]>([
+		...(qOthers.length ? [{ kind: 'heading' as const, label: 'More sets' }, ...qOthers.map((r) => ({ label: r.name, checked: r.id === title?.pick_rules_id, onselect: () => void setRules(r.id) })), { kind: 'separator' as const }] : []),
+		{ label: 'New set', icon: 'plus', href: to('/settings/pick-rules/new') },
+		{ label: 'Edit sets', icon: 'tools', href: to(qCustom && !qCustom.preset ? `/settings/pick-rules/${qCustom.id}` : '/settings/pick-rules') }
+	]);
+	// Folder: only with another music folder to move to; moving asks first.
+	let moveTo = $state<LibraryFolder | null>(null);
+	const folderMenu = $derived<MenuItem[]>(folders.map((f) => ({ label: f.label, checked: f.id === title?.library_folder_id, onselect: () => { if (f.id !== title?.library_folder_id) moveTo = f; } })));
+	const curFolder = $derived(folders.find((f) => f.id === title?.library_folder_id));
+	async function moveFolder() {
+		const f = moveTo;
+		if (!f) return;
+		await run('move', async () => {
+			await api.post(`/titles/${titleId}/move`, { library_folder_id: f.id, apply: true });
+			moveTo = null;
+			await load();
+		}, `Moving the files to ${f.label} now.`);
+	}
 </script>
 
 {#if title}
@@ -190,7 +238,6 @@
 				</div>
 				{#if manage}
 					{#if missing}<button type="button" class="al-btn primary" disabled={busy === 'all'} onclick={() => search({}, 'all', 'Looking for every missing track.')}><Icon name="search" size={16} />Get all missing</button>{/if}
-					<button type="button" class="al-btn" onclick={() => pick(null)}><Icon name="grid" size={16} />Pick a release</button>
 				{/if}
 			</section>
 
@@ -271,10 +318,28 @@
 				<h3 class="al-h">Settings</h3>
 				<div class="al-rows">
 					<button type="button" class="al-rowbtn" disabled={busy === 'keep'} onclick={keepTitle}><span><b>Keep up to date</b><small>Grab new releases and upgrade when a better copy shows up</small></span><span class="al-switch" class:on={t.keep_up_to_date} aria-hidden="true"></span></button>
-					<button type="button" class="al-rowbtn" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{t.pick_rules_name ?? 'Quality'} · folder</small></span><Icon name="tools" size={16} /></button>
-					<button type="button" class="al-rowbtn" onclick={openKinds}><span><b>Album kinds</b><small>{kindsLine}</small></span><Icon name="music" size={16} /></button>
-					<button type="button" class="al-rowbtn" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
-					<button type="button" class="al-rowbtn" disabled={busy === 'refresh'} onclick={refresh}><span><b>Refresh details</b><small>Albums, tracks, names and pictures{t.refreshed_at ? ` · ${ago(t.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
+					<div class="al-rowbtn static q-row" data-testid="quality-row">
+						<span><b>Quality</b>{#if qHint}<small>{qHint}</small>{/if}</span>
+						<div class="q-seg" role="radiogroup" aria-label="Quality">
+							{#each qPresets as r (r.id)}
+								<button type="button" role="radio" aria-checked={r.id === t.pick_rules_id} class:on={r.id === t.pick_rules_id} title={r.name} disabled={busy === 'rules'} onclick={() => setRules(r.id)}>{qShort[r.name] ?? r.name}</button>
+							{/each}
+							<div class="q-more" class:on={!!qCustom}>
+								<Menu label={qCustom ? `Quality: ${qCustom.name}. Other sets` : 'Custom quality sets'} variant="button" width={230} items={qMenu}>{#snippet trigger()}<i>{qCustom?.name ?? 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu>
+							</div>
+						</div>
+					</div>
+					<button type="button" class="al-rowbtn" onclick={openKinds}><span><b>Album kinds</b><small>{kindsLine}</small></span><Icon name="chevronRight" size={16} /></button>
+					{#if folders.length > 1}
+						<div class="al-rowbtn static" data-testid="folder-row">
+							<span><b>Folder</b></span>
+							<div class="al-pick"><Menu label="Folder" variant="button" items={folderMenu} width={260}>{#snippet trigger()}<i>{curFolder?.label ?? 'Folder'}</i><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+						</div>
+					{/if}
+					{#if renameCount}
+						<button type="button" class="al-rowbtn" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>{renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
+					{/if}
+					<button type="button" class="al-rowbtn" disabled={busy === 'refresh'} onclick={refresh}><span><b>Refresh details</b><small>New albums and tracks{t.refreshed_at ? ` · ${ago(t.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 				</div>
 				<div class="al-rows danger">
 					<button type="button" class="al-rowbtn" onclick={() => (deleteOpen = true)}><span><b>Delete artist</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
@@ -285,12 +350,18 @@
 
 	{#if manage}
 		<ReleaseSheet bind:open={pickOpen} {titleId} name={t.name} scope={pickScope} onchosen={load} />
-		<EditTitleSheet bind:open={editOpen} title={t} onsaved={load} />
+		<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo?.label ?? ''}?`} description="Its files move to the new folder." size="sm" placement="center">
+			<p class="al-move-path">{moveTo?.path}</p>
+			<div class="al-move-actions">
+				<button type="button" class="al-btn" onclick={() => (moveTo = null)}>Cancel</button>
+				<button type="button" class="al-btn primary" disabled={busy === 'move'} onclick={moveFolder}>Move files</button>
+			</div>
+		</Sheet>
 		<DeleteSheet bind:open={deleteOpen} {titleId} name={t.name} kind="artist" ondone={() => ondeleted?.()} />
-		<Sheet bind:open={renameOpen} title="Rename files" description={t.name} placement="right" size="md">
+		<Sheet bind:open={renameOpen} title="Rename files" description={t.name} placement="center" size="md">
 			{#if renameOpen}<RenamePreview {titleId} onDone={() => { renameOpen = false; void load(); }} />{/if}
 		</Sheet>
-		<Sheet bind:open={kindsOpen} title="Album kinds" description={t.name} placement="right" size="md">
+		<Sheet bind:open={kindsOpen} title="Album kinds" description={t.name} placement="center" size="md">
 			<form class="al-kinds" onsubmit={saveKinds}>
 				<div class="field">
 					<label for="al-new">New albums</label>
@@ -408,7 +479,24 @@
 	.al-tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }
 	.al-tl li { display: flex; justify-content: space-between; gap: 12px; }
 	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: inherit; font: 600 14px/1 var(--font-ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-	.al-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
+	/* Static rows (choices inside) and the Quality control, same as a movie's Settings. */
+	.al-rowbtn.static { cursor: default; }
+	.al-rowbtn.static:hover { background: none; }
+	.al-rowbtn.static + .al-rowbtn, .al-rowbtn + .al-rowbtn.static { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.al-rowbtn.q-row { display: grid; gap: 10px; justify-content: stretch; }
+	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
+	.q-seg > button, .q-more :global(.trigger), .al-pick :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.q-seg > button.on, .q-more.on :global(.trigger) { background: color-mix(in srgb, var(--text) 16%, transparent); color: var(--text); }
+	.q-seg > button:hover:not(.on), .q-more:not(.on) :global(.trigger:hover) { color: var(--text); }
+	.q-more { flex: 0 0 auto; display: flex; }
+	.q-more :global(.ui-pop) { display: flex; flex: 1 1 auto; }
+	.q-seg i, .al-pick i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
+	.al-pick { flex: none; max-width: 55%; min-width: 0; }
+	.al-pick :global(.ui-pop) { display: flex; max-width: 100%; }
+	.al-pick :global(.trigger) { font-weight: 500; font-size: 14px; }
+	.al-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
+	.al-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
+	.al-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
 	.al-rows.danger :global(svg) { color: var(--fail-on-art); }
 	.al-rowbtn { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }

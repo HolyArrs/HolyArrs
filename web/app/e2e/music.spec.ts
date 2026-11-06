@@ -157,7 +157,8 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await axe(own, 'artist album kinds');
 	await kinds.getByRole('button', { name: 'Cancel' }).click();
 	await expect(kinds).toBeHidden();
-	for (const b of [/^Keep up to date/, /^Edit/, /^Rename files/, /^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
+	for (const b of [/^Keep up to date/, /^Album kinds/, /^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
+	await expect(lib.getByTestId('quality-row')).toBeVisible();
 	await expect(lib.getByRole('link', { name: 'All history' })).toHaveAttribute('href', /\/downloads\/history\?title=\d+/);
 });
 

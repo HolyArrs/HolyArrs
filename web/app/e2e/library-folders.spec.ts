@@ -83,18 +83,6 @@ function writeFiles(dir: string, rels: string[]) {
 	}
 }
 
-/** moveInEditSheet picks the new folder in the open Edit sheet and saves. */
-async function moveInEditSheet(page: Page, label: string, path: string) {
-	const sheet = page.getByTestId('edit-sheet');
-	const pick = sheet.getByRole('combobox', { name: /^Folder/ });
-	await expect(pick.locator('option', { hasText: `${label} · ${path}` })).toHaveCount(1);
-	await pick.selectOption({ label: `${label} · ${path}` });
-	await expect(sheet.getByText('Saving moves its files to the new folder.')).toBeVisible();
-	await sheet.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Moving the files to the new folder now.')).toBeVisible();
-	await expect(sheet).toBeHidden();
-}
-
 /** libraryFolderColumn opens the Library table for kind with the Folder column on and returns the title's row. */
 async function libraryFolderColumn(page: Page, kind: 'show' | 'artist', titleId: number) {
 	await page.goto(`/library?kind=${kind}&layout=table`);
@@ -148,7 +136,7 @@ test('Move a show with its episode files to a second show folder from the Folder
 	await expect(await libraryFolderColumn(page, 'show', id)).toContainText(join(two, name));
 });
 
-test('Move an artist with its album files to a second music folder from Edit on its Library page', async ({ page }) => {
+test('Move an artist with its album files to a second music folder from the Folder row on its Library page', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const one = join(tmp, 'lf-music-one');
@@ -163,10 +151,14 @@ test('Move an artist with its album files to a second music folder from Edit on 
 	const libraryTab = page.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' });
 	await page.goto(`/library/${id}`);
 	await libraryTab.click();
-	const edit = page.getByRole('button', { name: /^Edit\b.*folder/ });
-	await edit.click();
-	await expect(page.getByTestId('edit-sheet')).toContainText(join(one, name));
-	await moveInEditSheet(page, 'Music shelf two', two);
+	const folderRow = page.getByTestId('folder-row');
+	await expect(folderRow).toContainText('Music shelf one');
+	await folderRow.getByRole('button').click();
+	await page.getByRole('menuitemradio', { name: 'Music shelf two' }).or(page.getByRole('menuitem', { name: 'Music shelf two' })).click();
+	const confirm = page.getByRole('dialog', { name: 'Move to Music shelf two?' });
+	await expect(confirm).toContainText(two);
+	await confirm.getByRole('button', { name: 'Move files' }).click();
+	await expect(page.getByText('Moving the files to Music shelf two now.')).toBeVisible();
 
 	// Every track lands in the second folder in its album folder, and the old artist folder is gone.
 	await expect.poll(() => filesUnder(join(two, name)), { timeout: 20_000 }).toEqual(tracks);
@@ -175,11 +167,9 @@ test('Move an artist with its album files to a second music folder from Edit on 
 	const t = (await (await call('GET', `/titles/${id}`)).json()) as { folder_path: string };
 	expect(t.folder_path).toBe(join(two, name));
 
-	// Edit on the artist's Library page and the Library both show the new folder.
+	// The artist's Folder row and the Library both show the new folder.
 	await page.reload();
 	await libraryTab.click();
-	await edit.click();
-	await expect(page.getByTestId('edit-sheet')).toContainText(join(two, name));
-	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('folder-row')).toContainText('Music shelf two');
 	await expect(await libraryFolderColumn(page, 'artist', id)).toContainText(join(two, name));
 });
