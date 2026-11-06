@@ -126,3 +126,24 @@ func TestLibraryCopySlotsAreExactMovieVersion(t *testing.T) {
 		t.Fatalf("slots %#v err %v", ids, err)
 	}
 }
+
+func TestTitleCopiesGivesEachMovieItsMainFile(t *testing.T) {
+	s, _ := openTest(t, Options{})
+	arrival, av, af, _ := addMovieCopy(t, s, "Arrival", "hevc", "complete", true)
+	broken, _, _, _ := addMovieCopy(t, s, "Broken", "h264", "error", false)
+
+	got, err := TitleCopies(context.Background(), s.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, ok := got[arrival.ID]
+	if !ok || a.FileID != af.ID || a.VersionID != av.ID || a.Codec != "hevc" || a.Container != "matroska" || !a.Protected {
+		t.Fatalf("arrival %+v (found %v)", a, ok)
+	}
+	if len(a.AudioLanguages) != 2 || a.AudioLanguages[0] != "ja" {
+		t.Fatalf("audio %#v", a.AudioLanguages)
+	}
+	if b := got[broken.ID]; b.Codec != "unknown" || b.AudioLanguages == nil {
+		t.Fatalf("broken %+v", b)
+	}
+}

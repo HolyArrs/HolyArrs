@@ -289,3 +289,44 @@ func (s *Store) LibraryCopySlots(ctx context.Context, selection LibraryCopySelec
 	}
 	return ids, nil
 }
+
+// TitleCopy is a movie's main file as the Library list shows it: the codec,
+// container and audio languages, and the ids a copy search is asked with.
+type TitleCopy struct {
+	FileID         int64    `json:"file_id"`
+	VersionID      int64    `json:"version_id"`
+	Codec          string   `json:"codec"`
+	Container      string   `json:"container"`
+	AudioLanguages []string `json:"audio_languages"`
+	Protected      bool     `json:"protected"`
+}
+
+// TitleCopies reads every movie's main file (the main Version first) in one query.
+func TitleCopies(ctx context.Context, db Lister) (map[int64]TitleCopy, error) {
+	where, _, _ := libraryCopyWhere("")
+	rows, err := db.QueryContext(ctx, `SELECT t.id, f.id, v.id, `+libraryCopyCodecSQL+`,
+		coalesce(json_extract(f.media_info, '$.container'), ''), coalesce(json_extract(f.media_info, '$.audio_languages'), '[]'), f.protected
+		FROM files f JOIN versions v ON v.id=f.version_id JOIN titles t ON t.id=v.title_id WHERE `+where+`
+		ORDER BY t.id, v.is_main DESC, v.id, f.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64]TitleCopy{}
+	for rows.Next() {
+		var id int64
+		var c TitleCopy
+		var audio string
+		if err := rows.Scan(&id, &c.FileID, &c.VersionID, &c.Codec, &c.Container, &audio, &c.Protected); err != nil {
+			return nil, err
+		}
+		if _, ok := out[id]; ok {
+			continue
+		}
+		if json.Unmarshal([]byte(audio), &c.AudioLanguages) != nil || c.AudioLanguages == nil {
+			c.AudioLanguages = []string{}
+		}
+		out[id] = c
+	}
+	return out, rows.Err()
+}

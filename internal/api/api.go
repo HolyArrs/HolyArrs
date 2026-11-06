@@ -597,6 +597,9 @@ type TitleView struct {
 	// every file kept for it, across all Versions (Library table columns).
 	AddedAt   time.Time `json:"added_at"`
 	SizeBytes int64     `json:"size_bytes"`
+	// Copy is a movie's main file (codec, audio, ids for a copy search); only
+	// in the Library list, and only for people who manage the Library.
+	Copy *store.TitleCopy `json:"copy,omitempty"`
 	// LastActivity is the newest grab or import for the title, if any.
 	LastActivity *time.Time `json:"last_activity,omitempty"`
 	// Versions are the wanted copies (main first), such as HD and 4K.
@@ -714,6 +717,9 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	facts := factsOf(ctx)
 	if facts != nil {
 		v.SizeBytes = facts.sizes[t.ID]
+		if c, ok := facts.copies[t.ID]; ok {
+			v.Copy = &c
+		}
 		if at, ok := facts.activity[t.ID]; ok {
 			v.LastActivity = &at
 		}
@@ -879,6 +885,8 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []TitleView{}
+	who, signed := auth.From(r.Context())
+	manage := !signed || who.Has(auth.PermManageLibrary)
 	ctx, err := withTitleFacts(withLookupMemo(r.Context()), a.s.Store.Read())
 	if err == nil && len(ts) > 0 {
 		ctx, err = a.withTitleBatch(ctx)
@@ -901,6 +909,9 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		}
 		if v.Artist != nil {
 			v.Artist.Bio = a.keptArtistBio(r.Context(), v.Artist.MBID, t.Name)
+		}
+		if !manage {
+			v.Copy = nil
 		}
 		out = append(out, v)
 	}

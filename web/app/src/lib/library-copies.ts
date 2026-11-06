@@ -78,6 +78,16 @@ export function copiesQuery(filters: CopyFilters): string {
 	return `/library/copies?${params.toString()}`;
 }
 
+const languageNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'language' }) : null;
+/** languageName turns a language code (en, spa) into its English name; an unknown code stays as it is. */
+export function languageName(code: string): string {
+	try {
+		return languageNames?.of(code) ?? code;
+	} catch {
+		return code;
+	}
+}
+
 export function codecLabel(codec: string): string {
 	const labels: Record<string, string> = { unknown: 'Unknown', h264: 'H.264', hevc: 'HEVC', av1: 'AV1', vp9: 'VP9', mpeg2: 'MPEG-2', xvid: 'Xvid', vc1: 'VC-1' };
 	return labels[codec] ?? codec.toUpperCase();

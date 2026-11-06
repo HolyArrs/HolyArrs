@@ -96,13 +96,24 @@ describe('filter counts', () => {
 		expect(ts.filter((t) => passes(t, { ...f, asker: 'me' }, ctx)).map((t) => t.id)).toEqual([3]);
 		expect(ts.filter((t) => passes(t, { ...noFilter, series: 40 }, ctx)).map((t) => t.id)).toEqual([4]);
 	});
+	it('filters movies by codec and titles by missing subtitles', () => {
+		const copy = (codec: string) => ({ file_id: 1, version_id: 1, codec, container: 'matroska', audio_languages: ['en'], protected: false });
+		const films = [movie(10, 'HEVC film', { copy: copy('hevc') }), movie(11, 'H.264 film', { copy: copy('h264') }), movie(12, 'No file', {})];
+		const sub: FilterContext = { ...ctx, subsMissing: (t) => t.id === 11 };
+		expect(films.filter((t) => passes(t, { ...noFilter, codec: 'hevc' }, sub)).map((t) => t.id)).toEqual([10]);
+		expect(films.filter((t) => passes(t, { ...noFilter, subs: true }, sub)).map((t) => t.id)).toEqual([11]);
+		const c = filterCounts(films, { ...noFilter, subs: true }, sub);
+		// Codec counts follow the subtitles choice; the subtitles count ignores its own choice.
+		expect(Object.fromEntries(c.codecs)).toEqual({ h264: 1 });
+		expect(c.subs).toBe(1);
+	});
 });
 
 describe('saved filters', () => {
 	it('round-trip per member and library, filling choices added later', () => {
 		const store = memory();
 		saveSaved(3, 'show', [{ name: 'Missing, kept', filter: { ...noFilter, status: 'missing', kept: 'on' } }], store);
-		expect(loadSaved(3, 'show', store)).toEqual([{ name: 'Missing, kept', filter: { status: 'missing', kept: 'on', asker: 'anyone', series: 0 } }]);
+		expect(loadSaved(3, 'show', store)).toEqual([{ name: 'Missing, kept', filter: { status: 'missing', kept: 'on', asker: 'anyone', series: 0, codec: '', subs: false } }]);
 		expect(loadSaved(3, 'movie', store)).toEqual([]);
 		store.setItem('holyarrs.library-filters.3.movie', JSON.stringify([{ name: 'Old', filter: { status: 'have' } }, { bad: 1 }]));
 		expect(loadSaved(3, 'movie', store)).toEqual([{ name: 'Old', filter: { ...noFilter, status: 'have' } }]);

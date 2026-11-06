@@ -57,6 +57,8 @@ export interface TitleView {
 	added_at?: string;
 	/** Every kept file together, in bytes. */
 	size_bytes?: number;
+	/** A movie's main file (Library list, people who manage the Library only). */
+	copy?: TitleCopy;
 	/** The newest grab or import. */
 	last_activity?: string;
 	versions: VersionView[];
@@ -1085,4 +1087,15 @@ export interface NeverAddEntry {
 	name: string;
 	reason: string;
 	created_at: string;
+}
+
+/** TitleCopy is a movie's main file as the Library list shows it. */
+export interface TitleCopy {
+	file_id: number;
+	version_id: number;
+	/** h264, hevc, av1, vp9, mpeg2, xvid, vc1 or unknown. */
+	codec: string;
+	container: string;
+	audio_languages: string[];
+	protected: boolean;
 }

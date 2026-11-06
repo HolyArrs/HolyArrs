@@ -15,6 +15,7 @@ type titleFacts struct {
 	sizes    map[int64]int64
 	activity map[int64]time.Time
 	versions map[int64][]domain.Version
+	copies   map[int64]store.TitleCopy
 }
 
 type titleFactsKey struct{}
@@ -68,6 +69,9 @@ func withTitleFacts(ctx context.Context, db store.Lister) (context.Context, erro
 	}
 	for _, v := range vs {
 		f.versions[v.TitleID] = append(f.versions[v.TitleID], v)
+	}
+	if f.copies, err = store.TitleCopies(ctx, db); err != nil {
+		return ctx, err
 	}
 	return context.WithValue(ctx, titleFactsKey{}, f), nil
 }

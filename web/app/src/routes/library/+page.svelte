@@ -57,6 +57,7 @@
 	import type { MovieCollection, CollectionDetail } from '#lib/collections.ts';
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import { codecLabel, copyCodecs, languageName, type CopySearchPreview, type CopySearchResult } from '#lib/library-copies.ts';
 	import { deleteBody } from '#lib/organise.ts';
 	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/library-art.ts';
 
@@ -87,7 +88,12 @@
 		const kept = p.get('kept') as Kept;
 		const asker = p.get('requester');
 		const series = Number(p.get('series'));
+		// Codecs are known for movies only; subtitles for movies and TV shows (never Music).
+		const k = p.get('kind');
+		const codec = p.get('codec') ?? '';
 		return {
+			codec: k === 'movie' && codec !== 'all' && (copyCodecs as readonly string[]).includes(codec) ? codec : '',
+			subs: (k === 'movie' || k === 'show') && p.get('subs') === 'missing',
 			status: filters.some(([f]) => f === status) ? status : 'all',
 			kept: kept === 'on' || kept === 'off' ? kept : 'any',
 			asker: asker === 'me' || (asker && /^[1-9]\d*$/.test(asker)) ? asker : 'anyone',
@@ -122,6 +128,8 @@
 		set('kept', filter.kept === 'any' ? null : filter.kept);
 		set('requester', filter.asker === 'anyone' ? null : filter.asker);
 		set('series', filter.series ? String(filter.series) : null);
+		set('codec', filter.codec || null);
+		set('subs', filter.subs ? 'missing' : null);
 		set('q', q || null);
 		const d = defaultSort(kind === 'all' ? 'all' : kind);
 		set('sort', sort.key === d.key ? null : sort.key);
@@ -305,7 +313,9 @@
 		}
 		return [...people.values()];
 	}
-	const ctx = $derived<FilterContext>({ askers: (t) => linkedPeople(t).map((p) => p.id), me: myId, seriesOf: (t) => seriesOfTitle.get(t.id) });
+	// Titles with subtitles still wanted (movies and TV shows), from the same list the subtitles search uses.
+	let subsTitles = $state<Set<number> | null>(null);
+	const ctx = $derived<FilterContext>({ askers: (t) => linkedPeople(t).map((p) => p.id), me: myId, seriesOf: (t) => seriesOfTitle.get(t.id), subsMissing: (t) => !!subsTitles?.has(t.id) });
 	const ofThisKind = $derived(titles.filter((t) => ofKind(t, kind) && matchesTitleQuery(t, query, indexedIds)));
 	const counts = $derived(filterCounts(ofThisKind, filter, ctx));
 	const shown = $derived(sortTitles(ofThisKind.filter((t) => passes(t, filter, ctx)), sort.key, sort.dir));
@@ -404,7 +414,7 @@
 		saved = saved.filter((s) => s.name !== name);
 		saveSaved(myId, kind, saved);
 	}
-	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series;
+	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series && (a.codec ?? '') === (b.codec ?? '') && !!a.subs === !!b.subs;
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
@@ -422,12 +432,6 @@
 				name: 'Look after',
 				tools: [
 					...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', hint: 'Bring back or clear', icon: 'trash', tint: 'red', href: to('/library/deleted'), count: 'deleted' }] as Tool[]) : [])
-				] as Tool[]
-			},
-			{
-				name: 'Import',
-				tools: [
-					...(session.can('settings') ? ([{ label: 'Files by hand', hint: 'Match loose files', icon: 'upload', tint: 'green', href: to('/library/import-files') }] as Tool[]) : [])
 				] as Tool[]
 			}
 		].filter((g) => g.tools.length)
@@ -649,6 +653,55 @@
 		busy = false;
 		report('being looked for now', failed, ids.length);
 	}
+	// Find another copy (movies): the selected movies' main files, searched again with their Pick rules
+	// after a review. Protected files are left out.
+	const copyPicks = $derived(pickedShown.flatMap((t) => (t.copy && !t.copy.protected ? [{ file_id: t.copy.file_id, version_id: t.copy.version_id }] : [])));
+	let copyDialog = $state<HTMLDialogElement | null>(null);
+	let copyPreview = $state<CopySearchPreview | null>(null);
+	async function reviewCopies() {
+		busy = true;
+		try {
+			copyPreview = await api.post<CopySearchPreview>('/library/copies/search/preview', { selections: copyPicks });
+			copyDialog?.showModal();
+		} catch (e) {
+			toasts.push(plainReason(message(e)).text, 'fail');
+		} finally {
+			busy = false;
+		}
+	}
+	async function findCopies() {
+		if (!copyPreview) return;
+		busy = true;
+		try {
+			const r = await api.post<CopySearchResult>('/library/copies/search', { selections: copyPicks, review_token: copyPreview.review_token });
+			toasts.push(r.job_ids.length === 1 ? 'Looking for 1 copy now.' : `Looking for ${r.job_ids.length} copies now.`, 'ok');
+			copyDialog?.close();
+		} catch (e) {
+			toasts.push(plainReason(message(e)).text, 'fail');
+		} finally {
+			busy = false;
+		}
+	}
+	// Subtitles: which titles still want some (read at most once a minute); the search covers the shown kind.
+	let subsAt = 0;
+	let subsSearching = $state(false);
+	$effect(() => {
+		if (!canManage || !(kind === 'movie' || kind === 'show') || !partOn('subtitles')) return;
+		if (Date.now() - subsAt < 60_000) return;
+		subsAt = Date.now();
+		void api.get<{ titles: { id: number }[] }>('/subtitles/missing?limit=1').then((r) => (subsTitles = new Set((r.titles ?? []).map((x) => x.id))), () => {});
+	});
+	async function searchMissingSubs() {
+		subsSearching = true;
+		try {
+			const r = await api.post<{ queued: number }>('/subtitles/missing/search', { kind: kind === 'movie' ? 'movie' : 'episode' });
+			toasts.push(r.queued === 1 ? 'Looking for subtitles for 1 file now.' : `Looking for subtitles for ${r.queued} files now.`, 'ok');
+		} catch (e) {
+			toasts.push(plainReason(message(e)).text, 'fail');
+		} finally {
+			subsSearching = false;
+		}
+	}
 	async function refreshTitle(t: TitleView) {
 		try {
 			await api.post(`/titles/${t.id}/refresh`, {});
@@ -795,6 +848,8 @@
 			case 'added': return date(t.added_at);
 			case 'year': return t.year ? String(t.year) : '';
 			case 'size': return t.size_bytes ? bytes(t.size_bytes) : '';
+			case 'codec': return t.copy && t.copy.codec !== 'unknown' ? codecLabel(t.copy.codec) : '';
+			case 'audio': return (t.copy?.audio_languages ?? []).map(languageName).join(', ');
 			case 'genres': return (t.genres ?? []).slice(0, 3).join(', ');
 			case 'rating': return t.rating ?? '';
 			case 'path': return t.folder_path ?? '';
@@ -980,15 +1035,19 @@
 		{#if (view === 'table' || view === 'rows') && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
 		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
 		{#if canManage}
-			<span class="t-tool">
-				{#if phone}
+			{@const tools = toolGroups.flatMap((g) => g.tools)}
+			{#if tools.length}<span class="t-tool">
+				{#if tools.length === 1}
+					<!-- One tool left: the button goes straight to it. -->
+					{#if phone}<IconButton icon={tools[0].icon} label={tools[0].label} href={tools[0].href} data-testid="library-tools" />{:else}<Button size="md" icon={tools[0].icon} href={tools[0].href} data-testid="library-tools">{tools[0].label}</Button>{/if}
+				{:else if phone}
 					<IconButton icon="tools" label="Library tools" aria-haspopup="dialog" onclick={() => (toolsOpen = true)} data-testid="library-tools" />
 				{:else}
 					<Popover label="Library tools" variant="button" icon="tools" text="Tools" width={440} align="end" bind:open={toolsOpen}>
 						{#snippet children()}{@render toolTiles()}{/snippet}
 					</Popover>
 				{/if}
-			</span>
+			</span>{/if}
 			<span class="t-add"><Menu label="Add to the Library" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={190} align="end" /></span>
 		{/if}
 		</span>
@@ -1011,8 +1070,11 @@
 			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? 'Kept' : 'Not kept'} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
 			{#if filter.asker !== 'anyone'}<Chip label="Asked by {filter.asker === 'me' ? 'me' : (askers.find((p) => String(p.id) === filter.asker)?.name ?? 'someone')}" selected onclick={() => setFilter({ asker: 'anyone' })} onremove={() => setFilter({ asker: 'anyone' })} />{/if}
 			{#if filter.series}<Chip label="Movie series: {seriesName(filter.series)}" selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
+			{#if filter.codec}<Chip label={codecLabel(filter.codec)} selected onclick={() => setFilter({ codec: '' })} onremove={() => setFilter({ codec: '' })} />{/if}
+			{#if filter.subs}<Chip label="Missing subtitles" selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
 			{#if q}<Chip label="Search: {q}" selected onclick={() => { q = ''; syncUrl(); }} onremove={() => { q = ''; syncUrl(); }} />{/if}
 			<Button variant="plain" size="md" onclick={clearFilters}>Clear</Button>
+			{#if canManage && filter.subs && shown.length}<span class="t-miss"><Button size="md" icon="search" busy={subsSearching} onclick={searchMissingSubs} data-testid="search-missing-subtitles">Search subtitles</Button></span>{/if}
 			{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
 		</div>
 	{/if}
@@ -1237,7 +1299,7 @@
 											</div>
 										{/if}
 										{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">Last opened</span>{/if}
-										{#if requester}
+										{#if requester && view !== 'rows'}
 											<p class="row-notes">
 												<span class="requester" data-testid="requested-by">Asked by {requester}</span>
 											</p>
@@ -1264,6 +1326,7 @@
 			{#if moveItems.length > 1}<Menu label="Move the selected titles to another folder" variant="button" text="Move" icon="folder" items={moveItems} width={260} placement="above" />{/if}
 			{#if rulesItems.length}<Menu label="Pick rules for the selected titles" variant="button" text="Pick rules" icon="star" items={rulesItems} width={220} placement="above" />{/if}
 			<Button size="md" icon="search" disabled={busy || !pickedShown.length} onclick={() => searchTitles(pickedShown.map((t) => t.id))}>Search now</Button>
+			{#if kind === 'movie'}<Button size="md" icon="copy" disabled={busy || !copyPicks.length} onclick={reviewCopies} data-testid="select-find-copy">Find another copy</Button>{/if}
 			<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedShown.length} onclick={() => askDelete(pickedShown.map((t) => t.id))} data-testid="select-delete">Remove {pickedShown.length || ''}</Button>
 			<IconButton icon="x" label="Stop selecting" onclick={stopSelecting} />
 		</div>
@@ -1276,6 +1339,18 @@
 	<div class="modal-actions">
 		<Button onclick={() => deleteDialog?.close()} disabled={busy}>Cancel</Button>
 		<Button variant="destructive" icon="trash" disabled={busy} onclick={confirmDelete} data-testid="bulk-delete-confirm">Remove {deleteIds.length} {deleteIds.length === 1 ? 'title' : 'titles'}</Button>
+	</div>
+</dialog>
+
+<dialog bind:this={copyDialog} aria-labelledby="find-copy-title" class="modal" data-testid="find-copy" onclose={() => (copyPreview = null)}>
+	{#if copyPreview}
+		<h2 id="find-copy-title" class="h2">Find another copy of {copyPreview.copies.length} {copyPreview.copies.length === 1 ? 'movie' : 'movies'}?</h2>
+		<p class="small muted">{copyPreview.slot_count} {copyPreview.slot_count === 1 ? 'search' : 'searches'} with your Pick rules. Nothing downloads on its own.</p>
+		<ul class="copy-list">{#each copyPreview.copies as c (`${c.file_id}:${c.version_id}`)}<li><b>{c.title}</b><span>{c.version} · {codecLabel(c.codec)}</span></li>{/each}</ul>
+	{/if}
+	<div class="modal-actions">
+		<Button onclick={() => copyDialog?.close()} disabled={busy}>Cancel</Button>
+		<Button variant="primary" icon="search" {busy} onclick={findCopies} data-testid="find-copy-confirm">Search</Button>
 	</div>
 </dialog>
 
@@ -1363,6 +1438,18 @@
 					<Chip label="Anyone" selected={filter.asker === 'anyone'} onclick={() => setFilter({ asker: 'anyone' })} />
 					{#if myId}<Chip label="Me" count={loaded ? (counts.askers.get(myId) ?? 0) : undefined} selected={filter.asker === 'me'} onclick={() => setFilter({ asker: 'me' })} />{/if}
 					{#each askers.filter((p) => p.id !== myId) as p (p.id)}<Chip label={p.name} count={loaded ? (counts.askers.get(p.id) ?? 0) : undefined} selected={filter.asker === String(p.id)} onclick={() => setFilter({ asker: String(p.id) })} />{/each}
+				</div>
+			{/if}
+			{#if kind === 'movie' && counts.codecs.size}
+				<h3 class="sf-h">Codec</h3>
+				<div class="sf-chips">
+					{#each [...counts.codecs].toSorted((a, b) => b[1] - a[1]) as [c, n] (c)}<Chip label={codecLabel(c)} count={n} selected={filter.codec === c} onclick={() => setFilter({ codec: filter.codec === c ? '' : c })} />{/each}
+				</div>
+			{/if}
+			{#if (kind === 'movie' || kind === 'show') && subsTitles}
+				<h3 class="sf-h">Subtitles</h3>
+				<div class="sf-chips">
+					<Chip label="Missing" icon="subtitle" count={counts.subs} selected={!!filter.subs} onclick={() => setFilter({ subs: !filter.subs })} />
 				</div>
 			{/if}
 			{#if (kind === 'movie' || kind === 'all') && series.length}
@@ -1498,6 +1585,9 @@
 	@media (pointer: coarse) and (max-width: 767px) { .find { min-height: 44px; } }
 	.tool-gap { flex: 1 1 auto; }
 	.filter-btn.on :global(button[aria-haspopup]) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-text); }
+	.copy-list { display: grid; gap: 6px; max-height: 240px; overflow: auto; margin: 0 0 14px; padding: 0; list-style: none; font: var(--t-callout); }
+	.copy-list li { display: flex; justify-content: space-between; gap: 12px; }
+	.copy-list span { color: var(--text-muted); white-space: nowrap; }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 	.search-error { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--fail); font: var(--t-callout); }
 	.content { min-width: 0; }

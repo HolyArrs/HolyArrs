@@ -9,7 +9,7 @@ export type LibKind = 'movie' | 'show' | 'artist';
 
 export type ColumnId =
 	| 'status' | 'network' | 'rules' | 'next' | 'last' | 'seasons' | 'episodes' | 'added' | 'year' | 'size' | 'genres' | 'rating' | 'path'
-	| 'release' | 'runtime' | 'series' | 'albums' | 'tracks' | 'latest' | 'requested' | 'quality' | 'kept' | 'showstate' | 'activity';
+	| 'release' | 'runtime' | 'series' | 'albums' | 'tracks' | 'latest' | 'requested' | 'quality' | 'kept' | 'showstate' | 'activity' | 'codec' | 'audio';
 
 export interface Column {
 	id: ColumnId;
@@ -77,6 +77,8 @@ export function columnsFor(kind: LibKind): Column[] {
 		col('genres', 'Genres', '160px', false),
 		col('requested', 'Requested by', '130px', false),
 		col('quality', 'Quality', '120px', false),
+		col('codec', 'Codec', '84px', false),
+		col('audio', 'Audio', '150px', false),
 		col('kept', 'Kept up to date', '72px', false),
 		col('activity', 'Last activity', '110px', false, true),
 		col('path', 'Folder', 'minmax(160px, 1fr)', false)
@@ -246,14 +248,20 @@ export interface FilterState {
 	asker: string;
 	/** A movie series id, or 0 for every title. */
 	series: number;
+	/** A video codec (h264, hevc…) movies' main files must have, or '' for any. */
+	codec: string;
+	/** Only titles with subtitles still wanted. */
+	subs: boolean;
 }
 
-export const noFilter: FilterState = { status: 'all', kept: 'any', asker: 'anyone', series: 0 };
+export const noFilter: FilterState = { status: 'all', kept: 'any', asker: 'anyone', series: 0, codec: '', subs: false };
 
 export interface FilterContext {
 	askers: (t: TitleView) => number[];
 	me?: number;
 	seriesOf: (t: TitleView) => number | undefined;
+	/** Whether the title has subtitles still wanted. */
+	subsMissing?: (t: TitleView) => boolean;
 }
 
 export function passes(t: TitleView, f: FilterState, ctx: FilterContext, skip?: keyof FilterState): boolean {
@@ -264,6 +272,8 @@ export function passes(t: TitleView, f: FilterState, ctx: FilterContext, skip?: 
 		if (id === undefined || !ctx.askers(t).includes(id)) return false;
 	}
 	if (skip !== 'series' && f.series && ctx.seriesOf(t) !== f.series) return false;
+	if (skip !== 'codec' && f.codec && t.copy?.codec !== f.codec) return false;
+	if (skip !== 'subs' && f.subs && !ctx.subsMissing?.(t)) return false;
 	return true;
 }
 
@@ -272,6 +282,8 @@ export interface FilterCounts {
 	kept: Record<Kept, number>;
 	askers: Map<number, number>;
 	series: Map<number, number>;
+	codecs: Map<string, number>;
+	subs: number;
 }
 
 /**
@@ -284,7 +296,9 @@ export function filterCounts(ts: TitleView[], f: FilterState, ctx: FilterContext
 		status: { all: 0, missing: 0, not_out_yet: 0, better: 0, have: 0 },
 		kept: { any: 0, on: 0, off: 0 },
 		askers: new Map(),
-		series: new Map()
+		series: new Map(),
+		codecs: new Map(),
+		subs: 0
 	};
 	const statuses: Filter[] = ['all', 'missing', 'not_out_yet', 'better', 'have'];
 	for (const t of ts) {
@@ -298,12 +312,14 @@ export function filterCounts(ts: TitleView[], f: FilterState, ctx: FilterContext
 			const s = ctx.seriesOf(t);
 			if (s) out.series.set(s, (out.series.get(s) ?? 0) + 1);
 		}
+		if (t.copy && passes(t, f, ctx, 'codec')) out.codecs.set(t.copy.codec, (out.codecs.get(t.copy.codec) ?? 0) + 1);
+		if (passes(t, f, ctx, 'subs') && ctx.subsMissing?.(t)) out.subs++;
 	}
 	return out;
 }
 
 export function activeCount(f: FilterState): number {
-	return Number(f.status !== 'all') + Number(f.kept !== 'any') + Number(f.asker !== 'anyone') + Number(!!f.series);
+	return Number(f.status !== 'all') + Number(f.kept !== 'any') + Number(f.asker !== 'anyone') + Number(!!f.series) + Number(!!f.codec) + Number(!!f.subs);
 }
 
 /** Saved filters: a name and the choices, kept per member and library. */
