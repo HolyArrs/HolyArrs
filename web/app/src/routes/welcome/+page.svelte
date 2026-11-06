@@ -169,6 +169,12 @@
 			return { ...k, path: '', saved: f?.path ?? '', id: f?.id ?? null, editing: false, error: '' };
 		});
 	}
+	// The server's folder answers, in plain words.
+	function folderWords(text: string): string {
+		if (/absolute/i.test(text)) return 'Use the full folder path, like /data/movies.';
+		if (/already a library folder/i.test(text)) return 'This folder is already used, or sits inside one that is.';
+		return text;
+	}
 	// skip: keep the parts, add no folders now (Settings has them later).
 	async function saveMedia(skip: boolean) {
 		if (mediaOff) return;
@@ -208,12 +214,16 @@
 				r.id = f.id;
 				r.editing = false;
 			} catch (err) {
-				r.error = message(err);
+				r.error = folderWords(message(err));
 				failed = true;
 			}
 		}
 		busy = false;
 		if (!failed) go('downloader');
+		else {
+			await tick();
+			document.getElementById(`folder-${rows.find((r) => r.error)?.kind}`)?.focus();
+		}
 	}
 
 	// ---- Downloader ----
@@ -311,6 +321,8 @@
 			if (!askSignIn(reachWords(message(err)))) error = message(err);
 		} finally {
 			busy = false;
+			// A failed Connect: focus the field the answer is about (the key, or else the address).
+			if (dlError || (error && dlForm)) void tick().then(() => document.getElementById(!dlError && /key|password/i.test(error) ? 'dl-secret' : 'dl-url')?.focus());
 		}
 	}
 	// An app that signs in, turned down with no user name typed: ask for both,
@@ -375,9 +387,26 @@
 	// What a skipped step left to do, each a Settings page.
 	type Todo = { label: string; path: string };
 	let todo = $state<Todo[]>([]);
+	// What is set: a short line each ("Movies · /data/movies", "qBittorrent", "Prowlarr").
+	let haveSet = $state<string[]>([]);
 	async function loadTodo() {
-		const n = (path: string, key: string) => api.get<Record<string, unknown[]>>(path).then((r) => (r[key] ?? []).length, () => 1);
-		const [folders, dls, srcs] = await Promise.all([n('/library-folders', 'library_folders'), n('/downloaders', 'downloaders'), sourceCount()]);
+		const list = <T,>(path: string, key: string) => api.get<Record<string, T[]>>(path).then((r) => r[key] ?? [], () => null);
+		const [fl, dl, br, srcs] = await Promise.all([
+			list<LibraryFolder>('/library-folders', 'library_folders'),
+			list<DownloaderView>('/downloaders', 'downloaders'),
+			list<{ kind: string }>('/bridges', 'bridges'),
+			sourceCount()
+		]);
+		const kindName: Record<string, string> = { movie: 'Movies', show: 'TV shows', music: 'Music' };
+		const bridgeName: Record<string, string> = { prowlarr: 'Prowlarr', jackett: 'Jackett' };
+		haveSet = [
+			...(fl ?? []).map((f) => `${kindName[f.kind] ?? f.label} · ${f.path}`),
+			...(dl ?? []).map((d) => kindWords[d.kind] ?? d.name),
+			...(br ?? []).map((b) => bridgeName[b.kind] ?? b.kind)
+		];
+		// Unknown (the list failed to load) counts as set, so nothing is asked twice.
+		const folders = fl ? fl.length : 1;
+		const dls = dl ? dl.length : 1;
 		todo = [
 			...(folders ? [] : [{ label: 'Folders', path: '/settings/library-folders' }]),
 			...(dls ? [] : [{ label: 'Downloader', path: '/settings/downloaders' }]),
@@ -623,6 +652,13 @@
 		</div>
 	{:else}
 		<div class="card" data-testid="welcome-done">
+			{#if haveSet.length}
+				<ul class="todo" aria-label="Set up">
+					{#each haveSet as h (h)}
+						<li><span class="todo-row"><span class="set-name"><span class="set-tick" aria-hidden="true"><Icon name="check" size={14} stroke={2.5} /></span><span>{h}</span></span></span></li>
+					{/each}
+				</ul>
+			{/if}
 			{#if todo.length}
 				<ul class="todo" aria-label="Still to do">
 					{#each todo as t (t.label)}
@@ -806,7 +842,7 @@
 	.conn-text { flex: 1; min-width: 0; }
 	.conn-text b { display: block; font: 600 15px/1.3 var(--font-ui); color: var(--text); }
 	.conn-text .addr { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); overflow-wrap: anywhere; }
-	.quiet { flex: none; align-self: center; border: 0; padding: 4px 2px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
+	.quiet { flex: none; align-self: center; display: inline-flex; align-items: center; min-height: 32px; border: 0; padding: 0 8px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
 	.quiet:hover:not(:disabled) { color: var(--text); }
 	.quiet.danger:hover:not(:disabled) { color: var(--danger-text, #ff6961); }
 	.row-acts { display: flex; gap: 16px; padding: 6px 4px 0; }
@@ -824,11 +860,14 @@
 	.head h1:focus { outline: none; }
 	/* Done with steps left: each one a row that opens its Settings page. */
 	.todo { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 8px; }
-	.todo a { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); font: 600 15px/1.2 var(--font-ui); text-decoration: none; }
+	.todo a, .todo-row { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); font: 600 15px/1.2 var(--font-ui); text-decoration: none; }
 	@media (hover: hover) { .todo a:hover { border-color: var(--line-strong); } }
 	.todo a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.todo :global(svg) { color: var(--text-muted); }
 	.todo-end { display: inline-flex; align-items: center; gap: 6px; }
+	.set-name { display: inline-flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; padding: 12px 0; }
+	.set-tick { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+	.todo .set-tick :global(svg) { color: #fff; }
 	.todo-state { color: var(--text-muted); font: 500 14px/1.2 var(--font-ui); }
 	/* Import: the move flow's cards stack inside the glass with plain gaps. */
 	.move { display: flex; flex-direction: column; gap: 18px; }
