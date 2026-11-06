@@ -25,6 +25,8 @@ export interface Me {
 	outside_recent?: boolean;
 	/** False for someone who joined through a media server and set no password yet. */
 	has_password?: boolean;
+	/** The owner has not finished the first-run wizard yet. */
+	setup_open?: boolean;
 	/** Address of my profile picture, or null. */
 	avatar?: string | null;
 	/** Age-rating limit ('' = none; set means a Kid account). */
@@ -68,6 +70,8 @@ export function createSession(client: Client = defaultClient) {
 		localRecent: boolean;
 		outsideRecent: boolean;
 		hasPassword: boolean;
+		/** The owner has not finished the first-run wizard: every page sends them back to it. */
+		setupOpen: boolean;
 		/** Address of my profile picture; null shows the initials. */
 		avatar: string | null;
 		/** Age-rating limit; '' means none. A Kid has one. */
@@ -94,6 +98,7 @@ export function createSession(client: Client = defaultClient) {
 		localRecent: false,
 		outsideRecent: false,
 		hasPassword: true,
+		setupOpen: false,
 		avatar: null,
 		maxRating: '',
 		ways: ['password'],
@@ -152,6 +157,7 @@ export function createSession(client: Client = defaultClient) {
 		s.localRecent = !!me.local_recent;
 		s.outsideRecent = !!me.outside_recent;
 		s.hasPassword = me.has_password ?? true;
+		s.setupOpen = !!me.setup_open;
 		s.avatar = me.avatar ?? null;
 		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
@@ -169,6 +175,7 @@ export function createSession(client: Client = defaultClient) {
 		s.localRecent = false;
 		s.outsideRecent = false;
 		s.hasPassword = true;
+		s.setupOpen = false;
 		s.avatar = null;
 		s.maxRating = '';
 		try {

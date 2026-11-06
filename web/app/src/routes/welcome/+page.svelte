@@ -81,7 +81,7 @@
 	const DONE_KEY = 'holyarrs.welcome.done';
 	function wizardDone(): boolean {
 		try {
-			return sessionStorage.getItem(DONE_KEY) === '1';
+			return !session.s.setupOpen && sessionStorage.getItem(DONE_KEY) === '1';
 		} catch {
 			return false;
 		}
@@ -150,7 +150,8 @@
 				history.go(-n);
 			});
 		}
-		await api.post('/auth/setup/done').catch(() => {});
+		// Finished: the rest of the app opens (a failed save keeps the owner here).
+		await api.post('/auth/setup/done').then(() => (session.s.setupOpen = false), () => {});
 		await goto(to(path), { replace: true }).finally(loaderReady);
 	}
 

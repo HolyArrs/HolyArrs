@@ -1370,9 +1370,16 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	// People who joined through a media server have no password until they set one.
 	hasPassword := true
 	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash != '' FROM users WHERE id = ?", who.UserID).Scan(&hasPassword)
+	// The owner stays in the first-run wizard until it is finished.
+	setupOpen := false
+	if who.Role == RoleOwner {
+		var done string
+		_ = a.s.Read().QueryRowContext(r.Context(), "SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, settingFirstRunDone).Scan(&done)
+		setupOpen = done != "1"
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "has_password": hasPassword,
+		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "setup_open": setupOpen, "has_password": hasPassword,
 		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 

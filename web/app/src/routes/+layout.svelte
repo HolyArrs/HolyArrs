@@ -352,6 +352,11 @@
 			const back = path + page.url.search;
 			void goto(to(back && back !== '/' ? `/login?next=${encodeURIComponent(back)}` : '/login'), { replace: true });
 		}
+		// The owner finishes the first-run wizard before the rest of the app opens.
+		if (st === 'signed_in' && session.s.setupOpen && !firstRunWelcome && path !== '/login') {
+			void goto(to('/welcome?first=1'), { replace: true });
+			return;
+		}
 		if (st === 'signed_in' && !bare && !pageAllowed(path)) {
 			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref()), { replace: true });
 		}
@@ -438,7 +443,7 @@
 		try {
 			await session.logout();
 		} catch {
-			toasts.push('Could not confirm sign-out with the server.', 'fail');
+			toasts.push('Couldn’t confirm sign-out', 'fail');
 		}
 		void goto(to('/login'));
 	}
@@ -446,9 +451,9 @@
 	async function signOut() {
 		try {
 			await session.logout();
-			toasts.push('Signed out.');
+			toasts.push('Signed out');
 		} catch {
-			toasts.push('Could not confirm sign-out with the server.', 'fail');
+			toasts.push('Couldn’t confirm sign-out', 'fail');
 		}
 	}
 
