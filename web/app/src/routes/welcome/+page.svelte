@@ -173,7 +173,8 @@
 	function folderWords(text: string): string {
 		if (/absolute/i.test(text)) return 'Use the full folder path, like /data/movies.';
 		if (/already a library folder/i.test(text)) return 'This folder is already used, or sits inside one that is.';
-		return text;
+		if (/does not exist|not a folder|no such file/i.test(text)) return "That folder doesn't exist. Check the path.";
+		return text ? text[0].toUpperCase() + text.slice(1) : text;
 	}
 	// skip: keep the parts, add no folders now (Settings has them later).
 	async function saveMedia(skip: boolean) {
@@ -564,10 +565,11 @@
 							</label>
 							{#if media[r.part]}
 								{#if r.saved && !r.editing}
-									<div class="fsaved"><span class="mono">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={() => { r.path = r.saved; r.editing = true; }} aria-label="Change {r.label} folder">Change</button></div>
+									<div class="fsaved"><span class="mono">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label="Change {r.label} folder">Change</button></div>
 								{:else}
 									<input id="folder-{r.kind}" class="input mono" bind:value={r.path} oninput={() => (r.error = '')} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
 									{#if r.error}<p class="form-error" id="folder-{r.kind}-error" role="alert">{r.error}</p>{/if}
+									{#if r.editing && r.saved}<button type="button" class="quiet keep" disabled={busy} onclick={() => { r.path = r.saved; r.editing = false; r.error = ''; }}>Keep {r.saved}</button>{/if}
 								{/if}
 							{/if}
 						</div>
@@ -853,6 +855,7 @@
 	.conn-text { flex: 1; min-width: 0; }
 	.conn-text b { display: block; font: 600 15px/1.3 var(--font-ui); color: var(--text); }
 	.conn-text .addr { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); overflow-wrap: anywhere; }
+	.quiet.keep { align-self: flex-start; padding-left: 0; overflow-wrap: anywhere; }
 	.quiet { flex: none; align-self: center; display: inline-flex; align-items: center; min-height: 32px; border: 0; padding: 0 8px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
 	.quiet:hover:not(:disabled) { color: var(--text); }
 	.quiet.danger:hover:not(:disabled) { color: var(--danger-text, #ff6961); }

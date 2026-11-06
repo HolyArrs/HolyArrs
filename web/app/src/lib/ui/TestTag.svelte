@@ -17,9 +17,9 @@
 </script>
 
 {#if ok}
-	<span class="testtag ok" role="status" title={hover || text || undefined} data-testid={testid}><Icon name="check" size={12} stroke={2.5} />{testLabel(text, app, extra)}</span>
+	<span class="testtag ok" title={hover || text || undefined} data-testid={testid}><Icon name="check" size={12} stroke={2.5} />{testLabel(text, app, extra)}</span>
 {:else}
-	<span class="testtag bad" role="status" title={hover || text || undefined} data-testid={testid}>Not connected</span>
+	<span class="testtag bad" title={hover || text || undefined} data-testid={testid}>Not connected</span>
 {/if}
 
 <style>

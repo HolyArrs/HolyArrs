@@ -116,6 +116,7 @@
 	h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	p { margin-top: 4px; color: var(--text-muted); font: var(--t-callout); }
 	.body { padding: 8px 22px 22px; overflow: auto; overscroll-behavior: contain; }
+	@media (pointer: coarse), (max-width: 600px) { footer :global(.ui-btn) { min-height: 44px; } }
 	footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 14px 22px calc(18px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
 	.ui-sheet::backdrop { background: var(--scrim); }
 	.ui-sheet[open] { animation: sheet-in var(--dur) var(--ease-spring) both; }
