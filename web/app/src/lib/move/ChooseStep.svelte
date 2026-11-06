@@ -160,6 +160,28 @@
 
 	// The reconnect list: Sources split into Usenet and Torrent, Downloaders with what each needs.
 	let keysOpen = $state(false);
+	// Not moved, by the app it came from; an app opens its reasons, each once with a count.
+	let nmOpen = $state(false);
+	let nmApp = $state<string | null>(null);
+	const nmApps = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const x of plan?.not_moved ?? []) {
+			const k = x.from.split(' ')[0] ?? '';
+			m.set(k, (m.get(k) ?? 0) + 1);
+		}
+		return [...m].sort((a, b) => b[1] - a[1]);
+	});
+	const nmReasons = $derived.by(() => {
+		const m = new Map<string, { what: string; why: string; n: number }>();
+		for (const x of plan?.not_moved ?? []) {
+			if ((x.from.split(' ')[0] ?? '') !== nmApp) continue;
+			const k = x.what + '|' + x.why;
+			const r = m.get(k);
+			if (r) r.n++;
+			else m.set(k, { what: x.what, why: x.why, n: 1 });
+		}
+		return [...m.values()].sort((a, b) => b.n - a.n);
+	});
 	let keysOf = $state<'sources' | 'downloaders'>('sources');
 	function openKeys(k: 'sources' | 'downloaders') {
 		keysOf = k;
@@ -377,7 +399,7 @@
 						<ul class="box list tail">
 							<li class="mrow" data-testid="not-moved-row">
 								<span class="txt one"><span class="name">Not moved</span> <span class="sub">{plural(plan.not_moved.length, 'setting')} with no match here</span></span>
-								<button type="button" class="quiet" onclick={() => onshow('Not moved', plan?.not_moved ?? [], (x, i) => ({ key: x.from + i, name: x.what, hint: `${groupLabels[x.group] ?? 'Other settings'} · ${x.why}` }))}>Show</button>
+								<button type="button" class="quiet" onclick={() => { nmApp = null; nmOpen = true; }}>Show</button>
 							</li>
 						</ul>
 					{/if}
@@ -401,7 +423,32 @@
 	</div>
 </Sheet>
 
+<Sheet bind:open={nmOpen} title={nmApp ? `Not moved · ${appName(nmApp)}` : 'Not moved'} size="md">
+	{#if !nmApp}
+		<p class="sub nm-lead">HolyArrs handles these its own way. Nothing to do.</p>
+		<ul class="box list" data-testid="not-moved-apps">
+			{#each nmApps as [k, n] (k)}
+				<li><button type="button" class="nm-row" onclick={() => (nmApp = k)}><b>{appName(k) || 'Other'}</b><span class="count">{n}</span><Icon name="chevronRight" size={15} /></button></li>
+			{/each}
+		</ul>
+	{:else}
+		<button type="button" class="quiet nm-back" onclick={() => (nmApp = null)}><Icon name="chevronLeft" size={15} />All apps</button>
+		<ul class="box list">
+			{#each nmReasons as r (r.what + r.why)}
+				<li class="mrow"><span class="txt"><span class="name one">{r.what}</span><span class="sub">{r.why}</span></span>{#if r.n > 1}<span class="count">×{r.n}</span>{/if}</li>
+			{/each}
+		</ul>
+	{/if}
+</Sheet>
+
 <style>
+	.nm-lead { margin: 0 2px 10px; }
+	.nm-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 0; background: none; color: var(--text); font: var(--t-callout); text-align: left; cursor: pointer; }
+	.nm-row b { flex: 1; font-weight: 600; }
+	.nm-row:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+	.nm-row:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 12px; }
+	li + li > .nm-row { border-top: 1px solid var(--line); }
+	.nm-back { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 10px; }
 	.cards { display: grid; gap: 10px; }
 	.card1 { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
 	.gnote { margin-left: 10px; color: var(--text-muted); font: var(--t-footnote); }
