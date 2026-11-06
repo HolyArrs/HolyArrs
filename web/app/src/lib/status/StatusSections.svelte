@@ -311,8 +311,10 @@
 		<section class="st-plate" aria-labelledby="s-story">
 			<h2 id="s-story">Why HolyArrs</h2>
 			<div class="story">
-				<p>Running a media server meant running six apps next to your downloader: one each for shows, movies, music, subtitles, indexers and requests. Each had its own settings, its own logins and its own idea of what was going on.</p>
-				<p>HolyArrs puts the whole trip in one place, from someone asking for a title to it showing up on the media server.</p>
+				<p>For years my media server meant six apps running next to my downloader: one each for shows, movies, music, subtitles, indexers and requests. I loved what they made possible, but each had its own settings, its own logins and its own idea of what was going on.</p>
+				<p>So I built the one place I always wanted. HolyArrs carries the whole trip, from someone asking for a title to it showing up on your media server, and every screen in it was made with real care.</p>
+				<p>Thank you for running it, for testing it, and for trusting it with your library. Every bug you report and every idea you share makes it better for everyone.</p>
+				<p class="sign">Luis</p>
 			</div>
 		</section>
 	{/if}
@@ -428,4 +430,5 @@
 		.tbl.jobs .k::after { content: ' '; }
 	}
 	.clock { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+	.sign { font-weight: 600; color: var(--text); }
 </style>
