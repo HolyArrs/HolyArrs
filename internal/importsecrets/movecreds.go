@@ -15,17 +15,20 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// Pending move credentials live in the move_credentials table: an old
-// app's address and key, saved from the secrets file for the Move tool,
-// as one vault secret each, used by one successful read and then deleted.
+// Move credentials live in the move_credentials table: an old app's
+// address and key (qBittorrent: or its sign-in), saved from the secrets
+// file or by a successful read with a typed key, as one vault secret
+// each. They are kept for "Read again" until a move finishes.
 
 // MoveKinds are the old apps a credential may be saved for.
-var MoveKinds = []string{"radarr", "sonarr", "lidarr", "prowlarr", "bazarr", "seerr"}
+var MoveKinds = []string{"radarr", "sonarr", "lidarr", "prowlarr", "bazarr", "seerr", "overseerr", "qbittorrent", "sabnzbd"}
 
-// MoveCredential is one old app's address and key.
+// MoveCredential is one old app's address and key (or sign-in).
 type MoveCredential struct {
 	Address           string `json:"address"`
 	APIKey            string `json:"api_key"`
+	Username          string `json:"username,omitempty"`
+	Password          string `json:"password,omitempty"`
 	AllowLocalNetwork bool   `json:"allow_local_network"`
 }
 

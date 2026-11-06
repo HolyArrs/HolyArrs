@@ -354,7 +354,8 @@
 	function onread(r: ReadAnswer, kind: AppKind, usedSaved: boolean) {
 		snapshots = [r.snapshot, ...snapshots.filter((x) => x.id !== r.snapshot.id)];
 		picked = [...picked.filter((id) => id !== r.snapshot.id), r.snapshot.id];
-		if (usedSaved) savedKeys = savedKeys.filter((x) => x.kind !== kind);
+		// The server keeps the key until a move finishes: ask what it keeps now.
+		void loadSaved();
 		changed();
 		const what = countWords(kind, r.snapshot.counts, 1);
 		const keys = r.needs_reentry?.length ?? 0;
@@ -387,6 +388,8 @@
 			picked = picked.filter((x) => x !== s.id);
 			changed();
 			forgetOpen = false;
+			// Forgetting a read forgets the key kept for that app too.
+			void loadSaved();
 		} catch (err) {
 			if (!quiet(err)) forgetError = message(err);
 		} finally {
@@ -541,6 +544,8 @@
 		if (m.state === 'undone') toasts.push(`Move ${m.id} undone.`, 'ok');
 		else if (m.undo_state === 'failed') toasts.push(`The undo of move ${m.id} stopped. Try it again.`, 'fail');
 		else toasts.push(`Move ${m.id} finished.`, m.state === 'done' ? 'ok' : 'fail');
+		// A finished move forgets the kept keys.
+		if (m.state === 'done') void loadSaved();
 		if (m.state !== 'undone' && !m.undo_state) {
 			// A finished move needs a new test before another one: the reads
 			// it used are switched off.

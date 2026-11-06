@@ -663,7 +663,7 @@ func (r *run) moveCredentials() {
 				continue
 			}
 		}
-		r.done(item, "saved for the Move tool; used once, then forgotten")
+		r.done(item, "saved for the Move tool; forgotten when a move finishes")
 	}
 }
 

@@ -1864,8 +1864,20 @@ func (m *Mover) setState(ctx context.Context, id int64, state string, rep *Repor
 			_, err := tx.Exec("UPDATE moves SET state = 'undone', undo_state = '', report = ?, undone_at = ? WHERE id = ?", string(b), store.FormatTime(m.now()), id)
 			return err
 		}
-		_, err := tx.Exec("UPDATE moves SET state = ?, report = ?, finished_at = ? WHERE id = ?", state, string(b), store.FormatTime(m.now()), id)
-		return err
+		if _, err := tx.Exec("UPDATE moves SET state = ?, report = ?, finished_at = ? WHERE id = ?", state, string(b), store.FormatTime(m.now()), id); err != nil {
+			return err
+		}
+		if state == "done" {
+			// A finished move forgets every old-app key kept for "Read
+			// again" (importsecrets' move credentials and their vault rows).
+			if _, err := tx.Exec("DELETE FROM secrets WHERE id IN (SELECT secret_id FROM move_credentials)"); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("DELETE FROM move_credentials"); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

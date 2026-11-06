@@ -377,7 +377,8 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
 
 // 3.5.13: `holyarrs import-secrets` while HolyArrs runs goes through its
 // API with an owner key; the old Radarr's key is saved for the Move tool,
-// offered without being shown, used for one read and then forgotten.
+// offered without being shown, and kept for Read again until a move
+// finishes (Luis 2026-11-05: "Keep key until moved").
 test("import a made-up secrets file, then read Radarr with the saved key", async () => {
   const tmp = join(dirname(fileURLToPath(import.meta.url)), ".tmp");
   const me = (await (await page.request.get("/api/v1/auth/me")).json()) as {
@@ -438,7 +439,30 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   await expect(sheet).toBeHidden();
   await expect(page.getByTestId("read-row")).toHaveCount(before + 1);
   const left = await page.request.get("/api/v1/migrate/saved-keys");
-  expect(await left.text()).not.toContain("radarr");
+  expect(await left.text()).toContain(`"kind":"radarr"`);
+  expect(await left.text()).not.toContain(oldKey);
+
+  // Read again: the app is locked, the kept key is used without asking.
+  await expect(sheet).toBeHidden();
+  await page.getByRole("button", { name: "Read Radarr again" }).first().click();
+  const again = readSheet(page);
+  await expect(again).toBeVisible();
+  await expect(again.getByLabel("App", { exact: true })).toBeDisabled();
+  await expect(again.getByTestId("use-saved-key")).toHaveCount(0);
+  await expect(again.getByTestId("saved-address")).toHaveText(`http://127.0.0.1:${oldRadarrPort}`);
+  await expect(again).toContainText("Saved key");
+  await expect(again.getByLabel("API key", { exact: true })).toHaveCount(0);
+  // A different key is one quiet link away; Cancel leaves it as it was.
+  await again.getByRole("button", { name: "Use a different key" }).click();
+  await expect(again.getByLabel("API key", { exact: true })).toBeVisible();
+  await again.getByRole("button", { name: "Cancel" }).click();
+  await expect(again).toBeHidden();
+  await page.getByRole("button", { name: "Read Radarr again" }).first().click();
+  await expect(again.getByTestId("saved-address")).toBeVisible();
+  await again.getByRole("button", { name: "Read Radarr" }).click();
+  await expect(again).toBeHidden();
+  await expect(page.getByTestId("read-row")).toHaveCount(before + 2);
+  expect(await (await page.request.get("/api/v1/migrate/saved-keys")).text()).toContain(`"kind":"radarr"`);
   expect(await page.content()).not.toContain(oldKey);
 });
 

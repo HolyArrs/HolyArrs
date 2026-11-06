@@ -633,3 +633,32 @@ func TestMoveOutsideLists(t *testing.T) {
 		t.Fatalf("movies off %+v", got)
 	}
 }
+
+// A finished move forgets every old-app key kept for "Read again".
+func TestFinishedMoveForgetsKeptKeys(t *testing.T) {
+	l := newMoveLab(t)
+	err := l.st.Write(context.Background(), func(tx *sql.Tx) error {
+		for i, kind := range []string{"radarr", "qbittorrent"} {
+			id := int64(9000 + i)
+			if _, err := tx.Exec("INSERT INTO secrets (id, created_at, created_by, updated_at, updated_by, kind, value) VALUES (?, '', '', '', '', 'move_credential', 'sealed')", id); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("INSERT INTO move_credentials (kind, secret_id, created_at, created_by) VALUES (?, ?, '', '')", kind, id); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mv := l.move(t, Choices{}); mv.State != "done" {
+		t.Fatalf("move %s", mv.State)
+	}
+	if n := l.count(t, "SELECT count(*) FROM move_credentials"); n != 0 {
+		t.Fatalf("%d keys kept after the move", n)
+	}
+	if n := l.count(t, "SELECT count(*) FROM secrets WHERE kind = 'move_credential'"); n != 0 {
+		t.Fatalf("%d vault rows kept after the move", n)
+	}
+}

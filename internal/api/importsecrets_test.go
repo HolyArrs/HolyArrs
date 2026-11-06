@@ -1,17 +1,11 @@
 package api
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
-	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/importsecrets"
@@ -89,8 +83,8 @@ func TestImportSecretsRoutes(t *testing.T) {
 		t.Fatalf("tvdb answered %s", b)
 	}
 
-	// The Move screen sees the saved key without the key, reads with it
-	// once, and then it is gone.
+	// The Move screen sees the saved key without the key, and reads with
+	// it as often as it likes.
 	b := r.owner.call("GET", "/api/v1/migrate/saved-keys", "", 200)
 	if !strings.Contains(string(b), `"kind":"radarr"`) || strings.Contains(string(b), radarrKey) {
 		t.Fatalf("saved %s", b)
@@ -112,10 +106,10 @@ func TestImportSecretsRoutes(t *testing.T) {
 	if strings.Contains(string(b), radarrKey) {
 		t.Fatal("key answered")
 	}
-	if b := r.owner.call("GET", "/api/v1/migrate/saved-keys", "", 200); strings.Contains(string(b), "radarr") {
-		t.Fatalf("still saved after a read %s", b)
+	if b := r.owner.call("GET", "/api/v1/migrate/saved-keys", "", 200); !strings.Contains(string(b), `"kind":"radarr"`) || strings.Contains(string(b), radarrKey) {
+		t.Fatalf("saved key gone after a read %s", b)
 	}
-	r.owner.call("POST", "/api/v1/migrate/read", `{"kind":"radarr","use_saved_key":true}`, 400)
+	r.owner.call("POST", "/api/v1/migrate/read", `{"kind":"radarr","use_saved_key":true}`, 201)
 
 	// A credential saved without the local-network leave cannot be widened
 	// by the request: the fake on this machine is then not dialled.
@@ -172,115 +166,5 @@ func TestLocalSkipCannotReadSavedAddresses(t *testing.T) {
 		if resp.StatusCode != 403 {
 			t.Fatalf("%s %s: %d", tc.method, tc.path, resp.StatusCode)
 		}
-	}
-}
-
-func TestSavedKeyReadAndSnapshotAreAtomic(t *testing.T) {
-	r := newAskRig(t)
-	key := "atomic-test-radarr-key"
-	u := fakeRadarr(t, key)
-	body, _ := json.Marshal(map[string]any{"file": map[string]any{"version": 1, "radarr": map[string]any{
-		"address": u, "api_key": key, "allow_local_network": true,
-	}}})
-	r.owner.call("POST", "/api/v1/settings/import-secrets", string(body), 200)
-	err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`CREATE TRIGGER refuse_move_delete BEFORE DELETE ON move_credentials BEGIN SELECT RAISE(ABORT, 'test refusal'); END`)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	r.owner.call("POST", "/api/v1/migrate/read", `{"kind":"radarr","use_saved_key":true}`, 500)
-	var n int
-	if err := r.st.Read().QueryRow("SELECT count(*) FROM migrate_snapshots").Scan(&n); err != nil || n != 0 {
-		t.Fatalf("snapshot committed despite credential failure: %d, %v", n, err)
-	}
-	if b := r.owner.call("GET", "/api/v1/migrate/saved-keys", "", 200); !strings.Contains(string(b), `"kind":"radarr"`) {
-		t.Fatal("failed read consumed its credential")
-	}
-}
-
-func TestSavedKeyReadConsumesOnlyItsOwnVersion(t *testing.T) {
-	for _, replace := range []bool{true, false} {
-		t.Run(map[bool]string{true: "replaced while reading", false: "concurrent readers"}[replace], func(t *testing.T) {
-			r := newAskRig(t)
-			u, _ := url.Parse(fakeRadarr(t, "version-A-test-key"))
-			proxy := httputil.NewSingleHostReverseProxy(u)
-			entered, release := make(chan struct{}, 2), make(chan struct{})
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				if req.URL.Path == "/api/v3/movie" {
-					entered <- struct{}{}
-					<-release
-				}
-				proxy.ServeHTTP(w, req)
-			}))
-			defer srv.Close()
-			save := func(key string) int64 {
-				body, _ := json.Marshal(map[string]any{"file": map[string]any{"version": 1, "radarr": map[string]any{
-					"address": srv.URL, "api_key": key, "allow_local_network": true,
-				}}})
-				r.owner.call("POST", "/api/v1/settings/import-secrets", string(body), 200)
-				var id int64
-				if err := r.st.Read().QueryRow("SELECT secret_id FROM move_credentials WHERE kind = 'radarr'").Scan(&id); err != nil {
-					t.Fatal(err)
-				}
-				return id
-			}
-			save("version-A-test-key")
-			codes := make(chan int, 2)
-			start := func() {
-				go func() {
-					req, _ := http.NewRequest("POST", r.srv.URL+"/api/v1/migrate/read", strings.NewReader(`{"kind":"radarr","use_saved_key":true}`))
-					req.Header.Set(auth.CSRFHeader, r.owner.csrf)
-					resp, err := r.owner.c.Do(req)
-					if err != nil {
-						codes <- -1
-						return
-					}
-					io.Copy(io.Discard, resp.Body)
-					resp.Body.Close()
-					codes <- resp.StatusCode
-				}()
-			}
-			start()
-			if !replace {
-				start()
-			}
-			wait := func() {
-				select {
-				case <-entered:
-				case <-time.After(10 * time.Second):
-					t.Fatal("read did not reach fake movie route")
-				}
-			}
-			wait()
-			var newID int64
-			if replace {
-				newID = save("version-B-test-key")
-			} else {
-				wait()
-			}
-			close(release)
-			var snapshots int
-			if replace {
-				if code := <-codes; code != 409 {
-					t.Fatalf("stale credential read: %d", code)
-				}
-				var id int64
-				if err := r.st.Read().QueryRow("SELECT secret_id FROM move_credentials WHERE kind = 'radarr'").Scan(&id); err != nil || id != newID {
-					t.Fatalf("new credential lost: %d %v", id, err)
-				}
-			} else {
-				a, b := <-codes, <-codes
-				if !((a == 201 && b == 409) || (a == 409 && b == 201)) {
-					t.Fatalf("one-use reads: %d, %d", a, b)
-				}
-				snapshots = 1
-			}
-			var n int
-			if err := r.st.Read().QueryRow("SELECT count(*) FROM migrate_snapshots").Scan(&n); err != nil || n != snapshots {
-				t.Fatalf("snapshots %d, want %d: %v", n, snapshots, err)
-			}
-		})
 	}
 }

@@ -33,8 +33,9 @@ func (a *API) migrateRoutes(m *http.ServeMux) {
 
 // MigrateSourceInput says which old app to read and how: an address with
 // its key (qBittorrent: user name and password, or its API key), or a
-// backup path on this server. Keys and passwords are used for this call
-// only: never stored, logged or answered.
+// backup path on this server. Keys and passwords are never logged or
+// answered; after a successful read the owner's typed key is kept in the
+// vault for "Read again" until a move finishes.
 type MigrateSourceInput struct {
 	Kind       migrate.Kind `json:"kind"`
 	URL        string       `json:"url"`
@@ -44,8 +45,8 @@ type MigrateSourceInput struct {
 	Path       string       `json:"path"`
 	AllowLocal bool         `json:"allow_local_network"`
 	// UseSavedKey reads with the key the secrets file saved for this app
-	// (owner only); the address is the saved one unless url is given. A
-	// successful read deletes the saved key.
+	// or a past read kept for this app (owner only); the address is the
+	// saved one unless url is given. The saved key stays after the read.
 	UseSavedKey bool `json:"use_saved_key"`
 }
 
@@ -82,7 +83,7 @@ func (a *API) migrateSource(w http.ResponseWriter, r *http.Request) (src migrate
 			fail(w, http.StatusBadRequest, "a saved key is only sent to its saved address")
 			return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
 		}
-		in.URL, in.Key, in.AllowLocal, savedID = c.Address, c.APIKey, c.AllowLocalNetwork, id
+		in.URL, in.Key, in.Username, in.Password, in.AllowLocal, savedID = c.Address, c.APIKey, c.Username, c.Password, c.AllowLocalNetwork, id
 	}
 	if (in.URL == "") == (in.Path == "") {
 		fail(w, http.StatusBadRequest, migrate.ErrBadSource.Error())
@@ -151,6 +152,7 @@ func (a *API) migrateRead(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), readTimeout)
 	defer cancel()
+	movesDone := a.movesDone(r.Context())
 	snap, err := migrate.Read(ctx, src)
 	if err != nil {
 		migrateFail(w, err)
@@ -160,19 +162,9 @@ func (a *API) migrateRead(w http.ResponseWriter, r *http.Request) {
 	err = a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		var err error
 		saved, err = migrate.SaveTx(r.Context(), tx, actor(r).ID, snap)
-		if err != nil {
-			return err
-		}
-		if usedSaved.SecretID != 0 {
-			return importsecrets.ForgetMoveCredentialTx(r.Context(), tx, string(src.Kind), usedSaved)
-		}
-		return nil
+		return err
 	})
 	if err != nil {
-		if errors.Is(err, importsecrets.ErrMoveCredentialChanged) {
-			fail(w, http.StatusConflict, err.Error())
-			return
-		}
 		if errors.Is(err, migrate.ErrSnapshotTooBig) {
 			migrateFail(w, err)
 			return
@@ -180,7 +172,36 @@ func (a *API) migrateRead(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	// A move that finished while this read ran has forgotten every key: this
+	// read's key stays forgotten too.
+	if a.movesDone(r.Context()) == movesDone {
+		a.keepMoveKey(r, src, usedSaved)
+	}
 	writeJSON(w, http.StatusCreated, map[string]any{"snapshot": saved, "needs_reentry": snap.NeedsReentry, "notes": snap.Notes})
+}
+
+// keepMoveKey keeps the owner's typed key (or qBittorrent sign-in) after a
+// good read, replacing any older one for the app, so "Read again" needs no
+// typing. A read with the saved key leaves it as it is. Keeping is best
+// effort: the read already counts.
+func (a *API) keepMoveKey(r *http.Request, src migrate.Source, usedSaved importsecrets.MoveCredentialVersion) {
+	if usedSaved.SecretID != 0 || src.Path != "" || src.URL == "" {
+		return
+	}
+	if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
+		return
+	}
+	c := importsecrets.MoveCredential{Address: src.URL, APIKey: src.Key, Username: src.Username, Password: src.Password, AllowLocalNetwork: src.AllowLocal}
+	_ = importsecrets.SaveMoveCredential(context.WithoutCancel(r.Context()), a.s.Store, a.s.Secrets, string(src.Kind), c, actor(r))
+}
+
+// movesDone counts the finished moves (-2 when it can't be read).
+func (a *API) movesDone(ctx context.Context) int {
+	n := 0
+	if err := a.s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM moves WHERE state = 'done'").Scan(&n); err != nil {
+		return -2
+	}
+	return n
 }
 
 func (a *API) listSnapshots(w http.ResponseWriter, r *http.Request) {
@@ -232,6 +253,8 @@ func (a *API) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	var kind string
+	_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT app_kind FROM migrate_snapshots WHERE id = ?", id).Scan(&kind)
 	if err := migrate.Delete(r.Context(), a.s.Store, id); err != nil {
 		if errors.Is(err, migrate.ErrNoSnapshot) {
 			fail(w, http.StatusNotFound, err.Error())
@@ -239,6 +262,13 @@ func (a *API) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 		}
 		internal(w, err)
 		return
+	}
+	// Forgetting a read also forgets the key kept for that app.
+	if kind != "" {
+		if _, err := importsecrets.ForgetMoveCredential(r.Context(), a.s.Store, kind); err != nil {
+			internal(w, err)
+			return
+		}
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

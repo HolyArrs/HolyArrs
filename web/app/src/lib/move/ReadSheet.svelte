@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	/** An old app's key saved from the secrets file (owner only); never the key itself. */
+	/** An old app's key kept for the Move tool (owner only): from the secrets file or a past read; never the key itself. */
 	export interface SavedKey {
 		kind: string;
 		address: string;
@@ -71,6 +71,8 @@
 	const qbit = $derived(kind === 'qbittorrent');
 	const savedKey = $derived(saved.find((x) => x.kind === kind));
 	const withSaved = $derived(way === 'api' && !!savedKey && useSaved);
+	// Read again with a kept key: just the address and the button, no switch.
+	const keptAgain = $derived(again && !!savedKey);
 	const busy = $derived(reading !== '');
 	const title = $derived(again ? `Read ${appName(kind)} again` : 'Add an app');
 
@@ -183,13 +185,13 @@
 		<div class="srow">
 			<div class="txt"><label for="move-app">App</label></div>
 			<div class="ctl">
-				<select id="move-app" class="input" bind:value={kind} onchange={changed} disabled={busy}>
+				<select id="move-app" class="input" bind:value={kind} onchange={changed} disabled={busy || again}>
 					{#each shown as a (a.kind)}<option value={a.kind}>{a.name}</option>{/each}
 				</select>
 			</div>
 		</div>
 		{#if way === 'api'}
-			{#if savedKey}
+			{#if savedKey && !keptAgain}
 				<div class="srow" data-testid="use-saved-key">
 					<div class="txt"><label for="move-saved">Use the saved key</label><span class="hint">Sent only to {savedKey.address}.</span></div>
 					<div class="ctl">
@@ -200,6 +202,7 @@
 			<div class="srow">
 				<div class="txt">
 					{#if withSaved}<span class="label">Address</span>{:else}<label for="move-address">Address</label>{/if}
+					{#if withSaved && keptAgain}<span class="hint">Saved key</span>{/if}
 				</div>
 				<div class="ctl">
 					{#if withSaved}
@@ -209,6 +212,9 @@
 					{/if}
 				</div>
 			</div>
+			{#if withSaved && keptAgain}
+				<p class="other"><button type="button" class="link" onclick={() => { useSaved = false; changed(); }}>Use a different key</button></p>
+			{/if}
 			{#if !withSaved}
 				{#if qbit}
 					<div class="srow">
@@ -259,6 +265,9 @@
 	}
 	.addr { display: block; max-width: min(260px, 46vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.cap { margin-top: 12px; }
+	.other { margin: 4px 0 0; text-align: right; }
+	.link { background: none; border: 0; padding: 6px 0; min-height: 44px; color: var(--text-muted); font: var(--t-footnote); text-decoration: underline; cursor: pointer; }
+	.link:hover { color: var(--text); }
 	.probe, .form-error { margin-top: 12px; }
 	.probe { margin-bottom: 0; display: flex; }
 	select.input { width: 260px; }
