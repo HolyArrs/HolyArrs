@@ -472,6 +472,12 @@
 	// Step 3: the test run. A choice runs it again in place.
 	async function runTry() {
 		if (picked.length === 0 || ruleErrors > 0) return;
+		// Opened straight on Try it (a reload, a link): plan first, so the
+		// suggested folder matches are filled in before the test runs.
+		if (!plan) {
+			await makePlan();
+			if (destroyed) return;
+		}
 		const seq = ++trySeq;
 		tryCtrl?.abort();
 		tryCtrl = new AbortController();
