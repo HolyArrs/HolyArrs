@@ -109,7 +109,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
 	await page.getByTestId('season-tools').getByRole('button', { name: 'Delete Season 1' }).click();
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
-	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1 (3 episodes): HolyArrs stops keeping them up to date.');
+	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1: 3 episodes stop being kept up to date');
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files move to the holding folder');
 	await dialog.getByRole('button', { name: 'Delete Season 1' }).click();
@@ -200,7 +200,7 @@ test('the show page, import, history and calendar work at phone width', async ({
 	await noSidewaysScroll(phone);
 	await titleAction(phone, 'Library', 'Delete show');
 	const del = phone.getByTestId('delete-sheet');
-	await expect(del.getByRole('switch', { name: /Never add it again/ })).toBeVisible();
+	await expect(del.getByRole('switch', { name: /Never add again/ })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'delete a show on a phone');
 	await del.getByRole('button', { name: 'Cancel' }).click();
@@ -218,7 +218,7 @@ test('deleting the whole show with Never-add keeps its files and leaves the Libr
 	await page.getByRole('link', { name: /Quarry Bells/ }).first().click();
 	await titleAction(page, 'Library', 'Delete show');
 	const del = page.getByTestId('delete-sheet');
-	const never = del.getByRole('switch', { name: /Never add it again/ });
+	const never = del.getByRole('switch', { name: /Never add again/ });
 	await never.click();
 	await expect(never).toHaveAttribute('aria-checked', 'true');
 	await expect(del.getByTestId('delete-plan')).toContainText('The show leaves the Library');

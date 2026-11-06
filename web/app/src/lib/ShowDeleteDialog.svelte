@@ -90,7 +90,7 @@
 			</button>
 			{#if whole}
 				<button type="button" class="sd-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
-					<span><b>Never add it again</b><small>Outside lists skip it</small></span>
+					<span><b>Never add again</b><small>Lists skip it</small></span>
 					<span class="sd-switch" class:on={never} aria-hidden="true"></span>
 				</button>
 			{/if}

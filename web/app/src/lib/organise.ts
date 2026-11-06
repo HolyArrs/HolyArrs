@@ -410,38 +410,26 @@ export function score(s: number): string {
 
 /** deleteSummary says in plain words what a delete plan will do. */
 export function deleteSummary(p: RemovePlan, kind: 'movie' | 'show' | 'artist' = 'movie'): string[] {
+	// Short lines (Luis 2026-11-06): what goes, what stays, nothing explained twice.
 	const out: string[] = [];
+	const s = (n: number) => (n === 1 ? '' : 's');
 	if (p.scope === 'album' || p.scope === 'tracks') {
 		const n = p.tracks?.length ?? 0;
-		const what = p.scope === 'album' ? `${p.album} (${n} track${n === 1 ? '' : 's'})` : (p.tracks ?? []).join(', ');
-		out.push(
-			`${what}: HolyArrs stops keeping ${n === 1 ? 'it' : 'them'} up to date. The artist stays, and you can turn Keep up to date on again later.`
-		);
+		out.push(p.scope === 'album' ? `${p.album}: ${n} track${s(n)} stop being kept up to date` : `${(p.tracks ?? []).join(', ')}: no longer kept up to date`);
 	} else if (p.scope === 'season' || p.scope === 'episodes') {
-		const what = p.scope === 'season' ? `Season ${p.season}` : (p.episodes ?? []).join(', ');
 		const n = p.episodes?.length ?? 0;
-		out.push(
-			`${what}${p.scope === 'season' ? ` (${n} episode${n === 1 ? '' : 's'})` : ''}: HolyArrs stops keeping ${n === 1 ? 'it' : 'them'} up to date. The show stays, and you can turn Keep up to date on again later.`
-		);
+		out.push(p.scope === 'season' ? `Season ${p.season}: ${n} episode${s(n)} stop being kept up to date` : `${(p.episodes ?? []).join(', ')}: no longer kept up to date`);
 	} else {
-		out.push(
-			`The ${kind} leaves the Library and HolyArrs stops looking for it. Its history stays, and you can add it again later.`
-		);
+		out.push(`Leaves your Library. History stays.`);
 	}
 	if (p.held.length) {
 		const n = p.held.length;
-		out.push(
-			p.holding_days > 0
-				? `${n} file${n === 1 ? '' : 's'} move${n === 1 ? 's' : ''} to the holding folder and ${n === 1 ? 'is' : 'are'} removed for good after ${p.holding_days} day${p.holding_days === 1 ? '' : 's'}. Until then you can get ${n === 1 ? 'it' : 'them'} back from there.`
-				: `${n} file${n === 1 ? '' : 's'} move${n === 1 ? 's' : ''} to the holding folder and stay${n === 1 ? 's' : ''} there until you empty it (holding days is 0).`
-		);
+		out.push(p.holding_days > 0 ? `${n} file${s(n)} to the holding folder for ${p.holding_days} day${s(p.holding_days)}` : `${n} file${s(n)} to the holding folder`);
 	}
-	if (p.kept.length) out.push(`${p.kept.length} file${p.kept.length === 1 ? '' : 's'} stay${p.kept.length === 1 ? 's' : ''} where ${p.kept.length === 1 ? 'it is' : 'they are'}.`);
-	if (!p.held.length && !p.kept.length) out.push('It has no files on disk.');
-	if (p.choice.never_add) out.push('It goes on the Never-add list, so outside lists never add it again.');
-	if (p.active_downloads) {
-		out.push(`${p.active_downloads} download${p.active_downloads === 1 ? ' is' : 's are'} still running. They stay in the Downloader; remove them from Downloads if you want.`);
-	}
+	if (p.kept.length) out.push(`${p.kept.length} file${s(p.kept.length)} stay${p.kept.length === 1 ? 's' : ''} on disk`);
+	if (!p.held.length && !p.kept.length) out.push('No files on disk');
+	if (p.choice.never_add) out.push('Lists never add it again');
+	if (p.active_downloads) out.push(`${p.active_downloads} download${s(p.active_downloads)} keep running`);
 	return out;
 }
 

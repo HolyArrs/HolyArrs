@@ -65,15 +65,15 @@
 	}
 </script>
 
-<Sheet bind:open title={`Delete ${name}?`} description="Nothing changes until you press Delete." size="sm">
+<Sheet bind:open title={`Delete ${name}?`} size="sm">
 	<div class="ds" data-testid="delete-sheet">
 		<div class="ds-rows">
 			<button type="button" class="ds-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
-				<span><b>Also delete the files</b><small>They go to the holding folder first, so you can still get them back for a while.</small></span>
+				<span><b>Also delete the files</b><small>Kept in the holding folder for a while</small></span>
 				<span class="ds-switch" class:on={files} aria-hidden="true"></span>
 			</button>
 			<button type="button" class="ds-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
-				<span><b>Never add it again</b><small>Lists you follow will skip it. You can still add it yourself.</small></span>
+				<span><b>Never add again</b><small>Lists skip it</small></span>
 				<span class="ds-switch" class:on={never} aria-hidden="true"></span>
 			</button>
 		</div>

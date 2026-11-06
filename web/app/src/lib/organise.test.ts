@@ -71,22 +71,22 @@ describe('delete plan', () => {
 	const base: RemovePlan = { title_id: 1, name: 'A', choice: { delete_files: false, never_add: false }, applied: false, held: [], kept: [], holding_days: 7, active_downloads: 0 };
 	it('says files stay by default', () => {
 		const s = deleteSummary({ ...base, kept: [{ file_id: 1, origin: 'imported', path: 'a.mkv', why: 'delete files is off' }] });
-		expect(s.join(' ')).toContain('1 file stays where it is.');
+		expect(s.join(' ')).toContain('1 file stays on disk');
 		expect(s.join(' ')).not.toContain('holding');
 	});
 	it('says held files go after the holding days', () => {
 		const held = [1, 2].map((i) => ({ file_id: i, origin: 'imported', path: `${i}.mkv`, why: '' }));
 		const s = deleteSummary({ ...base, choice: { delete_files: true, never_add: true }, held, active_downloads: 1 }).join(' ');
-		expect(s).toContain('2 files move to the holding folder and are removed for good after 7 days');
-		expect(s).toContain('Never-add list');
-		expect(s).toContain('1 download is still running');
+		expect(s).toContain('2 files to the holding folder for 7 days');
+		expect(s).toContain('Lists never add it again');
+		expect(s).toContain('1 download keep running');
 	});
 	it('says when holding days is 0', () => {
 		const s = deleteSummary({ ...base, holding_days: 0, held: [{ file_id: 1, origin: 'adopted', path: 'a', why: '' }] }).join(' ');
-		expect(s).toContain('until you empty it');
+		expect(s).toContain('1 file to the holding folder');
 	});
 	it('says when there is nothing on disk', () => {
-		expect(deleteSummary(base).join(' ')).toContain('no files on disk');
+		expect(deleteSummary(base).join(' ')).toContain('No files on disk');
 	});
 });
 

@@ -129,11 +129,11 @@ test('delete: the plan shows first, changes with each choice, and files go to th
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('heading', { name: 'Delete Willow Signal?' })).toBeVisible();
 	const plan = dialog.getByTestId('delete-plan');
-	await expect(plan).toContainText('1 file stays where it is.');
+	await expect(plan).toContainText('1 file stays on disk');
 	await expect(plan).not.toContainText('holding folder');
 	await dialog.getByRole('switch', { name: /^Also delete the files/ }).click();
-	await expect(plan).toContainText('1 file moves to the holding folder and is removed for good after 7 days');
-	await dialog.getByRole('switch', { name: /^Never add it again/ }).click();
+	await expect(plan).toContainText('1 file to the holding folder for 7 days');
+	await dialog.getByRole('switch', { name: /^Never add again/ }).click();
 	await expect(plan).toContainText('Never-add list');
 	// Still nothing has happened; deleting files too wants the name typed first.
 	expect(readdirSync(join(oldLib, 'Willow Signal {tmdb-900013}'))).toEqual(['willow signal.mkv']);
@@ -221,7 +221,7 @@ test('the new screens fit a phone and pass the accessibility scan', async ({ bro
 		await titleAction(ph, 'Library', button);
 		const d = ph.getByRole('dialog');
 		await expect(d.getByRole('heading', { name: heading })).toBeVisible();
-		if (button === 'Delete movie') await expect(d.getByTestId('delete-plan')).toContainText('stays where it is');
+		if (button === 'Delete movie') await expect(d.getByTestId('delete-plan')).toContainText('stays on disk');
 		else await expect(d.getByRole('button', { name: 'Rename 1 file' })).toBeVisible();
 		// Measure and scan the settled dialog, not the menu closing and the dialog opening.
 		await ph.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined))));

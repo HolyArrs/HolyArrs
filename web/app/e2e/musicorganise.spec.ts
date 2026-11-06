@@ -204,8 +204,8 @@ test('deleting the whole artist with Never-add keeps files it only found and lea
 	await openInLibrary(page);
 	await artistSetting(page, /^Delete artist/);
 	const dialog = page.getByTestId('delete-sheet');
-	await dialog.getByRole('switch', { name: /Never add it again/ }).click();
-	await expect(dialog.getByTestId('delete-plan')).toContainText('The artist leaves the Library');
+	await dialog.getByRole('switch', { name: /Never add again/ }).click();
+	await expect(dialog.getByTestId('delete-plan')).toContainText('Leaves your Library');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
 	await dialog.getByRole('button', { name: 'Delete artist', exact: true }).click();
 	await expect(page).toHaveURL(/\/library$/);
