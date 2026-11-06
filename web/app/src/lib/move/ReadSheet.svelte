@@ -209,9 +209,11 @@
 	/** stop ends the read: the request is aborted, so the server stops reading. */
 	let startedAt = 0;
 	let stopped = false;
-	export function stop() {
-		// A second Enter on the same button right after Read is not a stop.
-		if (!ctrl || Date.now() - startedAt < 1000) return;
+	export function stop(e?: MouseEvent) {
+		if (!ctrl) return;
+		// A second Enter on the same button right after Read is not a stop
+		// (a key press gives a click with detail 0; a real click is 1 or more).
+		if (e && e.detail === 0 && Date.now() - startedAt < 1000) return;
 		stopped = true;
 		ctrl.abort();
 	}
