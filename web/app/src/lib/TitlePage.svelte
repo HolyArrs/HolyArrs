@@ -52,6 +52,7 @@
 	import MovieVersions from '#lib/MovieVersions.svelte';
 	import ShowVersions from '#lib/ShowVersions.svelte';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
+	import type { TitleSubtitles } from '#lib/subtitles.ts';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
 	import SeasonToolsSheet from '#lib/SeasonToolsSheet.svelte';
@@ -507,6 +508,57 @@
 	let libAll = $state(false);
 	let renameOpen = $state(false);
 	let subsOpen = $state(false);
+	// Subtitles as a choice like Quality (Luis 2026-11-05): Default (the default languages), Off, or the title's own
+	// languages under Custom, whose menu also opens the full window and starts a search.
+	let subsData = $state<TitleSubtitles | null>(null);
+	async function loadSubs(id: number) {
+		try {
+			subsData = await api.get<TitleSubtitles>(`/titles/${id}/subtitles`);
+		} catch {
+			subsData = null;
+		}
+	}
+	$effect(() => {
+		const id = owned?.id;
+		if (id && manage && ownTab === 'library' && !subsOpen) void loadSubs(id);
+	});
+	const subsOwn = $derived(subsData?.wishes.find((w) => !w.item_id && !w.version_id));
+	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
+	const subsCodes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
+	const subsHint = $derived.by(() => {
+		if (subsMode === 'off') return 'No subtitles';
+		if (subsMode === 'custom') return subsCodes(subsOwn?.languages ?? []);
+		const d = subsData?.files[0]?.wish?.languages ?? [];
+		return d.length ? `Default · ${subsCodes(d)}` : 'Default · none set';
+	});
+	async function setSubs(mode: 'default' | 'off') {
+		const o = owned;
+		if (!o || mode === subsMode) return;
+		busyAction = 'subs';
+		try {
+			await api.put(`/titles/${o.id}/subtitle-wish`, mode === 'default' ? { inherit: true } : { languages: [] });
+			await loadSubs(o.id);
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
+	async function searchSubs() {
+		const o = owned;
+		if (!o) return;
+		try {
+			const r = await api.post<{ queued: number }>('/subtitles/search', { title_id: o.id });
+			toasts.push(r.queued ? 'Looking for subtitles now.' : 'No file to look for subtitles for yet.', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		}
+	}
+	const subsMenu = $derived<MenuItem[]>([
+		{ label: 'Choose languages…', icon: 'tools', onselect: () => (subsOpen = true) },
+		{ label: 'Look for subtitles', icon: 'search', onselect: () => void searchSubs() },
+		...(owned?.kind !== 'show' ? [{ label: 'Subtitle files…', icon: 'copy' as const, onselect: () => (subsOpen = true) }] : [])
+	]);
 	// The Rename row says up front how many files would get a new name (the same read the preview uses).
 	let renameCount = $state<number | null>(null);
 	$effect(() => {
@@ -1321,7 +1373,16 @@
 									<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={340}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 								</div>
 							{/if}
-							<button type="button" class="lib-row" data-testid="subtitles-row" onclick={() => (subsOpen = true)}><span><b>Subtitles</b></span><Icon name="chevronRight" size={16} /></button>
+							<div class="lib-row static q-row" data-testid="subtitles-row">
+								<span><b>Subtitles</b><small>{subsData ? subsHint : ' '}</small></span>
+								<div class="q-seg" role="radiogroup" aria-label="Subtitles">
+									<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busyAction === 'subs'} onclick={() => setSubs('default')}>Default</button>
+									<button type="button" role="radio" aria-checked={subsMode === 'off'} class:on={subsMode === 'off'} disabled={busyAction === 'subs'} onclick={() => setSubs('off')}>Off</button>
+									<div class="q-more" class:on={subsMode === 'custom'}>
+										<Menu label="Subtitle options" variant="button" width={230} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? subsCodes(subsOwn?.languages ?? []) : 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu>
+									</div>
+								</div>
+							</div>
 							{#if renameCount}
 								<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>{renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
 							{/if}

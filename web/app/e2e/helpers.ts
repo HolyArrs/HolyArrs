@@ -303,7 +303,8 @@ export async function openInLibrary(page: Page) {
 /** openSubtitles opens an owned title's Subtitles window from the Settings on its Library tab. */
 export async function openSubtitles(page: Page): Promise<Locator> {
 	await openLibraryTab(page);
-	await page.getByTestId('subtitles-row').click();
+	await page.getByTestId('subtitles-row').getByRole('button', { name: 'Subtitle options' }).click();
+	await page.getByRole('menuitem', { name: 'Choose languages…' }).click();
 	const card = page.getByTestId('subtitles');
 	await expect(card).toBeVisible();
 	return card;
