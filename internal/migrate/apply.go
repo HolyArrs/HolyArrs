@@ -157,18 +157,29 @@ func LoadPlan(ctx context.Context, st *store.Store, ids []int64, ch Choices) (*P
 
 // SuggestRules suggests a path rule for every old library folder that is
 // not on this server as it is: to a Library folder here with the same last
-// name, or to a folder of that name directly under one here.
+// name, or else to the only Library folder here of the same kind (an old
+// Sonarr "/data/TV Shows" goes to the one shows folder).
 func SuggestRules(ctx context.Context, st *store.Store, p *Plan) []PathRule {
 	var here []string
-	rows, err := st.Read().QueryContext(ctx, "SELECT path FROM library_folders ORDER BY id")
+	kindOf := map[string]string{}
+	rows, err := st.Read().QueryContext(ctx, "SELECT path, kind FROM library_folders ORDER BY id")
 	if err == nil {
 		for rows.Next() {
-			var s string
-			if rows.Scan(&s) == nil {
+			var s, k string
+			if rows.Scan(&s, &k) == nil {
 				here = append(here, s)
+				kindOf[s] = k
 			}
 		}
 		rows.Close()
+	}
+	oldKind := map[string]string{}
+	for _, g := range p.Groups {
+		for _, it := range g.Items {
+			if it.Folder != nil {
+				oldKind[it.Folder.OldPath] = it.Folder.Kind
+			}
+		}
 	}
 	out := []PathRule{}
 	for _, old := range p.Paths {
@@ -176,11 +187,26 @@ func SuggestRules(ctx context.Context, st *store.Store, p *Plan) []PathRule {
 			continue
 		}
 		base := strings.ToLower(old[strings.LastIndexByte(old, '/')+1:])
+		found := ""
 		for _, h := range here {
 			if strings.ToLower(filepath.Base(h)) == base {
-				out = append(out, PathRule{From: old, To: filepath.ToSlash(h)})
+				found = h
 				break
 			}
+		}
+		if found == "" {
+			var same []string
+			for _, h := range here {
+				if k := oldKind[old]; k != "" && kindOf[h] == k {
+					same = append(same, h)
+				}
+			}
+			if len(same) == 1 {
+				found = same[0]
+			}
+		}
+		if found != "" {
+			out = append(out, PathRule{From: old, To: filepath.ToSlash(found)})
 		}
 	}
 	return out

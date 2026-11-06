@@ -120,6 +120,8 @@
 	});
 
 	// Things to type after the move (keys, passwords, links), people aside.
+	// The items behind the keys line, for its Show.
+	const keyItems = $derived(on.filter((g) => g.name !== 'people').flatMap((g) => g.items.filter((it) => it.needs)));
 	const keysLine = $derived.by(() => {
 		const parts: string[] = [];
 		const needs: string[] = [];
@@ -133,7 +135,7 @@
 		if (parts.length === 0) return '';
 		const keys = needs.every((x) => /key/.test(x));
 		const many = needs.length > 1;
-		return `${andList(parts)}: ${keys ? `type ${many ? 'their keys' : 'its key'}` : `fill ${many ? 'them' : 'it'} in`} after the move`;
+		return `${andList(parts)}: paste ${keys ? (many ? 'their keys' : 'its key') : many ? 'their keys or passwords' : 'its key or password'} in Settings after the move`;
 	});
 	const nothingNeeded = $derived(needFolders.length === 0 && !keysLine && !peopleOn);
 
@@ -201,7 +203,7 @@
 		</div>
 		<span class="arrow" aria-hidden="true">→</span>
 		<select {id} class="input pick" value={pick} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} onchange={(e) => onfolder(p, e.currentTarget.value)}>
-			<option value="">Leave unset</option>
+			<option value="">Don't bring them</option>
 			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
 			<option value={OTHER}>Other path…</option>
 		</select>
@@ -255,13 +257,13 @@
 				<p class="sub none">Nothing needs you. Everything moves as shown.</p>
 			{:else}
 				<h3 class="head">Needs you</h3>
-				{#if needFolders.length}<p class="sub">Titles in a folder you leave unset stay behind.</p>{/if}
+				{#if needFolders.length}<p class="sub">Pick where these titles go, or they stay behind.</p>{/if}
 				<ul class="box list" data-testid="needs-you">
 					{#each needFolders as p, n (p)}
 						{@render folderRow(p, n, `move-need-folder-${n}`, 'need-folder-row', false)}
 					{/each}
 					{#if keysLine}
-						<li class="mrow"><span class="txt warn">{keysLine}</span></li>
+						<li class="mrow"><span class="txt warn">{keysLine}</span><button type="button" class="quiet" onclick={() => onshow('Keys to paste after the move', keyItems, itemRow)}>Show</button></li>
 					{/if}
 					{#if peopleOn}
 						<li class="mrow">
