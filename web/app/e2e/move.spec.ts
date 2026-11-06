@@ -278,7 +278,7 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   // Undo, after a confirm.
   await page.getByRole("button", { name: "Undo this move" }).click();
   const undo = page.getByRole("dialog", { name: /^Undo move \d+\?$/ });
-  await expect(undo).toContainText("download it first");
+  await expect(undo).toContainText("Download the report first");
   await undo.getByRole("button", { name: "Undo move" }).click();
   await expect(page.getByTestId("done-result")).toContainText("Undone", { timeout: 20_000 });
   const after = (await (await page.request.get("/api/v1/titles")).json()) as { titles: { name: string }[] };
