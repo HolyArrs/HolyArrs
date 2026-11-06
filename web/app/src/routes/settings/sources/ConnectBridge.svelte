@@ -2,7 +2,7 @@
 	// Connect Jackett or Prowlarr (#96): HolyArrs takes the address and key, tests them, and brings the sites in as
 	// Sources in one step. Jackett's sites stay in step on their own;
 	// Prowlarr writes its sites in through the old-app API.
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -145,6 +145,14 @@
 		return false;
 	}
 
+	// After a failed Test or Link: focus the field the answer is about (the address by default).
+	async function focusError() {
+		if (!Object.keys(errors).length && !(result && !result.ok)) return;
+		await tick();
+		const f = Object.keys(errors)[0];
+		document.getElementById(f === 'callback_url' ? 'br-callback' : f === 'key' ? 'br-key' : 'br-url')?.focus();
+	}
+
 	async function test() {
 		errors = {};
 		result = null;
@@ -163,6 +171,7 @@
 		} finally {
 			testing = false;
 		}
+		await focusError();
 	}
 
 	async function connect() {
@@ -191,6 +200,7 @@
 		} finally {
 			connecting = false;
 		}
+		await focusError();
 	}
 
 	async function check(b: Bridge) {
@@ -254,7 +264,7 @@
 								<b>{names[b.kind]}</b>
 								<span class="mono xs muted addr" title={b.last_check ? `Checked ${ago(b.last_check)}` : undefined}>{b.url}</span>
 							</div>
-							<span class="ctag" class:bad={!!b.last_error}>{b.last_error ? 'Not connected' : countTag(b)}</span>
+							<span class="ctag" class:bad={!!b.last_error} aria-hidden={b.last_error ? 'true' : undefined}>{b.last_error ? 'Not connected' : countTag(b)}</span>
 						</div>
 						{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
 						{#if mayEdit}
@@ -362,8 +372,8 @@
 	.grow { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
 	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
 	.callback-line { margin: 0; overflow-wrap: anywhere; }
-	.link { border: 0; padding: 0 0 0 4px; background: none; color: var(--accent-text, var(--accent)); font: inherit; cursor: pointer; }
-	.link:hover { text-decoration: underline; }
+	.link { display: inline-flex; align-items: center; min-height: 32px; vertical-align: middle; border: 0; padding: 0 8px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
+	.link:hover { color: var(--text); }
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 	/* First run: Test and Link share one row; the answer tag takes its own line. */
 	.acts.one-row .tag { flex: 1 0 100%; margin: 0; }
