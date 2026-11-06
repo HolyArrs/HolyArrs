@@ -48,7 +48,7 @@ func libraryError(w http.ResponseWriter, err error) {
 	case errors.As(err, &fe):
 		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "health": fe.Health.State, "reason": fe.Health.Reason})
 	case errors.Is(err, library.ErrNeverAdd), errors.Is(err, library.ErrNoFolder), errors.Is(err, library.ErrFolderInUse),
-		errors.Is(err, library.ErrFolderTaken), errors.Is(err, library.ErrMainVersion), errors.Is(err, library.ErrVersionHasFiles), errors.Is(err, library.ErrVersionBusy),
+		errors.Is(err, library.ErrFolderTaken), errors.Is(err, library.ErrFolderName), errors.Is(err, library.ErrMainVersion), errors.Is(err, library.ErrVersionHasFiles), errors.Is(err, library.ErrVersionBusy),
 		errors.Is(err, library.ErrVersionFolder), errors.Is(err, library.ErrProtectedCopy):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, library.ErrBadGate), errors.Is(err, library.ErrBadDelay), errors.Is(err, library.ErrNotMovieFolder), errors.Is(err, library.ErrNotShowFolder), errors.Is(err, library.ErrNotMusicFolder),

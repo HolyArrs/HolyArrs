@@ -155,12 +155,9 @@
 	{#if !loaded}
 		<Skeleton lines={4} />
 	{:else}
-		<p class="small muted">
-			Only files HolyArrs imported or adopted are renamed, inside the folder they are in now. Files it found on its own are never touched.
-		</p>
 		{#if parts.change.length === 0}
 			<p class="notice" data-testid="rename-none">
-				Nothing to rename: every file already has the right name.
+				Every name matches.
 			</p>
 		{:else}
 			<h3 class="h3">{parts.change.length === 1 ? '1 file gets a new name' : `${parts.change.length} files get a new name`}</h3>

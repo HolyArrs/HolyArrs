@@ -115,6 +115,7 @@ var (
 	ErrFolderKind   = errors.New("kind must be movie, show or music")
 	ErrFolderTaken  = errors.New("that folder, or one inside or around it, is already a Library folder")
 	ErrFolderInUse  = errors.New("titles still use this Library folder; move them first")
+	ErrFolderName   = errors.New("another Library folder of this kind already has that name")
 	ErrFolderAbsent = errors.New("the folder does not exist")
 	ErrNoPickRules  = errors.New("no Pick rules with that id")
 )
@@ -182,6 +183,9 @@ func AddFolder(ctx context.Context, s *store.Store, in FolderInput, downloadPath
 				return ErrFolderTaken
 			}
 		}
+		// Names are unique per kind, so a title's Folder menu can tell them apart.
+		// A new folder whose name is taken gets a number; renaming to a taken name is refused.
+		lf.Label, _ = freeLabel(all, in.Kind, in.Label, 0, true)
 		if err := pickRulesExist(tx, in.DefaultPickRules); err != nil {
 			return err
 		}
@@ -247,7 +251,14 @@ func UpdateFolder(ctx context.Context, s *store.Store, id int64, c FolderChange,
 		if err := store.Get(ctx, tx, "library_folders", id, &lf); err != nil {
 			return err
 		}
-		if c.Label != nil && *c.Label != "" {
+		if c.Label != nil && *c.Label != "" && *c.Label != lf.Label {
+			all, err := store.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
+			if err != nil {
+				return err
+			}
+			if _, ok := freeLabel(all, lf.Kind, *c.Label, id, false); !ok {
+				return ErrFolderName
+			}
 			lf.Label = *c.Label
 		}
 		if c.DefaultPickRules != nil {
@@ -259,6 +270,31 @@ func UpdateFolder(ctx context.Context, s *store.Store, id int64, c FolderChange,
 		return store.Update(tx, "library_folders", &lf, by)
 	})
 	return lf, err
+}
+
+// freeLabel says whether label is free among the folders of kind (skipping
+// the folder with id skip). With number, a taken label gets " 2", " 3" and so on.
+func freeLabel(all []domain.LibraryFolder, kind, label string, skip int64, number bool) (string, bool) {
+	taken := func(l string) bool {
+		for _, o := range all {
+			if o.ID != skip && o.Kind == kind && strings.EqualFold(o.Label, l) {
+				return true
+			}
+		}
+		return false
+	}
+	if !taken(label) {
+		return label, true
+	}
+	if !number {
+		return "", false
+	}
+	for n := 2; n < 1000; n++ {
+		if l := fmt.Sprintf("%s %d", label, n); !taken(l) {
+			return l, true
+		}
+	}
+	return label, true
 }
 
 // DeleteFolder removes a Library folder no Version uses. Nothing on disk is touched.

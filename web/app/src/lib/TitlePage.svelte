@@ -317,7 +317,9 @@
 			busyAction = '';
 		}
 	}
-	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: f.label, checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
+	const pathEnd = (p: string) => p.split(/[\\/]+/).filter(Boolean).slice(-2).join('/');
+	const folderName = (f: LibraryFolder) => (kindFolders.filter((x) => x.label === f.label).length > 1 ? `${f.label} · ${pathEnd(f.path)}` : f.label);
+	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: folderName(f), checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
 	// Seasons (Luis 2026-11-05): one choice sets every season and new seasons together.
 	// A mix made season by season in the list reads Custom.
 	type SeasonPick = 'all' | 'latest' | 'none';
@@ -1311,12 +1313,16 @@
 									<div class="lib-pick"><Menu label="Episode order" variant="button" items={orderMenu} width={200}>{#snippet trigger()}<span>{orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? 'As aired'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 								</div>
 							{/if}
-							<div class="lib-row static" data-testid="folder-row">
-								<span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span>
-								{#if kindFolders.length > 1}<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={240}>{#snippet trigger()}<span>{curFolder?.label ?? 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>{:else if curFolder}<span class="lib-val">{curFolder.label}</span>{/if}
-							</div>
-							<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>{renameCount === null ? 'See the new names first' : renameCount === 0 ? 'Every name matches' : renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
-							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures{o.refreshed_at ? ` · refreshed ${date(o.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
+							<!-- Folder: only when there is another folder of this kind to move to. -->
+							{#if kindFolders.length > 1}
+								<div class="lib-row static" data-testid="folder-row" title={o.folder_path ?? ''}>
+									<span><b>Folder</b></span>
+									<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={240}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+								</div>
+							{/if}
+							{#if renameCount}
+								<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>{renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
+							{/if}
 						</div>
 						<div class="lib-rows danger">
 							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
@@ -1368,7 +1374,7 @@
 			{@const o = owned}
 				{#if mayReport}<ReportSheet bind:open={reportOpen} title={o} />{/if}
 				{#if manage}
-				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo?.label ?? ''}?`} description="Its files move to the new folder." size="sm" placement="center">
+				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderName(moveTo) : ''}?`} description="Its files move to the new folder." size="sm" placement="center">
 					<p class="lib-move-path">{moveTo?.path}</p>
 					<div class="lib-move-actions">
 						<button type="button" class="lib-btn" onclick={() => (moveTo = null)}>Cancel</button>

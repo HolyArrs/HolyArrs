@@ -123,8 +123,9 @@ test('Move a show with its episode files to a second show folder from the Folder
 
 	await page.goto(`/library/${id}`);
 	await openLibraryTab(page);
+	// The Folder row shows the folder's name (only when there is another folder to move to).
 	const folderRow = page.getByTestId('folder-row');
-	await expect(folderRow).toContainText(join(one, name));
+	await expect(folderRow).toContainText('Show shelf one');
 	await folderRow.getByRole('button').click();
 	await page.getByRole('menuitemradio', { name: 'Show shelf two' }).or(page.getByRole('menuitem', { name: 'Show shelf two' })).click();
 	const confirm = page.getByRole('dialog', { name: 'Move to Show shelf two?' });
@@ -143,7 +144,7 @@ test('Move a show with its episode files to a second show folder from the Folder
 	// The show's Library tab and the Library both show the new folder.
 	await page.reload();
 	await openLibraryTab(page);
-	await expect(page.getByTestId('folder-row')).toContainText(join(two, name));
+	await expect(page.getByTestId('folder-row')).toContainText('Show shelf two');
 	await expect(await libraryFolderColumn(page, 'show', id)).toContainText(join(two, name));
 });
 
