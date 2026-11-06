@@ -184,6 +184,12 @@
 	});
 
 
+	// People list: the name and one word, You or Invite.
+	function personRow(it: PlanItem) {
+		const me = people[it.key] === 'owner';
+		return { key: it.key, name: it.name, pill: me ? { word: 'You', tone: 'ok' as const } : { word: 'Invite', tone: 'quiet' as const } };
+	}
+
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
 		if (it.person?.was_owner) return `Owner in ${app}. Their requests become yours.`;
@@ -317,7 +323,7 @@
 					{#if peopleOn}
 						<div class="box card1">
 							<span class="txt"><b>Invite {peopleItems.length === 1 ? '1 user' : `${peopleItems.length} users`}</b><span class="sub">Their accounts arrive. Send each an invite to sign in.</span></span>
-							<button type="button" class="quiet" onclick={() => onshow('People', peopleItems, itemRow)}>Show</button>
+							<button type="button" class="quiet" onclick={() => onshow('People', peopleItems, personRow)}>Show</button>
 						</div>
 					{/if}
 				</div>

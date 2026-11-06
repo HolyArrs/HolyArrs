@@ -114,10 +114,16 @@
 	.tools .input { flex: 1 1 200px; min-width: 0; }
 	.count { margin: 8px 0 0; }
 	.rows { margin-top: 4px; }
+	/* Its own row layout, so it holds outside Settings (the first-run wizard). */
+	.srow { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-top: 1px solid var(--line); }
+	.srow:first-child { border-top: 0; }
+	.srow .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+	.srow .hint { color: var(--text-muted); font: var(--t-footnote); }
+	.srow .ctl { flex: none; }
 	.name { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.rows .hint { overflow-wrap: anywhere; }
 	/* One fixed column for the pills, so they line up row under row. */
-	.pill { display: flex; justify-content: flex-start; width: 184px; min-width: 0; }
+	.pill { display: flex; justify-content: flex-end; min-width: 0; }
 	.more { display: flex; justify-content: center; padding-top: 12px; }
 	@media (max-width: 600px) {
 		/* Phones: the pill goes under the name, so no word is cut. */
