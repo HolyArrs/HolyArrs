@@ -86,11 +86,10 @@
 				useSaved = true;
 				const last = again ? lastRead[start] : undefined;
 				address = again ? (saved.find((x) => x.kind === start)?.address ?? last?.address ?? '') : '';
-				if (last) {
-					key = last.key;
-					username = last.username;
-					signWord = last.signWord;
-				}
+				// Add an app always starts empty; Read again refills what that app was read with.
+				key = last?.key ?? '';
+				username = last?.username ?? '';
+				signWord = last?.signWord ?? '';
 				backupPath = '';
 				local = true;
 				error = '';
