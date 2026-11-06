@@ -7,10 +7,11 @@
 	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
 	import MoveFlow from '../settings/move/+page.svelte';
 	import { page } from '$app/state';
-	import { goto, pushState } from '$app/navigation';
-	import { onMount, setContext, tick } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { onMount, setContext, tick, untrack } from 'svelte';
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
-	import { api, message } from '#lib/api.ts';
+	import { api, message, ApiError } from '#lib/api.ts';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
@@ -62,7 +63,7 @@
 		const q = ['first=1', s !== 'start' ? `step=${s}` : '', fromApps && s !== 'start' && s !== 'import' ? 'from=apps' : ''].filter(Boolean).join('&');
 		// One history entry per step, so Back and Forward walk the steps.
 		depth += 1;
-		pushState(to(`/welcome?${q}`), { extra: [...extra], depth });
+		void goto(to(`/welcome?${q}`), { shallow: true, state: { extra: [...extra], depth } });
 		void enter(s);
 		// A new step: focus its heading, so keyboard and screen reader start there.
 		void tick().then(focusStep);
@@ -75,23 +76,29 @@
 	}
 	// Back or Forward in the browser: show the step the address names.
 	onMount(() => {
-		const onPop = (e: PopStateEvent) => {
+		const onPop = () => {
 			if (!firstRun) return;
 			const q = new URLSearchParams(location.search);
 			const s = stepFromUrl(q);
-			if (s === step) return;
-			const st = e.state?.['sveltekit:states'] as { extra?: Step[]; depth?: number } | undefined;
-			depth = st?.depth ?? 0;
-			const kept = st?.extra;
+			if (leaving || s === step) return;
 			error = '';
 			fromApps = q.get('from') === 'apps' || s === 'import';
-			if (kept) extra = kept;
 			step = s;
 			void enter(s);
 			void tick().then(focusStep);
 		};
 		window.addEventListener('popstate', onPop);
+		// A step address that names no step starts over, in the address too.
+		if (firstRun && page.url.searchParams.get('step') && step === 'start') void goto(to('/welcome?first=1'), { shallow: true, replace: true, state: {} });
 		return () => window.removeEventListener('popstate', onPop);
+	});
+	// Each step entry's record; SvelteKit restores page.state on Back and Forward.
+	$effect(() => {
+		const st = page.state as { extra?: Step[]; depth?: number };
+		untrack(() => {
+			depth = st.depth ?? 0;
+			if (st.extra) extra = st.extra;
+		});
 	});
 	const order = $derived<Step[]>(
 		fromApps
@@ -103,8 +110,20 @@
 
 	// Setup is done: a short Orbit while Home (or Users) opens.
 	// It also ends the setup sign-in's no-password-check window (server side).
+	// The step entries fold back into the first one, which Home then replaces,
+	// so the browser's Back after setup leaves the wizard.
+	let leaving = false;
 	async function home(path = '/') {
 		playLoader('', SETUP_HOLD_MS);
+		if (depth > 0) {
+			leaving = true;
+			const n = depth;
+			await new Promise<void>((done) => {
+				const t = setTimeout(done, 500);
+				window.addEventListener('popstate', () => (clearTimeout(t), done()), { once: true });
+				history.go(-n);
+			});
+		}
 		await api.post('/auth/setup/done').catch(() => {});
 		await goto(to(path), { replace: true }).finally(loaderReady);
 	}
@@ -183,7 +202,7 @@
 	}
 	// skip: keep the parts, add no folders now (Settings has them later).
 	async function saveMedia(skip: boolean) {
-		if (mediaOff) return;
+		if (mediaOff || busy) return;
 		error = '';
 		// Continue needs a folder for every part that is on (Skip for now adds none).
 		if (!skip) {
@@ -274,8 +293,16 @@
 			return [];
 		}
 	}
+	// The list didn't load: shown like the Source step, with Try again.
+	let dlLoadError = $state('');
 	async function loadDownloader() {
-		dlList = await listDownloaders();
+		try {
+			dlList = (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders ?? [];
+			dlLoadError = '';
+		} catch (err) {
+			dlLoadError = message(err);
+			return;
+		}
 		// Each one is tested again, so the row shows its version or that it is down.
 		await Promise.all(dlList.map((d) => testDl(d.id)));
 	}
@@ -308,6 +335,7 @@
 	}
 	async function saveDownloader(e: SubmitEvent) {
 		e.preventDefault();
+		if (busy) return;
 		if (!dlForm) return afterDownloader();
 		error = '';
 		busy = true;
@@ -335,7 +363,9 @@
 			dlAdding = false;
 			dl = emptyForm();
 		} catch (err) {
-			if (!askSignIn(reachWords(message(err)))) error = message(err);
+			// HolyArrs itself didn't answer: the Source step's wording.
+			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) error = 'HolyArrs isn’t answering. Try again in a moment.';
+			else if (!askSignIn(reachWords(message(err)))) error = message(err);
 		} finally {
 			busy = false;
 			// A failed Connect: focus the field the answer is about (the key, or else the address).
@@ -432,6 +462,7 @@
 	}
 	// Invite family: turns on Requests (what the old "family" question did), then opens Users.
 	async function invite() {
+		if (busy) return;
 		error = '';
 		busy = true;
 		try {
@@ -591,7 +622,9 @@
 		</form>
 	{:else if step === 'downloader'}
 		<form class="card" onsubmit={saveDownloader} data-testid="welcome-downloader">
-			{#if dlList.length}
+			{#if dlLoadError}
+				<LoadError hasData={false} message={dlLoadError} onretry={loadDownloader} />
+			{:else if dlList.length}
 				<ul class="conn" aria-label="Connected downloaders">
 					{#each dlList as d (d.id)}
 						{@const test = dlTests[d.id]}
