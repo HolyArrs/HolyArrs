@@ -521,7 +521,7 @@
 	.al-rowbtn.static + .al-rowbtn, .al-rowbtn + .al-rowbtn.static { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.al-rowbtn.q-row { display: grid; gap: 10px; justify-content: stretch; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
-	.q-seg > button, .q-more :global(.trigger), .al-pick :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.q-seg > button, .q-more :global(.trigger), .al-pick :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: color-mix(in srgb, var(--text) 82%, transparent); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
 	.q-seg > button.on, .q-more.on :global(.trigger) { background: color-mix(in srgb, var(--text) 16%, transparent); color: var(--text); }
 	.q-seg > button:hover:not(.on), .q-more:not(.on) :global(.trigger:hover) { color: var(--text); }
 	.q-more { flex: 0 0 auto; display: flex; }
