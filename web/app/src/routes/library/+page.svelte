@@ -57,7 +57,7 @@
 	import type { MovieCollection, CollectionDetail } from '#lib/collections.ts';
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { deleteBody, splitSteps, type RenameStep } from '#lib/organise.ts';
+	import { deleteBody } from '#lib/organise.ts';
 	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/library-art.ts';
 
 	type View = 'rows' | 'table' | 'posters' | 'overview';
@@ -415,23 +415,18 @@
 		...(partOn('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(partOn('music') ? ([{ label: 'Artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
 	]);
-	type Tool = { label: string; hint: string; icon: IconName; tint: Tint; href: string; /** Which count the tile carries, and whether it calls for action (red) or only tells (grey). */ count?: 'rename' | 'subs' | 'turned' | 'deleted'; hot?: boolean };
+	type Tool = { label: string; hint: string; icon: IconName; tint: Tint; href: string; /** Which count the tile carries, and whether it calls for action (red) or only tells (grey). */ count?: 'deleted'; hot?: boolean };
 	const toolGroups = $derived<{ name: string; tools: Tool[] }[]>(
 		[
 			{
 				name: 'Look after',
 				tools: [
-					{ label: 'Rename files', hint: 'Names off your pattern', icon: 'refresh', tint: 'blue', href: to('/library/rename'), count: 'rename', hot: true },
-					...(partOn('subtitles') ? ([{ label: 'Missing subtitles', hint: 'Languages still wanted', icon: 'subtitle', tint: 'indigo', href: to('/library/missing-subtitles'), count: 'subs', hot: true }] as Tool[]) : []),
-					{ label: 'Video codecs', hint: 'What your files use', icon: 'copy', tint: 'teal', href: to('/library/copies') },
-					{ label: 'Turned down', hint: 'Releases you said no to', icon: 'declined', tint: 'gray', href: to('/library/turned-down'), count: 'turned' },
 					...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', hint: 'Bring back or clear', icon: 'trash', tint: 'red', href: to('/library/deleted'), count: 'deleted' }] as Tool[]) : [])
 				] as Tool[]
 			},
 			{
 				name: 'Import',
 				tools: [
-					{ label: 'A whole library', hint: 'Folders you already have', icon: 'folder', tint: 'orange', href: to('/library/import') },
 					...(session.can('settings') ? ([{ label: 'Files by hand', hint: 'Match loose files', icon: 'upload', tint: 'green', href: to('/library/import-files') }] as Tool[]) : [])
 				] as Tool[]
 			}
@@ -446,10 +441,6 @@
 		if (Date.now() - toolCountsAt < 60_000) return;
 		toolCountsAt = Date.now();
 		const set = (k: NonNullable<Tool['count']>, n: number) => (toolCounts = { ...toolCounts, [k]: n });
-		// The same count the Rename page heads its list with: files that get a new name (skipped ones do not count).
-		void api.get<{ steps: RenameStep[] }>('/rename').then((r) => set('rename', splitSteps(r.steps ?? []).change.length), () => {});
-		if (partOn('subtitles')) void api.get<{ total: number }>('/subtitles/missing?limit=1').then((r) => set('subs', r.total ?? 0), () => {});
-		void api.get<{ total: number }>('/turned-down?limit=1').then((r) => set('turned', r.total ?? 0), () => {});
 		void api.get<{ files: unknown[] }>('/holding').then((r) => set('deleted', r.files?.length ?? 0), () => {});
 	}
 	$effect(() => {
