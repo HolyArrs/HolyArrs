@@ -44,7 +44,7 @@ test('copy Standard, change a step and a trait, save, and the changes stay after
 
 	const bar = page.getByTestId('savebar');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Standard copy made.')).toBeVisible();
+	await expect(page.getByText('Standard copy made')).toBeVisible();
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await expect(bar).toHaveCount(0);
 
@@ -68,7 +68,7 @@ test('a mistake is named on its field before anything is sent, and Save keeps a 
 
 	await page.getByLabel('Wait for Usenet (minutes)').fill('30');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Pick rules saved.')).toBeVisible();
+	await expect(page.getByText('Pick rules saved')).toBeVisible();
 	await expect(bar).toHaveCount(0);
 	await page.reload();
 	await expect(page.getByLabel('Wait for Usenet (minutes)')).toHaveValue('30');
@@ -87,7 +87,7 @@ test('removing asks first, and then the copy is gone', async () => {
 
 	await more('Standard copy', 'Remove');
 	await sheet.getByRole('button', { name: 'Remove', exact: true }).click();
-	await expect(page.getByText('Standard copy removed.')).toBeVisible();
+	await expect(page.getByText('Standard copy removed')).toBeVisible();
 	await expect(row('Standard copy')).toHaveCount(0);
 	await page.reload();
 	await expect(row('Standard')).toHaveCount(1);
@@ -149,7 +149,7 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 		expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 		await sheet.getByLabel('Words').fill('NLSubs\n/\\bdutch\\b/');
 		await sheet.getByRole('button', { name: 'Make trait' }).click();
-		await expect(page.getByText('Dutch subs made. Pick rules can use it now.')).toBeVisible();
+		await expect(page.getByText('Dutch subs made')).toBeVisible();
 		await expect(page.getByTestId('own-trait')).toContainText('Name has: NLSubs, /\\bdutch\\b/');
 
 		// A copy of Standard never takes it.
@@ -169,7 +169,7 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 		await page.getByTestId('own-trait').getByRole('button', { name: 'More for Dutch subs' }).click();
 		await page.getByRole('menu', { name: 'More for Dutch subs' }).getByRole('menuitem', { name: 'Remove' }).click();
 		await page.getByRole('dialog', { name: 'Remove this trait?' }).getByRole('button', { name: 'Remove', exact: true }).click();
-		await expect(page.getByText('Dutch subs removed, and taken out of 1 set of Pick rules.')).toBeVisible();
+		await expect(page.getByText('Dutch subs removed')).toBeVisible();
 		await expect(page.getByTestId('own-trait')).toHaveCount(0);
 		await page.goto(copy);
 		await expect(page.getByTestId('never')).not.toContainText('Dutch subs');

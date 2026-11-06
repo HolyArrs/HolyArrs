@@ -55,8 +55,8 @@
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
-		if (mode === 'location') return send('location', { category: category.trim(), folder: folder.trim() }, `Moving ${noun}. Big ones take a while.`, !folder.trim() ? 'Type a folder.' : '');
-		if (mode === 'speed') return send('speed-limits', { down: bytesOf(down), up: bytesOf(up) }, `Speed limits set for ${noun}.`, '');
+		if (mode === 'location') return send('location', { category: category.trim(), folder: folder.trim() }, `Moving ${noun}`, !folder.trim() ? 'Type a folder.' : '');
+		if (mode === 'speed') return send('speed-limits', { down: bytesOf(down), up: bytesOf(up) }, `Speed limits set for ${noun}`, '');
 		const l: ShareLimits = { ratio: valueOf(ratioMode, Number(ratio)), seeding_minutes: valueOf(seedMode, Number(seedMin)), inactive_minutes: valueOf(idleMode, Number(idleMin)), action };
 		error = checkLimits(l);
 		if (error || !count) return;
@@ -74,7 +74,7 @@
 			error = bad.join(' · ');
 			return;
 		}
-		toasts.push(`Seeding rules set for ${noun}.`, 'ok');
+		toasts.push(`Seeding rules set for ${noun}`, 'ok');
 		open = false;
 		ondone?.();
 	}

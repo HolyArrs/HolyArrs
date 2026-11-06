@@ -803,14 +803,14 @@
 	}
 	function artistAdded(a: LookupArtist, t: TitleView) {
 		patchArtist(a, { title_id: t.id });
-		toasts.push(`${t.name} is in your Library. Albums, Pressings and tracks are being filled in.`, 'ok');
+		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
 	}
 	function artistAsked(a: LookupArtist, r: { ask: Ask; joined: boolean; already: boolean }) {
 		patchArtist(a, { ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, albums: r.ask.albums } });
 		const what = `${r.ask.name} (${albumWords(r.ask.albums)})`;
-		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too and will hear when it is ready.`, 'ok');
-		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
+		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Kept up to date' });
+		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
+		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}
 	function artistRefused(a: LookupArtist, body: Record<string, unknown>) {

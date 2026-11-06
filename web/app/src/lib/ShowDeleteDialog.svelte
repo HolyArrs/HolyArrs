@@ -66,10 +66,8 @@
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, body(true));
 			isOpen = false;
-			const held = p.held.length
-				? ` ${p.held.length === 1 ? 'Its file is' : 'Their files are'} in the holding folder${p.holding_days ? ` for ${p.holding_days} days` : ''}.`
-				: ' Files stay on disk.';
-			toasts.push(`${what} is deleted.${held}`, 'ok');
+			const kept = p.held.length ? `Files kept${p.holding_days ? ` ${p.holding_days} days` : ' in the holding folder'}` : 'Files stay on disk';
+			toasts.push(`${what} deleted`, 'ok', { body: kept });
 			ondone(p);
 		} catch (e) {
 			error = message(e);

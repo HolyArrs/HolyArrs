@@ -51,10 +51,10 @@
 		uiBusy = true;
 		try {
 			cacheGB = (await api.put<{ artwork_cache_gb: number }>('/settings/ui', { artwork_cache_gb: gb })).artwork_cache_gb;
-			toasts.push(`Pictures may use up to ${cacheGB} GB`, 'ok');
+			toasts.push('Picture cache saved', 'ok', { body: `Up to ${cacheGB} GB` });
 		} catch (e) {
 			if (el) el.value = String(was);
-			toasts.push(`Not saved. ${message(e)}`, 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 			await loadUi();
 		} finally {
 			uiBusy = false;
@@ -70,7 +70,7 @@
 			toasts.push('History keep time saved', 'ok');
 		} catch (e) {
 			if (el) el.value = String(was);
-			toasts.push(`Not saved. ${message(e)}`, 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 			await loadUi();
 		} finally {
 			uiBusy = false;
@@ -80,10 +80,10 @@
 		uiBusy = true;
 		try {
 			countInstall = (await api.put<{ count_install: boolean }>('/settings/ui', { count_install: on })).count_install;
-			toasts.push(countInstall ? 'This install is counted' : 'This install is no longer counted', 'ok');
+			toasts.push(countInstall ? 'Install counted' : 'Install not counted', 'ok');
 		} catch (e) {
 			if (el) el.checked = !on;
-			toasts.push(`Not saved. ${message(e)}`, 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 			await loadUi();
 		} finally {
 			uiBusy = false;
@@ -108,7 +108,7 @@
 		try {
 			update = await api.post<UpdateInfo>('/app/update/check');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't check for updates", 'fail', { body: message(e) });
 		} finally {
 			checking = false;
 		}
@@ -128,9 +128,9 @@
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push('Copied.', 'ok');
+			toasts.push('Text copied', 'ok');
 		} catch {
-			toasts.push('Copying is not allowed here; select the text instead.', 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 	let storage = $state<{ app: PathInfo[]; library_folders: PathInfo[]; save_path: string } | null>(null);
@@ -195,7 +195,7 @@
 		try {
 			urlBase = await api.put<{ saved: string; in_use: string; restart_needed: boolean }>('/settings/url-base', { url_base: urlBaseTyped.trim() });
 			urlBaseTyped = urlBase.saved;
-			toasts.push(urlBase.restart_needed ? 'URL base saved. Restart HolyArrs to use it.' : 'URL base saved.', 'ok');
+			toasts.push('URL base saved', 'ok', urlBase.restart_needed ? { body: 'Restart to use it' } : undefined);
 		} catch (err) {
 			urlBaseErr = message(err);
 		} finally {

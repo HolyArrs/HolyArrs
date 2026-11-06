@@ -100,7 +100,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	await own.goto('/settings/wishlist');
 	await own.getByLabel('Request from Plex watchlists').check();
 	await own.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('Request settings saved.')).toBeVisible();
+	await expect(own.getByText('Request settings saved')).toBeVisible();
 
 	await lab('/lab/watchlist', { token: '*', items: [movie, show, kept, song] });
 	await own.goto('/settings/account');
@@ -108,7 +108,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	await expect(card.getByRole('heading', { name: 'Plex watchlist' })).toBeVisible();
 	// Turning a switch on queues a read straight away (the I/O workers may be busy with other Jobs first).
 	await card.getByLabel('Request movies on my Plex watchlist').check();
-	await expect(own.getByText('HolyArrs reads your Plex watchlist now')).toBeVisible();
+	await expect(own.getByText('Plex watchlist on')).toBeVisible();
 	await expect(card.getByLabel('Request movies on my Plex watchlist')).toBeChecked();
 	await card.getByLabel('Request shows on my Plex watchlist').check();
 	await expect(card.getByLabel('Request shows on my Plex watchlist')).toBeChecked();
@@ -139,7 +139,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	// Read now again: nothing new is asked for.
 	const before = (await watch()).checked_at;
 	await card.getByRole('button', { name: 'Read now' }).click();
-	await expect(own.getByText('Reading your Plex watchlist…')).toBeVisible();
+	await expect(own.getByText('Reading Plex watchlist')).toBeVisible();
 	await expect.poll(async () => (await watch()).checked_at, { timeout: 60_000, intervals: [1500] }).not.toBe(before);
 	expect((await asks()).map((a) => a.id).sort()).toEqual(first.map((a) => a.id).sort());
 
@@ -232,7 +232,7 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	await linked.getByRole('button', { name: 'Plex', exact: true }).click();
 	const pin = (await (await started).json()) as { id: number };
 	await (await popup).waitForLoadState().catch(() => {});
-	await expect(kid.getByText('Plex account junoplex linked.')).toBeVisible({ timeout: 20_000 });
+	await expect(kid.getByText('Plex junoplex linked')).toBeVisible({ timeout: 20_000 });
 	await expect(kid.getByTestId('my-plex-link')).toContainText('Plex, as junoplex');
 
 	// Only juno's Plex sign-in has these two on its watchlist (the fake Plex
@@ -268,7 +268,7 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	// Read now: nothing new is asked for, and the limit still holds the second back.
 	const before = (await watch(juno.call)).checked_at;
 	await card.getByRole('button', { name: 'Read now' }).click();
-	await expect(kid.getByText('Reading your Plex watchlist…')).toBeVisible();
+	await expect(kid.getByText('Reading Plex watchlist')).toBeVisible();
 	await expect.poll(async () => (await watch(juno.call)).checked_at, { timeout: 60_000, intervals: [1500] }).not.toBe(before);
 	expect(await states()).toEqual(first);
 	expect((await asks()).filter((a) => a.name === askedName || a.name === heldName).map((a) => a.id)).toEqual([mine[0].id]);

@@ -96,7 +96,7 @@ test('health: checks run on Health checks, show on Home, and their settings are 
 	await openAdvanced(page);
 	await page.getByLabel('Alert after this many runs in a row').fill('3');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(page.getByText('Health check settings saved.')).toBeVisible();
+	await expect(page.getByText('Health check settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Alert after this many runs in a row')).toHaveValue('3');
 	await page.getByLabel('Alert after this many runs in a row').fill('2');

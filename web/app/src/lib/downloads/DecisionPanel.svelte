@@ -43,11 +43,11 @@
 		busy = key;
 		try {
 			await api.post(`/needs-decision/${d.slot_id}/decide`, pack ? { action, pack: true } : { action });
-			toasts.push({ search: `Searching again for ${episodes}.`, turn_down: `Turned down. Searching again for ${episodes}.`, stop: `Stopped looking for ${episodes}.` }[action], 'ok');
+			toasts.push({ search: `Searching again for ${episodes}`, turn_down: `Searching again for ${episodes}`, stop: `Stopped looking for ${episodes}` }[action], 'ok', action === 'turn_down' ? { body: 'Release turned down' } : {});
 			await refreshDecisions();
 			ondone?.();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save decision", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}

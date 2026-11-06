@@ -122,7 +122,7 @@ test('a Release turned down for an episode is never picked again for it; Search 
 	await expect(best.locator('.rs-rec')).toHaveText('Recommended');
 
 	await best.getByRole('button', { name: /^Never pick/ }).click();
-	await expect(page.getByRole('status')).toContainText('It will never be picked');
+	await expect(page.getByRole('status')).toContainText('Release turned down');
 	await expect(verdict(best)).toHaveText('Turned down');
 	await page.keyboard.press('Escape');
 	await expect(panel).toBeHidden();
@@ -146,13 +146,13 @@ test('Settings > Search has the season pack choices', async () => {
 	await expect(page.getByLabel('A season pack is taken when')).toHaveValue('all');
 	await page.getByLabel('Season pack or single episodes').selectOption('always');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('status')).toContainText('Search settings saved.');
+	await expect(page.getByRole('status')).toContainText('Search settings saved');
 	await page.reload();
 	await expect(page.getByLabel('Season pack or single episodes')).toHaveValue('always');
 	await page.getByLabel('Season pack or single episodes').selectOption('rank');
 	await page.getByRole('button', { name: 'Save' }).click();
 	// Scan once the saved note is in, not while it fades in.
-	await expect(page.getByRole('status')).toContainText('Search settings saved.');
+	await expect(page.getByRole('status')).toContainText('Search settings saved');
 	await axe(page, 'search settings');
 });
 

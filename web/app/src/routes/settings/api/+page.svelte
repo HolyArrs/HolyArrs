@@ -36,9 +36,9 @@
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push('Copied.', 'ok');
+			toasts.push('Command copied', 'ok');
 		} catch {
-			toasts.push('Copying is not allowed here; select the text instead.', 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 

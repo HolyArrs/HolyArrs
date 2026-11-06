@@ -130,7 +130,6 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await expect(confirmTakeBack).toBeHidden();
 	await expect(confirmTakeBack.getByTestId('take-back-error')).toHaveCount(0);
 	await expect(ask).toHaveCount(0);
-	await expect(kim.getByText('Took back Copper Lighthouse.')).toBeVisible();
 	await expect(kim.getByRole('heading', { level: 1 })).toBeFocused();
 	// Asked again, it is back on the Requests page for the owner to approve.
 	const again = await askButton(kim, 'copper', 'Copper Lighthouse');
@@ -174,7 +173,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	await sheet.getByRole('button', { name: 'Approve', exact: true }).click();
 	await expect(win).toBeHidden();
 	// Undo waits at the bottom for a few seconds, then the answer is sent.
-	await expect(own.getByRole('status').filter({ hasText: 'Approved Copper Lighthouse.' }).getByRole('button', { name: 'Undo' })).toBeVisible();
+	await expect(own.getByRole('status').filter({ hasText: 'Copper Lighthouse approved' }).getByRole('button', { name: 'Undo' })).toBeVisible();
 	await expect(own.getByRole('button', { name: /^Pending 0/ })).toBeVisible();
 	await expect.poll(async () => (await posts()).some((c) => c.startsWith(`<@${kimDiscord}> **Approved: Copper Lighthouse`)), { timeout: 20_000 }).toBe(true);
 
@@ -346,14 +345,14 @@ test('two members ask for different seasons of a show: one ask, both askers on i
 	const first = await pick(rosa, 1);
 	await first.getByRole('button', { name: 'Ask for season 1' }).click();
 	await expect(first).toBeHidden();
-	await expect(rosa.getByRole('status').filter({ hasText: `Asked for ${show} (season 1)` })).toBeVisible();
+	await expect(rosa.getByRole('status').filter({ hasText: `${show} (season 1) requested` })).toBeVisible();
 
 	// teo is told someone asked already; season 2 joins rosa's ask and widens it.
 	const second = await pick(teo, 2);
 	await expect(second).toContainText('Someone asked for season 1 already');
 	await second.getByRole('button', { name: 'Ask for season 2' }).click();
 	await expect(second).toBeHidden();
-	await expect(teo.getByRole('status').filter({ hasText: 'you are on the ask too' })).toBeVisible();
+	await expect(teo.getByRole('status').filter({ hasText: "You're on the request too" })).toBeVisible();
 
 	for (const p of [rosa, teo]) {
 		await p.goto('/requests');
@@ -819,7 +818,7 @@ test('#136 several admins decline the same movie: the window names who else decl
 	const winner = (await asksFor(ada, harrow)).find((a) => a.id === second)!.decided_by!.display_name!;
 	expect(['Bea Thorn', 'Cy Marsh']).toContain(winner);
 	const [loserPage, loser] = winner === 'Bea Thorn' ? [cy, 'Cy Marsh'] : [bea, 'Bea Thorn'];
-	await expect(loserPage.getByRole('status').filter({ hasText: `${winner} already declined ${harrow}.` })).toBeVisible({ timeout: 20_000 });
+	await expect(loserPage.getByRole('status').filter({ hasText: `${harrow} already declined` })).toBeVisible({ timeout: 20_000 });
 	await expect(loserPage.getByText(/Try again/)).toHaveCount(0);
 
 	// 3. hal asks a third time; the admin who lost the race declines it.

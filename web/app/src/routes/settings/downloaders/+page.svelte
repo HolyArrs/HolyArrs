@@ -178,7 +178,7 @@
 		try {
 			const body = formBody(form);
 			const saved = isNew ? await api.post<DownloaderView>('/downloaders', body) : await api.put<DownloaderView>(`/downloaders/${editing!.id}`, body);
-			toasts.push(`Downloader ${saved.name} saved.`, 'ok');
+			toasts.push(`${saved.name} saved`, 'ok');
 			forgetTags();
 			editing = null;
 			await load();
@@ -208,7 +208,7 @@
 			await api.post(`/downloaders/${d.id}/${paused ? 'pause' : 'resume'}`);
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Downloader`, 'fail', { body: message(err) });
 		}
 	}
 
@@ -218,7 +218,7 @@
 			await api.del(`/downloaders/${d.id}`);
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove Downloader", 'fail', { body: message(err) });
 		}
 	}
 
@@ -232,10 +232,10 @@
 		abandoning = attempt.id;
 		try {
 			await api.post(`/downloaders/${d.id}/attempts/${attempt.id}/abandon`);
-			toasts.push('The uncertain send was abandoned. Inspect the Downloader before choosing another Release.', 'ok');
+			toasts.push('Send abandoned', 'ok', { body: 'Check the Downloader first' });
 			await loadAttempts(d);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't abandon send", 'fail', { body: message(err) });
 		} finally {
 			abandoning = 0;
 		}
@@ -258,7 +258,7 @@
 		try {
 			settings = await api.put<DownloaderSettings>('/settings/downloaders', body);
 			saved = JSON.stringify(settings);
-			toasts.push('Downloader settings saved.', 'ok');
+			toasts.push('Downloader settings saved', 'ok');
 		} catch (err) {
 			setError = message(err);
 		} finally {

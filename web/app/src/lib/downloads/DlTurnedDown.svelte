@@ -54,10 +54,9 @@
 		busy = true;
 		try {
 			await api.del(`/turned-down/${r.id}`);
-			toasts.push(`${r.name} may be picked again.`, 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't take off list", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -66,12 +65,11 @@
 		if (!confirm(`Take all ${total} Releases off the Turned down list? HolyArrs may pick them again.`)) return;
 		busy = true;
 		try {
-			const r = await api.del<{ removed: number }>(`/turned-down`);
-			toasts.push(`${r.removed} ${r.removed === 1 ? 'Release' : 'Releases'} taken off the list.`, 'ok');
+			await api.del(`/turned-down`);
 			offset = 0;
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't clear list", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

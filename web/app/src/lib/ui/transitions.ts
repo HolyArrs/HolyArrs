@@ -53,6 +53,17 @@ export function dropOut(node: Element): TransitionConfig {
 	return fly(node, { y: 16, duration: DUR.fast, easing: easeIn });
 }
 
+/** A top notification dropping in: a short drop with a soft spring (Apple TV style). */
+export function notifyIn(node: Element): TransitionConfig {
+	if (reducedMotion()) return calm(node, DUR.fast);
+	return fly(node, { y: -14, duration: DUR.slow, easing: easeSpring });
+}
+/** A top notification leaving upwards, quicker. */
+export function notifyOut(node: Element): TransitionConfig {
+	if (reducedMotion()) return calm(node, DUR.fast);
+	return fly(node, { y: -10, duration: DUR.fast, easing: easeIn });
+}
+
 /** On phones the pane is a fixed bottom sheet with its own look; its in-flow wrapper has no height, so nothing to fold. */
 const phone = () => typeof matchMedia === 'function' && matchMedia('(max-width: 640px)').matches;
 /** A sheet rising from the bottom of its card (the Downloads detail pane): one element folds open at the slow pace. */

@@ -46,16 +46,16 @@
 			if (field === 'autoplay_trailers') {
 				autoplay = s.autoplay_trailers ?? on;
 				setAutoplaySetting(autoplay);
-				toasts.push(autoplay ? 'Trailers play by themselves' : 'Trailers no longer play by themselves', 'ok');
+				toasts.push(autoplay ? 'Trailer autoplay on' : 'Trailer autoplay off', 'ok');
 			} else {
 				signinArt = s.signin_library_art ?? on;
-				toasts.push(signinArt ? 'The sign-in page shows Library art' : 'The sign-in page shows trending art', 'ok');
+				toasts.push(signinArt ? 'Sign-in art: Library' : 'Sign-in art: trending', 'ok');
 			}
 		} catch (e) {
 			// Put the box back and say why next to it, so a failed save is never silent.
 			box.checked = !on;
 			appError = `Not saved. ${message(e)}`;
-			toasts.push(appError, 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

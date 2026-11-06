@@ -84,7 +84,7 @@
 				saved = JSON.stringify(done);
 			}
 			savedDefaults.forget();
-			toasts.push('Movies and TV defaults saved.', 'ok');
+			toasts.push('Movies and TV defaults saved', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {

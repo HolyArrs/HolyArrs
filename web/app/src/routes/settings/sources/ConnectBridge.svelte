@@ -184,7 +184,7 @@
 			// Edited to a new address: the old connection goes, its Sources with it.
 			if (editingId != null && b.id !== editingId) await api.del(`/bridges/${editingId}`).catch(() => {});
 			editingId = null;
-			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. Sources show up in a minute.', 'ok');
+			toasts.push(b.kind === 'jackett' ? 'Jackett connected' : 'Prowlarr connected', 'ok', { body: b.kind === 'jackett' ? `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added` : 'Sources arrive in a minute' });
 			open = false;
 			key = '';
 			typedKeys = { sonarr: '', radarr: '' };
@@ -209,10 +209,10 @@
 		try {
 			const r = await api.post<{ bridge: Bridge; result?: { added: number; removed: number; updated: number } }>(`/bridges/${b.id}/check`, {});
 			const res = r.result;
-			toasts.push(res ? (res.added + res.removed + res.updated ? `Synced: ${res.added} added, ${res.removed} removed, ${res.updated} changed.` : 'Already up to date.') : 'Prowlarr is syncing again.', 'ok');
+			toasts.push(res ? (res.added + res.removed + res.updated ? 'Sources synced' : 'Already up to date') : 'Prowlarr syncing again', 'ok', res && res.added + res.removed + res.updated ? { body: `${res.added} added, ${res.removed} removed, ${res.updated} changed` } : undefined);
 			onchange?.();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't sync", 'fail', { body: message(e) });
 		} finally {
 			checking = null;
 			await load();
@@ -233,7 +233,7 @@
 		removeError = '';
 		try {
 			await api.del(`/bridges/${removing.id}${keepSources ? '?keep_sources=true' : ''}`);
-			toasts.push(`${names[removing.kind]} disconnected.`, 'ok');
+			toasts.push(`${names[removing.kind]} disconnected`, 'ok');
 			removeOpen = false;
 			await load();
 			onchange?.();

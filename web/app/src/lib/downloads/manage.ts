@@ -28,8 +28,8 @@ export function splitLinks(text: string): { links: string[]; bad: string[] } {
 
 const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 
-/** addWords says how an add went, in one line, and whether it is good news. */
-export function addWords(o: AddOutcome): { text: string; tone: 'ok' | 'info' | 'fail' } {
+/** addWords says how an add went (the main result, then the rest as a body), and whether it is good news. */
+export function addWords(o: AddOutcome): { text: string; body?: string; tone: 'ok' | 'info' | 'fail' } {
 	const parts: string[] = [];
 	if (o.added) parts.push(`${n(o.added, 'torrent')} added`);
 	if (o.pending) parts.push(`${o.pending} still being fetched`);
@@ -37,9 +37,9 @@ export function addWords(o: AddOutcome): { text: string; tone: 'ok' | 'info' | '
 	if (o.failed) parts.push(`${o.failed} failed`);
 	if (o.bad?.length) parts.push(`could not add: ${o.bad.join(', ')}`);
 	if (o.dropped) parts.push(`${n(o.dropped, 'local address', 'local addresses')} left out of the magnet links`);
-	const text = parts.length ? upper(parts.join(' · ')) + '.' : 'Nothing was added.';
+	const text = parts.length ? upper(parts[0]) : 'Nothing added';
 	const tone = o.failed || o.bad?.length ? (o.added || o.pending ? 'info' : 'fail') : o.added || o.pending ? 'ok' : 'info';
-	return { text, tone };
+	return parts.length > 1 ? { text, body: parts.slice(1).join(' · '), tone } : { text, tone };
 }
 
 const upper = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -70,10 +70,10 @@ export function byClient<T extends Addressed>(rows: T[]): Map<number, T[]> {
 	return m;
 }
 
-/** BULK_DONE is the toast after a selection action. */
+/** BULK_DONE ends the toast after a selection action: "3 downloads paused". */
 export const BULK_DONE: Record<BulkAction, string> = {
-	start: 'Started', pause: 'Paused', recheck: 'Checking again', reannounce: 'Asked the trackers again', top: 'Moved to the top', bottom: 'Moved to the bottom',
-	up: 'Moved up', down: 'Moved down', force: 'Force started', unforce: 'Back in the queue'
+	start: 'started', pause: 'paused', recheck: 'being checked', reannounce: 'announced again', top: 'moved to the top', bottom: 'moved to the bottom',
+	up: 'moved up', down: 'moved down', force: 'force started', unforce: 'back in the queue'
 };
 
 /** A torrent's own seeding rules: -2 follows the Downloader's rule, -1 is no limit. */

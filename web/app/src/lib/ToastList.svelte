@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { dropIn, dropOut } from './ui/transitions.ts';
-	import { toasts } from './toasts.svelte';
+	import { notifyIn, notifyOut } from './ui/transitions.ts';
+	import { alertsPanel, toasts } from './toasts.svelte';
+	import AlertsPanel from './AlertsPanel.svelte';
 	import Toast from './ui/Toast.svelte';
 	import {
 		METADATA_BACK,
-		METADATA_DOWN,
 		METADATA_DOWN_TITLE,
 		clearMetadataBack,
 		dismissMetadataDown,
@@ -15,10 +15,36 @@
 	} from './metadata-health.svelte.ts';
 	import { session } from './session.svelte.ts';
 
-	// All notifications slide up at the bottom centre (above the tab bar on
-	// phones) with a soft spring and leave downwards, quicker; reduced motion fades only.
-	const toastIn = dropIn;
-	const toastOut = dropOut;
+	// Notifications drop in at the top right under the top bar (top, full width on
+	// phones) with a soft spring and leave upwards, quicker; reduced motion fades only.
+	const toastIn = notifyIn;
+	const toastOut = notifyOut;
+
+	// Screen readers: failures are read at once, the rest politely. The text is cleared
+	// first so the same message pushed again is read again.
+	let politeMsg = $state('');
+	let urgentMsg = $state('');
+	const heard = new Map<number, number>();
+	$effect(() => {
+		const urgent: string[] = [];
+		const polite: string[] = [];
+		for (const t of toasts.list) {
+			if (heard.get(t.id) === t.seen) continue;
+			heard.set(t.id, t.seen);
+			const words = t.body ? `${t.text}. ${t.body}` : t.text;
+			(t.tone === 'fail' ? urgent : polite).push(t.action ? `${words}. ${t.action.label} is available.` : words);
+		}
+		for (const id of heard.keys()) if (!toasts.list.some((t) => t.id === id)) heard.delete(id);
+		if (!urgent.length && !polite.length) return;
+		// Messages that arrive together are read together.
+		if (urgent.length) urgentMsg = '';
+		if (polite.length) politeMsg = '';
+		const say = setTimeout(() => {
+			if (urgent.length) urgentMsg = urgent.join('. ');
+			if (polite.length) politeMsg = polite.join('. ');
+		}, 60);
+		return () => clearTimeout(say);
+	});
 
 	// Metadata outage: full card, shrinks to a pill after 6 s, tap to open again.
 	const downShown = $derived(metadataDownShown());
@@ -46,6 +72,13 @@
 	// before sign-in, which would read as an outage). Sign-in itself never
 	// needs metadata, so nothing is checked or shown until signed in.
 	const signedIn = $derived(session.s.state === 'signed_in');
+	// Recent alerts belong to this sign-in: signing out clears them.
+	$effect(() => {
+		if (session.s.state === 'signed_out') {
+			toasts.forgetAll();
+			alertsPanel.open = false;
+		}
+	});
 	$effect(() => {
 		if (!signedIn) return;
 		return watchMetadata();
@@ -102,6 +135,41 @@
 			if (host && home && host.parentNode !== home.parentNode) home.after(host);
 		};
 	});
+	// Preview builds only (VITE_ALERTS_DEMO): a button that plays sample alerts, for
+	// checking the look on real pages. Normal builds drop this code.
+	const demo = !!import.meta.env.VITE_ALERTS_DEMO;
+	let step = 0;
+	// Built only into the preview: normal builds see `false ? [...] : []` and drop the samples.
+	const samples: (() => void)[] = import.meta.env.VITE_ALERTS_DEMO ? [
+		() => toasts.push('Dune: Part Two requested', 'ok', { body: 'Waiting for approval' }),
+		() => toasts.push('Severance deleted', 'ok', { body: 'Files kept 7 days', ms: 10000, action: { label: 'Undo', run: () => toasts.push('Severance restored', 'ok') } }),
+		() => toasts.push("Couldn't reach qBittorrent", 'fail', { body: 'Check Settings › Downloaders' }),
+		() => toasts.push('Searching for The Bear', 'info'),
+		() => toasts.push('API key copied', 'ok'),
+		() => [1, 2, 3, 4].forEach((n) => toasts.push(`Andor S2E${n} marked failed`, 'info', { body: 'Searching for the next Release' })),
+		// Earlier alerts, so Recent alerts shows how times read (now, 5m, 1h, 3h, 2d).
+		() => {
+			const ago: [string, 'ok' | 'fail' | 'info', string | undefined, number][] = [
+				['Andor added', 'ok', 'Searching for a Release', 2 * 86400],
+				["Couldn't reach Prowlarr", 'fail', 'Check Settings › Sources', 3 * 3600],
+				['Backup made', 'ok', undefined, 3600],
+				['Searching for The Bear', 'info', undefined, 5 * 60]
+			];
+			for (const [title, tone, body, secs] of ago) {
+				const id = toasts.push(title, tone, { body });
+				const row = toasts.past.find((p) => p.id === id);
+				if (row) row.at = Date.now() - secs * 1000;
+			}
+			toasts.push('Severance deleted', 'ok', { body: 'Files kept 7 days', ms: 10000, action: { label: 'Undo', run: () => toasts.push('Severance restored', 'ok') } });
+		},
+		() => Array.from({ length: 10 }, (_, i) => i + 1).forEach((n) => toasts.push(`The Bear S3E${n} added`, 'ok', { body: 'Searching for a Release' }))
+	] : [];
+	function playDemo() {
+		if (samples.length) samples[step++ % samples.length]();
+	}
+	onMount(() => {
+		if (demo) (window as unknown as { __holyarrsToasts?: typeof toasts }).__holyarrsToasts = toasts;
+	});
 	$effect(() => {
 		void toasts.list.length;
 		void downShown;
@@ -111,27 +179,37 @@
 	});
 </script>
 
+{#if demo && signedIn}<button type="button" class="alerts-demo" onclick={playDemo}>Try alerts</button>{/if}
 <span class="toast-home" hidden bind:this={home}></span>
-<div class="toasts" class:in-win={inWin} role="status" aria-live="polite" popover="manual" bind:this={host}>
+<div class="sr-only" role="status" aria-live="polite">{politeMsg}</div>
+<div class="sr-only" role="alert" aria-live="assertive">{urgentMsg}</div>
+<div class="toasts" class:in-win={inWin} popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
-			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text={METADATA_DOWN} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
+			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text="Library still works" time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
 		</div>
 	{:else if signedIn && back}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-back">
-			<Toast tone="ok" icon="check" title={METADATA_BACK} text="Search and new artwork are back." time="now" ondismiss={clearMetadataBack} />
+			<Toast tone="ok" icon="check" title={METADATA_BACK} text="Search and artwork restored" time="now" ondismiss={clearMetadataBack} />
 		</div>
 	{/if}
-	{#each toasts.list as t (t.id)}
+	<!-- While Recent alerts is open the pills step aside: every alert is in the list. -->
+	{#each alertsPanel.open ? [] : toasts.list as t (t.id)}
 		<div class="slot" in:toastIn out:toastOut>
-			<Toast text={t.text} tone={t.tone} action={t.action ? { label: t.action.label, run: () => { t.action?.run(); toasts.dismiss(t.id); } } : undefined} ondismiss={() => toasts.dismiss(t.id)} />
+			<Toast title={t.body ? t.text : undefined} text={t.body ?? t.text} tone={t.tone} action={t.action ? { label: t.action.label, run: () => toasts.runPast(t.id) } : undefined} ondismiss={() => toasts.dismiss(t.id)} onhold={() => toasts.pause(t.id)} onlet={() => toasts.resume(t.id)} />
 		</div>
 	{/each}
+	{#if toasts.counts.waiting > 0 && !alertsPanel.open}
+		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>+{toasts.counts.waiting} more</button>
+	{/if}
 </div>
+{#if signedIn}<AlertsPanel />{/if}
 
 <style>
+	.alerts-demo { position: fixed; z-index: 89; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; border-radius: 999px; font: var(--t-subhead); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 6px 20px rgb(0 0 0 / 35%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
+	@media (max-width: 767px) { .alerts-demo { bottom: calc(var(--tabbar, 60px) + 12px + env(safe-area-inset-bottom, 0px)); } }
 	.toasts {
-		/* Undo the popover defaults; keep the bottom-centre placement. */
+		/* Undo the popover defaults. Top right, just under the top bar, like Apple TV. */
 		inset: auto;
 		margin: 0;
 		padding: 0;
@@ -141,20 +219,27 @@
 		overflow: visible;
 		position: fixed;
 		z-index: 90;
-		left: 50%;
-		bottom: calc(var(--s-4, 16px) + env(safe-area-inset-bottom, 0px));
-		transform: translateX(-50%);
+		top: calc(var(--topbar, 56px) + 10px + env(safe-area-inset-top, 0px));
+		right: max(20px, env(safe-area-inset-right, 0px));
 		display: flex;
 		flex-direction: column;
-		gap: var(--s-2);
-		width: min(400px, calc(100vw - 32px));
+		gap: 10px;
+		width: min(380px, calc(100vw - 32px));
 		pointer-events: none;
 	}
+	/* Inside an open window the top right holds its close button, so the toasts sit at
+	   the bottom centre of the screen instead. */
+	.toasts.in-win { top: auto; right: auto; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 	@media (max-width: 767px) {
-		.toasts { bottom: calc(var(--tabbar, 64px) + 12px + env(safe-area-inset-bottom, 0px)); }
-		/* Inside a full-screen window there's no tab bar; the bottom holds the window's status
-		   strip and answer buttons, so the toast drops in under the window's top controls. */
-		.toasts.in-win { bottom: auto; top: calc(72px + env(safe-area-inset-top, 0px)); }
+		.toasts { left: 12px; right: 12px; width: auto; top: calc(var(--topbar, 56px) + 8px + env(safe-area-inset-top, 0px)); }
+		/* A full-screen window on a phone keeps its answer buttons at the bottom; drop in
+		   under its top controls. */
+		.toasts.in-win { left: 12px; right: 12px; transform: none; bottom: auto; top: calc(72px + env(safe-area-inset-top, 0px)); }
 	}
 	.slot { display: flex; flex-direction: column; }
+	/* "+N more": how many wait behind the two on screen; opens Recent alerts. */
+	.more { pointer-events: auto; align-self: center; padding: 6px 14px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(28 28 32 / 86%); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: 0 8px 24px rgb(0 0 0 / 32%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
+	.more:hover { background: rgb(44 44 50 / 86%); }
+	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.toasts.in-win .slot { align-items: center; }
 </style>

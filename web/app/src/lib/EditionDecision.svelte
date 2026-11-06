@@ -18,7 +18,7 @@
 		error = '';
 		try {
 			await api.put(`/downloads/${downloadId}/edition`, editionDecisionBody(edition));
-			toasts.push('The checked edition is saved. HolyArrs is trying the import again.', 'ok');
+			toasts.push('Edition saved', 'ok', { body: 'Trying the import again' });
 			await onchange();
 		} catch (e) {
 			error = message(e);

@@ -24,7 +24,7 @@
 		try {
 			if (target) on = await setFollow(api, target, !on);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't update follow`, 'fail', { body: message(err) });
 		} finally {
 			busy = false;
 		}

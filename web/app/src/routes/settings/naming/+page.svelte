@@ -147,7 +147,7 @@
 			ns = n.naming;
 			fr = await api.put<FileRules>('/settings/files', { holding_days: days, min_free_mb: floor, skip_free_space_check: fr.skip_free_space_check });
 			saved = snapshot();
-			toasts.push('Naming and file settings saved.', 'ok');
+			toasts.push('Naming settings saved', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -160,11 +160,11 @@
 		try {
 			await api.post('/holding/clean');
 			toasts.push(
-				fr.holding_days > 0 ? `Removing held files older than ${fr.holding_days} days.` : 'Deleted files are kept for 0 days, which means until you empty them yourself. Nothing is removed.',
-				'ok'
+				fr.holding_days > 0 ? 'Removing held files' : 'Nothing removed',
+				'info', { body: fr.holding_days > 0 ? `Older than ${fr.holding_days} days` : 'Kept until emptied' }
 			);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't clean up", 'fail', { body: message(e) });
 		} finally {
 			cleaning = false;
 		}

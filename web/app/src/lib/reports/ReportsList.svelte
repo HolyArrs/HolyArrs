@@ -90,17 +90,33 @@
 		} catch {
 			return; // keep the last answer
 		}
-		for (const id of before) if (!searching.has(id)) searchEnded(id, recent);
+		// Every search that ended in this read becomes one toast, however many there are.
+		const ended: NonNullable<ReturnType<typeof searchEnded>>[] = [];
+		for (const id of before) if (!searching.has(id)) {
+			const e = searchEnded(id, recent);
+			if (e) ended.push(e);
+		}
+		if (ended.length === 1) {
+			const [e] = ended;
+			if (e.kind === 'none') toasts.push(`No better copy of ${e.name}`, 'info', { body: 'Nothing found yet' });
+			else if (e.kind === 'failed') toasts.push(`Couldn't search ${e.name}`, 'fail', e.error ? { body: e.error } : {});
+			else toasts.push(`Another copy of ${e.name} found`, 'ok');
+		} else if (ended.length > 1) {
+			const found = ended.filter((e) => e.kind === 'found').length;
+			const failed = ended.filter((e) => e.kind === 'failed').length;
+			const body = [found && `${found} found`, failed && `${failed} failed`, ended.length - found - failed && `${ended.length - found - failed} nothing new`].filter(Boolean).join(', ');
+			toasts.push(`${ended.length} searches finished`, failed === ended.length ? 'fail' : found ? 'ok' : 'info', { body });
+		}
 		if (searching.size) searchTimer = setTimeout(() => void readSearches(), 2500);
 	}
-	function searchEnded(titleId: number, recent: SearchView[]) {
+	function searchEnded(titleId: number, recent: SearchView[]): { name: string; kind: 'none' | 'failed' | 'found'; error?: string } | undefined {
 		if (!mine.delete(titleId)) return;
 		const job = recent.filter((x) => x.title_id === titleId).sort((x, y) => y.job_id - x.job_id)[0];
 		const name = job?.title_name ?? reports.find((r) => r.title_id === titleId)?.title_name;
 		if (!job || !name) return;
-		if (job.outcome === 'none') toasts.push(`No better copy of ${name} found yet.`, 'info');
-		else if (job.outcome === 'failed') toasts.push(`The search for ${name} failed.${job.error ? ` ${job.error}` : ''}`, 'fail');
-		else if (job.outcome === 'chosen' || job.outcome === 'held' || job.outcome === 'episodes' || job.outcome === 'album') toasts.push(`Found another copy of ${name}.`, 'ok');
+		if (job.outcome === 'none') return { name, kind: 'none' };
+		if (job.outcome === 'failed') return { name, kind: 'failed', error: job.error };
+		if (job.outcome === 'chosen' || job.outcome === 'held' || job.outcome === 'episodes' || job.outcome === 'album') return { name, kind: 'found' };
 	}
 
 	// The wide art comes from each title (a report carries only its poster); a title that gives none keeps the poster,
@@ -172,7 +188,7 @@
 			beat = new Set(beat).add(r.id);
 			put(done);
 			winOpen = false;
-			toasts.push(r.made_by && !r.mine ? `Marked fixed. ${whoName(r.made_by)} gets a message.` : 'Marked fixed.', 'ok');
+			toasts.push('Marked fixed', 'ok', r.made_by && !r.mine ? { body: `${whoName(r.made_by)} gets a message` } : {});
 			setTimeout(() => {
 				const next = new Set(beat);
 				next.delete(r.id);
@@ -189,9 +205,8 @@
 		busy = r.id;
 		try {
 			put(await reopenReport(r.id));
-			toasts.push('Opened again.', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't reopen report", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -207,7 +222,7 @@
 			clearTimeout(searchTimer);
 			searchTimer = setTimeout(() => void readSearches(), 1500);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't start search", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}

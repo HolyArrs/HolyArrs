@@ -50,7 +50,7 @@
 			checks = await api.post<HealthChecks>('/health/checks/run');
 			void refreshSettingsStatus();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't run check", 'fail', { body: message(e) });
 		} finally {
 			running = false;
 		}
@@ -71,7 +71,7 @@
 				})
 			);
 			update = await api.get<UpdateInfo>('/app/update');
-			toasts.push('Health check settings saved.', 'ok');
+			toasts.push('Health check settings saved', 'ok');
 		} catch (err) {
 			settingsError = message(err);
 		} finally {

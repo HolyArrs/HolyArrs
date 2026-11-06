@@ -62,7 +62,7 @@
 		try {
 			settings = await api.put<MusicSettings>('/settings/music', { ...settings, musicbrainz_url: settings.musicbrainz_url.trim(), cache_hours: Number(settings.cache_hours) });
 			saved = JSON.stringify(settings);
-			toasts.push('Music settings saved.', 'ok');
+			toasts.push('Music settings saved', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {

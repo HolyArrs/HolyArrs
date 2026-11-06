@@ -69,9 +69,9 @@
 				protected: protectedValue,
 				acknowledge_protection: !protectedValue && acknowledge[file.ID] === true
 			});
-			await changed(protectedValue ? 'This copy is protected.' : 'Protection is removed from this copy.');
+			await changed(protectedValue ? 'Copy protected' : 'Protection removed');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't change protection", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -95,7 +95,7 @@
 			addFolder = folders[0]?.id ?? 0;
 			addOpen = true;
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't open Version form", 'fail', { body: message(e) });
 		}
 	}
 
@@ -113,7 +113,7 @@
 				audio_languages: languageList(addAudio)
 			});
 			addOpen = false;
-			await changed(`The existing copy is protected and the ${addLabel.trim()} Version is added.`);
+			await changed(`${addLabel.trim()} Version added`);
 		} catch (e) {
 			formError = message(e);
 		} finally {
@@ -137,7 +137,7 @@
 				relative_path: adoptPath.trim()
 			});
 			adoptOpen = false;
-			await changed(`The existing file now belongs to the ${adoptVersion.label} Version.`);
+			await changed(`File moved to ${adoptVersion.label} Version`);
 		} catch (e) {
 			formError = message(e);
 		} finally {

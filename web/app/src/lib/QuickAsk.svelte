@@ -64,13 +64,13 @@
 		asking = c.key;
 		try {
 			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
-			if (!d) return void toasts.push(`Could not find ${c.name}. Try Search.`, 'fail');
-			if (d.titleId) return void toasts.push(`${c.name} is in your Library already.`, 'ok');
+			if (!d) return void toasts.push(`Couldn't find ${c.name}`, 'fail', { body: 'Try Search' });
+			if (d.titleId) return void toasts.push(`${c.name} already in Library`, 'ok');
 			if (act === 'add' && d.movie) addMovie?.open(d.movie);
 			else if (act === 'add' && d.show) addShow?.open(d.show);
 			else if (d.show) askShow?.open(d.show);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't open title", 'fail', { body: message(e) });
 		} finally {
 			asking = '';
 		}
@@ -87,7 +87,7 @@
 			asked(r, c.name);
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409) refused(err.body);
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't send request", 'fail', { body: message(err) });
 		} finally {
 			asking = '';
 		}
@@ -95,9 +95,9 @@
 
 	function asked(r: { ask: Ask; joined: boolean }, what: string) {
 		if (current) askedHere = new Map([...askedHere, [current.key, { ask: r.ask.state }]]);
-		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs is looking for it.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too.`, 'ok');
-		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
+		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Searching for a Release' });
+		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
+		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}
 
@@ -108,7 +108,7 @@
 
 	function added(t: TitleView) {
 		if (current) askedHere = new Map([...askedHere, [current.key, { titleId: t.id }]]);
-		toasts.push(`${t.name} is in your Library.`, 'ok');
+		toasts.push(`${t.name} added`, 'ok');
 		onadded?.(t);
 	}
 

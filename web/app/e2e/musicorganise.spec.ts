@@ -80,7 +80,7 @@ test('Settings > Naming has music patterns with a live example', async () => {
 	await card.getByRole('textbox', { name: 'Track file name pattern', exact: true }).fill('{track} - {track_title}');
 	await axe(page, 'naming with music');
 	await page.getByRole('button', { name: /^Save/ }).click();
-	await expect(page.getByText('Naming and file settings saved.')).toBeVisible();
+	await expect(page.getByText('Naming settings saved')).toBeVisible();
 });
 
 test('Rename files on the album page renames its tracks into the new album folder', async () => {
@@ -91,7 +91,7 @@ test('Rename files on the album page renames its tracks into the new album folde
 	await expect(dialog.getByTestId('rename-step').first()).toContainText('Tin Lanterns/2019 - Harbour Songs/01 - Song 1.1.flac');
 	await axe(page, 'album rename preview');
 	await dialog.getByRole('button', { name: 'Rename 3 files' }).click();
-	await expect(page.getByText('3 files renamed.')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('3 files renamed')).toBeVisible({ timeout: 30_000 });
 	await expect(dialog.getByTestId('rename-none')).toBeVisible();
 	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
 	const folder = join(musicDir, 'Tin Lanterns', '2019 - Harbour Songs');
@@ -106,7 +106,7 @@ test('Rename files on the album page renames its tracks into the new album folde
 	await page.goto('/settings/naming');
 	await page.getByTestId('music-naming').getByRole('textbox', { name: 'Album folder pattern', exact: true }).fill('{album} ({year})');
 	await page.getByRole('button', { name: /^Save/ }).click();
-	await expect(page.getByText('Naming and file settings saved.')).toBeVisible();
+	await expect(page.getByText('Naming settings saved')).toBeVisible();
 });
 
 test('Import a library scans the music folder, matches albums and tracks, and adopts with nothing moved', async () => {
@@ -149,7 +149,7 @@ test('deleting one track with its file moves it to the holding folder; the album
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Low Orbit (2018)/02 - Song 1.2.mp3');
 	await axe(page, 'delete a track');
 	await dialog.getByRole('button', { name: 'Delete track 02 Song 1.2' }).click();
-	await expect(page.getByText(/is deleted\. Its file is in the holding folder/)).toBeVisible();
+	await expect(page.getByText(/Files kept/)).toBeVisible();
 	expect(existsSync(wrenFiles.two)).toBe(false);
 	expect(existsSync(wrenFiles.one)).toBe(true);
 	const hist = page.getByTestId('album-history');

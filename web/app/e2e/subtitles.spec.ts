@@ -85,7 +85,7 @@ test('Settings > Subtitles: English and Spanish become the default languages; th
 	await expect(page.getByLabel('Frame rate from')).toHaveValue('25');
 	await expect(page.getByLabel('Frame rate to')).toHaveValue('23.976');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Subtitle settings saved.')).toBeVisible();
+	await expect(page.getByText('Subtitle settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.locator('#def-lang-0')).toHaveValue('en');
 	await expect(page.locator('#def-lang-1')).toHaveValue('es');
@@ -182,7 +182,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await card.getByRole('button', { name: 'Add a language' }).click();
 	await card.locator('select[id$="-lang-1"]').selectOption('fr');
 	await card.getByRole('button', { name: 'Save languages' }).click();
-	await expect(page.getByText('Subtitle languages saved.')).toBeVisible();
+	await expect(page.getByText('Subtitle languages saved')).toBeVisible();
 	await expect(card.getByTestId('subtitle-wish')).toContainText('English · French · set for this movie');
 	await expect(card.getByTestId('subtitle-missing')).toContainText('French');
 
@@ -194,7 +194,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await expect(choices.getByTestId('subtitle-choice-score').first()).toHaveText(/\d+\/100/);
 	await axe(page, 'choose a subtitle', '[data-testid="subtitles"]'); // the card; the Library tab's other tools have their own checks
 	await choices.locator('ul[data-lang="fr"]').getByRole('button', { name: /^Choose / }).first().click();
-	await expect(page.getByText(/Saved .*\.fr\.srt\./)).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByRole('status').filter({ hasText: 'Subtitle saved' })).toContainText(/\.fr\.srt/, { timeout: 30_000 });
 	const fr = card.getByTestId('subtitle-row').filter({ hasText: 'French' });
 	await expect(fr).toContainText('Chosen by hand from Lab subtitle site');
 
@@ -205,14 +205,14 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await expect(fr).toContainText('1 second later');
 	await axe(page, 'sync fix', '[data-testid="subtitles"]'); // the card; the Library tab's other tools have their own checks
 	await fr.getByRole('button', { name: 'Fix the timing' }).click();
-	await expect(page.getByText('Timing fixed. The old file is in the holding folder.')).toBeVisible();
+	await expect(page.getByText('Timing fixed')).toBeVisible();
 
 	// Turn down: it goes to the holding folder and is never chosen again.
 	const fr2 = card.getByTestId('subtitle-row').filter({ hasText: 'French' });
 	await fr2.getByRole('button', { name: 'Turn down French' }).click();
 	await fr2.getByLabel('Why (optional)').fill('out of sync');
 	await fr2.getByTestId('subtitle-turn-down-yes').click();
-	await expect(page.getByText('Subtitle turned down; HolyArrs looks for another one.')).toBeVisible();
+	await expect(page.getByText('Subtitle turned down')).toBeVisible();
 
 	// History lists the subtitle Events.
 	await page.reload();
@@ -257,7 +257,7 @@ test('Show page: one episode gets its own subtitle languages in its sheet', asyn
 	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(1);
 	await axe(page, 'episode subtitles', '[data-testid="episode-subtitles"]');
 	await sheet.getByTestId('subtitle-search').click();
-	await expect(page.getByText('Looking for subtitles now.')).toBeVisible();
+	await expect(page.getByText('Searching for subtitles')).toBeVisible();
 	await page.keyboard.press('Escape');
 });
 

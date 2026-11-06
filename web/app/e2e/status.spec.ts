@@ -108,7 +108,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 	await own.getByRole('button', { name: 'Change uma' }).click();
 	await own.getByRole('dialog').getByLabel('Run the Library').check();
 	await own.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
-	await expect(own.getByText('uma saved.')).toBeVisible();
+	await expect(own.getByText('uma saved')).toBeVisible();
 	await open(uma, '/status?tab=about');
 	await expect(uma.locator('#st-panel-about')).toBeVisible();
 	await expect(uma.getByTestId('status-support-bundle')).toHaveCount(0);
@@ -131,6 +131,6 @@ test('status: tabs move with the arrow keys and keep focus', async ({ browser })
 	await page.keyboard.press('Home');
 	await expect(page).not.toHaveURL(/tab=(jobs|updates|about)/);
 	await page.getByRole('button', { name: 'Check again' }).click();
-	await expect(page.getByText('Checks ran.')).toBeVisible();
+	await expect(page.getByText('Checks ran')).toBeVisible();
 	await page.context().close();
 });

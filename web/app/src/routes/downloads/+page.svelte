@@ -321,10 +321,10 @@
 		busy = r.id;
 		try {
 			await api.post(`/downloads/${r.id}/mark-failed`);
-			toasts.push('Marked failed. HolyArrs looks for the next Release.', 'ok');
+			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't mark failed", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -347,7 +347,7 @@
 	function askRemoveMany(rows: DownloadRow[], withFiles = false) {
 		const ok = rows.filter((r) => r.can_act);
 		if (!ok.length) {
-			toasts.push('These cannot be removed from here.', 'info');
+			toasts.push("Can't remove these", 'info', { body: 'Not from here' });
 			return;
 		}
 		targets = ok;
@@ -400,7 +400,8 @@
 			} else {
 				removeOpen = false;
 				const one = list.length === 1 && !list[0].client_item;
-				toasts.push(one && choice.turn_down && choice.search_again ? 'Removed. HolyArrs looks for the next Release.' : list.length > 1 ? `Removed ${list.length} downloads.` : 'Removed.', 'ok');
+				const searching = one && choice.turn_down && choice.search_again;
+				toasts.push(list.length > 1 ? `${list.length} downloads removed` : 'Download removed', 'ok', searching ? { body: 'Searching for the next Release' } : {});
 			}
 			await load();
 		} finally {
@@ -409,7 +410,7 @@
 		}
 	}
 	// Client actions: the Downloader does the work; the row's new state is read back from it.
-	const DONE: Record<string, string> = { pause: 'Paused.', resume: 'Started.', top: 'Moved to the top.', recheck: 'Checking again.', reannounce: 'Asked the trackers again.', retry: 'Sent back to the queue.' };
+	const DONE: Record<string, string> = { pause: 'Download paused', resume: 'Download started', top: 'Moved to top', recheck: 'Checking again', reannounce: 'Trackers asked again', retry: 'Sent back to queue' };
 	async function act(r: DownloadRow, action: 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry') {
 		busy = r.id;
 		try {
@@ -417,7 +418,7 @@
 			toasts.push(DONE[action], 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update download", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -444,8 +445,8 @@
 				bad.push(`${r.name || 'Download'}: ${message(e)}`);
 			}
 		}
-		if (bad.length) toasts.push(bad.join(' · '), 'fail');
-		else toasts.push(list.length === 1 ? 'Sent back to the queue.' : `Sent ${list.length} downloads back to the queue.`, 'ok');
+		if (bad.length) toasts.push("Couldn't send back", 'fail', { body: bad.join(' · ') });
+		else toasts.push(list.length === 1 ? 'Sent back to queue' : `${list.length} downloads sent back`, 'ok');
 		await load();
 	}
 	// The steering sheet: seeding rules and more for one or many torrents.
@@ -462,7 +463,7 @@
 		const groups = byClient(list);
 		const left = list.length - [...groups.values()].reduce((n, g) => n + g.length, 0);
 		if (!groups.size) {
-			toasts.push('None of these can do that from here.', 'info');
+			toasts.push("Can't do that here", 'info', { body: 'Not for these downloads' });
 			return;
 		}
 		const bad: string[] = [];
@@ -474,8 +475,8 @@
 			}
 		}
 		const n = list.length - left;
-		if (bad.length) toasts.push(bad.join(' · '), 'fail');
-		else toasts.push(`${BULK_DONE[action]}: ${n} ${n === 1 ? 'download' : 'downloads'}${left ? ` (${left} skipped)` : ''}.`, 'ok');
+		if (bad.length) toasts.push("Couldn't update downloads", 'fail', { body: bad.join(' · ') });
+		else toasts.push(`${n} ${n === 1 ? 'download' : 'downloads'} ${BULK_DONE[action]}`, 'ok', left ? { body: `${left} skipped` } : {});
 		await load();
 	}
 	type ClientStatus = { paused: boolean; speed_limit: number; up_limit: number };
@@ -484,11 +485,11 @@
 		try {
 			const r = await api.post<{ clients: ClientView[] }>(pause ? '/downloads/pause-all' : '/downloads/resume-all');
 			const bad = r.clients.filter((c) => c.controls && c.error);
-			if (bad.length) toasts.push(`${bad.map((c) => c.name).join(', ')}: ${bad[0].error}`, 'fail');
-			else toasts.push(pause ? 'Paused everything.' : 'Started everything.', 'ok');
+			if (bad.length) toasts.push(`Couldn't ${pause ? 'pause' : 'start'} ${bad.length === 1 ? bad[0].name : `${bad.length} Downloaders`}`, 'fail', { body: bad[0].error });
+			else toasts.push(pause ? 'Everything paused' : 'Everything started', 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't ${pause ? 'pause' : 'start'} everything`, 'fail', { body: message(e) });
 		}
 	}
 
@@ -528,7 +529,7 @@
 			}
 			failing = '';
 			limitOpen = false;
-			toasts.push('Speed limit saved.', 'ok');
+			toasts.push('Speed limit saved', 'ok');
 		} catch (err) {
 			limitError = failing ? `${failing}: ${message(err)}` : message(err);
 		} finally {

@@ -56,7 +56,7 @@ test('a Trakt list needs the Trakt key, then adds its movie', async () => {
 
 	await page.getByLabel('Paste the Trakt key').fill(traktKey);
 	await page.locator('form').filter({ has: page.locator('#trakt') }).getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(page.getByText('Trakt key saved.')).toBeVisible();
+	await expect(page.getByText('Trakt key saved')).toBeVisible();
 	await expect(page.locator('body')).not.toContainText(traktKey);
 	await row.getByRole('button', { name: 'Read now' }).click();
 	await expect(row.getByTestId('list-result')).toContainText('1 added', { timeout: 15_000 });

@@ -107,7 +107,7 @@ test("Movie editions: a Director's Cut checked on the Library tab renames the fi
 	await expect(step.locator('.old')).toContainText(basename(before));
 	await expect(step.locator('.new')).toContainText(tag);
 	await dialog.getByRole('button', { name: 'Rename 1 file' }).click();
-	await expect(page.getByText('1 file renamed.')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('1 file renamed')).toBeVisible({ timeout: 30_000 });
 
 	// On disk: one video in the movie's folder, named Title (Year) … {edition-Director's Cut}.mkv.
 	const names = readdirSync(folder).filter((n) => n.endsWith('.mkv'));

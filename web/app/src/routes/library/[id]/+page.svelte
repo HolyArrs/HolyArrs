@@ -152,7 +152,6 @@
 		try {
 			await api.post(`/titles/${id}/versions`, { label: vLabel.trim(), pick_rules_id: vRules, library_folder_id: vFolder, edition: vEdition.trim(), audio_languages: vAudio.split(/[,\s]+/).filter(Boolean), folder_name: vFolderName });
 			versionDialog?.close();
-			toasts.push(`The ${vLabel.trim()} Version is added.`, 'ok');
 			allVersions = true;
 			await load('title');
 		} catch (err) {
@@ -166,10 +165,9 @@
 		if (!confirm(`Stop keeping the ${v.label} Version of this movie? Files on disk are not touched.`)) return;
 		try {
 			await api.del(`/titles/${id}/versions/${v.id}`);
-			toasts.push(`The ${v.label} Version is removed.`, 'ok');
 			await load('title');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
 		}
 	}
 
@@ -204,8 +202,7 @@
 			if (targetSlotId) body.slot_id = targetSlotId;
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
-			toasts.push(`Chosen: ${target.name}. HolyArrs sends it to a Downloader now.`, 'ok');
-			for (const w of ch.warnings) toasts.push(w, 'info');
+			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
 			await load();
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
@@ -232,7 +229,7 @@
 		try {
 			await api.post(`/releases/${target.id}/turn-down`, turnReason.trim() ? { reason: turnReason.trim() } : undefined);
 			turnDialog?.close();
-			toasts.push(`Turned down: ${target.name}. HolyArrs never picks it again for this movie.`, 'ok');
+			toasts.push('Release turned down', 'ok', { body: 'Never picked for this movie' });
 			await load('releases');
 		} catch (err) {
 			chooseError = message(err);
@@ -349,10 +346,7 @@
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${id}/delete`, { delete_files: delFiles, never_add: delNever, apply: true });
 			deleteDialog?.close();
-			toasts.push(
-				p.held.length ? `${p.name} is deleted. Its files are in the holding folder${p.holding_days ? ` for ${p.holding_days} days` : ''}.` : `${p.name} is deleted. Its files stay on disk.`,
-				'ok'
-			);
+			toasts.push(`${p.name} deleted`, 'ok', { body: p.held.length ? `Files kept${p.holding_days ? ` ${p.holding_days} days` : ' in the holding folder'}` : 'Files stay on disk' });
 			await goto(to(crumbFor(title?.kind ?? 'movie').path));
 		} catch (e) {
 			delError = message(e);
@@ -368,10 +362,10 @@
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);
-			toasts.push('Marked failed. HolyArrs looks for the next Release.', 'ok');
+			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
 			await load('title');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't mark failed`, 'fail', { body: message(e) });
 		} finally {
 			failing = 0;
 		}
@@ -386,12 +380,9 @@
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${id}/search`, body);
 			running = [...new Set([...running, ...r.job_ids])];
 			relOffset = 0;
-			toasts.push(
-				pick ? 'Search started. HolyArrs picks the best Release by itself.' : 'Searching every Source. Pick one from the list once they answer.',
-				'ok'
-			);
+			toasts.push('Searching for a Release', 'info', pick ? undefined : { body: 'Pick one from the list' });
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			setTimeout(() => (searching = false), 1500);
 		}
@@ -417,9 +408,9 @@
 		refreshing = true;
 		try {
 			await api.post(`/titles/${id}/refresh`);
-			toasts.push('Refreshing names, dates and posters.', 'ok');
+			toasts.push(`Refreshing ${title?.name ?? 'title'}`, 'info', { body: 'Names, dates and posters' });
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't refresh`, 'fail', { body: message(e) });
 		} finally {
 			setTimeout(() => (refreshing = false), 1500);
 		}
@@ -453,7 +444,7 @@
 			const r = await api.put<{ title: TitleView }>(`/titles/${id}`, body);
 			title = r.title;
 			editDialog?.close();
-			toasts.push('Saved.', 'ok');
+			toasts.push(`${title?.name ?? 'Title'} saved`, 'ok');
 		} catch (err) {
 			editError = message(err);
 		} finally {
@@ -510,9 +501,9 @@
 		try {
 			const r = await api.put<{ title: TitleView }>(`/titles/${id}`, { keep_up_to_date: v });
 			title = r.title;
-			toasts.push(v ? 'HolyArrs keeps this up to date.' : 'HolyArrs stops looking for this.', 'ok');
+			toasts.push(v ? 'Kept up to date' : 'Not kept up to date', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update`, 'fail', { body: message(e) });
 		} finally {
 			saving = false;
 		}

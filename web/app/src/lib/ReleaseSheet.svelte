@@ -31,7 +31,7 @@
 			const mine = Date.now() - startedAt < 60_000 && !p.releases.length ? running : [];
 			running = [...new Set([...(p.running_job_ids ?? []), ...mine])];
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't load Releases`, 'fail', { body: message(e) });
 		} finally {
 			loading = false;
 		}
@@ -42,7 +42,7 @@
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { ...(scope?.body ?? {}), choose: false });
 			running = [...new Set([...running, ...r.job_ids])];
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		}
 	}
 	// Opening loads the list; while a search runs, check again every few seconds.
@@ -60,15 +60,14 @@
 		busyId = r.id;
 		try {
 			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, { force: r.needs_force });
-			toasts.push(`Sent ${r.name} to download.`, 'ok');
-			for (const w of ch.warnings) toasts.push(w, 'info');
+			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
 			open = false;
 			onchosen?.();
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
 				r.needs_force = true;
 				confirmId = r.id;
-			} else toasts.push(message(e), 'fail');
+			} else toasts.push(`Couldn't send to Downloader`, 'fail', { body: message(e) });
 		} finally {
 			busyId = 0;
 		}
@@ -77,10 +76,10 @@
 		busyId = r.id;
 		try {
 			await api.post(`/releases/${r.id}/turn-down`);
-			toasts.push('It will never be picked for this title.', 'ok');
+			toasts.push('Release turned down', 'ok', { body: 'Never picked for this title' });
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't turn down Release", 'fail', { body: message(e) });
 		} finally {
 			busyId = 0;
 		}
