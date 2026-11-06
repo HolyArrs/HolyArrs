@@ -361,6 +361,33 @@ export function countWord(key: string, n: number): string {
 	return `${n} ${n === 1 ? w[0] : w[1]}`;
 }
 
+// The few counts that matter most per app, in order; titles get the app's own word.
+const bestKeys: Record<string, string[]> = {
+	radarr: ['titles', 'indexers', 'download_clients'],
+	sonarr: ['titles', 'indexers', 'download_clients'],
+	lidarr: ['titles', 'indexers', 'download_clients'],
+	bazarr: ['subtitle_languages', 'subtitle_sites'],
+	seerr: ['users', 'requests'],
+	overseerr: ['users', 'requests'],
+	prowlarr: ['indexers'],
+	qbittorrent: ['download_clients'],
+	sabnzbd: ['download_clients']
+};
+const titleWord: Record<string, [string, string]> = { radarr: ['movie', 'movies'], sonarr: ['show', 'shows'], lidarr: ['artist', 'artists'] };
+
+/** bestStats says a read's most useful counts ("252 movies · 11 Sources · 2 Downloaders"). */
+export function bestStats(kind: string, counts: Record<string, number>): string {
+	return (bestKeys[kind] ?? [])
+		.map((k) => {
+			const n = counts[k] ?? 0;
+			if (!(n > 0)) return '';
+			const w = k === 'titles' && titleWord[kind] ? titleWord[kind] : countNames[k];
+			return w ? `${n} ${n === 1 ? w[0] : w[1]}` : '';
+		})
+		.filter(Boolean)
+		.join(' · ');
+}
+
 /** countWords says a read's counts: the app's main count first, then the largest, at most max of them, then "and N more". */
 export function countWords(kind: string, counts: Record<string, number>, max = 3): string {
 	const known = Object.entries(counts).filter(([k, n]) => countNames[k] && n > 0);

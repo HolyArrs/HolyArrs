@@ -7,7 +7,7 @@
 	import StatusPill, { type StatusKind } from '../ui/StatusPill.svelte';
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import { dateTime } from '../format.ts';
-	import { appName, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from '../move.ts';
+	import { appName, bestStats, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from '../move.ts';
 
 	// Step 1: the reads kept so far, each switched on or off for this move,
 	// and the earlier moves below.
@@ -44,11 +44,19 @@
 	const shownMoves = $derived(allMoves ? moves : moves.slice(0, 5));
 	const pills: Record<string, StatusKind> = { ok: 'in_library', info: 'downloading', wait: 'missing', fail: 'failed', idle: 'requested' };
 
-	// The row shows what was found; when it was read sits in the tooltip.
+	// The row shows the app's most useful counts; when it was read sits in the tooltip.
 	function hint(s: Snapshot): string {
 		const used = usedBy.get(s.id);
-		return [used ? `Moved in Move ${used}` : '', countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
+		return [used ? `Moved in Move ${used}` : '', bestStats(s.kind, s.counts) || countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
 	}
+	// One row per app: its newest read is the one used; older reads of it drop out.
+	const latest = $derived(snapshots.filter((s, i) => snapshots.findIndex((x) => x.kind === s.kind) === i));
+	$effect(() => {
+		for (const s of snapshots) {
+			const use = latest.includes(s);
+			if (use !== picked.includes(s.id)) onpick(s.id, use);
+		}
+	});
 </script>
 
 <SettingsCard id="move-step" title="Step 1 of 5 · Read your apps" description="HolyArrs only looks. Nothing changes in those apps.">
@@ -69,18 +77,15 @@
 					</div>
 				</li>
 			{/if}
-			{#each snapshots as s (s.id)}
+			{#each latest as s (s.id)}
 				{@const h = hint(s)}
-				<li class="read" class:off={!picked.includes(s.id)} data-testid="read-row">
+				<li class="read" data-testid="read-row">
 					<div class="top">
 						<div class="what" title="Read {dateTime(s.created_at)}"><b>{appName(s.kind)}</b><span class="sub one">{h || 'Nothing found'}</span></div>
-						<label class="switch" title="Use this read">
-							<input id="move-read-{s.id}" type="checkbox" checked={picked.includes(s.id)} onchange={(e) => onpick(s.id, e.currentTarget.checked)} aria-label="Use the {appName(s.kind)} read from {dateTime(s.created_at)}" />
-							<span class="sw" aria-hidden="true"></span>
-						</label>
+						<span class="ok-tag" title="Read {dateTime(s.created_at)}"><Icon name="check" size={12} stroke={2.5} />{s.app_version ? `v${s.app_version.split('.').slice(0, 3).join('.')}` : 'Read'}</span>
 					</div>
 					<div class="acts">
-						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label="Read {appName(s.kind)} again">Read again</button>
+						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label="Read {appName(s.kind)} again">Edit</button>
 						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label="Forget the {appName(s.kind)} read from {dateTime(s.created_at)}">Remove</button>
 					</div>
 				</li>
@@ -119,7 +124,7 @@
 	/* Each read is one plain row, like the first-run downloader rows. */
 	.reads { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 	.read { padding: 14px 16px 10px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
-	.read.off .what { opacity: 0.55; }
+	.ok-tag { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-mono); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.top { display: flex; align-items: center; gap: 12px; }
 	.what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 	.what b { font: 600 15px/1.3 var(--font-ui); color: var(--text); }
@@ -129,6 +134,11 @@
 	.quiet:hover:not(:disabled) { color: var(--text); }
 	.quiet.danger:hover { color: var(--fail-text, #ff6961); }
 	.quiet:disabled { opacity: 0.5; cursor: default; }
+	/* Phones: 44px to tap, the row stays the same height to look at. */
+	@media (max-width: 600px), (pointer: coarse) {
+		.acts { gap: 8px; padding-top: 0; margin-bottom: -8px; }
+		.quiet { min-height: 44px; padding: 0 8px; margin-left: -8px; }
+	}
 	.quiet:focus-visible, .add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.add-row { width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }

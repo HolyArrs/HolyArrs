@@ -147,17 +147,14 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await expect(sheet).toBeHidden();
   const rows = page.getByTestId("read-row");
   await expect(rows.filter({ hasText: "Radarr" })).toBeVisible();
-  await expect(
-    page.getByRole("checkbox", { name: /^Use the Radarr read from/ }),
-  ).toBeChecked();
   // Counts in our words: no raw keys.
   await expect(rows.first()).not.toContainText("_");
-  await expect(rows.first()).toContainText("1 title");
+  await expect(rows.first()).toContainText("1 movie");
 
   sheet = await addApp(page, "seerr", oldSeerrPort);
   await sheet.getByRole("button", { name: "Read Seerr" }).click();
   await expect(sheet).toBeHidden();
-  await expect(rows.filter({ hasText: "Seerr · people and requests" })).toBeVisible();
+  await expect(rows.filter({ hasText: "Seerr" })).toBeVisible();
   await measuredSymmetry(page);
 
   // Step 2: the plan makes itself.
@@ -437,7 +434,8 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   await expect(sheet.locator("#move-local")).toHaveCount(0);
   await sheet.getByRole("button", { name: "Read Radarr" }).click();
   await expect(sheet).toBeHidden();
-  await expect(page.getByTestId("read-row")).toHaveCount(before + 1);
+  // One row per app: reading Radarr again keeps one Radarr row.
+  await expect(page.getByTestId("read-row").filter({ hasText: "Radarr" })).toHaveCount(1);
   const left = await page.request.get("/api/v1/migrate/saved-keys");
   expect(await left.text()).toContain(`"kind":"radarr"`);
   expect(await left.text()).not.toContain(oldKey);
@@ -461,7 +459,8 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   await expect(again.getByTestId("saved-address")).toBeVisible();
   await again.getByRole("button", { name: "Read Radarr" }).click();
   await expect(again).toBeHidden();
-  await expect(page.getByTestId("read-row")).toHaveCount(before + 2);
+  // One row per app: reading Radarr again keeps one Radarr row.
+  await expect(page.getByTestId("read-row").filter({ hasText: "Radarr" })).toHaveCount(1);
   expect(await (await page.request.get("/api/v1/migrate/saved-keys")).text()).toContain(`"kind":"radarr"`);
   expect(await page.content()).not.toContain(oldKey);
 });
