@@ -19,6 +19,7 @@
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
 	import { alertsPanel, toasts } from '#lib/toasts.svelte.ts';
+	import { decisionPins, feedPins, startBellFeeds } from '#lib/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/requests.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
@@ -300,7 +301,12 @@
 	// An id-like account name (preview-…, e2e-…) reads as "You".
 	const shownName = $derived(personName(session.s.name, 'You'));
 	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
-	const openFixes = $derived(settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0);
+	const openFixes = $derived((settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0));
+	// Request updates, failed downloads and a new version reach the bell from any page.
+	$effect(() => {
+		if (session.s.state !== 'signed_in') return;
+		return startBellFeeds(allowed('manage'));
+	});
 	const unseenAlerts = $derived(toasts.unseen() + openFixes);
 	const hasFailAlert = $derived(openFixes > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
 	const accountItems = $derived<MenuItem[]>([

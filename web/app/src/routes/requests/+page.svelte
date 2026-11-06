@@ -435,7 +435,6 @@
 	// for this visit; other news (a fixed report, new albums, a followed title ready)
 	// shows once as a toast. Opening the page reads it all, so the badge clears.
 	let fresh = $state(new Set<number>());
-	const toasted = new Set<number>();
 	let reading = false;
 	$effect(() => {
 		if (!inbox.unread || reading) return;
@@ -443,10 +442,7 @@
 		if (!unread.length) return;
 		reading = true;
 		untrack(() => (fresh = new Set([...fresh, ...unread.flatMap((m) => (m.ask_id ? [m.ask_id] : []))])));
-		const news = unread.filter((m) => !m.ask_id && !toasted.has(m.id)).slice(0, 3);
-		for (const m of news) toasted.add(m.id);
-		if (news.length === 1) toasts.push('Request updated', 'ok', { body: plain(news[0].text) });
-		else if (news.length > 1) toasts.push(`${news.length} new updates`, 'ok');
+		// Their alerts come from the bell (bell-feeds), on every page.
 		void markRead()
 			.catch(() => {})
 			.finally(() => (reading = false));

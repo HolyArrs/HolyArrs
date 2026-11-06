@@ -1,7 +1,7 @@
 // Small notifications at the top of the screen (Apple TV style), and the
 // Recent alerts list that keeps them so they can be read again.
 
-export type ToastTone = 'ok' | 'fail' | 'info';
+export type ToastTone = 'ok' | 'fail' | 'info' | 'warn';
 export interface Toast {
 	id: number;
 	/** The title: the thing and what happened ("Severance deleted"). */
@@ -175,9 +175,15 @@ export function createToasts(ms = 6000) {
 		dismiss(id);
 		act.run();
 	}
+	/** record keeps an alert in Recent alerts without a pill (something else already showed it). */
+	function record(text: string, tone: ToastTone = 'info', opts: { body?: string } = {}): number {
+		const t: Toast = { id: next++, text, body: opts.body, tone, seen: 0 };
+		remember(t, 0);
+		return t.id;
+	}
 	const unseen = () => past.filter((p) => p.fresh).length;
 
-	return { list, past, counts, push, dismiss, pause, resume, seeAll, forget, forgetAll, runPast, unseen };
+	return { list, past, counts, push, record, dismiss, pause, resume, seeAll, forget, forgetAll, runPast, unseen };
 }
 
 export const toasts = createToasts();

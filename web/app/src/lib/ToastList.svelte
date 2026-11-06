@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { notifyIn, notifyOut } from './ui/transitions.ts';
 	import { alertsPanel, toasts } from './toasts.svelte';
 	import AlertsPanel from './AlertsPanel.svelte';
@@ -35,6 +35,13 @@
 	$effect(() => {
 		if (downShown) openCard();
 		else clearTimeout(shrinkTimer);
+	});
+	// The outage and the recovery are kept in Recent alerts too (the card itself is not a toast).
+	$effect(() => {
+		if (signedIn && downShown) untrack(() => toasts.record(METADATA_DOWN_TITLE, 'warn', { body: 'Library still works' }));
+	});
+	$effect(() => {
+		if (signedIn && back) untrack(() => toasts.record(METADATA_BACK, 'ok', { body: 'Search and artwork restored' }));
 	});
 
 	// Recovery: a short green note, gone after 3 s.

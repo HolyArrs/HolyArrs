@@ -5,6 +5,7 @@
 	import Sheet from './ui/Sheet.svelte';
 	import { alertsPanel, toasts } from './toasts.svelte';
 	import { pinned } from './attention-alerts.ts';
+	import { decisionPins, feedPins } from './bell-feeds.svelte.ts';
 	import { sections } from './settings.ts';
 	import { settingsNow } from './settings-status.svelte.ts';
 	import { session } from './session.svelte.ts';
@@ -22,7 +23,11 @@
 	});
 
 	// Settings health warnings stay pinned on top until they are fixed (no × on them).
-	const fixes = $derived(session.can('settings') ? pinned(settingsNow.answer?.items ?? [], sections) : []);
+	const fixes = $derived([
+		...(feedPins.update ? [feedPins.update] : []),
+		...(session.can('settings') ? pinned(settingsNow.answer?.items ?? [], sections) : []),
+		...decisionPins()
+	]);
 
 	// Opening shows everything waiting and clears the count (once per opening: alerts
 	// that arrive while it is open keep their "new" ring).
