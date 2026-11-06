@@ -238,7 +238,7 @@
 						<span class="hint">At least {MIN_LENGTH} characters.</span>
 					</div>
 					<div class="field">
-						<label for="pwAgain">Password again</label>
+						<label for="pwAgain">Confirm password</label>
 						<input id="pwAgain" class="input" type={showPw ? 'text' : 'password'} bind:value={pwAgain} autocomplete="new-password" required />
 					</div>
 					{@render problem()}
