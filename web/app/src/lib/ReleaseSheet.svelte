@@ -7,7 +7,7 @@
 	import { keyReasons, verdict, verdictTone } from '#lib/releases.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/types.ts';
 
-	// Pick a release, as a side sheet on the title page: the releases the last
+	// Pick a release, as a centered window on the title page: the releases the last
 	// search found, best first, with the reason each would or would not be picked.
 	// scope narrows it to one season or episode: its query for the list and its body for a search.
 	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
@@ -138,7 +138,7 @@
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>
 
-<Sheet bind:open title="Pick a release" description={scope ? `${name} · ${scope.label}` : name} placement="right" size="md">
+<Sheet bind:open title="Pick a release" description={scope ? `${name} · ${scope.label}` : name} placement="center" size="lg">
 	<div class="rs" data-testid="release-sheet">
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">
