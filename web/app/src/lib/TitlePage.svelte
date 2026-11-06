@@ -503,7 +503,8 @@
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		return { id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
+		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 	let libAll = $state(false);
 	let renameOpen = $state(false);
@@ -1311,11 +1312,13 @@
 									{@const v = o.versions.find((x) => x.id === f.versionId)}
 								<article class="lib-file" data-testid="version-card">
 									<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && !v.main && o.kind !== 'show'}<span class="lib-file-menu"><Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => void movieVersions?.remove(v) }]} width={220} /></span>{/if}</p>
-									<p class="lib-file-meta">{f.has ? [f.codec, f.size, f.added && `added ${f.added}`].filter(Boolean).join(' · ') : `${f.state} · no file yet`}</p>
+									{#if f.has}
+										<div class="lib-tiles"><div><span>Quality</span><b>{f.res || '—'}</b></div><div><span>Size</span><b>{f.size || '—'}</b></div><div><span>Added</span><b>{f.addedOn || '—'}</b></div></div>
+									{:else}<p class="lib-file-meta">{f.state} · no file yet</p>{/if}
 									{#if f.audio.length || f.subs.length}
 										<p class="lib-langs">{#if f.audio.length}<span class="muted">Audio</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">Subtitles</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
 									{/if}
-									<p class="lib-file-name" title={f.name}>{f.name}</p>
+									{#if f.name}<p class="lib-file-name" title={f.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{f.name}</span></p>{/if}
 								</article>
 							{:else}
 								<p class="muted">No file yet.</p>
@@ -1815,7 +1818,13 @@
 	.lib-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font: 500 12px/1 var(--font-ui); }
 	.lib-langs .muted:not(:first-child) { margin-left: 8px; }
 	.lib-file-menu { margin-left: auto; }
-	.lib-file-name { margin-top: 2px !important; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+	.lib-tiles > div { display: grid; gap: 2px; min-width: 0; padding: 9px 12px; border-radius: 10px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+	.lib-tiles span { color: var(--text-muted); font: 500 11.5px/1.2 var(--font-ui); }
+	.lib-tiles b { font: 600 14px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-file-name svg { flex: none; width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+	.lib-file-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.lib-file-name { display: flex !important; align-items: center; gap: 8px; margin-top: 2px !important; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }

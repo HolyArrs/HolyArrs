@@ -76,6 +76,8 @@
 			size: file.Size ? bytes(file.Size) : '',
 			name: String(file.RelativePath ?? '').split(/[\\/]/).pop() ?? '',
 			added: file.AddedAt ? ago(file.AddedAt) : '',
+			res: q.resolution ? `${q.resolution}p` : '',
+			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
 			audio: langs(m.audio_languages),
 			subs: langs(m.subtitle_languages ?? m.subtitles)
 		};
@@ -132,11 +134,11 @@
 				{#if fileFacts}
 					<article class="es-file">
 						<p class="es-badges"><b>File</b>{#each fileFacts.badges as b (b)}<span class="es-badge">{b}</span>{/each}</p>
-						<p class="es-meta">{[fileFacts.quality, fileFacts.size, fileFacts.added && `added ${fileFacts.added}`].filter(Boolean).join(' · ')}</p>
+						<div class="es-tiles"><div><span>Quality</span><b>{fileFacts.res || '—'}</b></div><div><span>Size</span><b>{fileFacts.size || '—'}</b></div><div><span>Added</span><b>{fileFacts.addedOn || '—'}</b></div></div>
 						{#if fileFacts.audio.length || fileFacts.subs.length}
 							<p class="es-langs">{#if fileFacts.audio.length}<span class="muted">Audio</span>{#each fileFacts.audio as l (l)}<span class="es-lang">{l}</span>{/each}{/if}{#if fileFacts.subs.length}<span class="muted">Subtitles</span>{#each fileFacts.subs as l (l)}<span class="es-lang">{l}</span>{/each}{/if}</p>
 						{/if}
-						<p class="es-name" title={fileFacts.name}>{fileFacts.name}</p>
+						<p class="es-name" title={fileFacts.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{fileFacts.name}</span></p>
 					</article>
 				{/if}
 			</div>
@@ -203,7 +205,13 @@
 	.es-meta { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.es-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font: 500 12px/1 var(--font-ui); }
 	.es-langs .muted:not(:first-child) { margin-left: 8px; }
-	.es-name { padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
+	.es-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+	.es-tiles > div { display: grid; gap: 2px; min-width: 0; padding: 9px 12px; border-radius: 10px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+	.es-tiles span { color: var(--text-muted); font: 500 11.5px/1.2 var(--font-ui); }
+	.es-tiles b { font: 600 14px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.es-name svg { flex: none; width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+	.es-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.es-name { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
 	.es-rows { display: grid; border-radius: 14px; background: var(--surface-2); overflow: hidden; }
 	.es-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.es-row span:first-child { display: grid; gap: 3px; }
