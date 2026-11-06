@@ -653,7 +653,7 @@
 		busy = false;
 		report('being looked for now', failed, ids.length);
 	}
-	// Find another copy (movies): the selected movies' main files, searched again with their Pick rules
+	// Find another copy (movies): the selected movies' main files, searched again at their Quality
 	// after a review. Protected files are left out.
 	const copyPicks = $derived(pickedShown.flatMap((t) => (t.copy && !t.copy.protected ? [{ file_id: t.copy.file_id, version_id: t.copy.version_id }] : [])));
 	let copyDialog = $state<HTMLDialogElement | null>(null);
@@ -1324,7 +1324,7 @@
 			<Button size="md" icon="bellOn" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), true)}>Keep up to date</Button>
 			<Button size="md" icon="bell" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), false)}>Stop keeping</Button>
 			{#if moveItems.length > 1}<Menu label="Move the selected titles to another folder" variant="button" text="Move" icon="folder" items={moveItems} width={260} placement="above" />{/if}
-			{#if rulesItems.length}<Menu label="Pick rules for the selected titles" variant="button" text="Pick rules" icon="star" items={rulesItems} width={220} placement="above" />{/if}
+			{#if rulesItems.length}<Menu label="Quality for the selected titles" variant="button" text="Quality" icon="star" items={rulesItems} width={220} placement="above" />{/if}
 			<Button size="md" icon="search" disabled={busy || !pickedShown.length} onclick={() => searchTitles(pickedShown.map((t) => t.id))}>Search now</Button>
 			{#if kind === 'movie'}<Button size="md" icon="copy" disabled={busy || !copyPicks.length} onclick={reviewCopies} data-testid="select-find-copy">Find another copy</Button>{/if}
 			<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedShown.length} onclick={() => askDelete(pickedShown.map((t) => t.id))} data-testid="select-delete">Remove {pickedShown.length || ''}</Button>
@@ -1345,7 +1345,7 @@
 <dialog bind:this={copyDialog} aria-labelledby="find-copy-title" class="modal" data-testid="find-copy" onclose={() => (copyPreview = null)}>
 	{#if copyPreview}
 		<h2 id="find-copy-title" class="h2">Find another copy of {copyPreview.copies.length} {copyPreview.copies.length === 1 ? 'movie' : 'movies'}?</h2>
-		<p class="small muted">{copyPreview.slot_count} {copyPreview.slot_count === 1 ? 'search' : 'searches'} with your Pick rules. Nothing downloads on its own.</p>
+		<p class="small muted">{copyPreview.slot_count} {copyPreview.slot_count === 1 ? 'search' : 'searches'} at each movie's Quality. Nothing downloads on its own.</p>
 		<ul class="copy-list">{#each copyPreview.copies as c (`${c.file_id}:${c.version_id}`)}<li><b>{c.title}</b><span>{c.version} · {codecLabel(c.codec)}</span></li>{/each}</ul>
 	{/if}
 	<div class="modal-actions">

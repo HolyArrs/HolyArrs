@@ -34,7 +34,7 @@ export function columnsFor(kind: LibKind): Column[] {
 			col('status', 'Status', '200px', true),
 			col('episodes', 'Episodes', '150px', true),
 			col('next', 'Next episode', '118px', true, true),
-			col('rules', 'Pick rules', '120px', true),
+			col('rules', 'Quality', '120px', true),
 			col('size', 'Size', '84px', true, true),
 			col('added', 'Added', '104px', true, true),
 			col('network', 'Network', '120px', false),
@@ -44,7 +44,7 @@ export function columnsFor(kind: LibKind): Column[] {
 			col('genres', 'Genres', '160px', false),
 			col('rating', 'Age rating', '88px', false),
 			col('requested', 'Requested by', '130px', false),
-			col('quality', 'Quality', '120px', false),
+			col('quality', 'File quality', '130px', false),
 			col('kept', 'Kept up to date', '72px', false),
 			col('showstate', 'Show state', '100px', false),
 			col('activity', 'Last activity', '110px', false, true),
@@ -57,7 +57,7 @@ export function columnsFor(kind: LibKind): Column[] {
 			col('latest', 'Next release', '118px', true, true),
 			col('size', 'Size', '84px', true, true),
 			col('added', 'Added', '104px', true, true),
-			col('rules', 'Pick rules', '120px', true),
+			col('rules', 'Quality', '120px', true),
 			col('albums', 'Albums', '84px', false, true),
 			col('requested', 'Requested by', '130px', false),
 			col('kept', 'Kept up to date', '72px', false),
@@ -67,7 +67,7 @@ export function columnsFor(kind: LibKind): Column[] {
 	return [
 		col('status', 'Status', '200px', true),
 		col('release', 'Out', '176px', true),
-		col('rules', 'Pick rules', '120px', true),
+		col('rules', 'Quality', '120px', true),
 		col('size', 'Size', '84px', true, true),
 		col('added', 'Added', '104px', true, true),
 		col('year', 'Year', '64px', true, true),
@@ -76,7 +76,7 @@ export function columnsFor(kind: LibKind): Column[] {
 		col('series', 'Movie series', '160px', false),
 		col('genres', 'Genres', '160px', false),
 		col('requested', 'Requested by', '130px', false),
-		col('quality', 'Quality', '120px', false),
+		col('quality', 'File quality', '130px', false),
 		col('codec', 'Codec', '84px', false),
 		col('audio', 'Audio', '150px', false),
 		col('kept', 'Kept up to date', '72px', false),
@@ -146,7 +146,7 @@ export type SortDir = 'asc' | 'desc';
 
 export const sortLabels: Record<SortKey, string> = {
 	status: 'Status', name: 'Name', year: 'Year', added: 'Added', size: 'Size', next: 'Next episode', last: 'Last aired',
-	progress: 'Progress', release: 'Out date', runtime: 'Runtime', network: 'Network', rules: 'Pick rules'
+	progress: 'Progress', release: 'Out date', runtime: 'Runtime', network: 'Network', rules: 'Quality'
 };
 
 /** sortsFor lists the sorts a library offers. */

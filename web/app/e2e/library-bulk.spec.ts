@@ -149,8 +149,8 @@ test('Pick rules: two ticked movies and a show all move to the chosen rules', as
 	for (const t of titles) expect((await titleOf(call, t.id)).pick_rules_id, t.name).not.toBe(ruleId);
 
 	const bar = await selectTitles(page, titles);
-	await bar.getByRole('button', { name: 'Pick rules', exact: true }).click();
-	const menu = page.getByRole('menu', { name: 'Pick rules for the selected titles' });
+	await bar.getByRole('button', { name: 'Quality', exact: true }).click();
+	const menu = page.getByRole('menu', { name: 'Quality for the selected titles' });
 	// Music rules cannot apply to movies or shows, so they are not offered.
 	await expect(menu.getByRole('menuitem', { name: 'Standard', exact: true })).toBeVisible();
 	await expect(menu.getByRole('menuitem', { name: 'Any music', exact: true })).toHaveCount(0);
