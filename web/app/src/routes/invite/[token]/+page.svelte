@@ -62,7 +62,7 @@
 		if (via !== 'password') return joinServer(via);
 		if (!name.trim()) return void (error = 'Pick a name.');
 		if (pw.length < MIN_LENGTH) return void (error = `The password needs at least ${MIN_LENGTH} characters.`);
-		if (pw !== pwAgain) return void (error = 'Passwords don'''t match.');
+		if (pw !== pwAgain) return void (error = "Passwords don't match.");
 		busy = true;
 		try {
 			await session.acceptInvite(linkPart, name.trim(), pw);
