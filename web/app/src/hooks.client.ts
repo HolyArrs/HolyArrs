@@ -3,7 +3,8 @@
 // says nothing). Not-found pages keep their plain words.
 export const handleError = ({ error, status }: { error: unknown; status: number }) => {
 	console.error(error);
-	if (status === 404) return { message: 'Not Found' };
-	const why = error instanceof Error ? error.message : String(error);
+	const e = error as { status?: number; message?: unknown } | null;
+	if (status === 404 || e?.status === 404) return { message: 'Not Found' };
+	const why = error instanceof Error ? error.message : typeof e?.message === 'string' ? e.message : String(error);
 	return { message: `Internal Error: ${why}`.slice(0, 300) };
 };
