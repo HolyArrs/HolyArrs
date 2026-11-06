@@ -90,7 +90,7 @@
 						<span class="ok-tag" title="Read {dateTime(s.created_at)}"><Icon name="check" size={12} stroke={2.5} />{s.app_version ? `v${s.app_version.split('.').slice(0, 3).join('.')}` : 'Read'}</span>
 					</div>
 					<div class="acts">
-						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label="Read {appName(s.kind)} again">Edit</button>
+						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label="Edit {appName(s.kind)}">Edit</button>
 						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label="Forget the {appName(s.kind)} read from {dateTime(s.created_at)}">Remove</button>
 					</div>
 				</li>

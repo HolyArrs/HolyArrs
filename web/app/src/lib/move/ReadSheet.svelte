@@ -76,7 +76,7 @@
 	// Read again with a kept key: just the address and the button, no switch.
 	const keptAgain = $derived(again && !!savedKey);
 	const busy = $derived(reading !== '');
-	const title = $derived(again ? `Read ${appName(kind)} again` : 'Add an app');
+	const title = $derived(again ? `Edit ${appName(kind)}` : 'Add an app');
 
 	// Each open starts clean, on the app it was opened for.
 	let wasOpen = false;
@@ -282,7 +282,7 @@
 		{/if}
 	</form>
 	{#if busy}
-		<div class="cap" role="status"><StepCapsule tone="go" live fill={0.4} status="processing" word="Reading {appName(reading)}" detail="Can take a few minutes" testid="read-capsule" /></div>
+		<div class="cap" role="status"><StepCapsule tone="go" live fill={0.4} status="processing" word="Adding {appName(reading)}" detail="Can take a few minutes" testid="read-capsule" /></div>
 	{/if}
 	{#if probe}<p class="probe" data-testid={probe.ok ? 'probe-ok' : undefined}><TestTag ok={probe.ok} text={probe.text} app={appName(kind)} /></p>{/if}
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
@@ -290,7 +290,7 @@
 		<Button variant="secondary" onclick={() => (open = false)}>Cancel</Button>
 		<Button onclick={check} busy={checking} disabled={busy}>Test</Button>
 		<!-- One button that changes, so focus stays on it while reading. -->
-		<Button variant="primary" type={busy ? 'button' : 'submit'} form={busy ? undefined : 'move-read-form'} onclick={busy ? stop : undefined}>{busy ? 'Stop reading' : `Read ${appName(kind)}`}</Button>
+		<Button variant="primary" type={busy ? 'button' : 'submit'} form={busy ? undefined : 'move-read-form'} onclick={busy ? stop : undefined}>{busy ? 'Stop' : again ? 'Save' : `Add ${appName(kind)}`}</Button>
 	{/snippet}
 </Sheet>
 

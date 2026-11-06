@@ -66,7 +66,7 @@ async function openAll(p: Page) {
   await expect(b).toHaveAttribute("aria-expanded", "true");
 }
 const readSheet = (p: Page) =>
-  p.getByRole("dialog", { name: /^(Add an app|Read .+ again)$/ });
+  p.getByRole("dialog", { name: /^(Add an app|Edit .+)$/ });
 
 async function addApp(p: Page, app: string, port: number, key = oldKey) {
   await p.getByRole("button", { name: "Add an app" }).first().click();
@@ -140,7 +140,7 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
 
   // A wrong key is refused in plain words, inside the sheet, and never shown back.
   let sheet = await addApp(page, "radarr", oldRadarrPort, "wrong-key-here");
-  await sheet.getByRole("button", { name: "Read Radarr" }).click();
+  await sheet.getByRole("button", { name: "Add Radarr" }).click();
   await expect(
     sheet.getByRole("alert").filter({ hasText: "refused the key" }),
   ).toBeVisible();
@@ -151,7 +151,7 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   await sheet.getByLabel("API key", { exact: true }).fill(oldKey);
   await sheet.getByRole("button", { name: "Test", exact: true }).click();
   await expect(sheet.getByTestId("probe-ok")).toHaveText("Radarr v6.4.4");
-  await sheet.getByRole("button", { name: "Read Radarr" }).click();
+  await sheet.getByRole("button", { name: "Add Radarr" }).click();
   await expect(sheet).toBeHidden();
   const rows = page.getByTestId("read-row");
   await expect(rows.filter({ hasText: "Radarr" })).toBeVisible();
@@ -350,7 +350,7 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   await sheet.getByLabel("App", { exact: true }).selectOption("qbittorrent");
   await expect(sheet.getByLabel("Address", { exact: true })).toHaveAttribute("placeholder", /:8080$/);
   await sheet.getByLabel("Address", { exact: true }).fill("http://127.0.0.1:9");
-  await sheet.getByRole("button", { name: "Read qBittorrent" }).click();
+  await sheet.getByRole("button", { name: "Add qBittorrent" }).click();
   await expect(sheet.locator("#move-user:invalid")).toHaveCount(1);
   await expect(sheet.locator("#move-pass:invalid")).toHaveCount(1);
 
@@ -363,9 +363,9 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   await page.route("**/api/v1/migrate/read", () => {
     // Never answers: only Stop reading ends it.
   });
-  await sheet.getByRole("button", { name: "Read Radarr" }).click();
-  await expect(sheet.getByTestId("read-capsule")).toContainText("Reading Radarr");
-  await sheet.getByRole("button", { name: "Stop reading" }).click();
+  await sheet.getByRole("button", { name: "Add Radarr" }).click();
+  await expect(sheet.getByTestId("read-capsule")).toContainText("Adding Radarr");
+  await sheet.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(sheet.getByTestId("read-capsule")).toHaveCount(0);
   await page.unroute("**/api/v1/migrate/read");
   await sheet.getByRole("button", { name: "Cancel" }).click();
@@ -444,7 +444,7 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   await expect(sheet.getByLabel("Address", { exact: true })).toHaveCount(0);
   await expect(sheet.getByLabel("API key", { exact: true })).toHaveCount(0);
   await expect(sheet.locator("#move-local")).toHaveCount(0);
-  await sheet.getByRole("button", { name: "Read Radarr" }).click();
+  await sheet.getByRole("button", { name: "Add Radarr" }).click();
   await expect(sheet).toBeHidden();
   // One row per app: reading Radarr again keeps one Radarr row.
   await expect(page.getByTestId("read-row").filter({ hasText: "Radarr" })).toHaveCount(1);
@@ -454,7 +454,7 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
 
   // Read again: the app is locked, the kept key is used without asking.
   await expect(sheet).toBeHidden();
-  await page.getByRole("button", { name: "Read Radarr again" }).first().click();
+  await page.getByRole("button", { name: "Edit Radarr" }).first().click();
   const again = readSheet(page);
   await expect(again).toBeVisible();
   await expect(again.getByLabel("App", { exact: true })).toBeDisabled();
@@ -467,9 +467,9 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   await expect(again.getByLabel("API key", { exact: true })).toBeVisible();
   await again.getByRole("button", { name: "Cancel" }).click();
   await expect(again).toBeHidden();
-  await page.getByRole("button", { name: "Read Radarr again" }).first().click();
+  await page.getByRole("button", { name: "Edit Radarr" }).first().click();
   await expect(again.getByTestId("saved-address")).toBeVisible();
-  await again.getByRole("button", { name: "Read Radarr" }).click();
+  await again.getByRole("button", { name: "Save", exact: true }).click();
   await expect(again).toBeHidden();
   // One row per app: reading Radarr again keeps one Radarr row.
   await expect(page.getByTestId("read-row").filter({ hasText: "Radarr" })).toHaveCount(1);
