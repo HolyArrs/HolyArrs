@@ -790,7 +790,8 @@
 	/* Media: one row per part, its icon, its name and switch, then its folder. */
 	.rows { display: flex; flex-direction: column; gap: 10px; }
 	.frow { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); transition: opacity var(--dur-fast) var(--ease-out); }
-	.frow.off .ficon, .frow.off .fname { opacity: 0.55; }
+	.frow.off .ficon { opacity: 0.55; }
+	.frow.off .fname { color: var(--text-muted); }
 	.ficon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-1); color: var(--text-muted); box-shadow: 0 0 0 1px var(--line); }
 	.fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 	.ftop { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; cursor: pointer; }
