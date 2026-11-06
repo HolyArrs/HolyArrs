@@ -86,6 +86,24 @@
 		untrack(reload);
 	});
 	onMount(() => feed.watch(reload));
+	// A day header that is pinned under the page's top row gets a hairline and a soft shadow, so the list
+	// under it keeps a visible top edge instead of rows being cut off mid-row.
+	onMount(() => {
+		let raf = 0;
+		const check = () => {
+			raf = 0;
+			for (const h of list?.querySelectorAll<HTMLElement>('.dh') ?? []) {
+				const pin = parseFloat(getComputedStyle(h).top) || 0;
+				const day = h.parentElement?.getBoundingClientRect();
+				h.classList.toggle('stuck', !!day && day.top < pin - 1 && day.bottom > pin + h.offsetHeight);
+			}
+		};
+		const onScroll = () => { if (!raf) raf = requestAnimationFrame(check); };
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('resize', onScroll, { passive: true });
+		onScroll();
+		return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
+	});
 	$effect(() => {
 		episodeName = feed.episode;
 	});
@@ -303,6 +321,8 @@
 	.days { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-inline: -12px; padding: 10px 12px 8px; background: var(--bg); transition: top var(--bar-glide); }
 	/* The pinned header's background reaches 12px past the list each side (text unmoved), so the list's outline and shadow never peek out beside it. */
+	.dh::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-strong); box-shadow: 0 6px 16px 2px light-dark(rgb(20 24 40 / .10), rgb(0 0 0 / .55)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
+	.dh:global(.stuck)::after { opacity: 1; }
 	.dh h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.dl { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.rail { position: relative; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
