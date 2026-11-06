@@ -316,7 +316,7 @@ test('Library search debounces the indexed query and ignores stale results', asy
 	await find.fill('broken');
 	await expect(page.getByRole('alert')).toContainText('Library search failed.');
 	// The Filter menu and the layout switch stay usable after a failed search.
-	await expect(page.getByRole('button', { name: 'Filter' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Sort & filter' })).toBeVisible();
 	await expect(page.getByRole('radiogroup', { name: 'View' })).toBeVisible();
 	await page.unroute('**/api/v1/titles?*');
 });
