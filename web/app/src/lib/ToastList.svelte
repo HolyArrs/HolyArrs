@@ -20,31 +20,8 @@
 	const toastIn = notifyIn;
 	const toastOut = notifyOut;
 
-	// Screen readers: failures are read at once, the rest politely. The text is cleared
-	// first so the same message pushed again is read again.
-	let politeMsg = $state('');
-	let urgentMsg = $state('');
-	const heard = new Map<number, number>();
-	$effect(() => {
-		const urgent: string[] = [];
-		const polite: string[] = [];
-		for (const t of toasts.list) {
-			if (heard.get(t.id) === t.seen) continue;
-			heard.set(t.id, t.seen);
-			const words = t.body ? `${t.text}. ${t.body}` : t.text;
-			(t.tone === 'fail' ? urgent : polite).push(t.action ? `${words}. ${t.action.label} is available.` : words);
-		}
-		for (const id of heard.keys()) if (!toasts.list.some((t) => t.id === id)) heard.delete(id);
-		if (!urgent.length && !polite.length) return;
-		// Messages that arrive together are read together.
-		if (urgent.length) urgentMsg = '';
-		if (polite.length) politeMsg = '';
-		const say = setTimeout(() => {
-			if (urgent.length) urgentMsg = urgent.join('. ');
-			if (polite.length) politeMsg = polite.join('. ');
-		}, 60);
-		return () => clearTimeout(say);
-	});
+	// Screen readers: the stack itself is a polite live region, so each alert is read as it
+	// drops in, with no hidden second copy of its text.
 
 	// Metadata outage: full card, shrinks to a pill after 6 s, tap to open again.
 	const downShown = $derived(metadataDownShown());
@@ -181,9 +158,7 @@
 
 {#if demo && signedIn}<button type="button" class="alerts-demo" onclick={playDemo}>Try alerts</button>{/if}
 <span class="toast-home" hidden bind:this={home}></span>
-<div class="sr-only" role="status" aria-live="polite">{politeMsg}</div>
-<div class="sr-only" role="alert" aria-live="assertive">{urgentMsg}</div>
-<div class="toasts" class:in-win={inWin} popover="manual" bind:this={host}>
+<div class="toasts" class:in-win={inWin} role="status" aria-live="polite" popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
 			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text="Library still works" time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
