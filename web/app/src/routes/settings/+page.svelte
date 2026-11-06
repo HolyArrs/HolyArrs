@@ -79,7 +79,6 @@
 <div class="sx-home" bind:this={home}>
 	<div class="sx-head">
 		<PageHeader title="Settings" />
-		<p class="lede">Your own account is in the menu under your name.</p>
 		<div class="find">
 			<Icon name="search" size={17} />
 			<label class="sr-only" for="settings-find">Search settings</label>
