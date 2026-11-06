@@ -133,15 +133,6 @@
 	});
 
 	// Things to type after the move (keys, passwords, links), people aside.
-	const keysLine = $derived.by(() => {
-		const parts: string[] = [];
-		for (const g of on) {
-			if (g.name === 'people') continue;
-			const n = g.items.filter((it) => it.needs).length;
-			if (n > 0) parts.push(plural(n, g.label.replace(/s$/, ''), g.label));
-		}
-		return parts.length ? `Reconnect ${andList(parts)}` : '';
-	});
 
 	function choicesFor(p: string): { value: string; label: string }[] {
 		const k = kindOf.get(p);
@@ -151,25 +142,15 @@
 		return out;
 	}
 
-	function apps(items: PlanItem[]): string {
-		const seen: string[] = [];
-		for (const it of items) {
-			const a = appName(it.from.split(' ')[0] ?? '');
-			if (a && !seen.includes(a)) seen.push(a);
-			if (seen.length > 3) break;
-		}
-		return seen.join(', ');
-	}
-
 	/** Where a group comes from, or what it needs (warn), or Left out. */
 	function groupNote(g: PlanGroup): { text: string; warn: boolean } {
 		if (skip.includes(g.name)) return { text: 'Left out', warn: false };
 		const n = g.items.length;
 		const needs = g.items.filter((it) => it.needs);
-		if (needs.length === n && n > 0 && needs.every((it) => it.needs === needs[0].needs)) return { text: `${n === 1 ? 'needs' : 'each needs'} ${needs[0].needs}`, warn: true };
-		if (needs.length > 0) return { text: `${needs.length} need your input`, warn: true };
-		const from = apps(g.items);
-		return { text: from ? `from ${from}` : '', warn: false };
+		if (needs.length > 0 && g.name === 'people') return { text: 'Invite after the move', warn: true };
+		if (needs.length > 0) return { text: needs.every((it) => /key/i.test(it.needs ?? '')) ? 'Keys after the move' : 'Keys or passwords after the move', warn: true };
+		void n;
+		return { text: '', warn: false };
 	}
 
 	function itemRow(it: PlanItem) {
@@ -179,6 +160,15 @@
 
 	// The reconnect list: Sources split into Usenet and Torrent, Downloaders with what each needs.
 	let keysOpen = $state(false);
+	let keysOf = $state<'sources' | 'downloaders'>('sources');
+	function openKeys(k: 'sources' | 'downloaders') {
+		keysOf = k;
+		keysOpen = true;
+	}
+	const keyCount = $derived({
+		sources: on.find((g) => g.name === 'sources')?.items.filter((it) => it.needs).length ?? 0,
+		downloaders: on.find((g) => g.name === 'downloaders')?.items.filter((it) => it.needs).length ?? 0
+	});
 	const clean = (n: string) => n.replace(/\s*\((Prowlarr|Jackett)\)$/i, '');
 	const keyGroups = $derived.by(() => {
 		const src = on.find((g) => g.name === 'sources')?.items.filter((it) => it.needs) ?? [];
@@ -190,7 +180,7 @@
 			{ label: 'Usenet', items: usenet.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
 			{ label: 'Torrent', items: torrent.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
 			{ label: 'Downloaders', items: dls.map((it) => ({ key: it.key, name: clean(it.name), need: need(it) })) }
-		].filter((g) => g.items.length > 0);
+		].filter((g) => g.items.length > 0 && (keysOf === 'downloaders' ? g.label === 'Downloaders' : g.label !== 'Downloaders'));
 	});
 
 
@@ -309,19 +299,28 @@
 				</ul>
 			{/if}
 
-			{#if keysLine || peopleOn}
+			{#if keyCount.sources || keyCount.downloaders || peopleOn}
 				<h3 class="head">After the move</h3>
-				<ul class="box list">
-					{#if keysLine}
-						<li class="mrow"><span class="txt"><b class="warn">{keysLine}</b><span class="sub">They come over paused. Add their keys in Settings to switch them on.</span></span><button type="button" class="quiet" onclick={() => (keysOpen = true)}>Show</button></li>
+				<div class="cards">
+					{#if keyCount.sources}
+						<div class="box card1">
+							<span class="txt"><b>Reconnect {plural(keyCount.sources, 'Source', 'Sources')}</b><span class="sub">They arrive paused. Add their keys in Settings.</span></span>
+							<button type="button" class="quiet" onclick={() => openKeys('sources')}>Show</button>
+						</div>
+					{/if}
+					{#if keyCount.downloaders}
+						<div class="box card1">
+							<span class="txt"><b>Reconnect {plural(keyCount.downloaders, 'Downloader', 'Downloaders')}</b><span class="sub">They arrive paused. Add their passwords or keys in Settings.</span></span>
+							<button type="button" class="quiet" onclick={() => openKeys('downloaders')}>Show</button>
+						</div>
 					{/if}
 					{#if peopleOn}
-						<li class="mrow">
-							<span class="txt"><b>Invite {peopleItems.length === 1 ? '1 user' : `${peopleItems.length} users`}</b><span class="sub">Their accounts come over. Send each an invite so they can sign in.</span></span>
+						<div class="box card1">
+							<span class="txt"><b>Invite {peopleItems.length === 1 ? '1 user' : `${peopleItems.length} users`}</b><span class="sub">Their accounts arrive. Send each an invite to sign in.</span></span>
 							<button type="button" class="quiet" onclick={() => onshow('People', peopleItems, itemRow)}>Show</button>
-						</li>
+						</div>
 					{/if}
-				</ul>
+				</div>
 			{/if}
 
 			{#if shown.length > 0 || oldRows.length > 0 || pathRules}
@@ -338,7 +337,7 @@
 								<li class="mrow" data-testid="group-row">
 									<span class="txt one" title="{g.label} {g.items.length}{note.text ? ` · ${note.text}` : ''}">
 										<label class="name" for="move-group-{g.name}">{g.label}</label>
-										<span class="count">{g.items.length}</span>{#if note.text}<span class="sub"> · </span><span class="sub" class:warn={note.warn}>{note.text}</span>{/if}
+										<span class="count">{g.items.length}</span>{#if note.text}<span class="gnote" class:warn={note.warn}>{note.text}</span>{/if}
 									</span>
 									<button type="button" class="quiet" onclick={() => onshow(g.label, g.items, itemRow)} disabled={g.items.length === 0} aria-label="Show {g.label}">Show</button>
 									<label class="switch">
@@ -385,7 +384,7 @@
 	</SettingsCard>
 </div>
 
-<Sheet bind:open={keysOpen} title="Reconnect after the move" size="md">
+<Sheet bind:open={keysOpen} title={keysOf === 'downloaders' ? 'Downloaders to reconnect' : 'Sources to reconnect'} size="md">
 	<div class="kgroups" data-testid="keys-sheet">
 		{#each keyGroups as g (g.label)}
 			<p class="khead">{g.label} · {g.items.length}</p>
@@ -397,6 +396,10 @@
 </Sheet>
 
 <style>
+	.cards { display: grid; gap: 10px; }
+	.card1 { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+	.gnote { margin-left: 10px; color: var(--text-muted); font: var(--t-footnote); }
+	.gnote.warn { color: var(--wait-text); }
 	.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 	.tile { padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 	.num { font: 700 26px/1.1 var(--font-ui); color: var(--text); }
@@ -414,7 +417,7 @@
 	.list { list-style: none; padding: 0 16px; }
 	.head { margin: 18px 0 8px; font: var(--t-subhead); font-weight: 600; color: var(--text); }
 	.sub { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
-	.warn, .sub.warn { color: var(--wait-text); }
+	.warn { color: var(--wait-text); }
 	.none { margin: 0; }
 
 	.mrow { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 0; min-width: 0; }
@@ -424,7 +427,7 @@
 	span.txt.one { display: block; }
 	.one { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.name { font: 600 14px/1.3 var(--font-ui); color: var(--text); }
-	.count { color: var(--text-muted); margin-left: 6px; }
+	.count { color: var(--text-muted); margin-left: 8px; }
 	.path { font-size: 13px; color: var(--text); }
 	.arrow { flex: none; color: var(--text-muted); }
 	.sw-word { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
