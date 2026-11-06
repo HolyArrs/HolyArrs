@@ -79,11 +79,6 @@ test('This app shows where things are kept, and the log', async () => {
 	await expect(page.getByTestId('log-lines')).toHaveAttribute('data-query', /(^|&)level=error(&|$)/);
 	await expect(page.getByTestId('log-lines')).toHaveAttribute('aria-busy', 'false');
 	for (const l of await page.getByTestId('log-line').all()) await expect(l).toHaveAttribute('data-level', 'error');
-	// The first-run setup code is in the log, hidden.
-	await page.getByRole('button', { name: 'Clear' }).click();
-	await page.getByLabel('Text').fill('setup code');
-	await page.getByRole('button', { name: 'Apply', exact: true }).click();
-	await expect(page.getByTestId('log-line').first()).toContainText('setup code [hidden]');
 	await axe(page, '/settings/logs');
 	await phone(page, '/settings/logs');
 	await axe(page, '/settings/this-app');

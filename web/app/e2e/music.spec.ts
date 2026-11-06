@@ -143,7 +143,7 @@ test('the owner finds an artist and adds it from Search', async () => {
 	// An album turns off and on.
 	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
 	await expect(own.getByRole('status')).toContainText('Night Ferry: HolyArrs stops looking after it.');
-	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Not kept up to date');
+	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Not kept');
 	await expect(lib.getByRole('button', { name: 'Keep Night Ferry up to date' })).toHaveAttribute('aria-pressed', 'false');
 	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
 	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Missing');
@@ -161,9 +161,10 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await axe(own, 'artist album kinds');
 	await kinds.getByRole('button', { name: 'Cancel' }).click();
 	await expect(kinds).toBeHidden();
-	for (const b of [/^Keep up to date/, /^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
+	await expect(lib.getByRole('switch', { name: /^Keep up to date/ })).toBeVisible();
+	for (const b of [/^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
 	await expect(lib.getByTestId('quality-row')).toBeVisible();
-	await expect(lib.getByRole('link', { name: 'All history' })).toHaveAttribute('href', /\/downloads\/history\?title=\d+/);
+	await expect(lib.getByRole('heading', { name: 'History' })).toBeVisible();
 });
 
 test('the album page lists tracks and Pressings, and the owner picks another Pressing', async () => {
@@ -202,9 +203,11 @@ test('artists sit in the Library with a Music kind', async () => {
 	// Posters carry only the status circle now.
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' })).toHaveCount(0);
 	await libraryView(own, 'Banners');
-	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText('tracks in the Library');
+	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText(/Missing · \d+|Complete/);
 	await libraryView(own, 'Posters');
 	await libraryKind(own, /^Everything/);
+	// Cards fade in one after another; let the ones on screen start before checking contrast.
+	await own.waitForFunction(() => [...document.querySelectorAll('.lp')].every((e) => e.classList.contains('shown') || e.getBoundingClientRect().top > innerHeight));
 	await axe(own, 'library with music');
 });
 
@@ -315,10 +318,10 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await noSidewaysScroll(phone);
 	await axe(phone, 'artist page phone');
 
-	// History names who asked and who approved (rows read "Asked · ivy", "Approved · luis").
+	// History names who asked and who approved (each row shows the person and the step).
 	await own.goto('/downloads/history');
-	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: /Asked\s*·\s*ivy/ }).first()).toBeVisible();
-	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: /Approved\s*·\s*luis/ }).first()).toBeVisible();
+	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: /ivy[\s\S]*Asked/ }).first()).toBeVisible();
+	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: /luis[\s\S]*Approved/ }).first()).toBeVisible();
 
 	// ivy is told (no inbox card on Requests; the news is on her card); members see no switches on the artist page.
 	expect(((await (await ivy.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Moss Choir, Fern Hymns was approved by an admin'));

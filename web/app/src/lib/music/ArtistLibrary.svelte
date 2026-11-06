@@ -538,7 +538,7 @@
 	.al-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.al-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
-	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail-on-art); }
+	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail-text); }
 	.al-rowbtn { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.al-rowbtn:not(.static):hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.al-rowbtn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
