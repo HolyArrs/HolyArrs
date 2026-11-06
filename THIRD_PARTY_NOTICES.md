@@ -34,7 +34,7 @@ Every open-source part HolyArrs ships: the Go modules in the program, the packag
 
 | Part | Version | Licence | Shipped in |
 | --- | --- | --- | --- |
-| github.com/andybalholm/brotli | v1.2.2 | MIT (some parts BSD-3-Clause) | the holyarrs program |
+| github.com/andybalholm/brotli | v1.2.7 | MIT | the holyarrs program |
 | github.com/bodgit/plumbing | v1.3.0 | BSD-3-Clause | the holyarrs program |
 | github.com/bodgit/sevenzip | v1.6.5 | BSD-3-Clause | the holyarrs program |
 | github.com/bodgit/windows | v1.0.1 | BSD-3-Clause | the holyarrs program |
@@ -43,7 +43,7 @@ Every open-source part HolyArrs ships: the Go modules in the program, the packag
 | github.com/go-jose/go-jose/v4 | v4.1.5 | Apache-2.0 (some parts BSD-3-Clause) | the holyarrs program |
 | github.com/google/uuid | v1.6.0 | BSD-3-Clause | the holyarrs program |
 | github.com/hashicorp/golang-lru/v2 | v2.0.7 | MPL-2.0 (some parts BSD-3-Clause) | the holyarrs program |
-| github.com/klauspost/compress | v1.19.0 | BSD-3-Clause (some parts MIT) | the holyarrs program |
+| github.com/klauspost/compress | v1.20.2 | BSD-3-Clause (some parts MIT) | the holyarrs program |
 | github.com/mattn/go-isatty | v0.0.24 | MIT | the holyarrs program |
 | github.com/ncruces/go-strftime | v1.0.0 | MIT | the holyarrs program |
 | github.com/nwaples/rardecode/v2 | v2.4.5 | BSD-2-Clause | the holyarrs program |
