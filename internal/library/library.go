@@ -49,7 +49,7 @@ func (e *FolderError) Error() string {
 
 // AddOptions are the choices made when adding a movie. Zero values take the
 // defaults: the first movie Library folder, its default Pick rules (else
-// Good everyday), kept up to date, the Release gate settings, no search.
+// Standard), kept up to date, the Release gate settings, no search.
 type AddOptions struct {
 	LibraryFolderID int64  `json:"library_folder_id"`
 	PickRulesID     int64  `json:"pick_rules_id"`

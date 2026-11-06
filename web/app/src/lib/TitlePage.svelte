@@ -256,8 +256,8 @@
 	const ownChips = $derived([...ownBadges, owned?.size_bytes ? bytes(owned.size_bytes) : '', owned ? (owned.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date') : ''].filter(Boolean));
 	let rules = $state<PickRulesView[]>([]);
 	// Quality: ready-made sets in the control (4K stays for second versions), every other set in the Custom menu.
-	const qOrder = ['Save space', 'Good everyday', 'Best'];
-	const qHints: Record<string, string> = { 'Save space': '720p to 1080p, small files', 'Good everyday': 'Up to 1080p, best value', Best: '4K and HDR when out', '4K': '4K first' };
+	const qOrder = ['Lite', 'Standard', 'Best'];
+	const qHints: Record<string, string> = { 'Lite': '720p to 1080p, small files', 'Standard': 'Up to 1080p, best value', Best: '4K and HDR when out', '4K': '4K first' };
 	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
 	const qPresets = $derived(qKind.filter((r) => r.preset && r.name !== '4K').sort((a, b) => (qOrder.indexOf(a.name) + 1 || 99) - (qOrder.indexOf(b.name) + 1 || 99)));
 	const qOthers = $derived(qKind.filter((r) => !qPresets.includes(r)));

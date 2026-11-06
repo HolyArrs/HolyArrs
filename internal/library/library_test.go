@@ -349,7 +349,7 @@ func TestEditPickRulesGoodEnoughWithDryRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Put a 1080p WEB file in the library: good enough under Good everyday.
+	// Put a 1080p WEB file in the library: good enough under Standard.
 	sl := slotsOf(t, s, id)[0]
 	strict := domain.GoodEveryday()
 	strict.GoodEnoughAt = "2160p_web"

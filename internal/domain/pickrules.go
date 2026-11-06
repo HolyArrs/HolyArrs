@@ -66,7 +66,7 @@ type PickRulesBody struct {
 }
 
 // GoodEverydayName is the default preset's name.
-const GoodEverydayName = "Good everyday"
+const GoodEverydayName = "Standard"
 
 const gb = int64(1) << 30
 
@@ -103,7 +103,7 @@ func GoodEveryday() PickRulesBody {
 }
 
 // SaveSpaceName is the small-files preset's name.
-const SaveSpaceName = "Save space"
+const SaveSpaceName = "Lite"
 
 // SaveSpace returns the small-files preset: 720p to 1080p web, good enough at
 // 1080p web, x265 earns points, 0.4 to 2.5 GB per hour of video.

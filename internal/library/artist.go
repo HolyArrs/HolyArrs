@@ -21,7 +21,7 @@ import (
 
 // ArtistAddOptions are the choices made when adding an artist. Empty values
 // take the music settings: the first music Library folder, its default
-// Pick rules (else Good everyday), kept up to date.
+// Pick rules (else Standard), kept up to date.
 type ArtistAddOptions struct {
 	LibraryFolderID int64    `json:"library_folder_id"`
 	PickRulesID     int64    `json:"pick_rules_id"`

@@ -59,7 +59,7 @@ and move again: nothing is added twice.
 | --- | --- |
 | Library folders (Radarr, Sonarr, Lidarr) | Library folders for movies, shows and music. |
 | Movies, shows and artists | Titles, found by their TMDB, TVDB or MusicBrainz id, using **the folder where it is**: each title's folder and files stay exactly where they are. Its watch flag becomes **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
-| Quality profiles | Each one is matched to the closest **Pick rules** preset (Good everyday, 4K, Lossless first, Lossy 320 or V0, Any music), with the reason shown in the plan. Titles use the preset of their profile. |
+| Quality profiles | Each one is matched to the closest **Pick rules** preset (Standard, 4K, Lossless first, Lossy 320 or V0, Any music), with the reason shown in the plan. Titles use the preset of their profile. |
 | Exclusions | The **Never-add** list (read live or from a backup). |
 | Radarr's release stage of each movie, and its availability delay | Each moved movie's **Release gate** and gate delay (up to 365 days). This server's default for new movies stays as it is. |
 | The untagged default wait rule (Radarr, Sonarr, Lidarr) | The preferred protocol and the Usenet and torrent waits of the ready-made **Pick rules** its quality profiles matched (up to 7 days; "skip the wait at the top quality" turns on **Skip the wait once good enough**). Only when the rule differs from the old app's own default, and only while those Pick rules still have their wait as they came. If two apps set different waits for the same Pick rules, neither is used; an app left at its own default counts as no wait. Try it shows the change and how many versions use those Pick rules. |

@@ -10,7 +10,7 @@ func TestCheckPickRules(t *testing.T) {
 	video := []string{"movie", "show"}
 	music := []string{"music"}
 	if err := CheckPickRules(GoodEverydayName, video, GoodEveryday()); err != nil {
-		t.Fatalf("Good everyday: %v", err)
+		t.Fatalf("Standard: %v", err)
 	}
 	if err := CheckPickRules(FourKName, []string{"movie"}, FourK()); err != nil {
 		t.Fatalf("4K: %v", err)

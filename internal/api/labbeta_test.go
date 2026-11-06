@@ -204,7 +204,7 @@ type labMovieOpts struct {
 	cat     string
 	movies  string                      // the Library folder; a temp folder when ""
 	feed    string                      // the Source (Torznab); none when ""
-	rules   func(*domain.PickRulesBody) // changes to Good everyday
+	rules   func(*domain.PickRulesBody) // changes to Standard
 	pathMap []domain.PathMap
 	notOut  bool // the digital release is a month away: the gate is closed
 }
@@ -634,7 +634,7 @@ func TestLabBeta41ForcedProgramFileChain(t *testing.T) {
 	t.Logf("#41 chain: forced %s failed as dangerous (%s), turned down, our Dune sent next and imported as %s; after clearing the list it still needs force", exeName, why, f.RelativePath)
 }
 
-// #46 Pick your quality: with Good everyday the 1080p copy ranks over our
+// #46 Pick your quality: with Standard the 1080p copy ranks over our
 // own 720p copy; with Pick rules that allow only 720p, the 1080p copy is
 // refused as not allowed and the 720p copy is grabbed and imported.
 func TestLabBeta46PickYourQuality(t *testing.T) {
@@ -647,7 +647,7 @@ func TestLabBeta46PickYourQuality(t *testing.T) {
 	def.handSearch(t, false)
 	dr := def.releases(t)
 	if dr[labDune1080].Rank != 1 || dr[labDune720].Rank != 2 || dr[labDune1080].Step != "1080p_web" || dr[labDune720].Step != "720p_web" {
-		t.Fatalf("Good everyday: 1080p %+v, 720p %+v", dr[labDune1080], dr[labDune720])
+		t.Fatalf("Standard: 1080p %+v, 720p %+v", dr[labDune1080], dr[labDune720])
 	}
 
 	x := newLabMovie(t, labMovieOpts{cat: cat, feed: feed.URL, rules: func(b *domain.PickRulesBody) {
@@ -672,7 +672,7 @@ func TestLabBeta46PickYourQuality(t *testing.T) {
 	if !strings.Contains(f.RelativePath, "720p") && (f.ReleaseName == nil || *f.ReleaseName != labDune720) {
 		t.Fatalf("placed %s (%v)", f.RelativePath, f.ReleaseName)
 	}
-	t.Logf("#46: Good everyday ranks 1080p_web over 720p_web; 720p-only rules refuse 1080p (%s) and import %s", rels[labDune1080].has("step.not_allowed"), f.RelativePath)
+	t.Logf("#46: Standard ranks 1080p_web over 720p_web; 720p-only rules refuse 1080p (%s) and import %s", rels[labDune1080].has("step.not_allowed"), f.RelativePath)
 }
 
 // #48 Wait for a better release: with a 60 minute wait the first copy found

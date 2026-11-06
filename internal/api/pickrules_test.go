@@ -122,7 +122,7 @@ func TestPickRulesFieldErrors(t *testing.T) {
 
 func TestPickRulesNameTaken(t *testing.T) {
 	srv, _, _ := libSetup(t)
-	b := string(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "good EVERYDAY", []string{"movie"}, domain.GoodEveryday()), 409))
+	b := string(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "standARD", []string{"movie"}, domain.GoodEveryday()), 409))
 	if !strings.Contains(b, `"field":"name"`) {
 		t.Fatalf("taken: %s", b)
 	}

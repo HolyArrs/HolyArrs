@@ -690,14 +690,14 @@ func matchPreset(k Kind, p Profile) (string, string) {
 	if strings.Contains(cut, "2160") || strings.Contains(cut, "4k") || strings.Contains(cut, "uhd") {
 		return "4K", "it aims for 2160p (" + clip(p.Cutoff, 60) + ")" + scores
 	}
-	why := "it aims for " + clip(p.Cutoff, 60) + " or lower; Good everyday picks the best copy up to 1080p"
+	why := "it aims for " + clip(p.Cutoff, 60) + " or lower; Standard picks the best copy up to 1080p"
 	if p.Cutoff == "" {
-		why = "it names no top quality; Good everyday picks the best copy up to 1080p"
+		why = "it names no top quality; Standard picks the best copy up to 1080p"
 	}
 	if !p.UpgradeAllowed {
-		why += "; it never looked for better copies, Good everyday does until the top step"
+		why += "; it never looked for better copies, Standard does until the top step"
 	}
-	return "Good everyday", why + scores
+	return "Standard", why + scores
 }
 
 func (b *builder) profiles(s *Snapshot) {
@@ -1222,7 +1222,7 @@ func (b *builder) titleList(s *Snapshot) {
 		tp := &TitlePlan{Kind: kind, ID: id, IDs: ids, Year: t.Year, KeepUpToDate: t.Monitored,
 			Preset: b.presets[string(s.Kind)+":"+strconv.FormatInt(t.ProfileID, 10)], Music: music}
 		if tp.Preset == "" && kind != "artist" {
-			tp.Preset = "Good everyday"
+			tp.Preset = "Standard"
 		}
 		for _, se := range t.Seasons {
 			if !se.Monitored && se.Number >= 0 && se.Number < 10000 {

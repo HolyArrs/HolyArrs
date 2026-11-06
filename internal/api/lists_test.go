@@ -165,7 +165,7 @@ func TestOutsideListsAPI(t *testing.T) {
 	do(t, "POST", srv.URL+"/api/v1/never-add", `{"kind":"artist","tmdb_id":"1","name":"x"}`, 400)
 }
 
-// goodEverydayBody is the Good everyday rules body as JSON, for new rules.
+// goodEverydayBody is the Standard rules body as JSON, for new rules.
 func goodEverydayBody(t *testing.T) string {
 	t.Helper()
 	b, err := json.Marshal(domain.GoodEveryday())

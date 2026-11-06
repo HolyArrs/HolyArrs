@@ -25,13 +25,13 @@ async function more(name: string, item: string) {
 	await page.getByRole('menu', { name: `More for ${name}` }).getByRole('menuitem', { name: item }).click();
 }
 
-test('copy Good everyday, change a step and a trait, save, and the changes stay after a reload', async () => {
+test('copy Standard, change a step and a trait, save, and the changes stay after a reload', async () => {
 	await page.goto('/settings/pick-rules');
-	await expect(row('Good everyday')).toContainText('Ready-made');
-	await more('Good everyday', 'Make a copy');
+	await expect(row('Standard')).toContainText('Ready-made');
+	await more('Standard', 'Make a copy');
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/new\?from=\d+$/);
 	await expect(page.getByRole('heading', { name: 'Add Pick rules', level: 1 })).toBeVisible();
-	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Good everyday copy');
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Standard copy');
 
 	// A step: 4K web on.
 	const fourK = page.getByRole('switch', { name: '4K web' });
@@ -44,12 +44,12 @@ test('copy Good everyday, change a step and a trait, save, and the changes stay 
 
 	const bar = page.getByTestId('savebar');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Good everyday copy made.')).toBeVisible();
+	await expect(page.getByText('Standard copy made.')).toBeVisible();
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await expect(bar).toHaveCount(0);
 
 	await page.reload();
-	await expect(page.getByRole('heading', { name: 'Good everyday copy', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Standard copy', level: 1 })).toBeVisible();
 	await expect(page.getByRole('switch', { name: '4K web' })).toBeChecked();
 	await expect(page.getByRole('switch', { name: '720p web' })).toBeChecked();
 	await expect(page.getByLabel('Points for HEVC (smaller files)')).toHaveValue('25');
@@ -77,34 +77,34 @@ test('a mistake is named on its field before anything is sent, and Save keeps a 
 
 test('removing asks first, and then the copy is gone', async () => {
 	await page.goto('/settings/pick-rules');
-	await expect(row('Good everyday copy')).toContainText('Not used yet');
-	await more('Good everyday copy', 'Remove…');
+	await expect(row('Standard copy')).toContainText('Not used yet');
+	await more('Standard copy', 'Remove…');
 	const sheet = page.getByRole('dialog', { name: 'Remove these Pick rules?' });
-	await expect(sheet).toContainText('Good everyday copy');
+	await expect(sheet).toContainText('Standard copy');
 	await sheet.getByRole('button', { name: 'Cancel' }).click();
 	await expect(sheet).toBeHidden();
-	await expect(row('Good everyday copy')).toHaveCount(1);
+	await expect(row('Standard copy')).toHaveCount(1);
 
-	await more('Good everyday copy', 'Remove…');
+	await more('Standard copy', 'Remove…');
 	await sheet.getByRole('button', { name: 'Remove', exact: true }).click();
-	await expect(page.getByText('Good everyday copy removed.')).toBeVisible();
-	await expect(row('Good everyday copy')).toHaveCount(0);
+	await expect(page.getByText('Standard copy removed.')).toBeVisible();
+	await expect(row('Standard copy')).toHaveCount(0);
 	await page.reload();
-	await expect(row('Good everyday')).toHaveCount(1);
-	await expect(row('Good everyday copy')).toHaveCount(0);
+	await expect(row('Standard')).toHaveCount(1);
+	await expect(row('Standard copy')).toHaveCount(0);
 });
 
 test('a ready-made set cannot be removed or renamed, but can be copied and changed', async () => {
 	await page.goto('/settings/pick-rules');
-	await row('Good everyday').getByRole('button', { name: 'More for Good everyday' }).click();
-	const menu = page.getByRole('menu', { name: 'More for Good everyday' });
+	await row('Standard').getByRole('button', { name: 'More for Standard' }).click();
+	const menu = page.getByRole('menu', { name: 'More for Standard' });
 	await expect(menu.getByRole('menuitem', { name: 'Make a copy' })).toBeVisible();
 	await expect(menu.getByRole('menuitem', { name: /^Remove/ })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 
-	await row('Good everyday').getByRole('link', { name: 'Change' }).click();
-	await expect(page.getByRole('heading', { name: 'Good everyday', level: 1 })).toBeVisible();
-	await expect(page.getByTestId('preset-name')).toContainText('Good everyday');
+	await row('Standard').getByRole('link', { name: 'Change' }).click();
+	await expect(page.getByRole('heading', { name: 'Standard', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('preset-name')).toContainText('Standard');
 	await expect(page.getByLabel('Name', { exact: true })).toHaveCount(0);
 	await expect(page.getByRole('switch', { name: '1080p web' })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Make a copy' })).toBeVisible();
@@ -152,8 +152,8 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 		await expect(page.getByText('Dutch subs made. Pick rules can use it now.')).toBeVisible();
 		await expect(page.getByTestId('own-trait')).toContainText('Name has: NLSubs, /\\bdutch\\b/');
 
-		// A copy of Good everyday never takes it.
-		await more('Good everyday', 'Make a copy');
+		// A copy of Standard never takes it.
+		await more('Standard', 'Make a copy');
 		const never = page.getByLabel('Add to Never');
 		await expect(never.locator('optgroup[label="Your traits"] option', { hasText: 'Dutch subs' })).toHaveCount(1);
 		await never.selectOption({ label: 'Dutch subs' });
@@ -177,16 +177,16 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 		const ts = ((await (await call('GET', '/own-traits')).json()) as { own_traits: { id: number }[] }).own_traits;
 		for (const t of ts) await call('DELETE', `/own-traits/${t.id}`);
 		const rs = ((await (await call('GET', '/pick-rules')).json()) as { pick_rules: { id: number; name: string }[] }).pick_rules;
-		for (const r of rs.filter((x) => x.name === 'Good everyday copy')) await call('DELETE', `/pick-rules/${r.id}`);
+		for (const r of rs.filter((x) => x.name === 'Standard copy')) await call('DELETE', `/pick-rules/${r.id}`);
 	}
 });
 
 test('a phone: the list and the editor fit without sideways scroll', async () => {
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.goto('/settings/pick-rules');
-	await expect(row('Good everyday')).toBeVisible();
+	await expect(row('Standard')).toBeVisible();
 	await noSidewaysScroll(page);
-	await row('Good everyday').getByRole('link', { name: 'Change' }).click();
+	await row('Standard').getByRole('link', { name: 'Change' }).click();
 	await expect(page.getByRole('switch', { name: '1080p web' })).toBeVisible();
 	await openAdvanced(page);
 	await noSidewaysScroll(page);
@@ -195,22 +195,22 @@ test('a phone: the list and the editor fit without sideways scroll', async () =>
 
 test('accessibility: the list, the remove sheet and a copy in the editor with Advanced open', async () => {
 	await page.goto('/settings/pick-rules');
-	await expect(row('Good everyday')).toBeVisible();
+	await expect(row('Standard')).toBeVisible();
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 	// The remove sheet, on a set nothing uses (a fresh copy, made and then removed).
-	await more('Good everyday', 'Make a copy');
+	await more('Standard', 'Make a copy');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await page.goto('/settings/pick-rules');
-	await more('Good everyday copy', 'Remove…');
+	await more('Standard copy', 'Remove…');
 	const sheet = page.getByRole('dialog', { name: 'Remove these Pick rules?' });
 	await expect(sheet).toBeVisible();
 	await sheet.evaluate((el) => Promise.all(el.getAnimations().map((x) => x.finished)));
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 	await sheet.getByRole('button', { name: 'Remove', exact: true }).click();
-	await expect(row('Good everyday copy')).toHaveCount(0);
-	await more('Good everyday', 'Make a copy');
-	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Good everyday copy');
+	await expect(row('Standard copy')).toHaveCount(0);
+	await more('Standard', 'Make a copy');
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Standard copy');
 	await openAdvanced(page);
 	// The save bar rises in (opacity from 0); check its colours once it has settled.
 	const bar = page.getByTestId('savebar');

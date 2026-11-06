@@ -276,7 +276,7 @@ describe('server fields', () => {
 	});
 
 	it('names a copy', () => {
-		expect(copyName('Good everyday')).toBe('Good everyday copy');
+		expect(copyName('Standard')).toBe('Standard copy');
 		expect(copyName('x'.repeat(199))).toHaveLength(200);
 	});
 });

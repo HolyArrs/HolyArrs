@@ -152,7 +152,7 @@ test('Pick rules: two ticked movies and a show all move to the chosen rules', as
 	await bar.getByRole('button', { name: 'Pick rules', exact: true }).click();
 	const menu = page.getByRole('menu', { name: 'Pick rules for the selected titles' });
 	// Music rules cannot apply to movies or shows, so they are not offered.
-	await expect(menu.getByRole('menuitem', { name: 'Good everyday', exact: true })).toBeVisible();
+	await expect(menu.getByRole('menuitem', { name: 'Standard', exact: true })).toBeVisible();
 	await expect(menu.getByRole('menuitem', { name: 'Any music', exact: true })).toHaveCount(0);
 	await menu.getByRole('menuitem', { name, exact: true }).click();
 	await expect(page.getByText(`3 titles now use ${name}.`)).toBeVisible();

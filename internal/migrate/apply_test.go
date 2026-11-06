@@ -496,8 +496,8 @@ func TestMoveDefaultWait(t *testing.T) {
 		t.Fatalf("wait after the move %+v", w)
 	}
 	// The other ready-made rules keep theirs.
-	if _, w = l.readWait(t, "Good everyday"); w != seededWait {
-		t.Fatalf("Good everyday changed %+v", w)
+	if _, w = l.readWait(t, "Standard"); w != seededWait {
+		t.Fatalf("Standard changed %+v", w)
 	}
 	// Moving again changes nothing.
 	again := l.move(t, Choices{})

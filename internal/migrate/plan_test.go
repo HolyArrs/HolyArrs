@@ -265,7 +265,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	item(t, p, GroupFolders, "folder:/music")
 	// Pick rules: closest preset, with the reason.
 	r := item(t, p, GroupRules, "pick_rules:1:radarr:1")
-	if r.Rules.Preset != "Good everyday" || !strings.Contains(r.Why, "custom format scores") {
+	if r.Rules.Preset != "Standard" || !strings.Contains(r.Why, "custom format scores") {
 		t.Fatalf("rules %+v", r)
 	}
 	if item(t, p, GroupRules, "pick_rules:1:radarr:2").Rules.Preset != "4K" || item(t, p, GroupRules, "pick_rules:3:lidarr:1").Rules.Preset != "Lossless first" {
@@ -273,7 +273,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	}
 	// Titles: adopted in place, the profile's preset, Keep up to date.
 	m := item(t, p, GroupTitles, "title:movie:tmdb:603").Title
-	if m.Library != "/data/movies" || m.Folder != "The Matrix (1999)" || !m.KeepUpToDate || m.Preset != "Good everyday" {
+	if m.Library != "/data/movies" || m.Folder != "The Matrix (1999)" || !m.KeepUpToDate || m.Preset != "Standard" {
 		t.Fatalf("movie %+v", m)
 	}
 	s := item(t, p, GroupTitles, "title:show:tvdb:73739").Title
@@ -615,7 +615,7 @@ func TestPlanReleaseGate(t *testing.T) {
 	}
 }
 
-// waitSnap is a read whose one quality profile matches Good everyday, with
+// waitSnap is a read whose one quality profile matches Standard, with
 // the given wait rules.
 func waitSnap(kind Kind, ds ...DelayProfile) *Snapshot {
 	return &Snapshot{Kind: kind, QualityProfiles: []Profile{{ID: 1, Name: "HD", UpgradeAllowed: true, Cutoff: "Bluray-1080p"}}, DelayProfiles: ds}
@@ -641,7 +641,7 @@ func TestPlanDefaultWait(t *testing.T) {
 	def := DelayProfile{ID: 1, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "usenet", Order: 2147483647}
 	// The factory default plans nothing and lists nothing.
 	p := BuildPlan([]Input{{1, waitSnap(Radarr, def)}}, Choices{})
-	if it := waitItem(p, "Good everyday"); it != nil {
+	if it := waitItem(p, "Standard"); it != nil {
 		t.Fatalf("factory default planned %+v", it)
 	}
 	if _, ok := notMoved(p, "radarr delay_profiles[0]"); ok || !slices.Contains(p.Mapped, "radarr delay_profiles[0]") {
@@ -651,7 +651,7 @@ func TestPlanDefaultWait(t *testing.T) {
 	f := def
 	f.BypassIfHighestQuality, f.BypassIfAboveScore = true, true
 	p = BuildPlan([]Input{{1, waitSnap(Radarr, f)}}, Choices{})
-	if it := waitItem(p, "Good everyday"); it != nil || len(p.NotMoved) != 0 {
+	if it := waitItem(p, "Standard"); it != nil || len(p.NotMoved) != 0 {
 		t.Fatalf("factory default with skips planned %+v %+v", it, p.NotMoved)
 	}
 
@@ -660,8 +660,8 @@ func TestPlanDefaultWait(t *testing.T) {
 	d.TorrentDelay = 120
 	tagged := DelayProfile{ID: 2, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "torrent", UsenetDelay: 30, Order: 1, Tags: []string{"anime"}}
 	p = BuildPlan([]Input{{1, waitSnap(Radarr, tagged, d)}}, Choices{})
-	it := waitItem(p, "Good everyday")
-	if it == nil || *it.Protocol != (ProtocolPlan{Preset: "Good everyday", Prefer: "usenet", WaitTorrent: 120, Part: "movies"}) || it.From != "radarr delay_profiles[1]" {
+	it := waitItem(p, "Standard")
+	if it == nil || *it.Protocol != (ProtocolPlan{Preset: "Standard", Prefer: "usenet", WaitTorrent: 120, Part: "movies"}) || it.From != "radarr delay_profiles[1]" {
 		t.Fatalf("wait item %+v", it)
 	}
 	if it.Detail != "from the default wait rule of radarr: prefer usenet, Usenet 0 min, torrent 120 min" {
@@ -676,8 +676,8 @@ func TestPlanDefaultWait(t *testing.T) {
 	d = def
 	d.UsenetDelay, d.TorrentDelay, d.BypassIfHighestQuality, d.BypassIfAboveScore = 20000, 60, true, true
 	p = BuildPlan([]Input{{1, waitSnap(Radarr, d)}}, Choices{})
-	it = waitItem(p, "Good everyday")
-	if it == nil || *it.Protocol != (ProtocolPlan{Preset: "Good everyday", Prefer: "usenet", WaitUsenet: 10080, WaitTorrent: 60, SkipAtGoodEnough: true, Part: "movies"}) {
+	it = waitItem(p, "Standard")
+	if it == nil || *it.Protocol != (ProtocolPlan{Preset: "Standard", Prefer: "usenet", WaitUsenet: 10080, WaitTorrent: 60, SkipAtGoodEnough: true, Part: "movies"}) {
 		t.Fatalf("cut wait %+v", it)
 	}
 	for _, want := range []string{"Usenet 20000 min cut to 10080 (HolyArrs allows up to 7 days)", "no wait once a release is Good enough", "which can be below the top allowed quality"} {
@@ -693,35 +693,35 @@ func TestPlanDefaultWait(t *testing.T) {
 	d = def
 	d.EnableUsenet, d.TorrentDelay = false, 10
 	p = BuildPlan([]Input{{1, waitSnap(Radarr, d)}}, Choices{})
-	if it = waitItem(p, "Good everyday"); it == nil || it.Protocol.Prefer != "torrent" || it.Protocol.WaitTorrent != 10 {
+	if it = waitItem(p, "Standard"); it == nil || it.Protocol.Prefer != "torrent" || it.Protocol.WaitTorrent != 10 {
 		t.Fatalf("torrent only %+v", it)
 	}
 	if n, ok := notMoved(p, "radarr delay_profiles[0].enable_usenet"); !ok || n.Why != "Pick rules cannot turn a protocol off, so pause the Usenet Sources instead; torrent is preferred" {
 		t.Errorf("usenet off %+v", n)
 	}
 
-	// Radarr and Sonarr disagree on Good everyday: nothing changes there and
+	// Radarr and Sonarr disagree on Standard: nothing changes there and
 	// both are listed with their values.
 	r := def
 	r.TorrentDelay = 120
 	s := def
 	s.UsenetDelay = 15
 	p = BuildPlan([]Input{{1, waitSnap(Radarr, r)}, {2, waitSnap(Sonarr, s)}}, Choices{})
-	if it := waitItem(p, "Good everyday"); it != nil {
+	if it := waitItem(p, "Standard"); it != nil {
 		t.Fatalf("disagreeing apps planned %+v", it)
 	}
 	for from, values := range map[string]string{"radarr delay_profiles[0]": "radarr had prefer usenet, Usenet 0 min, torrent 120 min", "sonarr delay_profiles[0]": "sonarr had prefer usenet, Usenet 15 min, torrent 0 min"} {
-		if n, ok := notMoved(p, from); !ok || n.Why != "the old apps set different waits for Good everyday, so this server's wait stays; "+values {
+		if n, ok := notMoved(p, from); !ok || n.Why != "the old apps set different waits for Standard, so this server's wait stays; "+values {
 			t.Errorf("%s: %+v", from, n)
 		}
 	}
 	// An app left at its default counts as no wait, so it disagrees too.
 	p = BuildPlan([]Input{{1, waitSnap(Radarr, def)}, {2, waitSnap(Sonarr, r)}}, Choices{})
-	if it := waitItem(p, "Good everyday"); it != nil {
+	if it := waitItem(p, "Standard"); it != nil {
 		t.Fatalf("default and a wait planned %+v", it)
 	}
 	for _, from := range []string{"radarr delay_profiles[0]", "sonarr delay_profiles[0]"} {
-		if n, ok := notMoved(p, from); !ok || !strings.HasPrefix(n.Why, "the old apps set different waits for Good everyday") {
+		if n, ok := notMoved(p, from); !ok || !strings.HasPrefix(n.Why, "the old apps set different waits for Standard") {
 			t.Errorf("%s: %+v", from, n)
 		}
 	}
@@ -729,10 +729,10 @@ func TestPlanDefaultWait(t *testing.T) {
 	ra := waitSnap(Radarr, r)
 	ra.QualityProfiles = append(ra.QualityProfiles, Profile{ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"})
 	p = BuildPlan([]Input{{1, ra}, {2, waitSnap(Sonarr, r)}}, Choices{})
-	if it := waitItem(p, "Good everyday"); it == nil || !strings.HasPrefix(it.Detail, "from the default wait rule of radarr and sonarr: ") || !slices.Contains(p.Mapped, "sonarr delay_profiles[0]") {
+	if it := waitItem(p, "Standard"); it == nil || !strings.HasPrefix(it.Detail, "from the default wait rule of radarr and sonarr: ") || !slices.Contains(p.Mapped, "sonarr delay_profiles[0]") {
 		t.Fatalf("agreeing apps %+v %v", it, p.Mapped)
 	}
-	if it := waitItem(p, "Good everyday"); it.Protocol.Part != "" {
+	if it := waitItem(p, "Standard"); it.Protocol.Part != "" {
 		t.Errorf("a change from two parts has part %q", it.Protocol.Part)
 	}
 	if it := waitItem(p, "4K"); it == nil || it.Protocol.WaitTorrent != 120 || it.Protocol.Part != "movies" {

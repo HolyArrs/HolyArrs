@@ -18,7 +18,7 @@ import (
 
 // ShowAddOptions are the choices made when adding a show. Empty values take
 // the show settings: the first show Library folder, its default Pick rules
-// (else Good everyday), kept up to date.
+// (else Standard), kept up to date.
 type ShowAddOptions struct {
 	LibraryFolderID int64  `json:"library_folder_id"`
 	PickRulesID     int64  `json:"pick_rules_id"`

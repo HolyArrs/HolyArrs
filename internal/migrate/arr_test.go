@@ -637,11 +637,11 @@ func TestRadarrWaitSkipsAndListsRead(t *testing.T) {
 		t.Fatalf("api wait %+v", d)
 	}
 	p := BuildPlan([]Input{{1, s}}, Choices{})
-	if w := item(t, p, GroupRules, "pick_rules_protocol:Good everyday").Protocol; *w != (ProtocolPlan{Preset: "Good everyday", Prefer: "torrent", WaitTorrent: 120, SkipAtGoodEnough: true, Part: "movies"}) {
+	if w := item(t, p, GroupRules, "pick_rules_protocol:Standard").Protocol; *w != (ProtocolPlan{Preset: "Standard", Prefer: "torrent", WaitTorrent: 120, SkipAtGoodEnough: true, Part: "movies"}) {
 		t.Fatalf("api wait plan %+v", w)
 	}
 	top := item(t, p, GroupLists, "outside_list:tmdb_list:8136")
-	if l := top.OutsideList; l.Library != "/movies" || l.Preset != "Good everyday" || !l.SearchOnAdd || l.ReleaseGate != "in_cinemas" {
+	if l := top.OutsideList; l.Library != "/movies" || l.Preset != "Standard" || !l.SearchOnAdd || l.ReleaseGate != "in_cinemas" {
 		t.Fatalf("api list %+v", l)
 	}
 	if !strings.Contains(top.Detail, "(was on there)") {

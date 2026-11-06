@@ -76,7 +76,7 @@ describe('add choices', () => {
 
 describe('secondVersion', () => {
 	const rules = [
-		{ id: 1, name: 'Good everyday' },
+		{ id: 1, name: 'Standard' },
 		{ id: 2, name: '4K' }
 	];
 	it('suggests the 4K Pick rules and a 4K folder', () => {
@@ -87,7 +87,7 @@ describe('secondVersion', () => {
 		expect(secondVersion(rules, folders, 10)).toEqual({ label: '4K', pick_rules_id: 2, library_folder_id: 11 });
 	});
 	it('falls back to the main folder and the first Pick rules', () => {
-		expect(secondVersion([{ id: 1, name: 'Good everyday' }], [{ id: 10, label: 'Movies', path: '/movies' }], 10)).toEqual({
+		expect(secondVersion([{ id: 1, name: 'Standard' }], [{ id: 10, label: 'Movies', path: '/movies' }], 10)).toEqual({
 			label: '4K',
 			pick_rules_id: 1,
 			library_folder_id: 10
