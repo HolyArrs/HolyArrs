@@ -26,6 +26,7 @@
 </script>
 
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { reducedMotion, viewTransitionName } from '../motion.ts';
@@ -99,6 +100,10 @@
 
 	// Tilt toward the pointer: fine pointers only, never for keyboard focus or
 	// reduced motion. One write per frame, straight to the style (no re-render).
+	// Touch screens never show the hover panel, so its buttons stay out of the page.
+	let touch = $state(false);
+	onMount(() => void (touch = matchMedia('(hover: none)').matches));
+
 	let raf = 0;
 	const canTilt = () => typeof matchMedia !== 'undefined' && matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion();
 	function move(e: PointerEvent) {
@@ -134,6 +139,7 @@
 			{/if}
 			<span class="line {bar.tone}" aria-hidden="true"><i style="transform: scaleX({bar.fill})"></i></span>
 		</a>
+		{#if !touch}
 		<div class="glass" aria-label="{title} details" role="group">
 			<p class="g-state {bar.tone}">{words || 'In the Library'}</p>
 			{#each facts.filter(Boolean) as f (f)}<p class="g-fact">{f}</p>{/each}
@@ -145,6 +151,7 @@
 				<a class="g-open" {href} tabindex="-1">Open<Icon name="chevronRight" size={14} /></a>
 			</div>
 		</div>
+		{/if}
 	</div>
 	<p class="cap"><span class="t" title={title}>{title}</span>{#if year}<span class="y">{year}</span>{/if}</p>
 	{#if detail !== 'title' && attention && ls}<p class="sub {bar.tone}">{ls.label}</p>{/if}

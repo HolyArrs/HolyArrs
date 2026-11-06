@@ -25,6 +25,7 @@ describe('libraryState: movies', () => {
 	});
 	it('says not kept up to date, in Library with quality, asks and not out yet', () => {
 		expect(label(movie([slot('wanted')], { keep_up_to_date: false }))).toBe('Not kept');
+		expect(libraryState(movie([slot('wanted')], { keep_up_to_date: false }), now)?.icon).toBe('x');
 		expect(label(movie([slot('in_library', { file: { RelativePath: 'a', Size: 1, AddedAt: '', Quality: { resolution: 2160 } } })]))).toBe('In library · 4K');
 		const ask = (state: string) => [{ state, title_id: 1 }] as unknown as TitleView['asks'];
 		expect(label(movie([slot('wanted')], { asks: ask('approved') }))).toBe('Searching');

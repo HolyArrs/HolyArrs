@@ -32,7 +32,7 @@
 <Popover label="Columns" icon="eye" text="Columns" variant="button" width={260} align="end">
 	{#snippet children()}
 		<div class="chooser">
-			<p class="head">Columns <span>drag to reorder</span></p>
+			<p class="head">Columns</p>
 			<ul bind:this={list}>
 				{#each columns as c, i (c.id)}
 					<li
@@ -50,7 +50,7 @@
 					</li>
 				{/each}
 			</ul>
-			<button type="button" class="reset" onclick={onreset}>Reset columns</button>
+			<button type="button" class="reset" onclick={onreset}>Reset</button>
 			<span class="sr-only" aria-live="polite">{said}</span>
 		</div>
 	{/snippet}
@@ -58,8 +58,7 @@
 
 <style>
 	.chooser { display: flex; flex-direction: column; gap: 4px; }
-	.head { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 8px 6px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
-	.head span { font-weight: 400; }
+	.head { margin: 2px 8px 6px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
 	ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
 	li { display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 2px 0 8px; border-radius: 8px; cursor: grab; }
 	li:hover { background: var(--surface-3); }
@@ -69,5 +68,5 @@
 	input { width: 16px; height: 16px; accent-color: var(--accent); }
 	.grip { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: grab; }
 	.grip:focus-visible, .reset:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.reset { margin-top: 4px; padding: 8px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--accent); font: var(--t-callout); text-align: left; cursor: pointer; }
+	.reset { margin-top: 4px; padding: 8px; border: 0; border-top: 1px solid var(--line); color: var(--accent); font: var(--t-callout); text-align: left; cursor: pointer; position: sticky; bottom: -6px; margin-bottom: -6px; padding-bottom: 14px; background: var(--surface-1); z-index: 1; }
 </style>

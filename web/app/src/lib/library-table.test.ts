@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TitleView } from './types.ts';
-import { applyLayout, columnsFor, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortTitles, tableMinWidth, type FilterContext } from './library-table.ts';
+import { applyLayout, columnsFor, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortTitles, tableMinWidth, type FilterContext } from './library-table.ts';
 
 function memory() {
 	const m = new Map<string, string>();
@@ -126,5 +126,13 @@ describe('tableMinWidth', () => {
 	});
 	it('ignores widths with no px floor', () => {
 		expect(tableMinWidth(['1fr'], 16, 0)).toBe(0);
+	});
+});
+
+describe('sortLabel', () => {
+	it('names the Music next sort a release', () => {
+		expect(sortLabel('next', 'artist')).toBe('Next release');
+		expect(sortLabel('next', 'show')).toBe('Next episode');
+		expect(sortLabel('release', 'movie')).toBe('Out');
 	});
 });

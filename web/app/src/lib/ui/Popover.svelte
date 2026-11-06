@@ -58,6 +58,10 @@
 	function toggle() {
 		open = !open;
 	}
+	function leave(e: FocusEvent) {
+		const to = e.relatedTarget as Node | null;
+		if (to && root && !root.contains(to)) close(false);
+	}
 
 	$effect(() => {
 		if (!open) return;
@@ -74,7 +78,11 @@
 		};
 		document.addEventListener('pointerdown', outside, true);
 		document.addEventListener('keydown', esc, true);
-		queueMicrotask(() => panel && onopen?.(panel));
+		queueMicrotask(() => {
+			if (!panel) return;
+			if (onopen) onopen(panel);
+			else if (panelRole === 'dialog') panel.querySelector<HTMLElement>('button:not([disabled]),a[href],input,[tabindex="0"]')?.focus({ preventScroll: true });
+		});
 		return () => {
 			document.removeEventListener('pointerdown', outside, true);
 			document.removeEventListener('keydown', esc, true);
@@ -121,7 +129,7 @@
 	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
 </script>
 
-<div class="ui-pop" bind:this={root}>
+<div class="ui-pop" bind:this={root} onfocusout={leave}>
 	<button
 		bind:this={button}
 		class="trigger {variant}"
@@ -170,7 +178,7 @@
 	.panel {
 		position: fixed; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto;
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);
-		box-shadow: var(--shadow-lift), 0 0 0 1px var(--line);
+		box-shadow: var(--shadow-lift), 0 0 0 1px light-dark(var(--line), transparent);
 	}
 	/* On an album or artist colour the surfaces are see-through tints: the panel gets a solid, slightly lifted shade of the colour. */
 	:global(html[data-tint]) .panel { background: color-mix(in srgb, var(--tint-bg, #1d1d22) 86%, #fff); color: #fff; }

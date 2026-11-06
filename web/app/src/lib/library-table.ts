@@ -146,8 +146,13 @@ export type SortDir = 'asc' | 'desc';
 
 export const sortLabels: Record<SortKey, string> = {
 	status: 'Status', name: 'Name', year: 'Year', added: 'Added', size: 'Size', next: 'Next episode', last: 'Last aired',
-	progress: 'Progress', release: 'Out date', runtime: 'Runtime', network: 'Network', rules: 'Quality'
+	progress: 'Progress', release: 'Out', runtime: 'Runtime', network: 'Network', rules: 'Quality'
 };
+
+/** sortLabel names a sort; Music's "next" is its next release, not an episode. */
+export function sortLabel(k: SortKey, kind: LibKind | 'all'): string {
+	return k === 'next' && kind === 'artist' ? 'Next release' : sortLabels[k];
+}
 
 /** sortsFor lists the sorts a library offers. */
 export function sortsFor(kind: LibKind | 'all'): SortKey[] {

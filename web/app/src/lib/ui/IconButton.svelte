@@ -20,7 +20,7 @@
 </script>
 
 {#if href}
-	<a bind:this={node} class="ui-ibtn {variant} {size} tip-{tipSide} {cls}" {href} aria-label={label} data-tip={tooltip ? label : undefined} use:press={'round'}>
+	<a bind:this={node} class="ui-ibtn {variant} {size} tip-{tipSide} {cls}" {href} aria-label={label} data-tip={tooltip ? label : undefined} use:press={'round'} {...rest as Record<string, unknown>}>
 		<Icon name={icon} size={px} />
 		{#if badge > 0}<b class="count" aria-hidden="true">{badge > 99 ? '99+' : badge}</b>{/if}
 	</a>

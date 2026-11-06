@@ -36,8 +36,8 @@ const bands: Record<Density, { share: number; min: number; max: number }> = {
 	compact: { share: 0.18, min: 200, max: 300 }
 };
 
-export const densityLabels: Record<Density, string> = { large: 'Large art', comfortable: 'Comfortable', compact: 'Compact' };
-export const posterLabels: Record<PosterSize, string> = { s: 'Small posters', m: 'Medium posters', l: 'Large posters' };
+export const densityLabels: Record<Density, string> = { large: 'Large', comfortable: 'Comfortable', compact: 'Compact' };
+export const posterLabels: Record<PosterSize, string> = { s: 'Small', m: 'Medium', l: 'Large' };
 /** Smallest poster column width per size, in css pixels. */
 export const posterMin: Record<PosterSize, number> = { s: 132, m: 172, l: 232 };
 /** Music's square art is a third shorter than a poster, so its columns pack a little tighter, like Apple Music's artist grid (six across at 1440). */

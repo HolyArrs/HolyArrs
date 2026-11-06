@@ -29,7 +29,7 @@
 
 <span class="ui-chip" class:on={selected}>
 	<button class="main" type="button" aria-pressed={selected === undefined ? undefined : selected} aria-describedby={describedby} {onclick} use:press={'button'}>
-		{#if icon}<Icon name={icon} size={15} />{/if}{label}{#if count !== undefined}<span class="n">{count}</span>{/if}{#if note}<span class="n">· {note}</span>{/if}
+		{#if icon}<Icon name={icon} size={15} />{/if}{label}{#if count !== undefined}<span class="n"><span class="sr-only">, </span>{count}</span>{/if}{#if note}<span class="n"><span class="sr-only">, </span>· {note}</span>{/if}
 	</button>
 	{#if onremove}<button class="rm" type="button" aria-label="Remove {label}" onclick={onremove}><Icon name="x" size={14} /></button>{/if}
 </span>

@@ -177,7 +177,7 @@
 	</div>
 	<div class="pbar" data-testid="dl-phonebar">
 		<button type="button" class="pbn" class:has={fCount > 0} aria-haspopup="dialog" aria-label={fCount ? `Filters, ${fCount} on` : 'Filters'} onclick={() => (fOpen = true)} data-testid="dl-filters-btn">
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>
+			<Icon name="sliders" size={18} stroke={2} />
 			<span>Filters</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
 		</button>
 		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={nameOf(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}

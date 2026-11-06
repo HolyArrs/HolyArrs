@@ -44,7 +44,7 @@ const look: Record<LibStateKey, [LibTone, IconName, StatusKind]> = {
 	approved: ['ok', 'waiting', 'approved'],
 	waiting_approval: ['idle', 'waiting', 'requested'],
 	not_out_yet: ['idle', 'calendarDay', 'coming_soon'],
-	not_kept: ['idle', 'bell', 'turned_down'],
+	not_kept: ['idle', 'x', 'turned_down'],
 	specials_only: ['ok', 'owned', 'in_library'],
 	declined: ['idle', 'declined', 'turned_down'],
 	in_library: ['ok', 'owned', 'in_library'],

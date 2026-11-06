@@ -11,12 +11,13 @@
 	import { ago, bytes, date } from '#lib/format.ts';
 	import { exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import {
-		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabels, sortTitles, sortsFor, startDir, columnsFor, defaultSort,
+		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabel, sortTitles, sortsFor, startDir, columnsFor, defaultSort,
 		type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey,
 		tableMinWidth
 	} from '#lib/library-table.ts';
 	import { reducedMotion } from '#lib/motion.ts';
-	import { DUR, EASE, easeOut, moveMs } from '#lib/ui/transitions.ts';
+	import { DUR, EASE, dropIn, dropOut, easeOut, moveMs } from '#lib/ui/transitions.ts';
+	import { fade, slide } from 'svelte/transition';
 	import { episodeLabel, showProgress } from '#lib/shows.ts';
 	import { artistProgress } from '#lib/music/music.ts';
 	import { artistHref } from '#lib/music/music-pages.ts';
@@ -167,7 +168,13 @@
 		}
 	});
 	function setView(v: View) {
+		if (v === view) return;
 		view = v;
+		// The new view fades up in one piece, like a Downloads tab; the posters' own rise still plays.
+		void tick().then(() => {
+			const el = view === 'posters' ? gridEl : listEl;
+			if (el && !reducedMotion()) el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: DUR.base, easing: EASE.out });
+		});
 		try {
 			localStorage.setItem(`holyarrs.library-view.${kind}`, v);
 		} catch { /* Not remembered in a private window. */ }
@@ -245,11 +252,25 @@
 	// As many facts as the list is wide enough for: three on a wide screen, down to one.
 	// The Rows grid: poster 52, title >= 120, status 168, each fact 150, actions (wider on touch screens), 12 px gaps.
 	const actsW = $derived(96 + (touchActs ? 48 : 0));
-	const factRoom = $derived(Math.floor((listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3) / 162));
-	const rowCols = $derived(kind === 'all' ? [] : chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept').slice(0, Math.max(1, Math.min(3, factRoom))));
+	const factCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept'));
+	/** colPx is a column's width for the Rows grid (a stretching column takes its floor). */
+	const colPx = (c: Column) => Math.max(84, parseInt(c.width.replace(/^minmax\((\d+)px.*$/, '$1'), 10) || 150);
+	const rowCols = $derived.by(() => {
+		if (kind === 'all') return [];
+		let room = listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3 - (selecting ? 28 + 12 : 0);
+		const out: Column[] = [];
+		for (const c of factCols) {
+			if (out.length === 3 || (out.length && room < colPx(c) + 12)) break;
+			out.push(c);
+			room -= colPx(c) + 12;
+		}
+		return out;
+	});
+	const factsTpl = $derived(rowCols.map((c) => `${colPx(c)}px`).join(' ') || '0px');
 	/** rowCell is a fact for the Rows view: counts for progress columns, "14 d ago" for dates that are recent by nature. */
 	function rowCell(t: TitleView, c: Column, p: { have: number; total: number }): string {
 		if (isProgressCol(c)) return p.total ? `${p.have}/${p.total}` : '';
+		if (c.id === 'release' && t.kind === 'movie' && t.digital_date && Date.parse(t.digital_date) <= Date.now()) return date(t.digital_date);
 		if (c.id === 'added') return ago(t.added_at);
 		if (c.id === 'activity') return ago(t.last_activity);
 		return cell(t, c);
@@ -328,7 +349,7 @@
 		return `${shown.length} ${shown.length === 1 ? one : many}`;
 	});
 	// The Library has no top bar: its own row carries the search (as on Downloads). Ctrl K and "/" focus it.
-	const findWords = $derived(kind === 'movie' ? 'Search movies' : kind === 'show' ? 'Search TV shows' : kind === 'artist' ? 'Search music' : 'Search the Library');
+	const findWords = $derived(kind === 'movie' ? 'Search movies' : kind === 'show' ? 'Search TV shows' : kind === 'artist' ? 'Search music' : 'Search library');
 	function setQ(v: string) {
 		q = v.slice(0, 256);
 		syncUrl();
@@ -369,6 +390,9 @@
 			.map(([k, label]): MenuItem => ({ label, checked: kind === k, onselect: () => void goto(to(`/library?kind=${k}`)) }))
 	);
 	let findOpen = $state(false);
+	// Rows of chips and folds grow in; a fade under reduced motion.
+	const grow = (n: Element) => (reducedMotion() ? fade(n, { duration: DUR.fast }) : slide(n, { duration: DUR.base, easing: easeOut }));
+	const shrink = (n: Element) => (reducedMotion() ? fade(n, { duration: DUR.fast }) : slide(n, { duration: DUR.fast, easing: easeOut }));
 	let sortOpen = $state(false);
 	let toolbarEl = $state<HTMLElement>();
 	let stuck = $state(false);
@@ -382,10 +406,14 @@
 		filter = { ...filter, ...patch };
 		syncUrl();
 	}
+	function clearSearch() {
+		q = '';
+		findOpen = false;
+		syncUrl();
+	}
 	function clearFilters() {
 		filter = { ...noFilter };
-		q = '';
-		syncUrl();
+		clearSearch();
 	}
 	function setSort(key: SortKey, dir?: SortDir) {
 		sort = { key, dir: dir ?? (sort.key === key ? (sort.dir === 'asc' ? 'desc' : 'asc') : startDir(key)) };
@@ -405,7 +433,7 @@
 		saved = [...saved.filter((s) => s.name !== name), { name, filter: { ...filter } }];
 		saveSaved(myId, kind, saved);
 		saveDialog?.close();
-		toasts.push(`Saved the filter "${name}".`, 'ok');
+		toasts.push(`Saved “${name}”.`, 'ok');
 	}
 	function forget(name: string) {
 		saved = saved.filter((s) => s.name !== name);
@@ -654,7 +682,7 @@
 		busy = true;
 		try {
 			const r = await api.post<CopySearchResult>('/library/copies/search', { selections: copyPicks, review_token: copyPreview.review_token });
-			toasts.push(r.job_ids.length === 1 ? 'Looking for 1 copy now.' : `Looking for ${r.job_ids.length} copies now.`, 'ok');
+			toasts.push(r.job_ids.length === 1 ? 'Searching for 1 copy.' : `Searching for ${r.job_ids.length} copies.`, 'ok');
 			copyDialog?.close();
 		} catch (e) {
 			toasts.push(plainReason(message(e)).text, 'fail');
@@ -675,7 +703,7 @@
 		subsSearching = true;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/missing/search', { kind: kind === 'movie' ? 'movie' : 'episode' });
-			toasts.push(r.queued === 1 ? 'Looking for subtitles for 1 file now.' : `Looking for subtitles for ${r.queued} files now.`, 'ok');
+			toasts.push(r.queued === 1 ? 'Searching subtitles for 1 file.' : `Searching subtitles for ${r.queued} files.`, 'ok');
 		} catch (e) {
 			toasts.push(plainReason(message(e)).text, 'fail');
 		} finally {
@@ -699,7 +727,7 @@
 		searchingAll = true;
 		try {
 			await api.post('/search/missing', kind === 'all' ? undefined : { kind });
-			toasts.push(`Searching for every missing ${kind === 'movie' ? 'movie' : kind === 'show' ? 'episode' : kind === 'artist' ? 'album' : 'movie, episode and album'}.`, 'ok');
+			toasts.push(`Searching ${missingCount} missing ${missingCount === 1 ? 'title' : 'titles'}.`, 'ok');
 			missingDialog?.close();
 		} catch (e) {
 			toasts.push(plainReason(message(e)).text, 'fail');
@@ -737,13 +765,24 @@
 		if (kinds.size !== 1) return [];
 		// An artist lives in a music folder.
 		const k = [...kinds][0] === 'artist' ? 'music' : [...kinds][0];
-		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
+		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, disabled: busy || !pickedShown.length, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
 	});
 	// Only rules that fit every ticked title (Music rules say "music", artist titles "artist").
 	const rulesItems = $derived.by<MenuItem[]>(() => {
 		const need = new Set((pickedShown.length ? pickedShown.map((t) => t.kind) : kind === 'all' ? [] : [kind]).map((k) => (k === 'artist' ? 'music' : k)));
-		return rules.filter((r) => !r.kinds.length || [...need].every((k) => r.kinds.includes(k))).map((r): MenuItem => ({ label: r.name, onselect: () => setRules(pickedShown.map((t) => t.id), r) }));
+		return rules.filter((r) => !r.kinds.length || [...need].every((k) => r.kinds.includes(k))).map((r): MenuItem => ({ label: r.name, disabled: busy || !pickedShown.length, onselect: () => setRules(pickedShown.map((t) => t.id), r) }));
 	});
+	// Phones get the bar's actions as one menu (Downloads does the same).
+	const phoneActs = $derived<MenuItem[]>([
+		{ label: allPicked ? 'Select none' : `Select all ${shown.length}`, icon: 'check', onselect: pickAll },
+		{ kind: 'separator' },
+		{ label: 'Keep up to date', icon: 'bellOn', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), true) },
+		{ label: 'Stop keeping', icon: 'bell', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), false) },
+		{ label: 'Search now', icon: 'search', disabled: busy || !pickedShown.length, onselect: () => searchTitles(pickedShown.map((t) => t.id)) },
+		...(kind === 'movie' ? ([{ label: 'Find another copy', icon: 'copy', disabled: busy || !copyPicks.length, onselect: reviewCopies }] as MenuItem[]) : []),
+		...(rulesItems.length ? ([{ kind: 'separator' }, { kind: 'heading', label: 'Quality' }, ...rulesItems] as MenuItem[]) : []),
+		...(moveItems.length > 1 ? ([{ kind: 'separator' }, { kind: 'heading', label: 'Move to' }, ...moveItems] as MenuItem[]) : [])
+	]);
 	function selectKey(e: KeyboardEvent) {
 		if (selecting && e.key === 'Escape' && !deleteDialog?.open) stopSelecting();
 	}
@@ -1000,45 +1039,46 @@
 		<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'rows', label: 'Rows', icon: 'menu' }, { value: 'table', label: 'Banners', icon: 'image' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && (view === 'table' || view === 'posters') ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 1100} /></span>
 		<span class="filter-btn cap" class:on={filtersOn > 0}>
 			{#if phone}
-				<Button size="md" icon="chevronUpDown" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
+				<Button size="md" icon="sliders" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
 			{:else}
-				<Popover label="Sort and filter" variant="button" icon="chevronUpDown" text={filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'} width={620} bind:open={sortOpen}>
+				<Popover label="Sort and filter" variant="button" icon="sliders" text={filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'} width={620} bind:open={sortOpen}>
 					{#snippet children()}{@render sortFilter()}{/snippet}
 				</Popover>
 			{/if}
 		</span>
 		{#if phone}
-			<span class="t-find"><IconButton icon="search" label="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" aria-pressed={findOpen || !!q} onclick={() => { findOpen = !findOpen || !!q; if (findOpen) void tick().then(() => document.getElementById('find')?.focus()); }} /></span>
+			<span class="t-find"><IconButton icon="search" label={findWords} aria-pressed={findOpen || !!q} onclick={() => { findOpen = !findOpen || !!q; if (findOpen) void tick().then(() => document.getElementById('find')?.focus()); }} /></span>
 		{/if}
 		<span class="tool-gap"></span>
 		<span class="t-tools cap">
-		{#if (view === 'table' || view === 'rows') && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
-		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
+		{#if view !== 'posters' && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
+		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
 		{#if canManage}
 			<span class="t-add"><Menu label="Add to the Library" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={190} align="end" /></span>
 		{/if}
 		</span>
 		{#if phone && (findOpen || q)}
-			<div class="find-box">
+			<div class="find-box rise">
 				<span class="find-ic" aria-hidden="true"><Icon name="search" size={16} /></span>
-				<label class="sr-only" for="find">Find in the Library</label>
-				<input id="find" class="input find" type="search" bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncUrl(); }} onblur={() => { if (!q) findOpen = false; }} placeholder="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" autocomplete="off" maxlength="256" />
+				<label class="sr-only" for="find">{findWords}</label>
+				<input id="find" class="input find" type="search" bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncUrl(); }} onblur={() => { if (!q) findOpen = false; }} placeholder={findWords} autocomplete="off" maxlength="256" />
 			</div>
 		{/if}
 	</div>
 	{#if phone}
-		<Sheet bind:open={sortOpen} title="Sort and filter" placement="bottom">{@render sortFilter()}</Sheet>
+		<Sheet bind:open={sortOpen} title="Sort and filter" placement="bottom">{@render sortFilter()}{#snippet footer()}<div class="sf-foot sf-foot-sheet">{@render sfFoot()}</div>{/snippet}</Sheet>
 	{/if}
 
-	{#if filtersOn || q}
-		<div class="chips" role="group" aria-label="Active filters">
+	{#if filtersOn || q || grouped}
+		<div class="chips" role="group" aria-label="Active filters" in:grow out:shrink>
 			{#if filter.status !== 'all'}<Chip label={filters.find(([f]) => f === filter.status)?.[1] ?? ''} selected onclick={() => setFilter({ status: 'all' })} onremove={() => setFilter({ status: 'all' })} />{/if}
 			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? 'Kept' : 'Not kept'} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
 			{#if filter.asker !== 'anyone'}<Chip label="Asked by {filter.asker === 'me' ? 'me' : (askers.find((p) => String(p.id) === filter.asker)?.name ?? 'someone')}" selected onclick={() => setFilter({ asker: 'anyone' })} onremove={() => setFilter({ asker: 'anyone' })} />{/if}
 			{#if filter.series}<Chip label="Movie series: {seriesName(filter.series)}" selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
 			{#if filter.codec}<Chip label={codecLabel(filter.codec)} selected onclick={() => setFilter({ codec: '' })} onremove={() => setFilter({ codec: '' })} />{/if}
 			{#if filter.subs}<Chip label="Missing subtitles" selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
-			{#if q}<Chip label="Search: {q}" selected onclick={() => { q = ''; syncUrl(); }} onremove={() => { q = ''; syncUrl(); }} />{/if}
+			{#if q}<Chip label="Search: {q}" selected onclick={clearSearch} onremove={clearSearch} />{/if}
+			{#if grouped}<Chip label="Grouped by series" selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
 			<Button variant="plain" size="md" onclick={clearFilters}>Clear</Button>
 			{#if canManage && filter.subs && shown.length}<span class="t-miss"><Button size="md" icon="search" busy={subsSearching} onclick={searchMissingSubs} data-testid="search-missing-subtitles">Search subtitles</Button></span>{/if}
 			{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
@@ -1053,17 +1093,15 @@
 			{#if error}
 				<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 			{:else if titles.length === 0}
-				<EmptyState icon="library" title="Your Library is empty" text={canManage ? 'Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.' : 'Nothing has been added yet. Look for a movie, a show or an artist on the Search page.'} action={{ label: 'Search for a movie', href: to('/search'), icon: 'search' }} />
+				<EmptyState icon="library" title="Nothing here yet" action={{ label: 'Add a movie', href: to('/search'), icon: 'search' }} />
 				<div class="empty-more">
-					<Button href={to('/search?kind=show')}>Search for a show</Button>
-					<Button href={to('/search?kind=music')}>Search for an artist</Button>
-					{#if canManage}<Button href={to('/library/import')}>Import a library</Button>{/if}
-					{#if session.can('settings')}<Button href={to('/settings/library-folders')}>Library folders</Button>{/if}
+					{#if partOn('shows')}<Button href={to('/search?kind=show')}>Add a show</Button>{/if}
+					{#if partOn('music')}<Button href={to('/search?kind=music')}>Add an artist</Button>{/if}
+					{#if session.can('settings')}<Button href={to('/settings/library-folders')}>Folders</Button>{/if}
 				</div>
 			{:else if shown.length === 0}
-				<EmptyState compact icon="search" title="Nothing matches these filters." text="Try fewer filters or other words." action={filtersOn || q ? { label: 'Clear', onclick: clearFilters } : undefined} />
+				<EmptyState compact icon="search" title={q && !filtersOn ? `Nothing for “${q}”` : 'Nothing matches'} action={filtersOn || q ? { label: 'Clear filters', onclick: clearFilters } : undefined} />
 			{:else if view === 'posters'}
-				{#if grouped}<p class="group-note">Grouped by series in the Banners and Overview views.</p>{/if}
 				<ul class="grid" class:selecting style="--poster-min: {gridMin}px" style:--poster-min-phone={kind === 'artist' ? `${squarePhoneMin[posterSize]}px` : undefined} aria-label="{kindTitle} titles" bind:this={gridEl}>
 					{#each shown as t (t.id)}
 						{@const p = progressOf(t)}
@@ -1080,16 +1118,17 @@
 			{:else}
 				<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
 					{#if view === 'rows' && !phone}
-						<div class="lh" role="presentation" style="--ln: {rowCols.length}">
+						<div class="lh" role="presentation" style="--facts: {factsTpl}">
+							{#if selecting}<span></span>{/if}
 							<span></span>
-							<button type="button" class="h sort" aria-label="Title, sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+							<button type="button" class="h sort" aria-label={sort.key === 'name' ? `Title, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : 'Title'} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 							<span class="h">Status</span>
 							{#each rowCols as c (c.id)}
 								{@const sk = columnSort[c.id]}
 								{#if sk && sortsFor(kind === 'all' ? 'all' : libKind).includes(sk)}
-									<button type="button" class="h sort" class:num={c.numeric} aria-label="Sort by {c.label}" aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+									<button type="button" class="h sort" aria-label={sort.key === sk ? `${c.label}, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : c.label} aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 								{:else}
-									<span class="h" class:num={c.numeric}>{c.label}</span>
+									<span class="h">{c.label}</span>
 								{/if}
 							{/each}
 							<span></span>
@@ -1099,12 +1138,12 @@
 						<div class="row head" role="presentation">
 							<span class="h banner-h">Banner</span>
 							<span></span>
-							<button type="button" class="h sort" aria-label="Title, sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+							<button type="button" class="h sort" aria-label={sort.key === 'name' ? `Title, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : 'Title'} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 							{#if kind !== 'all'}
 								{#each shownCols as c (c.id)}
 									{@const sk = columnSort[c.id]}
 									{#if sk && sortsFor(libKind).includes(sk)}
-										<button type="button" class="h sort" class:num={c.numeric} aria-label="Sort by {c.label}" aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+										<button type="button" class="h sort" class:num={c.numeric} aria-label={sort.key === sk ? `${c.label}, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : c.label} aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 									{:else}
 										<span class="h" class:num={c.numeric}>{c.label}</span>
 									{/if}
@@ -1149,24 +1188,24 @@
 										onclick={(ev) => rowClick(ev, t)}
 									>
 										{#if view === 'rows'}
-											<div class="lr" class:ph={phone} style="--ln: {rowCols.length}; --row-h: {phone ? 60 : 54}px">
+											<div class="lr" class:ph={phone} style="--facts: {factsTpl}; --row-h: {phone ? 60 : 54}px">
+												{#if selecting}<span class="lsel"><input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" /></span>{/if}
 												<span class="lp" style:--poster-ratio={posterRatio(t.kind)} class:round={t.kind === 'artist'}>
-													{#if selecting}<input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
-													{:else}<Poster src={t.artwork[0]} name={t.name} />{/if}
+													<Poster src={t.artwork[0]} name={t.name} />
 												</span>
 												<span class="lt">
 													<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
 													{#if !phone && t.year}<small>{t.year}</small>{/if}
-													{#if phone}<span class="lsub">{[ls?.label, rowCols[0] ? rowCell(t, rowCols[0], p) : ''].filter(Boolean).join(' · ')}</span>{/if}
+													{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub">{[ls?.label, fc ? rowCell(t, fc, p) : ''].filter(Boolean).join(' · ')}</span>{/if}
 												</span>
 												{#if !phone}
 													<span class="ls {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
-													{#each rowCols as c (c.id)}<span class="lc" class:num={c.numeric} title={c.id === 'path' ? cell(t, c) : undefined}>{rowCell(t, c, p) || '—'}</span>{/each}
+													{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c) : undefined}>{rowCell(t, c, p) || '—'}</span>{/each}
 													<span class="acts">
 														{#if canManage && !selecting}
-															<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" onclick={() => searchTitles([t.id])} />
-															<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" onclick={() => refreshTitle(t)} />
-															<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" href={titleLink(t.id)} />
+															<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
+															<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => refreshTitle(t)} />
+															<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" tabindex={ri === active ? 0 : -1} href={titleLink(t.id)} />
 														{/if}
 													</span>
 												{:else}
@@ -1185,16 +1224,16 @@
 													<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
 													<span class="sub">
 														{#if kind === 'all'}{kindLabel[t.kind]}{#if t.year} · {t.year}{/if}{/if}
-														{#if st && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<StatusPill kind={st.kind} label={st.label} />{/if}
+														{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 													</span>
-													{#if phone}<span class="facts">{chosenCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c))).filter(Boolean).join(' · ')}</span>{/if}
+													{#if phone}<span class="facts">{factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c))).filter(Boolean).join(' · ')}</span>{/if}
 												</span>
 												{#if kind !== 'all'}
 													{#each shownCols as c (c.id)}
 														{#if c.id === 'status'}
 															<span class="c lstate {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}>
 																{#if ls}
-																	<span class="ls-line"><Icon name={ls.icon} size={15} /><span class="ls-t">{ls.label}</span></span>
+																	<span class="ls-line ls {ls.tone}"><i class="dot" aria-hidden="true"></i><span class="ls-t">{ls.label}</span></span>
 																	{#if ls.percent !== undefined}<span class="meter ls-bar" aria-hidden="true"><i style="width: {ls.percent}%"></i></span>{/if}
 																{:else}—{/if}
 															</span>
@@ -1213,9 +1252,9 @@
 												{/if}
 												<span class="acts">
 													{#if canManage && !selecting}
-														<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" onclick={() => searchTitles([t.id])} />
-														<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" onclick={() => refreshTitle(t)} />
-														<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" href={titleLink(t.id)} />
+														<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
+														<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => refreshTitle(t)} />
+														<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" tabindex={ri === active ? 0 : -1} href={titleLink(t.id)} />
 													{/if}
 												</span>
 												{#if kind === 'all' || phone}<span class="sr-only">{progressText(t)}</span>{/if}
@@ -1230,15 +1269,17 @@
 													{:else}
 														<p class="ov-text">{t.overview || 'No description yet.'}</p>
 													{/if}
-													<span class="ov-prog">
-														<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
-														{#if p.total && t.kind !== 'movie'}<span class="ov-count" aria-hidden="true">{p.have}/{p.total}</span>{/if}
-													</span>
+													{#if t.kind !== 'movie'}
+														<span class="ov-prog">
+															<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
+															{#if p.total}<span class="ov-count" aria-hidden="true">{p.have}/{p.total}</span>{/if}
+														</span>
+													{/if}
 													<span class="sr-only">{progressText(t)}</span>
 												</div>
 												<!-- The status leads on its own line (never cut short); under it only facts that say something. -->
 												<dl class="ov-facts">
-													{#if st}<dt class="sr-only">Status</dt><dd class="ov-state"><StatusPill kind={st.kind} label={st.label} /></dd>{/if}
+													{#if ls}<dt class="sr-only">Status</dt><dd class="ov-state"><span class="ls {ls.tone}"><i class="dot" aria-hidden="true"></i>{ls.label}</span></dd>{/if}
 													{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept').slice(0, 4) as c (c.id)}{#if cell(t, c)}<dt>{c.label}</dt><dd title={cell(t, c)}>{cell(t, c)}</dd>{/if}{/each}
 												</dl>
 												{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
@@ -1247,12 +1288,12 @@
 										{#if fold}
 											{@const eps = missingOf[t.id]}
 											<div class="fold">
-												<Button variant="plain" size="sm" icon={foldOpen === t.id ? 'chevronDown' : 'chevronRight'} aria-expanded={foldOpen === t.id} aria-controls="missing-{t.id}" onclick={() => toggleMissing(t)} data-testid="missing-fold">{t.show?.missing} {t.show?.missing === 1 ? 'episode' : 'episodes'} missing</Button>
+												<Button variant="plain" size="sm" icon="chevronRight" class="fold-btn" aria-expanded={foldOpen === t.id} aria-controls="missing-{t.id}" onclick={() => toggleMissing(t)} data-testid="missing-fold">{t.show?.missing} {t.show?.missing === 1 ? 'episode' : 'episodes'} missing</Button>
 												{#if foldOpen === t.id}
-													<div id="missing-{t.id}" class="fold-body" data-testid="missing-episodes">
+													<div id="missing-{t.id}" class="fold-body" data-testid="missing-episodes" in:grow out:shrink>
 														{#if eps === 'loading' || eps === undefined}<Skeleton lines={2} />
-														{:else if eps === 'error'}<p class="fold-note">The episodes could not be loaded. <a href={titleLink(t.id)}>Open {t.name}</a></p>
-														{:else if eps.length === 0}<p class="fold-note">Nothing missing any more.</p>
+														{:else if eps === 'error'}<p class="fold-note">Episodes didn’t load. <a href={titleLink(t.id)}>Open {t.name}</a></p>
+														{:else if eps.length === 0}<p class="fold-note">Nothing missing.</p>
 														{:else}
 															<ul>
 																{#each eps as ep (ep.id)}
@@ -1283,16 +1324,20 @@
 	</div>
 
 	{#if selecting}
-		<div class="select-bar" role="toolbar" aria-label="Selected titles" data-testid="select-bar">
+		<div class="select-bar" role="toolbar" aria-label="Selected titles" data-testid="select-bar" in:dropIn out:dropOut>
 			<span class="count" aria-live="polite">{pickedShown.length} selected</span>
-			<Button variant="plain" size="md" onclick={pickAll}>{allPicked ? 'Select none' : `Select all ${shown.length}`}</Button>
+			{#if !phone}<Button variant="plain" size="md" onclick={pickAll}>{allPicked ? 'Select none' : `Select all ${shown.length}`}</Button>{/if}
 			<span class="bar-gap"></span>
-			<Button size="md" icon="bellOn" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), true)}>Keep up to date</Button>
-			<Button size="md" icon="bell" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), false)}>Stop keeping</Button>
-			{#if moveItems.length > 1}<Menu label="Move the selected titles to another folder" variant="button" text="Move" icon="folder" items={moveItems} width={260} placement="above" />{/if}
-			{#if rulesItems.length}<Menu label="Quality for the selected titles" variant="button" text="Quality" icon="star" items={rulesItems} width={220} placement="above" />{/if}
-			<Button size="md" icon="search" disabled={busy || !pickedShown.length} onclick={() => searchTitles(pickedShown.map((t) => t.id))}>Search now</Button>
-			{#if kind === 'movie'}<Button size="md" icon="copy" disabled={busy || !copyPicks.length} onclick={reviewCopies} data-testid="select-find-copy">Find another copy</Button>{/if}
+			{#if phone}
+				<Menu label="Actions for the selected titles" icon="more" items={phoneActs} width={240} placement="above" align="end" />
+			{:else}
+				<Button size="md" icon="bellOn" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), true)}>Keep up to date</Button>
+				<Button size="md" icon="bell" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), false)}>Stop keeping</Button>
+				{#if moveItems.length > 1}<Menu label="Move the selected titles to another folder" variant="button" text="Move" icon="folder" items={moveItems} width={260} placement="above" />{/if}
+				{#if rulesItems.length}<Menu label="Quality for the selected titles" variant="button" text="Quality" icon="star" items={rulesItems} width={220} placement="above" />{/if}
+				<Button size="md" icon="search" disabled={busy || !pickedShown.length} onclick={() => searchTitles(pickedShown.map((t) => t.id))}>Search now</Button>
+				{#if kind === 'movie'}<Button size="md" icon="copy" disabled={busy || !copyPicks.length} onclick={reviewCopies} data-testid="select-find-copy">Find another copy</Button>{/if}
+			{/if}
 			<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedShown.length} onclick={() => askDelete(pickedShown.map((t) => t.id))} data-testid="select-delete">Remove {pickedShown.length || ''}</Button>
 			<IconButton icon="x" label="Stop selecting" onclick={stopSelecting} />
 		</div>
@@ -1322,7 +1367,7 @@
 
 <dialog bind:this={missingDialog} aria-labelledby="search-missing-title" class="modal" data-testid="search-missing">
 	<h2 id="search-missing-title" class="h2">Search for {missingCount} missing {missingCount === 1 ? 'title' : 'titles'}?</h2>
-	<p class="small muted">Each one kept up to date is looked for at your Sources, a few at a time. Home shows the searches as they run.</p>
+	<p class="small muted">Kept titles only, a few at a time. Progress on Home.</p>
 	<div class="modal-actions">
 		<Button onclick={() => missingDialog?.close()} disabled={searchingAll}>Cancel</Button>
 		<Button variant="primary" icon="search" busy={searchingAll} onclick={searchAllMissing} data-testid="search-missing-confirm">Search</Button>
@@ -1333,7 +1378,7 @@
 	<form method="dialog" onsubmit={(e) => { e.preventDefault(); saveCurrent(); }}>
 		<h2 id="save-filter-title" class="h2">Save this filter</h2>
 		<label class="small muted" for="save-filter-name">Name</label>
-		<input id="save-filter-name" class="input" bind:value={saveName} maxlength="60" placeholder="For example: Missing, kept up to date" />
+		<input id="save-filter-name" class="input" bind:value={saveName} maxlength="60" />
 		<div class="modal-actions">
 			<Button onclick={() => saveDialog?.close()}>Cancel</Button>
 			<Button variant="primary" type="submit" disabled={!saveName.trim()}>Save</Button>
@@ -1362,7 +1407,7 @@
 		<section class="sf-col sf-sort" aria-label="Sort">
 			<h3 class="sf-h">Sort by</h3>
 			{#each sortsFor(kind === 'all' ? 'all' : kind) as k (k)}
-				{@render sfRow(sortLabels[k], sort.key === k, () => setSort(k, sort.key === k ? (sort.dir === 'asc' ? 'desc' : 'asc') : startDir(k)), '', sort.key === k ? (sort.dir === 'asc' ? '↑' : '↓') : '')}
+				{@render sfRow(sortLabel(k, kind === 'all' ? 'all' : kind), sort.key === k, () => setSort(k, sort.key === k ? (sort.dir === 'asc' ? 'desc' : 'asc') : startDir(k)), '', sort.key === k ? (sort.dir === 'asc' ? '↑' : '↓') : '')}
 			{/each}
 			<div class="sf-dir"><SegmentedControl label="Order" size="sm" value={sort.dir} options={[{ value: 'asc', label: 'Ascending' }, { value: 'desc', label: 'Descending' }]} onchange={(d) => setSort(sort.key, d)} /></div>
 			{#if kind === 'movie'}
@@ -1422,14 +1467,16 @@
 				{/each}
 			</section>
 		{/if}
-		<footer class="sf-foot">
+		{#if !phone}<footer class="sf-foot">{@render sfFoot()}</footer>{/if}
+	</div>
+{/snippet}
+
+{#snippet sfFoot()}
 			<div class="sf-saved">
 				{#each saved as sv (sv.name)}<Chip label={sv.name} icon="star" selected={sameFilter(sv.filter, filter)} onclick={() => setFilter(sv.filter)} onremove={() => forget(sv.name)} />{/each}
 				<Button variant="plain" size="sm" icon="plus" disabled={!filtersOn} onclick={() => { sortOpen = false; saveName = ''; saveDialog?.showModal(); }}>Save this filter</Button>
 			</div>
 			<Button variant="plain" size="sm" disabled={!filtersOn} onclick={clearFilters}>Clear filters</Button>
-		</footer>
-	</div>
 {/snippet}
 
 <style>
@@ -1464,7 +1511,7 @@
 	   A folded name is only hidden from the eye, so the button keeps its name for screen readers. */
 	.toolbar.topbar { container-type: inline-size; }
 	.toolbar.topbar :global(.dlfind) { flex-basis: 200px; min-width: 180px; }
-	@container (max-width: 1500px) {
+	@container (max-width: 1000px) {
 		.toolbar.topbar .t-cols :global(.trigger.button > span), .toolbar.topbar .t-cols :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 		.toolbar.topbar .t-sel :global(.ui-btn) { font-size: 0; gap: 0; }
 		.toolbar.topbar .t-sel :global(.ui-btn), .toolbar.topbar .t-cols :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
@@ -1473,7 +1520,7 @@
 		.toolbar.topbar :global(.dlfind) { flex-basis: 150px; min-width: 150px; }
 		.toolbar.topbar :global(.dlfind .kb) { display: none; }
 	}
-	@container (max-width: 1500px) {
+	@container (max-width: 1000px) {
 		.toolbar.topbar .t-tools :global(.trigger.button > span), .toolbar.topbar .t-tools :global(.trigger.button > svg:last-child), .toolbar.topbar .filter-btn :global(.trigger.button > span), .toolbar.topbar .filter-btn :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 		.toolbar.topbar .t-tools :global(.trigger.button), .toolbar.topbar .filter-btn :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
 	}
@@ -1506,7 +1553,6 @@
 	.sf-dir { margin: 10px 4px 4px; }
 	.sf-dir :global(.ui-seg) { width: 100%; }
 	.sf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-	.sf-chips :global(.ui-chip .main) { min-height: 30px; padding: 0 12px; font-size: 13px; }
 	/* A status chip carries its status colour as a dot, the same colours the rows use. */
 	.sf-chip { display: inline-flex; }
 	.sf-chip:not(.t-all) :global(.main)::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, var(--text-faint)); }
@@ -1518,9 +1564,11 @@
 	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
 	/* Tools: tiles with the Settings pages' glossy icons, two across (one on phones). */
 	/* A count sits on the icon's corner, so every tile keeps the same shape: red when it calls for action, grey when it only tells. */
-	.sf-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 8px 2px 0; border-top: 1px solid var(--line); }
+	/* The footer stays at the panel's edge while the lists scroll under it (the panel has 6px padding). */
+	.sf-foot { grid-column: 1 / -1; position: sticky; bottom: -6px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px -6px -6px; padding: 8px 8px 6px; background: var(--surface-1); border-top: 1px solid var(--line); }
+	.sf-foot-sheet { position: static; margin: 0; padding: 0; border: 0; background: none; width: 100%; }
 	.sf-saved { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
-	@media (pointer: coarse) { .sf-o { min-height: 44px; } .sf-chips :global(.ui-chip .main) { min-height: 40px; } }
+	@media (pointer: coarse) { .sf-o { min-height: 44px; } }
 	.find-box { position: relative; flex: 1 1 220px; max-width: 360px; min-width: 0; }
 	.find-ic { position: absolute; left: 11px; top: 50%; translate: 0 -50%; color: var(--text-muted); display: grid; pointer-events: none; }
 	.find { width: 100%; min-height: 40px; padding-left: 34px; border-radius: var(--r-btn); background: var(--surface-2); border-color: transparent; }
@@ -1536,7 +1584,6 @@
 	.content { min-width: 0; }
 	.with-rail { min-width: 0; }
 	.with-rail.has-rail { display: grid; grid-template-columns: minmax(0, 1fr) 26px; gap: 12px; align-items: start; }
-	.group-note { margin: 0 0 12px; color: var(--text-muted); font: var(--t-footnote); }
 
 	.toolbar.topbar .t-view { order: 2; }
 	.toolbar.topbar .filter-btn { order: 3; }
@@ -1544,7 +1591,10 @@
 	.toolbar.topbar .t-tools { order: 5; }
 
 	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
-	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px repeat(var(--ln, 3), 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
+	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
+	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); }
+	.lsel { display: grid; place-items: center; padding-left: 10px; }
+	.lr { position: relative; }
 	.lh { position: relative; height: 40px; padding-right: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
 	.lr { height: var(--row-h, 54px); padding-right: 10px; }
 	.rows.v-rows .entry::before { left: 0; right: 0; }
@@ -1564,10 +1614,10 @@
 	.ls.fail { color: var(--fail-text); }
 	.ls.idle { color: var(--text-muted); }
 	.lc { min-width: 0; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lc.num, .lh .h.num { text-align: right; justify-self: end; }
 	.lr .acts { top: 50%; }
 	/* Phone rows (chosen by the list's own width): the poster, the name over "status · fact", the year at the right. */
 	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-right: 12px; }
+	.rows.has-select .lr.ph { grid-template-columns: 28px 50px minmax(0, 1fr) auto; }
 	.lr.ph .lp { width: 36px; margin-left: 8px; }
 	.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
 	.lr.ph .lt a { max-width: 100%; }
@@ -1584,28 +1634,35 @@
 	   anchoring must not also correct for them, or the two chase each other. */
 	.body { overflow-anchor: none; }
 	.row.head { position: relative; min-height: 40px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
-	.h { color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; text-align: left; white-space: nowrap; }
+	/* Sentence case, like Downloads' column headings: one voice on the page. */
+	.h { color: color-mix(in srgb, var(--text) 78%, transparent); font: 600 12px/1 var(--font-ui); text-align: left; white-space: nowrap; }
 	.h.more { position: absolute; right: 6px; top: 50%; translate: 0 -50%; padding: 3px 5px; border-radius: 6px; background: color-mix(in srgb, var(--text) 8%, transparent); letter-spacing: 0; cursor: help; }
 	.h.num, .c.num { text-align: right; justify-self: end; }
-	.banner-h { padding-left: 8px; }
 	.sort { display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; border: 0; background: none; cursor: pointer; }
 	.sort.num { justify-content: flex-end; }
 	.sort[aria-pressed='true'] { color: var(--text); }
 	.sort:hover { color: var(--text); }
 	.sort:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.dir { color: var(--accent); }
-	.entry { position: relative; outline: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.entry { position: relative; outline: none; cursor: pointer; scroll-margin-top: 84px; transition: background var(--dur-fast) var(--ease-out); }
+	.library.selecting .entry, .library.selecting .grid > li { scroll-margin-bottom: 120px; }
 	/* Every row carries its top line, so a row's height never changes when the
 	   virtual window drops the row above it (that would nudge the list 1px). */
 	/* The line between rows is drawn, not a border, and starts after the picture. */
 	.entry::before { content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px; background: var(--line); pointer-events: none; }
 	.rows.table .entry::before { left: calc(var(--banner-w, 0px) + 24px); }
+	.rows.overview .entry::before { left: 16px; }
 	.entry.first::before { display: none; }
 	.entry:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.entry:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
-	.entry.selected { background: color-mix(in srgb, var(--accent) 12%, var(--surface-1)); }
+	.entry.selected { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 	/* Coming back from a title, the one you opened is marked by a thin line that fades away by itself. */
 	.entry.last-opened { animation: last-row 2.6s var(--ease-out) both; }
+	@media (prefers-reduced-motion: reduce) {
+		.entry.last-opened { animation: none; box-shadow: inset 2px 0 0 color-mix(in srgb, var(--text-muted) 70%, transparent); }
+		.grid > li.last-opened { animation: none; outline-color: color-mix(in srgb, var(--text-muted) 60%, transparent); }
+		.meter i { transition: none; }
+	}
 	@keyframes last-row { 0%, 65% { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--text-muted) 70%, transparent); } 100% { box-shadow: inset 2px 0 0 transparent; } }
 	@keyframes last-ring { 0%, 65% { outline-color: color-mix(in srgb, var(--text-muted) 60%, transparent); } 100% { outline-color: transparent; } }
 	.state { display: grid; place-items: center; }
@@ -1640,14 +1697,14 @@
 	.lstate.idle .ls-bar i { background: var(--text-faint); }
 	.keep-c { display: flex; }
 	.num-t { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.acts { position: absolute; right: 10px; top: calc(var(--row-h, 100px) / 2); translate: 0 -50%; z-index: 1; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 88%, transparent); box-shadow: var(--shadow-card); backdrop-filter: blur(8px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.acts { position: absolute; right: 10px; top: calc(var(--row-h, 100px) / 2); translate: 0 -50%; z-index: 1; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--sheet-a) 86%, transparent); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 6%); backdrop-filter: blur(8px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.acts:empty { display: none; }
 	.entry:hover .acts, .entry:focus-within .acts { opacity: 1; }
 	@media (hover: none) { .acts { opacity: 1; } }
 
 	/* Progress meter, coloured by state */
 	.meter { position: relative; display: block; height: 5px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
-	.meter i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--text-muted); }
+	.meter i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--text-muted); transition: width var(--dur-slow) var(--ease-out); }
 	.meter.full i { background: var(--ok, #2fa36b); }
 	.meter.gap i { background: var(--warn, #d9822b); }
 	.meter.gap { background: color-mix(in srgb, var(--fail, #d64545) 28%, var(--surface-3)); }
@@ -1705,16 +1762,24 @@
 	.rows.table .row-notes, .rows.table .fold { padding-left: calc(var(--banner-w, 0px) + 68px); }
 
 	/* Bulk bar */
-	.select-bar { position: sticky; bottom: 16px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; padding: 10px 12px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card), 0 8px 28px rgb(0 0 0 / 25%); }
+	.select-bar { position: sticky; bottom: 16px; z-index: 20; container-type: inline-size; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; padding: 10px 12px; border-radius: var(--r-panel); background: color-mix(in srgb, var(--sheet-a) 90%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 6%), 0 8px 28px rgb(0 0 0 / 25%); }
+	/* Narrow: the bar's buttons fold to their icons (Remove keeps its word), the toolbar's own trick. */
+	@container (max-width: 1000px) {
+		.select-bar :global(.ui-btn.secondary > span), .select-bar :global(.trigger.button > span), .select-bar :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+		.select-bar :global(.ui-btn.secondary), .select-bar :global(.trigger.button) { width: 36px; padding-inline: 0; justify-content: center; }
+	}
 	/* Phones: the bar stays above the bottom tab bar and the safe area. */
 	@media (max-width: 767px) { .select-bar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom, 0px) + 8px); } }
+	@media (max-width: 639px) { .select-bar { flex-wrap: nowrap; } .select-bar .bar-gap { flex: 1 1 0; min-width: 0; } }
 	.select-bar > :global(.ui-ibtn:last-child) { order: -1; }
 	/* A little tighter, so the whole bar stays on one line beside an open side menu. */
 	.select-bar :global(.ui-btn.md), .select-bar :global(.trigger.button) { padding-inline: 11px; }
 	.select-bar :global(.ui-btn.plain) { padding-inline: 6px; }
 	.select-bar .count { padding: 0 8px; font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.bar-gap { flex: 1 1 auto; }
-	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
+	.modal::backdrop { background: var(--scrim); }
+	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--s-6); }
 	.modal .input { width: 100%; margin-top: 6px; }
 
 	/* A to Z */
@@ -1727,6 +1792,8 @@
 	/* Missing fold */
 	.fold { padding: 0 12px 10px 54px; }
 	.fold-body { margin-top: 6px; padding: 8px 12px; border-radius: var(--r-btn); background: var(--surface-2); }
+	:global(.fold-btn svg:first-child) { transition: rotate var(--dur-fast) var(--ease-out); }
+	:global(.fold-btn[aria-expanded="true"] svg:first-child) { rotate: 90deg; }
 	.fold-body ul { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font: var(--t-callout); }
 	.fold-body li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 	.ep-code { color: var(--text-muted); font-variant-numeric: tabular-nums; }
@@ -1747,10 +1814,10 @@
 		.tool-gap { display: block; order: 4; flex-basis: 100%; height: 0; }
 		.t-view { order: 5; }
 		.filter-btn { order: 6; }
-		.t-sel { order: 7; margin-left: auto; }
+		.t-sel { order: 2; }
 		.chips .t-miss { flex-basis: 100%; }
 		.chips .t-miss :global(button) { width: 100%; }
-		.find-box { flex-basis: 100%; max-width: none; order: 5; }
+		.find-box { flex-basis: 100%; max-width: none; order: 4; }
 		.sf { grid-template-columns: 1fr; padding: 0; }
 		.sf-sort { padding: 0; }
 		.sf-filter { margin-top: 10px; padding: 4px 0 0; border-left: 0; border-top: 1px solid var(--line); }
