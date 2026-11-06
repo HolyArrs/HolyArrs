@@ -42,13 +42,13 @@ describe('show library import', () => {
 describe('show deletes', () => {
 	const base: RemovePlan = { title_id: 1, name: 'Copper Valley', choice: { delete_files: true, never_add: false }, applied: false, held: [], kept: [], holding_days: 7, active_downloads: 0 };
 	it('words a whole show, a season and episodes', () => {
-		expect(deleteSummary({ ...base, scope: 'title' }, 'show')[0]).toMatch(/^The show leaves the Library/);
+		expect(deleteSummary({ ...base, scope: 'title' }, 'show')[0]).toMatch(/^Leaves your Library/);
 		const season = deleteSummary({ ...base, scope: 'season', season: 2, episodes: ['S02E01', 'S02E02'] }, 'show');
-		expect(season[0]).toBe('Season 2 (2 episodes): HolyArrs stops keeping them up to date. The show stays, and you can turn Keep up to date on again later.');
+		expect(season[0]).toBe('Season 2: 2 episodes stop being kept up to date');
 		const one = deleteSummary({ ...base, scope: 'episodes', episodes: ['S01E02'], kept: [{ file_id: 3, origin: 'adopted', path: 'x', why: 'kept: it also holds S01E03, which stays' }] }, 'show');
-		expect(one[0]).toMatch(/^S01E02: HolyArrs stops keeping it up to date/);
+		expect(one[0]).toMatch(/^S01E02: no longer kept up to date/);
 		expect(one).toContain('1 file stays where it is.');
-		expect(deleteSummary(base)[0]).toMatch(/^The movie leaves/);
+		expect(deleteSummary(base)[0]).toMatch(/^Leaves your Library/);
 	});
 });
 

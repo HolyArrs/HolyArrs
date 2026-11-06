@@ -114,9 +114,9 @@ describe('music rename and delete', () => {
 			active_downloads: 0
 		};
 		const s = deleteSummary(p, 'artist');
-		expect(s[0]).toBe('Old Days (2 tracks): HolyArrs stops keeping them up to date. The artist stays, and you can turn Keep up to date on again later.');
-		expect(s[1]).toMatch(/^1 file moves to the holding folder/);
-		expect(deleteSummary({ ...p, scope: 'title' }, 'artist')[0]).toMatch(/^The artist leaves the Library/);
+		expect(s[0]).toBe('Old Days: 2 tracks stop being kept up to date');
+		expect(s[1]).toMatch(/^1 file to the holding folder/);
+		expect(deleteSummary({ ...p, scope: 'title' }, 'artist')[0]).toMatch(/^Leaves your Library/);
 	});
 
 	it('lists the music examples in order', () => {
