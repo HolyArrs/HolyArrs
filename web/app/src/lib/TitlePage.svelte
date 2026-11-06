@@ -300,6 +300,7 @@
 		}
 	}
 	const kindFolders = $derived(folders.filter((f) => f.kind === owned?.kind));
+	const curFolder = $derived(folders.find((f) => f.id === owned?.library_folder_id));
 	let moveTo = $state<LibraryFolder | null>(null);
 	async function moveFolder() {
 		const o = owned, f = moveTo;
@@ -318,16 +319,7 @@
 	}
 	const pathEnd = (p: string) => p.split(/[\\/]+/).filter(Boolean).slice(-2).join('/');
 	const folderName = (f: LibraryFolder) => (kindFolders.filter((x) => x.label === f.label).length > 1 ? `${f.label} · ${pathEnd(f.path)}` : f.label);
-	// Folder as a segmented control like Quality: the folder in use first, up to three folders,
-	// the rest in a More menu. Repeated names get a number here and their path on hover.
-	const folderShort = (f: LibraryFolder) => {
-		const same = kindFolders.filter((x) => x.label === f.label);
-		return same.length > 1 ? `${f.label} ${same.indexOf(f) + 1}` : f.label;
-	};
-	const folderSegs = $derived([...kindFolders].sort((x, y) => Number(y.id === owned?.library_folder_id) - Number(x.id === owned?.library_folder_id)).slice(0, kindFolders.length > 3 ? 2 : 3));
-	const folderRest = $derived(kindFolders.filter((f) => !folderSegs.includes(f)));
-	const pickFolder = (f: LibraryFolder) => { if (f.id !== owned?.library_folder_id) moveTo = f; };
-	const folderMenu = $derived<MenuItem[]>(folderRest.map((f) => ({ label: folderName(f), onselect: () => pickFolder(f) })));
+	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: folderName(f), checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
 	// Seasons (Luis 2026-11-05): one choice sets every season and new seasons together.
 	// A mix made season by season in the list reads Custom.
 	type SeasonPick = 'all' | 'latest' | 'none';
@@ -1324,14 +1316,9 @@
 							{/if}
 							<!-- Folder: only when there is another folder of this kind to move to. -->
 							{#if kindFolders.length > 1}
-								<div class="lib-row static q-row" data-testid="folder-row">
+								<div class="lib-row static" data-testid="folder-row" title={o.folder_path ?? ''}>
 									<span><b>Folder</b></span>
-									<div class="q-seg" role="radiogroup" aria-label="Folder">
-										{#each folderSegs as f (f.id)}
-											<button type="button" role="radio" aria-checked={f.id === o.library_folder_id} class:on={f.id === o.library_folder_id} title={f.path} onclick={() => pickFolder(f)}>{folderShort(f)}</button>
-										{/each}
-										{#if folderRest.length}<div class="q-more"><Menu label="More folders" variant="button" width={340} items={folderMenu}>{#snippet trigger()}<i>More</i><Icon name="chevronDown" size={13} />{/snippet}</Menu></div>{/if}
-									</div>
+									<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={340}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 								</div>
 							{/if}
 							<button type="button" class="lib-row" data-testid="subtitles-row" onclick={() => (subsOpen = true)}><span><b>Subtitles</b></span><Icon name="chevronRight" size={16} /></button>
@@ -1391,7 +1378,7 @@
 				<Sheet bind:open={subsOpen} title="Subtitles" description={o.name} placement="center" size="lg">
 					{#if subsOpen}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} bare />{/if}
 				</Sheet>
-				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderShort(moveTo) : ''}?`} description="Its files move to the new folder." size="sm" placement="center">
+				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderName(moveTo) : ''}?`} description="Its files move to the new folder." size="sm" placement="center">
 					<p class="lib-move-path">{moveTo?.path}</p>
 					<div class="lib-move-actions">
 						<button type="button" class="lib-btn" onclick={() => (moveTo = null)}>Cancel</button>
