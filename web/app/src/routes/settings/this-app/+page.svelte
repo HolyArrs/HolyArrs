@@ -327,21 +327,21 @@
 			<div class="card-head"><h2 id="h-autoplay" class="h2">Autoplay trailers</h2></div>
 			<label class="checkline">
 				<input type="checkbox" checked={autoplay} disabled={autoplayBusy} onchange={(e) => saveAutoplay(e.currentTarget.checked)} />
-				<span><b>Play trailers by themselves</b><br /><span class="hint">On Explore the featured title and the larger card that opens over a poster play a muted trailer. Never for Kid accounts, with Reduce motion on, or on slow or data-saving connections. Applies to everyone.</span></span>
+				<span><b>Play trailers by themselves</b><br /><span class="hint">Muted, on Explore. Never for Kids, Reduce motion or slow connections.</span></span>
 			</label>
 			<label class="checkline" data-testid="signin-art-setting">
 				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
-				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows trending movies and shows. On, it shows wide pictures from your Library first. Anyone who opens the page can see them, and no rating filter applies.</span></span>
+				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">Anyone can see them, with no rating filter</span></span>
 			</label>
 			<label class="checkline" data-testid="count-install-setting">
 				<input type="checkbox" checked={countInstall} disabled={autoplayBusy} onchange={(e) => saveCountInstall(e.currentTarget.checked)} />
-				<span><b>Count this install</b><br /><span class="hint">Count this install in the per-country install total on the HolyArrs metadata server. No names, files or library.</span></span>
+				<span><b>Count this install</b><br /><span class="hint">Adds this install to a per-country total. Nothing else is sent.</span></span>
 			</label>
 			<label class="checkline" data-testid="artwork-cache-setting">
 				<select aria-label="Picture storage" value={cacheGB} disabled={autoplayBusy} onchange={(e) => saveCacheGB(Number(e.currentTarget.value))}>
 					{#each [1, 2, 5, 10, 20] as gb (gb)}<option value={gb}>{gb} GB</option>{/each}
 				</select>
-				<span><b>Picture storage</b><br /><span class="hint">Posters, covers and photos are kept on this server so pages open with their pictures. Past this size the pictures seen longest ago are removed; they come back when a page needs them.</span></span>
+				<span><b>Picture storage</b><br /><span class="hint">Oldest pictures are removed past this size and reload when needed</span></span>
 			</label>
 		</section>
 	{/if}
@@ -350,16 +350,16 @@
 		<section class="card" id="history-keep-card" aria-labelledby="h-history-keep" data-testid="history-keep-setting">
 			<div class="card-head"><h2 id="h-history-keep" class="h2">History</h2></div>
 			<label class="checkline">
-				<select aria-label="Keep routine work" value={keepRoutine} disabled={autoplayBusy} onchange={(e) => saveKeep('history_routine_days', Number(e.currentTarget.value))}>
+				<select aria-label="Keep routine Events" value={keepRoutine} disabled={autoplayBusy} onchange={(e) => saveKeep('history_routine_days', Number(e.currentTarget.value))}>
 					{#each keepChoices.includes(keepRoutine) ? keepChoices : [...keepChoices, keepRoutine] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
 				</select>
-				<span><b>Keep routine work</b><br /><span class="hint">Searches, feed checks, refreshed details and folder scans. Older ones are removed once a day.</span></span>
+				<span><b>Keep routine Events</b><br /><span class="hint">Searches, feed checks, refreshes, scans</span></span>
 			</label>
 			<label class="checkline">
-				<select aria-label="Keep everything else" value={keepOther} disabled={autoplayBusy} onchange={(e) => saveKeep('history_other_days', Number(e.currentTarget.value))}>
+				<select aria-label="Keep other Events" value={keepOther} disabled={autoplayBusy} onchange={(e) => saveKeep('history_other_days', Number(e.currentTarget.value))}>
 					{#each keepChoices.includes(keepOther) ? keepChoices : [...keepChoices, keepOther] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
 				</select>
-				<span><b>Keep everything else</b><br /><span class="hint">Downloads, imports, upgrades, problems, sign-ins and settings changes.</span></span>
+				<span><b>Keep other Events</b><br /><span class="hint">Downloads, imports, better copies, problems, sign-ins, settings changes</span></span>
 			</label>
 		</section>
 	{/if}
@@ -376,7 +376,7 @@
 			{:else if update.newer}
 				<p class="small" data-testid="update-version">Version {update.latest}</p>
 			{/if}
-			<p class="xs muted">HolyArrs only tells you; it never updates by itself. Pull the new image when it suits you.</p>
+			<p class="xs muted">Never updates itself. Pull the new image when ready.</p>
 			{#if goBack?.from_version}
 				{@const tag = imageTag(goBack.from_version)}
 				<div class="go-back" data-testid="go-back">
@@ -391,7 +391,7 @@
 						<li>Start the container again with that image (with Compose: <code>docker compose up -d</code>).</li>
 						<li>{goBack.from_version} sees that its data is newer and shows a page instead. There, type the one-time code from <code>docker logs &lt;container&gt;</code> and press <b>Put back the data from before the update</b>. HolyArrs then starts on that data.</li>
 					</ol>
-					<p class="xs muted">Changes made since the update are not in that copy. The newer data is not deleted: it moves to the backups folder (before-restore-&lt;time&gt;). Without the page: <code>docker exec &lt;container&gt; /holyarrs restore --pre-update</code>, then <code>docker restart &lt;container&gt;</code>.</p>
+					<p class="xs muted">Later changes move to backups/before-restore-&lt;time&gt;. From the command line: <code>docker exec &lt;container&gt; /holyarrs restore --pre-update</code>, then <code>docker restart &lt;container&gt;</code>.</p>
 				</div>
 			{/if}
 			{#if update.on && session.can('settings')}
@@ -410,7 +410,7 @@
 		<p class="small muted">
 			{#if !checks || checks.checks.length === 0}No health results yet.{:else if bad.length === 0}All {checks.checks.length} checks are fine.{:else}{bad.length} of {checks.checks.length} checks need a look.{/if}
 		</p>
-		<div class="row" style="margin-top: var(--s-3)"><Button href={to('/settings/health')} iconAfter="chevronRight">See the health checks</Button></div>
+		<div class="row" style="margin-top: var(--s-3)"><Button href={to('/settings/health')} iconAfter="chevronRight">Health checks</Button></div>
 	</section>
 
 	<section class="card" aria-labelledby="h-stages" data-testid="stages">
@@ -418,9 +418,9 @@
 			<h2 id="h-stages" class="h2">Stages</h2>
 			{#if states?.safe_mode}<span class="chip wait">Safe mode</span>{/if}
 		</div>
-		<p class="small muted">Background work that can fail on its own. A stage that crashes starts again by itself after a short wait.</p>
+		<p class="small muted">Crashed Stages restart after a short wait</p>
 		{#if split.stages.length === 0}
-			<p class="small muted" style="margin-top: var(--s-3)">No stages reported.</p>
+			<p class="small muted" style="margin-top: var(--s-3)">No Stages</p>
 		{:else}
 			<ul class="rows checks">
 				{#each split.stages as s (s.key)}
@@ -440,7 +440,7 @@
 	<div data-testid="links">
 		<SettingsCard title="Linked apps">
 			{#if split.links.length === 0}
-				<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
+				<p class="small muted">No Linked apps</p>
 			{:else}
 				<ul class="rows checks">
 					{#each split.links as l (l.key)}
@@ -458,7 +458,7 @@
 	</div>
 
 	<div data-testid="storage">
-		<SettingsCard id="storage-card" title="Storage" description="Paths as HolyArrs sees them (inside the container in Docker). Everything HolyArrs keeps lives in the config folder.">
+		<SettingsCard id="storage-card" title="Storage" description="Paths inside the container. HolyArrs data lives in config.">
 			{#if storage}
 				<ul class="rows checks">
 					{#each storage.app as p (p.name)}
@@ -483,23 +483,23 @@
 					{/if}
 				</ul>
 			{:else if storageNeedsProof}
-				<p class="small muted" style="margin-top: var(--s-2)">Storage paths are protected. Confirm your HolyArrs password in My account, then return here.</p>
+				<p class="small muted" style="margin-top: var(--s-2)">Confirm your password in My account to see paths</p>
 				<AdminLinkButton href={to('/settings/account')} style="margin-top: var(--s-3)">Open My account</AdminLinkButton>
 			{:else if storageError}
 				<p class="notice bad small" role="alert" style="margin-top: var(--s-3)">{storageError}</p>
 			{:else}
-				<p class="small muted" style="margin-top: var(--s-2)">Paths are shown to people who may change settings.</p>
+				<p class="small muted" style="margin-top: var(--s-2)">Needs the Settings permission</p>
 			{/if}
 		</SettingsCard>
 	</div>
 
 	{#if session.can('settings') && !urlBaseGone}
-		<SettingsCard id="url-base-card" title="URL base" description="The path HolyArrs lives under behind a reverse proxy, for example /holyarrs. Leave it empty to use the whole address.">
+		<SettingsCard id="url-base-card" title="URL base" description="For reverse proxies, e.g. /holyarrs. Empty for none.">
 			<form class="sc-urlbase" onsubmit={saveURLBase} data-testid="url-base-form">
 				<Field id="url-base" label="URL base" hint={urlBase ? `In use now: ${urlBase.in_use || 'none'}` : undefined}>
 					<input id="url-base" class="input mono" bind:value={urlBaseTyped} placeholder="/holyarrs" autocomplete="off" spellcheck="false" maxlength="200" />
 				</Field>
-				{#if urlBase?.restart_needed}<p class="notice warn" role="status">Restart HolyArrs to use it. A URL base set when HolyArrs starts (HOLYARRS_URL_BASE or -url-base) wins over this one.</p>{/if}
+				{#if urlBase?.restart_needed}<p class="notice warn" role="status">Needs a restart. HOLYARRS_URL_BASE or -url-base overrides it.</p>{/if}
 				{#if urlBaseErr}<p class="form-error" role="alert">{urlBaseErr}</p>{/if}
 				<div class="row acts"><Button variant="primary" type="submit" disabled={!urlBase || urlBaseTyped.trim() === urlBase.saved} aria-busy={urlBaseBusy}>Save</Button></div>
 			</form>
@@ -529,10 +529,10 @@
 	{/if}
 
 	{#if session.s.role === 'owner' && titleStats}
-		<SettingsCard title="Explore row titles" description="Last 30 days. Rows with a smart title next to rows with their plain title: opens and asks per row shown. Counted on this server only.">
+		<SettingsCard title="Explore row titles" description="Last 30 days, this server only. Smart vs plain row titles.">
 			<Table
 				caption="Explore row titles"
-				columns={[{ key: 'layer', label: 'Title from' }, { key: 'shown', label: 'Shown', align: 'end' }, { key: 'opens', label: 'Opens', align: 'end' }, { key: 'asks', label: 'Asks', align: 'end' }, { key: 'rate', label: 'Per row', align: 'end' }]}
+				columns={[{ key: 'layer', label: 'Title from' }, { key: 'shown', label: 'Shown', align: 'end' }, { key: 'opens', label: 'Opens', align: 'end' }, { key: 'asks', label: 'Requests', align: 'end' }, { key: 'rate', label: 'Per row', align: 'end' }]}
 				rows={titleStats}
 				rowKey={(r) => r.layer}
 				empty="No Explore rows counted yet."

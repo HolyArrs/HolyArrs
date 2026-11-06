@@ -51,9 +51,9 @@
 	}
 
 	const permWord: Record<Perm, string> = {
-		ask: 'Ask for titles',
-		auto_approve: 'Asks approved without waiting',
-		approve: 'Approve or turn down asks',
+		ask: 'Request titles',
+		auto_approve: 'Requests approved without waiting',
+		approve: 'Approve or turn down requests',
 		manage_library: 'Run the Library',
 		settings: 'Change settings'
 	};
@@ -71,9 +71,9 @@
 		no_limit: boolean;
 	}
 	const limitFields = [
-		{ kind: 'movies', key: 'movies_per_week', label: 'Movie asks' },
-		{ kind: 'shows', key: 'shows_per_week', label: 'Show asks' },
-		{ kind: 'music', key: 'music_per_week', label: 'Music asks' }
+		{ kind: 'movies', key: 'movies_per_week', label: 'Movie requests' },
+		{ kind: 'shows', key: 'shows_per_week', label: 'Show requests' },
+		{ kind: 'music', key: 'music_per_week', label: 'Music requests' }
 	] as const;
 	let limits = $state<Record<number, LimitRow>>({});
 	let defaultsPerWeek = $state<Partial<Record<LimitKind, number>>>({});
@@ -81,7 +81,7 @@
 
 	function limitWords(l: LimitRow | undefined): string {
 		if (!l) return '';
-		if (l.no_limit) return 'No ask limit (may approve)';
+		if (l.no_limit) return 'No request limit (may approve)';
 		return limitFields
 			.map((f) => {
 				const own = l[f.key];
@@ -143,7 +143,7 @@
 			.get<{ limits: LimitRow[] }>('/ask-limits')
 			.then((r) => (limits = Object.fromEntries(r.limits.map((l) => [l.user_id, l]))))
 			.catch(() => (limits = {}));
-		api
+		if (session.can('settings')) api
 			.get<AskSettings>('/settings/asks')
 			.then((s) => (defaultsPerWeek = { movies: s.movies_per_week, shows: s.shows_per_week, music: s.music_per_week }))
 			.catch(() => {});
@@ -292,12 +292,12 @@
 	}
 
 	async function setState(u: User, state: 'active' | 'disabled') {
-		if (state === 'disabled' && !confirm(`Turn off ${u.name}? They are signed out everywhere and cannot sign in until you turn them back on.`)) return;
+		if (state === 'disabled' && !confirm(`Turn off ${u.name}? They're signed out until you turn them on.`)) return;
 		await put(u, { state }, state === 'disabled' ? `${u.name} turned off.` : `${u.name} turned on.`);
 	}
 
 	async function resetTwoFactor(u: User) {
-		if (!confirm(`Reset two-factor sign-in for ${u.name}? They sign in with their password alone until they set it up again.`)) return;
+		if (!confirm(`Reset two-factor for ${u.name}? Password only until they set it up.`)) return;
 		try {
 			await api.post(`/users/${u.id}/two-factor/reset`);
 			toasts.push(`Two-factor sign-in reset for ${u.name}.`, 'ok');
@@ -318,14 +318,14 @@
 		}
 	};
 	async function unlinkSSO(u: User, l: { kind: string; issuer: string }) {
-		if (!confirm(`Unlink the ${ssoWord(l.kind)} sign-in of ${u.name} (${hostOf(l.issuer)})? The devices it signed in are signed out.`)) return;
+		if (!confirm(`Unlink ${u.name}'s ${ssoWord(l.kind)} sign-in? Its devices sign out.`)) return;
 		const body: Record<string, unknown> = { kind: l.kind, issuer: l.issuer };
 		try {
 			try {
 				await api.post(`/users/${u.id}/sso/unlink`, body);
 			} catch (e) {
 				if (!(e instanceof ApiError && e.body.code === 'no_way_in')) throw e;
-				if (!confirm(`This is how ${u.name} signs in, and they have no HolyArrs password. Unlink anyway? Set a password for them first if they should keep a way in.`)) return;
+				if (!confirm(`${u.name} has no password and will be locked out. Unlink anyway?`)) return;
 				await api.post(`/users/${u.id}/sso/unlink`, { ...body, confirm_no_way_in: true });
 			}
 			toasts.push(`Unlinked the ${ssoWord(l.kind)} sign-in of ${u.name}.`, 'ok');
@@ -353,15 +353,15 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<SettingsCard id="invite-card" title="Invite someone">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send them a one-time link. They pick their own name and password.</p>
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">One-time link; they choose name and password</p>
 
 		{#if link}
 			<div class="fresh" role="status">
-				<p class="small"><b>Invite link.</b> It works once and is shown only now.</p>
+				<p class="small"><b>Invite link.</b> Works once; copy it now.</p>
 				<div class="row">
 					<code class="key grow">{link}</code>
 					<Button icon="copy" type="button" onclick={copyLink}>Copy</Button>
-					<Button variant="plain" type="button" onclick={() => (link = '')}>Done</Button>
+					<Button variant="plain" type="button" onclick={() => (link = '')}>Close</Button>
 				</div>
 			</div>
 		{/if}
@@ -389,7 +389,7 @@
 			<div class="row">
 				<div class="field grow">
 					<label for="inv-note">Note for yourself</label>
-					<input id="inv-note" class="input" bind:value={note} maxlength="100" placeholder="Who is this for?" />
+					<input id="inv-note" class="input" bind:value={note} maxlength="100" placeholder="e.g. Mum" />
 				</div>
 				<Field id="inv-days" label="Days the link lasts">
 					<input id="inv-days" class="input" type="number" min="1" max="30" bind:value={days} style="max-width: 120px" />
@@ -462,7 +462,7 @@
 
 	<SettingsCard id="invites-card" title="Invite links">
 		{#if invites.length === 0}
-			<p class="small muted" style="margin-top: var(--s-3)">No invites yet.</p>
+			<p class="small muted" style="margin-top: var(--s-3)">No invites</p>
 		{:else}
 			<ul class="rows" style="margin-top: var(--s-3)">
 				{#each invites as i (i.id)}
@@ -472,7 +472,7 @@
 							<div class="xs muted">Made by {i.created_by} {ago(i.created_at)} · {inviteState(i)}</div>
 						</div>
 						{#if !i.used_at && new Date(i.expires_at).getTime() > Date.now()}
-							<Button variant="plain" type="button" onclick={() => takeBack(i)}>Take back</Button>
+							<Button variant="plain" type="button" onclick={() => takeBack(i)}>Revoke</Button>
 						{/if}
 					</li>
 				{/each}
@@ -530,7 +530,6 @@
 <dialog bind:this={devDialog} class="dlg" aria-labelledby="h-devices" onclose={() => (devicesOf = null)}>
 	{#if devicesOf}
 		<h2 id="h-devices" class="h2">Signed-in devices of {devicesOf.name}</h2>
-		<p class="small muted" style="margin-bottom: var(--s-3)">Signing out ends the session at once; they sign in again with their password.</p>
 		<Sessions path="/users/{devicesOf.id}/sessions" name={devicesOf.name} />
 		<div class="row end" style="margin-top: var(--s-4)">
 			<Button variant="plain" type="button" onclick={() => devDialog?.close()}>Close</Button>
@@ -581,7 +580,7 @@
 			</fieldset>
 			{#if limits[editing.id] && !limits[editing.id].no_limit}
 				<fieldset class="field" aria-describedby="limits-hint">
-					<legend class="label">Weekly asks</legend>
+					<legend class="label">Weekly Limit</legend>
 					<div class="limit-row">
 						{#each limitFields as f (f.kind)}
 							<Field id="limit-{f.kind}" label={f.label}>
@@ -598,10 +597,10 @@
 							</Field>
 						{/each}
 					</div>
-					<span id="limits-hint" class="hint">Empty uses the default from Settings &gt; Request rules. 0 means no limit. Each kind counts on its own; joining someone else's ask is free.</span>
+					<span id="limits-hint" class="hint">Empty uses Request rules. 0 for no limit. Joining a request is free.</span>
 				</fieldset>
 			{:else if limits[editing.id]?.no_limit}
-				<p class="hint">No weekly ask limit: {editing.name} may approve asks.</p>
+				<p class="hint">No weekly request limit: {editing.name} may approve requests.</p>
 			{/if}
 			<div class="row end">
 				<Button variant="plain" type="button" onclick={() => dialog?.close()}>Cancel</Button>

@@ -45,7 +45,7 @@
 		icon?: IconName;
 		id?: string;
 		tone?: 'danger';
-		children: Snippet;
+		children?: Snippet;
 		advanced?: Snippet;
 		/** A stable name for this card's Advanced disclosure; defaults to id or title. */
 		advancedId?: string;
@@ -71,7 +71,7 @@
 			{#if description}<p title={description}>{description}</p>{/if}
 		</div>
 	</header>
-	<div class="body">{@render children()}</div>
+	{#if children}<div class="body">{@render children()}</div>{/if}
 	{#if advanced}
 		<details class="advanced" {open} ontoggle={toggled} data-testid="advanced">
 			<summary><Icon name="chevronRight" size={15} /><span>Advanced</span></summary>

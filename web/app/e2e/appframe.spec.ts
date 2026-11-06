@@ -71,7 +71,7 @@ test('This app shows where things are kept, and the log', async () => {
 	await expect(page.getByRole('heading', { name: 'Logs', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('log-line').first()).toBeVisible();
 	await page.getByLabel('Text').fill('listening on');
-	await page.getByRole('button', { name: 'Show', exact: true }).click();
+	await page.getByRole('button', { name: 'Apply', exact: true }).click();
 	await expect(page.getByTestId('log-line').first()).toContainText('listening on');
 	await page.getByLabel('Level').selectOption('error');
 	// Wait for the lines that answer the Level filter, not the ones shown before.
@@ -81,7 +81,7 @@ test('This app shows where things are kept, and the log', async () => {
 	// The first-run setup code is in the log, hidden.
 	await page.getByRole('button', { name: 'Clear' }).click();
 	await page.getByLabel('Text').fill('setup code');
-	await page.getByRole('button', { name: 'Show', exact: true }).click();
+	await page.getByRole('button', { name: 'Apply', exact: true }).click();
 	await expect(page.getByTestId('log-line').first()).toContainText('setup code [hidden]');
 	await axe(page, '/settings/logs');
 	await phone(page, '/settings/logs');
@@ -124,7 +124,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	// The page shows its settings once they load; then open Advanced.
 	await page.locator('details.advanced').first().waitFor();
 	await openAdvanced(page);
-	await page.getByLabel('The release feed may be on the local network').check();
+	await page.getByLabel('Feed may be on the local network').check();
 	await saved();
 	await page.goto('/settings/this-app');
 	await page.getByRole('button', { name: 'Check for updates now' }).click();
@@ -148,7 +148,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 test('the API page: key, scopes, base address, examples and every route', async () => {
 	await page.goto('/settings');
 	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'API for other apps' }).click();
-	await expect(page.getByRole('heading', { name: 'API for other apps', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'API', level: 1 })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Sign-in and security' })).toHaveAttribute('href', '/settings/sign-in');
 	await expect(page.getByTestId('api-base')).toHaveText(/^http:\/\/127\.0\.0\.1:\d+\/api\/v1$/);
 	await expect(page.getByTestId('api-scopes')).toContainText('control');

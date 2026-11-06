@@ -43,7 +43,7 @@
 		try {
 			await saveDisplayName(nameDraft);
 			nameEditing = false;
-			toasts.push('Display name saved.', 'ok');
+			toasts.push('Name saved', 'ok');
 		} catch (err) {
 			nameError = message(err);
 		} finally {
@@ -52,6 +52,7 @@
 	}
 
 	// Where Alerts reach this person (email, Discord).
+	let emailReady = $state(true);
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
 	// Follow: the shows and artists I follow.
 	type Followed = { title_id: number; kind: string; name: string; year?: number };
@@ -70,7 +71,7 @@
 		resetBusy = true;
 		try {
 			await api.del('/explore/strip/counts');
-			toasts.push('Your recommendations start fresh.', 'ok');
+			toasts.push('Recommendations reset', 'ok');
 		} catch (err) {
 			toasts.push(message(err), 'fail');
 		} finally {
@@ -97,7 +98,7 @@
 		watchBusy = true;
 		try {
 			await api.post('/my/plex-watchlist/check', {});
-			toasts.push('Reading your Plex watchlist now.', 'ok');
+			toasts.push('Reading your Plex watchlist…', 'ok');
 			setTimeout(() => void api.get<PlexWatchlist>('/my/plex-watchlist').then((r) => (watch = r)).catch(() => {}), 4000);
 		} catch (err) {
 			toasts.push(message(err), 'fail');
@@ -123,6 +124,12 @@
 				savedTargets = JSON.stringify(r);
 			})
 			.catch(() => {});
+		// Only people who may read Settings can tell whether email Alerts exist; for them the Email box is off until one does.
+		if (session.can('settings'))
+			api
+				.get<{ alerts: { kind: string; enabled?: boolean }[] }>('/alerts')
+				.then((r) => (emailReady = r.alerts.some((a) => a.kind === 'email' && a.enabled !== false)))
+				.catch(() => {});
 		api
 			.get<PlexWatchlist>('/my/plex-watchlist')
 			.then((r) => (watch = r))
@@ -139,7 +146,7 @@
 		try {
 			targets = await api.put('/my/alerts', targets);
 			savedTargets = JSON.stringify(targets);
-			toasts.push('Saved where Alerts reach you.', 'ok');
+			toasts.push('Alert settings saved', 'ok');
 		} catch (err) {
 			tgError = message(err);
 		} finally {
@@ -196,8 +203,8 @@
 	async function changePassword(e: SubmitEvent) {
 		e.preventDefault();
 		pwError = '';
-		if (next.length < MIN_LENGTH) return void (pwError = `The new password needs at least ${MIN_LENGTH} characters.`);
-		if (next !== again) return void (pwError = 'The two new passwords are not the same.');
+		if (next.length < MIN_LENGTH) return void (pwError = `Use at least ${MIN_LENGTH} characters`);
+		if (next !== again) return void (pwError = 'Passwords don’t match');
 		pwBusy = true;
 		const first = !session.s.hasPassword;
 		try {
@@ -205,7 +212,7 @@
 			current = next = again = '';
 			pwOpen = false;
 			if (first) session.s.hasPassword = true;
-			toasts.push(first ? `Password set. You can also sign in as ${session.s.name} with it.` : 'Password changed. Your other devices are signed out.', 'ok');
+			toasts.push(first ? `Password set. You can also sign in as ${session.s.name} with it.` : 'Password changed. Other devices signed out.', 'ok');
 		} catch (err) {
 			pwError = strong(err);
 		} finally {
@@ -253,7 +260,7 @@
 			offCode = '';
 			if (r?.backup_codes) {
 				codes = r.backup_codes;
-				toasts.push('New backup codes made. The old ones no longer work.', 'ok');
+				toasts.push('New backup codes made. Old ones stop working.', 'ok');
 			} else {
 				codes = [];
 				tfOpen = false;
@@ -280,7 +287,7 @@
 			await navigator.clipboard.writeText(codes.join('\n'));
 			toasts.push('Copied.', 'ok');
 		} catch {
-			toasts.push('Copy did not work here; write the codes down by hand.', 'fail');
+			toasts.push('Couldn’t copy. Write the codes down.', 'fail');
 		}
 	}
 
@@ -378,7 +385,7 @@
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/my-link/start', {});
 			if (!win) {
-				linkError = 'Your browser blocked the Plex window. Allow pop-ups for HolyArrs and try again.';
+				linkError = 'Pop-up blocked. Allow pop-ups and try again.';
 				return;
 			}
 			win.location.href = r.auth_url;
@@ -398,7 +405,7 @@
 				toasts.push(`Plex account ${done.name} linked.`, 'ok');
 				return;
 			}
-			linkError = 'The Plex sign-in timed out. Start again.';
+			linkError = 'Plex sign-in timed out. Try again.';
 		} catch (err) {
 			linkError = message(err);
 		} finally {
@@ -417,7 +424,7 @@
 			await api.del('/auth/plex/my-link');
 			plexMine = { linked: false, name: '', kept: false };
 			plexUnlinking = false;
-			toasts.push('Plex account unlinked. Devices it signed in are signed out.', 'ok');
+			toasts.push('Plex unlinked. Its devices are signed out.', 'ok');
 		} catch (err) {
 			linkError = message(err);
 		} finally {
@@ -443,11 +450,11 @@
 		if (!f) return;
 		clearPick();
 		if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
-			toasts.push('Choose a JPEG, PNG or WebP picture.', 'fail');
+			toasts.push('Use JPEG, PNG or WebP', 'fail');
 			return;
 		}
 		if (f.size > AVATAR_MAX) {
-			toasts.push('That picture is over 5 MB.', 'fail');
+			toasts.push('Picture is over 5 MB', 'fail');
 			return;
 		}
 		picked = f;
@@ -486,10 +493,10 @@
 <div class="acct">
 
 {#if session.s.mustTwoFactor}
-	<p class="notice warn" role="alert">The owner asks every admin to use two-factor sign-in. Turn it on under Security to use the rest of HolyArrs.</p>
+	<p class="notice warn" role="alert">Admins need two-factor sign-in. Turn it on under Security to continue.</p>
 {/if}
 
-<SettingsCard id="profile-me" title="Profile" description="How you show up across HolyArrs." icon="user">
+<SettingsCard id="profile-me" title="Profile" icon="user">
 	<div class="pfp">
 		<Avatar name={shownName(profile.displayName, personName(session.s.name, 'You'))} src={preview || session.s.avatar} size={44} label="Your profile picture" />
 		<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label="Choose a profile picture" />
@@ -500,7 +507,7 @@
 			<Button type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change picture' : 'Add picture'}</Button>
 			{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
 		{/if}
-		<span class="hint" title="JPEG, PNG or WebP up to 5 MB; cropped to a square.">Up to 5 MB.</span>
+		<span class="hint" title="JPEG, PNG or WebP, up to 5 MB">Up to 5 MB.</span>
 	</div>
 	<div class="boxes" data-testid="profile-boxes">
 		<div class="box wide" data-testid="box-display-name">
@@ -515,7 +522,7 @@
 			{:else}
 				<div class="line">
 					<span class="value">{profile.displayName || session.s.name}</span>
-					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">Edit</Button>
+					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">Change</Button>
 				</div>
 			{/if}
 		</div>
@@ -523,14 +530,14 @@
 			<span class="label">Username</span>
 			<div class="line">
 				<span class="value">{session.s.name}</span>
-				<span class="lock" title="You sign in with this name, so it does not change here." role="img" aria-label="Locked: you sign in with this name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+				<span class="lock" title="Used to sign in; can't change" role="img" aria-label="Locked: you sign in with this name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
 			</div>
 		</div>
 		<div class="box" data-testid="box-role">
 			<span class="label">Role</span>
 			<div class="line">
 				<span class="value">{roleWord(session.s.role)}</span>
-				<span class="lock" title="Ask an owner to change your role" role="img" aria-label="Locked: ask an owner to change your role"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+				<span class="lock" title="Only the owner can change this" role="img" aria-label="Locked: ask an owner to change your role"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
 			</div>
 		</div>
 		<div class="box" data-testid="box-sign-in">
@@ -553,7 +560,7 @@
 							<input id="pw-current" class="input" type="password" placeholder="Current password" bind:value={current} autocomplete="current-password" />
 						{/if}
 						<label class="sr-only" for="pw-new">New password</label>
-						<input id="pw-new" class="input" type="password" placeholder="New password (at least {MIN_LENGTH})" bind:value={next} autocomplete="new-password" />
+						<input id="pw-new" class="input" type="password" placeholder="At least {MIN_LENGTH} characters" bind:value={next} autocomplete="new-password" />
 						<label class="sr-only" for="pw-again">Confirm new password</label>
 						<input id="pw-again" class="input" type="password" placeholder="Confirm new password" bind:value={again} autocomplete="new-password" />
 						{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
@@ -571,20 +578,20 @@
 	</div>
 </SettingsCard>
 
-<SettingsCard id="preferences-me" title="Preferences" description="Kept for you; trailers only on this device." icon="appearance">
+<SettingsCard id="preferences-me" title="Preferences" icon="appearance">
 	<div class="srow">
-		<div class="txt"><span class="label">Trailers</span><span class="hint" title="Auto follows your system (reduced motion, data saver). Always plays them anyway; Never turns them off.">Auto follows reduced motion and data saver.</span></div>
+		<div class="txt"><span class="label">Trailers</span><span class="hint" title="Auto respects Reduce motion and data saver">Auto respects Reduce motion and data saver</span></div>
 		<div class="ctl"><SegmentedControl size="sm" label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
 	</div>
 	<div class="srow" id="recommendations-me">
-		<div class="txt"><span class="label">Recommendations</span><span class="hint" title="Explore's category strip learns from the categories you open. This stays on this server.">Explore learns from what you open.</span></div>
+		<div class="txt"><span class="label">Recommendations</span><span class="hint" title="Explore learns from what you open. Stays on this server.">Explore learns from what you open.</span></div>
 		<div class="ctl"><Button variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>
 	</div>
 </SettingsCard>
 
-<SettingsCard id="security-me" title="Security" description="Two-factor sign-in and linked sign-ins." icon="shield">
+<SettingsCard id="security-me" title="Security" icon="shield">
 	<div class="srow" id="twofactor-me">
-		<div class="txt"><span class="label">Two-factor</span><span class="hint">A six-digit code from your phone after the password.</span></div>
+		<div class="txt"><span class="label">Two-factor</span><span class="hint">A code from your phone at sign-in</span></div>
 		<div class="ctl">
 			<span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? 'On' : 'Off'}</span>
 			{#if !tfOpen && !setup}
@@ -595,13 +602,13 @@
 			<div class="tf below">
 				{#if codes.length}
 					<div class="fresh" role="status">
-						<p class="small"><b>Backup codes.</b> Each works once. Shown only now.</p>
+						<p class="small"><b>Backup codes.</b> Each works once; save them now.</p>
 						<ul class="codes mono">
 							{#each codes as c (c)}<li>{c}</li>{/each}
 						</ul>
 						<div class="row acts">
 							<Button icon="copy" type="button" onclick={copyCodes}>Copy</Button>
-							<Button variant="secondary" type="button" onclick={() => (codes = [])}>Done</Button>
+							<Button variant="secondary" type="button" onclick={() => (codes = [])}>Close</Button>
 						</div>
 					</div>
 				{/if}
@@ -610,7 +617,7 @@
 						{#if session.s.twoFactor}
 							<form class="tf-form" onsubmit={(e) => withCode(offMode === 'off' ? '/auth/two-factor/disable' : '/auth/two-factor/backup-codes', e)}>
 								<fieldset class="modes">
-									<legend class="sr-only">With a code from your app or a backup code</legend>
+									<legend class="sr-only">Enter an app or backup code</legend>
 									<label class="checkline"><input type="radio" bind:group={offMode} value="codes" /> New backup codes</label>
 									<label class="checkline"><input type="radio" bind:group={offMode} value="off" /> Turn off</label>
 								</fieldset>
@@ -618,7 +625,7 @@
 									<label class="sr-only" for="off-code">Code</label>
 									<input id="off-code" class="input mono six" placeholder="Code" bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
 									<Button variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
-										{offMode === 'off' ? 'Turn off' : 'Make codes'}
+										{offMode === 'off' ? 'Turn off' : 'Make new codes'}
 									</Button>
 									<Button variant="plain" type="button" onclick={() => (tfOpen = false)}>Cancel</Button>
 								</div>
@@ -654,14 +661,14 @@
 	</div>
 	{#if hasLinkWay || myLinks.length || plexMine?.linked || (plexMine && session.s.hasPassword)}
 		<div class="srow" id="linked-me">
-			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span></div>
+			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="Matched by account ID, never by email">Matched by account ID, never by email</span></div>
 			<div class="ctl">{#if !linkOpen && (hasLinkWay || session.s.hasPassword)}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
 			{#if plexMine?.linked}
 				<ul class="below my-links" data-testid="my-plex-link">
 					<li>
 						<span class="small">Plex{#if plexMine.name}, as {plexMine.name}{/if}</span>
 						{#if !session.s.hasPassword}
-							<span class="xs muted" data-testid="plex-needs-password">Set a HolyArrs password above to unlink or change it.</span>
+							<span class="xs muted" data-testid="plex-needs-password">Set a password above to unlink</span>
 						{:else if plexUnlinking}
 							<Confirm action="link" onCancel={() => (plexUnlinking = false)}>
 								<div class="row acts">
@@ -719,28 +726,28 @@
 	{/if}
 	{#if session.s.role === 'owner'}
 		<div class="srow">
-			<div class="txt"><span class="label">Locked out?</span><span class="hint">Run this on the HolyArrs machine.</span></div>
+			<div class="txt"><span class="label">Locked out?</span><span class="hint">Run this where HolyArrs runs.</span></div>
 			<div class="ctl"><code class="cmd">holyarrs reset-owner</code></div>
 		</div>
 	{/if}
 </SettingsCard>
 
-<SettingsCard id="alerts-me" title="Alerts" description="Asks always show on your Requests page; add email or Discord too." icon="bell">
+<SettingsCard id="alerts-me" title="Alerts" description="Requests always show on Requests. Add email or Discord too." icon="bell">
 	<form id="alerts-form" class="rows" onsubmit={saveTargets} novalidate>
 		<div class="srow">
-			<div class="txt"><label for="tg-email">Email</label><span class="hint">When the owner set up email.</span></div>
-			<div class="ctl"><input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" /></div>
+			<div class="txt"><label for="tg-email">Email</label><span class="hint">{emailReady ? 'Needs email set up by the owner' : 'Email Alerts aren’t set up'}</span></div>
+			<div class="ctl"><input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" placeholder="you@example.com" disabled={!emailReady && !targets.email} /></div>
 		</div>
 		<div class="srow">
-			<div class="txt"><label for="tg-discord">Discord user ID</label><span class="hint" title="In Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.">Developer Mode, then Copy User ID.</span></div>
-			<div class="ctl"><input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" /></div>
+			<div class="txt"><label for="tg-discord">Discord user ID</label><span class="hint" title="In Discord: Developer Mode, right-click your name, Copy User ID">Developer Mode, then Copy User ID.</span></div>
+			<div class="ctl"><input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" placeholder="e.g. 123456789012345678" /></div>
 		</div>
 		<div class="srow">
-			<div class="txt"><span class="label">New episodes</span><span class="hint">Of shows you asked for; at most hourly.</span></div>
+			<div class="txt"><span class="label">New episodes</span><span class="hint">Shows you requested, at most hourly</span></div>
 			<div class="ctl">
 				<label class="switch">
 					<input type="checkbox" bind:checked={targets.new_episodes} data-testid="new-episodes" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">New episodes of shows I asked for</span>
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">New episodes of shows I requested</span>
 				</label>
 			</div>
 		</div>
@@ -764,25 +771,25 @@
 </SettingsCard>
 
 {#if showWatchlistCard(watch) && watch}
-	<SettingsCard id="watchlist-me" title="Plex watchlist" description="Titles you add to your Plex watchlist are asked for as you." icon="requests">
+	<SettingsCard id="watchlist-me" title="Plex watchlist" description="Titles on your Plex watchlist become your requests" icon="requests">
 		{#if !watch.can_read}
-			<p class="hint" data-testid="watchlist-cannot-read">HolyArrs has no Plex sign-in saved for you yet, so your watchlist can’t be read.</p>
+			<p class="hint" data-testid="watchlist-cannot-read">Link Plex under Security to read your watchlist</p>
 		{/if}
 		<div class="srow">
-			<div class="txt"><span class="label">Movies</span><span class="hint">Asked like any of your asks; your weekly limit applies.</span></div>
+			<div class="txt"><span class="label">Movies</span><span class="hint">Your weekly Limit applies</span></div>
 			<div class="ctl">
 				<label class="switch">
 					<input type="checkbox" checked={watch.movies} disabled={watchBusy || (!watch.can_read && !watch.movies)} onchange={(e) => setWatch('movies', e.currentTarget.checked)} data-testid="watchlist-movies" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">Ask for movies on my Plex watchlist</span>
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">Request movies on my Plex watchlist</span>
 				</label>
 			</div>
 		</div>
 		<div class="srow">
-			<div class="txt"><span class="label">Shows</span><span class="hint">The whole show is asked for.</span></div>
+			<div class="txt"><span class="label">Shows</span><span class="hint">Requests the whole show</span></div>
 			<div class="ctl">
 				<label class="switch">
 					<input type="checkbox" checked={watch.shows} disabled={watchBusy || (!watch.can_read && !watch.shows)} onchange={(e) => setWatch('shows', e.currentTarget.checked)} data-testid="watchlist-shows" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">Ask for shows on my Plex watchlist</span>
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">Request shows on my Plex watchlist</span>
 				</label>
 			</div>
 		</div>
@@ -809,7 +816,7 @@
 	</SettingsCard>
 {/if}
 
-<SettingsCard id="sessions-me" title="Devices" description="Where you are signed in. Sign out any you don't know." icon="tv">
+<SettingsCard id="sessions-me" title="Devices" description="Sign out any you don't recognise" icon="tv">
 	<Sessions path="/auth/sessions" first={5} />
 </SettingsCard>
 </div>
@@ -844,7 +851,10 @@
 	.line .value { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lock { flex: none; display: grid; place-items: center; width: 24px; height: 24px; color: var(--text-faint); cursor: help; }
 	.dn { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-	.dn .input { flex: 1 1 200px; min-width: 0; min-height: 34px; }
+	.dn .input { flex: 1 1 200px; min-width: 0; }
+	/* One button height and one input height across My account, the Settings sizes. */
+	.acct :global(.ui-btn.ui-btn) { min-height: 32px; }
+	.acct :global(.input:not(textarea)) { height: 32px; min-height: 32px; padding-block: 0; }
 	code { font-family: var(--font-mono); color: var(--text); }
 	.acts { gap: 8px; flex-wrap: wrap; align-items: center; }
 	.pw, .tf, .tf-form { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -866,11 +876,15 @@
 	@media (prefers-reduced-motion: reduce) { .box { transition: none; } }
 	@media (max-width: 600px) {
 		.boxes { grid-template-columns: minmax(0, 1fr); }
-		.dn .input { flex-basis: 100%; min-height: 40px; }
+		.dn .input { flex-basis: 100%; }
 		.six { max-width: none; flex: 1; }
-		.acts > :global(.ui-btn) { min-height: 40px; }
 	}
-	@media (max-width: 600px) and (pointer: coarse) {
-		.acts > :global(.ui-btn) { min-height: 44px; }
+	@media (max-width: 600px) {
+		.acct :global(.ui-btn.ui-btn) { min-height: 40px; }
+		.acct :global(.input:not(textarea)) { height: 40px; min-height: 40px; }
+	}
+	@media (pointer: coarse) {
+		.acct :global(.ui-btn.ui-btn) { min-height: 44px; }
+		.acct :global(.input:not(textarea)) { height: 44px; min-height: 44px; }
 	}
 </style>

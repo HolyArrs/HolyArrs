@@ -142,7 +142,7 @@ test('Settings > Naming and files shows the episode patterns with live examples'
 	await page.getByRole('textbox', { name: 'Episode file name pattern' }).fill('{title} {quality}');
 	// The page shows one problem in one place (under Movie names); the examples point there.
 	await expect(page.getByRole('alert').filter({ hasText: 'must hold {episode}' })).toBeVisible();
-	await expect(ex).toContainText('No example yet');
+	await expect(ex).toContainText('See the error under Movie names');
 	await page.getByRole('textbox', { name: 'Episode file name pattern' }).fill('{title} - {episode} - {episode_title} {quality}');
 	await expect(ex).toContainText('Copper Valley - S01E02 - The Mill 1080p WEB.mkv');
 	await axe(page, 'naming with shows');

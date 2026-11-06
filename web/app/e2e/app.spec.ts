@@ -193,12 +193,12 @@ test('make and revoke an API key', async () => {
 	await expect(page.locator('code.key')).toContainText('hak_');
 	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Revoke' }).click();
-	await expect(page.getByText('No API keys yet.')).toBeVisible();
+	await expect(page.getByText('No API keys')).toBeVisible();
 });
 
 test('make a backup and see it listed', async () => {
 	await page.goto('/settings/backups');
-	await page.getByRole('button', { name: 'Make a backup now' }).click();
+	await page.getByRole('button', { name: 'Back up now' }).click();
 	await expect(page.getByRole('link', { name: 'Download' }).first()).toBeVisible();
 	await page.getByRole('radio', { name: /Careful/ }).check();
 	await expect(page.getByText('Backups: Careful.')).toBeVisible();

@@ -80,20 +80,20 @@
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<form class="sc-form" id="music-form" onsubmit={save} aria-label="Music defaults">
-		<SettingsCard id="new-artist" title="A new artist" description="What every artist you add gets, unless you choose otherwise when adding.">
+		<SettingsCard id="new-artist" title="A new artist" description="For new artists; you can override when adding">
 			<Field id="m-albums" label="Albums to keep up to date">
 				<select id="m-albums" class="input" bind:value={settings.album_choice}>
 					{#each albumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 				</select>
 				<span class="hint">{albumChoices.find(([v]) => v === settings.album_choice)?.[2]}</span>
 			</Field>
-			<Field id="m-new" label="New albums" hint="What happens when an artist you have puts out a new album.">
+			<Field id="m-new" label="New albums" hint="When an artist releases a new album">
 				<select id="m-new" class="input" bind:value={settings.new_albums}>
 					{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 				</select>
 			</Field>
 			<fieldset class="kinds" id="album-kinds" tabindex="-1">
-				<legend class="small"><b>Album kinds</b> <span class="hint">Albums of other kinds are listed but left out.</span></legend>
+				<legend class="small"><b>Album kinds</b> <span class="hint">Others are listed but not downloaded</span></legend>
 				<div class="boxes">
 					{#each mainKinds as [v, l] (v)}
 						<label class="box"><input type="checkbox" checked={settings.album_types.includes(v)} onchange={(e) => (settings.album_types = toggle(settings.album_types, v, e.currentTarget.checked, mainKinds))} /> {l}</label>
@@ -102,7 +102,7 @@
 			</fieldset>
 			{#snippet advanced()}
 				<fieldset class="kinds" id="extra-kinds" tabindex="-1">
-					<legend class="small"><b>Extra kinds</b> <span class="hint">An album with an extra kind, such as Live, needs it ticked.</span></legend>
+					<legend class="small"><b>Extra kinds</b> <span class="hint">Albums with these (e.g. Live) need them ticked</span></legend>
 					<div class="boxes">
 						{#each extraKinds as [v, l] (v)}
 							<label class="box"><input type="checkbox" checked={settings.secondary_types.includes(v)} onchange={(e) => (settings.secondary_types = toggle(settings.secondary_types, v, e.currentTarget.checked, extraKinds))} /> {l}</label>
@@ -110,7 +110,7 @@
 					</div>
 				</fieldset>
 				<fieldset class="kinds" id="pressing-statuses" tabindex="-1">
-					<legend class="small"><b>Pressings that count</b> <span class="hint">Only Pressings of these kinds are chosen.</span></legend>
+					<legend class="small"><b>Pressings that count</b></legend>
 					<div class="boxes">
 						{#each pressingStatuses as [v, l] (v)}
 							<label class="box"><input type="checkbox" checked={settings.release_statuses.includes(v)} onchange={(e) => (settings.release_statuses = toggle(settings.release_statuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>
@@ -125,15 +125,14 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="musicbrainz" title="MusicBrainz" description="Where artist and album details come from.">
-			<p class="hint">HolyArrs asks musicbrainz.org, at most once a second.</p>
+		<SettingsCard id="musicbrainz" title="MusicBrainz" description="Artist and album details, at most one lookup a second">
 			{#snippet advanced()}
 				<div class="field">
 					<label for="m-url">MusicBrainz address <span class="muted">(optional)</span></label>
 					<input id="m-url" class="input mono" bind:value={settings.musicbrainz_url} placeholder="https://musicbrainz.org" autocomplete="off" spellcheck="false" />
-					<span class="hint">Leave empty for musicbrainz.org. A mirror of your own works too.</span>
+					<span class="hint">Empty uses musicbrainz.org; mirrors work</span>
 				</div>
-				<Field id="m-hours" label="Keep answers for (hours)" hint="Answers are reused for this long before HolyArrs asks again.">
+				<Field id="m-hours" label="Cache answers for (hours)">
 					<input id="m-hours" class="input narrow" type="number" min="1" max="720" bind:value={settings.cache_hours} />
 				</Field>
 			{/snippet}

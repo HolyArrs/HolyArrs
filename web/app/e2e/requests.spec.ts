@@ -50,11 +50,11 @@ test.beforeAll(async ({ browser }) => {
 test('the owner adds a Discord Alert and sends a test', async () => {
 	await own.goto('/settings/alerts');
 	await expect(own.getByRole('heading', { level: 1, name: 'Alerts' })).toBeVisible();
-	await expect(own.getByText('No Alerts yet')).toBeVisible();
+	await expect(own.getByText('No Alerts')).toBeVisible();
 	await own.getByRole('button', { name: 'Add an Alert' }).first().click();
 	await own.getByLabel('Name', { exact: true }).fill('Family Discord');
 	await own.getByLabel('Discord link').fill(`http://127.0.0.1:${discordPort}/api/webhooks/1/stand-in`);
-	await own.getByLabel('May reach the local network').check();
+	await own.getByLabel('Reach the local network').check();
 	await own.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const row = own.getByTestId('alert');
 	await expect(row).toContainText('Family Discord');
@@ -82,7 +82,7 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await kim.goto('/account');
 	await kim.getByLabel('Discord user ID').fill(kimDiscord);
 	await kim.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(kim.getByText('Saved where Alerts reach you.')).toBeVisible();
+	await expect(kim.getByText('Alert settings saved')).toBeVisible();
 
 	await kim.goto('/requests');
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 10 movie asks left this week');
@@ -237,8 +237,8 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await expect(row.getByTestId('user-limits')).toContainText('1 movie ask of 10');
 	await row.getByRole('button', { name: 'Change kim' }).click();
 	const dlg = own.getByRole('dialog');
-	await expect(dlg.getByLabel('Show asks')).toHaveAttribute('placeholder', 'Default (10)');
-	await dlg.getByLabel('Movie asks').fill('1');
+	await expect(dlg.getByLabel('Show requests')).toHaveAttribute('placeholder', 'Default (10)');
+	await dlg.getByLabel('Movie requests').fill('1');
 	await dlg.getByRole('button', { name: 'Save' }).click();
 	await expect(row.getByTestId('user-limits')).toContainText('1 movie ask of 1 (own)');
 	await expect(row.getByTestId('user-limits')).toContainText('0 show asks of 10');

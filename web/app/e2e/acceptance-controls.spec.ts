@@ -18,7 +18,7 @@ test('the Downloaders Test button reaches the preserved lab qBittorrent with its
 	await page.getByRole('textbox', { name: 'API key', exact: true }).fill(key);
 	await page.getByText('More options').click();
 	await page.getByLabel('Category', { exact: true }).fill('holyarrs-acceptance');
-	await page.getByLabel('May reach the local network').check();
+	await page.getByLabel('Reach the local network').check();
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 
 	const downloader = page.getByTestId('downloader').filter({ hasText: 'Preserved lab qBittorrent' });

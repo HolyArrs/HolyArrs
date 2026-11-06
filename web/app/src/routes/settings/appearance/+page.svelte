@@ -21,14 +21,13 @@
 
 <PageHeader title="Appearance" />
 
-<SettingsCard id="theme-card" title="Theme" description="Light, dark, or follow this device. The change shows straight away and is kept in this browser." icon="appearance">
+<SettingsCard id="theme-card" title="Theme" description="Saved in this browser" icon="appearance">
 	<div id="theme" tabindex="-1">
 		<SegmentedControl label="Theme" options={themes} bind:value={themeChoice} onchange={(v) => setTheme(v)} />
 	</div>
-	<p class="hint">Automatic turns dark when this device does, for example at night.</p>
 </SettingsCard>
 
-<SettingsCard id="ratings-card" title="Ratings" description="Which ratings movie and show pages show. Three read at a glance: viewers on IMDb, then critics and viewers on Rotten Tomatoes. Kept in this browser." icon="star">
+<SettingsCard id="ratings-card" title="Ratings" description="Up to three, beside the year on title pages" icon="star">
 	<ul class="picks" id="ratings" tabindex="-1">
 		{#each RATING_SOURCES as r (r.id)}
 			<li>
@@ -40,11 +39,10 @@
 			</li>
 		{/each}
 	</ul>
-	<p class="hint">Up to three, shown next to the year at the top of a title page; every source is listed in Ratings at the bottom. Turn them all off for no scores at the top. While you keep the default three, a title missing one shows the next score it has instead.</p>
-	{#if !isDefault}<Button variant="plain" size="sm" onclick={resetRatingPicks}>Back to the default three</Button>{/if}
+	{#if !isDefault}<Button variant="plain" size="sm" onclick={resetRatingPicks}>Reset</Button>{/if}
 </SettingsCard>
 
-<SettingsCard id="about-card" title="About on title pages" description="Which lines the About section at the bottom of movie and show pages shows. Kept short by default; year, length, age rating and genres are already at the top. Kept in this browser." icon="info">
+<SettingsCard id="about-card" title="About on title pages" description="Lines in the About section of title pages" icon="info">
 	{#each aboutGroups as g (g)}
 		<h3 class="grp">{g}</h3>
 		<ul class="picks">
@@ -59,11 +57,10 @@
 			{/each}
 		</ul>
 	{/each}
-	{#if !aboutIsDefault()}<Button variant="plain" size="sm" onclick={resetAboutPicks}>Back to the defaults</Button>{/if}
+	{#if !aboutIsDefault()}<Button variant="plain" size="sm" onclick={resetAboutPicks}>Reset</Button>{/if}
 </SettingsCard>
 
-<SettingsCard id="motion-card" title="Motion" description="HolyArrs follows this device's own Reduce motion setting: when it is on, screens change without sliding or growing.">
-	<p class="hint">Change it in your device's accessibility settings.</p>
+<SettingsCard id="motion-card" title="Motion" description="Follows your device's Reduce motion setting">
 </SettingsCard>
 
 <style>

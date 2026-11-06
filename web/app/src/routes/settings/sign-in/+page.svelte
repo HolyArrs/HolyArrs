@@ -123,7 +123,7 @@
 		}
 	}
 	async function unlinkPlex() {
-		if (!confirm('Unlink your Plex account? HolyArrs forgets the Plex key it kept for importing people.')) return;
+		if (!confirm('Unlink Plex? People import stops working.')) return;
 		try {
 			plexOwner = await api.del<{ linked: boolean; name: string; can_import: boolean }>('/auth/plex/link');
 			plexServers = [];
@@ -414,12 +414,12 @@
 				Devices on the networks below open HolyArrs as the owner, without a password. With family or friends on the same
 				network, leave this off: they would get the owner's rights too.
 			</p>
-			<p class="hint">Changing keys and passwords still needs a real sign-in.</p>
+			<p class="hint">Keys and passwords still need a sign-in</p>
 			<form class="nets" onsubmit={saveNets}>
-				<Field id="local-nets" label="Local networks, one per line" hint="Like 192.168.1.0/24, or one address like 192.168.1.20. Up to 32.">
+				<Field id="local-nets" label="Local networks, one per line" hint="e.g. 192.168.1.0/24 or 192.168.1.20. Up to 32.">
 					<textarea id="local-nets" class="input" rows="3" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
 				</Field>
-				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save networks</Button>
+				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save</Button>
 			</form>
 			{#if seenAddress}<p class="hint" data-testid="seen-address">HolyArrs sees this browser as <span class="mono">{seenAddress}</span>.</p>{/if}
 			{#if proxyUntrusted}<p class="hint" data-testid="proxy-untrusted">
@@ -464,7 +464,7 @@
 				{#if isOwner}
 					<Button variant="primary" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</Button>
 				{:else}
-					<p class="hint">Only the owner can change this.</p>
+					<p class="hint">Owner only</p>
 				{/if}
 			</fieldset>
 		</form>
@@ -492,7 +492,7 @@
 								<p class="small">Linked to the Plex account <b>{plexOwner.name}</b>.</p>
 								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>Unlink</Button>{/if}
 							{:else}
-								<p class="small muted">Link your own Plex account to pick your server from a list and import the people you share it with.</p>
+								<p class="small muted">Link Plex to pick your server and import its people</p>
 							{/if}
 							{#if isOwner}
 								<Button type="button" onclick={linkPlex} disabled={linking} aria-busy={linking}>{plexOwner.linked ? 'Link again' : 'Link my Plex account'}</Button>
@@ -502,14 +502,14 @@
 						{#if plexServers.length}
 							<Field id="{w}-pick" label="Server people must share">
 								<select id="{w}-pick" class="input" bind:value={ways[w].server_id}>
-									<option value="">Any server (no share check)</option>
+									<option value="">Any server</option>
 									{#each plexServers as sv (sv.id)}<option value={sv.id}>{sv.name}</option>{/each}
 								</select>
 							</Field>
 						{/if}
 						<details class="adv">
-							<summary class="small">Advanced: type the server id</summary>
-							<Field id="{w}-server" label="Server id people must share (optional)" hint="Your Plex server's machine identifier. When set, only people your server is shared with may join.">
+							<summary class="small">Type the server ID</summary>
+							<Field id="{w}-server" label="Server id people must share (optional)" hint="Only people it's shared with can join">
 								<input id="{w}-server" class="input mono" bind:value={ways[w].server_id} maxlength="200" spellcheck="false" />
 							</Field>
 						</details>
@@ -521,11 +521,11 @@
 							</div>
 						</Field>
 						{#if tested[w]}{@const t = tested[w]}<div class="testline" data-testid="{w}-tested"><TestTag ok={t.ok} text={t.text} app={t.app} />{#if !t.ok}<span class="small bad-text">{t.text}</span>{/if}</div>
-						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested yet. Save runs the test; you can save even if it fails.</p>{/if}
+						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested. Saving tests it.</p>{/if}
 					{/if}
-					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Someone the server limits (a Plex managed user, a parental rating) joins as a Kid, up to PG. Change them on Users and roles.">
+					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members. Plex managed users join as Kid (up to PG).">
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
-							<option value="nobody">Nobody new; only people already linked</option>
+							<option value="nobody">Only people already linked</option>
 							<option value="list">Only the names or emails below</option>
 							<option value="everyone">Everyone {w === 'plex' ? 'with a Plex account (who shares the server, when set)' : `with an account on the ${wayWord[w]} server`}</option>
 						</select>
@@ -563,7 +563,7 @@
 			<Field id="allowed-hosts" label="Host names, one per line">
 				<textarea id="allowed-hosts" class="input" rows="3" bind:value={hostNames} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
 			</Field>
-			<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>Save host names</Button>
+			<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>Save</Button>
 		</form>
 	</SettingsCard>
 	{/if}
@@ -576,7 +576,7 @@
 	</SettingsCard>
 
 	<SettingsCard id="keys-card" title="API keys">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">For scripts and other apps. Send the key in the <code>X-Api-Key</code> header, never in an address.</p>
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send in the <code>X-Api-Key</code> header, never in an address</p>
 
 		{#if keysNote}
 			<p class="notice warn">{keysNote}</p>
@@ -587,19 +587,19 @@
 					<div class="row">
 						<code class="key grow">{fresh.key}</code>
 						<Button icon="copy" type="button" onclick={copy}>Copy</Button>
-						<Button variant="plain" type="button" onclick={() => (fresh = null)}>Done</Button>
+						<Button variant="plain" type="button" onclick={() => (fresh = null)}>Close</Button>
 					</div>
 				</div>
 			{/if}
 
 			<form class="row" onsubmit={makeKey}>
 				<label class="sr-only" for="key-label">Key name</label>
-				<input id="key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="What uses this key?" maxlength="64" />
+				<input id="key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="e.g. Home Assistant" maxlength="64" />
 				<Button icon="key" variant="primary" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make a key</Button>
 			</form>
 
 			{#if keys.length === 0}
-				<p class="small muted" style="margin-top: var(--s-4)">No API keys yet.</p>
+				<p class="small muted" style="margin-top: var(--s-4)">No API keys</p>
 			{:else}
 				<ul class="rows" style="margin-top: var(--s-3)">
 					{#each keys as k (k.id)}
@@ -628,9 +628,9 @@
 	{:else if !candidates}
 		{#if !importNote}<SkSettings rows={3} />{/if}
 	{:else if candidates.length === 0}
-		<p class="small muted">Nobody to import: the server lists no one else.</p>
+		<p class="small muted">No one to import</p>
 	{:else}
-		<p class="small muted">Nothing is made until you press Import. People join as Members who may ask for titles; Kid means asks only, rated PG or lower. Server admins do not become HolyArrs admins.</p>
+		<p class="small muted">People join as Members. Kid is PG or lower. Server admins stay Members.</p>
 		<ul class="rows imp-list">
 			{#each candidates as p (p.id)}
 				<li>

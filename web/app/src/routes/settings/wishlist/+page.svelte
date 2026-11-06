@@ -42,9 +42,9 @@
 	const musicFolders = $derived(folders.filter((f) => f.kind === 'music'));
 	const musicRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('music')));
 	const kinds = [
-		{ key: 'movies_per_week', id: 'per-week-movies', label: 'Movie asks', hint: 'One movie is one ask.' },
-		{ key: 'shows_per_week', id: 'per-week-shows', label: 'Show asks', hint: 'A show ask counts as one, whatever its seasons.' },
-		{ key: 'music_per_week', id: 'per-week-music', label: 'Music asks', hint: 'An artist or album ask counts as one, whatever its albums.' }
+		{ key: 'movies_per_week', id: 'per-week-movies', label: 'Movie requests', hint: '' },
+		{ key: 'shows_per_week', id: 'per-week-shows', label: 'Show requests', hint: 'Any number of seasons counts as one' },
+		{ key: 'music_per_week', id: 'per-week-music', label: 'Music requests', hint: 'An artist or album counts as one' }
 	] as const;
 
 	async function load() {
@@ -104,45 +104,44 @@
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Request rules">
-		<SettingsCard id="weekly-limits" title="Weekly limits" description="How many asks each person may make in 7 days.">
+		<SettingsCard id="weekly-limits" title="Weekly Limits" description="Per person, per 7 days">
 			<fieldset class="kinds">
-				<legend class="sr-only">Asks each person may make in 7 days</legend>
 				<div class="kind-row">
 					{#each kinds as k (k.key)}
 						<div class="field">
 							<label for={k.id}>{k.label}</label>
-							<input id={k.id} class="input narrow" type="number" min="0" max="1000" required bind:value={settings[k.key]} aria-describedby="{k.id}-hint" />
-							<span id="{k.id}-hint" class="hint">{k.hint}</span>
+							<input id={k.id} class="input narrow" type="number" min="0" max="1000" required bind:value={settings[k.key]} aria-describedby={k.hint ? `${k.id}-hint` : undefined} />
+							{#if k.hint}<span id="{k.id}-hint" class="hint">{k.hint}</span>{/if}
 						</div>
 					{/each}
 				</div>
 				<span class="hint">
 					These are the defaults; give one person their own limits on the
 					{#if session.can('users')}<a href={to(`/settings/users`)}>Users and roles</a>{:else}Users and roles{/if} page. 0 means no limit. People who may approve
-					have no limit. Taking an ask back or a turned down ask frees it up; joining someone else's ask costs nothing.
+					have no limit. Taking a request back or a turned down request frees it up; joining someone else's request costs nothing.
 				</span>
 			</fieldset>
 		</SettingsCard>
-		<SettingsCard id="approved-asks" title="Approved asks" description="Where an approved ask goes, and whether the search starts straight away.">
-			<Field id="ask-folder" label="Library folder for approved movie asks">
+		<SettingsCard id="approved-asks" title="Approved requests">
+			<Field id="ask-folder" label="Movie folder">
 				<select id="ask-folder" class="input" bind:value={settings.library_folder_id}>
-					<option value={0}>The first movie folder</option>
+					<option value={0}>First movie folder</option>
 					{#each movieFolders as f (f.id)}
 						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
 				</select>
 			</Field>
-			<Field id="ask-show-folder" label="Library folder for approved show asks">
+			<Field id="ask-show-folder" label="Show folder">
 				<select id="ask-show-folder" class="input" bind:value={settings.show_library_folder_id}>
-					<option value={0}>The first show folder</option>
+					<option value={0}>First show folder</option>
 					{#each showFolders as f (f.id)}
 						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
 				</select>
 			</Field>
-			<Field id="ask-music-folder" label="Library folder for approved music asks" hint="An approved artist or album ask is added to this folder, with only the albums asked for kept up to date.">
+			<Field id="ask-music-folder" label="Music folder" hint="Only requested albums are kept up to date">
 				<select id="ask-music-folder" class="input" bind:value={settings.music_library_folder_id}>
-					<option value={0}>The first music folder</option>
+					<option value={0}>First music folder</option>
 					{#each musicFolders as f (f.id)}
 						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
@@ -150,10 +149,10 @@
 			</Field>
 			<label class="checkline">
 				<input id="search-approved" type="checkbox" bind:checked={settings.search_on_approve} />
-				<span><b>Search when approved</b><br /><span class="hint">Start looking for a Release as soon as a movie ask is approved. Approved shows are looked for at the next feed check and each night.</span></span>
+				<span><b>Search when approved</b><br /><span class="hint">Movies search at once; shows at the next feed check</span></span>
 			</label>
 			{#snippet advanced()}
-				<Field id="ask-rules" label="Pick rules for approved movie asks" hint="Whoever approves can pick another folder and Pick rules for one ask.">
+				<Field id="ask-rules" label="Movie Pick rules" hint="Approvers can override per request">
 					<select id="ask-rules" class="input" bind:value={settings.pick_rules_id}>
 						<option value={0}>The folder's own Pick rules</option>
 						{#each movieRules as r (r.id)}
@@ -161,7 +160,7 @@
 						{/each}
 					</select>
 				</Field>
-				<Field id="ask-show-rules" label="Pick rules for approved show asks" hint="Which Releases an approved show takes.">
+				<Field id="ask-show-rules" label="Show Pick rules">
 					<select id="ask-show-rules" class="input" bind:value={settings.show_pick_rules_id}>
 						<option value={0}>The folder's own Pick rules</option>
 						{#each showRules as r (r.id)}
@@ -169,7 +168,7 @@
 						{/each}
 					</select>
 				</Field>
-				<Field id="ask-music-rules" label="Pick rules for approved music asks" hint="Which Releases an approved artist or album takes.">
+				<Field id="ask-music-rules" label="Music Pick rules">
 					<select id="ask-music-rules" class="input" bind:value={settings.music_pick_rules_id}>
 						<option value={0}>The folder's own Pick rules</option>
 						{#each musicRules as r (r.id)}
@@ -179,10 +178,10 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="plex-watchlists" title="Plex watchlists" description="New titles on a person's Plex watchlist become their asks.">
+		<SettingsCard id="plex-watchlists" title="Plex watchlists" description="Watchlisted titles become requests">
 			<label class="checkline">
 				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
-				<span><b>Ask from Plex watchlists</b><br /><span class="hint">Each person with a linked Plex account turns it on for themselves in My account. Their weekly limits, auto-approve and age-rating limits apply as for any ask. HolyArrs reads the newest 20 entries every few minutes.</span></span>
+				<span><b>Request from Plex watchlists</b><br /><span class="hint">Each person turns it on in My account. Their Limits apply.</span></span>
 			</label>
 		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}

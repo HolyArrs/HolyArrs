@@ -125,7 +125,7 @@
 	}
 
 	async function remove(f: LibraryFolder) {
-		if (!confirm(`Remove the Library folder ${f.path}? The files in it stay where they are.`)) return;
+		if (!confirm(`Remove ${f.path}? Files stay on disk.`)) return;
 		busyId = f.id;
 		try {
 			await api.del(`/library-folders/${f.id}`);
@@ -150,10 +150,10 @@
 {#if adding}
 	<form class="sc-form" onsubmit={add} aria-label="Add a Library folder">
 		<SettingsCard title="Add a Library folder">
-			<Field id="lf-kind" label="Holds" hint="Movies, shows and music each get their own folders.">
+			<Field id="lf-kind" label="Holds" hint="Each kind needs its own folder">
 				<select id="lf-kind" class="input" bind:value={kind}>
 					<option value="movie">Movies</option>
-					<option value="show">TV shows</option>
+					<option value="show">Shows</option>
 					<option value="music">Music</option>
 				</select>
 			</Field>
@@ -162,11 +162,11 @@
 			</Field>
 			<div class="field">
 				<label for="lf-label">Name <span class="muted">(optional)</span></label>
-				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'TV shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
+				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'Shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
 			</div>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Add and check</Button>
+				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Add</Button>
 				<Button variant="plain" type="button" onclick={() => ((adding = false), (formError = ''))}>Cancel</Button>
 			</div>
 		</SettingsCard>
@@ -178,7 +178,7 @@
 {:else if error}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if folders.length === 0 && !adding}
-	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder where your movies live, for example /movies, and one for shows, for example /shows. HolyArrs needs one before it can add a movie or a show." action={{ label: 'Add a folder', icon: 'plus', onclick: () => (adding = true) }} />
+	<EmptyState icon="folder" title="No Library folders" text="Add the folder where your movies live, for example /movies, and one for shows, for example /shows. HolyArrs needs one before it can add a movie or a show." action={{ label: 'Add a folder', icon: 'plus', onclick: () => (adding = true) }} />
 {:else if folders.length}
 	<ul class="card rows">
 		{#each folders as f (f.id)}
@@ -215,8 +215,8 @@
 
 {#if extraLoaded}
 	<form class="sc-form extra" onsubmit={saveExtra} aria-label="Extra import folders">
-		<SettingsCard id="import-folders" title="Extra import folders" description="Import files by hand reads only from Library folders, Downloader folders and these.">
-			<Field id="if-paths" label="Folders" hint="One full path per line, as HolyArrs sees it, such as /data/imports. Up to 32." error={extraError}>
+		<SettingsCard id="import-folders" title="Extra import folders" description="Import can also read from these">
+			<Field id="if-paths" label="Folders" hint="One path per line, e.g. /data/imports. Up to 32." error={extraError}>
 				<textarea id="if-paths" class="input mono" rows="3" bind:value={extraText} placeholder="/data/imports" autocomplete="off" spellcheck="false" readonly={!canSaveExtra}></textarea>
 			</Field>
 			{#if canSaveExtra}
@@ -224,7 +224,7 @@
 					<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>Save</Button>
 				</div>
 			{:else}
-				<p class="hint">Only the owner or an admin can change these.</p>
+				<p class="hint">Owner and admins only</p>
 			{/if}
 		</SettingsCard>
 	</form>

@@ -130,7 +130,7 @@
 	}
 
 	async function remove(b: BackupInfo) {
-		if (!confirm(`Delete the backup ${b.name}? This cannot be undone.`)) return;
+		if (!confirm(`Remove ${b.name}? This can't be undone.`)) return;
 		try {
 			await api.del(`/backups/${encodeURIComponent(b.name)}`);
 			backups = backups.filter((x) => x.name !== b.name);
@@ -143,7 +143,7 @@
 	async function restore(e: Event) {
 		const file = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!file) return;
-		if (!confirm(`Restore from ${file.name}? HolyArrs checks the file, then restarts and puts it in place. Changes made since that backup are lost.`)) {
+		if (!confirm(`Restore ${file.name}? HolyArrs restarts. Changes since then are lost.`)) {
 			(e.currentTarget as HTMLInputElement).value = '';
 			return;
 		}
@@ -163,10 +163,10 @@
 
 <svelte:head><title>Backups and restore · HolyArrs</title></svelte:head>
 
-<PageHeader title="Backups and restore">
+<PageHeader title="Backups">
 	{#snippet actions()}
 		{#if loaded && !missing}
-		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>Make a backup now</Button>
+		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>Back up now</Button>
 		{/if}
 	{/snippet}
 </PageHeader>
@@ -181,12 +181,12 @@
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if waiting}
 		<p class="notice warn" role="status" style="margin-bottom: var(--s-4)">
-			<Icon name="info" size={18} /><span>A restore is checked and waiting. HolyArrs puts it in place the next time it starts.</span>
+			<Icon name="info" size={18} /><span>Restore ready. It applies on the next start.</span>
 		</p>
 	{/if}
 
 	{#if keyKit?.fingerprint}
-		<SettingsCard id="backup-key" title="Master key" description="Backups do not hold the key that opens saved passwords and API keys. Keep a copy of it.">
+		<SettingsCard id="backup-key" title="Master key" description="Backups don't include this key. Keep a copy somewhere safe.">
 			{#if keyKit.needed}
 				<p class="notice warn" role="status">
 					<Icon name="info" size={18} /><span
@@ -202,7 +202,7 @@
 				{/if}
 			</div>
 			{#if session.s.role === 'owner'}
-				<p class="xs muted keynote">To put it back, rename the file to holyarrs.key and place it in the config folder.</p>
+				<p class="xs muted keynote">To restore: rename to holyarrs.key, put in the config folder</p>
 			{/if}
 		</SettingsCard>
 	{/if}
@@ -228,7 +228,7 @@
 			</label>
 		</div>
 		{#if backups.length === 0}
-			<p class="small muted">No backups yet. The first one is made on schedule, or press Make a backup now.</p>
+			<p class="small muted">No backups</p>
 		{:else}
 			<ul class="rows">
 				{#each backups as b (b.name)}

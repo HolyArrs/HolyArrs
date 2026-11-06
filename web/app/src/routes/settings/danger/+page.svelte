@@ -58,7 +58,7 @@
 <PageHeader title="Danger zone" />
 
 {#if !allowed}
-	<p class="notice warn">Only the owner and admins can use these controls.</p>
+	<p class="notice warn">Owner and admins only</p>
 {:else if gone}
 	<p class="notice warn" role="status" data-testid="app-gone">{gone}</p>
 {:else}
@@ -70,7 +70,7 @@
 				<Button variant="destructive" id="confirm-yes" type="button" onclick={confirmNow} disabled={busy === asking.key} aria-busy={busy === asking.key}>Yes, {asking.label.toLowerCase()}</Button>
 				<Button variant="plain" type="button" onclick={() => (asking = null)}>Cancel</Button>
 			</div>
-			<p class="xs muted">This question lasts 60 seconds.</p>
+			<p class="xs muted">Expires in 60 s</p>
 		</div>
 	{/if}
 
@@ -85,7 +85,7 @@
 				<Button type="button" onclick={() => app('safe-mode', 'Restart in safe mode')} disabled={!!busy}>Restart in safe mode</Button>
 				<Button variant="destructive" type="button" onclick={() => app('shutdown', 'Shut down')} disabled={!!busy}>Shut down</Button>
 			</div>
-			<p class="xs muted">Safe mode starts only the core, once: sign-in, settings and the Library list. Use it when a part keeps breaking the start.</p>
+			<p class="xs muted">Starts once with only sign-in, Settings and Library. Use it when a Part blocks startup.</p>
 		</SettingsCard>
 	</div>
 {/if}

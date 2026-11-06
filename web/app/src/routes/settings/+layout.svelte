@@ -9,7 +9,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { filterSections, grouped, sectionFor, sections as all, visible } from '#lib/settings.ts';
+	import { filterSections, grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
@@ -49,6 +49,11 @@
 	const current = $derived(appPath(page.url.pathname));
 	const home = $derived(current === '/settings');
 	const currentSection = $derived(sectionFor(sections, current));
+	// A direct link to a page this person may not open gets a note, not a bounce.
+	const blocked = $derived.by(() => {
+		const sec = sectionFor(all, current);
+		return !!sec && !mayOpen(sec, session.can);
+	});
 	const currentGroup = $derived(groups.find((g) => g.group.id === currentSection?.group));
 	const status = $derived(settingsNow.answer && currentSection ? pageState(settingsNow.answer, currentSection.href) : null);
 	// The current group is open; a heading opens another.
@@ -162,7 +167,7 @@
 			</a>
 		{/if}
 		{#if find.trim() && !firstShown}
-			<p class="nav-none">No page is called that. <a href={to('/settings') + '?q=' + encodeURIComponent(find.trim())} onclick={() => (find = '')}>Search every setting</a></p>
+			<p class="nav-none">No matching page <a href={to('/settings') + '?q=' + encodeURIComponent(find.trim())} onclick={() => (find = '')}>Search every setting</a></p>
 		{/if}
 	</nav>
 	<div class="settings-workspace">
@@ -173,16 +178,20 @@
 			</div>
 		{/if}
 		<div class="settings-content">
-			{#if reauth && !session.s.hasPassword}
-				<SettingsCard id="settings-reauth" title="Set a password first" description="This touches keys, passwords, people or backups, so HolyArrs asks for your HolyArrs password. You sign in another way and have none yet." icon="shield">
+			{#if blocked}
+				<SettingsCard id="settings-blocked" title="You can't change this" icon="shield">
+					<div><Button href={to('/settings')}>Back to Settings</Button></div>
+				</SettingsCard>
+			{:else if reauth && !session.s.hasPassword}
+				<SettingsCard id="settings-reauth" title="Set a password first" description="Keys, passwords, people and backups need a HolyArrs password. You don't have one yet." icon="shield">
 					<div><Button variant="primary" href={to('/account')}>Set a password</Button></div>
 				</SettingsCard>
 			{:else if reauth}
-				<SettingsCard id="settings-reauth" title="Confirm your password" description="This touches keys, passwords, people or backups, so HolyArrs asks for your password again. It then won't ask for 10 minutes." icon="shield">
+				<SettingsCard id="settings-reauth" title="Confirm your password" description="Keys, passwords, people and backups need your password. Good for 10 minutes." icon="shield">
 					<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>
 			{/if}
-			{#if reauth !== 'load'}
+			{#if !blocked && reauth !== 'load'}
 				{#key pageKey}{@render children()}{/key}
 			{/if}
 		</div>

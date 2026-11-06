@@ -147,7 +147,7 @@
 		saving = true;
 		try {
 			enabled = (await api.put<{ enabled: boolean }>('/settings/ai', { enabled: v })).enabled;
-			toasts.push(enabled ? 'AI connections are on.' : 'AI connections are off.', 'ok');
+			toasts.push(enabled ? 'AI apps are on.' : 'AI apps are off.', 'ok');
 		} catch (e) {
 			enabled = before;
 			toasts.push(message(e), 'fail');
@@ -262,7 +262,7 @@
 			<div class="fresh-row">
 				<code class="key grow">{fresh.key}</code>
 				<Button icon="copy" type="button" onclick={() => fresh && copy(fresh.key)}>Copy</Button>
-				<Button variant="plain" type="button" onclick={doneWithKey}>Done</Button>
+				<Button variant="plain" type="button" onclick={doneWithKey}>Close</Button>
 			</div>
 		</div>
 	{/if}
@@ -316,7 +316,7 @@
 				</ol>
 				{#if app.clientIdHelper}
 					<form class="client-id" onsubmit={makeClientID} data-testid="ai-client-id" novalidate>
-						<p class="small">Gemini doesn't register itself, so HolyArrs makes a client ID for it.</p>
+						<p class="small">Gemini needs a client ID</p>
 						<label class="label" for="ai-redirect">Gemini's redirect URI</label>
 						<div class="keyrow">
 							<input
@@ -341,7 +341,7 @@
 								<pre>{clientID}</pre>
 								<Button icon="copy" size="sm" type="button" aria-label="Copy client ID" onclick={() => copy(clientID)}>Copy</Button>
 							</div>
-							<p class="small">Paste it into Gemini, leave the client secret empty and press <b>Next</b>.</p>
+							<p class="small">Paste into Gemini, leave the secret empty, press <b>Next</b></p>
 						{/if}
 					</form>
 				{/if}
@@ -353,16 +353,16 @@
 	{/if}
 {/snippet}
 
-<svelte:head><title>AI connections · HolyArrs</title></svelte:head>
+<svelte:head><title>AI apps · HolyArrs</title></svelte:head>
 
-<PageHeader title="AI connections" />
+<PageHeader title="AI apps" />
 
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else if error}
 	<LoadError hasData={false} message={error} onretry={load} busy={false} />
 {:else}
-	<SettingsCard id="ai-switch" title="AI connections">
+	<SettingsCard id="ai-switch" title="AI apps">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-3)">
 			AI apps like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and ask for titles for you. They can only do what you allow,
 			and every request they make shows in History.
@@ -374,8 +374,8 @@
 		</label>
 		{#if !isOwner}<p class="hint">Only the owner can turn this on or off.</p>{/if}
 		<ul class="facts small muted">
-			<li>An AI app acts as you, so your permissions and request limits apply.</li>
-			<li>Before it asks for a title, the AI app checks with you. Approving requests stays with people, on the Requests page.</li>
+			<li>AI apps act as you, with your permissions and Limits</li>
+			<li>AI apps check with you before requesting. Only people approve.</li>
 			<li>At most 60 calls a minute and 5 requests an hour per app.</li>
 		</ul>
 	</SettingsCard>
@@ -386,7 +386,7 @@
 			<code class="addr grow" data-testid="ai-address">{url}</code>
 			<Button icon="copy" size="sm" type="button" aria-label="Copy AI address" onclick={() => copy(url)}>Copy</Button>
 		</div>
-		<p class="xs muted">This address shows an error in a browser. That's normal, because only AI apps use it.</p>
+		<p class="xs muted">Shows an error in a browser; that's expected</p>
 		{#if !enabled}<p class="notice warn"><span>Turn on <b>Let AI apps connect</b> above first. Until then, AI apps get "not found".</span></p>{/if}
 		<p class="small muted mode" data-testid="ai-mode">
 			{#if signIn}
@@ -412,7 +412,7 @@
 					</p>
 				</li>
 			</ol>
-			<p class="small muted">Claude, ChatGPT, Gemini, Grok and Perplexity connect from the cloud, so they need HolyArrs at a public https address.</p>
+			<p class="small muted">Cloud AI apps (Claude, ChatGPT, Gemini, Grok, Perplexity) need a public https address</p>
 			<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">Only on your home network?</a>
 		</section>
 
@@ -454,13 +454,13 @@
 
 		<section class="part" aria-labelledby="ai-agent-h">
 			<h3 class="h3" id="ai-agent-h">Or let your agent do it</h3>
-			<p class="small">Using Claude Code, Codex, Cursor or another agent? Paste this into it.</p>
+			<p class="small">Paste this into Claude Code, Codex, Cursor or another agent</p>
 			<div class="codebox">
 				<pre data-testid="ai-prompt">{prompt}</pre>
 				<Button icon="copy" size="sm" type="button" onclick={() => copy(prompt)}>Copy prompt</Button>
 			</div>
 			{#if promptKey}
-				<p class="xs muted">This prompt has your key in it. Paste it only into your own agent.</p>
+				<p class="xs muted">Contains your key. Paste only into your own agent.</p>
 			{:else if !signIn}
 				<p class="xs muted">Press <b>Make a key</b> first to put your key in the prompt.</p>
 			{/if}
@@ -473,11 +473,11 @@
 				<pre>{CHECK_QUESTION}</pre>
 				<Button icon="copy" size="sm" type="button" onclick={() => copy(CHECK_QUESTION)}>Copy question</Button>
 			</div>
-			<p class="xs muted">If it lists your downloads, or says nothing is downloading, you're connected.</p>
+			<p class="xs muted">Any answer about downloads means it works</p>
 		</section>
 	</SettingsCard>
 
-	<SettingsCard id="ai-keys" title="Connected apps">
+	<SettingsCard id="ai-keys" title="Linked AI apps">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Each app that signs in or uses a key shows here. Revoke it to disconnect the app.</p>
 		{#if keysNote}
 			<p class="notice warn">{keysNote}</p>
@@ -485,7 +485,7 @@
 			<!-- A key made for the open app shows in its steps instead. -->
 			{#if fresh && !(app && fresh.app === app.id)}{@render freshBox()}{/if}
 			{#if aiKeys.length === 0}
-				<p class="small muted">No AI apps yet. Connect one above and it shows here.</p>
+				<p class="small muted">No AI apps linked</p>
 			{:else}
 				<ul class="rows">
 					{#each aiKeys as k (k.id)}
@@ -503,14 +503,14 @@
 				<summary bind:this={byHand}>Make a key by hand</summary>
 				<form class="row" onsubmit={makeKey}>
 					<label class="sr-only" for="ai-key-label">Key name</label>
-					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="Which AI app? (for example Claude Desktop)" maxlength="64" />
+					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="For example, Claude Desktop" maxlength="64" />
 					<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make an AI key</Button>
 				</form>
 			</details>
 		{/if}
 	</SettingsCard>
 
-	<Sheet bind:open={revokeOpen} size="sm" title={revoking ? `Revoke ${revoking.label}?` : 'Revoke'} description="It stops working until you connect it again.">
+	<Sheet bind:open={revokeOpen} size="sm" title={revoking ? `Revoke ${revoking.label}?` : 'Revoke'} description="The app loses access until you link it again">
 		<div class="confirm-actions">
 			<Button variant="plain" type="button" onclick={() => (revokeOpen = false)}>Keep it</Button>
 			<Button variant="destructive" type="button" disabled={revokeBusy} onclick={() => revoking && void revoke(revoking)}>Revoke</Button>

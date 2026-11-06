@@ -57,7 +57,7 @@ test('search by another word, and the keyboard reaches the result', async () => 
 	await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
 	await page.goto('/settings');
 	await page.getByLabel('Search settings').fill('zebra crossing');
-	await expect(page.getByText('No settings match')).toBeVisible();
+	await expect(page.getByText('No matching settings')).toBeVisible();
 });
 
 test('the save bar shows only with a change; Discard puts it back', async () => {
@@ -76,7 +76,7 @@ test('the save bar shows only with a change; Discard puts it back', async () => 
 
 test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', async () => {
 	await page.goto('/settings/wishlist');
-	await page.getByLabel('Movie asks', { exact: true }).fill('7');
+	await page.getByLabel('Movie requests', { exact: true }).fill('7');
 	await expect(page.getByTestId('savebar')).toBeVisible();
 	// The side menu folds: open the Downloads group first.
 	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Downloads' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
@@ -86,7 +86,7 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await ask.getByRole('button', { name: 'Stay' }).click();
 	await expect(ask).toBeHidden();
 	await expect(page).toHaveURL(/\/settings\/wishlist$/);
-	await expect(page.getByLabel('Movie asks', { exact: true })).toHaveValue('7');
+	await expect(page.getByLabel('Movie requests', { exact: true })).toHaveValue('7');
 
 	// The side menu folds: open the Downloads group first.
 	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Downloads' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
@@ -94,12 +94,12 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
 	await expect(page.getByRole('heading', { name: 'Sources', level: 1 })).toBeVisible();
 	await page.goto('/settings/wishlist');
-	await expect(page.getByLabel('Movie asks', { exact: true })).not.toHaveValue('7');
+	await expect(page.getByLabel('Movie requests', { exact: true })).not.toHaveValue('7');
 });
 
 test('Save in the bar saves through the page form, with a toast', async () => {
 	await page.goto('/settings/wishlist');
-	const field = page.getByLabel('Movie asks', { exact: true });
+	const field = page.getByLabel('Movie requests', { exact: true });
 	const before = await field.inputValue();
 	await field.fill(String(Number(before) + 1));
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
@@ -134,7 +134,7 @@ test('Advanced starts closed and stays as the person left it', async () => {
 
 test('Movies and TV defaults: saved choices are where the add movie dialog starts', async () => {
 	await page.goto('/settings/title-defaults');
-	await expect(page.getByRole('heading', { name: 'Movies and TV defaults', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Movie and show defaults', level: 1 })).toBeVisible();
 	const movies = page.locator('#movie-defaults');
 	const folder = movies.getByLabel('Library folder');
 	await expect(folder).toHaveValue('0');
@@ -149,7 +149,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await movies.getByLabel('Search when added').uncheck();
 	const bar = page.getByTestId('savebar');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Movies and TV defaults saved.')).toBeVisible();
+	await expect(page.getByText('Movie and show defaults saved.')).toBeVisible();
 	await expect(bar).toHaveCount(0);
 	await page.reload();
 	await expect(movies.getByLabel('Library folder')).toHaveValue(first);
@@ -186,7 +186,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await movies.getByLabel('Keep up to date').check();
 	await movies.getByLabel('Search when added').check();
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Movies and TV defaults saved.').first()).toBeVisible();
+	await expect(page.getByText('Movie and show defaults saved.').first()).toBeVisible();
 	await expect(bar).toHaveCount(0);
 });
 
@@ -232,7 +232,7 @@ test('URL base: a saved path is cleaned, asks for a restart, and can be cleared'
 	await card.getByLabel('URL base').fill('holyarrs/');
 	await card.getByRole('button', { name: 'Save' }).click();
 	await expect(card.getByLabel('URL base')).toHaveValue('/holyarrs');
-	await expect(card.getByRole('status')).toContainText('Restart HolyArrs to use it');
+	await expect(card.getByRole('status')).toContainText('Needs a restart');
 	// Back to none so the tests after this one start the same way.
 	await card.getByLabel('URL base').fill('');
 	await card.getByRole('button', { name: 'Save' }).click();
@@ -268,7 +268,7 @@ test('Requests from Seerr and Overseerr: switch on, make a key shown once, remov
 
 	page.once('dialog', (d) => void d.accept());
 	await card.getByTestId('seerr-side-sonarr').getByRole('button', { name: 'Remove key' }).click();
-	await expect(card.getByTestId('seerr-side-sonarr')).toContainText('No key yet.');
+	await expect(card.getByTestId('seerr-side-sonarr')).toContainText('No key');
 	await card.getByTestId('seerr-on').uncheck();
 	await expect(card.getByTestId('seerr-side-sonarr')).toHaveCount(0);
 });

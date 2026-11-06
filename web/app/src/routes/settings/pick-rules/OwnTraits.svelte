@@ -117,13 +117,13 @@
 	}
 </script>
 
-<SettingsCard id="own-traits" title="Your traits" description="Words or release groups to look for in a Release. Pick rules can give them points, need them or never take them.">
+<SettingsCard id="own-traits" title="Your traits" description="Words or release groups to look for in Release names">
 	{#if error && !list}
 		<LoadError hasData={false} message={error} onretry={load} busy={loading} />
 	{:else if list}
 		{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 		{#if list.length === 0}
-			<EmptyState compact icon="star" title="No traits of your own yet" text="Make one for a word like a subtitle language, or for release groups you like or avoid." action={mayEdit ? { label: 'Make a trait', icon: 'plus', onclick: () => openSheet(null) } : undefined} />
+			<EmptyState compact icon="star" title="No traits of your own" text="Make one for a word like a subtitle language, or for release groups you like or avoid." action={mayEdit ? { label: 'Make a trait', icon: 'plus', onclick: () => openSheet(null) } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="own-traits">
 				{#each list as t (t.id)}
@@ -134,7 +134,7 @@
 						</span>
 						{#if mayEdit}<span class="acts">
 								<Button variant="plain" onclick={() => openSheet(t)}>Change</Button>
-								<Menu label="More for {t.name}" items={[{ label: 'Remove…', icon: 'trash', destructive: true, onselect: () => ((removing = t), (removeError = ''), (removeOpen = true)) }]} />
+								<Menu label="More for {t.name}" items={[{ label: 'Remove', icon: 'trash', destructive: true, onselect: () => ((removing = t), (removeError = ''), (removeOpen = true)) }]} />
 							</span>{/if}
 					</li>
 				{/each}
@@ -146,7 +146,7 @@
 
 <Sheet bind:open title={editing ? 'Change trait' : 'Make a trait'} description={editing?.name} size="sm">
 	<form id="own-trait-form" class="form" onsubmit={save} novalidate>
-		<Field id="ot-name" label="Name" hint="How Pick rules show it." error={errors.name}>
+		<Field id="ot-name" label="Name" error={errors.name}>
 			<input id="ot-name" class="input" maxlength="60" autocomplete="off" bind:value={name} aria-invalid={errors.name ? 'true' : undefined} aria-describedby={errors.name ? 'ot-name-error' : 'ot-name-hint'} />
 		</Field>
 		<div class="field">
@@ -154,7 +154,7 @@
 			<SegmentedControl options={matchChoices} bind:value={match} label="Look at" testid="ot-match" />
 			<span class="hint">{match === 'group' ? 'The release group, the name after the last dash, must be one of these words, or fit one of the patterns.' : 'The Release name must have one of these anywhere in it.'}</span>
 		</div>
-		<Field id="ot-terms" label={match === 'group' ? 'Release groups' : 'Words'} hint="One per line, any case. Write /pattern/ for a regular expression." error={errors.terms}>
+		<Field id="ot-terms" label={match === 'group' ? 'Release groups' : 'Words'} hint="One per line. /pattern/ for regex." error={errors.terms}>
 			<textarea id="ot-terms" class="input mono" rows="4" spellcheck="false" autocomplete="off" bind:value={termsText} placeholder={match === 'group' ? 'HOLYARRS' : 'NLSubs'} aria-invalid={errors.terms ? 'true' : undefined} aria-describedby={errors.terms ? 'ot-terms-error' : 'ot-terms-hint'}></textarea>
 		</Field>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
@@ -167,7 +167,7 @@
 
 <Sheet bind:open={removeOpen} title="Remove this trait?" description={removing?.name} size="sm">
 	<form id="remove-own-trait" onsubmit={remove}>
-		<p class="small">It is also taken out of every Pick rule that gives it points, needs it or never takes it.</p>
+		<p class="small">It's removed from every Pick rule too</p>
 		{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 	</form>
 	{#snippet footer()}

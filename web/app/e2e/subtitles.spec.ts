@@ -99,7 +99,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await page.getByText('Limits').click();
 	await page.getByLabel('Wait between calls (ms)').fill('10');
 	await page.getByLabel('Calls per window, at most').fill('5000');
-	await page.getByLabel(/May reach the local network/).check();
+	await page.getByLabel(/Reach the local network/).check();
 	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const lab = page.getByTestId('subtitle-site').filter({ hasText: 'Lab subtitle site' }).first();
 	await expect(lab.getByTestId('subtitle-site-state')).toHaveText('On');
@@ -113,7 +113,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	const key = page.getByTestId('site-account').getByLabel('API key');
 	await expect(key).toHaveAttribute('type', 'password');
 	await page.getByRole('textbox', { name: 'Address' }).fill(siteURL);
-	await page.getByLabel(/May reach the local network/).check();
+	await page.getByLabel(/Reach the local network/).check();
 	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('needs your account');
 	await key.fill('xxxx-xxxx');
@@ -301,10 +301,13 @@ test('members see none of it', async ({ browser }) => {
 	await uma.getByRole('link', { name: /Quill Atlas/ }).first().click();
 	await expect(uma.getByRole('heading', { level: 1 })).toContainText('Quill Atlas');
 	await expect(uma.getByTestId('subtitles')).toHaveCount(0);
-	for (const url of ['/library/missing-subtitles', '/settings/subtitles']) {
+	for (const url of ['/library/missing-subtitles']) {
 		await uma.goto(url);
 		await expect(uma).not.toHaveURL(new RegExp(url.replace(/\//g, '\\/') + '$'));
 	}
+	// A Settings page they may not open shows a note in place of the page.
+	await uma.goto('/settings/subtitles');
+	await expect(uma.getByRole('heading', { name: "You can't change this" })).toBeVisible();
 	for (const path of ['/api/v1/subtitles/missing', '/api/v1/subtitle-sites', '/api/v1/settings/subtitles']) {
 		expect((await uma.request.get(path)).status(), path).toBe(403);
 	}

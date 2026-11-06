@@ -210,7 +210,7 @@
 	}
 
 	async function remove(d: DownloaderView) {
-		if (!confirm(`Remove the Downloader ${d.name}? Downloads already in it stay there; HolyArrs stops following them.`)) return;
+		if (!confirm(`Remove ${d.name}? Its downloads stay; HolyArrs stops watching them.`)) return;
 		try {
 			await api.del(`/downloaders/${d.id}`);
 			await load();
@@ -283,16 +283,16 @@
 		<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
 		<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
 	</Field>
-	<Field id="dl-prio" label="Priority" hint="1 to 50; 1 is used first.">
+	<Field id="dl-prio" label="Priority" hint="1–50, lowest first">
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
-<Field id="dl-tags" label="Tags" hint="A title with one of these tags is sent only to Downloaders that have it. A title with none of your Downloaders' tags goes to the Downloaders without tags.">
+<Field id="dl-tags" label="Tags" hint="Titles with a matching tag use this Downloader. Untagged ones use untagged Downloaders.">
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
 <details class="more" open={form.path_map.length > 0}>
 	<summary>Different folder names</summary>
-	<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
+	<p class="hint">When the Downloader sees the folder under another path</p>
 	{#each form.path_map as p, i (i)}
 		<div class="two">
 			<Field id="pm-theirs-{i}" label="Downloader's path">
@@ -325,7 +325,7 @@
 			<Field id="dl-name" label="Name" style="margin-top: var(--s-4)">
 				<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
 			</Field>
-			<Field id="dl-url" label="Address" hint="The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.">
+			<Field id="dl-url" label="Address" hint="Its web page. For SABnzbd, use the IP or allow HolyArrs' host name.">
 				<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
 			</Field>
 			{#if form.kind === 'qbittorrent'}
@@ -344,7 +344,7 @@
 						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" required={qbit} data-testid="dl-user" />
 						<span class="hint">{qbit ? 'The qBittorrent Web UI username.' : `Leave empty when ${kindWords[form.kind]} does not require it from this network.`}</span>
 					</Field>
-					<Field id="dl-secret" label="Password" hint="Kept encrypted, never shown again. Leave as it is to keep the stored one.">
+					<Field id="dl-secret" label="Password">
 						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" required={qbit && isNew} data-testid="dl-secret" />
 					</Field>
 				</div>
@@ -356,7 +356,7 @@
 				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
-				<p class="notice">The Deluge Web UI must already be connected to the intended daemon, and that daemon must have the Label plugin enabled.</p>
+				<p class="notice">Deluge Web UI must be connected to a daemon with the Label plugin on</p>
 			{/if}
 			{#if form.kind === 'qbittorrent'}
 				<details class="more"><summary>More options</summary>{@render moreFields()}</details>
@@ -365,7 +365,7 @@
 			{/if}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>May reach the local network</b><br /><span class="hint">On: it may run on this machine or your home network (the usual case). Off: only addresses on the internet.</span></span>
+				<span><b>Reach the local network</b><br /><span class="hint">On for most setups</span></span>
 			</label>
 			<label class="checkline" class:off={writableLocked}>
 				<input type="checkbox" bind:checked={form.writable} disabled={writableLocked} data-testid="dl-form-writable" />
@@ -375,7 +375,7 @@
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
-				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test connection</Button>{/if}
+				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test</Button>{/if}
 				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<TestTag ok={r.ok} text={r.text} app={kindWords[editing.kind]} />{#if !r.ok}<span class="small bad-text">{r.text}</span>{/if}{/if}
 			</div>
 		</SettingsCard>
@@ -387,7 +387,7 @@
 {:else if error && !listOk}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if list.length === 0 && !editing}
-	<EmptyState icon="downloader" title="No Downloader yet" text="HolyArrs needs a Downloader to fetch what it chooses. Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="downloader" title="No Downloaders" text="HolyArrs needs a Downloader to fetch what it chooses. Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
@@ -416,13 +416,13 @@
 					<p class="small bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
-					<section class="notice bad attempt-review" aria-label="Uncertain sends" data-testid="downloader-attempts">
-						<h3 class="h3">A send needs review</h3>
+					<section class="notice bad attempt-review" aria-label="Needs a decision" data-testid="downloader-attempts">
+						<h3 class="h3">Check whether this download arrived</h3>
 						<p class="small">HolyArrs could not confirm whether {kindWords[d.kind]} accepted it. Inspect {kindWords[d.kind]} before choosing a different Release.</p>
 						{#each pendingAttempts(attempts[d.id]) as attempt (attempt.id)}
 							<div class="attempt-row">
 								<p class="small">Release {attempt.release_id} · Slot {attempt.slot_id} · started {ago(attempt.created_at)}</p>
-								<Button variant="plain" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Abandon this send</Button>
+								<Button variant="plain" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Give up on it</Button>
 							</div>
 						{/each}
 						<p class="xs muted">Abandoning stops HolyArrs from retrying this exact Release and Slot, including covered Slots in the same Version. It does not cancel anything in {kindWords[d.kind]}.</p>
@@ -453,37 +453,37 @@
 	{/if}
 {:else}
 <form class="sc-form settings" id="wrong-form" onsubmit={saveSettings} aria-labelledby="h-wrong">
-	<SettingsCard id="wrong-card" title="When downloads go wrong" description="What HolyArrs does with a download that stalls, fails or holds something it should not.">
+	<SettingsCard id="wrong-card" title="When downloads go wrong">
 		<span id="h-wrong" class="sr-only">When downloads go wrong</span>
 		<label class="checkline">
 			<input id="remove-failed" type="checkbox" bind:checked={settings.remove_failed} />
-			<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">With their files. Off: they stay there for you to look at.</span></span>
+			<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">Deletes their files too</span></span>
 		</label>
 		<label class="checkline">
 			<input id="auto-add" type="checkbox" bind:checked={settings.downloads_auto_add} />
-			<span><b>Add matched titles to your Library</b><br /><span class="hint">When something already in a Downloader matches a movie or show for sure, add that title without searching. Sure matches already in Suggested are added the next time they are matched.</span></span>
+			<span><b>Add matched titles to your Library</b><br /><span class="hint">Sure matches already in a Downloader are added without searching</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
-			<legend class="small muted">When you remove a download on the Downloads screen, the choices start as:</legend>
+			<legend class="small muted">Removing a download starts with:</legend>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_delete_files} />
-			<span><b>Delete its files</b><br /><span class="hint">Off: the Downloader keeps the files.</span></span>
+			<span><b>Delete its files</b></span>
 		</label>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_turn_down} />
-			<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks that Release again for the movie.</span></span>
+			<span><b>Turn down its Release</b><br /><span class="hint">Never picked again for that title</span></span>
 		</label>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_search_again} />
-			<span><b>Search again</b><br /><span class="hint">Only with Turned down: look for the next Release straight away.</span></span>
+			<span><b>Search again</b><br /><span class="hint">Needs Turn down. Looks for the next Release at once.</span></span>
 		</label>
 		</fieldset>
 		{#snippet advanced()}
 			<div class="two">
-				<Field id="st-stall" label="Stalled after (hours without progress)" hint="Waiting its turn or paused never counts.">
+				<Field id="st-stall" label="Stalled after (hours)" hint="Queued or paused time doesn't count">
 					<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={settings.stalled_after_hours} />
 				</Field>
-				<Field id="st-act" label="Give up and try the next Release after (hours)" hint="Counted from the last progress.">
+				<Field id="st-act" label="Try the next Release after (hours)" hint="Counted from the last progress.">
 					<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
 				</Field>
 			</div>
@@ -491,19 +491,19 @@
 				<input id="fail-programs" type="checkbox" bind:checked={settings.fail_dangerous} />
 				<span
 					><b>Fail downloads that hold programs or fakes</b><br /><span class="hint"
-						>Files such as .exe, .bat, .scr or .lnk, also hidden as movie.mkv.exe; a password note or a web shortcut; a torrent with only archives and no video or audio. Checked as soon as the Downloader lists the files.</span
+						>.exe, .bat, .scr, .lnk (even as movie.mkv.exe), password notes, web shortcuts, archive-only torrents</span
 					></span
 				>
 			</label>
 			<label class="checkline">
 				<input id="replace-removed" type="checkbox" bind:checked={settings.replace_vanished} />
-				<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the movie waits for your decision instead.</span></span>
+				<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the title waits for you</span></span>
 			</label>
 			<label class="checkline">
 				<input id="try-next-dl" type="checkbox" bind:checked={settings.try_next_downloader} />
-				<span><b>Try the next Downloader</b><br /><span class="hint">When the first one cannot take a Release, send it to the next one of the same kind.</span></span>
+				<span><b>Try the next Downloader</b><br /><span class="hint">When one fails, use the next of the same kind</span></span>
 			</label>
-			<Field id="st-gap" label="Seconds between sends to one Downloader" hint="A short wait between Releases sent to the same Downloader, so it is not flooded.">
+			<Field id="st-gap" label="Seconds between sends to one Downloader">
 				<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={settings.grab_spacing_seconds} />
 			</Field>
 		{/snippet}

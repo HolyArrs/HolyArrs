@@ -158,7 +158,8 @@
 	.scope button:hover { opacity: 1; background: rgb(127 127 127 / 18%); }
 	.scope button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	input.scoped { padding-left: 164px; }
-	input::placeholder { color: var(--text-muted); }
+	input { text-overflow: ellipsis; }
+	input::placeholder { color: var(--text-muted); text-overflow: ellipsis; }
 	input::-webkit-search-cancel-button { display: none; }
 	input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.hint { position: absolute; right: 14px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--text-muted); font: 500 11px/1.4 var(--font-ui); pointer-events: none; }

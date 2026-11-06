@@ -273,7 +273,7 @@
 					<span class="hint" id="ol-new-hint">{seasons === 'future' ? 'Future seasons only keeps new seasons up to date.' : 'What happens to a season that comes out later.'}</span>
 				</Field>
 			{/if}
-			<Field id="ol-hours" label="Read every (hours)" hint="Between 6 hours and a week. Saving reads the list once straight away.">
+			<Field id="ol-hours" label="Read every (hours)" hint="6 to 168 hours. Saving reads it now.">
 				<input id="ol-hours" class="input" type="number" min="6" max="168" bind:value={hours} />
 			</Field>
 			<label class="checkline">
@@ -286,9 +286,9 @@
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={enabled} />
-				<span><b>Read this list</b><br /><span class="hint">Off keeps the list but stops reading it.</span></span>
+				<span><b>Read this list</b></span>
 			</label>
-			{#if kind === 'trakt_list' && !traktMasked}<p class="notice warn">Add your Trakt key below first, or this list cannot be read.</p>{/if}
+			{#if kind === 'trakt_list' && !traktMasked}<p class="notice warn">Add a Trakt key below first</p>{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={saving || kindFolders.length === 0} aria-busy={saving}>Save</Button>
@@ -305,7 +305,7 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if lists.length === 0 && !formOpen}
-		<EmptyState icon="inbox" title="No Outside lists yet" text="Add a TMDB or Trakt list and its movies or shows come into your Library by themselves." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
+		<EmptyState icon="inbox" title="No Outside lists" text="Add a TMDB or Trakt list and its movies or shows come into your Library by themselves." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
 	{:else if lists.length}
 		<ul class="card rows" aria-label="Outside lists">
 			{#each lists as l (l.id)}
@@ -325,7 +325,7 @@
 						{#if l.last_synced_at}
 							<p class="small" data-testid="list-result">Last read {dateTime(l.last_synced_at)}: {l.last_result}</p>
 						{:else}
-							<p class="small muted">Not read yet.</p>
+							<p class="small muted">Not read yet</p>
 						{/if}
 						{#if l.last_error}<p class="small bad-text" role="status">{l.last_error}</p>{/if}
 					</div>
@@ -356,7 +356,7 @@
 		</form>
 	</section>
 
-	<SettingsCard id="never-card" title="Never-add list" description="Outside lists skip these movies and shows, and they cannot be added by hand until taken off.">
+	<SettingsCard id="never-card" title="Never-add list" description="Never added by lists or by hand until removed">
 		<form class="never-form" onsubmit={addNever}>
 			<Field id="na-kind" label="Movie or show">
 				<select id="na-kind" class="input" bind:value={naKind}>
@@ -371,7 +371,7 @@
 				<input id="na-name" class="input" bind:value={naName} maxlength="200" />
 			</Field>
 			<div class="field">
-				<label for="na-reason">Why <span class="muted">(optional)</span></label>
+				<label for="na-reason">Reason <span class="muted">(optional)</span></label>
 				<input id="na-reason" class="input" bind:value={naReason} maxlength="200" />
 			</div>
 			<div class="na-act"><Button type="submit">Add to the Never-add list</Button></div>
@@ -387,7 +387,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="small muted" style="margin-top: var(--s-3)">Nothing on it.</p>
+			<p class="small muted" style="margin-top: var(--s-3)">Empty</p>
 		{/if}
 	</SettingsCard>
 {/if}

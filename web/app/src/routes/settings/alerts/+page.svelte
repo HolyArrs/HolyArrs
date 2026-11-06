@@ -19,8 +19,8 @@
 	type Kind = 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
 	const momentGroups: { label: string; hint: string; moments: readonly Moment[] }[] = [
-		{ label: 'Requests', hint: 'Asks and their answers.', moments: askMoments },
-		{ label: 'Library', hint: 'What HolyArrs does with your movies and shows. Email goes to the staff addresses.', moments: libraryMoments }
+		{ label: 'Requests', hint: 'New requests and decisions', moments: askMoments },
+		{ label: 'Library', hint: 'Downloads, imports and problems. Email goes to staff.', moments: libraryMoments }
 	];
 	const kindWord: Record<Kind, string> = { discord: 'Discord', email: 'Email', webhook: 'Webhook', telegram: 'Telegram', ntfy: 'ntfy', gotify: 'Gotify', pushover: 'Pushover' };
 	let alerts = $state<AlertView[]>([]);
@@ -174,7 +174,7 @@
 		testing = a.id;
 		try {
 			await api.post(`/alerts/${a.id}/test`);
-			results = { ...results, [a.id]: { ok: true, text: `Test sent through ${a.name}.` } };
+			results = { ...results, [a.id]: { ok: true, text: `Test sent to ${a.name}` } };
 		} catch (err) {
 			results = { ...results, [a.id]: { ok: false, text: message(err) } };
 		} finally {
@@ -184,7 +184,7 @@
 	}
 
 	async function remove(a: AlertView) {
-		if (!confirm(`Remove the Alert ${a.name}?`)) return;
+		if (!confirm(`Remove ${a.name}?`)) return;
 		try {
 			await api.del(`/alerts/${a.id}`);
 			await load();
@@ -221,15 +221,15 @@
 						<option value="gotify">Gotify</option>
 						<option value="pushover">Pushover</option>
 						<option value="email">Email</option>
-						<option value="webhook">Webhook (JSON to your own server)</option>
+						<option value="webhook">Webhook (JSON)</option>
 					</select>
 				</Field>
 			{/if}
 			{#if form.kind === 'webhook'}
-				<Field id="al-hook" label="Webhook link" hint="HolyArrs posts JSON here: the moment, the movie, and the reasons and paths. Kept encrypted; shown masked.">
+				<Field id="al-hook" label="Webhook link" hint="Gets a JSON post for each Alert">
 					<input id="al-hook" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://example.com/holyarrs" />
 				</Field>
-				<Field id="al-secret" label="Secret" hint="Optional. Kept encrypted and never shown again. Leave as it is to keep the stored one; a link to another server needs it typed again.">
+				<Field id="al-secret" label="Secret" hint="Optional. Retype it if the link moves to another server.">
 					<input id="al-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" />
 				</Field>
 				<Field id="al-auth" label="What the secret does">
@@ -243,14 +243,14 @@
 				<Field id="al-tg-token" label="Bot token" hint={isNew ? 'In Telegram, talk to @BotFather and send /newbot; it gives you the token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one.'}>
 					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : 'Stored'} />
 				</Field>
-				<Field id="al-tg-chat" label="Chat ID" hint="Who gets the messages: a number for a person, group or channel (groups and channels start with -), or @name for a public channel. Send the bot a message first, or add it to the group or channel.">
+				<Field id="al-tg-chat" label="Chat ID" hint="A user, group or channel ID, or @channel. Message the bot or add it first.">
 					<input id="al-tg-chat" class="input mono" bind:value={form.chat_id} autocomplete="off" spellcheck="false" placeholder="-1001234567890 or @mychannel" />
 				</Field>
 			{:else if form.kind === 'ntfy'}
-				<Field id="al-ntfy-server" label="Server address" hint="Leave empty for the public server, ntfy.sh. Your own ntfy server works too; one at home needs May reach the local network.">
+				<Field id="al-ntfy-server" label="Server address" hint="Empty uses ntfy.sh. A home server needs “Reach the local network”.">
 					<input id="al-ntfy-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://ntfy.sh" />
 				</Field>
-				<Field id="al-ntfy-topic" label="Topic" hint="The topic you subscribe to in the ntfy app. Letters, digits, - and _ only. On ntfy.sh anyone who knows it can read it, so pick a name that is hard to guess.">
+				<Field id="al-ntfy-topic" label="Topic" hint="Letters, digits, - and _. Anyone who knows it can read it, so make it hard to guess.">
 					<input id="al-ntfy-topic" class="input mono" bind:value={form.topic} maxlength="64" autocomplete="off" spellcheck="false" placeholder="holyarrs-alerts" />
 				</Field>
 				<Field id="al-ntfy-token" label="Access token" hint={isNew || !editing?.app_token ? 'Optional, only for a topic that needs a sign-in. In ntfy: Account, Access tokens. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
@@ -259,25 +259,25 @@
 				{#if !isNew && editing?.app_token}
 					<label class="checkline">
 						<input id="al-ntfy-clear" type="checkbox" bind:checked={form.clear_app_token} onchange={() => (form.app_token = '')} />
-						<span><b>Remove the token</b><br /><span class="hint">For a topic that no longer needs a sign-in, or a token you deleted in ntfy.</span></span>
+						<span><b>Remove the token</b><br /><span class="hint">When the topic no longer needs one</span></span>
 					</label>
 				{/if}
 			{:else if form.kind === 'gotify'}
-				<Field id="al-gotify-server" label="Server address" hint="Where your Gotify server answers. One at home needs May reach the local network.">
+				<Field id="al-gotify-server" label="Server address" hint="A home server needs “Reach the local network”">
 					<input id="al-gotify-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://gotify.example.com" />
 				</Field>
 				<Field id="al-gotify-token" label="App token" hint={isNew ? 'In Gotify: Apps, Create application, then copy its token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
 					<input id="al-gotify-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : 'Stored'} />
 				</Field>
 			{:else if form.kind === 'pushover'}
-				<Field id="al-push-user" label="User key" hint="On pushover.net, at the top of your dashboard after you sign in. A group key works too.">
+				<Field id="al-push-user" label="User key" hint="Top of your pushover.net page. Group keys work too.">
 					<input id="al-push-user" class="input mono" bind:value={form.user_key} autocomplete="off" spellcheck="false" />
 				</Field>
 				<Field id="al-push-token" label="App token" hint={isNew ? 'On pushover.net: Create an Application, then copy its API token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one.'}>
 					<input id="al-push-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : 'Stored'} />
 				</Field>
 			{:else if form.kind === 'discord'}
-				<Field id="al-url" label="Discord link" hint="In Discord: channel settings, Integrations, Webhooks, Copy link. Kept encrypted; shown masked.">
+				<Field id="al-url" label="Discord link" hint="Channel settings › Integrations › Webhooks › Copy link">
 					<input id="al-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" />
 				</Field>
 			{:else}
@@ -302,10 +302,10 @@
 				<Field id="al-user" label="Mail username">
 					<input id="al-user" class="input" bind:value={form.smtp_user} autocomplete="off" />
 				</Field>
-				<Field id="al-pw" label="Mail password" hint="Kept encrypted. Leave as it is to keep the stored one.">
+				<Field id="al-pw" label="Mail password">
 					<input id="al-pw" class="input" type="password" bind:value={form.smtp_pass} autocomplete="new-password" />
 				</Field>
-				<Field id="al-staff" label="Staff addresses" hint="Who hears when someone asks for a movie. The people who asked get their own messages at their own address.">
+				<Field id="al-staff" label="Staff addresses" hint="Hear about new requests. Requesters get their own email.">
 					<input id="al-staff" class="input" bind:value={form.staff_to} placeholder="you@example.com, other@example.com" autocomplete="off" />
 				</Field>
 			{/if}
@@ -325,11 +325,11 @@
 			{/each}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com, api.telegram.org and api.pushover.net, and mail, webhook, ntfy and Gotify servers on the internet. On: also a server on this machine or your home network.</span></span>
+				<span><b>Reach the local network</b><br /><span class="hint">For a server on this machine or your home network</span></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
-				<span><b>Send messages</b><br /><span class="hint">Off keeps the Alert but sends nothing.</span></span>
+				<span><b>Send messages</b></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
@@ -346,7 +346,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if alerts.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="bell" title="No Alerts yet" text="Add Discord, Telegram, ntfy, Gotify, Pushover, an email server or a webhook to tell people (or your own tools) outside HolyArrs." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="bell" title="No Alerts" text="Add Discord, Telegram, ntfy, Gotify, Pushover, an email server or a webhook to tell people (or your own tools) outside HolyArrs." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
@@ -378,7 +378,7 @@
 
 <section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
 	<h2 id="h-packs" class="h2">Season packs</h2>
-	<p class="small muted">When one download brings several episodes of a show into the Library.</p>
+	<p class="small muted">When one download brings several episodes</p>
 	{#if pack === null}
 		{#if packError}
 			<LoadError hasData={false} message={packError} onretry={loadPack} busy={packBusy} />
@@ -394,7 +394,7 @@
 		</label>
 		<label class="checkline">
 			<input type="radio" name="pack" value="each" checked={pack === 'each'} onchange={() => savePack('each')} />
-			<span><b>One Alert per episode</b><br /><span class="hint">A ten-episode pack sends ten messages.</span></span>
+			<span><b>One Alert per episode</b></span>
 		</label>
 	</fieldset>
 	{/if}

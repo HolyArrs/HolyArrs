@@ -71,19 +71,19 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 test('the settings for downloads that go wrong are saved and checked', async () => {
 	await page.goto('/settings/downloaders');
 	await openAdvanced(page.locator('#wrong-card'));
-	await expect(page.getByLabel('Stalled after (hours without progress)')).toHaveValue('6');
-	await expect(page.getByLabel('Give up and try the next Release after (hours)')).toHaveValue('24');
-	await page.getByLabel('Stalled after (hours without progress)').fill('8');
-	await page.getByLabel('Give up and try the next Release after (hours)').fill('4');
+	await expect(page.getByLabel('Stalled after (hours)')).toHaveValue('6');
+	await expect(page.getByLabel('Try the next Release after (hours)')).toHaveValue('24');
+	await page.getByLabel('Stalled after (hours)').fill('8');
+	await page.getByLabel('Try the next Release after (hours)').fill('4');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('alert')).toContainText('no sooner than it counts as stalled');
-	await page.getByLabel('Give up and try the next Release after (hours)').fill('30');
+	await page.getByLabel('Try the next Release after (hours)').fill('30');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Downloader settings saved.')).toBeVisible();
 	await page.reload();
-	await expect(page.getByLabel('Stalled after (hours without progress)')).toHaveValue('8');
-	await page.getByLabel('Stalled after (hours without progress)').fill('6');
-	await page.getByLabel('Give up and try the next Release after (hours)').fill('24');
+	await expect(page.getByLabel('Stalled after (hours)')).toHaveValue('8');
+	await page.getByLabel('Stalled after (hours)').fill('6');
+	await page.getByLabel('Try the next Release after (hours)').fill('24');
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Downloader settings saved.')).toBeVisible();
 });

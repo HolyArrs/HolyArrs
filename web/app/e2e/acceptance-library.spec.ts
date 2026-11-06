@@ -32,7 +32,7 @@ async function addLibraryFolder(kind: 'music' | 'show', path: string, name: stri
 	await page.getByLabel('Holds').selectOption(kind);
 	await page.getByLabel('Folder path').fill(path);
 	await page.getByLabel(/^Name/).fill(name);
-	await page.getByRole('button', { name: 'Add and check' }).click();
+	await page.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByTestId('folder-kind').filter({ hasText: kind === 'music' ? 'For music' : 'For shows' })).toHaveCount(1);
 }
 
@@ -129,7 +129,7 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await page.getByText('Limits').click();
 	await page.getByLabel('Wait between calls (ms)').fill('10');
 	await page.getByLabel('Calls per window, at most').fill('5000');
-	await page.getByLabel(/May reach the local network/).check();
+	await page.getByLabel(/Reach the local network/).check();
 	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const site = page.getByTestId('subtitle-site').filter({ hasText: 'Lab subtitle site' }).first();
 	await expect(site.getByTestId('subtitle-site-test')).toHaveText(/· \d+ subtitles?$/, { timeout: 15_000 });

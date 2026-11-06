@@ -109,7 +109,7 @@
 	}
 
 	async function remove(m: MediaServerView) {
-		if (!confirm(`Remove ${m.name}? HolyArrs stops telling it about changes.`)) return;
+		if (!confirm(`Remove ${m.name}? It stops getting updates.`)) return;
 		try {
 			await api.del(`/media-servers/${m.id}`);
 			await load();
@@ -158,10 +158,10 @@
 				</span>
 			</Field>
 			<fieldset class="when">
-				<legend class="label">Tell it after</legend>
-				<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>An import</b><br /><span class="hint">A new file or a better copy.</span></span></label>
+				<legend class="label">Update it after</legend>
+				<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>An import</b></span></label>
 				<label class="checkline"><input type="checkbox" bind:checked={form.on_rename} /><span><b>A rename</b></span></label>
-				<label class="checkline"><input type="checkbox" bind:checked={form.on_delete} /><span><b>A delete</b><br /><span class="hint">Only when the delete removed files.</span></span></label>
+				<label class="checkline"><input type="checkbox" bind:checked={form.on_delete} /><span><b>A delete</b><br /><span class="hint">Only when files were removed</span></span></label>
 			</fieldset>
 			<div class="two">
 				<Field id="ms-from" label="HolyArrs path">
@@ -171,14 +171,14 @@
 					<input id="ms-to" class="input mono" bind:value={form.path_to} placeholder="/movies" autocomplete="off" />
 				</Field>
 			</div>
-			<p class="hint">Only when the server sees your movies, shows and music under another path (for example in another container). Leave both empty otherwise.</p>
+			<p class="hint">Only if the server sees your files under another path</p>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>May reach the local network</b><br /><span class="hint">On by default: media servers are usually at home.</span></span>
+				<span><b>Reach the local network</b></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
-				<span><b>Tell it about changes</b><br /><span class="hint">Off keeps it but tells it nothing.</span></span>
+				<span><b>Send updates</b></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
@@ -195,7 +195,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if servers.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="tv" title="No media servers yet" text="Add your Plex, Jellyfin or Emby server and new movies, shows and music show up there by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="tv" title="No media servers" text="Add your Plex, Jellyfin or Emby server and new movies, shows and music show up there by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">

@@ -123,7 +123,7 @@
 		const days = Number(fr.holding_days);
 		const floor = Number(fr.min_free_mb);
 		if (!Number.isInteger(days) || days < 0) {
-			error = 'Days to keep deleted files must be 0 or more.';
+			error = 'Use 0 or more days';
 			return;
 		}
 		if (!Number.isFinite(floor) || floor < 100) {
@@ -132,12 +132,12 @@
 		}
 		const scanLimit = Number(ns.adopt_scan_limit);
 		if (!Number.isInteger(scanLimit) || scanLimit < 10 || scanLimit > 100000) {
-			error = 'Folders read per scan must be from 10 to 100000.';
+			error = 'Use 10 to 100,000';
 			return;
 		}
 		const musicLimit = Number(ns.music_adopt_scan_limit ?? 200);
 		if (!Number.isInteger(musicLimit) || musicLimit < 10 || musicLimit > 100000) {
-			error = 'Artist folders read per music scan must be from 10 to 100000.';
+			error = 'Use 10 to 100,000';
 			return;
 		}
 		busy = true;
@@ -185,11 +185,11 @@
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<form class="sc-form stack" id="naming-form" onsubmit={save} aria-label="Naming and files">
-		<SettingsCard id="movie-names" title="Movie names" description="How a movie's file and folder are named.">
-			<Field id="file-pattern" label="File name pattern" hint="Words in braces are filled in for each movie. A word with nothing to fill in is dropped with its brackets.">
+		<SettingsCard id="movie-names" title="Movie names">
+			<Field id="file-pattern" label="File name pattern" hint="{'{'}Words{'}'} fill in per movie; empty ones drop out">
 				<input id="file-pattern" class="input mono" bind:value={ns.file_pattern} autocomplete="off" spellcheck="false" />
 			</Field>
-			<Field id="folder-pattern" label="Folder name pattern" hint="For movies added from now on. Folders of movies you already have keep their names.">
+			<Field id="folder-pattern" label="Folder name pattern" hint="New movies only; existing folders keep their names">
 				<input id="folder-pattern" class="input mono" bind:value={ns.folder_pattern} autocomplete="off" spellcheck="false" />
 			</Field>
 			<div class="example" aria-live="polite" data-testid="naming-example">
@@ -214,12 +214,12 @@
 				</dl>
 			</details>
 			{#snippet advanced()}
-			<Field id="colon" label="A colon in a name becomes" hint="Windows and many shares cannot hold a colon in a name.">
+			<Field id="colon" label="A colon in a name becomes" hint="Windows and many shares can't store colons">
 				<select id="colon" class="input" bind:value={ns.colon}>
 					{#each colonChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
 			</Field>
-			<Field id="illegal" label="Other characters a disk cannot hold" hint="What happens to characters such as ? and * that a disk cannot store.">
+			<Field id="illegal" label="Other characters a disk cannot hold" hint="For ? * and similar">
 				<select id="illegal" class="input" bind:value={ns.illegal}>
 					{#each illegalChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
@@ -227,13 +227,13 @@
 			{/snippet}
 		</SettingsCard>
 
-		<SettingsCard id="show-names" title="Show names" description="How a show, its seasons and its episode files are named.">
-			<Field id="show-folder-pattern" label="Show folder pattern" hint="For shows added from now on. Folders of shows you already have keep their names.">
+		<SettingsCard id="show-names" title="Show names">
+			<Field id="show-folder-pattern" label="Show folder pattern" hint="New shows only; existing folders keep their names">
 				<input id="show-folder-pattern" class="input mono" bind:value={ns.show_folder_pattern} autocomplete="off" spellcheck="false" />
 			</Field>
 			<label class="checkline">
 				<input id="season-folders" type="checkbox" bind:checked={ns.season_folders} />
-				<span><b>A folder for each season</b><br /><span class="hint">Off puts every episode straight in the show folder.</span></span>
+				<span><b>A folder for each season</b></span>
 			</label>
 			<Field id="season-folder-pattern" label="Season folder pattern">
 				<input id="season-folder-pattern" class="input mono" bind:value={ns.season_folder_pattern} autocomplete="off" spellcheck="false" disabled={!ns.season_folders} />
@@ -246,7 +246,7 @@
 			<div class="example" aria-live="polite" data-testid="episode-examples">
 				<p class="xs muted">Examples</p>
 				{#if exampleError}
-					<p class="small muted">No example yet. The problem is shown under Movie names.</p>
+					<p class="small muted">See the error under Movie names</p>
 				{:else}
 					<dl class="exlist">
 						{#each episodeExampleRows(episodes) as [label, path] (label)}
@@ -301,7 +301,7 @@
 		</SettingsCard>
 
 		<div data-testid="music-naming">
-			<SettingsCard id="music-names" title="Music names" description="How an artist, an album and its track files are named.">
+			<SettingsCard id="music-names" title="Music names">
 				<Field id="artist-folder-pattern" label="Artist folder pattern">
 					<input id="artist-folder-pattern" class="input mono" bind:value={ns.artist_folder_pattern} autocomplete="off" spellcheck="false" />
 					<span class="hint"
@@ -320,7 +320,7 @@
 				<div class="example" aria-live="polite" data-testid="music-examples">
 					<p class="xs muted">Examples</p>
 					{#if exampleError}
-						<p class="small muted">No example yet. The problem is shown under Movie names.</p>
+						<p class="small muted">See the error under Movie names</p>
 					{:else}
 						<dl class="exlist">
 							{#each musicExampleRows(music) as [label, path] (label)}
@@ -351,7 +351,7 @@
 				</Field>
 				<label class="checkline">
 					<input id="disc-folders" type="checkbox" bind:checked={ns.disc_folders} />
-					<span><b>A folder for each disc</b><br /><span class="hint">Only on albums of more than one disc. Off keeps every track in the album folder.</span></span>
+					<span><b>A folder for each disc</b><br /><span class="hint">Multi-disc albums only</span></span>
 				</label>
 				<Field id="disc-folder-pattern" label="Disc folder pattern">
 					<input id="disc-folder-pattern" class="input mono" bind:value={ns.disc_folder_pattern} autocomplete="off" spellcheck="false" disabled={!ns.disc_folders} />
@@ -370,18 +370,18 @@
 			</SettingsCard>
 		</div>
 
-		<SettingsCard id="importing" title="Importing" description="What happens to a file's name when it comes in.">
+		<SettingsCard id="importing" title="Importing">
 			<label class="checkline">
 				<input id="rename-on-import" type="checkbox" bind:checked={ns.rename_on_import} />
 				<span
 					><b>Rename files when they are imported</b><br /><span class="hint"
-						>Off keeps the name the Release came with. Files you already have are only renamed when you ask, from Rename files.</span
+						>Existing files rename only from Rename files</span
 					></span
 				>
 			</label>
 		</SettingsCard>
 
-		<SettingsCard id="where-files-go" title="Where files go" description="Deleted files, free space and how big a library scan is.">
+		<SettingsCard id="where-files-go" title="Where files go">
 			<Field id="holding-days" label="Keep deleted files for (days)">
 				<input id="holding-days" class="input narrow" type="number" min="0" max="3650" bind:value={fr.holding_days} />
 				<span class="hint"
@@ -390,18 +390,18 @@
 				>
 			</Field>
 			{#snippet advanced()}
-			<Field id="scan-limit" label="Folders read per library scan" hint="A bigger library is scanned in parts: the scan offers Scan the rest for the next part.">
+			<Field id="scan-limit" label="Folders read per library scan" hint="Bigger Libraries scan in parts">
 				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />
 			</Field>
-			<Field id="music-scan-limit" label="Artist folders read per music scan" hint="Each artist folder takes a few MusicBrainz lookups, about one a second, so music is scanned in smaller parts.">
+			<Field id="music-scan-limit" label="Artist folders read per music scan" hint="Lower because MusicBrainz allows one lookup a second">
 				<input id="music-scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.music_adopt_scan_limit} />
 			</Field>
-			<Field id="min-free" label="Always leave this much free space (MB)" hint="An import that would leave less than this free is refused before anything is written. 100 MB is the lowest.">
+			<Field id="min-free" label="Always leave this much free space (MB)" hint="Imports stop below this. Minimum 100 MB.">
 				<input id="min-free" class="input narrow" type="number" min="100" bind:value={fr.min_free_mb} />
 			</Field>
 			<label class="checkline">
 				<input id="skip-free-check" type="checkbox" bind:checked={fr.skip_free_space_check} />
-				<span><b>Skip the free-space check</b><br /><span class="hint">Only for disks that report their free space wrongly.</span></span>
+				<span><b>Skip the free-space check</b><br /><span class="hint">For disks that misreport free space</span></span>
 			</label>
 			{/snippet}
 		</SettingsCard>
@@ -409,9 +409,9 @@
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 
-	<SettingsCard id="holding-card" title="Holding folder" description="HolyArrs removes old held files once a day. Run it now to free the space straight away.">
+	<SettingsCard id="holding-card" title="Holding folder" description="Old Held files are cleared daily">
 		<div class="row" style="margin-top: var(--s-4)">
-			<Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Remove old held files now</Button>
+			<Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Clear now</Button>
 		</div>
 	</SettingsCard>
 	<SaveBar {dirty} form="naming-form" saving={busy} disabled={!!exampleError} ondiscard={discard} />

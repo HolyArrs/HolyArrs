@@ -179,7 +179,7 @@
 	}
 
 	async function remove(s: SiteView) {
-		if (!confirm(`Remove the Subtitle site ${s.name}? Subtitles already saved stay; its account details are forgotten.`)) return;
+		if (!confirm(`Remove ${s.name}? Saved subtitles stay.`)) return;
 		try {
 			await api.del(`/subtitle-sites/${s.ID}`);
 			await loadSites();
@@ -200,7 +200,7 @@
 {:else if settings}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label="Default languages">
-		<SettingsCard id="lang-card" title="Default languages" description="Every movie and show without languages of its own gets these. Change a title's own languages on its page. With no languages, nothing is looked for.">
+		<SettingsCard id="lang-card" title="Default languages" description="For titles without their own. Empty means no subtitles.">
 			<WishEditor bind:wants={settings.languages} {langs} id="def" />
 			<p class="xs muted hint-block">
 				<b>Hearing-impaired:</b> Normal also counts a hearing-impaired subtitle as there; Hearing-impaired only waits for one with sound descriptions; Either takes any.
@@ -209,10 +209,10 @@
 	
 			{#snippet advanced()}
 				<div class="two">
-					<Field id="pm-ep" label="Pass mark for episodes" hint="A subtitle is saved on its own only when it scores this or more.">
+					<Field id="pm-ep" label="Pass mark for episodes" hint="Auto-saved at this score or higher">
 						<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_episode} />
 					</Field>
-					<Field id="pm-mov" label="Pass mark for movies" hint="A subtitle is saved on its own only when it scores this or more.">
+					<Field id="pm-mov" label="Pass mark for movies" hint="Auto-saved at this score or higher">
 						<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_movie} />
 					</Field>
 				</div>
@@ -232,17 +232,17 @@
 	
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="inside-video" title="Inside the video" description="Subtitles that come inside the video file.">
+		<SettingsCard id="inside-video" title="Inside the video">
 			<label class="checkline">
 				<input id="embedded" type="checkbox" bind:checked={settings.use_built_in} />
-				<span><b>Count subtitles inside the video</b><br /><span class="hint">A language already inside the file is not looked for again.</span></span>
+				<span><b>Count subtitles inside the video</b><br /><span class="hint">Skips languages already in the file</span></span>
 			</label>
 			{#snippet advanced()}
 				<label class="checkline">
 					<input id="no-picture" type="checkbox" bind:checked={settings!.ignore_picture_tracks} disabled={!settings!.use_built_in} />
-					<span><b>Leave out picture subtitles</b><br /><span class="hint">Picture tracks (from discs) do not count, since many players cannot show them.</span></span>
+					<span><b>Leave out picture subtitles</b><br /><span class="hint">Many players can't show disc subtitles</span></span>
 				</label>
-				<Field id="hi-suffix" label="Hearing-impaired files are named" hint="The ending a hearing-impaired subtitle file gets, so players can tell it apart.">
+				<Field id="hi-suffix" label="Hearing-impaired files are named" hint="File ending players read as SDH">
 					<select id="hi-suffix" class="input narrow" bind:value={settings!.hi_suffix}>
 						<option value="hi">.hi (Movie.en.hi.srt)</option>
 						<option value="cc">.cc (Movie.en.cc.srt)</option>
@@ -251,50 +251,50 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="when-to-look" title="When to look" description="A new file is searched at once. After that, HolyArrs looks again on a timer.">
+		<SettingsCard id="when-to-look" title="When to look" description="New files search at once, then on a timer">
 			<label class="checkline">
 				<input id="better-subs" type="checkbox" bind:checked={settings.better} />
-				<span><b>Look for better subtitles</b><br /><span class="hint">Subtitles saved lately that scored under 99 are searched again; a new one must score higher.</span></span>
+				<span><b>Look for better subtitles</b><br /><span class="hint">Re-searches recent ones under 99</span></span>
 			</label>
 			{#snippet advanced()}
 			<div class="two">
-				<Field id="s-hours" label="Look for missing subtitles every (hours)" hint="Files still missing a language are searched again after this many hours.">
+				<Field id="s-hours" label="Look for missing subtitles every (hours)">
 					<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={settings!.search_hours} />
 				</Field>
-				<Field id="s-batch" label="Files per run, at most" hint="Keeps the Subtitle sites from being asked too much at once.">
+				<Field id="s-batch" label="Files per run, at most" hint="Protects site rate limits">
 					<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={settings!.batch} />
 				</Field>
 			</div>
 				<label class="checkline">
 					<input id="slow-down" type="checkbox" bind:checked={settings!.adaptive} />
-					<span><b>Slow down after three weeks</b><br /><span class="hint">A subtitle not found for three weeks is then looked for once a week.</span></span>
+					<span><b>Slow down after three weeks</b><br /><span class="hint">Then weekly</span></span>
 				</label>
 				{#if settings!.better}
 					<div class="two">
-						<Field id="b-hours" label="Every (hours)" hint="How often better subtitles are looked for.">
+						<Field id="b-hours" label="Every (hours)">
 							<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={settings!.better_hours} />
 						</Field>
-						<Field id="b-days" label="For subtitles saved in the last (days)" hint="Older subtitles are left as they are.">
+						<Field id="b-days" label="For subtitles saved in the last (days)">
 							<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={settings!.better_days} />
 						</Field>
 					</div>
 				{/if}
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="sync-fix" title="Sync fix" description="Where the by-hand fix for a subtitle out of time starts.">
+		<SettingsCard id="sync-fix" title="Sync fix" description="Starting values for fixing timing">
 			<p class="small muted">
 				A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. HolyArrs does
 				not listen to the sound to line subtitles up.
 			</p>
 			{#snippet advanced()}
 				<div class="three">
-					<Field id="sy-step" label="Shift buttons move (ms)" hint="One press of a shift button moves every line this far.">
+					<Field id="sy-step" label="Shift buttons move (ms)">
 						<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={settings!.sync_step_ms} />
 					</Field>
-					<Field id="sy-from" label="Frame rate from" hint="The rate the fix starts from.">
+					<Field id="sy-from" label="Frame rate from">
 						<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_from_fps} />
 					</Field>
-					<Field id="sy-to" label="Frame rate to" hint="The rate the fix changes to.">
+					<Field id="sy-to" label="Frame rate to">
 						<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_to_fps} />
 					</Field>
 				</div>
@@ -308,7 +308,7 @@
 		<div class="sites-head">
 			<div>
 				<h2 id="h-sites" class="h2">Subtitle sites</h2>
-				<p class="small muted">Where HolyArrs looks for subtitles, lowest priority number first. A site that fails rests for a while and is tried again later.</p>
+				<p class="small muted">Lowest priority number first. Failing sites rest, then retry.</p>
 			</div>
 			{#if !editing && sites.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Subtitle site</Button>{/if}
 		</div>
@@ -323,7 +323,7 @@
 							<label class="checkline">
 								<input type="radio" name="site-kind" checked={form.kind === k.kind} disabled={k.later} onchange={() => pickKind(k)} />
 								<span>
-									<b>{k.name}</b> ({kindCovers(k)}){#if k.later}{' '}<span class="chip">Later</span>{:else if k.needs_account}{' '}<span class="chip fail">Needs your account</span>{/if}
+									<b>{k.name}</b> ({kindCovers(k)}){#if k.later}{' '}<span class="chip">Coming later</span>{:else if k.needs_account}{' '}<span class="chip fail">Needs your account</span>{/if}
 									{#if k.note}<br /><span class="hint">{k.note}</span>{/if}
 								</span>
 							</label>
@@ -334,7 +334,7 @@
 					<Field id="st-name" label="Name">
 						<input id="st-name" class="input" bind:value={form.name} maxlength="100" required />
 					</Field>
-					<Field id="st-prio" label="Priority" hint="1 to 100; lower is asked first.">
+					<Field id="st-prio" label="Priority" hint="1–100, lowest first">
 						<input id="st-prio" class="input narrow" type="number" min="1" max="100" bind:value={form.priority} />
 					</Field>
 				</div>
@@ -373,18 +373,18 @@
 						<Field id="st-win" label="Window (seconds)">
 							<input id="st-win" class="input narrow" type="number" min="60" max="86400" bind:value={form.limits.window_seconds} />
 						</Field>
-						<Field id="st-day" label="Downloads a day (0: no cap)">
+						<Field id="st-day" label="Downloads a day (0 for no limit)">
 							<input id="st-day" class="input narrow" type="number" min="0" max="100000" bind:value={form.limits.downloads_per_day} />
 						</Field>
 					</div>
 				</details>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.allow_local_network} />
-					<span><b>May reach the local network</b><br /><span class="hint">Only for a site on this machine or your home network, such as the lab site. Never cloud addresses.</span></span>
+					<span><b>Reach the local network</b><br /><span class="hint">For a site at home</span></span>
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.enabled} />
-					<span><b>On</b><br /><span class="hint">Off: searches skip it until you turn it on.</span></span>
+					<span><b>On</b></span>
 				</label>
 				{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 				<div class="row" style="margin-top: var(--s-5)">
@@ -395,7 +395,7 @@
 		{/if}
 
 		{#if sites.length === 0 && !editing}
-			<EmptyState compact icon="subtitle" title="No Subtitle site yet" text="Add one so HolyArrs can look for the subtitles your movies and shows are missing." action={{ label: 'Add a Subtitle site', icon: 'plus', onclick: startAdd }} />
+			<EmptyState compact icon="subtitle" title="No Subtitle sites" text="Add one so HolyArrs can look for the subtitles your movies and shows are missing." action={{ label: 'Add a Subtitle site', icon: 'plus', onclick: startAdd }} />
 		{:else}
 			<ul class="list">
 				{#each sites as s (s.ID)}

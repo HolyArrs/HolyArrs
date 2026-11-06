@@ -132,10 +132,10 @@
 
 <svelte:head><title>Parts and controls · HolyArrs</title></svelte:head>
 
-<PageHeader title="Parts and controls" />
+<PageHeader title="Parts" />
 
 {#if !allowed}
-	<p class="notice warn">Only the owner and admins can use these controls.</p>
+	<p class="notice warn">Owner and admins only</p>
 {:else if error && !parts}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if !parts}
@@ -157,12 +157,12 @@
 				<Button variant="destructive" id="confirm-yes" type="button" onclick={confirmNow} disabled={busy === asking.key} aria-busy={busy === asking.key}>Yes, {asking.label.toLowerCase()}</Button>
 				<Button variant="plain" type="button" onclick={() => (asking = null)}>Cancel</Button>
 			</div>
-			<p class="xs muted">This question lasts 60 seconds.</p>
+			<p class="xs muted">Expires in 60 s</p>
 		</div>
 	{/if}
 
 	<div data-testid="parts">
-		<SettingsCard id="parts-card" title="Parts" description="A part that is off hides its screens and stops its work. Its data is kept, and turning it on brings everything back.">
+		<SettingsCard id="parts-card" title="Parts" description="Off hides its screens and stops its work. Data is kept.">
 			<ul class="rows list">
 				{#each parts.parts as p (p.part)}
 					<li data-testid="part" data-part={p.part} data-state={p.state}>
@@ -190,9 +190,9 @@
 	</div>
 
 	<div data-testid="control-stages">
-		<SettingsCard id="stages-card" title="Stages" description="Background work such as feed checks and imports. Pause one to hold it; restart one that seems stuck. The rest keeps running.">
+		<SettingsCard id="stages-card" title="Stages" description="Feed checks, imports and other background work. Restart one that's stuck.">
 			{#if split.stages.length === 0}
-				<p class="small muted">No stages reported.</p>
+				<p class="small muted">No Stages</p>
 			{:else}
 				<ul class="rows list">
 					{#each split.stages as s (s.key)}
@@ -217,9 +217,9 @@
 	</div>
 
 	<div data-testid="control-links">
-		<SettingsCard id="links-card" title="Linked apps" description="Reconnect one Downloader, or test one Source, media server or subtitle site now. Nothing else is interrupted.">
+		<SettingsCard id="links-card" title="Linked apps" description="Test or reconnect one without touching the rest">
 			{#if split.links.length === 0}
-				<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
+				<p class="small muted">No Linked apps</p>
 			{:else}
 				<ul class="rows list">
 					{#each split.links as l (l.key)}
@@ -240,14 +240,14 @@
 	</div>
 
 	<SettingsCard id="whole-app-card" title="The whole app">
-		<p class="small muted">Restarting HolyArrs, safe mode and shutting down are in the Danger zone.</p>
+		<p class="small muted">Restart, Safe mode and Shut down</p>
 		<div class="row acts" style="margin-top: var(--s-3)"><Button href={to('/settings/danger')} iconAfter="chevronRight">Open the Danger zone</Button></div>
 	</SettingsCard>
 
 	<div data-testid="control-events">
 		<SettingsCard title="Controls used">
 			{#if events.length === 0}
-				<p class="small muted">No controls used yet.</p>
+				<p class="small muted">Nothing used yet</p>
 			{:else}
 				<ul class="rows list">
 					{#each events as e (e.ID)}

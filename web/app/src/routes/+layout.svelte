@@ -339,11 +339,8 @@
 		if (p.startsWith('/requests')) return allowed('wishlist');
 		// Status sits under Manage, as in the side menu.
 		if (p.startsWith('/status')) return allowed('manage_library');
-		if (p === '/settings/users') return session.can('users');
-		if (p === '/settings/account' || p === '/settings/appearance') return true;
-		// People who manage the Library may look at Pick rules and Movies and TV defaults, read only.
-		if (p === '/settings/title-defaults' || p === '/settings/pick-rules' || p.startsWith('/settings/pick-rules/')) return session.can('settings') || allowed('manage_library');
-		if (p.startsWith('/settings')) return p === '/settings' ? staff : session.can('settings');
+		// A Settings page the person may not open shows a short note there instead of a bounce.
+		if (p === '/settings') return staff;
 		return true;
 	}
 

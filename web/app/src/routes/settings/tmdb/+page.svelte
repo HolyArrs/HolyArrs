@@ -35,7 +35,7 @@
 			<span class="chip {metadataHealth.up ? 'ok' : 'fail'}">{metadataHealth.up ? 'Answering' : 'Down'}</span>
 		</div>
 		{#if metadataHealth.up}
-			<p class="small muted">Searches, details, Explore and artwork are ready.</p>
+			<p class="small muted">Connected</p>
 		{:else}
 			<p class="notice warn" role="status">{METADATA_DOWN}</p>
 		{/if}
@@ -44,21 +44,21 @@
 
 	<!-- Keep in step with docs/metadata-privacy.md (tmdb-privacy.test.ts checks both). -->
 	<section class="card" id="metadata-sent" aria-labelledby="h-sent">
-		<h2 id="h-sent" class="h2">What the metadata server gets</h2>
+		<h2 id="h-sent" class="h2">What we send</h2>
 		<ul class="sent">
-			<li><b>An install token.</b> It identifies this install, not a person.</li>
-			<li><b>What you look up.</b> Search words, and the IDs of the movies, shows, people, artists and albums a page shows.</li>
-			<li><b>Display choices.</b> The language and region, so posters, trailers and where to watch match.</li>
+			<li><b>An install token.</b> Identifies this install, not you.</li>
+			<li><b>What you look up.</b> Search words and IDs of what a page shows.</li>
+			<li><b>Display choices.</b> Language and region.</li>
 			<li><b>Small request headers.</b> <code>Accept</code>, <code>Cache-Control</code>, <code>If-None-Match</code> and <code>X-Fetch: ahead</code> when a page is loaded ahead of time.</li>
 			<li><b>Install count by country.</b> Installs are counted per country. Turn off <a href={to('/settings/this-app')}>Count this install</a> and requests carry <code>X-Country-Count: off</code>.</li>
 		</ul>
-		<p class="small muted">Like any web request, the server sees the public IP address it comes from.</p>
+		<p class="small muted">Your public IP address, like any web request.</p>
 		<h3 class="h3">Never sent</h3>
 		<ul class="sent">
 			<li>Your files, folder paths or file names.</li>
 			<li>Your library: which titles you have, what is downloading, your history.</li>
 			<li>Accounts: user names, passwords, sign-in sessions, who asked for what.</li>
-			<li>Keys and addresses of your downloaders, sources, media servers and lists.</li>
+			<li>Keys and addresses of your Downloaders, Sources, media servers and lists.</li>
 		</ul>
 	</section>
 {/if}

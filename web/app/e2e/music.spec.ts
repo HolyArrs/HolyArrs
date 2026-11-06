@@ -67,7 +67,7 @@ test('the owner adds a music folder and looks at Settings > Music', async () => 
 	await own.getByLabel('Holds').selectOption('music');
 	await own.getByLabel('Folder path').fill(musicDir);
 	await own.getByLabel(/^Name/).fill('Music');
-	await own.getByRole('button', { name: 'Add and check' }).click();
+	await own.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(own.getByTestId('folder-kind').filter({ hasText: 'For music' })).toHaveCount(1);
 
 	await own.goto('/settings/music');
@@ -77,11 +77,11 @@ test('the owner adds a music folder and looks at Settings > Music', async () => 
 	await openAdvanced(own);
 	await expect(own.getByRole('checkbox', { name: 'Live', exact: true })).not.toBeChecked();
 	await expect(own.getByLabel('Which Pressing an album follows')).toHaveValue('common');
-	await own.getByLabel('Keep answers for (hours)').fill('48');
+	await own.getByLabel('Cache answers for (hours)').fill('48');
 	await own.getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByRole('status')).toContainText('Music settings saved.');
 	await own.reload();
-	await expect(own.getByLabel('Keep answers for (hours)')).toHaveValue('48');
+	await expect(own.getByLabel('Cache answers for (hours)')).toHaveValue('48');
 	await axe(own, 'settings music');
 });
 

@@ -76,7 +76,7 @@ test('Settings > Naming has music patterns with a live example', async () => {
 	await card.getByRole('textbox', { name: 'Track file name pattern', exact: true }).fill('{track_title}');
 	// The page shows one problem in one place (under Movie names); the music examples point there.
 	await expect(page.getByRole('alert').filter({ hasText: 'must hold {track}' })).toBeVisible();
-	await expect(ex).toContainText('No example yet');
+	await expect(ex).toContainText('See the error under Movie names');
 	await card.getByRole('textbox', { name: 'Track file name pattern', exact: true }).fill('{track} - {track_title}');
 	await axe(page, 'naming with music');
 	await page.getByRole('button', { name: /^Save/ }).click();

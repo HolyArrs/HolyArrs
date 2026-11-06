@@ -20,7 +20,7 @@ test('Settings > Metadata shows what the metadata server gets', async ({ page })
 	for (const width of [1280, 390]) {
 		await page.setViewportSize({ width, height: width > 500 ? 900 : 844 });
 		await page.goto('/settings/tmdb');
-		const card = page.getByRole('region', { name: 'What the metadata server gets' });
+		const card = page.getByRole('region', { name: 'What we send' });
 		await expect(card).toBeVisible();
 		for (const words of ['An install token.', 'What you look up.', 'Display choices.', 'Small request headers.', 'Install count by country.', 'public IP address', 'Never sent', 'Your files, folder paths or file names.']) {
 			await expect(card.getByText(words, { exact: false }).first()).toBeVisible();

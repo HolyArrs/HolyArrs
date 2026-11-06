@@ -56,7 +56,7 @@
 
 <svelte:head><title>API for other apps · HolyArrs</title></svelte:head>
 
-<PageHeader title="API for other apps">
+<PageHeader title="API">
 	{#snippet actions()}
 		<AdminLinkButton href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">The OpenAPI file</AdminLinkButton>
 	{/snippet}
@@ -65,7 +65,7 @@
 <div class="sc-form">
 <SettingsCard id="api-start" title="Start here">
 	<ol class="steps small">
-		<li>Make a key under API keys in <a href={to(`/settings/sign-in`)}>Sign-in and security</a>. The key is shown once; copy it then.</li>
+		<li>Make a key in <a href={to(`/settings/sign-in`)}>Sign-in and security</a>. The key is shown once; copy it then.</li>
 		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
 		<li>
 			The base address is
@@ -116,7 +116,7 @@
 			<SkSettings rows={2} />
 		{:else}
 			<Field id="api-q" label="Find a route">
-				<input id="api-q" class="input" type="search" bind:value={q} placeholder="For example downloads" autocomplete="off" />
+				<input id="api-q" class="input" type="search" bind:value={q} placeholder="e.g. downloads" autocomplete="off" />
 			</Field>
 			<p class="xs muted" role="status">{filterOps(ops, q).length} of {ops.length} routes</p>
 			{#each shown as g (g.tag)}

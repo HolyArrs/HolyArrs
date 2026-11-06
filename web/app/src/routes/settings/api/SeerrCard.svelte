@@ -51,7 +51,7 @@
 	}
 
 	async function makeKey(side: Side) {
-		if (a?.sides.find((s) => s.side === side)?.key && !confirm(`Make a new ${sideWord[side].app} key? The one Seerr or Overseerr has now stops working at once.`)) return;
+		if (a?.sides.find((s) => s.side === side)?.key && !confirm(`Replace the ${sideWord[side].app} key? The current one stops working.`)) return;
 		busy = 'key-' + side;
 		try {
 			const r = await api.post<{ key: string }>(`/settings/old-app-api/keys/${side}`);
@@ -66,7 +66,7 @@
 	}
 
 	async function removeKey(side: Side) {
-		if (!confirm(`Remove the ${sideWord[side].app} key? Seerr or Overseerr can no longer send requests on that side.`)) return;
+		if (!confirm(`Remove the ${sideWord[side].app} key? Seerr stops sending ${sideWord[side].what.toLowerCase()} requests.`)) return;
 		busy = 'del-' + side;
 		try {
 			await api.del(`/settings/old-app-api/keys/${side}`);
@@ -91,7 +91,7 @@
 </script>
 
 {#if !gone}
-	<SettingsCard id="seerr-card" title="Requests from Seerr and Overseerr" description="Seerr and Overseerr send approved requests to Sonarr and Radarr. Switch this on and add HolyArrs there in their place: requests land in your Library." icon="inbox">
+	<SettingsCard id="seerr-card" title="Requests from Seerr and Overseerr" description="Add HolyArrs to Seerr or Overseerr as Sonarr and Radarr. Approved requests land in your Library." icon="inbox">
 		{#if error && !a}
 			<LoadError hasData={false} message={error} onretry={load} />
 		{:else if !a}
@@ -99,7 +99,7 @@
 		{:else}
 			{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 			<div class="srow">
-				<div class="txt"><label for="seerr-on">Answer Seerr and Overseerr</label><span class="hint">Off: the Sonarr and Radarr addresses below answer nothing.</span></div>
+				<div class="txt"><label for="seerr-on">Answer Seerr and Overseerr</label></div>
 				<div class="ctl">
 					<label class="switch">
 						<input id="seerr-on" type="checkbox" checked={a.enabled} disabled={busy === 'on'} aria-busy={busy === 'on'} onchange={(e) => put({ enabled: e.currentTarget.checked }, 'on')} data-testid="seerr-on" />
@@ -117,7 +117,7 @@
 								<span class="hint" data-testid="seerr-key-{s.side}">Key ending in {s.key.hint.replace(/^[.…]+/, '')}, made by {s.key.owner}{s.key.last_used_at ? `, last used ${ago(s.key.last_used_at)}` : ', not used yet'}.</span>
 								{#if !s.key.owner_active}<span class="hint warn">{s.key.owner}'s account is off or may no longer manage the Library, so this key is refused. Make a new one.</span>{/if}
 							{:else}
-								<span class="hint">No key yet.</span>
+								<span class="hint">No key</span>
 							{/if}
 						</div>
 						<div class="ctl">
@@ -133,14 +133,14 @@
 								<code class="mono key">{fresh.key}</code>
 								<div class="row acts">
 									<Button icon="copy" type="button" onclick={() => copy(fresh?.key ?? '', 'Key')}>Copy</Button>
-									<Button variant="plain" type="button" onclick={() => (fresh = null)}>Done</Button>
+									<Button variant="plain" type="button" onclick={() => (fresh = null)}>Close</Button>
 								</div>
 							</div>
 						{/if}
 					</div>
 				{/each}
 				<div class="srow">
-					<div class="txt"><label for="seerr-delete">Let these apps delete files</label><span class="hint">Off: removing a title in Seerr takes it out of the Library and keeps its files. Seerr stores the key in plain text, so leave this off unless you need it.</span></div>
+					<div class="txt"><label for="seerr-delete">Let these apps delete files</label><span class="hint">Seerr stores keys in plain text. Leave off unless needed.</span></div>
 					<div class="ctl">
 						<label class="switch">
 							<input id="seerr-delete" type="checkbox" checked={a.delete_files} disabled={busy === 'delete'} aria-busy={busy === 'delete'} onchange={(e) => put({ delete_files: e.currentTarget.checked }, 'delete')} data-testid="seerr-delete" />

@@ -127,7 +127,7 @@
 
 <PageHeader title="Schedules" />
 
-{#if safeMode}<p class="notice warn">Safe mode: only the core runs. Schedules outside the core wait for a normal start.</p>{/if}
+{#if safeMode}<p class="notice warn">Safe mode is on. Most schedules wait for a normal start.</p>{/if}
 
 {#if !rows}
 	{#if error}
@@ -202,7 +202,7 @@
 									</p>
 								{/if}
 								{#if s.kind === 'rescan_library' && !s.enabled}
-									<p class="stale-note" data-testid="rescan-off-note">Files added, changed or removed by hand are found only when you press Run now on this row.</p>
+									<p class="stale-note" data-testid="rescan-off-note">Files changed by hand show up only after Run now</p>
 								{/if}
 
 								{#if editing === s.kind}
@@ -234,7 +234,7 @@
 										{/if}
 										{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 										<div class="ed-acts">
-											{#if s.settings}<a class="its" href={to(s.settings)}>Its settings<Icon name="chevronRight" size={14} /></a>{/if}
+											{#if s.settings}<a class="its" href={to(s.settings)}>Settings<Icon name="chevronRight" size={14} /></a>{/if}
 											<Button variant="primary" type="submit" busy={busy === s.kind} disabled={busy === s.kind}>Save</Button>
 											<Button variant="plain" type="button" onclick={() => closeEditor(s)}>Cancel</Button>
 										</div>
@@ -250,8 +250,8 @@
 
 	{#if loops.length}
 		<section class="sched-group" aria-labelledby="sg-loops" data-testid="loops">
-			<h2 id="sg-loops" class="group-head">Background loops</h2>
-			<p class="group-about">Work that keeps running on its own. Pause or restart one in <a href={to('/settings/parts')}>Parts and controls</a>.</p>
+			<h2 id="sg-loops" class="group-head">Stages</h2>
+			<p class="group-about">Pause or restart them in <a href={to('/settings/parts')}>Parts and controls</a>.</p>
 			<div class="s-card sched-card">
 				<ul>
 					{#each loops as l (l.key)}

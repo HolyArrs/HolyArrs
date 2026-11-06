@@ -42,7 +42,7 @@ test('the owner adds a Library folder for shows', async () => {
 	await own.getByLabel('Holds').selectOption('show');
 	await own.getByLabel('Folder path').fill(showsDir);
 	await own.getByLabel(/^Name/).fill('Shows');
-	await own.getByRole('button', { name: 'Add and check' }).click();
+	await own.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(own.getByTestId('folder-kind').filter({ hasText: 'For shows' })).toHaveCount(1);
 });
 

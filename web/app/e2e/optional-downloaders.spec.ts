@@ -194,18 +194,18 @@ async function verifyUncertainSendRecovery(page: Page) {
 	await page.reload();
 	const row = page.getByTestId('downloader').filter({ hasText: 'UI NZBGet' });
 	const warning = row.getByTestId('downloader-attempts');
-	await expect(warning.getByRole('heading', { name: 'A send needs review' })).toBeVisible();
+	await expect(warning.getByRole('heading', { name: 'Check whether this download arrived' })).toBeVisible();
 	await expect(warning).toContainText(`Release ${releaseID} · Slot ${slotID}`);
 	await expect(warning).toContainText('does not cancel anything in NZBGet');
 	await expect(warning).toContainText('stops HolyArrs from retrying this exact Release and Slot');
-	await expect(warning.getByRole('button', { name: 'Abandon this send' })).toBeVisible();
+	await expect(warning.getByRole('button', { name: 'Give up on it' })).toBeVisible();
 	await expect(warning.getByRole('button', { name: /retry/i })).toHaveCount(0);
 
 	await noSidewaysScroll(page);
 	for (const width of [320, 390]) {
 		await page.setViewportSize({ width, height: 844 });
 		await noSidewaysScroll(page);
-		await expect(warning.getByRole('button', { name: 'Abandon this send' })).toBeVisible();
+		await expect(warning.getByRole('button', { name: 'Give up on it' })).toBeVisible();
 	}
 	const posts: string[] = [];
 	const rememberPost = (request: { method(): string; url(): string }) => {
@@ -218,7 +218,7 @@ async function verifyUncertainSendRecovery(page: Page) {
 		expect(dialog.message()).toContain('does not cancel anything in NZBGet');
 		await dialog.accept();
 	});
-	await warning.getByRole('button', { name: 'Abandon this send' }).click();
+	await warning.getByRole('button', { name: 'Give up on it' }).click();
 	await expect(warning).toHaveCount(0);
 	page.off('request', rememberPost);
 	expect(abandonPosts).toBe(1);

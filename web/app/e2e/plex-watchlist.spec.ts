@@ -98,7 +98,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	await expect(own.getByRole('heading', { name: 'Devices' })).toBeVisible();
 	await expect(own.getByRole('heading', { name: 'Plex watchlist' })).toHaveCount(0);
 	await own.goto('/settings/wishlist');
-	await own.getByLabel('Ask from Plex watchlists').check();
+	await own.getByLabel('Request from Plex watchlists').check();
 	await own.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByText('Request settings saved.')).toBeVisible();
 
@@ -107,11 +107,11 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	const card = own.locator('#watchlist-me');
 	await expect(card.getByRole('heading', { name: 'Plex watchlist' })).toBeVisible();
 	// Turning a switch on queues a read straight away (the I/O workers may be busy with other Jobs first).
-	await card.getByLabel('Ask for movies on my Plex watchlist').check();
+	await card.getByLabel('Request movies on my Plex watchlist').check();
 	await expect(own.getByText('HolyArrs reads your Plex watchlist now')).toBeVisible();
-	await expect(card.getByLabel('Ask for movies on my Plex watchlist')).toBeChecked();
-	await card.getByLabel('Ask for shows on my Plex watchlist').check();
-	await expect(card.getByLabel('Ask for shows on my Plex watchlist')).toBeChecked();
+	await expect(card.getByLabel('Request movies on my Plex watchlist')).toBeChecked();
+	await card.getByLabel('Request shows on my Plex watchlist').check();
+	await expect(card.getByLabel('Request shows on my Plex watchlist')).toBeChecked();
 	await expect(card.getByText('Plex: ownerplex')).toBeVisible();
 
 	const states = async () => Object.fromEntries((await watch()).items.map((i) => [i.name, i.state]));
@@ -139,7 +139,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	// Read now again: nothing new is asked for.
 	const before = (await watch()).checked_at;
 	await card.getByRole('button', { name: 'Read now' }).click();
-	await expect(own.getByText('Reading your Plex watchlist now.')).toBeVisible();
+	await expect(own.getByText('Reading your Plex watchlist…')).toBeVisible();
 	await expect.poll(async () => (await watch()).checked_at, { timeout: 60_000, intervals: [1500] }).not.toBe(before);
 	expect((await asks()).map((a) => a.id).sort()).toEqual(first.map((a) => a.id).sort());
 
@@ -174,8 +174,8 @@ test('with the switches off, new watchlist entries are not asked for', async () 
 	const card = own.locator('#watchlist-me');
 	// Shows stay on, so saving queues a read; let it finish first.
 	const saved = (await watch()).checked_at;
-	await card.getByLabel('Ask for movies on my Plex watchlist').uncheck();
-	await expect(card.getByLabel('Ask for movies on my Plex watchlist')).not.toBeChecked();
+	await card.getByLabel('Request movies on my Plex watchlist').uncheck();
+	await expect(card.getByLabel('Request movies on my Plex watchlist')).not.toBeChecked();
 	await expect.poll(async () => (await watch()).movies).toBe(false);
 	await expect.poll(async () => (await watch()).checked_at, { timeout: 60_000, intervals: [1500] }).not.toBe(saved);
 
@@ -188,7 +188,7 @@ test('with the switches off, new watchlist entries are not asked for', async () 
 	expect((await watch()).items.some((i) => i.name === 'Nettle Observatory')).toBe(false);
 
 	// Both off: there is nothing to read.
-	await card.getByLabel('Ask for shows on my Plex watchlist').uncheck();
+	await card.getByLabel('Request shows on my Plex watchlist').uncheck();
 	await expect.poll(async () => (await watch()).shows).toBe(false);
 	expect((await call('POST', '/my/plex-watchlist/check', {})).status()).toBe(409);
 	expect((await asks()).some((a) => a.name === 'Nettle Observatory')).toBe(false);
@@ -240,8 +240,8 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	await kid.reload();
 	const card = kid.locator('#watchlist-me');
 	await expect(card.getByRole('heading', { name: 'Plex watchlist' })).toBeVisible();
-	await card.getByLabel('Ask for movies on my Plex watchlist').check();
-	await expect(card.getByLabel('Ask for movies on my Plex watchlist')).toBeChecked();
+	await card.getByLabel('Request movies on my Plex watchlist').check();
+	await expect(card.getByLabel('Request movies on my Plex watchlist')).toBeChecked();
 	await expect(card.getByText('Plex: junoplex')).toBeVisible();
 
 	const states = async () => Object.fromEntries((await watch(juno.call)).items.map((i) => [i.name, i.state]));
@@ -267,7 +267,7 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	// Read now: nothing new is asked for, and the limit still holds the second back.
 	const before = (await watch(juno.call)).checked_at;
 	await card.getByRole('button', { name: 'Read now' }).click();
-	await expect(kid.getByText('Reading your Plex watchlist now.')).toBeVisible();
+	await expect(kid.getByText('Reading your Plex watchlist…')).toBeVisible();
 	await expect.poll(async () => (await watch(juno.call)).checked_at, { timeout: 60_000, intervals: [1500] }).not.toBe(before);
 	expect(await states()).toEqual(first);
 	expect((await asks()).filter((a) => a.name === askedName || a.name === heldName).map((a) => a.id)).toEqual([mine[0].id]);

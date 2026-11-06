@@ -122,7 +122,7 @@
 			</label>
 		</div>
 		{#if days.length === 0}
-			<p class="small muted empty-chart">No calls recorded in this period. Calls will show here after this Source answers a call.</p>
+			<p class="small muted empty-chart">No calls in this period</p>
 		{:else}
 		<p class="xs muted legend"><span class="key calls"></span> answered <span class="key fails"></span> failed <span class="key grabs"></span> picked · days in UTC</p>
 		<div class="bars" role="img" aria-label="Calls, failures and picks per day">
@@ -146,9 +146,9 @@
 		{/if}
 	</section>
 
-	<SettingsCard title="Last calls">
+	<SettingsCard title="Recent calls">
 		{#if recent.length === 0}
-			<p class="small muted">No calls yet. Test the Source from the Sources page.</p>
+			<p class="small muted">No calls. Test it from Sources.</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 			<div class="table-scroll" tabindex="0" role="region" aria-label="Recent calls">

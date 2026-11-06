@@ -78,14 +78,14 @@ test('a mistake is named on its field before anything is sent, and Save keeps a 
 test('removing asks first, and then the copy is gone', async () => {
 	await page.goto('/settings/pick-rules');
 	await expect(row('Standard copy')).toContainText('Not used yet');
-	await more('Standard copy', 'Remove…');
+	await more('Standard copy', 'Remove');
 	const sheet = page.getByRole('dialog', { name: 'Remove these Pick rules?' });
 	await expect(sheet).toContainText('Standard copy');
 	await sheet.getByRole('button', { name: 'Cancel' }).click();
 	await expect(sheet).toBeHidden();
 	await expect(row('Standard copy')).toHaveCount(1);
 
-	await more('Standard copy', 'Remove…');
+	await more('Standard copy', 'Remove');
 	await sheet.getByRole('button', { name: 'Remove', exact: true }).click();
 	await expect(page.getByText('Standard copy removed.')).toBeVisible();
 	await expect(row('Standard copy')).toHaveCount(0);
@@ -136,7 +136,7 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 	try {
 		await page.goto('/settings/pick-rules');
 		const card = page.locator('#own-traits');
-		await expect(card).toContainText('No traits of your own yet');
+		await expect(card).toContainText('No traits of your own');
 		await card.getByRole('button', { name: 'Make a trait' }).click();
 		const sheet = page.getByRole('dialog', { name: 'Make a trait' });
 		await sheet.getByLabel('Name').fill('Dutch subs');
@@ -167,7 +167,7 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 		// Removing the trait takes it out of the copy.
 		await page.goto('/settings/pick-rules');
 		await page.getByTestId('own-trait').getByRole('button', { name: 'More for Dutch subs' }).click();
-		await page.getByRole('menu', { name: 'More for Dutch subs' }).getByRole('menuitem', { name: 'Remove…' }).click();
+		await page.getByRole('menu', { name: 'More for Dutch subs' }).getByRole('menuitem', { name: 'Remove' }).click();
 		await page.getByRole('dialog', { name: 'Remove this trait?' }).getByRole('button', { name: 'Remove', exact: true }).click();
 		await expect(page.getByText('Dutch subs removed, and taken out of 1 set of Pick rules.')).toBeVisible();
 		await expect(page.getByTestId('own-trait')).toHaveCount(0);
@@ -202,7 +202,7 @@ test('accessibility: the list, the remove sheet and a copy in the editor with Ad
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await page.goto('/settings/pick-rules');
-	await more('Standard copy', 'Remove…');
+	await more('Standard copy', 'Remove');
 	const sheet = page.getByRole('dialog', { name: 'Remove these Pick rules?' });
 	await expect(sheet).toBeVisible();
 	await sheet.evaluate((el) => Promise.all(el.getAnimations().map((x) => x.finished)));

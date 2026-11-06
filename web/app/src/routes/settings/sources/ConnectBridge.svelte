@@ -254,8 +254,8 @@
 						{#if mayEdit}
 							<div class="row-acts">
 								{#if !compact}<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</button>{/if}
-								<button type="button" class="quiet" onclick={() => editBridge(b)} data-testid="bridge-edit">Edit</button>
-								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">{compact ? 'Remove' : 'Disconnect…'}</button>
+								<button type="button" class="quiet" onclick={() => editBridge(b)} data-testid="bridge-edit">Change</button>
+								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">{compact ? 'Remove' : 'Unlink'}</button>
 							</div>
 						{/if}
 					</li>
@@ -266,7 +266,7 @@
 			{#if bridges.length}
 				<button type="button" class="add-row" onclick={startConnect} data-testid="bridge-start"><Icon name="plus" size={16} />Add another</button>
 			{:else}
-				<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">Connect</Button></div>
+				<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">Link</Button></div>
 			{/if}
 		{/if}
 		{#if open}
@@ -288,7 +288,7 @@
 					{/if}
 					{#if keysNeeded.length}
 						<div class="keys" data-testid="bridge-keys">
-							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>Make new old-app keys. Update any app that uses the old ones, like Seerr.</span></label>
+							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>Replace keys. Update apps that use them, like Seerr.</span></label>
 							{#if !newKeys}
 								<p class="hint">Or enter your current {keysNeeded.length === 1 ? 'key' : 'keys'}:</p>
 								{#each keysNeeded as side (side)}
@@ -312,27 +312,27 @@
 					{#if result?.tested}<span class="tag"><TestTag ok={result.ok} text={result.text} app={names[kind]} extra={result.extra} testid={result.ok ? 'bridge-result' : undefined} /></span>{/if}
 					<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>
 					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
-					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Connect'}</Button>
+					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Link'}</Button>
 				</div>
 			</div>
 		{/if}
 	{/if}
 </SettingsCard>
 
-<Sheet bind:open={removeOpen} title="Disconnect {removing ? names[removing.kind] : ''}?" description={removing?.url} size="sm">
+<Sheet bind:open={removeOpen} title="Unlink {removing ? names[removing.kind] : ''}?" description={removing?.url} size="sm">
 	<form id="remove-bridge" class="form" onsubmit={remove}>
 		{#if removing?.kind === 'jackett'}
 			<label class="check"><input type="radio" name="keep" checked={!keepSources} onchange={() => (keepSources = false)} /> <span>Remove its {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'}</span></label>
-			<label class="check"><input type="radio" name="keep" checked={keepSources} onchange={() => (keepSources = true)} /> <span>Keep them, but stop syncing with Jackett</span></label>
+			<label class="check"><input type="radio" name="keep" checked={keepSources} onchange={() => (keepSources = true)} /> <span>Keep Sources, stop syncing</span></label>
 		{:else if removing}
 			<p class="small">Removes HolyArrs from Prowlarr and deletes the {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'} it added.</p>
-			<label class="check"><input type="checkbox" bind:checked={keepSources} /> <span>Disconnect here only. HolyArrs stays in Prowlarr and keeps the Sources.</span></label>
+			<label class="check"><input type="checkbox" bind:checked={keepSources} /> <span>Unlink here only. Sources stay.</span></label>
 		{/if}
 		{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 	</form>
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="remove-bridge" busy={removeBusy}>Disconnect</Button>
+		<Button variant="destructive" type="submit" form="remove-bridge" busy={removeBusy}>Unlink</Button>
 	{/snippet}
 </Sheet>
 

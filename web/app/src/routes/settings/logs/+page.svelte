@@ -61,7 +61,7 @@
 
 <PageHeader title="Logs">
 	{#snippet actions()}
-		<AdminLinkButton href={to(`/api/v1/logs/download`)} download>Download the log</AdminLinkButton>
+		<AdminLinkButton href={to(`/api/v1/logs/download`)} download>Download</AdminLinkButton>
 	{/snippet}
 </PageHeader>
 
@@ -76,7 +76,7 @@
 		</Field>
 		<div class="field grow">
 			<label for="lg-q">Text</label>
-			<input id="lg-q" class="input" type="search" bind:value={filter.q} placeholder="For example qbittorrent" autocomplete="off" />
+			<input id="lg-q" class="input" type="search" bind:value={filter.q} placeholder="e.g. qBittorrent" autocomplete="off" />
 		</div>
 		<Field id="lg-from" label="From">
 			<input id="lg-from" class="input" type="date" bind:value={filter.from} onchange={() => apply()} />
@@ -86,7 +86,7 @@
 		</Field>
 	</div>
 	<div class="row" style="margin-top: var(--s-3)">
-		<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Show</Button>
+		<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Apply</Button>
 		<Button variant="plain" type="button" onclick={clear}>Clear</Button>
 	</div>
 </form>

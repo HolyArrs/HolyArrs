@@ -18,12 +18,12 @@ test('a TMDB list adds its movies by itself and skips the Never-add list', async
 	await page.goto('/settings');
 	await page.getByRole('link', { name: /Outside lists/ }).first().click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Outside lists' })).toBeVisible();
-	await expect(page.getByText('No Outside lists yet')).toBeVisible();
+	await expect(page.getByText('No Outside lists', { exact: true })).toBeVisible();
 
 	// Salt Choir must never be added.
 	await page.getByLabel('TMDB number').fill('900005');
 	await page.getByLabel('Name', { exact: true }).fill('Salt Choir');
-	await page.getByLabel('Why').fill('not for this house');
+	await page.getByLabel('Reason').fill('not for this house');
 	await page.getByRole('button', { name: 'Add to the Never-add list' }).click();
 	await expect(page.getByTestId('never-add')).toContainText('Salt Choir');
 

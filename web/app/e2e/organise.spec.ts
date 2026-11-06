@@ -28,7 +28,7 @@ test.beforeAll(async ({ browser }) => {
 	await page.getByRole('button', { name: 'Add a folder' }).click();
 	await page.getByLabel('Folder path').fill(oldLib);
 	await page.getByLabel('Name').fill('Old library');
-	await page.getByRole('button', { name: 'Add and check' }).click();
+	await page.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText(oldLib)).toBeVisible();
 });
 
@@ -184,7 +184,7 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await page.getByTestId('savebar').getByRole('button', { name: 'Discard' }).click();
 	await page.reload();
 	await expect(page.getByLabel('Folders read per library scan')).toHaveValue('5000');
-	await page.getByRole('button', { name: 'Remove old held files now' }).click();
+	await page.getByRole('button', { name: 'Clear now' }).click();
 	await expect(page.getByText('Removing held files older than 14 days.')).toBeVisible();
 });
 
@@ -257,10 +257,13 @@ test('members see none of it', async ({ browser }) => {
 	await sam.getByRole('button', { name: 'More actions', exact: true }).click();
 	await expect(sam.getByRole('menuitem')).toHaveText(['Report a problem']);
 	await sam.keyboard.press('Escape');
-	for (const url of ['/library/import', '/library/rename', '/settings/naming']) {
+	for (const url of ['/library/import', '/library/rename']) {
 		await sam.goto(url);
 		await expect(sam).not.toHaveURL(new RegExp(url.replace(/\//g, '\\/') + '$'));
 	}
+	// A Settings page they may not open shows a note in place of the page.
+	await sam.goto('/settings/naming');
+	await expect(sam.getByRole('heading', { name: "You can't change this" })).toBeVisible();
 	const res = await sam.request.get('/api/v1/rename');
 	expect(res.status()).toBe(403);
 	await sam.context().close();

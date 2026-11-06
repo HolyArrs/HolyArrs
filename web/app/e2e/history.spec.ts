@@ -86,7 +86,7 @@ test('history on the movie page links to the movie in History', async () => {
 test('health: checks run on Health checks, show on Home, and their settings are saved', async () => {
 	await page.goto('/settings/this-app');
 	await expect(page.getByTestId('health-summary')).toBeVisible();
-	await page.getByRole('link', { name: 'See the health checks' }).click();
+	await page.getByRole('link', { name: 'Health checks' }).click();
 	await expect(page.getByRole('heading', { name: 'Health checks', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'Check again' }).click();
 	const checks = page.getByTestId('health-check');
@@ -160,7 +160,7 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await page.getByTestId('moments-requests').getByRole('button', { name: 'None of these' }).click();
 	await expect(page.getByTestId('moments-requests').getByRole('checkbox', { name: /Someone asks/ })).not.toBeChecked();
 	await expect(page.getByTestId('moments-library').getByRole('checkbox', { name: /Sent to download/ })).toBeChecked();
-	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
+	await page.getByRole('checkbox', { name: /Reach the local network/ }).check();
 	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('alert').filter({ hasText: 'Home server hook' });
 	await expect(card).toContainText('Webhook');
@@ -187,7 +187,7 @@ test('alerts: add a Telegram bot, send a test, the chat gets the text', async ()
 	await page.getByLabel('Kind').selectOption('telegram');
 	await page.getByLabel('Bot token').fill(['123456789', 'AAHstandInTokenForE2eTests_0123'].join(':'));
 	await page.getByLabel('Chat ID').fill('-1001234567890');
-	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
+	await page.getByRole('checkbox', { name: /Reach the local network/ }).check();
 	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('alert').filter({ hasText: 'Family Telegram' });
 	await expect(card).toContainText('Telegram');
@@ -212,7 +212,7 @@ test('alerts: add an ntfy topic, send a test, the topic gets the text', async ()
 	await page.getByLabel('Kind').selectOption('ntfy');
 	await page.getByLabel('Server address').fill(`http://127.0.0.1:${discordPort}`);
 	await page.getByLabel('Topic').fill('holyarrs-e2e');
-	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
+	await page.getByRole('checkbox', { name: /Reach the local network/ }).check();
 	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('alert').filter({ hasText: 'Phone ntfy' });
 	await expect(card).toContainText('ntfy');

@@ -19,7 +19,7 @@ async function addSource(name: string, format: string, url: string, key = '') {
 	await page.getByLabel('Kind of feed').selectOption(format);
 	await page.getByLabel('Address', { exact: true }).fill(url);
 	if (key) await page.getByLabel('Key', { exact: true }).fill(key);
-	await page.getByText('May reach the local network', { exact: true }).click();
+	await page.getByText('Reach the local network', { exact: true }).click();
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 }
 
@@ -110,9 +110,9 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		await expect(guarded.getByTestId('source-bridge-link')).toHaveAttribute('href', '#connect-bridge');
 
 		await row.getByTestId('bridge-remove').click();
-		const sheet = page.getByRole('dialog', { name: 'Disconnect Jackett?' });
+		const sheet = page.getByRole('dialog', { name: 'Unlink Jackett?' });
 		await expect(sheet).toContainText('Remove its 1 Source');
-		await sheet.getByRole('button', { name: 'Disconnect', exact: true }).click();
+		await sheet.getByRole('button', { name: 'Unlink', exact: true }).click();
 		await expect(page.getByText('Jackett disconnected.')).toBeVisible();
 		await expect(card.getByTestId('bridge')).toHaveCount(0);
 		await expect(page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' })).toHaveCount(0);

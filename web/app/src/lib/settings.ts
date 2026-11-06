@@ -12,8 +12,8 @@ export interface Section {
 	about: string;
 	group: GroupId;
 	tint: Tint;
-	/** users: owner and admins; self: everyone; otherwise the settings permission. */
-	need?: 'users' | 'self';
+	/** users: owner and admins; self: everyone; library: settings or manage_library (read only); otherwise the settings permission. */
+	need?: 'users' | 'self' | 'library';
 }
 
 export interface Group {
@@ -23,9 +23,19 @@ export interface Group {
 	about: string;
 }
 
+type Can = (p: 'settings' | 'users' | 'manage_library') => boolean;
+
+/** mayOpen says whether a person may open one section. */
+export function mayOpen(s: Section, can: Can): boolean {
+	if (s.need === 'self') return true;
+	if (s.need === 'users') return can('users');
+	if (s.need === 'library') return can('settings') || can('manage_library');
+	return can('settings');
+}
+
 /** visible keeps the sections a person may open. */
-export function visible(all: Section[], can: (p: 'settings' | 'users') => boolean): Section[] {
-	return all.filter((s) => (s.need === 'self' ? true : s.need === 'users' ? can('users') : can('settings')));
+export function visible(all: Section[], can: Can): Section[] {
+	return all.filter((s) => mayOpen(s, can));
 }
 
 // Eight top tabs (Luis, 2026-11-02), then My account on its own: few tabs,
@@ -50,12 +60,12 @@ export const sections: Section[] = [
 
 	{ href: '/settings/library-folders', group: 'library', tint: 'blue', label: 'Library folders', icon: 'folder', about: 'Where finished movies, shows and music live, and their health.' },
 	{ href: '/settings/naming', group: 'library', tint: 'teal', label: 'Naming and files', icon: 'film', about: 'How files and folders are named, the holding folder and free space.' },
-	{ href: '/settings/title-defaults', group: 'library', tint: 'orange', label: 'Movies and TV defaults', icon: 'tv', about: 'What a new movie or show gets: folder, Pick rules, Keep up to date and Search when added.' },
+	{ href: '/settings/title-defaults', group: 'library', tint: 'orange', label: 'Movies and TV defaults', icon: 'tv', about: 'What a new movie or show gets: folder, Pick rules, Keep up to date and Search when added.', need: 'library' },
 	{ href: '/settings/music', group: 'library', tint: 'pink', label: 'Music defaults', icon: 'music', about: 'What a new artist gets, which Pressing an album follows, and MusicBrainz.' },
 	{ href: '/settings/subtitles', group: 'library', tint: 'amber', label: 'Subtitles', icon: 'subtitle', about: 'Default languages, Pass marks, when to look, Sync fix and Subtitle sites.' },
 	{ href: '/settings/tmdb', group: 'general', tint: 'purple', label: 'Metadata', icon: 'sparkle', about: 'Where names, dates and posters come from.' },
 
-	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Pick rules', icon: 'star', about: 'The rules that choose which Release to take, and where each is used.' },
+	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Pick rules', icon: 'star', about: 'The rules that choose which Release to take, and where each is used.', need: 'library' },
 	{ href: '/settings/sources', group: 'downloads', tint: 'blue', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases.' },
 	{ href: '/settings/search', group: 'downloads', tint: 'indigo', label: 'Search', icon: 'search', about: 'How often feeds are checked, the nightly search and the early and fake guards.' },
 	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', label: 'Downloaders', icon: 'downloader', about: 'The apps that download for HolyArrs, and what happens when a download goes wrong.' },

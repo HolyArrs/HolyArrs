@@ -88,9 +88,9 @@
 	<SkSettings rows={3} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
-	<SettingsCard id="pick-rules-card" title="Your Pick rules" description="Each Library folder has its own Pick rules, and a title can use other ones.">
+	<SettingsCard id="pick-rules-card" title="Your Pick rules" description="Each Library folder has its own; a title can override">
 		{#if rules.length === 0}
-			<EmptyState compact icon="star" title="No Pick rules yet" text="HolyArrs makes its ready-made Pick rules when it starts." action={mayEdit ? { label: 'Add Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
+			<EmptyState compact icon="star" title="No Pick rules" text="HolyArrs makes its ready-made Pick rules when it starts." action={mayEdit ? { label: 'Add Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="pick-rules">
 				{#each rules as r (r.id)}
@@ -106,7 +106,7 @@
 								label="More for {r.name}"
 								items={[
 									{ label: 'Make a copy', icon: 'copy', href: to(`/settings/pick-rules/new?from=${r.id}`) },
-									...(r.preset ? [] : [{ label: 'Remove…', icon: 'trash' as const, destructive: true, onselect: () => askRemove(r) }])
+									...(r.preset ? [] : [{ label: 'Remove', icon: 'trash' as const, destructive: true, onselect: () => askRemove(r) }])
 								]}
 							/>{/if}
 						</span>
@@ -124,16 +124,16 @@
 			<li><a href={to('/settings/title-defaults')}>Movies and TV defaults</a>: the rules a new movie or show gets.</li>
 			<li><a href={to('/settings/wishlist#ask-rules')}>Request rules</a>: the rules approved asks get.</li>
 			<li><a href={to('/settings/outside-lists')}>Outside lists</a>: the rules titles from a list get.</li>
-			<li>A title's own page: change the rules for that one title.</li>
+			<li>A title's page, for that title only</li>
 		</ul>
-		{#if mayEdit}<p class="hint">Change opens the steps, traits, sizes and waits of one set. Ready-made rules keep their name and kinds; make a copy to start your own from one.</p>
-		{:else}<p class="hint" data-testid="read-only">You can see Pick rules here. Changing them takes the settings permission.</p>{/if}
+		{#if mayEdit}<p class="hint">Copy a ready-made set to start your own</p>
+		{:else}<p class="hint" data-testid="read-only">View only. Changing needs the Settings permission.</p>{/if}
 	</SettingsCard>
 {/if}
 
 <Sheet bind:open={removeOpen} title="Remove these Pick rules?" description={removing?.name} size="sm">
 	<form id="remove-rules" onsubmit={remove}>
-		<p class="small">They are gone for good. Titles keep the files they already have.</p>
+		<p class="small">Can't be undone. Files stay.</p>
 		{#if removing?.in_use}<p class="small muted">{usedWords(removing.in_use)}. Pick other rules there first.</p>{/if}
 		{#if removeError}
 			<p class="form-error" role="alert" data-testid="remove-error">{removeError}{#if removeUse}<br /><span class="muted">{removeUse}.</span>{/if}</p>

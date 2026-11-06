@@ -269,22 +269,22 @@
 	{/snippet}
 </PageHeader>
 
-<PageLoader loading={!loaded} label="Loading the rule">
+<PageLoader loading={!loaded} label="Loading…">
 {#if id === null && !mayEdit}
-	<EmptyState icon="star" title="Making Pick rules takes the settings permission" text="You can see the Pick rules there are." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
+	<EmptyState icon="star" title="Needs the Settings permission" text="You can see the Pick rules there are." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
 {:else if gone}
-	<EmptyState icon="star" title="These Pick rules are gone" text="They may have been removed on another device." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
+	<EmptyState icon="star" title="Pick rules not found" text="They may have been removed on another device." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
-	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these Pick rules. Changing them takes the settings permission.</p>{/if}
+	{#if !mayEdit}<p class="hint" data-testid="read-only">View only. Changing needs the Settings permission.</p>{/if}
 	<form class="sc-form" id="pick-rules-form" onsubmit={save} aria-label="Pick rules" novalidate>
 	<fieldset class="group cards" disabled={!mayEdit}>
 	<legend class="sr-only">{mayEdit ? 'Pick rules' : 'Pick rules, read only'}</legend>
-		<SettingsCard id="rules-name" title="Name and kinds" description="What these rules are called and what they are for.">
+		<SettingsCard id="rules-name" title="Name and kinds">
 			{#if preset}
 				<p class="ro" data-testid="preset-name"><b>{form.name}</b><span class="muted">{` · ${kindWords}`}</span></p>
-				<p class="hint">Ready-made Pick rules keep their name and kinds, because HolyArrs finds them by name. What they take can change. Make a copy to start your own.</p>
+				<p class="hint">Name and kind are fixed on ready-made rules. Copy to rename.</p>
 			{:else}
 				<Field id="pr-name" label="Name" error={errors.name}>
 					<input id="pr-name" class="input" bind:value={form.name} maxlength="200" autocomplete="off" {...bad('name')} />
@@ -296,13 +296,13 @@
 							<label class="checkline box"><input type="checkbox" checked={form.kinds.includes(k)} onchange={(e) => setKind(k, e.currentTarget.checked)} /> <span>{l}</span></label>
 						{/each}
 					</div>
-					<span class="hint" id="kinds-hint">Music Pick rules are for music alone. Switching between video and music starts the steps and traits again.</span>
+					<span class="hint" id="kinds-hint">Switching video ↔ music resets steps and traits</span>
 					{#if errors.kinds}<span class="field-error" id="pr-kinds-error" role="alert">{errors.kinds}</span>{/if}
 				</fieldset>
 			{/if}
 		</SettingsCard>
 
-		<SettingsCard id="rules-steps" title="Quality steps" description="Which steps HolyArrs may take, best at the top. It keeps looking for a better copy until a file reaches Good enough.">
+		<SettingsCard id="rules-steps" title="Quality steps" description="Best at the top">
 			<fieldset class="group" id="pr-steps" tabindex="-1">
 				<legend class="sr-only">Steps HolyArrs may take</legend>
 				<ul class="steps" data-testid="steps">
@@ -330,9 +330,9 @@
 			{#each list.filter((t) => !isOwnTrait(t)) as t (t)}<option value={t}>{label(t)}</option>{/each}
 			{#if list.some(isOwnTrait)}<optgroup label="Your traits">{#each list.filter(isOwnTrait) as t (t)}<option value={t}>{label(t)}</option>{/each}</optgroup>{/if}
 		{/snippet}
-		<SettingsCard id="rules-traits" title="Traits and points" description="Traits a Release name shows earn or lose points. More points win between Releases on the same step.">
+		<SettingsCard id="rules-traits" title="Traits and points" description="Most points wins on the same step">
 			{#if form.body.traits.length === 0}
-				<p class="hint">No traits yet: every Release on a step counts the same.</p>
+				<p class="hint">No traits; all Releases on a step tie</p>
 			{:else}
 				<ul class="traits" id="pr-traits" data-testid="traits">
 					{#each form.body.traits as t, i (t.trait)}
@@ -350,17 +350,17 @@
 			{/if}
 			{#if errors.traits}<span class="field-error" id="pr-traits-error" role="alert">{errors.traits}</span>{/if}
 			<div><Button id="pr-add-trait" icon="plus" onclick={addTrait} disabled={form.body.traits.length >= own.length}>Add a trait</Button></div>
-			<p class="hint">Need a word or release group the list lacks? <a href={to('/settings/pick-rules#own-traits')}>Make your own trait</a>.</p>
+			<p class="hint"><a href={to('/settings/pick-rules#own-traits')}>Make your own trait</a></p>
 			{#snippet advanced()}
 				<Field id="pr-order" label="Which wins" hint={orderChoices.find(([v]) => v === form.body.order)?.[2]} error={errors.order}>
 					<select id="pr-order" class="input" bind:value={form.body.order}>
 						{#each orderChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="pr-upgrade" label="Points a better copy must add" hint="A Release on the same step replaces the file only with at least this many more points." error={errors.upgrade_min_points}>
+				<Field id="pr-upgrade" label="Points a better copy must add" hint="Same-step Releases need this many more points to replace" error={errors.upgrade_min_points}>
 					<input id="pr-upgrade" class="input narrow" type="number" min="-10000" max="10000" step="1" bind:value={form.body.upgrade_min_points} {...bad('upgrade_min_points')} />
 				</Field>
-				<Field id="pr-min-points" label="Fewest points a Release needs" hint="A Release with fewer points is passed over." error={errors.min_points}>
+				<Field id="pr-min-points" label="Fewest points a Release needs" error={errors.min_points}>
 					<input id="pr-min-points" class="input narrow" type="number" min="-10000" max="10000" step="1" bind:value={form.body.min_points} {...bad('min_points')} />
 				</Field>
 				<Field id="pr-proper" label="Fixed copies" hint={properChoices.find(([v]) => v === form.body.proper_policy.mode)?.[2]} error={errors.proper_policy}>
@@ -376,7 +376,7 @@
 			{/snippet}
 		</SettingsCard>
 
-		<SettingsCard id="rules-must-never" title="Must have and Never" description="A Release without every must-have trait is passed over. One with any Never trait is never taken.">
+		<SettingsCard id="rules-must-never" title="Must have and Never">
 			<div class="field">
 				<span class="label" id="must-label">Must have</span>
 				<div class="chips" role="group" aria-labelledby="must-label" data-testid="must-have">
@@ -384,7 +384,7 @@
 				</div>
 				<label class="sr-only" for="pr-must-add">Add to Must have</label>
 				<select id="pr-must-add" class="input" value="" onchange={(e) => (addTo('must_have', e.currentTarget.value), (e.currentTarget.value = ''))} {...bad('must_have')}>
-					<option value="">Add to Must have…</option>
+					<option value="">Add to Must have</option>
 					{@render options(own.filter((t) => !form.body.must_have.includes(t)))}
 				</select>
 				{#if errors.must_have}<span class="field-error" id="pr-must-add-error" role="alert">{errors.must_have}</span>{/if}
@@ -396,7 +396,7 @@
 				</div>
 				<label class="sr-only" for="pr-never-add">Add to Never</label>
 				<select id="pr-never-add" class="input" value="" onchange={(e) => (addTo('never', e.currentTarget.value), (e.currentTarget.value = ''))} {...bad('never')}>
-					<option value="">Add to Never…</option>
+					<option value="">Add to Never</option>
 					{@render options(neverChoices(form.kinds, mine).filter((t) => !form.body.never.includes(t)))}
 				</select>
 				{#if errors.never}<span class="field-error" id="pr-never-add-error" role="alert">{errors.never}</span>{/if}
@@ -415,11 +415,11 @@
 			<p class="hint">Leave a box empty for no limit. A 2-hour movie at 6 GB per hour is 12 GB.{#if otherSizes} {otherSizes === 1 ? 'One step has' : `${otherSizes} steps have`} sizes of {otherSizes === 1 ? 'its' : 'their'} own, which stay as they are.{/if}</p>
 		</SettingsCard>
 
-		<SettingsCard id="rules-wait" title="Waiting" description="Wait a while after a Release turns up, in case a better one follows.">
+		<SettingsCard id="rules-wait" title="Waiting" description="Wait in case a better Release turns up">
 			<div class="field" id="pr-prefer">
 				<span class="label">Prefer</span>
 				<div><SegmentedControl label="Prefer" options={preferChoices} bind:value={form.body.protocol.prefer} /></div>
-				<span class="hint">When a torrent and a Usenet Release are equally good, this one wins.</span>
+				<span class="hint">Wins a tie</span>
 			</div>
 			<div class="pair">
 				<Field id="pr-wait-torrent" label="Wait for torrents (minutes)" error={errors.wait_minutes_torrent}>
@@ -431,7 +431,7 @@
 			</div>
 			<label class="checkline">
 				<input id="pr-skip-wait" type="checkbox" bind:checked={form.body.protocol.skip_wait_at_good_enough} />
-				<span><b>Skip the wait once good enough</b><br /><span class="hint">A Release that is already good enough is taken at once.</span></span>
+				<span><b>Skip the wait once good enough</b></span>
 			</label>
 		</SettingsCard>
 
@@ -445,7 +445,7 @@
 			</div>
 			<label class="checkline">
 				<input id="pr-original" type="checkbox" bind:checked={form.body.language.original_ok} />
-				<span><b>The original language is fine</b><br /><span class="hint">A Release in the title's own language is taken too, even when it is not picked above.</span></span>
+				<span><b>The original language is fine</b><br /><span class="hint">Even if not ticked above</span></span>
 			</label>
 		</SettingsCard>
 
@@ -474,18 +474,19 @@
 	.switch { flex: 1; min-width: 0; font: var(--t-callout); }
 	.traits { display: flex; flex-direction: column; gap: 8px; }
 	.traits li { display: flex; align-items: center; gap: 8px; }
-	.traits select { flex: 1; min-width: 0; }
+	.traits select { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+	/* One control height per row: select, points and the remove button. */
+	.traits .input { height: 32px; min-height: 32px; padding-block: 0; }
 	.points { width: 110px; flex: none; }
 	.narrow { max-width: 180px; }
 	.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 	.pair :global(.field + .field) { margin-top: 0; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 32px; }
 	.field-error { color: var(--fail-text); font: var(--t-footnote); }
-	/* Phones: the trait gets its own line, its points and remove go below it. */
-	@media (max-width: 520px) {
-		.traits { gap: 16px; }
-		.traits li { flex-wrap: wrap; }
-		.traits select { flex-basis: 100%; }
-		.points { flex: 1; width: auto; }
+	/* Phones: points stay on the trait's row, narrower. */
+	@media (max-width: 600px) {
+		.traits .input { height: 40px; min-height: 40px; }
+		.points { width: 72px; }
 	}
+	@media (pointer: coarse) { .traits .input { height: 44px; min-height: 44px; } }
 </style>

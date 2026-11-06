@@ -110,14 +110,14 @@
 			<h2 id="h-checks" class="h2">Results</h2>
 			<span class="chip {checks.worst === 'ok' ? 'ok' : checks.worst === 'warning' ? 'wait' : 'fail'}" data-testid="health-worst">{stateWord(checks.worst)}</span>
 		</div>
-		<p class="small muted">When something breaks or is fixed, the Alerts that speak for health hear of it.</p>
+		<p class="small muted">Health Alerts hear about breaks and fixes</p>
 		{#if checks.sync?.length}
 			<ul class="rows checks" data-testid="health-sync">
 				{#each checks.sync as c (c.id)}
 					<li data-testid="health-sync-row" data-state={c.health}>
 						<span class="chip {c.health === 'degraded' ? 'fail' : 'wait'}">{c.health === 'degraded' ? 'Sync degraded' : 'Checking'}</span>
 						<span class="grow small">
-							<b>Downloads reader</b> {c.name}
+							<b>Download tracking</b> {c.name}
 							<br /><span class="muted"
 								>{c.health === 'degraded'
 									? 'The background reader is down; HolyArrs reads this Downloader itself until it is back.'
@@ -130,7 +130,7 @@
 			</ul>
 		{/if}
 		{#if checks.checks.length === 0}
-			<p class="small muted" style="margin-top: var(--s-3)">No results yet. Check again to run them now.</p>
+			<p class="small muted" style="margin-top: var(--s-3)">No results. Check again to run them.</p>
 		{:else}
 			<ul class="rows checks">
 				{#each checks.checks as c (c.key)}
@@ -149,11 +149,11 @@
 
 	{#if settings}
 		<form class="sc-form" id="health-form" onsubmit={saveSettings} aria-label="Health check settings">
-			<SettingsCard id="health-settings" title="Health check settings" description="How often HolyArrs checks, and when it looks for a newer version.">
+			<SettingsCard id="health-settings" title="Health check settings">
 				<label class="checkline" id="update-check-row"
 					><input id="update-check" type="checkbox" bind:checked={settings.update_check} /> Check for a newer HolyArrs</label
 				>
-				<p class="hint">Off: HolyArrs never asks. On: one small request per check to the release feed; nothing is ever installed by itself.</p>
+				<p class="hint">Only checks. Never installs.</p>
 				<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
 				{#if settings.update_check}
 					<Field id="hs-days" label="Check for updates every">
@@ -166,24 +166,24 @@
 						</select>
 					</Field>
 				{/if}
-				<Field id="hs-low" label="Warn when free space is under (MB)" hint="A health warning goes out when a Library folder's disk has less free space than this.">
+				<Field id="hs-low" label="Warn when free space is under (MB)" hint="Per Library folder disk">
 					<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
 				</Field>
 				{#if settingsError}<p class="form-error" role="alert">{settingsError}</p>{/if}
 				{#snippet advanced()}
 					<div class="two">
-						<Field id="hs-every" label="Check every (minutes)" hint="Every check runs again after this many minutes.">
+						<Field id="hs-every" label="Check every (minutes)">
 							<input id="hs-every" class="input" type="number" min="1" max="1440" bind:value={settings!.every_minutes} />
 						</Field>
-						<Field id="hs-guard" label="Alert after this many runs in a row" hint="A break or a fix must hold this long before an Alert goes out.">
+						<Field id="hs-guard" label="Alert after this many runs in a row" hint="Stops one-off blips from alerting">
 							<input id="hs-guard" class="input" type="number" min="1" max="20" bind:value={settings!.flap_guard} />
 						</Field>
 					</div>
-					<Field id="hs-upd" label="Release feed" hint="Empty: the HolyArrs project's releases.">
+					<Field id="hs-upd" label="Release feed" hint="Empty uses HolyArrs releases">
 						<input id="hs-upd" class="input mono" bind:value={settings!.update_check_url} placeholder={settings!.update_check_default} autocomplete="off" />
 					</Field>
-					<label class="checkline"><input type="checkbox" bind:checked={settings!.update_check_local} /> The release feed may be on the local network</label>
-					<label class="checkline"><input type="checkbox" bind:checked={settings!.update_prerelease} /> Tell me about test versions too (such as v1.2.0-rc1)</label>
+					<label class="checkline"><input type="checkbox" bind:checked={settings!.update_check_local} /> Feed may be on the local network</label>
+					<label class="checkline"><input type="checkbox" bind:checked={settings!.update_prerelease} /> Include test versions (like 1.2.0-rc1)</label>
 				{/snippet}
 			</SettingsCard>
 		</form>

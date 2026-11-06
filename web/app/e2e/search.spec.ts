@@ -161,14 +161,14 @@ test('Settings > Search: the three settings are saved and a wrong interval is re
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('alert')).toContainText('10 to 120 minutes');
 	await page.getByLabel('Check Source feeds every (minutes)').fill('30');
-	await page.getByLabel('Movies to search for each night').fill('7');
-	await page.getByLabel('Also Find a better copy each night').check();
+	await page.getByLabel('Titles to search each night').fill('7');
+	await page.getByLabel('Also find better copies each night').check();
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Search settings saved.')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Check Source feeds every (minutes)')).toHaveValue('30');
-	await expect(page.getByLabel('Movies to search for each night')).toHaveValue('7');
-	await expect(page.getByLabel('Also Find a better copy each night')).toBeChecked();
+	await expect(page.getByLabel('Titles to search each night')).toHaveValue('7');
+	await expect(page.getByLabel('Also find better copies each night')).toBeChecked();
 });
 
 test('Settings > Search: the early and fake switches are saved', async () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SkSettings } from '#lib/ui/sk/index.ts';
-	// Settings > Movies and TV defaults: what a new movie or show gets (folder,
+	// Settings > Movie and show defaults: what a new movie or show gets (folder,
 	// Pick rules, Keep up to date, Search when added), with the Release gate
 	// and the show choices behind Advanced. Three server routes, one form.
 	import { onMount } from 'svelte';
@@ -83,7 +83,7 @@
 				saved = JSON.stringify(done);
 			}
 			savedDefaults.forget();
-			toasts.push('Movies and TV defaults saved.', 'ok');
+			toasts.push('Movie and show defaults saved.', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -92,9 +92,9 @@
 	}
 </script>
 
-<svelte:head><title>Movies and TV defaults · HolyArrs</title></svelte:head>
+<svelte:head><title>Movie and show defaults · HolyArrs</title></svelte:head>
 
-<PageHeader title="Movies and TV defaults" />
+<PageHeader title="Movie and show defaults" />
 
 {#if loading && !form}
 	<SkSettings rows={4} />
@@ -102,17 +102,17 @@
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these defaults. Changing them takes the settings permission.</p>{/if}
-	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movies and TV defaults">
+	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movie and show defaults">
 	<fieldset class="all" disabled={!mayEdit}>
-	<legend class="sr-only">{mayEdit ? 'Movies and TV defaults' : 'Movies and TV defaults, read only'}</legend>
-		<SettingsCard id="movie-defaults" icon="film" title="Movies" description="What every movie you add gets.">
-			<Field id="td-movie-folder" label="Library folder" hint="Where a new movie goes.">
+	<legend class="sr-only">{mayEdit ? 'Movie and show defaults' : 'Movie and show defaults, read only'}</legend>
+		<SettingsCard id="movie-defaults" icon="film" title="Movies">
+			<Field id="td-movie-folder" label="Library folder">
 				<select id="td-movie-folder" class="input" bind:value={form.defaults.movie.library_folder_id}>
-					<option value={0}>The first working movie folder</option>
+					<option value={0}>First movie folder</option>
 					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
-			<Field id="td-movie-rules" label="Pick rules" hint="Which Releases count, and which one is best.">
+			<Field id="td-movie-rules" label="Pick rules">
 				<select id="td-movie-rules" class="input" bind:value={form.defaults.movie.pick_rules_id}>
 					<option value={0}>The folder's own Pick rules</option>
 					{#each movieRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
@@ -120,11 +120,11 @@
 			</Field>
 			<label class="checkline">
 				<input id="td-movie-keep" type="checkbox" bind:checked={form.defaults.movie.keep_up_to_date} />
-				<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks for it, and for a better copy later.</span></span>
+				<span><b>Keep up to date</b><br /><span class="hint">Searches now and for better copies later</span></span>
 			</label>
 			<label class="checkline">
 				<input id="td-movie-search" type="checkbox" bind:checked={form.defaults.movie.search_on_add} />
-				<span><b>Search when added</b><br /><span class="hint">Start looking for a Release straight away.</span></span>
+				<span><b>Search when added</b></span>
 			</label>
 			{#snippet advanced()}
 				<Field id="td-gate" label="Release gate" hint={gateChoices.find(([g]) => g === form?.gate.release_gate)?.[2]}>
@@ -132,20 +132,20 @@
 						{#each gateChoices as [g, l] (g)}<option value={g}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="td-gate-days" label="Extra days to wait" hint="Days to wait after the gate opens before HolyArrs looks.">
+				<Field id="td-gate-days" label="Extra days to wait" hint="After the Release gate opens">
 					<input id="td-gate-days" class="input narrow" type="number" min="0" max="365" step="1" bind:value={form!.gate.gate_delay_days} />
 				</Field>
 			{/snippet}
 		</SettingsCard>
 
-		<SettingsCard id="show-defaults" icon="tv" title="TV shows" description="What every show you add gets.">
-			<Field id="td-show-folder" label="Library folder" hint="Where a new show goes.">
+		<SettingsCard id="show-defaults" icon="tv" title="Shows">
+			<Field id="td-show-folder" label="Library folder">
 				<select id="td-show-folder" class="input" bind:value={form.defaults.show.library_folder_id}>
-					<option value={0}>The first working TV show folder</option>
+					<option value={0}>First show folder</option>
 					{#each showFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
-			<Field id="td-show-rules" label="Pick rules" hint="Which Releases count, and which one is best.">
+			<Field id="td-show-rules" label="Pick rules">
 				<select id="td-show-rules" class="input" bind:value={form.defaults.show.pick_rules_id}>
 					<option value={0}>The folder's own Pick rules</option>
 					{#each showRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
@@ -153,11 +153,11 @@
 			</Field>
 			<label class="checkline">
 				<input id="td-show-keep" type="checkbox" bind:checked={form.defaults.show.keep_up_to_date} />
-				<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks for the episodes of the seasons it keeps up to date.</span></span>
+				<span><b>Keep up to date</b></span>
 			</label>
 			<label class="checkline">
 				<input id="td-show-search" type="checkbox" bind:checked={form.defaults.show.search_on_add} />
-				<span><b>Search when added</b><br /><span class="hint">Look for missing episodes as soon as the show is added. Off: they are looked for at the next feed check and each night.</span></span>
+				<span><b>Search when added</b><br /><span class="hint">Off waits for the next feed check</span></span>
 			</label>
 			{#snippet advanced()}
 				<Field id="td-seasons" label="Seasons to keep up to date" hint={seasonChoices.find(([v]) => v === form?.shows.season_choice)?.[2]}>
@@ -165,7 +165,7 @@
 						{#each seasonChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="td-new-seasons" label="New seasons" hint="What happens to a season that comes out later.">
+				<Field id="td-new-seasons" label="New seasons">
 					<select id="td-new-seasons" class="input" bind:value={form!.shows.new_seasons}>
 						<option value="all">Keep them up to date</option>
 						<option value="none">Leave them off</option>
@@ -176,7 +176,7 @@
 						{#each episodeOrders as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="td-source" label="Details from" hint="Where names, seasons and air dates come from.">
+				<Field id="td-source" label="Details from">
 					<select id="td-source" class="input" bind:value={form!.shows.details_source}>
 						{#each detailsSources as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>

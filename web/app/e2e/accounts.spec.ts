@@ -383,7 +383,7 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await own.goto('/settings/sign-in');
 	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Plex' }) });
 	await card.getByText('Show the Plex button on the sign-in page').click();
-	await card.getByText('Advanced: type the server id').click();
+	await card.getByText('Type the server ID').click();
 	await card.getByLabel('Server id people must share (optional)').fill('fake-server');
 	await card.getByLabel('Who may join the first time').selectOption('everyone');
 	await card.getByRole('button', { name: 'Save' }).click();

@@ -790,7 +790,7 @@
 <svelte:head>{#if !embedded}<title>Move from other apps · HolyArrs</title>{/if}</svelte:head>
 
 {#if !embedded}
-	<PageHeader title="Move from other apps" subtitle="Bring your movies, shows, music, Sources, Downloaders and people over from the apps you use now. Nothing changes in those apps." />
+	<PageHeader title="Move from other apps" subtitle="Bring your titles, Sources, Downloaders and people over. Your old apps stay untouched." />
 {/if}
 
 {#if !loaded}
@@ -801,14 +801,14 @@
 {:else}
 	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
 	{#if mustSetPw && !pwSheet}
-		<SettingsCard id="move-password" title="Set a password first" description="Moving needs a HolyArrs password." icon="shield">
+		<SettingsCard id="move-password" title="Set a password first" description="Needed before moving" icon="shield">
 			<form class="setpw" onsubmit={setFirstPw}>
-				<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="New password" autocomplete="new-password" />
-				<input class="input" type="password" bind:value={pwB} placeholder="Password again" aria-label="New password again" autocomplete="new-password" />
+				<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
+				<input class="input" type="password" bind:value={pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
 				<Button variant="primary" type="submit" busy={pwBusy} disabled={pwBusy}>Set password</Button>
 			</form>
 			{#if pwStale}
-				<p class="form-error" role="alert">Sign in again first. You'll come straight back here.</p>
+				<p class="form-error" role="alert">Sign in again to continue. You'll return here.</p>
 				<div><Button onclick={signInAgain}>Sign in again</Button></div>
 			{:else if pwErr}<p class="form-error" role="alert">{pwErr}</p>{/if}
 		</SettingsCard>
@@ -858,7 +858,7 @@
 
 	{#if gone}
 		<div class="notice warn gone" role="alert">
-			<span>One of the reads you picked is gone. Go back and pick again.</span>
+			<span>A picked read is gone. Pick again.</span>
 			<Button onclick={goBackToReads}>Back to Read your apps</Button>
 		</div>
 	{/if}
@@ -905,21 +905,21 @@
 
 <Sheet bind:open={forgetOpen} title="Forget this {appName(forgetting?.kind ?? '')} read?" size="sm">
 	<form id="move-forget-form" onsubmit={forget}>
-		<p class="small muted">Moves already made from it stay. You can read it again any time.</p>
+		<p class="small muted">Finished moves stay. You can read it again.</p>
 		{#if forgetError}<p class="form-error" role="alert">{forgetError}</p>{/if}
 	</form>
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (forgetOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>Forget</Button>
+		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>Remove</Button>
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={pwSheet} title="Set a password first" description="Moving needs a HolyArrs password." size="sm">
+<Sheet bind:open={pwSheet} title="Set a password first" description="Needed before moving" size="sm">
 	<form class="setpw one-col" onsubmit={setFirstPw}>
-		<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="New password" autocomplete="new-password" />
-		<input class="input" type="password" bind:value={pwB} placeholder="Password again" aria-label="New password again" autocomplete="new-password" />
+		<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
+		<input class="input" type="password" bind:value={pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
 		{#if pwStale}
-			<p class="form-error" role="alert">Sign in again first. You'll come straight back here.</p>
+			<p class="form-error" role="alert">Sign in again to continue. You'll return here.</p>
 			<Button onclick={signInAgain}>Sign in again</Button>
 		{:else if pwErr}<p class="form-error" role="alert">{pwErr}</p>{/if}
 		<Button variant="primary" type="submit" busy={pwBusy} disabled={pwBusy}>Set password and move</Button>
@@ -953,7 +953,7 @@
 
 <Sheet bind:open={confirmUndo} title="Undo move {current?.id ?? ''}?" size="sm">
 	<form id="move-undo-form" onsubmit={undo}>
-		<p class="small muted">Removes what this move added. Anything you changed since stays. Your old apps were never touched. The undo replaces this move's report, so download it first if you want to keep it.</p>
+		<p class="small muted">Removes what this move added; your later changes stay. Download the report first if you want it.</p>
 	</form>
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (confirmUndo = false)}>Cancel</Button>

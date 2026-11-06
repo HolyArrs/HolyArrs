@@ -106,7 +106,7 @@
 	}
 
 	async function remove(s: SourceView) {
-		if (!confirm(`Remove the Source ${s.name}? Its Releases and its record go too.`)) return;
+		if (!confirm(`Remove ${s.name}? Its Releases and history go too.`)) return;
 		try {
 			await api.del(`/sources/${s.id}`);
 			await load();
@@ -143,9 +143,9 @@
 			<div class="two">
 				<Field id="so-format" label="Kind of feed">
 					<select id="so-format" class="input" bind:value={form.format}>
-						<option value="torznab">Torznab (torrents, also Jackett and Prowlarr)</option>
+						<option value="torznab">Torznab (torrents, Jackett, Prowlarr)</option>
 						<option value="newznab">Newznab (Usenet)</option>
-						<option value="rss">Plain RSS feed (newest list only)</option>
+						<option value="rss">RSS (newest only)</option>
 					</select>
 				</Field>
 				<Field id="so-proto" label="Downloads">
@@ -162,16 +162,16 @@
 				</span>
 			</Field>
 			{#if form.format !== 'rss'}
-				<Field id="so-key" label="Key" hint="Kept encrypted. Leave as it is to keep the stored one. Moving the address to another host needs the key again.">
+				<Field id="so-key" label="Key" hint="Retype it if the address moves host">
 					<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 				</Field>
 			{/if}
 			<fieldset class="group">
 				<legend class="label">Use it for</legend>
-				<label class="checkline"><input type="checkbox" bind:checked={form.feed} /><span><b>Newest list</b><br /><span class="hint">Read its newest Releases now and then.</span></span></label>
+				<label class="checkline"><input type="checkbox" bind:checked={form.feed} /><span><b>Newest list</b></span></label>
 				{#if form.format !== 'rss'}
-					<label class="checkline"><input type="checkbox" bind:checked={form.auto_search} /><span><b>Searches on its own</b><br /><span class="hint">When HolyArrs looks for a title by itself.</span></span></label>
-					<label class="checkline"><input type="checkbox" bind:checked={form.hand_search} /><span><b>Search by hand</b><br /><span class="hint">When you search from a title's page.</span></span></label>
+					<label class="checkline"><input type="checkbox" bind:checked={form.auto_search} /><span><b>Automatic searches</b></span></label>
+					<label class="checkline"><input type="checkbox" bind:checked={form.hand_search} /><span><b>Choose a release</b></span></label>
 				{/if}
 			</fieldset>
 			<fieldset class="group">
@@ -181,7 +181,7 @@
 				{/each}
 			</fieldset>
 			<div class="two">
-				<Field id="so-prio" label="Priority" hint="1 to 50; 1 is asked first and wins a tie.">
+				<Field id="so-prio" label="Priority" hint="1–50, lowest first and wins ties">
 					<input id="so-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 				</Field>
 				{#if form.protocol === 'torrent'}
@@ -190,13 +190,13 @@
 					</Field>
 				{/if}
 			</div>
-			<Field id="so-tags" label="Tags" hint="With tags, this Source is searched and its newest list matched only for titles that have one of them. Without tags it serves every title.">
+			<Field id="so-tags" label="Tags" hint="Only titles with a matching tag use it">
 				<TagInput id="so-tags" bind:value={form.tags} describedby="so-tags-hint" testid="so-tags" />
 			</Field>
 			<details class="more">
 				<summary>Limits</summary>
 				<div class="two">
-					<Field id="so-cap" label="Most searches per window" hint="0 means no cap.">
+					<Field id="so-cap" label="Most searches per window" hint="0 for no limit">
 						<input id="so-cap" class="input" type="number" min="0" bind:value={form.searches_per_window} />
 					</Field>
 					<Field id="so-win" label="Window (hours)">
@@ -212,20 +212,20 @@
 			</details>
 			<details class="more" open={!!form.proxy}>
 				<summary>Proxy</summary>
-				<Field id="so-proxy" label="Proxy address" hint="Every call to this Source goes through it. Empty means none.">
+				<Field id="so-proxy" label="Proxy address">
 					<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder="socks5://name@host:1080 or http://host:3128" />
 				</Field>
-				<Field id="so-proxy-pw" label="Proxy password" hint="Kept encrypted. Leave as it is to keep the stored one.">
+				<Field id="so-proxy-pw" label="Proxy password">
 					<input id="so-proxy-pw" class="input" type="password" bind:value={form.proxy_password} autocomplete="new-password" />
 				</Field>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.proxy_allow_local_network} />
-					<span><b>The proxy may be on the local network</b><br /><span class="hint">Off: only a proxy on the internet.</span></span>
+					<span><b>Proxy may be on the local network</b></span>
 				</label>
 			</details>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>May reach the local network</b><br /><span class="hint">Off: only addresses on the internet. On: also this machine or your home network, for a bridge such as Jackett or Prowlarr.</span></span>
+				<span><b>Reach the local network</b><br /><span class="hint">For Jackett or Prowlarr at home</span></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
@@ -243,7 +243,7 @@
 {:else if sources.length === 0 && !editing}
 	<EmptyState
 		icon="source"
-		title="No Sources yet"
+		title="No Sources"
 		text="Without a Source, HolyArrs cannot find Releases. Add a Torznab or Newznab feed, or a bridge such as Jackett or Prowlarr."
 		action={{ label: 'Add a Source', onclick: startAdd, icon: 'plus' }}
 	/>
@@ -262,7 +262,7 @@
 					<span class="chip {healthTone(s.health)}" data-testid="source-state">{healthWord(s.health)}</span>
 				</div>
 				<p class="small" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
-				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="small"><a href="#connect-bridge" data-testid="source-bridge-link">Connect Jackett or Prowlarr</a></p>{/if}
+				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="small"><a href="#connect-bridge" data-testid="source-bridge-link">Link Jackett or Prowlarr</a></p>{/if}
 				<p class="xs muted">
 					{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)} · priority {s.priority} · {uses(s)}
 					{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
