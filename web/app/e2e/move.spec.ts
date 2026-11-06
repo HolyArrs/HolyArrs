@@ -380,7 +380,7 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   // Let the sheet finish closing before it opens again.
   await expect(forget).toBeHidden();
   await page.getByRole("button", { name: /^Forget the .+ read from/ }).last().click();
-  await forget.getByRole("button", { name: "Forget", exact: true }).click();
+  await forget.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before - 1);
 });
 
