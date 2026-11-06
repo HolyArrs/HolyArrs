@@ -10,6 +10,7 @@
 	import EmptyState from '../ui/EmptyState.svelte';
 	import Icon from '../Icon.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
+	import Sheet from '../ui/Sheet.svelte';
 	import { appName, folderProblem, groupLabels, OTHER, plural, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from '../move.ts';
 
 	// Step 2: a summary of what moves, then only what needs the person; the
@@ -116,26 +117,18 @@
 	const bigLine = $derived(lead.length ? lead.map(countOf).join(', ') : 'Nothing switched on');
 	const restLine = $derived.by(() => {
 		const rest = on.filter((g) => !lead.includes(g)).map((g) => named[g.name] ?? g.label);
-		return rest.length ? `plus ${andList(rest)}` : '';
+		return rest.length ? `Also: ${andList(rest)}` : '';
 	});
 
 	// Things to type after the move (keys, passwords, links), people aside.
-	// The items behind the keys line, for its Show.
-	const keyItems = $derived(on.filter((g) => g.name !== 'people').flatMap((g) => g.items.filter((it) => it.needs)));
 	const keysLine = $derived.by(() => {
 		const parts: string[] = [];
-		const needs: string[] = [];
 		for (const g of on) {
 			if (g.name === 'people') continue;
-			const n = g.items.filter((it) => it.needs);
-			if (n.length === 0) continue;
-			parts.push(plural(n.length, g.label.replace(/s$/, ''), g.label));
-			for (const it of n) needs.push(it.needs ?? '');
+			const n = g.items.filter((it) => it.needs).length;
+			if (n > 0) parts.push(plural(n, g.label.replace(/s$/, ''), g.label));
 		}
-		if (parts.length === 0) return '';
-		const keys = needs.every((x) => /key/.test(x));
-		const many = needs.length > 1;
-		return `${andList(parts)}: paste ${keys ? (many ? 'their keys' : 'its key') : many ? 'their keys or passwords' : 'its key or password'} in Settings after the move`;
+		return parts.length ? `Reconnect ${andList(parts)}` : '';
 	});
 	const nothingNeeded = $derived(needFolders.length === 0 && !keysLine && !peopleOn);
 
@@ -173,11 +166,22 @@
 		return { key: it.key, name: it.name, hint };
 	}
 
-	// The keys list: the name, then only what to paste ("Key", "Password").
-	function keyRow(it: PlanItem) {
-		const what = (it.needs ?? '').replace(/^your\s+/i, '');
-		return { key: it.key, name: it.name.replace(/\s*\((Prowlarr|Jackett)\)$/i, ''), hint: what.charAt(0).toUpperCase() + what.slice(1) };
-	}
+	// The reconnect list: Sources split into Usenet and Torrent, Downloaders with what each needs.
+	let keysOpen = $state(false);
+	const clean = (n: string) => n.replace(/\s*\((Prowlarr|Jackett)\)$/i, '');
+	const keyGroups = $derived.by(() => {
+		const src = on.find((g) => g.name === 'sources')?.items.filter((it) => it.needs) ?? [];
+		const dls = on.find((g) => g.name === 'downloaders')?.items.filter((it) => it.needs) ?? [];
+		const usenet = src.filter((it) => /newznab|usenet/i.test(it.detail ?? ''));
+		const torrent = src.filter((it) => !usenet.includes(it));
+		const need = (it: PlanItem) => (/password/i.test(it.needs ?? '') ? 'Password' : 'Key');
+		return [
+			{ label: 'Usenet', items: usenet.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
+			{ label: 'Torrent', items: torrent.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
+			{ label: 'Downloaders', items: dls.map((it) => ({ key: it.key, name: clean(it.name), need: need(it) })) }
+		].filter((g) => g.items.length > 0);
+	});
+
 
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
@@ -250,6 +254,7 @@
 			{#if shown.length === 0}
 				<EmptyState compact icon="check" title="Nothing new to move" text="Everything in these reads is already here or has no match." />
 			{:else}
+				<h3 class="head">Coming over</h3>
 				<div class="box sum" data-testid="move-summary">
 					<b class="big">{bigLine}</b>
 					{#if restLine}<span class="sub">{restLine}</span>{/if}
@@ -269,11 +274,11 @@
 						{@render folderRow(p, n, `move-need-folder-${n}`, 'need-folder-row', false)}
 					{/each}
 					{#if keysLine}
-						<li class="mrow"><span class="txt warn">{keysLine}</span><button type="button" class="quiet" onclick={() => onshow('Paste after the move', keyItems, keyRow)}>Show</button></li>
+						<li class="mrow"><span class="txt"><b class="warn">{keysLine}</b><span class="sub">They come over paused. Add their keys in Settings to switch them on.</span></span><button type="button" class="quiet" onclick={() => (keysOpen = true)}>Show</button></li>
 					{/if}
 					{#if peopleOn}
 						<li class="mrow">
-							<span class="txt">{peopleItems.length === 1 ? '1 person comes' : `${peopleItems.length} people come`} over turned off until you invite them</span>
+							<span class="txt"><b>Invite {peopleItems.length === 1 ? '1 user' : `${peopleItems.length} users`}</b><span class="sub">Their accounts come over. Send each an invite so they can sign in.</span></span>
 							{#if asked.length > 3}
 								<button type="button" class="quiet" aria-expanded={peopleOpen} onclick={() => (peopleOpen = !peopleOpen)}>Review people</button>
 							{:else}
@@ -367,7 +372,23 @@
 	</SettingsCard>
 </div>
 
+<Sheet bind:open={keysOpen} title="Reconnect after the move" size="md">
+	<div class="kgroups" data-testid="keys-sheet">
+		{#each keyGroups as g (g.label)}
+			<p class="khead">{g.label} · {g.items.length}</p>
+			<ul class="chips">
+				{#each g.items as it (it.key)}<li class="chip">{it.name}{#if it.need}<span class="cneed">{it.need}</span>{/if}</li>{/each}
+			</ul>
+		{/each}
+	</div>
+</Sheet>
+
 <style>
+	.kgroups { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+	.khead { margin: 8px 2px 2px; color: var(--text-muted); font: var(--t-footnote); }
+	.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+	.chip { padding: 7px 12px; border-radius: 10px; background: var(--surface-2); font: 500 14px/1.2 var(--font-ui); color: var(--text); }
+	.cneed { margin-left: 6px; color: var(--text-muted); font-weight: 400; font-size: 13px; }
 	.choose { display: contents; }
 	.dim :global(.ui-settings .body) { opacity: 0.6; transition: opacity var(--dur-fast) var(--ease-out); }
 
