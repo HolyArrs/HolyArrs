@@ -2,7 +2,7 @@
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import { steps, stepIndex, type Step } from '../move.ts';
 
-	// The five-step rail: done steps go back, the current one says how far it
+	// The four-step rail: done steps go back, the current one says how far it
 	// is, later ones wait. On phones only the current step shows its word.
 	let {
 		step,
@@ -53,7 +53,7 @@
 
 <style>
 	.rail-wrap { min-width: 0; }
-	.rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.rail li { min-width: 0; }
 	.cap-btn { position: relative; display: block; width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: inherit; border-radius: 12px; cursor: pointer; }
 	.cap-btn:disabled { cursor: default; }

@@ -14,12 +14,13 @@ import { fileURLToPath } from "node:url";
 import { oldKey, oldRadarrPort, oldSeerrPort } from "./fakes.mjs";
 import { moviesDir, noSidewaysScroll, owner, signIn } from "./helpers.ts";
 
-// Move from other apps (6.2.2), in five steps: read a fake old Radarr and
-// Seerr, choose what to move, try it, move, done, undo. Then the variants
-// (qBittorrent sign-in, backup file, saved key, Forget, Stop reading), the
-// choices the server asks for, poll errors, stale tests, ?move=N, no
-// confirm() anywhere, sideways scroll, measured symmetry and a 2,000-title
-// list, at 360, 390 and 1280.
+// Move from other apps (6.2.2), in four steps: read a fake old Radarr and
+// Seerr, choose what to move, move (a quiet test run first; problems open
+// "Before you move"), done, undo. Then the variants (qBittorrent sign-in,
+// backup file, saved key, Forget, Stop reading), the choices the server asks
+// for, the straight-through move, poll errors, stale tests, ?move=N, old
+// ?step=try addresses, no confirm() anywhere, sideways scroll, measured
+// symmetry and a 2,000-title list, at 360, 390 and 1280.
 test.describe.configure({ mode: "serial" });
 
 let page: Page;
@@ -119,7 +120,7 @@ async function measuredSymmetry(p: Page) {
   }
 }
 
-test("full flow: read, choose, try it, move, done and undo", async () => {
+test("full flow: read, choose, move (with Before you move), done and undo", async () => {
   await page.goto("/settings");
   await page
     .getByRole("main")
@@ -130,7 +131,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await expect(
     page.getByRole("heading", { name: "Move from other apps", level: 1 }),
   ).toBeVisible();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 5, Read/);
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 4, Read/);
   // Empty: one primary, no footer.
   await expect(
     page.getByRole("heading", { name: "Bring your old apps over" }),
@@ -166,7 +167,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
 
   // Step 2: the plan makes itself.
   await primary(page).click();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 5, Choose/);
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
   await expect(page).toHaveURL(/step=choose&read=\d+,\d+/);
   await openAll(page);
   const groups = page.getByTestId("group-row");
@@ -179,9 +180,9 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
 
   // Browser Back goes to the step before, Forward comes back.
   await page.goBack();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 5/);
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 4/);
   await page.goForward();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 5/);
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4/);
   await openAll(page);
 
   // A group switched off stays in place, marked Left out.
@@ -191,7 +192,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await alerts.check();
   await expect(groups.filter({ hasText: "Alerts" })).not.toContainText("Left out");
 
-  // A bad folder: the error is on its own row and Try it waits.
+  // A bad folder: the error is on its own row and Move waits.
   const pick = folder.locator("select");
   const suggested = await pick.inputValue();
   await pick.selectOption({ label: "Other path…" });
@@ -216,42 +217,37 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await noSidewaysScroll(page);
   await measuredSymmetry(page);
 
-  // Step 3: the test runs by itself.
+  // Move: a quiet test run first (the button is busy, no step of its own).
   await expect(primary(page)).toBeEnabled();
+  await expect(primary(page)).toHaveText("Move");
+  const tested = page.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(page).click();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 3 of 5, Try it/);
-  await expect(page.getByTestId("try-result")).toContainText("Ready", {
-    timeout: 20_000,
-  });
-  await expect(page.getByTestId("try-tally")).toContainText(/moves? over/);
-  // Same name as the owner here: a choice, nothing picked yet.
-  const choice = page.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first();
+  await tested;
+  // Same name as the owner here: a choice, so "Before you move" opens.
+  const before = page.getByRole("dialog", { name: "Before you move" });
+  await expect(before).toBeVisible({ timeout: 20_000 });
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
+  await expect(before.getByRole("button", { name: "Move anyway" })).toBeVisible();
+  // Go back closes it and stays on Choose.
+  await before.getByRole("button", { name: "Go back" }).click();
+  await expect(before).toBeHidden();
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
+  await primary(page).click();
+  await expect(before).toBeVisible({ timeout: 20_000 });
+  const choice = before.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first();
   await expect(choice).toContainText("Someone here has the same name");
   await expect(choice.getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "false");
   await expect(choice.getByRole("radio", { name: "Leave out" })).toHaveAttribute("aria-checked", "false");
-  await expect(reason(page)).toContainText("need");
   await choice.getByRole("radio", { name: "Leave out" }).click();
   await expect(choice.getByRole("radio", { name: "Leave out" })).toHaveAttribute("aria-checked", "true");
   // The row stays after the choice, and the choice can go back.
   await choice.getByRole("radio", { name: "Same person" }).click();
-  await expect(page.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first().getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByTestId("try-result")).toContainText("Ready");
-  await page.getByRole("button", { name: "Show Titles" }).click();
-  const list = page.getByRole("dialog", { name: "Titles" });
-  await expect(list).toContainText("Lodestone Ferry");
-  await expect(list).toContainText("Will use the one here");
+  await expect(before.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first().getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "true");
   await noSidewaysScroll(page);
-  await list.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(before.getByRole("button", { name: "Move anyway" })).toBeEnabled({ timeout: 20_000 });
 
-  // Step 4: confirm in a Sheet, then follow the progress.
-  await primary(page).click();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 4 of 5, Move/);
-  await expect(page.getByText("Your old apps are not changed.")).toBeVisible();
-  await expect(primary(page)).toHaveText(/^Move \d+ items?$/);
-  await primary(page).click();
-  const confirm = page.getByRole("dialog", { name: /^Move \d+ items?\?$/ });
-  await expect(confirm).toContainText("From Radarr and Seerr.");
-  await confirm.getByRole("button", { name: "Move", exact: true }).click();
+  // Move anyway starts it; follow the progress.
+  await before.getByRole("button", { name: "Move anyway" }).click();
   const seen: number[] = [];
   const progress = page.getByRole("progressbar", { name: "Move progress" });
   await expect(async () => {
@@ -262,8 +258,8 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   for (let i = 1; i < seen.length; i++)
     expect(seen[i]).toBeGreaterThanOrEqual(seen[i - 1]);
 
-  // Step 5: what to do now, results, the report.
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 5 of 5, Done/);
+  // Step 4: what to do now, results, the report.
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
   await expect(page).toHaveURL(/move=\d+/);
   await expect(page.getByText("Keep the old apps until HolyArrs runs the way you want.")).toBeVisible();
   await page.getByRole("button", { name: "Show Titles" }).click();
@@ -291,20 +287,23 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
 
   // Done resets to step 1; the reads that moved start off.
   await primary(page).click();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 5/);
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 4/);
   await expect(page.getByTestId("earlier-move").first()).toContainText("Undone");
 });
 
-test("after Done, Move waits for a new test; a stale test blocks Continue; a changed plan runs it again", async () => {
+test("old addresses land on Choose; a change while testing runs it again; a changed plan checks again", async () => {
   await page.goto("/settings/move");
   const snaps = (await (await page.request.get("/api/v1/migrate/snapshots")).json()) as { snapshots: { id: number }[] };
   const ids = snaps.snapshots.map((s) => s.id);
-  // An address that names Move without a test lands on Try it.
+  // An address that names Move without a move, or the old Try it, lands on Choose.
   await page.goto(`/settings/move?step=move&read=${ids.join(",")}`);
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 3 of 5, Try it/);
-  await expect(page.getByTestId("try-result")).toContainText(/Ready|won't work/, { timeout: 20_000 });
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
+  await page.goto(`/settings/move?step=try&read=${ids.join(",")}`);
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
+  await expect(page).toHaveURL(/step=choose/);
+  await expect(page.getByTestId("move-steps").locator("li")).toHaveCount(4);
 
-  // Back to Choose, change a group: the test is old until it runs again.
+  // Change a group, then Move: the quiet test is held, the button is busy and no sheet opens.
   let release: () => void = () => {};
   const held = new Promise<void>((r) => (release = r));
   await page.route("**/api/v1/migrate/dry-run", async (route: Route) => {
@@ -312,31 +311,33 @@ test("after Done, Move waits for a new test; a stale test blocks Continue; a cha
     // The page may cancel a held run when it starts a newer one.
     await route.continue().catch(() => {});
   });
-  await page.getByTestId("step-foot").getByRole("button", { name: "Back", exact: true }).click();
   await openAll(page);
   await page.getByRole("checkbox", { name: "Move Alerts" }).uncheck();
   await expect(primary(page)).toBeEnabled();
   const asked = page.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(page).click();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 3 of 5/);
   await asked;
-  await expect(primary(page)).toBeDisabled();
+  await expect(primary(page)).toHaveAttribute("aria-busy", "true");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   release();
   await page.unroute("**/api/v1/migrate/dry-run");
-  await expect(primary(page)).toBeEnabled({ timeout: 20_000 });
+  const sheet = page.getByRole("dialog", { name: /^(Before you move|Move \d+ items?\?)$/ });
+  await expect(sheet).toBeVisible({ timeout: 20_000 });
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
 
-  // The server says the plan changed: back to Try it, which runs again.
+  // The server says the plan changed: it tests again and asks again, still on Choose.
   await page.route("**/api/v1/migrate/moves", (route: Route) =>
     route.request().method() === "POST"
       ? route.fulfill({ status: 409, json: { error: "the plan changed since its dry run; dry run again" } })
       : route.continue(),
   );
-  await primary(page).click();
-  await primary(page).click();
-  await page.getByRole("dialog", { name: /^Move/ }).getByRole("button", { name: "Move", exact: true }).click();
-  await expect(current(page)).toHaveAttribute("aria-label", /Step 3 of 5/);
-  await expect(page.getByText("Something changed since the test run, so it ran again. Check it and move.")).toBeVisible();
+  const again = page.waitForRequest("**/api/v1/migrate/dry-run");
+  await sheet.getByRole("button", { name: /^(Move anyway|Move)$/ }).click();
+  await again;
+  await expect(page.getByRole("dialog").getByText("Something changed, so HolyArrs checked again.")).toBeVisible({ timeout: 20_000 });
+  await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
   await page.unroute("**/api/v1/migrate/moves");
+  await page.keyboard.press("Escape");
 });
 
 test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", async () => {
@@ -483,6 +484,10 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
 type Fixture = {
   moveAnswers?: (n: number) => { status: number; json: unknown };
   titles?: number;
+  /** No person to choose and nothing missing: Move goes straight through. */
+  clean?: boolean;
+  /** Titles whose folder is not found here. */
+  missing?: number;
 };
 function line(group: string, key: string, name: string, result: string, more: Record<string, unknown> = {}) {
   return { group, key, name, result, ...more };
@@ -504,9 +509,10 @@ async function fixture(p: Page, f: Fixture = {}) {
     at: "2026-11-03T14:10:00Z",
     lines: [
       ...items.map((it) => line("titles", it.key, it.name, "adopt")),
-      line("people", "person:seerr:7", "Pia", "skipped", { detail: "HolyArrs can't tell if this is the same person. Choose Same person or Leave out.", choose: "numeric_id" }),
+      ...Array.from({ length: f.missing ?? 0 }, (_, i) => line("titles", `title:movie:m${i}`, `Missing ${i}`, "not_found", { detail: `/old/movies/Missing ${i}` })),
+      ...(f.clean ? [] : [line("people", "person:seerr:7", "Pia", "skipped", { detail: "HolyArrs can't tell if this is the same person. Choose Same person or Leave out.", choose: "numeric_id" })]),
     ],
-    counts: { adopt: items.length, skipped: 1 },
+    counts: f.clean ? { adopt: items.length } : { adopt: items.length, skipped: 1, ...(f.missing ? { not_found: f.missing } : {}) },
     not_moved: [],
     needs_input: [],
     next: ["Some people need a choice: pick Same person or Leave out for each, then try and move again.", "Keep the old apps until HolyArrs runs the way you want; this move changed nothing in them."],
@@ -523,6 +529,7 @@ async function fixture(p: Page, f: Fixture = {}) {
     if (path === "/migrate/moves" && method === "GET") return route.fulfill({ json: { moves: [{ ...done, report: { counts: done.report.counts } }] } });
     if (path === "/migrate/plan") return route.fulfill({ json: { plan, counts: {}, suggested_path_rules: [], plan_hash: "h" } });
     if (path === "/migrate/dry-run") return route.fulfill({ json: { report: dry, plan_hash: "h" } });
+    if (path === "/migrate/moves" && method === "POST") return route.fulfill({ json: { move: { id: 7, created_at: "2026-11-03T14:20:00Z", snapshots: [901, 902], state: "running" } } });
     if (path === "/migrate/moves/7") {
       const a = f.moveAnswers?.(n++) ?? { status: 200, json: { move: done, progress: 1, progress_note: "" } };
       return route.fulfill({ status: a.status, json: a.json });
@@ -545,17 +552,70 @@ async function phone(browser: Browser, width: number): Promise<{ ctx: BrowserCon
   return { ctx, p };
 }
 
-test("a person the server cannot match by number gets Same person or Leave out", async ({ browser }) => {
+test("a person the server cannot match by number gets Same person or Leave out in Before you move", async ({ browser }) => {
   const { ctx, p } = await phone(browser, 390);
   await fixture(p);
+  // The old Try it address lands on Choose.
   await p.goto("/settings/move?step=try&read=901,902");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 5, Try it/);
-  const row = p.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").filter({ hasText: "Pia" });
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
+  await expect(primary(p)).toBeEnabled();
+  await primary(p).click();
+  const before = p.getByRole("dialog", { name: "Before you move" });
+  await expect(before).toBeVisible();
+  // Only problems are listed: no group lines here, just the choice.
+  await expect(before.getByTestId("problem-row")).toHaveCount(0);
+  const row = before.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").filter({ hasText: "Pia" });
   await expect(row).toContainText("HolyArrs can't tell if this is the same person.");
   await expect(row.getByRole("radio", { name: "Same person" })).toBeVisible();
   await expect(row.getByRole("radio", { name: "Leave out" })).toBeVisible();
-  await expect(reason(p)).toHaveText("1 still needs a choice. It stays behind if you move now.");
+  await expect(before.getByRole("button", { name: "Move anyway" })).toBeEnabled();
   await noSidewaysScroll(p);
+  await before.getByRole("button", { name: "Go back" }).click();
+  await expect(before).toBeHidden();
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
+  await ctx.close();
+});
+
+test("Before you move lists only the problem groups, one line each, with Show", async ({ browser }) => {
+  const { ctx, p } = await phone(browser, 360);
+  await fixture(p, { missing: 345 });
+  await p.goto("/settings/move?step=choose&read=901,902");
+  await expect(primary(p)).toBeEnabled();
+  await primary(p).click();
+  const before = p.getByRole("dialog", { name: "Before you move" });
+  await expect(before).toBeVisible();
+  const rows = before.getByTestId("problem-row");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText("Titles · 345 · folder not found here");
+  await rows.first().getByRole("button", { name: /^Show Titles/ }).click();
+  const list = p.getByRole("dialog", { name: "Titles" });
+  await expect(list).toContainText("Missing 0");
+  await expect(list).not.toContainText("Title 0");
+  await list.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(before.getByRole("button", { name: "Move anyway" })).toBeVisible();
+  await expect(before.getByRole("button", { name: "Go back" })).toBeVisible();
+  await noSidewaysScroll(p);
+  await ctx.close();
+});
+
+test("no problems: Move tests quietly, confirms once and goes straight to the move", async ({ browser }) => {
+  const { ctx, p } = await phone(browser, 390);
+  await fixture(p, { clean: true });
+  await p.goto("/settings/move?step=choose&read=901,902");
+  await expect(primary(p)).toHaveText("Move");
+  await expect(primary(p)).toBeEnabled();
+  const tested = p.waitForRequest("**/api/v1/migrate/dry-run");
+  await primary(p).click();
+  await tested;
+  const confirm = p.getByRole("dialog", { name: /^Move \d+ items?\?$/ });
+  await expect(confirm).toContainText("From Radarr and Seerr.");
+  await expect(p.getByRole("dialog", { name: "Before you move" })).toHaveCount(0);
+  const started = p.waitForRequest((r) => r.url().endsWith("/api/v1/migrate/moves") && r.method() === "POST");
+  await confirm.getByRole("button", { name: "Move", exact: true }).click();
+  expect((await started).postDataJSON()).toMatchObject({ plan_hash: "h" });
+  await expect(p.getByTestId("done-result")).toContainText("Moved", { timeout: 15_000 });
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
+  await expect(p).toHaveURL(/move=7/);
   await ctx.close();
 });
 
@@ -567,14 +627,14 @@ test("poll errors: one soft capsule, no toasts, then it recovers; nothing is ask
       n === 0 ? running(0.2) : n <= 2 ? { status: 500, json: { error: "down" } } : n <= 4 ? running(0.6) : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 5, Move/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Move/);
   await expect(p.getByTestId("move-progress")).toBeVisible();
   await expect(p.getByTestId("move-progress")).toContainText("Can't reach HolyArrs", { timeout: 10_000 });
   // A lost poll never toasts.
   await expect(p.locator(".ui-toast")).toHaveCount(0);
   await expect(p.getByRole("progressbar", { name: "Move progress" })).toBeVisible({ timeout: 15_000 });
   await expect(p.getByTestId("done-result")).toContainText("Moved", { timeout: 15_000 });
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 5 of 5, Done/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
 
   // Leave mid-poll: nothing is asked after the page is gone.
   await p.unroute(/\/api\/v1\/(migrate|library-folders)/);
@@ -598,13 +658,13 @@ test("?move=N: a running move shows Move and follows it; a done move shows Done"
         : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 5, Move/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Move/);
   await expect(p.getByTestId("done-result")).toContainText("Moved", { timeout: 15_000 });
   await p.goto("/settings/move?move=8");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 5 of 5, Done/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
   await expect(p.getByText("Move 8 ·")).toBeVisible();
   await p.goBack();
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 5 of 5, Done/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
   await expect(p.getByText("Move 7 ·")).toBeVisible();
   await ctx.close();
 });
@@ -680,12 +740,13 @@ test("desktop 1280: the rail capsules are equal, open sheets fit, and accessibil
   watchDialogs(p);
   await signIn(p, owner());
   await fixture(p);
-  await p.goto("/settings/move?step=try&read=901,902");
-  await expect(p.getByTestId("try-result")).toContainText("Ready");
+  await p.goto("/settings/move?step=choose&read=901,902");
+  await expect(primary(p)).toBeEnabled();
   const widths = await p.getByTestId("move-steps").locator(".st-cap").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
-  expect(widths).toHaveLength(5);
+  expect(widths).toHaveLength(4);
   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
   await measuredSymmetry(p);
+  await openAll(p);
   await p.getByRole("button", { name: "Show Titles" }).click();
   await noSidewaysScroll(p);
   await p.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close", exact: true }).click();

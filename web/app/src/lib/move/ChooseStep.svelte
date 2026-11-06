@@ -276,7 +276,7 @@
 {/snippet}
 
 <div class="choose" class:dim={planning && !!plan} aria-busy={planning}>
-	<SettingsCard id="move-step" title="Step 2 of 5 · What to move">
+	<SettingsCard id="move-step" title="Step 2 of 4 · What to move">
 		{#if !plan}
 			<p class="hint">Updating…</p>
 		{:else}

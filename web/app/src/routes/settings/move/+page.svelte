@@ -14,7 +14,7 @@
 	import ItemsSheet, { type SheetRow, type ShowList } from '#lib/move/ItemsSheet.svelte';
 	import ReadStep from '#lib/move/ReadStep.svelte';
 	import ChooseStep from '#lib/move/ChooseStep.svelte';
-	import TryStep from '#lib/move/TryStep.svelte';
+	import BeforeSheet from '#lib/move/BeforeSheet.svelte';
 	import MoveStep from '#lib/move/MoveStep.svelte';
 	import DoneStep from '#lib/move/DoneStep.svelte';
 	import { createFollower } from '#lib/move/poll.ts';
@@ -46,9 +46,10 @@
 		type Step
 	} from '#lib/move.ts';
 
-	// Settings > Move from other apps: five steps, one at a time. The step and
-	// the reads in use live in the address (?step=try&read=3,5, or ?move=7 for
-	// one move), so Back and a reload land on the same step.
+	// Settings > Move from other apps: four steps, one at a time. The step and
+	// the reads in use live in the address (?step=choose&read=3,5, or ?move=7
+	// for one move), so Back and a reload land on the same step. Move on
+	// Choose runs a quiet test first; only problems open "Before you move".
 	type MoveAnswer = { move: Move; progress: number; progress_note: string };
 
 	// The first-run wizard shows this same flow inside its panel. There the
@@ -99,7 +100,7 @@
 	let planSeq = 0;
 	let planCtrl: AbortController | null = null;
 
-	// Step 3: the test run, kept in place while it runs again.
+	// The quiet test run before a move, kept in place while it runs again.
 	let dry = $state.raw<Report | null>(null);
 	let dryAt = $state(-1);
 	let planHash = '';
@@ -109,8 +110,10 @@
 	let seen = $state.raw(new Map<string, Line>());
 	let trySeq = 0;
 	let tryCtrl: AbortController | null = null;
+	let checking = $state(false);
+	let beforeOpen = $state(false);
 
-	// Steps 4 and 5: the move.
+	// Steps 3 and 4: the move.
 	let current = $state.raw<Move | null>(null);
 	let progress = $state(0);
 	let progressNote = $state('');
@@ -184,6 +187,8 @@
 	const withItems = $derived((plan?.groups ?? []).filter((g) => g.items.length > 0 && g.name !== 'other'));
 	const moveRunning = $derived(!!current && running(current) && !current.undo_state);
 	const total = $derived(moveTotal(dry?.counts ?? {}));
+	// Lines that will not move as asked: not found here, won't work, or a person still to choose.
+	const problems = $derived((dry?.lines ?? []).filter((l) => l.result === 'not_found' || l.result === 'failed').length + openChoices);
 	const gate = $derived(
 		stepGate({
 			step,
@@ -308,6 +313,8 @@
 			changes++;
 		}
 		enter(s, false);
+		// An old Try it address says Choose from now on.
+		if (q.get(stepKey) === 'try' && step === 'choose') setUrl('choose', undefined, true);
 	}
 
 	function focusStep() {
@@ -318,12 +325,16 @@
 	function enter(want: Step, push = true) {
 		let s = want;
 		if (s === 'done' && !current) s = 'read';
-		if ((s === 'choose' || s === 'try' || s === 'move') && picked.length === 0) s = 'read';
-		if (s === 'move' && (!dry || stale)) s = 'try';
+		if ((s === 'choose' || s === 'move') && picked.length === 0) s = 'read';
+		// Move only shows a move that started; without one it is Choose.
+		if (s === 'move' && !current) s = 'choose';
 		const moved = s !== step;
 		step = s;
 		actionError = '';
-		if (s !== 'try') tryNotice = '';
+		if (s !== 'choose') {
+			tryNotice = '';
+			beforeOpen = false;
+		}
 		if (s === 'read') gone = false;
 		if (s !== 'choose') {
 			// A re-plan still waiting from step 2 is not wanted any more.
@@ -332,7 +343,6 @@
 			planning = false;
 		}
 		if (s === 'choose') void makePlan();
-		if (s === 'try' && (!dry || stale) && !trying) void runTry();
 		// A step that fell back puts its own name in the address, so Back stays one step.
 		if (push) setUrl(s);
 		else if (s !== want) setUrl(s, undefined, true);
@@ -469,11 +479,11 @@
 		replan(true);
 	}
 
-	// Step 3: the test run. A choice runs it again in place.
+	// The test run. A choice runs it again in place.
 	async function runTry() {
 		if (picked.length === 0 || ruleErrors > 0) return;
-		// Opened straight on Try it (a reload, a link): plan first, so the
-		// suggested folder matches are filled in before the test runs.
+		// No plan yet (a reload, a link): plan first, so the suggested
+		// folder matches are filled in before the test runs.
 		if (!plan) {
 			await makePlan();
 			if (destroyed) return;
@@ -511,10 +521,39 @@
 		void runTry();
 	}
 
-	// Step 4: the move, after a confirm.
+	/** moveNow is Choose's Move: a quiet test run, then the move (after a
+	 * confirm), or "Before you move" when the test found problems. */
+	async function moveNow() {
+		if (checking || starting) return;
+		checking = true;
+		actionError = '';
+		try {
+			// A change while it runs makes it old: run again (a few times at most).
+			for (let i = 0; i < 3 && (!dry || stale || trying); i++) {
+				await runTry();
+				if (destroyed || tryFailed || gone) return;
+			}
+			if (!dry || stale || step !== 'choose') return;
+			if (problems > 0) beforeOpen = true;
+			else confirmMove = true;
+		} finally {
+			checking = false;
+		}
+	}
+	function moveAnyway() {
+		beforeOpen = false;
+		void start();
+	}
 	async function startMove(e: SubmitEvent) {
 		e.preventDefault();
 		confirmMove = false;
+		await start();
+	}
+
+	// Step 3: the move.
+	async function start() {
+		if (!dry || stale) return;
+		let recheck = false;
 		starting = true;
 		actionError = '';
 		try {
@@ -524,8 +563,12 @@
 			progressNote = '';
 			lost = false;
 			moves = [r.move, ...moves.filter((m) => m.id !== r.move.id)];
+			// Choose starts the move now (there is no Move step before it): show
+			// the Move step before following, so finished() lands on Done.
+			step = 'move';
+			beforeOpen = false;
 			follower.follow(r.move.id);
-			setUrl('move', r.move.id, true);
+			setUrl('move', r.move.id, false);
 			// The Move button is gone now: keep focus on the step.
 			focusStep();
 		} catch (err) {
@@ -533,15 +576,17 @@
 			const text = message(err);
 			if (err instanceof ApiError && err.status === 409 && /safe mode/i.test(text)) safeMode = true;
 			else if (err instanceof ApiError && err.status === 409 && /changed/i.test(text)) {
-				// The plan moved on since the test: run it again and look.
+				// The plan moved on since the test: check again and ask again.
 				dryAt = -1;
-				enter('try');
-				tryNotice = 'Something changed since the test run, so it ran again. Check it and move.';
+				tryNotice = 'Something changed, so HolyArrs checked again.';
+				// After finally: moveNow skips while starting is still true.
+				recheck = true;
 			} else if (err instanceof ApiError && err.status === 404) gone = true;
 			else actionError = text;
 		} finally {
 			starting = false;
 		}
+		if (recheck) void moveNow();
 	}
 
 	/** finished hears a move or an undo end. */
@@ -561,8 +606,8 @@
 			suggested = {};
 			picked = picked.filter((id) => !m.snapshots.includes(id));
 			changed();
-			// Still on an earlier step of another round: it runs again with the reads left (or falls back to step 1).
-			if (step === 'choose' || step === 'try' || (step === 'move' && current?.id !== m.id)) enter(step === 'choose' ? 'choose' : 'try', false);
+			// Still on Choose for another round: it plans again with the reads left (or falls back to step 1).
+			if (step === 'choose' || (step === 'move' && current?.id !== m.id)) enter('choose', false);
 		}
 		if (current?.id === m.id) {
 			current = m;
@@ -575,7 +620,7 @@
 		}
 	}
 
-	// Step 5.
+	// Step 4.
 	async function undo(e: SubmitEvent) {
 		e.preventDefault();
 		confirmUndo = false;
@@ -650,7 +695,7 @@
 		current = null;
 		dry = null;
 		changed();
-		enter('try');
+		enter('choose');
 	}
 	function back(s: Step) {
 		enter(s);
@@ -674,7 +719,7 @@
 
 	$effect(() => embedded?.onstep?.(step));
 
-	const railBusy = $derived(step === 'choose' && planning ? 'Updating…' : step === 'try' && trying ? 'Updating…' : '');
+	const railBusy = $derived(step === 'choose' && (checking || starting) ? 'Checking…' : step === 'choose' && planning ? 'Updating…' : '');
 	const railFill = $derived(step === 'move' && moveRunning ? progress : 0.5);
 </script>
 
@@ -685,7 +730,7 @@
 {/if}
 
 {#if !loaded}
-	<div class="sk-rail" aria-hidden="true">{#each [1, 2, 3, 4, 5] as n (n)}<span class="sk"></span>{/each}</div>
+	<div class="sk-rail" aria-hidden="true">{#each [1, 2, 3, 4] as n (n)}<span class="sk"></span>{/each}</div>
 	<SkSettings cards={2} rows={4} />
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
@@ -728,8 +773,6 @@
 			onshow={show}
 		/>
 		{#if planError}<p class="form-error" role="alert">{planError}</p>{/if}
-	{:else if step === 'try'}
-		<TryStep {dry} groups={tried.groups} choose={chooseLines} {trying} {stale} failed={tryFailed} {people} {openChoices} notice={tryNotice} {onchoose} onretry={runTry} onshow={show} />
 	{:else if step === 'move'}
 		<MoveStep {dry} running={moveRunning} {progress} note={progressNote} {lost} {safeMode} onshow={show} />
 	{:else if step === 'done' && current}
@@ -749,19 +792,16 @@
 			<StepFoot label="Continue" onclick={() => enter('choose')} disabled={!gate.ok} reason={gate.reason} />
 		{/if}
 	{:else if step === 'choose'}
-		<StepFoot back={() => back('read')} label="Try it" onclick={() => enter('try')} disabled={!gate.ok} reason={gate.reason} />
-	{:else if step === 'try'}
-		<StepFoot back={() => back('choose')} label="Continue" onclick={() => enter('move')} disabled={!gate.ok} reason={gate.reason} />
-	{:else if step === 'move'}
 		<StepFoot
-			back={() => back('try')}
-			backDisabled={moveRunning || starting}
-			label={moveRunning ? undefined : `Move ${plural(total, 'item')}`}
-			onclick={() => (confirmMove = true)}
-			disabled={!gate.ok}
-			busy={starting}
-			reason={moveRunning ? '' : gate.reason}
+			back={() => back('read')}
+			label="Move"
+			onclick={() => void moveNow()}
+			disabled={!gate.ok || safeMode || moveRunning}
+			busy={checking || starting}
+			reason={safeMode ? 'HolyArrs started in safe mode.' : checking ? 'Checking…' : gate.reason}
 		/>
+	{:else if step === 'move'}
+		<StepFoot back={() => back('choose')} backDisabled={moveRunning || starting} />
 	{:else if step === 'done' && current}
 		{@const m = current}
 		{@const busyNow = running(m)}
@@ -797,8 +837,23 @@
 	{/snippet}
 </Sheet>
 
+<BeforeSheet
+	bind:open={beforeOpen}
+	groups={tried.groups}
+	choose={chooseLines}
+	{people}
+	{total}
+	{trying}
+	ready={!!dry && !stale && !tryFailed}
+	notice={tryNotice}
+	{onchoose}
+	onmove={moveAnyway}
+	onshow={show}
+/>
+
 <Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
 	<form id="move-confirm-form" onsubmit={startMove}>
+		{#if tryNotice}<p class="notice warn" role="status">{tryNotice}</p>{/if}
 		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Anything marked paused stays paused. You can undo this move later from Earlier moves {embedded ? 'in Settings, Move from other apps' : 'on this page'}.</p>
 	</form>
 	{#snippet footer()}
@@ -818,14 +873,14 @@
 </Sheet>
 
 <style>
-	.sk-rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+	.sk-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 	.sk-rail .sk { display: block; height: 40px; border-radius: 12px; }
 	@media (pointer: coarse) {
 		.sk-rail .sk { height: 44px; }
 	}
 	.gone { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 	@media (max-width: 600px) {
-		.sk-rail { grid-template-columns: minmax(0, 1fr) 44px 44px 44px 44px; }
+		.sk-rail { grid-template-columns: minmax(0, 1fr) 44px 44px 44px; }
 		.sk-rail .sk { height: 44px; }
 	}
 </style>

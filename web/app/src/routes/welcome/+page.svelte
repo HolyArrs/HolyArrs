@@ -454,7 +454,7 @@
 		margin: 0 auto;
 		padding: clamp(28px, 7vh, 72px) 0 48px;
 	}
-	/* The move flow's five steps and its rows need more room than a form. */
+	/* The move flow's four steps and its rows need more room than a form. */
 	.welcome.wide { width: min(820px, calc(100% - 32px)); }
 	.brand { display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px/1 var(--font-ui); color: var(--text); }
 	/* The round back button sits top-left, level with the logo. */

@@ -4,7 +4,7 @@
 
 	// The results of a test run or a move, one row per group, each with
 	// "Show"; then what was not moved, the keys to type again and the apps'
-	// notes. Used by Try it (before) and Done (after the move).
+	// notes. Used by Done and Done (after the move).
 	let {
 		report,
 		groups,

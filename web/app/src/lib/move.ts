@@ -1,4 +1,4 @@
-// The move from the old apps: read them, choose what to move, try it, move.
+// The move from the old apps: read them, choose what to move, move.
 // Plain helpers for Settings > Move from other apps.
 
 export const apps = [
@@ -177,7 +177,7 @@ export const groupLabels: Record<string, string> = {
 /** The order groups are shown in (the server's GroupOrder). */
 export const groupOrder = ['folders', 'pick_rules', 'titles', 'never_add', 'outside_lists', 'sources', 'downloaders', 'naming', 'subtitles', 'people', 'wishlist', 'alerts'];
 
-// Result words: [in Try it, after the move]. The server says create in a
+// Result words: [before the move, after it]. The server says create in a
 // test run and created in a real move; both read the same here.
 const words: Record<string, [string, string]> = {
 	create: ['Will be added', 'Added'],
@@ -191,7 +191,7 @@ const words: Record<string, [string, string]> = {
 };
 const pastToBase: Record<string, string> = { created: 'create', adopted: 'adopt', changed: 'change' };
 
-/** resultWords says one result in plain words: before the move (Try it), after it, or after an undo. */
+/** resultWords says one result in plain words: before the move (the check), after it, or after an undo. */
 export function resultWords(result: string, after = false, undo = false): string {
 	if (undo) {
 		if (result === 'removed') return 'Removed';
@@ -474,11 +474,10 @@ export function rulesFrom(picks: Record<string, string>, others: Record<string, 
 }
 
 /** Step names, in order. */
-export type Step = 'read' | 'choose' | 'try' | 'move' | 'done';
+export type Step = 'read' | 'choose' | 'move' | 'done';
 export const steps: { id: Step; word: string; title: string }[] = [
 	{ id: 'read', word: 'Read', title: 'Read your apps' },
 	{ id: 'choose', word: 'Choose', title: 'What to move' },
-	{ id: 'try', word: 'Try it', title: 'Try it' },
 	{ id: 'move', word: 'Move', title: 'Move' },
 	{ id: 'done', word: 'Done', title: 'Done' }
 ];
@@ -487,8 +486,9 @@ export function stepIndex(s: Step): number {
 	return steps.findIndex((x) => x.id === s);
 }
 
-/** asStep reads a step from the address, or null. */
+/** asStep reads a step from the address, or null. The old Try it step lands on Choose. */
 export function asStep(v: string | null): Step | null {
+	if (v === 'try') return 'choose';
 	return steps.some((s) => s.id === v) ? (v as Step) : null;
 }
 
@@ -529,7 +529,6 @@ export function stepGate(s: GateState): { ok: boolean; reason: string } {
 			if ((s.groupsWithItems ?? 0) === 0) return { ok: false, reason: 'Nothing new to move.' };
 			if ((s.groupsOn ?? 0) === 0) return { ok: false, reason: 'Turn on at least one group.' };
 			return { ok: true, reason: '' };
-		case 'try':
 		case 'move': {
 			if (s.moving) return { ok: false, reason: '' };
 			if (s.trying) return { ok: false, reason: s.tried ? 'Updating…' : 'Trying the move…' };

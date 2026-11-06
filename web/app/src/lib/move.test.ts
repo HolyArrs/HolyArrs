@@ -185,19 +185,20 @@ describe('move helpers', () => {
 		expect(stepGate({ step: 'choose', picked: 1, planned: true, groupsOn: 0, groupsWithItems: 0 }).ok).toBe(false);
 		expect(stepGate({ step: 'choose', picked: 1, planned: true, groupsOn: 1, groupsWithItems: 1 }).ok).toBe(true);
 		// A stale test never lets Continue or Move go.
-		expect(stepGate({ step: 'try', picked: 1, tried: true, stale: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, stale: true }).ok).toBe(false);
-		expect(stepGate({ step: 'try', picked: 1, tried: false }).ok).toBe(false);
-		expect(stepGate({ step: 'try', picked: 1, tried: true, trying: true }).reason).toBe('Updating…');
-		expect(stepGate({ step: 'try', picked: 1, tried: true, openChoices: 3 })).toEqual({ ok: true, reason: '3 still need a choice. They stay behind if you move now.' });
-		expect(stepGate({ step: 'try', picked: 1, tried: true, openChoices: 1 }).reason).toBe('1 still needs a choice. It stays behind if you move now.');
+		expect(stepGate({ step: 'move', picked: 1, tried: true, stale: true }).ok).toBe(false);
+		expect(stepGate({ step: 'move', picked: 1, tried: false }).ok).toBe(false);
+		expect(stepGate({ step: 'move', picked: 1, tried: true, trying: true }).reason).toBe('Updating…');
+		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 3 })).toEqual({ ok: true, reason: '3 still need a choice. They stay behind if you move now.' });
+		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 1 }).reason).toBe('1 still needs a choice. It stays behind if you move now.');
 		// A failed test run says so, with or without an older result.
-		expect(stepGate({ step: 'try', picked: 1, tried: false, failed: true })).toEqual({ ok: false, reason: 'The test run failed.' });
-		expect(stepGate({ step: 'try', picked: 1, tried: true, failed: true }).ok).toBe(false);
+		expect(stepGate({ step: 'move', picked: 1, tried: false, failed: true })).toEqual({ ok: false, reason: 'The test run failed.' });
+		expect(stepGate({ step: 'move', picked: 1, tried: true, failed: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, safeMode: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, moving: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true }).ok).toBe(true);
-		expect(asStep('try')).toBe('try');
+		expect(asStep('try')).toBe('choose');
+		expect(asStep('move')).toBe('move');
 		expect(asStep('nope')).toBeNull();
 	});
 

@@ -27,7 +27,7 @@
 		progress?: number;
 		note?: string;
 		lost?: boolean;
-		/** Go back to Try it with the same reads, to choose. */
+		/** Go back to Choose with the same reads, to choose. */
 		onchoose: () => void;
 		onshow: ShowList;
 	} = $props();
@@ -48,7 +48,7 @@
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
 </script>
 
-<SettingsCard id="move-step" title="Step 5 of 5 · Done">
+<SettingsCard id="move-step" title="Step 4 of 4 · Done">
 	<div class="srow">
 		<div class="cap" data-testid="done-result">
 			{#if busy && lost}

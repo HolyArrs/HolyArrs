@@ -35,7 +35,7 @@
 	const detail = $derived(note.replace(/\s+(moved|undone)\.?$/, ''));
 </script>
 
-<SettingsCard id="move-step" title="Step 4 of 5 · Move" description={running ? undefined : 'Before you move'}>
+<SettingsCard id="move-step" title="Step 3 of 4 · Move" description={running ? undefined : 'Before you move'}>
 	{#if running}
 		<div class="srow">
 			<div class="cap">

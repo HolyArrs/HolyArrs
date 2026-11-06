@@ -59,7 +59,7 @@
 	});
 </script>
 
-<SettingsCard id="move-step" title="Step 1 of 5 · Read your apps" description="HolyArrs only looks. Nothing changes in those apps.">
+<SettingsCard id="move-step" title="Step 1 of 4 · Read your apps" description="HolyArrs only looks. Nothing changes in those apps.">
 	{#if snapshots.length === 0 && !reading}
 		<EmptyState
 			icon="upload"
