@@ -162,7 +162,7 @@
 	}
 </script>
 
-<Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} placement="center" size="md">
+<Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} size="md">
 	{#if ep}
 		<!-- One column (Luis 2026-11-06, layout 3): picture, story, status when not in the library, File, Settings, History. -->
 		<div class="es" data-testid="episode-sheet">

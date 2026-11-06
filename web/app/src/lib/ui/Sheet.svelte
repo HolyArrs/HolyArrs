@@ -143,6 +143,8 @@
 		.at-auto.closing, .at-bottom.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
 		.at-auto .inner::before, .at-bottom .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-top { margin-top: 12px; }
+		/* Clear the iPhone home indicator when the window has no footer. */
+		.at-auto .body:last-child, .at-bottom .body:last-child, .at-right .body:last-child { padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
 		/* Full screen on phones (the search palette). */
 		.at-full { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding-top: env(safe-area-inset-top); }
 		.at-full .inner { height: 100%; }

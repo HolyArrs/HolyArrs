@@ -138,7 +138,7 @@
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>
 
-<Sheet bind:open title="Choose a release" description={scope ? `${name} · ${scope.label}` : name} placement="center" size="lg">
+<Sheet bind:open title="Choose a release" description={scope ? `${name} · ${scope.label}` : name} size="lg">
 	<div class="rs" data-testid="release-sheet">
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">

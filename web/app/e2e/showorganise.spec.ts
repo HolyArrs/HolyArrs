@@ -100,7 +100,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	const dialog = page.getByTestId('show-delete');
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
 	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
-	await dialog.getByRole('checkbox', { name: /Also delete their files/ }).check();
+	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('it also holds S01E03, which stays');
 	await axe(page, 'delete an episode');
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
@@ -110,7 +110,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await page.getByTestId('season-tools').getByRole('button', { name: 'Delete Season 1' }).click();
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1 (3 episodes): HolyArrs stops keeping them up to date.');
-	await dialog.getByRole('checkbox', { name: /Also delete their files/ }).check();
+	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files move to the holding folder');
 	await dialog.getByRole('button', { name: 'Delete Season 1' }).click();
 	await expect(page.getByText(/Quarry Bells Season 1 is deleted\. Their files are in the holding folder/)).toBeVisible();

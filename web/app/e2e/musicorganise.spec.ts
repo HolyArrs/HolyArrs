@@ -144,7 +144,7 @@ test('deleting one track with its file moves it to the holding folder; the album
 	const dialog = page.getByTestId('show-delete');
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Copper Wren – track 02 Song 1.2?');
 	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
-	await dialog.getByRole('checkbox', { name: /Also delete their files/ }).check();
+	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('1 file moves to the holding folder');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Low Orbit (2018)/02 - Song 1.2.mp3');
 	await axe(page, 'delete a track');

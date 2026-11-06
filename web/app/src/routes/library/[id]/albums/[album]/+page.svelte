@@ -355,10 +355,10 @@
 
 
 		{#if staff}
-			<Sheet bind:open={listing} title="Choose a release" description={scope.label} size="lg" placement="center">
+			<Sheet bind:open={listing} title="Choose a release" description={scope.label} size="lg">
 				{#if listing}<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music bare onclose={() => (listing = false)} onchange={load} />{/if}
 			</Sheet>
-			<Sheet bind:open={editionOpen} title="Follow this edition?" description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm" placement="center">
+			<Sheet bind:open={editionOpen} title="Follow this edition?" description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm">
 				<p class="small muted">Tracks it doesn’t have go unless a file holds them.</p>
 				<div class="row modal-actions">
 					<Button variant="plain" onclick={() => (editionOpen = false)}>Cancel</Button>
@@ -368,7 +368,7 @@
 
 			<ShowDeleteDialog bind:this={deleter} titleId={titleId} name={artist?.name ?? 'Artist'} kind="artist" ondone={afterDelete} />
 
-			<Sheet bind:open={renameOpen} title="Rename files" description={album.name} placement="center" size="md">
+			<Sheet bind:open={renameOpen} title="Rename files" description={album.name} size="md">
 				{#if renameOpen}<RenamePreview {titleId} {albumId} onDone={() => { renameOpen = false; void afterDelete(); }} />{/if}
 			</Sheet>
 		{/if}

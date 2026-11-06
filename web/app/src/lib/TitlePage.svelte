@@ -1423,7 +1423,7 @@
 		{#snippet ownTabBar()}
 			<div class="own-tabs" role="tablist" data-testid="own-tabs">
 				{#each ownTabs as t (t.v)}
-					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => setTab(t.v)}>
+					<button type="button" role="tab" aria-selected={ownTab === t.v} tabindex={ownTab === t.v ? 0 : -1} class:on={ownTab === t.v} onclick={() => setTab(t.v)} onkeydown={(e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; e.preventDefault(); const el = e.currentTarget as HTMLElement; const i = ownTabs.findIndex((x) => x.v === ownTab); const next = ownTabs[(i + d + ownTabs.length) % ownTabs.length]; setTab(next.v); requestAnimationFrame(() => el.parentElement?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()); }}>
 						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-hidden="true">!</span><span class="sr-only">, needs attention</span>{/if}
 					</button>
 				{/each}
@@ -1441,10 +1441,10 @@
 			{@const o = owned}
 				{#if mayReport}<ReportSheet bind:open={reportOpen} title={o} />{/if}
 				{#if manage}
-				<Sheet bind:open={subsOpen} title="Subtitles" description={o.name} placement="center" size="lg">
+				<Sheet bind:open={subsOpen} title="Subtitles" description={o.name} size="lg">
 					{#if subsOpen}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} bare />{/if}
 				</Sheet>
-				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderName(moveTo) : ''}?`} description="Its files move to the new folder." size="sm" placement="center">
+				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderName(moveTo) : ''}?`} description="Its files move to the new folder." size="sm">
 					<p class="lib-move-path">{moveTo?.path}</p>
 					<div class="lib-move-actions">
 						<button type="button" class="lib-btn" onclick={() => (moveTo = null)}>Cancel</button>
@@ -1456,7 +1456,7 @@
 				<!-- One season or one episode (and its files) goes through the show's delete dialog. -->
 				{#if o.show}<ShowDeleteDialog bind:this={showDeleter} titleId={o.id} name={o.name} ondone={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />{/if}
 				<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} scope={pickScope} onchosen={() => loadOwned(o.id)} />
-				<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="center" size="md">
+				<Sheet bind:open={renameOpen} title="Rename files" description={o.name} size="md">
 					{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}
 				</Sheet>
 				<DeleteSheet bind:open={deleteOpen} titleId={o.id} name={o.name} kind={o.kind === 'show' ? 'show' : 'movie'} ondone={() => { owned = null; ownedEvents = []; ownTab = 'overview'; }} />

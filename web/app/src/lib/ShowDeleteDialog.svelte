@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	// Delete a show, a season or one episode (5.2.3), or an artist, an album
 	// or some tracks (4.15.4). The plan below is what the delete does: it is
 	// asked again whenever a choice changes, and the delete carries out that
@@ -15,7 +16,7 @@
 		ondone
 	}: { titleId: number; name: string; kind?: 'show' | 'artist'; ondone: (plan: RemovePlan) => void } = $props();
 
-	let dialog: HTMLDialogElement | undefined = $state();
+	let isOpen = $state(false);
 	let scope = $state<DeleteScope>({});
 	let files = $state(false);
 	let never = $state(false);
@@ -30,6 +31,12 @@
 
 	function body(apply: boolean): Record<string, unknown> {
 		return deleteBody(scope, files, never, apply);
+	}
+
+	function flip(which: 'files' | 'never') {
+		if (which === 'files') files = !files;
+		else never = !never;
+		void planIt();
 	}
 
 	async function planIt() {
@@ -49,7 +56,7 @@
 		files = false;
 		never = false;
 		plan = null;
-		dialog?.showModal();
+		isOpen = true;
 		void planIt();
 	}
 
@@ -58,7 +65,7 @@
 		error = '';
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, body(true));
-			dialog?.close();
+			isOpen = false;
 			const held = p.held.length
 				? ` ${p.held.length === 1 ? 'Its file is' : 'Their files are'} in the holding folder${p.holding_days ? ` for ${p.holding_days} days` : ''}.`
 				: ' Files stay on disk.';
@@ -73,90 +80,69 @@
 	}
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="show-delete-title" class="modal wide" data-testid="show-delete">
-	<h2 id="show-delete-title" class="h2">Delete {what}?</h2>
-	<p class="small muted">Read what will happen below before you press Delete. Nothing has changed yet.</p>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={files} onchange={planIt} />
-		<span
-			><b>Also delete {whole ? 'its' : 'their'} files</b><br /><span class="hint"
-				>Files HolyArrs imported or adopted move to the holding folder in their Library folder, and are removed for good after the holding days (7 unless
-				you changed it in Settings). Files it only found are never touched, and a file holding {parts} stays. Off: every file stays where it is.</span
-			></span
-		>
-	</label>
-	{#if whole}
-		<label class="checkline">
-			<input type="checkbox" bind:checked={never} onchange={planIt} />
-			<span><b>Add it to the Never-add list</b><br /><span class="hint">Outside lists can then never add it again. You can still add it yourself.</span></span>
-		</label>
-	{/if}
-	<section class="plan" aria-labelledby="show-plan-title" aria-live="polite" data-testid="delete-plan">
-		<h3 id="show-plan-title" class="h3">What will happen</h3>
-		{#if !plan}
-			{#if !error}<div class="sk" style="height: 60px"></div>{/if}
-		{:else}
-			<ul class="warns">
-				{#each deleteSummary(plan, kind) as line (line)}<li>{line}</li>{/each}
-			</ul>
-			{#if plan.held.length}
-				<p class="xs muted">To the holding folder:</p>
-				<ul class="files">
-					{#each plan.held as f (f.file_id)}<li class="xs"><span class="mono path">{f.path}</span>{#if f.episodes?.length}<span class="muted"> ({f.episodes.join(', ')})</span>{/if}</li>{/each}
-				</ul>
+<!-- The same window as the title's Delete (Luis 2026-11-06): switch rows, what will happen, then Delete. -->
+<Sheet bind:open={isOpen} title={`Delete ${what}?`} size="md">
+	<div class="sd" data-testid="show-delete">
+		<div class="sd-rows">
+			<button type="button" class="sd-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
+				<span><b>Also delete {whole ? 'its' : 'their'} files</b><small>Kept in the holding folder for a while</small></span>
+				<span class="sd-switch" class:on={files} aria-hidden="true"></span>
+			</button>
+			{#if whole}
+				<button type="button" class="sd-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
+					<span><b>Never add it again</b><small>Outside lists skip it</small></span>
+					<span class="sd-switch" class:on={never} aria-hidden="true"></span>
+				</button>
 			{/if}
-			{#if plan.kept.length}
-				<p class="xs muted">Staying where they are:</p>
-				<ul class="files">
-					{#each plan.kept as f (f.file_id)}<li class="xs"><span class="mono path">{f.path}</span> <span class="muted">({f.why})</span></li>{/each}
-				</ul>
+		</div>
+		<section class="sd-plan" aria-live="polite" data-testid="delete-plan">
+			<p class="sd-h">What will happen</p>
+			{#if !plan}
+				{#if !error}<div class="sd-skel"></div>{/if}
+			{:else}
+				<ul>{#each deleteSummary(plan, kind) as line (line)}<li>{line}</li>{/each}</ul>
+				{#if plan.held.length}
+					<details class="sd-files"><summary>{plan.held.length === 1 ? '1 file to the holding folder' : `${plan.held.length} files to the holding folder`}</summary>
+						<ul>{#each plan.held as f (f.file_id)}<li class="mono">{f.path}</li>{/each}</ul>
+					</details>
+				{/if}
+				{#if plan.kept.length}
+					<details class="sd-files"><summary>{plan.kept.length === 1 ? '1 file stays' : `${plan.kept.length} files stay`}</summary>
+						<ul>{#each plan.kept as f (f.file_id)}<li class="mono">{f.path} <span class="muted">({f.why})</span></li>{/each}</ul>
+					</details>
+				{/if}
 			{/if}
-		{/if}
-	</section>
-	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-	<div class="row modal-actions">
-		<Button variant="plain" onclick={() => dialog?.close()}>Cancel</Button>
-		<Button variant="destructive" onclick={go} disabled={busy || !plan} busy={busy}>
-			{whole ? `Delete ${kind}` : 'Delete ' + (scope.label || (kind === 'artist' ? 'these tracks' : 'these episodes'))}
-		</Button>
+		</section>
+		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
+		<div class="sd-actions">
+			<Button variant="plain" onclick={() => (isOpen = false)}>Cancel</Button>
+			<Button variant="destructive" onclick={go} disabled={busy || !plan} busy={busy}>
+				{whole ? `Delete ${kind}` : 'Delete ' + (scope.label || (kind === 'artist' ? 'these tracks' : 'these episodes'))}
+			</Button>
+		</div>
 	</div>
-</dialog>
+</Sheet>
 
 <style>
-	.modal {
-		width: min(640px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.plan {
-		margin-top: var(--s-4);
-		padding: var(--s-3) var(--s-4);
-		background: var(--surface-2);
-		border-radius: var(--r-sm);
-	}
-	.warns {
-		padding-left: var(--s-5);
-		margin: var(--s-2) 0;
-	}
-	.files {
-		list-style: none;
-		padding: 0;
-		margin: var(--s-1) 0 var(--s-2);
-	}
-	.path {
-		overflow-wrap: anywhere;
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
+	.sd { display: grid; gap: 14px; }
+	.sd-rows { display: grid; border-radius: var(--r-panel); background: var(--surface-2); overflow: hidden; }
+	.sd-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+	.sd-row + .sd-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.sd-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.sd-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+	.sd-row span:first-child { display: grid; gap: 3px; }
+	.sd-row b { font: 600 15px/1.2 var(--font-ui); }
+	.sd-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.sd-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
+	.sd-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
+	.sd-switch.on { background: var(--accent-fill); }
+	.sd-switch.on::after { transform: translateX(18px); }
+	.sd-plan { display: grid; gap: 8px; padding: 14px 20px; border-radius: var(--r-panel); background: var(--surface-2); }
+	.sd-h { margin: 0; color: var(--text-muted); font: 600 13px/1 var(--font-ui); }
+	.sd-plan ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font: 500 14px/1.4 var(--font-ui); }
+	.sd-files summary { cursor: pointer; color: var(--text-muted); font: 600 13px/1.3 var(--font-ui); }
+	.sd-files ul { margin-top: 6px; padding-left: 0; list-style: none; max-height: 160px; overflow: auto; }
+	.sd-files .mono { font: 500 12px/1.5 var(--font-mono, ui-monospace, monospace); color: var(--text-muted); overflow-wrap: anywhere; }
+	.sd-skel { height: 48px; border-radius: 10px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+	.sd-actions { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

@@ -385,7 +385,7 @@
 
 	{#if manage}
 		<ReleaseSheet bind:open={pickOpen} {titleId} name={t.name} scope={pickScope} onchosen={load} />
-		<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo?.label ?? ''}?`} description="Its files move to the new folder." size="sm" placement="center">
+		<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo?.label ?? ''}?`} description="Its files move to the new folder." size="sm">
 			<p class="al-move-path">{moveTo?.path}</p>
 			<div class="al-move-actions">
 				<button type="button" class="al-btn" onclick={() => (moveTo = null)}>Cancel</button>
@@ -393,10 +393,10 @@
 			</div>
 		</Sheet>
 		<DeleteSheet bind:open={deleteOpen} {titleId} name={t.name} kind="artist" ondone={() => ondeleted?.()} />
-		<Sheet bind:open={renameOpen} title="Rename files" description={t.name} placement="center" size="md">
+		<Sheet bind:open={renameOpen} title="Rename files" description={t.name} size="md">
 			{#if renameOpen}<RenamePreview {titleId} onDone={() => { renameOpen = false; void load(); }} />{/if}
 		</Sheet>
-		<Sheet bind:open={kindsOpen} title="Album kinds" description={t.name} placement="center" size="md">
+		<Sheet bind:open={kindsOpen} title="Album kinds" description={t.name} size="md">
 			<form class="al-kinds" onsubmit={saveKinds}>
 				<div class="field">
 					<label for="al-new">New albums</label>
