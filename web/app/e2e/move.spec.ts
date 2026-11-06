@@ -341,23 +341,16 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   await page.getByRole("button", { name: "Add an app" }).first().click();
   const sheet = readSheet(page);
   await sheet.getByLabel("App", { exact: true }).selectOption("qbittorrent");
-  await expect(sheet.getByRole("radio", { name: "Address and sign-in" })).toBeVisible();
   await expect(sheet.getByLabel("Address", { exact: true })).toHaveAttribute("placeholder", /:8080$/);
   await sheet.getByLabel("Address", { exact: true }).fill("http://127.0.0.1:9");
   await sheet.getByRole("button", { name: "Read qBittorrent" }).click();
   await expect(sheet.locator("#move-user:invalid")).toHaveCount(1);
   await expect(sheet.locator("#move-pass:invalid")).toHaveCount(1);
 
-  // A backup file is a full path on this server.
   await sheet.getByLabel("App", { exact: true }).selectOption("radarr");
-  await sheet.getByRole("radio", { name: "Backup file" }).click();
-  await sheet.getByLabel("Backup file", { exact: true }).fill("/nowhere/radarr.zip");
-  await sheet.getByRole("button", { name: "Read Radarr" }).click();
-  await expect(sheet.getByRole("alert")).toBeVisible();
   await noSidewaysScroll(page);
 
   // Stop reading: the request is aborted and no read is added.
-  await sheet.getByRole("radio", { name: "Address and key" }).click();
   await sheet.getByLabel("Address", { exact: true }).fill(`http://127.0.0.1:${oldRadarrPort}`);
   await sheet.getByLabel("API key", { exact: true }).fill(oldKey);
   await page.route("**/api/v1/migrate/read", () => {

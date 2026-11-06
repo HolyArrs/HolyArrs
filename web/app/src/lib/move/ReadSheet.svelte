@@ -16,7 +16,6 @@
 <script lang="ts">
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
-	import SegmentedControl from '../ui/SegmentedControl.svelte';
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import { api, ApiError, message } from '../api.ts';
 	import { toasts } from '../toasts.svelte.ts';
@@ -49,6 +48,7 @@
 	} = $props();
 
 	let kind = $state<AppKind>('radarr');
+	// Reading from a backup file waits for a later release (Luis 2026-11-05); the server still has it.
 	let way = $state<'api' | 'backup'>('api');
 	let address = $state('');
 	let key = $state('');
@@ -173,20 +173,6 @@
 				</select>
 			</div>
 		</div>
-		<div class="srow">
-			<div class="txt"><span class="label" id="move-how-l">How</span></div>
-			<div class="ctl">
-				<SegmentedControl
-					label="How to read it"
-					options={[
-						{ value: 'api', label: qbit ? 'Address and sign-in' : 'Address and key' },
-						{ value: 'backup', label: 'Backup file' }
-					]}
-					bind:value={way}
-					onchange={changed}
-				/>
-			</div>
-		</div>
 		{#if way === 'api'}
 			{#if savedKey}
 				<div class="srow" data-testid="use-saved-key">
@@ -235,11 +221,6 @@
 					</div>
 				</div>
 			{/if}
-		{:else}
-			<div class="srow">
-				<div class="txt"><label for="move-path">Backup file</label><span class="hint">A full path on this server, like /backups/radarr.zip.</span></div>
-				<div class="ctl"><input id="move-path" class="input mono" bind:value={backupPath} oninput={changed} placeholder="/backups/{kind}.zip" required autocomplete="off" spellcheck="false" /></div>
-			</div>
 		{/if}
 	</form>
 	{#if busy}
