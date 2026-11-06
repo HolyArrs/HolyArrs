@@ -1449,7 +1449,7 @@
 					</div>
 				</Sheet>
 				{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} ondelete={() => { toolsOpen = false; showDeleter?.open({ season: toolsSeason, label: toolsSeason === 0 ? 'Specials' : `Season ${toolsSeason}` }); }} />{/if}
-				{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} ondelete={() => { const e = epPicked; if (!e) return; epOpen = false; showDeleter?.open({ episodeIds: [e.id], label: `S${String(e.season ?? 0).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}` }); }} />{/if}
+				{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} show={o} ondelete={() => { const e = epPicked; if (!e) return; epOpen = false; showDeleter?.open({ episodeIds: [e.id], label: `S${String(e.season ?? 0).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}` }); }} />{/if}
 				<!-- One season or one episode (and its files) goes through the show's delete dialog. -->
 				{#if o.show}<ShowDeleteDialog bind:this={showDeleter} titleId={o.id} name={o.name} ondone={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />{/if}
 				<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} scope={pickScope} onchosen={() => loadOwned(o.id)} />
