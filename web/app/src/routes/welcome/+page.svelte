@@ -271,7 +271,8 @@
 				if (err instanceof ApiError && err.status === 409) {
 					try {
 						const have = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders ?? [];
-						const same = have.find((x) => x.kind === r.kind && x.path.replace(/\/+$/, '') === r.path.trim().replace(/\/+$/, ''));
+						const norm = (s: string) => s.trim().replace(/\\/g, '/').replace(/\/+$/, '');
+						const same = have.find((x) => x.kind === r.kind && norm(x.path) === norm(r.path));
 						if (same) {
 							r.saved = same.path;
 							r.id = same.id;
