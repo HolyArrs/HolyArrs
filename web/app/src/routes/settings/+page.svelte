@@ -42,7 +42,6 @@
 		settingsFind.first = results[0] ? link(results[0]) : '';
 	});
 	const answer = $derived(settingsNow.answer);
-	const attention = $derived((answer?.items ?? []).filter((a) => open.has(a.href)));
 
 	const tone = (s: GroupState) => (s === 'attention' ? 'fail' : s === 'unset' ? 'wait' : s === 'ok' ? 'ok' : '');
 	const link = (r: SettingEntry) => to(r.href) + (r.anchor ? `#${r.anchor}` : '');
@@ -109,20 +108,7 @@
 			<EmptyState compact icon="search" title="No matching settings" text="Try another word, like folder, key or password." action={{ label: 'Clear the search', onclick: () => (settingsFind.term = '') }} />
 		{/if}
 	{:else}
-		{#if attention.length}
-			<section class="sx-attention" aria-labelledby="h-attention" data-testid="needs-attention">
-				<h2 id="h-attention"><Icon name="alert" size={17} />Needs attention</h2>
-				<ul>
-					{#each attention as a (a.href + a.text)}
-						<li>
-							<span>{a.text}</span>
-							<a class="fix" href={to(a.href)} aria-label="Fix: {a.text}">Fix<Icon name="chevronRight" size={14} /></a>
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{/if}
-
+		<!-- Problems show in the alerts panel and as the group's chip on its card, not as a banner here. -->
 		<div class="bento" data-count={groups.length}>
 			{#each groups as { group, items } (group.id)}
 				{@const gs = answer ? groupState(answer, items.map((i) => i.href)) : null}
@@ -152,12 +138,6 @@
 	.find .input { width: 100%; min-height: 44px; padding-left: 40px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: transparent; font: var(--t-body); }
 	@media (max-width: 767px) { .find { display: flex; } }
 
-	.sx-attention { margin-bottom: 20px; padding: 14px 18px; border-radius: var(--r-panel); background: color-mix(in srgb, var(--surface-1) 86%, transparent); box-shadow: 0 0 0 1.5px var(--wait); }
-	.sx-attention h2 { display: flex; align-items: center; gap: 8px; font: var(--t-headline); color: var(--wait-text); }
-	.sx-attention ul { margin-top: 6px; }
-	.sx-attention li { display: flex; align-items: center; gap: 12px; min-height: 44px; }
-	.sx-attention li + li { border-top: 1px solid var(--line); }
-	.sx-attention li > span { flex: 1; min-width: 0; font: var(--t-callout); overflow-wrap: anywhere; }
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 
 	/* ---------- Bento: Library tall on the left, four around it ---------- */
