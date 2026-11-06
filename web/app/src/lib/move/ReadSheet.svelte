@@ -62,6 +62,8 @@
 	let error = $state('');
 	// The answer of Check connection, shown as a tag.
 	let probe = $state<{ ok: boolean; text: string } | null>(null);
+	// What each app was last read with, for Read again: kept in this page only, never stored.
+	const lastRead: Partial<Record<AppKind, { address: string; key: string; username: string; signWord: string }>> = {};
 	let checking = $state(false);
 	let ctrl: AbortController | null = null;
 	let form = $state<HTMLFormElement>();
@@ -80,7 +82,13 @@
 				kind = start;
 				way = 'api';
 				useSaved = true;
-				address = again ? (saved.find((x) => x.kind === start)?.address ?? '') : '';
+				const last = again ? lastRead[start] : undefined;
+				address = again ? (saved.find((x) => x.kind === start)?.address ?? last?.address ?? '') : '';
+				if (last) {
+					key = last.key;
+					username = last.username;
+					signWord = last.signWord;
+				}
 				backupPath = '';
 				local = true;
 				error = '';
@@ -147,6 +155,7 @@
 		changed();
 		try {
 			const r = await api.request<ReadAnswer>('/migrate/read', { method: 'POST', body: b, signal: ctrl.signal });
+			if (!usedSaved) lastRead[k] = { address, key, username, signWord };
 			key = '';
 			signWord = '';
 			open = false;
