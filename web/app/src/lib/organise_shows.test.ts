@@ -47,7 +47,7 @@ describe('show deletes', () => {
 		expect(season[0]).toBe('Season 2: 2 episodes stop being kept up to date');
 		const one = deleteSummary({ ...base, scope: 'episodes', episodes: ['S01E02'], kept: [{ file_id: 3, origin: 'adopted', path: 'x', why: 'kept: it also holds S01E03, which stays' }] }, 'show');
 		expect(one[0]).toMatch(/^S01E02: no longer kept up to date/);
-		expect(one).toContain('1 file stays where it is.');
+		expect(one).toContain('1 file stays on disk');
 		expect(deleteSummary(base)[0]).toMatch(/^Leaves your Library/);
 	});
 });
