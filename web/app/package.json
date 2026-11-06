@@ -15,6 +15,7 @@
 		"@axe-core/playwright": "^4.13.0",
 		"@fontsource-variable/geist": "^5.3.0",
 		"@fontsource-variable/geist-mono": "^5.3.0",
+		"@fontsource/silkscreen": "^5.3.0",
 		"@playwright/test": "^1.64.0",
 		"@sveltejs/adapter-static": "^4.0.0",
 		"@sveltejs/kit": "^3.0.1",

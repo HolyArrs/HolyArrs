@@ -2,6 +2,7 @@
 	"_about": "Every file in static/ is copied into web/dist as it is. ours: our own files (folders end in /). listed: third-party files, each with a notice in docs/third-party-notices.md (scripts/notices.py). covered_by: a file another notice covers. The build fails on any other file (bundled-packages.ts).",
 	"ours": [
 		"brand/",
+		"why/",
 		"favicon.ico"
 	],
 	"covered_by": [
