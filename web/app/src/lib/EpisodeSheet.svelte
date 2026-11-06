@@ -162,59 +162,47 @@
 	}
 </script>
 
-<Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} placement="center" size="lg">
+<Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} placement="center" size="md">
 	{#if ep}
+		<!-- One column (Luis 2026-11-06, layout 3): picture, story, status when not in the library, File, Settings, History. -->
 		<div class="es" data-testid="episode-sheet">
-			<div class="es-still es-wide">
+			<div class="es-still">
 				{#if ep.still}<img src={ep.still} alt="" decoding="async" />{/if}
 				<span class="es-shade" aria-hidden="true"></span>
 				<div class="es-cap">
 					<h3>{ep.name ?? `Episode ${ep.episode}`}</h3>
 					<p>{[date(ep.air_date), ep.runtime_minutes ? `${ep.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</p>
 				</div>
+				{#if tone === 'have'}<span class="es-chip"><span class="es-dot" aria-hidden="true"></span>{slot?.state_label ?? 'In library'}</span>{/if}
 			</div>
-			<div class="es-main">
-				{#if story}<p class="es-story">{story}</p>{/if}
+			{#if story}<p class="es-story">{story}</p>{/if}
 
+			{#if tone !== 'have'}
 				<section class="es-status {tone}">
 					<span class="es-st"><span class="es-dot" aria-hidden="true"></span>{slot?.state_label ?? 'Missing'}</span>
-					{#if manage && slot && tone !== 'have' && tone !== 'downloading'}<button type="button" class="es-btn primary" disabled={busy === 'look'} onclick={look}><Icon name="search" size={15} />Look for it</button>{/if}
+					{#if manage && slot && tone !== 'downloading'}<button type="button" class="es-btn primary" disabled={busy === 'look'} onclick={look}><Icon name="search" size={15} />Look for it</button>{/if}
 				</section>
+			{/if}
 
-				{#if fileFacts}
-					<article class="es-file">
-						<p class="es-badges"><b>File</b>{#each fileFacts.badges as b (b)}<span class="es-badge">{b}</span>{/each}</p>
-						<div class="es-tiles"><div><span>Quality</span><b>{fileFacts.res || '—'}</b></div><div><span>Size</span><b>{fileFacts.size || '—'}</b></div><div><span>Added</span><b>{fileFacts.addedOn || '—'}</b></div></div>
-						{#if fileFacts.audio.length || fileFacts.subs.length}
-							<p class="es-langs">{#if fileFacts.audio.length}<span class="muted">Audio</span>{#each fileFacts.audio as l (l)}<span class="es-lang">{l}</span>{/each}{/if}{#if fileFacts.subs.length}<span class="muted">Subtitles</span>{#each fileFacts.subs as l (l)}<span class="es-lang">{l}</span>{/each}{/if}</p>
-						{/if}
-						<p class="es-name" title={fileFacts.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{fileFacts.name}</span></p>
-					</article>
-				{/if}
-			</div>
+			{#if fileFacts}
+				<article class="es-file">
+					<p class="es-badges"><b>File</b>{#each fileFacts.badges as b (b)}<span class="es-badge">{b}</span>{/each}</p>
+					<div class="es-tiles"><div><span>Quality</span><b>{fileFacts.res || '—'}</b></div><div><span>Size</span><b>{fileFacts.size || '—'}</b></div><div><span>Added</span><b>{fileFacts.addedOn || '—'}</b></div></div>
+					{#if fileFacts.audio.length || fileFacts.subs.length}
+						<p class="es-langs">{#if fileFacts.audio.length}<span class="muted">Audio</span>{#each fileFacts.audio as l (l)}<span class="es-lang">{l}</span>{/each}{/if}{#if fileFacts.subs.length}<span class="muted">Subtitles</span>{#each fileFacts.subs as l (l)}<span class="es-lang">{l}</span>{/each}{/if}</p>
+					{/if}
+					<p class="es-name" title={fileFacts.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{fileFacts.name}</span></p>
+				</article>
+			{/if}
 
-			<div class="es-side">
-				<h4 class="es-h">History</h4>
-				<ol class="es-tl">
-					{#each rows as r (r.key)}<li><CompactRow row={r} ctx={{ titles }} titleById={titles} onclick={() => goto(to(`/downloads/history?title=${titleId}`))} /><span class="sr-only">{r.events.map((x) => x.Summary).join(' · ')}</span></li>
-					{:else}<li class="muted">Nothing yet.</li>{/each}
-				</ol>
-
-				{#if manage}
-					<h4 class="es-h">Settings</h4>
-					<div class="es-rows">
-						<button type="button" class="es-row" role="switch" aria-checked={keep} disabled={busy === 'keep'} onclick={flipKeep}>
-							<span><b>Keep up to date</b><small>Better copies</small></span>
-							<span class="es-switch" class:on={keep} aria-hidden="true"></span>
-						</button>
-						{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>Delete episode</b></span><Icon name="trash" size={16} /></button>{/if}
-					</div>
-				{/if}
-
-				{#if manage && ep.season != null}
-					<!-- This episode's subtitles: its languages, what is missing, choose one by hand. -->
-					<div class="es-rows" data-testid="episode-subtitles-row">
-						<div class="es-row static es-subq">
+			{#if manage}
+				<div class="es-rows">
+					<button type="button" class="es-row" role="switch" aria-checked={keep} disabled={busy === 'keep'} onclick={flipKeep}>
+						<span><b>Keep up to date</b><small>Better copies</small></span>
+						<span class="es-switch" class:on={keep} aria-hidden="true"></span>
+					</button>
+					{#if ep.season != null}
+						<div class="es-row static es-subq" data-testid="episode-subtitles-row">
 							<span><b>Subtitles</b><small>{subs ? subsHint : ' '}</small></span>
 							<div class="q-seg" role="radiogroup" aria-label="Subtitles">
 								<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busy === 'subs'} onclick={() => setSubs('default')}>Default</button>
@@ -222,24 +210,33 @@
 								<div class="q-more" class:on={subsMode === 'custom'}><Menu label="Subtitle options" variant="button" width={220} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu></div>
 							</div>
 						</div>
-					</div>
-					{#if subsMore}
-						<div class="es-subs" data-testid="episode-subtitles">{#key ep.id}<SubtitlePanel {titleId} movie={false} itemId={ep.id} bare label={`S${String(ep.season).padStart(2, '0')}E${String(ep.episode).padStart(2, '0')}`} />{/key}</div>
 					{/if}
+					{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>Delete episode</b></span><Icon name="trash" size={16} /></button>{/if}
+				</div>
+				{#if subsMore && ep.season != null}
+					<div class="es-subs" data-testid="episode-subtitles">{#key ep.id}<SubtitlePanel {titleId} movie={false} itemId={ep.id} bare label={`S${String(ep.season).padStart(2, '0')}E${String(ep.episode).padStart(2, '0')}`} />{/key}</div>
 				{/if}
-			</div>
+			{/if}
+
+			<h4 class="es-h">History</h4>
+			<ol class="es-tl">
+				{#each rows as r (r.key)}<li><CompactRow row={r} ctx={{ titles }} titleById={titles} onclick={() => goto(to(`/downloads/history?title=${titleId}`))} /><span class="sr-only">{r.events.map((x) => x.Summary).join(' · ')}</span></li>
+				{:else}<li class="muted">Nothing yet.</li>{/each}
+			</ol>
 		</div>
 	{/if}
 </Sheet>
 
 <style>
-	.es { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
-	.es-main, .es-side { display: grid; gap: 14px; min-width: 0; }
+	.es { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+	.es-chip { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px; border-radius: 999px; background: rgb(0 0 0 / 45%); color: #fff; font: 600 12.5px/1 var(--font-ui); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+	.es-chip .es-dot { background: var(--ok); }
 	.es-subs :global(.card) { padding: 0; background: none; box-shadow: none; border: 0; }
 	.es-subs { position: relative; display: grid; gap: 16px; padding-top: 34px; }
 	.es-row.static { cursor: default; }
 	.es-row.static:hover { background: none; }
 	.es-row.es-subq { display: grid; gap: 10px; justify-content: stretch; }
+	.es-subq .q-seg { max-width: 420px; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; min-height: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 	.q-seg > button.on, .q-more.on :global(.trigger) { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 2px rgb(0 0 0 / .2); }
@@ -250,9 +247,9 @@
 	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } }
 	.es-subs :global(.card-head.bare) { position: absolute; top: 0; right: 0; margin: 0; }
 	@media (max-width: 760px) { .es { grid-template-columns: minmax(0, 1fr); } }
-	.es-still { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: var(--surface-2); }
-	.es-wide { grid-column: 1 / -1; aspect-ratio: 21 / 9; }
-	@media (max-width: 760px) { .es-wide { aspect-ratio: 16 / 9; } }
+	.es-still { position: relative; aspect-ratio: 21 / 9; border-radius: 14px; overflow: hidden; background: var(--surface-2); }
+	@media (max-width: 760px) { .es-still { aspect-ratio: 16 / 9; } }
+
 	.es-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
 	.es-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 78%) 0%, rgb(0 0 0 / 20%) 45%, transparent 70%); }
 	.es-cap { position: absolute; left: 22px; right: 22px; bottom: 16px; color: #fff; }
