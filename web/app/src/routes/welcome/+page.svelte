@@ -215,9 +215,11 @@
 		} catch {
 			// show empty rows
 		}
+		// Keep anything typed while the list was loading.
 		rows = kindRows.map((k) => {
 			const f = have.find((x) => x.kind === k.kind);
-			return { ...k, path: '', saved: f?.path ?? '', id: f?.id ?? null, editing: false, error: '' };
+			const cur = rows.find((r) => r.kind === k.kind);
+			return { ...k, path: cur?.path ?? '', saved: f?.path ?? '', id: f?.id ?? null, editing: cur?.editing ?? false, error: '' };
 		});
 	}
 	// The server's folder answers, in plain words.
