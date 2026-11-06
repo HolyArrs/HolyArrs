@@ -36,9 +36,6 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LibraryViewSwitch from '#lib/LibraryViewSwitch.svelte';
 	import DlFind from '#lib/downloads/DlFind.svelte';
-	import SettingsTile from '#lib/ui/SettingsTile.svelte';
-	import type { Tint } from '#lib/settings.ts';
-	import type { IconName } from '#lib/Icon.svelte';
 	import { searchShortcut } from '#lib/downloads/keys.ts';
 	import { dlTop } from '#lib/dl-top.svelte.ts';
 	import { rememberLibraryKind } from '#lib/library-last-kind.ts';
@@ -425,30 +422,13 @@
 		...(partOn('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(partOn('music') ? ([{ label: 'Artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
 	]);
-	type Tool = { label: string; hint: string; icon: IconName; tint: Tint; href: string; /** Which count the tile carries, and whether it calls for action (red) or only tells (grey). */ count?: 'deleted'; hot?: boolean };
-	const toolGroups = $derived<{ name: string; tools: Tool[] }[]>(
-		[
-			{
-				name: 'Look after',
-				tools: [
-					...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', hint: 'Bring back or clear', icon: 'trash', tint: 'red', href: to('/library/deleted'), count: 'deleted' }] as Tool[]) : [])
-				] as Tool[]
-			}
-		].filter((g) => g.tools.length)
-	);
-	let toolsOpen = $state(false);
-	// The tiles' counts are read when Tools opens (at most once a minute), from the lists the tool pages
-	// themselves read; a list that cannot be read simply shows no count.
-	let toolCounts = $state<Partial<Record<NonNullable<Tool['count']>, number>>>({});
-	let toolCountsAt = 0;
-	function loadToolCounts() {
-		if (Date.now() - toolCountsAt < 60_000) return;
-		toolCountsAt = Date.now();
-		const set = (k: NonNullable<Tool['count']>, n: number) => (toolCounts = { ...toolCounts, [k]: n });
-		void api.get<{ files: unknown[] }>('/holding').then((r) => set('deleted', r.files?.length ?? 0), () => {});
-	}
+	// Recently deleted lives in Sort & filter: its count is read when the panel opens (at most once a minute).
+	let deletedCount = $state<number | null>(null);
+	let deletedAt = 0;
 	$effect(() => {
-		if (toolsOpen) untrack(loadToolCounts);
+		if (!sortOpen || !canManage || Date.now() - deletedAt < 60_000) return;
+		deletedAt = Date.now();
+		void api.get<{ files: unknown[] }>('/holding').then((r) => (deletedCount = r.files?.length ?? 0), () => {});
 	});
 	function partOn(name: string) {
 		return partsNow.answer?.parts.find((part) => part.part === name)?.on !== false;
@@ -1035,19 +1015,6 @@
 		{#if (view === 'table' || view === 'rows') && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
 		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
 		{#if canManage}
-			{@const tools = toolGroups.flatMap((g) => g.tools)}
-			{#if tools.length}<span class="t-tool">
-				{#if tools.length === 1}
-					<!-- One tool left: the button goes straight to it. -->
-					{#if phone}<IconButton icon={tools[0].icon} label={tools[0].label} href={tools[0].href} data-testid="library-tools" />{:else}<Button size="md" icon={tools[0].icon} href={tools[0].href} data-testid="library-tools">{tools[0].label}</Button>{/if}
-				{:else if phone}
-					<IconButton icon="tools" label="Library tools" aria-haspopup="dialog" onclick={() => (toolsOpen = true)} data-testid="library-tools" />
-				{:else}
-					<Popover label="Library tools" variant="button" icon="tools" text="Tools" width={440} align="end" bind:open={toolsOpen}>
-						{#snippet children()}{@render toolTiles()}{/snippet}
-					</Popover>
-				{/if}
-			</span>{/if}
 			<span class="t-add"><Menu label="Add to the Library" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={190} align="end" /></span>
 		{/if}
 		</span>
@@ -1061,7 +1028,6 @@
 	</div>
 	{#if phone}
 		<Sheet bind:open={sortOpen} title="Sort and filter" placement="bottom">{@render sortFilter()}</Sheet>
-		<Sheet bind:open={toolsOpen} title="Library tools" placement="bottom">{@render toolTiles()}</Sheet>
 	{/if}
 
 	{#if filtersOn || q}
@@ -1391,24 +1357,6 @@
 	</button>
 {/snippet}
 
-{#snippet toolTiles()}
-	<div class="tt" data-testid="library-tools-panel">
-		{#each toolGroups as g, gi (g.name)}
-			{#if gi}<span class="sf-sep" aria-hidden="true"></span>{/if}
-			<h3 class="sf-h">{g.name}</h3>
-			<div class="tt-grid">
-				{#each g.tools as tool (tool.href)}
-					{@const n = tool.count ? (toolCounts[tool.count] ?? 0) : 0}
-					<a class="tt-tile" href={tool.href} onclick={() => (toolsOpen = false)}>
-						<span class="tt-ic"><SettingsTile icon={tool.icon} tint={tool.tint} />{#if n > 0}<i class="tt-pin" class:hot={tool.hot} aria-hidden="true" data-testid="tool-count">{n > 999 ? '999+' : n}</i>{/if}</span>
-						<span class="tt-tx"><b>{tool.label}{#if n > 0}<span class="sr-only">, {n}</span>{/if}</b><small>{tool.hint}</small></span>
-					</a>
-				{/each}
-			</div>
-		{/each}
-	</div>
-{/snippet}
-
 {#snippet sortFilter()}
 	<div class="sf">
 		<section class="sf-col sf-sort" aria-label="Sort">
@@ -1461,6 +1409,10 @@
 					{/each}
 				</div>
 			{/if}
+			{#if canManage && (partOn('movies') || partOn('shows') || partOn('music'))}
+				<span class="sf-sep" aria-hidden="true"></span>
+				<a class="sf-o sf-link" href={to('/library/deleted')} onclick={() => (sortOpen = false)} data-testid="library-deleted"><span class="sf-tick" aria-hidden="true"><Icon name="trash" size={14} /></span><span class="sf-l">Recently deleted</span>{#if deletedCount}<span class="sf-n">{deletedCount}</span>{/if}</a>
+			{/if}
 		</section>
 		{#if phone && view === 'posters'}
 			<section class="sf-col sf-size" aria-label="Posters">
@@ -1505,7 +1457,7 @@
 	.toolbar.topbar .t-view :global(.vs button[role='radio']) { min-height: 44px; min-width: 44px; }
 	.toolbar.topbar .t-view :global(.vs .seg) { border-radius: 10px; }
 	.toolbar.topbar .filter-btn.on :global(.trigger.button) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-text); }
-	.t-tools, .t-sel, .t-add, .t-tool, .t-cols { display: contents; }
+	.t-tools, .t-sel, .t-add, .t-cols { display: contents; }
 	.chips .t-miss { display: inline-flex; margin-left: auto; }
 	.toolbar.topbar .t-tools { display: flex; margin-left: auto; }
 	/* A narrower page keeps the one row: first Columns and Select fold to their icons, then Tools and Add too.
@@ -1542,6 +1494,8 @@
 	.sf-sep { height: 1px; margin: 6px 8px; background: var(--line); }
 	.sf-o { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px; border-radius: 8px; color: var(--text); font: 500 13.5px/1.2 var(--font-ui); text-align: left; transition: background-color 120ms ease; }
 	.sf-o + .sf-o { margin-top: 2px; }
+	.sf-link { text-decoration: none; }
+	.sf-link .sf-tick { color: var(--text-muted); }
 	.sf-o:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.sf-o:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.sf-o.on { font-weight: 650; }
@@ -1563,18 +1517,7 @@
 	/* The series list is long: it scrolls inside its own well, and takes the height the Sort column leaves. */
 	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
 	/* Tools: tiles with the Settings pages' glossy icons, two across (one on phones). */
-	.tt { padding: 4px; }
-	.tt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; }
-	.tt-tile { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 52px; padding: 8px 10px; border-radius: 10px; color: var(--text); text-decoration: none; transition: background-color 120ms ease; }
-	.tt-tile:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
-	.tt-tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.tt-ic { position: relative; flex: none; display: grid; }
 	/* A count sits on the icon's corner, so every tile keeps the same shape: red when it calls for action, grey when it only tells. */
-	.tt-pin { position: absolute; right: -8px; top: -7px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--text-muted); color: var(--bg); font: 700 10.5px/17px var(--font-ui); font-style: normal; font-variant-numeric: tabular-nums; text-align: center; box-shadow: 0 0 0 2px var(--surface-1); }
-	.tt-pin.hot { background: var(--accent-fill, var(--accent)); color: #fff; }
-	.tt-tx { display: grid; min-width: 0; }
-	.tt-tx b { font: 600 13.5px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.tt-tx small { color: var(--text-muted); font: 400 12px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sf-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 8px 2px 0; border-top: 1px solid var(--line); }
 	.sf-saved { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
 	@media (pointer: coarse) { .sf-o { min-height: 44px; } .sf-chips :global(.ui-chip .main) { min-height: 40px; } }
@@ -1796,10 +1739,8 @@
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
 		.toolbar { position: static; margin: 0; padding: 8px 0; }
-		.t-sel, .t-add, .t-view, .filter-btn, .t-tool { display: inline-flex; }
-		.t-tool { order: 2; }
-		.tt-grid { grid-template-columns: 1fr; }
-		/* Two rows: count, search, select, add; then view and size, sort and filter. */
+		.t-sel, .t-add, .t-view, .filter-btn { display: inline-flex; }
+			/* Two rows: count, search, select, add; then view and size, sort and filter. */
 		.toolbar .count { order: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; }
 		.t-find { order: 1; }
 		.t-add { order: 3; }

@@ -97,11 +97,18 @@ export async function openLibraryTab(page: Page): Promise<Locator> {
 	return page.getByTestId('own-pane');
 }
 
-/** libraryTool opens a Library tool from the Library page's Tools panel. */
+/**
+ * libraryTool opens a Library tool. Recently deleted opens from the Library's Sort & filter panel;
+ * the others are off the Library for now (plans/active/2026-11-05-library-tools-deferred.md), so they open by address.
+ */
 export async function libraryTool(page: Page, name: string) {
-	await page.getByRole('main').getByRole('button', { name: /^(Tools|Library tools)$/ }).click();
-	const tiles: Record<string, string> = { 'Import a library': 'A whole library', 'Import files by hand': 'Files by hand', 'Turned down releases': 'Turned down' };
-	await page.getByRole('link', { name: tiles[name] ?? name }).first().click();
+	if (name === 'Recently deleted') {
+		await page.getByRole('main').getByRole('button', { name: /^(Sort and filter|Sort & filter)/ }).first().click();
+		await page.getByTestId('library-deleted').click();
+		return;
+	}
+	const paths: Record<string, string> = { 'Import a library': '/library/import', 'Import files by hand': '/library/import-files', 'Turned down releases': '/library/turned-down', 'Missing subtitles': '/library/missing-subtitles', 'Rename files': '/library/rename', 'Video codecs': '/library/copies' };
+	await page.goto(paths[name] ?? name);
 }
 
 // A show's seasons and episodes live on its Library tab: one row per season

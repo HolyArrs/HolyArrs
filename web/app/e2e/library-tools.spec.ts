@@ -6,8 +6,8 @@ import { libraryTool, libraryView, noSidewaysScroll, owner, signIn, titleAction 
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
-// Library tools open from the Tools panel and land on their own page.
-test('Library tools open from the Tools panel', async ({ page }) => {
+// Library tools land on their own page (Recently deleted opens from Sort & filter).
+test('Library tools open to their own page', async ({ page }) => {
 	await signIn(page, owner());
 	for (const tool of ['Recently deleted', 'Import files by hand']) {
 		await page.goto('/library');
