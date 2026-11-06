@@ -62,8 +62,10 @@
 	});
 </script>
 
-<SettingsCard id="move-step" title={countSteps ? 'Step 1 of 4 · Read your apps' : 'Read your apps'}>
-	{#if snapshots.length === 0 && !reading}
+{#snippet reads()}
+	{#if snapshots.length === 0 && !reading && !countSteps}
+		<button type="button" class="add-row first" onclick={onadd}><Icon name="plus" size={16} />Add an app</button>
+	{:else if snapshots.length === 0 && !reading}
 		<EmptyState
 			icon="upload"
 			title="Bring your old apps over"
@@ -96,7 +98,14 @@
 		</ul>
 		<button type="button" class="add-row" onclick={onadd} disabled={!!reading}><Icon name="plus" size={16} />Add an app</button>
 	{/if}
-</SettingsCard>
+{/snippet}
+
+<!-- In the wizard its own heading says what this is: just the reads. -->
+{#if countSteps}
+	<SettingsCard id="move-step" title="Step 1 of 4 · Read your apps">{@render reads()}</SettingsCard>
+{:else}
+	<div id="move-step" tabindex="-1" aria-label="Your apps">{@render reads()}</div>
+{/if}
 
 {#if moves.length > 0 || movesError}
 	<SettingsCard id="move-earlier" title="Earlier moves">
@@ -144,6 +153,8 @@
 	}
 	.quiet:focus-visible, .add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.add-row { width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; }
+	.add-row.first { margin-top: 0; }
+	#move-step:focus { outline: none; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.one { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* One left edge for every pill, whatever its word. */

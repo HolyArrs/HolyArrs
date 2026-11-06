@@ -60,7 +60,7 @@
 	let local = $state(true);
 	let useSaved = $state(true);
 	let error = $state('');
-	// The answer of Check connection, shown as a tag.
+	// The answer of Test, shown as a tag.
 	let probe = $state<{ ok: boolean; text: string } | null>(null);
 	// What each app was last read with, for Read again: kept in this page only, never stored.
 	const lastRead: Partial<Record<AppKind, { address: string; key: string; username: string; signWord: string }>> = {};
@@ -244,7 +244,7 @@
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
-		<Button onclick={check} busy={checking} disabled={busy}>Check connection</Button>
+		<Button onclick={check} busy={checking} disabled={busy}>Test</Button>
 		<!-- One button that changes, so focus stays on it while reading. -->
 		<Button variant="primary" type={busy ? 'button' : 'submit'} form={busy ? undefined : 'move-read-form'} onclick={busy ? stop : undefined}>{busy ? 'Stop reading' : `Read ${appName(kind)}`}</Button>
 	{/snippet}

@@ -27,7 +27,7 @@ export function appLabel(kind: string): string {
 
 /** placeholderFor is the address hint for an app, on its usual port. */
 export function placeholderFor(kind: string): string {
-	return `http://10.0.0.5:${apps.find((a) => a.kind === kind)?.port ?? 8080}`;
+	return `http://192.168.1.10:${apps.find((a) => a.kind === kind)?.port ?? 8080}`;
 }
 
 export interface Snapshot {

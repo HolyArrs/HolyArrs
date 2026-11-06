@@ -8,7 +8,7 @@
 	import MoveFlow from '../settings/move/+page.svelte';
 	import { page } from '$app/state';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount, setContext } from 'svelte';
+	import { onMount, setContext, tick } from 'svelte';
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -18,7 +18,7 @@
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import { emptyForm, formBody, formFrom, kindWords, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
+	import { emptyForm, formBody, formFrom, kindWords, reachWords, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
 	import type { LibraryFolder } from '#lib/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
@@ -46,10 +46,22 @@
 
 	function go(s: Step) {
 		error = '';
+		// Done says what is left, so it waits for that list.
+		if (s === 'done' && step !== 'done') {
+			busy = true;
+			void loadTodo().finally(() => {
+				busy = false;
+				show(s);
+			});
+		} else show(s);
+	}
+	function show(s: Step) {
 		step = s;
 		const q = ['first=1', s !== 'start' ? `step=${s}` : '', fromApps && s !== 'start' && s !== 'import' ? 'from=apps' : ''].filter(Boolean).join('&');
 		replaceState(to(`/welcome?${q}`), page.state);
 		void enter(s);
+		// A new step: focus its heading, so keyboard and screen reader start there.
+		void tick().then(() => document.getElementById('welcome-title')?.focus());
 	}
 	const order = $derived<Step[]>(
 		fromApps
@@ -184,6 +196,8 @@
 	let dlAdding = $state(false);
 	// The downloader being edited (its form is open), or null when adding a new one.
 	let dlEditing = $state<number | null>(null);
+	// Connect's answer when the downloader didn't answer, shown under Address.
+	let dlError = $state('');
 	const dlForm = $derived(dlList.length === 0 || dlAdding);
 	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
 	function pickDl(k: DownloaderForm['kind']) {
@@ -205,13 +219,14 @@
 	async function testDl(id: number) {
 		try {
 			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${id}/test`);
-			dlTests = { ...dlTests, [id]: { ok: t.ok, text: t.text } };
+			dlTests = { ...dlTests, [id]: { ok: t.ok, text: t.ok ? t.text : reachWords(t.text) } };
 		} catch (err) {
-			dlTests = { ...dlTests, [id]: { ok: false, text: message(err) } };
+			dlTests = { ...dlTests, [id]: { ok: false, text: reachWords(message(err)) } };
 		}
 	}
 	function editDl(d: DownloaderView) {
 		error = '';
+		dlError = '';
 		dl = formFrom(d);
 		dlEditing = d.id;
 		dlAdding = true;
@@ -233,13 +248,24 @@
 		if (!dlForm) return afterDownloader();
 		error = '';
 		busy = true;
+		dlError = '';
 		try {
-			const v = dlEditing != null ? await api.put<DownloaderView>(`/downloaders/${dlEditing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
-			dlList = dlEditing != null ? dlList.map((x) => (x.id === v.id ? v : x)) : [...dlList, v];
+			const editing = dlEditing;
+			const v = editing != null ? await api.put<DownloaderView>(`/downloaders/${editing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
+			if (editing != null) dlList = dlList.map((x) => (x.id === v.id ? v : x));
+			// Only a downloader that answers becomes a row; a new one that doesn't is taken back and the form stays.
+			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${v.id}/test`).catch((err) => ({ ok: false, text: message(err) }));
+			if (!t.ok) {
+				if (editing == null) await api.del(`/downloaders/${v.id}`).catch(() => {});
+				else dlEditing = v.id;
+				dlError = reachWords(t.text);
+				return;
+			}
+			dlTests = { ...dlTests, [v.id]: { ok: t.ok, text: t.text } };
+			if (editing == null) dlList = [...dlList, v];
 			dlEditing = null;
 			dlAdding = false;
 			dl = emptyForm();
-			await testDl(v.id);
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -297,6 +323,18 @@
 	}
 
 	// ---- Done ----
+	// What a skipped step left to do, each a Settings page.
+	type Todo = { label: string; path: string };
+	let todo = $state<Todo[]>([]);
+	async function loadTodo() {
+		const n = (path: string, key: string) => api.get<Record<string, unknown[]>>(path).then((r) => (r[key] ?? []).length, () => 1);
+		const [folders, dls, srcs] = await Promise.all([n('/library-folders', 'library_folders'), n('/downloaders', 'downloaders'), sourceCount()]);
+		todo = [
+			...(folders ? [] : [{ label: 'Folders', path: '/settings/library-folders' }]),
+			...(dls ? [] : [{ label: 'Downloader', path: '/settings/downloaders' }]),
+			...(srcs ? [] : [{ label: 'Source', path: '/settings/sources' }])
+		];
+	}
 	// Invite family: turns on Requests (what the old "family" question did), then opens Users.
 	async function invite() {
 		error = '';
@@ -320,6 +358,7 @@
 		if (s === 'downloader') await loadDownloader();
 		if (s === 'source') await loadSources();
 		if (s === 'import') await loadHidden();
+		if (s === 'done' && !todo.length) await loadTodo();
 	}
 	onMount(() => {
 		if (firstRun) void enter(step);
@@ -342,17 +381,19 @@
 	const titles: Record<Step, { h: string; p: string }> = {
 		start: { h: 'Coming from other apps?', p: 'We can bring over your shows, movies, folders and settings. Media files stay where they are.' },
 		media: { h: 'Where’s your media?', p: 'Turn on what you collect and add its folder.' },
-		downloader: { h: 'Where do downloads go?', p: 'Connect the app that downloads for you.' },
+		downloader: { h: 'Which app downloads?', p: 'Connect the one you use.' },
 		source: { h: 'Where should we search?', p: 'Link Prowlarr or Jackett and your sites come with it.' },
-		import: { h: 'Bring your apps', p: 'We only read them. Your old apps keep running.' },
+		import: { h: 'Bring your apps', p: 'We only read them. Nothing moves until you say so.' },
 		done: { h: 'You’re set', p: 'Find something on Home and we’ll get it.' }
 	};
 	const head = $derived(
 		!firstRun
 			? { h: 'What do you use?', p: 'You can change this later.' }
-			: step === 'done' && fromApps
-				? { h: 'Welcome home', p: 'Your library is here. Your old apps keep running.' }
-				: titles[step]
+			: step === 'done' && todo.length
+				? { h: 'Almost there', p: 'Finish these when you’re ready.' }
+				: step === 'done' && fromApps
+					? { h: 'Welcome home', p: 'Your library is here. Your old apps keep running.' }
+					: titles[step]
 	);
 </script>
 
@@ -372,9 +413,10 @@
 		</ol>
 	{/if}
 	<header class="head">
-		<h1>{head.h}</h1>
+		<h1 id="welcome-title" tabindex="-1">{head.h}</h1>
 		<p>{head.p}</p>
 	</header>
+	{#if firstRun}<p class="sr-only" aria-live="polite">{busy && step !== 'done' ? '' : `Step ${stepNo} of ${order.length}: ${head.h}`}</p>{/if}
 
 	{#if !session.can('users') || (firstRun && step !== 'start' && !session.can('settings'))}
 		<p class="notice warn">Only the owner or an admin with Settings access can finish setup.</p>
@@ -442,7 +484,7 @@
 					</li>
 				{/each}
 			</ul>
-			<p class="hint">On Docker, use the path inside the container. Leave a folder empty to add it later.</p>
+			<p class="hint">On Docker, use the path inside the container.</p>
 			{#if error || mediaOff}<p class="form-error" role="alert">{error || 'Turn on at least one.'}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaOff} {busy}>Continue</Button>
 			<button class="alt" type="button" disabled={busy || mediaOff} onclick={() => saveMedia(true)}>Skip for now</button>
@@ -483,7 +525,8 @@
 				</div>
 				<div class="field">
 					<label for="dl-url">Address</label>
-					<input id="dl-url" class="input mono" type="url" bind:value={dl.url} placeholder="http://192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" />
+					<input id="dl-url" class="input mono" type="url" bind:value={dl.url} oninput={() => (dlError = '')} placeholder="http://192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={dlError ? 'true' : undefined} aria-describedby={dlError ? 'dl-url-error' : undefined} />
+					{#if dlError}<p class="form-error" id="dl-url-error" role="alert">{dlError}</p>{/if}
 				</div>
 				<div class="two">
 					{#if dlUser}
@@ -501,7 +544,7 @@
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlEditing != null ? 'Save' : dlForm ? 'Connect' : 'Continue'}</Button>
 			{#if dlForm && dlList.length}
-				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = false; dlEditing = null; dl = emptyForm(); }}>Cancel</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlError = ''; dlAdding = false; dlEditing = null; dl = emptyForm(); }}>Cancel</button>
 			{:else}
 				<button class="alt" type="button" disabled={busy} onclick={afterDownloader}>Skip for now</button>
 			{/if}
@@ -509,11 +552,13 @@
 	{:else if step === 'source'}
 		<div class="card source" data-testid="welcome-source">
 			<ConnectBridge onchange={loadSources} compact />
-			{#if sources > 0}
-				<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>Continue</Button>
-			{:else}
-				<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Do this later</button>
-			{/if}
+			<div class="foot">
+				{#if sources > 0}
+					<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>Continue</Button>
+				{:else}
+					<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Do this later</button>
+				{/if}
+			</div>
 		</div>
 	{:else if step === 'import'}
 		<div class="card move" data-testid="welcome-move">
@@ -527,6 +572,13 @@
 		</div>
 	{:else}
 		<div class="card" data-testid="welcome-done">
+			{#if todo.length}
+				<ul class="todo" aria-label="Still to do">
+					{#each todo as t (t.label)}
+						<li><a href={to(t.path)} onclick={(e) => { e.preventDefault(); void home(t.path); }}><span>{t.label}</span><Icon name="chevronRight" size={16} /></a></li>
+					{/each}
+				</ul>
+			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<Button variant="primary" size="lg" full type="button" disabled={busy} {busy} onclick={() => home()}>Open Home</Button>
 			<button class="alt" type="button" disabled={busy} onclick={invite}>Invite family</button>
@@ -539,9 +591,9 @@
 	.welcome {
 		position: relative;
 		width: min(560px, calc(100% - 32px));
-		min-height: 100dvh;
 		margin: 0 auto;
 		padding: clamp(28px, 7vh, 72px) 0 48px;
+		box-sizing: border-box;
 	}
 	/* The move flow's four steps and its rows need more room than a form. */
 	.welcome.wide { width: min(820px, calc(100% - 32px)); }
@@ -714,6 +766,22 @@
 	.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; align-items: start; }
 	.two > :global(.field) { margin: 0; }
 	.source :global(.settings-card), .source :global(section) { box-shadow: none; }
+	/* The wizard heading says it all: no second title in the card. */
+	.sheet.glass .source :global(.ui-settings > header) { display: none; }
+	.source .foot { margin-top: 8px; }
+	/* Phones: Continue or Do this later stays in view under a long form. */
+	@media (max-width: 520px) {
+		.source .foot { position: sticky; bottom: 0; z-index: 2; margin: 8px calc(-1 * var(--pad, 0px)) 0; padding: 8px var(--pad, 0px) calc(8px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, rgb(14 14 18 / 0.85) 30%); }
+		.light .source .foot { background: linear-gradient(transparent, rgb(255 253 250 / 0.9) 30%); }
+		.source .foot .alt, .source .foot :global(.ui-btn) { margin-top: 0; }
+	}
+	.head h1:focus { outline: none; }
+	/* Done with steps left: each one a row that opens its Settings page. */
+	.todo { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 8px; }
+	.todo a { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); font: 600 15px/1.2 var(--font-ui); text-decoration: none; }
+	@media (hover: hover) { .todo a:hover { border-color: var(--line-strong); } }
+	.todo a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.todo :global(svg) { color: var(--text-muted); }
 	/* Import: the move flow's cards stack inside the glass with plain gaps. */
 	.move { display: flex; flex-direction: column; gap: 18px; }
 	.move .alt { margin-top: 0; }
@@ -723,16 +791,25 @@
 	@media (max-width: 520px) {
 		.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.tiles.five { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-		.tiles.five .tile:last-child:nth-child(odd) { grid-column: span 2; }
 		.tiles.two-up { grid-template-columns: 1fr; }
 		.tile { min-height: 96px; }
 		.tile.small { min-height: 52px; }
 		.tile.big { min-height: 110px; }
-		.frow { gap: 12px; padding: 12px 10px; }
+		.frow { gap: 12px; padding: 10px; }
+		/* A phone fits the short steps without scrolling. */
+		.welcome { padding: 12px 0 0; }
+		.rows { gap: 8px; }
+		.welcome :global(.card) > :global(.ui-btn) { margin-top: 16px; }
+		.alt { margin-top: 4px; }
+		.head { margin: 12px 0 16px; }
+		.glass .head { margin-bottom: 16px; }
+		.hint { margin-top: 8px; }
+		.dots { margin-top: 16px; }
 		.ficon { width: 36px; height: 36px; }
 	}
-	@media (pointer: coarse) {
+	@media (pointer: coarse), (max-width: 520px) {
 		.alt { min-height: 44px; }
+		.source :global(.acts .ui-btn) { min-height: 44px; }
 		.seg label { min-height: 44px; }
 	}
 </style>
