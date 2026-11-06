@@ -19,6 +19,7 @@
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import TestTag from '../ui/TestTag.svelte';
 	import { api, ApiError, message } from '../api.ts';
+	import { reachWords } from '../downloaders.ts';
 	import { toasts } from '../toasts.svelte.ts';
 	import { getContext } from 'svelte';
 	import { apps, appName, placeholderFor, type AppKind } from '../move.ts';
@@ -114,7 +115,9 @@
 			b.use_saved_key = true;
 			return b;
 		}
-		b.url = address.trim();
+		// A bare host:port gets http:// in front, as people often type it that way.
+		const a = address.trim();
+		b.url = a && !/^[a-z][a-z0-9+.-]*:\/\//i.test(a) ? `http://${a}` : a;
 		b.allow_local_network = local;
 		if (qbit && (username || signWord)) {
 			b.username = username;
@@ -128,8 +131,18 @@
 		return (err instanceof ApiError && err.body.code === 'reauth') || (err instanceof DOMException && err.name === 'AbortError');
 	}
 
+	// Our own words instead of the browser's bubbles: the address is the one field people miss.
+	function missing(): boolean {
+		if (way === 'api' && !withSaved && !address.trim()) {
+			error = 'Add the address.';
+			document.getElementById('move-address')?.focus();
+			return true;
+		}
+		return !!form && !form.reportValidity();
+	}
+
 	async function check() {
-		if (form && !form.reportValidity()) return;
+		if (missing()) return;
 		checking = true;
 		changed();
 		try {
@@ -137,7 +150,7 @@
 			probe = { ok: true, text: `${appName(kind)}${r.app?.version ? ' ' + r.app.version : ''}` };
 		} catch (err) {
 			if (!quiet(err)) {
-				error = message(err);
+				error = reachWords(message(err));
 				probe = { ok: false, text: error };
 			}
 		} finally {
@@ -147,7 +160,7 @@
 
 	async function read(e: SubmitEvent) {
 		e.preventDefault();
-		if (busy) return;
+		if (busy || missing()) return;
 		const k = kind;
 		const b = body();
 		const usedSaved = !!b.use_saved_key;
@@ -163,8 +176,8 @@
 			onread(r, k, usedSaved);
 		} catch (err) {
 			if (quiet(err)) return;
-			if (open) error = message(err);
-			else toasts.push(`${appName(k)} was not read: ${message(err)}`, 'fail');
+			if (open) error = reachWords(message(err));
+			else toasts.push(`${appName(k)} was not read: ${reachWords(message(err))}`, 'fail');
 		} finally {
 			reading = '';
 			ctrl = null;
@@ -180,7 +193,7 @@
 </script>
 
 <Sheet bind:open {title} size="md" placement="auto">
-	<form id="move-read-form" bind:this={form} onsubmit={read}>
+	<form id="move-read-form" bind:this={form} onsubmit={read} novalidate>
 		<div class="srow">
 			<div class="txt"><label for="move-app">App</label></div>
 			<div class="ctl">
@@ -207,7 +220,7 @@
 					{#if withSaved}
 						<span class="value mono addr" data-testid="saved-address">{savedKey?.address}</span>
 					{:else}
-						<input id="move-address" class="input mono" type="url" bind:value={address} oninput={changed} placeholder={placeholderFor(kind)} required autocomplete="off" spellcheck="false" />
+						<input id="move-address" class="input mono" type="text" inputmode="url" bind:value={address} oninput={changed} placeholder={placeholderFor(kind).replace('http://', '')} autocomplete="off" spellcheck="false" />
 					{/if}
 				</div>
 			</div>
@@ -243,7 +256,7 @@
 	{#if probe}<p class="probe" data-testid={probe.ok ? 'probe-ok' : undefined}><TestTag ok={probe.ok} text={probe.text} app={appName(kind)} /></p>{/if}
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
+		<Button variant="secondary" onclick={() => (open = false)}>Cancel</Button>
 		<Button onclick={check} busy={checking} disabled={busy}>Test</Button>
 		<!-- One button that changes, so focus stays on it while reading. -->
 		<Button variant="primary" type={busy ? 'button' : 'submit'} form={busy ? undefined : 'move-read-form'} onclick={busy ? stop : undefined}>{busy ? 'Stop reading' : `Read ${appName(kind)}`}</Button>

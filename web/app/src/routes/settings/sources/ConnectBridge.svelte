@@ -45,7 +45,8 @@
 	let bridges = $state<Bridge[] | null>(null);
 	let loadError = $state('');
 	let open = $state(false);
-	let kind = $state<Kind>('jackett');
+	// First run names Prowlarr first, so it starts picked there.
+	let kind = $state<Kind>(untrack(() => (compact ? 'prowlarr' : 'jackett')));
 	let address = $state('');
 	let key = $state('');
 	// The connection being edited: the form starts filled in; a new address replaces it.
@@ -130,7 +131,9 @@
 	function body() {
 		const keys: Record<string, string> = {};
 		for (const [side, k] of Object.entries(typedKeys)) if (k.trim()) keys[side] = k.trim();
-		return { kind, url: address.trim(), key: key.trim(), callback_url: kind === 'prowlarr' ? callback.trim() : '', new_keys: newKeys, keys };
+		// First run: a bare host:port gets http:// in front.
+		const withScheme = (v: string) => (compact && v && !/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? `http://${v}` : v);
+		return { kind, url: withScheme(address.trim()), key: key.trim(), callback_url: kind === 'prowlarr' ? withScheme(callback.trim()) : '', new_keys: newKeys, keys };
 	}
 
 	function fieldError(e: unknown): boolean {
@@ -276,7 +279,7 @@
 			<div class="form" data-testid="bridge-form">
 				<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
 				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include the base path, if any.' : undefined} error={errors.url}>
-					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://192.168.1.10:9117' : 'http://192.168.1.10:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
+					<input id="br-url" class="input mono" type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" placeholder={(compact ? '' : 'http://') + (kind === 'jackett' ? '192.168.1.10:9117' : '192.168.1.10:9696')} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
 				<Field id="br-key" label="API key" hint={editingId != null ? 'Enter it again to save.' : kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
@@ -286,7 +289,7 @@
 						<p class="small muted callback-line">Prowlarr reaches HolyArrs at <span class="mono">{callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
 					{:else}
 						<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
-							<input id="br-callback" class="input mono" type="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
+							<input id="br-callback" class="input mono" type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
 						</Field>
 					{/if}
 					{#if keysNeeded.length}
@@ -314,8 +317,8 @@
 				<div class="acts" class:one-row={compact}>
 					{#if result?.tested}<span class="tag"><TestTag ok={result.ok} text={result.text} app={names[kind]} extra={result.extra} testid={result.ok ? 'bridge-result' : undefined} /></span>{/if}
 					{#if !compact}<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>{/if}
-					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
-					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Link'}</Button>
+					<Button type="button" size={compact ? 'lg' : 'md'} busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
+					<Button type="button" size={compact ? 'lg' : 'md'} variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Link'}</Button>
 				</div>
 			</div>
 		{/if}
