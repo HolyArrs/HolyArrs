@@ -55,11 +55,14 @@
 			});
 		} else show(s);
 	}
+	// How many steps this visit pushed: the in-app Back walks history while it can.
+	let depth = 0;
 	function show(s: Step) {
 		step = s;
 		const q = ['first=1', s !== 'start' ? `step=${s}` : '', fromApps && s !== 'start' && s !== 'import' ? 'from=apps' : ''].filter(Boolean).join('&');
 		// One history entry per step, so Back and Forward walk the steps.
-		pushState(to(`/welcome?${q}`), { extra: [...extra] });
+		depth += 1;
+		pushState(to(`/welcome?${q}`), { extra: [...extra], depth });
 		void enter(s);
 		// A new step: focus its heading, so keyboard and screen reader start there.
 		void tick().then(focusStep);
@@ -77,7 +80,9 @@
 			const q = new URLSearchParams(location.search);
 			const s = stepFromUrl(q);
 			if (s === step) return;
-			const kept = (e.state?.['sveltekit:states'] as { extra?: Step[] } | undefined)?.extra;
+			const st = e.state?.['sveltekit:states'] as { extra?: Step[]; depth?: number } | undefined;
+			depth = st?.depth ?? 0;
+			const kept = st?.extra;
 			error = '';
 			fromApps = q.get('from') === 'apps' || s === 'import';
 			if (kept) extra = kept;
@@ -441,7 +446,10 @@
 	}
 
 	function back() {
-		if (prev) go(prev);
+		if (!prev) return;
+		// Step back through history, so the browser's Back and Forward stay in order.
+		if (depth > 0) history.back();
+		else go(prev);
 	}
 	async function enter(s: Step) {
 		if (s === 'media') await loadMedia();
