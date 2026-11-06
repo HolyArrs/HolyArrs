@@ -100,56 +100,10 @@
 	</section>
 {/if}
 
-<div class="pair">
-	<section class="st-plate" aria-labelledby="s-how">
-		<h2 id="s-how">How to update</h2>
-		<p class="lead">HolyArrs never changes its own program. Your databases, settings, keys and backups stay in the config folder through every update.</p>
-		{#if docker !== true}
-			{#if docker === null}<h3 class="kind">Without a container</h3>{/if}
-			<ol class="steps">
-				<li><b>Stop HolyArrs</b><span>Finish or pause downloads first if you like; the queue carries on afterwards.</span></li>
-				<li><b>Replace the program</b><span>Put the new build where the old one is. Leave the config folder alone.</span></li>
-				<li><b>Start it again</b><span>The first start runs any database migration and shows the new version here.</span></li>
-			</ol>
-		{/if}
-		{#if docker !== false}
-			{#if docker === null}<h3 class="kind">In a container</h3>{/if}
-			<ol class="steps">
-				<li><b>Get the new image</b><span>Pull the new HolyArrs image, or update it in your NAS or container app.</span></li>
-				<li><b>Recreate the container</b><span>Same mounts, same ports. With Docker Compose:</span><code class="cmd">docker compose up -d --force-recreate</code></li>
-				<li><b>Open Status</b><span>The new version shows here; the first start runs any database migration.</span></li>
-			</ol>
-		{/if}
-	</section>
-
-	<section class="st-plate" aria-labelledby="s-tools">
-		<h2 id="s-tools">Built-in tools</h2>
-		<p class="lead">Parts of HolyArrs that reach outside services. Their fixes come with HolyArrs updates.</p>
-		<ul class="tools">
-			<li data-testid="status-youtube-reader">
-				<span class="tn">Trailer reader</span>
-				<span class="tv">
-					{#if reader}
-						<i class="st-dot {readerTone}" aria-hidden="true"></i>{readerSays}
-						{#if reader.checked_at}<small>· checked <time datetime={reader.checked_at} title={dateTime(reader.checked_at)}>{ago(reader.checked_at)}</time></small>{/if}
-					{:else if !checksKnown}
-						<i class="st-dot none" aria-hidden="true"></i>State not known right now
-					{:else}
-						<i class="st-dot none" aria-hidden="true"></i>Not checked yet
-					{/if}
-				</span>
-				<span class="td">Finds trailers and music videos on YouTube. Nothing is downloaded and nobody signs in.{#if canAct} <a class="lnk" href={to('/settings/this-app')}>Setting</a>{/if}</span>
-				{#if reader?.message}<span class="why">{reader.message}</span>{/if}
-			</li>
-		</ul>
-	</section>
-</div>
-
 <Releases {upd} />
 
 <style>
-	ul, ol { margin: 0; padding: 0; list-style: none; }
-	.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); align-items: stretch; }
+	ul { margin: 0; padding: 0; list-style: none; }
 
 	/* band */
 	.band { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 28px; padding: 20px 24px; }
@@ -171,37 +125,15 @@
 	.xbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .xbtn { min-height: 44px; } }
 	.vers .chip { margin-top: 14px; }
-	.kind { margin: 14px 0 8px; font: 600 13px/1.3 var(--font-ui); color: var(--text); }
-	.kind:first-of-type { margin-top: 0; }
 
 	/* new since yours */
 	.notes { display: flex; flex-direction: column; gap: 8px; }
 	.notes li { position: relative; padding-left: 18px; font-size: 14.5px; line-height: 1.5; color: var(--text); }
 	.notes li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent, var(--text)); }
 
-	/* how to update */
-	.lead { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
-	.steps { counter-reset: step; display: flex; flex-direction: column; }
-	.steps li { counter-increment: step; position: relative; display: flex; flex-direction: column; gap: 3px; padding: 12px 0 12px 38px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-muted); }
-	.steps li:first-child { border-top: 0; padding-top: 2px; }
-	.steps li::before { content: counter(step); position: absolute; left: 0; top: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2, var(--surface-1)); color: var(--text); font: 600 12.5px/1 var(--font-ui); }
-	.steps li:first-child::before { top: 0; }
-	.steps b { font-weight: 600; color: var(--text); }
-	code { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12.5px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2, var(--surface-1)); color: var(--text); }
-	.cmd { display: block; width: fit-content; max-width: 100%; margin-top: 6px; padding: 8px 12px; overflow-x: auto; white-space: nowrap; }
 
-	/* bundled tools */
-	.tools li { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 4px 14px; font-size: 14px; }
-	.tn { font-weight: 600; color: var(--text); }
-	.tv { display: flex; align-items: center; gap: 8px; color: var(--text); font-variant-numeric: tabular-nums; }
-	.tv small { font-size: 12.5px; color: var(--text-muted); }
-	.td { grid-column: 2; font-size: 13px; line-height: 1.5; color: var(--text-muted); }
-	.tools .why { grid-column: 2; font-size: 13px; color: var(--wait-text, var(--text)); }
-	.lnk { color: var(--accent-text, var(--text)); font-weight: 600; text-decoration: none; }
-	.lnk:hover { text-decoration: underline; }
 
 	@media (max-width: 900px) {
-		.pair { grid-template-columns: minmax(0, 1fr); }
 		.band { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 18px 20px; }
 		.acts { justify-content: flex-start; }
 		.when { flex-basis: 100%; margin: 0; }
@@ -209,7 +141,5 @@
 	@media (max-width: 767px) {
 		.band { padding: 16px 14px; }
 		.v b { font-size: 24px; }
-		.tools li { grid-template-columns: minmax(0, 1fr); }
-		.td, .tools .why { grid-column: 1; }
 	}
 </style>
