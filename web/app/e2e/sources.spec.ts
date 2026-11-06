@@ -129,8 +129,14 @@ test('the Connect card fits a phone and passes the accessibility check', async (
 	const card = page.locator('#connect-bridge');
 	await card.getByTestId('bridge-start').click();
 	await card.getByText('Prowlarr', { exact: true }).click();
-	// Opened at this machine's own address, which Prowlarr can't reach: the field starts empty.
-	await expect(card.getByLabel('HolyArrs address')).toHaveValue('');
+	// Opened at this machine's own address, which Prowlarr can't reach: the card offers the
+	// machine's network address instead ("Prowlarr reaches HolyArrs at … Change"), or an empty
+	// field when it has none. Never the loopback address.
+	const line = card.getByText(/^Prowlarr reaches HolyArrs at/);
+	const field = card.getByLabel('HolyArrs address');
+	await expect(line.or(field)).toBeVisible();
+	if (await field.isVisible()) await expect(field).toHaveValue('');
+	else await expect(line).not.toContainText(/localhost|127\.0\.0\.1/);
 	const AxeBuilder = (await import('@axe-core/playwright')).default;
 	expect((await new AxeBuilder({ page }).include('#connect-bridge').analyze()).violations).toEqual([]);
 	await page.setViewportSize({ width: 360, height: 760 });

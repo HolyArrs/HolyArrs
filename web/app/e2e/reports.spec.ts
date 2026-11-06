@@ -40,7 +40,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(own, owner());
 	// The movie: the desktop project adds it; add it here when it is not there.
 	await own.goto('/library');
-	await own.locator('[data-testid="library-card"], [data-testid="library-row"]').or(own.getByRole('heading', { name: 'Your Library is empty' })).first().waitFor();
+	await own.locator('[data-testid="library-card"], [data-testid="library-row"]').or(own.getByRole('heading', { name: 'Nothing here yet' })).first().waitFor();
 	if (!(await own.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: movie }).count())) {
 		const dialog = await addFromSearch(own, movie, movie);
 		await dialog.getByLabel('Search when added').uncheck();

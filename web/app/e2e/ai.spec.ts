@@ -16,7 +16,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 	// A Library movie to find; earlier specs may have added it already.
 	await page.goto('/library');
-	await page.locator('[data-testid="library-card"], [data-testid="library-row"]').or(page.getByRole('heading', { name: 'Your Library is empty' })).first().waitFor();
+	await page.locator('[data-testid="library-card"], [data-testid="library-row"]').or(page.getByRole('heading', { name: 'Nothing here yet' })).first().waitFor();
 	if (!(await page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Driftwood Moon' }).count())) {
 		const dialog = await addFromSearch(page, 'Driftwood Moon', 'Driftwood Moon');
 		await dialog.getByLabel('Search when added').uncheck();

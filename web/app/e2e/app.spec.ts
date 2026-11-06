@@ -129,7 +129,7 @@ test('the desktop menu reaches every destination and Back works', async () => {
 
 test('empty pages say what to do next', async () => {
 	await page.goto('/library');
-	await expect(page.getByRole('heading', { name: 'Your Library is empty' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Nothing here yet' })).toBeVisible();
 	await page.goto('/downloads');
 	await expect(page.getByRole('heading', { name: 'No downloads yet' })).toBeVisible();
 	await page.goto('/calendar');
@@ -215,7 +215,7 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 	const watcher = await browser.newPage();
 	await signIn(watcher, owner());
 	await watcher.goto('/library');
-	await expect(watcher.getByRole('heading', { name: 'Your Library is empty' })).toBeVisible();
+	await expect(watcher.getByRole('heading', { name: 'Nothing here yet' })).toBeVisible();
 
 	const dialog = await addFromSearch(page, 'Driftwood Moon', 'Driftwood Moon');
 	await dialog.getByLabel('Search when added').uncheck();

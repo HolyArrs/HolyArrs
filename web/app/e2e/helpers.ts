@@ -305,7 +305,7 @@ export async function ensureInLibrary(browser: Browser, words: string, name: str
 		await signIn(page, owner());
 		await page.goto('/library');
 		const cards = page.locator('[data-testid="library-card"], [data-testid="library-row"]');
-		await cards.or(page.getByRole('heading', { name: 'Your Library is empty' })).first().waitFor();
+		await cards.or(page.getByRole('heading', { name: 'Nothing here yet' })).first().waitFor();
 		if (await cards.filter({ hasText: name }).count()) return;
 		const dialog = await addFromSearch(page, words, name);
 		await dialog.getByLabel('Search when added').uncheck();
