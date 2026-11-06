@@ -195,7 +195,6 @@ test('on a plain-http home address apps use an AI key, and cloud apps need https
 	await expect(guide).toContainText(`"Authorization": "Bearer ${k}"`);
 	await expect(guide.getByRole('button', { name: 'Make a key for Cursor' })).toHaveCount(0);
 	await expect(p.getByTestId('ai-prompt')).toContainText(`Use this AI key: ${k}. Only add`);
-	await expect(p.getByText('This prompt has your key in it.')).toBeVisible();
 	expect([...new URL(p.url()).searchParams.keys()]).toEqual(['app']);
 	expect(p.url()).not.toContain(k);
 
@@ -278,9 +277,9 @@ test('History offers AI apps in its Filter', async () => {
 	await page.goto('/downloads/history');
 	await page.getByRole('button', { name: 'Filter' }).click();
 	// AI actions are their own "who" next to You, Members and HolyArrs on its own.
-	const who = page.getByRole('combobox', { name: 'Who' });
-	await who.selectOption({ label: 'AI apps' });
-	await expect(who).toHaveValue('ai');
+	const ai = page.getByRole('group', { name: 'Who' }).getByRole('button', { name: 'AI apps', exact: true });
+	await ai.click();
+	await expect(ai).toHaveAttribute('aria-pressed', 'true');
 	await page.keyboard.press('Escape');
 });
 

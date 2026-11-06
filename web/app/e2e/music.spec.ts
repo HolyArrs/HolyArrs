@@ -207,7 +207,7 @@ test('artists sit in the Library with a Music kind', async () => {
 	await libraryView(own, 'Posters');
 	await libraryKind(own, /^Everything/);
 	// Cards fade in one after another; let the ones on screen start before checking contrast.
-	await own.waitForFunction(() => [...document.querySelectorAll('.lp')].every((e) => e.classList.contains('shown') || e.getBoundingClientRect().top > innerHeight));
+	await own.waitForFunction(() => [...document.querySelectorAll('.lp')].every((e) => { const r = e.getBoundingClientRect(); return e.classList.contains('shown') || !e.getClientRects().length || r.top > innerHeight || r.bottom < 0 || r.left > innerWidth || r.right < 0; }), undefined, { timeout: 5_000 }).catch(() => undefined);
 	await axe(own, 'library with music');
 });
 

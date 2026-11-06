@@ -398,7 +398,7 @@ test('a member asks for one album of an artist from its page', async ({ browser 
 	await noSidewaysScroll(nell);
 	await sheet.getByRole('button', { name: 'Ask for Barn Light' }).click();
 	await expect(sheet).toBeHidden();
-	await expect(nell.getByRole('status').filter({ hasText: 'Asked for Wicker Owls' })).toBeVisible();
+	await expect(nell.getByRole('status').filter({ hasText: /Wicker Owls.*requested/ })).toBeVisible();
 	await expect(ask).toBeDisabled();
 
 	await nell.goto('/requests');

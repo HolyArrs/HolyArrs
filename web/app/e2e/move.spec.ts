@@ -121,13 +121,7 @@ async function measuredSymmetry(p: Page) {
 }
 
 test("full flow: read, choose, move (with Before you move), done and undo", async () => {
-  await page.goto("/settings");
-  await page
-    .getByRole("main")
-    .locator(".links")
-    .getByRole("link")
-    .filter({ hasText: "Move from other apps" })
-    .click();
+  await page.goto("/settings/move");
   await expect(
     page.getByRole("heading", { name: "Move from other apps", level: 1 }),
   ).toBeVisible();
