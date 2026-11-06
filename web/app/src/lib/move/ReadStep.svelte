@@ -1,13 +1,13 @@
 <script lang="ts">
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
-	import IconButton from '../ui/IconButton.svelte';
+	import Icon from '../Icon.svelte';
 	import EmptyState from '../ui/EmptyState.svelte';
 	import LoadError from '../ui/LoadError.svelte';
 	import StatusPill, { type StatusKind } from '../ui/StatusPill.svelte';
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import { dateTime } from '../format.ts';
-	import { appLabel, appName, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from '../move.ts';
+	import { appName, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from '../move.ts';
 
 	// Step 1: the reads kept so far, each switched on or off for this move,
 	// and the earlier moves below.
@@ -44,9 +44,10 @@
 	const shownMoves = $derived(allMoves ? moves : moves.slice(0, 5));
 	const pills: Record<string, StatusKind> = { ok: 'in_library', info: 'downloading', wait: 'missing', fail: 'failed', idle: 'requested' };
 
+	// The row shows what was found; when it was read sits in the tooltip.
 	function hint(s: Snapshot): string {
 		const used = usedBy.get(s.id);
-		return [used ? `Moved in Move ${used}` : '', `Read ${dateTime(s.created_at)}`, countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
+		return [used ? `Moved in Move ${used}` : '', countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
 	}
 </script>
 
@@ -59,33 +60,33 @@
 			action={{ label: 'Add an app', icon: 'plus', onclick: onadd }}
 		/>
 	{:else}
-		{#if reading}
-			<div class="srow" data-testid="read-pending">
-				<div class="txt"><span class="label">{appLabel(reading)}</span><span class="hint one">Reading now. You can keep going.</span></div>
-				<div class="ctl"><span class="cap"><StepCapsule tone="go" live fill={0.4} word="Reading…" /></span></div>
-			</div>
-		{/if}
-		{#each snapshots as s (s.id)}
-			{@const h = hint(s)}
-			<div class="srow" data-testid="read-row">
-				<div class="txt">
-					<span class="label">{appLabel(s.kind)}</span>
-					<span class="hint one" title={h}>{h}</span>
-				</div>
-				<div class="ctl">
-					<label class="switch">
-						<input id="move-read-{s.id}" type="checkbox" checked={picked.includes(s.id)} onchange={(e) => onpick(s.id, e.currentTarget.checked)} aria-label="Use the {appName(s.kind)} read from {dateTime(s.created_at)}" />
-						<span class="sw" aria-hidden="true"></span>
-					</label>
-					<IconButton icon="refresh" label="Read {appName(s.kind)} again" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} />
-					<IconButton icon="trash" label="Forget the {appName(s.kind)} read from {dateTime(s.created_at)}" onclick={() => onforget(s)} />
-				</div>
-			</div>
-		{/each}
-		<div class="srow add">
-			<div class="txt"><span class="hint">Read another app, or a backup file.</span></div>
-			<div class="ctl"><Button icon="plus" onclick={onadd} disabled={!!reading}>Add an app</Button></div>
-		</div>
+		<ul class="reads">
+			{#if reading}
+				<li class="read" data-testid="read-pending">
+					<div class="top">
+						<div class="what"><b>{appName(reading)}</b><span class="sub">Reading now. You can keep going.</span></div>
+						<span class="cap"><StepCapsule tone="go" live fill={0.4} word="Reading…" /></span>
+					</div>
+				</li>
+			{/if}
+			{#each snapshots as s (s.id)}
+				{@const h = hint(s)}
+				<li class="read" class:off={!picked.includes(s.id)} data-testid="read-row">
+					<div class="top">
+						<div class="what" title="Read {dateTime(s.created_at)}"><b>{appName(s.kind)}</b><span class="sub one">{h || 'Nothing found'}</span></div>
+						<label class="switch" title="Use this read">
+							<input id="move-read-{s.id}" type="checkbox" checked={picked.includes(s.id)} onchange={(e) => onpick(s.id, e.currentTarget.checked)} aria-label="Use the {appName(s.kind)} read from {dateTime(s.created_at)}" />
+							<span class="sw" aria-hidden="true"></span>
+						</label>
+					</div>
+					<div class="acts">
+						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label="Read {appName(s.kind)} again">Read again</button>
+						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label="Forget the {appName(s.kind)} read from {dateTime(s.created_at)}">Remove</button>
+					</div>
+				</li>
+			{/each}
+		</ul>
+		<button type="button" class="add-row" onclick={onadd} disabled={!!reading}><Icon name="plus" size={16} />Add an app</button>
 	{/if}
 </SettingsCard>
 
@@ -115,6 +116,22 @@
 {/if}
 
 <style>
+	/* Each read is one plain row, like the first-run downloader rows. */
+	.reads { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+	.read { padding: 14px 16px 10px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+	.read.off .what { opacity: 0.55; }
+	.top { display: flex; align-items: center; gap: 12px; }
+	.what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+	.what b { font: 600 15px/1.3 var(--font-ui); color: var(--text); }
+	.sub { color: var(--text-muted); font: var(--t-footnote); }
+	.acts { display: flex; gap: 16px; padding-top: 6px; }
+	.quiet { border: 0; padding: 4px 0; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
+	.quiet:hover:not(:disabled) { color: var(--text); }
+	.quiet.danger:hover { color: var(--fail-text, #ff6961); }
+	.quiet:disabled { opacity: 0.5; cursor: default; }
+	.quiet:focus-visible, .add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
+	.add-row { width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; }
+	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.one { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* One left edge for every pill, whatever its word. */
 	.pill { display: flex; justify-content: flex-start; width: 168px; min-width: 0; }

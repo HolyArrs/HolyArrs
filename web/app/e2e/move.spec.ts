@@ -146,7 +146,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await sheet.getByRole("button", { name: "Read Radarr" }).click();
   await expect(sheet).toBeHidden();
   const rows = page.getByTestId("read-row");
-  await expect(rows.filter({ hasText: "Radarr · movies" })).toBeVisible();
+  await expect(rows.filter({ hasText: "Radarr" })).toBeVisible();
   await expect(
     page.getByRole("checkbox", { name: /^Use the Radarr read from/ }),
   ).toBeChecked();
