@@ -1,4 +1,4 @@
-// AI connections (Settings > AI connections): which keys are AI keys, the
+// AI apps (Settings > AI apps): which keys are AI keys, the
 // "Where to add HolyArrs" table and the setup for each app, the same as the
 // website's /docs/ai/. On an https address (or this computer) apps sign in
 // through the browser and nothing is pasted; on a plain http address most
@@ -87,7 +87,7 @@ export function codeParts(text: string): Part[] {
 
 // The website's step markup (dev/build-ai-docs.mjs): the step's labels and a
 // few HolyArrs ones in bold, commands, paths and file names as code.
-const GLOBAL_BOLD = ['Settings › AI connections', 'Make client ID', 'Make a key', 'Allow'];
+const GLOBAL_BOLD = ['Settings › AI apps', 'Make client ID', 'Make a key', 'Allow'];
 const CODE_WORDS =
 	/(~\/[\w./-]+|%\w+%\\[\w.\\*]+|(?<![\w-])--[a-z][a-z-]+|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|\bclaude mcp login holyarrs\b|(?<![\w/])\/mcp\b|\b[\w-]+\.(?:json|toml)\b|\bholyarrs\.json\b)/g;
 const reEsc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

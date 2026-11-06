@@ -67,7 +67,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Claude Code and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Claude Code and press Make a key.",
       },
       {
         text: "Run this in a terminal.",
@@ -127,7 +127,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Claude Desktop at home and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Claude Desktop at home and press Make a key.",
       },
       {
         text: "From the Claude menu (Windows: the app menu), open Settings… › Developer and press Edit Config. Add the holyarrs entry under mcpServers, beside any others.",
@@ -212,7 +212,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick ChatGPT desktop app and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick ChatGPT desktop app and press Make a key.",
       },
       {
         text: "Add this block to ~/.codex/config.toml (Windows: %USERPROFILE%\\.codex\\config.toml).",
@@ -244,7 +244,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Codex and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Codex and press Make a key.",
       },
       {
         text: "Save the key in an environment variable named HOLYARRS_AI_KEY.",
@@ -290,7 +290,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Codex IDE extension and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Codex IDE extension and press Make a key.",
       },
       {
         text: "Add this block to ~/.codex/config.toml (Windows: %USERPROFILE%\\.codex\\config.toml).",
@@ -323,7 +323,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Gemini CLI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Gemini CLI and press Make a key.",
       },
       {
         text: "Add HolyArrs for all folders.",
@@ -366,7 +366,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Antigravity and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Antigravity and press Make a key.",
       },
       {
         text: "Open the global MCP config file.",
@@ -391,7 +391,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Gemini Code Assist and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Gemini Code Assist and press Make a key.",
       },
       {
         text: "Add this inside mcpServers in ~/.gemini/settings.json.",
@@ -426,7 +426,7 @@ export const APP_DATA: AppData[] = [
         bold: ["Show more", "Advanced features", "Additional settings"],
       },
       {
-        text: "In HolyArrs, open Settings › AI connections › Gemini app, paste it and press Make client ID.",
+        text: "In HolyArrs, open Settings › AI apps › Gemini app, paste it and press Make client ID.",
       },
       {
         text: "Paste the client ID into Gemini, leave the client secret empty and press Next. HolyArrs opens in your browser. Press Allow.",
@@ -470,7 +470,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick VS Code with Copilot and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick VS Code with Copilot and press Make a key.",
       },
       { text: "Press Add to VS Code and confirm the install in VS Code." },
       {
@@ -498,7 +498,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick GitHub Copilot CLI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick GitHub Copilot CLI and press Make a key.",
       },
       {
         text: "Run this in a terminal.",
@@ -523,7 +523,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick GitHub Copilot cloud agent and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick GitHub Copilot cloud agent and press Make a key.",
       },
       {
         text: "In the repository, add an Agents secret COPILOT_MCP_HOLYARRS_KEY holding the key.",
@@ -588,7 +588,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Copilot Studio and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Copilot Studio and press Make a key.",
       },
       {
         text: "In your agent, open Tools › Add a tool › New tool › Model Context Protocol.",
@@ -679,7 +679,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Perplexity Mac helper and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Perplexity Mac helper and press Make a key.",
       },
       {
         text: "In the Mac app, open Plugins and install PerplexityXPC when asked.",
@@ -725,7 +725,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Manus and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Manus and press Make a key.",
       },
       {
         text: "In Manus, open Connectors, press Create and choose an MCP server by URL.",
@@ -787,7 +787,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Qwen Chat desktop app and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Qwen Chat desktop app and press Make a key.",
       },
       { text: "In a chat, open the MCP option, then MCP settings › Add MCP." },
       {
@@ -826,7 +826,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Cursor and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Cursor and press Make a key.",
       },
       {
         text: "Open ~/.cursor/mcp.json and add this entry beside any others.",
@@ -863,7 +863,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Windsurf and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Windsurf and press Make a key.",
       },
       {
         text: "Open ~/.config/devin/mcp_config.json (Windows: %APPDATA%\\devin\\mcp_config.json).",
@@ -895,7 +895,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Zed and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Zed and press Make a key.",
       },
       { text: "Run zed: open settings file from the command palette." },
       {
@@ -917,7 +917,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick JetBrains AI Assistant and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick JetBrains AI Assistant and press Make a key.",
       },
       {
         text: "Open Settings › Tools › AI Assistant › Model Context Protocol (MCP) and press Add.",
@@ -964,7 +964,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Cline and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Cline and press Make a key.",
       },
       {
         text: "In Cline, click the MCP Servers icon, then Configure › Configure MCP Servers.",
@@ -987,7 +987,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Continue and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Continue and press Make a key.",
       },
       {
         text: "Open ~/.continue/config.yaml from the gear next to Local Config.",
@@ -1018,7 +1018,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Kilo Code and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Kilo Code and press Make a key.",
       },
       {
         text: "Add this under mcp in ~/.config/kilo/kilo.jsonc and save.",
@@ -1045,7 +1045,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick OpenCode and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick OpenCode and press Make a key.",
       },
       {
         text: "Add this to ~/.config/opencode/opencode.json.",
@@ -1077,7 +1077,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Warp and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Warp and press Make a key.",
       },
       {
         text: "In Warp, open Settings › Agents › MCP servers and press + Add.",
@@ -1103,7 +1103,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Amp and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Amp and press Make a key.",
       },
       {
         text: "Add the amp.mcpServers block to ~/.config/amp/settings.json.",
@@ -1134,7 +1134,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Pi and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Pi and press Make a key.",
       },
       {
         text: "Add this to ~/.pi/agent/mcp.json.",
@@ -1158,7 +1158,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Mistral Vibe CLI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Mistral Vibe CLI and press Make a key.",
       },
       {
         text: "Put the key in HOLYARRS_AI_KEY.",
@@ -1193,7 +1193,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Kimi Code CLI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Kimi Code CLI and press Make a key.",
       },
       {
         text: "Add this to ~/.kimi-code/mcp.json.",
@@ -1224,7 +1224,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Devin and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Devin and press Make a key.",
       },
       {
         text: "In Devin, open Customize › MCPs, press Add MCP, then Add custom MCP.",
@@ -1271,7 +1271,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Open WebUI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Open WebUI and press Make a key.",
       },
       {
         text: "In Open WebUI, open Admin Panel › Settings › Integrations and press + Add Connection.",
@@ -1318,7 +1318,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick LibreChat and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick LibreChat and press Make a key.",
       },
       {
         text: "On a home address, allow HolyArrs in librechat.yaml and restart LibreChat.",
@@ -1346,7 +1346,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick LobeHub and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick LobeHub and press Make a key.",
       },
       {
         text: "In LobeHub, open Settings › Connectors and add an MCP server by hand.",
@@ -1381,7 +1381,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick LM Studio and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick LM Studio and press Make a key.",
       },
       {
         text: "In LM Studio, open the Program tab, pick Install, then Edit mcp.json.",
@@ -1414,7 +1414,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Jan and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Jan and press Make a key.",
       },
       {
         text: "In Jan, open Settings › MCP Servers and press + Add MCP Server.",
@@ -1438,7 +1438,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick AnythingLLM and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick AnythingLLM and press Make a key.",
       },
       {
         text: "In AnythingLLM, open Agent Skills once to create the servers file.",
@@ -1462,7 +1462,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Cherry Studio and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Cherry Studio and press Make a key.",
       },
       {
         text: "In Cherry Studio, open Settings › MCP › MCP Servers, press Add, choose Import from JSON.",
@@ -1486,7 +1486,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Msty Studio and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Msty Studio and press Make a key.",
       },
       {
         text: "In Msty Studio, open Toolbox › Tools, press Add New Tool and pick HTTP.",
@@ -1513,7 +1513,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick 5ire and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick 5ire and press Make a key.",
       },
       { text: "In 5ire, open Tools and press New." },
       {
@@ -1542,7 +1542,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Hermes Agent and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Hermes Agent and press Make a key.",
       },
       {
         text: "Add this to ~/.hermes/config.yaml.",
@@ -1579,7 +1579,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Goose and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Goose and press Make a key.",
       },
       {
         text: "Run goose configure, then Add Extension › Remote Extension (Streamable HTTP).",
@@ -1607,7 +1607,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick ollmcp and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick ollmcp and press Make a key.",
       },
       { text: "Install ollmcp.", code: "uv tool install --upgrade ollmcp" },
       {
@@ -1633,7 +1633,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick llama.cpp web UI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick llama.cpp web UI and press Make a key.",
       },
       {
         text: "Save this as mcp.json in the folder you start llama-server from.",
@@ -1658,7 +1658,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick LocalAI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick LocalAI and press Make a key.",
       },
       {
         text: "Add this mcp block to your model's YAML config.",
@@ -1679,7 +1679,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick text-generation-webui and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick text-generation-webui and press Make a key.",
       },
       { text: "In the Model tab, load a model with tool-call support." },
       {
@@ -1700,7 +1700,7 @@ export const APP_DATA: AppData[] = [
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick KoboldCpp and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick KoboldCpp and press Make a key.",
       },
       {
         text: "Save this as mcp.json.",
@@ -1731,14 +1731,14 @@ export const APP_DATA: AppData[] = [
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Page Assist and press Make a key.",
+        text: "In HolyArrs, open Settings › AI apps, pick Page Assist and press Make a key.",
       },
       {
         text: "In Page Assist's MCP settings, add {url} with Bearer token {key}.",
       },
       { text: "Turn on Require approval before running MCP tools." },
     ],
-    check: 'The key shows "last used" in Settings › AI connections.',
+    check: 'The key shows "last used" in Settings › AI apps.',
     note: "It calls from your browser, so HolyArrs may refuse it as another site.",
     page: null,
     tested: null,

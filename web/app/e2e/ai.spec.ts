@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
 
-// AI connections (#89) and search in plain words (#90): turn AI connections
+// AI apps (#89) and search in plain words (#90): turn AI apps
 // on, make an AI key, use it over MCP, and find a title by describing it.
 test.describe.configure({ mode: 'serial' });
 
@@ -25,7 +25,7 @@ test.beforeAll(async ({ browser }) => {
 	}
 });
 
-test('AI connections are off until the owner turns them on, then an AI key works only there', async () => {
+test('AI apps are off until the owner turns them on, then an AI key works only there', async () => {
 	await page.goto('/settings/ai');
 	const sw = page.getByRole('checkbox', { name: 'Let AI apps connect' });
 	await expect(sw).not.toBeChecked();
@@ -284,7 +284,7 @@ test('History offers AI apps in its Filter', async () => {
 	await page.keyboard.press('Escape');
 });
 
-test('AI connections and plain-words search fit a phone screen', async () => {
+test('AI apps and plain-words search fit a phone screen', async () => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/settings/ai');
 	await expect(page.getByRole('checkbox', { name: 'Let AI apps connect' })).toBeVisible();

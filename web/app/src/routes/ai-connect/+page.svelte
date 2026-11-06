@@ -64,7 +64,7 @@
 		<p class="muted">Loading…</p>
 	{:else if done === 'allowed'}
 		<h2>{info.client_name} is connected</h2>
-		<p class="muted">Go back to {info.client_name}; you can close this tab. To disconnect it later, revoke its key under Settings, AI connections.</p>
+		<p class="muted">Go back to {info.client_name}; you can close this tab. To disconnect it later, revoke its key under Settings, AI apps.</p>
 	{:else if done === 'cancelled'}
 		<h2>Not connected</h2>
 		<p class="muted">{info.client_name} did not get access. You can close this tab.</p>
@@ -81,7 +81,7 @@
 			<p class="notice warn">Only people who can change settings can connect AI apps. Ask the owner.</p>
 		{:else if !enabled}
 			<p class="notice" class:warn={!isOwner}>
-				{isOwner ? 'AI connections are off. Allowing turns them on.' : 'AI connections are off. Ask the owner to turn them on, then try again.'}
+				{isOwner ? 'AI apps are off. Allowing turns them on.' : 'AI apps are off. Ask the owner to turn them on, then try again.'}
 			</p>
 		{/if}
 		<!-- Allowing makes the app a key, so it takes a fresh password, as making a key does. -->
