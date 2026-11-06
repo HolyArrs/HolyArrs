@@ -71,6 +71,7 @@
 	/* The picked row: a neutral lift, never the red of a failure. */
 	.hit.on { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
 	.hit.bad.on { box-shadow: inset 2px 0 0 var(--fail), inset 0 0 0 1px var(--line-strong); }
+	.hit.on:focus-visible { box-shadow: inset 0 0 0 1px var(--line-strong), var(--focus-ring); }
 	:global(.quiet) > .hit .nm { color: var(--text-muted); font-weight: 500; }
 	@media (max-width: 767px) { .hit { column-gap: 10px; padding: 8px 10px; } }
 	@media (prefers-reduced-motion: reduce) { .hit { transition: none; } }

@@ -15,7 +15,7 @@
 	import EventSheet from '../history-designs/EventSheet.svelte';
 	import VerbMark from '../history-designs/VerbMark.svelte';
 	import StateDot from './StateDot.svelte';
-	import CompactRow from './CompactRow.svelte';
+	import DenseRow from './DenseRow.svelte';
 	import LookFrame from './LookFrame.svelte';
 	import { EventFeed } from './feed.svelte.ts';
 	import { api } from '../api.ts';
@@ -26,7 +26,7 @@
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { dropAiTwins, eventStep, isRoutine, stepVerb } from './dirs.ts';
+	import { dropAiTwins, eventStep, filterVerb, isRoutine, stepVerb } from './dirs.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
@@ -113,14 +113,59 @@
 		const all = dropAiTwins(feed.events);
 		const list = byDay(keep ? all.filter(keep) : all);
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
-		return list.map((d) => ({ ...d, items: allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows) }));
+		return list.map((d) => ({ ...d, items: foldSame(allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows)) }));
+	});
+	// Back-to-back repeats of the same single Event (12 sign-ins in a row) fold into one row with a count.
+	type Item = ReturnType<typeof dayItems>[number] | { type: 'same'; key: string; rows: HistoryRow[] };
+	const sameKey = (r: HistoryRow) => (r.steps.length || r.events.length > 1 ? '' : [r.head.Kind, r.head.TitleID ?? 0, r.head.Actor?.kind ?? '', r.head.Actor?.id ?? 0, rowText(r, ctx).line].join('|'));
+	function foldSame(items: ReturnType<typeof dayItems>): Item[] {
+		if (!compact) return items;
+		const out: Item[] = [];
+		for (const it of items) {
+			const last = out[out.length - 1];
+			if (it.type !== 'row') { out.push(it); continue; }
+			const k = sameKey(it.row);
+			if (k && last?.type === 'same' && sameKey(last.rows[0]) === k) {
+				last.rows.push(it.row);
+				// Named after its oldest row, so a new repeat on top keeps an open run open.
+				last.key = `s${it.row.key}`;
+				continue;
+			}
+			if (k && last?.type === 'row' && sameKey(last.row) === k) {
+				out[out.length - 1] = { type: 'same', key: `s${it.row.key}`, rows: [last.row, it.row] };
+				continue;
+			}
+			out.push(it);
+		}
+		return out;
+	}
+	// This day: the picked row's day, counted by the Filter's steps.
+	const today = $derived.by(() => {
+		const d = days.find((x) => x.rows.some((r) => r.key === picked?.key));
+		if (!d) return null;
+		// Every Event counts on its own (a grouped download is several steps).
+		const n = new Map<string, { verb: ReturnType<typeof filterVerb>; count: number }>();
+		let total = 0;
+		for (const r of d.rows)
+			for (const e of r.events) {
+				const one = { key: String(e.ID), head: e, events: [e], steps: [] };
+				const v = filterVerb(one, eventText(e, ctx).tag);
+				if (!v.word) continue;
+				total++;
+				const c = n.get(v.word);
+				if (c) c.count++;
+				else n.set(v.word, { verb: v, count: 1 });
+			}
+		// The last day on the page may go on past it: "200+".
+		const more = d === days[days.length - 1] && feed.events.length < feed.total;
+		return { key: d.key, total, more, steps: [...n.values()].sort((a, b) => b.count - a.count) };
 	});
 	let open = $state<Record<string, boolean>>({});
 	let sheet = $state<HistoryRow | null>(null);
 	const split = $derived(wide && panel);
 
 	// The rows a person can move through, in order: folded runs only once opened.
-	const shown = $derived(days.flatMap((d) => d.items.flatMap((it) => (it.type === 'row' ? [it.row] : open[it.key] ? it.rows : []))));
+	const shown = $derived(days.flatMap((d) => d.items.flatMap((it) => (it.type === 'row' ? [it.row] : it.type === 'same' ? (open[it.key] || it.rows.some((r) => r.key === pickedKey && r !== it.rows[0]) ? it.rows : [it.rows[0]]) : open[it.key] ? it.rows : []))));
 	let pickedKey = $state('');
 	// The first row is picked until a person picks another (or it leaves the page).
 	const picked = $derived(shown.find((r) => r.key === pickedKey) ?? shown[0] ?? null);
@@ -193,7 +238,7 @@
 	{@const t = titleById.get(e.TitleID ?? 0)}
 	{@const on = split && picked?.key === r.key}
 	{#if compact}
-		<CompactRow row={r} {ctx} {titleById} {who} {on} time={clock} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
+		<DenseRow row={r} {ctx} {titleById} {who} {on} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
 	{:else}
 	<button type="button" class="hit {w.tag.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
 		<time class="clk" datetime={e.At}>{clock(e.At)}</time>
@@ -218,9 +263,23 @@
 						{#each d.items as it (it.key)}
 							{#if it.type === 'row'}
 								<li class="item" class:quiet={it.tier === 'routine'}>{@render line(it.row)}</li>
+							{:else if it.type === 'same'}
+								{@const on = !!open[it.key]}
+								{@const head = it.rows[0]}
+								<li class="item fold">
+									<DenseRow row={head} {ctx} {titleById} {who} on={split && picked?.key === head.key} count={it.rows.length} expanded={on} controls={wide ? panelId : undefined} onclick={() => { open = { ...open, [it.key]: !on }; if (wide) choose(head); }} />
+									{#if on}
+										<ol class="inner" in:unfold out:fold>
+											{#each it.rows.slice(wide ? 1 : 0) as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
+										</ol>
+									{/if}
+								</li>
 							{:else}
 								{@const on = !!open[it.key]}
 								<li class="item fold">
+									{#if compact}
+									<DenseRow row={it.rows[0]} {ctx} {titleById} {who} count={it.rows.length} expanded={on} label="Routine work" keyed={false} note={burstLine(it.rows.flatMap((r) => r.events), titleById)} onclick={() => (open = { ...open, [it.key]: !on })} />
+									{:else}
 									<button type="button" class="hit q" aria-expanded={on} onclick={() => (open = { ...open, [it.key]: !on })}>
 										<time class="clk" datetime={it.rows[0].head.At}>{clock(it.rows[0].head.At)}</time>
 										<span class="node" aria-hidden="true"><i></i></span>
@@ -231,6 +290,7 @@
 										</span>
 										<span class="chev" class:on aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
 									</button>
+									{/if}
 									{#if on}
 										<ol class="inner" in:unfold out:fold>
 											{#each it.rows as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
@@ -253,6 +313,7 @@
 					{@const w = rowText(picked, ctx)}
 					{@const t = titleById.get(e.TitleID ?? 0)}
 					{@const href = titleHref(e.TitleID, titleById)}
+					<div class="card">
 					{#key picked.key}
 						<div class="pin" in:paneIn>
 							<div class="ph">
@@ -302,6 +363,15 @@
 							{#if !actions && href && e.title_name}<div class="pact"><Button variant="secondary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button></div>{/if}
 						</div>
 					{/key}
+					</div>
+					{#if compact && today}
+						<section class="card day-card" aria-label="This day" data-testid="history-this-day">
+							<div class="dch"><h3 class="h">This day</h3><span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? 'event' : 'events'}</span></div>
+							<ul class="tally">
+								{#each today.steps as x (x.verb.word)}<li class="tp {x.verb.tone}"><span class="td" aria-hidden="true"></span>{x.verb.word}<b>{x.count}</b></li>{/each}
+							</ul>
+						</section>
+					{/if}
 				{/if}
 			</aside>
 		{/if}
@@ -376,9 +446,23 @@
 
 	/* The details panel: slides out to the right edge when hidden. */
 	/* The panel's top lines up with the first row (under the day header, 45px), at rest and when pinned. */
-	.pane { position: sticky; top: calc(var(--topbar) + 45px); margin-top: 45px; min-width: 0; max-height: calc(100dvh - var(--topbar) - 65px); overflow-y: auto; overscroll-behavior: contain; padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
+	.pane { position: sticky; top: calc(var(--topbar) + var(--pane-drop, 45px)); margin-top: var(--pane-drop, 45px); min-width: 0; max-height: calc(100dvh - var(--topbar) - 65px); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
 	.pane[hidden] { display: block; visibility: hidden; opacity: 0; translate: 24px 0; padding-inline: 0; overflow: hidden; transition: opacity var(--dur-fast) var(--ease-in), translate var(--dur-fast) var(--ease-in), padding var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-fast); }
+	.card { padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.pin { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+	/* This day: the picked row's day, counted by the Filter's steps. */
+	.day-card { padding: 16px 18px; }
+	.dch { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+	.dcn { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.tally { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+	.tp { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--r-pill); background: var(--well, color-mix(in srgb, var(--text) 5%, transparent)); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: 500 12.5px/1 var(--font-ui); }
+	.tp b { color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.td { width: 6px; height: 6px; border-radius: 50%; background: var(--info); }
+	.tp.ok .td { background: var(--ok); }
+	.tp.wait .td { background: var(--wait); }
+	.tp.idle .td { background: var(--text-faint); }
+	.tp.fail .td { background: var(--fail); }
+	.tp.fail { color: var(--fail-text); }
 	.ph { display: flex; gap: 16px; align-items: flex-start; }
 	.part { flex: none; width: 88px; --poster-ratio: 2 / 3; }
 	.part.square { --poster-ratio: 1; }
@@ -432,8 +516,15 @@
 		.size-l .l2 { font: var(--t-callout); }
 	}
 
-	/* The Search looks' row: one frame for every Event, two lines at most. */
-	.compact .rail::before { display: none; }
+	/* History's compact cards: the list is the sheet Home's tiles and the Requests cards are made of (lit from above,
+	   a hairline edge, one long soft shadow), with a 1px rail through the row dots; the details cards match. */
+	.compact { --sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a); --well: light-dark(rgb(20 24 40 / 4%), rgb(255 255 255 / 5%)); }
+	.compact .rail, .compact .card { outline: 0; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%)), 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
+	.compact .rail::before { top: 22px; bottom: 22px; left: calc(4px + 10px + 58px + 10px + 3px); width: 1px; border-radius: 0; }
+	.compact .inner { margin: 0; }
+	/* The details cards' top lines up with the list card's top edge (just under the day header). */
+	.compact { --pane-drop: 41px; }
+	@media (max-width: 767px) { .compact .rail::before { left: calc(4px + 8px + 52px + 8px + 3px); } }
 	@media (prefers-reduced-motion: reduce) {
 		.split, .hit, .chev, .dh, .pane, .pane[hidden] { transition: none; }
 		.pane[hidden] { translate: none; }

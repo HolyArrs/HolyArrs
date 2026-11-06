@@ -263,6 +263,25 @@ export function stepVerb(row: HistoryRow, tag: Verb): Verb {
 }
 /** eventStep is one Event's step, for the details' list of every step. */
 export const eventStep = (e: EventRecord, tag: Verb): Verb => stepVerb({ key: String(e.ID), head: e, events: [e], steps: [] }, tag);
+
+/** filterStep is the Filter's step a kind belongs to (its key and word), or undefined for routine work. */
+export function filterStep(kind: string): { key: string; label: string } | undefined {
+	return searchSteps.find((st) => st.kinds.some((k) => (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind)));
+}
+
+/** The row words that the Filter calls by another name (merged steps). */
+const filterWord: Record<string, string> = { 'Out now': 'Added', Chosen: 'Sent', Subtitles: 'Subtitled', 'In media server': 'Imported', 'Reported problems': 'Reported' };
+/** filterVerb is a row's step mark in the Filter's words: the step the row already shows (its furthest step,
+ *  Failed when any step failed), renamed where the Filter merged it ("Out now" is Added). */
+export function filterVerb(row: HistoryRow, tag: Verb): Verb {
+	const v = stepVerb(row, tag);
+	if (v.tone === 'fail') return v;
+	const word = filterWord[v.word] ?? v.word;
+	if (searchSteps.some((st) => st.label === word)) return { ...v, word };
+	// A row word the Filter has no step for ("Fixed" on a report): the Filter step its Event belongs to, when not a failure.
+	const st = filterStep(row.head.Kind);
+	return { ...v, word: st && st.key !== 'failed' ? st.label : word };
+}
 function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string): string {
 	if (step.failed) {
 		for (const e of row.events) {

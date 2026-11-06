@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { eventText } from '../history-lines.ts';
-import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, filterVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
@@ -205,5 +205,22 @@ describe('reported problems in History', () => {
 		expect(stepKinds([])).toContain('report_*');
 		expect(rowLinks(row(ev('report_fixed', { Data: { report_id: 4 } }))).map((l) => l.href)).toEqual(['/reports?show=all']);
 		expect(searchSteps.find((s) => s.key === 'reported')?.label).toBe('Reported');
+	});
+});
+
+describe('row step marks in the Filter words', () => {
+	const one = (e: EventRecord): HistoryRow => ({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
+	const mark = (r: HistoryRow) => filterVerb(r, eventText(r.head, { titles: new Map() }).tag).word;
+	it('renames merged steps and keeps failures', () => {
+		expect(mark(one(ev('gate_opened')))).toBe('Added');
+		expect(mark(one(ev('import_done')))).toBe('Imported');
+		expect(mark(one(ev('report_fixed')))).toBe('Reported');
+		expect(mark(one(ev('download_failed')))).toBe('Failed');
+		// A folder check that found the folder fine is not a failure.
+		expect(mark(one(ev('library_folder_health', { Data: { health: 'ok' } })))).not.toBe('Failed');
+	});
+	it('names a grouped download by its furthest step', () => {
+		const events = [ev('download_seeding'), ev('import_done'), ev('download_sent')];
+		expect(mark({ key: 'd', head: events[0], events, steps: downloadSteps(events) })).toBe('Imported');
 	});
 });
