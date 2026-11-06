@@ -71,6 +71,9 @@ HolyArrs checks every Downloader once a minute. A working answer ends a rest. **
 - Paused and resting Downloaders are skipped.
 - When one cannot take a Release, the next one of the same kind is tried (**Try the next Downloader**, on by default).
 - Two sends to the same Downloader are at least 2 seconds apart.
+- With tags: a title goes to the Downloaders that share one of its tags, and an untagged title to the untagged ones.
+
+Tagging a title from its page is left out for now and will come back in a later release, with more around it. Tags already on a title keep working, and the API (`PUT /api/v1/titles/{id}` with `tags`) still sets them.
 
 ## On the Movie page
 

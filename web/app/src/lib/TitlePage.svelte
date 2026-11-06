@@ -40,9 +40,6 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { forgetTags } from '#lib/tags.ts';
-	import TagInput from '#lib/ui/TagInput.svelte';
-	import Popover from '#lib/ui/Popover.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { tick, untrack } from 'svelte';
@@ -285,7 +282,7 @@
 		}
 	}
 	let folders = $state<LibraryFolder[]>([]);
-	// Settings rows that save on the spot: folder (after a short check, files move), tags, and for shows
+	// Settings rows that save on the spot: folder (after a short check, files move), and for shows
 	// which seasons to keep, new seasons and episode order.
 	async function putTitle(body: Record<string, unknown>, busy: string, done?: string) {
 		const o = owned;
@@ -320,12 +317,6 @@
 		}
 	}
 	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: f.label, checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
-	let tagDraft = $state<string[]>([]);
-	async function saveTags(close: () => void) {
-		await putTitle({ tags: tagDraft }, 'tags');
-		forgetTags();
-		close();
-	}
 	type SeasonPick = 'all' | 'missing' | 'future' | 'latest' | 'none';
 	const realSeasons = $derived((owned?.show?.seasons ?? []).filter((x) => x.number > 0));
 	const keptSeasons = $derived(realSeasons.filter((x) => x.keep_up_to_date).length);
@@ -1312,19 +1303,6 @@
 								<span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span>
 								{#if kindFolders.length > 1}<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={240}>{#snippet trigger()}<span>{curFolder?.label ?? 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>{:else if curFolder}<span class="lib-val">{curFolder.label}</span>{/if}
 							</div>
-							<div class="lib-row static" data-testid="tags-row">
-								<span><b>Tags</b><small>Sends its downloads to the Downloaders and Sources with the same tag</small></span>
-								<div class="lib-pick">
-									<Popover label="Tags" variant="button" text={o.tags?.length ? o.tags.join(', ') : 'None'} width={300} onopen={() => (tagDraft = [...(o.tags ?? [])])}>
-										{#snippet children(close)}
-											<div class="lib-tags">
-												<TagInput id="lib-tags" bind:value={tagDraft} testid="lib-tags" />
-												<button type="button" class="lib-btn primary" disabled={busyAction === 'tags'} onclick={() => saveTags(close)}>Save</button>
-											</div>
-										{/snippet}
-									</Popover>
-								</div>
-							</div>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures{o.refreshed_at ? ` · refreshed ${date(o.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 						</div>
@@ -1773,8 +1751,6 @@
 	.lib-pick :global(.trigger) { max-width: 100%; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
 	.lib-pick :global(.trigger span) { display: inline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-pick :global(.trigger:hover), .lib-pick :global(.trigger[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
-	.lib-tags { display: grid; gap: 10px; padding: 8px; }
-	.lib-tags .lib-btn { justify-self: end; }
 	.lib-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
 	.lib-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
 	/* Quality: a segmented control under its label; the last slot opens the other sets. */

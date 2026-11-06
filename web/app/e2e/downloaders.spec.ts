@@ -18,7 +18,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 const row = (name: string) => page.getByTestId('downloader').filter({ hasText: name });
-// Iron Lullaby's page, once it is in the Library (the tags test uses its Tags row).
+// Iron Lullaby's page, once it is in the Library (the tags test tags it through the API).
 let ironPage = '';
 
 async function addDownloader(kind: 'qBittorrent' | 'SABnzbd', name: string, url: string, secret = '', category = '') {
@@ -198,23 +198,17 @@ test('tags are set on a Downloader and on a title, and shown where they are kept
 		await expect(sab.getByTestId('downloader-tags')).toHaveText('tags 4k-only, kids');
 
 		expect(ironPage).not.toBe('');
+		// A title's tags are set through the API for now: the title page's Tags row
+		// is left out until it comes back in a later release (docs/downloaders.md).
+		const titleId = ironPage.match(/\/library\/(\d+)/)?.[1];
+		const tagged = await call('PUT', `/titles/${titleId}`, { tags: ['kids'] });
+		expect(tagged.ok(), await tagged.text()).toBe(true);
+		expect(((await (await call('GET', `/titles/${titleId}`)).json()) as { tags: string[] }).tags).toEqual(['kids']);
 		await page.goto(ironPage);
 		await page.getByTestId('own-tabs').getByRole('tab', { name: 'Library' }).click();
-		const tagsRow = page.getByTestId('tags-row');
-		await tagsRow.getByRole('button').click();
-		const titleTags = page.getByTestId('lib-tags-input');
-		await titleTags.fill('kids');
-		await titleTags.press('Enter');
-		await page.getByRole('button', { name: 'Save', exact: true }).click();
-		await expect(tagsRow).toContainText('kids');
-		await page.reload();
-		await page.getByTestId('own-tabs').getByRole('tab', { name: 'Library' }).click();
-		await expect(tagsRow).toContainText('kids');
-		// Taken off again in the same small panel.
-		await tagsRow.getByRole('button').click();
-		await page.getByTestId('lib-tags').getByRole('button', { name: 'Remove kids' }).click();
-		await page.getByRole('button', { name: 'Save', exact: true }).click();
-		await expect(tagsRow).toContainText('None');
+		await expect(page.getByTestId('tags-row')).toHaveCount(0);
+		const cleared = await call('PUT', `/titles/${titleId}`, { tags: [] });
+		expect(cleared.ok(), await cleared.text()).toBe(true);
 	} finally {
 		const ds = ((await (await call('GET', '/downloaders')).json()) as { downloaders: { id: number; name: string; kind: string; url: string; category: string; priority: number; allow_local_network: boolean }[] }).downloaders;
 		for (const d of ds.filter((x) => x.name === 'Lab SABnzbd'))
