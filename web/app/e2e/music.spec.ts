@@ -174,19 +174,21 @@ test('the album page lists tracks and Pressings, and the owner picks another Pre
 	// The Library artist page's album links open the album's Library page straight away.
 	await expect(own).toHaveURL(/\/library\/\d+\/albums\//);
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Songs/ })).toBeVisible();
-	await expect(own.getByTestId('pressing')).toHaveCount(3);
+	// Three editions: the Other editions shelf lists them; Settings has the one followed.
+	await expect(own.locator('#title-editions')).toContainText('Harbour Songs (deluxe)');
 	await expect(own.getByTestId('track')).toHaveCount(3);
 	await expect(own.getByTestId('track').first()).toContainText('Song 1.1');
 	await expect(own.getByTestId('track').first()).toContainText('3:00');
 	await expect(own.getByTestId('track-state').first()).toHaveText('Missing');
 	await expect(own.getByTestId('chosen-pressing')).toContainText('Digital Media · 3 tracks');
-	await expect(own.getByTestId('chosen-pressing')).toContainText('picked by the rule');
+	await expect(own.getByTestId('chosen-pressing')).toContainText('By the rule');
 	await axe(own, 'album page');
-	await own.getByLabel('Pressing to follow').selectOption({ label: 'Harbour Songs (deluxe) · 2019 · GB · CD · 4 tracks' });
-	await own.getByRole('button', { name: 'Use this Pressing' }).click();
+	await own.getByTestId('chosen-pressing').getByRole('button', { name: 'Edition' }).click();
+	await own.getByRole('menuitemradio', { name: 'Harbour Songs (deluxe) · 2019 · GB · CD · 4 tracks' }).or(own.getByRole('menuitem', { name: 'Harbour Songs (deluxe) · 2019 · GB · CD · 4 tracks' })).click();
+	await own.getByRole('dialog', { name: 'Follow this edition?' }).getByRole('button', { name: 'Use this edition' }).click();
 	await expect(own.getByRole('status')).toContainText('The tracks now follow Harbour Songs.');
 	await expect(own.getByTestId('track')).toHaveCount(4);
-	await expect(own.getByTestId('chosen-pressing')).toContainText('picked by hand');
+	await expect(own.getByTestId('chosen-pressing')).toContainText('By hand');
 	await own.getByRole('link', { name: 'Tin Lanterns', exact: true }).first().click();
 	const lib = await libraryTab(own);
 	await expect(lib.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByTestId('album-count')).toContainText('/ 4');
@@ -340,7 +342,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	// The single's card names its state first ("Missing: … Fern Hymns 2021 · Single").
 	await ivy.getByRole('group', { name: 'Singles & EPs' }).getByRole('link', { name: /Fern Hymns/ }).first().click();
 	await expect(ivy.getByRole('heading', { level: 1, name: /Fern Hymns/ })).toBeVisible();
-	await expect(ivy.getByRole('button', { name: 'Use this Pressing' })).toHaveCount(0);
+	await expect(ivy.getByTestId('chosen-pressing')).toHaveCount(0);
 	await expect(ivy.getByRole('checkbox')).toHaveCount(0);
 	await noSidewaysScroll(ivy);
 });

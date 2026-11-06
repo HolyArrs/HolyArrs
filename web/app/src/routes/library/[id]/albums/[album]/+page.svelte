@@ -7,6 +7,7 @@
 	// lists, its History, and for the staff Keep up to date, which Pressing
 	// is used, Rename files for the album and Delete for the album or a track.
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
 	import { ago, date, dateTime, tone } from '#lib/format.ts';
@@ -15,14 +16,18 @@
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
-	import LibrarySection from '#lib/ui/LibrarySection.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import CompactRow from '#lib/history-looks/CompactRow.svelte';
+	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import { crumbFor } from '#lib/title-page.ts';
 	import { audienceStatus } from '#lib/title-status.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import '#lib/title-page.css';
-	import { groupLabel, kindTone } from '#lib/history.ts';
+	import { groupDownloads } from '#lib/history.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
@@ -179,8 +184,7 @@
 	const mayReport = $derived(!!artist && (tracks ?? []).some(hasFile));
 	const moreItems = $derived<MenuItem[]>([...(staff ? heroItems : []), ...(mayReport ? [...(staff ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
-		const h = document.getElementById('h-library');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		document.getElementById('album-library')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 	}
 
 	// Search now lets HolyArrs pick; Choose a release lists every Release.
@@ -218,8 +222,14 @@
 		}
 	}
 
-	async function usePressing(e: SubmitEvent) {
-		e.preventDefault();
+	// History as compact rows like the movie and artist pages; Edition as a menu that asks before it changes.
+	const histRows = $derived(groupDownloads(history.filter((e) => !isRoutine(e.Kind))));
+	const histTitles = $derived(new Map(artist ? [[artist.id, artist]] : []));
+	let editionOpen = $state(false);
+	const editionMenu = $derived<MenuItem[]>(pressings.map((p) => ({ label: pressingLabel(p), checked: !!p.chosen, onselect: () => { if (!p.chosen) { chosen = p.id; editionOpen = true; } } })));
+	async function usePressing(e?: Event) {
+		e?.preventDefault();
+		editionOpen = false;
 		busy = 'pressing';
 		try {
 			album = await api.put<AlbumSummary>(`/albums/${albumId}`, { pressing_id: chosen });
@@ -275,6 +285,11 @@
 			{/snippet}
 		</TitleHero>
 
+		<div class="alb" class:staff>
+		<div class="alb-main">
+		{#if listing}
+			<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music onclose={() => (listing = false)} onchange={load} />
+		{/if}
 		<TitleSection id="h-tracks" title="Tracks" primary>
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
 				<ol class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
@@ -301,6 +316,41 @@
 				</ol>
 			{/if}
 		</TitleSection>
+		</div>
+		{#if staff}
+			<aside class="alb-side" id="album-library">
+				<section class="alb-card">
+					<p class="alb-state"><span class="dot {st.tone}" aria-hidden="true"></span><span data-testid="album-state">{st.label}</span></p>
+					<p class="alb-sub">{album.in_library} of {album.tracks} tracks</p>
+					<div class="alb-acts">
+						<button type="button" class="alb-btn primary" disabled={busy === 'search'} onclick={() => search(true)} data-testid="album-search-now"><Icon name="search" size={15} />{album.state === 'better_wanted' ? 'Find a better copy' : 'Search now'}</button>
+						<button type="button" class="alb-btn" disabled={busy === 'list'} onclick={() => search(false)} data-testid="album-choose"><Icon name="grid" size={15} />Choose a release</button>
+					</div>
+				</section>
+
+				<h3 class="alb-h">History</h3>
+				<div class="alb-hist" data-testid="album-history">
+					{#each histRows as r (r.key)}
+						<div data-testid="album-event"><CompactRow row={r} ctx={{ titles: histTitles }} titleById={histTitles} onclick={() => goto(to(`/downloads/history?title=${titleId}`))} /><span class="sr-only">{r.events?.[0]?.Summary ?? ''}</span></div>
+					{:else}<p class="small muted">Nothing has happened yet.</p>{/each}
+				</div>
+
+				<h3 class="alb-h">Settings</h3>
+				<div class="alb-rows">
+					<button type="button" class="alb-row" role="switch" aria-checked={album.keep_up_to_date} disabled={busy === 'keep' || !album.included} onclick={() => setKeep(!album!.keep_up_to_date)}>
+						<span><b>Keep up to date</b><small>{album.included ? 'Grab missing tracks and better copies' : 'Left out by the artist’s Releases'}</small></span>
+						<span class="alb-switch" class:on={album.keep_up_to_date} aria-hidden="true"></span>
+					</button>
+					{#if pressings.length > 1 && current}
+						<div class="alb-row static" data-testid="chosen-pressing">
+							<span><b>Edition</b><small>{current.chosen_by === 'person' ? 'By hand' : 'By the rule'}</small></span>
+							<div class="alb-pick"><Menu label="Edition" variant="button" width={340} items={editionMenu}>{#snippet trigger()}<i>{pressingLabel(current!)}</i><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+						</div>
+					{/if}
+				</div>
+			</aside>
+		{/if}
+		</div>
 
 		{#if more.length}
 			<Shelf title="More by {artist?.name ?? 'the artist'}" item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1}>
@@ -324,79 +374,18 @@
 				{#if album.release_date}<dt>Released</dt><dd>{date(album.release_date)}</dd>{/if}
 				<dt>Kind</dt>
 				<dd>{albumKind(album)}</dd>
-				{#if pressings.length}<dt>Editions</dt><dd>{pressings.length}</dd>{/if}
-				{#if current}<dt>Edition followed</dt><dd>{pressingLabel(current)}</dd>{/if}
+				{#if pressings.length > 1}<dt>Editions</dt><dd>{pressings.length}</dd>{/if}
 			</dl>
 		</TitleSection>
 
 		{#if staff}
-			<LibrarySection note="Releases, the edition followed, files and history">
-				{#if listing}
-					<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music onclose={() => (listing = false)} onchange={load} />
-				{/if}
-				<TitleSection id="h-album-search" title="Search">
-					<div class="row tools">
-						<Button icon="search" onclick={() => search(true)} disabled={busy === 'search'} busy={busy === 'search'} data-testid="album-search-now">{album.state === 'better_wanted' ? 'Find a better copy' : 'Search now'}</Button>
-						<Button onclick={() => search(false)} disabled={busy === 'list'} busy={busy === 'list'} data-testid="album-choose">Choose a release</Button>
-						<label class="switch">
-							<input type="checkbox" checked={album.keep_up_to_date} disabled={busy === 'keep' || !album.included} onchange={(e) => setKeep(e.currentTarget.checked)} />
-							<span class="sw" aria-hidden="true"></span>
-							<span class="small">Keep up to date</span>
-						</label>
-					</div>
-					<p class="small muted"><span class="chip {st.tone}" data-testid="album-state">{st.label}</span></p>
-				</TitleSection>
-
-				<TitleSection id="h-pressings" title="Pressings">
-					{#if pressings.length === 0}
-						<p class="small muted">{album.included ? 'Pressings come with the next refresh.' : 'Pressings are read only for included albums.'}</p>
-					{:else}
-						{#if current}
-							<p class="small" data-testid="chosen-pressing">
-								The tracks follow <b>{pressingLabel(current)}</b> ({current.chosen_by === 'person' ? 'picked by hand' : 'picked by the rule in Settings > Music'}).
-							</p>
-						{/if}
-						<form class="row pick" onsubmit={usePressing}>
-							<label class="sr-only" for="pressing">Pressing to follow</label>
-							<select id="pressing" class="input" bind:value={chosen}>
-								{#each pressings as p (p.id)}
-									<option value={p.id}>{pressingLabel(p)}</option>
-								{/each}
-							</select>
-							<Button type="submit" disabled={busy === 'pressing' || chosen === current?.id} busy={busy === 'pressing'}>Use this Pressing</Button>
-						</form>
-						<p class="hint">Tracks on both Pressings keep their files; tracks the new one lacks are removed unless a file holds them.</p>
-						<ul class="pressings">
-							{#each pressings as p (p.id)}
-								<li data-testid="pressing">
-									<span class="grow small">{pressingLabel(p)}</span>
-									<span class="chip">{word(pressingStatuses, p.status)}</span>
-									{#if p.chosen}<span class="chip ok">Used</span>{/if}
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</TitleSection>
-
-				<TitleSection id="h-album-history" title="History" testid="album-history">
-					{#snippet head()}
-						{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${titleId}`)}>All rows for the artist</Button>{/if}
-					{/snippet}
-					{#if history.length === 0}
-						<p class="small muted">Nothing has happened to this album yet.</p>
-					{:else}
-						<ul class="events">
-							{#each history as e (e.ID)}
-								<li class="ev" data-testid="album-event">
-									<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-									<span class="small grow">{e.Summary}</span>
-									<time class="xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</TitleSection>
-			</LibrarySection>
+			<Sheet bind:open={editionOpen} title="Follow this edition?" description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm" placement="center">
+				<p class="small muted">Tracks it doesn't have go unless a file holds them.</p>
+				<div class="row modal-actions">
+					<Button variant="plain" onclick={() => (editionOpen = false)}>Cancel</Button>
+					<Button variant="primary" disabled={busy === 'pressing'} busy={busy === 'pressing'} onclick={() => usePressing()}>Use this edition</Button>
+				</div>
+			</Sheet>
 
 			<ShowDeleteDialog bind:this={deleter} titleId={titleId} name={artist?.name ?? 'Artist'} kind="artist" ondone={afterDelete} />
 
@@ -430,11 +419,42 @@
 	.mark.here { color: var(--ok, var(--text)); font-weight: 600; }
 	.grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 	.tools { gap: var(--s-2) var(--s-3); flex-wrap: wrap; align-items: center; }
-	.pick { gap: var(--s-2); flex-wrap: wrap; margin: var(--s-3) 0 var(--s-2); }
-	.pick select { flex: 1; min-width: 0; }
-	.pressings { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: flex; flex-direction: column; }
-	.pressings li, .ev { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2) var(--s-3); padding: var(--s-3) 0; }
-	.pressings li + li, .ev + .ev { border-top: 1px solid var(--line); }
+	/* Tracks beside the album's Library column, like a movie's Library tab. */
+	.alb.staff { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; align-items: start; }
+	.alb-main { min-width: 0; }
+	.alb-side { display: grid; gap: 12px; min-width: 0; padding-top: 8px; scroll-margin-top: 90px; }
+	.alb-card { display: grid; gap: 6px; padding: 18px 20px; border-radius: 16px; background: var(--surface-2); }
+	.alb-card p { margin: 0; }
+	.alb-state { display: flex; align-items: center; gap: 8px; font: 700 18px/1.2 var(--font-ui); }
+	.alb-state .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--text-muted); }
+	.alb-state .dot.ok { background: var(--ok, #30d158); }
+	.alb-state .dot.warn, .alb-state .dot.part { background: var(--warn, #ff9f0a); }
+	.alb-state .dot.bad { background: var(--fail, #ff453a); }
+	.alb-sub { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.alb-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+	.alb-btn { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
+	.alb-btn.primary { background: var(--text); color: var(--bg); }
+	.alb-btn:disabled { opacity: .55; }
+	.alb-h { margin: 16px 0 0; font: 700 20px/1.2 var(--font-ui); }
+	.alb-hist { display: grid; gap: 2px; margin: 0 -12px; }
+	.alb-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
+	.alb-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+	.alb-row + .alb-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.alb-row.static { cursor: default; }
+	.alb-row > span { display: grid; gap: 3px; min-width: 0; }
+	.alb-row b { font: 600 15px/1.2 var(--font-ui); }
+	.alb-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.alb-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); }
+	.alb-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; transition: transform .15s; }
+	.alb-switch.on { background: #30a46c; }
+	.alb-switch.on::after { transform: translateX(18px); }
+	.alb-pick { flex: none; max-width: 60%; min-width: 0; }
+	.alb-pick :global(.ui-pop) { display: flex; max-width: 100%; }
+	.alb-pick :global(.trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
+	.alb-pick i { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	@media (max-width: 1099px) { .alb.staff { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+	.ev { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2) var(--s-3); padding: var(--s-3) 0; }
+	.ev + .ev { border-top: 1px solid var(--line); }
 	.events { list-style: none; padding: 0; margin: 0; }
 	.modal { width: min(720px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal::backdrop { background: var(--scrim); }

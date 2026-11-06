@@ -106,6 +106,8 @@
 	}
 </script>
 
+<!-- Only with a second Version: Main alone repeats the Quality and Folder in Settings. Add a version stays in the tools menu. -->
+{#if title.versions.length > 1}
 <TitleSection id="h-show-versions" title="Versions" testid="show-versions" primary>
 	{#snippet head()}
 		<div class="tp-head-end">
@@ -140,6 +142,7 @@
 		<p class="xs muted">Each episode is looked for, downloaded and placed once per Version. Edit and Move change the main Version only.</p>
 	{/if}
 </TitleSection>
+{/if}
 
 <dialog bind:this={dialog} aria-labelledby="show-version-title" class="modal">
 	<form onsubmit={save}>
