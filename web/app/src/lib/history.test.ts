@@ -150,4 +150,16 @@ describe('history download rows', () => {
 		const rows = groupDownloads([ev(2, 'search_done'), ev(1, 'search_done')]);
 		expect(rows).toHaveLength(2);
 	});
+	it('folds the pick that started a download, and the decision it waits on, into its row', () => {
+		const at = (e: EventRecord, x: Partial<EventRecord>) => ({ ...e, ...x });
+		const rows = groupDownloads([
+			at(ev(6, 'needs_decision'), { SlotID: 8 }),
+			at(ev(5, 'import_failed', 4), { SlotID: 8 }),
+			at(ev(4, 'download_sent', 4), { Data: { release_id: 70 } }),
+			at(ev(3, 'release_chosen'), { Data: { release_id: 70 } }),
+			at(ev(2, 'release_chosen'), { Data: { release_id: 99 } })
+		]);
+		expect(rows.map((r) => [r.key, r.events.length])).toEqual([['d4', 4], ['e2', 1]]);
+		expect(rows[0].head.Kind).toBe('needs_decision');
+	});
 });

@@ -27,7 +27,7 @@
 	import { byDay, dayItems, dayLine, type ArtSize } from '../history-looks.ts';
 	import { dropAiTwins, filterVerb } from './dirs.ts';
 	import { glue, panelView, pathBits } from './panel.ts';
-	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
+	import { rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventRecord, TitleView } from '../types.ts';
 
 	let {
@@ -79,15 +79,27 @@
 	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 
 	const SIZE = 200;
-	// When repeats fold a page down to a few rows, earlier pages load on their own until the list fills a screen.
-	const FILL_ROWS = 24;
+	// The first view fills the screen and no more: earlier Events load on their own, 50 at a time, until the rows reach
+	// the bottom of the window, and rows past it wait for Show more.
+	const FILL_STEP = 50;
 	const FILL_PAGES = 5;
+	const ROW = 42;
+	let fit = $state(14);
+	let capped = $state(true);
+	onMount(() => {
+		// Phones: 52px rows under the search, Filter and count, above the tab bar.
+		const size = () => (fit = window.innerWidth < 768 ? Math.max(5, Math.floor((window.innerHeight - 440) / 52)) : Math.max(6, Math.floor((window.innerHeight - 300) / ROW)));
+		size();
+		window.addEventListener('resize', size, { passive: true });
+		return () => window.removeEventListener('resize', size);
+	});
 	const feed = new EventFeed(SIZE);
 	const reload = () => feed.load(filter, kinds);
 	// Live news re-reads every page already on screen in one go, so the list never shrinks and grows back.
 	const refresh = () => feed.load(filter, kinds, 0, false, Math.min(Math.max(SIZE, feed.events.length), SIZE * FILL_PAGES));
 	$effect(() => {
 		void [filter, kinds];
+		capped = true;
 		untrack(reload);
 	});
 	onMount(() => feed.watch(refresh));
@@ -120,6 +132,23 @@
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
 		return list.map((d) => ({ ...d, items: foldSame(allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows)) }));
 	});
+	// What shows: the days cut to the rows that fit the screen until Show more (or Show more already pressed).
+	// Each day header takes about one row's height, so it counts as one.
+	const allRows = $derived(days.reduce((n, d) => n + d.items.length + 1, 0));
+	const visible = $derived.by(() => {
+		if (!capped || feed.manual || allRows <= fit) return days;
+		let n = fit;
+		const out: typeof days = [];
+		for (const d of days) {
+			// A day starts only when its header and at least one row still fit.
+			if (n < 2) break;
+			n -= 1;
+			out.push({ ...d, items: d.items.slice(0, n) });
+			n -= Math.min(n, d.items.length);
+		}
+		return out;
+	});
+	const held = $derived(visible !== days);
 	// Back-to-back repeats of the same single Event (12 sign-ins in a row) fold into one row with a count.
 	type Item = ReturnType<typeof dayItems>[number] | { type: 'same'; key: string; rows: HistoryRow[] };
 	const sameKey = (r: HistoryRow) => (r.steps.length || r.events.length > 1 ? '' : [r.head.Kind, r.head.TitleID ?? 0, r.head.Actor?.kind ?? '', r.head.Actor?.id ?? 0, rowText(r, ctx).line].join('|'));
@@ -144,39 +173,46 @@
 		}
 		return out;
 	}
-	// This day: the picked row's day, counted by the Filter's steps.
+	// A day counted by the Filter's steps, one per row, with the same mark the row shows (so the counts match the list).
+	function tallyOf(rows: HistoryRow[]) {
+		const n = new Map<string, { verb: ReturnType<typeof filterVerb>; count: number }>();
+		let total = 0;
+		for (const r of rows) {
+			const v = filterVerb(r, rowText(r, ctx).tag);
+			if (!v.word) continue;
+			total++;
+			const c = n.get(v.word);
+			if (c) c.count++;
+			else n.set(v.word, { verb: v, count: 1 });
+		}
+		return { total, steps: [...n.values()].sort((a, b) => b.count - a.count) };
+	}
+	// The day header (compact): how many Events, then what needs a look ("6 Events · Failed 1").
+	function headLine(rows: HistoryRow[]): string {
+		const t = tallyOf(rows);
+		const bad = t.steps.filter((x) => x.verb.word === 'Needs you' || x.verb.word === 'Failed').map((x) => `${x.verb.word} ${x.count}`);
+		return [`${t.total} ${t.total === 1 ? 'Event' : 'Events'}`, ...bad].join(' · ');
+	}
+	// This day: the picked row's day.
 	const today = $derived.by(() => {
 		const d = days.find((x) => x.rows.some((r) => r.key === picked?.key));
 		if (!d) return null;
-		// Every Event counts on its own (a grouped download is several steps).
-		const n = new Map<string, { verb: ReturnType<typeof filterVerb>; count: number }>();
-		let total = 0;
-		for (const r of d.rows)
-			for (const e of r.events) {
-				const one = { key: String(e.ID), head: e, events: [e], steps: [] };
-				const v = filterVerb(one, eventText(e, ctx).tag);
-				if (!v.word) continue;
-				total++;
-				const c = n.get(v.word);
-				if (c) c.count++;
-				else n.set(v.word, { verb: v, count: 1 });
-			}
 		// The last day on the page may go on past it: "200+".
 		const more = d === days[days.length - 1] && feed.events.length < feed.total;
-		return { key: d.key, total, more, steps: [...n.values()].sort((a, b) => b.count - a.count) };
+		return { key: d.key, more, ...tallyOf(d.rows) };
 	});
 	$effect(() => {
-		const rows = days.reduce((n, d) => n + d.items.length, 0);
+		const rows = allRows;
 		if (!feed.loaded || feed.busy || feed.error || feed.manual) return;
-		if (rows >= FILL_ROWS || feed.events.length >= feed.total || feed.events.length >= SIZE * FILL_PAGES) return;
-		untrack(() => feed.load(filter, kinds, feed.offset + SIZE, true));
+		if (rows >= fit || feed.events.length >= feed.total || feed.events.length >= SIZE * FILL_PAGES) return;
+		untrack(() => feed.load(filter, kinds, feed.next, true, FILL_STEP));
 	});
 	let open = $state<Record<string, boolean>>({});
 	let sheet = $state<HistoryRow | null>(null);
 	const split = $derived(wide && panel);
 
 	// The rows a person can move through, in order: folded runs only once opened.
-	const shown = $derived(days.flatMap((d) => d.items.flatMap((it) => (it.type === 'row' ? [it.row] : it.type === 'same' ? (open[it.key] || it.rows.some((r) => r.key === pickedKey && r !== it.rows[0]) ? it.rows : [it.rows[0]]) : open[it.key] ? it.rows : []))));
+	const shown = $derived(visible.flatMap((d) => d.items.flatMap((it) => (it.type === 'row' ? [it.row] : it.type === 'same' ? (open[it.key] || it.rows.some((r) => r.key === pickedKey && r !== it.rows[0]) ? it.rows : [it.rows[0]]) : open[it.key] ? it.rows : []))));
 	let pickedKey = $state('');
 	// The first row is picked until a person picks another (or it leaves the page).
 	const picked = $derived(shown.find((r) => r.key === pickedKey) ?? shown[0] ?? null);
@@ -242,7 +278,7 @@
 	{@const t = titleById.get(e.TitleID ?? 0)}
 	{@const on = split && picked?.key === r.key}
 	{#if compact}
-		<DenseRow row={r} {ctx} {titleById} {who} {on} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
+		<DenseRow row={r} {ctx} {titleById} {who} {on} tabindex={split ? (picked?.key === r.key ? 0 : -1) : undefined} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
 	{:else}
 	<button type="button" class="hit {w.tag.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
 		<time class="clk" datetime={e.At}>{clock(e.At)}</time>
@@ -253,15 +289,15 @@
 	{/if}
 {/snippet}
 
-<LookFrame {feed} {empty} {onall} onretry={reload} onmore={() => { feed.manual = true; void feed.load(filter, kinds, feed.offset + SIZE, true); }}>
+<LookFrame {feed} {empty} {onall} count={days.length > 0} onretry={reload} held={held} onmore={() => { if (held) capped = false; else { feed.manual = true; void feed.load(filter, kinds, feed.next, true); } }}>
 	<div class="split size-{size}" class:compact class:on={split} class:wide data-testid="look-days" data-size={size} data-panel={wide ? (panel ? 'open' : 'hidden') : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="days" bind:this={list} onkeydown={key}>
-			{#each days as d (d.key)}
+			{#each visible as d (d.key)}
 				<section class="day" aria-labelledby="day-{d.key}">
 					<header class="dh">
 						<h2 id="day-{d.key}">{dayLabel(d.key)}</h2>
-						<p class="dl">{dayLine(d.tally)}</p>
+						<p class="dl">{compact ? headLine(d.rows) : dayLine(d.tally)}</p>
 					</header>
 					<ol class="rail">
 						{#each d.items as it (it.key)}
@@ -271,10 +307,10 @@
 								{@const on = !!open[it.key]}
 								{@const head = it.rows[0]}
 								<li class="item fold">
-									<DenseRow row={head} {ctx} {titleById} {who} on={split && picked?.key === head.key} count={it.rows.length} expanded={on} controls={wide ? panelId : undefined} onclick={() => { open = { ...open, [it.key]: !on }; if (wide) choose(head); }} />
+									<DenseRow row={head} {ctx} {titleById} {who} on={split && picked?.key === head.key} tabindex={split ? (picked?.key === head.key ? 0 : -1) : undefined} count={it.rows.length} expanded={on} controls={wide ? panelId : undefined} onclick={() => { open = { ...open, [it.key]: !on }; if (wide) choose(head); }} />
 									{#if on}
 										<ol class="inner" in:unfold out:fold>
-											{#each it.rows.slice(wide ? 1 : 0) as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
+											{#each it.rows.slice(1) as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
 										</ol>
 									{/if}
 								</li>
@@ -306,7 +342,12 @@
 					</ol>
 				</section>
 			{:else}
-				<p class="none miss" data-testid="history-no-match">No Events on this page match.{feed.events.length < feed.total ? ' Show more to look further back.' : ''}</p>
+				<div class="none" data-testid="history-no-match">
+					<span class="eic"><Icon name="search" size={22} stroke={2} /></span>
+					<p class="et">Nothing matches.</p>
+					{#if feed.events.length < feed.total}<p class="es">Show more to look further back.</p>{/if}
+					{#if onall}<button type="button" class="elink" onclick={onall}>Clear filters</button>{/if}
+				</div>
 			{/each}
 		</div>
 
@@ -327,7 +368,7 @@
 								</div>
 								{#if v.steps.length}
 									<ol class="steps" aria-label="Steps of this download" data-testid="history-steps">
-										{#each v.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting on you' : 'not yet'}</span></li>{/each}
+										{#each v.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting' : 'not yet'}</span></li>{/each}
 									</ol>
 								{/if}
 								{#if v.line}<p class="psum" class:long={v.long}>{v.line}</p>{/if}
@@ -352,7 +393,7 @@
 						</div>
 					{#if compact && today}
 						<section class="card day-card" aria-label="This day" data-testid="history-this-day">
-							<div class="dch"><h3 class="h">This day</h3>{#if today.steps.length > 1}<span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? 'event' : 'events'}</span>{/if}</div>
+							<div class="dch"><h3 class="h">This day</h3>{#if today.steps.length > 1}<span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? 'Event' : 'Events'}</span>{/if}</div>
 							<ul class="tally">
 								{#each today.steps as x (x.verb.word)}<li class="tp {x.verb.tone}"><span class="td" aria-hidden="true"></span>{x.verb.word}<b>{x.count}</b></li>{/each}
 							</ul>
@@ -485,11 +526,20 @@
 	.cp:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pact { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 	.pact > :global(.ui-btn) { border-radius: var(--r-pill); }
-	.none { color: var(--text-muted); font: var(--t-footnote); }
-	.miss { margin: 0; padding: 24px 0; color: var(--text-muted); text-align: center; }
+	/* Nothing on the page matches: the same card as an empty History. */
+	.none { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; text-align: center; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); }
+	.eic { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 12px; background: var(--surface-2); color: var(--text-muted); }
+	.et { font: var(--t-headline); }
+	.es { color: var(--text-muted); font: var(--t-callout); max-width: 360px; }
+	.elink { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--accent-text); font: var(--t-callout); font-weight: 600; cursor: pointer; border-radius: 6px; }
+	.elink:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-	@media (max-width: 1279px) { .split.wide.on { --pane: 340px; } }
+	/* Under 1280 the list stays the wider column: a narrower panel, and the step marks show their icon only (the word is still read out). */
+	@media (max-width: 1279px) {
+		.split.wide.on { --pane: 300px; }
+		.compact.on .days :global(.mark .w) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+	}
 	@media (max-width: 767px) {
 		.split { --clk: 54px; }
 		.size-m { --art: 48px; --row: 84px; }
@@ -511,7 +561,7 @@
 	.compact .inner { margin: 0; }
 	/* The details cards' top lines up with the list card's top edge (just under the day header). */
 	.compact { --pane-drop: 41px; }
-	@media (max-width: 767px) { .compact .rail::before { left: calc(4px + 8px + 52px + 8px + 3px); } }
+	@media (max-width: 767px) { .compact .rail::before { left: calc(4px + 8px + 56px + 8px + 3px); } }
 	@media (prefers-reduced-motion: reduce) {
 		.split, .hit, .chev, .dh, .pane, .pane[hidden] { transition: none; }
 		.pane[hidden] { translate: none; }

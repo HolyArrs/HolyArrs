@@ -12,6 +12,8 @@ export class EventFeed {
 	/** With an episode filter: the episode, named by the server. */
 	episode = $state('');
 	offset = $state(0);
+	/** Where the next read starts (Show more and the screen fill read from here). */
+	next = $state(0);
 	loaded = $state(false);
 	busy = $state(false);
 	/** A person pressed Show more: live news no longer reloads (it would pull the rows away). */
@@ -38,8 +40,8 @@ export class EventFeed {
 			this.events = append ? [...this.events, ...p.events] : p.events;
 			this.total = p.total;
 			this.episode = p.episode ?? '';
-			// The last page read: Show more reads the one after it.
-			this.offset = offset + limit - this.size;
+			this.offset = offset;
+			this.next = offset + limit;
 			if (!append) this.manual = false;
 			this.error = '';
 		} catch (e) {

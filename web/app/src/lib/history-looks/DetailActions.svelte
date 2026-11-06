@@ -8,12 +8,14 @@
 	import { api, message } from '../api.ts';
 	import { to } from '../paths.ts';
 	import { titleHref } from '../history-views.ts';
-	import { canFind, findTarget, qualityOf, rowLinks } from './dirs.ts';
+	import { canFind, findTarget, qualityOf, rowLinks, rowStep } from './dirs.ts';
 	import type { HistoryRow } from '../history.ts';
 	import type { TitleView } from '../types.ts';
 
 	let { row, titleById }: { row: HistoryRow; titleById: Map<number, TitleView> } = $props();
 	const find = $derived(canFind(row));
+	// On a download that failed it finds another; on one that came in it replaces it.
+	const findWord = $derived(rowStep(row).failed ? 'Find another' : 'Replace');
 	const links = $derived(rowLinks(row, titleHref(row.head.TitleID, titleById)));
 
 	let asking = $state(false);
@@ -67,7 +69,7 @@
 			</div>
 		</div>
 	{:else if find}
-		<Button variant="secondary" size="sm" icon="refresh" data-testid="history-find" onclick={ask}>Find another</Button>
+		<Button variant="secondary" size="sm" icon="refresh" data-testid="history-find" onclick={ask}>{findWord}</Button>
 	{/if}
 	{#each links as l (l.key)}<Button variant="secondary" size="sm" href={to(l.href)} iconAfter="chevronRight" data-testid="history-go-{l.key}">{l.label}</Button>{/each}
 </div>
@@ -75,7 +77,7 @@
 
 <style>
 	.da { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; min-width: 0; }
-	.da > :global(.ui-btn) { border-radius: var(--r-pill); max-width: 100%; }
+	.da > :global(.ui-btn) { flex: 1 1 auto; border-radius: var(--r-pill); max-width: 100%; }
 	.da > :global(.ui-btn span) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.btns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 	.ask { flex: 1 0 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--r-card); background: var(--well, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--line); }

@@ -7,7 +7,8 @@
 	import VerbMark from '../history-designs/VerbMark.svelte';
 	import { dateTime } from '../format.ts';
 	import { artOf, clock } from '../history-views.ts';
-	import { filterVerb, partOf, rowExtra, rowStep } from './dirs.ts';
+	import { filterVerb, partOf, rowExtra, rowStep, sameWords } from './dirs.ts';
+	import { sysSplit } from './panel.ts';
 	import { rowText, type LineContext } from '../history-lines.ts';
 	import type { HistoryRow } from '../history.ts';
 	import type { EventRecord, TitleView } from '../types.ts';
@@ -24,6 +25,7 @@
 		label,
 		note,
 		keyed = true,
+		tabindex,
 		onclick
 	}: {
 		row: HistoryRow;
@@ -41,12 +43,15 @@
 		note?: string;
 		/** The row carries its row key (for moving with the arrow keys); a routine run's toggle does not. */
 		keyed?: boolean;
+		/** Wide screens: only the picked row is a Tab stop (the arrow keys move between rows). */
+		tabindex?: number;
 		onclick: () => void;
 	} = $props();
 
 	const e = $derived(row.head);
 	const w = $derived(rowText(row, ctx));
-	const t = $derived(titleById.get(e.TitleID ?? 0));
+	// An ask with no title id yet: the Library title of the same name, once it was added, lends its poster.
+	const t = $derived(titleById.get(e.TitleID ?? 0) ?? (!e.TitleID && /ask_/.test(e.Kind) ? [...titleById.values()].find((x) => x.name === w.name) : undefined));
 	const s = $derived(rowStep(row, w.tag.word));
 	// A routine run is neutral: its own icon, no step word, whatever its first row was.
 	const verb = $derived(label !== undefined ? { word: '', icon: 'settings' as const, tone: 'idle' as const } : filterVerb(row, w.tag));
@@ -54,31 +59,36 @@
 	const part = $derived(partOf(row));
 	const version = $derived(w.bits.find((b) => b.kind === 'version')?.text ?? '');
 	// No title (sign-ins, health, backups): the line itself is the name, with a small icon instead of a poster.
-	const bare = $derived(label !== undefined || !e.title_name);
-	const name = $derived(label ?? (bare ? w.line || extra || w.name : w.name));
+	// An ask keeps its title even when the title is not in the Library yet (read from the ask).
+	const bare = $derived(label !== undefined || (!e.title_name && w.name === 'HolyArrs'));
+	// Health and alert rows read like title rows: what it is about, then what happened.
+	const split = $derived(bare && label === undefined ? sysSplit(row, { ...ctx, titles: titleById }) : null);
+	const name = $derived(label ?? (bare ? split?.name || w.line || extra || w.name : w.name));
 	// The second line only when it adds something: the row's own step word when the Filter's differs ("Out now"), then the extra.
 	const second = $derived.by(() => {
 		if (note !== undefined) return note;
-		if (bare) return '';
-		const own = s.label && s.label !== verb.word ? s.label : '';
+		if (bare) return split?.line ?? '';
+		const own = s.label && s.label !== verb.word && !sameWords.has(s.label) ? s.label : '';
 		return [own, extra].filter(Boolean).join(' · ');
 	});
 </script>
 
-<button type="button" class="hit {verb.tone}" class:on class:two={!!second} data-key={keyed ? row.key : undefined} data-testid="history-row" data-kind={e.Kind} data-steps={row.steps.length ? row.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={controls} aria-expanded={expanded} {onclick}>
+<button type="button" class="hit {verb.tone}" {tabindex} class:on class:two={!!second} data-key={keyed ? row.key : undefined} data-testid="history-row" data-kind={e.Kind} data-steps={row.steps.length ? row.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={controls} aria-expanded={expanded} {onclick}>
 	<time class="clk" datetime={e.At} title={dateTime(e.At)}>{clock(e.At)}</time>
 	<span class="node" aria-hidden="true"></span>
-	<span class="art" class:square={t?.kind === 'artist'}>{#if bare}<span class="sysi"><Icon name={verb.tone === 'fail' ? 'alert' : 'settings'} size={13} /></span>{:else}<Poster src={artOf(e, titleById)} name={e.title_name ?? ''} />{/if}</span>
+	<span class="art" class:square={t?.kind === 'artist'}>{#if bare}<span class="sysi"><Icon name={verb.tone === 'fail' ? 'alert' : 'settings'} size={13} /></span>{:else}<Poster src={artOf(e, titleById) ?? t?.artwork?.[0]} name={e.title_name ?? w.name} />{/if}</span>
 	<span class="tx">
 		<span class="l1"><span class="nm" data-testid="history-title">{name}</span>{#if !bare && part}<span class="sub">{` · ${part}`}</span>{/if}{#if !bare && version}<span class="sub" data-testid="event-version">{' · '}<span data-testid="history-version">{version}</span></span>{/if}{#if count > 1}<span class="cnt" data-testid="history-count-run" aria-hidden="true">{count}</span><span class="vh">, {count} {label !== undefined ? 'updates' : 'times'}</span>{/if}</span>
 		{#if second || (!bare && part)}<span class="l2" class:ponly={!second}>{#if !bare && part}<span class="pp">{part}{second ? ' · ' : ''}</span>{/if}{second}</span>{/if}
 	</span>
-	<span class="mark">{#if verb.word}<VerbMark {verb} size="sm" />{/if}{#if expanded !== undefined}<span class="chev" class:open={expanded} aria-hidden="true"><Icon name="chevronDown" size={14} /></span>{/if}</span>
+	<span class="mark">{#if verb.word}<VerbMark {verb} size="sm" />{/if}</span>
+	<!-- Every row keeps the chevron's slot, so the step marks share one right edge. -->
+	<span class="chev" class:open={expanded} aria-hidden="true">{#if expanded !== undefined}<Icon name="chevronDown" size={14} />{/if}</span>
 </button>
 
 <style>
 	/* One 42px line per Event (52px on phones); the second line only when it says something new. */
-	.hit { --clk: 58px; --art: 32px; position: relative; width: 100%; height: 42px; display: grid; grid-template-columns: var(--clk) 7px var(--art) minmax(0, 1fr) auto; align-items: center; column-gap: 10px; padding: 0 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
+	.hit { --clk: 58px; --art: 32px; position: relative; width: 100%; height: 42px; display: grid; grid-template-columns: var(--clk) 7px var(--art) minmax(0, 1fr) auto 14px; align-items: center; column-gap: 10px; padding: 0 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
 	.hit:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The picked row: a neutral lift with a hairline, never the red of a failure. */
@@ -109,14 +119,14 @@
 	.l2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: 400 12px/1.3 var(--font-ui); }
 	.fail .l2 { color: var(--fail-text); }
 	.mark { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 112px; }
-	.chev { display: grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out); }
+	.chev { display: grid; width: 14px; margin-left: -4px; color: var(--text-faint); transition: transform var(--dur) var(--ease-out); }
 	.chev.open { transform: rotate(180deg); }
 	@media (max-width: 1279px) { .mark { min-width: 0; } }
 	/* The part on the second line is for phones only (desktops show it after the name). */
 	.pp { display: none; }
 	.l2.ponly { display: none; }
 	@media (max-width: 767px) {
-		.hit { --clk: 52px; height: 52px; column-gap: 8px; padding: 0 8px; }
+		.hit { --clk: 56px; height: 52px; column-gap: 8px; padding: 0 8px; }
 		/* Phones: the name gets the line; the part moves under it and the step shows as its mark only (still read out). */
 		.l1 .sub { display: none; }
 		.pp { display: inline; }

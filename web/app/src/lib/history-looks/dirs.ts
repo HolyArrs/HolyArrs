@@ -2,7 +2,7 @@
 // extra piece, and the actions a row's details offer.
 import { readFilter, type HistoryRow } from '../history.ts';
 import { fineCheck, lookTabs, tabKinds } from '../history-looks.ts';
-import { plainWhy, resolutionOf } from '../history-lines.ts';
+import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from '../history-lines.ts';
 import { bytes } from '../format.ts';
 import type { Verb } from '../history-views.ts';
 import type { EventRecord } from '../types.ts';
@@ -66,9 +66,9 @@ export function sizeOf(row: HistoryRow): number {
 	return 0;
 }
 export const sizeText = (row: HistoryRow) => (sizeOf(row) ? bytes(sizeOf(row)) : '');
-/** partOf is the episode or album a row is about. */
+/** partOf is the episode ("S04 E12 Name", as the details show it) or album a row is about. */
 export function partOf(row: HistoryRow): string {
-	return row.head.episode || first(row, (d) => str(d.album)) || '';
+	return episodeBits(row.head.episode).join(' · ') || first(row, (d) => str(d.album)) || '';
 }
 
 /* The search looks (?look=pill|plain): a search bar, a Filter with steps,
@@ -222,10 +222,10 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^(ai_)?ask_approved$/, { label: 'Approved', icon: 'check' }],
 	[/^(ask|release|ai_ask)_turned_down$/, { label: 'Turned down', icon: 'declined' }],
 	[/^report_(made|reopened)$/, { label: 'Reported', icon: 'alert' }],
-	[/^report_fixed$/, { label: 'Fixed', icon: 'check' }],
+	[/^(report_fixed|health_recovered|file_back)$/, { label: 'Fixed', icon: 'check' }],
 	[/^(title_added|list_synced|version_changed)$/, { label: 'Added', icon: 'plus' }],
 	[/^gate_opened$/, { label: 'Out now', icon: 'calendarDay' }],
-	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'search' }],
+	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'upload' }],
 	[/^download_(sent|queued)$/, { label: 'Sent', icon: 'upload' }],
 	[/^download_(downloading|stalled|paused)$/, { label: 'Downloading', icon: 'download' }],
 	[/^download_(finished|seeding)$/, { label: 'Downloaded', icon: 'download' }],
@@ -241,6 +241,8 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 	const kinds = row.events.map((e) => e.Kind);
 	const bad = row.events.find((e) => isProblem(e.Kind) && !fineCheck(e))?.Kind;
+	// Low space and a check's warning are warnings: still the Filter's Failed, never the fail tone.
+	if (bad && row.steps.length === 0 && (bad === 'free_space_low' || (bad === 'health_broken' && row.head.Data?.state === 'warning'))) return { label: 'Failed', icon: 'alert', failed: false };
 	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? 'Needs you' : 'Failed', icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
 	const pick = row.steps.length ? (kinds.includes('file_replaced') ? 'file_replaced' : kinds.find((k) => /^import_/.test(k)) ?? kinds.find((k) => /^download_(finished|seeding)$/.test(k)) ?? row.head.Kind) : row.head.Kind;
 	const hit = kindStep.find(([re]) => re.test(pick));
@@ -269,6 +271,8 @@ export function filterStep(kind: string): { key: string; label: string } | undef
 	return searchSteps.find((st) => st.kinds.some((k) => (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind)));
 }
 
+/** The row words that only repeat the Filter's mark ("Subtitles" under Subtitled): a row never shows them twice. */
+export const sameWords = new Set(['Chosen', 'Subtitles', 'In media server', 'Reported problems']);
 /** The row words that the Filter calls by another name (merged steps). */
 const filterWord: Record<string, string> = { 'Out now': 'Added', Chosen: 'Sent', Subtitles: 'Subtitled', 'In media server': 'Imported', 'Reported problems': 'Reported' };
 /** filterVerb is a row's step mark in the Filter's words: the step the row already shows (its furthest step,
@@ -283,22 +287,25 @@ export function filterVerb(row: HistoryRow, tag: Verb): Verb {
 	return { ...v, word: st && st.key !== 'failed' ? st.label : word };
 }
 /** A failure's short words when it kept no reason. */
-const failedWords: Record<string, string> = { file_missing: 'File missing', download_vanished: 'Download disappeared', file_hold_failed: 'Could not set a file aside' };
+const failedWords: Record<string, string> = { download_vanished: 'Download disappeared', file_hold_failed: 'Could not set a file aside' };
 function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string): string {
 	if (step.failed) {
 		for (const e of row.events) {
 			const d = e.Data ?? {};
 			const why = str(d.reason) || str(d.error) || str(d.message);
 			if (why) {
-				const s = plainWhy(why);
-				return s ? s[0].toUpperCase() + s.slice(1) : s;
+				return cap(plainWhy(why));
 			}
 		}
 		const at = row.steps.find((x) => x.state === 'failed')?.key;
+		if (row.head.Kind === 'file_missing') return missingLine(row.head);
 		return failedWords[row.head.Kind] ?? (at === 'imported' || /^import_(failed|rejected)$/.test(row.head.Kind) ? 'Nothing could be placed' : at ? 'Download failed' : '');
 	}
 	switch (step.label) {
-		case 'Asked':
+		case 'Asked': {
+			const d = row.head.Data ?? {};
+			return [who(row.head), cap(str(d.albums) || str(d.seasons))].filter(Boolean).join(' · ');
+		}
 		case 'Approved':
 		case 'Turned down':
 		case 'Added': return who(row.head);
@@ -309,8 +316,15 @@ function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string
 			const now = first(row, (d) => str(d.new_quality));
 			return was && now ? `${was} → ${now}` : qualityOf(row);
 		}
-		case 'Imported': return sizeText(row);
-		case 'Subtitles': return first(row, (d) => str(d.language)).toUpperCase();
+		// Found on disk keeps no size: what was found instead ("45 tracks · 4 albums").
+		case 'Imported': {
+			if (sizeText(row)) return sizeText(row);
+			const d = row.head.Data ?? {};
+			const files = num(d.files), albums = num(d.albums);
+			return row.head.Kind === 'adopted' && files ? [`${files} ${albums ? (files === 1 ? 'track' : 'tracks') : files === 1 ? 'file' : 'files'}`, albums && `${albums} ${albums === 1 ? 'album' : 'albums'}`].filter(Boolean).join(' · ') : '';
+		}
+		case 'Subtitles': return first(row, (d) => str(d.language));
+		case 'Reported': return row.head.Kind === 'report_reopened' ? 'Opened again' : '';
 	}
 	return '';
 }
@@ -384,7 +398,7 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 		const id = decide.DownloadID ?? (typeof decide.Data?.download_id === 'number' ? decide.Data.download_id : 0);
 		out.push({ key: 'plan', label: 'Import plan', href: slot ? `/downloads?slot=${slot}` : id ? `/downloads?open=${id}` : '/downloads' });
 	}
-	if (titleHref) out.push({ key: 'title', label: row.head.title_name ?? 'Title', href: titleHref });
+	if (titleHref) out.push({ key: 'title', label: 'Title page', href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
 	// Only rows about a release or a download lead to Downloads (a sign-in does not).
 	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });

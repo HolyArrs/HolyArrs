@@ -93,7 +93,7 @@ describe('search look rows', () => {
 		const imp = dl(ev('import_done', { Data: { size_bytes: 2_000_000_000 } }), ev('download_sent'));
 		expect(rowExtra(imp, rowStep(imp))).toMatch(/GB/);
 		const sub = one(ev('subtitle_saved', { Data: { language: 'en' } }));
-		expect(rowExtra(sub, rowStep(sub))).toBe('EN');
+		expect(rowExtra(sub, rowStep(sub))).toBe('en');
 		const bad = dl(ev('download_failed', { Data: { reason: 'Tracker said no.' } }), ev('download_sent'));
 		expect(rowExtra(bad, rowStep(bad))).toBe('Tracker said no');
 		const ren = one(ev('renamed'));
@@ -192,13 +192,13 @@ describe('history detail actions', () => {
 	it('links to the title, the download and Requests for asks', () => {
 		const links = rowLinks(row(ev('download_sent', { DownloadID: 7, title_name: 'Dune' })), '/title/movie/1');
 		expect(links.map((l) => l.href)).toEqual(['/title/movie/1', '/downloads?open=7']);
-		expect(links[0].label).toBe('Dune');
+		expect(links[0].label).toBe('Title page');
 		expect(rowLinks(row(ev('ask_made'))).map((l) => l.key)).toEqual(['requests']);
 		expect(rowLinks(row(ev('signed_in')))).toEqual([]);
 		expect(rowLinks(row(ev('ask_made', { Data: { ask_id: 12 } })))[0].href).toBe('/requests?ask=12');
 		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
 		const plan = rowLinks(row(ev('needs_decision', { SlotID: 8, title_name: 'Arrival' })), '/library/4');
-		expect(plan.map((l) => [l.label, l.href])).toEqual([['Import plan', '/downloads?slot=8'], ['Arrival', '/library/4']]);
+		expect(plan.map((l) => [l.label, l.href])).toEqual([['Import plan', '/downloads?slot=8'], ['Title page', '/library/4']]);
 	});
 });
 

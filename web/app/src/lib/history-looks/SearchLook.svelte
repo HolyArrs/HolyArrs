@@ -66,14 +66,14 @@
 		if (!q.trim() && !type && !who && !fails) return undefined;
 		return (e: EventRecord) => !(fails && fineCheck(e)) && (exact && !link.title ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
 	});
-	const problem = $derived(dateRangeProblem(st) ? 'The start date is after the end date.' : '');
+	const problem = $derived(dateRangeProblem(st) ? 'Start date is after end date.' : '');
 	const filtered = $derived(chips.length > 0 || !!st.q.trim());
 	const empty = $derived(
 		problem
-			? { title: problem, text: 'Change the dates in Filter.' }
+			? { title: problem, text: '' }
 			: filtered
-				? { title: 'Nothing matches these filters.', text: 'Try fewer filters or other words.' }
-				: { title: 'No Events yet.', text: 'Every step from the ask to the media server shows here, newest first.' }
+				? { title: 'Nothing matches.', text: '' }
+				: { title: 'No Events yet.', text: '' }
 	);
 	const clearAll = () => {
 		text = '';
@@ -103,6 +103,12 @@
 		const t = e.target as HTMLElement | null;
 		const inField = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 		const inDialog = !!t?.closest?.('[role="dialog"], dialog, [popover]:popover-open') || !!document.querySelector('dialog[open]');
+		// In the Filter or a sheet the shortcut does nothing: it never leaves History for the app-wide search.
+		if (inDialog && searchShortcut(e, inField, false)) {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			return;
+		}
 		if (!searchShortcut(e, inField, inDialog)) return;
 		e.preventDefault();
 		e.stopImmediatePropagation();
@@ -155,7 +161,8 @@
 	function close(back = true) {
 		if (!open) return;
 		open = false;
-		if (back) btn?.focus();
+		// After the sheet's inert is lifted.
+		if (back) void tick().then(() => btn?.focus());
 	}
 	function keys(e: KeyboardEvent) {
 		if (e.key !== 'Escape') return;
@@ -163,6 +170,18 @@
 		e.stopPropagation();
 		close();
 	}
+	// The phone Filter sheet is modal: everything behind it (but its scrim) is inert while it is open.
+	$effect(() => {
+		if (!open || !phone || !pop) return;
+		const off: Element[] = [];
+		for (let n: Element | null = pop; n && n !== document.body; n = n.parentElement)
+			for (const sib of n.parentElement?.children ?? [])
+				if (sib !== n && !sib.classList.contains('scrim') && !sib.hasAttribute('inert') && !/^(SCRIPT|STYLE)$/.test(sib.tagName)) {
+					sib.setAttribute('inert', '');
+					off.push(sib);
+				}
+		return () => off.forEach((x) => x.removeAttribute('inert'));
+	});
 	$effect(() => {
 		if (!open || phone) return;
 		const out = (e: PointerEvent) => {

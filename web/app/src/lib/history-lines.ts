@@ -69,7 +69,8 @@ const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? o
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
-const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** cap starts a line with a capital, leaving names like "qBittorrent" and "iPhone" as they are. */
+export const cap = (s: string) => (s && !/^[a-z][A-Z]/.test(s) ? s[0].toUpperCase() + s.slice(1) : s);
 /** The words for a reported problem's kind (#95). */
 const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
 const problem = (v: unknown) => problemWords[str(v)] ?? str(v);
@@ -134,7 +135,7 @@ function releaseOf(events: EventRecord[]): string {
 export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
 	const dl = /^the downloader says (.+)$/i.exec(s);
-	if (dl) s = dl[1].toLowerCase() === 'error' ? 'the downloader reported an error' : `the downloader says ${dl[1]}`;
+	if (dl) s = dl[1].toLowerCase() === 'error' ? 'downloader error' : `the downloader says ${dl[1]}`;
 	s = s.replace(/[;,]?\s*look at the import plan$/i, '');
 	s = s.replace(/\bno Release passed the Pick rules\b/i, 'nothing good enough was found').replace(/\bRelease(s?)\b/g, 'download$1').replace(/\bPick rules\b/g, 'your quality rules');
 	return s;
@@ -174,12 +175,19 @@ function keepLine(d: Record<string, unknown>): string {
 
 const count = (n: number) => n.toLocaleString('en-US');
 
-/** How much of a Library folder went out of reach: "All 1,347 files gone · none marked missing". */
+/** How much of a Library folder went out of reach: "All 1,347 files gone". */
 export function folderGone(e: EventRecord): string {
 	const d = e.Data ?? {};
 	const gone = num(d.gone), known = num(d.known);
 	const lost = gone && known ? (gone >= known ? `All ${count(known)} ${known === 1 ? 'file' : 'files'} gone` : `${count(gone)} of ${count(known)} ${known === 1 ? 'file' : 'files'} gone`) : cap(plainWhy(str(d.reason)));
-	return join(lost, /no file was marked missing/i.test(e.Summary) && 'none marked missing');
+	return lost;
+}
+
+/** missingLine names a missing file by its name: "03 - One for the Road · Missing". */
+export function missingLine(e: Pick<EventRecord, 'Data'>): string {
+	const d = e.Data ?? {};
+	const name = (str(d.path) || str(d.to) || str(d.file)).split(/[\\/]/).pop()?.replace(/\.[a-z0-9]{2,4}$/i, '') ?? '';
+	return name ? `${name} · Missing` : 'File missing';
 }
 
 /** The Library folder an Event is about ("Music folder"), from its summary. */
@@ -303,12 +311,12 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 			const files = num(d.files), albums = num(d.albums);
 			return t(TAG.came, join('Found in its folder', albums ? `${plural(files, 'track')} in ${plural(albums, 'album')}` : files ? plural(files, 'file') : ''));
 		}
-		case 'file_missing': return t(TAG.failed, 'A file is missing from disk');
+		case 'file_missing': return t(TAG.failed, missingLine(e));
 		case 'file_back': return t(TAG.fixed, 'A missing file is back on disk');
 		case 'file_held': return t(TAG.changed, 'A file was set aside');
 		case 'file_hold_failed': return t(TAG.failed, 'Could not set a file aside');
 		case 'holding_cleaned': return t(TAG.changed, 'Cleared old set-aside files');
-		case 'free_space_low': return t(TAG.failed, join('Low on disk space', plainWhy(str(d.reason) || str(d.message))));
+		case 'free_space_low': return t(TAG.warning, join('Low space', plainWhy(str(d.reason) || str(d.message)).replace(/\s*\([^)]*\)$/, '')));
 		case 'needs_decision': return t(TAG.needs, plainWhy(str(d.reason)));
 		case 'stopped_looking': return t(TAG.changed, join('Stopped looking for it', plainWhy(str(d.reason))));
 		case 'health_broken': return t(str(d.state) === 'warning' ? TAG.warning : TAG.failed, plainWhy(str(d.message) || withoutTitle(e.Summary, name)));
@@ -319,7 +327,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
 		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
 		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
-		case 'report_reopened': return t(TAG.reopened, problem(d.kind));
+		case 'report_reopened': return t(TAG.reopened, join(problem(d.kind), str(d.note)));
 		// Sign-ins: the username as it is, never capitalised.
 		case 'signed_in':
 		case 'signed_out':
@@ -332,7 +340,12 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'secrets_imported': return t(TAG.changed, join('Settings imported', `${num(d.set)} set`));
 		case 'media_server_told': return t(TAG.checked, 'Told the media server about it');
 		case 'media_server_failed': return t(TAG.failed, join('Could not reach the media server', plainWhy(str(d.reason) || str(d.error))));
-		case 'alert_failed': return t(TAG.failed, join('An alert could not be sent', plainWhy(str(d.reason) || str(d.error))));
+		case 'alert_failed': {
+			const to = str(d.alert);
+			const why = plainWhy(str(d.reason) || str(d.error));
+			return t(TAG.failed, join(to || 'Alert not sent', to && why.startsWith(to) ? cap(why.slice(to.length).replace(/^\s*(answered|says|said)?\s*/i, '')) : why));
+		}
+		case 'ai_action_failed': return t(TAG.failed, cap(plainWhy(str(d.error) || str(d.reason))) || withoutTitle(e.Summary, name));
 	}
 	if (k.startsWith('subtitle_')) {
 		const bad = /failed|none|not_found/.test(k);

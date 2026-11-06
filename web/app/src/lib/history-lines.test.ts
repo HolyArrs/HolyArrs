@@ -41,7 +41,7 @@ describe('line 2', () => {
 		expect(eventText(ev('folder_scanned', { Data: { versions: [{ exists: true }] } }), ctx).line).toBe('Checked its folder · nothing changed');
 		const f = eventText(ev('download_failed', { Data: { reason: 'the Downloader says error' } }), ctx);
 		expect(f.tag.word).toBe('Failed');
-		expect(f.line).toBe('The downloader reported an error');
+		expect(f.line).toBe('Downloader error');
 		expect(eventText(ev('download_failed'), ctx).line).toBe('Download failed');
 		expect(eventText(ev('import_failed', { Data: { reason: 'no video file found' } }), ctx).line).toBe('No video file found');
 		expect(eventText(ev('import_rejected'), ctx).line).toBe('Nothing could be placed');
@@ -101,7 +101,7 @@ describe('system rows', () => {
 	});
 	it('a Library folder out of reach: the folder and the count, no question', () => {
 		const t = eventText(ev('library_folder_unreachable', { TitleID: null, title_name: undefined, Summary: 'Library folder Music: 1347 of 1347 files are gone at once; is a drive or share not mounted? No file was marked missing', Data: { gone: 1347, known: 1347 } }), ctx);
-		expect([t.tag.word, t.line]).toEqual(['Failed', 'Music folder · All 1,347 files gone · none marked missing']);
+		expect([t.tag.word, t.line]).toEqual(['Failed', 'Music folder · All 1,347 files gone']);
 		expect(eventText(ev('library_folder_unreachable', { TitleID: null, title_name: undefined, Summary: 'Library folder TV: 1200 of 1347 files are gone at once', Data: { gone: 1200, known: 1347 } }), ctx).line).toBe('TV folder · 1,200 of 1,347 files gone');
 	});
 	it('no tails about what may come next', () => {

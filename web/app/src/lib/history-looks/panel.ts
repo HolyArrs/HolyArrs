@@ -2,8 +2,8 @@
 // (LookDays) and the phone sheet (EventSheet): the step mark, the title,
 // a short meta line, the art, a download's steps, one line of new facts,
 // the facts themselves and where to go next. The views only lay it out.
-import { artOf, clock, dayKey, titleHref, type Verb } from '../history-views.ts';
-import { episodeBits, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from '../history-lines.ts';
+import { artOf, byWhom, clock, dayKey, titleHref, type Verb } from '../history-views.ts';
+import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from '../history-lines.ts';
 import { bytes } from '../format.ts';
 import { canFind, filterVerb, rowLinks, type GoLink } from './dirs.ts';
 import type { HistoryRow, StepKey } from '../history.ts';
@@ -52,7 +52,6 @@ export interface PanelContext extends Omit<LineContext, 'titles'> {
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
-const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const count = (n: number) => n.toLocaleString('en-US');
 const plural = (n: number, one: string, many = one + 's') => `${count(n)} ${n === 1 ? one : many}`;
 const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
@@ -110,7 +109,8 @@ export function pathBits(p: string, max = 76): string[] {
 	let i = bits.length;
 	while (i > 0 && len + bits[i - 1].length <= max) len += bits[--i].length;
 	if (i === bits.length) i--;
-	return i > 0 ? [`…${j}`, ...bits.slice(i)] : bits;
+	// The ellipsis stays on the line of the piece after it, never alone on a line.
+	return i > 0 ? [`…${j}${bits[i]}`, ...bits.slice(i + 1)] : bits;
 }
 
 /** glue keeps a path piece on one line: spaces and hyphens no longer break it (only the separators do). */
@@ -125,8 +125,9 @@ function first(row: HistoryRow, read: (d: Record<string, unknown>, e: EventRecor
 }
 const pathsOf = (d: Record<string, unknown>) => (Array.isArray(d.paths) ? (d.paths as unknown[]).filter((p): p is Record<string, unknown> => !!p && typeof p === 'object') : []);
 
-/** The person who did it ('' for HolyArrs, jobs, AI apps and automatic actions). */
+/** Who did it: a person or an AI app ('' for HolyArrs, jobs and automatic actions). */
 function person(e: EventRecord, ctx: PanelContext): string {
+	if (e.Actor?.kind === 'ai') return byWhom(e);
 	if (e.Actor?.kind !== 'user') return '';
 	const d = e.Data ?? {};
 	if (d.auto === true) return '';
@@ -151,6 +152,9 @@ function subject(e: EventRecord): string {
 		// A subject with a note after it ("Trailer reader, last good lookup …") keeps its name only.
 		return sub.split(', ')[0] || /^([^:]{1,60}):/.exec(msg)?.[1] || '';
 	}
+	if (k === 'health_recovered') return str(d.subject).split(', ')[0];
+	if (k === 'alert_failed') return str(d.alert);
+	if (k === 'free_space_low') return 'Low space';
 	if (k === 'holding_cleaned') return 'Set-aside files';
 	if (k === 'settings_changed') return str(d.name);
 	if (k.startsWith('download_') && !e.title_name) return str(d.release) || str(d.downloader);
@@ -207,7 +211,16 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 			const sub = subject(e);
 			if (!sub) return { line: '', long: false };
 			const rest = sub && msg.startsWith(sub) ? msg.slice(sub.length).replace(/^[\s:,-]+/, '') : msg;
-			return { line: cap(rest || msg), long: false };
+			// "is not answering (timed out after 30 s)": the part in brackets says what happened.
+			const inner = /\(([^)]+)\)$/.exec(rest)?.[1];
+			return { line: cap(inner || rest || msg), long: false };
+		}
+		case 'health_recovered': return { line: 'Working again', long: false };
+		case 'alert_failed':
+		case 'free_space_low': {
+			const sub = subject(e);
+			const w = rowText(row, ctx).line;
+			return { line: sub && w.startsWith(sub + ' · ') ? w.slice(sub.length + 3) : w, long: false };
 		}
 		case 'file_held': return { line: 'File set aside', long: false };
 		case 'holding_cleaned': return { line: '', long: false };
@@ -233,12 +246,12 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 		}
 		// The mark says Reported, so the outcome comes first.
 		case 'report_fixed': return { line: join('Fixed', problemWords[str(d.kind)] ?? cap(str(d.kind)), str(d.reply) && `“${str(d.reply)}”`), long: true };
-		case 'report_reopened': return { line: join('Opened again', problemWords[str(d.kind)] ?? cap(str(d.kind))), long: false };
+		case 'report_reopened': return { line: join('Opened again', problemWords[str(d.kind)] ?? cap(str(d.kind)), str(d.note) && `“${str(d.note)}”`), long: true };
 		case 'adopted': {
 			const files = num(d.files), albums = num(d.albums);
 			return { line: albums ? join(plural(files, 'track'), plural(albums, 'album')) : '', long: false };
 		}
-		case 'file_missing': return { line: 'File missing', long: false };
+		case 'file_missing': return { line: missingLine(e), long: false };
 		case 'file_back': return { line: 'File back', long: false };
 		case 'renamed':
 		case 'release_chosen':
@@ -252,6 +265,16 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 		return { line: langs || fallback, long: false };
 	}
 	return { line: fallback, long: false };
+}
+
+/** sysSplit names a health or alert row the way title rows read: what it is about, then what happened ("Discord" · "401 Unauthorized"). */
+const splitKinds = /^(health_broken|health_recovered|alert_failed|free_space_low|library_folder_unreachable)$/;
+export function sysSplit(row: HistoryRow, ctx: PanelContext): { name: string; line: string } | null {
+	const e = row.head;
+	if (e.title_name || row.steps.length || !splitKinds.test(e.Kind)) return null;
+	const name = subject(e);
+	if (!name) return null;
+	return { name, line: lineOf(row, ctx, '', '').line };
 }
 
 /** panelView is everything the details panel shows for a row. */
@@ -280,7 +303,8 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const art = src && e.title_name ? { src, name: e.title_name, square: kind === 'artist' || kind === 'album' } : null;
 
 	// Steps: a download's three; a decision waiting on an import shows where it stopped.
-	let steps: PanelStep[] = row.steps.map((s) => ({ key: s.key, label: s.label, state: s.state }));
+	const waits = row.events.some((x) => x.Kind === 'needs_decision');
+	let steps: PanelStep[] = row.steps.map((s) => (waits && s.state === 'failed' ? { key: s.key, label: 'Needs you', state: 'needs' } : { key: s.key, label: s.label, state: s.state }));
 	if (!steps.length && e.Kind === 'needs_decision' && /plac|import/i.test(str(d.reason)))
 		steps = [{ key: 'sent', label: 'Sent', state: 'done' }, { key: 'downloaded', label: 'Downloaded', state: 'done' }, { key: 'imported', label: 'Needs you', state: 'needs' }];
 	const failedAt = row.steps.find((s) => s.state === 'failed')?.key ?? '';

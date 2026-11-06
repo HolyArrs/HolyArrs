@@ -225,17 +225,42 @@ export function downloadSteps(events: Pick<EventRecord, 'Kind'>[]): Step[] {
 /**
  * groupDownloads folds the Events of one download (sent, downloading,
  * finished, imported or failed) into one row, placed where its newest Event
- * is. Every other Event stays a row of its own. The order is kept.
+ * is. The pick that started it (release_chosen, matched by its release) and
+ * a decision it is waiting on (needs_decision or stopped_looking, matched by
+ * its download, or by its Slot when that download's import failed) fold in
+ * too. Every other Event stays a row of its own. The order is kept.
  */
 export function groupDownloads(events: EventRecord[]): HistoryRow[] {
+	const numOf = (v: unknown) => (typeof v === 'number' && v > 0 ? v : 0);
+	// Which download each release and each stuck Slot belongs to, read from the download's own steps.
+	const byRelease = new Map<number, number>();
+	const stuckSlot = new Map<number, number>();
+	for (const e of events) {
+		if (!isDownloadStep(e)) continue;
+		const rel = numOf(e.Data?.release_id);
+		if (rel && !byRelease.has(rel)) byRelease.set(rel, e.DownloadID!);
+		if (e.SlotID && /^import_(failed|rejected)$/.test(e.Kind) && !stuckSlot.has(e.SlotID)) stuckSlot.set(e.SlotID, e.DownloadID!);
+	}
+	const known = new Set(byRelease.values());
+	for (const e of events) if (isDownloadStep(e)) known.add(e.DownloadID!);
+	const downloadOf = (e: EventRecord): number => {
+		if (isDownloadStep(e)) return e.DownloadID!;
+		if (e.Kind === 'release_chosen' || e.Kind === 'release_chosen_by_hand') return byRelease.get(numOf(e.Data?.release_id)) ?? 0;
+		if (e.Kind === 'needs_decision' || e.Kind === 'stopped_looking') {
+			const id = e.DownloadID || numOf(e.Data?.download_id);
+			if (id && known.has(id)) return id;
+			return e.Kind === 'needs_decision' && e.SlotID ? (stuckSlot.get(e.SlotID) ?? 0) : 0;
+		}
+		return 0;
+	};
 	const rows: HistoryRow[] = [];
 	const byDownload = new Map<number, HistoryRow>();
 	for (const e of events) {
-		if (!isDownloadStep(e)) {
+		const id = downloadOf(e);
+		if (!id) {
 			rows.push({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
 			continue;
 		}
-		const id = e.DownloadID!;
 		const row = byDownload.get(id);
 		if (row) {
 			row.events.push(e);

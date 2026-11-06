@@ -45,7 +45,7 @@
 			</div>
 			{#if v.steps.length}
 				<ol class="steps" aria-label="Steps of this download">
-					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting on you' : 'not yet'}</span></li>{/each}
+					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting' : 'not yet'}</span></li>{/each}
 				</ol>
 			{/if}
 			{#if v.line}<p class="sum" class:long={v.long}>{v.line}</p>{/if}

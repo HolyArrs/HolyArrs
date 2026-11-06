@@ -68,7 +68,7 @@ export const lookTabs: LookTab[] = [
 			{ key: 'subtitles', label: 'Subtitles', hint: 'Subtitles saved, upgraded, synced or not found.', kinds: ['subtitle_*'] },
 			{ key: 'asks', label: 'Asks', hint: 'Asks made, approved or turned down, by people or AI apps.', kinds: ['ask_*', 'ai_ask_*'] },
 			{ key: 'reports', label: 'Reports', hint: 'Problems people reported with titles, fixed or opened again.', kinds: ['report_*'] },
-			{ key: 'system', label: 'System', hint: 'Sign-ins, API keys, account and settings changes.', kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used'] }
+			{ key: 'system', label: 'System', hint: 'Sign-ins, API keys, account and settings changes.', kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used', 'health_recovered'] }
 		]
 	},
 	{

@@ -30,8 +30,8 @@ describe('paths', () => {
 		expect(shortPath(`${root}\\music`)).toBe('music');
 		expect(shortPath('Ted Lasso (2020)/Season 4/x.mkv', 'Ted Lasso')).toBe('Ted Lasso (2020)/Season 4/x.mkv');
 		expect(pathBits('movies\\Heat (1995)\\Heat.mkv')).toEqual(['movies\\', 'Heat (1995)\\', 'Heat.mkv']);
-		expect(pathBits('a/bbbbbbbbbb/cccccccccc/d.mkv', 20)).toEqual(['…/', 'cccccccccc/', 'd.mkv']);
-		expect(pathBits('a/' + 'x'.repeat(30) + '.mkv', 20)).toEqual(['…/', 'x'.repeat(30) + '.mkv']);
+		expect(pathBits('a/bbbbbbbbbb/cccccccccc/d.mkv', 20)).toEqual(['…/cccccccccc/', 'd.mkv']);
+		expect(pathBits('a/' + 'x'.repeat(30) + '.mkv', 20)).toEqual(['…/' + 'x'.repeat(30) + '.mkv']);
 	});
 });
 
@@ -44,7 +44,7 @@ describe('panelView', () => {
 	});
 	it('a Library folder out of reach: the folder as title, the count, the folder', () => {
 		const v = panelView(one(ev('library_folder_unreachable', { Summary: 'Library folder Music: 1347 of 1347 files are gone at once; is a drive or share not mounted? No file was marked missing', Actor: { kind: 'job', id: 1 }, Data: { gone: 1347, known: 1347, path: `${root}\\music`, reason: 'most files gone at once' } })), ctx);
-		expect([v.verb.word, v.title, v.meta, v.line, v.art]).toEqual(['Failed', 'Music folder', '', 'All 1,347 files gone · none marked missing', null]);
+		expect([v.verb.word, v.title, v.meta, v.line, v.art]).toEqual(['Failed', 'Music folder', '', 'All 1,347 files gone', null]);
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['Folder', 'music']]);
 		expect(v.facts[1]).toMatchObject({ mono: true, full: `${root}\\music` });
 	});
@@ -63,7 +63,7 @@ describe('panelView', () => {
 		expect(v.steps.map((s) => s.state)).toEqual(['done', 'waiting', 'waiting']);
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['Quality', '1080p'], ['Size', '8.1 GB'], ['Source', 'Lab'], ['Downloader', 'Stand-in'], ['Release', 'Slow.Horses.S03E04.1080p.WEB-DL']]);
 		expect(v.find).toBe(true);
-		expect(v.actions.map((a) => a.label)).toEqual(['Slow Horses', 'Downloads']);
+		expect(v.actions.map((a) => a.label)).toEqual(['Title page', 'Downloads']);
 	});
 	it('an import by hand: no meta for a movie, By, Quality and File', () => {
 		const v = panelView(one(ev('import_done', { TitleID: 2, title_name: 'Heat', Actor: { kind: 'user', id: 2 }, actor_name: 'home', Data: { from: `${root}\\movies\\_loose\\Heat.1995.1080p.WEB.mkv`, paths: [{ from: `${root}\\movies\\_loose\\Heat.1995.1080p.WEB.mkv`, to: `${root}\\movies\\Heat (1995)\\Heat (1995) 1080p WEB.mkv` }] } })), ctx);
@@ -80,7 +80,7 @@ describe('panelView', () => {
 		expect([v.verb.word, v.line]).toEqual(['Needs you', 'Nothing could be placed']);
 		expect(v.steps.map((s) => [s.label, s.state])).toEqual([['Sent', 'done'], ['Downloaded', 'done'], ['Needs you', 'needs']]);
 		expect(facts(v).map((f) => f[0])).toEqual(['When']);
-		expect(v.actions.map((a) => a.label)).toEqual(['Import plan', 'Arrival']);
+		expect(v.actions.map((a) => a.label)).toEqual(['Import plan', 'Title page']);
 	});
 	it('a deletion: whether the files stayed, who did it', () => {
 		const v = panelView(one(ev('title_removed', { TitleID: 2, title_name: 'Heat', Actor: { kind: 'user', id: 2 }, actor_name: 'home', Data: { delete_files: false } })), ctx);
@@ -109,11 +109,11 @@ describe('panelView', () => {
 		expect([v.verb.word, v.meta, v.line, v.long]).toEqual(['Reported', 'Artist', 'Sound · “This track skips for a second near the end.”', true]);
 		expect(v.art?.square).toBe(true);
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['By', 'agent-check']]);
-		expect(v.actions.map((a) => a.label)).toEqual(['Arctic Monkeys', 'Problems']);
+		expect(v.actions.map((a) => a.label)).toEqual(['Title page', 'Problems']);
 	});
 	it('a missing file: File missing, the file', () => {
 		const v = panelView(one(ev('file_missing', { TitleID: 1, title_name: "Grey's Anatomy", episode: 'S23E04 Love on the Brain', Actor: { kind: 'job', id: 1 }, Data: { path: "Grey's Anatomy/Season 23/x.mkv" } })), ctx);
-		expect([v.verb.word, v.line]).toEqual(['Failed', 'File missing']);
+		expect([v.verb.word, v.line]).toEqual(['Failed', 'x · Missing']);
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['File', "Grey's Anatomy/Season 23/x.mkv"]]);
 	});
 	it('a fixed report says Fixed first, By is who fixed it; a reopened one says Opened again', () => {
