@@ -318,18 +318,31 @@
 		}
 	}
 	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: f.label, checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
-	type SeasonPick = 'all' | 'missing' | 'future' | 'latest' | 'none';
+	// Seasons (Luis 2026-11-05): one choice sets every season and new seasons together.
+	// A mix made season by season in the list reads Custom.
+	type SeasonPick = 'all' | 'latest' | 'none';
 	const realSeasons = $derived((owned?.show?.seasons ?? []).filter((x) => x.number > 0));
-	const keptSeasons = $derived(realSeasons.filter((x) => x.keep_up_to_date).length);
-	const seasonsWord = $derived(keptSeasons === realSeasons.length ? 'All' : keptSeasons === 0 ? 'None' : `${keptSeasons} of ${realSeasons.length}`);
+	const latestSeason = $derived(Math.max(0, ...realSeasons.map((x) => x.number)));
+	const seasonPick = $derived.by((): SeasonPick | 'custom' => {
+		const kept = realSeasons.filter((x) => x.keep_up_to_date);
+		const newOn = owned?.show?.new_seasons !== 'none';
+		if (kept.length === realSeasons.length && newOn) return 'all';
+		if (kept.length === 0 && !newOn) return 'none';
+		if (kept.length === 1 && kept[0].number === latestSeason && newOn) return 'latest';
+		return 'custom';
+	});
+	const seasonPickWords: Record<SeasonPick | 'custom', string> = { all: 'All', latest: 'Latest', none: 'None', custom: 'Custom' };
 	async function setSeasons(pick: SeasonPick) {
 		const o = owned;
 		if (!o) return;
-		const latest = Math.max(0, ...realSeasons.map((x) => x.number));
-		const want = (x: (typeof realSeasons)[number]) => pick === 'all' || (pick === 'missing' && x.missing > 0) || (pick === 'future' && x.not_out_yet > 0) || (pick === 'latest' && x.number === latest);
 		busyAction = 'seasons';
 		try {
-			for (const x of realSeasons) if (want(x) !== x.keep_up_to_date) await api.put(`/titles/${o.id}/seasons/${x.number}`, { keep_up_to_date: want(x) });
+			for (const x of realSeasons) {
+				const want = pick === 'all' || (pick === 'latest' && x.number === latestSeason);
+				if (want !== x.keep_up_to_date) await api.put(`/titles/${o.id}/seasons/${x.number}`, { keep_up_to_date: want });
+			}
+			const newSeasons = pick === 'none' ? 'none' : 'all';
+			if (o.show?.new_seasons !== newSeasons) await api.put(`/titles/${o.id}`, { new_seasons: newSeasons });
 			seasonEps = {};
 			openSeasons.clear();
 			await loadOwned(o.id);
@@ -339,13 +352,7 @@
 			busyAction = '';
 		}
 	}
-	const seasonMenu: MenuItem[] = [
-		{ label: 'All seasons', onselect: () => void setSeasons('all') },
-		{ label: 'Missing episodes', onselect: () => void setSeasons('missing') },
-		{ label: 'Still airing', onselect: () => void setSeasons('future') },
-		{ label: 'Latest season', onselect: () => void setSeasons('latest') },
-		{ label: 'No seasons', onselect: () => void setSeasons('none') }
-	];
+	const seasonMenu = $derived<MenuItem[]>(([['all', 'All seasons'], ['latest', 'Latest season'], ['none', 'None']] as [SeasonPick, string][]).map(([v, l]) => ({ label: l, checked: seasonPick === v, onselect: () => void setSeasons(v) })));
 	const orders: [string, string][] = [['aired', 'As aired'], ['daily', 'By date'], ['absolute', 'Absolute']];
 	const orderMenu = $derived<MenuItem[]>(orders.map(([v, l]) => ({ label: l, checked: owned?.show?.episode_order === v, onselect: () => void putTitle({ episode_order: v }, 'order') })));
 	async function ownRun(what: 'search' | 'refresh' | 'keep') {
@@ -1296,13 +1303,9 @@
 							</div>
 							{#if o.show}
 								<div class="lib-row static" data-testid="seasons-row">
-									<span><b>Seasons to keep</b><small>Sets every season at once</small></span>
-									<div class="lib-pick"><Menu label="Seasons to keep" variant="button" items={seasonMenu} width={260}>{#snippet trigger()}<span>{busyAction === 'seasons' ? 'Saving…' : seasonsWord}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+									<span><b>Seasons</b></span>
+									<div class="lib-pick"><Menu label="Seasons" variant="button" items={seasonMenu} width={200}>{#snippet trigger()}<span>{busyAction === 'seasons' ? 'Saving…' : seasonPickWords[seasonPick]}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 								</div>
-								<button type="button" class="lib-row" role="switch" aria-checked={o.show.new_seasons !== 'none'} disabled={busyAction === 'new'} onclick={() => putTitle({ new_seasons: o.show?.new_seasons === 'none' ? 'all' : 'none' }, 'new')}>
-									<span><b>New seasons</b><small>Keep them up to date when announced</small></span>
-									<span class="lib-switch" class:on={o.show.new_seasons !== 'none'} aria-hidden="true"></span>
-								</button>
 								<div class="lib-row static">
 									<span><b>Episode order</b></span>
 									<div class="lib-pick"><Menu label="Episode order" variant="button" items={orderMenu} width={200}>{#snippet trigger()}<span>{orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? 'As aired'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
