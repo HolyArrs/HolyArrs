@@ -2,7 +2,7 @@
 // extra piece, and the actions a row's details offer.
 import { readFilter, type HistoryRow } from '../history.ts';
 import { fineCheck, lookTabs, tabKinds } from '../history-looks.ts';
-import { resolutionOf } from '../history-lines.ts';
+import { plainWhy, resolutionOf } from '../history-lines.ts';
 import { bytes } from '../format.ts';
 import type { Verb } from '../history-views.ts';
 import type { EventRecord } from '../types.ts';
@@ -282,14 +282,20 @@ export function filterVerb(row: HistoryRow, tag: Verb): Verb {
 	const st = filterStep(row.head.Kind);
 	return { ...v, word: st && st.key !== 'failed' ? st.label : word };
 }
+/** A failure's short words when it kept no reason. */
+const failedWords: Record<string, string> = { file_missing: 'File missing', download_vanished: 'Download disappeared', file_hold_failed: 'Could not set a file aside' };
 function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string): string {
 	if (step.failed) {
 		for (const e of row.events) {
 			const d = e.Data ?? {};
 			const why = str(d.reason) || str(d.error) || str(d.message);
-			if (why) return why.trim().replace(/[.;]\s*$/, '');
+			if (why) {
+				const s = plainWhy(why);
+				return s ? s[0].toUpperCase() + s.slice(1) : s;
+			}
 		}
-		return '';
+		const at = row.steps.find((x) => x.state === 'failed')?.key;
+		return failedWords[row.head.Kind] ?? (at === 'imported' || /^import_(failed|rejected)$/.test(row.head.Kind) ? 'Nothing could be placed' : at ? 'Download failed' : '');
 	}
 	switch (step.label) {
 		case 'Asked':
@@ -363,21 +369,27 @@ export function findTarget(row: HistoryRow): { releaseId: number; slotId: number
 	return null;
 }
 
-/** A "Go to" link a row's details offer. */
+/** A place a row's details lead to. */
 export interface GoLink {
-	key: 'title' | 'downloads' | 'requests' | 'reports';
+	key: 'plan' | 'title' | 'downloads' | 'requests' | 'reports';
 	label: string;
 	href: string;
 }
-/** rowLinks: the title page, Downloads for releases and downloads (opening the download if known) and Requests for asks. */
+/** rowLinks: the import plan for a decision, the title page, Downloads for releases and downloads (opening the download if known), Requests for asks and Problems for reports. */
 export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	const out: GoLink[] = [];
+	const decide = row.events.find((e) => e.Kind === 'needs_decision');
+	if (decide) {
+		const slot = decide.SlotID ?? 0;
+		const id = decide.DownloadID ?? (typeof decide.Data?.download_id === 'number' ? decide.Data.download_id : 0);
+		out.push({ key: 'plan', label: 'Import plan', href: slot ? `/downloads?slot=${slot}` : id ? `/downloads?open=${id}` : '/downloads' });
+	}
 	if (titleHref) out.push({ key: 'title', label: row.head.title_name ?? 'Title', href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
 	// Only rows about a release or a download lead to Downloads (a sign-in does not).
 	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
-	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', label: 'Reported problems', href: '/reports?show=all' });
+	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', label: 'Problems', href: '/reports?show=all' });
 	return out;
 }

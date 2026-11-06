@@ -2,9 +2,9 @@
 	// History, day by day. Each day has a sticky header with what it held
 	// ("2 came in · 1 problem · 40 routine"); rows sit on a rail with their
 	// clock time, and runs of routine work fold into one quiet line that
-	// opens in place. On wide screens the picked row's whole story shows in
-	// a details panel on the right (reasons, paths, every step of a
-	// download, the latest Events for the same title); arrow keys or j and k
+	// opens in place. On wide screens the picked row shows in a details
+	// panel on the right (the step, the title, a download's steps, one line
+	// of new facts, the facts and where to go); arrow keys or j and k
 	// move through the rows. The panel can be hidden; picking a row shows it
 	// again. Narrower screens open the row in a sheet instead.
 	import { onMount, tick, untrack, type Snippet } from 'svelte';
@@ -18,17 +18,17 @@
 	import DenseRow from './DenseRow.svelte';
 	import LookFrame from './LookFrame.svelte';
 	import { EventFeed } from './feed.svelte.ts';
-	import { api } from '../api.ts';
 	import { to } from '../paths.ts';
-	import { ago, dateTime } from '../format.ts';
+	import { toasts } from '../toasts.svelte.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
-	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
-	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
-	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { dropAiTwins, eventStep, filterVerb, isRoutine, stepVerb } from './dirs.ts';
+	import type { HistoryFilter, HistoryRow } from '../history.ts';
+	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier } from '../history-views.ts';
+	import { byDay, dayItems, dayLine, type ArtSize } from '../history-looks.ts';
+	import { dropAiTwins, filterVerb } from './dirs.ts';
+	import { glue, panelView, pathBits } from './panel.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
-	import type { EventPage, EventRecord, TitleView } from '../types.ts';
+	import type { EventRecord, TitleView } from '../types.ts';
 
 	let {
 		filter,
@@ -195,23 +195,16 @@
 		}
 	}
 
-	// The latest Events for the picked title, every kind.
-	let more = $state<EventRecord[]>([]);
-	let moreFor = 0;
-	$effect(() => {
-		const id = picked?.head.TitleID ?? 0;
-		// With the page kept to one title, the rows already are its story.
-		if (!split || filter.title || id === moreFor) return;
-		moreFor = id;
-		more = [];
-		if (!id) return;
-		api.get<EventPage>(`/events?title=${id}&limit=30`)
-			.then((p) => {
-				if (moreFor === id) more = p.events;
-			})
-			.catch(() => {});
-	});
-	const others = $derived(filter.title ? [] : more.filter((e) => !isRoutine(e.Kind) && !picked?.events.some((x) => x.ID === e.ID)).slice(0, 6));
+	// The picked row's details, worked out once for the pane.
+	const view = $derived(picked && wide ? panelView(picked, { titles: titleById, people, me }) : null);
+	async function copy(path: string) {
+		try {
+			await navigator.clipboard.writeText(path);
+			toasts.push('Path copied', 'ok');
+		} catch {
+			toasts.push('Could not copy the path', 'fail');
+		}
+	}
 
 	function unfold(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.base, easing: easeOut });
@@ -308,65 +301,47 @@
 
 		{#if wide}
 			<aside class="pane" id={panelId} aria-label="Details" data-testid="look-pane" hidden={!panel ? true : undefined} inert={!panel}>
-				{#if picked}
-					{@const e = picked.head}
-					{@const w = rowText(picked, ctx)}
-					{@const t = titleById.get(e.TitleID ?? 0)}
-					{@const href = titleHref(e.TitleID, titleById)}
-					<div class="card">
-					{#key picked.key}
-						<div class="pin" in:paneIn>
-							<div class="ph">
-								{#if e.title_name}<span class="part" class:square={t?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>{/if}
-								<div class="pw">
-									<VerbMark verb={compact ? stepVerb(picked, w.tag) : w.tag} />
-									<h2 class="pt">{w.name}</h2>
-									{#if w.bits.length}<p class="psub">{w.bits.map((b) => b.text).join(' · ')}</p>{/if}
-									<p class="psum">{w.line}</p>
+					{#if picked && view}
+						{@const v = view}
+						<div class="card">
+						{#key picked.key}
+							<div class="pin" in:paneIn>
+								<div class="ph">
+									{#if v.art}<span class="part" class:square={v.art.square}><Poster src={v.art.src} name={v.art.name} /></span>{/if}
+									<div class="pw">
+										<VerbMark verb={v.verb} size="sm" />
+										<h2 class="pt">{v.title}</h2>
+										{#if v.meta}<p class="psub">{v.meta}</p>{/if}
+									</div>
 								</div>
+								{#if v.steps.length}
+									<ol class="steps" aria-label="Steps of this download" data-testid="history-steps">
+										{#each v.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting on you' : 'not yet'}</span></li>{/each}
+									</ol>
+								{/if}
+								{#if v.line}<p class="psum" class:long={v.long}>{v.line}</p>{/if}
+								<dl class="pf">
+									{#each v.facts as f (f.label)}
+										<dt>{f.label}</dt>
+										<dd class:mono={f.mono} class:one={f.label === 'Release'} title={f.label === 'Release' ? f.value : undefined}>
+											{#if f.at}<time datetime={f.at}>{f.value}</time>{#if f.ago}<span class="ago">{` · ${f.ago}`}</span>{/if}
+											{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label="Copy the full path" title="Copy the full path" onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
+											{:else}{f.value}{/if}
+										</dd>
+									{/each}
+								</dl>
+								{#if actions ? v.find || v.actions.length : v.actions.some((a) => a.key === 'title')}
+									<div class="pact">
+										{#if actions}{@render actions(picked)}
+										{:else}{@const t = v.actions.find((a) => a.key === 'title')}{#if t}<Button variant="secondary" size="sm" href={to(t.href)} iconAfter="chevronRight">{t.label}</Button>{/if}{/if}
+									</div>
+								{/if}
 							</div>
-							{#if picked.steps.length}
-								<ol class="steps" aria-label="Steps of this download" data-testid="history-steps">
-									{#each picked.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : 'not yet'}</span></li>{/each}
-								</ol>
-							{/if}
-							<dl class="facts">
-								<dt>When</dt><dd><time datetime={e.At}>{dateTime(e.At)}</time> <span class="ago">({ago(e.At)})</span></dd>
-								<dt>By</dt><dd>{who(e) || byWhom(e)}</dd>
-								{#each picked.steps.length ? [] : details(e) as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}
-							</dl>
-							{#if !picked.steps.length && details(e).length === 0}<p class="none">No reasons or paths were kept for this Event.</p>{/if}
-							{#if picked.events.length > 1}
-								<h3 class="h">Every step</h3>
-								<ol class="trail" data-testid="history-trail">
-									{#each picked.events as s (s.ID)}
-										{@const why = details(s)}
-										{@const sw = eventText(s, ctx)}
-										<li>
-											<div class="tl"><VerbMark verb={eventStep(s, sw.tag)} size="sm" /><time datetime={s.At} title={dateTime(s.At)}>{whenShort(s.At)}</time></div>
-											<p class="ts">{sw.line}</p>
-											{#if why.length}<dl class="facts small">{#each why as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}</dl>{/if}
-										</li>
-									{/each}
-								</ol>
-							{/if}
-							{#if others.length}
-								<h3 class="h">Also for {e.title_name}</h3>
-								<ol class="also">
-									{#each others as o (o.ID)}
-										{@const ow = eventText(o, ctx)}
-										<li><VerbMark verb={eventStep(o, ow.tag)} size="sm" /><span class="as">{ow.line}</span><time datetime={o.At}>{whenShort(o.At)}</time></li>
-									{/each}
-								</ol>
-							{/if}
-							{#if actions}<div class="pact">{@render actions(picked)}</div>{/if}
-							{#if !actions && href && e.title_name}<div class="pact"><Button variant="secondary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button></div>{/if}
+						{/key}
 						</div>
-					{/key}
-					</div>
 					{#if compact && today}
 						<section class="card day-card" aria-label="This day" data-testid="history-this-day">
-							<div class="dch"><h3 class="h">This day</h3><span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? 'event' : 'events'}</span></div>
+							<div class="dch"><h3 class="h">This day</h3>{#if today.steps.length > 1}<span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? 'event' : 'events'}</span>{/if}</div>
 							<ul class="tally">
 								{#each today.steps as x (x.verb.word)}<li class="tp {x.verb.tone}"><span class="td" aria-hidden="true"></span>{x.verb.word}<b>{x.count}</b></li>{/each}
 							</ul>
@@ -448,10 +423,9 @@
 	/* The panel's top lines up with the first row (under the day header, 45px), at rest and when pinned. */
 	.pane { position: sticky; top: calc(var(--topbar) + var(--pane-drop, 45px)); margin-top: var(--pane-drop, 45px); min-width: 0; max-height: calc(100dvh - var(--topbar) - 65px); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
 	.pane[hidden] { display: block; visibility: hidden; opacity: 0; translate: 24px 0; padding-inline: 0; overflow: hidden; transition: opacity var(--dur-fast) var(--ease-in), translate var(--dur-fast) var(--ease-in), padding var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-fast); }
-	.card { padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
-	.pin { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+	.card { margin: 0; padding: 20px; border: 0; border-radius: 16px; background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.pin { display: flex; flex-direction: column; min-width: 0; }
 	/* This day: the picked row's day, counted by the Filter's steps. */
-	.day-card { padding: 16px 18px; }
 	.dch { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	.dcn { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.tally { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
@@ -463,41 +437,43 @@
 	.tp.idle .td { background: var(--text-faint); }
 	.tp.fail .td { background: var(--fail); }
 	.tp.fail { color: var(--fail-text); }
-	.ph { display: flex; gap: 16px; align-items: flex-start; }
-	.part { flex: none; width: 88px; --poster-ratio: 2 / 3; }
+	.h { font: var(--t-headline); }
+	/* The header: the art, then the step, the title and the meta, top aligned. */
+	.ph { display: flex; gap: 14px; align-items: start; min-width: 0; }
+	.part { flex: none; width: 64px; --poster-ratio: 2 / 3; }
 	.part.square { --poster-ratio: 1; }
-	.part :global(.poster) { border-radius: 8px; }
-	.pw { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
-	.pt { font: var(--t-title3); letter-spacing: var(--t-title3-track); overflow-wrap: anywhere; }
-	.psub { color: var(--text-muted); font: var(--t-footnote); }
-	.psum { font: var(--t-callout); overflow-wrap: anywhere; }
-	.steps { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; font: var(--t-footnote); }
+	.part :global(.poster) { border-radius: 10px; box-shadow: 0 0 0 1px var(--line); }
+	.pw { flex: 1; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+	.pt { margin-top: 4px; color: var(--text); font: var(--t-title3); letter-spacing: var(--t-title3-track); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+	.psub { width: 100%; margin-top: 2px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* A download's steps: pips joined by a rule, flush to the card's left edge. */
+	.steps { display: flex; align-items: center; margin: 12px 0 0; padding: 0; list-style: none; font: var(--t-footnote); white-space: nowrap; }
 	.steps li { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
-	.steps li + li::before { content: ''; width: 18px; height: 1px; margin: 0 8px; background: var(--line); }
-	.pip { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
+	.steps li + li { flex: 1 1 auto; min-width: 0; }
+	.steps li + li::before { content: ''; flex: 1 1 auto; min-width: 10px; height: 1px; margin: 0 4px 0 10px; background: var(--line); }
+	.pip { flex: none; width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
 	.steps .done { color: var(--text); }
 	.steps .done .pip { background: var(--ok); box-shadow: none; }
 	.steps .failed { color: var(--fail-text); font-weight: 600; }
 	.steps .failed .pip { background: var(--fail); box-shadow: none; }
-	.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 14px; margin: 0; padding: 14px; border-radius: var(--r-card); background: var(--surface-2); font: var(--t-footnote); }
-	.facts dt { color: var(--text-muted); }
-	.facts dd { margin: 0; overflow-wrap: anywhere; }
-	.facts dd.mono { font-family: var(--font-mono); }
-	.facts .ago { color: var(--text-muted); }
-	.facts.small { margin-top: 8px; padding: 10px; background: var(--surface-1); }
-	.h { font: var(--t-headline); }
-	.trail, .also { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-	.trail { gap: 8px; }
-	.trail li { padding: 10px 12px; border-radius: var(--r-card); background: var(--surface-2); }
-	.tl { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: var(--t-footnote); }
-	.tl time { color: var(--text-muted); white-space: nowrap; }
-	.ts { margin-top: 4px; font: var(--t-footnote); overflow-wrap: anywhere; }
-	.also li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; font: var(--t-footnote); }
-	.also li + li { border-top: 1px solid var(--line); }
-	.as { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
-	.also time { color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-	.pact { display: flex; flex-wrap: wrap; gap: 8px; }
-	/* Muted, not faint: faint text fails contrast on the panel in both themes. */
+	.steps .needs { color: var(--text); font-weight: 600; }
+	.steps .needs .pip { background: var(--accent); box-shadow: none; }
+	.psum { margin-top: 12px; color: var(--text); font: var(--t-subhead); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+	.psum.long { -webkit-line-clamp: 3; line-clamp: 3; }
+	/* The facts: a flat list on the card, body font with even digits; mono only for releases and paths. */
+	.pf { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px 12px; margin: 20px 0 0; padding: 0; font: var(--t-footnote); }
+	.pf dt { color: var(--text-muted); }
+	.pf dd { margin: 0; min-width: 0; color: var(--text); font: var(--t-footnote); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+	.pf dd.mono { font: var(--t-caption); font-family: var(--font-mono); font-weight: 400; line-height: 1.45; }
+	.pf dd.one { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pf .ago { color: var(--text-muted); }
+	.path { display: inline-flex; align-items: flex-start; gap: 4px; min-width: 0; max-width: 100%; }
+	.pv { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+	.cp { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-top: -4px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
+	.cp:hover { background: var(--well, var(--surface-2)); color: var(--text); }
+	.cp:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pact { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+	.pact > :global(.ui-btn) { border-radius: var(--r-pill); }
 	.none { color: var(--text-muted); font: var(--t-footnote); }
 	.miss { margin: 0; padding: 24px 0; color: var(--text-muted); text-align: center; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

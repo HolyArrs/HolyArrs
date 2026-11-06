@@ -1,7 +1,7 @@
 // History's words for a row: line 1 says what it is (the title, the
 // episode or what kind of title), a status tag says what kind of thing
-// happened, and line 2 says what happened and what comes next, in plain
-// words and never repeating the title. The details panel and the phone
+// happened, and line 2 says what happened, in plain words and never
+// repeating the title or the step. The details panel and the phone
 // sheet use the same words.
 import type { IconName } from './Icon.svelte';
 import { bytes } from './format.ts';
@@ -38,7 +38,7 @@ export interface RowText {
 	/** What it is, after the name: "S39 E192", "Pastry Week", "Movie", "4K". */
 	bits: Bit[];
 	tag: Tag;
-	/** What happened and what comes next. */
+	/** What happened. */
 	line: string;
 }
 
@@ -135,6 +135,7 @@ export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
 	const dl = /^the downloader says (.+)$/i.exec(s);
 	if (dl) s = dl[1].toLowerCase() === 'error' ? 'the downloader reported an error' : `the downloader says ${dl[1]}`;
+	s = s.replace(/[;,]?\s*look at the import plan$/i, '');
 	s = s.replace(/\bno Release passed the Pick rules\b/i, 'nothing good enough was found').replace(/\bRelease(s?)\b/g, 'download$1').replace(/\bPick rules\b/g, 'your quality rules');
 	return s;
 }
@@ -168,7 +169,23 @@ function scrub(line: string, name: string): string {
 }
 
 function keepLine(d: Record<string, unknown>): string {
-	return d.keep_up_to_date === true ? 'kept up to date from now on' : d.keep_up_to_date === false ? 'no longer kept up to date' : '';
+	return d.keep_up_to_date === true ? 'Kept up to date' : d.keep_up_to_date === false ? 'No longer kept up to date' : '';
+}
+
+const count = (n: number) => n.toLocaleString('en-US');
+
+/** How much of a Library folder went out of reach: "All 1,347 files gone · none marked missing". */
+export function folderGone(e: EventRecord): string {
+	const d = e.Data ?? {};
+	const gone = num(d.gone), known = num(d.known);
+	const lost = gone && known ? (gone >= known ? `All ${count(known)} ${known === 1 ? 'file' : 'files'} gone` : `${count(gone)} of ${count(known)} ${known === 1 ? 'file' : 'files'} gone`) : cap(plainWhy(str(d.reason)));
+	return join(lost, /no file was marked missing/i.test(e.Summary) && 'none marked missing');
+}
+
+/** The Library folder an Event is about ("Music folder"), from its summary. */
+export function folderName(e: EventRecord): string {
+	const n = /^Library folder (.+?):/.exec(e.Summary)?.[1];
+	return n ? `${n} folder` : '';
 }
 
 /** The title an ask is about, read from its summary when the title is not in the Library. */
@@ -195,16 +212,21 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 	const what = !eps.length ? (season ? `Season ${season}` : kind ? kindWord[kind] : '') : '';
 	const bits: Bit[] = [...eps.map((text) => ({ text, kind: 'episode' as const })), ...(what ? [{ text: what, kind: 'what' as const }] : []), ...(e.version ? [{ text: e.version, kind: 'version' as const }] : [])];
 	const t = (tag: Tag, line: string): RowText => ({ name, bits, tag, line: scrub(line, name) });
+	// A line that starts with a member's name keeps the name's own case.
+	const named = (tag: Tag, person: string, ...rest: string[]): RowText => {
+		const tail = scrub(join(...rest), name);
+		return person ? { name, bits, tag, line: join(person, tail) } : { name, bits, tag, line: tail };
+	};
 	const res = resolutionOf(str(d.release));
 	const k = e.Kind;
 
 	switch (k) {
 		case 'gate_opened':
-			return eps.length || e.episode ? t(TAG.aired, join(`Aired ${dayWord(e.At, now)}`, 'HolyArrs will look for it')) : t(TAG.out, join(`Out to watch ${dayWord(e.At, now)}`, 'HolyArrs will look for it'));
+			return eps.length || e.episode ? t(TAG.aired, `Aired ${dayWord(e.At, now)}`) : t(TAG.out, `Out to watch ${dayWord(e.At, now)}`);
 		case 'title_added': {
 			const by = who(e, ctx);
 			const how = str(d.why_added) === 'import' ? 'Added from a Library import' : str(d.why_added) === 'ask' ? `Added after an ask${by ? ` by ${by}` : ''}` : by ? `Added to the Library by ${by}` : 'Added to the Library by HolyArrs';
-			return t(TAG.added, join(how, d.search_on_add === true && 'HolyArrs will look for it'));
+			return t(TAG.added, how);
 		}
 		case 'list_synced': return t(TAG.added, 'Added from a list');
 		case 'title_removed': return t(TAG.removed, join('Removed from the Library', d.delete_files === true ? 'its files were deleted' : 'its files were kept'));
@@ -242,11 +264,11 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'details_source_changed': return t(TAG.changed, 'Its details now come from another source');
 		case 'version_changed': return t(TAG.changed, 'Versions changed');
 		case 'renamed': return t(TAG.changed, 'Renamed its files to match');
-		case 'rename_planned': return t(TAG.changed, 'A rename is ready · waiting for you');
+		case 'rename_planned': return t(TAG.changed, 'Rename ready');
 		case 'search_done': {
 			const m = /\((\d+) found, (\d+) refused\)/.exec(e.Summary);
 			const found = m ? Number(m[1]) : 0;
-			if (/^(Season \d+: )?no Release passed/i.test(e.Summary) || !m) return t(TAG.searched, join('Looked for it', found ? `${found} found, none good enough` : 'nothing found yet', 'HolyArrs will look again'));
+			if (/^(Season \d+: )?no Release passed/i.test(e.Summary) || !m) return t(TAG.searched, join('Looked for it', found ? `${found} found, none good enough` : 'nothing found yet'));
 			return t(TAG.searched, join('Looked for it', `${found} found`));
 		}
 		case 'search_failed': return t(TAG.failed, join('Search failed', plainWhy(str(d.reason) || str(d.error))));
@@ -254,52 +276,59 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'release_chosen':
 		case 'release_chosen_by_hand': {
 			const r = resolutionOf(str(d.release) || e.Summary);
-			return t(TAG.getting, join(k === 'release_chosen_by_hand' ? 'Picked by hand' : 'Picked a download', r, 'sending it to download'));
+			return t(TAG.getting, join(k === 'release_chosen_by_hand' ? 'Picked by hand' : 'Picked a download', r));
 		}
 		case 'release_turned_down': return t(TAG.declined, join('A download was turned down', plainWhy(str(d.reason))));
-		case 'turned_down_removed': return t(TAG.changed, 'A turned-down download may be picked again');
+		case 'turned_down_removed': return t(TAG.changed, 'Unblocked a download');
 		case 'release_held': return t(TAG.stalled, join('A download is held back', plainWhy(str(d.reason))));
 		case 'held_removed': return t(TAG.changed, 'A held download was let go');
-		case 'download_sent': return t(TAG.getting, join('Sent to download', res, 'HolyArrs brings it in when done'));
+		case 'download_sent': return t(TAG.getting, res);
 		case 'download_queued': return t(TAG.getting, join('Waiting to download', res));
 		case 'download_downloading': return t(TAG.getting, join(`Downloading${num(d.progress) ? ` · ${Math.round(num(d.progress) * 100)}%` : ''}`, res));
 		case 'download_stalled': return t(TAG.stalled, join('Download stalled', plainWhy(str(d.reason))));
 		case 'download_paused': return t(TAG.paused, join(`Download paused${num(d.progress) ? ` at ${Math.round(num(d.progress) * 100)}%` : ''}`, res));
-		case 'download_finished': return t(TAG.getting, join('Downloaded', res, sizeOf(d), 'bringing it into the Library'));
+		case 'download_finished': return t(TAG.getting, join(res, sizeOf(d)));
 		case 'download_seeding': return t(TAG.came, join('Sharing it back', res));
-		case 'download_removed': return t(TAG.changed, 'Removed from the downloader');
+		case 'download_removed': return t(TAG.changed, 'Removed from downloader');
 		case 'download_changed': return t(TAG.changed, e.Summary || 'Changed in the downloader');
-		case 'download_failed': return t(TAG.failed, join('Download failed', plainWhy(str(d.reason))));
-		case 'download_vanished': return t(TAG.failed, join('Download disappeared from the downloader', 'HolyArrs will look again'));
+		case 'download_failed': return t(TAG.failed, plainWhy(str(d.reason)) || 'Download failed');
+		case 'download_vanished': return t(TAG.failed, 'Download disappeared from the downloader');
 		case 'download_not_removed': return t(TAG.failed, 'Could not remove it from the downloader');
-		case 'import_done': return t(TAG.came, join('Downloaded', resolutionOf(releaseOf([e])), sizeOf(d), 'in the Library'));
+		case 'import_done': return t(TAG.came, join(resolutionOf(releaseOf([e])), sizeOf(d)));
 		case 'import_partly_done': return t({ ...TAG.came, tone: 'wait' }, join('Partly in the Library', 'some files need a look'));
 		case 'import_failed':
-		case 'import_rejected': return t(TAG.failed, join('Could not bring it into the Library', plainWhy(str(d.reason)) || 'nothing could be placed'));
+		case 'import_rejected': return t(TAG.failed, plainWhy(str(d.reason)) || 'Nothing could be placed');
 		case 'file_replaced': return t(TAG.came, join('A better copy came in', 'the old one is set aside'));
 		case 'adopted': {
 			const files = num(d.files), albums = num(d.albums);
 			return t(TAG.came, join('Found in its folder', albums ? `${plural(files, 'track')} in ${plural(albums, 'album')}` : files ? plural(files, 'file') : ''));
 		}
-		case 'file_missing': return t(TAG.failed, join('A file is missing from disk', 'HolyArrs will look for it'));
+		case 'file_missing': return t(TAG.failed, 'A file is missing from disk');
 		case 'file_back': return t(TAG.fixed, 'A missing file is back on disk');
 		case 'file_held': return t(TAG.changed, 'A file was set aside');
 		case 'file_hold_failed': return t(TAG.failed, 'Could not set a file aside');
 		case 'holding_cleaned': return t(TAG.changed, 'Cleared old set-aside files');
 		case 'free_space_low': return t(TAG.failed, join('Low on disk space', plainWhy(str(d.reason) || str(d.message))));
-		case 'needs_decision': return t(TAG.needs, join('Needs your decision', plainWhy(str(d.reason))));
+		case 'needs_decision': return t(TAG.needs, plainWhy(str(d.reason)));
 		case 'stopped_looking': return t(TAG.changed, join('Stopped looking for it', plainWhy(str(d.reason))));
 		case 'health_broken': return t(str(d.state) === 'warning' ? TAG.warning : TAG.failed, plainWhy(str(d.message) || withoutTitle(e.Summary, name)));
 		case 'health_recovered': return t(TAG.fixed, join('Working again', str(d.subject)));
-		case 'ask_made': {
-			const what = str(d.albums) || str(d.seasons);
-			return t(TAG.asked, join(`Asked for by ${who(e, ctx) || str(d.asked_by) || 'a member'}`, what));
+		// The tag says the step; the line keeps only who and what ("Maya · Every album"), names kept as they are.
+		case 'ask_made': return named(TAG.asked, who(e, ctx) || str(d.asked_by) || 'a member', cap(str(d.albums) || str(d.seasons)));
+		case 'ask_approved': return d.auto === true ? t(TAG.approved, join('Automatic', str(d.note))) : named(TAG.approved, str(d.approved_by) || who(e, ctx), str(d.note));
+		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
+		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
+		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
+		case 'report_reopened': return t(TAG.reopened, problem(d.kind));
+		// Sign-ins: the username as it is, never capitalised.
+		case 'signed_in':
+		case 'signed_out':
+		case 'sign_in_failed': {
+			const user = str(d.name) || e.actor_name || '';
+			const said = e.Summary.trim();
+			return user && said.startsWith(user) ? { name, bits, tag: TAG.changed, line: said } : t(TAG.changed, plainWhy(withoutTitle(said, name)) || 'Something changed');
 		}
-		case 'ask_approved': return t(TAG.approved, join(`Approved by ${str(d.approved_by) || who(e, ctx) || 'HolyArrs'}`, d.auto === true ? 'on its own' : '', str(d.note)));
-		case 'ask_turned_down': return t(TAG.declined, join(`Declined by ${str(d.turned_down_by) || who(e, ctx) || 'HolyArrs'}`, str(d.note)));
-		case 'report_made': return t(TAG.reported, join(`Problem reported by ${str(d.made_by) || who(e, ctx) || 'a member'}`, problem(d.kind), str(d.note)));
-		case 'report_fixed': return t(TAG.fixed, join(`Problem fixed by ${str(d.fixed_by) || who(e, ctx) || 'HolyArrs'}`, problem(d.kind), str(d.reply)));
-		case 'report_reopened': return t(TAG.reopened, join(`Problem opened again by ${str(d.reopened_by) || who(e, ctx) || 'HolyArrs'}`, problem(d.kind)));
+		case 'library_folder_unreachable': return t(TAG.failed, join(folderName(e), folderGone(e)) || plainWhy(withoutTitle(e.Summary, name)));
 		case 'secrets_imported': return t(TAG.changed, join('Settings imported', `${num(d.set)} set`));
 		case 'media_server_told': return t(TAG.checked, 'Told the media server about it');
 		case 'media_server_failed': return t(TAG.failed, join('Could not reach the media server', plainWhy(str(d.reason) || str(d.error))));
@@ -324,10 +353,10 @@ export function rowText(row: HistoryRow, ctx: LineContext = {}): RowText {
 	const failed = row.steps.find((s) => s.state === 'failed');
 	if (failed) {
 		const bad = row.events.find((e) => /failed|vanished|rejected/.test(e.Kind));
-		const why = plainWhy(str(bad?.Data?.reason)) || (failed.key === 'imported' ? 'nothing could be placed' : '');
-		return { ...head, tag: TAG.failed, line: scrub(join(failed.key === 'imported' ? 'Could not bring it into the Library' : 'Download failed', why), head.name) };
+		const why = plainWhy(str(bad?.Data?.reason)) || (failed.key === 'imported' ? 'Nothing could be placed' : 'Download failed');
+		return { ...head, tag: TAG.failed, line: scrub(why, head.name) };
 	}
 	if (row.events.some((e) => e.Kind === 'file_replaced')) return { ...head, tag: TAG.came, line: join('A better copy came in', res, size, 'the old one is set aside') };
-	if (row.steps.find((s) => s.key === 'imported')?.state === 'done') return { ...head, tag: TAG.came, line: join('Downloaded', res, size, 'in the Library') };
+	if (row.steps.find((s) => s.key === 'imported')?.state === 'done') return { ...head, tag: TAG.came, line: join(res, size) };
 	return head;
 }

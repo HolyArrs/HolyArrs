@@ -85,7 +85,6 @@ test('Search now on the season fills each Version with its own pack; History nam
 	const pane = page.getByTestId('look-pane');
 	await expect(pane.getByTestId('history-steps').locator('li')).toHaveCount(3);
 	await expect(pane.getByTestId('history-steps').locator('[data-state="done"]').first()).toBeVisible();
-	expect(await pane.getByTestId('history-trail').locator(':scope > li').count()).toBeGreaterThan(1);
 });
 
 test('change, add and remove Versions; a busy Version stays', async () => {

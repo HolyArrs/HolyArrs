@@ -112,7 +112,7 @@ describe('history', () => {
 		).toEqual([
 			['Why', 'nothing could be placed'],
 			['Release', 'Arrival.2016.1080p'],
-			['Placed at', '/movies/Arrival (2016)/Arrival (2016).mkv']
+			['File', '/movies/Arrival (2016)/Arrival (2016).mkv']
 		]);
 		expect(details({ Data: undefined })).toEqual([]);
 	});

@@ -2,111 +2,111 @@
 	import type { Snippet } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import Icon from '#lib/Icon.svelte';
 	import Poster from '#lib/Poster.svelte';
 	import VerbMark from './VerbMark.svelte';
 	import { to } from '#lib/paths.ts';
-	import { ago, dateTime } from '#lib/format.ts';
-	import { details, type HistoryRow } from '#lib/history.ts';
-	import { artOf, byWhom, titleHref } from '#lib/history-views.ts';
-	import { whenShort } from '#lib/history-looks.ts';
-	import { eventStep, stepVerb } from '#lib/history-looks/dirs.ts';
-	import { eventText, rowText, type LineContext } from '#lib/history-lines.ts';
+	import { toasts } from '#lib/toasts.svelte.ts';
+	import type { HistoryRow } from '#lib/history.ts';
+	import { glue, panelView, pathBits } from '#lib/history-looks/panel.ts';
 	import type { TitleView } from '#lib/types.ts';
 
-	// Everything about one History row in a side sheet (a bottom sheet on
-	// phones): the full text, who did it, the reasons and paths, every step
-	// of a download, and the way to the title.
+	// One History row in a sheet (a bottom sheet on phones): the same content
+	// as the details panel, in the same order.
 	let { row = $bindable(null), titleById, people, me, actions }: { row: HistoryRow | null; titleById: Map<number, TitleView>; people?: Map<number, string>; me?: number; /** Extra buttons for the row (History preview looks). */ actions?: Snippet<[HistoryRow]> } = $props();
-	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 	let open = $state(false);
 	$effect(() => {
 		open = !!row;
 	});
-	const e = $derived(row?.head);
-	const words = $derived(row ? rowText(row, ctx) : null);
-	const href = $derived(titleHref(e?.TitleID, titleById));
-	const title = $derived(e?.TitleID ? titleById.get(e.TitleID) : undefined);
-	// Who did it, worked out the same way as the details panel: the name the Event kept, else the member's name.
-	const by = $derived.by(() => {
-		if (!e) return '';
-		const n = byWhom(e);
-		return e.Actor?.kind === 'user' && n === 'A person' ? people?.get(e.Actor.id ?? 0) || n : n;
-	});
+	const v = $derived(row ? panelView(row, { titles: titleById, people, me }) : null);
+	const titleLink = $derived(v?.actions.find((a) => a.key === 'title'));
+	async function copy(path: string) {
+		try {
+			await navigator.clipboard.writeText(path);
+			toasts.push('Path copied', 'ok');
+		} catch {
+			toasts.push('Could not copy the path', 'fail');
+		}
+	}
 </script>
 
-<Sheet bind:open title={words?.name ?? 'Event'} placement="right" size="md" onclose={() => (row = null)}>
-	{#if row && e && words}
+<Sheet bind:open title={v?.title ?? 'Event'} placement="auto" size="md" hideTitle onclose={() => (row = null)}>
+	{#if row && v}
 		<div class="es" data-testid="hv-sheet">
 			<div class="head">
-				{#if e.TitleID && e.title_name}
-					<span class="art" class:square={title?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>
-				{/if}
+				{#if v.art}<span class="art" class:square={v.art.square}><Poster src={v.art.src} name={v.art.name} /></span>{/if}
 				<div class="hw">
-					<VerbMark verb={stepVerb(row, words.tag)} />
-					{#if words.bits.length}<p class="sub">{words.bits.map((b) => b.text).join(' · ')}</p>{/if}
-					<p class="sum">{words.line}</p>
+					<VerbMark verb={v.verb} size="sm" />
+					<p class="ttl">{v.title}</p>
+					{#if v.meta}<p class="sub">{v.meta}</p>{/if}
 				</div>
+				<IconButton icon="x" label="Close" variant="tinted" size="sm" tooltip={false} onclick={() => (open = false)} />
 			</div>
-			{#if row.steps.length}
+			{#if v.steps.length}
 				<ol class="steps" aria-label="Steps of this download">
-					{#each row.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : 'not yet'}</span></li>{/each}
+					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting on you' : 'not yet'}</span></li>{/each}
 				</ol>
 			{/if}
-			<dl class="facts">
-				<dt>When</dt><dd><time datetime={e.At}>{dateTime(e.At)}</time> <span class="muted">({ago(e.At)})</span></dd>
-				<dt>By</dt><dd>{by}</dd>
-				{#each row.steps.length ? [] : details(e) as [k, v], i (i)}<dt>{k}</dt><dd class="mono">{v}</dd>{/each}
+			{#if v.line}<p class="sum" class:long={v.long}>{v.line}</p>{/if}
+			<dl class="pf">
+				{#each v.facts as f (f.label)}
+					<dt>{f.label}</dt>
+					<dd class:mono={f.mono} class:one={f.label === 'Release'} title={f.label === 'Release' ? f.value : undefined}>
+						{#if f.at}<time datetime={f.at}>{f.value}</time>{#if f.ago}<span class="ago">{` · ${f.ago}`}</span>{/if}
+						{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label="Copy the full path" onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
+						{:else}{f.value}{/if}
+					</dd>
+				{/each}
 			</dl>
-			{#if row.events.length > 1}
-				<h3 class="h">Every step</h3>
-				<ol class="trail">
-					{#each row.events as step (step.ID)}
-						{@const why = details(step)}
-						{@const sw = eventText(step, ctx)}
-						<li>
-							<div class="t-line"><VerbMark verb={eventStep(step, sw.tag)} size="sm" /><time datetime={step.At} title={dateTime(step.At)}>{whenShort(step.At)}</time></div>
-							<p class="t-sum">{sw.line}</p>
-							{#if why.length}<dl class="facts small">{#each why as [k, v], i (i)}<dt>{k}</dt><dd class="mono">{v}</dd>{/each}</dl>{/if}
-						</li>
-					{/each}
-				</ol>
+			{#if actions ? v.find || v.actions.length : titleLink}
+				<div class="acts">
+					{#if actions}{@render actions(row)}
+					{:else if titleLink}<Button variant="secondary" size="sm" href={to(titleLink.href)} iconAfter="chevronRight">{titleLink.label}</Button>{/if}
+				</div>
 			{/if}
-			{#if actions}<div class="acts">{@render actions(row)}</div>{/if}
 		</div>
 	{/if}
-	{#snippet footer()}
-		{#if !actions && href && e?.title_name}<Button variant="primary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button>{/if}
-	{/snippet}
 </Sheet>
 
 <style>
-	.acts { display: flex; flex-wrap: wrap; gap: 8px; }
-	.steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; margin: 0; padding: 0; list-style: none; font: var(--t-footnote); }
+	/* The sheet's body keeps a 16px side gutter. */
+	.es { display: flex; flex-direction: column; min-width: 0; margin: 8px -6px 0; }
+	.head { display: flex; gap: 12px; align-items: start; min-width: 0; }
+	.head > :global(.ui-ibtn) { flex: none; margin: -4px -4px 0 0; }
+	.art { flex: none; width: 56px; --poster-ratio: 2 / 3; }
+	.art.square { --poster-ratio: 1; }
+	.art :global(.poster) { border-radius: 10px; box-shadow: 0 0 0 1px var(--line); }
+	.hw { flex: 1; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+	.ttl { margin: 4px 0 0; color: var(--text); font: var(--t-title3); letter-spacing: var(--t-title3-track); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+	.sub { width: 100%; margin: 2px 0 0; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.steps { display: flex; align-items: center; margin: 12px 0 0; padding: 0; list-style: none; font: var(--t-footnote); white-space: nowrap; }
 	.steps li { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
-	.steps li + li::before { content: ''; width: 14px; height: 1px; margin: 0 6px; background: var(--line); }
-	.pip { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
+	.steps li + li { flex: 1 1 auto; min-width: 0; }
+	.steps li + li::before { content: ''; flex: 1 1 auto; min-width: 10px; height: 1px; margin: 0 4px 0 10px; background: var(--line); }
+	.pip { flex: none; width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
 	.steps .done { color: var(--text); }
 	.steps .done .pip { background: var(--ok); box-shadow: none; }
 	.steps .failed { color: var(--fail-text); font-weight: 600; }
 	.steps .failed .pip { background: var(--fail); box-shadow: none; }
+	.steps .needs { color: var(--text); font-weight: 600; }
+	.steps .needs .pip { background: var(--accent); box-shadow: none; }
+	.sum { margin: 12px 0 0; color: var(--text); font: var(--t-subhead); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+	.sum.long { -webkit-line-clamp: 3; line-clamp: 3; }
+	.pf { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px 12px; margin: 20px 0 0; padding: 0; font: var(--t-footnote); }
+	.pf dt { color: var(--text-muted); }
+	.pf dd { margin: 0; min-width: 0; color: var(--text); font: var(--t-footnote); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+	.pf dd.mono { font: var(--t-caption); font-family: var(--font-mono); font-weight: 400; line-height: 1.45; }
+	.pf dd.one { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pf .ago { color: var(--text-muted); }
+	.path { display: inline-flex; align-items: flex-start; gap: 4px; min-width: 0; max-width: 100%; }
+	.pv { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+	.cp { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-top: -4px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
+	.cp:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Actions: full width and stacked, Find another first. */
+	.acts { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+	.acts :global(.da) { flex-direction: column; align-items: stretch; }
+	.acts :global(.ui-btn) { width: 100%; min-height: 44px; justify-content: center; border-radius: var(--r-pill); }
+	.acts :global(.ask .btns) { flex-direction: column; align-items: stretch; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-	.es { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-	.head { display: flex; gap: 14px; align-items: flex-start; }
-	.art { flex: none; width: 72px; --poster-ratio: 2 / 3; border-radius: var(--r-sm); overflow: hidden; }
-	.art.square { --poster-ratio: 1; }
-	.hw { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-	.sum { font: var(--t-body); overflow-wrap: anywhere; }
-	.sub, .muted { color: var(--text-muted); font: var(--t-footnote); }
-	.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 14px; margin: 0; padding: 14px; border-radius: var(--r-card); background: var(--surface-2); font: var(--t-footnote); }
-	.facts dt { color: var(--text-muted); }
-	.facts dd { margin: 0; overflow-wrap: anywhere; font-family: var(--font-ui); }
-	.facts dd.mono { font-family: var(--font-mono); }
-	.mono { font-family: var(--font-mono); }
-	.facts.small { margin-top: 8px; padding: 10px; background: var(--surface-1); }
-	.h { font: var(--t-headline); }
-	.trail { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; }
-	.trail li { padding: 12px; border-radius: var(--r-card); background: var(--surface-2); }
-	.t-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--text-muted); font: var(--t-footnote); }
-	.t-sum { margin-top: 6px; font: var(--t-callout); overflow-wrap: anywhere; }
-	@media (max-width: 480px) { .facts { grid-template-columns: minmax(0, 1fr); gap: 2px; } .facts dd + dt { margin-top: 8px; } }
 </style>

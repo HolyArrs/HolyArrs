@@ -84,6 +84,12 @@ describe('search look rows', () => {
 		expect(rowExtra(ask, rowStep(ask), who)).toBe('Maya');
 		const chose = one(ev('release_chosen', { Data: { release: 'Show.S01E01.1080p.WEB' } }));
 		expect(rowExtra(chose, rowStep(chose))).toBe('1080p');
+		const decide = one(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }));
+		expect(rowExtra(decide, rowStep(decide))).toBe('Nothing could be placed');
+		const gone = one(ev('file_missing', { Data: {} }));
+		expect(rowExtra(gone, rowStep(gone))).toBe('File missing');
+		const placed = one(ev('import_failed', { Data: {} }));
+		expect(rowExtra(placed, rowStep(placed))).toBe('Nothing could be placed');
 		const imp = dl(ev('import_done', { Data: { size_bytes: 2_000_000_000 } }), ev('download_sent'));
 		expect(rowExtra(imp, rowStep(imp))).toMatch(/GB/);
 		const sub = one(ev('subtitle_saved', { Data: { language: 'en' } }));
@@ -126,7 +132,7 @@ describe('search look rows', () => {
 		expect(rowStep(one(ev('ai_ask_turned_down'))).label).toBe('Turned down');
 		const bad = one(ev('ai_action_failed', { Data: { error: 'not allowed for this key' } }));
 		expect(rowStep(bad).failed).toBe(true);
-		expect(rowExtra(bad, rowStep(bad))).toBe('not allowed for this key');
+		expect(rowExtra(bad, rowStep(bad))).toBe('Not allowed for this key');
 		expect(stepKinds([])).toEqual(expect.arrayContaining(['ai_ask_*', 'ai_action_failed']));
 		expect(stepKinds(['asked'])).toContain('ai_ask_made');
 		expect(textMatches(ai, 'claude')).toBe(true);
@@ -191,6 +197,8 @@ describe('history detail actions', () => {
 		expect(rowLinks(row(ev('signed_in')))).toEqual([]);
 		expect(rowLinks(row(ev('ask_made', { Data: { ask_id: 12 } })))[0].href).toBe('/requests?ask=12');
 		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
+		const plan = rowLinks(row(ev('needs_decision', { SlotID: 8, title_name: 'Arrival' })), '/library/4');
+		expect(plan.map((l) => [l.label, l.href])).toEqual([['Import plan', '/downloads?slot=8'], ['Arrival', '/library/4']]);
 	});
 });
 
@@ -204,6 +212,7 @@ describe('reported problems in History', () => {
 		expect(stepKinds(['reported'])).toEqual(['report_*']);
 		expect(stepKinds([])).toContain('report_*');
 		expect(rowLinks(row(ev('report_fixed', { Data: { report_id: 4 } }))).map((l) => l.href)).toEqual(['/reports?show=all']);
+		expect(rowLinks(row(ev('report_made'))).map((l) => l.label)).toEqual(['Problems']);
 		expect(searchSteps.find((s) => s.key === 'reported')?.label).toBe('Reported');
 	});
 });

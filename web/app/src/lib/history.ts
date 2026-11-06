@@ -145,11 +145,11 @@ const detailWords: [string, string][] = [
 	['reason', 'Why'],
 	['release', 'Release'],
 	['downloader', 'Downloader'],
-	['save_path', 'Downloaded to'],
+	['save_path', 'Folder'],
 	['from', 'From'],
 	['to', 'To'],
 	['folder', 'Folder'],
-	['path', 'Path'],
+	['path', 'Folder'],
 	['message', 'Message'],
 	['error', 'Error']
 ];
@@ -165,7 +165,7 @@ export function details(e: Pick<EventRecord, 'Data'>): [string, string][] {
 	const paths = d.paths;
 	if (Array.isArray(paths)) {
 		for (const p of paths) {
-			if (p && typeof p === 'object' && typeof (p as { to?: unknown }).to === 'string') out.push(['Placed at', (p as { to: string }).to]);
+			if (p && typeof p === 'object' && typeof (p as { to?: unknown }).to === 'string') out.push(['File', (p as { to: string }).to]);
 			else if (typeof p === 'string') out.push(['Folder', p]);
 		}
 	}
