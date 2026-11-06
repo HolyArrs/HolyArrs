@@ -155,6 +155,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/auth/setup/discover":                 Core,
 	"POST /api/v1/auth/login":                         Core,
 	"POST /api/v1/auth/reauth":                        Core,
+	"POST /api/v1/auth/setup/done":                    Core,
 	"POST /api/v1/auth/oidc/start":                    Core,
 	"POST /api/v1/auth/oidc/link":                     Core,
 	"GET /api/v1/auth/oidc/callback":                  Core,

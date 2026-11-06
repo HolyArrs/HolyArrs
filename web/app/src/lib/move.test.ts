@@ -80,7 +80,7 @@ describe('move helpers', () => {
 		expect(resultWords('adopted', true)).toBe('Using the one here');
 		expect(resultWords('change')).toBe('Will be updated');
 		expect(resultWords('matched', true)).toBe('Matched');
-		expect(resultWords('not_found')).toBe('Folder not found here');
+		expect(resultWords('not_found')).toBe('No folder here');
 		expect(resultWords('failed')).toBe("Won't work");
 		expect(resultWords('failed', true)).toBe('Failed');
 		expect(resultWords('failed', true, true)).toBe('Not removed');
@@ -94,7 +94,7 @@ describe('move helpers', () => {
 		expect(tone('kept')).toBe('warn');
 		expect(tone('skipped')).toBe('quiet');
 		expect(summary({ create: 2, already: 1, failed: 0 })).toBe('2 will be added · 1 already here');
-		expect(summary({ created: 840, not_found: 4, failed: 2 }, true)).toBe('840 added · 4 folder not found here · 2 failed');
+		expect(summary({ created: 840, not_found: 4, failed: 2 }, true)).toBe('840 added · 4 no folder here · 2 failed');
 		expect(moveTotal({ create: 3, adopt: 1, already: 5, skipped: 2 })).toBe(4);
 		expect(stayTotal({ create: 3, skipped: 2, not_found: 1, failed: 1 })).toBe(4);
 	});

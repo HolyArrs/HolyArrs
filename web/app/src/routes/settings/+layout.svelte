@@ -77,6 +77,8 @@
 			// My account asks inline, next to the control that needs it, and so
 			// does Jackett or Prowlarr, above its Connect button.
 			if (currentSection?.group === 'account' || detail?.path === '/bridges') return;
+			// Move from other apps shows its own set-a-password card in the step.
+			if (!session.s.hasPassword && detail?.path?.startsWith('/migrate')) return;
 			if (reauth !== 'load') reauth = method === 'GET' ? 'load' : 'save';
 		};
 		window.addEventListener('holyarrs:reauth', onReauth);

@@ -293,10 +293,11 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 			t.Fatalf("%d old-app keys were made for %s", keys, what)
 		}
 	}
-	// The setup session after its hour.
-	exec("UPDATE sessions SET local_auth_at = ?, created_at = ?", hourAgo, hourAgo)
+	// The setup session after its 24-hour cap.
+	dayAgo := store.FormatTime(time.Now().Add(-25 * time.Hour))
+	exec("UPDATE sessions SET local_auth_at = ?, created_at = ?", hourAgo, dayAgo)
 	if st, out := f.session("POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
-		t.Fatalf("setup session after its hour made old-app keys: %d %s", st, out)
+		t.Fatalf("setup session after its day made old-app keys: %d %s", st, out)
 	}
 	noKeys("an old setup session")
 	// A normal password sign-in with a stale proof.

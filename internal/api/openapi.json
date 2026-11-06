@@ -11193,6 +11193,24 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/setup/done": {
+      "post": {
+        "description": "Records that the first-run wizard is finished and ends this session's setup mark, so risky steps ask for the password again. Browser session only.",
+        "operationId": "setupDone",
+        "responses": {
+          "200": {
+            "description": "Done."
+          }
+        },
+        "summary": "Finish first-run setup",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/setup/media-server/{kind}": {
       "post": {
         "description": "Checks the name and password on the server at url; the account must be an admin there. It becomes the owner, that way is turned on with that address and the owner is signed in. Only while there is no owner.",

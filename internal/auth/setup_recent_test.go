@@ -24,9 +24,10 @@ func newKey(t *testing.T, f *fixture, p person) bool {
 	return false
 }
 
-// Luis, 2026-11-05 ("No check during setup"): the session first-run setup
-// starts passes the recent-password check for an hour; nothing else does.
-func TestSetupSessionCountsAsRecentForAnHour(t *testing.T) {
+// Luis, 2026-11-05 ("No check during setup"), widened 2026-11-06: the
+// session first-run setup starts passes the recent-password check until the
+// wizard is done or 24 hours pass; nothing else does.
+func TestSetupSessionCountsAsRecentUntilDone(t *testing.T) {
 	f := gated(t, Options{})
 	own := ownerOf(t, f)
 	if who := meOf(t, f, own); !who.SetupRecent || !who.LocalRecent {
@@ -37,7 +38,7 @@ func TestSetupSessionCountsAsRecentForAnHour(t *testing.T) {
 		t.Fatalf("setup session at 11 min: setup %v local %v", who.SetupRecent, who.LocalRecent)
 	}
 	if !newKey(t, f, own) {
-		t.Fatal("setup session asked for the password inside its hour")
+		t.Fatal("setup session asked for the password at 11 min")
 	}
 
 	// A normal password sign-in is never a setup session.
@@ -57,17 +58,51 @@ func TestSetupSessionCountsAsRecentForAnHour(t *testing.T) {
 	if newKey(t, f, ana) {
 		t.Fatal("a stale invite session made a key without the password")
 	}
-	if !newKey(t, f, own) {
-		t.Fatal("setup session asked for the password at 22 min")
+	// /auth/setup/done is the owner's alone.
+	if resp, out := ana.do(t, f, http.MethodPost, "/api/v1/auth/setup/done", ``); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("admin finished setup: %d %s", resp.StatusCode, out)
 	}
 
-	// The hour is over (the session has rotated by now, too).
-	f.clock.add(setupRecentFor - 2*(localRecentFor+time.Minute))
+	// Still a setup session at 90 minutes (rotated by now, too).
+	f.clock.add(90*time.Minute - 2*(localRecentFor+time.Minute))
+	if who := meOf(t, f, own); !who.SetupRecent {
+		t.Fatal("setup session ended at 90 min with the wizard unfinished")
+	}
+	if !newKey(t, f, own) {
+		t.Fatal("setup session asked for the password at 90 min")
+	}
+
+	// Finishing the wizard ends it.
+	if resp, out := own.do(t, f, http.MethodPost, "/api/v1/auth/setup/done", ``); resp.StatusCode != http.StatusOK {
+		t.Fatalf("setup done: %d %s", resp.StatusCode, out)
+	}
 	if who := meOf(t, f, own); who.SetupRecent {
-		t.Fatal("setup session still counted at exactly one hour")
+		t.Fatal("setup session still counted after the wizard was done")
 	}
 	if newKey(t, f, own) {
-		t.Fatal("setup session made a key after its hour")
+		t.Fatal("setup session made a key after the wizard was done")
+	}
+	var v string
+	_ = f.s.Read().QueryRow("SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, settingFirstRunDone).Scan(&v)
+	if v != "1" {
+		t.Fatalf("first_run_done = %q", v)
+	}
+}
+
+// The setup mark ends after 24 hours even if the wizard never finishes.
+func TestSetupSessionEndsAfterADay(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	f.clock.add(setupRecentFor - time.Minute)
+	if who := meOf(t, f, own); !who.SetupRecent {
+		t.Fatal("setup session ended before 24 hours")
+	}
+	f.clock.add(time.Minute)
+	if who := meOf(t, f, own); who.SetupRecent {
+		t.Fatal("setup session still counted after 24 hours")
+	}
+	if newKey(t, f, own) {
+		t.Fatal("setup session made a key after 24 hours")
 	}
 }
 
@@ -129,9 +164,11 @@ func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 	if !newKey(t, f, own) {
 		t.Fatal("the Jellyfin setup session asked for a password")
 	}
-	f.clock.add(setupRecentFor)
+	if resp, out := own.do(t, f, http.MethodPost, "/api/v1/auth/setup/done", ``); resp.StatusCode != http.StatusOK {
+		t.Fatalf("setup done: %d %s", resp.StatusCode, out)
+	}
 	if newKey(t, f, own) {
-		t.Fatal("the Jellyfin setup session made a key after its hour")
+		t.Fatal("the Jellyfin setup session made a key after the wizard")
 	}
 }
 

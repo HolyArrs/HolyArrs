@@ -7,6 +7,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import { session } from '#lib/session.svelte.ts';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import MoveSteps from '#lib/move/MoveSteps.svelte';
 	import StepFoot from '#lib/move/StepFoot.svelte';
@@ -63,6 +65,20 @@
 	const stepKey = embedded ? 'mstep' : 'step';
 
 	// What the page knows.
+	// An owner who signs in another way has no password to confirm: moving
+	// asks for one, so the step shows how to set it (Settings and the wizard).
+	let mustSetPw = $state(false);
+	onMount(() => {
+		const onReauth = (e: Event) => {
+			const path = (e as CustomEvent<{ path?: string }>).detail?.path ?? '';
+			if (!session.s.hasPassword && path.startsWith('/migrate')) mustSetPw = true;
+		};
+		window.addEventListener('holyarrs:reauth', onReauth);
+		return () => window.removeEventListener('holyarrs:reauth', onReauth);
+	});
+	$effect(() => {
+		if (mustSetPw && session.s.hasPassword) mustSetPw = false;
+	});
 	let loaded = $state(false);
 	let loadError = $state('');
 	let movesError = $state('');
@@ -736,6 +752,11 @@
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
+	{#if mustSetPw}
+		<SettingsCard id="move-password" title="Set a password first" description="Moving needs your HolyArrs password." icon="shield">
+			<div><Button variant="primary" href={to('/account')}>Set a password</Button></div>
+		</SettingsCard>
+	{/if}
 
 	{#if step === 'read'}
 		<ReadStep

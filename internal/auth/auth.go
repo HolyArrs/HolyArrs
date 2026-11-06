@@ -271,7 +271,8 @@ type Who struct {
 	// ten minutes old: the proof a person with no password yet can give.
 	OutsideRecent bool `json:"outside_recent"`
 	// SetupRecent is true for the session first-run owner setup started,
-	// for setupRecentFor after it began; it then counts as LocalRecent.
+	// until the first-run wizard is done (at most setupRecentFor); it then
+	// counts as LocalRecent.
 	SetupRecent bool `json:"setup_recent"`
 	// Scopes are an API key's scopes (see Scopes); empty for
 	// a session, which holds every scope.
@@ -551,6 +552,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/login", a.login)
 	m.HandleFunc("POST /api/v1/auth/logout", a.logout)
 	m.HandleFunc("POST /api/v1/auth/reauth", a.reauth)
+	m.HandleFunc("POST /api/v1/auth/setup/done", a.setupDone)
 	m.HandleFunc("GET /api/v1/auth/me", a.me)
 	m.HandleFunc("GET /api/v1/auth/keys", a.listKeys)
 	m.HandleFunc("POST /api/v1/auth/keys", a.makeKey)

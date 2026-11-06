@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
 )
 
 const (
@@ -16,14 +18,18 @@ const (
 	AuthMethodLocalPassword string = "local_password"
 	AuthMethodLocalSetup           = "local_setup"
 	localRecentFor                 = 10 * time.Minute
-	// INTENTIONAL (Luis, 2026-11-05, "No check during setup"): first-run setup
-	// has no password re-check. The session the owner setup itself starts
-	// (setup() and the Plex, Jellyfin and Emby setup routes) counts as a
-	// recent local proof for its first hour, so the first-run steps (such as
-	// connecting Prowlarr, which makes old-app keys) never ask. Only that
-	// setup sign-in: every other sign-in, and the setup one after the hour,
-	// is unchanged. A required two-factor enrollment still wins.
-	setupRecentFor = 60 * time.Minute
+	// INTENTIONAL (Luis, 2026-11-05 "No check during setup", widened
+	// 2026-11-06 "fix it"): first-run setup has no password re-check. The
+	// session the owner setup itself starts (setup() and the Plex, Jellyfin
+	// and Emby setup routes) counts as a recent local proof until the
+	// first-run wizard is finished (POST /api/v1/auth/setup/done), capped at
+	// setupRecentFor, so the first-run steps (connecting Prowlarr, Import's
+	// Move) never ask. Only that setup sign-in: every other sign-in, and the
+	// setup one after the wizard or the cap, is unchanged. A required
+	// two-factor enrollment still wins.
+	setupRecentFor = 24 * time.Hour
+	// settingFirstRunDone (this_app group) records that the wizard finished.
+	settingFirstRunDone = "first_run_done"
 	// setupFamily starts the family id of that setup session. A '.' never
 	// comes out of token()'s base64url, so no other family can start so; the
 	// id is kept across rotation and replaced by any later sign-in or reauth.
@@ -32,7 +38,7 @@ const (
 
 // RecentLocal reports whether this request is an authenticated browser
 // session with a recent local password proof (or a first-run setup session
-// in its first hour, see setupRecentFor) and no unfinished two-factor
+// before the wizard is done, see setupRecentFor) and no unfinished two-factor
 // enrollment requirement. Other outside sign-ins and API keys never satisfy it.
 func RecentLocal(r *http.Request) bool {
 	who, ok := From(r.Context())
@@ -111,7 +117,7 @@ func needsRecentLocal(pattern string, who Who) bool {
 // administrator is required to enroll, so that policy cannot lock them out.
 func recentLocalExempt(pattern string, who Who) bool {
 	switch pattern {
-	case "GET /api/v1/auth/me", "POST /api/v1/auth/logout", "POST /api/v1/auth/reauth",
+	case "GET /api/v1/auth/me", "POST /api/v1/auth/logout", "POST /api/v1/auth/reauth", "POST /api/v1/auth/setup/done",
 		"GET /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions/{sid}":
 		return true
 	// The Downloads detail panel: admin scope keeps them off read-only API keys,
@@ -223,4 +229,39 @@ func deletePresentedFamily(tx *sql.Tx, rawCookie string) error {
 	}
 	_, err = tx.Exec("DELETE FROM sessions WHERE family = ?", family)
 	return err
+}
+
+// setupDone records that the first-run wizard is finished and ends the setup
+// mark of the caller's session: its family loses the setup prefix, so the
+// session (and its rotations) is an ordinary one from here on.
+func (a *Auth) setupDone(w http.ResponseWriter, r *http.Request) {
+	who, ok := From(r.Context())
+	if !ok || who.Via != "session" {
+		fail(w, http.StatusForbidden, "sign in in the browser first")
+		return
+	}
+	if who.Role != RoleOwner {
+		fail(w, http.StatusForbidden, "only the owner finishes first-run setup")
+		return
+	}
+	ck, err := r.Cookie(CookieName)
+	if err != nil {
+		fail(w, http.StatusForbidden, "sign in in the browser first")
+		return
+	}
+	now := a.now()
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		if err := putSetting(tx, settingsGroup, settingFirstRunDone, "1", domain.Actor{Kind: "user", ID: who.UserID}, now); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`UPDATE sessions SET family = substr(family, ?) WHERE family LIKE 'setup.%' AND family = (SELECT family FROM sessions WHERE hash = ?)`,
+			len(setupFamily)+1, sum(ck.Value))
+		return err
+	})
+	if err != nil {
+		log.Printf("auth: setup done: %v", err)
+		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"done": true})
 }

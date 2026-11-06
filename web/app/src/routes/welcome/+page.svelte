@@ -50,8 +50,10 @@
 	const prev = $derived(ORDER[ORDER.indexOf(step) - 1]);
 
 	// Setup is done: a short Orbit while Home opens.
+	// It also ends the setup sign-in's no-password-check window (server side).
 	async function home() {
 		playLoader('', SETUP_HOLD_MS);
+		await api.post('/auth/setup/done').catch(() => {});
 		await goto(to('/'), { replace: true }).finally(loaderReady);
 	}
 
@@ -249,8 +251,9 @@
 		if (s === 'source') await loadSources();
 	}
 	onMount(() => void enter(step));
-	// Moving asks for a recent password check (past the first setup hour): the
-	// move flow only signals it, so the wizard shows the confirm box itself.
+	// Moving asks for a recent password check (past the setup window): the
+	// move flow only signals it, so the wizard shows the confirm box itself
+	// (an owner with no password gets the move flow's set-a-password card).
 	let importCheck = $state(false);
 	onMount(() => {
 		const onReauth = () => {
@@ -417,9 +420,7 @@
 		</div>
 	{:else if importing}
 		<div class="card move" data-testid="welcome-move">
-			{#if importCheck && !session.s.hasPassword}
-				<p class="form-error" role="alert">Set a HolyArrs password to move your setup. <a href={to('/account')}>Set a password</a></p>
-			{:else if importCheck}
+			{#if importCheck && session.s.hasPassword}
 				<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 			{/if}
 			<MoveFlow embedded={{ query: IMPORT_QUERY, ondone: home, onstep: (s) => (moveStep = s) }} />

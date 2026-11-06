@@ -289,7 +289,8 @@ func TestReauthReplacesWholeFamilyWithFreshLocalSession(t *testing.T) {
 	if resp, _ := own.do(t, f, http.MethodGet, "/api/v1/auth/me", ""); resp.StatusCode != http.StatusOK {
 		t.Fatal(resp.StatusCode)
 	}
-	setSessionAssurance(t, f, "UPDATE sessions SET auth_method = 'oidc:test', local_auth_at = '' WHERE family = ?", oldFamily)
+	setSessionAssurance(t, f, "UPDATE sessions SET auth_method = 'oidc:test', local_auth_at = '', family = ? WHERE family = ?", strings.TrimPrefix(oldFamily, setupFamily), oldFamily)
+	oldFamily = strings.TrimPrefix(oldFamily, setupFamily) // no longer the setup session
 	if resp, _ := own.do(t, f, http.MethodPost, "/api/v1/auth/keys", `{"label":"x"}`); resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("external session reached admin route: %d", resp.StatusCode)
 	}
