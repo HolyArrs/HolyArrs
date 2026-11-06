@@ -4,6 +4,9 @@
 </script>
 
 <script lang="ts">
+	import { getContext as moveContext } from 'svelte';
+	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import IconButton from '../ui/IconButton.svelte';
@@ -276,7 +279,7 @@
 {/snippet}
 
 <div class="choose" class:dim={planning && !!plan} aria-busy={planning}>
-	<SettingsCard id="move-step" title="Step 2 of 4 · What to move">
+	<SettingsCard id="move-step" title={countSteps ? 'Step 2 of 4 · What to move' : 'What to move'}>
 		{#if !plan}
 			<p class="hint">Updating…</p>
 		{:else}

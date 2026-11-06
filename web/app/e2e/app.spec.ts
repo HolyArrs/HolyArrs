@@ -41,34 +41,30 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByLabel('Password again').fill(o.password);
 	await page.getByRole('button', { name: 'Create account' }).click();
 
-	// The first-run step: Movies and Shows ticked, Music not; the browser
-	// tests use every part, so Music and Requests go on too.
+	// First run forks: bring the old apps, or start fresh.
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
-	await expect(page.getByRole('heading', { name: 'What do you use?', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Coming from other apps?', level: 1 })).toBeVisible();
+	await expect(page.getByRole('button', { name: /^Bring my apps/ })).toBeVisible();
+	await scanFirstRun();
+	// The media step: Movies and TV shows on, Music off, one folder row each.
+	// It stays outside the app frame, and a reload stays on it. Metadata needs no key.
+	await page.getByRole('button', { name: /^Start fresh/ }).click();
+	await expect(page).toHaveURL(/\/welcome\?first=1&step=media$/);
 	await expect(page.getByLabel('Movies', { exact: true })).toBeChecked();
 	await expect(page.getByLabel('TV shows', { exact: true })).toBeChecked();
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
-	await expect(page.getByLabel('No, just me')).toBeChecked();
-	await scanFirstRun();
-	await expect(page.getByTestId('welcome')).toContainText('Yes adds a Requests page.');
-	await page.getByLabel('Music', { exact: true }).check();
-	await page.getByLabel('Subtitles', { exact: true }).check();
-	await page.getByLabel('Yes', { exact: true }).check();
-	await page.getByRole('button', { name: 'Continue' }).click();
-
-	// First run stays outside the app frame: folders (one row per picked
-	// part), Downloader, Source, then the import choice. Metadata needs no key.
-	await expect(page).toHaveURL(/\/welcome\?first=1&step=folders$/);
-	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible();
-	await expect(page.getByLabel('Music folder')).toBeVisible();
-	// A reload stays on the folders step.
+	await expect(page.getByLabel('TV shows folder')).toBeVisible();
+	await expect(page.getByLabel('Music folder')).toHaveCount(0);
 	await page.reload();
-	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
 	await expect(page.getByText(/TMDB|read access token/)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
 	await scanFirstRun();
-	await finishFirstRun(page, moviesDir);
+	// The browser tests use every part: Music here, Requests through Invite family.
+	await page.getByRole('button', { name: 'Back' }).click();
+	await finishFirstRun(page, moviesDir, { music: true, invite: true });
 
+	await page.goto('/');
 	await expect(page).toHaveURL(/\/$/);
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 	await expect(page.getByTestId('home-greeting')).toContainText(/luis/i);

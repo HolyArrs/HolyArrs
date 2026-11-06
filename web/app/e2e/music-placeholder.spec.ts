@@ -25,9 +25,7 @@ test.beforeAll(async ({ browser }) => {
 	await page.getByLabel('Password again').fill(o.password);
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
-	await page.getByLabel('Music', { exact: true }).check();
-	await page.getByRole('button', { name: 'Continue' }).click();
-		await finishFirstRun(page, moviesDir);
+	await finishFirstRun(page, moviesDir, { music: true });
 	await expect(page).toHaveURL(/\/$/);
 	await page.close();
 });

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { getContext as moveContext } from 'svelte';
+	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../Icon.svelte';
@@ -59,7 +62,7 @@
 	});
 </script>
 
-<SettingsCard id="move-step" title="Step 1 of 4 · Read your apps">
+<SettingsCard id="move-step" title={countSteps ? 'Step 1 of 4 · Read your apps' : 'Read your apps'}>
 	{#if snapshots.length === 0 && !reading}
 		<EmptyState
 			icon="upload"

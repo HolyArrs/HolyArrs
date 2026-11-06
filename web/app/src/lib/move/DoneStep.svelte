@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { getContext as moveContext } from 'svelte';
+	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import StepCapsule from '../ui/StepCapsule.svelte';
@@ -43,7 +46,7 @@
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
 </script>
 
-<SettingsCard id="move-step" title="Step 4 of 4 · Done">
+<SettingsCard id="move-step" title={countSteps ? 'Step 4 of 4 · Done' : 'Done'}>
 	<div class="srow">
 		<div class="cap" data-testid="done-result">
 			{#if busy && lost}

@@ -22,42 +22,65 @@
 	import type { LibraryFolder } from '#lib/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
-	// First run, right after the owner is made, is one fixed path: parts,
-	// Library folders, a Downloader, a Source, then an optional import from
-	// other apps, then Home. Steps 3-5 can be skipped. A later visit to
-	// /welcome (no first=1) changes only the parts and returns to Home.
-	type Step = 'parts' | 'folders' | 'downloader' | 'source' | 'import';
-	const ORDER: Step[] = ['parts', 'folders', 'downloader', 'source', 'import'];
+	// First run, right after the owner is made, forks once: bring the old apps
+	// (Import, then a Downloader or Source only if Import brought none), or
+	// start fresh (media and folders, a Downloader, a Source). Both end on a
+	// short done screen. A later visit to /welcome (no first=1) changes only
+	// the parts and returns to Home.
+	type Step = 'start' | 'media' | 'downloader' | 'source' | 'import' | 'done';
+	const STEPS: Step[] = ['start', 'media', 'downloader', 'source', 'import', 'done'];
 	const firstRun = $derived(page.url.searchParams.get('first') === '1');
 	function stepFromUrl(): Step {
 		const s = page.url.searchParams.get('step');
-		if (s === 'folder') return 'folders';
-		return ORDER.includes(s as Step) ? (s as Step) : 'parts';
+		// Older addresses: parts and folders are one step now.
+		if (s === 'parts' || s === 'folder' || s === 'folders') return 'media';
+		return STEPS.includes(s as Step) ? (s as Step) : 'start';
 	}
-	// The step is kept in the address so a reload stays on it.
+	// The step, and which way the owner went, stay in the address so a reload keeps them.
 	let step = $state<Step>(stepFromUrl());
+	let fromApps = $state(page.url.searchParams.get('from') === 'apps' || page.url.searchParams.get('step') === 'import');
+	// Import path: the steps still needed after the move (no Downloader or Source came over).
+	let extra = $state<Step[]>([]);
 	let busy = $state(false);
 	let error = $state('');
 
 	function go(s: Step) {
 		error = '';
 		step = s;
-		replaceState(to(s === 'parts' ? '/welcome?first=1' : `/welcome?first=1&step=${s}`), page.state);
+		const q = ['first=1', s !== 'start' ? `step=${s}` : '', fromApps && s !== 'start' && s !== 'import' ? 'from=apps' : ''].filter(Boolean).join('&');
+		replaceState(to(`/welcome?${q}`), page.state);
 		void enter(s);
 	}
-	const stepNo = $derived(ORDER.indexOf(step) + 1);
-	const stepCount = ORDER.length;
-	const prev = $derived(ORDER[ORDER.indexOf(step) - 1]);
+	const order = $derived<Step[]>(
+		fromApps
+			? ['start', 'import', ...(extra.length ? extra : step === 'downloader' || step === 'source' ? [step] : []), 'done']
+			: ['start', 'media', 'downloader', 'source', 'done']
+	);
+	const stepNo = $derived(order.indexOf(step) + 1);
+	const prev = $derived(step === 'done' ? undefined : order[order.indexOf(step) - 1]);
 
-	// Setup is done: a short Orbit while Home opens.
+	// Setup is done: a short Orbit while Home (or Users) opens.
 	// It also ends the setup sign-in's no-password-check window (server side).
-	async function home() {
+	async function home(path = '/') {
 		playLoader('', SETUP_HOLD_MS);
 		await api.post('/auth/setup/done').catch(() => {});
-		await goto(to('/'), { replace: true }).finally(loaderReady);
+		await goto(to(path), { replace: true }).finally(loaderReady);
 	}
 
-	// ---- 1. Parts ----
+	// ---- The fork ----
+	function pickPath(apps: boolean) {
+		fromApps = apps;
+		extra = [];
+		go(apps ? 'import' : 'media');
+	}
+
+	// The parts as the server has them now.
+	function partsOn(): Record<PartName, boolean> {
+		const on = (p: PartName) => partsNow.answer?.parts.find((x) => x.part === p)?.on === true;
+		return { movies: on('movies'), shows: on('shows'), music: on('music'), subtitles: on('subtitles'), wishlist: on('wishlist') };
+	}
+
+	// ---- Parts: a later visit to /welcome, outside first run ----
 	let want = $state<Record<'movies' | 'shows' | 'music' | 'subtitles', boolean>>({ movies: true, shows: true, music: false, subtitles: true });
 	let family = $state<'yes' | 'no'>('no');
 	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string; icon: IconName }[] = [
@@ -68,59 +91,64 @@
 	];
 	const full = $derived<Record<PartName, boolean>>({ ...want, wishlist: family === 'yes' });
 	const problem = $derived(needsProblem(full));
-
-	async function saveParts(parts: Record<PartName, boolean>) {
+	async function submitParts(e: SubmitEvent) {
+		e.preventDefault();
+		if (problem) return void (error = problem);
 		error = '';
 		busy = true;
 		try {
-			await applyParts(parts);
+			await applyParts(full);
 			await refreshParts();
-			if (firstRun) go('folders');
-			else await home();
-		} catch (e) {
-			error = message(e);
+			await home();
+		} catch (err) {
+			error = message(err);
 		} finally {
 			busy = false;
 		}
 	}
-	function submitParts(e: SubmitEvent) {
-		e.preventDefault();
-		if (problem) return void (error = problem);
-		void saveParts(full);
-	}
 
-	// ---- 2. Library folders: one row per picked part that keeps files ----
+	// ---- Media: a switch and a Library folder per part, on one screen ----
+	type MediaPart = 'movies' | 'shows' | 'music';
 	type Kind = 'movie' | 'show' | 'music';
 	// saved/id: the folder already made; editing reopens it to type a new path.
-	type Row = { kind: Kind; label: string; icon: IconName; path: string; saved: string; id: number | null; editing: boolean; error: string };
-	const kindRows: { part: PartName; kind: Kind; label: string; icon: IconName }[] = [
-		{ part: 'movies', kind: 'movie', label: 'Movies', icon: 'film' },
-		{ part: 'shows', kind: 'show', label: 'TV shows', icon: 'tv' },
-		{ part: 'music', kind: 'music', label: 'Music', icon: 'music' }
+	type Row = { part: MediaPart; kind: Kind; label: string; icon: IconName; hint: string; path: string; saved: string; id: number | null; editing: boolean; error: string };
+	const kindRows: Pick<Row, 'part' | 'kind' | 'label' | 'icon' | 'hint'>[] = [
+		{ part: 'movies', kind: 'movie', label: 'Movies', icon: 'film', hint: '/movies' },
+		{ part: 'shows', kind: 'show', label: 'TV shows', icon: 'tv', hint: '/tv' },
+		{ part: 'music', kind: 'music', label: 'Music', icon: 'music', hint: '/music' }
 	];
 	let rows = $state<Row[]>([]);
-	async function loadFolders() {
-		await refreshParts();
-		const on = (p: PartName) => partsNow.answer?.parts.find((x) => x.part === p)?.on !== false;
+	let media = $state<Record<MediaPart, boolean>>({ movies: true, shows: true, music: false });
+	const mediaOff = $derived(!media.movies && !media.shows && !media.music);
+	async function loadMedia() {
 		let have: LibraryFolder[] = [];
 		try {
 			have = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders ?? [];
 		} catch {
 			// show empty rows
 		}
-		rows = kindRows
-			.filter((k) => on(k.part))
-			.map((k) => {
-				const f = have.find((x) => x.kind === k.kind);
-				return { kind: k.kind, label: k.label, icon: k.icon, path: '', saved: f?.path ?? '', id: f?.id ?? null, editing: false, error: '' };
-			});
+		rows = kindRows.map((k) => {
+			const f = have.find((x) => x.kind === k.kind);
+			return { ...k, path: '', saved: f?.path ?? '', id: f?.id ?? null, editing: false, error: '' };
+		});
 	}
-	async function saveFolders(e: SubmitEvent) {
-		e.preventDefault();
+	// skip: keep the parts, add no folders now (Settings has them later).
+	async function saveMedia(skip: boolean) {
+		if (mediaOff) return;
 		error = '';
 		busy = true;
+		try {
+			await refreshParts();
+			// Subtitles come on with Movies or TV shows; Requests stays as it is.
+			await applyParts({ ...media, subtitles: media.movies || media.shows, wishlist: partsOn().wishlist });
+			await refreshParts();
+		} catch (err) {
+			busy = false;
+			return void (error = message(err));
+		}
 		let failed = false;
 		for (const r of rows) {
+			if (skip || !media[r.part]) continue;
 			if (r.editing && r.path.trim() === r.saved) r.editing = false;
 			if ((r.saved && !r.editing) || !r.path.trim()) continue;
 			r.error = '';
@@ -142,12 +170,10 @@
 			}
 		}
 		busy = false;
-		if (failed) return;
-		if (!rows.some((r) => r.saved)) return void (error = 'Add at least one folder.');
-		go('downloader');
+		if (!failed) go('downloader');
 	}
 
-	// ---- 3. Downloader ----
+	// ---- Downloader ----
 	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge'];
 	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112' };
 	let dl = $state<DownloaderForm>(emptyForm());
@@ -164,13 +190,15 @@
 		const url = dl.url;
 		dl = { ...emptyForm(k), url: url !== 'http://' ? url : 'http://' };
 	}
-	async function loadDownloader() {
+	async function listDownloaders(): Promise<DownloaderView[]> {
 		try {
-			const r = await api.get<{ downloaders: DownloaderView[] }>('/downloaders');
-			dlList = r.downloaders ?? [];
+			return (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders ?? [];
 		} catch {
-			dlList = [];
+			return [];
 		}
+	}
+	async function loadDownloader() {
+		dlList = await listDownloaders();
 		// Each one is tested again, so the row shows its version or that it is down.
 		await Promise.all(dlList.map((d) => testDl(d.id)));
 	}
@@ -202,7 +230,7 @@
 	}
 	async function saveDownloader(e: SubmitEvent) {
 		e.preventDefault();
-		if (!dlForm) return go('source');
+		if (!dlForm) return afterDownloader();
 		error = '';
 		busy = true;
 		try {
@@ -218,46 +246,91 @@
 			busy = false;
 		}
 	}
+	// Fresh setup always asks for a Source next; after an import only when none came over.
+	async function afterDownloader() {
+		if (fromApps && (await sourceCount()) > 0) return go('done');
+		go('source');
+	}
 
-	// ---- 4. Source ----
+	// ---- Source ----
 	let sources = $state(0);
+	// Sources plus linked Jackett/Prowlarr (a fresh link may not have synced its Sources yet).
+	async function sourceCount(): Promise<number> {
+		const n = async (path: string, key: string) => {
+			try {
+				return ((await api.get<Record<string, unknown[]>>(path))[key] ?? []).length;
+			} catch {
+				return 0;
+			}
+		};
+		const [s, b] = await Promise.all([n('/sources', 'sources'), n('/bridges', 'bridges')]);
+		return s + b;
+	}
 	async function loadSources() {
+		sources = await sourceCount();
+	}
+
+	// ---- Import: the Settings move flow, right here in the panel ----
+	const IMPORT_QUERY = 'first=1&step=import';
+	// Import offers every app, except a downloader or Prowlarr that is already
+	// connected here. The list is filled before the Read sheet first opens.
+	const hideApps: string[] = [];
+	setContext('move-hide-apps', hideApps);
+	setContext('move-hide-count', true);
+	let moveStep = $state('read');
+	// After the move: ask only for what Import didn't bring.
+	async function afterImport() {
+		busy = true;
+		const [dls, srcs] = await Promise.all([listDownloaders(), sourceCount()]);
+		busy = false;
+		extra = [...(dls.length ? [] : (['downloader'] as Step[])), ...(srcs ? [] : (['source'] as Step[]))];
+		go(extra[0] ?? 'done');
+	}
+	async function loadHidden() {
+		const [dls, bridges] = await Promise.all([
+			listDownloaders(),
+			api.get<{ bridges: { kind: string }[] }>('/bridges').then((r) => r.bridges ?? [], () => [])
+		]);
+		hideApps.length = 0;
+		for (const k of ['qbittorrent', 'sabnzbd'] as const) if (dls.some((d) => d.kind === k)) hideApps.push(k);
+		if (bridges.some((b) => b.kind === 'prowlarr')) hideApps.push('prowlarr');
+	}
+
+	// ---- Done ----
+	// Invite family: turns on Requests (what the old "family" question did), then opens Users.
+	async function invite() {
+		error = '';
+		busy = true;
 		try {
-			sources = ((await api.get<{ sources: unknown[] }>('/sources')).sources ?? []).length;
-		} catch {
-			sources = 0;
+			await refreshParts();
+			const now = partsOn();
+			if (!now.wishlist) await applyParts({ ...now, wishlist: true });
+			await home('/settings/users');
+		} catch (err) {
+			error = message(err);
+			busy = false;
 		}
 	}
 
-	// ---- 5. Import: the Settings move flow, right here in the panel ----
-	const IMPORT_QUERY = 'first=1&step=import&import=1';
-	// Downloaders and Jackett/Prowlarr were set up in the steps before: Import doesn't offer them again.
-	setContext('move-hide-apps', ['prowlarr', 'qbittorrent', 'sabnzbd']);
-	let importing = $state(page.url.searchParams.get('import') === '1');
-	let moveStep = $state('read');
-	function openImport(open: boolean) {
-		importing = open;
-		moveStep = 'read';
-		replaceState(to(`/welcome?${open ? IMPORT_QUERY : 'first=1&step=import'}`), page.state);
-	}
 	function back() {
-		if (importing) openImport(false);
-		else if (prev) go(prev);
+		if (prev) go(prev);
 	}
-
 	async function enter(s: Step) {
-		if (s === 'folders') await loadFolders();
+		if (s === 'media') await loadMedia();
 		if (s === 'downloader') await loadDownloader();
 		if (s === 'source') await loadSources();
+		if (s === 'import') await loadHidden();
 	}
-	onMount(() => void enter(step));
+	onMount(() => {
+		if (firstRun) void enter(step);
+	});
 	// Moving asks for a recent password check (past the setup window): the
 	// move flow only signals it, so the wizard shows the confirm box itself
 	// (an owner with no password gets the move flow's set-a-password card).
 	let importCheck = $state(false);
 	onMount(() => {
 		const onReauth = () => {
-			if (importing) importCheck = true;
+			if (step === 'import') importCheck = true;
 		};
 		window.addEventListener('holyarrs:reauth', onReauth);
 		return () => window.removeEventListener('holyarrs:reauth', onReauth);
@@ -267,28 +340,35 @@
 	});
 
 	const titles: Record<Step, { h: string; p: string }> = {
-		parts: { h: 'What do you use?', p: 'You can change this later.' },
-		folders: { h: 'Library folders', p: 'Where finished downloads go.' },
-		downloader: { h: 'Downloader', p: 'Where HolyArrs sends downloads.' },
-		source: { h: 'Source', p: 'Where HolyArrs finds releases.' },
-		import: { h: 'Bring your setup', p: 'Coming from Sonarr, Radarr or Overseerr?' }
+		start: { h: 'Coming from other apps?', p: 'We can bring over your shows, movies, folders and settings. Media files stay where they are.' },
+		media: { h: 'Where’s your media?', p: 'Turn on what you collect and add its folder.' },
+		downloader: { h: 'Where do downloads go?', p: 'Connect the app that downloads for you.' },
+		source: { h: 'Where should we search?', p: 'Link Prowlarr or Jackett and your sites come with it.' },
+		import: { h: 'Bring your apps', p: 'We only read them. Your old apps keep running.' },
+		done: { h: 'You’re set', p: 'Find something on Home and we’ll get it.' }
 	};
-	const head = $derived(step === 'import' && importing ? { h: 'Import', p: 'From the apps you use now.' } : titles[step]);
+	const head = $derived(
+		!firstRun
+			? { h: 'What do you use?', p: 'You can change this later.' }
+			: step === 'done' && fromApps
+				? { h: 'Welcome home', p: 'Your library is here. Your old apps keep running.' }
+				: titles[step]
+	);
 </script>
 
 <svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
 
 {#if firstRun}<SigninBackdrop />{/if}
-<div class="welcome" class:over-art={firstRun} class:wide={step === 'import' && importing}>
+<div class="welcome" class:over-art={firstRun} class:wide={firstRun && step === 'import'}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt="" width="32" height="32" /><span>HolyArrs</span></div>
-	{#if firstRun && prev && session.can('users') && (!importing || moveStep === 'read')}
+	{#if firstRun && prev && session.can('users') && (step !== 'import' || moveStep === 'read')}
 		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={back} disabled={busy} /></span>
 	{/if}
 	{#if firstRun}
-		<ol class="dots" aria-label="Step {stepNo} of {stepCount}">
-			{#each ORDER as s, i (s)}<li class:done={i + 1 < stepNo} class:now={i + 1 === stepNo}></li>{/each}
+		<ol class="dots" aria-label="Step {stepNo} of {order.length}">
+			{#each order as s, i (s)}<li class:done={i + 1 < stepNo} class:now={i + 1 === stepNo}></li>{/each}
 		</ol>
 	{/if}
 	<header class="head">
@@ -296,9 +376,9 @@
 		<p>{head.p}</p>
 	</header>
 
-	{#if !session.can('users') || (step !== 'parts' && !session.can('settings'))}
+	{#if !session.can('users') || (firstRun && step !== 'start' && !session.can('settings'))}
 		<p class="notice warn">Only the owner or an admin with Settings access can finish setup.</p>
-	{:else if step === 'parts'}
+	{:else if !firstRun}
 		<form class="card" onsubmit={submitParts} data-testid="welcome">
 			<!-- Big tiles, each a real checkbox (it covers the tile, so a tap anywhere toggles it). -->
 			<div class="tiles" role="group" aria-label="Parts">
@@ -323,32 +403,49 @@
 
 			{#if error || problem}<p class="form-error" role="alert">{error || problem}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy || !!problem} {busy}>Continue</Button>
-			<button class="alt" type="button" disabled={busy} onclick={() => saveParts({ movies: true, shows: false, music: false, subtitles: false, wishlist: false })}>Just movies</button>
 		</form>
-	{:else if step === 'folders'}
-		<form class="card" onsubmit={saveFolders} data-testid="welcome-folders">
+	{:else if step === 'start'}
+		<div class="card" data-testid="welcome-start">
+			<div class="tiles two-up">
+				<button class="tile big" type="button" onclick={() => pickPath(true)}>
+					<Icon name="download" size={26} />
+					<span class="tile-label">Bring my apps</span>
+					<span class="tile-sub">Sonarr, Radarr, Lidarr, Overseerr…</span>
+				</button>
+				<button class="tile big" type="button" onclick={() => pickPath(false)}>
+					<Icon name="plus" size={26} />
+					<span class="tile-label">Start fresh</span>
+					<span class="tile-sub">Pick folders and a downloader.</span>
+				</button>
+			</div>
+		</div>
+	{:else if step === 'media'}
+		<form class="card" onsubmit={(e) => { e.preventDefault(); void saveMedia(false); }} data-testid="welcome-media">
 			<ul class="rows">
 				{#each rows as r (r.kind)}
-					<li class="frow">
+					<li class="frow" class:off={!media[r.part]}>
 						<span class="ficon" aria-hidden="true"><Icon name={r.icon} size={22} /></span>
 						<div class="fbody">
-							<span class="fname">{r.label}</span>
-							{#if r.saved && !r.editing}
-								<span class="fsaved mono">{r.saved}</span>
-							{:else}
-								<input class="input mono" bind:value={r.path} aria-label="{r.label} folder" placeholder={r.kind === 'show' ? '/shows' : r.kind === 'music' ? '/music' : '/movies'} autocomplete="off" spellcheck="false" />
-								{#if r.error}<p class="form-error" role="alert">{r.error}</p>{/if}
+							<div class="ftop">
+								<span class="fname">{r.label}</span>
+								<label class="switch"><input type="checkbox" bind:checked={media[r.part]} aria-label={r.label} disabled={busy} /><span class="sw" aria-hidden="true"></span></label>
+							</div>
+							{#if media[r.part]}
+								{#if r.saved && !r.editing}
+									<div class="fsaved"><span class="mono">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={() => { r.path = r.saved; r.editing = true; }} aria-label="Change {r.label} folder">Change</button></div>
+								{:else}
+									<input class="input mono" bind:value={r.path} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" />
+									{#if r.error}<p class="form-error" role="alert">{r.error}</p>{/if}
+								{/if}
 							{/if}
 						</div>
-						{#if r.saved && !r.editing}
-							<button type="button" class="quiet" disabled={busy} onclick={() => { r.path = r.saved; r.editing = true; }} aria-label="Change {r.label} folder">Change</button>
-						{/if}
 					</li>
 				{/each}
 			</ul>
-			{#if rows.some((r) => !r.saved || r.editing)}<p class="hint">On Docker, use the path inside the container. Leave a row empty to add it later.</p>{/if}
-			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>Continue</Button>
+			<p class="hint">On Docker, use the path inside the container. Leave a folder empty to add it later.</p>
+			{#if error || mediaOff}<p class="form-error" role="alert">{error || 'Turn on at least one.'}</p>{/if}
+			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaOff} {busy}>Continue</Button>
+			<button class="alt" type="button" disabled={busy || mediaOff} onclick={() => saveMedia(true)}>Skip for now</button>
 		</form>
 	{:else if step === 'downloader'}
 		<form class="card" onsubmit={saveDownloader} data-testid="welcome-downloader">
@@ -406,41 +503,33 @@
 			{#if dlForm && dlList.length}
 				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = false; dlEditing = null; dl = emptyForm(); }}>Cancel</button>
 			{:else}
-				<button class="alt" type="button" disabled={busy} onclick={() => go('source')}>Skip for now</button>
+				<button class="alt" type="button" disabled={busy} onclick={afterDownloader}>Skip for now</button>
 			{/if}
 		</form>
 	{:else if step === 'source'}
 		<div class="card source" data-testid="welcome-source">
 			<ConnectBridge onchange={loadSources} compact />
 			{#if sources > 0}
-				<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('import')}>Continue</Button>
+				<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>Continue</Button>
 			{:else}
-				<button class="alt" type="button" disabled={busy} onclick={() => go('import')}>Skip for now</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Do this later</button>
 			{/if}
 		</div>
-	{:else if importing}
+	{:else if step === 'import'}
 		<div class="card move" data-testid="welcome-move">
 			{#if importCheck && session.s.hasPassword}
 				<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 			{/if}
-			<MoveFlow embedded={{ query: IMPORT_QUERY, ondone: home, onstep: (s) => (moveStep = s) }} />
+			<MoveFlow embedded={{ query: IMPORT_QUERY, ondone: afterImport, onstep: (s) => (moveStep = s) }} />
 			{#if moveStep === 'read'}
-				<button class="alt" type="button" disabled={busy} onclick={home}>Skip for now</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => pickPath(false)}>Start fresh instead</button>
 			{/if}
 		</div>
 	{:else}
-		<div class="card" data-testid="welcome-import">
-			<div class="tiles two-up">
-				<button class="tile big" type="button" disabled={busy} onclick={() => openImport(true)}>
-					<Icon name="download" size={26} />
-					<span class="tile-label">Import</span>
-					<span class="tile-sub">Titles, Sources, Downloaders and people.</span>
-				</button>
-				<button class="tile big" type="button" disabled={busy} onclick={home}>
-					<Icon name="home" size={26} />
-					<span class="tile-label">Start fresh</span>
-				</button>
-			</div>
+		<div class="card" data-testid="welcome-done">
+			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
+			<Button variant="primary" size="lg" full type="button" disabled={busy} {busy} onclick={() => home()}>Open Home</Button>
+			<button class="alt" type="button" disabled={busy} onclick={invite}>Invite family</button>
 		</div>
 	{/if}
 	</div>
@@ -578,6 +667,8 @@
 	.hint { display: block; margin-top: 10px; color: var(--text-muted); font: var(--t-footnote); }
 
 	.welcome :global(.card) > :global(.ui-btn) { margin-top: 24px; }
+	/* Done: the one button sits right under the heading. */
+	[data-testid='welcome-done'] > :global(.ui-btn) { margin-top: 0; }
 	.alt {
 		display: block;
 		margin: 10px auto 0;
@@ -594,14 +685,16 @@
 	.alt:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.alt:disabled { opacity: 0.5; cursor: default; }
 
-	/* Folders: one row per part, its icon, its name, its path. */
+	/* Media: one row per part, its icon, its name and switch, then its folder. */
 	.rows { display: flex; flex-direction: column; gap: 10px; }
-	.frow { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); }
+	.frow { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); transition: opacity var(--dur-fast) var(--ease-out); }
+	.frow.off .ficon, .frow.off .fname { opacity: 0.55; }
 	.ficon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-1); color: var(--text-muted); box-shadow: 0 0 0 1px var(--line); }
-	.fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-	.fname { font: 600 15px/1.2 var(--font-ui); color: var(--text); padding-top: 2px; }
-	.fsaved { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 13px; overflow-wrap: anywhere; }
-	.fsaved :global(svg) { color: var(--ok, #30d158); flex: none; }
+	.fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+	.ftop { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
+	.ftop .switch { margin: 0; flex: none; }
+	.fname { font: 600 15px/1.2 var(--font-ui); color: var(--text); }
+	.fsaved { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 13px; overflow-wrap: anywhere; }
 	.frow .form-error { margin-top: 0; }
 
 	/* A connected downloader or source: a plain row, its version as a small tag. */
@@ -635,6 +728,8 @@
 		.tile { min-height: 96px; }
 		.tile.small { min-height: 52px; }
 		.tile.big { min-height: 110px; }
+		.frow { gap: 12px; padding: 12px 10px; }
+		.ficon { width: 36px; height: 36px; }
 	}
 	@media (pointer: coarse) {
 		.alt { min-height: 44px; }

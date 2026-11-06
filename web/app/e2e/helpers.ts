@@ -23,18 +23,28 @@ export function owner(): Owner {
 	return JSON.parse(readFileSync(ownerFile, 'utf8'));
 }
 
-/** finishFirstRun walks first-run steps 2-5: one movies folder, skips Downloader and Source, then Start fresh (Home). */
-export async function finishFirstRun(page: Page, moviesPath: string) {
-	// Saving the parts restarts them, which can take a while on a slow or loaded machine.
-	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible({ timeout: 20_000 });
+/**
+ * finishFirstRun walks the first run after the owner: Start fresh, one movies
+ * folder (Music on too when asked), skips Downloader and Source, then opens
+ * Home, or Users through Invite family (which also turns on Requests).
+ */
+export async function finishFirstRun(page: Page, moviesPath: string, o: { music?: boolean; invite?: boolean } = {}) {
+	await expect(page.getByRole('heading', { name: 'Coming from other apps?', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: /^Start fresh/ }).click();
+	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
+	if (o.music) await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Movies folder').fill(moviesPath);
 	await page.getByRole('button', { name: 'Continue' }).click();
-	for (const h of ['Downloader', 'Source']) {
-		await expect(page.getByRole('heading', { name: h, level: 1 })).toBeVisible();
-		await page.getByRole('button', { name: 'Skip for now' }).click();
-	}
-	await expect(page.getByRole('heading', { name: 'Bring your setup', level: 1 })).toBeVisible();
-	await page.getByRole('button', { name: 'Start fresh' }).click();
+	// Saving the parts restarts them, which can take a while on a slow or loaded machine.
+	await expect(page.getByRole('heading', { name: 'Where do downloads go?', level: 1 })).toBeVisible({ timeout: 20_000 });
+	await page.getByRole('button', { name: 'Skip for now' }).click();
+	await expect(page.getByRole('heading', { name: 'Where should we search?', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: 'Do this later' }).click();
+	await expect(page.getByRole('heading', { name: /^You.re set$/, level: 1 })).toBeVisible();
+	if (o.invite) {
+		await page.getByRole('button', { name: 'Invite family' }).click();
+		await expect(page).toHaveURL(/\/settings\/users$/, { timeout: 20_000 });
+	} else await page.getByRole('button', { name: 'Open Home' }).click();
 }
 
 /** plainForm leaves the remembered people (one person's step, or the list) for the name-and-password form. */

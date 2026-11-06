@@ -95,6 +95,8 @@
 			const odd = /^(localhost|127\.|\[::1\]|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)|\.ts\.net$/.test(location.hostname);
 			if (r.home_ip && odd && !callbackOpen) callback = `${location.protocol}//${r.home_ip}${location.port ? ':' + location.port : ''}${to('/').replace(/\/$/, '')}`;
 			loadError = '';
+			// First run: nothing linked yet, so the form is the whole step.
+			if (compact && mayEdit && !r.bridges.length && !open) startConnect();
 		} catch (e) {
 			loadError = message(e);
 		}
