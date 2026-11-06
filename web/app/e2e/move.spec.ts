@@ -207,6 +207,8 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
 
   // The old owner: This is me can be turned on and off again.
   const me = page.getByRole("checkbox", { name: /^This is me/ });
+  // The only owner starts as "This is me".
+  await expect(me).toBeChecked();
   await me.check();
   await expect(me).toBeChecked();
   await me.uncheck();

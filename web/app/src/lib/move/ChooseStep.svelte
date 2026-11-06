@@ -76,6 +76,17 @@
 	const peopleItems = $derived(plan?.groups.find((g) => g.name === 'people')?.items ?? []);
 	const peopleOn = $derived(peopleItems.length > 0 && !skip.includes('people'));
 	const asked = $derived(peopleItems.filter((it) => it.person?.was_owner || it.person?.was_admin));
+	// The one owner of the old app is almost always the person importing: on by
+	// default, once per person, so turning it off stays off.
+	const defaulted = new Set<string>();
+	$effect(() => {
+		const owners = asked.filter((it) => it.person?.was_owner);
+		if (owners.length !== 1) return;
+		const k = owners[0].key;
+		if (defaulted.has(k)) return;
+		defaulted.add(k);
+		if (people[k] === undefined) onperson(k, 'owner');
+	});
 	const pathRules = $derived(!!plan && oldRows.length === 0 && (extra.length > 0 || plan.not_moved.some((n) => n.group === 'titles')));
 
 	// A folder with nothing picked needs the person; once shown there it stays
