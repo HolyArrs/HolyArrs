@@ -21,7 +21,7 @@
 	import { api, ApiError, message } from '../api.ts';
 	import { reachWords } from '../downloaders.ts';
 	import { toasts } from '../toasts.svelte.ts';
-	import { getContext } from 'svelte';
+	import { getContext, tick } from 'svelte';
 	import { apps, appName, placeholderFor, type AppKind } from '../move.ts';
 	// The first-run wizard hides the apps it already set up (Prowlarr, downloaders).
 	const hidden = getContext<AppKind[] | undefined>('move-hide-apps') ?? [];
@@ -96,6 +96,8 @@
 				error = '';
 				probe = null;
 			}
+			// Start on the App field, not the sheet's Close button (the address when the app is fixed).
+			setTimeout(() => document.getElementById(again || busy ? 'move-address' : 'move-app')?.focus(), 0);
 		}
 		wasOpen = open;
 	});
@@ -156,6 +158,11 @@
 		} finally {
 			checking = false;
 		}
+		if (error) focusAddress();
+	}
+	async function focusAddress() {
+		await tick();
+		document.getElementById('move-address')?.focus();
 	}
 
 	async function read(e: SubmitEvent) {
@@ -184,6 +191,7 @@
 			key = '';
 			signWord = '';
 		}
+		if (open && error) focusAddress();
 	}
 
 	/** stop ends the read: the request is aborted, so the server stops reading. */
@@ -243,7 +251,7 @@
 					</div>
 				{:else}
 					<div class="srow">
-						<div class="txt"><label for="move-key">API key</label><span class="hint">Settings › General</span></div>
+						<div class="txt"><label for="move-key">API key</label><span class="hint">{appName(kind)} › Settings › General</span></div>
 						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" required /></div>
 					</div>
 				{/if}
