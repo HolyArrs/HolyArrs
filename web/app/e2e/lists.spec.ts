@@ -48,7 +48,7 @@ test('a Trakt list needs the Trakt key, then adds its movie', async () => {
 	await page.getByRole('button', { name: 'Add a list' }).first().click();
 	await page.getByLabel('Name', { exact: true }).first().fill('Trakt favourites');
 	await page.getByLabel('Kind').selectOption('trakt_list');
-	await expect(page.getByText('Add your Trakt key below first')).toBeVisible();
+	await expect(page.getByText('Add a Trakt key below first')).toBeVisible();
 	await page.getByLabel('Which list').fill('lab/favourites');
 	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const row = page.getByTestId('outside-list').filter({ hasText: 'Trakt favourites' });

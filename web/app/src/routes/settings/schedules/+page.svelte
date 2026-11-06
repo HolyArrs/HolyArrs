@@ -306,7 +306,7 @@
 		align-items: center;
 		column-gap: 12px;
 	}
-	.cols { padding: 9px 16px 7px; border-bottom: 1px solid var(--line); color: var(--text-faint); font: var(--t-caption); letter-spacing: 0.01em; }
+	.cols { padding: 9px 16px 7px; border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-caption); letter-spacing: 0.01em; }
 	li { position: relative; }
 	li + li::before { content: ''; position: absolute; top: 0; left: 36px; right: 0; border-top: 1px solid var(--line); }
 	.line { min-height: 52px; padding: 7px 12px 7px 16px; }

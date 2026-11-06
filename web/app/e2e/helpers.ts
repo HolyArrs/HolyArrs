@@ -29,11 +29,19 @@ export function owner(): Owner {
  * since Continue needs a folder for every part that is on), skips Downloader and Source, then opens
  * Home, or Users through Invite family (which also turns on Requests).
  */
-export async function finishFirstRun(page: Page, moviesPath: string, o: { music?: boolean; invite?: boolean } = {}) {
+export async function finishFirstRun(page: Page, moviesPath: string, o: { tv?: boolean; music?: boolean; invite?: boolean } = {}) {
 	await expect(page.getByRole('heading', { name: 'Coming from other apps?', level: 1 })).toBeVisible();
+	// The media step reads the saved folders as it opens and rebuilds its rows when they arrive; typing before that is lost.
+	const loaded = page.waitForResponse((r) => r.url().includes('/api/v1/library-folders') && r.request().method() === 'GET');
 	await page.getByRole('button', { name: /^Start fresh/ }).click();
 	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
-	await page.getByLabel('TV shows', { exact: true }).uncheck();
+	await loaded;
+	// TV shows starts on; most own-server checks need Movies only. The shared setup keeps it on, with its own folder.
+	if (o.tv) {
+		const tvPath = join(dirname(moviesPath), 'tv');
+		mkdirSync(tvPath, { recursive: true });
+		await page.getByLabel('TV shows folder').fill(tvPath);
+	} else await page.getByLabel('TV shows', { exact: true }).uncheck();
 	if (o.music) {
 		await page.getByLabel('Music', { exact: true }).check();
 		const musicPath = join(dirname(moviesPath), 'music');
@@ -41,6 +49,7 @@ export async function finishFirstRun(page: Page, moviesPath: string, o: { music?
 		await page.getByLabel('Music folder').fill(musicPath);
 	}
 	await page.getByLabel('Movies folder').fill(moviesPath);
+	await expect(page.getByLabel('Movies folder')).toHaveValue(moviesPath);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	// Saving the parts restarts them, which can take a while on a slow or loaded machine.
 	await expect(page.getByRole('heading', { name: 'Which app downloads?', level: 1 })).toBeVisible({ timeout: 20_000 });
@@ -179,13 +188,13 @@ export async function seasonCount(page: Page): Promise<number> {
 
 /** seasonKept says whether a season's keep toggle is on. */
 export async function seasonKept(page: Page, season: string): Promise<boolean> {
-	const keep = (await seasonRow(page, season)).locator('.lib-sr-head').getByRole('button', { name: /up to date\. Click/ });
+	const keep = (await seasonRow(page, season)).locator('.lib-sr-head').getByRole('button', { name: /^Keep .* up to date$/ });
 	return (await keep.getAttribute('aria-pressed')) === 'true';
 }
 
 /** toggleSeasonKept flips a season's keep toggle and waits for the saved state. */
 export async function toggleSeasonKept(page: Page, season: string) {
-	const keep = (await seasonRow(page, season)).locator('.lib-sr-head').getByRole('button', { name: /up to date\. Click/ });
+	const keep = (await seasonRow(page, season)).locator('.lib-sr-head').getByRole('button', { name: /^Keep .* up to date$/ });
 	const was = await keep.getAttribute('aria-pressed');
 	await keep.click();
 	await expect(keep).toHaveAttribute('aria-pressed', was === 'true' ? 'false' : 'true');
@@ -208,7 +217,7 @@ export async function episodeAction(page: Page, code: string, item: string) {
 	const ep = await episodeRow(page, code);
 	const n = Number(/E(\d+)$/.exec(code)![1]);
 	if (item === `Keep ${code} up to date`) {
-		const keep = ep.getByRole('button', { name: /up to date\. Click/ });
+		const keep = ep.getByRole('button', { name: /^Keep .* up to date$/ });
 		const was = await keep.getAttribute('aria-pressed');
 		await keep.click();
 		await expect(keep).toHaveAttribute('aria-pressed', was === 'true' ? 'false' : 'true');
@@ -222,7 +231,7 @@ export async function episodeAction(page: Page, code: string, item: string) {
 
 /** episodeKept says whether an episode's keep toggle is on. */
 export async function episodeKept(page: Page, code: string): Promise<boolean> {
-	const keep = (await episodeRow(page, code)).getByRole('button', { name: /up to date\. Click/ });
+	const keep = (await episodeRow(page, code)).getByRole('button', { name: /^Keep .* up to date$/ });
 	return (await keep.getAttribute('aria-pressed')) === 'true';
 }
 

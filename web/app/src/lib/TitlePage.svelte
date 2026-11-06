@@ -1852,7 +1852,7 @@
 	/* Quality: a segmented control under its label; the last slot opens the other sets. */
 	.q-row { display: grid; gap: 10px; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
-	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: color-mix(in srgb, var(--text) 82%, transparent); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
 	.q-seg > button:hover:not(.on), .q-more:not(.on) :global(.trigger:hover) { color: var(--text); }
 	.q-seg > button.on, .q-more.on :global(.trigger) { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 2px rgb(0 0 0 / .2); }
 	.q-more { flex: 0 0 auto; display: flex; }
