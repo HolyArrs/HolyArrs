@@ -242,7 +242,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await axe(ivy, 'ask artist dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for Fern Hymns' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(ivy.getByRole('status')).toContainText('Moss Choir requested');
+	await expect(ivy.getByRole('status')).toContainText('Moss Choir (Fern Hymns) requested');
 
 	// An artist in the Library offers to ask for the albums it does not keep (on its page).
 	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');

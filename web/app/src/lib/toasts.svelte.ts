@@ -43,8 +43,11 @@ const KEEP = 50;
 export function createToasts(ms = 6000) {
 	const list = $state<Toast[]>([]);
 	const past = $state<PastAlert[]>([]);
-	// How many wait behind the two on screen (for the "+N more" chip).
+	// How many went past the two on screen in this burst (for the "+N more" chip): pushed
+	// into Recent alerts by a newer one, or waiting behind two that both offer Undo.
 	const counts = $state({ waiting: 0 });
+	let bumped = 0;
+	const recount = () => (counts.waiting = waiting.length + bumped);
 	const waiting: (Toast & { life: number })[] = [];
 	const timers = new Map<number, { t?: ReturnType<typeof setTimeout>; left: number; at: number }>();
 	let next = 1;
@@ -70,16 +73,18 @@ export function createToasts(ms = 6000) {
 		timers.delete(id);
 		const w = waiting.findIndex((t) => t.id === id);
 		if (w >= 0) waiting.splice(w, 1);
-		counts.waiting = waiting.length;
 		const i = list.findIndex((t) => t.id === id);
-		if (i < 0) return;
-		list.splice(i, 1);
-		const up = waiting.shift();
-		counts.waiting = waiting.length;
-		if (up) {
-			const { life: left, ...t } = up;
-			show(t, left);
+		if (i >= 0) {
+			list.splice(i, 1);
+			const up = waiting.shift();
+			if (up) {
+				const { life: left, ...t } = up;
+				show(t, left);
+			}
 		}
+		// The burst is over once nothing is on screen.
+		if (!list.length) bumped = 0;
+		recount();
 	}
 
 	function remember(t: Toast, left: number) {
@@ -108,6 +113,18 @@ export function createToasts(ms = 6000) {
 
 		const t: Toast = { id: next++, text, body: opts.body, tone, action: opts.action, seen: 0 };
 		remember(t, left);
+		// The newest always shows at once: when two are up, the older plain one steps into
+		// Recent alerts. Only when both on screen offer Undo does the new one wait its turn.
+		if (list.length >= SHOW) {
+			const old = list.find((x) => !x.action);
+			if (old) {
+				const timer = timers.get(old.id);
+				if (timer?.t) clearTimeout(timer.t);
+				timers.delete(old.id);
+				list.splice(list.indexOf(old), 1);
+				bumped++;
+			}
+		}
 		if (list.length < SHOW) show(t, left);
 		else {
 			waiting.push({ ...t, life: left });
@@ -115,8 +132,8 @@ export function createToasts(ms = 6000) {
 				const plain = waiting.findIndex((x) => !x.action);
 				waiting.splice(plain >= 0 ? plain : 0, 1);
 			}
-			counts.waiting = waiting.length;
 		}
+		recount();
 		return t.id;
 	}
 
@@ -136,7 +153,8 @@ export function createToasts(ms = 6000) {
 	function seeAll() {
 		for (const t of [...waiting]) dismiss(t.id);
 		waiting.length = 0;
-		counts.waiting = 0;
+		bumped = 0;
+		recount();
 		for (const p of past) p.fresh = false;
 	}
 	/** × on a row. */

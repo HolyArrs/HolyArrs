@@ -92,7 +92,7 @@
 			{/each}
 		</ul>
 	{:else}
-		<p class="empty">No alerts yet</p>
+		<p class="empty">Nothing here yet</p>
 	{/if}
 {/snippet}
 

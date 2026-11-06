@@ -106,7 +106,7 @@
 			{#if title}<span class="text">{text}</span>{/if}
 		</span>
 		{#if action}<button class="act" type="button" data-testid="toast-action" onclick={action.run}>{action.label}</button>{/if}
-		{#if ondismiss}<button class="x" type="button" aria-label="Close" onclick={ondismiss}><Icon name="x" size={10} stroke={2.6} /></button>{/if}
+		{#if ondismiss}<button class="x" type="button" aria-label="Dismiss alert" onclick={ondismiss}><Icon name="x" size={10} stroke={2.6} /></button>{/if}
 	</div>
 {/if}
 

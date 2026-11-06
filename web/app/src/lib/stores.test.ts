@@ -83,15 +83,28 @@ describe('live', () => {
 describe('toasts', () => {
 	afterEach(() => vi.useRealTimers());
 
-	it('shows two, queues the rest and clears itself', () => {
+	it('shows the newest two at once, counts the rest and clears itself', () => {
 		vi.useFakeTimers();
 		const t = createToasts(1000);
 		for (let i = 0; i < 4; i++) t.push(`m${i}`);
-		expect(t.list.map((x) => x.text)).toEqual(['m0', 'm1']);
-		vi.advanceTimersByTime(1001);
 		expect(t.list.map((x) => x.text)).toEqual(['m2', 'm3']);
+		expect(t.counts.waiting).toBe(2);
 		vi.advanceTimersByTime(1001);
 		expect(t.list).toHaveLength(0);
+		expect(t.counts.waiting).toBe(0);
+	});
+
+	it('waits only behind two that both offer Undo', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		const undo = { label: 'Undo', run: () => {} };
+		t.push('a', 'ok', { action: undo, ms: 5000 });
+		t.push('b', 'ok', { action: undo, ms: 5000 });
+		t.push('c');
+		expect(t.list.map((x) => x.text)).toEqual(['a', 'b']);
+		expect(t.counts.waiting).toBe(1);
+		vi.advanceTimersByTime(5001);
+		expect(t.list.map((x) => x.text)).toEqual(['c']);
 	});
 
 	it('refreshes the same message instead of stacking it', () => {
@@ -143,8 +156,8 @@ describe('toasts', () => {
 		vi.useFakeTimers();
 		const t = createToasts(1000);
 		for (let i = 0; i < 12; i++) t.push(`n${i}`);
-		expect(t.list).toHaveLength(2);
-		expect(t.counts.waiting).toBe(6);
+		expect(t.list.map((x) => x.text)).toEqual(['n10', 'n11']);
+		expect(t.counts.waiting).toBe(10);
 		expect(t.past.map((p) => p.text)).toHaveLength(12);
 		expect(t.past[0].text).toBe('n11');
 		expect(t.unseen()).toBe(12);
