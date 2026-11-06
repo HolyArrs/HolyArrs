@@ -30,6 +30,8 @@
 <div class="hist"><SearchLook {titleById} {people} {me} /></div>
 
 <style>
-	/* Phones get the same side gutter as the other pages so rows don't touch the screen edge. */
-	@media (max-width: 767px) { .hist { padding-inline: max(var(--gutter), env(safe-area-inset-left, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px)); } }
+	/* History has no shared top bar: its own row (search, Live, Filter) is pinned at the top instead,
+	   so the day headers and the details panel pin under that row (72px: a 52px capsule and 10px above and below). */
+	.hist { --topbar: 72px; }
+	@media (max-width: 767px) { .hist { --topbar: 0px; } }
 </style>

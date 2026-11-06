@@ -220,7 +220,8 @@
 		dlTop.searchKey = searchKey;
 		dlTop.toggle = () => void toggleSidebar();
 	});
-	const topHidden = $derived(path === '/downloads' || path === '/library');
+	// History has its own top row too (search, Live, Filter), so the shared bar steps aside there as well.
+	const topHidden = $derived(path === '/downloads' || path === '/library' || path === '/downloads/history');
 	const typingIn = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
@@ -515,7 +516,7 @@
 			/>{/if}
 		{/snippet}
 		{#snippet tabbar()}<TabBar items={tabs} />{/snippet}
-		<main id="main" tabindex="-1" class:bleed={path === '/downloads' || path.startsWith('/downloads/')}>
+		<main id="main" tabindex="-1" class:bleed={path === '/downloads' || (path.startsWith('/downloads/') && path !== '/downloads/history')}>
 			{#if offHere}
 				<section class="part-off" role="status" data-testid="part-off"><h1>This part is off</h1><p>{offHere} {offHere.includes(' and ') ? 'are' : 'is'} turned off, so this page is hidden. Nothing is deleted: everything comes back when it is turned on again.</p><p class="muted">The owner or an admin can turn it on again.</p></section>
 			{:else}{@render children()}{/if}

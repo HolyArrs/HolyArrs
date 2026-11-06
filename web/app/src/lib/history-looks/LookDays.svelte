@@ -301,8 +301,8 @@
 	.split { display: grid; grid-template-columns: minmax(0, 1fr) var(--pane); column-gap: var(--gap); align-items: start; transition: grid-template-columns var(--dur-base) var(--ease-out), column-gap var(--dur-base) var(--ease-out); }
 
 	.days { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; padding: 10px 0 8px; background: var(--bg); transition: top var(--bar-glide); }
-	:global(html.bar-hidden) .dh { top: 0; }
+	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-inline: -12px; padding: 10px 12px 8px; background: var(--bg); transition: top var(--bar-glide); }
+	/* The pinned header's background reaches 12px past the list each side (text unmoved), so the list's outline and shadow never peek out beside it. */
 	.dh h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.dl { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.rail { position: relative; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
@@ -355,8 +355,8 @@
 	.inner .item { box-shadow: 0 -1px 0 var(--line); }
 
 	/* The details panel: slides out to the right edge when hidden. */
-	.pane { position: sticky; top: calc(var(--topbar) + 12px); min-width: 0; max-height: calc(100dvh - var(--topbar) - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
-	:global(html.bar-hidden) .pane { top: 12px; max-height: calc(100dvh - 32px); }
+	/* The panel's top lines up with the first row (under the day header, 45px), at rest and when pinned. */
+	.pane { position: sticky; top: calc(var(--topbar) + 45px); margin-top: 45px; min-width: 0; max-height: calc(100dvh - var(--topbar) - 65px); overflow-y: auto; overscroll-behavior: contain; padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
 	.pane[hidden] { display: block; visibility: hidden; opacity: 0; translate: 24px 0; padding-inline: 0; overflow: hidden; transition: opacity var(--dur-fast) var(--ease-in), translate var(--dur-fast) var(--ease-in), padding var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-fast); }
 	.pin { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 	.ph { display: flex; gap: 16px; align-items: flex-start; }

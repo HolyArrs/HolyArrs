@@ -20,6 +20,9 @@
 	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whoLabels, whoMatches, type MediaType, type Who } from './dirs.ts';
 	import type { EventRecord, TitleView } from '../types.ts';
 	import { session } from '../session.svelte.ts';
+	import IconButton from '../ui/IconButton.svelte';
+	import { dlTop } from '../dl-top.svelte.ts';
+	import { searchShortcut } from '../downloads/keys.ts';
 
 	let { titleById, people, me }: { titleById: Map<number, TitleView>; people: Map<number, string>; me?: number } = $props();
 
@@ -84,6 +87,22 @@
 		clearTimeout(timer);
 		timer = setTimeout(() => set({ q: v.trim() || undefined }), 250);
 	}
+	// Ctrl K and / focus this page's own search (History has no shared top bar), as on Downloads and Library.
+	let findEl = $state<HTMLInputElement>();
+	function findKey(e: KeyboardEvent) {
+		const t = e.target as HTMLElement | null;
+		const inField = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+		const inDialog = !!t?.closest?.('[role="dialog"], dialog, [popover]:popover-open') || !!document.querySelector('dialog[open]');
+		if (!searchShortcut(e, inField, inDialog)) return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		findEl?.focus();
+		findEl?.select();
+	}
+	$effect(() => {
+		window.addEventListener('keydown', findKey, true);
+		return () => window.removeEventListener('keydown', findKey, true);
+	});
 
 	onMount(() => {
 		if (session.can('settings'))
@@ -174,11 +193,13 @@
 
 <h1 class="sr-only">History</h1>
 <div class="toolbar" data-testid="history-search-bar">
+	{#if dlTop.collapsed && !phone}<span class="cap"><IconButton icon="sidebar" label="Show sidebar" onclick={() => dlTop.toggle()} data-testid="history-side-btn" /></span>{/if}
 	<label class="search">
-		<Icon name="search" size={16} />
+		<span class="mag" aria-hidden="true"><Icon name="search" size={16} /></span>
 		<span class="sr-only">Search</span>
-		<input type="search" placeholder="Search titles, people, Sources…" value={text} oninput={(e) => typed(e.currentTarget.value)} />
+		<input bind:this={findEl} type="search" placeholder="Search titles, people, Sources…" value={text} oninput={(e) => typed(e.currentTarget.value)} />
 		<span class="live" class:off={live.status.state !== 'live'} title={live.status.state === 'live' ? 'Updates as they happen' : 'Reconnecting'}><span class="dot" aria-hidden="true"></span>Live</span>
+		{#if !phone}<kbd class="kb" aria-hidden="true">{dlTop.searchKey}</kbd>{/if}
 	</label>
 	<div class="right">
 		<div class="anchor">
@@ -217,17 +238,25 @@
 </LookDays>
 
 <style>
-	.toolbar { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
-	.search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text-muted); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	.search:focus-within { box-shadow: var(--focus-ring); }
-	.search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; color: var(--text); font: 500 14px/1 var(--font-ui); outline: none; }
+	/* The page's top row, in place of the shared top bar (as on Downloads and Library): the same 52px glass
+	   capsules, pinned at the top on one solid band, with the page's side margins. */
+	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; height: 72px; box-sizing: border-box; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 4px; padding: 10px var(--gutter, 0px); background: var(--bg); }
+	.cap { display: flex; flex: none; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.cap :global(.ui-ibtn) { width: 44px; height: 44px; border-radius: 10px; }
+	.search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 52px; box-sizing: border-box; padding: 0 12px 0 15px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text-muted); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out); }
+	.search:hover { border-color: color-mix(in srgb, var(--line-strong) 60%, var(--line)); }
+	.search:focus-within { border-color: var(--line-strong); background: color-mix(in srgb, var(--surface-1) 86%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 0 0 3px color-mix(in srgb, var(--text) 6%, transparent), 0 8px 24px -12px rgb(0 0 0 / 0.4); }
+	.mag { display: grid; place-items: center; flex: none; }
+	.search:focus-within .mag { color: var(--text); }
+	.kb { flex: none; padding: 2px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--text-muted); font: 500 11px/1.4 var(--font-ui); white-space: nowrap; }
+	.search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-callout); outline: none; }
 	.search input::placeholder { color: var(--text-muted); }
 	.live { flex: none; display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 	.live.off .dot { background: var(--text-muted); }
 	.right { flex: none; display: flex; align-items: center; gap: 8px; }
 	.anchor { position: relative; }
-	.sf-btn { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
+	.sf-btn { display: inline-flex; align-items: center; gap: 7px; height: 52px; padding: 0 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
 	.sf-btn:focus-visible, .clear:focus-visible, .done:focus-visible, .chip:focus-visible, .all:focus-visible, .step:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.funnel { color: var(--text-muted); }
@@ -256,11 +285,13 @@
 	.sht { color: var(--text); font: 600 15px/1.2 var(--font-ui); }
 	.done { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	@media (pointer: coarse) {
-		.search, .sf-btn, .fc, .clear, .chip, .all, .step { height: 44px; }
+		.fc, .clear, .chip, .all, .step { height: 44px; }
 		.search input, .fc { font-size: 16px; }
 	}
 	@media (max-width: 767px) {
-		.toolbar { flex-wrap: wrap; }
+		/* Phones: the row scrolls away with the page and wraps (search, then Filter). */
+		.toolbar { position: static; height: auto; flex-wrap: wrap; margin: 0 0 12px; padding: 0; background: none; }
+		.search, .sf-btn { height: 44px; }
 		.search { flex-basis: 100%; }
 		.right { width: 100%; }
 		.anchor { flex: 1; }
