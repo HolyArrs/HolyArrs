@@ -165,15 +165,15 @@
 <Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} placement="center" size="lg">
 	{#if ep}
 		<div class="es" data-testid="episode-sheet">
-			<div class="es-main">
-				<div class="es-still">
-					{#if ep.still}<img src={ep.still} alt="" decoding="async" />{/if}
-					<span class="es-shade" aria-hidden="true"></span>
-					<div class="es-cap">
-						<h3>{ep.name ?? `Episode ${ep.episode}`}</h3>
-						<p>{[date(ep.air_date), ep.runtime_minutes ? `${ep.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</p>
-					</div>
+			<div class="es-still es-wide">
+				{#if ep.still}<img src={ep.still} alt="" decoding="async" />{/if}
+				<span class="es-shade" aria-hidden="true"></span>
+				<div class="es-cap">
+					<h3>{ep.name ?? `Episode ${ep.episode}`}</h3>
+					<p>{[date(ep.air_date), ep.runtime_minutes ? `${ep.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</p>
 				</div>
+			</div>
+			<div class="es-main">
 				{#if story}<p class="es-story">{story}</p>{/if}
 
 				<section class="es-status {tone}">
@@ -251,6 +251,8 @@
 	.es-subs :global(.card-head.bare) { position: absolute; top: 0; right: 0; margin: 0; }
 	@media (max-width: 760px) { .es { grid-template-columns: minmax(0, 1fr); } }
 	.es-still { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: var(--surface-2); }
+	.es-wide { grid-column: 1 / -1; aspect-ratio: 21 / 9; }
+	@media (max-width: 760px) { .es-wide { aspect-ratio: 16 / 9; } }
 	.es-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
 	.es-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 78%) 0%, rgb(0 0 0 / 20%) 45%, transparent 70%); }
 	.es-cap { position: absolute; left: 22px; right: 22px; bottom: 16px; color: #fff; }
