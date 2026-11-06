@@ -86,7 +86,12 @@
 
 	async function load() {
 		try {
-			bridges = (await api.get<{ bridges: Bridge[] }>('/bridges')).bridges;
+			const r = await api.get<{ bridges: Bridge[]; home_ip?: string }>('/bridges');
+			bridges = r.bridges;
+			// Opened over Tailscale or on this machine: Prowlarr usually can't use
+			// that address, so offer this machine's home-network one instead.
+			const odd = /^(localhost|127\.|\[::1\]|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)|\.ts\.net$/.test(location.hostname);
+			if (r.home_ip && odd && !callbackOpen) callback = `${location.protocol}//${r.home_ip}${location.port ? ':' + location.port : ''}${to('/').replace(/\/$/, '')}`;
 			loadError = '';
 		} catch (e) {
 			loadError = message(e);

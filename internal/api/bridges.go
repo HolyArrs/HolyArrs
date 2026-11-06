@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -107,7 +108,33 @@ func (a *API) listBridges(w http.ResponseWriter, r *http.Request) {
 	for _, b := range bs {
 		out = append(out, a.bridgeView(r.Context(), b))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"bridges": out})
+	// home_ip: this machine's home-network address, for the page to offer as
+	// HolyArrs's address for Prowlarr when the browser came in over Tailscale
+	// or localhost (Prowlarr usually can't reach those).
+	writeJSON(w, http.StatusOK, map[string]any{"bridges": out, "home_ip": homeIP()})
+}
+
+// homeIP is the first 10.x or 192.168.x address of this machine, or "".
+// 172.16/12 is skipped: inside Docker it is the container's own network.
+func homeIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, a := range addrs {
+		ipn, ok := a.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		ip := ipn.IP.To4()
+		if ip == nil {
+			continue
+		}
+		if ip[0] == 10 || (ip[0] == 192 && ip[1] == 168) {
+			return ip.String()
+		}
+	}
+	return ""
 }
 
 func (a *API) findBridges(w http.ResponseWriter, r *http.Request) {

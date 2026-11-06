@@ -197,7 +197,7 @@
 			{#if !withSaved}
 				{#if qbit}
 					<div class="srow">
-						<div class="txt"><label for="move-user">User name</label><span class="hint">Found in the app's own settings.</span></div>
+						<div class="txt"><label for="move-user">User name</label></div>
 						<div class="ctl"><input id="move-user" class="input" bind:value={username} oninput={changed} autocomplete="off" required={!key} /></div>
 					</div>
 					<div class="srow">
@@ -205,17 +205,17 @@
 						<div class="ctl"><input id="move-pass" class="input" type="password" bind:value={signWord} oninput={changed} autocomplete="new-password" required={!key} /></div>
 					</div>
 					<div class="srow">
-						<div class="txt"><label for="move-key">API key</label><span class="hint">qBittorrent 5.2 and later, instead of a sign-in.</span></div>
+						<div class="txt"><label for="move-key">API key</label><span class="hint">Instead of a sign-in, qBittorrent 5.2+</span></div>
 						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" /></div>
 					</div>
 				{:else}
 					<div class="srow">
-						<div class="txt"><label for="move-key">API key</label><span class="hint">Found in the app's own settings.</span></div>
+						<div class="txt"><label for="move-key">API key</label><span class="hint">Settings › General</span></div>
 						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" required /></div>
 					</div>
 				{/if}
 				<div class="srow">
-					<div class="txt"><label for="move-local">May reach the local network</label><span class="hint">On when the app runs on this machine or your home network.</span></div>
+					<div class="txt"><label for="move-local">On my home network</label></div>
 					<div class="ctl">
 						<label class="switch"><input id="move-local" type="checkbox" bind:checked={local} onchange={changed} /><span class="sw" aria-hidden="true"></span></label>
 					</div>
@@ -237,6 +237,17 @@
 </Sheet>
 
 <style>
+	/* Its own row layout, so it looks the same outside Settings (the first-run wizard). */
+	.srow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 16px; min-height: 52px; padding: 7px 0; border-top: 1px solid var(--line); }
+	.srow:first-child { border-top: 0; }
+	.srow > .txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+	.srow > .txt > :is(.label, label) { font: var(--t-callout); color: var(--text); }
+	.srow > .txt > .hint { color: var(--text-muted); font: var(--t-footnote); }
+	.srow > .ctl { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0; }
+	.srow > .ctl > .input { width: 260px; }
+	@media (max-width: 600px) {
+		.srow > .ctl > .input { width: min(260px, 46vw); }
+	}
 	.addr { display: block; max-width: min(260px, 46vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.cap { margin-top: 12px; }
 	.notice, .form-error { margin-top: 12px; }
