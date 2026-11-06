@@ -44,7 +44,7 @@ const states = (s: Locator) => s.locator('.lib-ep-st');
 
 // The Pick a release sheet a season or episode button opened: Search now when nothing was searched yet, then All.
 async function sheetReleases(p: Page, label: string): Promise<Locator> {
-	const sheet = p.getByRole('dialog', { name: 'Pick a release' });
+	const sheet = p.getByRole('dialog', { name: 'Choose a release' });
 	await expect(sheet.getByTestId('release-sheet')).toBeVisible();
 	await expect(sheet).toContainText(label);
 	const now = sheet.getByRole('button', { name: 'Search now' });

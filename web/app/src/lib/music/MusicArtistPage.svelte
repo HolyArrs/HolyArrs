@@ -1076,7 +1076,7 @@
 <style>
 	/* Windows opened on a tinted artist page get a solid tinted background; the page's see-through surfaces stay inside them. */
 	.artist.tinted :global(.ui-sheet) { background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ar-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--ar-bg, #1b1c20) 55%, #050506) 70%); }
-	.artist.tinted { --text: #fff; --bg: var(--ar-bg); --text-muted: var(--ar-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
+	.artist.tinted { --ok: #30d158; --fail: #ff6961; --fail-text: #ff6961; --accent-text: #fff; --text: #fff; --bg: var(--ar-bg); --text-muted: var(--ar-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
 	.artist.tinted .hero { --hero-ink: var(--ar-bg); }
 	.artist { --music-item: max(168px, calc((100vw - 96px) / 7.2)); --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); padding-bottom: 48px; min-width: 0; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }

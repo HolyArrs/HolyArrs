@@ -258,7 +258,7 @@
 			<section class="al-status">
 				<div class="al-st-text">
 					<p class="al-st-title"><span class="dot {missing ? 'part' : 'have'}" aria-hidden="true"></span>{have} of {total} tracks</p>
-					<p class="al-st-sub">{fullAlbums} full {fullAlbums === 1 ? 'release' : 'releases'}{missing && t.keep_up_to_date ? ' · the rest are grabbed when found' : ''}</p>
+					<p class="al-st-sub">{fullAlbums} full {fullAlbums === 1 ? 'release' : 'releases'}</p>
 					<!-- Why nothing is searched yet (gate, kinds, keep off), as on movie and show pages. -->
 					{#if t.gate_reason}<p class="al-why" data-testid="gate-reason">{t.gate_reason}</p>{/if}
 					<p class="al-facts">{#each facts as f (f.k)}<span class="al-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
@@ -300,7 +300,7 @@
 								{#if manage}
 									<span class="al-acts">
 										<button type="button" class="al-ico" title="Get the missing tracks" aria-label="Get the missing tracks of {a.name}" disabled={!a.missing || busy === `a${a.id}`} onclick={() => search({ album_id: a.id }, `a${a.id}`, `Looking for ${a.name}.`)}><Icon name="search" size={15} /></button>
-										<button type="button" class="al-ico" title="Pick a release for this album" aria-label="Pick a release for {a.name}" onclick={() => pick({ label: a.name, query: `album_id=${a.id}`, body: { album_id: a.id } })}><Icon name="grid" size={15} /></button>
+										<button type="button" class="al-ico" title="Choose a release" aria-label="Choose a release for {a.name}" onclick={() => pick({ label: a.name, query: `album_id=${a.id}`, body: { album_id: a.id } })}><Icon name="grid" size={15} /></button>
 									</span>
 								{/if}
 							</div>
@@ -342,7 +342,7 @@
 			{#if manage}
 				<h3 class="al-h">Settings</h3>
 				<div class="al-rows">
-					<button type="button" class="al-rowbtn" disabled={busy === 'keep'} onclick={keepTitle}><span><b>Keep up to date</b><small>Grab new releases and upgrade when a better copy shows up</small></span><span class="al-switch" class:on={t.keep_up_to_date} aria-hidden="true"></span></button>
+					<button type="button" class="al-rowbtn" role="switch" aria-checked={t.keep_up_to_date} disabled={busy === 'keep'} onclick={keepTitle}><span><b>Keep up to date</b><small>New and better copies</small></span><span class="al-switch" class:on={t.keep_up_to_date} aria-hidden="true"></span></button>
 					<div class="al-rowbtn static q-row" data-testid="quality-row">
 						<span><b>Quality</b>{#if qHint}<small>{qHint}</small>{/if}</span>
 						<div class="q-seg" role="radiogroup" aria-label="Quality">
@@ -377,7 +377,7 @@
 					<button type="button" class="al-rowbtn" disabled={busy === 'refresh'} onclick={refresh}><span><b>Refresh details</b><small>New albums and tracks{t.refreshed_at ? ` · ${ago(t.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 				</div>
 				<div class="al-rows danger">
-					<button type="button" class="al-rowbtn" onclick={() => (deleteOpen = true)}><span><b>Delete artist</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
+					<button type="button" class="al-rowbtn" onclick={() => (deleteOpen = true)}><span><b>Delete artist</b></span><Icon name="trash" size={16} /></button>
 				</div>
 			{/if}
 		</aside>
@@ -538,8 +538,11 @@
 	.al-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.al-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
-	.al-rows.danger :global(svg) { color: var(--fail-on-art); }
+	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail-on-art); }
 	.al-rowbtn { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+	.al-rowbtn:not(.static):hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.al-rowbtn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+	@media (pointer: coarse) { .al-more { min-height: 44px; } .q-seg > button, .q-more :global(.trigger), .al-pick :global(.trigger) { height: 40px; } }
 	.al-rowbtn + .al-rowbtn { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.al-rowbtn span { display: grid; gap: 3px; min-width: 0; }
 	.al-rowbtn b { font: 600 15px/1.2 var(--font-ui); }

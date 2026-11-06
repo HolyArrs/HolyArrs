@@ -152,10 +152,10 @@
 					<h4 class="es-h">Settings</h4>
 					<div class="es-rows">
 						<button type="button" class="es-row" role="switch" aria-checked={keep} disabled={busy === 'keep'} onclick={flipKeep}>
-							<span><b>Keep up to date</b><small>Upgrade when a better copy shows up</small></span>
+							<span><b>Keep up to date</b><small>Better copies</small></span>
 							<span class="es-switch" class:on={keep} aria-hidden="true"></span>
 						</button>
-						{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>Delete episode</b><small>Choose whether the file goes too</small></span><Icon name="trash" size={16} /></button>{/if}
+						{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>Delete episode</b></span><Icon name="trash" size={16} /></button>{/if}
 					</div>
 				{/if}
 
@@ -186,10 +186,10 @@
 	.es-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
 	.es-st { display: inline-flex; align-items: center; gap: 8px; font: 600 15px/1 var(--font-ui); }
 	.es-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--text-muted); }
-	.es-status.have .es-dot { background: #30a46c; }
-	.es-status.downloading .es-dot { background: #3e8ef7; }
-	.es-status.failed .es-dot { background: var(--danger, #e5484d); }
-	.es-status.failed { background: color-mix(in srgb, var(--danger, #e5484d) 10%, var(--surface-2)); }
+	.es-status.have .es-dot { background: var(--ok); }
+	.es-status.downloading .es-dot { background: var(--info); }
+	.es-status.failed .es-dot { background: var(--fail); }
+	.es-status.failed { background: color-mix(in srgb, var(--fail) 10%, var(--surface-2)); }
 	.es-btn { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.es-btn.primary { background: var(--text); color: var(--bg); }
 	.es-h { margin: 4px 0 -4px; font: 700 17px/1.2 var(--font-ui); }
@@ -209,11 +209,13 @@
 	.es-row span:first-child { display: grid; gap: 3px; }
 	.es-row b { font: 600 15px/1.2 var(--font-ui); }
 	.es-row.danger b, .es-row.danger :global(svg) { color: var(--fail-text); }
+	.es-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.es-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 	.es-rows > .es-row + .es-row { border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.es-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.es-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
 	.es-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
-	.es-switch.on { background: #30a46c; }
+	.es-switch.on { background: var(--ok); }
 	.es-switch.on::after { transform: translateX(18px); }
 	.es-tl { display: grid; gap: 2px; margin: 0 -12px; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }
 	.es-tl li.muted { padding: 0 12px; }

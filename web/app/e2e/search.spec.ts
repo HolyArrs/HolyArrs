@@ -25,7 +25,7 @@ async function fresh(browser: Browser) {
 async function chooseRelease(p: Page): Promise<Locator> {
 	await p.getByRole('button', { name: 'More actions' }).click();
 	await p.getByRole('menuitem', { name: 'Choose a release' }).click();
-	const sheet = p.getByRole('dialog', { name: 'Pick a release' });
+	const sheet = p.getByRole('dialog', { name: 'Choose a release' });
 	await expect(sheet.getByTestId('release-sheet')).toBeVisible();
 	return sheet;
 }

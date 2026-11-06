@@ -88,6 +88,8 @@
 	.st { display: grid; gap: 14px; }
 	.st-seg { display: inline-flex; justify-self: start; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.st-seg button { height: 30px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
+	.st-seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .st-seg button { height: 40px; } }
 	.st-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
 	.st-del { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--fail-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.st-del:focus-visible { outline: none; box-shadow: var(--focus-ring); }

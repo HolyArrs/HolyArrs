@@ -138,7 +138,7 @@
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>
 
-<Sheet bind:open title="Pick a release" description={scope ? `${name} · ${scope.label}` : name} placement="center" size="lg">
+<Sheet bind:open title="Choose a release" description={scope ? `${name} · ${scope.label}` : name} placement="center" size="lg">
 	<div class="rs" data-testid="release-sheet">
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">
@@ -201,6 +201,8 @@
 	.rs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; row-gap: 8px; }
 	.rs-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.rs-seg button { height: 30px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+	.rs-seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .rs-seg button { height: 40px; } }
 	.rs-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
 	.rs-search, .rs-primary { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.rs-primary { height: 40px; padding: 0 18px; background: var(--text); color: var(--bg); font-size: 14px; }
@@ -232,7 +234,7 @@
 	.rs-act { display: flex; align-items: center; gap: 8px; flex: none; }
 	.rs-choose { height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.rs-choose.quiet { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); }
-	.rs-choose.warn { background: #d4a72c; color: #111; }
+	.rs-choose.warn { background: var(--wait); color: #111; }
 	.rs-x { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
 	.rs-x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
 	.rs-sent { display: inline-flex; align-items: center; gap: 5px; color: var(--ok-text); font: 600 13px/1 var(--font-ui); }

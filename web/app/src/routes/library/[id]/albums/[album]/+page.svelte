@@ -70,12 +70,10 @@
 	}
 
 	// Rename files of this album, and delete the album or one track.
-	let renameDialog: HTMLDialogElement | undefined = $state();
 	let renameOpen = $state(false);
 	let deleter: ReturnType<typeof ShowDeleteDialog> | undefined = $state();
 	function openRename() {
 		renameOpen = true;
-		renameDialog?.showModal();
 	}
 	function trackLabel(t: TrackView): string {
 		const n = String(t.number).padStart(2, '0');
@@ -339,7 +337,7 @@
 					{#if pressings.length > 1 && current}
 						<div class="alb-row static" data-testid="chosen-pressing">
 							<span><b>Edition</b><small>{current.chosen_by === 'person' ? 'By hand' : 'By the rule'}</small></span>
-							<div class="alb-pick"><Menu label="Edition" variant="button" width={340} items={editionMenu}>{#snippet trigger()}<i>{pressingLabel(current!)}</i><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+							<div class="alb-pick"><Menu label="Edition" variant="button" width={340} items={editionMenu}>{#snippet trigger()}<i>{pressingLabel(current!).replace(album!.name + ' · ', '')}</i><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 					{/if}
 				</div>
@@ -361,7 +359,7 @@
 				{#if listing}<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music bare onclose={() => (listing = false)} onchange={load} />{/if}
 			</Sheet>
 			<Sheet bind:open={editionOpen} title="Follow this edition?" description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm" placement="center">
-				<p class="small muted">Tracks it doesn't have go unless a file holds them.</p>
+				<p class="small muted">Tracks it doesn’t have go unless a file holds them.</p>
 				<div class="row modal-actions">
 					<Button variant="plain" onclick={() => (editionOpen = false)}>Cancel</Button>
 					<Button variant="primary" disabled={busy === 'pressing'} busy={busy === 'pressing'} onclick={() => usePressing()}>Use this edition</Button>
@@ -370,16 +368,9 @@
 
 			<ShowDeleteDialog bind:this={deleter} titleId={titleId} name={artist?.name ?? 'Artist'} kind="artist" ondone={afterDelete} />
 
-			<dialog bind:this={renameDialog} aria-labelledby="rename-album-title" class="modal wide" onclose={() => (renameOpen = false)}>
-				{#if renameOpen}
-					<h2 id="rename-album-title" class="h2">Rename the files of {album.name}</h2>
-					<p class="small muted">The names now and the names they get from the album and track patterns. Nothing changes until you press Rename.</p>
-					<RenamePreview {titleId} {albumId} onDone={() => void afterDelete()} />
-					<div class="row modal-actions">
-						<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
-					</div>
-				{/if}
-			</dialog>
+			<Sheet bind:open={renameOpen} title="Rename files" description={album.name} placement="center" size="md">
+				{#if renameOpen}<RenamePreview {titleId} {albumId} onDone={() => { renameOpen = false; void afterDelete(); }} />{/if}
+			</Sheet>
 		{/if}
 		<!-- Last in the page, never right after the hero: title-page.css gives the hero's next sibling its top margin, which would pull the sheet up. -->
 		{#if artist && mayReport}<ReportSheet bind:open={reportOpen} title={artist} album={{ id: album.id, name: album.name, tracks: tracks ?? [] }} />{/if}
@@ -409,25 +400,27 @@
 	.alb-state { display: flex; align-items: center; gap: 8px; font: 700 18px/1.2 var(--font-ui); }
 	.alb-state .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--text-muted); }
 	.alb-state .dot.ok { background: var(--ok, #30d158); }
-	.alb-state .dot.warn, .alb-state .dot.part { background: var(--warn, #ff9f0a); }
+	.alb-state .dot.warn, .alb-state .dot.part { background: var(--wait); }
 	.alb-state .dot.bad { background: var(--fail, #ff453a); }
 	.alb-sub { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.alb-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-	.alb-btn { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
+	.alb-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.alb-btn.primary { background: var(--text); color: var(--bg); }
 	.alb-btn:disabled { opacity: .55; }
 	.alb-h { margin: 16px 0 0; font: 700 20px/1.2 var(--font-ui); }
 	.alb-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.alb-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.alb-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+	.alb-row:not(.static):hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.alb-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 	.alb-row + .alb-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.alb-row.static { cursor: default; }
 	.alb-row > span { display: grid; gap: 3px; min-width: 0; }
 	.alb-row b { font: 600 15px/1.2 var(--font-ui); }
 	.alb-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.alb-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); }
-	.alb-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; transition: transform .15s; }
-	.alb-switch.on { background: #30a46c; }
+	.alb-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; transition: transform var(--dur-fast) var(--ease-out); }
+	.alb-switch.on { background: var(--ok); }
 	.alb-switch.on::after { transform: translateX(18px); }
 	.alb-pick { flex: none; max-width: 60%; min-width: 0; }
 	.alb-pick :global(.ui-pop) { display: flex; max-width: 100%; }

@@ -101,7 +101,7 @@ test('Anime: a Release named by running number 13 is matched to S02E01, picked, 
 
 	// Choose a release for S02E01: the Source answers by running number only.
 	await episodeAction(page, 'S02E01', 'Choose a release');
-	const sheet = page.getByRole('dialog', { name: 'Pick a release' });
+	const sheet = page.getByRole('dialog', { name: 'Choose a release' });
 	await expect(sheet.getByTestId('release-sheet')).toBeVisible();
 	await expect(sheet).toContainText('S2 E1');
 	await sheet.getByRole('button', { name: 'Search now' }).click();

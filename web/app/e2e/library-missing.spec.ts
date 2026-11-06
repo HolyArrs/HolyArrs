@@ -225,7 +225,7 @@ test('Search all missing searches each missing movie, then each episode, at the 
 		await page.goto(`/library/${ids[0]}`);
 		await page.getByRole('button', { name: 'More actions' }).click();
 		await page.getByRole('menuitem', { name: 'Choose a release' }).click();
-		const sheet = page.getByRole('dialog', { name: 'Pick a release' });
+		const sheet = page.getByRole('dialog', { name: 'Choose a release' });
 		await sheet.getByRole('tab', { name: /^All/ }).click();
 		await expect(sheet.getByTestId('release')).toHaveCount(3);
 		await expect(sheet.getByTestId('release').filter({ hasText: 'Hollow.Compass.2015.1080p.WEB-DL' })).toBeVisible();

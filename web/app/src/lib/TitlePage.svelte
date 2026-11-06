@@ -319,7 +319,7 @@
 		}
 	}
 	const pathEnd = (p: string) => p.split(/[\\/]+/).filter(Boolean).slice(-2).join('/');
-	const folderName = (f: LibraryFolder) => (kindFolders.filter((x) => x.label === f.label).length > 1 ? `${f.label} · ${pathEnd(f.path)}` : f.label);
+	const folderName = (f: LibraryFolder) => (kindFolders.filter((x) => x.label === f.label).length > 1 ? pathEnd(f.path) : f.label);
 	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: folderName(f), checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
 	// Seasons (Luis 2026-11-05): one choice sets every season and new seasons together.
 	// A mix made season by season in the list reads Custom.
@@ -475,7 +475,7 @@
 		const pct = !o.show && ownDownload?.download ? Math.round(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) : null;
 		const main = ownFiles[0]?.file;
 		const sub =
-			k === 'have' && o.show ? [`${o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length} full seasons`, o.size_bytes ? bytes(o.size_bytes) : '', o.keep_up_to_date ? 'the rest are grabbed when found' : ''].filter(Boolean).join(' · ')
+			k === 'have' && o.show ? [`${o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length} full seasons`, o.size_bytes ? bytes(o.size_bytes) : ''].filter(Boolean).join(' · ')
 			: k === 'have' ? [ownBadges.join(' · '), main?.Size ? bytes(main.Size) : '', o.added_at ? `added ${ago(o.added_at)}` : ''].filter(Boolean).join(' · ')
 			: k === 'downloading' ? 'On its way to your library'
 			: k === 'failed' ? 'The last try did not work. It will try another release.'
@@ -1234,7 +1234,7 @@
 							<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
 							{#if libHead.sub}<p class="lib-st-sub">{libHead.sub}</p>{/if}
 								<p class="lib-facts">{#each libFacts as f (f.k)}<span class="lib-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
-							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:transform="translateX({libHead.pct - 100}%)"></span></div>{/if}
+							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-label="Download progress" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:transform="translateX({libHead.pct - 100}%)"></span></div>{/if}
 						</div>
 						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
 						{#if manage}<button type="button" class="lib-btn" onclick={() => openPick(null)}><Icon name="grid" size={16} />Choose a release</button>{/if}
@@ -1254,7 +1254,7 @@
 								{@const full = se.episodes > 0 && se.in_library >= se.episodes}
 								<section class="lib-sr" class:open={isOpen}>
 									<div class="lib-sr-head">
-										{#if manage}<button type="button" class="lib-keep" class:on={se.keep_up_to_date} aria-pressed={se.keep_up_to_date} title={se.keep_up_to_date ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} disabled={busyAction === `k${se.number}`} onclick={() => keepSeason(o.id, se.number, !se.keep_up_to_date)}><Icon name="check" size={13} /></button>{/if}
+										{#if manage}<button type="button" class="lib-keep" class:on={se.keep_up_to_date} aria-pressed={se.keep_up_to_date} title={se.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} aria-label="Keep season {se.number} up to date" disabled={busyAction === `k${se.number}`} onclick={() => keepSeason(o.id, se.number, !se.keep_up_to_date)}><Icon name="check" size={13} /></button>{/if}
 										<button type="button" class="lib-sr-main" aria-expanded={isOpen} onclick={() => toggleSeason(o.id, se.number)}>
 											<b>{se.number === 0 ? 'Specials' : `Season ${se.number}`}</b>
 											<span class="lib-count" class:full class:part={!full && se.in_library > 0} class:none={!se.in_library && se.missing > 0}>{se.in_library} / {se.episodes}</span>
@@ -1267,7 +1267,7 @@
 											<span class="lib-sr-acts">
 												<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Looking for the missing episodes of season ${se.number}.`)}><Icon name="search" size={15} /></button>
 												<button type="button" class="lib-ico" title="Choose a release for this season" aria-label="Choose a release for season {se.number}" onclick={() => openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
-												<button type="button" class="lib-ico" title="Files, rename and history" aria-label="Files, rename and history of season {se.number}" onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
+												<button type="button" class="lib-ico" title="Season tools" aria-label="Season {se.number} tools" onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
 											</span>
 										{/if}
 									</div>
@@ -1279,11 +1279,11 @@
 												{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now()}
 												<!-- The row is not a button itself (it holds buttons): the title button opens the episode and stretches over the row. -->
 												<div class="lib-ep {tone}" class:future={!aired}>
-													{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
+													{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? 'Kept up to date' : 'Not kept up to date'} aria-label="Keep episode {e.episode} up to date" onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
 													<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
 													<button type="button" class="lib-ep-text" aria-label="Episode {e.episode}: {e.name ?? ''}" onclick={() => { epPicked = e; epOpen = true; }}>
 														<b>{e.name ?? `Episode ${e.episode}`}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">Finale</span>{/if}</b>
-														<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+														<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? `${e.runtime_minutes}\u00a0min` : '', epFile(e)].filter(Boolean).join(' · ')}</small>
 													</button>
 													<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || st?.state_label || 'Missing' : 'Not out yet'}</span>
 													{#if manage && st}
@@ -1335,8 +1335,8 @@
 					{#if manage}
 						<h3 class="lib-h">Settings</h3>
 						<div class="lib-rows">
-							<button type="button" class="lib-row" disabled={busyAction === 'keep'} onclick={() => ownRun('keep')}>
-								<span><b>Keep up to date</b><small>Grab it when it comes out and upgrade when a better copy shows up</small></span>
+							<button type="button" class="lib-row" role="switch" aria-checked={o.keep_up_to_date} disabled={busyAction === 'keep'} onclick={() => ownRun('keep')}>
+								<span><b>Keep up to date</b><small>New and better copies</small></span>
 								<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
 							</button>
 							{#if (!o.gate_open || !o.keep_up_to_date) && o.gate_reason}
@@ -1390,7 +1390,7 @@
 							{/if}
 						</div>
 						<div class="lib-rows danger">
-							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
+							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b></span><Icon name="trash" size={16} /></button>
 						</div>
 					{/if}
 					</aside>
@@ -1421,7 +1421,7 @@
 			<div class="own-tabs" role="tablist" data-testid="own-tabs">
 				{#each ownTabs as t (t.v)}
 					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => setTab(t.v)}>
-						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-label="Needs attention">!</span>{/if}
+						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-hidden="true">!</span><span class="sr-only">, needs attention</span>{/if}
 					</button>
 				{/each}
 			</div>
@@ -1681,7 +1681,8 @@
 	.own-count { color: var(--text-muted); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	/* T1: underline tabs, left. */
 	.own-tabs { border-bottom: 1px solid var(--line); }
-	.own-tabs button { border-bottom: 2px solid transparent; }
+	.own-tabs button { border-bottom: 2px solid transparent; transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+	.own-tabs button:hover { color: var(--text); }
 	.own-tabs button.on { border-bottom-color: var(--text); }
 	/* T2: centered segmented pills. */
 	/* T3: glass pills sitting on the bottom edge of the art. */
@@ -1754,7 +1755,7 @@
 	.lib-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
 	.lib-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
 	.lib-ico:disabled { opacity: .3; cursor: default; }
-	.lib-keep { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
+	.lib-keep { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 50%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
 	.lib-keep.on { border-color: var(--ok); background: var(--ok); color: #fff; }
 	.lib-keep.sm { width: 24px; height: 24px; border-radius: 5px; }
 	.lib-sr .lib-eps { padding: 0 6px 8px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
@@ -1807,7 +1808,7 @@
 	.lib-file { display: grid; gap: 8px; align-content: start; padding: 18px 20px; border-radius: 16px; background: var(--surface-2); min-width: 0; }
 	.lib-file p { margin: 0; }
 	.lib-file-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 700 16px/1.2 var(--font-ui); }
-	.lib-file-top b { margin-right: 4px; }
+	.lib-file-top b { margin-right: 4px; font-weight: 700; }
 	.lib-badge, .lib-lang { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); font: 700 11px/1 var(--font-ui); letter-spacing: .03em; color: var(--text-muted); }
 	.lib-lang { border-radius: 99px; }
 	.lib-file-meta { color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
@@ -1822,6 +1823,7 @@
 	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
 	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.lib-row:focus-visible, .lib-sr-main:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 	.lib-row span { display: grid; gap: 3px; min-width: 0; }
 	.lib-row b { font: 600 15px/1.2 var(--font-ui); }
 	.lib-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1851,7 +1853,9 @@
 	.q-more :global(.ui-pop) { align-self: stretch; }
 	.q-more :global(.trigger) { min-height: 0; line-height: 1; }
 	.q-more i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
-	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } }
+	.q-seg > button, .q-more :global(.trigger) { transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	.q-seg > button:focus-visible, .q-more :global(.trigger:focus-visible) { box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } .lib-ico { width: 40px; height: 40px; } .lib-keep { position: relative; } .lib-keep::after { content: ''; position: absolute; inset: -10px; } }
 	@media (max-width: 420px) { .q-seg > button, .q-more :global(.trigger) { padding: 0 6px; font-size: 12.5px; } }
 	.lib-val { flex: none; color: var(--text-muted); font: 500 14px/1.3 var(--font-ui); text-align: right; font-variant-numeric: tabular-nums; }
 	/* The tools under the tabs speak the Settings group's language: same heading size, same surfaces. */
