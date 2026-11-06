@@ -244,6 +244,8 @@ test('Show page: one episode gets its own subtitle languages in its sheet', asyn
 	await openSeasonNamed(page, 'Season 1');
 	// The episode's sheet holds its own Subtitles card.
 	await episodeAction(page, 'S01E01', 'History');
+	await page.getByTestId('episode-subtitles-row').getByRole('button', { name: 'Subtitle options' }).click();
+	await page.getByRole('menuitem', { name: 'Choose languages…' }).click();
 	const sheet = page.getByTestId('episode-subtitles');
 	await expect(sheet.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
 	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(2);

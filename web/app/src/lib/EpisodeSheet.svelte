@@ -9,6 +9,8 @@
 	import { qualityBadges } from '#lib/title-page.ts';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 	import CompactRow from '#lib/history-looks/CompactRow.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import type { TitleSubtitles } from '#lib/subtitles.ts';
 	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import { groupDownloads } from '#lib/history.ts';
 	import type { EventRecord, TitleView } from '#lib/types.ts';
@@ -58,6 +60,54 @@
 				.then((r) => (story = r.episodes?.find((x) => x.number === e.episode)?.overview ?? ''), () => {});
 	});
 
+	// Subtitles as a choice like the title's Settings: Default, Off, or this episode's own languages;
+	// Custom opens the full list (languages, choose a subtitle, sync).
+	let subs = $state<TitleSubtitles | null>(null);
+	let subsMore = $state(false);
+	async function loadSubs() {
+		if (!ep) return;
+		try { subs = await api.get<TitleSubtitles>(`/titles/${titleId}/subtitles`); } catch { subs = null; }
+	}
+	$effect(() => { if (open && ep && manage) { subsMore = false; void loadSubs(); } });
+	const subsOwn = $derived(subs?.wishes.find((w) => w.item_id === ep?.id));
+	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
+	const subsFile = $derived(subs?.files.find((f) => f.item_id === ep?.id));
+	const codes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
+	const subsHint = $derived.by(() => {
+		if (subsMode === 'off') return 'No subtitles';
+		const wanted = subsFile?.wish?.languages ?? subsOwn?.languages ?? [];
+		const have = new Set((subsFile?.subtitles ?? []).filter((r) => r.state === 'present').map((r) => r.language));
+		const miss = wanted.filter((w) => !have.has(w.language));
+		const head = subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Default';
+		if (!wanted.length) return `${head} · none set`;
+		return miss.length ? `${head} · ${codes(miss)} missing` : `${head} · all here`;
+	});
+	async function setSubs(mode: 'default' | 'off') {
+		if (!ep || mode === subsMode) return;
+		busy = 'subs';
+		try {
+			await api.put(`/titles/${titleId}/subtitle-wish`, mode === 'default' ? { inherit: true, item_id: ep.id } : { languages: [], item_id: ep.id });
+			await loadSubs();
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busy = '';
+		}
+	}
+	async function findSubs() {
+		if (!ep) return;
+		try {
+			const r = await api.post<{ queued: number }>('/subtitles/search', { title_id: titleId, item_id: ep.id });
+			toasts.push(r.queued ? 'Looking for subtitles now.' : 'No file yet.', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		}
+	}
+	const subsMenu = $derived<MenuItem[]>([
+		{ label: 'Choose languages…', icon: 'tools', onselect: () => (subsMore = true) },
+		{ label: 'Look for subtitles', icon: 'search', onselect: () => void findSubs() },
+		{ label: 'Choose a subtitle…', icon: 'copy', onselect: () => (subsMore = true) }
+	]);
 	const slot = $derived(ep?.slots[0]);
 	const file = $derived(slot?.file ?? null);
 	const tone = $derived.by(() => {
@@ -163,7 +213,19 @@
 
 				{#if manage && ep.season != null}
 					<!-- This episode's subtitles: its languages, what is missing, choose one by hand. -->
-					<div class="es-subs" data-testid="episode-subtitles"><p class="es-h" aria-hidden="true">Subtitles</p>{#key ep.id}<SubtitlePanel {titleId} movie={false} itemId={ep.id} bare label={`S${String(ep.season).padStart(2, '0')}E${String(ep.episode).padStart(2, '0')}`} />{/key}</div>
+					<div class="es-rows" data-testid="episode-subtitles-row">
+						<div class="es-row static es-subq">
+							<span><b>Subtitles</b><small>{subs ? subsHint : ' '}</small></span>
+							<div class="q-seg" role="radiogroup" aria-label="Subtitles">
+								<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busy === 'subs'} onclick={() => setSubs('default')}>Default</button>
+								<button type="button" role="radio" aria-checked={subsMode === 'off'} class:on={subsMode === 'off'} disabled={busy === 'subs'} onclick={() => setSubs('off')}>Off</button>
+								<div class="q-more" class:on={subsMode === 'custom'}><Menu label="Subtitle options" variant="button" width={220} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu></div>
+							</div>
+						</div>
+					</div>
+					{#if subsMore}
+						<div class="es-subs" data-testid="episode-subtitles">{#key ep.id}<SubtitlePanel {titleId} movie={false} itemId={ep.id} bare label={`S${String(ep.season).padStart(2, '0')}E${String(ep.episode).padStart(2, '0')}`} />{/key}</div>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -174,8 +236,18 @@
 	.es { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 	.es-main, .es-side { display: grid; gap: 14px; min-width: 0; }
 	.es-subs :global(.card) { padding: 0; background: none; box-shadow: none; border: 0; }
-	.es-subs { position: relative; display: grid; gap: 16px; }
-	.es-subs > .es-h { display: flex; align-items: center; min-height: 34px; margin: 0; }
+	.es-subs { position: relative; display: grid; gap: 16px; padding-top: 34px; }
+	.es-row.static { cursor: default; }
+	.es-row.static:hover { background: none; }
+	.es-row.es-subq { display: grid; gap: 10px; justify-content: stretch; }
+	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); }
+	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; min-height: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.q-seg > button.on, .q-more.on :global(.trigger) { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 2px rgb(0 0 0 / .2); }
+	.q-seg > button:focus-visible, .q-more :global(.trigger:focus-visible) { box-shadow: var(--focus-ring); }
+	.q-more { flex: 0 0 auto; display: flex; }
+	.q-more :global(.ui-pop) { display: flex; align-self: stretch; }
+	.q-more i { font-style: normal; }
+	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } }
 	.es-subs :global(.card-head.bare) { position: absolute; top: 0; right: 0; margin: 0; }
 	@media (max-width: 760px) { .es { grid-template-columns: minmax(0, 1fr); } }
 	.es-still { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: var(--surface-2); }

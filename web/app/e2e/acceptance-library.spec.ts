@@ -141,6 +141,8 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await openLibraryTab(page);
 	await openSeasonNamed(page, 'Season 1');
 	await page.getByRole('button', { name: /^Episode 1:/ }).first().click();
+	await page.getByTestId('episode-subtitles-row').getByRole('button', { name: 'Subtitle options' }).click();
+	await page.getByRole('menuitem', { name: 'Choose languages…' }).click();
 	const dialog = page.getByTestId('episode-subtitles');
 	await expect(dialog.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
 	await expect(dialog.getByTestId('subtitle-missing')).toContainText('English');
