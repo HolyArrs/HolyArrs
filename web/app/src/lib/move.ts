@@ -434,7 +434,7 @@ export function ruleProblem(r: PathRule): string {
 	const full = (p: string) => p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
 	if (!r.from || !r.to) return 'Fill in both paths.';
 	if (!full(r.from) || !full(r.to)) return 'Both must be full paths, such as /movies.';
-	if (/(^|[\\/])\.\.([\\/]|$)/.test(r.from + '/' + r.to)) return 'Paths may not hold "..".';
+	if (/(^|[\\/])\.\.([\\/]|$)/.test(r.from + '/' + r.to)) return `Paths can't contain "..".`;
 	return '';
 }
 

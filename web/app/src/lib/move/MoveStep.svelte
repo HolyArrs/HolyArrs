@@ -56,13 +56,13 @@
 		{/if}
 		{#if links}
 			<div class="srow">
-				<p class="txt">Sources and Downloaders arrive paused and can't reach your home network until you turn on May reach the local network.</p>
+				<p class="txt">Sources and Downloaders arrive paused. They can't reach your home network until you turn on May reach the local network.</p>
 			</div>
 		{/if}
 		{#if needs.length > 0}
 			<div class="srow">
 				<div class="txt"><span class="label">{plural(needs.length, 'key or password', 'keys and passwords')} to type again afterwards</span></div>
-				<div class="ctl"><Button onclick={() => onshow('Keys to type again', needs, (n) => n)} aria-label="Show Keys to type again">Show</Button></div>
+				<div class="ctl"><Button onclick={() => onshow('Keys to add again', needs, (n) => n)} aria-label="Show Keys to add again">Show</Button></div>
 			</div>
 		{/if}
 		{#if newPeople > 0}
@@ -71,7 +71,7 @@
 			</div>
 		{/if}
 		<div class="srow">
-			<p class="txt hint">Your old apps are not changed. You can undo this move.</p>
+			<p class="txt hint">Your old apps aren't changed. You can undo this move.</p>
 		</div>
 	{/if}
 </SettingsCard>

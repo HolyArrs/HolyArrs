@@ -657,7 +657,7 @@
 	function finished(m: Move) {
 		moves = [m, ...moves.filter((x) => x.id !== m.id)];
 		if (m.state === 'undone') toasts.push(`Move ${m.id} undone.`, 'ok');
-		else if (m.undo_state === 'failed') toasts.push(`The undo of move ${m.id} stopped. Try it again.`, 'fail');
+		else if (m.undo_state === 'failed') toasts.push(`Undo of move ${m.id} stopped. Try again.`, 'fail');
 		else toasts.push(`Move ${m.id} finished.`, m.state === 'done' ? 'ok' : 'fail');
 		// A finished move forgets the kept keys.
 		if (m.state === 'done') void loadSaved();
@@ -801,7 +801,7 @@
 {:else}
 	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
 	{#if mustSetPw && !pwSheet}
-		<SettingsCard id="move-password" title="Set a password first" description="Needed before moving" icon="shield">
+		<SettingsCard id="move-password" title="Set a password first" icon="shield">
 			<form class="setpw" onsubmit={setFirstPw}>
 				<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
 				<input class="input" type="password" bind:value={pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
@@ -858,7 +858,7 @@
 
 	{#if gone}
 		<div class="notice warn gone" role="alert">
-			<span>A picked read is gone. Pick again.</span>
+			<span>A read you picked is gone. Pick again.</span>
 			<Button onclick={goBackToReads}>Back to Read your apps</Button>
 		</div>
 	{/if}
@@ -885,7 +885,7 @@
 		{@const canUndo = !busyNow && (m.state === 'done' || m.state === 'failed') && m.undo_state !== 'failed'}
 		{@const retry = !busyNow && m.undo_state === 'failed' && m.state !== 'undone'}
 		<StepFoot
-			label={busyNow ? undefined : retry ? 'Try the undo again' : embedded?.ondone ? 'Continue' : 'Done'}
+			label={busyNow ? undefined : retry ? 'Try undo again' : embedded?.ondone ? 'Continue' : 'Done'}
 			variant={retry ? 'destructive' : 'primary'}
 			onclick={retry ? () => (confirmUndo = true) : (embedded?.ondone ?? done)}
 			disabled={(safeMode || undoing) && retry}
@@ -914,7 +914,7 @@
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={pwSheet} title="Set a password first" description="Needed before moving" size="sm">
+<Sheet bind:open={pwSheet} title="Set a password first" size="sm">
 	<form class="setpw one-col" onsubmit={setFirstPw}>
 		<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
 		<input class="input" type="password" bind:value={pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
@@ -943,7 +943,7 @@
 <Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
 	<form id="move-confirm-form" onsubmit={startMove}>
 		{#if tryNotice}<p class="notice warn" role="status">{tryNotice}</p>{/if}
-		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Anything marked paused stays paused. You can undo this move later from Earlier moves {embedded ? 'in Settings, Move from other apps' : 'on this page'}.</p>
+		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Paused items stay paused. You can undo this later from Earlier moves {embedded ? 'in Settings, Move from other apps' : 'on this page'}.</p>
 	</form>
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (confirmMove = false)}>Cancel</Button>

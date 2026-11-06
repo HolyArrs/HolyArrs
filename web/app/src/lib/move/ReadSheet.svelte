@@ -225,7 +225,7 @@
 						<div class="ctl"><input id="move-pass" class="input" type="password" bind:value={signWord} oninput={changed} autocomplete="new-password" required={!key} /></div>
 					</div>
 					<div class="srow">
-						<div class="txt"><label for="move-key">API key</label><span class="hint">Instead of a sign-in, qBittorrent 5.2+</span></div>
+						<div class="txt"><label for="move-key">API key</label><span class="hint">Replaces user name and password. qBittorrent 5.2+</span></div>
 						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" /></div>
 					</div>
 				{:else}
@@ -238,7 +238,7 @@
 		{/if}
 	</form>
 	{#if busy}
-		<div class="cap" role="status"><StepCapsule tone="go" live fill={0.4} status="processing" word="Reading {appName(reading)}" detail="this can take a few minutes" testid="read-capsule" /></div>
+		<div class="cap" role="status"><StepCapsule tone="go" live fill={0.4} status="processing" word="Reading {appName(reading)}" detail="Can take a few minutes" testid="read-capsule" /></div>
 	{/if}
 	{#if probe}<p class="probe" data-testid={probe.ok ? 'probe-ok' : undefined}><TestTag ok={probe.ok} text={probe.text} app={appName(kind)} /></p>{/if}
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}

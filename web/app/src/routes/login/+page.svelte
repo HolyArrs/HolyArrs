@@ -393,7 +393,7 @@
 			else if (via !== 'choose') took(await session.mediaServer(via, name.trim(), pw));
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409 && mode === 'setup') {
-				error = 'The owner is already set up. Sign in instead.';
+				error = 'An owner already exists. Sign in instead.';
 				await session.load();
 			} else {
 				failed(err);
@@ -500,7 +500,7 @@
 		} catch (err) {
 			firstRunWay = '';
 			if (err instanceof ApiError && err.status === 409) {
-				error = 'The owner is already set up. Sign in instead.';
+				error = 'An owner already exists. Sign in instead.';
 				await session.load();
 			} else {
 				failed(err);
@@ -743,7 +743,7 @@
 						{#if mode === 'setup'}
 							<p class="lead">{setupServer ? `Use an admin account on your ${wayWord[setupServer]} server.` : 'Create the owner account.'}</p>
 							{#if session.s.configUnmapped}
-								<p class="form-error" role="status">/config isn't mapped, so this setup will be lost when the container is recreated. See "Forgot to map /config?" in the install guide.</p>
+								<p class="form-error" role="status">/config isn't mapped. This setup is lost when the container is recreated. See "Forgot to map /config?" in the install guide.</p>
 							{/if}
 						{:else if mode === 'code'}
 							<p class="lead">{useBackup ? 'Enter one of your saved backup codes.' : 'Enter the 6-digit code from your authenticator app to finish signing in.'}</p>

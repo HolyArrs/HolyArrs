@@ -268,12 +268,12 @@
 
 	const titles: Record<Step, { h: string; p: string }> = {
 		parts: { h: 'What do you use?', p: 'You can change this later.' },
-		folders: { h: 'Library folders', p: 'Where should finished downloads go?' },
+		folders: { h: 'Library folders', p: 'Where finished downloads go.' },
 		downloader: { h: 'Downloader', p: 'Where HolyArrs sends downloads.' },
 		source: { h: 'Source', p: 'Where HolyArrs finds releases.' },
 		import: { h: 'Bring your setup', p: 'Coming from Sonarr, Radarr or Overseerr?' }
 	};
-	const head = $derived(step === 'import' && importing ? { h: 'Import', p: 'Bring your library and settings over from the apps you use now.' } : titles[step]);
+	const head = $derived(step === 'import' && importing ? { h: 'Import', p: 'From the apps you use now.' } : titles[step]);
 </script>
 
 <svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
@@ -434,12 +434,11 @@
 				<button class="tile big" type="button" disabled={busy} onclick={() => openImport(true)}>
 					<Icon name="download" size={26} />
 					<span class="tile-label">Import</span>
-					<span class="tile-sub">Library, sources, downloaders and people.</span>
+					<span class="tile-sub">Titles, Sources, Downloaders and people.</span>
 				</button>
 				<button class="tile big" type="button" disabled={busy} onclick={home}>
 					<Icon name="home" size={26} />
 					<span class="tile-label">Start fresh</span>
-					<span class="tile-sub">Open Home.</span>
 				</button>
 			</div>
 		</div>

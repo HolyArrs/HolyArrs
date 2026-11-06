@@ -47,7 +47,7 @@
 	{#if needs.length > 0}
 		<li class="rg-row">
 			<span class="rg-txt"><b>Keys to add again</b><span class="rg-sub">{needs.length}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow('Keys to add again', needs, (n) => n)} aria-label="Show Keys to type again">Show</button>
+			<button type="button" class="rg-show" onclick={() => onshow('Keys to add again', needs, (n) => n)} aria-label="Show Keys to add again">Show</button>
 		</li>
 	{/if}
 	{#if (report.notes?.length ?? 0) > 0}

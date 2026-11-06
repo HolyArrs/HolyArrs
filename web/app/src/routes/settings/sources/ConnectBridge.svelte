@@ -168,7 +168,7 @@
 			// Edited to a new address: the old connection goes, its Sources with it.
 			if (editingId != null && b.id !== editingId) await api.del(`/bridges/${editingId}`).catch(() => {});
 			editingId = null;
-			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. Sources will appear shortly.', 'ok');
+			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. Sources show up in a minute.', 'ok');
 			open = false;
 			key = '';
 			typedKeys = { sonarr: '', radarr: '' };
