@@ -114,7 +114,8 @@
 		if (b.length > 0 || on.length === 0) return b;
 		return [on.reduce((a, g) => (g.items.length > a.items.length ? g : a))];
 	});
-	const bigLine = $derived(lead.length ? lead.map(countOf).join(', ') : 'Nothing switched on');
+	// The summary as tiles: the number big, its word under it.
+	const tiles = $derived(lead.map((g) => { const w = counted[g.name]; return { n: g.items.length, w: w ? (g.items.length === 1 ? w[0] : w[1]) : g.label }; }));
 	const restLine = $derived.by(() => {
 		const rest = on.filter((g) => !lead.includes(g)).map((g) => named[g.name] ?? g.label);
 		return rest.length ? `Also: ${andList(rest)}` : '';
@@ -130,7 +131,6 @@
 		}
 		return parts.length ? `Reconnect ${andList(parts)}` : '';
 	});
-	const nothingNeeded = $derived(needFolders.length === 0 && !keysLine && !peopleOn);
 
 	function choicesFor(p: string): { value: string; label: string }[] {
 		const k = kindOf.get(p);
@@ -254,59 +254,61 @@
 			{#if shown.length === 0}
 				<EmptyState compact icon="check" title="Nothing new to move" text="Everything in these reads is already here or has no match." />
 			{:else}
-				<h3 class="head">Coming over</h3>
-				<div class="box sum" data-testid="move-summary">
-					<b class="big">{bigLine}</b>
-					{#if restLine}<span class="sub">{restLine}</span>{/if}
+				<div class="tiles" data-testid="move-summary">
+					{#each tiles as tl (tl.w)}<div class="tile"><b class="num">{tl.n}</b><span class="sub">{tl.w}</span></div>{/each}
+					{#if tiles.length === 0}<div class="tile"><span class="sub">Nothing switched on</span></div>{/if}
 				</div>
+				{#if restLine}<p class="sub also">{restLine}</p>{/if}
 			{/if}
 
-			{#if shown.length === 0 && needFolders.length === 0}
-				<!-- Nothing to move: no "Needs you" either. -->
-			{:else if nothingNeeded}
-				<h3 class="head">Needs you</h3>
-				<p class="sub none">Nothing needs you. Everything moves as shown.</p>
-			{:else}
-				<h3 class="head">Needs you</h3>
-				{#if needFolders.length}<p class="sub">Pick where these titles go, or they stay behind.</p>{/if}
+			{#if needFolders.length}
+				<h3 class="head">Folders</h3>
+				<p class="sub">Pick where these titles go, or they stay behind.</p>
 				<ul class="box list" data-testid="needs-you">
 					{#each needFolders as p, n (p)}
 						{@render folderRow(p, n, `move-need-folder-${n}`, 'need-folder-row', false)}
 					{/each}
+				</ul>
+			{/if}
+
+			{#if peopleOn && asked.length}
+				<h3 class="head">Your account</h3>
+				<ul class="box list">
+					{#if asked.length <= 3 || peopleOpen}
+						{#each asked as it, n (it.key)}
+						{@const owner = !!it.person?.was_owner}
+						<li class="mrow" data-testid="person-row">
+							<div class="txt"><span class="name one">{it.name}</span><span class="sub one" title={personHint(it)}>{personHint(it)}</span></div>
+							<span class="sw-word" aria-hidden="true">{owner ? 'This is me' : 'Keep as admin'}</span>
+							<label class="switch">
+								<input
+									id="move-person-{n}"
+									type="checkbox"
+									checked={people[it.key] === (owner ? 'owner' : 'admin')}
+									onchange={(e) => onperson(it.key, e.currentTarget.checked ? (owner ? 'owner' : 'admin') : null)}
+									aria-label="{owner ? 'This is me' : 'Keep as admin'}: {it.name}"
+								/>
+								<span class="sw" aria-hidden="true"></span>
+							</label>
+						</li>
+						{/each}
+					{:else}
+						<li class="mrow"><span class="txt">{asked.length} owners and admins</span><button type="button" class="quiet" aria-expanded={peopleOpen} onclick={() => (peopleOpen = true)}>Review</button></li>
+					{/if}
+				</ul>
+			{/if}
+
+			{#if keysLine || peopleOn}
+				<h3 class="head">After the move</h3>
+				<ul class="box list">
 					{#if keysLine}
 						<li class="mrow"><span class="txt"><b class="warn">{keysLine}</b><span class="sub">They come over paused. Add their keys in Settings to switch them on.</span></span><button type="button" class="quiet" onclick={() => (keysOpen = true)}>Show</button></li>
 					{/if}
 					{#if peopleOn}
 						<li class="mrow">
 							<span class="txt"><b>Invite {peopleItems.length === 1 ? '1 user' : `${peopleItems.length} users`}</b><span class="sub">Their accounts come over. Send each an invite so they can sign in.</span></span>
-							{#if asked.length > 3}
-								<button type="button" class="quiet" aria-expanded={peopleOpen} onclick={() => (peopleOpen = !peopleOpen)}>Review people</button>
-							{:else}
-								<button type="button" class="quiet" onclick={() => onshow('People', peopleItems, itemRow)}>Show</button>
-							{/if}
+							<button type="button" class="quiet" onclick={() => onshow('People', peopleItems, itemRow)}>Show</button>
 						</li>
-						{#if asked.length <= 3 || peopleOpen}
-							{#each asked as it, n (it.key)}
-								{@const owner = !!it.person?.was_owner}
-								<li class="mrow" data-testid="person-row">
-									<div class="txt"><span class="name one">{it.name}</span><span class="sub one" title={personHint(it)}>{personHint(it)}</span></div>
-									<span class="sw-word" aria-hidden="true">{owner ? 'This is me' : 'Keep as admin'}</span>
-									<label class="switch">
-										<input
-											id="move-person-{n}"
-											type="checkbox"
-											checked={people[it.key] === (owner ? 'owner' : 'admin')}
-											onchange={(e) => onperson(it.key, e.currentTarget.checked ? (owner ? 'owner' : 'admin') : null)}
-											aria-label="{owner ? 'This is me' : 'Keep as admin'}: {it.name}"
-										/>
-										<span class="sw" aria-hidden="true"></span>
-									</label>
-								</li>
-							{/each}
-							{#if asked.length > 3}
-								<li class="mrow"><span class="txt"></span><button type="button" class="quiet" onclick={() => onshow('People', peopleItems, itemRow)}>Show all</button></li>
-							{/if}
-						{/if}
 					{/if}
 				</ul>
 			{/if}
@@ -384,6 +386,10 @@
 </Sheet>
 
 <style>
+	.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+	.tile { padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.num { font: 700 26px/1.1 var(--font-ui); color: var(--text); }
+	.also { margin: 8px 2px 0; }
 	.kgroups { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
 	.khead { margin: 8px 2px 2px; color: var(--text-muted); font: var(--t-footnote); }
 	.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -395,8 +401,6 @@
 	/* One surface box per list, rows split by --line, like the read rows. */
 	.box { margin: 0; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.list { list-style: none; padding: 0 16px; }
-	.sum { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; }
-	.big { font: 600 17px/1.3 var(--font-ui); color: var(--text); }
 	.head { margin: 18px 0 8px; font: var(--t-subhead); font-weight: 600; color: var(--text); }
 	.sub { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
 	.warn, .sub.warn { color: var(--wait-text); }
