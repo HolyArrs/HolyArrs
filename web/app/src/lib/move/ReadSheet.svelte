@@ -171,7 +171,10 @@
 		const k = kind;
 		const b = body();
 		const usedSaved = !!b.use_saved_key;
+		let keep = false;
 		ctrl = new AbortController();
+		startedAt = Date.now();
+		stopped = false;
 		reading = k;
 		changed();
 		try {
@@ -182,21 +185,35 @@
 			open = false;
 			onread(r, k, usedSaved);
 		} catch (err) {
-			if (quiet(err)) return;
+			if (quiet(err)) {
+				// Stopped by the owner: say so, and keep what they typed.
+				if (stopped) {
+					keep = true;
+					if (open) error = 'Reading stopped.';
+				}
+				return;
+			}
 			if (open) error = reachWords(message(err));
 			else toasts.push(`${appName(k)} was not read: ${reachWords(message(err))}`, 'fail');
 		} finally {
 			reading = '';
 			ctrl = null;
-			key = '';
-			signWord = '';
+			if (!keep) {
+				key = '';
+				signWord = '';
+			}
 		}
 		if (open && error) focusAddress();
 	}
 
 	/** stop ends the read: the request is aborted, so the server stops reading. */
+	let startedAt = 0;
+	let stopped = false;
 	export function stop() {
-		ctrl?.abort();
+		// A second Enter on the same button right after Read is not a stop.
+		if (!ctrl || Date.now() - startedAt < 1000) return;
+		stopped = true;
+		ctrl.abort();
 	}
 </script>
 

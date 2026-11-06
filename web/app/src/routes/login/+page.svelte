@@ -522,6 +522,8 @@
 	function cancelPlex() {
 		clearInterval(plexTimer);
 		plexWaiting = false;
+		// Focus goes back to the Plex button (or the first choice), not the page.
+		void tick().then(() => (panelEl?.querySelector<HTMLElement>('[data-way="plex"]') ?? panelEl?.querySelector<HTMLElement>('button:not([disabled])'))?.focus());
 	}
 
 	async function plex() {

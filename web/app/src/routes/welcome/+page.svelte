@@ -12,6 +12,7 @@
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
@@ -75,9 +76,29 @@
 		announce = `Step ${stepNo} of ${order.length}: ${head.h}`;
 	}
 	// Back or Forward in the browser: show the step the address names.
+	// Set once the wizard is finished in this tab: a later Back, Forward or reload
+	// onto a step goes to Home instead (the step history may predate a reload).
+	const DONE_KEY = 'holyarrs.welcome.done';
+	function wizardDone(): boolean {
+		try {
+			return sessionStorage.getItem(DONE_KEY) === '1';
+		} catch {
+			return false;
+		}
+	}
 	onMount(() => {
+		if (firstRun && wizardDone()) {
+			leaving = true;
+			void goto(to('/'), { replace: true });
+			return;
+		}
 		const onPop = () => {
 			if (!firstRun) return;
+			if (!leaving && wizardDone()) {
+				leaving = true;
+				void goto(to('/'), { replace: true });
+				return;
+			}
 			const q = new URLSearchParams(location.search);
 			const s = stepFromUrl(q);
 			if (leaving || s === step) return;
@@ -115,6 +136,11 @@
 	let leaving = false;
 	async function home(path = '/') {
 		playLoader('', SETUP_HOLD_MS);
+		try {
+			sessionStorage.setItem(DONE_KEY, '1');
+		} catch {
+			// no storage: the depth fold below still covers this visit
+		}
 		if (depth > 0) {
 			leaving = true;
 			const n = depth;
@@ -194,8 +220,8 @@
 		});
 	}
 	// The server's folder answers, in plain words.
-	function folderWords(text: string): string {
-		if (/absolute/i.test(text)) return 'Use the full folder path, like /data/movies.';
+	function folderWords(text: string, kind: Kind = 'movie'): string {
+		if (/absolute/i.test(text)) return `Use the full folder path, like ${kind === 'show' ? '/data/tv' : kind === 'music' ? '/data/music' : '/data/movies'}.`;
 		if (/already a library folder/i.test(text)) return 'This folder is already used, or sits inside one that is.';
 		if (/does not exist|not a folder|no such file/i.test(text)) return "That folder doesn't exist. Check the path.";
 		return text ? text[0].toUpperCase() + text.slice(1) : text;
@@ -241,7 +267,22 @@
 				r.id = f.id;
 				r.editing = false;
 			} catch (err) {
-				r.error = folderWords(message(err));
+				// Saved meanwhile (another tab, same path): take that one and carry on.
+				if (err instanceof ApiError && err.status === 409) {
+					try {
+						const have = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders ?? [];
+						const same = have.find((x) => x.kind === r.kind && x.path.replace(/\/+$/, '') === r.path.trim().replace(/\/+$/, ''));
+						if (same) {
+							r.saved = same.path;
+							r.id = same.id;
+							r.editing = false;
+							continue;
+						}
+					} catch {
+						// fall through to the error
+					}
+				}
+				r.error = folderWords(message(err), r.kind);
 				failed = true;
 				if (old && r.id == null) {
 					try {
@@ -490,7 +531,7 @@
 		if (s === 'done' && !todo.length) await loadTodo();
 	}
 	onMount(() => {
-		if (firstRun) void enter(step);
+		if (firstRun && !wizardDone()) void enter(step);
 	});
 	// Moving asks for a recent password check (past the setup window): the
 	// move flow only signals it, so the wizard shows the confirm box itself
@@ -592,6 +633,7 @@
 		</div>
 	{:else if step === 'media'}
 		<form class="card" onsubmit={(e) => { e.preventDefault(); void saveMedia(false); }} data-testid="welcome-media">
+			<PageLoader loading={!rows.length} label="Loading folders">
 			<ul class="rows">
 				{#each rows as r (r.kind)}
 					<li class="frow" class:off={!media[r.part]}>
@@ -615,6 +657,7 @@
 					</li>
 				{/each}
 			</ul>
+			</PageLoader>
 			<p class="hint">On Docker, use the path inside the container.</p>
 			{#if error || mediaOff}<p class="form-error" role="alert">{error || 'Turn on at least one.'}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaOff} {busy}>Continue</Button>
