@@ -200,7 +200,6 @@
 			else {
 				listJobs = r.job_ids;
 				listing = true;
-				toLibrary();
 			}
 		} catch (e) {
 			toasts.push(message(e), 'fail');
@@ -287,9 +286,6 @@
 
 		<div class="alb" class:staff>
 		<div class="alb-main">
-		{#if listing}
-			<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music onclose={() => (listing = false)} onchange={load} />
-		{/if}
 		<TitleSection id="h-tracks" title="Tracks" primary>
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
 				<ol class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
@@ -379,6 +375,9 @@
 		</TitleSection>
 
 		{#if staff}
+			<Sheet bind:open={listing} title="Choose a release" description={scope.label} size="lg" placement="center">
+				{#if listing}<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music bare onclose={() => (listing = false)} onchange={load} />{/if}
+			</Sheet>
 			<Sheet bind:open={editionOpen} title="Follow this edition?" description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm" placement="center">
 				<p class="small muted">Tracks it doesn't have go unless a file holds them.</p>
 				<div class="row modal-actions">

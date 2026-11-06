@@ -116,8 +116,6 @@ test('the album page searches from a phone', async ({ browser }) => {
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
 	await openAlbum(phone, 'Tin Lanterns', 'Night Ferry');
-	// On a phone the title page sections fold; open Search.
-	await phone.locator('#h-album-search').click();
 	await expect(phone.getByTestId('album-search-now')).toBeVisible();
 	await phone.getByTestId('album-choose').click();
 	const panel = phone.getByTestId('show-releases');

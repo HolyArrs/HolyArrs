@@ -16,9 +16,10 @@
 		scope,
 		jobs = [],
 		music = false,
+		bare = false,
 		onclose,
 		onchange
-	}: { titleId: number; scope: Scope; jobs?: number[]; music?: boolean; onclose: () => void; onchange: () => void } = $props();
+	}: { titleId: number; scope: Scope; jobs?: number[]; music?: boolean; bare?: boolean; onclose: () => void; onchange: () => void } = $props();
 	/** Music lists are for an album: one Release fills its tracks. */
 	const noun = $derived(music ? 'tracks' : 'episodes');
 
@@ -144,10 +145,10 @@
 	}
 </script>
 
-<section class="card rel-card" aria-labelledby="h-show-rel" data-testid="show-releases">
-	<div class="card-head">
+<section class="card rel-card" class:bare aria-labelledby="h-show-rel" data-testid="show-releases">
+	<div class="card-head" class:sr-only={bare}>
 		<h2 id="h-show-rel" class="h2">Choose a release: {scope.label}</h2>
-		<Button variant="plain" onclick={onclose}>Close</Button>
+		{#if !bare}<Button variant="plain" onclick={onclose}>Close</Button>{/if}
 	</div>
 	{#if total}<p class="xs muted">{total} found in the last search</p>{/if}
 	<p class="small muted" aria-live="polite" data-testid="search-running">
@@ -243,6 +244,7 @@
 </dialog>
 
 <style>
+	.rel-card.bare { padding: 0; background: none; box-shadow: none; border: 0; }
 	.card-head {
 		display: flex;
 		justify-content: space-between;
