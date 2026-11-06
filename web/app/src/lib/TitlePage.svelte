@@ -1751,7 +1751,7 @@
 	.lib-file.add { place-items: center; place-content: center; gap: 6px; min-height: 120px; background: none; border: 1.5px dashed color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); font: 600 14px/1.2 var(--font-ui); text-decoration: none; text-align: center; }
 	.lib-file.add small { color: var(--text-muted); font-weight: 500; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
-	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
+	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
 	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
 	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
@@ -1766,8 +1766,10 @@
 	.lib-row small.wrap { white-space: normal; }
 	/* A row's value that opens a short menu or a small panel. */
 	.lib-pick { flex: none; max-width: 55%; min-width: 0; }
-	.lib-pick :global(.trigger) { max-width: 100%; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
-	.lib-pick :global(.trigger span) { display: inline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-pick :global(.ui-pop) { display: flex; max-width: 100%; }
+	.lib-pick :global(.trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
+	.lib-pick :global(.trigger span) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-pick :global(.trigger svg) { flex: none; }
 	.lib-pick :global(.trigger:hover), .lib-pick :global(.trigger[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 	.lib-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
 	.lib-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
