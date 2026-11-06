@@ -54,11 +54,11 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	// A reload of a deep page, the menu and Back stay under the base.
 	await page.goto(`${root}/library`);
 	await page.reload();
-	await expect(page).toHaveURL(new RegExp(`${root}/library(\?kind=movie)?$`));
+	await expect(page).toHaveURL(new RegExp(`${root}/library(\\?kind=movie)?$`));
 	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: /^Settings(, needs attention)?$/ }).click();
 	await expect(page).toHaveURL(`${root}/settings`);
 	await page.goBack();
-	await expect(page).toHaveURL(new RegExp(`${root}/library(\?kind=movie)?$`));
+	await expect(page).toHaveURL(new RegExp(`${root}/library(\\?kind=movie)?$`));
 
 	// Outside the base there is nothing.
 	expect((await page.request.get(`http://${proxy}/api/v1/auth/state`)).status()).toBe(404);
