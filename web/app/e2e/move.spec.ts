@@ -57,6 +57,13 @@ const primary = (p: Page) => p.locator("#move-primary");
 const reason = (p: Page) => p.locator("#move-reason");
 const current = (p: Page) =>
   p.getByTestId("move-steps").locator('[aria-current="step"]');
+/** Opens "Change what moves" on Choose (the full list), if it is closed. */
+async function openAll(p: Page) {
+  const b = p.getByRole("button", { name: "Change what moves" });
+  await expect(b).toBeVisible();
+  if ((await b.getAttribute("aria-expanded")) !== "true") await b.click();
+  await expect(b).toHaveAttribute("aria-expanded", "true");
+}
 const readSheet = (p: Page) =>
   p.getByRole("dialog", { name: /^(Add an app|Read .+ again)$/ });
 
@@ -161,6 +168,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await primary(page).click();
   await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 5, Choose/);
   await expect(page).toHaveURL(/step=choose&read=\d+,\d+/);
+  await openAll(page);
   const groups = page.getByTestId("group-row");
   await expect(groups.filter({ hasText: "Titles" })).toBeVisible();
   // The old folder is not here: the Library folder of the same name is suggested.
@@ -174,6 +182,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 5/);
   await page.goForward();
   await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 5/);
+  await openAll(page);
 
   // A group switched off stays in place, marked Left out.
   const alerts = page.getByRole("checkbox", { name: "Move Alerts" });
@@ -302,6 +311,7 @@ test("after Done, Move waits for a new test; a stale test blocks Continue; a cha
     await route.continue().catch(() => {});
   });
   await page.getByTestId("step-foot").getByRole("button", { name: "Back", exact: true }).click();
+  await openAll(page);
   await page.getByRole("checkbox", { name: "Move Alerts" }).uncheck();
   await expect(primary(page)).toBeEnabled();
   const asked = page.waitForRequest("**/api/v1/migrate/dry-run");
@@ -601,6 +611,7 @@ test("a 2,000-title list opens 100 at a time and searches", async ({ browser }) 
   const { ctx, p } = await phone(browser, 390);
   await fixture(p, { titles: 2000 });
   await p.goto("/settings/move?step=choose&read=901,902");
+  await openAll(p);
   await expect(p.getByTestId("group-row").filter({ hasText: "Titles" })).toContainText("2000");
   await p.getByRole("button", { name: "Show Titles" }).click();
   const sheet = p.getByRole("dialog", { name: "Titles" });
@@ -651,8 +662,9 @@ for (const width of [360, 390]) {
       const footEnd = await p.getByTestId("step-foot").boundingBox();
       const barEnd = await p.locator(".ui-tabbar").boundingBox();
       if (footEnd && barEnd) expect(footEnd.y + footEnd.height, `${url}: footer behind the tab bar`).toBeLessThanOrEqual(barEnd.y + 1);
-      const last = p.locator("main .ui-settings .srow").last();
-      const lb = await last.boundingBox();
+      // Rows: the settings rows, and the move steps' own rows (Read and Choose).
+      const rowsHere = p.locator("main .ui-settings :is(.srow, .mrow, .read)");
+      const lb = (await rowsHere.count()) ? await rowsHere.last().boundingBox() : null;
       const fb = await p.getByTestId("step-foot").boundingBox();
       if (lb && fb) expect(lb.y + lb.height).toBeLessThanOrEqual(fb.y + 1);
     }
