@@ -179,7 +179,8 @@
 <div class="settings-shell look-fold" class:home>
 	{#if !home}
 		<div class="group-top">
-			<a class="back-home" href={to('/settings')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />Settings</a>
+			<!-- Settings home is for staff; a member on their own pages goes back Home instead of being bounced. -->
+			{#if session.can('settings') || session.can('users')}<a class="back-home" href={to('/settings')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />Settings</a>{:else}<a class="back-home" href={to('/')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />Home</a>{/if}
 			{@render pill()}
 		</div>
 		{#if currentGroup}
