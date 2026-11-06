@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	// This lives on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '#lib/Icon.svelte';
@@ -6,15 +7,18 @@
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import CompactRow from '#lib/history-looks/CompactRow.svelte';
+	import { isRoutine } from '#lib/history-looks/dirs.ts';
+	import { groupDownloads } from '#lib/history.ts';
 	import { splitSteps, type RenameStep } from '#lib/organise.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/format.ts';
-	import type { AlbumSummary, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/types.ts';
+	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/types.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
-	import { albumChoices, albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind, word } from '#lib/music/music.ts';
+	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from '#lib/music/music.ts';
 
 	// An artist's Library tab: what you have, the albums grouped by kind (closed
 	// until opened, with their tracks and a link to the album page), keep up to
@@ -25,7 +29,10 @@
 
 	let title = $state<TitleView | null>(null);
 	let albums = $state<AlbumSummary[]>([]);
-	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
+	let events = $state<EventRecord[]>([]);
+	// History: the same compact rows as a movie's Library tab, routine work left out.
+	const eventRows = $derived(groupDownloads(events.filter((e) => !isRoutine(e.Kind))));
+	const eventTitles = $derived(new Map(title ? [[title.id, title]] : []));
 	let busy = $state('');
 	let show = $state<'included' | 'left_out' | 'all'>('included');
 	let allEvents = $state(false);
@@ -143,8 +150,28 @@
 	let eStatuses = $state<string[]>([]);
 	let kindsError = $state('');
 	let saving = $state(false);
-	const kindsLine = $derived([word(newAlbumChoices, title?.artist?.new_albums), (title?.artist?.album_types ?? []).map((k) => word(mainKinds, k)).join(', ')].filter(Boolean).join(' · '));
+	type KindPick = 'albums' | 'eps' | 'singles';
+	const kindSets: Record<KindPick, string[]> = { albums: ['album'], eps: ['album', 'ep'], singles: ['album', 'ep', 'single'] };
+	const kindWords: Record<KindPick | 'custom', string> = { albums: 'Albums', eps: 'Albums and EPs', singles: 'Albums, EPs and singles', custom: 'Your own mix' };
+	const same = (a: string[] = [], b: string[] = []) => a.length === b.length && a.every((x) => b.includes(x));
+	const kindPick = $derived.by((): KindPick | 'custom' => {
+		const ar = title?.artist;
+		if (!ar || !same(ar.secondary_types, ['studio']) || !same(ar.release_statuses, ['official'])) return 'custom';
+		return (Object.keys(kindSets) as KindPick[]).find((k) => same(ar.album_types, kindSets[k])) ?? 'custom';
+	});
+	const newWords: Record<string, string> = { all: 'new ones kept', new: 'only newer ones kept', none: 'new ones left off' };
+	const kindHint = $derived(`${kindWords[kindPick]} · ${newWords[title?.artist?.new_albums ?? 'all'] ?? ''}`);
+	const setKinds = (k: KindPick) => {
+		if (k === kindPick) return;
+		return run('kinds', async () => {
+			await api.put(`/titles/${titleId}/artist`, { new_albums: title?.artist?.new_albums ?? 'all', album_types: kindSets[k], secondary_types: ['studio'], release_statuses: ['official'] });
+			await load();
+		}, 'Saved. A refresh brings in the albums it now includes.');
+	};
+	const kindMenu = $derived<MenuItem[]>([{ label: 'Choose kinds…', icon: 'tools', onselect: openKinds }]);
+	let moreKinds = $state(false);
 	function openKinds() {
+		moreKinds = false;
 		const ar = title?.artist;
 		kindsError = '';
 		eNew = ar?.new_albums ?? 'all';
@@ -299,20 +326,18 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="muted">{show === 'left_out' ? 'Nothing here.' : 'No releases included yet. Album kinds in Settings picks which count.'}</p>
+				<p class="muted">{show === 'left_out' ? 'Nothing here.' : 'No releases included yet. Releases in Settings picks which count.'}</p>
 			{/each}
 		</div>
 
 		<aside class="al-side">
 			<h3 class="al-h">History</h3>
-			<ol class="al-tl">
-				{#each allEvents ? events : events.slice(0, 6) as e (e.ID)}<li><span>{(e.Summary ?? e.Kind ?? '').replace(/\s+(from|on|via) (MusicBrainz|TMDB|TVmaze|TheTVDB|Wikipedia|Wikidata|fanart\.tv)\b/gi, '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
-				{:else}<li class="muted">Nothing has happened yet.</li>{/each}
-			</ol>
-			<p class="al-links">
-				{#if events.length > 6}<button type="button" class="al-link" onclick={() => (allEvents = !allEvents)}>{allEvents ? 'Show less' : `Show all ${events.length}`}</button>{/if}
-				<a class="al-link" href={to(`/downloads/history?title=${titleId}`)}>All history</a>
-			</p>
+			<div class="al-hist">
+				{#each allEvents ? eventRows : eventRows.slice(0, 5) as r (r.key)}
+					<CompactRow row={r} ctx={{ titles: eventTitles }} titleById={eventTitles} onclick={() => goto(to(`/downloads/history?title=${titleId}`))} />
+				{:else}<p class="muted">Nothing has happened yet.</p>{/each}
+			</div>
+			{#if eventRows.length > 5}<button type="button" class="al-link" onclick={() => (allEvents = !allEvents)}>{allEvents ? 'Show less' : `Show all ${eventRows.length}`}</button>{/if}
 
 			{#if manage}
 				<h3 class="al-h">Settings</h3>
@@ -329,7 +354,17 @@
 							</div>
 						</div>
 					</div>
-					<button type="button" class="al-rowbtn" onclick={openKinds}><span><b>Album kinds</b><small>{kindsLine}</small></span><Icon name="chevronRight" size={16} /></button>
+					<div class="al-rowbtn static q-row" data-testid="kinds-row">
+						<span><b>Releases</b><small>{kindHint}</small></span>
+						<div class="q-seg" role="radiogroup" aria-label="Releases">
+							{#each [['albums', 'Albums'], ['eps', '+ EPs'], ['singles', '+ Singles']] as [k, l] (k)}
+								<button type="button" role="radio" aria-checked={kindPick === k} class:on={kindPick === k} disabled={busy === 'kinds'} onclick={() => setKinds(k as KindPick)}>{l}</button>
+							{/each}
+							<div class="q-more" class:on={kindPick === 'custom'}>
+								<Menu label="Release kinds" variant="button" width={200} items={kindMenu}>{#snippet trigger()}<i>Custom</i><Icon name="chevronDown" size={13} />{/snippet}</Menu>
+							</div>
+						</div>
+					</div>
 					{#if folders.length > 1}
 						<div class="al-rowbtn static" data-testid="folder-row">
 							<span><b>Folder</b></span>
@@ -375,6 +410,8 @@
 						{#each mainKinds as [v, l] (v)}<label class="al-box"><input type="checkbox" checked={eTypes.includes(v)} onchange={(e) => (eTypes = toggleKind(eTypes, v, e.currentTarget.checked, mainKinds))} /> {l}</label>{/each}
 					</div>
 				</fieldset>
+				<button type="button" class="al-more" aria-expanded={moreKinds} onclick={() => (moreKinds = !moreKinds)}>{moreKinds ? 'Fewer kinds' : 'Live, compilations and more'}<Icon name="chevronDown" size={14} /></button>
+				{#if moreKinds}
 				<fieldset class="al-kind-set">
 					<legend><b>Extra kinds</b></legend>
 					<div class="al-boxes">
@@ -387,8 +424,7 @@
 						{#each pressingStatuses as [v, l] (v)}<label class="al-box"><input type="checkbox" checked={eStatuses.includes(v)} onchange={(e) => (eStatuses = toggleKind(eStatuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>{/each}
 					</div>
 				</fieldset>
-				{#if t.artist?.album_choice}<p class="hint">Picked when added: {word(albumChoices, t.artist.album_choice)}</p>{/if}
-				<p class="hint">Albums the new kinds leave out stay listed under Not included; their files stay where they are.</p>
+				{/if}
 				{#if kindsError}<p class="form-error" role="alert">{kindsError}</p>{/if}
 				<div class="al-kinds-acts">
 					<Button variant="plain" onclick={() => (kindsOpen = false)}>Cancel</Button>
@@ -438,7 +474,9 @@
 	.al-kind-set legend { margin-bottom: var(--s-2); font-size: var(--text-sm); }
 	.al-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s-2); }
 	.al-box { display: flex; align-items: center; gap: var(--s-2); min-height: var(--tap); font-size: var(--text-sm); }
-	.al-kinds-acts { display: flex; justify-content: flex-end; gap: var(--s-2); }
+	.al-kinds-acts { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: var(--s-2); padding: 12px 0 4px; margin-bottom: -4px; background: inherit; }
+	.al-more { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.al-more[aria-expanded='true'] :global(svg) { transform: rotate(180deg); }
 	.al-group { margin: 14px 0 8px; color: var(--text-muted); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.al-group span { margin-left: 4px; opacity: .7; }
 	.al-list { display: grid; gap: 8px; }
@@ -476,8 +514,6 @@
 	.al-tr-st.have { color: var(--ok-on-art); background: color-mix(in srgb, var(--ok) 12%, transparent); }
 	.al-tr-st.downloading { color: var(--info-on-art); background: color-mix(in srgb, var(--info) 12%, transparent); }
 	.al-tr-st.failed { color: var(--fail-on-art); background: color-mix(in srgb, var(--fail) 12%, transparent); }
-	.al-tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }
-	.al-tl li { display: flex; justify-content: space-between; gap: 12px; }
 	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: inherit; font: 600 14px/1 var(--font-ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 	/* Static rows (choices inside) and the Quality control, same as a movie's Settings. */
 	.al-rowbtn.static { cursor: default; }
@@ -496,6 +532,7 @@
 	.al-pick :global(.trigger) { font-weight: 500; font-size: 14px; }
 	.al-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
 	.al-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
+	.al-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.al-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
 	.al-rows.danger :global(svg) { color: var(--fail-on-art); }

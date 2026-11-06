@@ -148,16 +148,20 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
 	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Missing');
 
-	// What the old More menu had sits in the tab: album kinds, rename, refresh, delete, all history.
-	await lib.getByRole('button', { name: /^Album kinds/ }).click();
+	// Releases: a ready-made choice on the row; Custom opens the full list (extra kinds under More).
+	const kindsRow = lib.getByTestId('kinds-row');
+	await expect(kindsRow.getByRole('radiogroup', { name: 'Releases' })).toBeVisible();
+	await kindsRow.getByRole('button', { name: 'Release kinds' }).click();
+	await own.getByRole('menuitem', { name: 'Choose kinds…' }).click();
 	const kinds = own.getByRole('dialog', { name: 'Album kinds' });
 	await expect(kinds.getByLabel('New albums')).toHaveValue('all');
 	await expect(kinds.getByRole('checkbox', { name: 'Album', exact: true })).toBeChecked();
+	await kinds.getByRole('button', { name: 'Live, compilations and more' }).click();
 	await expect(kinds.getByRole('checkbox', { name: 'Live', exact: true })).not.toBeChecked();
 	await axe(own, 'artist album kinds');
 	await kinds.getByRole('button', { name: 'Cancel' }).click();
 	await expect(kinds).toBeHidden();
-	for (const b of [/^Keep up to date/, /^Album kinds/, /^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
+	for (const b of [/^Keep up to date/, /^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
 	await expect(lib.getByTestId('quality-row')).toBeVisible();
 	await expect(lib.getByRole('link', { name: 'All history' })).toHaveAttribute('href', /\/downloads\/history\?title=\d+/);
 });
@@ -329,7 +333,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(ivy.getByRole('checkbox')).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
 	await expect(ivy.getByTestId('artist-tabs')).toHaveCount(0);
-	await expect(ivy.getByRole('button', { name: /^Album kinds/ })).toHaveCount(0);
+	await expect(ivy.getByTestId('kinds-row')).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'More actions' })).toHaveCount(0);
 	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
 	await noSidewaysScroll(ivy);
