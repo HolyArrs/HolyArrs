@@ -116,13 +116,15 @@
 	}
 	@keyframes rise { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 	@media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
-	.head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; font: var(--t-callout); font-weight: 600; }
+	.head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 10px; font: var(--t-callout); font-weight: 600; }
 	.clear { font: var(--t-footnote); font-weight: 600; color: rgb(245 245 247 / 62%); padding: 4px 8px; border-radius: 999px; }
 	.clear:hover { color: #f5f5f7; background: rgb(255 255 255 / 10%); }
-	.rows { overflow-y: auto; display: flex; flex-direction: column; overscroll-behavior: contain; }
-	.row { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 12px; }
-	.row + .row { border-top: 1px solid rgb(255 255 255 / 6%); }
-	.row:hover { background: rgb(255 255 255 / 5%); }
+	.rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; overscroll-behavior: contain; }
+	/* Each alert is its own glass card, like the pills that drop in. */
+	.row { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 5%)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 0 0 0.5px rgb(255 255 255 / 7%), 0 4px 14px rgb(0 0 0 / 22%); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
+	.row:hover { background: linear-gradient(180deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 8%)); }
+	/* New since you last looked: a thin blue ring, matching the blue dot. */
+	.row.fresh { box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 0 0 1px rgb(100 181 255 / 28%), 0 4px 14px rgb(0 0 0 / 22%); }
 	.tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 	.t { font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fresh .t::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--info-on-art, #64b5ff); vertical-align: middle; }
@@ -139,7 +141,8 @@
 	.sheet-body .tools { display: flex; justify-content: flex-end; }
 	.sheet-body .clear, .sheet-body .b, .sheet-body time, .sheet-body .x, .sheet-body .empty { color: var(--text-muted); }
 	.sheet-body .act { color: var(--text); background: var(--surface-2); }
-	.sheet-body .row + .row { border-top-color: var(--line); }
-	.sheet-body .row:hover { background: none; }
+	/* Phone sheet: the same separate cards, in the theme's own surface. */
+	.sheet-body .row, .sheet-body .row:hover { background: var(--surface-1); box-shadow: inset 0 0 0 0.5px var(--line), 0 2px 8px rgb(0 0 0 / 8%); }
+	.sheet-body .row.fresh { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #0071e3) 35%, transparent), 0 2px 8px rgb(0 0 0 / 8%); }
 	@media (pointer: coarse) { .x { width: 36px; height: 36px; margin-right: -6px; } }
 </style>
