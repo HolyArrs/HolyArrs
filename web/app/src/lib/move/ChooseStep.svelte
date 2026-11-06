@@ -173,6 +173,12 @@
 		return { key: it.key, name: it.name, hint };
 	}
 
+	// The keys list: the name, then only what to paste ("Key", "Password").
+	function keyRow(it: PlanItem) {
+		const what = (it.needs ?? '').replace(/^your\s+/i, '');
+		return { key: it.key, name: it.name.replace(/\s*\((Prowlarr|Jackett)\)$/i, ''), hint: what.charAt(0).toUpperCase() + what.slice(1) };
+	}
+
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
 		if (it.person?.was_owner) return `Owner in ${app}. Their requests become yours.`;
@@ -263,7 +269,7 @@
 						{@render folderRow(p, n, `move-need-folder-${n}`, 'need-folder-row', false)}
 					{/each}
 					{#if keysLine}
-						<li class="mrow"><span class="txt warn">{keysLine}</span><button type="button" class="quiet" onclick={() => onshow('Keys to paste after the move', keyItems, itemRow)}>Show</button></li>
+						<li class="mrow"><span class="txt warn">{keysLine}</span><button type="button" class="quiet" onclick={() => onshow('Paste after the move', keyItems, keyRow)}>Show</button></li>
 					{/if}
 					{#if peopleOn}
 						<li class="mrow">
