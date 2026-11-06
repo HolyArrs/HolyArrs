@@ -16,6 +16,7 @@
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import Updates from './Updates.svelte';
+	import WhyNote from './WhyNote.svelte';
 	import type { HealthCheck, UpdateInfo } from '../types.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './status.ts';
 
@@ -71,6 +72,7 @@
 	let aboutDenied = $state(false);
 	// One clock for every relative time here, so "in 5 min" keeps counting down.
 	let now = $state(Date.now());
+	let why = $state<ReturnType<typeof WhyNote>>();
 
 	const tabs = [
 		{ id: 'parts', label: 'Status' },
@@ -308,15 +310,11 @@
 			</section>
 		{/if}
 
-		<section class="st-plate" aria-labelledby="s-story">
-			<h2 id="s-story">Why HolyArrs</h2>
-			<div class="story">
-				<p>For years my media server meant six apps running next to my downloader: one each for shows, movies, music, subtitles, indexers and requests. I loved what they made possible, but each had its own settings, its own logins and its own idea of what was going on.</p>
-				<p>So I built the one place I always wanted. HolyArrs carries the whole trip, from someone asking for a title to it showing up on your media server, and every screen in it was made with real care.</p>
-				<p>Thank you for running it, for testing it, and for trusting it with your library. Every bug you report and every idea you share makes it better for everyone.</p>
-				<p class="sign">Luis</p>
-			</div>
+		<section class="why-row" aria-labelledby="s-story">
+			<div><h2 id="s-story">Why HolyArrs</h2><small>A note from the one who made it</small></div>
+			<button class="why-btn" type="button" aria-haspopup="dialog" onclick={() => why?.open()} data-testid="why-open"><span class="px" aria-hidden="true">&gt;_</span>Read the note</button>
 		</section>
+		<WhyNote bind:this={why} />
 	{/if}
 	</div>
 </div>
@@ -404,9 +402,6 @@
 	.kv dd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text); min-width: 0; overflow-wrap: anywhere; }
 	.muted { color: var(--text-muted); }
 	.help-text { margin: 0 0 12px; max-width: 760px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
-	.story { max-width: 760px; }
-	.story p { margin: 0 0 12px; font-size: 15px; line-height: 1.65; color: var(--text); }
-	.story p:last-child { margin-bottom: 0; }
 
 	@media (max-width: 900px) { .disks { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
@@ -430,5 +425,18 @@
 		.tbl.jobs .k::after { content: ' '; }
 	}
 	.clock { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
-	.sign { font-weight: 600; color: var(--text); }
+	/* Why HolyArrs: a small retro panel in the site's look; the note opens in its own window. */
+	.why-row { --coal: #191d20; --cream: #f3efe5; --red: #cf3025; --pixel: 'Silkscreen', var(--font-mono, ui-monospace), monospace;
+		position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; background: radial-gradient(120% 140% at 0% 0%, #2a3035, var(--coal) 70%); border: 2px solid rgb(243 239 229 / 22%); border-radius: var(--r-panel, 16px); }
+	.why-row::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgb(0 0 0 / 20%) 0 1px, transparent 1px 3px); }
+	.why-row > * { position: relative; }
+	.why-row h2 { margin: 0; padding: 3px 0; font: 400 14px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--cream); }
+	.why-row small { display: block; margin-top: 6px; color: #b6bec3; font-size: 13px; }
+	.why-btn { all: unset; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; background: var(--cream); color: var(--coal); border: 2px solid var(--coal); box-shadow: 4px 4px 0 var(--red); font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; transition: transform 120ms ease, box-shadow 120ms ease; }
+	.why-btn .px { color: var(--red); letter-spacing: 0; }
+	.why-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--red); }
+	.why-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--red); }
+	.why-btn:focus-visible { outline: 2px solid #ff9384; outline-offset: 3px; }
+	@media (pointer: coarse) { .why-btn { height: 44px; } }
+	@media (max-width: 520px) { .why-row { flex-direction: column; align-items: flex-start; } }
 </style>
