@@ -264,7 +264,7 @@
 	const qCustom = $derived(qOthers.find((r) => r.id === owned?.pick_rules_id));
 	const qHint = $derived(qHints[owned?.pick_rules_name ?? ''] ?? (qCustom ? (qCustom.preset ? '' : 'Your set') : ''));
 	const qMenu = $derived<MenuItem[]>([
-		...(qOthers.length ? [{ kind: 'heading' as const, label: 'Your sets' }, ...qOthers.map((r) => ({ label: r.name, checked: r.id === owned?.pick_rules_id, onselect: () => void setRules(r.id) }))] : []),
+		...(qOthers.length ? [{ kind: 'heading' as const, label: 'More sets' }, ...qOthers.map((r) => ({ label: r.name, checked: r.id === owned?.pick_rules_id, onselect: () => void setRules(r.id) }))] : []),
 		...(qOthers.length ? [{ kind: 'separator' as const }] : []),
 		{ label: 'New set', icon: 'plus', href: to('/settings/pick-rules/new') },
 		{ label: 'Edit sets', icon: 'tools', href: to(qCustom && !qCustom.preset ? `/settings/pick-rules/${qCustom.id}` : '/settings/pick-rules') }
@@ -1663,14 +1663,15 @@
 	/* Quality: a segmented control under its label; the last slot opens the other sets. */
 	.q-row { display: grid; gap: 10px; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
-	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
 	.q-seg > button:hover:not(.on), .q-more:not(.on) :global(.trigger:hover) { color: var(--text); }
 	.q-seg > button.on, .q-more.on :global(.trigger) { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 2px rgb(0 0 0 / .2); }
-	.q-more { flex: 1 1 auto; min-width: 0; display: flex; }
-	.q-more :global(.ui-pop) { display: flex; flex: 1 1 auto; min-width: 0; }
+	.q-more { flex: 0 0 auto; display: flex; }
+	.q-more :global(.ui-pop) { display: flex; flex: 1 1 auto; }
 	.q-more :global(.trigger) { width: 100%; }
 	.q-more i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
 	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } }
+	@media (max-width: 420px) { .q-seg > button, .q-more :global(.trigger) { padding: 0 6px; font-size: 12.5px; } }
 	.lib-val { flex: none; color: var(--text-muted); font: 500 14px/1.3 var(--font-ui); text-align: right; font-variant-numeric: tabular-nums; }
 	/* The tools under the tabs speak the Settings group's language: same heading size, same surfaces. */
 	.lib-more :global(.tp-h2) { font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; margin-bottom: 12px; }
