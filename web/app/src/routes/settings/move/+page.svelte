@@ -68,6 +68,39 @@
 	// An owner who signs in another way has no password to confirm: moving
 	// asks for one, so the step shows how to set it (Settings and the wizard).
 	let mustSetPw = $state(false);
+	// Set it right here: the first password, then a fresh check with it, so Move works without leaving.
+	let pwA = $state('');
+	let pwB = $state('');
+	let pwErr = $state('');
+	let pwBusy = $state(false);
+	async function setFirstPw(e: SubmitEvent) {
+		e.preventDefault();
+		pwErr = '';
+		const min = session.s.minPassword;
+		if (pwA.length < min) return void (pwErr = `Use at least ${min} characters.`);
+		if (pwA !== pwB) return void (pwErr = "Passwords don't match.");
+		pwBusy = true;
+		try {
+			await api.post('/auth/password', { new: pwA });
+			session.s.hasPassword = true;
+			await session.reauth(pwA);
+			pwA = pwB = '';
+			mustSetPw = false;
+			toasts.push('Password set. Press Move again.', 'ok');
+		} catch (err) {
+			// A first password needs a fresh sign-in with the media server (the server's rule).
+			if (err instanceof ApiError && err.body?.code === 'reauth') pwStale = true;
+			else pwErr = message(err);
+		} finally {
+			pwBusy = false;
+		}
+	}
+	let pwStale = $state(false);
+	async function signInAgain() {
+		const back = location.pathname + location.search;
+		await session.logout();
+		await goto(to(`/login?next=${encodeURIComponent(back)}`));
+	}
 	onMount(() => {
 		const onReauth = (e: Event) => {
 			const path = (e as CustomEvent<{ path?: string }>).detail?.path ?? '';
@@ -753,8 +786,16 @@
 {:else}
 	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
 	{#if mustSetPw}
-		<SettingsCard id="move-password" title="Set a password first" description="Moving needs your HolyArrs password." icon="shield">
-			<div><Button variant="primary" href={to('/account')}>Set a password</Button></div>
+		<SettingsCard id="move-password" title="Set a password first" description="Moving needs a HolyArrs password." icon="shield">
+			<form class="setpw" onsubmit={setFirstPw}>
+				<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="New password" autocomplete="new-password" />
+				<input class="input" type="password" bind:value={pwB} placeholder="Password again" aria-label="New password again" autocomplete="new-password" />
+				<Button variant="primary" type="submit" busy={pwBusy} disabled={pwBusy}>Set password</Button>
+			</form>
+			{#if pwStale}
+				<p class="form-error" role="alert">Sign in again first. You'll come straight back here.</p>
+				<div><Button onclick={signInAgain}>Sign in again</Button></div>
+			{:else if pwErr}<p class="form-error" role="alert">{pwErr}</p>{/if}
 		</SettingsCard>
 	{/if}
 
@@ -894,6 +935,8 @@
 </Sheet>
 
 <style>
+	.setpw { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+	@media (max-width: 600px) { .setpw { grid-template-columns: 1fr; } }
 	.sk-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 	.sk-rail .sk { display: block; height: 40px; border-radius: 12px; }
 	@media (pointer: coarse) {
