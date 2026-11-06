@@ -18,7 +18,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 const row = (name: string) => page.getByTestId('downloader').filter({ hasText: name });
-// Iron Lullaby's page, once it is in the Library (the tags test opens its Edit sheet).
+// Iron Lullaby's page, once it is in the Library (the tags test uses its Tags row).
 let ironPage = '';
 
 async function addDownloader(kind: 'qBittorrent' | 'SABnzbd', name: string, url: string, secret = '', category = '') {
@@ -200,21 +200,21 @@ test('tags are set on a Downloader and on a title, and shown where they are kept
 		expect(ironPage).not.toBe('');
 		await page.goto(ironPage);
 		await page.getByTestId('own-tabs').getByRole('tab', { name: 'Library' }).click();
-		await page.getByRole('button', { name: /^Edit.*tags/ }).click();
-		const sheet = page.getByTestId('edit-sheet');
-		const titleTags = sheet.getByTestId('et-tags-input');
+		const tagsRow = page.getByTestId('tags-row');
+		await tagsRow.getByRole('button').click();
+		const titleTags = page.getByTestId('lib-tags-input');
 		await titleTags.fill('kids');
 		await titleTags.press('Enter');
-		await sheet.getByRole('button', { name: 'Save' }).click();
-		await expect(sheet).toBeHidden();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(tagsRow).toContainText('kids');
 		await page.reload();
 		await page.getByTestId('own-tabs').getByRole('tab', { name: 'Library' }).click();
-		await page.getByRole('button', { name: /^Edit.*tags/ }).click();
-		await expect(sheet.getByTestId('et-tags').getByRole('button', { name: 'Remove kids' })).toBeVisible();
-		// Taken off again in the sheet.
-		await sheet.getByTestId('et-tags').getByRole('button', { name: 'Remove kids' }).click();
-		await sheet.getByRole('button', { name: 'Save' }).click();
-		await expect(sheet).toBeHidden();
+		await expect(tagsRow).toContainText('kids');
+		// Taken off again in the same small panel.
+		await tagsRow.getByRole('button').click();
+		await page.getByTestId('lib-tags').getByRole('button', { name: 'Remove kids' }).click();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(tagsRow).toContainText('None');
 	} finally {
 		const ds = ((await (await call('GET', '/downloaders')).json()) as { downloaders: { id: number; name: string; kind: string; url: string; category: string; priority: number; allow_local_network: boolean }[] }).downloaders;
 		for (const d of ds.filter((x) => x.name === 'Lab SABnzbd'))

@@ -105,7 +105,7 @@ async function libraryFolderColumn(page: Page, kind: 'show' | 'artist', titleId:
 	return page.locator(`[data-testid="library-row"][data-title-id="${titleId}"]`);
 }
 
-test('Move a show with its episode files to a second show folder from Edit on its Library tab', async ({ page }) => {
+test('Move a show with its episode files to a second show folder from the Folder row on its Library tab', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const one = join(tmp, 'lf-shows-one');
@@ -123,10 +123,14 @@ test('Move a show with its episode files to a second show folder from Edit on it
 
 	await page.goto(`/library/${id}`);
 	await openLibraryTab(page);
-	const folderRow = page.getByRole('button', { name: /^Folder/ });
+	const folderRow = page.getByTestId('folder-row');
 	await expect(folderRow).toContainText(join(one, name));
-	await folderRow.click();
-	await moveInEditSheet(page, 'Show shelf two', two);
+	await folderRow.getByRole('button').click();
+	await page.getByRole('menuitemradio', { name: 'Show shelf two' }).or(page.getByRole('menuitem', { name: 'Show shelf two' })).click();
+	const confirm = page.getByRole('dialog', { name: 'Move to Show shelf two?' });
+	await expect(confirm).toContainText(two);
+	await confirm.getByRole('button', { name: 'Move files' }).click();
+	await expect(page.getByText('Moving the files to Show shelf two now.')).toBeVisible();
 
 	// The move runs as a Job: every episode file lands in the second folder
 	// in its season folder, and the old show folder is gone.
@@ -139,7 +143,7 @@ test('Move a show with its episode files to a second show folder from Edit on it
 	// The show's Library tab and the Library both show the new folder.
 	await page.reload();
 	await openLibraryTab(page);
-	await expect(page.getByRole('button', { name: /^Folder/ })).toContainText(join(two, name));
+	await expect(page.getByTestId('folder-row')).toContainText(join(two, name));
 	await expect(await libraryFolderColumn(page, 'show', id)).toContainText(join(two, name));
 });
 

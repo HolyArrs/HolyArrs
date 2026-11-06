@@ -40,6 +40,9 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import { forgetTags } from '#lib/tags.ts';
+	import TagInput from '#lib/ui/TagInput.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { tick, untrack } from 'svelte';
@@ -55,7 +58,6 @@
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
 	import SeasonToolsSheet from '#lib/SeasonToolsSheet.svelte';
-	import EditTitleSheet from '#lib/EditTitleSheet.svelte';
 	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
@@ -212,7 +214,7 @@
 		toolsOpen = true;
 		if (!seasonEps[n]) void loadSeason(id, n);
 	}
-	let editOpen = $state(false);	// Pick a release for the whole title, one season or one episode.
+	// Pick a release for the whole title, one season or one episode.
 	let pickScope = $state<{ label: string; query: string; body: Record<string, unknown> } | null>(null);
 	function openPick(scope: { label: string; query: string; body: Record<string, unknown> } | null) {
 		pickScope = scope;
@@ -282,6 +284,78 @@
 			busyAction = '';
 		}
 	}
+	let folders = $state<LibraryFolder[]>([]);
+	// Settings rows that save on the spot: folder (after a short check, files move), tags, and for shows
+	// which seasons to keep, new seasons and episode order.
+	async function putTitle(body: Record<string, unknown>, busy: string, done?: string) {
+		const o = owned;
+		if (!o) return;
+		busyAction = busy;
+		try {
+			const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, body);
+			owned = r.title;
+			if (done) toasts.push(done, 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
+	const kindFolders = $derived(folders.filter((f) => f.kind === owned?.kind));
+	const curFolder = $derived(folders.find((f) => f.id === owned?.library_folder_id));
+	let moveTo = $state<LibraryFolder | null>(null);
+	async function moveFolder() {
+		const o = owned, f = moveTo;
+		if (!o || !f) return;
+		busyAction = 'move';
+		try {
+			await api.post(`/titles/${o.id}/move`, { library_folder_id: f.id, apply: true });
+			toasts.push(`Moving the files to ${f.label} now.`, 'ok');
+			moveTo = null;
+			void loadOwned(o.id);
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
+	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: f.label, checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
+	let tagDraft = $state<string[]>([]);
+	async function saveTags(close: () => void) {
+		await putTitle({ tags: tagDraft }, 'tags');
+		forgetTags();
+		close();
+	}
+	type SeasonPick = 'all' | 'missing' | 'future' | 'latest' | 'none';
+	const realSeasons = $derived((owned?.show?.seasons ?? []).filter((x) => x.number > 0));
+	const keptSeasons = $derived(realSeasons.filter((x) => x.keep_up_to_date).length);
+	const seasonsWord = $derived(keptSeasons === realSeasons.length ? 'All' : keptSeasons === 0 ? 'None' : `${keptSeasons} of ${realSeasons.length}`);
+	async function setSeasons(pick: SeasonPick) {
+		const o = owned;
+		if (!o) return;
+		const latest = Math.max(0, ...realSeasons.map((x) => x.number));
+		const want = (x: (typeof realSeasons)[number]) => pick === 'all' || (pick === 'missing' && x.missing > 0) || (pick === 'future' && x.not_out_yet > 0) || (pick === 'latest' && x.number === latest);
+		busyAction = 'seasons';
+		try {
+			for (const x of realSeasons) if (want(x) !== x.keep_up_to_date) await api.put(`/titles/${o.id}/seasons/${x.number}`, { keep_up_to_date: want(x) });
+			seasonEps = {};
+			openSeasons.clear();
+			await loadOwned(o.id);
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
+	const seasonMenu: MenuItem[] = [
+		{ label: 'All seasons', onselect: () => void setSeasons('all') },
+		{ label: 'Missing episodes', onselect: () => void setSeasons('missing') },
+		{ label: 'Still airing', onselect: () => void setSeasons('future') },
+		{ label: 'Latest season', onselect: () => void setSeasons('latest') },
+		{ label: 'No seasons', onselect: () => void setSeasons('none') }
+	];
+	const orders: [string, string][] = [['aired', 'As aired'], ['daily', 'By date'], ['absolute', 'Absolute']];
+	const orderMenu = $derived<MenuItem[]>(orders.map(([v, l]) => ({ label: l, checked: owned?.show?.episode_order === v, onselect: () => void putTitle({ episode_order: v }, 'order') })));
 	async function ownRun(what: 'search' | 'refresh' | 'keep') {
 		const o = owned;
 		if (!o) return;
@@ -316,7 +390,7 @@
 			{ group: 'Files', items: [
 				{ label: 'Rename files', icon: 'copy', run: () => (renameOpen = true) },
 				{ label: 'Add a Version', icon: 'plus', run: () => void addVersion() },
-				{ label: 'Edit', icon: 'tools', run: () => (editOpen = true) }
+				{ label: 'Settings', icon: 'tools', run: () => setTab('library') }
 			] },
 			{ group: 'Keep', items: [
 				{ label: o.keep_up_to_date ? 'Stop keeping up to date' : 'Keep up to date', icon: 'check', run: () => ownRun('keep'), busy: busyAction === 'keep' },
@@ -435,7 +509,6 @@
 	let pickOpen = $state(typeof location !== 'undefined' && new URLSearchParams(location.search).has('pick'));
 	const mayAsk = $derived(session.can('ask') && !manage);
 
-	let folders = $state<LibraryFolder[]>([]);
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
 
@@ -1221,8 +1294,37 @@
 									</div>
 								</div>
 							</div>
-							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></button>
-								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, episode order, tags, folder' : 'Tags and folder'}</small></span><Icon name="tools" size={16} /></button>
+							{#if o.show}
+								<div class="lib-row static" data-testid="seasons-row">
+									<span><b>Seasons to keep</b><small>Sets every season at once</small></span>
+									<div class="lib-pick"><Menu label="Seasons to keep" variant="button" items={seasonMenu} width={260}>{#snippet trigger()}<span>{busyAction === 'seasons' ? 'Saving…' : seasonsWord}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+								</div>
+								<button type="button" class="lib-row" role="switch" aria-checked={o.show.new_seasons !== 'none'} disabled={busyAction === 'new'} onclick={() => putTitle({ new_seasons: o.show?.new_seasons === 'none' ? 'all' : 'none' }, 'new')}>
+									<span><b>New seasons</b><small>Keep them up to date when announced</small></span>
+									<span class="lib-switch" class:on={o.show.new_seasons !== 'none'} aria-hidden="true"></span>
+								</button>
+								<div class="lib-row static">
+									<span><b>Episode order</b></span>
+									<div class="lib-pick"><Menu label="Episode order" variant="button" items={orderMenu} width={200}>{#snippet trigger()}<span>{orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? 'As aired'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+								</div>
+							{/if}
+							<div class="lib-row static" data-testid="folder-row">
+								<span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span>
+								{#if kindFolders.length > 1}<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={240}>{#snippet trigger()}<span>{curFolder?.label ?? 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>{:else if curFolder}<span class="lib-val">{curFolder.label}</span>{/if}
+							</div>
+							<div class="lib-row static" data-testid="tags-row">
+								<span><b>Tags</b><small>Sends its downloads to the Downloaders and Sources with the same tag</small></span>
+								<div class="lib-pick">
+									<Popover label="Tags" variant="button" text={o.tags?.length ? o.tags.join(', ') : 'None'} width={300} onopen={() => (tagDraft = [...(o.tags ?? [])])}>
+										{#snippet children(close)}
+											<div class="lib-tags">
+												<TagInput id="lib-tags" bind:value={tagDraft} testid="lib-tags" />
+												<button type="button" class="lib-btn primary" disabled={busyAction === 'tags'} onclick={() => saveTags(close)}>Save</button>
+											</div>
+										{/snippet}
+									</Popover>
+								</div>
+							</div>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures{o.refreshed_at ? ` · refreshed ${date(o.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 						</div>
@@ -1276,7 +1378,13 @@
 			{@const o = owned}
 				{#if mayReport}<ReportSheet bind:open={reportOpen} title={o} />{/if}
 				{#if manage}
-				<EditTitleSheet bind:open={editOpen} title={o} onsaved={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />
+				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo?.label ?? ''}?`} description="Its files move to the new folder." size="sm" placement="center">
+					<p class="lib-move-path">{moveTo?.path}</p>
+					<div class="lib-move-actions">
+						<button type="button" class="lib-btn" onclick={() => (moveTo = null)}>Cancel</button>
+						<button type="button" class="lib-btn primary" disabled={busyAction === 'move'} onclick={moveFolder}>Move files</button>
+					</div>
+				</Sheet>
 				{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} ondelete={() => { toolsOpen = false; showDeleter?.open({ season: toolsSeason, label: toolsSeason === 0 ? 'Specials' : `Season ${toolsSeason}` }); }} />{/if}
 				{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} ondelete={() => { const e = epPicked; if (!e) return; epOpen = false; showDeleter?.open({ episodeIds: [e.id], label: `S${String(e.season ?? 0).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}` }); }} />{/if}
 				<!-- One season or one episode (and its files) goes through the show's delete dialog. -->
@@ -1660,6 +1768,15 @@
 	.lib-row.static { cursor: default; }
 	.lib-row.static:hover { background: none; }
 	.lib-row small.wrap { white-space: normal; }
+	/* A row's value that opens a short menu or a small panel. */
+	.lib-pick { flex: none; max-width: 55%; min-width: 0; }
+	.lib-pick :global(.trigger) { max-width: 100%; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
+	.lib-pick :global(.trigger span) { display: inline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-pick :global(.trigger:hover), .lib-pick :global(.trigger[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+	.lib-tags { display: grid; gap: 10px; padding: 8px; }
+	.lib-tags .lib-btn { justify-self: end; }
+	.lib-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
+	.lib-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
 	/* Quality: a segmented control under its label; the last slot opens the other sets. */
 	.q-row { display: grid; gap: 10px; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
