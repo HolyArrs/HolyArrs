@@ -66,6 +66,7 @@ Every open-source part HolyArrs ships: the Go modules in the program, the packag
 | @fontsource-variable/geist | 5.3.0 | OFL-1.1 | the web app |
 | @fontsource-variable/geist-mono | 5.3.0 | OFL-1.1 | the web app |
 | @fontsource/anton | 5.3.0 | OFL-1.1 | the web app |
+| @fontsource/silkscreen | 5.3.0 | OFL-1.1 | the web app |
 | @sveltejs/kit | 3.0.1 | MIT | the web app |
 | clsx | 2.1.1 | MIT | the web app |
 | devalue | 5.9.4 | MIT | the web app |

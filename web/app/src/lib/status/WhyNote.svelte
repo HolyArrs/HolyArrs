@@ -3,10 +3,11 @@
 	// types its lines, slams its tags on like stickers, and Luis and Peanut run across the title bar now and then.
 	import { tick } from 'svelte';
 	import { to } from '../paths.ts';
+	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 
-	// Silkscreen, the pixel font (SIL Open Font License, static/why/OFL-silkscreen.txt), loaded once from the app itself.
+	// Silkscreen, the pixel font (SIL Open Font License, from @fontsource/silkscreen), loaded once from the app itself.
 	if (typeof document !== 'undefined' && typeof FontFace !== 'undefined' && ![...document.fonts].some((f) => f.family === 'Silkscreen')) {
-		const face = new FontFace('Silkscreen', `url(${to('/why/silkscreen.woff2')}) format('woff2')`, { display: 'swap' });
+		const face = new FontFace('Silkscreen', `url(${silkscreen}) format('woff2')`, { display: 'swap' });
 		document.fonts.add(face);
 		void face.load().catch(() => {});
 	}
