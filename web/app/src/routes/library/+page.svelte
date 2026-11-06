@@ -972,13 +972,6 @@
 			<DlFind bind:term={() => q, setQ} shown={shown.length} total={kindTotal} searchKey={dlTop.searchKey} placeholder={findWords} note={loaded && !error ? countText : ''} testid="library-find" />
 		{/if}
 		<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'rows', label: 'Rows', icon: 'menu' }, { value: 'table', label: 'Banners', icon: 'image' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && (view === 'table' || view === 'posters') ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 1100} /></span>
-		<span class="t-tabs cap">
-			<div class="tabs" role="group" aria-label="Status">
-				{#each filters as [f, label] (f)}
-					<button type="button" aria-pressed={filter.status === f} class:on={filter.status === f} onclick={() => setFilter({ status: f })} data-testid="library-tab-{f}">{label}{#if loaded && counts.status[f] !== undefined}<b>{counts.status[f]}</b>{/if}</button>
-				{/each}
-			</div>
-		</span>
 		<span class="filter-btn cap" class:on={filtersOn > 0}>
 			{#if phone}
 				<Button size="md" icon="chevronUpDown" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
@@ -1521,24 +1514,10 @@
 	.with-rail.has-rail { display: grid; grid-template-columns: minmax(0, 1fr) 26px; gap: 12px; align-items: start; }
 	.group-note { margin: 0 0 12px; color: var(--text-muted); font: var(--t-footnote); }
 
-	/* Status tabs: the same pill track as the view switch, one tab per status with its count. */
-	.t-tabs { display: contents; }
-	.toolbar.topbar .t-tabs { display: flex; min-width: 0; }
-	.tabs { display: inline-flex; gap: 2px; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-	.tabs::-webkit-scrollbar { display: none; }
-	.tabs button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 10px; border-radius: 10px; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; transition: background-color 120ms ease, color 120ms ease; }
-	.tabs button b { font-weight: 600; font-variant-numeric: tabular-nums; }
-	.tabs button:hover { color: var(--text); }
-	.tabs button.on { background: var(--seg-thumb, var(--surface-1)); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); }
-	.tabs button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.toolbar.topbar .t-tabs { order: 1; }
 	.toolbar.topbar .t-view { order: 2; }
 	.toolbar.topbar .filter-btn { order: 3; }
 	.toolbar.topbar .tool-gap { order: 4; }
 	.toolbar.topbar .t-tools { order: 5; }
-	@container (max-width: 1500px) { .toolbar.topbar .tabs button b { display: none; } .toolbar.topbar .tabs button { padding: 0 9px; } }
-	/* A narrower page gives the tabs their own line under the controls. */
-	@container (max-width: 1040px) { .toolbar.topbar .t-tabs { order: 6; flex-basis: 100%; } .toolbar.topbar .t-tabs .tabs { width: 100%; } }
 
 	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
 	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px repeat(var(--ln, 3), 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
@@ -1747,12 +1726,6 @@
 		.t-view { order: 5; }
 		.filter-btn { order: 6; }
 		.t-sel { order: 7; margin-left: auto; }
-		.t-tabs { order: 4; display: flex; flex-basis: 100%; min-width: 0; margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
-		.t-tabs::-webkit-scrollbar { display: none; }
-		.t-tabs .tabs { overflow: visible; padding: 2px; border-radius: 12px; background: var(--surface-2); }
-		.t-tabs .tabs button { height: 36px; padding: 0 10px; }
-		@media (pointer: coarse) { .t-tabs .tabs button { height: 44px; } }
-		/* Phone rows: 60 px, the poster, the name over "status · fact", the year at the right. */
 		.chips .t-miss { flex-basis: 100%; }
 		.chips .t-miss :global(button) { width: 100%; }
 		.find-box { flex-basis: 100%; max-width: none; order: 5; }
