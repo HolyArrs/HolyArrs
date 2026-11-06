@@ -112,7 +112,7 @@ test('a movie not out yet: every Release is listed, and one that did not pass is
 test('a movie with two Versions: Choose a release searches it', async () => {
 	await openMovie(page, 'Glass Meridian');
 	await openLibraryTab(page);
-	await expect(page.getByTestId('version')).toHaveCount(2);
+	await expect(page.getByTestId('version-card')).toHaveCount(2);
 	// The sheet has no Version choice: one search covers the movie.
 	const sheet = await chooseRelease(page);
 	await sheet.getByRole('button', { name: 'Search now' }).click();

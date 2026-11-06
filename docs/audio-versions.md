@@ -10,8 +10,10 @@ An import whose inspected audio cannot meet its Version waits for a decision wit
 
 Keep original and dubbed copies as separate Versions with separate folders and requirements. Their quality settings and upgrade progress remain independent. Keeping an existing copy while adding another Version is an explicit action; no automatic duplication is introduced.
 
-## Editions checked by hand: not in the app for now
+## Left out of the title page for now
 
-HolyArrs reads a copy's edition (Theatrical, Director's Cut, Extended and so on) from its file name. Correcting that edition by hand, so a file counts toward the right cut when you keep more than one, is left out of the title page for now. The Copies list still shows an edition when the file name gives one, and editions checked before stay in place.
+A title page's Library tab lists every Version as a card under File: its file, or that it has no file yet. Add another version is there, and an extra Version can be removed from its card's menu. A few tools are left out of the title page for now and will come back in a later release, in a simpler form:
 
-Correcting an edition by hand will come back in a later release, in a simpler form.
+- Correcting a copy's edition by hand (Theatrical, Director's Cut, Extended), so a file counts toward the right cut when you keep more than one. HolyArrs still reads the edition from the file name, and editions checked before stay in place.
+- Protecting a copy so upgrades never replace it, and keeping a copy while adding another Version in one step. Copies protected before stay protected.
+- A separate Versions list with each Version's rules and folder.

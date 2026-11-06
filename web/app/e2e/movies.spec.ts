@@ -171,15 +171,15 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await expect(page).toHaveURL(/\/library\/\d+/);
 	await openLibraryTab(page);
 
-	const versions = page.getByTestId('version');
+	// Every Version is a File card on the Library tab (the main one reads Main copy; one without a file says so).
+	const versions = page.getByTestId('version-card');
 	await expect(versions).toHaveCount(2);
-	await expect(versions.nth(0).getByTestId('version-main')).toHaveCount(1);
+	await expect(versions.nth(0)).toContainText('Main copy');
 	await expect(versions.nth(1)).toContainText('4K');
-	await expect(versions.nth(1)).toContainText('· 4K');
-	await expect(versions.nth(1)).toContainText('[4K]');
+	await expect(versions.nth(1)).toContainText('no file yet');
 
-	// A third Version from the Movie page, then take it off again.
-	await page.getByRole('button', { name: 'Add a Version' }).click();
+	// A third Version from the File cards' Add another version, then take it off again.
+	await page.getByRole('button', { name: /^Add another version/ }).click();
 	const vd = page.getByRole('dialog');
 	await vd.getByLabel('Version name').fill('Small');
 	await vd.getByRole('button', { name: 'Add Version' }).click();

@@ -12,7 +12,7 @@
 	import { toasts } from './toasts.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
 
-	let { title, onchange }: { title: TitleView; onchange: () => void | Promise<void> } = $props();
+	let { list = true, title, onchange }: { list?: boolean; title: TitleView; onchange: () => void | Promise<void> } = $props();
 
 	let dialog: HTMLDialogElement | undefined = $state();
 	let all = $state(false);
@@ -68,7 +68,8 @@
 		}
 	}
 
-	async function remove(v: VersionView) {
+	/** Removes a Version (the title page's File cards call it). */
+	export async function remove(v: VersionView) {
 		if (!confirm(`Stop keeping the ${v.label} Version of this movie? Files on disk are not touched.`)) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
@@ -80,6 +81,7 @@
 	}
 </script>
 
+{#if list}
 <TitleSection id="h-versions" title="Versions" testid="movie-versions" primary>
 	{#snippet head()}
 		<div class="tp-head-end">
@@ -123,6 +125,7 @@
 		{/each}
 	</ul>
 </TitleSection>
+{/if}
 
 <dialog bind:this={dialog} aria-labelledby="movie-version-title" class="modal">
 	<form onsubmit={add}>

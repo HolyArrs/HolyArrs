@@ -89,13 +89,11 @@ test("Movie editions: a Director's Cut checked on the Library tab renames the fi
 	const serverId = ((await made.json()) as { id: number }).id;
 
 	// The copy's edition, checked by hand. Its box is out of the app for now (docs/audio-versions.md),
-	// so the check goes through the API the box used; the Library tab then shows it.
+	// so the check goes through the API the box used.
 	const saved = await call('PUT', `/titles/${id}/files/${copies.files[0].ID}/choices`, { edition });
 	expect(saved.ok(), await saved.text()).toBe(true);
 	await page.goto(`/library/${id}`);
 	await openLibraryTab(page);
-	const copy = page.getByTestId('copy-controls').getByTestId('copy-version').filter({ hasText: basename(before) });
-	await expect(copy).toContainText(edition);
 	copies = (await (await call('GET', `/titles/${id}/copies`)).json()) as Copies;
 	expect(copies.files[0].MediaInfo).toMatchObject({ edition, edition_source: 'confirmed' });
 	// Saving the edition alone moves nothing.
@@ -130,6 +128,6 @@ test("Movie editions: a Director's Cut checked on the Library tab renames the fi
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto(`/library/${id}`);
 	await openLibraryTab(page);
-	await expect(page.getByTestId('copy-controls')).toContainText(tag);
+	await expect(page.getByTestId('version-card').first()).toContainText(tag);
 	await noSidewaysScroll(page);
 });

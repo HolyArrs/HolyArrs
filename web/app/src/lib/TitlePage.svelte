@@ -33,7 +33,7 @@
 	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import { groupDownloads } from '#lib/history.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
-	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { qualityBadges } from '#lib/title-page.ts';
 	import { bytes, ago } from '#lib/format.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
@@ -51,7 +51,6 @@
 	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
 	import MovieVersions from '#lib/MovieVersions.svelte';
 	import ShowVersions from '#lib/ShowVersions.svelte';
-	import CopyControls from '#lib/CopyControls.svelte';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
@@ -395,12 +394,12 @@
 		if (o.show?.network) out.push({ k: 'net', icon: 'tv', v: o.show.network });
 		if (lang) out.push({ k: 'lang', icon: 'sound', v: lang });
 		return out;
-	});	const libFiles = $derived(ownFiles.map((x) => {
+	});	const libFiles = $derived((owned?.kind === 'show' ? ownFiles : (owned?.slots ?? [])).map((x) => {
 		const f = x.file as Record<string, any>;
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		return { id: x.id, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : ''), m.audio_codec].filter(Boolean).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		return { id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : ''), m.audio_codec].filter(Boolean).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 	let libAll = $state(false);
 	let renameOpen = $state(false);
@@ -1144,9 +1143,10 @@
 						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
 						<div class="lib-files">
 							{#each libFiles as f (f.id)}
-								<article class="lib-file">
-									<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}</p>
-									<p class="lib-file-meta">{[f.codec, f.size, f.added && `added ${f.added}`].filter(Boolean).join(' · ')}</p>
+									{@const v = o.versions.find((x) => x.id === f.versionId)}
+								<article class="lib-file" data-testid="version-card">
+									<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && !v.main && o.kind !== 'show'}<span class="lib-file-menu"><Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => void movieVersions?.remove(v) }]} width={220} /></span>{/if}</p>
+									<p class="lib-file-meta">{f.has ? [f.codec, f.size, f.added && `added ${f.added}`].filter(Boolean).join(' · ') : `${f.state} · no file yet`}</p>
 									{#if f.audio.length || f.subs.length}
 										<p class="lib-langs">{#if f.audio.length}<span class="muted">Audio</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">Subtitles</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
 									{/if}
@@ -1210,8 +1210,7 @@
 							</TitleSection>
 						{/if}
 						{#if o.kind === 'show'}<ShowVersions bind:this={showVersions} title={o} staff onchange={() => loadOwned(o.id)} />
-						{:else}<MovieVersions bind:this={movieVersions} title={o} onchange={() => loadOwned(o.id)} />{/if}
-						<CopyControls title={o} onchange={() => loadOwned(o.id)} />
+						{:else}<MovieVersions bind:this={movieVersions} list={false} title={o} onchange={() => loadOwned(o.id)} />{/if}
 						<div id="title-subtitles">{#key o.id}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} />{/key}</div>
 					</div>
 				{/if}
@@ -1604,6 +1603,7 @@
 	.lib-file-meta { color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
 	.lib-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font: 500 12px/1 var(--font-ui); }
 	.lib-langs .muted:not(:first-child) { margin-left: 8px; }
+	.lib-file-menu { margin-left: auto; }
 	.lib-file-name { color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-file.add { place-items: center; place-content: center; gap: 6px; min-height: 120px; background: none; border: 1.5px dashed color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); font: 600 14px/1.2 var(--font-ui); text-decoration: none; text-align: center; }
 	.lib-file.add small { color: var(--text-muted); font-weight: 500; }

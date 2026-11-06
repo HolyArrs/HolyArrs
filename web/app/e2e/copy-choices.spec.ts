@@ -42,89 +42,16 @@ async function paperHarbour(page: import('@playwright/test').Page): Promise<stri
 	return `/library/${id}`;
 }
 
-test('copy controls show inspected facts and require explicit choices', async ({ page }) => {
+test("a title's Library tab lists its Versions on the File cards, with no Copies section", async ({ page }) => {
 	await enterApp(page);
 	const href = await paperHarbour(page);
-
-	let files = [
-		{
-			ID: 701,
-			VersionID: 501,
-			RelativePath: 'Paper Harbour (2023)/Paper Harbour (2023).mkv',
-			Size: 12_345,
-			AddedAt: '2026-10-15T12:00:00Z',
-			State: 'present',
-			Protected: false,
-			MediaInfo: { audio_languages: ['fr', 'en'], edition: 'Theatrical', video_codec: 'hevc' }
-		}
-	];
-	let versions = [
-		{ id: 501, label: 'HD', main: true, pick_rules_id: 1, pick_rules_name: 'HD', library_folder_id: 1, folder_path: 'C:/Movies/Paper Harbour (2023)', keep_up_to_date: true, edition: 'Theatrical', audio_languages: ['en'] },
-		{ id: 502, label: '4K', main: false, pick_rules_id: 1, pick_rules_name: '4K', library_folder_id: 1, folder_path: 'C:/Movies/Paper Harbour (2023) [4K]', keep_up_to_date: true, edition: 'Director cut', audio_languages: ['en', 'fr'] }
-	];
-	const calls: Array<{ path: string; body: Record<string, unknown> }> = [];
-
-	await page.route('**/api/v1/titles/*/copies', (route) => route.fulfill({ json: { files, versions } }));
-	await page.route('**/api/v1/titles/*/files/*/choices', async (route) => {
-		const body = route.request().postDataJSON() as Record<string, unknown>;
-		calls.push({ path: new URL(route.request().url()).pathname, body });
-		files = files.map((file) => file.ID === 701
-			? {
-				...file,
-				...(typeof body.protected === 'boolean' ? { Protected: body.protected } : {}),
-				...(typeof body.edition === 'string' ? { MediaInfo: { ...file.MediaInfo, edition: body.edition } } : {})
-			}
-			: file);
-		await route.fulfill({ json: files[0] });
-	});
-	await page.route('**/api/v1/titles/*/files/*/keep-and-add', async (route) => {
-		const body = route.request().postDataJSON() as Record<string, unknown>;
-		calls.push({ path: new URL(route.request().url()).pathname, body });
-		files = files.map((file) => ({ ...file, Protected: true }));
-		versions = [...versions, { id: 503, label: String(body.label), main: false, pick_rules_id: Number(body.pick_rules_id), pick_rules_name: 'HD', library_folder_id: Number(body.library_folder_id), folder_path: 'C:/Movies/Paper Harbour Archive', keep_up_to_date: true, edition: String(body.edition), audio_languages: body.audio_languages as string[] }];
-		await route.fulfill({ status: 201, json: versions.at(-1) });
-	});
-	await page.route('**/api/v1/titles/*/versions/*/adopt', async (route) => {
-		const body = route.request().postDataJSON() as Record<string, unknown>;
-		calls.push({ path: new URL(route.request().url()).pathname, body });
-		files = [...files, { ID: 702, VersionID: 502, RelativePath: String(body.relative_path), Size: 99, AddedAt: '2026-10-15T12:00:00Z', State: 'present', Protected: false, MediaInfo: { audio_languages: ['en', 'fr'], edition: '', video_codec: 'hevc' } }];
-		await route.fulfill({ status: 201, json: files.at(-1) });
-	});
-
-	// The copy controls sit on the title's Library tab.
 	await page.goto(`${href!}?tab=library`);
 	await expect(page.getByTestId('lib-pane')).toBeVisible();
-	const controls = page.getByTestId('copy-controls');
-	await expect(controls).toContainText('Required audio: en');
-	await expect(controls).toContainText('Audio fr, en');
-	await expect(controls).not.toContainText('subtitle');
-
-	await controls.getByRole('button', { name: 'Protect this copy' }).click();
-	await expect(controls.getByText('Protected', { exact: true })).toBeVisible();
-	await expect(controls.getByRole('button', { name: 'Remove protection' })).toBeDisabled();
-	await controls.getByLabel("I understand this removes the copy's protection").check();
-	await controls.getByRole('button', { name: 'Remove protection' }).click();
-	expect(calls.at(-1)?.body).toEqual({ protected: false, acknowledge_protection: true });
-
-	// Correcting a copy's edition by hand is out of the app for now (docs/audio-versions.md).
-	await expect(controls.getByLabel('Checked edition')).toHaveCount(0);
-
-	await controls.getByRole('button', { name: 'Keep this copy and add another Version' }).click();
-	const add = page.getByRole('dialog', { name: 'Keep this copy and add another Version' });
-	await add.getByLabel('Version name').fill('Archive');
-	await add.getByLabel(/Edition wanted/).fill('Theatrical');
-	await add.getByLabel(/Audio wanted/).fill('EN, fr, en');
-	await add.getByRole('button', { name: 'Protect and add Version' }).click();
-	expect(calls.at(-1)?.body.audio_languages).toEqual(['en', 'fr']);
-	await expect(controls).toContainText('Archive');
-
-	await controls.getByRole('button', { name: /^Use an existing video/ }).first().click();
-	const adopt = page.getByRole('dialog', { name: /Use an existing video/ });
-	await adopt.getByLabel('Path relative to the Library folder').fill('Paper Harbour (2023) [4K]/Paper Harbour.mkv');
-	await adopt.getByRole('button', { name: 'Check and use file' }).click();
-	expect(calls.at(-1)?.body).toEqual({ relative_path: 'Paper Harbour (2023) [4K]/Paper Harbour.mkv' });
-	await expect(controls).toContainText('Paper Harbour.mkv');
-
+	// Protect a copy, keep a copy and add a Version, and the Versions list are out of the title page for now
+	// (docs/audio-versions.md); every Version shows as a File card, a Version without a file says so.
+	await expect(page.getByTestId('version-card').first()).toBeVisible();
+	await expect(page.getByTestId('copy-controls')).toHaveCount(0);
+	await expect(page.getByTestId('movie-versions')).toHaveCount(0);
 	await page.setViewportSize({ width: 412, height: 915 });
 	await noSidewaysScroll(page);
 });
