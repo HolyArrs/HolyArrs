@@ -62,7 +62,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await scanFirstRun();
 	// The browser tests use every part: Music here, Requests through Invite family.
 	await page.getByRole('button', { name: 'Back' }).click();
-	await finishFirstRun(page, moviesDir, { music: true, invite: true });
+	await finishFirstRun(page, moviesDir, { tv: true, music: true, invite: true });
 
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/$/);

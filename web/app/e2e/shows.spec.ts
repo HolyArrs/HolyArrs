@@ -136,13 +136,15 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(card).toHaveCount(0);
 	await libraryStatus(own, 'all');
 	await libraryView(own, 'Banners');
-	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText('aired episodes in the Library');
+	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText(/Missing · \d+|Complete/);
 	await libraryView(own, 'Posters');
 	await libraryKind(own, /^Movies/);
 	await libraryView(own, 'Posters');
 	await expect(card).toHaveCount(0);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toBeVisible();
 	await libraryKind(own, /^Everything/);
+	// Cards fade in one after another; let the ones on screen start before checking contrast.
+	await own.waitForFunction(() => [...document.querySelectorAll('.lp')].every((e) => e.classList.contains('shown') || e.getBoundingClientRect().top > innerHeight));
 	await axe(own, 'library with shows');
 });
 
@@ -212,8 +214,9 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(phone.getByRole('button', { name: 'Approve Lantern Street' })).toHaveCount(0);
 
 	// The show page names who asked and keeps exactly the asked seasons.
-	await phone.goto('/library');
-	await phone.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Lantern Street' }).click();
+	// Opened by its id: the phone Library only draws the cards near the screen.
+	const lanternId: number = await phone.evaluate(async () => ((await (await fetch('/api/v1/titles')).json()).titles as { id: number; name: string }[]).find((t) => t.name === 'Lantern Street')!.id);
+	await phone.goto(`/library/${lanternId}`);
 	await expect(phone.getByTestId('asked-by-line')).toContainText(/max/i);
 	expect(await seasonKept(phone, 'Season 1')).toBe(true);
 	expect(await seasonKept(phone, 'Season 2')).toBe(true);
@@ -233,7 +236,7 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();
 	expect(await seasonCount(max)).toBe(3);
 	await expect(max.getByRole('checkbox')).toHaveCount(0);
-	await expect(max.getByRole('button', { name: /up to date\. Click/ })).toHaveCount(0);
+	await expect(max.getByRole('button', { name: /^Keep .* up to date$/ })).toHaveCount(0);
 	await expect(max.getByRole('button', { name: /^Episode actions for/ })).toHaveCount(0);
 	await expect(max.getByRole('button', { name: 'Edit' })).toHaveCount(0);
 	await noSidewaysScroll(max);
