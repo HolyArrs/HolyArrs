@@ -12,6 +12,9 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import Icon from '#lib/Icon.svelte';
 	import SeerrCard from './SeerrCard.svelte';
+	import ApiKeysCard from './ApiKeysCard.svelte';
+	import MoreOptions from '#lib/ui/MoreOptions.svelte';
+	import { session } from '#lib/session.svelte.ts';
 	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/apidocs.ts';
 
 	let spec = $state<Spec | null>(null);
@@ -54,7 +57,7 @@
 	onMount(load);
 </script>
 
-<svelte:head><title>API for other apps · HolyArrs</title></svelte:head>
+<svelte:head><title>API · HolyArrs</title></svelte:head>
 
 <PageHeader title="API">
 	{#snippet actions()}
@@ -62,10 +65,12 @@
 	{/snippet}
 </PageHeader>
 
+{#if session.can('settings')}<ApiKeysCard />{/if}
+
 <div class="sc-form">
 <SettingsCard id="api-start" title="Start here">
 	<ol class="steps small">
-		<li>Make a key in <a href={to(`/settings/sign-in`)}>Sign-in and security</a>. The key is shown once; copy it then.</li>
+		<li>Make a key under <a href="#keys-card">API keys</a>. It is shown once; copy it then.</li>
 		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
 		<li>
 			The base address is
@@ -79,6 +84,9 @@
 
 <SeerrCard />
 
+</div>
+
+<MoreOptions label="Reference">
 {#if spec?.['x-holyarrs-scopes']}
 		<SettingsCard title="Scopes">
 			<dl class="facts" data-testid="api-scopes">
@@ -89,8 +97,6 @@
 			</dl>
 		</SettingsCard>
 {/if}
-</div>
-
 <div>
 <SettingsCard title="Example calls">
 	<p class="small muted">Set <code>HOLYARRS_KEY</code> to your key in your shell first.</p>
@@ -143,6 +149,7 @@
 		{/if}
 	</SettingsCard>
 </div>
+</MoreOptions>
 
 <style>
 	.steps {

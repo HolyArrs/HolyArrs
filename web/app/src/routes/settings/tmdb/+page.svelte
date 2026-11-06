@@ -50,7 +50,7 @@
 			<li><b>What you look up.</b> Search words and IDs of what a page shows.</li>
 			<li><b>Display choices.</b> Language and region.</li>
 			<li><b>Small request headers.</b> <code>Accept</code>, <code>Cache-Control</code>, <code>If-None-Match</code> and <code>X-Fetch: ahead</code> when a page is loaded ahead of time.</li>
-			<li><b>Install count by country.</b> Installs are counted per country. Turn off <a href={to('/settings/this-app')}>Count this install</a> and requests carry <code>X-Country-Count: off</code>.</li>
+			<li><b>Install count by country.</b> Installs are counted per country. Turn off <a href={to('/settings/this-app') + '#count-install'}>Count this install</a> and requests carry <code>X-Country-Count: off</code>.</li>
 		</ul>
 		<p class="small muted">Your public IP address, like any web request.</p>
 		<h3 class="h3">Never sent</h3>

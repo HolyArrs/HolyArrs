@@ -2,6 +2,7 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import MoreOptions from '#lib/ui/MoreOptions.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -232,78 +233,8 @@
 	
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="inside-video" title="Inside the video">
-			<label class="checkline">
-				<input id="embedded" type="checkbox" bind:checked={settings.use_built_in} />
-				<span><b>Count subtitles inside the video</b><br /><span class="hint">Skips languages already in the file</span></span>
-			</label>
-			{#snippet advanced()}
-				<label class="checkline">
-					<input id="no-picture" type="checkbox" bind:checked={settings!.ignore_picture_tracks} disabled={!settings!.use_built_in} />
-					<span><b>Leave out picture subtitles</b><br /><span class="hint">Many players can't show disc subtitles</span></span>
-				</label>
-				<Field id="hi-suffix" label="Hearing-impaired files are named" hint="File ending players read as SDH">
-					<select id="hi-suffix" class="input narrow" bind:value={settings!.hi_suffix}>
-						<option value="hi">.hi (Movie.en.hi.srt)</option>
-						<option value="cc">.cc (Movie.en.cc.srt)</option>
-						<option value="sdh">.sdh (Movie.en.sdh.srt)</option>
-					</select>
-				</Field>
-			{/snippet}
-		</SettingsCard>
-		<SettingsCard id="when-to-look" title="When to look" description="New files search at once, then on a timer">
-			<label class="checkline">
-				<input id="better-subs" type="checkbox" bind:checked={settings.better} />
-				<span><b>Look for better subtitles</b><br /><span class="hint">Re-searches recent ones under 99</span></span>
-			</label>
-			{#snippet advanced()}
-			<div class="two">
-				<Field id="s-hours" label="Look for missing subtitles every (hours)">
-					<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={settings!.search_hours} />
-				</Field>
-				<Field id="s-batch" label="Files per run, at most" hint="Protects site rate limits">
-					<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={settings!.batch} />
-				</Field>
-			</div>
-				<label class="checkline">
-					<input id="slow-down" type="checkbox" bind:checked={settings!.adaptive} />
-					<span><b>Slow down after three weeks</b><br /><span class="hint">Then weekly</span></span>
-				</label>
-				{#if settings!.better}
-					<div class="two">
-						<Field id="b-hours" label="Every (hours)">
-							<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={settings!.better_hours} />
-						</Field>
-						<Field id="b-days" label="For subtitles saved in the last (days)">
-							<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={settings!.better_days} />
-						</Field>
-					</div>
-				{/if}
-			{/snippet}
-		</SettingsCard>
-		<SettingsCard id="sync-fix" title="Sync fix" description="Starting values for fixing timing">
-			<p class="small muted">
-				A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. HolyArrs does
-				not listen to the sound to line subtitles up.
-			</p>
-			{#snippet advanced()}
-				<div class="three">
-					<Field id="sy-step" label="Shift buttons move (ms)">
-						<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={settings!.sync_step_ms} />
-					</Field>
-					<Field id="sy-from" label="Frame rate from">
-						<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_from_fps} />
-					</Field>
-					<Field id="sy-to" label="Frame rate to">
-						<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_to_fps} />
-					</Field>
-				</div>
-			{/snippet}
-		</SettingsCard>
 		{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	</form>
-	<SaveBar {dirty} form="subtitle-form" saving={setBusy} ondiscard={() => (settings = JSON.parse(saved))} />
-
 	<section class="sites-sec" id="sites-card" aria-labelledby="h-sites" tabindex="-1">
 		<div class="sites-head">
 			<div>
@@ -395,7 +326,7 @@
 		{/if}
 
 		{#if sites.length === 0 && !editing}
-			<EmptyState compact icon="subtitle" title="No Subtitle sites" text="Add one so HolyArrs can look for the subtitles your movies and shows are missing." action={{ label: 'Add a Subtitle site', icon: 'plus', onclick: startAdd }} />
+			<EmptyState compact icon="subtitle" title="No Subtitle sites" text="Add one to find missing subtitles." action={{ label: 'Add a Subtitle site', icon: 'plus', onclick: startAdd }} />
 		{:else}
 			<ul class="list">
 				{#each sites as s (s.ID)}
@@ -435,6 +366,83 @@
 			</ul>
 		{/if}
 	</section>
+
+	<div class="sc-form sub-more">
+		<SettingsCard id="when-to-look" title="When to look" description="New files search at once, then on a timer">
+			<label class="checkline">
+				<input id="better-subs" form="subtitle-form" type="checkbox" bind:checked={settings.better} />
+				<span><b>Look for better subtitles</b><br /><span class="hint">Re-searches recent ones under 99</span></span>
+			</label>
+			{#snippet advanced()}
+			<div class="two">
+				<Field id="s-hours" label="Look for missing subtitles every (hours)">
+					<input id="s-hours" form="subtitle-form" class="input narrow" type="number" min="1" max="168" bind:value={settings!.search_hours} />
+				</Field>
+				<Field id="s-batch" label="Files per run, at most" hint="Protects site rate limits">
+					<input id="s-batch" form="subtitle-form" class="input narrow" type="number" min="1" max="1000" bind:value={settings!.batch} />
+				</Field>
+			</div>
+				<label class="checkline">
+					<input id="slow-down" form="subtitle-form" type="checkbox" bind:checked={settings!.adaptive} />
+					<span><b>Slow down after three weeks</b><br /><span class="hint">Then weekly</span></span>
+				</label>
+				{#if settings!.better}
+					<div class="two">
+						<Field id="b-hours" label="Every (hours)">
+							<input id="b-hours" form="subtitle-form" class="input narrow" type="number" min="6" max="168" bind:value={settings!.better_hours} />
+						</Field>
+						<Field id="b-days" label="For subtitles saved in the last (days)">
+							<input id="b-days" form="subtitle-form" class="input narrow" type="number" min="0" max="30" bind:value={settings!.better_days} />
+						</Field>
+					</div>
+				{/if}
+			{/snippet}
+		</SettingsCard>
+	</div>
+	<MoreOptions>
+		<div class="sc-form">
+			<SettingsCard id="inside-video" title="Inside the video">
+				<label class="checkline">
+					<input id="embedded" form="subtitle-form" type="checkbox" bind:checked={settings.use_built_in} />
+					<span><b>Count subtitles inside the video</b><br /><span class="hint">Skips languages already in the file</span></span>
+				</label>
+				{#snippet advanced()}
+					<label class="checkline">
+						<input id="no-picture" form="subtitle-form" type="checkbox" bind:checked={settings!.ignore_picture_tracks} disabled={!settings!.use_built_in} />
+						<span><b>Leave out picture subtitles</b><br /><span class="hint">Many players can't show disc subtitles</span></span>
+					</label>
+					<Field id="hi-suffix" label="Hearing-impaired files are named" hint="File ending players read as SDH">
+						<select id="hi-suffix" form="subtitle-form" class="input narrow" bind:value={settings!.hi_suffix}>
+							<option value="hi">.hi (Movie.en.hi.srt)</option>
+							<option value="cc">.cc (Movie.en.cc.srt)</option>
+							<option value="sdh">.sdh (Movie.en.sdh.srt)</option>
+						</select>
+					</Field>
+				{/snippet}
+			</SettingsCard>
+			<SettingsCard id="sync-fix" title="Sync fix" description="Starting values for fixing timing">
+				<p class="small muted">
+					A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. HolyArrs does
+					not listen to the sound to line subtitles up.
+				</p>
+				{#snippet advanced()}
+					<div class="three">
+						<Field id="sy-step" label="Shift buttons move (ms)">
+							<input id="sy-step" form="subtitle-form" class="input narrow" type="number" min="10" max="60000" bind:value={settings!.sync_step_ms} />
+						</Field>
+						<Field id="sy-from" label="Frame rate from">
+							<input id="sy-from" form="subtitle-form" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_from_fps} />
+						</Field>
+						<Field id="sy-to" label="Frame rate to">
+							<input id="sy-to" form="subtitle-form" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_to_fps} />
+						</Field>
+					</div>
+				{/snippet}
+			</SettingsCard>
+		</div>
+	</MoreOptions>
+	<SaveBar {dirty} form="subtitle-form" saving={setBusy} ondiscard={() => (settings = JSON.parse(saved))} />
+
 {/if}
 
 <style>

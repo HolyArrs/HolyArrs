@@ -69,6 +69,7 @@ test.beforeAll(async ({ browser }) => {
 
 	// The member, invited by the owner.
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('Reports');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();

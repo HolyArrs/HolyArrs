@@ -148,6 +148,7 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 
 test('a member asks for two seasons of a show from a phone', async ({ browser }) => {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('Max');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();

@@ -198,6 +198,7 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	test.setTimeout(180_000);
 	// The owner makes an invite link; juno joins with it.
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('juno');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();

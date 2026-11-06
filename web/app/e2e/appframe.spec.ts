@@ -60,15 +60,16 @@ test('the sign-in page says how to reset the owner', async ({ browser }) => {
 
 test('This app shows where things are kept, and the log', async () => {
 	await page.goto('/settings/this-app');
+	await page.getByTestId('more-options').getByText('More options').click();
 	const store = page.getByTestId('storage');
 	await expect(store.getByTestId('storage-path').filter({ hasText: 'Main database' })).toContainText('holyarrs.db');
 	await expect(store.getByTestId('storage-media').first()).toContainText('Library folder');
-	const dl = page.getByRole('link', { name: 'Download the log' });
+	await page.getByTestId('settings-links').getByRole('link', { name: /^Logs/ }).click();
+	await expect(page.getByRole('heading', { name: 'Logs', level: 1 })).toBeVisible();
+	const dl = page.getByRole('link', { name: 'Download', exact: true });
 	await expect(dl).toHaveAttribute('href', /\/api\/v1\/logs\/download$/);
 	const [file] = await Promise.all([page.waitForEvent('download'), dl.click()]);
 	expect(file.suggestedFilename()).toMatch(/^holyarrs-log-.*\.txt$/);
-	await page.getByRole('link', { name: 'Read the log' }).click();
-	await expect(page.getByRole('heading', { name: 'Logs', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('log-line').first()).toBeVisible();
 	await page.getByLabel('Text').fill('listening on');
 	await page.getByRole('button', { name: 'Apply', exact: true }).click();
@@ -147,12 +148,14 @@ test('a newer release shows a notice; off asks nothing', async () => {
 
 test('the API page: key, scopes, base address, examples and every route', async () => {
 	await page.goto('/settings');
-	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'API for other apps' }).click();
+	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: /^API/ }).click();
 	await expect(page.getByRole('heading', { name: 'API', level: 1 })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Sign-in and security' })).toHaveAttribute('href', '/settings/sign-in');
+	await expect(page.locator('#api-start').getByRole('link', { name: 'API keys' })).toHaveAttribute('href', '#keys-card');
+	await expect(page.getByLabel('Key name')).toBeVisible();
 	await expect(page.getByTestId('api-base')).toHaveText(/^http:\/\/127\.0\.0\.1:\d+\/api\/v1$/);
 	await expect(page.getByTestId('api-scopes')).toContainText('control');
 	expect(await page.getByTestId('api-op').count()).toBeGreaterThan(150);
+	await page.getByTestId('more-options').getByText('Reference').click();
 	await page.getByLabel('Find a route').fill('schedules');
 	await expect(page.getByTestId('api-op').first()).toContainText('/api/v1/schedules');
 	await page.getByTestId('api-op').first().getByRole('button').click();

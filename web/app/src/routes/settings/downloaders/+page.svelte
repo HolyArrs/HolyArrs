@@ -286,7 +286,7 @@
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
-<Field id="dl-tags" label="Tags" hint="Titles with a matching tag use this Downloader. Untagged ones use untagged Downloaders.">
+<Field id="dl-tags" label="Tags" hint="Only titles with this tag use it.">
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
 <details class="more" open={form.path_map.length > 0}>
@@ -386,7 +386,7 @@
 {:else if error && !listOk}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if list.length === 0 && !editing}
-	<EmptyState icon="downloader" title="No Downloaders" text="HolyArrs needs a Downloader to fetch what it chooses. Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="downloader" title="No Downloaders" text="Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
@@ -424,7 +424,7 @@
 								<Button variant="plain" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Give up on it</Button>
 							</div>
 						{/each}
-						<p class="xs muted">Abandoning stops HolyArrs from retrying this exact Release and Slot, including covered Slots in the same Version. It does not cancel anything in {kindWords[d.kind]}.</p>
+						<p class="xs muted">HolyArrs won't retry this Release. The download in {kindWords[d.kind]} stays.</p>
 					</section>
 				{:else if attemptErrors[d.id]}
 					<p class="small bad-text" role="status">Could not check uncertain sends: {attemptErrors[d.id]}</p>

@@ -2,6 +2,8 @@
 	import { testLabel } from '#lib/test-tag.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import MoreOptions from '#lib/ui/MoreOptions.svelte';
+	import SettingsLinks from '#lib/ui/SettingsLinks.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -130,7 +132,7 @@
 	});
 </script>
 
-<svelte:head><title>Parts and controls · HolyArrs</title></svelte:head>
+<svelte:head><title>Parts · HolyArrs</title></svelte:head>
 
 <PageHeader title="Parts" />
 
@@ -190,7 +192,7 @@
 	</div>
 
 	<div data-testid="control-stages">
-		<SettingsCard id="stages-card" title="Stages" description="Feed checks, imports and other background work. Restart one that's stuck.">
+		<SettingsCard id="stages-card" title="Stages" description="Background work. Restart one that's stuck.">
 			{#if split.stages.length === 0}
 				<p class="small muted">No Stages</p>
 			{:else}
@@ -239,11 +241,7 @@
 		</SettingsCard>
 	</div>
 
-	<SettingsCard id="whole-app-card" title="The whole app">
-		<p class="small muted">Restart, Safe mode and Shut down</p>
-		<div class="row acts" style="margin-top: var(--s-3)"><Button href={to('/settings/danger')} iconAfter="chevronRight">Open the Danger zone</Button></div>
-	</SettingsCard>
-
+	<MoreOptions label="Controls used">
 	<div data-testid="control-events">
 		<SettingsCard title="Controls used">
 			{#if events.length === 0}
@@ -260,6 +258,9 @@
 			{/if}
 		</SettingsCard>
 	</div>
+	</MoreOptions>
+
+	<SettingsLinks label="The whole app" links={[{ href: '/settings/danger', label: 'Danger zone', note: 'Restart, safe mode or shut down' }]} />
 {/if}
 
 <style>

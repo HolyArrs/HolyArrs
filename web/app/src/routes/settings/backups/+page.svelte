@@ -161,7 +161,7 @@
 	}
 </script>
 
-<svelte:head><title>Backups and restore · HolyArrs</title></svelte:head>
+<svelte:head><title>Backups · HolyArrs</title></svelte:head>
 
 <PageHeader title="Backups">
 	{#snippet actions()}
@@ -184,40 +184,6 @@
 			<Icon name="info" size={18} /><span>Restore ready. It applies on the next start.</span>
 		</p>
 	{/if}
-
-	{#if keyKit?.fingerprint}
-		<SettingsCard id="backup-key" title="Master key" description="Backups don't include this key. Keep a copy somewhere safe.">
-			{#if keyKit.needed}
-				<p class="notice warn" role="status">
-					<Icon name="info" size={18} /><span
-						>No key kit saved for this key yet. Without it, a backup's saved passwords cannot be opened on a new machine.{#if session.s.role !== 'owner'}
-							Only the owner can download it; ask them to.{/if}</span
-					>
-				</p>
-			{/if}
-			<div class="keyrow">
-				<span class="xs muted">Key fingerprint <span class="mono">{keyKit.fingerprint}</span></span>
-				{#if session.s.role === 'owner'}
-					<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>Download key kit</Button>
-				{/if}
-			</div>
-			{#if session.s.role === 'owner'}
-				<p class="xs muted keynote">To restore: rename to holyarrs.key, put in the config folder</p>
-			{/if}
-		</SettingsCard>
-	{/if}
-
-	<SettingsCard id="backup-often" title="How often">
-		<div class="presets" role="radiogroup" aria-label="How often" aria-busy={savingPreset}>
-			{#each presets as p (p.key)}
-				<label class="preset" class:on={preset === p.key}>
-					<input type="radio" name="preset" value={p.key} checked={preset === p.key} disabled={savingPreset} onchange={() => choose(p.key)} />
-					<span class="pn">{p.name}</span>
-					<span class="xs muted">{p.about}</span>
-				</label>
-			{/each}
-		</div>
-	</SettingsCard>
 
 	<section class="card" id="backup-list" tabindex="-1" aria-labelledby="h-list">
 		<div class="card-head">
@@ -245,6 +211,41 @@
 		{/if}
 		{#if keyNote}<p class="xs muted keynote">{keyNote}</p>{/if}
 	</section>
+
+	<SettingsCard id="backup-often" title="How often">
+		<div class="presets" role="radiogroup" aria-label="How often" aria-busy={savingPreset}>
+			{#each presets as p (p.key)}
+				<label class="preset" class:on={preset === p.key}>
+					<input type="radio" name="preset" value={p.key} checked={preset === p.key} disabled={savingPreset} onchange={() => choose(p.key)} />
+					<span class="pn">{p.name}</span>
+					<span class="xs muted">{p.about}</span>
+				</label>
+			{/each}
+		</div>
+	</SettingsCard>
+
+	{#if keyKit?.fingerprint}
+		<SettingsCard id="backup-key" title="Master key" description="Backups don't include this key. Keep a copy somewhere safe.">
+			{#if keyKit.needed}
+				<p class="notice warn" role="status">
+					<Icon name="info" size={18} /><span
+						>No key kit saved for this key yet. Without it, a backup's saved passwords cannot be opened on a new machine.{#if session.s.role !== 'owner'}
+							Only the owner can download it; ask them to.{/if}</span
+					>
+				</p>
+			{/if}
+			<div class="keyrow">
+				<span class="xs muted">Key fingerprint <span class="mono">{keyKit.fingerprint}</span></span>
+				{#if session.s.role === 'owner'}
+					<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>Download key kit</Button>
+				{/if}
+			</div>
+			{#if session.s.role === 'owner'}
+				<p class="xs muted keynote">To restore: rename to holyarrs.key, put in the config folder</p>
+			{/if}
+		</SettingsCard>
+	{/if}
+
 {/if}
 
 <style>

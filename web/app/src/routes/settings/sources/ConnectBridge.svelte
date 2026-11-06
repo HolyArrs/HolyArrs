@@ -8,6 +8,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { ago } from '#lib/format.ts';
 	import { to } from '#lib/paths.ts';
+	import { reachWords } from '#lib/downloaders.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -37,8 +38,8 @@
 	const mayEdit = $derived(session.can('settings'));
 	const names: Record<Kind, string> = { jackett: 'Jackett', prowlarr: 'Prowlarr' };
 	const kindChoices: { value: Kind; label: string }[] = [
-		{ value: 'jackett', label: 'Jackett' },
-		{ value: 'prowlarr', label: 'Prowlarr' }
+		{ value: 'prowlarr', label: 'Prowlarr' },
+		{ value: 'jackett', label: 'Jackett' }
 	];
 
 	let bridges = $state<Bridge[] | null>(null);
@@ -155,7 +156,7 @@
 			result = { ok: true, text, tested: true, extra };
 		} catch (e) {
 			if (isReauth(e)) askPassword('test');
-			else if (!fieldError(e)) result = { ok: false, text: message(e), tested: true };
+			else if (!fieldError(e)) result = { ok: false, text: compact ? reachWords(message(e)) : message(e), tested: true };
 		} finally {
 			testing = false;
 		}
@@ -183,7 +184,7 @@
 			else if (e instanceof ApiError && e.status === 409 && e.body.need === 'keys' && Array.isArray(e.body.sides)) {
 				keysNeeded = e.body.sides as string[];
 				result = { ok: false, text: message(e) };
-			} else if (!fieldError(e)) result = { ok: false, text: message(e) };
+			} else if (!fieldError(e)) result = { ok: false, text: compact ? reachWords(message(e)) : message(e) };
 		} finally {
 			connecting = false;
 		}
@@ -235,7 +236,7 @@
 
 <SettingsCard
 	id="connect-bridge"
-	title="Jackett or Prowlarr"
+	title="Prowlarr or Jackett"
 	description={bridges?.length ? undefined : 'Use the indexers you already set up there.'}
 >
 	{#if loadError && !bridges}
@@ -275,7 +276,7 @@
 			<div class="form" data-testid="bridge-form">
 				<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
 				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include the base path, if any.' : undefined} error={errors.url}>
-					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://jackett:9117' : 'http://prowlarr:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
+					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://192.168.1.10:9117' : 'http://192.168.1.10:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
 				<Field id="br-key" label="API key" hint={editingId != null ? 'Enter it again to save.' : kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
@@ -310,9 +311,9 @@
 						<p class="small" role="status" data-testid="bridge-need-password"><a href={to('/account')}>Set a HolyArrs password</a> to connect Prowlarr.</p>
 					{/if}
 				{/if}
-				<div class="acts">
+				<div class="acts" class:one-row={compact}>
 					{#if result?.tested}<span class="tag"><TestTag ok={result.ok} text={result.text} app={names[kind]} extra={result.extra} testid={result.ok ? 'bridge-result' : undefined} /></span>{/if}
-					<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>
+					{#if !compact}<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>{/if}
 					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
 					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Link'}</Button>
 				</div>
@@ -361,6 +362,9 @@
 	.link { border: 0; padding: 0 0 0 4px; background: none; color: var(--accent-text, var(--accent)); font: inherit; cursor: pointer; }
 	.link:hover { text-decoration: underline; }
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
+	/* First run: Test and Link share one row; the answer tag takes its own line. */
+	.acts.one-row .tag { flex: 1 0 100%; margin: 0; }
+	.acts.one-row > :global(.ui-btn) { flex: 1 1 0; }
 	.tag { margin-right: auto; display: inline-flex; min-width: 0; }
 	.keys { display: flex; flex-direction: column; gap: 12px; }
 	.check { display: flex; gap: 8px; align-items: flex-start; font: var(--t-callout); }

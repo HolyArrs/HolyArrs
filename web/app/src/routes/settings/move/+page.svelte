@@ -790,7 +790,7 @@
 <svelte:head>{#if !embedded}<title>Move from other apps · HolyArrs</title>{/if}</svelte:head>
 
 {#if !embedded}
-	<PageHeader title="Move from other apps" subtitle="Bring your titles, Sources, Downloaders and people over. Your old apps stay untouched." />
+	<PageHeader title="Move from other apps" subtitle="Your old apps stay untouched." />
 {/if}
 
 {#if !loaded}
@@ -799,7 +799,7 @@
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
-	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
+	{#if !embedded}<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />{/if}
 	{#if mustSetPw && !pwSheet}
 		<SettingsCard id="move-password" title="Set a password first" icon="shield">
 			<form class="setpw" onsubmit={setFirstPw}>
@@ -903,7 +903,7 @@
 
 <ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
 
-<Sheet bind:open={forgetOpen} title="Forget this {appName(forgetting?.kind ?? '')} read?" size="sm">
+<Sheet bind:open={forgetOpen} title={forgetting ? `Forget this ${appName(forgetting.kind)} read?` : 'Forget this read?'} size="sm">
 	<form id="move-forget-form" onsubmit={forget}>
 		<p class="small muted">Finished moves stay. You can read it again.</p>
 		{#if forgetError}<p class="form-error" role="alert">{forgetError}</p>{/if}
@@ -951,7 +951,7 @@
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={confirmUndo} title="Undo move {current?.id ?? ''}?" size="sm">
+<Sheet bind:open={confirmUndo} title={current ? `Undo move ${current.id}?` : 'Undo this move?'} size="sm">
 	<form id="move-undo-form" onsubmit={undo}>
 		<p class="small muted">Removes what this move added; your later changes stay. Download the report first if you want it.</p>
 	</form>

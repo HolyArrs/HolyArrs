@@ -185,6 +185,31 @@
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<form class="sc-form stack" id="naming-form" onsubmit={save} aria-label="Naming and files">
+		<SettingsCard id="where-files-go" title="Where files go">
+			<Field id="holding-days" label="Keep deleted files for (days)">
+				<input id="holding-days" class="input narrow" type="number" min="0" max="3650" bind:value={fr.holding_days} />
+				<span class="hint"
+					>A deleted or replaced file first goes to the holding folder in its Library folder (.holyarrs-replaced). After this many days it is removed for good. 0
+					keeps them until you empty it yourself.</span
+				>
+			</Field>
+			{#snippet advanced()}
+			<Field id="scan-limit" label="Folders read per library scan" hint="Bigger Libraries scan in parts">
+				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />
+			</Field>
+			<Field id="music-scan-limit" label="Artist folders read per music scan" hint="Lower because MusicBrainz allows one lookup a second">
+				<input id="music-scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.music_adopt_scan_limit} />
+			</Field>
+			<Field id="min-free" label="Always leave this much free space (MB)" hint="Imports stop below this. Minimum 100 MB.">
+				<input id="min-free" class="input narrow" type="number" min="100" bind:value={fr.min_free_mb} />
+			</Field>
+			<label class="checkline">
+				<input id="skip-free-check" type="checkbox" bind:checked={fr.skip_free_space_check} />
+				<span><b>Skip the free-space check</b><br /><span class="hint">For disks that misreport free space</span></span>
+			</label>
+			{/snippet}
+		</SettingsCard>
+
 		<SettingsCard id="movie-names" title="Movie names">
 			<Field id="file-pattern" label="File name pattern" hint="{'{'}Words{'}'} fill in per movie; empty ones drop out">
 				<input id="file-pattern" class="input mono" bind:value={ns.file_pattern} autocomplete="off" spellcheck="false" />
@@ -379,31 +404,6 @@
 					></span
 				>
 			</label>
-		</SettingsCard>
-
-		<SettingsCard id="where-files-go" title="Where files go">
-			<Field id="holding-days" label="Keep deleted files for (days)">
-				<input id="holding-days" class="input narrow" type="number" min="0" max="3650" bind:value={fr.holding_days} />
-				<span class="hint"
-					>A deleted or replaced file first goes to the holding folder in its Library folder (.holyarrs-replaced). After this many days it is removed for good. 0
-					keeps them until you empty it yourself.</span
-				>
-			</Field>
-			{#snippet advanced()}
-			<Field id="scan-limit" label="Folders read per library scan" hint="Bigger Libraries scan in parts">
-				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />
-			</Field>
-			<Field id="music-scan-limit" label="Artist folders read per music scan" hint="Lower because MusicBrainz allows one lookup a second">
-				<input id="music-scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.music_adopt_scan_limit} />
-			</Field>
-			<Field id="min-free" label="Always leave this much free space (MB)" hint="Imports stop below this. Minimum 100 MB.">
-				<input id="min-free" class="input narrow" type="number" min="100" bind:value={fr.min_free_mb} />
-			</Field>
-			<label class="checkline">
-				<input id="skip-free-check" type="checkbox" bind:checked={fr.skip_free_space_check} />
-				<span><b>Skip the free-space check</b><br /><span class="hint">For disks that misreport free space</span></span>
-			</label>
-			{/snippet}
 		</SettingsCard>
 
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}

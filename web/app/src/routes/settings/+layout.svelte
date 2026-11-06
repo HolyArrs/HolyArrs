@@ -139,6 +139,11 @@
 			<label class="sr-only" for="settings-nav-find">Find a setting</label>
 			<input id="settings-nav-find" type="search" placeholder="Search" autocomplete="off" spellcheck="false" bind:value={find} onkeydown={findKey} />
 		</div>
+		{#if account && !find.trim()}
+			<a class="nav-row nav-account" href={to(account.href)} aria-current={currentSection?.href === account.href ? 'page' : undefined}>
+				<span class="glyph"><Icon name="user" size={16} /></span><span class="label">My account</span>
+			</a>
+		{/if}
 		{#each shown as { group, items } (group.id)}
 			<div class="nav-group" class:closed={!isOpen(group.id)} role="group" aria-labelledby="settings-nav-{group.id}">
 				<button type="button" class="fold-head" id="settings-nav-{group.id}" aria-expanded={isOpen(group.id)} onclick={() => (openGroup = isOpen(group.id) ? '' : group.id)}>
@@ -161,11 +166,6 @@
 				{/if}
 			</div>
 		{/each}
-		{#if account && !find.trim()}
-			<a class="nav-row nav-account" href={to(account.href)} aria-current={currentSection?.href === account.href ? 'page' : undefined}>
-				<span class="glyph"><Icon name="user" size={16} /></span><span class="label">My account</span>
-			</a>
-		{/if}
 		{#if find.trim() && !firstShown}
 			<p class="nav-none">No matching page <a href={to('/settings') + '?q=' + encodeURIComponent(find.trim())} onclick={() => (find = '')}>Search every setting</a></p>
 		{/if}
@@ -228,7 +228,7 @@
 	.nav-row[aria-current='page'] .glyph { color: var(--accent-text); }
 	.nav-row > :global(.icon:last-child) { color: var(--text-muted); }
 	.glyph { flex: none; display: grid; place-items: center; width: 18px; color: var(--text-muted); }
-	.nav-account { margin-top: 14px; }
+	.nav-account { margin: 4px 0 6px; }
 	.nav-none { padding: 10px 8px; color: var(--text-muted); font: var(--t-footnote); }
 	.nav-none a { color: var(--accent-text); font-weight: 600; }
 	.page-top { display: flex; align-items: center; gap: 12px; min-height: 32px; margin-bottom: 8px; }

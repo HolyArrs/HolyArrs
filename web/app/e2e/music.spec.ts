@@ -210,6 +210,7 @@ test('artists sit in the Library with a Music kind', async () => {
 
 test('a member asks for one single from a phone', async ({ browser }) => {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('Ivy');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();

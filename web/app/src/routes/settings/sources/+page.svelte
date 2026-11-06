@@ -243,7 +243,7 @@
 	<EmptyState
 		icon="source"
 		title="No Sources"
-		text="Without a Source, HolyArrs cannot find Releases. Add a Torznab or Newznab feed, or a bridge such as Jackett or Prowlarr."
+		text="Add a Torznab or Newznab feed, or Jackett or Prowlarr."
 		action={{ label: 'Add a Source', onclick: startAdd, icon: 'plus' }}
 	/>
 	<ConnectBridge onchange={load} />

@@ -251,7 +251,7 @@
 	{#if loops.length}
 		<section class="sched-group" aria-labelledby="sg-loops" data-testid="loops">
 			<h2 id="sg-loops" class="group-head">Stages</h2>
-			<p class="group-about">Pause or restart them in <a href={to('/settings/parts')}>Parts and controls</a>.</p>
+			<p class="group-about">Pause or restart them in <a href={to('/settings/parts')}>Parts</a>.</p>
 			<div class="s-card sched-card">
 				<ul>
 					{#each loops as l (l.key)}

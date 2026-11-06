@@ -99,7 +99,16 @@
 
 <svelte:head><title>Search · HolyArrs</title></svelte:head>
 
-<PageHeader title="Search" />
+<PageHeader title="Search">
+	{#snippet actions()}
+		{#if loaded && !loadError}
+			<span class="now" id="search-now">
+				<Button type="button" disabled={!!now} aria-busy={now === '/search/feed-check'} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
+				<Button type="button" disabled={!!now} aria-busy={now === '/search/better'} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
+			</span>
+		{/if}
+	{/snippet}
+</PageHeader>
 
 {#if !loaded}
 	<SkSettings rows={3} />
@@ -126,52 +135,6 @@
 			{#snippet advanced()}
 						<Field id="feed-minutes" label="Check Source feeds every (minutes)" hint="10–120; 0 turns them off">
 							<input id="feed-minutes" class="input narrow" type="number" min="0" max="120" bind:value={settings.feed_check_minutes} />
-						</Field>
-			{/snippet}
-		</SettingsCard>
-		<SettingsCard id="season-packs" title="Season packs">
-				<Field id="pack-upgrade" label="A season pack is taken when">
-					<select id="pack-upgrade" class="input" bind:value={settings.season_pack_upgrade}>
-						<option value="all">Every episode in it would be new or better</option>
-						<option value="any">At least one episode in it would be new or better</option>
-					</select>
-				</Field>
-				<Field id="pack-prefer" label="Season pack or single episodes" hint="Which wins when a season pack and single episodes are both on offer.">
-					<select id="pack-prefer" class="input" bind:value={settings.season_pack_prefer}>
-						<option value="rank">Best copy first; a season pack wins when they are equal</option>
-						<option value="always">A season pack whenever one passes the Pick rules</option>
-					</select>
-				</Field>
-			{#snippet advanced()}
-						<label class="checkline">
-							<input id="multi-season" type="checkbox" bind:checked={settings.multi_season_packs} />
-							<span
-								><b>Take Releases with several seasons</b><br /><span class="hint"
-									>Fills every missing episode in it</span
-								></span
-							>
-						</label>
-			{/snippet}
-		</SettingsCard>
-		<SettingsCard id="music-search" title="Music">
-				<label class="checkline">
-					<input id="missing-albums" type="checkbox" bind:checked={settings.missing_search_music} data-testid="missing-music" />
-					<span
-						><b>Search for missing albums too</b><br /><span class="hint"
-							>Released albums, one search each</span
-						></span
-					>
-				</label>
-			{#snippet advanced()}
-						<label class="checkline">
-							<input id="discographies" type="checkbox" bind:checked={settings.music_discography_packs} />
-							<span
-								><b>Take whole discographies</b></span
-							>
-						</label>
-						<Field id="track-tolerance" label="Tracks an album Release may lack">
-							<input id="track-tolerance" class="input" type="number" min="-1" max="50" bind:value={settings.album_track_tolerance} />
-							<p class="hint">0 needs every track; -1 skips the check</p>
 						</Field>
 			{/snippet}
 		</SettingsCard>
@@ -228,16 +191,56 @@
 						<p class="hint">Program and fake files are handled in Downloaders</p>
 			{/snippet}
 		</SettingsCard>
+		<SettingsCard id="season-packs" title="Season packs">
+				<Field id="pack-upgrade" label="A season pack is taken when">
+					<select id="pack-upgrade" class="input" bind:value={settings.season_pack_upgrade}>
+						<option value="all">Every episode in it would be new or better</option>
+						<option value="any">At least one episode in it would be new or better</option>
+					</select>
+				</Field>
+				<Field id="pack-prefer" label="Season pack or single episodes" hint="Which wins when a season pack and single episodes are both on offer.">
+					<select id="pack-prefer" class="input" bind:value={settings.season_pack_prefer}>
+						<option value="rank">Best copy first; a season pack wins when they are equal</option>
+						<option value="always">A season pack whenever one passes the Pick rules</option>
+					</select>
+				</Field>
+			{#snippet advanced()}
+						<label class="checkline">
+							<input id="multi-season" type="checkbox" bind:checked={settings.multi_season_packs} />
+							<span
+								><b>Take Releases with several seasons</b><br /><span class="hint"
+									>Fills every missing episode in it</span
+								></span
+							>
+						</label>
+			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="music-search" title="Music">
+				<label class="checkline">
+					<input id="missing-albums" type="checkbox" bind:checked={settings.missing_search_music} data-testid="missing-music" />
+					<span
+						><b>Search for missing albums too</b><br /><span class="hint"
+							>Released albums, one search each</span
+						></span
+					>
+				</label>
+			{#snippet advanced()}
+						<label class="checkline">
+							<input id="discographies" type="checkbox" bind:checked={settings.music_discography_packs} />
+							<span
+								><b>Take whole discographies</b></span
+							>
+						</label>
+						<Field id="track-tolerance" label="Tracks an album Release may lack">
+							<input id="track-tolerance" class="input" type="number" min="-1" max="50" bind:value={settings.album_track_tolerance} />
+							<p class="hint">0 needs every track; -1 skips the check</p>
+						</Field>
+			{/snippet}
+		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 	<SaveBar {dirty} form="search-form" saving={busy} ondiscard={() => (settings = JSON.parse(saved))} />
 
-	<SettingsCard id="search-now" title="Search now" description="Results show on Home">
-		<div class="row now">
-			<Button type="button" disabled={!!now} aria-busy={now === '/search/feed-check'} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
-			<Button type="button" disabled={!!now} aria-busy={now === '/search/better'} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
-		</div>
-	</SettingsCard>
 {/if}
 
 <style>
@@ -248,7 +251,7 @@
 		margin-top: var(--s-4);
 	}
 	.now {
-		margin-top: var(--s-4);
+		display: inline-flex;
 		gap: var(--s-2);
 		flex-wrap: wrap;
 	}

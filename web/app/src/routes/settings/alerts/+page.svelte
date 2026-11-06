@@ -250,7 +250,7 @@
 				<Field id="al-ntfy-server" label="Server address" hint="Empty uses ntfy.sh. A home server needs “Reach the local network”.">
 					<input id="al-ntfy-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://ntfy.sh" />
 				</Field>
-				<Field id="al-ntfy-topic" label="Topic" hint="Letters, digits, - and _. Anyone who knows it can read it, so make it hard to guess.">
+				<Field id="al-ntfy-topic" label="Topic" hint="Letters, digits, - and _. Anyone with this name can read it.">
 					<input id="al-ntfy-topic" class="input mono" bind:value={form.topic} maxlength="64" autocomplete="off" spellcheck="false" placeholder="holyarrs-alerts" />
 				</Field>
 				<Field id="al-ntfy-token" label="Access token" hint={isNew || !editing?.app_token ? 'Optional, only for a topic that needs a sign-in. In ntfy: Account, Access tokens. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
@@ -346,7 +346,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if alerts.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="bell" title="No Alerts" text="Add Discord, Telegram, ntfy, Gotify, Pushover, an email server or a webhook to tell people (or your own tools) outside HolyArrs." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="bell" title="No Alerts" text="Send messages to Discord, Telegram, email and more." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">

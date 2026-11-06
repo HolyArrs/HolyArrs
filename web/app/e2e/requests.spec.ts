@@ -68,6 +68,7 @@ test('the owner adds a Discord Alert and sends a test', async () => {
 
 test('a member asks for a movie from a phone and sees it on the Requests page', async ({ browser }) => {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('Kim');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();
@@ -264,6 +265,7 @@ const owls = 'a4444444-0000-4000-8000-000000000004';
 /** member makes an invite link as the owner and joins with it on a phone. */
 async function member(browser: Browser, name: string): Promise<Page> {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill(name);
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();
@@ -741,6 +743,7 @@ const harrow = 'Harrow Teaspoon';
 /** admin joins with an Admin invite and sets the display name everyone sees. */
 async function admin(browser: Browser, name: string, shown: string): Promise<Page> {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill(name);
 	await own.locator('form.invite').getByRole('group', { name: 'Role' }).getByLabel('Admin').check();
 	await own.getByRole('button', { name: 'Make an invite link' }).click();

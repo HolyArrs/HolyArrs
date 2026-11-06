@@ -195,7 +195,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if servers.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="tv" title="No media servers" text="Add your Plex, Jellyfin or Emby server and new movies, shows and music show up there by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="tv" title="No media servers" text="New titles show up in Plex, Jellyfin or Emby by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">

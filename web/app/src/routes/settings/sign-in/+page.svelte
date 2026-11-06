@@ -2,15 +2,15 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import MoreOptions from '#lib/ui/MoreOptions.svelte';
+	import SettingsLinks from '#lib/ui/SettingsLinks.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, date } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import type { ApiKey } from '#lib/types.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -33,14 +33,9 @@
 	const netList = () => nets.split(/[\s,]+/).filter(Boolean);
 	let savingRequire = $state(false);
 
-	let keys = $state<ApiKey[]>([]);
-	let keysNote = $state('');
-	let label = $state('');
-	let making = $state(false);
-	let fresh = $state<{ key: string; label: string } | null>(null);
 
 	function strongNote(e: unknown): string {
-		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to manage API keys.' : message(e);
+		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to change this.' : message(e);
 	}
 
 	interface Way {
@@ -306,9 +301,7 @@
 	}
 
 	onMount(async () => {
-		const [, k] = await Promise.allSettled([loadSettings(), api.get<{ keys: ApiKey[] }>('/auth/keys')]);
-		if (k.status === 'fulfilled') keys = k.value.keys;
-		else keysNote = strongNote(k.reason);
+		await loadSettings();
 		loaded = true;
 	});
 
@@ -356,42 +349,6 @@
 		}
 	}
 
-	async function makeKey(e: SubmitEvent) {
-		e.preventDefault();
-		if (!label.trim()) return;
-		making = true;
-		try {
-			const r = await api.post<{ id: number; label: string; key: string }>('/auth/keys', { label: label.trim() });
-			fresh = { key: r.key, label: r.label };
-			label = '';
-			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
-		} catch (err) {
-			toasts.push(strongNote(err), 'fail');
-		} finally {
-			making = false;
-		}
-	}
-
-	async function revoke(k: ApiKey) {
-		if (!confirm(`Revoke the API key "${k.label}"? Anything using it stops working.`)) return;
-		try {
-			await api.del(`/auth/keys/${k.id}`);
-			keys = keys.filter((x) => x.id !== k.id);
-			toasts.push('API key revoked.', 'ok');
-		} catch (e) {
-			toasts.push(strongNote(e), 'fail');
-		}
-	}
-
-	async function copy() {
-		if (!fresh) return;
-		try {
-			await navigator.clipboard.writeText(fresh.key);
-			toasts.push('Copied.', 'ok');
-		} catch {
-			toasts.push('Copy did not work here; select the key and copy it by hand.', 'fail');
-		}
-	}
 </script>
 
 <svelte:head><title>Sign-in and security · HolyArrs</title></svelte:head>
@@ -404,49 +361,6 @@
 	{#if !settingsOk}
 		<LoadError hasData={false} message={error} onretry={loadSettings} busy={settingsLoading} />
 	{:else}
-	<SettingsCard id="local-card" title="Local network">
-			<label class="switch" style="margin-top: var(--s-3)">
-				<input type="checkbox" checked={skipLocal} disabled={savingSkip} aria-busy={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
-				<span class="sw" aria-hidden="true"></span>
-				<span>Skip sign-in on my local network</span>
-			</label>
-			<p class="hint">
-				Devices on the networks below open HolyArrs as the owner, without a password. With family or friends on the same
-				network, leave this off: they would get the owner's rights too.
-			</p>
-			<p class="hint">Keys and passwords still need a sign-in</p>
-			<form class="nets" onsubmit={saveNets}>
-				<Field id="local-nets" label="Local networks, one per line" hint="e.g. 192.168.1.0/24 or 192.168.1.20. Up to 32.">
-					<textarea id="local-nets" class="input" rows="3" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
-				</Field>
-				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save</Button>
-			</form>
-			{#if seenAddress}<p class="hint" data-testid="seen-address">HolyArrs sees this browser as <span class="mono">{seenAddress}</span>.</p>{/if}
-			{#if proxyUntrusted}<p class="hint" data-testid="proxy-untrusted">
-					A proxy in front of HolyArrs is not trusted, so sign-in is never skipped through it. Add the proxy's address to
-					<span class="mono">HOLYARRS_TRUSTED_PROXIES</span> in the container settings.
-				</p>{/if}
-			{#if gatewayNets.length}
-				<p class="notice warn" role="status" data-testid="gateway-warn">
-					<Icon name="info" size={18} /><span
-						>{gatewayNets.join(', ')} {gatewayNets.length === 1 ? 'looks' : 'look'} like a Docker or Podman gateway address. If every device shows up as that address, anyone who can reach
-						HolyArrs opens it as the owner. Check the address above from another device; if it is the same, turn off Skip sign-in, then remove this entry.</span
-					>
-				</p>
-			{/if}
-	</SettingsCard>
-
-	<SettingsCard id="twofactor-card" title="Two-factor sign-in">
-		<label class="switch" style="margin-top: var(--s-3)">
-			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
-			<span class="sw" aria-hidden="true"></span>
-			<span>Admins must use two-factor sign-in</span>
-		</label>
-		<p class="hint">
-			An admin without it can open only My account until they turn it on. Anyone can turn it on for themselves in My account.{#if !isOwner}{' '}Only the owner can change this.{/if}
-		</p>
-	</SettingsCard>
-
 	<SettingsCard id="passwords-card" title="Passwords">
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
@@ -467,6 +381,17 @@
 				{/if}
 			</fieldset>
 		</form>
+	</SettingsCard>
+
+	<SettingsCard id="twofactor-card" title="Two-factor sign-in">
+		<label class="switch" style="margin-top: var(--s-3)">
+			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
+			<span class="sw" aria-hidden="true"></span>
+			<span>Admins must use two-factor sign-in</span>
+		</label>
+		<p class="hint">
+			An admin without it can open only My account until they turn it on. Anyone can turn it on for themselves in My account.{#if !isOwner}{' '}Only the owner can change this.{/if}
+		</p>
 	</SettingsCard>
 
 	{#each ['plex', 'jellyfin', 'emby'] as const as w (w)}
@@ -550,70 +475,65 @@
 		</SettingsCard>
 	{/each}
 	{#if isOwner}<SsoCard id="sso-card" />{/if}
-	{/if}
-
-	{#if settingsOk}
-	<SettingsCard id="hosts-card" title="Allowed host names">
-		<p class="hint">
-			Names you open HolyArrs by besides its IP address, like tower.local or media.example.com. The name you used at first-run
-			setup is already here. Names in <code>HOLYARRS_ALLOWED_HOSTS</code> always work and are not listed.
-		</p>
-		<form class="nets" onsubmit={saveHosts}>
-			<Field id="allowed-hosts" label="Host names, one per line">
-				<textarea id="allowed-hosts" class="input" rows="3" bind:value={hostNames} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
-			</Field>
-			<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>Save</Button>
-		</form>
-	</SettingsCard>
-	{/if}
-
-	<SettingsCard id="proxy-card" title="Trusted proxies">
-		<p class="small muted" style="margin-top: var(--s-2)">
-			Set when HolyArrs starts, not here: list your reverse proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
-			names in <code>HOLYARRS_ALLOWED_HOSTS</code>. Without a proxy, nothing is needed.
-		</p>
-	</SettingsCard>
-
-	<SettingsCard id="keys-card" title="API keys">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send in the <code>X-Api-Key</code> header, never in an address</p>
-
-		{#if keysNote}
-			<p class="notice warn">{keysNote}</p>
-		{:else}
-			{#if fresh}
-				<div class="fresh" role="status">
-					<p class="small"><b>{fresh.label}</b>: copy this key now. It is shown only once.</p>
-					<div class="row">
-						<code class="key grow">{fresh.key}</code>
-						<Button icon="copy" type="button" onclick={copy}>Copy</Button>
-						<Button variant="plain" type="button" onclick={() => (fresh = null)}>Close</Button>
-					</div>
-				</div>
-			{/if}
-
-			<form class="row" onsubmit={makeKey}>
-				<label class="sr-only" for="key-label">Key name</label>
-				<input id="key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="e.g. Home Assistant" maxlength="64" />
-				<Button icon="key" variant="primary" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make a key</Button>
+	<SettingsCard id="local-card" title="Local network">
+			<label class="switch" style="margin-top: var(--s-3)">
+				<input type="checkbox" checked={skipLocal} disabled={savingSkip} aria-busy={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
+				<span class="sw" aria-hidden="true"></span>
+				<span>Skip sign-in on my local network</span>
+			</label>
+			<p class="hint">
+				Devices on the networks below open HolyArrs as the owner, without a password. With family or friends on the same
+				network, leave this off: they would get the owner's rights too.
+			</p>
+			<p class="hint">Keys and passwords still need a sign-in</p>
+			<form class="nets" onsubmit={saveNets}>
+				<Field id="local-nets" label="Local networks, one per line" hint="e.g. 192.168.1.0/24 or 192.168.1.20. Up to 32.">
+					<textarea id="local-nets" class="input" rows="3" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+				</Field>
+				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save</Button>
 			</form>
-
-			{#if keys.length === 0}
-				<p class="small muted" style="margin-top: var(--s-4)">No API keys</p>
-			{:else}
-				<ul class="rows" style="margin-top: var(--s-3)">
-					{#each keys as k (k.id)}
-						<li>
-							<div class="grow">
-								<div class="name">{k.label} <span class="mono xs muted">{k.hint}</span></div>
-								<div class="xs muted">Made {date(k.created_at)} · {k.last_used_at ? `last used ${ago(k.last_used_at)}` : 'never used'}</div>
-							</div>
-							<Button variant="destructive" type="button" onclick={() => revoke(k)}>Revoke</Button>
-						</li>
-					{/each}
-				</ul>
+			{#if seenAddress}<p class="hint" data-testid="seen-address">HolyArrs sees this browser as <span class="mono">{seenAddress}</span>.</p>{/if}
+			{#if proxyUntrusted}<p class="hint" data-testid="proxy-untrusted">
+					A proxy in front of HolyArrs is not trusted, so sign-in is never skipped through it. Add the proxy's address to
+					<span class="mono">HOLYARRS_TRUSTED_PROXIES</span> in the container settings.
+				</p>{/if}
+			{#if gatewayNets.length}
+				<p class="notice warn" role="status" data-testid="gateway-warn">
+					<Icon name="info" size={18} /><span
+						>{gatewayNets.join(', ')} {gatewayNets.length === 1 ? 'looks' : 'look'} like a Docker or Podman gateway address. If every device shows up as that address, anyone who can reach
+						HolyArrs opens it as the owner. Check the address above from another device; if it is the same, turn off Skip sign-in, then remove this entry.</span
+					>
+				</p>
 			{/if}
-		{/if}
 	</SettingsCard>
+
+	{/if}
+
+	<SettingsLinks label="API keys" links={[{ href: '/settings/api#keys-card', label: 'API keys', note: 'Make and revoke them on the API page' }]} />
+
+	<MoreOptions>
+		{#if settingsOk}
+		<SettingsCard id="hosts-card" title="Allowed host names">
+			<p class="hint">
+				Names you open HolyArrs by besides its IP address, like tower.local or media.example.com. The name you used at first-run
+				setup is already here. Names in <code>HOLYARRS_ALLOWED_HOSTS</code> always work and are not listed.
+			</p>
+			<form class="nets" onsubmit={saveHosts}>
+				<Field id="allowed-hosts" label="Host names, one per line">
+					<textarea id="allowed-hosts" class="input" rows="3" bind:value={hostNames} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+				</Field>
+				<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>Save</Button>
+			</form>
+		</SettingsCard>
+		{/if}
+
+		<SettingsCard id="proxy-card" title="Trusted proxies">
+			<p class="small muted" style="margin-top: var(--s-2)">
+				Set when HolyArrs starts, not here: list your reverse proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
+				names in <code>HOLYARRS_ALLOWED_HOSTS</code>. Without a proxy, nothing is needed.
+			</p>
+		</SettingsCard>
+	</MoreOptions>
 {/if}
 
 <Sheet bind:open={importOpen} title={importFor ? `Import members from ${wayWord[importFor]}` : 'Import members'} size="md">
@@ -733,22 +653,5 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 6px 10px;
-	}
-	.fresh {
-		padding: var(--s-4);
-		border: 1px solid var(--ha-red);
-		background: var(--ha-red-soft);
-		border-radius: var(--r-btn);
-		margin-bottom: var(--s-4);
-	}
-	.fresh .row {
-		margin-top: var(--s-2);
-	}
-	.key {
-		padding: 10px var(--s-3);
-		background: var(--surface-2);
-		border-radius: var(--r-sm);
-		overflow-wrap: anywhere;
-		font-size: var(--text-sm);
 	}
 </style>

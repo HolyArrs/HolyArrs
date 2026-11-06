@@ -178,7 +178,7 @@
 {:else if error}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if folders.length === 0 && !adding}
-	<EmptyState icon="folder" title="No Library folders" text="Add the folder where your movies live, for example /movies, and one for shows, for example /shows. HolyArrs needs one before it can add a movie or a show." action={{ label: 'Add a folder', icon: 'plus', onclick: () => (adding = true) }} />
+	<EmptyState icon="folder" title="No Library folders" text="Add a folder for movies (like /movies) and one for shows." action={{ label: 'Add a folder', icon: 'plus', onclick: () => (adding = true) }} />
 {:else if folders.length}
 	<ul class="card rows">
 		{#each folders as f (f.id)}

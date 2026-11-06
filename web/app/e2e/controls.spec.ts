@@ -30,7 +30,7 @@ async function confirm(label: RegExp) {
 
 test('turn a part off and on, a refused switch, and the Events', async () => {
 	await page.goto('/settings');
-	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'Parts and controls' }).click();
+	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: /^Parts/ }).click();
 	await expect(page.getByRole('heading', { name: 'Parts', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('part')).toHaveCount(5);
 	await expect(part('Music')).toContainText('When off: Artist and album pages');
@@ -90,8 +90,8 @@ test('pause and resume a stage, reconnect a linked app', async () => {
 });
 
 test('the whole-app restart asks first and can be cancelled', async () => {
-	// It moved from Parts and controls to System > Danger zone; Parts links there.
-	await page.getByRole('link', { name: 'Open the Danger zone' }).click();
+	// It lives on System > Danger zone; Parts links there.
+	await page.getByTestId('settings-links').getByRole('link', { name: /Danger zone/ }).click();
 	await expect(page.getByRole('heading', { name: 'Danger zone', level: 1 })).toBeVisible();
 	const app = page.getByTestId('control-app');
 	await expect(app).toContainText("Docker's restart policy");

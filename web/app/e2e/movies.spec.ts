@@ -133,6 +133,7 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 
 test('a member sees the movie but none of the staff controls', async ({ browser }) => {
 	await page.goto('/settings/users');
+	await page.getByRole('button', { name: 'Invite someone' }).click();
 	await page.getByLabel('Note for yourself').fill('Viewer');
 	await page.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await page.locator('.fresh code').textContent())!.trim();

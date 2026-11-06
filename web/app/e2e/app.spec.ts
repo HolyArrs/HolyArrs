@@ -116,8 +116,8 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Downloads');
 	await link('Settings').click();
-	// The side menu folds: open the Notifications group first.
-	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Notifications' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
+	// The side menu folds: open the Connections group first.
+	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Connections' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Alerts' }).click();
 	await expect(page).toHaveURL(/\/settings\/alerts$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Alerts');
@@ -165,14 +165,16 @@ test('settings pages render their forms', async () => {
 	await expect(page.getByText('Skip sign-in on my local network')).toBeVisible();
 	await page.goto('/settings/this-app');
 	await expect(page.getByText('0.0.0-skeleton', { exact: true })).toBeVisible();
-	// Stages: every supervised loop and worker pool with its state.
-	const stages = page.getByTestId('stages');
+	// Stages and Linked apps live on Parts; This app links there.
+	await expect(page.getByTestId('settings-links').getByRole('link', { name: /^Stages/ })).toHaveAttribute('href', '/settings/parts#stages-card');
+	await page.goto('/settings/parts');
+	const stages = page.getByTestId('control-stages');
 	await expect(stages.getByRole('heading', { name: 'Stages' })).toBeVisible();
 	for (const name of ['Backups', 'Download sync', 'Schedules', 'Session clean-up', 'Core workers']) {
-		await expect(stages.getByTestId('stage').filter({ hasText: name })).toHaveAttribute('data-state', 'running');
+		await expect(stages.getByTestId('control-stage').filter({ hasText: name })).toHaveAttribute('data-state', 'running');
 	}
-	await expect(stages.getByTestId('stage').filter({ hasText: 'Backups' }).locator('.chip')).toHaveText('Running');
-	await expect(page.getByTestId('links').getByRole('heading', { name: 'Linked apps' })).toBeVisible();
+	await expect(stages.getByTestId('control-stage').filter({ hasText: 'Backups' }).locator('.chip')).toHaveText('Running');
+	await expect(page.getByTestId('control-links').getByRole('heading', { name: 'Linked apps' })).toBeVisible();
 });
 
 test('the first-run Library folder keeps its health', async () => {
@@ -182,7 +184,7 @@ test('the first-run Library folder keeps its health', async () => {
 });
 
 test('make and revoke an API key', async () => {
-	await page.goto('/settings/sign-in');
+	await page.goto('/settings/api');
 	await page.getByLabel('Key name').fill('e2e script');
 	await page.getByRole('button', { name: 'Make a key' }).click();
 	await expect(page.getByText('It is shown only once')).toBeVisible();

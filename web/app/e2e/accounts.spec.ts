@@ -35,6 +35,7 @@ test.beforeAll(async ({ browser }) => {
 
 test('the owner invites a member with a one-time link', async ({ browser }) => {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await expect(own.getByRole('heading', { level: 1, name: 'Users' })).toBeVisible();
 	await own.getByLabel('Note for yourself').fill('Ana');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();

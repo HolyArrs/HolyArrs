@@ -19,6 +19,7 @@
 	import { kidLabel, ratingChoices } from '#lib/kid.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 
 	interface User {
 		id: number;
@@ -167,6 +168,9 @@
 		return on ? [...new Set([...list, p])] : list.filter((x) => x !== p);
 	}
 
+	// The invite form opens as a sheet from the header; People come first.
+	let inviteOpen = $state(false);
+
 	async function makeInvite(e: SubmitEvent) {
 		e.preventDefault();
 		making = true;
@@ -174,6 +178,7 @@
 			const r = await api.post<{ path: string }>('/users/invites', { role, perms, note: note.trim(), days, max_rating: maxRating, rating_country: 'US' });
 			link = location.origin + to(r.path);
 			note = '';
+			inviteOpen = false;
 			await load();
 		} catch (err) {
 			toasts.push(message(err), 'fail');
@@ -344,7 +349,11 @@
 
 <svelte:head><title>Users and roles · HolyArrs</title></svelte:head>
 
-<PageHeader title="Users and roles" />
+<PageHeader title="Users and roles">
+	{#snippet actions()}
+		{#if loaded && hasData}<Button icon="plus" variant="primary" type="button" onclick={() => (inviteOpen = true)}>Invite someone</Button>{/if}
+	{/snippet}
+</PageHeader>
 
 {#if !loaded}
 	<SkSettings rows={3} />
@@ -352,52 +361,16 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<SettingsCard id="invite-card" title="Invite someone">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">One-time link; they choose name and password</p>
-
-		{#if link}
-			<div class="fresh" role="status">
-				<p class="small"><b>Invite link.</b> Works once; copy it now.</p>
-				<div class="row">
-					<code class="key grow">{link}</code>
-					<Button icon="copy" type="button" onclick={copyLink}>Copy</Button>
-					<Button variant="plain" type="button" onclick={() => (link = '')}>Close</Button>
-				</div>
-			</div>
-		{/if}
-
-		<form class="invite" onsubmit={makeInvite}>
-			<fieldset class="field">
-				<legend class="label">Role</legend>
-				<div class="row">
-					<label class="checkline"><input type="radio" name="role" checked={role === 'member'} onchange={() => pickRole('member')} /> Member</label>
-					{#if isOwner}
-						<label class="checkline"><input type="radio" name="role" checked={role === 'admin'} onchange={() => pickRole('admin')} /> Admin</label>
-					{/if}
-				</div>
-			</fieldset>
-			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset', maxRating, (m) => (maxRating = m))}
-			<fieldset class="field">
-				<legend class="label">May</legend>
-				{#each grantable as p (p)}
-					<label class="checkline"
-						><input type="checkbox" checked={perms.includes(p)} onchange={(e) => (perms = toggle(perms, p, e.currentTarget.checked))} />
-						{permWord[p]}</label
-					>
-				{/each}
-			</fieldset>
+	{#if link}
+		<div class="fresh" role="status">
+			<p class="small"><b>Invite link.</b> Works once; copy it now.</p>
 			<div class="row">
-				<div class="field grow">
-					<label for="inv-note">Note for yourself</label>
-					<input id="inv-note" class="input" bind:value={note} maxlength="100" placeholder="e.g. Mum" />
-				</div>
-				<Field id="inv-days" label="Days the link lasts">
-					<input id="inv-days" class="input" type="number" min="1" max="30" bind:value={days} style="max-width: 120px" />
-				</Field>
+				<code class="key grow">{link}</code>
+				<Button icon="copy" type="button" onclick={copyLink}>Copy</Button>
+				<Button variant="plain" type="button" onclick={() => (link = '')}>Close</Button>
 			</div>
-			<Button icon="plus" variant="primary" type="submit" disabled={making} aria-busy={making}>Make an invite link</Button>
-		</form>
-	</SettingsCard>
+		</div>
+	{/if}
 
 	<SettingsCard id="people-card" title="People">
 		<ul class="rows" style="margin-top: var(--s-3)">
@@ -609,6 +582,43 @@
 		</form>
 	{/if}
 </dialog>
+
+<Sheet bind:open={inviteOpen} title="Invite someone" size="md">
+	<div id="invite-card">
+		<p class="small muted" style="margin-bottom: var(--s-4)">One-time link; they choose name and password</p>
+		<form class="invite" onsubmit={makeInvite}>
+			<fieldset class="field">
+				<legend class="label">Role</legend>
+				<div class="row">
+					<label class="checkline"><input type="radio" name="role" checked={role === 'member'} onchange={() => pickRole('member')} /> Member</label>
+					{#if isOwner}
+						<label class="checkline"><input type="radio" name="role" checked={role === 'admin'} onchange={() => pickRole('admin')} /> Admin</label>
+					{/if}
+				</div>
+			</fieldset>
+			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset', maxRating, (m) => (maxRating = m))}
+			<fieldset class="field">
+				<legend class="label">May</legend>
+				{#each grantable as p (p)}
+					<label class="checkline"
+						><input type="checkbox" checked={perms.includes(p)} onchange={(e) => (perms = toggle(perms, p, e.currentTarget.checked))} />
+						{permWord[p]}</label
+					>
+				{/each}
+			</fieldset>
+			<div class="row">
+				<div class="field grow">
+					<label for="inv-note">Note for yourself</label>
+					<input id="inv-note" class="input" bind:value={note} maxlength="100" placeholder="e.g. Mum" />
+				</div>
+				<Field id="inv-days" label="Days the link lasts">
+					<input id="inv-days" class="input" type="number" min="1" max="30" bind:value={days} style="max-width: 120px" />
+				</Field>
+			</div>
+			<Button icon="plus" variant="primary" type="submit" disabled={making} aria-busy={making}>Make an invite link</Button>
+		</form>
+	</div>
+</Sheet>
 
 <style>
 	.sso-links { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }

@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn, addFromSearch } from './helpers.ts';
 
-// Settings: the eight groups and My account, setting search with a deep link that scrolls to
+// Settings: My account on top, then the six groups, setting search with a deep link that scrolls to
 // and highlights the field, the save bar and its leave guard, Advanced
 // disclosures that stay as each person left them, and Movies and TV defaults
 // that the add dialog starts from.
@@ -17,12 +17,13 @@ test.afterAll(async () => {
 	await page.context().close();
 });
 
-test('Settings home: eight groups and My account; the side menu folds, one group open', async () => {
+test('Settings home: My account on top, then six groups; the side menu folds, one group open', async () => {
 	await page.goto('/settings');
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('settings-group').getByRole('heading', { level: 2 })).toHaveText([
-		'General', 'Library', 'Downloads', 'Users', 'Services', 'Notifications', 'Logs', 'System', 'My account'
+		'Library', 'Downloads', 'People', 'Connections', 'Look', 'System'
 	]);
+	await expect(page.getByTestId('settings-account')).toHaveAttribute('href', '/settings/account');
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
 	await nav.getByRole('button', { name: 'Downloads' }).click();
 	await expect(nav.getByRole('link', { name: 'Pick rules' })).toBeVisible();
@@ -134,7 +135,7 @@ test('Advanced starts closed and stays as the person left it', async () => {
 
 test('Movies and TV defaults: saved choices are where the add movie dialog starts', async () => {
 	await page.goto('/settings/title-defaults');
-	await expect(page.getByRole('heading', { name: 'Movie and show defaults', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Movies and TV defaults', level: 1 })).toBeVisible();
 	const movies = page.locator('#movie-defaults');
 	const folder = movies.getByLabel('Library folder');
 	await expect(folder).toHaveValue('0');
@@ -149,7 +150,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await movies.getByLabel('Search when added').uncheck();
 	const bar = page.getByTestId('savebar');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Movie and show defaults saved.')).toBeVisible();
+	await expect(page.getByText('Movies and TV defaults saved.')).toBeVisible();
 	await expect(bar).toHaveCount(0);
 	await page.reload();
 	await expect(movies.getByLabel('Library folder')).toHaveValue(first);
@@ -186,7 +187,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await movies.getByLabel('Keep up to date').check();
 	await movies.getByLabel('Search when added').check();
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Movie and show defaults saved.').first()).toBeVisible();
+	await expect(page.getByText('Movies and TV defaults saved.').first()).toBeVisible();
 	await expect(bar).toHaveCount(0);
 });
 

@@ -1,6 +1,6 @@
 import type { IconName } from './Icon.svelte';
 
-export type GroupId = 'general' | 'library' | 'downloads' | 'users' | 'services' | 'notifications' | 'logs' | 'system' | 'account';
+export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'look' | 'system' | 'account';
 
 /** Tile colours for the small icon squares in the Settings menu and home. */
 export type Tint = 'gray' | 'blue' | 'indigo' | 'purple' | 'pink' | 'red' | 'orange' | 'amber' | 'green' | 'teal' | 'graphite';
@@ -38,56 +38,56 @@ export function visible(all: Section[], can: Can): Section[] {
 	return all.filter((s) => mayOpen(s, can));
 }
 
-// Eight top tabs (Luis, 2026-11-02), then My account on its own: few tabs,
-// each one plain list of pages. Pages keep their routes; only
-// the grouping changed, so old links still open the same page.
+// Six groups in setup order (settings-order proposal, Luis 2026-11-06):
+// Library, Downloads, People, Connections, Look, System, then My account,
+// which the hub shows as its own card on top. Pages keep their routes; only
+// the grouping changed, so old links still open the same page. Group lines
+// are for search only; the hub shows just the row lines.
 export const groups: Group[] = [
-	{ id: 'general', label: 'General', icon: 'settings', about: 'This HolyArrs, how it looks, which parts are on and where names and posters come from.' },
-	{ id: 'library', label: 'Library', icon: 'library', about: 'Where titles live, how files are named, what new titles get, and subtitles.' },
-	{ id: 'downloads', label: 'Downloads', icon: 'download', about: 'Which Release to take, where to look, who downloads, and lists that add titles.' },
-	{ id: 'users', label: 'Users', icon: 'people', about: 'Who may do what, what they may request, and how they sign in.' },
-	{ id: 'services', label: 'Services', icon: 'tv', about: 'Media servers, other apps that call HolyArrs, and moving over.' },
-	{ id: 'notifications', label: 'Notifications', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages.' },
-	{ id: 'logs', label: 'Logs', icon: 'copy', about: 'The app log and health checks.' },
-	{ id: 'system', label: 'System', icon: 'tools', about: 'Schedules, backups and the danger zone.' },
-	{ id: 'account', label: 'My account', icon: 'user', about: 'Your password, two-factor sign-in and your devices.' }
+	{ id: 'library', label: 'Library', icon: 'library', about: 'Folders, defaults, subtitles and file names.' },
+	{ id: 'downloads', label: 'Downloads', icon: 'download', about: 'Downloaders, Sources, Pick rules and search.' },
+	{ id: 'users', label: 'People', icon: 'people', about: 'Users, request rules and sign-in.' },
+	{ id: 'connections', label: 'Connections', icon: 'tv', about: 'Media servers, alerts, other apps and the API.' },
+	{ id: 'look', label: 'Look', icon: 'appearance', about: 'Appearance and metadata.' },
+	{ id: 'system', label: 'System', icon: 'tools', about: 'Health, schedules, backups, logs and the danger zone.' },
+	{ id: 'account', label: 'My account', icon: 'user', about: 'Password, two-factor, devices.' }
 ];
 
 export const sections: Section[] = [
-	{ href: '/settings/this-app', group: 'general', tint: 'gray', label: 'This app', icon: 'info', about: 'Version, updates, trailers, picture storage and where things are stored.' },
-	{ href: '/settings/appearance', group: 'general', tint: 'indigo', label: 'Appearance', icon: 'appearance', about: 'Light, dark or automatic, in this browser.', need: 'self' },
-	{ href: '/settings/parts', group: 'general', tint: 'graphite', label: 'Parts and controls', icon: 'grid', about: 'Turn Movies, TV shows, Music, Subtitles and Requests on or off; restart one part or stage.', need: 'users' },
+	{ href: '/settings/library-folders', group: 'library', tint: 'blue', label: 'Library folders', icon: 'folder', about: 'Where your titles live' },
+	{ href: '/settings/title-defaults', group: 'library', tint: 'orange', label: 'Movies and TV defaults', icon: 'tv', about: 'What new movies and shows get', need: 'library' },
+	{ href: '/settings/music', group: 'library', tint: 'pink', label: 'Music defaults', icon: 'music', about: 'What new artists get' },
+	{ href: '/settings/subtitles', group: 'library', tint: 'amber', label: 'Subtitles', icon: 'subtitle', about: 'Languages and Subtitle sites' },
+	{ href: '/settings/naming', group: 'library', tint: 'teal', label: 'Naming and files', icon: 'film', about: 'File names and free space' },
 
-	{ href: '/settings/library-folders', group: 'library', tint: 'blue', label: 'Library folders', icon: 'folder', about: 'Where finished movies, shows and music live, and their health.' },
-	{ href: '/settings/naming', group: 'library', tint: 'teal', label: 'Naming and files', icon: 'film', about: 'How files and folders are named, the holding folder and free space.' },
-	{ href: '/settings/title-defaults', group: 'library', tint: 'orange', label: 'Movies and TV defaults', icon: 'tv', about: 'What a new movie or show gets: folder, Pick rules, Keep up to date and Search when added.', need: 'library' },
-	{ href: '/settings/music', group: 'library', tint: 'pink', label: 'Music defaults', icon: 'music', about: 'What a new artist gets, which Pressing an album follows, and MusicBrainz.' },
-	{ href: '/settings/subtitles', group: 'library', tint: 'amber', label: 'Subtitles', icon: 'subtitle', about: 'Default languages, Pass marks, when to look, Sync fix and Subtitle sites.' },
-	{ href: '/settings/tmdb', group: 'general', tint: 'purple', label: 'Metadata', icon: 'sparkle', about: 'Where names, dates and posters come from.' },
+	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', label: 'Downloaders', icon: 'downloader', about: 'Your torrent and Usenet apps' },
+	{ href: '/settings/sources', group: 'downloads', tint: 'blue', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases' },
+	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Pick rules', icon: 'star', about: 'Which Release to take', need: 'library' },
+	{ href: '/settings/search', group: 'downloads', tint: 'indigo', label: 'Search', icon: 'search', about: 'When and how HolyArrs searches' },
+	{ href: '/settings/outside-lists', group: 'downloads', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'Lists that add titles for you' },
 
-	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Pick rules', icon: 'star', about: 'The rules that choose which Release to take, and where each is used.', need: 'library' },
-	{ href: '/settings/sources', group: 'downloads', tint: 'blue', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases.' },
-	{ href: '/settings/search', group: 'downloads', tint: 'indigo', label: 'Search', icon: 'search', about: 'How often feeds are checked, the nightly search and the early and fake guards.' },
-	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', label: 'Downloaders', icon: 'downloader', about: 'The apps that download for HolyArrs, and what happens when a download goes wrong.' },
-	{ href: '/settings/outside-lists', group: 'downloads', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'TMDB and Trakt lists that add movies and shows by themselves, and the Never-add list.' },
+	{ href: '/settings/users', group: 'users', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite people, set roles', need: 'users' },
+	{ href: '/settings/wishlist', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Limits and what requests get' },
+	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Passwords, two-factor, local network' },
 
-	{ href: '/settings/users', group: 'users', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite family and friends, roles, permissions and devices.', need: 'users' },
-	{ href: '/settings/wishlist', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Weekly limits, and the folder and Pick rules approved requests get.' },
-	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Plex, Jellyfin and Emby sign-in, two-factor rules, the local network and API keys.' },
+	{ href: '/settings/media-servers', group: 'connections', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Plex, Jellyfin and Emby' },
+	{ href: '/settings/alerts', group: 'connections', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, email and more' },
+	{ href: '/settings/move', group: 'connections', tint: 'teal', label: 'Move from other apps', icon: 'upload', about: 'Bring over Sonarr, Radarr and more', need: 'users' },
+	{ href: '/settings/ai', group: 'connections', tint: 'indigo', label: 'AI apps', icon: 'sparkle', about: 'Let AI assistants use HolyArrs' },
+	{ href: '/settings/api', group: 'connections', tint: 'gray', label: 'API', icon: 'key', about: 'Keys and routes for other apps' },
 
-	{ href: '/settings/media-servers', group: 'services', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Tell Plex, Jellyfin or Emby about imports, renames and deletes.' },
-	{ href: '/settings/alerts', group: 'notifications', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages for requests, imports and health.' },
-	{ href: '/settings/ai', group: 'services', tint: 'indigo', label: 'AI apps', icon: 'sparkle', about: 'Let AI assistants like Claude check your library and request titles, with keys you can revoke.' },
-	{ href: '/settings/api', group: 'services', tint: 'gray', label: 'API for other apps', icon: 'key', about: 'The base address, scopes, example calls and every route.' },
-	{ href: '/settings/move', group: 'services', tint: 'teal', label: 'Move from other apps', icon: 'upload', about: 'Bring a setup over from Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr and the Downloaders.', need: 'users' },
+	{ href: '/settings/appearance', group: 'look', tint: 'indigo', label: 'Appearance', icon: 'appearance', about: 'Theme and title pages', need: 'self' },
+	{ href: '/settings/tmdb', group: 'look', tint: 'purple', label: 'Metadata', icon: 'sparkle', about: 'Where posters and names come from' },
 
-	{ href: '/settings/logs', group: 'logs', tint: 'gray', label: 'Logs', icon: 'copy', about: 'Read, filter and download the app log; secrets are always hidden.', need: 'users' },
-	{ href: '/settings/health', group: 'logs', tint: 'green', label: 'Health checks', icon: 'check', about: 'What HolyArrs checks, the results, and how often it checks.' },
-	{ href: '/settings/schedules', group: 'system', tint: 'orange', label: 'Schedules', icon: 'clock', about: 'Everything that runs on a timer: last and next run, Run now, and how often.' },
-	{ href: '/settings/backups', group: 'system', tint: 'blue', label: 'Backups and restore', icon: 'archive', about: 'How often HolyArrs saves itself, and restore.' },
-	{ href: '/settings/danger', group: 'system', tint: 'red', label: 'Danger zone', icon: 'alert', about: 'Restart HolyArrs, restart in safe mode or shut it down.', need: 'users' },
+	{ href: '/settings/health', group: 'system', tint: 'green', label: 'Health checks', icon: 'check', about: "What's working and what isn't" },
+	{ href: '/settings/schedules', group: 'system', tint: 'orange', label: 'Schedules', icon: 'clock', about: 'Timed jobs and Run now' },
+	{ href: '/settings/backups', group: 'system', tint: 'blue', label: 'Backups', icon: 'archive', about: 'Save and restore HolyArrs' },
+	{ href: '/settings/logs', group: 'system', tint: 'gray', label: 'Logs', icon: 'copy', about: 'Read and download the app log', need: 'users' },
+	{ href: '/settings/parts', group: 'system', tint: 'graphite', label: 'Parts', icon: 'grid', about: 'Turn parts on or off', need: 'users' },
+	{ href: '/settings/this-app', group: 'system', tint: 'gray', label: 'This app', icon: 'info', about: 'Version, updates and storage' },
+	{ href: '/settings/danger', group: 'system', tint: 'red', label: 'Danger zone', icon: 'alert', about: 'Restart or shut down', need: 'users' },
 
-	{ href: '/settings/account', group: 'account', tint: 'gray', label: 'My account', icon: 'user', about: 'Your password, two-factor sign-in and your devices.', need: 'self' }
+	{ href: '/settings/account', group: 'account', tint: 'gray', label: 'My account', icon: 'user', about: 'Password, two-factor, devices', need: 'self' }
 ];
 
 /** sectionFor finds the page a path belongs to (a source's health page belongs to Sources). */

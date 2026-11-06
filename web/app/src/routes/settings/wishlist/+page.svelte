@@ -104,7 +104,7 @@
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Request rules">
-		<SettingsCard id="weekly-limits" title="Weekly Limits" description="Per person, per 7 days">
+		<SettingsCard id="weekly-limits" title="Weekly limits" description="Per person, per 7 days">
 			<fieldset class="kinds">
 				<div class="kind-row">
 					{#each kinds as k (k.key)}

@@ -88,6 +88,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 	const own = await (await browser.newContext()).newPage();
 	await signIn(own, owner());
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('Uma');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();

@@ -88,7 +88,7 @@ describe('settings groups', () => {
 
 	it('filters the menu by page name, its words or its group', () => {
 		expect(filterSections(sections, 'sched').map((s) => s.label)).toEqual(['Schedules']);
-		expect(filterSections(sections, 'system backups').map((s) => s.label)).toContain('Backups and restore');
+		expect(filterSections(sections, 'system backups').map((s) => s.label)).toContain('Backups');
 		expect(filterSections(sections, '  ')).toHaveLength(sections.length);
 		expect(filterSections(sections, 'zebra')).toEqual([]);
 	});

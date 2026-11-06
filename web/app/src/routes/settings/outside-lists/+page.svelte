@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { session } from '#lib/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -47,6 +48,10 @@
 	let traktKey = $state('');
 	let traktError = $state('');
 	let traktSaving = $state(false);
+	// Owner only: a Trakt VIP access token adds the Trakt tab (score,
+	// watchers, comments) to title pages. Moved here from This app.
+	let traktVipMasked = $state('');
+	let traktVip = $state('');
 
 	// Never-add list
 	let naKind = $state<'movie' | 'show'>('movie');
@@ -77,6 +82,7 @@
 			never = n.never_add;
 			// The key read needs a recent password check; without one the lists still show.
 			traktMasked = (await api.get<{ key: string }>('/settings/trakt-key').catch(() => ({ key: '' }))).key;
+			if (session.s.role === 'owner') traktVipMasked = (await api.get<{ token: string }>('/settings/trakt-token').catch(() => ({ token: '' }))).token;
 			hasData = true;
 			error = '';
 		} catch (e) {
@@ -175,15 +181,17 @@
 	async function saveTrakt(e: SubmitEvent) {
 		e.preventDefault();
 		traktError = '';
-		if (!traktKey.trim()) {
+		if (!traktKey.trim() && !traktVip.trim()) {
 			traktError = 'Paste the Client ID of your Trakt app.';
 			return;
 		}
 		traktSaving = true;
 		try {
-			traktMasked = (await api.put<{ key: string }>('/settings/trakt-key', { key: traktKey.trim() })).key;
+			if (traktKey.trim()) traktMasked = (await api.put<{ key: string }>('/settings/trakt-key', { key: traktKey.trim() })).key;
+			if (traktVip.trim()) traktVipMasked = (await api.put<{ token: string }>('/settings/trakt-token', { token: traktVip.trim() })).token;
+			toasts.push(traktVip.trim() ? 'Trakt saved.' : 'Trakt key saved.', 'ok');
 			traktKey = '';
-			toasts.push('Trakt key saved.', 'ok');
+			traktVip = '';
 		} catch (err) {
 			traktError = err instanceof ApiError && err.status === 403 ? 'Sign in with your password to change the key.' : message(err);
 		} finally {
@@ -306,7 +314,7 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if lists.length === 0 && !formOpen}
-		<EmptyState icon="inbox" title="No Outside lists" text="Add a TMDB or Trakt list and its movies or shows come into your Library by themselves." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
+		<EmptyState icon="inbox" title="No Outside lists" text="Add a TMDB or Trakt list. Its titles are added for you." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
 	{:else if lists.length}
 		<ul class="card rows" aria-label="Outside lists">
 			{#each lists as l (l.id)}
@@ -352,6 +360,11 @@
 			<Field id="trakt" label={traktMasked ? 'Replace the Trakt key' : 'Paste the Trakt key'}>
 				<input id="trakt" class="input mono" type="password" bind:value={traktKey} autocomplete="off" spellcheck="false" />
 			</Field>
+			{#if session.s.role === 'owner'}
+				<Field id="trakt-token" label={traktVipMasked ? 'Replace the VIP access token' : 'VIP access token (optional)'} hint="Adds a Trakt tab to title pages: score, watchers and comments">
+					<input id="trakt-token" class="input mono" type="password" bind:value={traktVip} autocomplete="off" spellcheck="false" />
+				</Field>
+			{/if}
 			{#if traktError}<p class="form-error" role="alert">{traktError}</p>{/if}
 			<Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>Save</Button>
 		</form>

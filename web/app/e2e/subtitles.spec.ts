@@ -285,6 +285,7 @@ test('the subtitle screens fit a phone and pass the accessibility scan', async (
 
 test('members see none of it', async ({ browser }) => {
 	await page.goto('/settings/users');
+	await page.getByRole('button', { name: 'Invite someone' }).click();
 	await page.getByLabel('Note for yourself').fill('Uma');
 	await page.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await page.locator('.fresh code').textContent())!.trim();

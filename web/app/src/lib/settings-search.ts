@@ -17,10 +17,15 @@ const e = (href: string, anchor: string, label: string, words = '', advanced = f
 export const settingIndex: SettingEntry[] = [
 	// General
 	e('/settings/appearance', 'theme', 'Theme', 'appearance light dark automatic mode colours colors night'),
+	e('/settings/appearance', 'autoplay-trailers', 'Play trailers by themselves', 'autoplay trailers video explore muted'),
+	e('/settings/appearance', 'signin-art', 'Show Library art on the sign-in page', 'sign-in login page background posters art'),
 	e('/settings/appearance', 'ratings', 'Ratings', 'ratings scores imdb rotten tomatoes critics audience metacritic letterboxd trakt tmdb'),
 	e('/settings/this-app', 'h-about-card', 'Version', 'about holyarrs build database schema uptime url base'),
 	e('/settings/this-app', 'update-card', 'Updates', 'update new version release check for updates'),
 	e('/settings/this-app', 'storage-card', 'Storage', 'paths config folder disk free space where things are stored'),
+	e('/settings/this-app', 'count-install', 'Count this install', 'install count country privacy metadata server'),
+	e('/settings/this-app', 'picture-storage', 'Picture storage', 'picture cache artwork posters covers gb'),
+	e('/settings/this-app', 'history-keep-card', 'History keep time', 'history events keep days forever clean up'),
 	e('/settings/this-app', 'url-base', 'URL base', 'reverse proxy path subfolder base url nginx traefik'),
 	e('/settings/parts', 'parts-card', 'Turn parts on or off', 'parts movies shows music subtitles wishlist switch off disable enable'),
 	e('/settings/parts', 'stages-card', 'Pause or restart a stage', 'stages background work stuck restart pause resume'),
@@ -93,7 +98,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'sites-card', 'Subtitle sites', 'subtitles opensubtitles provider site add'),
 	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
-	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id', true),
+	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id vip access token reviews comments'),
 	e('/settings/outside-lists', 'never-card', 'Never-add list', 'never add exclusion block list'),
 
 	// Getting copies
@@ -144,7 +149,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/wishlist', 'ask-folder', 'Library folder for approved requests', 'wishlist approved folder'),
 	e('/settings/wishlist', 'ask-rules', 'Pick rules for approved requests', 'wishlist approved pick rules quality', true),
 	e('/settings/wishlist', 'search-approved', 'Search when approved', 'wishlist approved search'),
-	e('/settings/users', 'invite-card', 'Invite someone', 'invite link add user family friend new user'),
+	e('/settings/users', '', 'Invite someone', 'invite link add user family friend new user'),
 	e('/settings/users', 'people-card', 'Users and roles', 'users people roles permissions admin member kid preset devices'),
 	e('/settings/users', 'invites-card', 'Invite links', 'invites take back links'),
 
@@ -157,7 +162,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/sign-in', 'emby-card', 'Sign in with Emby', 'emby sign-in login'),
 	e('/settings/sign-in', 'sso-card', 'Single sign-on', 'sso oidc openid connect authentik authelia keycloak trusted proxy forward auth unlink'),
 	e('/settings/sign-in', 'proxy-card', 'Trusted proxies', 'reverse proxy forward auth', true),
-	e('/settings/sign-in', 'keys-card', 'API keys', 'api key token make revoke', true),
+	e('/settings/api', 'keys-card', 'API keys', 'api key token make revoke'),
 
 	// Linked apps
 	e('/settings/media-servers', '', 'Media servers', 'plex jellyfin emby library update notify'),

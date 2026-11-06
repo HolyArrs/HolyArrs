@@ -30,6 +30,6 @@ test('Settings > Metadata shows what the metadata server gets', async ({ page })
 		expect(axe.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 	}
 	await page.getByRole('link', { name: 'Count this install' }).click();
-	await expect(page).toHaveURL(/\/settings\/this-app$/);
+	await expect(page).toHaveURL(/\/settings\/this-app#count-install$/);
 	await expect(page.getByText('Count this install').first()).toBeVisible();
 });

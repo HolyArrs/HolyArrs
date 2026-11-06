@@ -12,9 +12,13 @@
 	import { groupState, pageState, stateWords, type GroupState } from '#lib/settings-status.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
+	import { roleWord } from '#lib/account/profile.ts';
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
-	const groups = $derived(grouped(sections));
+	// My account is its own card on top (everyone has it); the groups follow.
+	const groups = $derived(grouped(sections).filter((g) => g.group.id !== 'account'));
+	const account = $derived(sections.find((s) => s.group === 'account'));
 	const open = $derived(new Set(sections.map((s) => s.href)));
 	const sectionOf = (href: string) => all.find((s) => s.href === href);
 	const groupLabel = (href: string) => allGroups.find((g) => g.id === sectionOf(href)?.group)?.label ?? '';
@@ -77,6 +81,14 @@
 		</section>
 	{/if}
 
+	{#if account}
+		<a class="account-card row-link" href={to(account.href)} data-testid="settings-account">
+			<Avatar name={session.s.name} src={session.s.avatar} size={48} />
+			<span class="setting-copy"><strong>{session.s.name || 'My account'}</strong><span>{roleWord(session.s.role)} · {account.about}</span></span>
+			<Icon name="chevronRight" size={16} />
+		</a>
+	{/if}
+
 	<div class="settings-overview">
 		{#each groups as { group, items } (group.id)}
 			{@const gs = answer ? groupState(answer, items.map((i) => i.href)) : null}
@@ -84,7 +96,6 @@
 				<header>
 					<div class="group-copy">
 						<h2 id="g-{group.id}">{group.label}</h2>
-						<p>{group.about}</p>
 					</div>
 					{#if gs && stateWords(gs)}<span class="chip {tone(gs.state)}" data-testid="group-status">{stateWords(gs)}</span>{/if}
 				</header>
@@ -117,13 +128,16 @@
 	.attention li + li { border-top: 1px solid var(--line); }
 	.attention li > span { flex: 1; min-width: 0; font: var(--t-callout); overflow-wrap: anywhere; }
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
-	.settings-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 28px 20px; align-items: start; }
+	.account-card { margin-bottom: 24px; padding: 12px 16px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.account-card .setting-copy strong { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
+	/* Fill column by column, so the reading order follows the setup order. */
+	.settings-overview { columns: 2 360px; column-gap: 20px; }
+	.group-card { break-inside: avoid; margin-bottom: 28px; }
 	/* Each group: its name and line above, then one rounded card of rows with
 	   colour tiles and inset dividers, like a phone's Settings app. */
 	.group-card header { display: flex; gap: 12px; align-items: flex-end; padding: 0 6px 8px; }
 	.group-copy { flex: 1; min-width: 0; }
 	.group-copy h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	.group-copy p { margin-top: 2px; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
 	.group-card .chip { flex: none; white-space: nowrap; }
 	.links { margin: 0; padding: 4px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.links li { position: relative; }
@@ -151,10 +165,9 @@
 	.row-link > :global(.icon:last-child) { flex: none; color: var(--text-muted); }
 	/* Phones: iOS-style grouped rows. */
 	@media (max-width: 767px) {
-		.settings-overview { gap: 20px; }
+		.group-card { margin-bottom: 20px; }
 		.group-card header { padding: 0 8px 6px; }
 		.group-copy h2 { font: var(--t-footnote); font-weight: 600; color: var(--text-muted); letter-spacing: 0.01em; }
-		.group-copy p { display: none; }
 		.links { padding: 2px 4px; }
 		.links .setting-copy span { display: none; }
 		.links .setting-copy strong { font: var(--t-body); font-weight: 500; }

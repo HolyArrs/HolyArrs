@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SkSettings } from '#lib/ui/sk/index.ts';
-	// Settings > Movie and show defaults: what a new movie or show gets (folder,
+	// Settings > Movies and TV defaults: what a new movie or show gets (folder,
 	// Pick rules, Keep up to date, Search when added), with the Release gate
 	// and the show choices behind Advanced. Three server routes, one form.
 	import { onMount } from 'svelte';
@@ -83,7 +83,7 @@
 				saved = JSON.stringify(done);
 			}
 			savedDefaults.forget();
-			toasts.push('Movie and show defaults saved.', 'ok');
+			toasts.push('Movies and TV defaults saved.', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -92,9 +92,9 @@
 	}
 </script>
 
-<svelte:head><title>Movie and show defaults · HolyArrs</title></svelte:head>
+<svelte:head><title>Movies and TV defaults · HolyArrs</title></svelte:head>
 
-<PageHeader title="Movie and show defaults" />
+<PageHeader title="Movies and TV defaults" />
 
 {#if loading && !form}
 	<SkSettings rows={4} />
@@ -102,9 +102,9 @@
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these defaults. Changing them takes the settings permission.</p>{/if}
-	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movie and show defaults">
+	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movies and TV defaults">
 	<fieldset class="all" disabled={!mayEdit}>
-	<legend class="sr-only">{mayEdit ? 'Movie and show defaults' : 'Movie and show defaults, read only'}</legend>
+	<legend class="sr-only">{mayEdit ? 'Movies and TV defaults' : 'Movies and TV defaults, read only'}</legend>
 		<SettingsCard id="movie-defaults" icon="film" title="Movies">
 			<Field id="td-movie-folder" label="Library folder">
 				<select id="td-movie-folder" class="input" bind:value={form.defaults.movie.library_folder_id}>

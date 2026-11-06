@@ -25,6 +25,7 @@ test.beforeAll(async ({ browser }) => {
 
 test('the owner invites a Kid with an age rating', async ({ browser }) => {
 	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill('Kai');
 	await own.locator('#invite-card').getByRole('radio', { name: 'Kid' }).check();
 	const rating = own.getByTestId('invite-preset-rating');

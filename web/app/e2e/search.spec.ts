@@ -199,6 +199,7 @@ test('Settings > Search: the early and fake switches are saved', async () => {
 
 test('a member sees none of the search screens', async ({ browser }) => {
 	await page.goto('/settings/users');
+	await page.getByRole('button', { name: 'Invite someone' }).click();
 	await page.getByLabel('Note for yourself').fill('Search viewer');
 	await page.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await page.locator('.fresh code').textContent())!.trim();

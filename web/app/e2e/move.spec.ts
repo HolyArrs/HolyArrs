@@ -147,9 +147,9 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   await expect(sheet.getByLabel("API key", { exact: true })).toHaveValue("");
   await noSidewaysScroll(page);
 
-  // Check connection answers in seconds, then the read.
+  // Test answers in seconds, then the read.
   await sheet.getByLabel("API key", { exact: true }).fill(oldKey);
-  await sheet.getByRole("button", { name: "Check connection" }).click();
+  await sheet.getByRole("button", { name: "Test", exact: true }).click();
   await expect(sheet.getByTestId("probe-ok")).toHaveText("Radarr v6.4.4");
   await sheet.getByRole("button", { name: "Read Radarr" }).click();
   await expect(sheet).toBeHidden();
