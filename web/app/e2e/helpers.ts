@@ -1,5 +1,5 @@
 import { expect, type Browser, type Locator, type Page } from '@playwright/test';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,22 +25,29 @@ export function owner(): Owner {
 
 /**
  * finishFirstRun walks the first run after the owner: Start fresh, one movies
- * folder (Music on too when asked), skips Downloader and Source, then opens
+ * folder (Music on too when asked, with a folder next to it; TV shows off,
+ * since Continue needs a folder for every part that is on), skips Downloader and Source, then opens
  * Home, or Users through Invite family (which also turns on Requests).
  */
 export async function finishFirstRun(page: Page, moviesPath: string, o: { music?: boolean; invite?: boolean } = {}) {
 	await expect(page.getByRole('heading', { name: 'Coming from other apps?', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: /^Start fresh/ }).click();
 	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
-	if (o.music) await page.getByLabel('Music', { exact: true }).check();
+	await page.getByLabel('TV shows', { exact: true }).uncheck();
+	if (o.music) {
+		await page.getByLabel('Music', { exact: true }).check();
+		const musicPath = join(dirname(moviesPath), 'music');
+		mkdirSync(musicPath, { recursive: true });
+		await page.getByLabel('Music folder').fill(musicPath);
+	}
 	await page.getByLabel('Movies folder').fill(moviesPath);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	// Saving the parts restarts them, which can take a while on a slow or loaded machine.
 	await expect(page.getByRole('heading', { name: 'Which app downloads?', level: 1 })).toBeVisible({ timeout: 20_000 });
 	await page.getByRole('button', { name: 'Skip for now' }).click();
 	await expect(page.getByRole('heading', { name: 'Where should we search?', level: 1 })).toBeVisible();
-	await page.getByRole('button', { name: 'Do this later' }).click();
-	await expect(page.getByRole('heading', { name: 'Almost there', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: 'Skip for now' }).click();
+	await expect(page.getByRole('heading', { name: 'HolyArrs is ready', level: 1 })).toBeVisible();
 	if (o.invite) {
 		await page.getByRole('button', { name: 'Invite family' }).click();
 		await expect(page).toHaveURL(/\/settings\/users$/, { timeout: 20_000 });

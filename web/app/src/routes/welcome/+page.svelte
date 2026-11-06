@@ -7,7 +7,7 @@
 	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
 	import MoveFlow from '../settings/move/+page.svelte';
 	import { page } from '$app/state';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
 	import { onMount, setContext, tick } from 'svelte';
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
 	import { api, message } from '#lib/api.ts';
@@ -30,8 +30,8 @@
 	type Step = 'start' | 'media' | 'downloader' | 'source' | 'import' | 'done';
 	const STEPS: Step[] = ['start', 'media', 'downloader', 'source', 'import', 'done'];
 	const firstRun = $derived(page.url.searchParams.get('first') === '1');
-	function stepFromUrl(): Step {
-		const s = page.url.searchParams.get('step');
+	function stepFromUrl(q = page.url.searchParams): Step {
+		const s = q.get('step');
 		// Older addresses: parts and folders are one step now.
 		if (s === 'parts' || s === 'folder' || s === 'folders') return 'media';
 		return STEPS.includes(s as Step) ? (s as Step) : 'start';
@@ -58,11 +58,36 @@
 	function show(s: Step) {
 		step = s;
 		const q = ['first=1', s !== 'start' ? `step=${s}` : '', fromApps && s !== 'start' && s !== 'import' ? 'from=apps' : ''].filter(Boolean).join('&');
-		replaceState(to(`/welcome?${q}`), page.state);
+		// One history entry per step, so Back and Forward walk the steps.
+		pushState(to(`/welcome?${q}`), { extra: [...extra] });
 		void enter(s);
 		// A new step: focus its heading, so keyboard and screen reader start there.
-		void tick().then(() => document.getElementById('welcome-title')?.focus());
+		void tick().then(focusStep);
 	}
+	// Read out after the step has changed, so it names the new step, not the old one.
+	let announce = $state('');
+	function focusStep() {
+		document.getElementById('welcome-title')?.focus();
+		announce = `Step ${stepNo} of ${order.length}: ${head.h}`;
+	}
+	// Back or Forward in the browser: show the step the address names.
+	onMount(() => {
+		const onPop = (e: PopStateEvent) => {
+			if (!firstRun) return;
+			const q = new URLSearchParams(location.search);
+			const s = stepFromUrl(q);
+			if (s === step) return;
+			const kept = (e.state?.['sveltekit:states'] as { extra?: Step[] } | undefined)?.extra;
+			error = '';
+			fromApps = q.get('from') === 'apps' || s === 'import';
+			if (kept) extra = kept;
+			step = s;
+			void enter(s);
+			void tick().then(focusStep);
+		};
+		window.addEventListener('popstate', onPop);
+		return () => window.removeEventListener('popstate', onPop);
+	});
 	const order = $derived<Step[]>(
 		fromApps
 			? ['start', 'import', ...(extra.length ? extra : step === 'downloader' || step === 'source' ? [step] : []), 'done']
@@ -148,6 +173,12 @@
 	async function saveMedia(skip: boolean) {
 		if (mediaOff) return;
 		error = '';
+		// Continue needs a folder for every part that is on (Skip for now adds none).
+		if (!skip) {
+			const empty = rows.filter((r) => media[r.part] && !(r.saved && !r.editing) && !r.path.trim());
+			for (const r of empty) r.error = 'Add a folder or turn this off.';
+			if (empty.length) return void tick().then(() => document.getElementById(`folder-${empty[0].kind}`)?.focus());
+		}
 		busy = true;
 		try {
 			await refreshParts();
@@ -198,9 +229,14 @@
 	let dlEditing = $state<number | null>(null);
 	// Connect's answer when the downloader didn't answer, shown under Address.
 	let dlError = $state('');
+	// Shown under User name when an app that signs in turned down a try without one.
+	let dlAuth = $state('');
 	const dlForm = $derived(dlList.length === 0 || dlAdding);
 	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
 	function pickDl(k: DownloaderForm['kind']) {
+		error = '';
+		dlError = '';
+		dlAuth = '';
 		const url = dl.url;
 		dl = { ...emptyForm(k), url: url !== 'http://' ? url : 'http://' };
 	}
@@ -249,6 +285,10 @@
 		error = '';
 		busy = true;
 		dlError = '';
+		dlAuth = '';
+		// A bare host:port gets http:// in front.
+		const u = dl.url.trim();
+		if (u && !/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) dl.url = `http://${u}`;
 		try {
 			const editing = dlEditing;
 			const v = editing != null ? await api.put<DownloaderView>(`/downloaders/${editing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
@@ -258,7 +298,8 @@
 			if (!t.ok) {
 				if (editing == null) await api.del(`/downloaders/${v.id}`).catch(() => {});
 				else dlEditing = v.id;
-				dlError = reachWords(t.text);
+				const words = reachWords(t.text);
+				if (!askSignIn(words)) dlError = words;
 				return;
 			}
 			dlTests = { ...dlTests, [v.id]: { ok: t.ok, text: t.text } };
@@ -267,10 +308,18 @@
 			dlAdding = false;
 			dl = emptyForm();
 		} catch (err) {
-			error = message(err);
+			if (!askSignIn(reachWords(message(err)))) error = message(err);
 		} finally {
 			busy = false;
 		}
+	}
+	// An app that signs in, turned down with no user name typed: ask for both,
+	// under User name (the server's answer names an API key field the wizard doesn't have).
+	function askSignIn(words: string): boolean {
+		if (!dlUser || dl.username.trim() || words.startsWith("Can't reach")) return false;
+		dlAuth = 'Add the user name and password.';
+		void tick().then(() => document.getElementById('dl-user')?.focus());
+		return true;
 	}
 	// Fresh setup always asks for a Source next; after an import only when none came over.
 	async function afterDownloader() {
@@ -390,7 +439,7 @@
 		!firstRun
 			? { h: 'What do you use?', p: 'You can change this later.' }
 			: step === 'done' && todo.length
-				? { h: 'Almost there', p: 'Finish these when you’re ready.' }
+				? { h: 'HolyArrs is ready', p: 'A few things are left. Finish them anytime in Settings.' }
 				: step === 'done' && fromApps
 					? { h: 'Welcome home', p: 'Your library is here. Your old apps keep running.' }
 					: titles[step]
@@ -400,7 +449,7 @@
 <svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
 
 {#if firstRun}<SigninBackdrop />{/if}
-<div class="welcome" class:over-art={firstRun} class:wide={firstRun && step === 'import'}>
+<div class="welcome" class:over-art={firstRun}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt="" width="32" height="32" /><span>HolyArrs</span></div>
@@ -416,7 +465,7 @@
 		<h1 id="welcome-title" tabindex="-1">{head.h}</h1>
 		<p>{head.p}</p>
 	</header>
-	{#if firstRun}<p class="sr-only" aria-live="polite">{busy && step !== 'done' ? '' : `Step ${stepNo} of ${order.length}: ${head.h}`}</p>{/if}
+	{#if firstRun}<p class="sr-only" aria-live="polite">{announce}</p>{/if}
 
 	{#if !session.can('users') || (firstRun && step !== 'start' && !session.can('settings'))}
 		<p class="notice warn">Only the owner or an admin with Settings access can finish setup.</p>
@@ -468,16 +517,17 @@
 					<li class="frow" class:off={!media[r.part]}>
 						<span class="ficon" aria-hidden="true"><Icon name={r.icon} size={22} /></span>
 						<div class="fbody">
-							<div class="ftop">
+							<!-- The whole top line labels the switch, so the tap target is the row. -->
+							<label class="ftop">
 								<span class="fname">{r.label}</span>
-								<label class="switch"><input type="checkbox" bind:checked={media[r.part]} aria-label={r.label} disabled={busy} /><span class="sw" aria-hidden="true"></span></label>
-							</div>
+								<span class="switch"><input type="checkbox" bind:checked={media[r.part]} onchange={() => (r.error = '')} disabled={busy} /><span class="sw" aria-hidden="true"></span></span>
+							</label>
 							{#if media[r.part]}
 								{#if r.saved && !r.editing}
 									<div class="fsaved"><span class="mono">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={() => { r.path = r.saved; r.editing = true; }} aria-label="Change {r.label} folder">Change</button></div>
 								{:else}
-									<input class="input mono" bind:value={r.path} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" />
-									{#if r.error}<p class="form-error" role="alert">{r.error}</p>{/if}
+									<input id="folder-{r.kind}" class="input mono" bind:value={r.path} oninput={() => (r.error = '')} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
+									{#if r.error}<p class="form-error" id="folder-{r.kind}-error" role="alert">{r.error}</p>{/if}
 								{/if}
 							{/if}
 						</div>
@@ -525,14 +575,15 @@
 				</div>
 				<div class="field">
 					<label for="dl-url">Address</label>
-					<input id="dl-url" class="input mono" type="url" bind:value={dl.url} oninput={() => (dlError = '')} placeholder="http://192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={dlError ? 'true' : undefined} aria-describedby={dlError ? 'dl-url-error' : undefined} />
+					<input id="dl-url" class="input mono" type="text" inputmode="url" bind:value={dl.url} oninput={() => (dlError = '')} placeholder="192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={dlError ? 'true' : undefined} aria-describedby={dlError ? 'dl-url-error' : undefined} />
 					{#if dlError}<p class="form-error" id="dl-url-error" role="alert">{dlError}</p>{/if}
 				</div>
 				<div class="two">
 					{#if dlUser}
 						<div class="field">
 							<label for="dl-user">User name</label>
-							<input id="dl-user" class="input" bind:value={dl.username} autocomplete="off" autocapitalize="none" spellcheck="false" />
+							<input id="dl-user" class="input" bind:value={dl.username} oninput={() => (dlAuth = '')} autocomplete="off" autocapitalize="none" spellcheck="false" aria-invalid={dlAuth ? 'true' : undefined} aria-describedby={dlAuth ? 'dl-user-error' : undefined} />
+								{#if dlAuth}<p class="form-error" id="dl-user-error" role="alert">{dlAuth}</p>{/if}
 						</div>
 					{/if}
 					<div class="field">
@@ -556,7 +607,7 @@
 				{#if sources > 0}
 					<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>Continue</Button>
 				{:else}
-					<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Do this later</button>
+					<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Skip for now</button>
 				{/if}
 			</div>
 		</div>
@@ -575,7 +626,7 @@
 			{#if todo.length}
 				<ul class="todo" aria-label="Still to do">
 					{#each todo as t (t.label)}
-						<li><a href={to(t.path)} onclick={(e) => { e.preventDefault(); void home(t.path); }}><span>{t.label}</span><Icon name="chevronRight" size={16} /></a></li>
+						<li><a href={to(t.path)} onclick={(e) => { e.preventDefault(); void home(t.path); }}><span>{t.label}</span><span class="todo-end"><span class="todo-state">Not set</span><Icon name="chevronRight" size={16} /></span></a></li>
 					{/each}
 				</ul>
 			{/if}
@@ -590,13 +641,12 @@
 <style>
 	.welcome {
 		position: relative;
-		width: min(560px, calc(100% - 32px));
+		/* One width for every step: what Import's rows need. */
+		width: min(680px, calc(100% - 32px));
 		margin: 0 auto;
 		padding: clamp(28px, 7vh, 72px) 0 48px;
 		box-sizing: border-box;
 	}
-	/* The move flow's four steps and its rows need more room than a form. */
-	.welcome.wide { width: min(820px, calc(100% - 32px)); }
 	.brand { display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px/1 var(--font-ui); color: var(--text); }
 	/* The round back button sits top-left, level with the logo. */
 	.corner { position: absolute; top: -2px; left: 0; }
@@ -743,7 +793,7 @@
 	.frow.off .ficon, .frow.off .fname { opacity: 0.55; }
 	.ficon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-1); color: var(--text-muted); box-shadow: 0 0 0 1px var(--line); }
 	.fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-	.ftop { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
+	.ftop { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; cursor: pointer; }
 	.ftop .switch { margin: 0; flex: none; }
 	.fname { font: 600 15px/1.2 var(--font-ui); color: var(--text); }
 	.fsaved { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 13px; overflow-wrap: anywhere; }
@@ -769,12 +819,7 @@
 	/* The wizard heading says it all: no second title in the card. */
 	.sheet.glass .source :global(.ui-settings > header) { display: none; }
 	.source .foot { margin-top: 8px; }
-	/* Phones: Continue or Do this later stays in view under a long form. */
-	@media (max-width: 520px) {
-		.source .foot { position: sticky; bottom: 0; z-index: 2; margin: 8px calc(-1 * var(--pad, 0px)) 0; padding: 8px var(--pad, 0px) calc(8px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, rgb(14 14 18 / 0.85) 30%); }
-		.light .source .foot { background: linear-gradient(transparent, rgb(255 253 250 / 0.9) 30%); }
-		.source .foot .alt, .source .foot :global(.ui-btn) { margin-top: 0; }
-	}
+	.source .foot .alt { margin-top: 4px; }
 	.head h1:focus { outline: none; }
 	/* Done with steps left: each one a row that opens its Settings page. */
 	.todo { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 8px; }
@@ -782,6 +827,8 @@
 	@media (hover: hover) { .todo a:hover { border-color: var(--line-strong); } }
 	.todo a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.todo :global(svg) { color: var(--text-muted); }
+	.todo-end { display: inline-flex; align-items: center; gap: 6px; }
+	.todo-state { color: var(--text-muted); font: 500 14px/1.2 var(--font-ui); }
 	/* Import: the move flow's cards stack inside the glass with plain gaps. */
 	.move { display: flex; flex-direction: column; gap: 18px; }
 	.move .alt { margin-top: 0; }
