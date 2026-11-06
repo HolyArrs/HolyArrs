@@ -284,6 +284,23 @@ describe('session', () => {
 		expect(s.s.name).toBe('kid');
 	});
 
+	it('joins through an invite with Plex or a media server', async () => {
+		let confirmed = false;
+		const c = server({
+			'POST /auth/invites/t%2F1/plex/start': json(200, { id: 9, auth_url: 'https://plex.example/auth' }),
+			'POST /auth/invites/t%2F1/plex/finish': () => new Response(JSON.stringify(confirmed ? { name: 'kid', csrf: 'p' } : { waiting: true }), { status: confirmed ? 200 : 202 }),
+			'POST /auth/invites/t%2F1/media-server/emby': json(409, { error: 'This account already has a HolyArrs account. Sign in instead.', code: 'linked' }),
+			'GET /auth/me': json(200, { name: 'kid', via: 'session', csrf: 'p', role: 'member', perms: ['ask'] })
+		});
+		const s = createSession(c);
+		expect((await s.invitePlexStart('t/1')).id).toBe(9);
+		expect(await s.invitePlexFinish('t/1', 9)).toBe('waiting');
+		confirmed = true;
+		expect(await s.invitePlexFinish('t/1', 9)).toEqual({ done: true });
+		expect(s.s.name).toBe('kid');
+		await expect(s.inviteMediaServer('t/1', 'emby', 'mum', 'right')).rejects.toMatchObject({ status: 409, body: { code: 'linked' } });
+	});
+
 	it('reads the sign-in ways when signed out', async () => {
 		const c = server({ 'GET /auth/me': json(401, {}), 'GET /auth/state': json(200, { needs_setup: false, ways: ['password', 'jellyfin'] }) });
 		const s = createSession(c);

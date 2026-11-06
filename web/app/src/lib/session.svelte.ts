@@ -268,6 +268,22 @@ export function createSession(client: Client = defaultClient) {
 		return finish(await client.post<SignInAnswer>(`/auth/invites/${encodeURIComponent(token)}`, { name, password }));
 	}
 
+	/** Joining through an invite with Plex: a PIN, like plexStart, bound to this invite. */
+	async function invitePlexStart(token: string): Promise<{ id: number; auth_url: string }> {
+		return client.post(`/auth/invites/${encodeURIComponent(token)}/plex/start`);
+	}
+
+	async function invitePlexFinish(token: string, id: number): Promise<SignInResult | 'waiting'> {
+		const r = await client.post<SignInAnswer & { waiting?: boolean }>(`/auth/invites/${encodeURIComponent(token)}/plex/finish`, { id });
+		if (r?.waiting) return 'waiting';
+		return finish(r);
+	}
+
+	/** Joining through an invite with a Jellyfin or Emby name and password. */
+	async function inviteMediaServer(token: string, kind: 'jellyfin' | 'emby', name: string, password: string): Promise<SignInResult> {
+		return finish(await client.post<SignInAnswer>(`/auth/invites/${encodeURIComponent(token)}/media-server/${kind}`, { name, password }));
+	}
+
 	// First run has no setup code (decisions/0009-no-setup-code.md, intentional).
 	async function setup(name: string, password: string) {
 		await finish(await client.post<SignInAnswer>('/auth/setup', { name, password }));
@@ -337,6 +353,9 @@ export function createSession(client: Client = defaultClient) {
 		plexStart,
 		plexFinish,
 		acceptInvite,
+		invitePlexStart,
+		invitePlexFinish,
+		inviteMediaServer,
 		setup,
 		setupPlexStart,
 		setupPlexFinish,

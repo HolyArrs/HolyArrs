@@ -2,17 +2,21 @@
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { session, type SignInResult } from '#lib/session.svelte.ts';
 	import { theme } from '#lib/theme.svelte.ts';
+	import { alreadyLinked, inviteTiles, type Way } from '#lib/signinArt.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 	const linkPart = $derived(page.params.token ?? '');
+	// The outside ways the owner turned on, as tiles above the name and password form.
+	const tiles = $derived(inviteTiles(session.s.ways as Way[]));
+	const wayWord = { jellyfin: 'Jellyfin', emby: 'Emby' } as const;
 
 	let invite = $state<{ role: string; max_rating?: string } | null>(null);
 	let gone = $state('');
@@ -20,20 +24,42 @@
 	let pw = $state('');
 	let pwAgain = $state('');
 	let error = $state('');
+	// The outside account already has a user: the invite stays unused.
+	let linked = $state(false);
 	let busy = $state(false);
+	// 'password' is a new name and password; Jellyfin or Emby open their own form.
+	let via = $state<'password' | 'jellyfin' | 'emby'>('password');
+	let plexWaiting = $state(false);
+	let plexTimer: ReturnType<typeof setInterval> | undefined;
 
 	onMount(async () => {
-		void session.loadMinPassword();
+		// /auth/state gives both the shortest password and the ways that are on.
+		void session.loadWays();
 		try {
 			invite = await api.get<{ role: string; max_rating?: string }>(`/auth/invites/${encodeURIComponent(linkPart)}`);
 		} catch (e) {
 			gone = message(e);
 		}
 	});
+	onDestroy(() => clearInterval(plexTimer));
+
+	const roleWord = $derived(invite?.role === 'admin' ? 'an Admin' : invite?.max_rating ? `a Kid (titles rated up to ${invite.max_rating})` : 'a Member');
+
+	// A failed join: an account that is already linked gets its own line with a sign-in link.
+	function failed(err: unknown) {
+		linked = alreadyLinked(err);
+		error = linked ? '' : message(err);
+	}
+
+	async function done(r: SignInResult) {
+		if (r.done) await goto(to('/'), { replace: true });
+	}
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		error = '';
+		linked = false;
+		if (via !== 'password') return joinServer(via);
 		if (!name.trim()) return void (error = 'Pick a name.');
 		if (pw.length < MIN_LENGTH) return void (error = `The password needs at least ${MIN_LENGTH} characters.`);
 		if (pw !== pwAgain) return void (error = 'The two passwords are not the same.');
@@ -47,10 +73,92 @@
 			busy = false;
 		}
 	}
+
+	async function joinServer(kind: 'jellyfin' | 'emby') {
+		if (!name.trim()) return void (error = `Enter your ${wayWord[kind]} name.`);
+		busy = true;
+		try {
+			await done(await session.inviteMediaServer(linkPart, kind, name.trim(), pw));
+		} catch (err) {
+			failed(err);
+			pw = '';
+		} finally {
+			busy = false;
+		}
+	}
+
+	function press(w: Way) {
+		error = '';
+		linked = false;
+		if (w === 'plex') return void plex();
+		if (w === 'jellyfin' || w === 'emby') {
+			via = w;
+			name = '';
+			pw = '';
+		}
+	}
+
+	function back() {
+		via = 'password';
+		error = '';
+		linked = false;
+		name = '';
+		pw = '';
+	}
+
+	function cancelPlex() {
+		clearInterval(plexTimer);
+		plexWaiting = false;
+	}
+
+	// The sign-in page's PIN steps, bound to this invite.
+	async function plex() {
+		// Open the window while the click still counts, then point it at Plex.
+		const win = window.open('', 'plex-sign-in', 'width=600,height=720');
+		try {
+			const p = await session.invitePlexStart(linkPart);
+			if (win) {
+				win.opener = null; // the Plex page cannot reach back into HolyArrs
+				win.location.href = p.auth_url;
+			} else window.open(p.auth_url, '_blank', 'noopener');
+			plexWaiting = true;
+			const started = Date.now();
+			clearInterval(plexTimer);
+			plexTimer = setInterval(async () => {
+				if (Date.now() - started > 9 * 60 * 1000) {
+					cancelPlex();
+					error = 'Plex timed out. Try again.';
+					return;
+				}
+				try {
+					const r = await session.invitePlexFinish(linkPart, p.id);
+					if (r === 'waiting') return;
+					cancelPlex();
+					win?.close();
+					await done(r);
+				} catch (err) {
+					cancelPlex();
+					win?.close();
+					failed(err);
+				}
+			}, 2000);
+		} catch (err) {
+			win?.close();
+			failed(err);
+		}
+	}
 	let showPw = $state(false);
 </script>
 
 <svelte:head><title>Join HolyArrs</title></svelte:head>
+
+{#snippet problem()}
+	{#if linked}
+		<p class="form-error" role="alert" data-testid="invite-linked">This account already has a HolyArrs account. <a href={to('/login')}>Sign in instead.</a></p>
+	{:else if error}
+		<p class="form-error" role="alert">{error}</p>
+	{/if}
+{/snippet}
 
 <!-- The same frame as the sign-in page: the wallpaper, the edge frame and the glass card (dark ink on light glass in light). -->
 <main class="wrap" data-theme="dark">
@@ -62,34 +170,81 @@
 			<img class="mark-light" src={to('/brand/mark-color.svg')} alt="" width="36" height="36" />
 			<span>HolyArrs</span>
 		</div>
-		<h1 class="title">Join HolyArrs</h1>
-		{#if gone}
-			<p class="form-error" role="alert">This invite is used up or has ended. Ask for a new one.</p>
-			<p class="back"><a href={to(`/login`)}>Go to sign in</a></p>
-		{:else if !invite}
-			<div class="sk"></div>
+		{#if plexWaiting}
+			<div class="wait" role="status" aria-live="polite" data-testid="plex-wait">
+				<div class="ring" aria-hidden="true">
+					<span class="orbit"></span>
+					<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
+				</div>
+				<h1 class="title">Waiting for Plex</h1>
+				<p class="lead">Finish in the Plex window.</p>
+				<button class="link" type="button" onclick={cancelPlex}>Cancel</button>
+			</div>
 		{:else}
-			<p class="lead">You were invited as {invite.role === 'admin' ? 'an Admin' : invite.max_rating ? `a Kid (titles rated up to ${invite.max_rating})` : 'a Member'}. Pick the name and password you will sign in with.</p>
-			<form onsubmit={submit} novalidate>
-				<div class="field">
-					<label for="name">Name</label>
-					<input id="name" class="input" bind:value={name} autocomplete="username" maxlength="64" required />
-				</div>
-				<div class="field">
-					<label for="password">Password</label>
-					<div class="pw">
-						<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" required />
-						<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+			<h1 class="title">Join HolyArrs</h1>
+			{#if gone}
+				<p class="form-error" role="alert">This invite is used up or has ended. Ask for a new one.</p>
+				<p class="back"><a href={to(`/login`)}>Go to sign in</a></p>
+			{:else if !invite}
+				<div class="sk"></div>
+			{:else if via !== 'password'}
+				<p class="lead">You were invited as {roleWord}. Use your {wayWord[via]} name and password.</p>
+				<form onsubmit={submit} novalidate>
+					<div class="field">
+						<label for="name">{wayWord[via]} name</label>
+						<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="128" required />
 					</div>
-					<span class="hint">At least {MIN_LENGTH} characters.</span>
-				</div>
-				<div class="field">
-					<label for="pwAgain">Password again</label>
-					<input id="pwAgain" class="input" type={showPw ? 'text' : 'password'} bind:value={pwAgain} autocomplete="new-password" required />
-				</div>
-				{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-				<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>Join and sign in</Button></div>
-			</form>
+					<div class="field">
+						<label for="password">Password</label>
+						<div class="pw">
+							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" />
+							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+						</div>
+					</div>
+					{@render problem()}
+					<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>Join with {wayWord[via]}</Button></div>
+				</form>
+				<button class="link" type="button" onclick={back}>Other ways to join</button>
+			{:else}
+				<p class="lead">You were invited as {roleWord}.{#if !tiles.length} Pick the name and password you will sign in with.{/if}</p>
+				{#if tiles.length}
+					<div class="provs" data-n={tiles.length} data-testid="invite-ways">
+						{#each tiles as t (t.way)}
+							<button class="prov" type="button" data-way={t.way} disabled={busy} onclick={() => press(t.way)}>
+								{#if t.way === 'plex'}
+									<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
+								{:else if t.way === 'jellyfin'}
+									<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="jg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#AA5CC3" /><stop offset="1" stop-color="#00A4DC" /></linearGradient></defs><path d="M12 3c-2 0-9 12.4-8 14.4S20 19.4 21 17.4 14 3 12 3zm0 6c1 0 4.4 6 4 7s-7.6 1-8 0S11 9 12 9z" fill="url(#jg)" /></svg>
+								{:else}
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
+								{/if}
+								<span>{t.label}</span>
+							</button>
+						{/each}
+					</div>
+					<div class="or">or</div>
+				{/if}
+				<form onsubmit={submit} novalidate>
+					<div class="field">
+						<label for="name">Name</label>
+						<input id="name" class="input" bind:value={name} autocomplete="username" maxlength="64" required />
+					</div>
+					<div class="field">
+						<label for="password">Password</label>
+						<div class="pw">
+							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" required />
+							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+						</div>
+						<span class="hint">At least {MIN_LENGTH} characters.</span>
+					</div>
+					<div class="field">
+						<label for="pwAgain">Password again</label>
+						<input id="pwAgain" class="input" type={showPw ? 'text' : 'password'} bind:value={pwAgain} autocomplete="new-password" required />
+					</div>
+					{@render problem()}
+					<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>Join and sign in</Button></div>
+				</form>
+			{/if}
 		{/if}
 	</div>
 	<SigninPortals />
@@ -160,8 +315,62 @@
 	.light .sk { background: rgb(0 0 0 / 0.05); }
 	.form-error { margin-top: 14px; padding: 10px 14px; border-radius: 12px; background: rgb(255 69 58 / 0.12); border: 1px solid rgb(255 69 58 / 0.26); color: #ffb3ad; font: 500 13px/1.45 var(--font-ui); text-align: center; }
 	.light .form-error { background: rgb(255 241 240 / 0.88); border-color: rgb(215 0 21 / 0.35); color: #9b0010; }
+	.form-error a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.back { margin: 16px 0 0; text-align: center; font: var(--t-subhead); }
 	.back a { color: rgb(255 255 255 / 0.78); text-decoration: underline; text-underline-offset: 3px; }
+	/* Provider tiles, "or", the text link and the Plex wait: the sign-in page's looks (routes/login). */
+	.provs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+	.prov {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 6px;
+		min-height: 76px;
+		padding: 15px 6px 10px;
+		text-align: center;
+		border: 1px solid rgb(255 255 255 / 0.08);
+		border-radius: 16px;
+		background: rgb(118 118 128 / 0.22);
+		color: rgb(255 255 255 / 0.78);
+		font: 500 12px/1.2 var(--font-ui);
+		cursor: pointer;
+		transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+	}
+	.prov svg { width: 26px; height: 26px; flex: none; }
+	.provs[data-n='1'] .prov { flex-direction: row; justify-content: center; padding: 0 6px; min-height: 50px; gap: 10px; font-size: 16px; color: #fff; }
+	.prov:active:not(:disabled) { transform: scale(0.97); }
+	.prov:disabled { opacity: 0.5; cursor: default; }
+	.prov:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (hover: hover) { .prov:not(:disabled):hover { background: rgb(118 118 128 / 0.34); color: #fff; } }
+	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+		.prov:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgb(0 0 0 / 0.35), 0 0 18px rgb(255 255 255 / 0.08); }
+		.light .prov:not(:disabled):hover { box-shadow: 0 4px 14px rgb(0 0 0 / 0.1), 0 1px 3px rgb(0 0 0 / 0.06); }
+	}
+	.light .prov { background: rgb(255 255 255 / 0.45); border-color: rgb(255 255 255 / 0.6); color: #1d1d1f; }
+	.light .provs[data-n='1'] .prov { color: #111; }
+	@media (hover: hover) { .light .prov:not(:disabled):hover { background: rgb(255 255 255 / 0.65); color: #111; } }
+	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
+	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
+	.light .or { color: rgb(0 0 0 / 0.62); }
+	.light .or::before, .light .or::after { background: rgb(0 0 0 / 0.14); }
+	.link { display: block; margin: 12px auto 0; padding: 0 10px; min-height: 36px; border: 0; border-radius: var(--r-sm); background: none; color: var(--accent-text); font: 500 14px/1 var(--font-ui); cursor: pointer; }
+	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.light .link { color: #1d1d1f; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(0 0 0 / 0.25); }
+	@media (hover: hover) {
+		.link:hover { background: rgb(255 255 255 / 0.08); }
+		.light .link:hover { background: rgb(0 0 0 / 0.05); }
+	}
+	.wait { text-align: center; }
+	.ring { position: relative; width: 64px; height: 64px; margin: 4px auto 16px; display: grid; place-items: center; }
+	.ring svg { width: 34px; height: 34px; }
+	.orbit { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgb(255 255 255 / 0.14); border-top-color: #e5a00d; animation: orbit 0.9s linear infinite; }
+	.light .orbit { border-color: rgb(0 0 0 / 0.14); border-top-color: #e5a00d; }
+	@keyframes orbit { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) {
+		.orbit { animation-duration: 2.4s; }
+		.prov:active:not(:disabled) { transform: none; filter: brightness(0.86); }
+	}
 	@media (min-width: 601px) { .wrap { --fr: 18px; } }
 	@media (min-width: 1280px) { .wrap { --fr: 22px; } }
 	@media (min-width: 1440px) { .wrap { --fr: 24px; } }
@@ -180,5 +389,11 @@
 		.panel :global(.field + .field) { margin-top: 4px; }
 		.panel :global(.input), .submit :global(.ui-btn) { min-height: 48px; }
 		.submit { margin-top: 8px; }
+		.prov { min-height: 64px; padding-top: 11px; }
+		.provs[data-n='1'] .prov { min-height: 48px; }
+		.or { margin: 10px 0; }
+		.link { margin-top: 4px; }
 	}
+	/* Touch screens: a 44 px tap target for the text link. */
+	@media (pointer: coarse) { .link { min-height: 44px; } }
 </style>

@@ -213,6 +213,11 @@ var Routes = map[string]Owner{
 	"DELETE /api/v1/account/avatar":                   Core,
 	"GET /api/v1/users/{id}/avatar":                   Core,
 
+	// Joining through an invite with Plex, Jellyfin or Emby.
+	"POST /api/v1/auth/invites/{token}/plex/start":          Core,
+	"POST /api/v1/auth/invites/{token}/plex/finish":         Core,
+	"POST /api/v1/auth/invites/{token}/media-server/{kind}": Core,
+
 	// Backups, health, Alerts, media servers, history and Jobs.
 	"GET /api/v1/backups":                  Core,
 	"POST /api/v1/backups":                 Core,

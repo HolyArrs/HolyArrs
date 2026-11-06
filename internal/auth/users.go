@@ -687,6 +687,35 @@ func (a *Auth) lookInvite(w http.ResponseWriter, r *http.Request) {
 var errInviteGone = errors.New("invite gone")
 var errNameTaken = errors.New("name taken")
 
+// inviteUser reads an open invite inside a write and returns the new user it
+// makes (no name or password yet), or errInviteGone.
+func (a *Auth) inviteUser(tx *sql.Tx, tok string) (domain.User, error) {
+	var role, perms, expires, maxRating, country, byRole, byPerms string
+	err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at, i.max_rating, i.rating_country, c.role, c.perms FROM invites i JOIN users c ON c.id = i.created_by
+		WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
+		Scan(&role, &perms, &expires, &maxRating, &country, &byRole, &byPerms)
+	if err != nil || !a.now().Before(parseTime(expires)) {
+		return domain.User{}, errInviteGone
+	}
+	// The link gives only what its maker still holds today.
+	perms = permsJSON(slices.DeleteFunc(parsePerms(perms), func(p Perm) bool {
+		return !(Who{Role: byRole, Perms: parsePerms(byPerms)}).Has(p)
+	}))
+	return domain.User{Role: role, State: "active", Perms: perms, MaxRating: maxRating, RatingCountry: countryOr(country)}, nil
+}
+
+// useInvite marks an invite used by the new user id, inside the same write.
+func (a *Auth) useInvite(tx *sql.Tx, tok string, id int64) error {
+	res, err := tx.Exec("UPDATE invites SET used_at = ?, used_by = ? WHERE hash = ? AND used_at IS NULL", store.FormatTime(a.now()), id, sum(tok))
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return errInviteGone
+	}
+	return nil
+}
+
 func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	key, ok := a.inviteGate(w, r)
 	if !ok {
@@ -719,17 +748,10 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		var role, perms, expires, maxRating, country, byRole, byPerms string
-		err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at, i.max_rating, i.rating_country, c.role, c.perms FROM invites i JOIN users c ON c.id = i.created_by
-			WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
-			Scan(&role, &perms, &expires, &maxRating, &country, &byRole, &byPerms)
-		if err != nil || !a.now().Before(parseTime(expires)) {
-			return errInviteGone
+		u, err := a.inviteUser(tx, tok)
+		if err != nil {
+			return err
 		}
-		// The link gives only what its maker still holds today.
-		perms = permsJSON(slices.DeleteFunc(parsePerms(perms), func(p Perm) bool {
-			return !(Who{Role: byRole, Perms: parsePerms(byPerms)}).Has(p)
-		}))
 		var n int
 		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", c.Name).Scan(&n); err != nil {
 			return err
@@ -737,19 +759,11 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 		if n > 0 {
 			return errNameTaken
 		}
-		id, err = store.Insert(tx, "users", &domain.User{Name: c.Name, Role: role, PasswordHash: h, State: "active", Perms: perms,
-			MaxRating: maxRating, RatingCountry: countryOr(country)}, domain.System)
-		if err != nil {
+		u.Name, u.PasswordHash = c.Name, h
+		if id, err = store.Insert(tx, "users", &u, domain.System); err != nil {
 			return err
 		}
-		res, err := tx.Exec("UPDATE invites SET used_at = ?, used_by = ? WHERE hash = ? AND used_at IS NULL", store.FormatTime(a.now()), id, sum(tok))
-		if err != nil {
-			return err
-		}
-		if n, _ := res.RowsAffected(); n != 1 {
-			return errInviteGone
-		}
-		return nil
+		return a.useInvite(tx, tok, id)
 	})
 	switch {
 	case errors.Is(err, errInviteGone):

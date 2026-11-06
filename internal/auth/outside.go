@@ -97,6 +97,7 @@ func (a *Auth) outsideRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/plex/finish", a.plexFinish)
 	m.HandleFunc("POST /api/v1/auth/media-server/{kind}", a.mediaServerLogin)
 	a.setupOutsideRoutes(m)
+	a.inviteOutsideRoutes(m)
 }
 
 // ways lists the sign-in ways the sign-in page offers.
@@ -387,24 +388,12 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		}
 		u.Perms, u.MaxRating = permsJSON([]Perm{PermAsk}), "PG"
 	}
-	base := strings.TrimSpace(extName)
-	if base == "" {
-		base = provider + "-user"
-	}
-	base = truncate(base, 56)
+	base := outsideBase(provider, extName)
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		name = base
-		for i := 2; ; i++ {
-			var n int
-			if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", name).Scan(&n); err != nil {
-				return err
-			}
-			if n == 0 {
-				break
-			}
-			name = fmt.Sprintf("%s-%d", base, i)
-		}
 		var err error
+		if name, err = freeName(tx, base); err != nil {
+			return err
+		}
 		u.Name = name
 		id, err = store.Insert(tx, "users", &u, domain.System)
 		if err != nil {
@@ -418,6 +407,30 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		log.Printf("auth: %s account joined as member %q (%d), kid %t", provider, name, id, kid)
 	}
 	return id, name, err
+}
+
+// outsideBase is the name a new user from an outside account starts from.
+func outsideBase(provider, extName string) string {
+	base := strings.TrimSpace(extName)
+	if base == "" {
+		base = provider + "-user"
+	}
+	return truncate(base, 56)
+}
+
+// freeName is base, or base-2, base-3... when that name is taken.
+func freeName(tx *sql.Tx, base string) (string, error) {
+	name := base
+	for i := 2; ; i++ {
+		var n int
+		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", name).Scan(&n); err != nil {
+			return "", err
+		}
+		if n == 0 {
+			return name, nil
+		}
+		name = fmt.Sprintf("%s-%d", base, i)
+	}
 }
 
 // linkedName is the member an outside account belongs to, found through its
@@ -607,20 +620,8 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	hdr := a.plexHeaders(ctx)
-	hdr["X-Plex-Token"] = tok
-	var user struct {
-		ID       int64  `json:"id"`
-		UUID     string `json:"uuid"`
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		// A managed Plex Home user with limits on what they may watch.
-		Restricted bool `json:"restricted"`
-	}
-	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
-	if err != nil || code/100 != 2 || user.ID == 0 {
-		log.Printf("auth: plex user: status %d: %v", code, err)
-		fail(w, http.StatusBadGateway, "Plex did not say who you are; try again")
+	user, hdr, ok := a.plexUser(ctx, w, tok)
+	if !ok {
 		return
 	}
 	extID := strconv.FormatInt(user.ID, 10)
@@ -653,6 +654,31 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist (#102)
 	}
 	a.outsideDone(w, r, ProviderPlex, id, name, err, place{})
+}
+
+// plexMe is the Plex account a confirmed PIN belongs to.
+type plexMe struct {
+	ID       int64  `json:"id"`
+	UUID     string `json:"uuid"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	// A managed Plex Home user with limits on what they may watch.
+	Restricted bool `json:"restricted"`
+}
+
+// plexUser asks Plex who a confirmed PIN's token belongs to. It returns the
+// headers with the token for further calls, or has answered 502.
+func (a *Auth) plexUser(ctx context.Context, w http.ResponseWriter, tok string) (plexMe, map[string]string, bool) {
+	hdr := a.plexHeaders(ctx)
+	hdr["X-Plex-Token"] = tok
+	var user plexMe
+	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
+	if err != nil || code/100 != 2 || user.ID == 0 {
+		log.Printf("auth: plex user: status %d: %v", code, err)
+		fail(w, http.StatusBadGateway, "Plex did not say who you are; try again")
+		return user, hdr, false
+	}
+	return user, hdr, true
 }
 
 // checkPin asks Plex whether the person confirmed the PIN. It returns the
@@ -716,24 +742,53 @@ func pinSecretMatches(r *http.Request, id int64, secret string) bool {
 }
 
 func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	kind := r.PathValue("kind")
-	if kind != ProviderJellyfin && kind != ProviderEmby {
-		fail(w, http.StatusNotFound, "no such sign-in way")
-		return
-	}
-	v := a.way(ctx, kind)
-	if !v.On || v.URL == "" {
-		fail(w, http.StatusNotFound, "sign-in with "+kind+" is off")
-		return
-	}
-	c, ok := readCreds(w, r)
+	v, ok := a.mediaWay(w, r, kind)
 	if !ok {
 		return
 	}
+	got, pl, ok := a.checkMediaServer(w, r, kind, v)
+	if !ok {
+		return
+	}
+	id, name, err := a.linkedUser(r.Context(), kind, got.ID, got.Name, allowed(v, got.Name), got.Limited)
+	a.outsideDone(w, r, kind, id, name, err, pl)
+}
+
+// mediaWay is the Jellyfin or Emby sign-in way, or false after answering
+// 404 when there is no such way or it is off.
+func (a *Auth) mediaWay(w http.ResponseWriter, r *http.Request, kind string) (WayView, bool) {
+	if kind != ProviderJellyfin && kind != ProviderEmby {
+		fail(w, http.StatusNotFound, "no such sign-in way")
+		return WayView{}, false
+	}
+	v := a.way(r.Context(), kind)
+	if !v.On || v.URL == "" {
+		fail(w, http.StatusNotFound, "sign-in with "+kind+" is off")
+		return v, false
+	}
+	return v, true
+}
+
+// mediaMe is the Jellyfin or Emby account a name and password belong to.
+type mediaMe struct {
+	ID, Name string
+	// Limited is set when the server limits what this person may watch.
+	Limited bool
+}
+
+// checkMediaServer checks the name and password in the request against the
+// owner's Jellyfin or Emby server, with the sign-in limits. It returns the
+// account and the place to record, or false after answering.
+func (a *Auth) checkMediaServer(w http.ResponseWriter, r *http.Request, kind string, v WayView) (mediaMe, place, bool) {
+	ctx := r.Context()
+	c, ok := readCreds(w, r)
+	if !ok {
+		return mediaMe{}, place{}, false
+	}
 	if c.Name == "" || len(c.Name) > 128 || len(c.Password) > MaxPassword {
 		fail(w, http.StatusBadRequest, "give your "+kind+" name and password")
-		return
+		return mediaMe{}, place{}, false
 	}
 	ipKey, altKey, sure := a.clientKeys(r)
 	userKey := "name:" + kind + ":" + strings.ToLower(c.Name)
@@ -759,7 +814,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	if wait > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		fail(w, http.StatusTooManyRequests, "too many failed sign-ins; wait a little and try again")
-		return
+		return mediaMe{}, place{}, false
 	}
 	authz := fmt.Sprintf(`MediaBrowser Client="%s", Device="%s", DeviceId="%s", Version="1"`, product, product, a.clientID(ctx))
 	hdr := map[string]string{"Authorization": authz, "X-Emby-Authorization": authz}
@@ -780,19 +835,19 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		undo(code)
 		log.Printf("auth: %s sign-in: %v", kind, err)
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not answer; ask the owner")
-		return
+		return mediaMe{}, place{}, false
 	}
 	if code == http.StatusUnauthorized || code == http.StatusForbidden || code/100 == 4 {
 		log.Printf("auth: failed %s sign-in from %s", kind, r.RemoteAddr)
 		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
-		return
+		return mediaMe{}, place{}, false
 	}
 	if code/100 != 2 || got.User.ID == "" {
 		undo(code)
 		log.Printf("auth: %s sign-in: status %d", kind, code)
 		fail(w, http.StatusBadGateway, "the "+kind+" server gave an odd answer; ask the owner")
-		return
+		return mediaMe{}, place{}, false
 	}
 	if got.AccessToken != "" {
 		// HolyArrs does not keep the server's token: end that session now.
@@ -803,12 +858,11 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	if got.User.Policy.IsDisabled {
 		a.failedEvent(r, a.linkedName(ctx, kind, got.User.ID, got.User.Name), kind+" turned off")
 		fail(w, http.StatusForbidden, "this account is turned off on the "+kind+" server")
-		return
+		return mediaMe{}, place{}, false
 	}
 	a.mu.Lock()
 	a.undoFailLocked(marks[:2]) // this attempt's address counts only (ipKey, altKey)
 	delete(a.fails, userKey)
 	a.mu.Unlock()
-	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
-	a.outsideDone(w, r, kind, id, name, err, place{ipKey, userKey, sure})
+	return mediaMe{ID: got.User.ID, Name: got.User.Name, Limited: got.User.Policy.MaxParentalRating != nil}, place{ipKey, userKey, sure}, true
 }

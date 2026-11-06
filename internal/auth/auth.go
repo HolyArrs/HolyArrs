@@ -366,6 +366,10 @@ func public(r *http.Request) bool {
 		(r.Method == http.MethodGet || r.Method == http.MethodPost) {
 		return true
 	}
+	// Joining through an invite with Plex, Jellyfin or Emby.
+	if r.Method == http.MethodPost && inviteOutsidePath(r.URL.Path) {
+		return true
+	}
 	if rest, ok := strings.CutPrefix(r.URL.Path, "/invite/"); ok && rest != "" && !strings.Contains(rest, "/") && r.Method == http.MethodGet {
 		return true
 	}

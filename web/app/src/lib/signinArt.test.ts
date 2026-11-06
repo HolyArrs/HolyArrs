@@ -205,3 +205,18 @@ describe('swap helpers', () => {
 		expect(interacting(99999, 0, true, false)).toBe(false);
 	});
 });
+
+import { alreadyLinked, inviteTiles } from './signinArt.ts';
+describe('inviteTiles', () => {
+	it('offers only Plex, Jellyfin and Emby on an invite', () => {
+		expect(inviteTiles(['password', 'oidc', 'emby', 'plex', 'forward_auth']).map((t) => t.way)).toEqual(['plex', 'emby']);
+		expect(inviteTiles(['password', 'oidc'])).toEqual([]);
+		expect(inviteTiles(['jellyfin'])[0].label).toBe('Continue with Jellyfin');
+	});
+	it('knows the already-linked answer', () => {
+		expect(alreadyLinked({ status: 409, body: { code: 'linked' } })).toBe(true);
+		expect(alreadyLinked({ status: 409, body: { error: 'that name is taken' } })).toBe(false);
+		expect(alreadyLinked(new Error('x'))).toBe(false);
+		expect(alreadyLinked(null)).toBe(false);
+	});
+});

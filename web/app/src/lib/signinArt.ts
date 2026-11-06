@@ -146,6 +146,17 @@ export function providerTiles(ways: readonly Way[]): ProviderTile[] {
 	return on.map((way) => ({ way, name: NAMES[way], label: on.length > 1 ? NAMES[way] : `Continue with ${NAMES[way]}` }));
 }
 
+/** The invite page's tiles: the media-server ways only (single sign-on and the proxy make no new people from an invite). */
+export function inviteTiles(ways: readonly Way[]): ProviderTile[] {
+	return providerTiles(ways.filter((w) => w === 'plex' || w === 'jellyfin' || w === 'emby'));
+}
+
+/** True when an invite join failed because that outside account already has a user. */
+export function alreadyLinked(err: unknown): boolean {
+	const e = err as { status?: number; body?: Record<string, unknown> } | null;
+	return e?.status === 409 && e.body?.code === 'linked';
+}
+
 /** Width of the kept thumbnail (the reveal's detail source until the full picture is in). */
 export const THUMB_W = 64;
 /** Blocks across the first-frame mosaic (the 24 px thumbnail app.html paints). */
