@@ -57,6 +57,7 @@
 	import SeasonToolsSheet from '#lib/SeasonToolsSheet.svelte';
 	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
+	import { splitSteps, type RenameStep } from '#lib/organise.ts';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
@@ -496,6 +497,14 @@
 	}));
 	let libAll = $state(false);
 	let renameOpen = $state(false);
+	// The Rename row says up front how many files would get a new name (the same read the preview uses).
+	let renameCount = $state<number | null>(null);
+	$effect(() => {
+		const id = owned?.id, files = owned?.slots?.length ?? 0;
+		if (!id || !manage || ownTab !== 'library' || renameOpen) return;
+		void files;
+		void api.get<{ steps: RenameStep[] }>(`/titles/${id}/rename`).then((r) => (renameCount = splitSteps(r.steps).change.length), () => (renameCount = null));
+	});
 	let deleteOpen = $state(false);
 	let pickOpen = $state(typeof location !== 'undefined' && new URLSearchParams(location.search).has('pick'));
 	const mayAsk = $derived(session.can('ask') && !manage);
@@ -1303,7 +1312,7 @@
 								<span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span>
 								{#if kindFolders.length > 1}<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={240}>{#snippet trigger()}<span>{curFolder?.label ?? 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>{:else if curFolder}<span class="lib-val">{curFolder.label}</span>{/if}
 							</div>
-							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
+							<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>{renameCount === null ? 'See the new names first' : renameCount === 0 ? 'Every name matches' : renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures{o.refreshed_at ? ` · refreshed ${date(o.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 						</div>
 						<div class="lib-rows danger">
@@ -1368,7 +1377,7 @@
 				<!-- One season or one episode (and its files) goes through the show's delete dialog. -->
 				{#if o.show}<ShowDeleteDialog bind:this={showDeleter} titleId={o.id} name={o.name} ondone={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />{/if}
 				<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} scope={pickScope} onchosen={() => loadOwned(o.id)} />
-				<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
+				<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="center" size="md">
 					{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}
 				</Sheet>
 				<DeleteSheet bind:open={deleteOpen} titleId={o.id} name={o.name} kind={o.kind === 'show' ? 'show' : 'movie'} ondone={() => { owned = null; ownedEvents = []; ownTab = 'overview'; }} />
