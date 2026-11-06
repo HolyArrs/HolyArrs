@@ -174,8 +174,6 @@ test('the album page lists tracks and Pressings, and the owner picks another Pre
 	// The Library artist page's album links open the album's Library page straight away.
 	await expect(own).toHaveURL(/\/library\/\d+\/albums\//);
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Songs/ })).toBeVisible();
-	// Three editions: the Other editions shelf lists them; Settings has the one followed.
-	await expect(own.locator('#title-editions')).toContainText('Harbour Songs (deluxe)');
 	await expect(own.getByTestId('track')).toHaveCount(3);
 	await expect(own.getByTestId('track').first()).toContainText('Song 1.1');
 	await expect(own.getByTestId('track').first()).toContainText('3:00');

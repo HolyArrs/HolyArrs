@@ -10,7 +10,7 @@
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
-	import { ago, date, dateTime, tone } from '#lib/format.ts';
+	import { tone } from '#lib/format.ts';
 	import TitleHero from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
@@ -33,7 +33,7 @@
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
 	import ShowReleases from '#lib/ShowReleases.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { albumCover, albumKind, albumLine, albumStateOf, albumYear, pressingLabel, pressingStatuses, trackLength, word } from '#lib/music/music.ts';
+	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength } from '#lib/music/music.ts';
 	import { NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/reask.ts';
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/types.ts';
@@ -271,7 +271,6 @@
 		>
 			{#snippet byline()}
 				{#if artist}<a class="artist-link" href={to(`/library/${titleId}`)}>{artist.name}</a>{/if}
-				{#if staff}<span data-testid="album-line">{albumLine(album!)}</span>{/if}
 				{#if album!.dropped}<span>No longer listed</span>{/if}
 			{/snippet}
 			{#snippet actions()}
@@ -356,23 +355,6 @@
 			</Shelf>
 		{/if}
 
-		{#if pressings.length > 1}
-			<Shelf title="Other editions" item="var(--title-item)" anchor="title-editions" placeholder="wide" lines={1}>
-				{#each pressings as p (p.id)}
-					<WideCard title={p.name} image={coverOk ? albumCover(album.id) : null} kind="artist" subtitle={pressingLabel(p)} owned={p.chosen ? { state: 'available', label: 'The edition HolyArrs follows' } : null} />
-				{/each}
-			</Shelf>
-		{/if}
-
-		<TitleSection id="h-about" title="About">
-			<dl class="tp-about">
-				{#if artist}<dt>Artist</dt><dd><a href={to(`/library/${titleId}`)}>{artist.name}</a></dd>{/if}
-				{#if album.release_date}<dt>Released</dt><dd>{date(album.release_date)}</dd>{/if}
-				<dt>Kind</dt>
-				<dd>{albumKind(album)}</dd>
-				{#if pressings.length > 1}<dt>Editions</dt><dd>{pressings.length}</dd>{/if}
-			</dl>
-		</TitleSection>
 
 		{#if staff}
 			<Sheet bind:open={listing} title="Choose a release" description={scope.label} size="lg" placement="center">
