@@ -218,7 +218,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await ivy.goto(new URL(link).pathname);
 	await ivy.getByLabel('Name', { exact: true }).fill('ivy');
 	await ivy.getByLabel('Password', { exact: true }).fill(ivyPw);
-	await ivy.getByLabel('Password again').fill(ivyPw);
+	await ivy.getByLabel('Confirm password').fill(ivyPw);
 	await ivy.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(ivy).toHaveURL(/\/$/);
 

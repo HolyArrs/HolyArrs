@@ -208,7 +208,7 @@ test('a member sees none of the search screens', async ({ browser }) => {
 	await m.goto(new URL(link).pathname);
 	await m.getByLabel('Name').fill('searchviewer');
 	await m.getByLabel('Password', { exact: true }).fill(pw);
-	await m.getByLabel('Password again').fill(pw);
+	await m.getByLabel('Confirm password').fill(pw);
 	await m.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(m).toHaveURL(/\/$/);
 	await m.goto('/library');

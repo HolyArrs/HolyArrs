@@ -97,7 +97,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 	await uma.goto(new URL(link).pathname);
 	await uma.getByLabel('Name').fill('uma');
 	await uma.getByLabel('Password', { exact: true }).fill(umaPw);
-	await uma.getByLabel('Password again').fill(umaPw);
+	await uma.getByLabel('Confirm password').fill(umaPw);
 	await uma.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(uma).toHaveURL(/\/$/);
 	await uma.goto('/status?tab=about');

@@ -47,7 +47,7 @@ test('the owner invites a member with a one-time link', async ({ browser }) => {
 	await expect(ana.getByRole('heading', { name: 'Join HolyArrs' })).toBeVisible();
 	await ana.getByLabel('Name').fill('ana');
 	await ana.getByLabel('Password', { exact: true }).fill(memberPw);
-	await ana.getByLabel('Password again').fill(memberPw);
+	await ana.getByLabel('Confirm password').fill(memberPw);
 	await ana.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(ana).toHaveURL(/\/$/);
 

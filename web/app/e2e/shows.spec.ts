@@ -156,7 +156,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await max.goto(new URL(link).pathname);
 	await max.getByLabel('Name', { exact: true }).fill('max');
 	await max.getByLabel('Password', { exact: true }).fill(maxPw);
-	await max.getByLabel('Password again').fill(maxPw);
+	await max.getByLabel('Confirm password').fill(maxPw);
 	await max.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(max).toHaveURL(/\/$/);
 

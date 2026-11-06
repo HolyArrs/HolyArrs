@@ -294,7 +294,7 @@ test('members see none of it', async ({ browser }) => {
 	await uma.goto(new URL(link).pathname);
 	await uma.getByLabel('Name').fill('uma');
 	await uma.getByLabel('Password', { exact: true }).fill(pw);
-	await uma.getByLabel('Password again').fill(pw);
+	await uma.getByLabel('Confirm password').fill(pw);
 	await uma.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(uma).toHaveURL(/\/$/);
 	await uma.goto('/library');

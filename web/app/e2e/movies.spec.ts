@@ -103,7 +103,7 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 	// Out and kept up to date: HolyArrs is looking, so no gate line (it shows only while HolyArrs waits).
 	await expect(page.getByTestId('gate-reason')).toHaveCount(0);
 	await expect(lib.getByRole('heading', { name: 'File', exact: true })).toBeVisible();
-	await expect(lib.getByText('No file yet.').first()).toBeVisible();
+	await expect(lib.getByText(/no file yet/i).first()).toBeVisible();
 
 	await page.getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Refresh details' }).click();
@@ -140,7 +140,7 @@ test('a member sees the movie but none of the staff controls', async ({ browser 
 	await m.goto(new URL(link).pathname);
 	await m.getByLabel('Name').fill('viewer');
 	await m.getByLabel('Password', { exact: true }).fill(memberPw);
-	await m.getByLabel('Password again').fill(memberPw);
+	await m.getByLabel('Confirm password').fill(memberPw);
 	await m.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(m).toHaveURL(/\/$/);
 

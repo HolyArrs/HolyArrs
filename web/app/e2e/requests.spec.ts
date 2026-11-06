@@ -76,7 +76,7 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await kim.goto(new URL(link).pathname);
 	await kim.getByLabel('Name', { exact: true }).fill('kim');
 	await kim.getByLabel('Password', { exact: true }).fill(kimPw);
-	await kim.getByLabel('Password again').fill(kimPw);
+	await kim.getByLabel('Confirm password').fill(kimPw);
 	await kim.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(kim).toHaveURL(/\/$/);
 
@@ -274,7 +274,7 @@ async function member(browser: Browser, name: string): Promise<Page> {
 	await p.goto(new URL(link).pathname);
 	await p.getByLabel('Name', { exact: true }).fill(name);
 	await p.getByLabel('Password', { exact: true }).fill(pw);
-	await p.getByLabel('Password again').fill(pw);
+	await p.getByLabel('Confirm password').fill(pw);
 	await p.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(p).toHaveURL(/\/$/);
 	return p;
@@ -753,7 +753,7 @@ async function admin(browser: Browser, name: string, shown: string): Promise<Pag
 	await p.goto(new URL(link).pathname);
 	await p.getByLabel('Name', { exact: true }).fill(name);
 	await p.getByLabel('Password', { exact: true }).fill(pw);
-	await p.getByLabel('Password again').fill(pw);
+	await p.getByLabel('Confirm password').fill(pw);
 	await p.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(p).toHaveURL(/\/$/);
 	await p.goto('/account');

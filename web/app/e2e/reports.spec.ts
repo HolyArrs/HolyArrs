@@ -77,7 +77,7 @@ test.beforeAll(async ({ browser }) => {
 	await member.goto(new URL(link).pathname);
 	await member.getByLabel('Name', { exact: true }).fill(memberName);
 	await member.getByLabel('Password', { exact: true }).fill(memberPw);
-	await member.getByLabel('Password again').fill(memberPw);
+	await member.getByLabel('Confirm password').fill(memberPw);
 	await member.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(member).toHaveURL(/\/$/);
 });

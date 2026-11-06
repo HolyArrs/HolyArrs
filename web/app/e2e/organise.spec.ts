@@ -88,7 +88,7 @@ test('rename: the Movie page shows the old and new name and renames after Apply'
 	// Done, the sheet closes; opened again it has nothing left to rename.
 	await expect(dialog).toBeHidden();
 	await titleAction(page, 'Library', 'Rename files');
-	await expect(dialog.getByTestId('rename-none')).toContainText('every file already has the right name');
+	await expect(dialog.getByTestId('rename-none')).toContainText('Every name matches.');
 	expect(readdirSync(join(oldLib, 'Marble Comet (2014)'))).toEqual([to]);
 	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
 	await expect(dialog).toBeHidden();
@@ -244,7 +244,7 @@ test('members see none of it', async ({ browser }) => {
 	await sam.goto(new URL(link).pathname);
 	await sam.getByLabel('Name').fill('sam');
 	await sam.getByLabel('Password', { exact: true }).fill(pw);
-	await sam.getByLabel('Password again').fill(pw);
+	await sam.getByLabel('Confirm password').fill(pw);
 	await sam.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(sam).toHaveURL(/\/$/);
 	await sam.goto('/library');

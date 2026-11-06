@@ -207,7 +207,7 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	await kid.goto(new URL(link).pathname);
 	await kid.getByLabel('Name', { exact: true }).fill('juno');
 	await kid.getByLabel('Password', { exact: true }).fill(pw);
-	await kid.getByLabel('Password again').fill(pw);
+	await kid.getByLabel('Confirm password').fill(pw);
 	await kid.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(kid).toHaveURL(/\/$/);
 	const juno = await api(kid);

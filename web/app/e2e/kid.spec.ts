@@ -40,10 +40,10 @@ test('the owner invites a Kid with an age rating', async ({ browser }) => {
 
 	kai = await fresh(browser);
 	await kai.goto(new URL(link).pathname);
-	await expect(kai.getByText('You were invited as a Kid (titles rated up to PG).')).toBeVisible();
+	await expect(kai.getByText('Invited as a Kid · up to PG')).toBeVisible();
 	await kai.getByLabel('Name').fill('kai');
 	await kai.getByLabel('Password', { exact: true }).fill(kidPw);
-	await kai.getByLabel('Password again').fill(kidPw);
+	await kai.getByLabel('Confirm password').fill(kidPw);
 	await kai.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(kai).toHaveURL(/\/$/);
 
