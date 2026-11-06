@@ -22,7 +22,13 @@ describe('history filters', () => {
 	});
 
 	it('maps steps to kinds and leaves routine work out', () => {
-		expect(stepKinds(['asked', 'chosen'])).toEqual(['ask_made', 'ai_ask_made', 'release_chosen', 'release_chosen_by_hand']);
+		expect(stepKinds(['asked', 'sent'])).toEqual(['release_chosen', 'release_chosen_by_hand', 'download_sent', 'download_queued', 'ask_made', 'ai_ask_made']);
+		// Needs you is its own step; Failed is what went wrong.
+		expect(stepKinds(['decide'])).toEqual(['needs_decision', 'stopped_looking']);
+		expect(stepKinds(['failed'])).not.toContain('needs_decision');
+		// Merged steps: old links pick the step they became.
+		expect(readSearch(new URLSearchParams('step=out,chosen,media,added')).steps).toEqual(['added', 'sent', 'imported']);
+		expect(stepKinds(['imported'])).toContain('media_server_told');
 		expect(stepKinds(['failed'])).toContain('download_failed');
 		const all = stepKinds([]);
 		expect(all).toContain('import_done');
@@ -38,7 +44,7 @@ describe('history filters', () => {
 		expect(s.steps).toEqual(['failed', 'asked']);
 		expect(toggleStep(s.steps, 'failed')).toBe('asked');
 		const chips = searchChips(s, new Date('2026-11-02T12:00:00Z'));
-		expect(chips.map((c) => c.label)).toEqual(['Asked', 'Failed', 'Movies', 'You', 'Last 7 days']);
+		expect(chips.map((c) => c.label)).toEqual(['Failed', 'Asked', 'Movies', 'You', '7 days']);
 		expect(chips.find((c) => c.key === 'step.failed')?.change).toEqual({ step: 'asked' });
 		expect(searchChips(readSearch(new URLSearchParams('q=x')))).toEqual([]);
 		expect(dateLabel('2026-10-01', '2026-10-05')).toBe('2026-10-01 to 2026-10-05');
@@ -96,8 +102,8 @@ describe('search look rows', () => {
 		expect(rowStep(one(ev('title_added'))).label).toBe('Added');
 		expect(rowStep(one(ev('gate_opened'))).label).toBe('Out now');
 		expect(rowStep(one(ev('ask_turned_down'))).label).toBe('Turned down');
-		for (const s of ['added', 'out', 'declined']) expect(searchSteps.some((x) => x.key === s)).toBe(true);
-		expect(stepKinds(['out'])).toEqual(['gate_opened']);
+		for (const s of ['added', 'declined']) expect(searchSteps.some((x) => x.key === s)).toBe(true);
+		expect(stepKinds(['added'])).toContain('gate_opened');
 		expect(rowStep(one(ev('library_folder_health', { Data: { health: 'ok' } }))).failed).toBe(false);
 		expect(rowStep(one(ev('library_folder_health', { Data: { health: 'gone' } }))).failed).toBe(true);
 	});
@@ -198,6 +204,6 @@ describe('reported problems in History', () => {
 		expect(stepKinds(['reported'])).toEqual(['report_*']);
 		expect(stepKinds([])).toContain('report_*');
 		expect(rowLinks(row(ev('report_fixed', { Data: { report_id: 4 } }))).map((l) => l.href)).toEqual(['/reports?show=all']);
-		expect(searchSteps.find((s) => s.key === 'reported')?.label).toBe('Reported problems');
+		expect(searchSteps.find((s) => s.key === 'reported')?.label).toBe('Reported');
 	});
 });

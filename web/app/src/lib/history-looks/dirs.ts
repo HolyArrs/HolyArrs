@@ -9,7 +9,7 @@ import type { EventRecord } from '../types.ts';
 
 /** Who made an Event happen, as the Filter offers it. */
 export type Who = '' | 'me' | 'people' | 'ai' | 'holyarrs';
-export const whoLabels: Record<Who, string> = { '': 'Anyone', me: 'You', people: 'Members', ai: 'AI apps', holyarrs: 'HolyArrs on its own' };
+export const whoLabels: Record<Who, string> = { '': 'All', me: 'You', people: 'Members', ai: 'AI apps', holyarrs: 'HolyArrs' };
 
 export function whoOf(v: string | null): Who {
 	return v === 'me' || v === 'people' || v === 'ai' || v === 'holyarrs' ? v : '';
@@ -76,25 +76,31 @@ export function partOf(row: HistoryRow): string {
    (searches, refreshes, scans) is left out of them. */
 
 /** A step of a download's life, as the Filter offers it, and the Event kinds it means. */
+/** The problems that wait on a person: their own step (Needs you), so Failed is what actually went wrong. */
+const decideKinds = ['needs_decision', 'stopped_looking'];
+/** The steps the Filter offers, one past-tense verb each: the download steps first, in the order
+ *  Sonarr and Radarr's history shows them, then asks and the Library (stepBreak), System last. */
 export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
-	{ key: 'added', label: 'Added', kinds: ['title_added', 'list_synced', 'version_changed'] },
-	{ key: 'out', label: 'Out now', kinds: ['gate_opened'] },
+	{ key: 'sent', label: 'Sent', kinds: ['release_chosen', 'release_chosen_by_hand', 'download_sent', 'download_queued'] },
+	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
+	{ key: 'imported', label: 'Imported', kinds: ['import_done', 'import_partly_done', 'adopted', 'media_server_told'] },
+	{ key: 'upgraded', label: 'Upgraded', kinds: ['file_replaced'] },
+	{ key: 'renamed', label: 'Renamed', kinds: ['renamed', 'rename_planned'] },
+	{ key: 'deleted', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+	{ key: 'declined', label: 'Turned down', kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down'] },
+	{ key: 'failed', label: 'Failed', kinds: (tabKinds('problems') ?? []).filter((k) => !decideKinds.includes(k)) },
 	{ key: 'asked', label: 'Asked', kinds: ['ask_made', 'ai_ask_made'] },
 	{ key: 'approved', label: 'Approved', kinds: ['ask_approved', 'ai_ask_approved'] },
-	{ key: 'declined', label: 'Turned down', kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down'] },
-	{ key: 'chosen', label: 'Chosen', kinds: ['release_chosen', 'release_chosen_by_hand'] },
-	{ key: 'sent', label: 'Sent', kinds: ['download_sent', 'download_queued'] },
-	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
-	{ key: 'imported', label: 'Imported', kinds: ['import_done', 'import_partly_done', 'adopted'] },
-	{ key: 'renamed', label: 'Renamed', kinds: ['renamed', 'rename_planned'] },
-	{ key: 'subtitles', label: 'Subtitles', kinds: ['subtitle_*'] },
-	{ key: 'media', label: 'In media server', kinds: ['media_server_told'] },
-	{ key: 'upgraded', label: 'Upgraded', kinds: ['file_replaced'] },
-	{ key: 'deleted', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
-	{ key: 'reported', label: 'Reported problems', kinds: ['report_*'] },
-	{ key: 'failed', label: 'Failed', kinds: tabKinds('problems') ?? [] },
+	{ key: 'added', label: 'Added', kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
+	{ key: 'subtitles', label: 'Subtitled', kinds: ['subtitle_*'] },
+	{ key: 'reported', label: 'Reported', kinds: ['report_*'] },
+	{ key: 'decide', label: 'Needs you', kinds: decideKinds },
 	{ key: 'system', label: 'System', kinds: tabKinds('changes', 'system') ?? [] }
 ];
+/** Where the second block of steps starts (asks and the Library). */
+export const stepBreak = searchSteps.findIndex((s) => s.key === 'asked');
+/** Steps that were merged into others: old links still pick the step they became. */
+const mergedSteps: Record<string, string> = { out: 'added', chosen: 'sent', media: 'imported' };
 
 /** Every kind but routine work: what the search looks show with no step picked. */
 export const nonRoutineKinds = lookTabs.filter((t) => t.key !== 'routine').flatMap((t) => t.subs.flatMap((s) => s.kinds));
@@ -137,7 +143,7 @@ export interface SearchState {
 
 export function readSearch(params: Params): SearchState {
 	const f = readFilter(params);
-	const steps = (params.get('step') ?? '').split(',').filter((k) => searchSteps.some((s) => s.key === k));
+	const steps = [...new Set((params.get('step') ?? '').split(',').map((k) => mergedSteps[k] ?? k))].filter((k) => searchSteps.some((s) => s.key === k));
 	const t = params.get('type');
 	const type: MediaType = t === 'movies' || t === 'shows' || t === 'music' ? t : '';
 	return { q: params.get('q') ?? '', steps, type, who: whoOf(params.get('who')), from: f.from, to: f.to };
@@ -150,11 +156,27 @@ export function toggleStep(steps: string[], key: string): string {
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
-/** dateLabel names a date range ("Last 7 days" when it runs from n days ago to now). */
+/** The When choices: a span back from now ('' is All time), or Custom (From and To). */
+export const whenSpans: { days: number; label: string }[] = [
+	{ days: 0, label: 'All time' },
+	{ days: 1, label: '24 hours' },
+	{ days: 7, label: '7 days' },
+	{ days: 30, label: '30 days' }
+];
+/** whenFrom is the From date for a span back from now. */
+export const whenFrom = (days: number, now = new Date()) => day(new Date(now.getTime() - days * 86400000));
+/** whenOf is the When choice the address holds: a span's days, 0 for All time, or 'custom'. */
+export function whenOf(from?: string, to?: string, now = new Date()): number | 'custom' {
+	if (!from && !to) return 0;
+	if (from && !to) for (const w of whenSpans) if (w.days && from === whenFrom(w.days, now)) return w.days;
+	return 'custom';
+}
+
+/** dateLabel names a date range ("7 days" when it runs from 7 days ago to now). */
 export function dateLabel(from?: string, to?: string, now = new Date()): string {
 	if (from && !to) {
 		for (const n of [1, 7, 30, 90]) {
-			if (from === day(new Date(now.getTime() - n * 86400000))) return n === 1 ? 'Last 24 hours' : `Last ${n} days`;
+			if (from === day(new Date(now.getTime() - n * 86400000))) return n === 1 ? '24 hours' : `${n} days`;
 		}
 		return `From ${from}`;
 	}

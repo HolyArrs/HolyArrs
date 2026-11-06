@@ -17,7 +17,8 @@
 	import { dateRangeProblem, readFilter, type HistoryFilter } from '../history.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { fineCheck } from '../history-looks.ts';
-	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whoLabels, whoMatches, type MediaType, type Who } from './dirs.ts';
+	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepBreak, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whenFrom, whenOf, whenSpans, whoLabels, whoMatches, type MediaType, type Who } from './dirs.ts';
+	import SegmentedControl from '../ui/SegmentedControl.svelte';
 	import type { EventRecord, TitleView } from '../types.ts';
 	import { session } from '../session.svelte.ts';
 	import IconButton from '../ui/IconButton.svelte';
@@ -41,6 +42,15 @@
 		...(srcId ? [{ key: 'source', label: srcName, change: { source: undefined } }] : [])
 	]);
 	const kinds = $derived(stepKinds(st.steps));
+	// Filter menu choices: Type as one segmented row, When as spans back from now (Custom opens From and To).
+	const typeOptions: { value: MediaType; label: string }[] = [{ value: '', label: 'All' }, ...(Object.entries(typeLabels) as [MediaType, string][]).map(([value, label]) => ({ value, label }))];
+	const when = $derived(whenOf(st.from, st.to));
+	let customOpen = $state(false);
+	const showDates = $derived(customOpen || when === 'custom');
+	function pickWhen(days: number) {
+		customOpen = false;
+		set({ from: days ? whenFrom(days) : undefined, to: undefined });
+	}
 	// The server filters by title id: text that names one Library title exactly goes there.
 	const exact = $derived.by(() => {
 		const t = st.q.trim().toLowerCase();
@@ -157,38 +167,44 @@
 </script>
 
 {#snippet fields()}
-	<div class="fl"><span class="fh">Step</span>
-		<div class="steps">
-			{#each searchSteps as s (s.key)}
+	<div class="fl"><span class="fh" id="hf-step">Step</span>
+		<div class="steps" role="group" aria-labelledby="hf-step">
+			{#each searchSteps as s, i (s.key)}
+				{#if i === stepBreak}<span class="brk" aria-hidden="true"></span>{/if}
 				<button type="button" class="step" class:fail={s.key === 'failed'} aria-pressed={st.steps.includes(s.key)} onclick={() => set({ step: toggleStep(st.steps, s.key) })}>{s.label}</button>
 			{/each}
 		</div>
 	</div>
-	<label class="fl"><span class="fh">Type</span>
-		<select class="fc" value={st.type} onchange={(e) => set({ type: e.currentTarget.value })}>
-			<option value="">Every type</option>
-			{#each Object.entries(typeLabels) as [k, v] (k)}<option value={k as MediaType}>{v}</option>{/each}
-		</select>
-	</label>
-	<label class="fl"><span class="fh">Who</span>
-		<select class="fc" value={st.who} onchange={(e) => set({ who: e.currentTarget.value })}>
-			{#each Object.entries(whoLabels) as [k, v] (k)}<option value={k as Who}>{v}</option>{/each}
-		</select>
-	</label>
-	<div class="two">
-		<label class="fl"><span class="fh">From</span><input class="fc" type="date" value={st.from ?? ''} max={st.to} onchange={(e) => set({ from: e.currentTarget.value })} /></label>
-		<label class="fl"><span class="fh">To</span><input class="fc" type="date" value={st.to ?? ''} min={st.from} onchange={(e) => set({ to: e.currentTarget.value })} /></label>
+	<div class="fl"><span class="fh">Type</span>
+		<SegmentedControl size="sm" label="Type" options={typeOptions} value={st.type} onchange={(v) => set({ type: v })} testid="history-type" />
+	</div>
+	<div class="fl"><span class="fh" id="hf-who">Who</span>
+		<div class="steps" role="group" aria-labelledby="hf-who">
+			{#each Object.entries(whoLabels) as [k, v] (k)}<button type="button" class="step" aria-pressed={st.who === k} onclick={() => set({ who: k })}>{v}</button>{/each}
+		</div>
+	</div>
+	<div class="fl"><span class="fh" id="hf-when">When</span>
+		<div class="steps" role="group" aria-labelledby="hf-when">
+			{#each whenSpans as w (w.days)}<button type="button" class="step" aria-pressed={!showDates && when === w.days} onclick={() => pickWhen(w.days)}>{w.label}</button>{/each}
+			<button type="button" class="step" aria-pressed={showDates} onclick={() => (customOpen = true)}>Custom</button>
+		</div>
+		{#if showDates}
+			<div class="two">
+				<label class="fl"><span class="sr-only">From</span><input class="fc" type="date" aria-label="From" value={st.from ?? ''} max={st.to} onchange={(e) => set({ from: e.currentTarget.value })} /></label>
+				<label class="fl"><span class="sr-only">To</span><input class="fc" type="date" aria-label="To" value={st.to ?? ''} min={st.from} onchange={(e) => set({ to: e.currentTarget.value })} /></label>
+			</div>
+		{/if}
 	</div>
 	{#if sources.length}
 		<label class="fl"><span class="fh">Source</span>
 			<select class="fc" value={srcId ?? ''} onchange={(e) => set({ source: e.currentTarget.value || undefined })}>
-				<option value="">Every Source</option>
+				<option value="">All</option>
 				{#each sources as x (x.id)}<option value={x.id}>{x.name}</option>{/each}
 			</select>
 		</label>
 	{/if}
 	{#if problem}<p class="bad" role="alert">{problem}</p>{/if}
-	{#if chips.length}<button type="button" class="clear" onclick={() => clearAll()}>Clear filters</button>{/if}
+	{#if chips.length}<button type="button" class="clear" onclick={() => clearAll()}>Clear</button>{/if}
 {/snippet}
 
 <h1 class="sr-only">History</h1>
@@ -266,21 +282,25 @@
 	.chip:hover { background: var(--surface-2); }
 	.all { height: 30px; padding: 0 10px; border: 0; background: none; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
 	.all:hover { color: var(--text); }
-	.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 320px; max-height: min(560px, 75vh); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); }
+	/* The menu is the sheet Home's tiles and the Requests cards are made of: lit from above, a hairline edge, one long soft shadow; 14px corners like the capsule it opens from. */
+	.menu, .sheet { --sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a); background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); }
+	.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 320px; max-height: min(600px, 78vh); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 14px; box-sizing: border-box; border: 0; border-radius: 14px; box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 7%)), 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 24px 48px -16px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
 	.menu:focus, .sheet:focus { outline: none; }
-	.fl { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-	.fh { color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
+	.fl { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+	.fh { color: var(--text-muted); font: 600 12px/1 var(--font-ui); }
+	/* The second block of steps (asks and the Library) starts on its own line, after a little air. */
+	.brk { flex-basis: 100%; height: 4px; }
 	.steps { display: flex; flex-wrap: wrap; gap: 5px; }
-	.step { height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
+	.step { height: 30px; padding: 0 11px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
 	.step[aria-pressed='true'] { background: var(--seg-thumb); border-color: var(--line-strong); box-shadow: 0 0 0 1px var(--line-strong); }
 	.step.fail[aria-pressed='true'] { color: var(--fail-text); box-shadow: 0 0 0 1px var(--fail); }
-	.fc { width: 100%; min-width: 0; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-1); color: var(--text); font: 500 13px/1 var(--font-ui); color-scheme: light dark; }
+	.fc { width: 100%; min-width: 0; height: 30px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-1); color: var(--text); font: 500 13px/1 var(--font-ui); color-scheme: light dark; }
 	.fc:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 	.bad { margin: 0; color: var(--fail-text); font: var(--t-footnote); }
 	.clear { align-self: flex-start; height: 34px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); cursor: pointer; }
 	.scrim { position: fixed; inset: 0; z-index: 96; background: color-mix(in srgb, var(--bg) 55%, transparent); }
-	.sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar) + 14px + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar) - env(safe-area-inset-bottom, 0px) - 62px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; padding: 10px 16px 16px; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface-2); box-shadow: 0 -20px 50px rgb(0 0 0 / 0.45); }
+	.sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar) + 14px + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar) - env(safe-area-inset-bottom, 0px) - 62px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; padding: 10px 16px 16px; border: 0; border-radius: 18px; box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 7%)), 0 -20px 50px light-dark(rgb(20 24 40 / 22%), rgb(0 0 0 / 55%)); }
 	.sh { display: flex; align-items: center; justify-content: space-between; }
 	.sht { color: var(--text); font: 600 15px/1.2 var(--font-ui); }
 	.done { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
