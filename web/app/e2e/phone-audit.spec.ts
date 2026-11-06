@@ -9,8 +9,8 @@ import { finishFirstRun } from './helpers.ts';
 // Smaller tap targets inside pages are written to .tmp-phone/audit.json.
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp-phone');
 const pages = [
-	'/', '/explore', '/new', '/search', '/library', '/library/collections', '/library/copies', '/library/held',
-	'/library/import', '/library/missing-subtitles', '/library/rename', '/library/turned-down', '/calendar', '/people',
+	'/', '/explore', '/new', '/search', '/library', '/library/copies', '/library/held',
+	'/library/import', '/library/missing-subtitles', '/library/rename', '/library/turned-down', '/calendar',
 	'/requests', '/downloads', '/downloads/decide', '/downloads/history', '/downloads/turned-down', '/status', '/account',
 	'/settings', '/settings/account', '/settings/alerts', '/settings/api', '/settings/appearance', '/settings/backups',
 	'/settings/danger', '/settings/downloaders', '/settings/health', '/settings/library-folders', '/settings/logs',

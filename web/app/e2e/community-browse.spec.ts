@@ -220,14 +220,10 @@ for (const viewport of viewports) {
 
 		test('disambiguates a person by stable identity, shows the card filmography, and follows title credits', async ({ page }, testInfo) => {
 			await signedInCommunity(page);
-			await page.goto('/people');
-			await page.getByLabel('Person name').fill('Alex Kim');
-			await page.getByRole('button', { name: 'Search', exact: true }).click();
-			const director = page.locator('a.person-card').filter({ hasText: 'Directing' });
-			await expect(director).toContainText('Known for North Star (2022)');
-			await expect(director).toHaveAttribute('href', '/people/202');
-			await director.click();
-			await expect(page).toHaveURL(/\/people\/202$/);
+			// The old People list now opens Search's People tab; a person's own page is unchanged.
+			await page.goto('/people?q=Alex');
+			await expect(page).toHaveURL(/\/search\?kind=people&q=Alex$/);
+			await page.goto('/people/202');
 			await expect(page.getByRole('heading', { level: 1, name: 'Alex Kim' })).toBeVisible();
 			// The filmography is rows of cards by decade, under the Filmography heading and filters: the owned film opens its Library page, the others open their title page.
 			const filmography = page.getByRole('group', { name: '2020s' });

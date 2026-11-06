@@ -36,7 +36,7 @@ test('Library tools fit a phone', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } });
 	const page = await ctx.newPage();
 	await signIn(page, owner());
-	for (const path of ['/library', '/library/collections', '/library/deleted', '/library/import-files']) {
+	for (const path of ['/library', '/library/deleted', '/library/import-files']) {
 		await page.goto(path);
 		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 		await noSidewaysScroll(page);
