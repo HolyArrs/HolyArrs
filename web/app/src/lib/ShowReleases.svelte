@@ -154,7 +154,7 @@
 		{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
 	</p>
 	{#if loaded && releases.length === 0 && !running.length}
-		<p class="small muted">No Releases yet. A search lists every Release found, with why each one would be chosen or not.</p>
+		<p class="small muted">Nothing found yet.</p>
 	{:else if releases.length}
 		<ul class="rels">
 			{#each releases as r (r.id)}
