@@ -254,6 +254,34 @@
 	});
 	// The short facts about the copy you have: quality, size, kept up to date.
 	const ownChips = $derived([...ownBadges, owned?.size_bytes ? bytes(owned.size_bytes) : '', owned ? (owned.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date') : ''].filter(Boolean));
+	let rules = $state<PickRulesView[]>([]);
+	// Quality: ready-made sets in the control (4K stays for second versions), every other set in the Custom menu.
+	const qOrder = ['Save space', 'Good everyday', 'Best'];
+	const qHints: Record<string, string> = { 'Save space': '720p to 1080p, small files', 'Good everyday': 'Up to 1080p, best value', Best: '4K and HDR when out', '4K': '4K first' };
+	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
+	const qPresets = $derived(qKind.filter((r) => r.preset && r.name !== '4K').sort((a, b) => (qOrder.indexOf(a.name) + 1 || 99) - (qOrder.indexOf(b.name) + 1 || 99)));
+	const qOthers = $derived(qKind.filter((r) => !qPresets.includes(r)));
+	const qCustom = $derived(qOthers.find((r) => r.id === owned?.pick_rules_id));
+	const qHint = $derived(qHints[owned?.pick_rules_name ?? ''] ?? (qCustom ? (qCustom.preset ? '' : 'Your set') : ''));
+	const qMenu = $derived<MenuItem[]>([
+		...(qOthers.length ? [{ kind: 'heading' as const, label: 'Your sets' }, ...qOthers.map((r) => ({ label: r.name, checked: r.id === owned?.pick_rules_id, onselect: () => void setRules(r.id) }))] : []),
+		...(qOthers.length ? [{ kind: 'separator' as const }] : []),
+		{ label: 'New set', icon: 'plus', href: to('/settings/pick-rules/new') },
+		{ label: 'Edit sets', icon: 'tools', href: to(qCustom && !qCustom.preset ? `/settings/pick-rules/${qCustom.id}` : '/settings/pick-rules') }
+	]);
+	async function setRules(id: number) {
+		const o = owned;
+		if (!o || id === o.pick_rules_id) return;
+		busyAction = 'rules';
+		try {
+			const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { pick_rules_id: id });
+			owned = r.title;
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
 	async function ownRun(what: 'search' | 'refresh' | 'keep') {
 		const o = owned;
 		if (!o) return;
@@ -408,7 +436,6 @@
 	const mayAsk = $derived(session.can('ask') && !manage);
 
 	let folders = $state<LibraryFolder[]>([]);
-	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
 
@@ -1181,9 +1208,21 @@
 									{#if o.gate_opens_at && !o.gate_open}<span class="lib-val">{date(o.gate_opens_at)}</span>{/if}
 								</div>
 							{/if}
-							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Pick rules</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></button>
+							<div class="lib-row static q-row" data-testid="quality-row">
+								<span><b>Quality</b>{#if qHint}<small>{qHint}</small>{/if}</span>
+								<div class="q-seg" role="radiogroup" aria-label="Quality">
+									{#each qPresets as r (r.id)}
+										<button type="button" role="radio" aria-checked={r.id === o.pick_rules_id} class:on={r.id === o.pick_rules_id} disabled={busyAction === 'rules'} onclick={() => setRules(r.id)}>{r.name}</button>
+									{/each}
+									<div class="q-more" class:on={!!qCustom}>
+										<Menu label={qCustom ? `Quality: ${qCustom.name}. Other sets` : 'Custom quality sets'} variant="button" width={230} items={qMenu}>
+											{#snippet trigger()}<i>{qCustom?.name ?? 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}
+										</Menu>
+									</div>
+								</div>
+							</div>
 							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></button>
-								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, quality, episode order, tags, folder' : 'Quality, tags and folder'}</small></span><Icon name="tools" size={16} /></button>
+								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, episode order, tags, folder' : 'Tags and folder'}</small></span><Icon name="tools" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures{o.refreshed_at ? ` · refreshed ${date(o.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 						</div>
@@ -1621,6 +1660,17 @@
 	.lib-row.static { cursor: default; }
 	.lib-row.static:hover { background: none; }
 	.lib-row small.wrap { white-space: normal; }
+	/* Quality: a segmented control under its label; the last slot opens the other sets. */
+	.q-row { display: grid; gap: 10px; }
+	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
+	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.q-seg > button:hover:not(.on), .q-more:not(.on) :global(.trigger:hover) { color: var(--text); }
+	.q-seg > button.on, .q-more.on :global(.trigger) { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 2px rgb(0 0 0 / .2); }
+	.q-more { flex: 1 1 auto; min-width: 0; display: flex; }
+	.q-more :global(.ui-pop) { display: flex; flex: 1 1 auto; min-width: 0; }
+	.q-more :global(.trigger) { width: 100%; }
+	.q-more i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
+	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } }
 	.lib-val { flex: none; color: var(--text-muted); font: 500 14px/1.3 var(--font-ui); text-align: right; font-variant-numeric: tabular-nums; }
 	/* The tools under the tabs speak the Settings group's language: same heading size, same surfaces. */
 	.lib-more :global(.tp-h2) { font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; margin-bottom: 12px; }

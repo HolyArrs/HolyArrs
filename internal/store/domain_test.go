@@ -257,6 +257,23 @@ func TestSeededFourK(t *testing.T) {
 	}
 }
 
+func TestSeededSaveSpaceAndBest(t *testing.T) {
+	s, _ := openTest(t, Options{})
+	for name, want := range map[string]domain.PickRulesBody{domain.SaveSpaceName: domain.SaveSpace(), domain.BestName: domain.Best()} {
+		var id int64
+		if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", name).Scan(&id); err != nil {
+			t.Fatal(name, err)
+		}
+		var pr domain.PickRules
+		if err := Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
+			t.Fatal(err)
+		}
+		if !pr.Preset || !reflect.DeepEqual(pr.Body, want) {
+			t.Fatalf("seeded %s preset differs\n got  %+v\n want %+v", name, pr.Body, want)
+		}
+	}
+}
+
 func TestSeededMusicPresets(t *testing.T) {
 	s, _ := openTest(t, Options{})
 	for name, want := range map[string]domain.PickRulesBody{domain.LosslessFirstName: domain.LosslessFirst(),

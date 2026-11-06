@@ -1,9 +1,7 @@
-import type { HandleClientError } from '@sveltejs/kit';
-
 // A page that breaks in the browser says why, on the error page and in the
 // console, so a screenshot is enough to find the cause ("Internal Error" alone
 // says nothing). Not-found pages keep their plain words.
-export const handleError: HandleClientError = ({ error, status }) => {
+export const handleError = ({ error, status }: { error: unknown; status: number }) => {
 	console.error(error);
 	if (status === 404) return { message: 'Not Found' };
 	const why = error instanceof Error ? error.message : String(error);

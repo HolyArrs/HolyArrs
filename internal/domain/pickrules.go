@@ -102,6 +102,42 @@ func GoodEveryday() PickRulesBody {
 	}
 }
 
+// SaveSpaceName is the small-files preset's name.
+const SaveSpaceName = "Save space"
+
+// SaveSpace returns the small-files preset: 720p to 1080p web, good enough at
+// 1080p web, x265 earns points, 0.4 to 2.5 GB per hour of video.
+func SaveSpace() PickRulesBody {
+	b := GoodEveryday()
+	allowed := map[string]bool{"720p_tv": true, "720p_web": true, "720p_bluray": true, "1080p_tv": true, "1080p_web": true}
+	for i := range b.Steps {
+		b.Steps[i].Allowed = allowed[b.Steps[i].Quality]
+	}
+	b.Traits = []TraitPoints{
+		{Trait: "hevc", Points: 20},
+		{Trait: "web_dl", Points: 5},
+		{Trait: "upscaled", Points: -50},
+		{Trait: "dubbed_only", Points: -30},
+	}
+	b.SizeLimits = map[string]SizeLimit{"*": {Min: 2 * gb / 5 / 60, Max: 5 * gb / 2 / 60, PerMinute: true}}
+	return b
+}
+
+// BestName is the best-copy preset's name.
+const BestName = "Best"
+
+// Best returns the best-copy preset: 4K first with 1080p Blu-ray as the
+// fallback, good enough at 2160p Blu-ray, HDR and Atmos earn points.
+func Best() PickRulesBody {
+	b := FourK()
+	allowed := map[string]bool{"1080p_bluray": true, "2160p_web": true, "2160p_bluray": true, "2160p_remux": true}
+	for i := range b.Steps {
+		b.Steps[i].Allowed = allowed[b.Steps[i].Quality]
+	}
+	b.GoodEnoughAt = "2160p_bluray"
+	return b
+}
+
 // FourKName is the 4K preset's name, meant for a second Version of a movie.
 const FourKName = "4K"
 
