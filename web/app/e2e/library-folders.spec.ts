@@ -126,8 +126,8 @@ test('Move a show with its episode files to a second show folder from the Folder
 	// The Folder row shows the folder's name (only when there is another folder to move to).
 	const folderRow = page.getByTestId('folder-row');
 	await expect(folderRow).toContainText('Show shelf one');
-	await folderRow.getByRole('button').click();
-	await page.getByRole('menuitemradio', { name: 'Show shelf two' }).or(page.getByRole('menuitem', { name: 'Show shelf two' })).click();
+	await expect(folderRow.getByRole('radio', { name: 'Show shelf one' })).toHaveAttribute('aria-checked', 'true');
+	await folderRow.getByRole('radio', { name: 'Show shelf two' }).click();
 	const confirm = page.getByRole('dialog', { name: 'Move to Show shelf two?' });
 	await expect(confirm).toContainText(two);
 	await confirm.getByRole('button', { name: 'Move files' }).click();
