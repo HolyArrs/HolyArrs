@@ -232,10 +232,10 @@
 					<div class="field">
 						<label for="password">Password</label>
 						<div class="pw">
-							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" required />
+							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" placeholder="At least {MIN_LENGTH} characters" aria-describedby="pw-min" required />
 							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 						</div>
-						<span class="hint">At least {MIN_LENGTH} characters.</span>
+						<span id="pw-min" class="sr-only">At least {MIN_LENGTH} characters.</span>
 					</div>
 					<div class="field">
 						<label for="pwAgain">Confirm password</label>
