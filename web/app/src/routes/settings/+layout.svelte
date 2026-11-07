@@ -336,11 +336,12 @@
 	.settings-content :global(:is(ul.card, div.card)) { padding: 4px 18px; }
 	.settings-content :global(section.ui-settings.danger > .body) { border-color: color-mix(in srgb, var(--fail) 40%, transparent); }
 	/* Rows inside a sheet: room to breathe, a hairline between. */
-	.settings-content :global(section.ui-settings > .body > :is(.srow, .field, ul > li, .row, form > .srow, form > .field)) { padding-block: 14px; }
-	.settings-content :global(section.ui-settings > .body > * + *), .settings-content :global(section.ui-settings > .body > form > * + *) { box-shadow: inset 0 1px 0 var(--line); margin-top: 0 !important; }
+	.settings-content :global(section.ui-settings > .body > :is(.srow, .field, ul > li, .row, form:not(.ask) > .srow, form:not(.ask) > .field)) { padding-block: 14px; }
+	.settings-content :global(section.ui-settings > .body > * + *), .settings-content :global(section.ui-settings > .body > form:not(.ask) > * + *) { box-shadow: inset 0 1px 0 var(--line); margin-top: 0 !important; }
 	.settings-content :global(section.ui-settings > .body > :first-child:last-child:not(.srow, .field)) { padding-block: 14px; }
+	.settings-content :global(section.ui-settings > .body > :is(ul, ol, p, .row)) { padding-block: 12px; }
 	/* One label style for every row: switch, text box or dropdown. */
-	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .field > :is(label:first-child, .label, legend))) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
+	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend))) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
 	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }
 	/* Advanced and footer sit under the sheet, quiet. */
 	.settings-content :global(section.ui-settings > .advanced) { margin: 6px 6px 0; border: 0; }

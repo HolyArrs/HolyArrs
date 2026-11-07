@@ -250,45 +250,42 @@
 	<ConnectBridge onchange={load} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
-	<ul class="list">
+	<ul class="fl">
 		{#each sources as s (s.id)}
-			<li class="card" data-testid="source">
-				<div class="head">
-					<span class="ic"><Icon name="source" /></span>
+			<li class="dl" data-testid="source">
+				<div class="main">
+					<span class="ic"><Icon name="source" size={20} /></span>
 					<div class="grow">
-						<h2 class="h3"><a href={to(`/settings/sources/${s.id}`)}>{s.name}</a></h2>
-						<div class="mono xs muted" style="overflow-wrap: anywhere">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if}</div>
+						<div class="top"><a class="name" href={to(`/settings/sources/${s.id}`)}>{s.name}</a></div>
+						<div class="sub" title={s.url}>{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)} · {s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if}</div>
+						<div class="facts">
+							Priority {s.priority} · {uses(s)}
+							{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
+							{#if s.proxy} · through {s.proxy}{/if}
+							{#if s.allow_local_network} · may reach the local network{/if}
+							{#if s.tags?.length} · <span data-testid="source-tags">tags {s.tags.join(', ')}</span>{/if}
+						</div>
 					</div>
-					<span class="chip {healthTone(s.health)}" data-testid="source-state">{healthWord(s.health)}</span>
+					<div class="num" title="Last answer {s.summary.last_success ? ago(s.summary.last_success) : 'never'} · {s.summary.failures_24h} of {s.summary.calls_24h} calls failed today"><b>{ms(s.summary.avg_ms_24h)}</b><small>avg</small></div>
+					<span class="st {healthTone(s.health)}"><i></i><span data-testid="source-state">{healthWord(s.health)}</span></span>
+					<div class="acts">
+						<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</Button>
+						{#if s.state === 'disabled'}
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, false)}>Resume</Button>
+						{:else}
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, true)}>Pause</Button>
+							{#if s.state === 'paused'}<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">Try now</Button>{/if}
+						{/if}
+						<Button variant="plain" size="sm" href={to(`/settings/sources/${s.id}`)}>Health</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => startChange(s)}>Change</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</Button>
+					</div>
 				</div>
-				<p class="small" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
-				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="small"><a href="#connect-bridge" data-testid="source-bridge-link">Link Jackett or Prowlarr</a></p>{/if}
-				<p class="xs muted">
-					{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)} · priority {s.priority} · {uses(s)}
-					{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
-					{#if s.proxy} · through {s.proxy}{/if}
-					{#if s.allow_local_network} · may reach the local network{/if}
-					{#if s.tags?.length} · <span data-testid="source-tags">tags {s.tags.join(', ')}</span>{/if}
-				</p>
-				<p class="xs muted">
-					Last answer {s.summary.last_success ? ago(s.summary.last_success) : 'never'} · {ms(s.summary.avg_ms_24h)} on average today ·
-					{s.summary.failures_24h} of {s.summary.calls_24h} calls failed today
-				</p>
+				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
+				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="note"><a href="#connect-bridge" data-testid="source-bridge-link">Link Jackett or Prowlarr</a></p>{/if}
 				{#if results[s.id]}
-					<div class="testline" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{results[s.id].text}</span>{/if}</div>
+					<div class="testline note" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{results[s.id].text}</span>{/if}</div>
 				{/if}
-				<div class="row actions">
-					<Button type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</Button>
-					{#if s.state === 'disabled'}
-						<Button variant="plain" type="button" onclick={() => setPaused(s, false)}>Resume</Button>
-					{:else}
-						<Button variant="plain" type="button" onclick={() => setPaused(s, true)}>Pause</Button>
-						{#if s.state === 'paused'}<Button type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">Try now</Button>{/if}
-					{/if}
-					<Button variant="plain" href={to(`/settings/sources/${s.id}`)}>Health</Button>
-					<Button variant="plain" type="button" onclick={() => startChange(s)}>Change</Button>
-					<Button variant="plain" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</Button>
-				</div>
 			</li>
 		{/each}
 	</ul>
@@ -307,16 +304,10 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.list .card + .card {
-		margin-top: 0;
-	}
 	.head {
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-	}
-	.head a {
-		color: inherit;
 	}
 	.ic {
 		width: 40px;
@@ -330,9 +321,6 @@
 	.grow {
 		min-width: 0;
 		flex: 1;
-	}
-	.card p {
-		margin-top: var(--s-2);
 	}
 	.actions {
 		margin-top: var(--s-3);
@@ -371,6 +359,37 @@
 		}
 	}
 	@media (max-width: 767px) and (pointer: coarse) {
-		.h3 a { display: inline-flex; align-items: center; min-height: 44px; }
+		.name { display: inline-flex; align-items: center; min-height: 44px; }
 	}
+
+	/* The list: one glass sheet, one row per Source (the Library folders pattern). */
+	.fl { list-style: none; margin: var(--s-4) 0 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); overflow: hidden; }
+	.dl { padding: 14px 16px 14px 18px; }
+	.dl + .dl { box-shadow: inset 0 1px 0 var(--line); }
+	.dl:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+	.main { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto auto; align-items: center; column-gap: 16px; }
+	.dl .ic { width: 24px; height: 24px; background: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
+	.top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sub { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.facts { margin-top: 2px; color: var(--text-faint, var(--text-muted)); font: 400 12px/1.35 var(--font-ui); }
+	.num { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.num b { font: 600 15px/1 var(--font-ui); } .num small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
+	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
+	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+	.st.ok i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
+	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
+	.st.fail i, .st.bad i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
+	.acts { display: flex; align-items: center; gap: 2px; }
+	@media (hover: hover) { .acts { opacity: 0.55; transition: opacity var(--dur-fast) var(--ease-out); } .dl:hover .acts, .dl:focus-within .acts { opacity: 1; } }
+	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
+	.dl .attempt-review { margin: 10px 0 0 40px; }
+	@media (max-width: 760px) {
+		.main { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic num acts'; row-gap: 8px; }
+		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: end; align-self: start; }
+		.main > .num { grid-area: num; } .main > .acts { grid-area: acts; justify-self: end; flex-wrap: wrap; }
+		.note, .dl .attempt-review { margin-left: 0; }
+	}
+	.name { color: inherit; text-decoration: none; } .name:hover { text-decoration: underline; }
+	.note { margin-top: 6px; }
 </style>

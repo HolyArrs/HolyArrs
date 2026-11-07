@@ -81,6 +81,10 @@
 		gap: var(--s-3);
 		align-items: end;
 	}
+	/* Side-by-side fields: label above its control (the Settings row grid would split them). */
+	.ask > :global(.field) { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px; padding-block: 0 !important; border-top: 0 !important; box-shadow: none !important; }
+	.ask > :global(.field > label) { display: block; text-align: left; justify-self: start; }
+	.ask { padding-block: 14px; }
 	.go {
 		padding-bottom: 2px;
 	}

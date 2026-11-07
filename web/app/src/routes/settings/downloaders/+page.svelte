@@ -265,6 +265,14 @@
 			setBusy = false;
 		}
 	}
+	/** hostOf keeps the address short: host and port, no scheme. */
+	function hostOf(url: string): string {
+		try {
+			return new URL(url).host || url;
+		} catch {
+			return url;
+		}
+	}
 </script>
 
 <svelte:head><title>Downloaders · HolyArrs</title></svelte:head>
@@ -392,30 +400,40 @@
 	<EmptyState icon="downloader" title="No Downloaders" text="Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<ul class="list">
+	<ul class="fl">
 		{#each list as d (d.id)}
-			<li class="card" data-testid="downloader">
-				<div class="head">
-					<span class="ic"><Icon name="downloader" /></span>
+			<li class="dl" data-testid="downloader">
+				<div class="main" title={d.url}>
+					<span class="ic"><Icon name={d.protocol === 'usenet' ? 'usenet' : 'torrent'} size={20} /></span>
 					<div class="grow">
-						<h2 class="h3">{d.name}</h2>
-						<div class="mono xs muted" style="overflow-wrap: anywhere">{d.url}</div>
+						<div class="top">
+							<span class="name">{d.name}</span>
+							{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
+						</div>
+						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'Torrents'} · {hostOf(d.url)}</div>
+						<div class="facts">
+							Priority {d.priority} · {d.category}
+							{#if d.tags?.length} · <span data-testid="downloader-tags">tags {d.tags.join(', ')}</span>{/if}
+							{#if d.allow_local_network} · may reach the local network{/if}
+							· {d.writable && !d.writable_locked ? 'HolyArrs can change it' : d.writable_locked ? 'read only' : 'hands off'}
+						</div>
 					</div>
-					{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
-					<span class="chip {healthTone(d.health.state)}" data-testid="downloader-state">{d.health.label}</span>
+					<div class="num" title={d.checked_at ? `checked ${ago(d.checked_at)}` : undefined}><b>{d.active_downloads}</b><small>active</small></div>
+					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{d.health.label}</span></span>
+					<div class="acts">
+						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</Button>
+						{#if d.health.state === 'paused'}
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, false)}>Resume</Button>
+						{:else}
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, true)}>Pause</Button>
+						{/if}
+						<Button variant="plain" size="sm" type="button" onclick={() => startChange(d)}>Change</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label="Remove {d.name}">Remove</Button>
+					</div>
 				</div>
-				{#if d.health.text}<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>{/if}
-				<p class="xs muted">
-					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
-					{#if d.secret} · {d.kind === 'sabnzbd' || (d.kind === 'qbittorrent' && !d.username) ? 'key' : 'password'} {d.secret}{/if}
-					{#if d.allow_local_network} · may reach the local network{/if}
-					{#if d.tags?.length} · <span data-testid="downloader-tags">tags {d.tags.join(', ')}</span>{/if}
-					· {d.writable && !d.writable_locked ? 'HolyArrs can change it' : d.writable_locked ? 'read only' : 'hands off'}
-					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
-					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}
-				</p>
+				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
-					<p class="small bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
+					<p class="note bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label="Needs a decision" data-testid="downloader-attempts">
@@ -430,18 +448,8 @@
 						<p class="xs muted">HolyArrs won't retry this Release. The download in {kindWords[d.kind]} stays.</p>
 					</section>
 				{:else if attemptErrors[d.id]}
-					<p class="small bad-text" role="status">Could not check uncertain sends: {attemptErrors[d.id]}</p>
+					<p class="note bad-text" role="status">Could not check uncertain sends: {attemptErrors[d.id]}</p>
 				{/if}
-				<div class="row actions">
-					<Button type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</Button>
-					{#if d.health.state === 'paused'}
-						<Button variant="plain" type="button" onclick={() => setPaused(d, false)}>Resume</Button>
-					{:else}
-						<Button variant="plain" type="button" onclick={() => setPaused(d, true)}>Pause</Button>
-					{/if}
-					<Button variant="plain" type="button" onclick={() => startChange(d)}>Change</Button>
-					<Button variant="plain" type="button" onclick={() => remove(d)} aria-label="Remove {d.name}">Remove</Button>
-				</div>
 			</li>
 		{/each}
 	</ul>
@@ -525,9 +533,6 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.list .card + .card {
-		margin-top: 0;
-	}
 	.settings {
 		margin-top: var(--s-6, 32px);
 	}
@@ -553,9 +558,6 @@
 	.grow {
 		min-width: 0;
 		flex: 1;
-	}
-	.card p {
-		margin-top: var(--s-2);
 	}
 	.actions {
 		margin-top: var(--s-3);
@@ -611,5 +613,34 @@
 			align-items: stretch;
 			flex-direction: column;
 		}
+	}
+
+	/* The list: one glass sheet, one row per Downloader (the Library folders pattern). */
+	.fl { list-style: none; margin: var(--s-4) 0 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); overflow: hidden; }
+	.dl { padding: 14px 16px 14px 18px; }
+	.dl + .dl { box-shadow: inset 0 1px 0 var(--line); }
+	.dl:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+	.main { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto auto; align-items: center; column-gap: 16px; }
+	.dl .ic { width: 24px; height: 24px; background: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
+	.top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sub { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.facts { margin-top: 2px; color: var(--text-faint, var(--text-muted)); font: 400 12px/1.35 var(--font-ui); }
+	.num { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.num b { font: 600 15px/1 var(--font-ui); } .num small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
+	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
+	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+	.st.ok i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
+	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
+	.st.fail i, .st.bad i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
+	.acts { display: flex; align-items: center; gap: 2px; }
+	@media (hover: hover) { .acts { opacity: 0.55; transition: opacity var(--dur-fast) var(--ease-out); } .dl:hover .acts, .dl:focus-within .acts { opacity: 1; } }
+	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
+	.dl .attempt-review { margin: 10px 0 0 40px; }
+	@media (max-width: 760px) {
+		.main { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic num acts'; row-gap: 8px; }
+		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: end; align-self: start; }
+		.main > .num { grid-area: num; } .main > .acts { grid-area: acts; justify-self: end; flex-wrap: wrap; }
+		.note, .dl .attempt-review { margin-left: 0; }
 	}
 </style>
