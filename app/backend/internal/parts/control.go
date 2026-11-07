@@ -16,6 +16,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -137,7 +138,7 @@ func (c *Control) flag() { c.active.Store(len(c.off) > 0 || len(c.hold) > 0) }
 // Add registers a background loop of owner (from Loops) for Start. An
 // optional loop is not started in safe mode.
 func (c *Control) Add(l jobs.Loop, optional bool) {
-	owner, ok := Loops[l.Name]
+	owner, ok := startup.OwnerOf(startup.LoopOwners, l.Name)
 	if !ok {
 		owner = Core
 		c.logf("parts: loop %s has no row in the parts table; treated as core", l.Name)
@@ -646,7 +647,7 @@ func (c *Control) Active() bool { return c.active.Load() }
 
 // KindOff reports whether scheduled Jobs of kind are not to be queued.
 func (c *Control) KindOff(kind string) bool {
-	o, ok := JobKinds[kind]
+	o, ok := startup.OwnerOf(startup.JobOwners, kind)
 	if !ok || o == ByTitle {
 		return false
 	}
@@ -657,7 +658,7 @@ func (c *Control) KindOff(kind string) bool {
 // an owner that is off (title-decided kinds are not listed).
 func (c *Control) OffKinds() []string {
 	var out []string
-	for k, o := range JobKinds {
+	for k, o := range startup.OwnersOf(startup.JobOwners) {
 		if o != ByTitle && !c.OwnerOn(o) {
 			out = append(out, k)
 		}
@@ -673,7 +674,7 @@ func (c *Control) Held(ctx context.Context, db database.Querier, kind string, su
 // jobPart resolves a Job's owner; a title-decided Job whose title cannot
 // be found counts as shared media work.
 func (c *Control) jobPart(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) Owner {
-	o, ok := JobKinds[kind]
+	o, ok := startup.OwnerOf(startup.JobOwners, kind)
 	if !ok {
 		return Core
 	}

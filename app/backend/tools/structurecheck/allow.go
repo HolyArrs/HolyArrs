@@ -114,7 +114,8 @@ var coreRows = map[string]int{
 // so an import that breaks the layer order shows up before the move. A dash
 // means the package is split or dissolved and is not judged.
 var packageHome = map[string]string{
-	"store":         "-",
+	"store":         "-", // leftover until Task 6 dissolves it into mediafiles and the table owners
+	"features":      "-", // held-back feature names, until each module takes its own
 	"parts":         "-",
 	"domain":        "-",
 	"api":           "-",

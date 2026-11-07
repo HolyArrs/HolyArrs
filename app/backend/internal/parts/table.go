@@ -7,10 +7,18 @@
 // Alerts and the controls themselves. Sources are not a part.
 package parts
 
-import "strings"
+import (
+	"strings"
 
-// Part is one of the five switchable parts.
-type Part string
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+)
+
+// Part and Owner are the registry's types; this package fills the registry
+// with the app's parts until each module registers its own.
+type (
+	Part  = startup.Part
+	Owner = startup.Owner
+)
 
 const (
 	Movies    Part = "movies"
@@ -18,52 +26,24 @@ const (
 	Music     Part = "music"
 	Subtitles Part = "subtitles"
 	Wishlist  Part = "wishlist"
+
+	Core    = startup.Core
+	Media   = startup.Media
+	ByTitle = startup.ByTitle
 )
 
-// All lists the parts in the order screens show them.
-var All = []Part{Movies, Shows, Music, Subtitles, Wishlist}
-
-// Label is the part's name on screen.
-func (p Part) Label() string {
-	switch p {
-	case Movies:
-		return "Movies"
-	case Shows:
-		return "TV shows"
-	case Music:
-		return "Music"
-	case Subtitles:
-		return "Subtitles"
-	case Wishlist:
-		return "Requests"
-	}
-	return string(p)
-}
-
-// Valid reports whether p is one of the five parts.
-func Valid(p Part) bool {
-	for _, q := range All {
-		if p == q {
-			return true
-		}
-	}
-	return false
-}
-
-// Owner says who a route, screen, loop or Job kind belongs to: one Part,
-// the core, the media parts together, or the title it is about.
-type Owner string
-
-const (
-	// Core is always on.
-	Core Owner = "core"
-	// Media is shared by Movies, TV shows and Music: it is on while any of
-	// the three is on (searching, Downloads that need a decision, naming).
-	Media Owner = "media"
-	// ByTitle is decided by the title the request or Job is about: a
-	// movie belongs to Movies, a show to Shows, an artist to Music.
-	ByTitle Owner = "title"
+// All lists the parts in the order screens show them. Routes, Screens, Loops
+// and JobKinds are read from the registry when the package starts.
+var (
+	All      []Part
+	Routes   map[string]Owner
+	Screens  map[string]Owner
+	Loops    map[string]Owner
+	JobKinds map[string]Owner
 )
+
+// Valid reports whether p is a registered part.
+func Valid(p Part) bool { return startup.PartKnown(p) }
 
 // Of is the Owner for one part.
 func Of(p Part) Owner { return Owner(p) }
@@ -90,10 +70,10 @@ var (
 	wishlist  = Of(Wishlist)
 )
 
-// Routes gives every route the server registers its owner. A test in
+// routeOwners gives every route the server registers its owner. A test in
 // internal/api fails for a registered route missing here, and for a row
 // whose route is gone.
-var Routes = map[string]Owner{
+var routeOwners = map[string]Owner{
 	// AI connections: core; each tool checks the parts it needs.
 	"POST /api/v1/mcp":        Core,
 	"GET /api/v1/mcp":         Core,
@@ -623,7 +603,7 @@ var Routes = map[string]Owner{
 // Screens gives every page of the web app (its path, with [x] for a
 // changing part) its owner. A test fails for a page file or a menu entry
 // missing here. The web app reads this table from GET /api/v1/parts.
-var Screens = map[string]Owner{
+var screenOwners = map[string]Owner{
 	"/people/[id]":                   movies,
 	"/library/collections/[id]":      movies,
 	"/library/copies":                movies,
@@ -696,7 +676,7 @@ var Screens = map[string]Owner{
 // Loops gives every supervised background loop and every other stage the
 // health page shows (worker pools, guarded work) its owner. A loop of a
 // part stops while the part is off.
-var Loops = map[string]Owner{
+var loopOwners = map[string]Owner{
 	"backups":          Core,
 	"downloads":        Core,
 	"schedules":        Core,
@@ -719,7 +699,7 @@ var Loops = map[string]Owner{
 // JobKinds gives every Job kind its owner. A Job of a part that is off
 // waits in the queue (it is not lost) and runs once the part is on again;
 // a scheduled kind of a part that is off is not queued.
-var JobKinds = map[string]Owner{
+var jobOwners = map[string]Owner{
 	"health_check":          Core,
 	"check_library_folders": Core,
 	"clean_history":         Core,
@@ -765,7 +745,7 @@ var JobKinds = map[string]Owner{
 func ScreenOwner(path string) (Owner, bool) {
 	got := strings.Split(strings.Trim(path, "/"), "/")
 	best, bestWild := Owner(""), -1
-	for pattern, o := range Screens {
+	for pattern, o := range startup.OwnersOf(startup.ScreenOwners) {
 		want := strings.Split(strings.Trim(pattern, "/"), "/")
 		if len(want) != len(got) {
 			continue
@@ -811,3 +791,21 @@ var SafeLibrary = map[string]bool{
 
 // SafeScreens are the pages that show in safe mode for the same reason.
 var SafeScreens = []string{"/library", "/library/[id]", "/library/[id]/albums/[album]"}
+
+func init() {
+	for _, p := range []struct {
+		part  Part
+		label string
+	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}} {
+		startup.RegisterPart(p.part, p.label)
+	}
+	All = startup.Parts()
+	startup.RegisterOwners(startup.RouteOwners, routeOwners)
+	startup.RegisterOwners(startup.ScreenOwners, screenOwners)
+	startup.RegisterOwners(startup.LoopOwners, loopOwners)
+	startup.RegisterOwners(startup.JobOwners, jobOwners)
+	Routes = startup.OwnersOf(startup.RouteOwners)
+	Screens = startup.OwnersOf(startup.ScreenOwners)
+	Loops = startup.OwnersOf(startup.LoopOwners)
+	JobKinds = startup.OwnersOf(startup.JobOwners)
+}
