@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Query is what a search asks a site for.
@@ -257,13 +256,13 @@ func newClient(cfg Config) (*client, error) {
 	}
 	h := cfg.HTTP
 	if h == nil {
-		allow := source.PublicOnly
+		allow := outbound.PublicOnly
 		if cfg.AllowLocal {
-			allow = source.NotMetadata
+			allow = outbound.NotMetadata
 		}
 		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.Proxy = nil // the network rule must see the real address
-		t.DialContext = source.PolicyDialer(allow).DialContext
+		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		h = &http.Client{Timeout: cfg.Timeout, Transport: t}
 	} else {
 		cp := *h
@@ -413,7 +412,7 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 		if errors.As(err, &ue) {
 			err = ue.Err // drop the URL
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return nil, &Error{Kind: KindBlocked, Msg: "the address is on the local network, which this site may not reach"}
 		}
 		var ne net.Error

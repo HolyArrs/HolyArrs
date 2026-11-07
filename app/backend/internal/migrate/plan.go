@@ -2375,7 +2375,7 @@ func (b *builder) outsideList(i int, l Provider) bool {
 }
 
 // metadataHost says an address names a link-local or cloud metadata
-// address (the list source.NotMetadata refuses), which no Source or
+// address (the list NotMetadata in core/outbound refuses), which no Source or
 // Downloader may reach.
 func metadataHost(raw string) bool {
 	u, err := url.Parse(raw)

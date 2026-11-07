@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"mime"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Errors from checking an ntfy, Gotify or Pushover Alert.
@@ -115,7 +115,7 @@ func postApp(a domain.Alert, who string, req *http.Request) (int, []byte, error)
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return 0, nil, fail("the "+who+" server is on the local network, which this Alert may not reach", err)
 		}
 		return 0, nil, again(who+" did not answer", err)

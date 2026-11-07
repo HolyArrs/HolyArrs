@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 var grabPayload = []byte("d4:infod6:lengthi1e4:name7:lab.mkvee")
@@ -33,7 +33,7 @@ func fakeDNS(t *testing.T, names map[string]string, publicHere bool) {
 		return addr
 	}
 	if publicHere {
-		grabAllow = func(ip net.IP) bool { return ip.Equal(net.IPv4(127, 0, 0, 1)) || source.PublicOnly(ip) }
+		grabAllow = func(ip net.IP) bool { return ip.Equal(net.IPv4(127, 0, 0, 1)) || outbound.PublicOnly(ip) }
 	}
 	t.Cleanup(func() { grabDial, grabAllow = oldDial, oldAllow })
 }
@@ -216,7 +216,7 @@ func TestGrabProxySourceUsesItsOwnTransport(t *testing.T) {
 	used := 0
 	m.SourceTransport = func(context.Context, domain.Source) (http.RoundTripper, error) {
 		used++
-		d := source.PolicyDialer(grabAllow)
+		d := outbound.PolicyDialer(grabAllow)
 		return &http.Transport{DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return d.DialContext(ctx, network, grabDial(addr))
 		}}, nil

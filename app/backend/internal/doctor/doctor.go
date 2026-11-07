@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io/fs"
 	"net"
 	"net/http"
@@ -30,7 +31,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Status marks one finding.
@@ -254,12 +254,12 @@ func ProxyWarning(getenv func(string) string) string {
 // metadataClient reaches the metadata server the way the app does: no
 // proxy from the environment, and the same address policy on every dial.
 func metadataClient() *http.Client {
-	allow := source.PublicOnly
+	allow := outbound.PublicOnly
 	if on, _ := strconv.ParseBool(os.Getenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL")); on {
-		allow = source.MetadataServiceLocal
+		allow = outbound.MetadataServiceLocal
 	}
 	return &http.Client{
-		Transport:     metadata.NewServerTransport(source.PolicyDialer(allow).DialContext),
+		Transport:     metadata.NewServerTransport(outbound.PolicyDialer(allow).DialContext),
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 }

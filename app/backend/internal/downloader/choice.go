@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"log"
 	"net"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Back-off after a Downloader fails: 1 minute, doubling, at most 30.
@@ -31,21 +31,21 @@ const (
 // Client is the HTTP client for one Downloader: it never follows a redirect
 // to another host or scheme, and without allowLocal it refuses this machine
 // and the local network (checked on every address after DNS). Link-local
-// and other cloud metadata addresses (source.NotMetadata) and metadata names
+// and other cloud metadata addresses (outbound.NotMetadata) and metadata names
 // are refused even with allowLocal.
 func Client(base string, allowLocal bool) *http.Client {
-	allow := source.NotMetadata
+	allow := outbound.NotMetadata
 	if !allowLocal {
-		allow = source.PublicOnly
+		allow = outbound.PublicOnly
 	}
-	d := source.PolicyDialer(allow)
+	d := outbound.PolicyDialer(allow)
 	host, scheme := "", ""
 	if u, err := url.Parse(base); err == nil {
 		host, scheme = u.Host, u.Scheme
 	}
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		if h, _, err := net.SplitHostPort(addr); err == nil && metadataName(h) {
-			return nil, &net.OpError{Op: "dial", Net: network, Err: source.ErrAddressRefused}
+			return nil, &net.OpError{Op: "dial", Net: network, Err: outbound.ErrAddressRefused}
 		}
 		return d.DialContext(ctx, network, addr)
 	}

@@ -3,14 +3,13 @@ package downloader
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // errLinkLocal is a Release link that leads to this machine or the local
@@ -26,7 +25,7 @@ var sabMaxNZB int64 = 128 << 20
 // of qBittorrent or SABnzbd. grabDial, when set (tests only), changes the
 // address dialled for a name, as a DNS answer would.
 var (
-	grabAllow = source.PublicOnly
+	grabAllow = outbound.PublicOnly
 	grabDial  func(addr string) string
 )
 
@@ -45,11 +44,11 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, "", errors.New("the Release file needs an http or https address without a sign-in")
 	}
-	d, home := source.PolicyDialer(grabAllow), source.PolicyDialer(source.NotMetadata)
+	d, home := outbound.PolicyDialer(grabAllow), outbound.PolicyDialer(outbound.NotMetadata)
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		h, port, err := net.SplitHostPort(addr)
 		if err == nil && metadataName(h) {
-			return nil, &net.OpError{Op: "dial", Net: network, Err: source.ErrAddressRefused}
+			return nil, &net.OpError{Op: "dial", Net: network, Err: outbound.ErrAddressRefused}
 		}
 		if grabDial != nil {
 			addr = grabDial(addr)
@@ -89,7 +88,7 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 		if ctx.Err() != nil {
 			return nil, "", ctx.Err()
 		}
-		if errors.Is(err, source.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
+		if errors.Is(err, outbound.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
 			if proxied {
 				// Through a proxy a refusal may be a name not looked up here
 				// or the proxy's own address: tried again, not turned down.

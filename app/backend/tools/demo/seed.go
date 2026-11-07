@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"os"
@@ -200,7 +201,7 @@ func realProviders(s *database.Store) (providers, error) {
 	tmdb := &metadata.TMDB{Access: metadata.TokenFile(f)}
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
+	t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
 	client := &http.Client{Transport: t}
 	mb := &metadata.MusicBrainz{
 		Client: func(context.Context) *http.Client { return client },

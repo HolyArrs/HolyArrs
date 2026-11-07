@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -118,8 +119,8 @@ func (tr *Transmission) call(ctx context.Context, method string, args map[string
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			if errors.Is(err, source.ErrAddressRefused) {
-				return source.ErrAddressRefused
+			if errors.Is(err, outbound.ErrAddressRefused) {
+				return outbound.ErrAddressRefused
 			}
 			return errDownloaderUnavailable
 		}

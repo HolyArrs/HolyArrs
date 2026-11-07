@@ -3,6 +3,7 @@ package downloader
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // M5: link-local and cloud metadata addresses are refused even with the
@@ -26,7 +26,7 @@ func TestMetadataRefusedEvenWithLocalNetwork(t *testing.T) {
 			resp.Body.Close()
 			t.Fatalf("%s answered", u)
 		}
-		if !errors.Is(err, source.ErrAddressRefused) {
+		if !errors.Is(err, outbound.ErrAddressRefused) {
 			t.Fatalf("%s: %v", u, err)
 		}
 	}

@@ -13,13 +13,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Kinds of bridge.
@@ -55,7 +54,7 @@ func Words(err error) string {
 func client(timeout time.Duration) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	t.DialContext = source.PolicyDialer(source.NotMetadata).DialContext
+	t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
 	return &http.Client{Timeout: timeout, Transport: t, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }
 
@@ -96,7 +95,7 @@ func call(ctx context.Context, hc *http.Client, method, target string, header ma
 		if ctx.Err() != nil {
 			return 0, nil, ctx.Err()
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return 0, nil, fail("That address can't be used: it is a cloud's internal address.")
 		}
 		return 0, nil, fail("HolyArrs could not reach it at that address. Check the address and that it is running.")

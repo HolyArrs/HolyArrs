@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 func bs(s string) string { return strconv.Itoa(len(s)) + ":" + s }
@@ -126,7 +126,7 @@ func TestGrabProxyRefusalIsTriedAgain(t *testing.T) {
 	}
 	m.SourceTransport = func(context.Context, domain.Source) (http.RoundTripper, error) {
 		return &http.Transport{DialContext: func(context.Context, string, string) (net.Conn, error) {
-			return nil, &net.OpError{Op: "dial", Net: "tcp", Err: source.ErrAddressRefused} // a name not looked up here
+			return nil, &net.OpError{Op: "dial", Net: "tcp", Err: outbound.ErrAddressRefused} // a name not looked up here
 		}}, nil
 	}
 	_, err = m.Grab(context.Background(), w.slotID, w.relID, domain.System)

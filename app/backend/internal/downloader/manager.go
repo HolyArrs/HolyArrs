@@ -1233,7 +1233,7 @@ func unreachable(err error) bool {
 	var status adapterHTTPError
 	return errors.Is(err, ErrAuth) || errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, errDownloaderUnavailable) ||
 		errors.As(err, &status) && (status.status == 408 || status.status == 429 || status.status >= 500) ||
-		errors.Is(err, source.ErrAddressRefused) || errors.Is(err, context.DeadlineExceeded) || errors.As(err, &ne)
+		errors.Is(err, outbound.ErrAddressRefused) || errors.Is(err, context.DeadlineExceeded) || errors.As(err, &ne)
 }
 
 func eqPtr(a, b *int64) bool {

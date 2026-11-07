@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
@@ -721,13 +722,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// points it elsewhere (tests).
 	he.ReleaseFeed = env("HOLYARRS_RELEASE_FEED", health.DefaultReleaseFeed)
 	he.ClientFor = func(allowLocal bool) *http.Client {
-		allow := source.PublicOnly
+		allow := outbound.PublicOnly
 		if allowLocal {
-			allow = source.NotMetadata
+			allow = outbound.NotMetadata
 		}
 		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.Proxy = nil
-		t.DialContext = source.PolicyDialer(allow).DialContext
+		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
 	he.Register(q)
@@ -1003,7 +1004,7 @@ func artistImages() *metadata.ArtistImages {
 	}
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil // the policy must see the real address
-	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
+	t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
 	return &metadata.ArtistImages{BaseURL: metadata.DeezerBase, HTTP: &http.Client{Transport: t}}
 }
 
@@ -1019,10 +1020,10 @@ func musicSource(s *database.Store, version string) *metadata.MusicBrainz {
 	client := func(allow func(net.IP) bool) *http.Client {
 		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.Proxy = nil // the policy must see the real address
-		t.DialContext = source.PolicyDialer(allow).DialContext
+		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		return &http.Client{Transport: t}
 	}
-	public, local := client(source.PublicOnly), client(source.NotMetadata)
+	public, local := client(outbound.PublicOnly), client(outbound.NotMetadata)
 	return &metadata.MusicBrainz{
 		Client: func(ctx context.Context) *http.Client {
 			if env != "" {

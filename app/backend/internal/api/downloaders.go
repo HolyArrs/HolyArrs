@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"net/http"
 	"strconv"
@@ -18,7 +19,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 func (a *API) downloaderRoutes(m *http.ServeMux) {
@@ -332,7 +332,7 @@ func explainDownloader(err error) string {
 		return "It turned down the key or sign-in. Check them and test again."
 	case errors.Is(err, downloader.ErrNoCategory):
 		return "It answered, but " + err.Error() + "."
-	case errors.Is(err, source.ErrAddressRefused):
+	case errors.Is(err, outbound.ErrAddressRefused):
 		return "The address is on this machine or the local network. Turn on May reach the local network if that is where it runs."
 	case errors.Is(err, context.DeadlineExceeded):
 		return "It did not answer within 20 seconds."

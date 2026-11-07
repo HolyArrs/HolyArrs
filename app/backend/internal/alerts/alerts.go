@@ -40,7 +40,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Moments an Alert can speak for.
@@ -209,9 +208,9 @@ type Sender struct {
 // cloud metadata addresses are refused even then.
 func dialer(a domain.Alert) *net.Dialer {
 	if a.AllowLocal {
-		return source.PolicyDialer(source.NotMetadata)
+		return outbound.PolicyDialer(outbound.NotMetadata)
 	}
-	return source.PolicyDialer(source.PublicOnly)
+	return outbound.PolicyDialer(outbound.PublicOnly)
 }
 
 // client sends Discord messages for one Alert. Redirects are never
@@ -447,7 +446,7 @@ func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("Discord link points to the local network, which this Alert may not reach", err)
 		}
 		return again("Discord did not answer", err)
@@ -584,7 +583,7 @@ func (s *Sender) email(ctx context.Context, a domain.Alert, m Message) error {
 		conn, err = d.DialContext(ctx, "tcp", addr)
 	}
 	if err != nil {
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("mail server is on the local network, which this Alert may not reach", err)
 		}
 		return again("mail server did not answer", err)

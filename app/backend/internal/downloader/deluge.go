@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -109,8 +110,8 @@ func (d *Deluge) rpcOnce(ctx context.Context, method string, params any, out any
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
-			return source.ErrAddressRefused
+		if errors.Is(err, outbound.ErrAddressRefused) {
+			return outbound.ErrAddressRefused
 		}
 		return fmt.Errorf("deluge %s: %w", method, errDownloaderUnavailable)
 	}

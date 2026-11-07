@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Webhook headers. The signature is "sha256=" and the hex HMAC-SHA256 of
@@ -174,7 +174,7 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("webhook link points to the local network, which this Alert may not reach", err)
 		}
 		return again("the webhook server did not answer", err)

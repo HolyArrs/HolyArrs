@@ -3,11 +3,10 @@ package downloader
 import (
 	"bytes"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // errTorrent is a .torrent that does not decode.
@@ -88,7 +87,9 @@ func bdecode(b []byte, pos, depth int) (bval, int, error) {
 	return bval{}, 0, errTorrent
 }
 
-func bstr(s []byte) []byte { return append(strconv.AppendInt(nil, int64(len(s)), 10), append([]byte{':'}, s...)...) }
+func bstr(s []byte) []byte {
+	return append(strconv.AppendInt(nil, int64(len(s)), 10), append([]byte{':'}, s...)...)
+}
 
 // homeHost says whether a host named in a .torrent points at this machine
 // or a local network by itself: a literal local, link-local, CGNAT or ULA
@@ -108,7 +109,7 @@ func homeHost(host string) bool {
 		return true
 	}
 	if ip, numeric := hostIP(host); ip != nil {
-		return !source.PublicOnly(ip)
+		return !outbound.PublicOnly(ip)
 	} else if numeric {
 		return true
 	}

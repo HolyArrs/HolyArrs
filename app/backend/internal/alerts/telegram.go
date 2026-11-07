@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Errors from checking a Telegram Alert.
@@ -96,7 +96,7 @@ func (s *Sender) telegram(ctx context.Context, a domain.Alert, m Message) error 
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("the Telegram address is on the local network, which this Alert may not reach", err)
 		}
 		return again("Telegram did not answer", err)

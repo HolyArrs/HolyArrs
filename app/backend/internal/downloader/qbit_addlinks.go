@@ -3,14 +3,13 @@ package downloader
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // addFetchMax caps a .torrent file HolyArrs fetches for a hand-made add.
@@ -126,10 +125,10 @@ func trackerAllowed(v string, allowLocal bool) bool {
 		return false
 	}
 	if ip, numeric := hostIP(host); ip != nil {
-		if !source.NotMetadata(ip) {
+		if !outbound.NotMetadata(ip) {
 			return false
 		}
-		return allowLocal || source.PublicOnly(ip)
+		return allowLocal || outbound.PublicOnly(ip)
 	} else if numeric {
 		return false
 	}
@@ -215,7 +214,7 @@ func peerAllowed(k, v string) bool {
 	}
 	ip, numeric := hostIP(host)
 	if ip != nil {
-		return source.NotMetadata(ip)
+		return outbound.NotMetadata(ip)
 	}
 	return !numeric
 }

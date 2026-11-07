@@ -10,14 +10,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 const (
@@ -83,8 +82,8 @@ func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) 
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
-			return source.ErrAddressRefused
+		if errors.Is(err, outbound.ErrAddressRefused) {
+			return outbound.ErrAddressRefused
 		}
 		return errDownloaderUnavailable
 	}

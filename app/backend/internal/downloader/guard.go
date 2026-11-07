@@ -10,7 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 var errDownloaderUnavailable = errors.New("the Downloader did not answer")
@@ -56,7 +55,7 @@ func (g *guardedEngine) run(ctx context.Context, call func() error) error {
 		case errors.Is(err, ErrSyncParse):
 			// A garbled change feed is a passing failure, never a refusal.
 			outcome = outbound.TransientFailure
-		case errors.Is(err, source.ErrAddressRefused):
+		case errors.Is(err, outbound.ErrAddressRefused):
 			outcome = outbound.TerminalFailure
 		case errors.As(err, &status):
 			outcome = outbound.HTTPOutcome(status.status, nil, ctx)

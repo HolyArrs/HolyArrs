@@ -30,7 +30,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Changes a folder can have.
@@ -536,9 +535,9 @@ func client(m domain.MediaServer) *http.Client {
 	t.Proxy = nil
 	if m.AllowLocal {
 		// The local network, but never link-local or cloud metadata.
-		t.DialContext = source.PolicyDialer(source.NotMetadata).DialContext
+		t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
 	} else {
-		t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
+		t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
 	}
 	return &http.Client{Timeout: 20 * time.Second, Transport: t,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -589,7 +588,7 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return nil, errors.New("the server is on the local network, which it may not reach")
 		}
 		return nil, errors.New("the server did not answer")

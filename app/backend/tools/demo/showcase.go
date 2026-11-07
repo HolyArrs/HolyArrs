@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -24,7 +25,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -191,7 +191,7 @@ func showcaseProviders(ctx context.Context, w *world) (providers, error) {
 	access := func(context.Context) (string, error) { return tok, nil }
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
+	t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
 	cl := &http.Client{Transport: t, Timeout: 5 * time.Minute}
 	svc, err := metadata.NewService(metadata.ServiceOptions{URL: metadata.ServiceURL(), HTTP: cl, Access: access})
 	if err != nil {

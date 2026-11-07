@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 const oidcBodyLimit = 1 << 20
@@ -24,7 +23,7 @@ var (
 func newOIDCHTTPClient(opt OIDCOptions, issuer *url.URL) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	t.DialContext = source.PolicyDialer(func(ip net.IP) bool { return oidcAddressAllowed(opt, ip) }).DialContext
+	t.DialContext = outbound.PolicyDialer(func(ip net.IP) bool { return oidcAddressAllowed(opt, ip) }).DialContext
 	return &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: oidcLimitTransport{base: t, issuer: issuer.String(), clientID: opt.ClientID},
@@ -42,9 +41,9 @@ func oidcAddressAllowed(opt OIDCOptions, ip net.IP) bool {
 		return true
 	}
 	if opt.AllowLocal {
-		return source.NotMetadata(ip)
+		return outbound.NotMetadata(ip)
 	}
-	return source.PublicOnly(ip)
+	return outbound.PublicOnly(ip)
 }
 
 type oidcLimitTransport struct {

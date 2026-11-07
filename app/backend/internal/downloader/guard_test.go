@@ -9,7 +9,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 type guardedStub struct {
@@ -82,7 +81,7 @@ func TestOptionalPolicyRefusalDoesNotTripDownloaderGuard(t *testing.T) {
 			r := outbound.New([]byte("isolated-test-registry-key"), outbound.Options{Threshold: 1})
 			g := &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader"}, begin: r.Begin}
 			for range 2 {
-				if _, err := g.Health(context.Background()); !errors.Is(err, source.ErrAddressRefused) {
+				if _, err := g.Health(context.Background()); !errors.Is(err, outbound.ErrAddressRefused) {
 					t.Fatalf("policy cause lost: %v", err)
 				}
 			}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"log"
 	"net"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // installationSetting is where the install's own metadata server credential
@@ -55,11 +55,11 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 			return nil, errors.New("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL must be true or false")
 		}
 	}
-	allow := source.PublicOnly
+	allow := outbound.PublicOnly
 	if local {
 		allow = metadataServiceLocal
 	}
-	d := source.PolicyDialer(allow)
+	d := outbound.PolicyDialer(allow)
 	// One pooled HTTP/2 transport for every call to the server: text
 	// answers here, and the server's pictures through the artwork client.
 	tr := &metadata.Gate{Next: metadata.NewServerTransport(d.DialContext)}
@@ -150,4 +150,4 @@ func installationAccess(v *secrets.Vault, register func(context.Context) (string
 	}
 }
 
-func metadataServiceLocal(ip net.IP) bool { return source.MetadataServiceLocal(ip) }
+func metadataServiceLocal(ip net.IP) bool { return outbound.MetadataServiceLocal(ip) }

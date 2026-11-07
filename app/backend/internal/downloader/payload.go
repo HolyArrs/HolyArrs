@@ -3,11 +3,10 @@ package downloader
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // fetchRelease uses the Source's network permission and no Downloader
@@ -28,7 +27,7 @@ func fetchRelease(ctx context.Context, raw string, allowLocal bool, limit int64)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
-		if errors.Is(err, source.ErrAddressRefused) {
+		if errors.Is(err, outbound.ErrAddressRefused) {
 			return nil, errLinkLocal // final: not fetched again on every retry (#152)
 		}
 		return nil, errors.New("the Release file could not be read from its Source")

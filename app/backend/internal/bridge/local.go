@@ -2,12 +2,11 @@ package bridge
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net"
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // IsLocal is LocalAddress; tests swap it.
@@ -26,7 +25,7 @@ func LocalAddress(ctx context.Context, raw string) (local, ok bool) {
 	}
 	host := u.Hostname()
 	if ip := net.ParseIP(host); ip != nil {
-		return !source.PublicOnly(ip), true
+		return !outbound.PublicOnly(ip), true
 	}
 	if strings.EqualFold(host, "localhost") || strings.HasSuffix(strings.ToLower(host), ".localhost") {
 		return true, true
@@ -38,7 +37,7 @@ func LocalAddress(ctx context.Context, raw string) (local, ok bool) {
 		return false, false
 	}
 	for _, ip := range ips {
-		if source.PublicOnly(ip.IP) {
+		if outbound.PublicOnly(ip.IP) {
 			return false, true
 		}
 	}

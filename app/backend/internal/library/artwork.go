@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	neturl "net/url"
@@ -18,7 +19,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // DefaultArtworkCap is the artwork cache size cap (decision 0002, Images;
@@ -624,7 +624,7 @@ func (c *ArtworkCache) trim() {
 // only, no proxy, HTTP/2 with connections kept between pictures (a row's
 // posters share one connection to TMDB's picture host).
 func ArtworkClient() *http.Client {
-	d := source.PolicyDialer(source.PublicOnly)
+	d := outbound.PolicyDialer(outbound.PublicOnly)
 	return &http.Client{Timeout: 20 * time.Second, Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, ForceAttemptHTTP2: true,
 		MaxIdleConns: 32, MaxIdleConnsPerHost: 8, IdleConnTimeout: 90 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 20 * time.Second}}
