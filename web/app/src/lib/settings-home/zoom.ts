@@ -162,12 +162,13 @@ export function zoomBack(card: HTMLElement, group: string): void {
 	}, () => {});
 }
 
-/** push slides a screen in on a phone: forward from the right, back from a little left. */
+/** push brings a screen in on a phone: a fade with a slight settle (never past the screen edge). */
 export function push(el: HTMLElement, back: boolean): Animation | null {
 	if (reduced() || !phone()) return null;
 	return back
-		? el.animate([{ transform: 'translateX(-28%)', opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: MS.pop, easing: EASE })
-		: el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: MS.push, easing: EASE });
+		? el.animate([{ transform: 'scale(0.985)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: MS.pop, easing: EASE })
+		: // A fade with a slight settle: nothing ever sits past the screen edge, even mid-motion.
+		  el.animate([{ transform: 'scale(0.985)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: MS.push, easing: EASE });
 }
 
 /** swap is the quiet change between two pages of one group. */
