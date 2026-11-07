@@ -2,10 +2,10 @@
 	// The Jobs tab's first plate. Left: the last runs above a Now line and the
 	// coming runs below it, on one rail, five each way. Right: the live board,
 	// what runs now with its progress and what comes next, counting down.
-	import { ago, dateTime } from '../core/format.ts';
-	import { nextRun } from './schedules.ts';
 	import LiveViews from './LiveViews.svelte';
 	import { pastResult, type StatusRow } from './rows.ts';
+	import { nextRun } from './schedules.ts';
+	import { ago, dateTime } from '../core/format.ts';
 
 	let { upcoming, recent, now }: { upcoming: StatusRow[]; recent: StatusRow[]; now: number } = $props();
 

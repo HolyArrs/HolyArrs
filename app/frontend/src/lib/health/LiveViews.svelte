@@ -1,9 +1,9 @@
 <script lang="ts">
 	// The Timeline plate's right half: the live job feed drawn as a day column.
-	import { onMount } from 'svelte';
+	import LiveDay from './LiveDay.svelte';
 	import { LiveJobs } from './live-jobs.svelte.ts';
 	import type { StatusRow } from './rows.ts';
-	import LiveDay from './LiveDay.svelte';
+	import { onMount } from 'svelte';
 
 	let { upcoming, recent }: { upcoming: StatusRow[]; recent: StatusRow[] } = $props();
 

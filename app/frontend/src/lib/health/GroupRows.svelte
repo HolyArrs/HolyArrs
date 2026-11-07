@@ -3,10 +3,10 @@
 	// and its word, and the reason plus Check / Fix right under any row
 	// that is not working. Problems come first; long lists show six rows
 	// until "Show all".
-	import { ago, dateTime } from '../core/format.ts';
-	import { to } from '../core/paths.ts';
 	import Button from '../ui/Button.svelte';
 	import { atVerb, type StatusRow } from './rows.ts';
+	import { ago, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
 
 	// flat drops the list's own frame (for rows that sit inside a ledger); compact tightens the rows.
 	let { rows, canAct, busy, oncheck, flat = false, compact = false }: { rows: StatusRow[]; canAct: boolean; busy: (key: string) => boolean; oncheck: (r: StatusRow) => void; flat?: boolean; compact?: boolean } = $props();

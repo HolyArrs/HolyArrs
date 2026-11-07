@@ -4,22 +4,21 @@
 	// Jobs: the timeline, then every job. Updates: where this HolyArrs stands,
 	// how to update, bundled tools, every release. About: this HolyArrs and its story.
 	import '../ui/plate.css';
-	import { onMount, untrack } from 'svelte';
-	import { api } from '../core/api.ts';
-	import { ago, bytes, dateTime } from '../core/format.ts';
-	import { nextRun, until } from './schedules.ts';
-	import { to } from '../core/paths.ts';
-	import { session } from '../core/session.svelte.ts';
 	import AdminLinkButton from '../ui/AdminLinkButton.svelte';
 	import Button from '../ui/Button.svelte';
 	import Skeleton from '../ui/Skeleton.svelte';
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import WhyNote from './WhyNote.svelte';
-	import type { HealthCheck } from '../core/types.ts';
+	import { nextRun, until } from './schedules.ts';
 	import type { Health } from './types.ts';
-	import type { UpdateInfo } from '../core/types.ts';
+	import { onMount, untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
+	import { api } from '../core/api.ts';
+	import { ago, bytes, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
+	import { session } from '../core/session.svelte.ts';
+	import type { HealthCheck, UpdateInfo } from '../core/types.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './rows.ts';
 
 	let {
@@ -62,8 +61,7 @@
 	let disks = $state<Disk[] | null>(null);
 	let upd = $state<Update | null>(null);
 	let updFailed = $state(false);
-	/** uptime says how long the app has run in the page's words: "12 min", "5 h 12 min", "3 d 4 h". */
-	/** uptime is a running clock, "0d 00:27:14" (days, then hours, minutes and seconds). */
+	/** uptime is a running clock: "0d 00:27:14". */
 	function uptime(s: number): string {
 		const t = Math.floor(Math.max(0, s));
 		const two = (n: number) => String(n).padStart(2, '0');

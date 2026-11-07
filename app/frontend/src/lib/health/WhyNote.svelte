@@ -1,9 +1,9 @@
 <script lang="ts">
 	// The About note, opened from Status > About: a small retro window that powers on, types its lines,
 	// slams its tags on like stickers, and now and then sends the title-bar runners across.
+	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 	import { tick } from 'svelte';
 	import { to } from '../core/paths.ts';
-	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 
 	// Silkscreen, the pixel font (SIL Open Font License, from @fontsource/silkscreen), loaded once from the app itself.
 	if (typeof document !== 'undefined' && typeof FontFace !== 'undefined' && ![...document.fonts].some((f) => f.family === 'Silkscreen')) {
@@ -109,7 +109,7 @@
 		playing = false;
 	}
 
-	// ── Title-bar runners ──
+	// Title-bar runners
 	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
 	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
 	let scene = 0;
