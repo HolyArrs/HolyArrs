@@ -24,6 +24,7 @@
 	import DlStatus from './DlStatus.svelte';
 	import DlTabsView from './DlTabsView.svelte';
 	import DlMorePop from './DlMorePop.svelte';
+	import { createColumns } from './columns-grid.svelte.ts';
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { CONN_HINT, CONN_WORD, tabsOf, type PaneTab } from './pane-facts.ts';
@@ -202,8 +203,8 @@
 	// A sorted column (kept with the column layout) overrides the tab's own order.
 	const time = (v: string | undefined) => (v ? Date.parse(v) : undefined);
 	const list = $derived.by(() => {
-		const so = layout.sort;
-		return so && vis.includes(so.id) ? sortRows(tabOrder, (r) => sortKey(r, so.id), so.desc) : tabOrder;
+		const so = cols.layout.sort;
+		return so && cols.vis.includes(so.id) ? sortRows(tabOrder, (r) => sortKey(r, so.id), so.desc) : tabOrder;
 	});
 	function sortKey(r: DownloadRow, id: ColId): number | string | undefined {
 		const tor = r.protocol === 'torrent';
@@ -219,7 +220,7 @@
 			// Swarm sorts by the facet picked in its header: seeds, peers or ratio.
 			case 'swarm': {
 				if (!tor) return undefined;
-				const f = layout.sort?.facet ?? 'seeds';
+				const f = cols.layout.sort?.facet ?? 'seeds';
 				return f === 'ratio' ? (r.ratio ?? undefined) : f === 'peers' ? (r.peers ?? 0) : (r.seeds ?? 0);
 			}
 			case 'tracker': return r.tracker;
@@ -538,7 +539,7 @@
 		if (e.key === 'Escape') {
 			if (listEsc(picked.size, !!openId) === 'close') {
 				// Escape from inside the pane: the focus goes back to the row the pane was about, never to nowhere.
-				const line = t.closest('.dpane') ? listEl?.querySelector<HTMLElement>(`[data-dl-id="${openId}"] .dline`) : null;
+				const line = t.closest('.dpane') ? cols.listEl?.querySelector<HTMLElement>(`[data-dl-id="${openId}"] .dline`) : null;
 				openId = 0;
 				e.preventDefault();
 				line?.focus();
@@ -567,9 +568,9 @@
 		const r = list[n];
 		openId = r.id;
 		rowFocus = r.id;
-		reveal(n);
+		cols.reveal(n);
 		tick().then(() => {
-			const row = grid?.querySelector<HTMLElement>(`[data-dl-id="${r.id}"] > .dline`);
+			const row = cols.grid?.querySelector<HTMLElement>(`[data-dl-id="${r.id}"] > .dline`);
 			row?.focus({ preventScroll: true });
 			row?.scrollIntoView({ block: 'nearest' });
 		});
@@ -586,160 +587,18 @@
 		const dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
 		return { duration: opts.dur, easing: opts.ease, css: (t, u) => `transform-origin: 0 0; transform: translate(${dx * u}px, ${dy * u}px) scale(${sx + (1 - sx) * t}, ${sy + (1 - sy) * t})` };
 	}
-	const small = (id: number) => () => grid?.querySelector(`[data-dl-id="${id}"] > .dline .post`);
+	const small = (id: number) => () => cols.grid?.querySelector(`[data-dl-id="${id}"] > .dline .post`);
 	function xOut(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.fast, easing: easeIn });
 	}
-	// Columns: which ones show, their order and their widths are each person's
-	// own, kept in this browser (columns.ts). Every row of both sections shares
-	// one grid: ▾ · poster · the shown columns in order · spare room · bin.
-	// Dragging a column's right edge changes that column only; dragging its name
-	// moves it; right-click a name, or ⋯ → Columns, opens the picker.
-	let grid = $state<HTMLElement>();
-	let appEl = $state<HTMLElement>();
-	let listEl = $state<HTMLElement>();
-	let appH = $state(0);
-	let phone = $state(false);
-	// A long list (over 100 rows) draws only the rows on screen plus 10 on each
-	// side; the list keeps its full height with padding above and below, so
-	// the scroll bar, sticky header and column widths stay as they are.
-	const WINDOW_FROM = 100;
-	const OVERSCAN = 10;
-	let ulEl = $state<HTMLElement>();
-	let vTop = $state(0);
-	let vH = $state(900);
-	let ulTop = $state(0);
-	let rowH = $state(0);
-	const windowed = $derived(list.length > WINDOW_FROM);
-	const rh = $derived(rowH || (phone ? 65 : 45));
-	const span = $derived.by(() => {
-		const n = list.length;
-		if (!windowed) return { a: 0, b: n };
-		const off = vTop - ulTop;
-		const b = Math.min(n, Math.max(0, Math.ceil((off + vH) / rh)) + OVERSCAN);
-		let a = Math.min(Math.max(0, Math.floor(off / rh) - OVERSCAN), Math.max(0, b - 1));
-		// Start on an even row so the striped rows keep their colours.
-		a -= a % 2;
-		return { a, b };
-	});
-	const shownRows = $derived(windowed ? list.slice(span.a, span.b) : list);
-	function measure() {
-		if (!listEl) return;
-		vTop = listEl.scrollTop;
-		vH = listEl.clientHeight || vH;
-		if (ulEl) ulTop = ulEl.getBoundingClientRect().top - listEl.getBoundingClientRect().top + listEl.scrollTop;
-	}
-	$effect(() => {
-		const el = listEl;
-		if (!el || !windowed) return;
-		let raf = 0;
-		const onScroll = () => {
-			if (!raf) raf = requestAnimationFrame(() => ((raf = 0), measure()));
-		};
-		measure();
-		el.addEventListener('scroll', onScroll, { passive: true });
-		const ro = new ResizeObserver(measure);
-		ro.observe(el);
-		return () => {
-			cancelAnimationFrame(raf);
-			el.removeEventListener('scroll', onScroll);
-			ro.disconnect();
-		};
-	});
-	// The details below the list fit their content, so the list can get shorter
-	// after a row was scrolled into view (its details arrive): keep the focused row on screen.
-	$effect(() => {
-		const el = listEl;
-		if (!el || typeof ResizeObserver === 'undefined') return;
-		let h = el.clientHeight;
-		const ro = new ResizeObserver(() => {
-			const was = h;
-			h = el.clientHeight;
-			const a = document.activeElement as HTMLElement | null;
-			if (h < was && a?.classList.contains('dline') && el.contains(a)) a.scrollIntoView({ block: 'nearest' });
-		});
-		ro.observe(el);
-		return () => ro.disconnect();
-	});
-	// The real row height (desktop and phone rows differ), read from a drawn row.
-	$effect(() => {
-		void shownRows;
-		void phone;
-		if (!windowed || !ulEl) return;
-		tick().then(() => {
-			const h = ulEl?.querySelector<HTMLElement>('.drow')?.offsetHeight;
-			if (h && h !== rowH) rowH = h;
-		});
-	});
-	/** reveal scrolls a row that is not drawn into the window, so it can be focused. */
-	function reveal(i: number) {
-		if (!windowed || !listEl || (i >= span.a && i < span.b)) return;
-		measure();
-		listEl.scrollTop = Math.max(0, ulTop + i * rh - vH / 2);
-		vTop = listEl.scrollTop;
-	}
+	const cols = createColumns({ isDone: () => isDone, list: () => list });
 	// Select mode ends when the screen leaves phone width or watch mode starts.
 	let wasPhone = false;
 	$effect(() => {
-		const p = phone;
+		const p = cols.phone;
 		if ((wasPhone && !p) || watch) untrack(() => (selecting = false));
 		wasPhone = p;
 	});
-	let gap = $state(10);
-	let layout = $state<Layout>(typeof localStorage === 'undefined' ? defaults() : readLayout());
-	function readLayout(): Layout {
-		try {
-			return load(localStorage.getItem(KEY), localStorage.getItem(OLD_KEY));
-		} catch {
-			return defaults();
-		}
-	}
-	function save() {
-		try {
-			localStorage.setItem(KEY, dump(layout));
-		} catch {
-			/* private window: the layout lasts for this visit */
-		}
-	}
-	// A layout nobody has changed shows more columns when the screen is wide (they drop out again when it is not).
-	const customised = $derived(layout.hidden.length !== COLUMNS.filter((c) => !c.on).length || COLUMNS.some((c) => !c.on && !layout.hidden.includes(c.id)) || layout.order.some((id, i) => id !== IDS[i]));
-	// One layout everywhere: wide screens no longer add columns by themselves.
-	const WIDE: ColId[] = [];
-	// Done has its own default columns: finished rows have no speed, but a date.
-	const DONE_SET: ColId[] = ['poster', 'title', 'proto', 'status', 'size', 'added', 'requested'];
-	const visAll = $derived.by(() => {
-		if (isDone && !customised) return DONE_SET.filter((id) => !COL[id].missing);
-		const v = visible(layout);
-		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
-	});
-	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 32, kind: 24, proto: 24, progress: 130, size: 56, swarm: 132, added: 70, status: 100 };
-	const TITLE_MIN = 220;
-	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
-	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : COL[id].fixed ? COL[id].width : Math.max(layout.widths[id], heads[id] ?? 0));
-	/** heads holds each header's name width, measured after layout and after each sort. */
-	let heads = $state<Partial<Record<ColId, number>>>({});
-	// The Source column hugs the client's logo; its header is an icon (wider only while a sort arrow shows).
-	const SRC_W = 24;
-	/** kindIcon turns a type word (matched, or read from the client's category) into its icon; anything else has none. */
-	const kindIcon = (w: string) => (w === 'Movie' ? 'film' : w === 'TV show' ? 'tv' : /music|audio|lidarr/i.test(w) ? 'music' : null);
-	// Posters come in three sizes (small, medium, large); dragging the Poster edge snaps between them and the rows grow to fit.
-	const POSTER_W = [32, 46, 62];
-	// Type has two sizes: an icon, or (dragged wider) a coloured word.
-	const KIND_W = [24, 60];
-	// Source has three sizes: small logo, bigger logo, and logo with the client's name.
-	const SRC_SIZES = [24, 30, 92];
-	const srcW = $derived(SRC_SIZES.includes(layout.widths.proto) ? layout.widths.proto : SRC_SIZES[0]);
-	const srcBig = $derived(srcW > SRC_SIZES[0]);
-	const srcName = $derived(srcW === SRC_SIZES[2]);
-	const kindW = $derived(KIND_W.includes(layout.widths.kind) ? layout.widths.kind : KIND_W[0]);
-	const kindWide = $derived(kindW > KIND_W[0]);
-	const posterW = $derived(POSTER_W.includes(layout.widths.poster) ? layout.widths.poster : POSTER_W[0]);
-	const near = (set: number[], w: number) => set.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
-	// Every picked column shows; when they are wider than the view the list scrolls sideways.
-	const vis = $derived(visAll);
-	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
-	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
 	// The pane's tabs work like the status tabs: one Tab stop, Left and Right (Home, End) switch.
 	function paneTabKey(e: KeyboardEvent, r: DownloadRow) {
 		const tabs = [...(e.currentTarget as HTMLElement).parentElement!.querySelectorAll<HTMLElement>('[role="tab"]')];
@@ -749,337 +608,6 @@
 		e.preventDefault();
 		tabs[j].click();
 		tick().then(() => tabs[j].focus());
-	}
-	// A heading's accessible name: its column and how the list is sorted by it.
-	function headName(id: ColId, so: { desc: boolean } | undefined): string {
-		const label = id === 'proto' ? 'Downloader' : id === 'poster' ? 'Poster' : id === 'kind' ? 'Type' : id === 'swarm' ? 'Seeds, peers and ratio' : COL[id].label;
-		return so ? `${label}, sorted ${so.desc ? 'high to low' : 'low to high'}` : label;
-	}
-	// Column headings take one Tab stop: Left and Right move between them, Enter or Space sorts.
-	// A screen reader's click (no pointer, detail 0) sorts too.
-	function headKey(e: KeyboardEvent, id: ColId) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			sortBy(id);
-			return;
-		}
-		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-		const heads = [...(e.currentTarget as HTMLElement).parentElement!.querySelectorAll<HTMLElement>('[data-testid="dl-head"]')];
-		const next = heads[heads.indexOf(e.currentTarget as HTMLElement) + (e.key === 'ArrowRight' ? 1 : -1)];
-		if (!next) return;
-		e.preventDefault();
-		heads.forEach((h) => (h.tabIndex = h === next ? 0 : -1));
-		next.focus();
-	}
-	function sortBy(id: ColId, facet?: SwarmFacet) {
-		layout.sort = nextSort(layout.sort, id, facet);
-		save();
-	}
-	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
-	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'size'];
-	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
-	const FIXED = 20 + 32;
-	let room = $state(0);
-	let titleMin = $state(MIN_W);
-	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
-	const tW = $derived.by(() => {
-		if (!vis.includes('title')) return 0;
-		if (room <= 0 || layout.titleSet) return wMin('title');
-		// A Title nobody has sized takes what is left (with a little slack); a sized one only gives way when the room is short.
-		const rest = vis.reduce((n, id) => (id === 'title' ? n : n + wMin(id)), (layout.titleSet ? 0 : 48) + FIXED + (vis.length + 3) * gap);
-		return Math.max(TITLE_MIN, Math.min(layout.widths.title, Math.floor(room - rest)));
-	});
-	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
-	// Until a person sets the Title width, it flexes and takes whatever room is left.
-	const tpl = $derived(`20px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
-	/** inner is the full width of the columns; the table box is at least this wide. */
-	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
-	const textW = (n: Node) => {
-		const r = document.createRange();
-		r.selectNodeContents(n);
-		return r.getBoundingClientRect().width;
-	};
-	/** minOf is a column's header label plus padding: any column shrinks to its own name. */
-	function minOf(id: ColId): number {
-		const l = grid?.querySelector<HTMLElement>(`.chead [data-col="${id}"] .lbl`);
-		const w = l ? textW(l) : 0;
-		return w > 0 ? Math.ceil(w) + 2 : MIN_W;
-	}
-	// Dragging stops at the column's own name; MINW only sets how narrow double-click fit goes.
-	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), Math.min(MAX_W, v)));
-	/** fitOf is the widest cell of a column (the header label too) plus padding. */
-	function fitOf(id: ColId): number {
-		if (!grid) return COL[id].width;
-		if (id === 'progress') return clamp(id, COL.progress.width); // a bar has no content width of its own
-		let w = 0;
-		for (const el of grid.querySelectorAll<HTMLElement>(`.dline [data-col="${id}"]`)) {
-			if (id === 'title' && !el.classList.contains('ch')) {
-				for (const t of el.querySelectorAll('.tt, .rel')) w = Math.max(w, textW(t));
-				continue;
-			}
-			const tx = el.classList.contains('ch') ? el.querySelector('.lbl') : (el.querySelector('.tx, .kt') ?? el);
-			w = Math.max(w, tx ? textW(tx) + (el.classList.contains('st') ? 14 : 0) : 0);
-		}
-		return clamp(id, Math.max(Math.ceil(w) + 14, MINW[id] ?? 0));
-	}
-	function measureHeads() {
-		const m: Partial<Record<ColId, number>> = {};
-		for (const id of vis) if (grid?.querySelector(`.chead [data-col="${id}"] .lbl`)) m[id] = minOf(id);
-		heads = m;
-	}
-	// A new sort arrow or column set changes the header widths, so measure again once it has drawn.
-	$effect(() => {
-		void layout.sort;
-		void vis;
-		const t = setTimeout(measureHeads, 0);
-		return () => clearTimeout(t);
-	});
-	$effect(() => {
-		if (!grid) return;
-		gap = parseFloat(getComputedStyle(grid).getPropertyValue('--gap')) || 10;
-		const g = grid;
-		const ro = new ResizeObserver(() => {
-			room = (listEl ?? g).clientWidth;
-			phone = matchMedia('(max-width: 640px)').matches;
-			titleMin = minOf('title');
-			measureHeads();
-		});
-		ro.observe(g);
-		if (listEl) ro.observe(listEl);
-		return () => ro.disconnect();
-	});
-	// The app fills the column down to the bottom of the screen; the list scrolls inside it.
-	$effect(() => {
-		if (!appEl) return;
-		const fit = () => {
-			const small = innerWidth <= 767;
-			const tab = small ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar')) || 56) : 0;
-			appH = Math.max(420, Math.floor(innerHeight - appEl!.getBoundingClientRect().top - tab));
-		};
-		fit();
-		const ro = new ResizeObserver(fit);
-		ro.observe(document.body);
-		window.addEventListener('resize', fit);
-		return () => {
-			ro.disconnect();
-			window.removeEventListener('resize', fit);
-		};
-	});
-	// Every table box scrolls sideways together, so the columns stay lined up.
-	function sync(e: Event) {
-		const x = (e.currentTarget as HTMLElement).scrollLeft;
-		for (const t of grid?.querySelectorAll<HTMLElement>('.tw') ?? []) if (t.scrollLeft !== x) t.scrollLeft = x;
-	}
-	function resize(id: ColId, w0: number, d: number) {
-		if (id === 'title') layout.titleSet = true;
-		layout.widths[id] = id === 'poster' ? near(POSTER_W, w0 + d) : id === 'kind' ? near(KIND_W, w0 + d) : id === 'proto' ? near(SRC_SIZES, w0 + d) : clamp(id, w0 + d);
-	}
-	function grab(e: PointerEvent, id: ColId) {
-		if (e.button !== 0) return;
-		e.preventDefault();
-		e.stopPropagation();
-		const x0 = e.clientX;
-		const el = e.currentTarget as HTMLElement;
-		// Start from the width on screen (a flexing Title is wider than its saved width), so the edge stays under the pointer.
-		const w0 = Math.round(el.parentElement?.getBoundingClientRect().width ?? wOf(id));
-		el.setPointerCapture(e.pointerId);
-		el.classList.add('drag');
-		document.documentElement.classList.add('col-resizing');
-		const mv = (m: PointerEvent) => resize(id, w0, m.clientX - x0);
-		const up = () => {
-			el.removeEventListener('pointermove', mv);
-			el.removeEventListener('pointerup', up);
-			el.removeEventListener('pointercancel', up);
-			el.classList.remove('drag');
-			document.documentElement.classList.remove('col-resizing');
-			save();
-		};
-		el.addEventListener('pointermove', mv);
-		el.addEventListener('pointerup', up);
-		el.addEventListener('pointercancel', up);
-	}
-	function nudge(e: KeyboardEvent, id: ColId) {
-		const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-		if (!d) return;
-		e.preventDefault();
-		resize(id, Math.round((e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect().width ?? wOf(id)), d * (e.shiftKey ? 40 : 10));
-		save();
-	}
-	// Double-click auto-fits that column, as in a spreadsheet.
-	function fitOne(id: ColId) {
-		if (id === 'title') layout.titleSet = true;
-		// Double-click on Poster steps to the next size (large goes back to small); on Type it flips icon and word.
-		layout.widths[id] = id === 'poster' ? POSTER_W[(POSTER_W.indexOf(posterW) + 1) % POSTER_W.length] : id === 'kind' ? (kindWide ? KIND_W[0] : KIND_W[1]) : id === 'proto' ? SRC_SIZES[(SRC_SIZES.indexOf(srcW) + 1) % SRC_SIZES.length] : fitOf(id);
-		save();
-	}
-	function resetAll() {
-		try {
-			localStorage.removeItem(KEY);
-			localStorage.removeItem(OLD_KEY);
-		} catch {
-			/* nothing saved */
-		}
-		layout = defaults();
-	}
-
-	// Dragging a column's name left or right moves it: a ghost follows the
-	// pointer and a line shows where it will land.
-	let ghost = $state<{ id: ColId; x: number; y: number } | null>(null);
-	let lineX = $state<number | null>(null);
-	let slot = 0;
-	function slotAt(head: HTMLElement, x: number): { slot: number; line: number } {
-		const box = head.getBoundingClientRect();
-		const hs = [...head.querySelectorAll<HTMLElement>('.ch')].map((h) => h.getBoundingClientRect());
-		let i = hs.findIndex((r) => x < r.left + r.width / 2);
-		if (i < 0) i = hs.length;
-		const at = i < hs.length ? hs[i].left - gap / 2 : hs[hs.length - 1].right + gap / 2;
-		return { slot: i, line: at - box.left };
-	}
-	function headDown(e: PointerEvent, id: ColId) {
-		if (e.button !== 0 || (e.target as Element).closest('.grip')) return;
-		const el = e.currentTarget as HTMLElement;
-		const head = el.closest<HTMLElement>('.chead');
-		if (!head) return;
-		const x0 = e.clientX;
-		let on = false;
-		el.setPointerCapture(e.pointerId);
-		const mv = (m: PointerEvent) => {
-			if (!on && Math.abs(m.clientX - x0) < 5) return;
-			on = true;
-			ghost = { id, x: m.clientX, y: m.clientY };
-			const s = slotAt(head, m.clientX);
-			slot = s.slot;
-			lineX = s.line;
-		};
-		const up = (u?: PointerEvent) => {
-			if (!on && u?.type === 'pointerup') sortBy(id);
-			el.removeEventListener('pointermove', mv);
-			el.removeEventListener('pointerup', up);
-			el.removeEventListener('pointercancel', stop);
-			if (on) {
-				const from = vis.indexOf(id);
-				const to = slot > from ? slot - 1 : slot;
-				if (to !== from) {
-					layout.order = moveVisible(layout, id, to);
-					save();
-				}
-			}
-			ghost = null;
-			lineX = null;
-		};
-		const stop = () => {
-			on = false;
-			up();
-		};
-		el.addEventListener('pointermove', mv);
-		el.addEventListener('pointerup', up);
-		el.addEventListener('pointercancel', stop);
-	}
-
-	// The column picker: every column with a tick and a handle to reorder.
-	let pop = $state<{ x: number; y: number } | null>(null);
-	let pickEl = $state<HTMLElement>();
-	let held = $state<ColId | null>(null);
-	let heldFrom: ColId[] = [];
-	let said = $state('');
-	function openPicker(x: number, y: number) {
-		const w = 260;
-		pop = { x: Math.max(8, Math.min(x, innerWidth - w - 8)), y: Math.max(8, Math.min(y, innerHeight - 440)) };
-		held = null;
-		tick().then(() => {
-			// Keep the whole list on screen: move it up by however much its
-			// bottom passes the screen edge (it scrolls inside past that).
-			const r = pickEl?.getBoundingClientRect();
-			if (r && pop && r.bottom > innerHeight - 8) pop = { x: pop.x, y: Math.max(8, pop.y - (r.bottom - (innerHeight - 8))) };
-			pickEl?.querySelector<HTMLElement>('input, button')?.focus();
-		});
-	}
-	function closePicker() {
-		if (held) layout.order = heldFrom;
-		held = null;
-		pop = null;
-		save();
-	}
-	function headMenu(e: MouseEvent) {
-		e.preventDefault();
-		openPicker(e.clientX, e.clientY);
-	}
-	function fromMenu() {
-		const b = grid?.querySelector<HTMLElement>('.cm button');
-		const r = b?.getBoundingClientRect();
-		openPicker(r ? r.right - 260 : innerWidth / 2, r ? r.bottom + 6 : 80);
-	}
-	function outside(e: PointerEvent) {
-		if (pop && pickEl && !pickEl.contains(e.target as Node)) closePicker();
-	}
-	function flip(id: ColId) {
-		layout.hidden = toggleCol(layout, id);
-		save();
-	}
-	async function refocus(id: ColId) {
-		await tick();
-		pickEl?.querySelector<HTMLElement>(`[data-handle="${id}"]`)?.focus();
-	}
-	function handleKey(e: KeyboardEvent, id: ColId) {
-		const i = layout.order.indexOf(id);
-		if (e.key === ' ' || e.key === 'Enter') {
-			e.preventDefault();
-			if (held === id) {
-				held = null;
-				said = `${COL[id].label} dropped at position ${i + 1}.`;
-				save();
-			} else if (e.key === ' ') {
-				heldFrom = [...layout.order];
-				held = id;
-				said = `${COL[id].label} picked up. Use the arrow keys to move it, Enter to drop.`;
-			}
-		} else if (held === id && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-			e.preventDefault();
-			const to = i + (e.key === 'ArrowUp' ? -1 : 1);
-			if (to < 0 || to >= layout.order.length) return;
-			layout.order = move(layout.order, id, to);
-			said = `${COL[id].label}: position ${to + 1} of ${layout.order.length}.`;
-			refocus(id);
-		} else if (e.key === 'Escape' && held) {
-			e.preventDefault();
-			e.stopPropagation();
-			layout.order = heldFrom;
-			held = null;
-			said = 'Move cancelled.';
-			refocus(id);
-		}
-	}
-	function handleDown(e: PointerEvent, id: ColId) {
-		if (e.button !== 0) return;
-		e.preventDefault();
-		const el = e.currentTarget as HTMLElement;
-		el.setPointerCapture(e.pointerId);
-		held = id;
-		const mv = (m: PointerEvent) => {
-			const lis = [...(pickEl?.querySelectorAll<HTMLElement>('li[data-id]') ?? [])];
-			let to = lis.findIndex((li) => m.clientY < li.getBoundingClientRect().top + li.offsetHeight / 2);
-			if (to < 0) to = lis.length - 1;
-			const from = layout.order.indexOf(id);
-			if (to > from) to -= 1;
-			if (to !== from) layout.order = move(layout.order, id, to);
-		};
-		const up = () => {
-			el.removeEventListener('pointermove', mv);
-			el.removeEventListener('pointerup', up);
-			el.removeEventListener('pointercancel', up);
-			held = null;
-			save();
-		};
-		el.addEventListener('pointermove', mv);
-		el.addEventListener('pointerup', up);
-		el.addEventListener('pointercancel', up);
-	}
-	function pickerKey(e: KeyboardEvent) {
-		if (e.key === 'Escape' && !held) {
-			e.preventDefault();
-			closePicker();
-			grid?.querySelector<HTMLElement>('.cm button')?.focus();
-		}
 	}
 	// A click anywhere on a row opens or closes its details, as the ▾ does;
 	// not on the bin, a link, a control, or while selecting text.
@@ -1098,7 +626,7 @@
 			return;
 		}
 		// Phones: once a long press started picking, a tap picks or unpicks a row.
-		if (!watch && phone && choosing) {
+		if (!watch && cols.phone && choosing) {
 			pickOne(id);
 			return;
 		}
@@ -1135,10 +663,10 @@
 	{#if id === 'poster'}
 		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 	{:else if id === 'kind'}
-		{@const kw = kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category)}{@const ki = kindIcon(kw)}<span class="kcell" class:ph data-col="kind"><span class="kt" class:none={!ki} class:wide={kindWide} data-testid="dl-kind" role="img" aria-label={kw || 'No type yet'} use:tip={kw ? (kindOf(r) ? kw : `${kw} (from the client's category)`) : 'No type yet'}>{#if kindWide && kw}<span class="kp" data-k={ki ?? 'other'}>{kw}</span>{:else if ki}<Icon name={ki} size={16} />{:else}{dash}{/if}</span></span>
+		{@const kw = kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category)}{@const ki = cols.kindIcon(kw)}<span class="kcell" class:ph data-col="kind"><span class="kt" class:none={!ki} class:wide={cols.kindWide} data-testid="dl-kind" role="img" aria-label={kw || 'No type yet'} use:tip={kw ? (kindOf(r) ? kw : `${kw} (from the client's category)`) : 'No type yet'}>{#if cols.kindWide && kw}<span class="kp" data-k={ki ?? 'other'}>{kw}</span>{:else if ki}<Icon name={ki} size={16} />{:else}{dash}{/if}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
-		<span class="pcell" class:ph class:named={srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
+		<span class="pcell" class:ph class:named={cols.srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if cols.srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
 			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tphone">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
@@ -1169,7 +697,7 @@
 			{@const why = problem(r)}
 			<!-- The word on its own line, a short line under it: the dot and the word carry the tone, the line stays quiet. -->
 			<!-- The line is the problem, else a waiting row's place in the Downloader's line, else the step it is at (or why it failed, or a seeding ratio). -->
-			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${ordinal(r.queue_pos)} in line`) : stepLine(r, detail)}
+			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${cols.ordinal(r.queue_pos)} in line`) : stepLine(r, detail)}
 			{@const under = why?.text || line}
 			<span class="st {t}" class:ph class:two={!!under} data-col="status" title={[statusWord(r), under, more.toLowerCase() === under.toLowerCase() ? '' : more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid={stageOf(r) === 'queued' ? 'dl-in-line' : 'dl-step'}>{line}</span>{/if}</span></span>
 		{/if}
@@ -1217,7 +745,7 @@
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => (rowFocus = r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" use:longPress={() => { if (!watch) pickOne(r.id, true); }} onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
 			{@render lead(r)}
-			{#each cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
+			{#each cols.cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
 			<span class="spare"></span>
 			{@render bin(r)}
 		</div>
@@ -1226,19 +754,19 @@
 
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={headMenu}>
+	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={cols.headMenu}>
 		<!-- Select all: ticked when every row is picked, half-ticked when some are. -->
 		<span class="hk">{#if !watch}<input type="checkbox" class="hpk" checked={list.length > 0 && picked.size === list.length} indeterminate={picked.size > 0 && picked.size < list.length} aria-label="Select all downloads" title="Select all" onchange={() => (picked.size === list.length ? clearPicked() : (picked = new Set(list.map((r) => r.id))))} data-testid="dl-head-pick" />{/if}</span>
-		{#each vis as id (id)}
+		{#each cols.vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			{@const so = layout.sort?.id === id ? layout.sort : undefined}
+			{@const so = cols.layout.sort?.id === id ? cols.layout.sort : undefined}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role={id === 'swarm' ? 'group' : 'button'} aria-label={headName(id, so)} tabindex={id === vis[0] ? 0 : -1} onpointerdown={(e) => headDown(e, id)} onclick={(e) => { if (e.detail === 0) sortBy(id); }} onkeydown={(e) => headKey(e, id)} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl"><span class="sr">Downloader</span><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl"><span class="sr">Poster</span><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl"><span class="sr">Type</span><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={cols.ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role={id === 'swarm' ? 'group' : 'button'} aria-label={cols.headName(id, so)} tabindex={id === cols.vis[0] ? 0 : -1} onpointerdown={(e) => cols.headDown(e, id)} onclick={(e) => { if (e.detail === 0) cols.sortBy(id); }} onkeydown={(e) => cols.headKey(e, id)} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !cols.srcName}<span class="lbl"><span class="sr">Downloader</span><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl"><span class="sr">Poster</span><Icon name="image" size={15} /></span>{:else if id === 'kind' && !cols.kindWide}<span class="lbl"><span class="sr">Type</span><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each cols.FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); cols.sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={cols.wOf(id)} aria-valuemin={cols.heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to cols.resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => cols.grab(e, id)} ondblclick={() => cols.fitOne(id)} onkeydown={(e) => cols.nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
-		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
-		{#if lineX !== null}<span class="ins" style="left: {lineX}px" data-testid="dl-insert" aria-hidden="true"></span>{/if}
+		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: cols.fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: cols.resetAll }]} /></span>
+		{#if cols.lineX !== null}<span class="ins" style="left: {cols.lineX}px" data-testid="dl-insert" aria-hidden="true"></span>{/if}
 	</div>
 {/snippet}
 
@@ -1313,10 +841,10 @@
 	</section>
 {/snippet}
 
-<svelte:window onpointerdown={outside} onkeydown={listKey} />
+<svelte:window onpointerdown={cols.outside} onkeydown={listKey} />
 
-<div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px; --pi: {posterW - 6}px; --lg: {srcBig ? 24 : 18}px">
-<div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
+<div class="dlgrid" bind:this={cols.grid} style="--tpl: {cols.tpl}; --c-in: {cols.inner}px; --pi: {cols.posterW - 6}px; --lg: {cols.srcBig ? 24 : 18}px">
+<div class="app" data-testid="dl-app" bind:this={cols.appEl} style="--app-h: {cols.appH}px">
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="psearch" class:open={psOpen || !!dlScope.term} data-testid="dl-psearch">
 		<button type="button" class="psb" aria-label="Search downloads" aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
@@ -1333,7 +861,7 @@
 <div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? bytes(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
 <p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? `Speed limit: ${bytes(capNow)}/s. Change it` : 'Set a speed limit'} data-testid="dl-q-down"><span class="sr">Speed: </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">Speed limit </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. Set a speed limit</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...dls.freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="listbox" bind:this={listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
+<div class="listbox" bind:this={cols.listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
@@ -1352,10 +880,10 @@
 		</div>
 {/if}
 {#if list.length}
-	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
+	<div class="tw" onscroll={cols.sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
-		<ul class="dlrows" class:vw={windowed} bind:this={ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={windowed ? `padding-top: ${span.a * rh}px; padding-bottom: ${(list.length - span.b) * rh}px` : undefined}>
-			{#each shownRows as r (r.id)}{@render row(r, inHistory(r))}{/each}
+		<ul class="dlrows" class:vw={cols.windowed} bind:this={cols.ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={cols.windowed ? `padding-top: ${cols.span.a * cols.rh}px; padding-bottom: ${(list.length - cols.span.b) * cols.rh}px` : undefined}>
+			{#each cols.shownRows as r (r.id)}{@render row(r, inHistory(r))}{/each}
 		</ul>
 	</div></div>
 {:else}
@@ -1374,7 +902,7 @@
 {#if openRow}
 	<div class="sheet" in:sheetIn out:sheetOut data-testid="dl-sheet">
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? (paneFit ? 0 : paneH) : 0} tabindex="0" class:fixed={!paneOpen} title="Drag to resize · double-click to fit the content" onpointerdown={dragDown} ondblclick={() => (paneFit = true)} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
+	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? (paneFit ? 0 : paneH) : 0} tabindex="0" class:fixed={!paneOpen} title="Drag to cols.resize · double-click to fit the content" onpointerdown={dragDown} ondblclick={() => (paneFit = true)} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
 	{@render panel(openRow)}
 	</div>
 {/if}
@@ -1385,24 +913,24 @@
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
 
-{#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
+{#if cols.ghost}<div class="ghost" style="left: {cols.ghost.x}px; top: {cols.ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[cols.ghost.id].label}</div>{/if}
 
-{#if pop}
+{#if cols.pop}
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div class="picker" role="dialog" aria-label="Columns" tabindex="-1" bind:this={pickEl} style="left: {pop.x}px; top: {pop.y}px" data-testid="dl-picker" onkeydown={pickerKey}>
+	<div class="picker" role="dialog" aria-label="Columns" tabindex="-1" bind:this={cols.pickEl} style="left: {cols.pop.x}px; top: {cols.pop.y}px" data-testid="dl-picker" onkeydown={cols.pickerKey}>
 		<p class="ph-t">Columns</p>
 		<ul class="pl">
-			{#each layout.order as id (id)}
+			{#each cols.layout.order as id (id)}
 				{@const c = COL[id]}
-				<li data-id={id} class:held={held === id} class:off={c.missing}>
-					<button type="button" class="hd" data-handle={id} aria-label="Move {c.label}" aria-pressed={held === id} aria-describedby="dl-pick-help" disabled={c.missing} onkeydown={(e) => handleKey(e, id)} onpointerdown={(e) => handleDown(e, id)}><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="5" cy="7" r="1.2"/><circle cx="9" cy="7" r="1.2"/><circle cx="5" cy="11" r="1.2"/><circle cx="9" cy="11" r="1.2"/></g></svg></button>
-					<label class="pkl"><input type="checkbox" checked={!c.missing && !layout.hidden.includes(id)} disabled={c.missing} onchange={() => flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">Not reported yet</span>{/if}</label>
+				<li data-id={id} class:held={cols.held === id} class:off={c.missing}>
+					<button type="button" class="hd" data-handle={id} aria-label="Move {c.label}" aria-pressed={cols.held === id} aria-describedby="dl-pick-help" disabled={c.missing} onkeydown={(e) => cols.handleKey(e, id)} onpointerdown={(e) => cols.handleDown(e, id)}><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="5" cy="7" r="1.2"/><circle cx="9" cy="7" r="1.2"/><circle cx="5" cy="11" r="1.2"/><circle cx="9" cy="11" r="1.2"/></g></svg></button>
+					<label class="pkl"><input type="checkbox" checked={!c.missing && !cols.layout.hidden.includes(id)} disabled={c.missing} onchange={() => cols.flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">Not reported yet</span>{/if}</label>
 				</li>
 			{/each}
 		</ul>
 		<p id="dl-pick-help" class="help">Drag a handle, or press Space on it, then ↑/↓ and Enter.</p>
-		<div class="pf"><button type="button" class="lk" onclick={resetAll} data-testid="dl-pick-reset">Reset to default</button></div>
-		<span class="sr" aria-live="polite">{said}</span>
+		<div class="pf"><button type="button" class="lk" onclick={cols.resetAll} data-testid="dl-pick-reset">Reset to default</button></div>
+		<span class="sr" aria-live="polite">{cols.said}</span>
 	</div>
 {/if}
 
