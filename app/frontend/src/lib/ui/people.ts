@@ -31,14 +31,6 @@ export type PersonMovie = {
 	ask?: { id: number; state: string; state_label: string; mine: boolean; people: number };
 };
 
-export type PersonSearchPage = {
-	people: PersonSummary[];
-	page: number;
-	total_pages: number;
-	total_results: number;
-	attribution: string;
-};
-
 export type FilmographyPage = {
 	person: Person;
 	movies: PersonMovie[];
