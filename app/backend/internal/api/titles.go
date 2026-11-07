@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"log"
 	"mime"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -23,16 +23,7 @@ import (
 
 // decode reads a JSON body into v; false means an answer was already sent.
 func decode(w http.ResponseWriter, r *http.Request, v any, help string) bool {
-	err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(v)
-	if mb := (*http.MaxBytesError)(nil); errors.As(err, &mb) {
-		fail(w, http.StatusRequestEntityTooLarge, "request body too large")
-		return false
-	}
-	if err != nil {
-		fail(w, http.StatusBadRequest, help)
-		return false
-	}
-	return true
+	return webserver.Decode(w, r, v, help)
 }
 
 // libraryError answers the library's refusals with a status and a reason.

@@ -10,5 +10,7 @@ import (
 // routes returns the handler that serves every route of the app. Each module
 // that leaves the api package adds one registration line here.
 func routes(a *api.API, c config) http.Handler {
-	return webserver.UnderURLBase(c.URLBase, webserver.Compress(limitBodies(a.Handler())))
+	rt := webserver.NewRouter()
+	a.Routes(rt)
+	return webserver.UnderURLBase(c.URLBase, webserver.Compress(limitBodies(a.Chain(rt))))
 }

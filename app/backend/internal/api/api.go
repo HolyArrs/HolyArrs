@@ -5,7 +5,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 
@@ -316,9 +315,10 @@ func actor(r *http.Request) domain.Actor {
 	return domain.Actor{Kind: "user", ID: 1}
 }
 
-// Handler returns every route.
-func (a *API) Handler() http.Handler {
-	m := http.NewServeMux()
+// Routes registers every route on rt. Modules that have left this package
+// register themselves from cmd/holyarrs/wiring.go instead.
+func (a *API) Routes(rt *webserver.Router) {
+	m := rt.Mux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
 	m.HandleFunc("GET /api/v1/tags", a.listTags)
 	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
@@ -505,6 +505,22 @@ func (a *API) Handler() http.Handler {
 	}
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
+	}
+}
+
+// Handler returns every route behind the sign-in, permission and gate layers.
+func (a *API) Handler() http.Handler {
+	rt := webserver.NewRouter()
+	a.Routes(rt)
+	return a.Chain(rt)
+}
+
+// Chain wraps a router that Routes filled with the layers every request
+// passes: sign-in, the permission gate, kid limits, part switches and the
+// security headers.
+func (a *API) Chain(rt *webserver.Router) http.Handler {
+	m := rt.Mux()
+	if a.s.Auth != nil {
 		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
 		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))))
 	}
@@ -515,19 +531,7 @@ func (a *API) Handler() http.Handler {
 // wrapMux lets tests record which routes the mux served.
 var wrapMux = func(h http.Handler) http.Handler { return h }
 
-func secure(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hd := w.Header()
-		hd.Set("X-Content-Type-Options", "nosniff")
-		hd.Set("Referrer-Policy", "no-referrer")
-		hd.Set("X-Frame-Options", "DENY")
-		// Pages an outside site opens lose their handle on HolyArrs; popups
-		// HolyArrs opens itself (Plex sign-in) keep theirs.
-		hd.Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
-		hd.Set("Content-Security-Policy", webserver.CSP(nil))
-		h.ServeHTTP(w, r)
-	})
-}
+func secure(h http.Handler) http.Handler { return webserver.SecureHeaders(h) }
 
 // healthz is open to everyone: it says only whether the database answers.
 func (a *API) healthz(w http.ResponseWriter, _ *http.Request) {
@@ -538,20 +542,11 @@ func (a *API) healthz(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("ok\n"))
 }
 
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
+func writeJSON(w http.ResponseWriter, code int, v any) { webserver.WriteJSON(w, code, v) }
 
-func fail(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
-}
+func fail(w http.ResponseWriter, code int, msg string) { webserver.Fail(w, code, msg) }
 
-func internal(w http.ResponseWriter, err error) {
-	log.Printf("api: %v", err)
-	fail(w, http.StatusInternalServerError, "something went wrong; see the log")
-}
+func internal(w http.ResponseWriter, err error) { webserver.Internal(w, "api", err) }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 

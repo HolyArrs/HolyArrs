@@ -335,16 +335,9 @@ func sum(s string) string {
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
+func writeJSON(w http.ResponseWriter, code int, v any) { webserver.WriteJSONNoStore(w, code, v) }
 
-func fail(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
-}
+func fail(w http.ResponseWriter, code int, msg string) { webserver.FailNoStore(w, code, msg) }
 
 // public routes need no sign-in.
 func public(r *http.Request) bool {

@@ -4,26 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // decodeKeys is decode that also answers which top-level keys the body
 // holds, so a left-out field can take a saved default.
 func decodeKeys(w http.ResponseWriter, r *http.Request, v any, help string) (map[string]json.RawMessage, bool) {
-	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<16))
-	if mb := (*http.MaxBytesError)(nil); errors.As(err, &mb) {
-		fail(w, http.StatusRequestEntityTooLarge, "request body too large")
-		return nil, false
-	}
-	keys := map[string]json.RawMessage{}
-	if err != nil || json.Unmarshal(raw, v) != nil || json.Unmarshal(raw, &keys) != nil {
-		fail(w, http.StatusBadRequest, help)
-		return nil, false
-	}
-	return keys, true
+	return webserver.DecodeKeys(w, r, v, help)
 }
 
 // kindDefaultsFor fills the fields an add left out from the saved Movies and

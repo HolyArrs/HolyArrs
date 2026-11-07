@@ -5,51 +5,44 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// Roles.
+// The role, permission and route-need names live in core/webserver; these
+// aliases keep the sign-in code and its callers on one spelling.
 const (
-	RoleOwner  = "owner"
-	RoleAdmin  = "admin"
-	RoleMember = "member"
+	RoleOwner  = webserver.RoleOwner
+	RoleAdmin  = webserver.RoleAdmin
+	RoleMember = webserver.RoleMember
 )
 
-// Perm is one thing a person may do. The owner may do everything.
-type Perm string
+// Perm is one thing a person may do.
+type Perm = webserver.Perm
 
 // Permissions a user can be given.
 const (
-	PermAsk           Perm = "ask"            // ask for titles (Wishlist)
-	PermAutoApprove   Perm = "auto_approve"   // their asks are approved without waiting
-	PermApprove       Perm = "approve"        // approve or turn down other people's asks
-	PermManageLibrary Perm = "manage_library" // add, edit, search and download titles
-	PermSettings      Perm = "settings"       // change settings
+	PermAsk           = webserver.PermAsk
+	PermAutoApprove   = webserver.PermAutoApprove
+	PermApprove       = webserver.PermApprove
+	PermManageLibrary = webserver.PermManageLibrary
+	PermSettings      = webserver.PermSettings
 )
-
-// AllPerms lists the permissions in the order screens show them.
-var AllPerms = []Perm{PermAsk, PermAutoApprove, PermApprove, PermManageLibrary, PermSettings}
 
 // Route needs besides the permissions above.
 const (
-	needSignedIn Perm = "signed_in" // anyone signed in
-	// NeedPublic marks a route that needs no sign-in at all because it
-	// checks a key of its own (the iCal feed). Middleware lets it through.
-	NeedPublic Perm = "public"
-	needSelf   Perm = "self"  // anyone signed in, even before they turn on a two-factor sign-in they must have
-	needUsers  Perm = "users" // the owner or an admin
-	needOwner  Perm = "owner" // the owner only
+	needSignedIn = webserver.NeedSignedIn
+	NeedPublic   = webserver.NeedPublic
+	needSelf     = webserver.NeedSelf
+	needUsers    = webserver.NeedUsers
+	needOwner    = webserver.NeedOwner
 )
 
+// AllPerms lists the permissions in the order screens show them.
+var AllPerms = webserver.AllPerms
+
 // DefaultPerms are what a new user of a role starts with.
-func DefaultPerms(role string) []Perm {
-	switch role {
-	case RoleAdmin:
-		return []Perm{PermAsk, PermAutoApprove, PermApprove, PermManageLibrary}
-	case RoleMember:
-		return []Perm{PermAsk}
-	}
-	return slices.Clone(AllPerms)
-}
+func DefaultPerms(role string) []Perm { return webserver.DefaultPerms(role) }
 
 func validPerm(p Perm) bool { return slices.Contains(AllPerms, p) }
 
@@ -74,20 +67,12 @@ func permsJSON(ps []Perm) string {
 	return string(b)
 }
 
-// Has reports whether the person may do p.
-func (w Who) Has(p Perm) bool {
-	switch {
-	case w.Role == RoleOwner:
-		return true
-	case p == needSignedIn || p == needSelf || p == NeedPublic:
-		return true
-	case p == needUsers:
-		return w.Role == RoleAdmin
-	case p == needOwner:
-		return false
-	}
-	return slices.Contains(w.Perms, p)
+func (w Who) caller() webserver.Caller {
+	return webserver.Caller{UserID: w.UserID, Role: w.Role, Perms: w.Perms}
 }
+
+// Has reports whether the person may do p.
+func (w Who) Has(p Perm) bool { return w.caller().Has(p) }
 
 // MaySeeAudit reports whether the person may read audit Events (sign-ins,
 // API keys, settings changes): the owner, admins and people with the
@@ -97,15 +82,7 @@ func (w Who) MaySeeAudit() bool {
 }
 
 // Effective is the full list of permissions the person holds.
-func (w Who) Effective() []Perm {
-	out := []Perm{}
-	for _, p := range AllPerms {
-		if w.Has(p) {
-			out = append(out, p)
-		}
-	}
-	return out
-}
+func (w Who) Effective() []Perm { return w.caller().Effective() }
 
 // RoutePerms says what each route needs. Routes missing here are for the
 // owner only, so a new route is closed until someone decides who may use it.

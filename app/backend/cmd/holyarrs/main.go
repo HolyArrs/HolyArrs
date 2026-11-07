@@ -196,20 +196,8 @@ const maxBody = 1 << 20
 
 // limitBodies refuses API request bodies over maxBody with 413.
 func limitBodies(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") && r.Body != nil {
-			if r.URL.Path == backup.RestorePath {
-				h.ServeHTTP(w, r) // the restore zip has its own, larger limit
-				return
-			}
-			if r.ContentLength > maxBody {
-				http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
-				return
-			}
-			r.Body = http.MaxBytesReader(w, r.Body, maxBody)
-		}
-		h.ServeHTTP(w, r)
-	})
+	restoreZip := func(path string) bool { return path == backup.RestorePath } // has its own, larger limit
+	return webserver.LimitBodies(maxBody, restoreZip, h)
 }
 
 // newServer has no WriteTimeout: the live stream stays open. Instead each
