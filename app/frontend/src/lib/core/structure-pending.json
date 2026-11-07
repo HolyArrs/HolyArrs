@@ -4,8 +4,6 @@
 		"hooks.server.ts"
 	],
 	"flat": [
-		"lib/EditionDecision.svelte",
-		"lib/TitleLookPicker.svelte",
 		"lib/art-check.ts",
 		"lib/home-line.test.ts",
 		"lib/home-line.ts",
@@ -26,7 +24,6 @@
 		"lib/music/MusicNewTab.svelte -> lib/requests/index.ts",
 		"lib/music/MusicTrendingRows.svelte -> lib/requests/index.ts",
 		"lib/shows/ShowPage.svelte -> lib/requests/index.ts",
-		"lib/ui/ListRow.svelte -> lib/music/index.ts",
 		"lib/ui/TitleRows.svelte -> lib/requests/index.ts"
 	],
 	"pageEdges": [],

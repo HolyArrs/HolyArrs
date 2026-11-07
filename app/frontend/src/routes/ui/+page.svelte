@@ -17,8 +17,6 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
-	import Hero from '#lib/ui/Hero.svelte';
-	import ListRow from '#lib/ui/ListRow.svelte';
 	import { Table } from '#lib/accounts/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -192,44 +190,6 @@
 	</section>
 
 	<section class="block">
-		<h2 class="bh">Hero</h2>
-		<Hero
-			title="Quiet Harbour"
-			backdrop={art('#1b3a5c', '#e07a5f', 1280, 720)}
-			meta={['2024', '1 h 52 min', 'Drama', 'Mystery']}
-			badges={['PG-13', '4K', 'HDR', 'Atmos', 'CC']}
-			status="in_library"
-			crumbLabel="Breadcrumb ({theme})"
-			breadcrumb={[{ href: '#top', label: 'Movies' }, { href: '#top', label: 'Quiet Harbour (2024)' }]}
-			description="A ferry captain finds a letter that should not exist, and a small coastal town starts remembering a winter nobody talks about. Old friends return, the tide keeps its own calendar, and every answer leads back to the harbour at night. The more she learns, the less the town wants her to stay."
-		>
-			{#snippet actions()}
-				<Button variant="primary" size="lg" icon="play">Play</Button>
-				<IconButton icon="search" label="Search now" variant="glass" size="lg" />
-				<IconButton icon="refresh" label="Keep up to date" variant="glass" size="lg" />
-				<IconButton icon="more" label="More actions" variant="glass" size="lg" />
-			{/snippet}
-		</Hero>
-		<div class="sp"></div>
-		<Hero title="Paper Moons" poster={art('#5f0f40', '#fb8b24')} meta={['2021', 'Movie']} status="requested" description="A short one." />
-	</section>
-
-	<section class="block">
-		<h2 class="bh">List rows</h2>
-		<div class="rows">
-			<ListRow title="Quiet Harbour" subtitle="Movie · 2024" meta="18.2 GB" image={art('#1b3a5c', '#e07a5f')} href="#top">
-				{#snippet trailing()}<StatusPill kind="in_library" />{/snippet}
-			</ListRow>
-			<ListRow title="The Long Field" subtitle="Asked by Sam · 2 days ago" image={art('#264653', '#2a9d8f')}>
-				{#snippet trailing()}<Button size="sm" variant="plain">Turn down</Button><Button size="sm" variant="primary">Approve</Button>{/snippet}
-			</ListRow>
-			<ListRow title="Library folders" subtitle="3 folders, 2.1 TB free" icon="folder" onclick={() => toasts.push('Opened')}>
-				{#snippet trailing()}<IconButton icon="chevronRight" label="Open Library folders" tooltip={false} />{/snippet}
-			</ListRow>
-		</div>
-	</section>
-
-	<section class="block">
 		<h2 class="bh">Table</h2>
 		<Table caption="Downloads ({theme})" columns={[{ key: 'name', label: 'Title' }, { key: 'size', label: 'Size', align: 'end', hideOnPhone: true }, { key: 'speed', label: 'Speed', align: 'end', hideOnPhone: true }, { key: 'state', label: 'State', align: 'end' }]} {rows} rowKey={(r) => r.id} />
 		<div class="sp"></div>
@@ -324,7 +284,6 @@
 	.bh { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.line { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 	.col { display: flex; flex-direction: column; gap: 12px; }
-	.rows { display: flex; flex-direction: column; }
 	.sp { height: 12px; }
 	.pop { display: flex; flex-direction: column; gap: 10px; padding: 8px; font: var(--t-callout); }
 	.skels { display: grid; grid-template-columns: repeat(3, 80px) 1fr; gap: 12px; align-items: start; }
