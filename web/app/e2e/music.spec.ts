@@ -97,7 +97,7 @@ test('the owner finds an artist and adds it from Search', async () => {
 	const dialog = own.getByRole('dialog');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Music');
 	await expect(dialog.getByLabel('Library folder')).not.toContainText('Shows');
-	await expect(dialog.getByTestId('music-search-note')).toContainText('one Release per album');
+	await expect(dialog.getByTestId('music-search-note')).toContainText('searched once their tracks are in');
 	await expect(dialog.getByLabel('Albums to keep up to date')).toHaveValue('all');
 	await dialog.getByLabel('Albums to keep up to date').selectOption('latest');
 	await expect(dialog).toContainText('Only the newest album that is out.');
