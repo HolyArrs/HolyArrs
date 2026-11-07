@@ -28,6 +28,22 @@ export function decisionPins(): PinnedAlert[] {
 	}));
 }
 
+const TOLD = 'holyarrs.bell.told';
+function readTold(): Set<number> {
+	try {
+		return new Set((JSON.parse(localStorage.getItem(TOLD) ?? '[]') as number[]).slice(-200));
+	} catch {
+		return new Set();
+	}
+}
+function saveTold(ids: Set<number>) {
+	try {
+		localStorage.setItem(TOLD, JSON.stringify([...ids].slice(-200)));
+	} catch {
+		// private window: the next reload may show one again
+	}
+}
+
 /**
  * startBellFeeds runs while someone is signed in. `canManage` turns on the parts only
  * staff see (failed downloads, a new version). It returns the stop function.
@@ -35,20 +51,21 @@ export function decisionPins(): PinnedAlert[] {
 export function startBellFeeds(canManage: boolean): () => void {
 	const stops: (() => void)[] = [];
 
-	// Request updates: messages already unread when the app opens go quietly into the
-	// list; ones that arrive later also pop up, wherever you are.
+	// Request updates pop up once each, wherever you are, and stay in the list. Ones this
+	// browser already showed (kept in local storage) only go into the list after a reload.
 	const known = new Set<number>();
-	let first = true;
+	const told = readTold();
 	const stopInbox = $effect.root(() => {
 		$effect(() => {
 			const unread = inbox.messages.filter((m) => !m.read_at && !known.has(m.id));
 			for (const m of unread) {
 				known.add(m.id);
 				const w = messageWords(m);
-				if (first) toasts.record(w.title, w.tone, { body: w.body });
+				if (told.has(m.id)) toasts.record(w.title, w.tone, { body: w.body });
 				else toasts.push(w.title, w.tone, { body: w.body, action: { label: 'Requests', run: () => void goto(to('/requests')) } });
+				told.add(m.id);
 			}
-			if (inbox.messages.length) first = false;
+			if (unread.length) saveTold(told);
 		});
 	});
 	stops.push(stopInbox);
@@ -60,6 +77,8 @@ export function startBellFeeds(canManage: boolean): () => void {
 				const d = x as { State?: string; StateReason?: string | null; state?: string; state_reason?: string | null };
 				if ((d.State ?? d.state) !== 'failed') return;
 				const why = d.StateReason ?? d.state_reason ?? '';
+				// Someone marked it failed by hand: they already know.
+				if (/^marked failed/i.test(why)) return;
 				toasts.push('Download failed', 'fail', { body: why ? cut(why) : 'Searching for the next Release', action: { label: 'Downloads', run: () => void goto(to('/downloads')) } });
 			})
 		);

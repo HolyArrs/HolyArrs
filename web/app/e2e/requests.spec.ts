@@ -626,9 +626,12 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	// Its file comes in: the next ready check (every 30 s, and after each import) tells dot.
 	await giveFile(ownCall, cobalt, 'Cobalt Orrery', 2016);
 	await expect.poll(told, slow).toBe(true);
-	// News that is not about an ask shows once as a toast on Requests.
+	// News that is not about an ask reaches the bell: it is in Recent alerts on any page.
 	await dot.goto('/requests');
-	await expect(dot.getByRole('status').filter({ hasText: 'Cobalt Orrery is in the Library' })).toBeVisible();
+	await dot.getByRole('button', { name: /^(Manage|More)/ }).click();
+	await dot.getByRole('link', { name: /^Recent alerts/ }).click();
+	await expect(dot.getByRole('dialog', { name: 'Recent alerts' }).getByText('Cobalt Orrery is in the Library')).toBeVisible();
+	await dot.keyboard.press('Escape');
 	// The follow moved onto the Library title.
 	await openFromSearch(dot, 'cobalt', 'Cobalt Orrery');
 	await expect(dot).toHaveURL(/\/library\/\d+/);
