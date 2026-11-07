@@ -1,27 +1,31 @@
 BINARY := holyarrs
 export CGO_ENABLED := 0
 
-.PHONY: build test vet docker web portable package-test
+.PHONY: ui build test vet docker e2e portable package-test
 
-build:
-	go build -trimpath -ldflags="-s -w" -o bin/$(BINARY) ./cmd/holyarrs
+# ui builds the app into app/frontend/dist, which the program embeds.
+ui:
+	npm --prefix app/frontend ci
+	npm --prefix app/frontend run build
+
+build: ui
+	go build -trimpath -ldflags="-s -w" -o bin/$(BINARY) ./app/backend/cmd/holyarrs
 
 test:
-	go test -timeout 25m ./... # internal/api alone runs past Go's 10 min default
+	go test -timeout 25m ./... # the api package alone runs past Go's 10 min default
 
 vet:
 	go vet ./...
 
 docker:
-	docker build -t holyarrs:dev .
+	docker build -f deploy/Dockerfile -t holyarrs:dev .
 
-# web rebuilds the app into web/dist, which the program embeds.
-web:
-	cd web/app && npm ci && npm run build
+e2e:
+	npm --prefix app/frontend run e2e
 
 # REF is a committed source snapshot; OUTPUT must be a new external directory.
 portable:
-	python scripts/package.py --ref "$(REF)" --version "$(VERSION)" --output "$(OUTPUT)" --web-node-modules "$(WEB_NODE_MODULES)" --module-cache "$(MODULE_CACHE)"
+	python deploy/release/package.py --ref "$(REF)" --version "$(VERSION)" --output "$(OUTPUT)" --web-node-modules "$(WEB_NODE_MODULES)" --module-cache "$(MODULE_CACHE)"
 
 package-test:
-	python -m unittest discover -s scripts -p 'test_packaging.py'
+	python -m unittest discover -s deploy/release/tests -p 'test_packaging.py'

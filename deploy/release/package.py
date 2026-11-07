@@ -14,16 +14,16 @@ import tarfile
 import tempfile
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 GO_IMAGE = "golang:1.27.3@sha256:e519d3b0a5b285e5aa53ab9eef02bc6bbb9cb04608389b743a136a9ce75f0d1e"
 TARGETS = {"linux-amd64": ("linux", "amd64", ""),
            "linux-arm64": ("linux", "arm64", ""),
            "linux-armv7": ("linux", "arm", "7"),
            "linux-386": ("linux", "386", ""),
            "windows-amd64": ("windows", "amd64", "")}
-SOURCE_DIRS = {"cmd", "internal", "web", "scripts", "docs", ".github"}
+SOURCE_DIRS = {"app", "deploy", "scripts", "docs", ".github"}
 SOURCE_FILES = {"go.mod", "go.sum", "LICENSE", "README.md", "SECURITY.md",
-                "Makefile", "Dockerfile", ".gitignore", ".gitattributes", ".dockerignore"}
+                "Makefile", ".gitignore", ".gitattributes", ".dockerignore"}
 
 
 def digest(data: bytes) -> str:
@@ -90,13 +90,13 @@ def snapshot(ref: str, destination: Path) -> tuple[str, int, dict[str, int]]:
             target.write_bytes(source.extractfile(member).read())
             target.chmod(member.mode & 0o777)
             modes[member.name] = 0o755 if member.mode & 0o111 else 0o644
-    if not (destination / "web/dist/index.html").is_file():
+    if not (destination / "app/frontend/dist/index.html").is_file():
         raise ValueError("committed embedded web assets are missing")
     return commit, epoch, modes
 
 
 def web_notices(source: Path, node_modules: Path) -> bytes:
-    lock = json.loads((source / "web/app/package-lock.json").read_bytes())
+    lock = json.loads((source / "app/frontend/package-lock.json").read_bytes())
     result = []
     required = {"svelte", "@sveltejs/kit", "esm-env", "devalue", "@fontsource-variable/geist",
                 "@fontsource-variable/geist-mono", "@fontsource-variable/sora"}
@@ -188,7 +188,7 @@ def build(args: argparse.Namespace) -> None:
             executable = "holyarrs.exe" if TARGETS[target][0] == "windows" else "holyarrs"
             go(["go", "build", "-mod=vendor", "-trimpath", "-buildvcs=false",
                 f"-ldflags=-s -w -buildid= -X main.version={version}", "-o", "/src/" + executable,
-                "./cmd/holyarrs"], TARGETS[target])
+                "./app/backend/cmd/holyarrs"], TARGETS[target])
             binary = (source / executable).read_bytes()
             build_info = go(["go", "version", "-m", "/src/" + executable])
             if version.encode() not in binary:

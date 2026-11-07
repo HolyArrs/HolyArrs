@@ -15,3 +15,8 @@ updates:
       go-modules:
         patterns:
           - "*"
+  # The web app's npm packages.
+  - package-ecosystem: npm
+    directory: /app/frontend
+    schedule:
+      interval: weekly

@@ -196,7 +196,7 @@ func TestListReasonsAreTemplates(t *testing.T) {
 // strings, log lines or settings (plan 2026-10-24 §8).
 func TestNoListBrandWord(t *testing.T) {
 	brand := regexp.MustCompile(`(?i)` + "spot" + "ify")
-	roots := []string{"../../web/app/src", ".", "../../cmd", "../music", "../metadata"}
+	roots := []string{"../../../frontend/src", ".", "../../cmd", "../music", "../metadata"}
 	for _, root := range roots {
 		err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 			if err != nil {

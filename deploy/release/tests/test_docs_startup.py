@@ -4,7 +4,7 @@ import pathlib
 import re
 import unittest
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 INSTALL = ROOT / "docs" / "install.md"
 NAS = ROOT / "docs" / "nas.md"
 
@@ -73,7 +73,7 @@ class Unraid(unittest.TestCase):
         guide = read(ROOT / "docs" / "nas-packages.md")
         self.assertIn("/mnt/<pool>/appdata", guide)
         self.assertNotIn("/mnt/cache/appdata/holyarrs", guide)
-        tool = read(ROOT / "scripts" / "nas-template.py")
+        tool = read(ROOT / "deploy" / "release" / "nas-template.py")
         self.assertIn("/mnt/<pool>/appdata", tool)
 
 

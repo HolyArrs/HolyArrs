@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 const appPort = '18739';
 
 export default defineConfig({
-	testDir: 'e2e',
+	testDir: '../tests',
 	testMatch: 'acceptance-library.spec.ts',
 	fullyParallel: false,
 	workers: 1,
@@ -17,7 +17,7 @@ export default defineConfig({
 		trace: 'retain-on-failure'
 	},
 	webServer: {
-		command: 'node e2e/acceptance-library-server.mjs',
+		command: 'node ../tests/acceptance-library-server.mjs',
 		url: `http://127.0.0.1:${appPort}/healthz`,
 		reuseExistingServer: false,
 		timeout: 240_000,

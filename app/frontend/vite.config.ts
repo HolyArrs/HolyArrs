@@ -5,14 +5,14 @@ import { buildVersion } from './build-version.ts';
 import { bundledPackages } from './bundled-packages.ts';
 import { defineConfig } from 'vitest/config';
 
-// The app is built into ../dist, which the Go program embeds and serves at /.
+// The app is built into dist, which the Go program embeds and serves at /.
 // Every page renders in the browser; index.html is the fallback for app links.
 const backend = process.env.HOLYARRS_DEV_BACKEND ?? 'http://127.0.0.1:18730';
 
 export default defineConfig({
 	plugins: [
 		sveltekit({
-			adapter: adapter({ pages: '../dist', assets: '../dist', fallback: 'index.html', strict: true }),
+			adapter: adapter({ pages: 'dist', assets: 'dist', fallback: 'index.html', strict: true }),
 			paths: { relative: false },
 			// Each page loads only its own code (plus the shared shell) instead of one bundle for every page.
 			output: { bundleStrategy: 'split' },

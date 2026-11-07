@@ -86,7 +86,7 @@ class Check(unittest.TestCase):
         found = self.run_check("### example.org/m@v1.0.0\n### svelte@4.0.0\n", ["clients/plex.svg", "fonts/paid.woff", "favicon.ico.br"])
         self.assertTrue(any(f.startswith("missing in docs/third-party-notices.md: svelte@5.0.0") for f in found), found)
         self.assertTrue(any("no longer shipped" in f and "svelte@4.0.0" in f for f in found), found)
-        self.assertTrue(any("web/dist/clients/plex.svg" in f for f in found), found)
+        self.assertTrue(any("app/frontend/dist/clients/plex.svg" in f for f in found), found)
         self.assertTrue(any("font outside" in f and "fonts/paid.woff" in f for f in found), found)
         self.assertFalse(any("favicon" in f for f in found), found)
 

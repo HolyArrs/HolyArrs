@@ -67,12 +67,12 @@ func excepted(rel, line string) bool {
 // every name and description in openapi.json and, when the plans folder is
 // next to the repo (it is not in the repo, so CI skips that part), plans\.
 func TestNoBannedWords(t *testing.T) {
-	repo := filepath.Join("..", "..")
+	repo := filepath.Join("..", "..", "..", "..")
 	type root struct {
 		dir  string
 		exts string
 	}
-	roots := []root{{filepath.Join(repo, "web", "app", "src"), ".svelte .ts .js .html .css"}, {filepath.Join(repo, "docs"), ".md"},
+	roots := []root{{filepath.Join(repo, "app", "frontend", "src"), ".svelte .ts .js .html .css"}, {filepath.Join(repo, "docs"), ".md"},
 		{filepath.Join(repo, "README.md"), ".md"}}
 	// The plans folder lives outside the repo, so a repo test only checks it
 	// when asked to (HOLYARRS_REQUIRE_PLANS); otherwise results would depend

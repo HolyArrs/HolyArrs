@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { deezerURL, mbPort, metadataEnv, plexPort, startFakes, subsPort, tmdbPort, traktPort, tvmazePort, youtubeURL } from './fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../../..');
+const repo = resolve(here, '../..');
 const tmp = join(here, '.tmp');
 const config = join(tmp, 'config');
 const movies = join(tmp, 'movies');
@@ -22,11 +22,11 @@ mkdirSync(movies, { recursive: true });
 mkdirSync(showsDir, { recursive: true });
 mkdirSync(musicDir, { recursive: true });
 
-const build = spawnSync('go', ['build', '-o', bin, './cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
+const build = spawnSync('go', ['build', '-o', bin, './app/backend/cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
 if (build.status !== 0) process.exit(build.status ?? 1);
 // The lab's fake Subtitle site: made-up subtitles, nothing from a real site.
 const subsBin = join(tmp, process.platform === 'win32' ? 'holyarrs-fakesubs.exe' : 'holyarrs-fakesubs');
-const subsBuild = spawnSync('go', ['build', '-o', subsBin, './cmd/holyarrs-fakesubs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
+const subsBuild = spawnSync('go', ['build', '-o', subsBin, './app/backend/tools/fakesubs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
 if (subsBuild.status !== 0) process.exit(subsBuild.status ?? 1);
 const subs = spawn(subsBin, ['-addr', `127.0.0.1:${subsPort}`], { cwd: tmp, stdio: 'ignore' });
 

@@ -1,12 +1,11 @@
 # Web stage: builds the app's pages from this commit's source and lockfile,
-# so an image from any commit always shows that commit's pages (the
-# committed web/dist is only for local go builds). It runs on the build
-# machine for every target; Node never reaches the final image.
+# so an image from any commit always shows that commit's pages. It runs on
+# the build machine for every target; Node never reaches the final image.
 FROM --platform=$BUILDPLATFORM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS web
-WORKDIR /src/web/app
-COPY web/app/package.json web/app/package-lock.json ./
+WORKDIR /src/app/frontend
+COPY app/frontend/package.json app/frontend/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
-COPY web/app/ ./
+COPY app/frontend/ ./
 RUN npm run build
 
 # Build stage: runs on the build machine and cross-compiles for the target,
@@ -23,14 +22,14 @@ WORKDIR /src
 COPY go.mod go.sum* ./
 RUN go mod download
 COPY . .
-# The pages just built replace the committed copy before the program embeds them.
-RUN rm -rf web/dist
-COPY --from=web /src/web/dist ./web/dist
+# The pages just built are what the program embeds.
+RUN rm -rf app/frontend/dist
+COPY --from=web /src/app/frontend/dist ./app/frontend/dist
 RUN set -eu; \
     ldflags="-s -w"; \
     if [ -n "${VERSION:-}" ]; then ldflags="$ldflags -X main.version=$VERSION"; fi; \
     GOARM="${TARGETVARIANT#v}" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -ldflags="$ldflags" -o /out/holyarrs ./cmd/holyarrs
+    go build -trimpath -ldflags="$ldflags" -o /out/holyarrs ./app/backend/cmd/holyarrs
 # The folders the bare image needs: /config for the owner (1000:1000) and a
 # /tmp anyone may write (Move's working copies, temporary files).
 RUN mkdir -p /out/config /out/tmp && chown 1000:1000 /out/config && chmod 1777 /out/tmp
@@ -49,7 +48,7 @@ COPY --from=build /out/holyarrs /holyarrs
 COPY --from=build --chmod=1777 /out/tmp /tmp
 COPY --from=build --chown=1000:1000 /out/config /config
 COPY LICENSE /LICENSE
-# The licences of every part shipped here (scripts/notices.py keeps them complete).
+# The licences of every part shipped here (deploy/release/notices.py keeps them complete).
 COPY THIRD_PARTY_NOTICES.md /THIRD_PARTY_NOTICES.md
 COPY docs/third-party-notices.md /docs/third-party-notices.md
 # No GOMEMLIMIT here: the program aims at 384 MiB by itself, and on a small

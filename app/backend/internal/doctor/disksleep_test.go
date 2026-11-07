@@ -51,7 +51,7 @@ func TestSlowFolderInDoctorRun(t *testing.T) {
 
 func readDoc(t *testing.T, name string) string {
 	t.Helper()
-	b, err := os.ReadFile(filepath.Join("..", "..", "docs", name))
+	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "docs", name))
 	if err != nil {
 		t.Fatal(err)
 	}

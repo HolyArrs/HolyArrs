@@ -157,7 +157,7 @@ export default mergeConfig(appConfig, defineConfig({
 		port: 18749,
 		strictPort: true,
 		// Build, test and agent output churns while other work runs; the preview must not reload on it.
-		watch: { ignored: ['**/.svelte-kit/output/**', '**/web/dist/**', '**/test-results/**', '**/playwright-report/**', '**/.omc/**', '**/e2e/**'] },
+		watch: { ignored: ['**/.svelte-kit/output/**', '**/dist/**', '**/test-results/**', '**/playwright-report/**', '**/.omc/**', '**/e2e/**'] },
 		fs: { allow: ['.'], deny: ['.env', '.env.*', '*.{crt,pem,key}', '**/.git/**'] },
 		proxy: {
 			'/api': isolatedProxy(),

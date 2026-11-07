@@ -88,7 +88,7 @@ export default mergeConfig(appConfig, defineConfig({
 		strictPort: true,
 		allowedHosts: ['holyarrs-app.luiverse.com'],
 		// Type checks and tests rewrite generated files; don't reload the page for them.
-		watch: { ignored: ['**/.svelte-kit/generated/**', '**/.svelte-kit/types/**', '**/test-results/**', '**/playwright-report/**', '../dist/**', '**/coverage/**'] },
+		watch: { ignored: ['**/.svelte-kit/generated/**', '**/.svelte-kit/types/**', '**/test-results/**', '**/playwright-report/**', 'dist/**', '**/coverage/**'] },
 		fs: { allow: ['.', '../../../mobbin-product-review/web/app/node_modules/@fontsource-variable'], deny: ['.env', '.env.*', '*.{crt,pem,key}', '**/.git/**'] },
 		proxy: {
 			'/api': isolatedProxy(),

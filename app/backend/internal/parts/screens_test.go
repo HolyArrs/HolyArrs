@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const webRoutes = "../../web/app/src/routes"
+const webRoutes = "../../../frontend/src/routes"
 
 // Every page of the web app (each +page.svelte) and every menu entry of
 // the app frame belongs to a part or is marked core in Screens; a row for a

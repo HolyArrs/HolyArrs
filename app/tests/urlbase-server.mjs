@@ -9,7 +9,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../../..');
+const repo = resolve(here, '../..');
 const tmp = join(here, '.tmp-base');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');
@@ -18,7 +18,7 @@ export const proxyPort = Number(process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? 1873
 
 rmSync(tmp, { recursive: true, force: true });
 mkdirSync(config, { recursive: true });
-const build = spawnSync('go', ['build', '-o', bin, './cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
+const build = spawnSync('go', ['build', '-o', bin, './app/backend/cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
 if (build.status !== 0) process.exit(build.status ?? 1);
 
 const child = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${appPort}`, '-url-base', '/holyarrs'], {

@@ -4,7 +4,7 @@ import pathlib
 import re
 import unittest
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 DOCS = ROOT / "docs"
 
 
@@ -109,19 +109,19 @@ class HealthDocs(unittest.TestCase):
 
     def test_unraid_exclusive_switch(self):
         self.assertIn("Permit exclusive shares", read(DOCS / "nas.md"))
-        self.assertIn("Permit exclusive shares", read(ROOT / "internal" / "store" / "store.go"))
+        self.assertIn("Permit exclusive shares", read(ROOT / "app" / "backend" / "internal" / "store" / "store.go"))
 
 
 class Wording(unittest.TestCase):
     def test_button_words_match(self):
         # The Downloads page button says "Check again"; no message may say "Recheck".
-        for p in (ROOT / "internal" / "downloader" / "manager.go", ROOT / "internal" / "health" / "health.go"):
+        for p in (ROOT / "app" / "backend" / "internal" / "downloader" / "manager.go", ROOT / "app" / "backend" / "internal" / "health" / "health.go"):
             with self.subTest(file=p.name):
                 self.assertNotIn("use Recheck", read(p))
                 self.assertIn("Check again", read(p))
 
     def test_no_shell_steps_on_first_run(self):
-        page = read(ROOT / "web" / "app" / "src" / "routes" / "login" / "+page.svelte")
+        page = read(ROOT / "app" / "frontend" / "src" / "routes" / "login" / "+page.svelte")
         self.assertNotIn("doctor shows how", page)
         self.assertIn("Forgot to map /config?", page)
 

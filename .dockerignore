@@ -4,9 +4,9 @@ config/
 *.db-wal
 *.db-shm
 .git/
-web/app/node_modules/
-web/app/.svelte-kit/
-web/app/e2e/.tmp/
+app/frontend/node_modules/
+app/frontend/.svelte-kit/
+app/tests/
 .claude/
 .omc/
 .env

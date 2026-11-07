@@ -3,12 +3,12 @@ import pathlib
 import re
 import unittest
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 GUIDES = [ROOT / "docs" / "install.md", ROOT / "docs" / "nas.md"]
 
 
 def go_source() -> str:
-    return "\n".join(p.read_text(encoding="utf-8") for d in ("cmd", "internal") for p in (ROOT / d).rglob("*.go"))
+    return "\n".join(p.read_text(encoding="utf-8") for d in ("app/backend/cmd", "app/backend/internal") for p in (ROOT / d).rglob("*.go"))
 
 
 class InstallGuides(unittest.TestCase):
@@ -20,7 +20,7 @@ class InstallGuides(unittest.TestCase):
                     self.assertIn(name.rstrip("_"), src)
 
     def test_port_matches_image(self):
-        expose = re.search(r"^EXPOSE\s+(\d+)", (ROOT / "Dockerfile").read_text(encoding="utf-8"), re.M).group(1)
+        expose = re.search(r"^EXPOSE\s+(\d+)", (ROOT / "deploy" / "Dockerfile").read_text(encoding="utf-8"), re.M).group(1)
         for g in GUIDES:
             self.assertIn(expose, g.read_text(encoding="utf-8"), g.name)
 
@@ -47,7 +47,7 @@ class InstallGuides(unittest.TestCase):
         for name in ("PUID", "PGID", "UMASK", "FILE__"):
             with self.subTest(name=name):
                 self.assertIn(name, src)
-        self.assertNotRegex((ROOT / "Dockerfile").read_text(encoding="utf-8"), r"(?m)^USER\s")
+        self.assertNotRegex((ROOT / "deploy" / "Dockerfile").read_text(encoding="utf-8"), r"(?m)^USER\s")
 
     def test_linuxserver_style_setup(self):
         text = (ROOT / "docs" / "install.md").read_text(encoding="utf-8")

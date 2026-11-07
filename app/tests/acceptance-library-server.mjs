@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { deezerURL, mbPort, metadataEnv, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from './fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../../..');
+const repo = resolve(here, '../..');
 const tmp = join(here, '.tmp-acceptance-library');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');
@@ -21,9 +21,9 @@ mkdirSync(config, { recursive: true });
 const goEnv = { ...process.env, CGO_ENABLED: '0' };
 const version = spawnSync('go', ['version'], { cwd: repo, stdio: 'inherit', env: goEnv });
 if (version.status !== 0) process.exit(version.status ?? 1);
-const build = spawnSync('go', ['build', '-o', bin, './cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: goEnv });
+const build = spawnSync('go', ['build', '-o', bin, './app/backend/cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: goEnv });
 if (build.status !== 0) process.exit(build.status ?? 1);
-const subsBuild = spawnSync('go', ['build', '-o', subsBin, './cmd/holyarrs-fakesubs'], { cwd: repo, stdio: 'inherit', env: goEnv });
+const subsBuild = spawnSync('go', ['build', '-o', subsBin, './app/backend/tools/fakesubs'], { cwd: repo, stdio: 'inherit', env: goEnv });
 if (subsBuild.status !== 0) process.exit(subsBuild.status ?? 1);
 
 const stopFakes = startFakes();

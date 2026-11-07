@@ -207,7 +207,7 @@ async function verifyPage(page: Page, testInfo: TestInfo, name: string) {
 	await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity));
 	const result = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(result.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`)).toEqual([]);
-	const artifactDir = join(process.cwd(), 'e2e', '.tmp', 'community-artifacts');
+	const artifactDir = join(process.cwd(), '..', 'tests', '.tmp', 'community-artifacts');
 	mkdirSync(artifactDir, { recursive: true });
 	const artifact = join(artifactDir, `${name}.png`);
 	await page.screenshot({ path: artifact, fullPage: true });

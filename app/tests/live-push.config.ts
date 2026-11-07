@@ -13,6 +13,6 @@ export default defineConfig({
 	reporter: [['list']],
 	use: { baseURL: `http://127.0.0.1:${web}`, trace: 'retain-on-failure', ...devices['Desktop Chrome'] },
 	webServer: [
-		{ command: 'node e2e/live-push-server.mjs', url: `http://127.0.0.1:${backend}/readyz`, reuseExistingServer: false, timeout: 180_000, stdout: 'ignore', stderr: 'pipe', cwd: '..' }
+		{ command: 'node ../tests/live-push-server.mjs', url: `http://127.0.0.1:${backend}/readyz`, reuseExistingServer: false, timeout: 180_000, stdout: 'ignore', stderr: 'pipe', cwd: '../frontend' }
 	]
 });

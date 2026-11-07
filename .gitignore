@@ -16,5 +16,10 @@ bin/
 /private-config/
 /exports/
 /captures/
-/web/app/static/preview-audit/
+/app/frontend/static/preview-audit/
+/app/frontend/dist/*
+!/app/frontend/dist/.gitkeep
+/app/tests/.tmp/
+/app/tests/.tmp-*/
+/app/tests/live-push.spec.ts-snapshots/
 deploy/metadata/live/egress.env

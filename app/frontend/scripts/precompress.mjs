@@ -1,11 +1,11 @@
 // Writes a brotli copy (name.br) next to each built script, style, page and
-// SVG in web/dist, kept only when it is smaller. The Go server sends it to
+// SVG in app/frontend/dist, kept only when it is smaller. The Go server sends it to
 // browsers that accept brotli; others get the file as it is, gzipped.
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { brotliCompressSync, constants } from 'node:zlib';
 
-const dist = new URL('../../dist/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const dist = new URL('../dist/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const exts = new Set(['.js', '.css', '.html', '.svg', '.json', '.txt']);
 let n = 0, before = 0, after = 0;
 function walk(dir) {

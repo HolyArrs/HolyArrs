@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "node scripts/vendor-hls.mjs && vite build && node scripts/precompress.mjs && node scripts/check-words.mjs",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && svelte-check --tsconfig ../tests/tsconfig.check.json --fail-on-warnings",
 		"test": "vitest run",
 		"e2e": "playwright test"
 	},

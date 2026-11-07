@@ -11,7 +11,7 @@ result_file="$artifact_dir/scale-results.jsonl"
 status_file="$artifact_dir/scale-exit-code.txt"
 image="holyarrs-scale-ci:${GITHUB_SHA:-local}"
 
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go test -c -o "$test_binary" ./cmd/holyarrs
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go test -c -o "$test_binary" ./app/backend/cmd/holyarrs
 
 cat >"$dockerfile" <<'EOF'
 FROM scratch

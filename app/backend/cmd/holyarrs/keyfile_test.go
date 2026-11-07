@@ -168,7 +168,7 @@ func TestDamagedKeyKeepsAPlainPage(t *testing.T) {
 // The key messages point at this section, so it must be there and name the
 // way to restore without the app running.
 func TestMoveToNewMachineDocs(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("..", "..", "docs", "backups.md"))
+	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "docs", "backups.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

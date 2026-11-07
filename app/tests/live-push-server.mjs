@@ -11,14 +11,14 @@ import { fileURLToPath } from 'node:url';
 import { metadataEnv, startFakes } from './fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../../..');
+const repo = resolve(here, '../..');
 const tmp = join(here, '.tmp-live');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');
 export const backendPort = Number(process.env.HOLYARRS_LIVE_BACKEND_PORT ?? 18732);
 export const qbitPort = Number(process.env.HOLYARRS_LIVE_QBIT_PORT ?? 18733);
 export const webPort = Number(process.env.HOLYARRS_LIVE_WEB_PORT ?? 18734);
-const site = resolve(here, '../.svelte-kit/showcase/site');
+const site = resolve(here, '../frontend/.svelte-kit/showcase/site');
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
@@ -29,7 +29,7 @@ function main() {
 	}
 	rmSync(tmp, { recursive: true, force: true });
 	mkdirSync(config, { recursive: true });
-	const build = spawnSync('go', ['build', '-o', bin, './cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
+	const build = spawnSync('go', ['build', '-o', bin, './app/backend/cmd/holyarrs'], { cwd: repo, stdio: 'inherit', env: { ...process.env, CGO_ENABLED: '0' } });
 	if (build.status !== 0) process.exit(build.status ?? 1);
 
 	// Fake qBittorrent: one torrent HolyArrs did not send; /set moves it.

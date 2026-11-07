@@ -10,7 +10,7 @@ import zipfile
 
 
 def module(name, filename):
-    spec = importlib.util.spec_from_file_location(name, Path(__file__).with_name(filename))
+    spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parent.parent / filename)
     result = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(result)
     return result
@@ -127,8 +127,8 @@ class PackagingTests(unittest.TestCase):
     def test_notice_version_mismatch_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "web/app").mkdir(parents=True)
-            (root / "web/app/package-lock.json").write_text(json.dumps({"packages": {"node_modules/svelte": {"version": "1"}}}))
+            (root / "app/frontend").mkdir(parents=True)
+            (root / "app/frontend/package-lock.json").write_text(json.dumps({"packages": {"node_modules/svelte": {"version": "1"}}}))
             modules = root / "modules"
             (modules / "svelte").mkdir(parents=True)
             (modules / "svelte/package.json").write_text('{"version":"2"}')
@@ -140,8 +140,8 @@ class PackagingTests(unittest.TestCase):
     def test_missing_nonoptional_web_package_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "web/app").mkdir(parents=True)
-            (root / "web/app/package-lock.json").write_text(json.dumps({"packages": {"node_modules/other": {"version": "1"}}}))
+            (root / "app/frontend").mkdir(parents=True)
+            (root / "app/frontend/package-lock.json").write_text(json.dumps({"packages": {"node_modules/other": {"version": "1"}}}))
             (root / "node_modules").mkdir()
             with self.assertRaises(ValueError):
                 package.web_notices(root, root / "node_modules")
@@ -149,8 +149,8 @@ class PackagingTests(unittest.TestCase):
     def test_linked_module_root_and_license_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "web/app").mkdir(parents=True)
-            (root / "web/app/package-lock.json").write_text(json.dumps({"packages": {"node_modules/svelte": {"version": "1"}}}))
+            (root / "app/frontend").mkdir(parents=True)
+            (root / "app/frontend/package-lock.json").write_text(json.dumps({"packages": {"node_modules/svelte": {"version": "1"}}}))
             modules = root / "node_modules"
             (modules / "svelte").mkdir(parents=True)
             (modules / "svelte/package.json").write_text('{"version":"1"}')

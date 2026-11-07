@@ -5,9 +5,9 @@ const port = process.env.HOLYARRS_E2E_PORT ?? '18741';
 const firstRun = /first run makes the owner, adds the key and folder, then returns Home/;
 
 // The tests drive a real HolyArrs (built from this repo, fresh config) that
-// serves the built app from web/dist; run `npm run build` first.
+// serves the built app from app/frontend/dist; run `npm run build` first.
 export default defineConfig({
-	testDir: 'e2e',
+	testDir: '../tests',
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,
@@ -18,7 +18,7 @@ export default defineConfig({
 	},
 	webServer: [
 		{
-			command: 'node e2e/server.mjs',
+			command: 'node ../tests/server.mjs',
 			url: `http://127.0.0.1:${port}/readyz`,
 			reuseExistingServer: false,
 			timeout: 180_000,
@@ -27,7 +27,7 @@ export default defineConfig({
 		},
 		// The same app under /holyarrs behind a small reverse proxy (3.5.10).
 		{
-			command: 'node e2e/urlbase-server.mjs',
+			command: 'node ../tests/urlbase-server.mjs',
 			url: `http://127.0.0.1:${process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? '18735'}/holyarrs/readyz`,
 			reuseExistingServer: false,
 			timeout: 180_000,
