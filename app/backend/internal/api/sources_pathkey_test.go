@@ -3,12 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // A feed with its passkey in the path (TorrentLeech style) is shown masked,

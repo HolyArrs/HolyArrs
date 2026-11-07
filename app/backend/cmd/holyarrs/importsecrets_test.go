@@ -16,7 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // A made-up secrets file; every value starts with "your-" and is

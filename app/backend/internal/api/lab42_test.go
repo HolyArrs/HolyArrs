@@ -27,7 +27,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 

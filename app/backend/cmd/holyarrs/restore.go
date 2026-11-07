@@ -12,7 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 const restoreUsage = "usage:\n" +

@@ -20,9 +20,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 const labRelease = "HolyArrs.Lab.Signal.2026.1080p.WEB.H264-HOLYARRS"

@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // KeySize is the master key length in bytes.
@@ -254,13 +253,13 @@ func (v *Vault) open(id int64, stored string) (string, error) {
 
 func now() string { return database.FormatTime(time.Now()) }
 
-func actor(a domain.Actor) string {
+func actor(a database.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
 }
 
 // PutTx stores a new secret inside an open write and returns its id.
-func (v *Vault) PutTx(tx *sql.Tx, kind, plain string, by domain.Actor) (int64, error) {
+func (v *Vault) PutTx(tx *sql.Tx, kind, plain string, by database.Actor) (int64, error) {
 	t, who := now(), actor(by)
 	res, err := tx.Exec("INSERT INTO secrets(created_at, created_by, updated_at, updated_by, kind, value) VALUES (?, ?, ?, ?, ?, ?)",
 		t, who, t, who, kind, "")
@@ -285,7 +284,7 @@ func (v *Vault) Put(ctx context.Context, kind, plain string) (int64, error) {
 	var id int64
 	err := v.s.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		id, err = v.PutTx(tx, kind, plain, domain.System)
+		id, err = v.PutTx(tx, kind, plain, database.System)
 		return err
 	})
 	return id, err
@@ -412,7 +411,7 @@ const settingRef = "secret:"
 
 // SetSetting stores a secret setting, such as the TMDB token, encrypted. The
 // settings row holds only a reference.
-func (v *Vault) SetSetting(ctx context.Context, grp, key, plain string, by domain.Actor) error {
+func (v *Vault) SetSetting(ctx context.Context, grp, key, plain string, by database.Actor) error {
 	return v.s.Write(ctx, func(tx *sql.Tx) error {
 		var cur string
 		err := tx.QueryRow("SELECT value FROM settings WHERE grp = ? AND key = ?", grp, key).Scan(&cur)
@@ -502,7 +501,7 @@ func (v *Vault) MigratePlaintext(ctx context.Context) (int, error) {
 			}
 			ref := x.ref.Int64
 			if !x.ref.Valid {
-				if ref, err = v.PutTx(tx, "source_api_key", plain, domain.System); err != nil {
+				if ref, err = v.PutTx(tx, "source_api_key", plain, database.System); err != nil {
 					return err
 				}
 			}
@@ -517,7 +516,7 @@ func (v *Vault) MigratePlaintext(ctx context.Context) (int, error) {
 			return err
 		}
 		for _, x := range sets {
-			id, err := v.PutTx(tx, "setting:"+x.grp+"/"+x.key, x.val, domain.System)
+			id, err := v.PutTx(tx, "setting:"+x.grp+"/"+x.key, x.val, database.System)
 			if err != nil {
 				return err
 			}

@@ -2,12 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // qBittorrent signs in with an API key or with a user name and password;

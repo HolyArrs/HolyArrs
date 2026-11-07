@@ -22,7 +22,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )

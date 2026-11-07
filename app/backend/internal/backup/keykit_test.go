@@ -16,8 +16,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 const keyKitPath = "/api/v1/system/key-kit"

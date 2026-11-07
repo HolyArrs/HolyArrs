@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // keySection is the doctor section for the master key.

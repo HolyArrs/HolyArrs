@@ -16,10 +16,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // listSetup is an API with Outside lists pointed at a stand-in TMDB that

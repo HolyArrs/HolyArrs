@@ -17,9 +17,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // TestEveryRouteHasAPermission reads every route the program registers and

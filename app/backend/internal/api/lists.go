@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // ListView is an Outside list as the API shows it.

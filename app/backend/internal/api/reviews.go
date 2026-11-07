@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // The Trakt VIP access token is kept encrypted next to the Trakt client id.

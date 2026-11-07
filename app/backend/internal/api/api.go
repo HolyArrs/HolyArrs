@@ -41,12 +41,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // Server is what the API needs.

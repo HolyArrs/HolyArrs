@@ -11,7 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 func onDisk(dir string) string {

@@ -19,9 +19,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small

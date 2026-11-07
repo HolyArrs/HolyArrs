@@ -9,9 +9,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // mediaServerRoutes are the media server link routes (5.1.14).

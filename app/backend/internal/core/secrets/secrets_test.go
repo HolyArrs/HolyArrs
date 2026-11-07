@@ -2,7 +2,6 @@ package secrets
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func openStore(t *testing.T, dir string) *database.Store {
@@ -124,66 +122,16 @@ func TestMask(t *testing.T) {
 	}
 }
 
-func TestMigratesPlaintext(t *testing.T) {
-	dir := t.TempDir()
-	s := openStore(t, dir)
-	ctx := context.Background()
-	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Old", Protocol: "torrent", Format: "torznab", URL: "http://x/api",
-			Kinds: []string{"movie"}, Categories: map[string][]int{}, State: "enabled",
-			Extra: map[string]string{"apikey": "OLD_PLAIN_KEY", "lang": "en"}}, domain.System); err != nil {
-			return err
-		}
-		_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by)
-			VALUES ('links', 'tmdb_token', 'plain-token-2', 'x', '{}', 'x', '{}')`)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	key, _ := LoadKey(dir, "")
-	v, err := Open(ctx, s, key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	n, err := v.MigratePlaintext(ctx)
-	if err != nil || n != 2 {
-		t.Fatalf("moved %d %v", n, err)
-	}
-	var src domain.Source
-	if err := database.Get(ctx, s.Read(), "sources", 1, &src); err != nil {
-		t.Fatal(err)
-	}
-	if _, left := src.Extra["apikey"]; left || src.Extra["lang"] != "en" || src.SecretRef == nil {
-		t.Fatalf("source after: %+v", src)
-	}
-	if got, _ := v.Get(ctx, *src.SecretRef); got != "OLD_PLAIN_KEY" {
-		t.Fatalf("moved key %q", got)
-	}
-	tok, err := v.Setting(ctx, "links", "tmdb_token")
-	if err != nil || tok != "plain-token-2" {
-		t.Fatalf("token %q %v", tok, err)
-	}
-	var raw string
-	_ = s.Read().QueryRow("SELECT value FROM settings WHERE key = 'tmdb_token'").Scan(&raw)
-	if strings.Contains(raw, "plain-token-2") {
-		t.Fatalf("setting still plain: %q", raw)
-	}
-	if n, _ := v.MigratePlaintext(ctx); n != 0 {
-		t.Fatalf("second run moved %d", n)
-	}
-}
-
 func TestSetSettingStoresEncrypted(t *testing.T) {
 	dir := t.TempDir()
 	s := openStore(t, dir)
 	key, _ := LoadKey(dir, "")
 	ctx := context.Background()
 	v, _ := Open(ctx, s, key)
-	if err := v.SetSetting(ctx, "links", "tmdb_token", "tok-a", domain.System); err != nil {
+	if err := v.SetSetting(ctx, "links", "tmdb_token", "tok-a", database.System); err != nil {
 		t.Fatal(err)
 	}
-	if err := v.SetSetting(ctx, "links", "tmdb_token", "tok-b", domain.System); err != nil {
+	if err := v.SetSetting(ctx, "links", "tmdb_token", "tok-b", database.System); err != nil {
 		t.Fatal(err)
 	}
 	if got, _ := v.Setting(ctx, "links", "tmdb_token"); got != "tok-b" {

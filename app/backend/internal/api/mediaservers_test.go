@@ -3,13 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // route: GET /api/v1/media-servers

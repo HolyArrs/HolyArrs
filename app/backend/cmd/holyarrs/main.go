@@ -48,7 +48,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
@@ -56,6 +56,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )

@@ -8,7 +8,7 @@ import (
 	"runtime"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // masterKeyChecks reads the master key (HOLYARRS_MASTER_KEY_FILE or holyarrs.key

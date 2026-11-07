@@ -18,9 +18,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 func TestDownloaderAttemptErrorsArePublicSentinels(t *testing.T) {
