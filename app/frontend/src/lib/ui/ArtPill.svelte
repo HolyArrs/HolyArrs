@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+	// A small frosted pill for text, an icon or a progress ring over artwork.
 	import Icon, { type IconName } from './Icon.svelte';
 
 	let {
@@ -22,7 +23,9 @@
 		compact?: boolean;
 		testid?: string;
 	} = $props();
+	// Keep the ring inside 0 to 100.
 	const pct = $derived(percent === undefined ? undefined : Math.max(0, Math.min(100, percent)));
+	// Ring length for radius 7, used to draw the filled arc.
 	const C = 2 * Math.PI * 7;
 </script>
 
@@ -39,6 +42,7 @@
 </span>
 
 <style>
+	/* Frosted so it stays readable over any artwork. */
 	.ui-art-pill {
 		--tint: var(--on-art);
 		display: inline-flex;
@@ -65,6 +69,7 @@
 	.info { --tint: var(--info-on-art); }
 	.wait { --tint: var(--wait-on-art); }
 	.fail { --tint: var(--fail-on-art); }
+	/* Compact keeps only the glyph in a round chip. */
 	.compact.glyph { width: 28px; height: 28px; padding: 0; justify-content: center; }
 	.compact.glyph .w { display: none; }
 </style>

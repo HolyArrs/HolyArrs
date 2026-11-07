@@ -1,4 +1,5 @@
 <script lang="ts">
+	// A tiny label chip, drawn as an art pill when placed over artwork.
 	import ArtPill from './ArtPill.svelte';
 	let { label, on = 'surface', title }: { label: string; on?: 'surface' | 'art'; title?: string } = $props();
 </script>

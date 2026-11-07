@@ -1,4 +1,5 @@
 <script lang="ts">
+	// A generated stand-in tile with initials, shown when art is missing.
 	import { inkOn, placeholderHue, placeholderText } from '../core/art-placeholder.ts';
 
 	let {
@@ -18,6 +19,7 @@
 	} = $props();
 	const text = $derived(placeholderText(name));
 	const hue = $derived(placeholderHue(name));
+	// Pick a readable text color for a given tint.
 	const ink = $derived(inkOn(color));
 </script>
 
@@ -26,6 +28,7 @@
 </span>
 
 <style>
+	/* Size container lets the letters scale with the box. */
 	.aph {
 		position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; container-type: size;
 		background: linear-gradient(145deg, hsl(var(--h) 28% 30%), hsl(calc(var(--h) + 25) 30% 18%));
@@ -41,6 +44,7 @@
 	.aph.inline.wide { aspect-ratio: 16 / 9; }
 	.t { font: 700 clamp(12px, 30cqmin, 64px) / 1 var(--font-ui); letter-spacing: .02em; opacity: .92; }
 	.t.long { font-size: clamp(11px, 20cqmin, 44px); }
+	/* Soft sweep shows the art is still loading. */
 	.loading::after {
 		content: ''; position: absolute; inset: 0;
 		background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / .08) 50%, transparent 70%);
