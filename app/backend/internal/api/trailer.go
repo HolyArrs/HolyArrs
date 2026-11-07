@@ -38,7 +38,6 @@ const (
 	trailerLongMiss       = 2 * time.Hour      // ...when it has no trailer, or none plays here for a lasting reason
 	trailerUnplayableMiss = time.Hour          // ...when one is blocked here or a premiere not on yet
 	trailerPool           = 4                  // reader lookups at once
-	trailerAhead          = 40                 // ahead-of-time music video lookups per 10 minutes for the whole install
 	trailerBadKeep        = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
 	trailerMore           = 4                  // other trailers of the title tried in one lookup (up to 5 in all, 4 when the first is marked bad)
 )
@@ -114,7 +113,6 @@ type trailerState struct {
 	cache   map[string]trailerEntry
 	budget  map[int64][]time.Time
 	flights map[string]*trailerFlight
-	ahead   []time.Time
 	pool    chan struct{}
 	// failed counts lookups that failed in a row at YouTube's door (a
 	// success resets; a video YouTube will not play here does not count);
@@ -296,24 +294,6 @@ func (t *trailerState) allow(user int64, now time.Time) bool {
 		return false
 	}
 	t.budget[user] = append(kept, now)
-	return true
-}
-
-// allowAhead spends one of the install's ahead-of-time lookups.
-func (t *trailerState) allowAhead(now time.Time) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	kept := t.ahead[:0]
-	for _, at := range t.ahead {
-		if now.Sub(at) < 10*time.Minute {
-			kept = append(kept, at)
-		}
-	}
-	t.ahead = kept
-	if len(kept) >= trailerAhead {
-		return false
-	}
-	t.ahead = append(t.ahead, now)
 	return true
 }
 

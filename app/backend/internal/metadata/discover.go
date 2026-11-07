@@ -198,9 +198,6 @@ func DiscovererFor(ctx context.Context, provider Provider) (Discoverer, bool) {
 	return d, ok
 }
 
-// DiscoverRows are the row names Discover takes.
-var DiscoverRows = []string{"trending", "popular", "upcoming", "similar", "genre", "services", "best"}
-
 // BestQuery is the TMDB discover query for best new releases: out in the
 // last 24 months, rated 7.5 or more by at least 300 people, best rated first.
 func BestQuery(kind string, now time.Time) url.Values {
