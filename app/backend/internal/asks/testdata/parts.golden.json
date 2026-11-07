@@ -1,0 +1,22 @@
+{
+  "seasons": {
+    "s": [
+      {
+        "number": 7,
+        "name": "s",
+        "air_day": "s"
+      }
+    ]
+  },
+  "albums": {
+    "s": [
+      {
+        "disc": 7,
+        "number": 7,
+        "name": "s",
+        "length_ms": 7,
+        "recording_id": "s"
+      }
+    ]
+  }
+}

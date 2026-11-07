@@ -1,0 +1,26 @@
+{
+  "ID": 7,
+  "CreatedAt": "2026-10-13T12:00:00Z",
+  "CreatedBy": {
+    "kind": "s",
+    "id": 7
+  },
+  "UpdatedAt": "2026-10-13T12:00:00Z",
+  "UpdatedBy": {
+    "kind": "s",
+    "id": 7
+  },
+  "TitleID": 7,
+  "AlbumID": 7,
+  "Season": 7,
+  "ItemID": 7,
+  "VersionID": 7,
+  "FileID": 7,
+  "Kind": "s",
+  "Note": "s",
+  "State": "s",
+  "MadeBy": 7,
+  "ClosedBy": 7,
+  "ClosedAt": "2026-10-13T12:00:00Z",
+  "Reply": "s"
+}
