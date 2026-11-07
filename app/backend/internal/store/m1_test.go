@@ -11,6 +11,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -25,15 +26,14 @@ var (
 // stage4 is the main migration set as it was after Stage 4 (up to 0006).
 func stage4(t *testing.T) fs.FS {
 	t.Helper()
-	src, _ := fs.Sub(embedded, "migrations/main")
-	ms, err := loadMigrations(src)
+	ms, err := database.EmbeddedMigrations("migrations/main")
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := fstest.MapFS{}
 	for _, m := range ms {
-		if m.version <= 6 {
-			out[m.name] = &fstest.MapFile{Data: []byte(m.sql)}
+		if m.Version <= 6 {
+			out[m.Name] = &fstest.MapFile{Data: []byte(m.SQL)}
 		}
 	}
 	return out
@@ -45,7 +45,7 @@ func stage4(t *testing.T) fs.FS {
 func TestM1RollForwardFromStage4(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: stage4(t)})
+	old, err := database.Open(dir, database.Options{MainMigrations: stage4(t)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,12 +62,12 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	}
 	_ = old.Close()
 
-	s, err := Open(dir, Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	mainV, _ := SchemaVersions()
+	mainV, _ := database.SchemaVersions()
 	if v, _ := s.Version(); v != mainV || v < 7 {
 		t.Fatalf("version %d, want %d (>= 7)", v, mainV)
 	}
@@ -75,7 +75,7 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	if len(backups) != 1 {
 		t.Fatalf("backups before 0007: %v", backups)
 	}
-	ts, err := Select[domain.Title](ctx, s.Read(), "titles", "")
+	ts, err := database.Select[domain.Title](ctx, s.Read(), "titles", "")
 	if err != nil || len(ts) != 1 {
 		t.Fatalf("titles %v %v", ts, err)
 	}
@@ -91,20 +91,20 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	opens := cinema.AddDate(0, 0, 90)
 	ti.GateOpensAt = &opens
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		if err := Update(tx, "titles", &ti, domain.System); err != nil {
+		if err := database.Update(tx, "titles", &ti, domain.System); err != nil {
 			return err
 		}
-		_, err := Insert(tx, "never_add", &domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "42"}, Name: "Skip Me", Reason: "test"}, domain.System)
+		_, err := database.Insert(tx, "never_add", &domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "42"}, Name: "Skip Me", Reason: "test"}, domain.System)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var back domain.Title
-	if err := Get(ctx, s.Read(), "titles", ti.ID, &back); err != nil || back.CinemaDate == nil || !back.CinemaDate.Equal(cinema) || !back.GateOpensAt.Equal(opens) {
+	if err := database.Get(ctx, s.Read(), "titles", ti.ID, &back); err != nil || back.CinemaDate == nil || !back.CinemaDate.Equal(cinema) || !back.GateOpensAt.Equal(opens) {
 		t.Fatalf("title back %+v %v", back, err)
 	}
-	na, err := Select[domain.NeverAdd](ctx, s.Read(), "never_add", "json_extract(source_ids, '$.tmdb') = ?", "42")
+	na, err := database.Select[domain.NeverAdd](ctx, s.Read(), "never_add", "json_extract(source_ids, '$.tmdb') = ?", "42")
 	if err != nil || len(na) != 1 || na[0].Name != "Skip Me" {
 		t.Fatalf("never_add %v %v", na, err)
 	}
@@ -118,7 +118,7 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	}
 	// Library folders keep a reason for their health.
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := Insert(tx, "library_folders", &domain.LibraryFolder{Path: dir, Kind: "movie", Label: "M", Health: "missing", HealthReason: "gone", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: dir, Kind: "movie", Label: "M", Health: "missing", HealthReason: "gone", SameDiskAs: []int64{}}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -127,7 +127,7 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 }
 
 func TestM1Seeds(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	want := map[string]string{"release_gate": "released", "gate_delay_days": "0", "bulk_search_respects_gate": "true"}
 	for k, v := range want {
@@ -136,7 +136,7 @@ func TestM1Seeds(t *testing.T) {
 			t.Errorf("setting %s = %q (%v), want %q", k, got, err, v)
 		}
 	}
-	scheds, err := Select[domain.Schedule](ctx, s.Read(), "schedules", "1=1 ORDER BY kind")
+	scheds, err := database.Select[domain.Schedule](ctx, s.Read(), "schedules", "1=1 ORDER BY kind")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,8 +283,7 @@ func migrationHasDestructiveDelete(sqlText string) bool {
 
 // TestM1MigrationsAreAddOnly guards old rows: M1 migrations only add.
 func TestM1MigrationsAreAddOnly(t *testing.T) {
-	src, _ := fs.Sub(embedded, "migrations/main")
-	ms, _ := loadMigrations(src)
+	ms, _ := database.EmbeddedMigrations("migrations/main")
 	for _, m := range ms {
 		// 0008 rebuilds users, sessions and API keys to widen the role
 		// check; TestAccountsKeepTheOwner proves no row is lost.
@@ -304,21 +303,21 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestAlertsKeptByMoreAppsMigration proves no Alert is lost.
 		// 0095 rebuilds move_credentials to add overseerr, qbittorrent and
 		// sabnzbd; TestMoveCredentialsKeptByAllAppsMigration proves no row is lost.
-		if m.version < 7 || m.version == 8 || m.version == 19 || m.version == 21 || m.version == 23 || m.version == 25 || m.version == 42 || m.version == 82 ||
-			m.version == 84 || m.version == 95 {
+		if m.Version < 7 || m.Version == 8 || m.Version == 19 || m.Version == 21 || m.Version == 23 || m.Version == 25 || m.Version == 42 || m.Version == 82 ||
+			m.Version == 84 || m.Version == 95 {
 			continue
 		}
-		up := strings.ToUpper(m.sql)
+		up := strings.ToUpper(m.SQL)
 		for _, bad := range []string{"DROP TABLE", "DROP COLUMN"} {
 			if strings.Contains(up, bad) {
-				t.Errorf("%s contains %s", m.name, bad)
+				t.Errorf("%s contains %s", m.Name, bad)
 			}
 		}
 		// Trigger maintenance may remove stale rows from a derived virtual
 		// table. Deletes outside such a trigger, or from stored tables, remain
 		// destructive migration work and fail this guard.
-		if migrationHasDestructiveDelete(m.sql) {
-			t.Errorf("%s contains a destructive DELETE FROM", m.name)
+		if migrationHasDestructiveDelete(m.SQL) {
+			t.Errorf("%s contains a destructive DELETE FROM", m.Name)
 		}
 	}
 }

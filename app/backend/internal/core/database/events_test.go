@@ -1,12 +1,10 @@
-package store
+package database
 
 import (
 	"context"
 	"database/sql"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestEventsBySourceAndHideFeed(t *testing.T) {
@@ -27,7 +25,7 @@ func TestEventsBySourceAndHideFeed(t *testing.T) {
 		t.Fatal(err)
 	}
 	day := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
-	for i, e := range []domain.Event{
+	for i, e := range []Event{
 		{Kind: "download_sent", Data: map[string]any{"release_id": 10}},
 		{Kind: "release_chosen", Data: map[string]any{"release_id": 20}},
 		{Kind: "source_paused", Data: map[string]any{"source_id": 1, "reason": "down"}},

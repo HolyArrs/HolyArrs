@@ -1,4 +1,4 @@
-package store
+package database
 
 import (
 	"context"
@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 type migration struct {
@@ -128,8 +130,8 @@ func skipSpaceCheck() bool {
 // Test hooks: free space on a folder's disk, whether two folders share a
 // disk, and the pre-update backup.
 var (
-	freeSpace  = diskFree
-	sameVolume = onSameVolume
+	freeSpace  = files.DiskFree
+	sameVolume = files.OnSameVolume
 	takeBackup = pinnedBackup
 )
 
@@ -483,4 +485,30 @@ func CheckBackupSum(p string) error {
 		return fmt.Errorf("%s does not match its sha256 file", filepath.Base(p))
 	}
 	return nil
+}
+
+// Migration is one numbered SQL step of the built-in schema.
+type Migration struct {
+	Version int
+	Name    string
+	SQL     string
+}
+
+// EmbeddedMigrations lists the built-in steps of one database in order. dir
+// is "migrations/main" or "migrations/events". Tests of other packages use it
+// to build older schemas.
+func EmbeddedMigrations(dir string) ([]Migration, error) {
+	src, err := fs.Sub(embedded, dir)
+	if err != nil {
+		return nil, err
+	}
+	ms, err := loadMigrations(src)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Migration, len(ms))
+	for i, m := range ms {
+		out[i] = Migration{Version: m.version, Name: m.name, SQL: m.sql}
+	}
+	return out, nil
 }

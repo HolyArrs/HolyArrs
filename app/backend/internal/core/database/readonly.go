@@ -1,16 +1,18 @@
-package store
+package database
 
 import (
 	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 // NetworkShare reports whether dir is on a network share, and its type
 // (statfs on Linux; always false elsewhere). It is the check Open refuses
 // a config folder with.
-func NetworkShare(dir string) (bool, string, error) { return isNetworkShare(dir) }
+func NetworkShare(dir string) (bool, string, error) { return files.IsNetworkShare(dir) }
 
 // OpenReadOnly opens the main database in dir for reading only, without
 // migrations or the writer, so it works next to a running server. It never

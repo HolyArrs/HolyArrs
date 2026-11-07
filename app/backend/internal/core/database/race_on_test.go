@@ -1,6 +1,6 @@
 //go:build race
 
-package store
+package database
 
 // raceOn says the race detector is on: it slows every write several times.
 const raceOn = true

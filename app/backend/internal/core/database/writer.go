@@ -1,4 +1,4 @@
-package store
+package database
 
 import (
 	"bytes"
@@ -76,9 +76,9 @@ func AfterCommit(tx *sql.Tx, fn func()) {
 	}
 }
 
-// storeOf returns the Store a running transaction belongs to (nil outside
+// StoreOf returns the Store a running transaction belongs to (nil outside
 // Write and WriteEvents).
-func storeOf(tx *sql.Tx) *Store {
+func StoreOf(tx *sql.Tx) *Store {
 	if v, ok := afterCommit.Load(tx); ok {
 		return v.(txAfter).s
 	}

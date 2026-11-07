@@ -1,6 +1,6 @@
 //go:build linux
 
-package store
+package files
 
 import "syscall"
 
@@ -28,7 +28,7 @@ var networkFS = map[int64]string{
 // fsKindOf names a statfs magic number, or "" for a local disk.
 func fsKindOf(magic int64) string { return networkFS[magic&0xffffffff] }
 
-func isNetworkShare(dir string) (bool, string, error) {
+func IsNetworkShare(dir string) (bool, string, error) {
 	var st syscall.Statfs_t
 	if err := syscall.Statfs(dir, &st); err != nil {
 		return false, "", err

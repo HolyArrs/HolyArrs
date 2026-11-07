@@ -1,6 +1,6 @@
 //go:build windows
 
-package store
+package files
 
 import (
 	"path/filepath"
@@ -9,8 +9,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// diskFree returns the bytes free to this user on dir's disk.
-func diskFree(dir string) (uint64, error) {
+// DiskFree returns the bytes free to this user on dir's disk.
+func DiskFree(dir string) (uint64, error) {
 	p, err := windows.UTF16PtrFromString(dir)
 	if err != nil {
 		return 0, err
@@ -22,8 +22,8 @@ func diskFree(dir string) (uint64, error) {
 	return free, nil
 }
 
-// onSameVolume reports whether a and b are on one drive or share.
-func onSameVolume(a, b string) (bool, error) {
+// OnSameVolume reports whether a and b are on one drive or share.
+func OnSameVolume(a, b string) (bool, error) {
 	va, err := filepath.Abs(a)
 	if err != nil {
 		return false, err

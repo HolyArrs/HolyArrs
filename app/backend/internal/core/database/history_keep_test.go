@@ -1,12 +1,10 @@
-package store
+package database
 
 import (
 	"context"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestHistoryKeepSettings(t *testing.T) {
@@ -15,10 +13,10 @@ func TestHistoryKeepSettings(t *testing.T) {
 	if k := ReadHistoryKeep(ctx, s.Read()); k != DefaultHistoryKeep {
 		t.Fatalf("default: %+v", k)
 	}
-	if err := s.SaveHistoryKeep(ctx, HistoryKeep{RoutineDays: -1}, domain.System); err != ErrHistoryKeep {
+	if err := s.SaveHistoryKeep(ctx, HistoryKeep{RoutineDays: -1}, System); err != ErrHistoryKeep {
 		t.Fatalf("negative: %v", err)
 	}
-	if err := s.SaveHistoryKeep(ctx, HistoryKeep{RoutineDays: 7, OtherDays: 365}, domain.System); err != nil {
+	if err := s.SaveHistoryKeep(ctx, HistoryKeep{RoutineDays: 7, OtherDays: 365}, System); err != nil {
 		t.Fatal(err)
 	}
 	if k := ReadHistoryKeep(ctx, s.Read()); k.RoutineDays != 7 || k.OtherDays != 365 {
@@ -31,7 +29,7 @@ func TestPruneEvents(t *testing.T) {
 	ctx := context.Background()
 	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
 	add := func(kind string, age time.Duration) {
-		e := domain.Event{Kind: kind, Summary: kind, At: now.Add(-age)}
+		e := Event{Kind: kind, Summary: kind, At: now.Add(-age)}
 		if err := s.AddEvent(ctx, &e); err != nil {
 			t.Fatal(err)
 		}

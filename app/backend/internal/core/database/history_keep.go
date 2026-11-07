@@ -1,4 +1,4 @@
-package store
+package database
 
 import (
 	"context"
@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // KindCleanHistory is the daily Job that removes old History Events.
@@ -73,7 +71,7 @@ func ReadHistoryKeep(ctx context.Context, db Querier) HistoryKeep {
 }
 
 // SaveHistoryKeep stores both keep times.
-func (s *Store) SaveHistoryKeep(ctx context.Context, k HistoryKeep, by domain.Actor) error {
+func (s *Store) SaveHistoryKeep(ctx context.Context, k HistoryKeep, by Actor) error {
 	if k.RoutineDays < 0 || k.OtherDays < 0 || k.RoutineDays > MaxHistoryKeepDays || k.OtherDays > MaxHistoryKeepDays {
 		return ErrHistoryKeep
 	}

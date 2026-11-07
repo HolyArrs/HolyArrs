@@ -1,26 +1,30 @@
-package store
+package database
 
 import (
 	"context"
 	"database/sql"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
+
+// eventGuard runs a hook so that a crash in it is caught. The program sets it
+// to the supervisor's guard at start.
+var eventGuard = func(_ string, f func()) { f() }
+
+// SetEventGuard sets the function that runs each event hook.
+func SetEventGuard(g func(name string, f func())) { eventGuard = g }
 
 // OnEvent adds fn to the functions told about every Event once it is
 // stored. fn runs on the writer's caller and must return quickly (start a
 // goroutine for slow work such as sending an Alert).
-func (s *Store) OnEvent(fn func(domain.Event)) {
+func (s *Store) OnEvent(fn func(Event)) {
 	s.hookMu.Lock()
 	s.hooks = append(s.hooks, fn)
 	s.hookMu.Unlock()
 }
 
 // AddEvent writes one Event to the events database and sets its ID.
-func (s *Store) AddEvent(ctx context.Context, e *domain.Event) error {
+func (s *Store) AddEvent(ctx context.Context, e *Event) error {
 	if e.At.IsZero() {
 		e.At = time.Now().UTC()
 	}
@@ -28,7 +32,7 @@ func (s *Store) AddEvent(ctx context.Context, e *domain.Event) error {
 		e.Data = map[string]any{}
 	}
 	if e.Actor.Kind == "" {
-		e.Actor = domain.System
+		e.Actor = System
 	}
 	err := s.WriteEvents(ctx, func(tx *sql.Tx) error {
 		_, err := Insert(tx, "events", e, e.Actor)
@@ -43,13 +47,13 @@ func (s *Store) AddEvent(ctx context.Context, e *domain.Event) error {
 	// A hook that crashes is caught here, so it never takes down the
 	// caller that stored the Event.
 	for _, fn := range hooks {
-		supervisor.Guard("events", func() { fn(*e) })
+		eventGuard("events", func() { fn(*e) })
 	}
 	return nil
 }
 
 // RecentEvents returns the newest Events first.
-func (s *Store) RecentEvents(ctx context.Context, limit int) ([]domain.Event, error) {
+func (s *Store) RecentEvents(ctx context.Context, limit int) ([]Event, error) {
 	es, _, err := s.Events(ctx, EventFilter{Limit: limit})
 	return es, err
 }
@@ -82,7 +86,7 @@ type EventFilter struct {
 
 // Events lists the Events that match f, newest first, and how many match
 // in all (for paging).
-func (s *Store) Events(ctx context.Context, f EventFilter) ([]domain.Event, int, error) {
+func (s *Store) Events(ctx context.Context, f EventFilter) ([]Event, int, error) {
 	if f.Limit <= 0 || f.Limit > 500 {
 		f.Limit = 50
 	}
@@ -167,16 +171,16 @@ func (s *Store) Events(ctx context.Context, f EventFilter) ([]domain.Event, int,
 	if err := s.readEv.QueryRowContext(ctx, "SELECT count(*) FROM events WHERE "+cond, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	var e domain.Event
+	var e Event
 	rows, err := s.readEv.QueryContext(ctx, "SELECT "+SelectList(&e)+" FROM events WHERE "+cond+" ORDER BY at DESC, id DESC LIMIT ? OFFSET ?",
 		append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
-	out := []domain.Event{}
+	out := []Event{}
 	for rows.Next() {
-		var e domain.Event
+		var e Event
 		if err := rows.Scan(ScanInto(&e)...); err != nil {
 			return nil, 0, err
 		}

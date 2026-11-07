@@ -1,6 +1,6 @@
 //go:build unix
 
-package store
+package files
 
 import (
 	"os"
@@ -9,8 +9,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// diskFree returns the bytes free to this user on dir's disk.
-func diskFree(dir string) (uint64, error) {
+// DiskFree returns the bytes free to this user on dir's disk.
+func DiskFree(dir string) (uint64, error) {
 	var st unix.Statfs_t
 	if err := unix.Statfs(dir, &st); err != nil {
 		return 0, err
@@ -18,8 +18,8 @@ func diskFree(dir string) (uint64, error) {
 	return uint64(st.Bavail) * uint64(st.Bsize), nil
 }
 
-// onSameVolume reports whether a and b are on one device.
-func onSameVolume(a, b string) (bool, error) {
+// OnSameVolume reports whether a and b are on one device.
+func OnSameVolume(a, b string) (bool, error) {
 	fa, err := os.Stat(a)
 	if err != nil {
 		return false, err

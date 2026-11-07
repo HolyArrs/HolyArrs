@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -14,7 +15,7 @@ import (
 func TestMusicAsksMigrationKeepsAsks(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 24)})
+	old, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 24)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,13 +43,13 @@ func TestMusicAsksMigrationKeepsAsks(t *testing.T) {
 	}
 	_ = old.Close()
 
-	s, err := Open(dir, Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	var show domain.Ask
-	if err := Get(ctx, s.Read(), "asks", 2, &show); err != nil {
+	if err := database.Get(ctx, s.Read(), "asks", 2, &show); err != nil {
 		t.Fatal(err)
 	}
 	if show.Kind != "show" || show.Ref != "tvmaze:82" || show.SourceIDs["tvmaze"] != "82" || len(show.Seasons) != 2 || show.Albums == nil || len(show.Albums) != 0 {
@@ -64,14 +65,14 @@ func TestMusicAsksMigrationKeepsAsks(t *testing.T) {
 	a := domain.Ask{Kind: "artist", Ref: "mbid:a1", SourceIDs: map[string]string{"musicbrainz": "a1"}, Seasons: []int{}, Name: "Tin Lanterns",
 		State: domain.AskAsked, AskedBy: 10, AskedAt: show.AskedAt, Albums: []domain.AskAlbum{{MBID: "rg1", Name: "Harbour Lights", Year: 2019}}}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := Insert(tx, "asks", &a, domain.Actor{Kind: "system"})
+		_, err := database.Insert(tx, "asks", &a, domain.Actor{Kind: "system"})
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var back domain.Ask
-	if err := Get(ctx, s.Read(), "asks", a.ID, &back); err != nil {
+	if err := database.Get(ctx, s.Read(), "asks", a.ID, &back); err != nil {
 		t.Fatal(err)
 	}
 	if back.Kind != "artist" || len(back.Albums) != 1 || back.Albums[0].Name != "Harbour Lights" || back.Albums[0].Year != 2019 {

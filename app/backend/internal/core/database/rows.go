@@ -1,4 +1,4 @@
-package store
+package database
 
 import (
 	"context"
@@ -10,8 +10,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // Querier is what Get needs: a pool or a transaction.
@@ -193,18 +191,18 @@ func convert(dst reflect.Value, src any, name string) error {
 	return nil
 }
 
-func meta(rv reflect.Value) *domain.Meta {
+func meta(rv reflect.Value) *Meta {
 	f := rv.FieldByName("Meta")
 	if !f.IsValid() {
 		return nil
 	}
-	m, _ := f.Addr().Interface().(*domain.Meta)
+	m, _ := f.Addr().Interface().(*Meta)
 	return m
 }
 
 // Insert adds v (a pointer to a domain record) to table, stamping the who
 // and when fields, and sets v's ID.
-func Insert(tx *sql.Tx, table string, v any, by domain.Actor) (int64, error) {
+func Insert(tx *sql.Tx, table string, v any, by Actor) (int64, error) {
 	rv, err := structOf(v)
 	if err != nil {
 		return 0, err
@@ -241,14 +239,14 @@ func Insert(tx *sql.Tx, table string, v any, by domain.Actor) (int64, error) {
 }
 
 // Update writes every column of v (found by its ID) and stamps updated_*.
-func Update(tx *sql.Tx, table string, v any, by domain.Actor) error {
+func Update(tx *sql.Tx, table string, v any, by Actor) error {
 	return UpdateWhere(tx, table, v, by, "")
 }
 
 // UpdateWhere is Update that writes only while cond (an SQL condition on
 // the row, with its args) still holds; otherwise it returns ErrNotFound and
 // changes nothing.
-func UpdateWhere(tx *sql.Tx, table string, v any, by domain.Actor, cond string, condArgs ...any) error {
+func UpdateWhere(tx *sql.Tx, table string, v any, by Actor, cond string, condArgs ...any) error {
 	rv, err := structOf(v)
 	if err != nil {
 		return err

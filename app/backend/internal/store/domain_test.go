@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -15,13 +16,13 @@ func ptr[T any](v T) *T { return &v }
 
 var owner = domain.Actor{Kind: "user", ID: 1}
 
-func roundTrip(t *testing.T, s *Store, table string, v any, fresh any) {
+func roundTrip(t *testing.T, s *database.Store, table string, v any, fresh any) {
 	t.Helper()
 	ctx := context.Background()
 	var id int64
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		id, err = Insert(tx, table, v, owner)
+		id, err = database.Insert(tx, table, v, owner)
 		return err
 	})
 	if err != nil {
@@ -34,7 +35,7 @@ func roundTrip(t *testing.T, s *Store, table string, v any, fresh any) {
 	if table == "events" {
 		db = s.ReadEvents()
 	}
-	if err := Get(ctx, db, table, id, fresh); err != nil {
+	if err := database.Get(ctx, db, table, id, fresh); err != nil {
 		t.Fatalf("%s: get: %v", table, err)
 	}
 	if !reflect.DeepEqual(v, fresh) {
@@ -43,13 +44,13 @@ func roundTrip(t *testing.T, s *Store, table string, v any, fresh any) {
 }
 
 func TestSeededGoodEveryday(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	var id int64
 	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	var pr domain.PickRules
-	if err := Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 		t.Fatal(err)
 	}
 	if !pr.Preset || pr.Revision != 1 {
@@ -61,7 +62,7 @@ func TestSeededGoodEveryday(t *testing.T) {
 }
 
 func TestCreateAndReadEveryRecord(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	now := time.Date(2026, 10, 12, 9, 30, 0, 123456789, time.UTC)
 
@@ -140,23 +141,27 @@ func TestCreateAndReadEveryRecord(t *testing.T) {
 	ev := &domain.Event{At: now, Actor: owner, Kind: "added", TitleID: &ti.ID, Summary: "Added The Lantern Keepers",
 		Data: map[string]any{"why": "by_hand"}, GroupKey: "t1"}
 	var evID int64
-	err := s.WriteEvents(ctx, func(tx *sql.Tx) error { var err error; evID, err = Insert(tx, "events", ev, owner); return err })
+	err := s.WriteEvents(ctx, func(tx *sql.Tx) error {
+		var err error
+		evID, err = database.Insert(tx, "events", ev, owner)
+		return err
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var back domain.Event
-	if err := Get(ctx, s.ReadEvents(), "events", evID, &back); err != nil || !reflect.DeepEqual(*ev, back) {
+	if err := database.Get(ctx, s.ReadEvents(), "events", evID, &back); err != nil || !reflect.DeepEqual(*ev, back) {
 		t.Fatalf("event round trip: %v\n got %+v\n want %+v", err, back, *ev)
 	}
 }
 
 func TestOneOwner(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := Insert(tx, "users", &domain.User{Name: "a", Role: "owner", PasswordHash: "x", State: "active"}, domain.System); err != nil {
+		if _, err := database.Insert(tx, "users", &domain.User{Name: "a", Role: "owner", PasswordHash: "x", State: "active"}, domain.System); err != nil {
 			return err
 		}
-		_, err := Insert(tx, "users", &domain.User{Name: "b", Role: "owner", PasswordHash: "x", State: "active"}, domain.System)
+		_, err := database.Insert(tx, "users", &domain.User{Name: "b", Role: "owner", PasswordHash: "x", State: "active"}, domain.System)
 		return err
 	})
 	if err == nil {
@@ -165,7 +170,7 @@ func TestOneOwner(t *testing.T) {
 }
 
 func TestSlotStateCheckAndMoves(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	var slotID int64
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -178,78 +183,78 @@ func TestSlotStateCheckAndMoves(t *testing.T) {
 			t string
 			v any
 		}{{"library_folders", lf}, {"titles", ti}} {
-			if _, err := Insert(tx, x.t, x.v, owner); err != nil {
+			if _, err := database.Insert(tx, x.t, x.v, owner); err != nil {
 				return err
 			}
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
-		if _, err := Insert(tx, "items", it, owner); err != nil {
+		if _, err := database.Insert(tx, "items", it, owner); err != nil {
 			return err
 		}
 		ve := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: "A"}
-		if _, err := Insert(tx, "versions", ve, owner); err != nil {
+		if _, err := database.Insert(tx, "versions", ve, owner); err != nil {
 			return err
 		}
-		if _, err := Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: "bogus"}, owner); err == nil {
+		if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: "bogus"}, owner); err == nil {
 			return errors.New("bogus slot state accepted by the table")
 		}
 		var err error
-		slotID, err = Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotWanted}, owner)
+		slotID, err = database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotWanted}, owner)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.MoveSlot(ctx, slotID, domain.SlotInLibrary, "", owner); err == nil {
+	if err := MoveSlot(ctx, s, slotID, domain.SlotInLibrary, "", owner); err == nil {
 		t.Fatal("wanted -> in_library accepted")
 	}
-	if err := s.MoveSlot(ctx, slotID, domain.SlotSearching, "search started", owner); err != nil {
+	if err := MoveSlot(ctx, s, slotID, domain.SlotSearching, "search started", owner); err != nil {
 		t.Fatal(err)
 	}
 	var sl domain.Slot
-	if err := Get(ctx, s.Read(), "slots", slotID, &sl); err != nil {
+	if err := database.Get(ctx, s.Read(), "slots", slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
 	if sl.State != domain.SlotSearching || sl.LastReason == nil || *sl.LastReason != "search started" {
 		t.Fatalf("slot after move: %+v", sl)
 	}
-	if err := s.MoveSlot(ctx, 9999, domain.SlotSearching, "", owner); !errors.Is(err, ErrNotFound) {
+	if err := MoveSlot(ctx, s, 9999, domain.SlotSearching, "", owner); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("missing slot: %v", err)
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	st := &domain.Setting{Group: "this_app", Key: "k", Value: "1"}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := Insert(tx, "settings", st, domain.System); err != nil {
+		if _, err := database.Insert(tx, "settings", st, domain.System); err != nil {
 			return err
 		}
 		st.Value = "2"
-		return Update(tx, "settings", st, owner)
+		return database.Update(tx, "settings", st, owner)
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var back domain.Setting
-	_ = Get(ctx, s.Read(), "settings", st.ID, &back)
+	_ = database.Get(ctx, s.Read(), "settings", st.ID, &back)
 	if back.Value != "2" || back.UpdatedBy != owner || back.CreatedBy != domain.System {
 		t.Fatalf("update wrong: %+v", back)
 	}
-	if err := Get(ctx, s.Read(), "settings", 999, &back); !errors.Is(err, ErrNotFound) {
-		t.Fatalf("want ErrNotFound, got %v", err)
+	if err := database.Get(ctx, s.Read(), "settings", 999, &back); !errors.Is(err, database.ErrNotFound) {
+		t.Fatalf("want database.ErrNotFound, got %v", err)
 	}
 }
 
 func TestSeededFourK(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	var id int64
 	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	var pr domain.PickRules
-	if err := Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 		t.Fatal(err)
 	}
 	if !pr.Preset || !reflect.DeepEqual(pr.Body, domain.FourK()) {
@@ -258,14 +263,14 @@ func TestSeededFourK(t *testing.T) {
 }
 
 func TestSeededSaveSpaceAndBest(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	for name, want := range map[string]domain.PickRulesBody{domain.SaveSpaceName: domain.SaveSpace(), domain.BestName: domain.Best()} {
 		var id int64
 		if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", name).Scan(&id); err != nil {
 			t.Fatal(name, err)
 		}
 		var pr domain.PickRules
-		if err := Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
+		if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 			t.Fatal(err)
 		}
 		if !pr.Preset || !reflect.DeepEqual(pr.Body, want) {
@@ -275,7 +280,7 @@ func TestSeededSaveSpaceAndBest(t *testing.T) {
 }
 
 func TestSeededMusicPresets(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	for name, want := range map[string]domain.PickRulesBody{domain.LosslessFirstName: domain.LosslessFirst(),
 		domain.Lossy320Name: domain.Lossy320(), domain.AnyMusicName: domain.AnyMusic()} {
 		var id int64
@@ -283,7 +288,7 @@ func TestSeededMusicPresets(t *testing.T) {
 			t.Fatal(name, err)
 		}
 		var pr domain.PickRules
-		if err := Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
+		if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 			t.Fatal(err)
 		}
 		if !pr.Preset || !reflect.DeepEqual(pr.Kinds, []string{"music"}) || !reflect.DeepEqual(pr.Body, want) || !domain.IsMusicRules(pr.Body) {

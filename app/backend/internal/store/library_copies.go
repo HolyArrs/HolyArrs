@@ -11,6 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -119,7 +120,7 @@ func normalizeLibraryCopyFilter(f LibraryCopyFilter) (LibraryCopyFilter, error) 
 }
 
 // LibraryCopies lists present main movie files and their exact Version.
-func (s *Store) LibraryCopies(ctx context.Context, filter LibraryCopyFilter) (LibraryCopyPage, error) {
+func LibraryCopies(ctx context.Context, s *database.Store, filter LibraryCopyFilter) (LibraryCopyPage, error) {
 	f, err := normalizeLibraryCopyFilter(filter)
 	if err != nil {
 		return LibraryCopyPage{}, err
@@ -207,17 +208,17 @@ func scanLibraryCopy(row rowScanner) (LibraryCopy, error) {
 		return c, fmt.Errorf("inspected audio languages: %w", err)
 	}
 	var err error
-	if c.AddedAt, err = time.Parse(TimeLayout, added); err != nil {
+	if c.AddedAt, err = time.Parse(database.TimeLayout, added); err != nil {
 		return c, err
 	}
-	if c.FileUpdatedAt, err = time.Parse(TimeLayout, fileUpdated); err != nil {
+	if c.FileUpdatedAt, err = time.Parse(database.TimeLayout, fileUpdated); err != nil {
 		return c, err
 	}
-	if c.VersionUpdatedAt, err = time.Parse(TimeLayout, versionUpdated); err != nil {
+	if c.VersionUpdatedAt, err = time.Parse(database.TimeLayout, versionUpdated); err != nil {
 		return c, err
 	}
 	if checked.Valid {
-		t, err := time.Parse(TimeLayout, checked.String)
+		t, err := time.Parse(database.TimeLayout, checked.String)
 		if err != nil {
 			return c, err
 		}
@@ -227,7 +228,7 @@ func scanLibraryCopy(row rowScanner) (LibraryCopy, error) {
 }
 
 // SelectedLibraryCopies re-reads exact file/Version pairs for review or execution.
-func (s *Store) SelectedLibraryCopies(ctx context.Context, selections []LibraryCopySelection) ([]LibraryCopy, error) {
+func SelectedLibraryCopies(ctx context.Context, s *database.Store, selections []LibraryCopySelection) ([]LibraryCopy, error) {
 	if len(selections) == 0 || len(selections) > 100 {
 		return nil, ErrLibraryCopyFilter
 	}
@@ -266,7 +267,7 @@ func (s *Store) SelectedLibraryCopies(ctx context.Context, selections []LibraryC
 }
 
 // LibraryCopySlots returns only movie Slots belonging to the selected Version.
-func (s *Store) LibraryCopySlots(ctx context.Context, selection LibraryCopySelection) ([]int64, error) {
+func LibraryCopySlots(ctx context.Context, s *database.Store, selection LibraryCopySelection) ([]int64, error) {
 	rows, err := s.Read().QueryContext(ctx, `SELECT s.id FROM slots s JOIN items i ON i.id=s.item_id JOIN versions v ON v.id=s.version_id JOIN files f ON f.id=? AND f.version_id=v.id
 		WHERE v.id=? AND i.title_id=v.title_id AND i.kind='movie' ORDER BY s.id`, selection.FileID, selection.VersionID)
 	if err != nil {
@@ -302,7 +303,7 @@ type TitleCopy struct {
 }
 
 // TitleCopies reads every movie's main file (the main Version first) in one query.
-func TitleCopies(ctx context.Context, db Lister) (map[int64]TitleCopy, error) {
+func TitleCopies(ctx context.Context, db database.Lister) (map[int64]TitleCopy, error) {
 	where, _, _ := libraryCopyWhere("")
 	rows, err := db.QueryContext(ctx, `SELECT t.id, f.id, v.id, `+libraryCopyCodecSQL+`,
 		coalesce(json_extract(f.media_info, '$.container'), ''), coalesce(json_extract(f.media_info, '$.audio_languages'), '[]'), f.protected

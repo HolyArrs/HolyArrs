@@ -1,4 +1,4 @@
-package store
+package database
 
 import (
 	"context"
@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	_ "modernc.org/sqlite" // pure Go SQLite driver
 )
@@ -206,7 +205,7 @@ type Store struct {
 	events *writer
 	// hooks are told about every Event after it is stored.
 	hookMu  sync.RWMutex
-	hooks   []func(domain.Event)
+	hooks   []func(Event)
 	filesMu sync.Mutex
 }
 
@@ -222,7 +221,7 @@ func (s *Store) LockFiles() func() {
 func Open(dir string, opt Options) (*Store, error) {
 	check := opt.NetworkShare
 	if check == nil {
-		check = isNetworkShare
+		check = files.IsNetworkShare
 	}
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return nil, err

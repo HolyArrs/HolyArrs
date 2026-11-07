@@ -11,26 +11,23 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
-	src, err := fs.Sub(embedded, "migrations/main")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ms, err := loadMigrations(src)
+	ms, err := database.EmbeddedMigrations("migrations/main")
 	if err != nil {
 		t.Fatal(err)
 	}
 	before := fstest.MapFS{}
 	for _, m := range ms {
-		if m.version <= 38 {
-			before[m.name] = &fstest.MapFile{Data: []byte(m.sql)}
+		if m.Version <= 38 {
+			before[m.Name] = &fstest.MapFile{Data: []byte(m.SQL)}
 		}
 	}
 	dir := t.TempDir()
-	s, err := Open(dir, Options{MainMigrations: before})
+	s, err := database.Open(dir, database.Options{MainMigrations: before})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +53,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	s, err = Open(dir, Options{})
+	s, err = database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,14 +95,14 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 		}
 		return out
 	}
-	if err := Get(context.Background(), s.Read(), "titles", title.ID, &title); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "titles", title.ID, &title); err != nil {
 		t.Fatal(err)
 	}
 	indexBefore := indexRows()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		// Store.Update writes all columns even when only unrelated metadata changed.
+		// database.Store.Update writes all columns even when only unrelated metadata changed.
 		title.Status = "released"
-		return Update(tx, "titles", &title, domain.System)
+		return database.Update(tx, "titles", &title, domain.System)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +111,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	}
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title.Name, title.SortName, title.Aliases = "Cidade de Deus", "cidade de deus", []string{"City of God"}
-		return Update(tx, "titles", &title, domain.System)
+		return database.Update(tx, "titles", &title, domain.System)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +128,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	match("cidade", 0)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title.ID = 0
-		_, err := Insert(tx, "titles", &title, domain.System)
+		_, err := database.Insert(tx, "titles", &title, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -142,11 +139,11 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	for _, state := range []string{"removed", "active"} {
 		if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 			title.State = state
-			return Update(tx, "titles", &title, domain.System)
+			return database.Update(tx, "titles", &title, domain.System)
 		}); err != nil {
 			t.Fatal(err)
 		}
-		found, err := s.SearchTitles(context.Background(), "city")
+		found, err := SearchTitles(context.Background(), s, "city")
 		if err != nil || len(found) != map[string]int{"removed": 0, "active": 1}[state] {
 			t.Fatalf("search in state %s: %+v (%v)", state, found, err)
 		}
@@ -161,20 +158,20 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 		t.Fatal(err)
 	}
 	match("city", 0)
-	if err := s.RebuildTitleSearch(context.Background()); err != nil {
+	if err := RebuildTitleSearch(context.Background(), s); err != nil {
 		t.Fatal(err)
 	}
 	match("city", 1)
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := s.RebuildTitleSearch(cancelled); err == nil {
+	if err := RebuildTitleSearch(cancelled, s); err == nil {
 		t.Fatal("cancelled rebuild succeeded")
 	}
 	match("city", 1)
 }
 
 func TestSearchTitlesOriginalNameAccentsAndYear(t *testing.T) {
-	s, err := Open(t.TempDir(), Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +181,7 @@ func TestSearchTitlesOriginalNameAccentsAndYear(t *testing.T) {
 		t.Helper()
 		title := domain.Title{Kind: "movie", Name: name, SortName: name, Year: &year, OriginalName: original, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active",
 			NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := Insert(tx, "titles", &title, domain.System); return err }); err != nil {
+		if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "titles", &title, domain.System); return err }); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -193,7 +190,7 @@ func TestSearchTitlesOriginalNameAccentsAndYear(t *testing.T) {
 	add("Dune", 2021, nil)
 	names := func(q string) []string {
 		t.Helper()
-		ts, err := s.SearchTitles(context.Background(), q)
+		ts, err := SearchTitles(context.Background(), s, q)
 		if err != nil {
 			t.Fatal(err)
 		}
