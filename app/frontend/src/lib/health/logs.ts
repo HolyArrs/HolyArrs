@@ -1,4 +1,4 @@
-// The log viewer: filters to a query, and words for levels.
+// Log viewer helpers: turn filters into a query and levels into words.
 
 export type LogLevel = 'info' | 'warning' | 'error';
 
@@ -24,9 +24,11 @@ export interface LogFilter {
 	limit: number;
 }
 
+export const levelWord: Record<LogLevel, string> = { info: 'Info', warning: 'Warning', error: 'Error' };
+
 export const emptyFilter = (limit = 100): LogFilter => ({ level: '', q: '', from: '', to: '', offset: 0, limit });
 
-/** logQuery is the query string for GET /logs (empty fields left out). */
+// Empty fields are left out so the URL stays short and the server uses its defaults.
 export function logQuery(f: LogFilter): string {
 	const p = new URLSearchParams();
 	if (f.level) p.set('level', f.level);
@@ -38,14 +40,11 @@ export function logQuery(f: LogFilter): string {
 	return p.toString();
 }
 
-export const levelWord: Record<LogLevel, string> = { info: 'Info', warning: 'Warning', error: 'Error' };
-
-/** levelTone is the chip colour for a level. */
 export function levelTone(l: LogLevel): string {
 	return l === 'error' ? 'fail' : l === 'warning' ? 'wait' : '';
 }
 
-/** pageWords says which lines of how many are shown. */
+// Offset is zero based, so the first shown line is offset + 1.
 export function pageWords(p: Pick<LogPage, 'total' | 'offset'>, shown: number): string {
 	if (p.total === 0) return 'No lines match.';
 	return `Lines ${p.offset + 1} to ${p.offset + shown} of ${p.total}, newest first.`;

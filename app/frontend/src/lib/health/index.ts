@@ -1,3 +1,4 @@
+// Public surface of the health module: one place the pages import from.
 export type * from './types.ts';
 export { buildRows } from './rows.ts';
 export { busyNow } from './schedules.ts';

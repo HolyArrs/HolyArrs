@@ -1,6 +1,7 @@
+// Shapes of the health routes' answers.
 import type { HealthCheck } from '../core/types.ts';
 
-/** One stage or linked app and its state (GET /health/states). */
+// Linked apps and stages share one shape so they can sit in one list.
 export interface StageState {
 	key: string;
 	kind: 'stage' | 'source' | 'downloader' | 'subtitle_site' | 'media_server' | 'part';
@@ -20,7 +21,7 @@ export interface HealthStates {
 export interface HealthChecks {
 	checks: HealthCheck[];
 	worst: 'ok' | 'warning' | 'error';
-	/** Torrent clients the Downloads reader cannot serve now (downloads sync on only). */
+		// Only present when downloads sync is on.
 	sync?: { id: number; name: string; health: 'degraded' | 'checking'; stale?: boolean; seen_at?: string }[];
 }
 
@@ -36,13 +37,12 @@ export interface HealthSettings {
 	update_check_default?: string;
 }
 
-/** One Job running or waiting right now (GET /jobs/active). */
 export interface ActiveJob {
 	id: number;
 	kind: string;
 	label: string;
 	state: 'running' | 'queued';
-	/** 0 to 1; 0 while the Job has not said how far it is. */
+		// Stays 0 until the job reports how far it is.
 	progress: number;
 	note?: string;
 	queued_at: string;

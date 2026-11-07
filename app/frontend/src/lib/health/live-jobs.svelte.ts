@@ -1,14 +1,10 @@
-// The live job feed behind the Jobs tab's right half: jobs running or waiting
-// now, the last finished runs, and a clock that ticks once a second. One
-// feed is made per plate and handed to whichever view is showing. Reads
-// again on every live job push, one read per 400 ms at most, so a steady
-// stream of progress pushes cannot starve it.
+// Live job feed for the Jobs tab: active jobs, recent runs and a one second clock, shared by the views.
 import { api } from '../core/api.ts';
 import { live } from '../core/live.svelte.ts';
 import type { ActiveJob } from './types.ts';
 import type { StatusRow } from './rows.ts';
 
-/** A finished (or running) job as the history route gives it. */
+// A job as the history route gives it, with its own capitalised field names.
 export interface HistJob {
 	ID: number;
 	Kind: string;
@@ -19,7 +15,7 @@ export interface HistJob {
 	ProgressNote?: string | null;
 }
 
-/** One line of the live log: a note from a running job or a finished run. */
+// One line of the live log, from a running job or a finished run.
 export interface LogEntry {
 	key: string;
 	at: number;
@@ -28,16 +24,17 @@ export interface LogEntry {
 	tone: 'ok' | 'fail' | 'info' | 'idle';
 }
 
+// NaN for a missing time so callers can test it with isFinite.
 export const t = (s?: string | null) => (s ? Date.parse(s) : NaN);
 
-/** clock says a time so far in minutes and seconds: "0:42", "12:05", or "3 h 10 min" past an hour, the same words as wait(). */
+// Past an hour it uses the same words as wait().
 export function clock(ms: number): string {
 	const s = Math.max(0, Math.round(ms / 1000));
 	if (s >= 3600) return wait(s * 1000);
 	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-/** wait says a time still to go the way the rest of the page does: "12 min", "3 h 10 min", "under 1 min". */
+// Matches the wording used elsewhere on the page.
 export function wait(ms: number): string {
 	const m = Math.round(Math.max(0, ms) / 60000);
 	if (m < 1) return 'under 1 min';
@@ -45,9 +42,10 @@ export function wait(ms: number): string {
 	return `${m} min`;
 }
 
-/** kindOf is the job kind a schedule row runs, or "" for rows that are not jobs. */
+// Empty for rows that are not jobs.
 export const kindOf = (r: StatusRow) => (r.check?.kind === 'job' ? r.check.job : '');
 
+// One feed per plate; reads again on each job push.
 export class LiveJobs {
 	active = $state<ActiveJob[]>([]);
 	history = $state<HistJob[]>([]);
@@ -57,7 +55,7 @@ export class LiveJobs {
 	runningKinds = $derived(new Set(this.running.map((j) => j.kind)));
 	names: Record<string, string> = {};
 
-	/** nameOf is a job kind's plain name, from the schedule rows or the kind with spaces. */
+	// Falls back to the kind with spaces when no row names it.
 	nameOf(kind: string): string {
 		return this.names[kind] ?? kind.replace(/_/g, ' ');
 	}
@@ -68,24 +66,23 @@ export class LiveJobs {
 		}
 		for (const j of this.active) this.names[j.kind] = j.label;
 	}
-	/** fill is how far a job is through its wait: 0 right after a run, 1 when the next is due. */
+	// 0 right after a run, 1 when the next one is due.
 	fill(r: StatusRow): number {
 		const a = t(r.lastRun), b = t(r.nextRun);
 		if (!Number.isFinite(b)) return 0;
 		if (!Number.isFinite(a) || b <= a) return this.tick >= b ? 1 : 0;
 		return Math.min(1, Math.max(0, (this.tick - a) / (b - a)));
 	}
-	/** due is the ms until a row's next run; negative once it is overdue. */
+	// Negative once overdue.
 	due(r: StatusRow): number {
 		return t(r.nextRun) - this.tick;
 	}
-	/** coming is the next runs, leaving out jobs running at this moment. */
+	// Skips jobs already running so they do not show twice.
 	coming(upcoming: StatusRow[], n: number): StatusRow[] {
 		return upcoming.filter((r) => !this.runningKinds.has(kindOf(r))).slice(0, n);
 	}
-	/** finished is the last runs that ended, newest first. */
+	// Newest first.
 	finished = $derived(this.history.filter((j) => j.EndedAt && j.State !== 'running' && j.State !== 'queued').sort((a, b) => t(b.EndedAt) - t(a.EndedAt)));
-	/** log is the live lines: running notes first, then the last finished runs. */
 	log = $derived.by((): LogEntry[] => {
 		const now: LogEntry[] = this.running.map((j) => ({ key: `r${j.id}`, at: t(j.started_at ?? j.queued_at), name: j.label, text: j.note || 'Working', tone: 'info' }));
 		const past: LogEntry[] = this.finished.slice(0, 12).map((j) => ({
@@ -98,14 +95,14 @@ export class LiveJobs {
 		return [...now, ...past];
 	});
 
+	// The 400 ms wait groups bursts of pushes into one read.
 	#timer: ReturnType<typeof setTimeout> | undefined;
 	#offs: (() => void)[] = [];
 	#interval: ReturnType<typeof setInterval> | undefined;
 	#seq = 0;
 
 	async load() {
-		// Reads can overlap; only the newest one's answer is kept, so a slow older
-		// reply never brings back a job that has since finished.
+		// Only the newest read is kept, so a slow older reply cannot bring back a finished job.
 		const n = ++this.#seq;
 		try {
 			const [a, h] = await Promise.all([api.get<{ jobs: ActiveJob[] }>('/jobs/active'), api.get<{ jobs: HistJob[] }>('/jobs?limit=80')]);
@@ -114,14 +111,12 @@ export class LiveJobs {
 			this.history = h.jobs;
 			for (const j of a.jobs) this.names[j.kind] = j.label;
 		} catch {
-			/* the feed keeps what it had */
+			// Keep the last good data.
 		}
 	}
 	start() {
 		void this.load();
-		// One read is kept on its way at a time, 400 ms after the first push; the
-		// next push after it starts another. Never a reset timer that a steady
-		// stream of pushes could keep from ever firing.
+		// At most one read waits at a time; a reset timer could be starved by steady pushes.
 		const poke = () => {
 			if (this.#timer) return;
 			this.#timer = setTimeout(() => {

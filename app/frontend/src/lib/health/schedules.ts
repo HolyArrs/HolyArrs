@@ -1,5 +1,4 @@
-// The Schedules page: intervals in words, states and the unit an interval
-// is edited in.
+// Schedules page helpers: intervals in words, state wording and grouping.
 import type { StageState } from './types.ts';
 
 export interface ScheduleRow {
@@ -28,74 +27,9 @@ export interface LoopRow extends StageState {
 	part: string;
 }
 
-/** every says an interval in words: "every 15 minutes", "every day". */
-export function every(s: number): string {
-	if (s <= 0) return 'all the time';
-	const units: [number, string][] = [
-		[86400, 'day'],
-		[3600, 'hour'],
-		[60, 'minute']
-	];
-	for (const [n, w] of units) {
-		if (s % n === 0) {
-			const k = s / n;
-			return k === 1 ? `every ${w}` : `every ${k} ${w}s`;
-		}
-	}
-	return `every ${s} seconds`;
-}
-
-/** unit is how an interval is typed: minutes, or hours for whole-hour steps. */
-export function unit(step: number): { size: number; word: string } {
-	return step % 3600 === 0 ? { size: 3600, word: 'hours' } : { size: 60, word: 'minutes' };
-}
-
-/** until says when something happens next: "in 5 min", "in 3 h", "now". */
-export function until(s: string | null | undefined, now = Date.now()): string {
-	if (!s) return 'not planned';
-	const t = new Date(s).getTime();
-	if (Number.isNaN(t)) return 'not planned';
-	const sec = Math.round((t - now) / 1000);
-	if (sec <= 30) return 'now';
-	if (sec < 3600) return `in ${Math.round(sec / 60)} min`;
-	if (sec < 86400) return `in ${Math.round(sec / 3600)} h`;
-	return `in ${Math.round(sec / 86400)} d`;
-}
-
-/** nextRun is until() for the Status page: a run more than a minute past says how late it is ("due 25 min ago"), never "now" for ever. */
-export function nextRun(s: string | null | undefined, now = Date.now()): string {
-	const t = s ? new Date(s).getTime() : NaN;
-	const late = Math.round((now - t) / 1000);
-	if (Number.isNaN(t) || late <= 60) return until(s, now);
-	if (late < 3600) return `due ${Math.round(late / 60)} min ago`;
-	if (late < 86400) return `due ${Math.round(late / 3600)} h ago`;
-	return `due ${Math.round(late / 86400)} d ago`;
-}
-
-export const stateWords: Record<ScheduleRow['state'], string> = {
-	waiting: 'Waiting',
-	queued: 'Queued',
-	running: 'Running',
-	off: 'Turned off',
-	part_off: 'Part is off',
-	safe_mode: 'Safe mode'
-};
-
-/** stateTone colours a schedule's state chip. */
-export function stateTone(s: ScheduleRow['state']): string {
-	if (s === 'running' || s === 'queued') return 'wait';
-	if (s === 'waiting') return 'ok';
-	return '';
-}
-
-/** mayRun says whether Run now makes sense for a schedule. */
-export function mayRun(s: Pick<ScheduleRow, 'state'>): boolean {
-	return s.state !== 'part_off' && s.state !== 'safe_mode';
-}
-
 export type ScheduleGroupId = 'library' | 'copies' | 'metadata' | 'upkeep';
 
-/** The four groups the Schedules page sorts its rows into, in page order. */
+// Page order of the groups.
 export const scheduleGroups: { id: ScheduleGroupId; label: string }[] = [
 	{ id: 'library', label: 'Library and files' },
 	{ id: 'copies', label: 'Getting copies' },
@@ -103,6 +37,7 @@ export const scheduleGroups: { id: ScheduleGroupId; label: string }[] = [
 	{ id: 'upkeep', label: 'Upkeep' }
 ];
 
+// Which group each known job kind sits in.
 const groupOfKind: Record<string, ScheduleGroupId> = {
 	check_library_folders: 'library',
 	rescan_library: 'library',
@@ -121,22 +56,86 @@ const groupOfKind: Record<string, ScheduleGroupId> = {
 	clean_history: 'upkeep'
 };
 
-/** scheduleGroup says which group a schedule belongs in; anything new lands in Upkeep. */
+// Words for each state chip.
+export const stateWords: Record<ScheduleRow['state'], string> = {
+	waiting: 'Waiting',
+	queued: 'Queued',
+	running: 'Running',
+	off: 'Turned off',
+	part_off: 'Part is off',
+	safe_mode: 'Safe mode'
+};
+
+// Picks the largest unit that divides evenly so the words stay exact.
+export function every(s: number): string {
+	if (s <= 0) return 'all the time';
+	const units: [number, string][] = [
+		[86400, 'day'],
+		[3600, 'hour'],
+		[60, 'minute']
+	];
+	for (const [n, w] of units) {
+		if (s % n === 0) {
+			const k = s / n;
+			return k === 1 ? `every ${w}` : `every ${k} ${w}s`;
+		}
+	}
+	return `every ${s} seconds`;
+}
+
+// Whole-hour steps are edited in hours, anything finer in minutes.
+export function unit(step: number): { size: number; word: string } {
+	return step % 3600 === 0 ? { size: 3600, word: 'hours' } : { size: 60, word: 'minutes' };
+}
+
+// A 30 second margin keeps imminent runs from reading "in 0 min".
+export function until(s: string | null | undefined, now = Date.now()): string {
+	if (!s) return 'not planned';
+	const t = new Date(s).getTime();
+	if (Number.isNaN(t)) return 'not planned';
+	const sec = Math.round((t - now) / 1000);
+	if (sec <= 30) return 'now';
+	if (sec < 3600) return `in ${Math.round(sec / 60)} min`;
+	if (sec < 86400) return `in ${Math.round(sec / 3600)} h`;
+	return `in ${Math.round(sec / 86400)} d`;
+}
+
+// Past the one minute margin a missed run reads as late, never as "now".
+export function nextRun(s: string | null | undefined, now = Date.now()): string {
+	const t = s ? new Date(s).getTime() : NaN;
+	const late = Math.round((now - t) / 1000);
+	if (Number.isNaN(t) || late <= 60) return until(s, now);
+	if (late < 3600) return `due ${Math.round(late / 60)} min ago`;
+	if (late < 86400) return `due ${Math.round(late / 3600)} h ago`;
+	return `due ${Math.round(late / 86400)} d ago`;
+}
+
+export function stateTone(s: ScheduleRow['state']): string {
+	if (s === 'running' || s === 'queued') return 'wait';
+	if (s === 'waiting') return 'ok';
+	return '';
+}
+
+// Parts that are off or in safe mode would refuse the run.
+export function mayRun(s: Pick<ScheduleRow, 'state'>): boolean {
+	return s.state !== 'part_off' && s.state !== 'safe_mode';
+}
+
+// Unknown kinds fall back to Upkeep so a new job still shows up.
 export function scheduleGroup(kind: string): ScheduleGroupId {
 	return groupOfKind[kind] ?? 'upkeep';
 }
 
-/** groupSchedules splits rows into the page's groups, keeping the server's order and leaving out empty groups. */
+// Server order is kept inside each group.
 export function groupSchedules<T extends Pick<ScheduleRow, 'kind'>>(rows: T[]): { id: ScheduleGroupId; label: string; rows: T[] }[] {
 	return scheduleGroups.map((g) => ({ ...g, rows: rows.filter((r) => scheduleGroup(r.kind) === g.id) })).filter((g) => g.rows.length > 0);
 }
 
-/** busyNow lists the schedules running or waiting their turn, for the Running now box. */
 export function busyNow<T extends Pick<ScheduleRow, 'state'>>(rows: T[]): T[] {
 	return rows.filter((r) => r.state === 'running' || r.state === 'queued');
 }
 
-/** dot is the status dot's colour: a failed last run wins over the schedule's state. */
+// A failed last run beats the state so problems stay visible.
 export function dot(s: Pick<ScheduleRow, 'state' | 'last_job'>): 'ok' | 'busy' | 'fail' | 'off' {
 	if (s.state === 'running' || s.state === 'queued') return 'busy';
 	if (s.last_job === 'failed') return 'fail';
