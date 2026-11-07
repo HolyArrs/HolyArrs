@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { api } from '../core/api.ts';
-	import { richMetadata, type RichMeta } from '../ui/TitleHero.svelte';
-	import Billboard from '../ui/Billboard.svelte';
+	import { richMetadata, type RichMeta } from '#lib/ui/TitleHero.svelte';
+	import Billboard from '#lib/ui/Billboard.svelte';
 	import { heroPictures } from '../core/trailer/trailer.ts';
 	import { proxied, sized } from '../core/tmdb-image.ts';
 	import { shortSynopsis } from './synopsis.ts';

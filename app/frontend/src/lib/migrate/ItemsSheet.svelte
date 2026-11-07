@@ -10,10 +10,10 @@
 </script>
 
 <script lang="ts" generics="T">
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
-	import SegmentedControl from '../ui/SegmentedControl.svelte';
-	import StatusPill, { type StatusKind } from '../ui/StatusPill.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 
 	let {
 		open = $bindable(false),

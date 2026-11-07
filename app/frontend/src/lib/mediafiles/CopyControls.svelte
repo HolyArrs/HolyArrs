@@ -1,12 +1,12 @@
 <!-- Lists each Version's copy with protect, keep-and-add and adopt actions. -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
-	import Badge from '../ui/Badge.svelte';
-	import { shortFolder } from '../ui/TitleHero.svelte';
-	import Skeleton from '../ui/Skeleton.svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Badge from '#lib/ui/Badge.svelte';
+	import { shortFolder } from '#lib/ui/TitleHero.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { copyEdition, inspectedAudio, languageList, versionCriteria } from './copy-controls.ts';
 	import { api, message } from '../core/api.ts';
 	import { session } from '../core/session.svelte.ts';

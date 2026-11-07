@@ -4,7 +4,7 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { secondVersion } from '../mediafiles/index.ts';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';

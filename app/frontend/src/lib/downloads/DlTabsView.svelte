@@ -1,7 +1,7 @@
 <script lang="ts">
 	import GhostEmpty from './GhostEmpty.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Confirm from '../ui/Confirm.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
 	import { to } from '../core/paths.ts';
 	import { size as bytes, protocolOf } from './size.ts';
 	import { fileTree } from './filetree.ts';

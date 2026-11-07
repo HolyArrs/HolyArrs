@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon from '../ui/Icon.svelte';
-	import Shelf from '../ui/Shelf.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
 	import { to } from '../core/paths.ts';
 	import { genreTintToken } from './genre-tint.ts';
 

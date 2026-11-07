@@ -11,7 +11,7 @@
 	import Sessions from './Sessions.svelte';
 	import AccountSecurity from './AccountSecurity.svelte';
 	import { strong } from './strong-error.ts';
-	import Confirm from '../ui/Confirm.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';

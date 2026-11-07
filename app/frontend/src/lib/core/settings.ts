@@ -1,6 +1,6 @@
 // Settings page map, who may open each section, and small text helpers.
 import { message } from './api.ts';
-import type { IconName } from '../ui/Icon.svelte';
+import type { IconName } from '#lib/ui/Icon.svelte';
 
 export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'system' | 'account';
 

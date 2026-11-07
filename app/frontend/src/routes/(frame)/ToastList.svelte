@@ -3,7 +3,7 @@
 	import { notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
 	import { AlertsPanel } from '#lib/alerts/index.ts';
-import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
+	import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
 	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';

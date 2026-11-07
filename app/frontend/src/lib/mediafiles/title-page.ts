@@ -1,5 +1,5 @@
 // Title page helpers: breadcrumb, quality badges, similar titles and slot status.
-import type { StatusKind } from '../ui/StatusPill.svelte';
+import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 import type { SlotView, TitleView } from '../core/types.ts';
 
 type FileLike = { Quality?: Record<string, unknown> | null; MediaInfo?: Record<string, unknown> | null } | null | undefined;

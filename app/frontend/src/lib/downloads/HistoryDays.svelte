@@ -9,9 +9,9 @@
 	// again. Narrower screens open the row in a sheet instead.
 	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
-	import Poster from '../ui/Poster.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Button from '../ui/Button.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import EventSheet from './HistoryEventSheet.svelte';
 	import VerbMark from './HistoryVerb.svelte';
 	import StateDot from './HistoryDot.svelte';

@@ -1,7 +1,7 @@
 <!-- Segmented view picker; the active option shows its label and an optional art size menu. -->
 <script lang="ts" generics="T extends string">
-	import Icon, { type IconName } from '../ui/Icon.svelte';
-	import Menu, { type MenuItem } from '../ui/Menu.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	let {
 		options,
 		value,

@@ -1,6 +1,6 @@
 // The type switch (All, Movies, Shows, Music) and the genre rows that follow it.
 
-import { type CardKind, type ExploreRow } from '../ui/title-cards.ts';
+import { type CardKind, type ExploreRow } from '#lib/ui/title-cards.ts';
 import { keepFull } from './explore-rows.ts';
 
 export type ExploreType = 'all' | 'movies' | 'shows' | 'music';

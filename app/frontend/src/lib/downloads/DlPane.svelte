@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import Poster from '../ui/Poster.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Menu from '../ui/Menu.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import { to } from '../core/paths.ts';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlTabsView from './DlTabsView.svelte';
@@ -18,7 +18,7 @@
 	import { barTone } from './sections.ts';
 	import type { PaneDetail } from './pane-detail.svelte.ts';
 	import type { PaneTab } from './pane-facts.ts';
-	import type { MenuItem } from '../ui/Menu.svelte';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import type { ImportRecord } from './types.ts';
 	import type { Decision, DownloadRow, TitleView } from '../core/types.ts';
 

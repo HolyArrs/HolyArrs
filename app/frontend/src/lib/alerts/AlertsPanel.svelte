@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import AlertSymbol from './AlertSymbol.svelte';
-	import Sheet from '../ui/Sheet.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import { alertsPanel, toasts } from '../core/toasts.svelte.ts';
 	import { pinned, type PinnedAlert } from './attention-alerts.ts';
 	import { sections } from '../core/settings.ts';

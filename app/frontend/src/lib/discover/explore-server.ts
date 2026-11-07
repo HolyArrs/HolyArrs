@@ -1,6 +1,6 @@
 // The server-built Explore page: the head in one request, the tail by pages.
 
-import { discoverCard, type ExploreRow, type ProviderItem } from '../ui/title-cards.ts';
+import { discoverCard, type ExploreRow, type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
 
 export interface ServerRow {

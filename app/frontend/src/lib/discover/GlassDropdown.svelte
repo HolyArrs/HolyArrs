@@ -2,8 +2,8 @@
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from './live-search.ts';
 	import { appPicture, coverFor } from '../music/index.ts';
 	import { pictureOf } from '../core/pictures.ts';
-	import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
-	import { SkTrackRow } from '../ui/sk/index.ts';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	// No art yet, or it failed: the row shows the one placeholder every
 	// picture uses (initials, on the picture's own colour when known).
 	let failed = $state<string[]>([]);

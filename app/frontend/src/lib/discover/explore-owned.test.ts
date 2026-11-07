@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { discoverCard, matchOwned, ownedIndex, ownedMark, ownedTitle, type ExploreCard } from '../ui/title-cards.ts';
+import { discoverCard, matchOwned, ownedIndex, ownedMark, ownedTitle, type ExploreCard } from '#lib/ui/title-cards.ts';
 import type { TitleView } from '../core/types.ts';
 
 const title = (o: Partial<TitleView>): TitleView => ({ id: 1, kind: 'movie', name: 'M', ids: { tmdb: '10' }, slots: [], asks: [], ...o }) as unknown as TitleView;

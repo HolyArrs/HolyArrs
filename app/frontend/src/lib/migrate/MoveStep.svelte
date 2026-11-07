@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	import SettingsCard from '../ui/SettingsCard.svelte';
-	import Button from '../ui/Button.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { needsGroups, plural, type Report } from './move.ts';

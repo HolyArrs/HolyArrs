@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { tick } from 'svelte';
 
 	// A small menu opened by a caret. The panel lives in the browser's top layer (the

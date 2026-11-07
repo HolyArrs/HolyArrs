@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Season picker and lazy-loaded episode list for one show.
-	import Skeleton from '../ui/Skeleton.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
 	import SeasonPicker from './SeasonPicker.svelte';
 	import { newSeason, newestSeason, seasonName } from './labels.ts';

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { appPath, to } from '../core/paths.ts';
 	import { dlScope, registerField, rememberReturn, searchField, searchHooks } from '../core/search-field.svelte.ts';
 	import { api } from '../core/api.ts';

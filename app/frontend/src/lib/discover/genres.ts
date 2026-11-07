@@ -1,6 +1,6 @@
 // Genre pages.
 
-import { type ExploreRow, type ProviderItem, cardIdentity } from '../ui/title-cards.ts';
+import { type ExploreRow, type ProviderItem, cardIdentity } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
 import { type ServerRow } from './explore-server.ts';
 

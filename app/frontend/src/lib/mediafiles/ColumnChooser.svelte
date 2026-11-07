@@ -1,7 +1,7 @@
 <!-- Popover to show, hide and reorder table columns. -->
 <script lang="ts">
-	import Popover from '../ui/Popover.svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { moveColumn, type Column } from './table.ts';
 
 	let { columns, onchange, onreset }: { columns: Column[]; onchange: (c: Column[]) => void; onreset: () => void } = $props();

@@ -2,9 +2,9 @@
 // Requests). Everything that decides what shows, and in which order, is a pure
 // function so it can be tested and explained.
 
-import { titleStatus } from '../ui/title-status.ts';
+import { titleStatus } from '#lib/ui/title-status.ts';
 import type { Ask, CalendarEntry, TitleView } from '../core/types.ts';
-import { type CardKind, type ExploreCard, type ExploreRow, ROW_MAX, kindOf, titleCard, tmdbArtName, cardTmdb } from '../ui/title-cards.ts';
+import { type CardKind, type ExploreCard, type ExploreRow, ROW_MAX, kindOf, titleCard, tmdbArtName, cardTmdb } from '#lib/ui/title-cards.ts';
 
 /** Facets are what two titles can share: genres and people. */
 export interface Facets {

@@ -14,8 +14,8 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../ui/Icon.svelte';
-	import { runtimeWords } from '../ui/TitleHero.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { runtimeWords } from '#lib/ui/TitleHero.svelte';
 	import { sized } from '../core/tmdb-image.ts';
 
 	let {

@@ -6,7 +6,7 @@
 	import { to } from '../core/paths.ts';
 	import { refreshInbox } from '../core/inbox.svelte.ts';
 	import { loadDetails } from '../metadata/index.ts';
-	import { cardAction, cardTmdb, liveCard, type ExploreCard } from '../ui/title-cards.ts';
+	import { cardAction, cardTmdb, liveCard, type ExploreCard } from '#lib/ui/title-cards.ts';
 	import { seasonWords } from '../shows/index.ts';
 	import { savedDefaults } from '../mediafiles/index.ts';
 	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';

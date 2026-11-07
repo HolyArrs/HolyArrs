@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Icon from '../ui/Icon.svelte';
-	import Button from '../ui/Button.svelte';
-	import IconButton from '../ui/IconButton.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { hiWords, langName, type HI, type Language, type Want } from './api.ts';
 
 	let { wants = $bindable(), langs, id }: { wants: Want[]; langs: Language[]; id: string } = $props();

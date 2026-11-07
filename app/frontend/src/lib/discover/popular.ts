@@ -1,5 +1,5 @@
 // New & Popular: paths and the small pure rules the page and Explore share.
-import { cardIdentity, type ExploreCard, type ProviderItem } from '../ui/title-cards.ts';
+import { cardIdentity, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ServerRow } from './explore-server.ts';
 
 export type NewType = 'all' | 'movies' | 'shows' | 'music';

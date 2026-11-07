@@ -10,13 +10,13 @@
 	import { tick, untrack } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import Billboard from '../ui/Billboard.svelte';
-	import TrailerPlayer from '../ui/TrailerPlayer.svelte';
+	import Billboard from '#lib/ui/Billboard.svelte';
+	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
 	import { artistVideo, autoplayHere, loadUISettings } from '../core/trailer/autoplay.svelte.ts';
 	import { heroVideoStart, pickedSources, type HeroVideo } from '../core/trailer/hero-video.ts';
-	import Poster from '../ui/Poster.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Avatar from '../ui/Avatar.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import AskParts from './AskParts.svelte';
 	import { agoLong, dateTime } from '../core/format.ts';

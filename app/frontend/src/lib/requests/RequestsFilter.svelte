@@ -2,8 +2,8 @@
 	import { tick } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
-	import Icon, { type IconName } from '../ui/Icon.svelte';
-	import StatusIcon, { statusKey } from '../ui/StatusIcon.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
+	import StatusIcon, { statusKey } from '#lib/ui/StatusIcon.svelte';
 	import type { Life } from './lifecycle.ts';
 	import type { BoardCtx } from './board.ts';
 

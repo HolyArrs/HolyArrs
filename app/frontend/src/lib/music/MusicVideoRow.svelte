@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Shelf from '../ui/Shelf.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS, prefetchArtistVideo } from '../core/trailer/autoplay.svelte.ts';
 	import { attachHLS } from '../core/trailer/hls-player.ts';
 	import { heroVideoStart, type HeroVideo } from '../core/trailer/hero-video.ts';

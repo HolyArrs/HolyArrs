@@ -1,6 +1,6 @@
 <script lang="ts">
 	// One group's parts as ruled rows, with the reason and Check / Fix under any row that is not working.
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { atVerb, type StatusRow } from './rows.ts';
 	import { ago, dateTime } from '../core/format.ts';
 	import { to } from '../core/paths.ts';

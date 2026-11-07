@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import Releases from './Releases.svelte';
 	import GoBack from './GoBack.svelte';
 	import { RELEASE_PAGES, releaseLink } from './update-notice.ts';

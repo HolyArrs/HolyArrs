@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Chip from '../ui/Chip.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-import { refreshInbox } from '../core/inbox.svelte.ts';
-	import type { OwnedIndex } from '../ui/title-cards.ts';
-	import { defaultRegion } from '../ui/region.ts';
+	import { refreshInbox } from '../core/inbox.svelte.ts';
+	import type { OwnedIndex } from '#lib/ui/title-cards.ts';
+	import { defaultRegion } from '#lib/ui/region.ts';
 	import { coverFor } from './music-pages.ts';
 	import { heroArtists, heroLine } from './page-hero.ts';
-	import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { isNewRelease } from './music-new.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchRisingToday, withRising, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music-trending.ts';
 	import { reaskWhileFilling } from './reask.ts';
@@ -19,11 +19,11 @@ import { refreshInbox } from '../core/inbox.svelte.ts';
 	import SongLine from './SongLine.svelte';
 	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
-	import Shelf from '../ui/Shelf.svelte';
-	import PosterCard from '../ui/PosterCard.svelte';
-	import IconButton from '../ui/IconButton.svelte';
-	import EmptyState from '../ui/EmptyState.svelte';
-	import { stableRows } from '../ui/row-window.ts';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import { stableRows } from '#lib/ui/row-window.ts';
 
 	// Explore → Music. The server builds every row (personal first, then the
 	// charts, similar artists, missing albums and genre rows); genre chips

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { quality, ratioText, swarmNum, type ColId } from './columns.ts';
-	import Poster from '../ui/Poster.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Menu from '../ui/Menu.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import { rowItems } from './rowmenu.ts';
 	import { to } from '../core/paths.ts';
 	import { tip } from './tip.ts';
@@ -12,7 +12,7 @@
 	import { size as bytes, categoryWords, protocolOf, KIND_WORD } from './size.ts';
 	import { kindOf, kindWords, manyWords, rowName } from './downloaders.ts';
 	import type { ImportRecord } from './types.ts';
-	import type { MenuItem } from '../ui/Menu.svelte';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import type { DownloadRow, TitleView } from '../core/types.ts';
 	import { shortReason, stageOf, statusHint, statusWord, stepLine } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';

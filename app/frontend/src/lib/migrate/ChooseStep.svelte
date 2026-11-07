@@ -4,12 +4,12 @@
 
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	import SettingsCard from '../ui/SettingsCard.svelte';
-	import Button from '../ui/Button.svelte';
-	import IconButton from '../ui/IconButton.svelte';
-	import EmptyState from '../ui/EmptyState.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Sheet from '../ui/Sheet.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { appName, folderProblem, groupLabels, OTHER, plural, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 

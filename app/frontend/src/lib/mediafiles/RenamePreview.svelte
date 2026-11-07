@@ -1,9 +1,9 @@
 <script lang="ts">
 	// Preview of file renames for a title or the whole library, with an apply step.
 	import Poster from '#lib/ui/Poster.svelte';
-	import Button from '../ui/Button.svelte';
-	import ProgressBar from '../ui/ProgressBar.svelte';
-	import Skeleton from '../ui/Skeleton.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import ProgressBar from '#lib/ui/ProgressBar.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import { titleArt } from './title-art.ts';
 	import { albumSteps, fileName, followJob, renamePair, splitSteps, type JobView, type RenameStep } from './organise.ts';
 	import { onMount } from 'svelte';

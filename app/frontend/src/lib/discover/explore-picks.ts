@@ -1,7 +1,7 @@
 // Explore rows from the discover endpoint: trending, best, upcoming, similar, genre.
 
 import { api, ApiError, type Client } from '../core/api.ts';
-import { type ProviderItem } from '../ui/title-cards.ts';
+import { type ProviderItem } from '#lib/ui/title-cards.ts';
 
 export type ProviderRowName = 'trending' | 'best' | 'upcoming' | 'similar' | 'genre' | 'services';
 

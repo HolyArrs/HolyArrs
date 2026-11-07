@@ -11,9 +11,9 @@
 	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
 	import { goto, replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
-	import Poster from '../ui/Poster.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Menu, { type MenuItem } from '../ui/Menu.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import { to } from '../core/paths.ts';
 	import DlBar from './DlBar.svelte';

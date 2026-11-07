@@ -1,9 +1,9 @@
 <script lang="ts">
 	// The Status page body: four tabs of plates (Status, Jobs, Updates, About).
-	import '../ui/plate.css';
-	import AdminLinkButton from '../ui/AdminLinkButton.svelte';
-	import Button from '../ui/Button.svelte';
-	import Skeleton from '../ui/Skeleton.svelte';
+	import '#lib/ui/plate.css';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import WhyNote from './WhyNote.svelte';

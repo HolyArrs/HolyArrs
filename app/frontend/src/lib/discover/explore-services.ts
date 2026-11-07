@@ -1,10 +1,10 @@
 // The streaming services a person has, and the top lists ranked on them.
 
-import { serviceRegion } from '../ui/region.ts';
+import { serviceRegion } from '#lib/ui/region.ts';
 import { have } from './explore-rows.ts';
 
 export { serviceRegion };
-import { type ProviderItem } from '../ui/title-cards.ts';
+import { type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
 
 /** WatchService is one streaming service from GET /watch-services. */

@@ -2,7 +2,7 @@
 // one-by-one review get from the page, and the small rules they share.
 
 import type { Ask } from '../core/types.ts';
-import type { StatusKind } from '../ui/StatusPill.svelte';
+import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 import type { ApproverTab, AskTab } from './ask-words.ts';
 import type { TitleDetails } from '../metadata/index.ts';
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';

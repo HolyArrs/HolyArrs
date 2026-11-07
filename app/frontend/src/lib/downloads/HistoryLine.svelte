@@ -1,8 +1,8 @@
 <script lang="ts">
 	// History's compact row: small poster, title and time, then the step and
 	// one extra piece. Used by History's Search looks and the title pages.
-	import Poster from '../ui/Poster.svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { dateTime } from '../core/format.ts';
 	import { artOf } from './history-kinds.ts';
 	import { agoShort, partOf, rowExtra, rowStep } from './history-search.ts';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import MusicTileGrid from './MusicTileGrid.svelte';
 
 	// Explore → Music's Browse and New & Popular → Music's Explore more (flag

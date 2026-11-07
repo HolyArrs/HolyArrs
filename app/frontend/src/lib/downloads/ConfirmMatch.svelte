@@ -6,8 +6,8 @@
 	// match. The list is read from HolyArrs only; no outside lookups here.
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { bannerWords, candidateLine, type Match, type Matches } from './matches.ts';
 
 	let { refresh = 0, onchange }: { refresh?: number; onchange?: () => void } = $props();

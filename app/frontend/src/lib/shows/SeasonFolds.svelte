@@ -1,9 +1,9 @@
 <script lang="ts">
 	// Season pills with a shelf of episode cards for the chosen season.
-	import Skeleton from '../ui/Skeleton.svelte';
-	import Shelf from '../ui/Shelf.svelte';
-	import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
-	import { runtimeWords } from '../ui/TitleHero.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { runtimeWords } from '#lib/ui/TitleHero.svelte';
 	import { newSeason, newestSeason, seasonName } from './labels.ts';
 	import { animeEpisode, animePath, type AnimeView } from './anime.ts';
 	import { api } from '../core/api.ts';

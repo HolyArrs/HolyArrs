@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardIdentity, type ExploreCard, type ExploreRow } from '../ui/title-cards.ts';
+import { cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 import { dedupeTop } from './genres.ts';
 
 const card = (row: string, id: number): ExploreCard => ({ key: `${row}-movie-${id}`, kind: 'movie', name: `T${id}`, ref: `tmdb:${id}`, badges: [] });

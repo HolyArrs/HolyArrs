@@ -13,9 +13,9 @@
 
 <script lang="ts">
 	import { getContext, tick } from 'svelte';
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
-	import TestTag from '../ui/TestTag.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import { apps, appName, placeholderFor, type AppKind } from './move.ts';
 	import { api, ApiError } from '#lib/core/api.ts';

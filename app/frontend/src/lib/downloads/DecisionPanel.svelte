@@ -14,8 +14,8 @@
 	import { session } from '../core/session.svelte.ts';
 	import { plainReason } from '../core/plain.ts';
 	import { editionDecisionBody } from '../mediafiles/index.ts';
-	import Button from '../ui/Button.svelte';
-	import Menu, { type MenuItem } from '../ui/Menu.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 
 	// `compact`: in the Download details the title is already in the header.
 	let { items, ondone, compact = false }: { items: Decision[]; ondone?: () => void; compact?: boolean } = $props();

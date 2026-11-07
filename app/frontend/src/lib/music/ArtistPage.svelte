@@ -7,13 +7,13 @@
 	import { live } from '../core/live.svelte.ts';
 	import { date } from '../core/format.ts';
 	import MusicArtistPage, { type ArtistLibrary } from './ArtistOverview.svelte';
-	import LoadError from '../ui/LoadError.svelte';
-	import TitleSection from '../ui/TitleSection.svelte';
-	import '../ui/title-page.css';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import TitleSection from '#lib/ui/TitleSection.svelte';
+	import '#lib/ui/title-page.css';
 	import { session } from '../core/session.svelte.ts';
-	import { audienceStatus } from '../ui/title-status.ts';
+	import { audienceStatus } from '#lib/ui/title-status.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-import { decided } from '../core/plain.ts';
+	import { decided } from '../core/plain.ts';
 	import { albumWords, artistProgress } from './labels.ts';
 	import type { Ask, TitleView } from '../core/types.ts';
 	import type { ArtistSheets, LookupArtist } from './types.ts';

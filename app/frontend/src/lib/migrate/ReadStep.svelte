@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	import SettingsCard from '../ui/SettingsCard.svelte';
-	import Button from '../ui/Button.svelte';
-	import Icon from '../ui/Icon.svelte';
-	import EmptyState from '../ui/EmptyState.svelte';
-	import LoadError from '../ui/LoadError.svelte';
-	import StatusPill, { type StatusKind } from '../ui/StatusPill.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import { appName, bestStats, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from './move.ts';
 	import { dateTime } from '../core/format.ts';

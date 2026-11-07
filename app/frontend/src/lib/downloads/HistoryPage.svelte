@@ -9,7 +9,7 @@
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import LookDays from './HistoryDays.svelte';
 	import DetailActions from './HistoryActions.svelte';
 	import { api } from '../core/api.ts';
@@ -18,10 +18,10 @@
 	import { reducedMotion } from '../core/motion.ts';
 	import { fineCheck } from './history-tabs.ts';
 	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepBreak, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whenFrom, whenOf, whenSpans, whoLabels, whoMatches, type MediaType, type Who } from './history-search.ts';
-	import SegmentedControl from '../ui/SegmentedControl.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { EventRecord, TitleView } from '../core/types.ts';
 	import { session } from '../core/session.svelte.ts';
-	import IconButton from '../ui/IconButton.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { dlTop } from './dl-top.svelte.ts';
 	import { searchShortcut } from './keys.ts';
 

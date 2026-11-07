@@ -1,7 +1,7 @@
 // Search in plain words ("that space movie with the robot from 2014"):
 // the server reads the words; this file decides when to ask it and says
 // back what it understood.
-import type { ProviderItem } from '../ui/title-cards.ts';
+import type { ProviderItem } from '#lib/ui/title-cards.ts';
 import type { TitleView } from '../core/types.ts';
 
 /** What the server understood the words as. */

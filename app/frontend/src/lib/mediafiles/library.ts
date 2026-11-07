@@ -1,8 +1,8 @@
 // Library page filters, kinds, title search and poster status.
 
 import type { TitleView } from '../core/types.ts';
-import type { StatusKind } from '../ui/StatusPill.svelte';
-import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from '../ui/title-status.ts';
+import type { StatusKind } from '#lib/ui/StatusPill.svelte';
+import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from '#lib/ui/title-status.ts';
 import { libraryState } from './library-state.ts';
 
 export type Filter = 'all' | 'missing' | 'not_out_yet' | 'better' | 'have';

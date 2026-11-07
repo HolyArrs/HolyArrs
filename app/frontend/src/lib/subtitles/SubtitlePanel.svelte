@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import WishEditor from './LanguageWants.svelte';
 	import {
 		fileName,

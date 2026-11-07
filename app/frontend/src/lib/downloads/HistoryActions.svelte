@@ -3,7 +3,7 @@
 	// release (blocks the release, then searches its Slot again), then the
 	// places to go (Import plan, the title, Downloads, Requests, Problems).
 	import { tick } from 'svelte';
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { api, message } from '../core/api.ts';
 	import { to } from '../core/paths.ts';

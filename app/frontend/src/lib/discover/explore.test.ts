@@ -3,7 +3,7 @@ import { ApiError } from '../core/api.ts';
 import { enoughCards, genreCardHref, genreRowAfter } from './explore-type.ts';
 import { discoverTitles, discoverPath, fetchProviderRow } from './explore-picks.ts';
 import { becauseYouHave, comingSoon, orderRecent, fromPerson, genreRows, genresOf, keepFull, kindShelf, readyToWatch, stillLooking, markTransitions, missingEpisodes, overlap, popularInHousehold, recentlyAdded, score, type Facets } from './explore-rows.ts';
-import { cardAction, cardTmdb, discoverCard, liveCard, tmdbArtName, quality, cardPill, titleCard } from '../ui/title-cards.ts';
+import { cardAction, cardTmdb, discoverCard, liveCard, tmdbArtName, quality, cardPill, titleCard } from '#lib/ui/title-cards.ts';
 import { pickerServices, toggleService, readServices, writeServices, serviceRegion } from './explore-services.ts';
 import type { Ask, CalendarEntry, SlotView, TitleView } from '../core/types.ts';
 

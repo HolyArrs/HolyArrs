@@ -3,7 +3,7 @@
 // happened, and line 2 says what happened, in plain words and never
 // repeating the title or the step. The details panel and the phone
 // sheet use the same words.
-import type { IconName } from '../ui/Icon.svelte';
+import type { IconName } from '#lib/ui/Icon.svelte';
 import { bytes } from '../core/format.ts';
 import { dayKey } from './history-kinds.ts';
 import type { HistoryRow } from './history.ts';

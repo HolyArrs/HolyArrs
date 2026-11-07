@@ -1,8 +1,8 @@
 <script lang="ts">
-	import SettingsCard from '../ui/SettingsCard.svelte';
-	import Field from '../ui/Field.svelte';
-	import Button from '../ui/Button.svelte';
-	import TestTag from '../ui/TestTag.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import Field from '#lib/ui/Field.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ms } from './api.ts';
 	import { checkCount, checkSummary, checkTone, checkWord, defaultQuery, type CheckKind, type SourceCheck } from './check.ts';
 	import { api } from '../core/api.ts';

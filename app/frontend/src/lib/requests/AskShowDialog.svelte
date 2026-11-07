@@ -1,8 +1,8 @@
 <script lang="ts">
 	// A member asks for a show: all seasons, the seasons they pick, or the
 	// future seasons only (what airs from now on).
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
 	import { seasonName, seasonWords } from '../shows/index.ts';
 	import type { Ask } from '../core/types.ts';

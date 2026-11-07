@@ -4,7 +4,7 @@
 	// Down and Up; Storage holds free space over a meter, today's total and the
 	// time left. Both are siblings of the status tab track.
 	import type { Snippet } from 'svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { reviewWord, timeWords } from './status-views.ts';
 
 	interface Props {

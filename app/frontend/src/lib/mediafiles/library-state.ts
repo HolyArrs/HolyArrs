@@ -1,9 +1,9 @@
 // Works out the one state a Library title shows: its label, tone, icon and sort rank.
 
 import type { TitleView } from '../core/types.ts';
-import type { StatusKind } from '../ui/StatusPill.svelte';
-import type { IconName } from '../ui/Icon.svelte';
-import { quality } from '../ui/title-cards.ts';
+import type { StatusKind } from '#lib/ui/StatusPill.svelte';
+import type { IconName } from '#lib/ui/Icon.svelte';
+import { quality } from '#lib/ui/title-cards.ts';
 import { date } from '../core/format.ts';
 
 export type LibStateKey =

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import '../ui/plate.css';
-	import Button from '../ui/Button.svelte';
+	import '#lib/ui/plate.css';
+	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { ago } from '../core/format.ts';
 

@@ -28,9 +28,9 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Icon, { type IconName } from '../ui/Icon.svelte';
-	import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
-	import { whenLoaded } from '../ui/lazy-art.ts';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { whenLoaded } from '#lib/ui/lazy-art.ts';
 	import { tiltFor, type BarTone, type PosterDetail } from './poster.ts';
 	import type { LibState } from './library-state.ts';
 	import { reducedMotion, viewTransitionName } from '../core/motion.ts';

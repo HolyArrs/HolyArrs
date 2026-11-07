@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { coverFor } from './music-pages.ts';
-	import { tmdbSized } from '../ui/library-art.ts';
+	import { tmdbSized } from '#lib/ui/library-art.ts';
 	// A song line: 56 tall, 44 px art, title and artist, the explicit "E",
 	// and one action: Ask album (HolyArrs asks for albums, it does not play).
 	let { title, artist, image = null, explicit = false, href, askHref }: { title: string; artist: string; image?: string | null; explicit?: boolean; href: string; askHref: string } = $props();

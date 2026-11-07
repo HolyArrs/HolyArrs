@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon from '../ui/Icon.svelte';
-	import Shelf from '../ui/Shelf.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
 	import { api } from '../core/api.ts';
 	import { claimPlayer } from '../core/trailer/trailer.ts';
 	import { openTheater } from '../core/trailer/theater.svelte.ts';

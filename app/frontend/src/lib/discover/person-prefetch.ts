@@ -1,5 +1,5 @@
 import { api } from '../core/api.ts';
-import type { FilmographyPage, FilmSort } from '../ui/people.ts';
+import type { FilmographyPage, FilmSort } from '#lib/ui/people.ts';
 
 // A person page opens filled in when the pointer has rested on that person's face:
 // the first page of their filmography is fetched on hover and handed to the page.

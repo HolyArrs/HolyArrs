@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Season dropdown, or a plain label when there is one season.
-	import Menu, { type MenuItem } from '../ui/Menu.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { seasonName } from './labels.ts';
 
 	let {

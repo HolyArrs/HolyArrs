@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../core/api.ts';
-import { matchOwned, ownedIndex } from '../ui/title-cards.ts';
+import { matchOwned, ownedIndex } from '#lib/ui/title-cards.ts';
 import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
 import type { TitleView } from '../core/types.ts';
 

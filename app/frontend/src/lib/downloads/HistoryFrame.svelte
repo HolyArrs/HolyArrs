@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../ui/Icon.svelte';
-	import Skeleton from '../ui/Skeleton.svelte';
-	import LoadError from '../ui/LoadError.svelte';
-	import Button from '../ui/Button.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { pageLine } from './history.ts';
 	import type { EventFeed } from './history-feed.svelte.ts';
 

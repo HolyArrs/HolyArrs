@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Shelf from '../ui/Shelf.svelte';
-	import Icon from '../ui/Icon.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { to } from '../core/paths.ts';
 	import { sized } from '../core/tmdb-image.ts';
 	import { browseHref, type BrowseTile } from './search-browse.ts';

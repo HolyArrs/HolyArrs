@@ -37,7 +37,7 @@
 
 <script lang="ts">
 	import type { TitleView } from '../core/types.ts';
-	import { bannerAspect, bannerSrc } from '../ui/library-art.ts';
+	import { bannerAspect, bannerSrc } from '#lib/ui/library-art.ts';
 
 	let { title, eager = false, width = 0 }: { title: TitleView; eager?: boolean; width?: number } = $props();
 

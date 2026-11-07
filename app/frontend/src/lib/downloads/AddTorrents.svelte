@@ -2,8 +2,8 @@
 	// The Add sheet: paste magnet or .torrent links (one per line) or drop and
 	// pick .torrent files, then choose the Downloader, its category, a folder
 	// and whether to start paused. The torrents go straight to the client.
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { addWords, isTorrentFile, splitLinks, type AddOutcome } from './manage.ts';

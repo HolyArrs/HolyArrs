@@ -1,5 +1,5 @@
 <script lang="ts">
-	import StatusIcon, { type StatusKey } from '../ui/StatusIcon.svelte';
+	import StatusIcon, { type StatusKey } from '#lib/ui/StatusIcon.svelte';
 
 	let {
 		tone = 'soft',

@@ -9,9 +9,9 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import Confirm from '../ui/Confirm.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
 	import QrCode from './QrCode.svelte';
-	import { needsConfirm } from '../ui/sensitive.ts';
+	import { needsConfirm } from '#lib/ui/sensitive.ts';
 	import { strong } from './strong-error.ts';
 
 	// Two-factor

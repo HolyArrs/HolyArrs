@@ -1,7 +1,7 @@
 <script lang="ts">
 	// A member asks for an artist: the whole artist, or the albums they pick.
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
 	import { albumKind, albumWords, albumYear } from '../music/index.ts';
 	import type { Ask } from '../core/types.ts';

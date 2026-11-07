@@ -16,8 +16,8 @@
 <script lang="ts">
 	// A member asks for a movie: one confirm step, so a card or result button
 	// never asks in a single click.
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
 	import type { Ask } from '../core/types.ts';
 

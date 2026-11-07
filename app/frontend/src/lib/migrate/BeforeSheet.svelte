@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
-	import SegmentedControl from '../ui/SegmentedControl.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { chooseHint, needsLook, plural, resultWords, tone, type Bucket, type Line, type PersonChoice } from './move.ts';
 

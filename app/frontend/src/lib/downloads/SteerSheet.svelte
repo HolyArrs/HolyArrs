@@ -1,8 +1,8 @@
 <script lang="ts">
 	// One sheet for steering torrents by hand: seeding rules, a new folder
 	// or speed caps, for one or many torrents. One call per Downloader.
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import type { DownloadRow } from '../core/types.ts';

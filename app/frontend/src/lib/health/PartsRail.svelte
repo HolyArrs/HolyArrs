@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Linked apps: a tab per kind with its count and worst colour, and the picked kind's rows beside it.
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import GroupRows from './GroupRows.svelte';
 	import { partKinds, type StatusGroup, type StatusRow, type Tone } from './rows.ts';
 	import { to } from '../core/paths.ts';

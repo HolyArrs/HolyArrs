@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createClient } from '../core/api.ts';
-import { ownedIndex, ownedMark, ownedTitle, type ExploreCard } from '../ui/title-cards.ts';
+import { ownedIndex, ownedMark, ownedTitle, type ExploreCard } from '#lib/ui/title-cards.ts';
 import { libraryBrief, libraryTitles, ownedLibrary, stubTitle } from './owned.ts';
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });

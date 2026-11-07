@@ -33,7 +33,7 @@
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import { pictureFor, pictureOf } from '#lib/core/pictures.ts';
-import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { albumYear } from './labels.ts';

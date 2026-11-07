@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Popover from '../ui/Popover.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
 	import { size as bytes } from './size.ts';
 	import { CONN_HINT, CONN_WORD } from './pane-facts.ts';
 	import type { Downloaders } from './clients.svelte.ts';

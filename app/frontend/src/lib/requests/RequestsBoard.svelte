@@ -9,10 +9,10 @@
 	import { flip } from 'svelte/animate';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
-	import Icon, { type IconName } from '../ui/Icon.svelte';
-	import Avatar from '../ui/Avatar.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
-	import StatusIcon, { statusKey, type StatusKey } from '../ui/StatusIcon.svelte';
+	import StatusIcon, { statusKey, type StatusKey } from '#lib/ui/StatusIcon.svelte';
 	import RequestsFilter from './RequestsFilter.svelte';
 	import RequestWindow from './RequestWindow.svelte';
 	import { agoLong, dateTime } from '../core/format.ts';

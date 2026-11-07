@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 
 	let {
 		back,

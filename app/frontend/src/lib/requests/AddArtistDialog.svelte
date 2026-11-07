@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Sheet from '../ui/Sheet.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '../core/paths.ts';
 	// The add-an-artist dialog: Library folder, Pick rules, which albums to
 	// keep up to date, new albums, album kinds and Pressing statuses.

@@ -3,14 +3,14 @@
 	import { to } from '../core/paths.ts';
 	import { api } from '../core/api.ts';
 	import { detailPath, remember } from '../metadata/index.ts';
-	import Shelf from '../ui/Shelf.svelte';
-	import PosterCard from '../ui/PosterCard.svelte';
-	import Chip from '../ui/Chip.svelte';
-	import { discoverCard, matchOwned, ownedMark, followsByTmdb, ownedTitle, type ExploreCard, type OwnedIndex, cardIdentity } from '../ui/title-cards.ts';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
+	import { discoverCard, matchOwned, ownedMark, followsByTmdb, ownedTitle, type ExploreCard, type OwnedIndex, cardIdentity } from '#lib/ui/title-cards.ts';
 	import { serviceChips, serviceLabel, serviceTopPath, topPath, type ServiceTopAnswer, type ServiceTopRow, type TopAnswer } from './explore-services.ts';
 	import { type ExploreType } from './explore-type.ts';
 	import { type Genre } from './genres.ts';
-	import type { Audience } from '../ui/title-status.ts';
+	import type { Audience } from '#lib/ui/title-status.ts';
 
 	// "Top on your services": one row, one chip per streaming service (one
 	// picked at a time). Every service's list comes in one answer, so a chip

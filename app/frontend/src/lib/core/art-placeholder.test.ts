@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
+import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 import { inkOn, placeholderHue, placeholderText } from './art-placeholder.ts';
 
 describe('picture placeholder', () => {

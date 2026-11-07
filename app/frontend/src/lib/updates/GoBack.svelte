@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '../ui/Button.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { IMAGE, goBackBackup, imageTag, type BackupRow } from './update-notice.ts';
 	import { api } from '../core/api.ts';
 	import { dateTime } from '../core/format.ts';
