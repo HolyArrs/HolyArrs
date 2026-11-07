@@ -1,21 +1,28 @@
+// Shared search box state and the page-return scroll memory.
 
 import { DUR, EASE } from './transitions.ts';
 
 type Hooks = { submit?: () => void; blur?: () => void; exit?: () => void };
 
+// Text in the main search box.
 export const searchField = $state({ term: '' });
 
+// Download-page scope toggle and its own search text.
 export const dlScope = $state({ on: false, off: false, term: '' });
 
+// Lets the active page react to submit, blur and exit of the box.
 export const searchHooks: Hooks = {};
 
+// Search inputs currently mounted, since layouts may render more than one.
 const fields = new Set<HTMLInputElement>();
 
+// Returns an undo function for cleanup when the input unmounts.
 export function registerField(el: HTMLInputElement): () => void {
 	fields.add(el);
 	return () => fields.delete(el);
 }
 
+// Focuses the first visible input; hidden copies are skipped.
 export function focusField(select = false): boolean {
 	for (const el of fields) {
 		if (el.offsetParent === null && el.getClientRects().length === 0) continue;
@@ -26,8 +33,10 @@ export function focusField(select = false): boolean {
 	return false;
 }
 
+// Scroll spot saved when leaving a list, so Back lands in the same place.
 let returnY = 0;
 let armed = false;
+// Only the first call counts until forgotten, so later scrolls do not overwrite it.
 export function rememberReturn() {
 	if (armed || typeof window === 'undefined') return;
 	armed = true;
@@ -36,6 +45,7 @@ export function rememberReturn() {
 export function forgetReturn() {
 	armed = false;
 }
+// Waits for the old page to leave and the new one to grow tall enough, then scrolls; gives up after 3s.
 export function restoreReturn(fromPath: string) {
 	const y = returnY;
 	const t0 = performance.now();
@@ -48,6 +58,7 @@ export function restoreReturn(fromPath: string) {
 	requestAnimationFrame(step);
 }
 
+// Fades the search form in; calm mode skips the scale.
 export function playFieldEntry(calm: boolean) {
 	for (const el of fields) {
 		const form = el.closest('form');

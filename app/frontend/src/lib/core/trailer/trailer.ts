@@ -1,6 +1,4 @@
-// Trailer autoplay: which video, whether it may play here, and the delays.
-// Layer 1 (moving pictures) always shows; Layer 2 (a muted trailer) plays
-// only when everything below says yes, and only one at a time.
+// Trailer autoplay rules: which video, whether it may play here, and the delays.
 
 export interface Video {
 	key: string;
@@ -10,13 +8,27 @@ export interface Video {
 	language?: string;
 }
 
-const youTubeKey = /^[A-Za-z0-9_-]{6,20}$/;
+export interface Conditions {
+	setting: boolean;
+	kid: boolean;
+	reducedMotion: boolean;
+	pref?: AutoplayPref;
+	saveData?: boolean;
+	effectiveType?: string;
+	phone?: boolean;
+}
 
-/**
- * pickTrailer chooses the trailer: a Trailer before a Teaser, official
- * first, the person's language before English before others, keeping
- * TMDB's order otherwise. Clips and odd keys never play.
- */
+export type AutoplayPref = 'auto' | 'always' | 'never';
+
+const youTubeKey = /^[A-Za-z0-9_-]{6,20}$/;
+const AUTOPLAY_KEY = 'holyarrs.trailer.autoplay';
+const SOUND_KEY = 'holyarrs.trailer.sound';
+
+// Delays in ms before a hero or hover trailer starts.
+export const HERO_DELAY = 1500;
+export const HOVER_DELAY = 800;
+
+// Trailer beats Teaser, then official, then own language, then English; clips and odd keys never play.
 export function pickTrailer(videos: Video[] | null | undefined, lang = 'en'): Video | null {
 	const want = lang.toLowerCase().split('-')[0];
 	let best: Video | null = null;
@@ -38,22 +50,21 @@ export function pickTrailer(videos: Video[] | null | undefined, lang = 'en'): Vi
 	return best;
 }
 
-/** The privacy-enhanced embed address (muted autoplay, no controls). */
+// Uses the no-cookie host.
 export function embedUrl(key: string, origin?: string, repeat = false): string {
 	const q = new URLSearchParams({ autoplay: '1', mute: '1', controls: '0', playsinline: '1', loop: '1', modestbranding: '1', rel: '0', enablejsapi: '1' });
 	if (origin) q.set('origin', origin);
-	// loop=1 repeats a single video only with playlist=<key>; without it the video ends.
+	// The embed only repeats a single video when playlist names it.
 	if (repeat) q.set('playlist', key);
 	return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(key)}?${q}`;
 }
 
-/** playingWord names what the big player plays: an artist's music video, else the video's own kind (teaser), else a trailer. */
 export function playingWord(kind: 'movie' | 'show' | 'artist', what?: string): string {
 	if (kind === 'artist') return 'music video';
 	return what || 'trailer';
 }
 
-/** The hero's pictures: the main backdrop first, then up to 3 more, no repeats. */
+// Main backdrop first, then more, no repeats.
 export function heroPictures(main: string | null | undefined, more: string[] | null | undefined, max = 4): string[] {
 	const out: string[] = [];
 	for (const u of [main, ...(more ?? [])]) {
@@ -62,25 +73,8 @@ export function heroPictures(main: string | null | undefined, more: string[] | n
 	return out;
 }
 
-export interface Conditions {
-	/** The owner's "Autoplay trailers" setting. */
-	setting: boolean;
-	kid: boolean;
-	reducedMotion: boolean;
-	/** This device's choice (autoplayPref); auto when left out. */
-	pref?: AutoplayPref;
-	saveData?: boolean;
-	/** navigator.connection.effectiveType */
-	effectiveType?: string;
-	/** A phone (touch only, or narrower than a tablet): the trailer waits for a tap. */
-	phone?: boolean;
-}
 
-/** mayAutoplay says whether Layer 2 may start here; otherwise Layer 1 stays. */
-export type AutoplayPref = 'auto' | 'always' | 'never';
-const AUTOPLAY_KEY = 'holyarrs.trailer.autoplay';
-
-/** This device's trailer choice: auto follows the system (reduced motion, data saver), always ignores it, never turns trailers off. */
+// Per-device choice: auto follows system settings, always ignores them, never turns trailers off.
 export function autoplayPref(): AutoplayPref {
 	try {
 		const v = localStorage.getItem(AUTOPLAY_KEY);
@@ -95,10 +89,11 @@ export function setAutoplayPref(v: AutoplayPref) {
 		if (v === 'auto') localStorage.removeItem(AUTOPLAY_KEY);
 		else localStorage.setItem(AUTOPLAY_KEY, v);
 	} catch {
-		/* private mode: the choice lasts this page only */
+		// storage can be blocked; the choice then lasts this page only
 	}
 }
 
+// Autoplay needs every condition to allow it; 'always' skips only the system ones.
 export function mayAutoplay(c: Conditions): boolean {
 	const pref = c.pref ?? 'auto';
 	if (!c.setting || c.kid || pref === 'never') return false;
@@ -107,7 +102,7 @@ export function mayAutoplay(c: Conditions): boolean {
 	return !['slow-2g', '2g', '3g'].includes(c.effectiveType ?? '');
 }
 
-/** What this browser says about motion and data. */
+// Without a window (server render) assume reduced motion so nothing plays.
 export function browserConditions(): Pick<Conditions, 'reducedMotion' | 'saveData' | 'effectiveType' | 'phone'> {
 	if (typeof window === 'undefined') return { reducedMotion: true };
 	const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
@@ -119,7 +114,7 @@ export function browserConditions(): Pick<Conditions, 'reducedMotion' | 'saveDat
 	};
 }
 
-/** True on a desktop pointer (hover cards only there). */
+// Hover cards only exist for a precise hovering pointer.
 export function finePointer(): boolean {
 	return typeof window !== 'undefined' && (window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false);
 }
@@ -133,15 +128,12 @@ if (typeof window !== 'undefined') {
 	window.addEventListener('pointermove', (e) => (e.movementX || e.movementY) && (movedSinceScroll = true), { passive: true, capture: true });
 }
 
-/** True while the page scrolls, and after it until the pointer moves: hover cards stay shut. */
+// 150 ms covers scroll momentum events that arrive just after the last one.
 export function scrollHold(): boolean {
 	return !movedSinceScroll || performance.now() - lastScroll < 150;
 }
 
-/**
- * dwell runs fire after ms unless cancelled first: the hover and in-view
- * delays. start again restarts; cancel is safe to call any time.
- */
+// Calling start again restarts the wait; cancel is always safe.
 export function dwell(ms: number, fire: () => void, timers: { set: (f: () => void, ms: number) => ReturnType<typeof setTimeout>; clear: (t: ReturnType<typeof setTimeout>) => void } = { set: (f, ms) => setTimeout(f, ms), clear: (t) => clearTimeout(t) }) {
 	let t: ReturnType<typeof setTimeout> | null = null;
 	return {
@@ -165,7 +157,7 @@ export function dwell(ms: number, fire: () => void, timers: { set: (f: () => voi
 // One video at a time: a new player stops the one before it.
 let playing: { id: symbol; stop: () => void } | null = null;
 
-/** claim makes this the only playing video; the returned release frees the slot. */
+// Starting a player stops whichever one held the slot before.
 export function claimPlayer(stop: () => void): () => void {
 	const id = Symbol('player');
 	if (playing) playing.stop();
@@ -175,14 +167,11 @@ export function claimPlayer(stop: () => void): () => void {
 	};
 }
 
-/** For tests: whether some player holds the slot. */
 export function playerBusy(): boolean {
 	return playing !== null;
 }
 
-const SOUND_KEY = 'holyarrs.trailer.sound';
-
-/** Whether the person turned trailer sound on earlier in this browser session. */
+// Remembers a sound-on choice so the next trailer does not start muted.
 export function soundOn(): boolean {
 	try {
 		return localStorage.getItem(SOUND_KEY) === 'on';
@@ -196,14 +185,11 @@ export function setSoundOn(on: boolean) {
 		if (on) localStorage.setItem(SOUND_KEY, 'on');
 		else localStorage.removeItem(SOUND_KEY);
 	} catch {
-		/* private mode: not remembered */
+		// storage can be blocked; not remembered
 	}
 }
 
-export const HERO_DELAY = 1500;
-export const HOVER_DELAY = 800;
-
-/** Where a hover card of size w×h opens, kept inside the viewport (8px margin). */
+// Keeps the card inside the viewport and bounds.
 export function placeCard(
 	anchor: { left: number; top: number; width: number; height: number },
 	w: number,
@@ -212,8 +198,7 @@ export function placeCard(
 	margin = 8,
 	bounds?: { left: number; right: number }
 ) {
-	// Netflix-style: grow from the poster itself, centred on it; at a row's
-	// edge, line up with the poster's outer edge instead of sliding away.
+	// Centre on the poster; at a row's edge, line up with the poster's outer edge instead.
 	const lo = Math.max(margin, bounds?.left ?? margin);
 	const hi = Math.min(view.width - margin, bounds?.right ?? view.width - margin);
 	const cx = anchor.left + anchor.width / 2;

@@ -1,15 +1,9 @@
-// The line a player shows when a trailer will not play, in plain words:
-// why, when the server said (the reader's reason from its 404), else the
-// plain "can't play here". Every player that shows such a line uses this.
+// Plain-words line shown by every player when a trailer will not play.
 
-/** YouTube refusing HolyArrs as a whole, not this one video. */
+// Reasons where the whole service is blocked, not this one video.
 const DOOR_REASONS = new Set(['bot_check', 'no_address', 'refused', 'network']);
 
-/**
- * missLine is the line for a trailer that will not play. why is the
- * server's reason ("" or undefined when it gave none); word is what plays
- * ("trailer", "teaser", "music video").
- */
+// why is the server's reason, if any; word names what was meant to play.
 export function missLine(why: string | undefined, word = 'trailer'): string {
 	switch (why) {
 		case 'age_restricted':

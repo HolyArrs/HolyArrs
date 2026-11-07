@@ -1,33 +1,21 @@
-// The artist page hero's music video: muted, looping, through HolyArrs'
-// relay. It follows exactly the trailers' rules (mayAutoplay): never for Kid
-// accounts or with trailers off or "never"; with reduced motion, data saver,
-// a slow connection or a phone only when this device says "always". Without
-// one the hero keeps its photo with the slow pan.
+// Rules and helpers for the artist hero's muted looping music video.
 import { mayAutoplay, type Conditions } from './trailer.ts';
 import type { TrailerSource } from './autoplay.svelte.ts';
 
-/** The answer of GET /music/artists/{mbid}?part=video. */
 export interface HeroVideo {
 	key: string;
 	proxy_url: string;
-	/** Seconds: most replayed point, else heatmap peak, else 30% in. */
 	start: number;
 	duration?: number;
-	/** When the relayed stream stops working. */
 	expires_at?: string;
 }
 
-/** heroVideoAllowed says whether the hero may ask for and play a video. */
+// Same rules as trailer autoplay, so the hero never plays where trailers may not.
 export function heroVideoAllowed(c: Conditions): boolean {
 	return mayAutoplay(c);
 }
 
-/**
- * pickedSources orders the sources for a video picked in the Music videos
- * row (v: the answer of ?part=video&id=<key>): the relayed stream first,
- * since label videos refuse YouTube's embedded player (error 150), then the
- * embed.
- */
+// Relay first: label videos often refuse the embedded player.
 export function pickedSources(key: string, v: Pick<HeroVideo, 'key' | 'proxy_url'> | null): TrailerSource[] {
 	const out: TrailerSource[] = [];
 	if (v?.proxy_url && v.key === key) out.push({ kind: 'pass', url: v.proxy_url, key });
@@ -35,18 +23,14 @@ export function pickedSources(key: string, v: Pick<HeroVideo, 'key' | 'proxy_url
 	return out;
 }
 
-/**
- * heroFullscreen picks how the hero's video goes full screen: the browser's
- * own full screen on the hero (the video fit whole, with its own exit, pause
- * and sound), or where a page may not (iPhone Safari) the video's player.
- */
+// iPhone Safari cannot full screen a page element, so it falls back to the video's own player.
 export function heroFullscreen(enabled: boolean | undefined, box: { requestFullscreen?: unknown } | undefined, video: { webkitEnterFullscreen?: unknown } | undefined): 'page' | 'video' | null {
 	if (enabled && typeof box?.requestFullscreen === 'function') return 'page';
 	if (typeof video?.webkitEnterFullscreen === 'function') return 'video';
 	return null;
 }
 
-/** heroVideoStart keeps the start inside the video (0 when unknown). */
+// A start at or past the end would show nothing, so it restarts from 0.
 export function heroVideoStart(v: Pick<HeroVideo, 'start' | 'duration'>): number {
 	const s = Number.isFinite(v.start) && v.start > 0 ? v.start : 0;
 	if (v.duration && s >= v.duration) return 0;

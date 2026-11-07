@@ -1,4 +1,5 @@
 
+// Shared motion timings, easings and enter/exit transitions, calmer under reduced motion.
 import { fade, fly, scale, slide, type TransitionConfig } from 'svelte/transition';
 import { flip } from 'svelte/animate';
 import { reducedMotion } from './motion.ts';
@@ -19,6 +20,7 @@ export const easeSpring = (t: number) => {
 	return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
 };
 
+// Reduced motion swaps movement for a plain fade.
 function calm(node: Element, duration: number): TransitionConfig {
 	return fade(node, { duration });
 }
@@ -50,6 +52,7 @@ export function notifyOut(node: Element): TransitionConfig {
 	return fly(node, { y: -10, duration: DUR.fast, easing: easeIn });
 }
 
+// Sheets fill the phone screen, so they appear without sliding.
 const phone = () => typeof matchMedia === 'function' && matchMedia('(max-width: 640px)').matches;
 export function sheetIn(node: Element): TransitionConfig {
 	if (phone()) return { duration: 0 };

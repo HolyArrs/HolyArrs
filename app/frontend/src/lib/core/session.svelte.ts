@@ -1,3 +1,4 @@
+// Who is signed in, what they may do, and every sign-in route.
 
 import { api as defaultClient, type Client } from './api';
 import { setHeld } from './settings.ts';
@@ -44,7 +45,17 @@ interface SignInAnswer {
 	ticket?: string;
 }
 
+interface AuthState {
+	needs_setup: boolean;
+	ways?: Way[];
+	setup_ways?: Way[];
+	safe_mode?: boolean;
+	min_password_length?: number;
+	config_unmapped?: boolean;
+}
+// One session store per client; the default one is exported below.
 export function createSession(client: Client = defaultClient) {
+	// Bumped on every sign-in or sign-out so a slow older response cannot overwrite newer state.
 	let generation = 0;
 	const s = $state<{
 		state: SessionState;
@@ -92,15 +103,9 @@ export function createSession(client: Client = defaultClient) {
 		minPassword: 8
 	});
 
-	interface AuthState {
-		needs_setup: boolean;
-		ways?: Way[];
-		setup_ways?: Way[];
-		safe_mode?: boolean;
-		min_password_length?: number;
-		config_unmapped?: boolean;
-	}
+	// Applies the public auth settings the server shares before and after sign-in.
 	function tookState(st: AuthState) {
+		// Floor of 4 guards against a bad server value.
 		s.minPassword = Math.max(4, st.min_password_length ?? 8);
 		if (st.ways) s.ways = st.ways;
 		s.setupWays = st.setup_ways?.length ? st.setup_ways : ['password'];
@@ -108,24 +113,25 @@ export function createSession(client: Client = defaultClient) {
 		s.configUnmapped = !!st.config_unmapped;
 	}
 
+	// Failure keeps the last value; the server checks the length again.
 	async function loadMinPassword(): Promise<number> {
 		try {
 			tookState(await client.get<AuthState>('/auth/state'));
 		} catch {
-			// keep what we had; the server checks again anyway
 		}
 		return s.minPassword;
 	}
 
+	// Failure keeps the last known choices; each action still fails closed.
 	async function loadWays(): Promise<Way[]> {
 		try {
 			tookState(await client.get<AuthState>('/auth/state'));
 		} catch {
-			// Keep the last known choices; individual actions still fail closed.
 		}
 		return s.ways;
 	}
 
+	// Copies the profile into state and sets the token used on writes.
 	function apply(me: Me) {
 		client.setCsrf(me.csrf ?? '');
 		s.id = me.id;
@@ -148,6 +154,7 @@ export function createSession(client: Client = defaultClient) {
 		s.state = 'signed_in';
 	}
 
+	// Clears the person; a stale call (older generation) does nothing.
 	async function signedOutState(expected: number) {
 		if (expected !== generation) return;
 		client.setCsrf('');
@@ -185,6 +192,7 @@ export function createSession(client: Client = defaultClient) {
 		return s.state;
 	}
 
+	// Shared end of every sign-in: a two-factor ticket pauses it, otherwise load the profile.
 	async function finish(r: SignInAnswer): Promise<SignInResult> {
 		if (r.two_factor && r.ticket) return { done: false, ticket: r.ticket };
 		const expected = ++generation;
@@ -243,6 +251,7 @@ export function createSession(client: Client = defaultClient) {
 		return client.post('/auth/plex/start');
 	}
 
+	// Plex returns waiting until the person approves in the other window.
 	async function plexFinish(id: number): Promise<SignInResult | 'waiting'> {
 		const r = await client.post<SignInAnswer & { waiting?: boolean }>('/auth/plex/finish', { id });
 		if (r?.waiting) return 'waiting';
@@ -302,10 +311,12 @@ export function createSession(client: Client = defaultClient) {
 		}
 	}
 
+	// Called when the server says the session ended.
 	function lost() {
 		if (s.state === 'signed_in') void signedOutState(++generation);
 	}
 
+	// Owners can do anything; admins also manage users.
 	function can(p: Perm | 'users'): boolean {
 		if (s.role === 'owner') return true;
 		if (p === 'users') return s.role === 'admin';

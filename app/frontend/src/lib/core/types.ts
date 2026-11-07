@@ -1,3 +1,4 @@
+// Shapes of the API answers the frontend reads.
 
 export interface CopyFile {
 	ID: number; VersionID: number; RelativePath: string; Size: number; AddedAt: string; State?: string; Protected?: boolean; MediaInfo?: Record<string, unknown> | null; ReleaseName?: string | null; Quality?: Record<string, unknown> | null;

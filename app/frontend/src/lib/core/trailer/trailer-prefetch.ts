@@ -1,8 +1,4 @@
-// The in-view trailer prefetch: title cards that stay on screen for a
-// while are named to the server in one batch (GET /trailer/batch), so a
-// later hover finds the address already resolved. Each title is asked at
-// most once per page (a pending one once more, later); a full batch goes
-// at once, a partial one after a short gather.
+// Batches in-view title ids to the server so a later hover finds the trailer already resolved.
 
 export interface PrefetchTimers {
 	set: (f: () => void, ms: number) => ReturnType<typeof setTimeout>;
@@ -10,25 +6,22 @@ export interface PrefetchTimers {
 }
 
 export interface PrefetchQueueOptions {
-	/** Sends one batch; answers the ids still pending (asked again once, after retryMs). */
 	send: (ids: string[]) => Promise<string[]>;
-	/** How long to gather ids before sending a partial batch. */
 	gatherMs?: number;
-	/** Most ids in one batch (the server allows 40). */
 	max?: number;
-	/** When pending ids are asked once more. */
 	retryMs?: number;
 	timers?: PrefetchTimers;
 }
 
 const realTimers: PrefetchTimers = { set: (f, ms) => setTimeout(f, ms), clear: (t) => clearTimeout(t) };
 
+// Each id is sent once, and a still-pending one once more later; a full batch goes at once.
 export function prefetchQueue(o: PrefetchQueueOptions) {
 	const gather = o.gatherMs ?? 150;
 	const max = o.max ?? 40;
 	const retry = o.retryMs ?? 8000;
 	const timers = o.timers ?? realTimers;
-	const asked = new Map<string, number>(); // id -> times sent
+	const asked = new Map<string, number>(); // times sent per id
 	let waiting: string[] = [];
 	let t: ReturnType<typeof setTimeout> | null = null;
 
@@ -44,7 +37,7 @@ export function prefetchQueue(o: PrefetchQueueOptions) {
 					if (again.length) timers.set(() => again.forEach((id) => queue(id, true)), retry);
 				})
 				.catch(() => {
-					/* the hover lookup still works */
+					// a failed prefetch is harmless: hover looks it up itself
 				});
 		}
 	}
@@ -59,7 +52,6 @@ export function prefetchQueue(o: PrefetchQueueOptions) {
 	}
 
 	return {
-		/** Names one title ("movie:123"); repeats are ignored. */
 		add: (id: string) => queue(id),
 		flush,
 		get waiting() {
