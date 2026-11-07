@@ -254,7 +254,10 @@ test('accessibility: Settings home, a search and a page with the save bar', asyn
 
 test('URL base: a saved path is cleaned, asks for a restart, and can be cleared', async () => {
 	await page.goto('/settings/this-app');
+	// URL base is a rare setting, so it sits under More options (closed until opened).
+	await page.getByTestId('more-options').getByText('More options').click();
 	const card = page.getByTestId('url-base-form');
+	await expect(card).toBeVisible();
 	await card.getByLabel('URL base').fill('holyarrs/');
 	await card.getByRole('button', { name: 'Save' }).click();
 	await expect(card.getByLabel('URL base')).toHaveValue('/holyarrs');
