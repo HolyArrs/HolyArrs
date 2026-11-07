@@ -269,7 +269,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await signIn(phone, owner());
 	await openRequests(phone);
 	// Approvers open on Pending; the card names who asked.
-	await expect(phone.getByRole('button', { name: /^Pending/ })).toHaveAttribute('aria-pressed', 'true');
+	await expect(phone.getByRole('button', { name: /^Waiting/ })).toHaveAttribute('aria-pressed', 'true');
 	const ask = phone.getByRole('list', { name: 'Requests' }).getByRole('listitem').filter({ hasText: 'Moss Choir' });
 	await expect(ask).toContainText('ivy');
 	await noSidewaysScroll(phone);

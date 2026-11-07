@@ -277,7 +277,7 @@ test('a member links Plex in My account: their own watchlist is asked as them, w
 	await own.goto('/requests');
 	const desk = own.getByTestId('requests-desktop');
 	await expect(desk).toBeVisible();
-	await desk.getByRole('button', { name: /^Pending \d+/ }).click();
+	await desk.getByRole('button', { name: /^Waiting \d+/ }).click();
 	const row = desk.locator(`li.bc[data-ask="${mine[0].id}"]`);
 	await expect(row).toContainText(askedName);
 	await expect(row).toContainText('juno');
