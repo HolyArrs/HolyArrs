@@ -1,0 +1,60 @@
+{
+  "Ask": {
+    "ID": 7,
+    "CreatedAt": "2026-10-13T12:00:00Z",
+    "CreatedBy": {
+      "kind": "s",
+      "id": 7
+    },
+    "UpdatedAt": "2026-10-13T12:00:00Z",
+    "UpdatedBy": {
+      "kind": "s",
+      "id": 7
+    },
+    "Kind": "s",
+    "TMDBID": "s",
+    "Name": "s",
+    "Year": 7,
+    "Poster": "s",
+    "State": "s",
+    "TitleID": 7,
+    "AskedBy": 7,
+    "AskedAt": "2026-10-13T12:00:00Z",
+    "DecidedBy": 7,
+    "DecidedAt": "2026-10-13T12:00:00Z",
+    "Note": "s",
+    "AutoApproved": true,
+    "AvailableAt": "2026-10-13T12:00:00Z",
+    "Ref": "s",
+    "SourceIDs": {
+      "s": "s"
+    },
+    "Seasons": [
+      7
+    ],
+    "Episodes": [
+      {
+        "season": 7,
+        "episodes": [
+          0
+        ]
+      }
+    ],
+    "FutureOnly": true,
+    "Albums": [
+      {
+        "mbid": "s",
+        "name": "s",
+        "year": 7,
+        "edition": "s",
+        "songs": [
+          ""
+        ],
+        "songs_done": true
+      }
+    ],
+    "FourK": true
+  },
+  "Joined": true,
+  "Already": true
+}
