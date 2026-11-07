@@ -120,9 +120,43 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 	if outsideStates == nil {
 		outsideStates = outside.States
 	}
+	// The breaker's ID is a keyed fingerprint of the call (its address and
+	// sign-in): it means nothing to a person and stays on the server, so the
+	// row says what kind of service it is and the key only counts.
+	seen := map[string]int{}
 	for _, s := range outsideStates() {
-		add("outside_call", 0, s.Kind+" "+s.ID, supervisor.Retrying, s.Reason)
-		out[len(out)-1].Key = "outside:" + s.ID
+		seen[s.Kind]++
+		add("outside_call", 0, outsideName(s.Kind), supervisor.Retrying, s.Reason)
+		out[len(out)-1].Key = "outside:" + s.Kind + ":" + strconv.Itoa(seen[s.Kind])
 	}
 	return out, nil
+}
+
+// outsideName is the plain name of an outside call's kind.
+func outsideName(kind string) string {
+	switch {
+	case strings.HasPrefix(kind, "metadata"):
+		return "Metadata server"
+	}
+	switch kind {
+	case "downloader":
+		return "Downloader"
+	case "media_server":
+		return "Media server"
+	case "source":
+		return "Source"
+	case "subtitle_site":
+		return "Subtitle site"
+	case "outside_list":
+		return "Outside list"
+	case "plex_watchlist":
+		return "Plex watchlist"
+	case "oidc":
+		return "Single sign-on"
+	case "alert":
+		return "Alerts"
+	case "update_feed":
+		return "Update check"
+	}
+	return "Outside service"
 }

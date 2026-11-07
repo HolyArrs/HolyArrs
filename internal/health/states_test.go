@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 )
@@ -93,5 +94,46 @@ func TestLinkStates(t *testing.T) {
 	}
 	if got["d-down"].Kind != "downloader" || got["t-key"].Kind != "subtitle_site" || got["m-bad"].Kind != "media_server" || got["s-ok"].Kind != "source" {
 		t.Errorf("kinds: %+v", ls)
+	}
+}
+
+// An outside call waiting to try again reads as its kind in plain words; the
+// breaker's fingerprint ID never reaches the row or its key.
+func TestOutsideCallRowsHideTheBreakerID(t *testing.T) {
+	w := newWorld(t)
+	const fp = "B68gdslpF06jsy8_OogpQb7_"
+	w.e.Outside = func() []outside.State {
+		return []outside.State{
+			{ID: fp, Kind: "metadata_tmdb", Status: "retrying", Reason: "It does not answer; HolyArrs tries again on its own."},
+			{ID: "Zz9_other-fingerprint", Kind: "metadata_tmdb", Status: "retrying"},
+			{ID: "Qq1_third", Kind: "downloader", Status: "retrying"},
+		}
+	}
+	ls, err := w.e.Links(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var calls []supervisor.Status
+	for _, l := range ls {
+		if l.Kind == "outside_call" {
+			calls = append(calls, l)
+		}
+	}
+	if len(calls) != 3 {
+		t.Fatalf("want 3 outside rows, got %d: %+v", len(calls), calls)
+	}
+	want := []struct{ name, key string }{{"Metadata server", "outside:metadata_tmdb:1"}, {"Metadata server", "outside:metadata_tmdb:2"}, {"Downloader", "outside:downloader:1"}}
+	for i, c := range calls {
+		if c.Name != want[i].name || c.Key != want[i].key || c.State != supervisor.Retrying {
+			t.Errorf("row %d = %q %q %v, want %q %q retrying", i, c.Name, c.Key, c.State, want[i].name, want[i].key)
+		}
+		for _, id := range []string{fp, "Zz9_other-fingerprint", "Qq1_third"} {
+			if strings.Contains(c.Name+c.Key+c.Reason, id) {
+				t.Errorf("row %d shows the breaker ID %s", i, id)
+			}
+		}
+	}
+	if outsideName("something_new") != "Outside service" {
+		t.Error("an unknown kind needs a plain fallback name")
 	}
 }
