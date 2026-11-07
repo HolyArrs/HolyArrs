@@ -85,7 +85,6 @@ test('history on the movie page links to the movie in History', async () => {
 
 test('health: checks run on Health checks, show on Home, and their settings are saved', async () => {
 	await page.goto('/settings/this-app');
-	await expect(page.getByTestId('health-summary')).toBeVisible();
 	await page.getByRole('link', { name: 'Health checks', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Health checks', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'Check again' }).click();

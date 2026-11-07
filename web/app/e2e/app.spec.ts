@@ -167,8 +167,6 @@ test('settings pages render their forms', async () => {
 	await expect(page.getByText('Skip sign-in on my local network')).toBeVisible();
 	await page.goto('/settings/this-app');
 	await expect(page.getByText('0.0.0-skeleton', { exact: true })).toBeVisible();
-	// Stages and Linked apps live on Parts; This app links there.
-	await expect(page.getByTestId('settings-links').getByRole('link', { name: /^Stages/ })).toHaveAttribute('href', '/settings/parts#stages-card');
 	await page.goto('/settings/parts');
 	const stages = page.getByTestId('control-stages');
 	await expect(stages.getByRole('heading', { name: 'Stages' })).toBeVisible();

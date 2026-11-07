@@ -303,15 +303,6 @@
 		</section>
 	{/if}
 
-	<div data-testid="health-summary">
-		<SettingsLinks
-			label="Elsewhere in Settings"
-			links={[
-				{ href: '/settings/parts#stages-card', label: 'Stages', note: states?.safe_mode ? 'Safe mode' : `${split.stages.length} running in the background` },
-				{ href: '/settings/parts#links-card', label: 'Linked apps', note: split.links.length ? `${split.links.length} linked` : 'None yet' },
-			]}
-		/>
-	</div>
 
 	{#if session.can('settings')}
 		<MoreOptions>
