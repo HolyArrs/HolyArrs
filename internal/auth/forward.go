@@ -91,13 +91,25 @@ func (a *Auth) forwardIdentity(r *http.Request, fwd *forwardRuntime) (string, st
 }
 
 func (a *Auth) ssoAttempt(w http.ResponseWriter, r *http.Request) bool {
+	return a.ssoGate(w, r, true)
+}
+
+// ssoContinue gates the later steps of a sign-in already counted at its
+// start (callback, finish): they wait out a running wait but add no count,
+// so one refused or abandoned sign-in cannot fail the next person's last step.
+// Guessing a state or result cookie (32 random bytes) gains nothing from extra tries.
+func (a *Auth) ssoContinue(w http.ResponseWriter, r *http.Request) bool {
+	return a.ssoGate(w, r, false)
+}
+
+func (a *Auth) ssoGate(w http.ResponseWriter, r *http.Request, count bool) bool {
 	keys := a.ssoKeys(r)
 	a.mu.Lock()
 	var wait time.Duration
 	for _, k := range keys {
 		wait = max(wait, a.waitFor(k, freeTries))
 	}
-	if wait == 0 {
+	if wait == 0 && count {
 		a.noteFail(keys...)
 	}
 	a.mu.Unlock()

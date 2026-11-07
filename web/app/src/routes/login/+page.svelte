@@ -227,6 +227,10 @@
 		const cap = setTimeout(go, GL_WAIT_CAP_MS);
 		const t = setInterval(() => (now = Date.now()), 1000);
 		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
+		else if (page.url.searchParams.get('sso') === 'failed') {
+			lastWay = 'oidc';
+			error = "Single sign-on didn't finish. Try again, or sign in another way.";
+		}
 		// Phones: lift the card above the on-screen keyboard (--kb on <main>).
 		const vv = window.visualViewport;
 		const lift = () => {

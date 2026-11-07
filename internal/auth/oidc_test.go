@@ -31,6 +31,13 @@ type fakeOIDC struct {
 	aud     []string
 	azp     string
 	expiry  time.Time
+	// B4 knobs: name in the ID token (nil = "Synthetic User"), iss override,
+	// the userinfo answer's sub and name, and a token-endpoint error code.
+	name     *string
+	iss      string
+	infoSub  string
+	infoName string
+	tokenErr string
 }
 
 func newFakeOIDC(t *testing.T) *fakeOIDC {
@@ -42,6 +49,7 @@ func newFakeOIDC(t *testing.T) *fakeOIDC {
 	mux.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	mux.HandleFunc("/token", f.token)
 	mux.HandleFunc("/keys", f.keys)
+	mux.HandleFunc("/userinfo", f.userinfo)
 	f.srv = httptest.NewServer(mux)
 	t.Cleanup(f.srv.Close)
 	return f
@@ -66,7 +74,7 @@ func (f *fakeOIDC) rotate(kid string) {
 func (f *fakeOIDC) discovery(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	write := map[string]any{"issuer": f.srv.URL, "authorization_endpoint": f.srv.URL + "/auth",
-		"token_endpoint": f.srv.URL + "/token", "jwks_uri": f.srv.URL + "/keys",
+		"token_endpoint": f.srv.URL + "/token", "jwks_uri": f.srv.URL + "/keys", "userinfo_endpoint": f.srv.URL + "/userinfo",
 		"id_token_signing_alg_values_supported": []string{"RS256"}}
 	_ = json.NewEncoder(w).Encode(write)
 }
@@ -86,7 +94,20 @@ func (f *fakeOIDC) token(w http.ResponseWriter, r *http.Request) {
 	}
 	f.mu.Lock()
 	key, kid, nonce, subject, aud, azp, expiry := f.key, f.kid, f.nonce, f.subject, append([]string(nil), f.aud...), f.azp, f.expiry
+	name, iss, tokenErr := "Synthetic User", f.srv.URL, f.tokenErr
+	if f.name != nil {
+		name = *f.name
+	}
+	if f.iss != "" {
+		iss = f.iss
+	}
 	f.mu.Unlock()
+	if tokenErr != "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": tokenErr})
+		return
+	}
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.RS256, Key: key}, &jose.SignerOptions{ExtraHeaders: map[jose.HeaderKey]any{jose.HeaderKey("kid"): kid}})
 	if err != nil {
 		f.t.Error(err)
@@ -99,11 +120,11 @@ func (f *fakeOIDC) token(w http.ResponseWriter, r *http.Request) {
 		Expiry  *jwt.NumericDate `json:"exp"`
 		Issued  *jwt.NumericDate `json:"iat"`
 		Nonce   string           `json:"nonce"`
-		Name    string           `json:"name"`
+		Name    string           `json:"name,omitempty"`
 		AZP     string           `json:"azp,omitempty"`
 		Aud     []string         `json:"aud"`
-	}{Issuer: f.srv.URL, Subject: subject, Expiry: jwt.NewNumericDate(expiry), Issued: jwt.NewNumericDate(time.Now()),
-		Nonce: nonce, Name: "Synthetic User", AZP: azp, Aud: aud}
+	}{Issuer: iss, Subject: subject, Expiry: jwt.NewNumericDate(expiry), Issued: jwt.NewNumericDate(time.Now()),
+		Nonce: nonce, Name: name, AZP: azp, Aud: aud}
 	raw, err := jwt.Signed(signer).Claims(claims).Serialize()
 	if err != nil {
 		f.t.Error(err)
@@ -400,8 +421,8 @@ func TestOIDCCallbackRejectsWrongHostAndProviderError(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("code plus provider error = %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/login?sso=failed" {
+		t.Fatalf("code plus provider error = %d %q", resp.StatusCode, resp.Header.Get("Location"))
 	}
 	req, _ = http.NewRequest(http.MethodGet, callback, nil)
 	req.Host = "127.0.0.1:18745"

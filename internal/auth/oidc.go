@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -49,6 +51,7 @@ type oidcRuntime struct {
 	client   *http.Client
 	oauth    *oauth2.Config
 	verifier *oidc.IDTokenVerifier
+	userinfo string // same-origin userinfo endpoint, asked only when the ID token has no name
 	ctx      context.Context
 	cancel   context.CancelFunc
 	provider chan struct{}
@@ -149,6 +152,7 @@ func (r *oidcRuntime) discoverProvider(done chan struct{}) {
 		AuthorizationEndpoint string `json:"authorization_endpoint"`
 		TokenEndpoint         string `json:"token_endpoint"`
 		JWKSURI               string `json:"jwks_uri"`
+		UserInfo              string `json:"userinfo_endpoint"`
 	}
 	if provider.Claims(&metadata) != nil || metadata.Issuer != r.opt.Issuer ||
 		!oidcEndpointAllowed(r.issuer, metadata.AuthorizationEndpoint) ||
@@ -165,6 +169,11 @@ func (r *oidcRuntime) discoverProvider(done chan struct{}) {
 		oauth.Endpoint.AuthStyle = oauth2.AuthStyleInHeader
 	}
 	verifier := provider.VerifierContext(r.ctx, &oidc.Config{ClientID: r.opt.ClientID, SupportedSigningAlgs: []string{oidc.RS256}})
+	if oidcEndpointAllowed(r.issuer, metadata.UserInfo) {
+		r.mu.Lock()
+		r.userinfo = metadata.UserInfo
+		r.mu.Unlock()
+	}
 	r.finishDiscovery(done, nil, oauth, verifier)
 }
 
@@ -317,6 +326,10 @@ func (r *oidcRuntime) exchange(ctx context.Context, code string, tx oidcTransact
 	}
 	tok, err := r.oauth.Exchange(ctx, code, oauth2.VerifierOption(tx.pkce))
 	if err != nil {
+		// The one cause the owner can fix in Settings; the provider's own text is not logged.
+		if re := (*oauth2.RetrieveError)(nil); errors.As(err, &re) && re.ErrorCode == "invalid_client" {
+			log.Print("auth: single sign-on: the provider refused HolyArrs's client id or secret; check them in Settings > Sign-in")
+		}
 		return oidcClaims{}, errOIDCProvider
 	}
 	raw, ok := tok.Extra("id_token").(string)
@@ -343,9 +356,47 @@ func (r *oidcRuntime) exchange(ctx context.Context, code string, tx oidcTransact
 		display = strings.TrimSpace(extra.PreferredUsername)
 	}
 	if !ssoText(display, 200) {
+		display = r.userInfoName(ctx, tok, id.Subject)
+	}
+	if !ssoText(display, 200) {
 		display = "oidc-user"
 	}
 	return oidcClaims{subject: id.Subject, display: display}, nil
+}
+
+// userInfoName asks the userinfo endpoint for a name when the ID token has
+// none (Authelia 4.39 sends profile claims only there). The answer counts
+// only for the same subject; any failure just leaves the name empty.
+func (r *oidcRuntime) userInfoName(ctx context.Context, tok *oauth2.Token, subject string) string {
+	r.mu.Lock()
+	endpoint := r.userinfo
+	r.mu.Unlock()
+	if endpoint == "" || tok.AccessToken == "" {
+		return ""
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return ""
+	}
+	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	req.Header.Set("Accept", "application/json")
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	var info struct {
+		Subject           string `json:"sub"`
+		Name              string `json:"name"`
+		PreferredUsername string `json:"preferred_username"`
+	}
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&info) != nil || info.Subject != subject {
+		return ""
+	}
+	if name := strings.TrimSpace(info.Name); ssoText(name, 200) {
+		return name
+	}
+	return strings.TrimSpace(info.PreferredUsername)
 }
 
 func (r *oidcRuntime) saveResult(now time.Time, claims oidcClaims, tx oidcTransaction) (string, error) {
@@ -444,7 +495,7 @@ func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 
 func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	oidcPrivate(w)
-	if !a.ssoAttempt(w, r) {
+	if !a.ssoContinue(w, r) {
 		return
 	}
 	o := a.ssoNow().oidc // read once: a settings save may swap it
@@ -468,23 +519,27 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "OIDC callback was not accepted")
 		return
 	}
+	// From here the browser came back from the provider: failures go back to
+	// the sign-in page with a plain message, never a bare error with the code
+	// still in the address bar.
+	failed := func() {
+		a.setOIDCCookie(w, o, "", -1)
+		http.Redirect(w, r, urlbase.From(r.Context())+"/login?sso=failed", http.StatusSeeOther)
+	}
 	query := r.URL.Query()
 	codes, providerErrors := query["code"], query["error"]
 	if len(codes) != 1 || codes[0] == "" || len(providerErrors) != 0 {
-		a.setOIDCCookie(w, o, "", -1)
-		fail(w, http.StatusUnauthorized, "OIDC provider did not accept sign-in")
+		failed()
 		return
 	}
 	claims, err := o.exchange(r.Context(), codes[0], tx)
 	if err != nil {
-		a.setOIDCCookie(w, o, "", -1)
-		fail(w, http.StatusUnauthorized, "OIDC provider did not accept sign-in")
+		failed()
 		return
 	}
 	resultCookie, err := o.saveResult(a.now(), claims, tx)
 	if err != nil {
-		a.setOIDCCookie(w, o, "", -1)
-		fail(w, http.StatusServiceUnavailable, "OIDC sign-in could not be continued")
+		failed()
 		return
 	}
 	a.setOIDCCookie(w, o, resultCookie, int(oidcFlowLife.Seconds()))
@@ -505,7 +560,7 @@ func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) 
 		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
 		return
 	}
-	if !a.ssoAttempt(w, r) {
+	if !a.ssoContinue(w, r) {
 		return
 	}
 	ck, _ := r.Cookie(oidcCookieName)
