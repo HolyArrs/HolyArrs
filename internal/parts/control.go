@@ -478,12 +478,24 @@ func (c *Control) stageLocked(name string) *entry {
 	return nil
 }
 
+// NeverPause lists stages that are never paused or restarted one by one:
+// Log masking keeps the list of secrets the log blanks out current, so a
+// pause would let a new key or password reach the log in the clear. They
+// restart only with the whole app.
+var NeverPause = map[string]bool{"log_secrets": true}
+
+// ErrNeverPause answers a pause or restart of a stage in NeverPause.
+var ErrNeverPause = errors.New("this stage keeps secrets out of the log and only restarts with the whole app")
+
 // Stages lists the names of the stages that can be paused one by one.
 func (c *Control) Stages() []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	out := make([]string, 0, len(c.loops))
 	for _, e := range c.loops {
+		if NeverPause[e.l.Name] {
+			continue
+		}
 		out = append(out, e.l.Name)
 	}
 	return out
@@ -491,6 +503,9 @@ func (c *Control) Stages() []string {
 
 // Pause stops one stage until Resume (or the next start of the app).
 func (c *Control) Pause(name, who string) error {
+	if NeverPause[name] {
+		return ErrNeverPause
+	}
 	if !c.busy.TryLock() {
 		return ErrBusy
 	}
@@ -541,6 +556,9 @@ func (c *Control) resumeLocked(e *entry) error {
 
 // RestartStage stops one stage and starts it again (a paused stage too).
 func (c *Control) RestartStage(name string) error {
+	if NeverPause[name] {
+		return ErrNeverPause
+	}
 	if !c.busy.TryLock() {
 		return ErrBusy
 	}

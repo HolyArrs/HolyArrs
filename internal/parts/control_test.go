@@ -508,3 +508,56 @@ func TestScreenOwner(t *testing.T) {
 		t.Error("an unknown page has an owner")
 	}
 }
+
+// Log masking is never paused or restarted on its own, is not offered as a
+// controllable stage, and keeps running.
+func TestLogMaskingIsNeverPaused(t *testing.T) {
+	reg := supervisor.NewRegistry()
+	reg.Logf = func(string, ...any) {}
+	s, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	c := &Control{Store: s, Reg: reg, Logf: func(string, ...any) {}}
+	if err := c.Load(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	var masks, backups atomic.Int32
+	c.Add(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: 5 * time.Millisecond, Run: func(context.Context) error { masks.Add(1); return nil }}, false)
+	c.Add(supervisor.Loop{Name: "backups", Label: "Backups", Every: 5 * time.Millisecond, Run: func(context.Context) error { backups.Add(1); return nil }}, false)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(func() { cancel(); reg.Wait() })
+	c.Start(ctx)
+	if got := c.Stages(); len(got) != 1 || got[0] != "backups" {
+		t.Fatalf("controllable stages = %v, want only backups", got)
+	}
+	if err := c.Pause("log_secrets", "Luis"); !errors.Is(err, ErrNeverPause) {
+		t.Fatalf("pause log masking: %v", err)
+	}
+	if err := c.RestartStage("log_secrets"); !errors.Is(err, ErrNeverPause) {
+		t.Fatalf("restart log masking: %v", err)
+	}
+	n := masks.Load()
+	deadline := time.Now().Add(5 * time.Second)
+	for masks.Load() < n+3 {
+		if time.Now().After(deadline) {
+			t.Fatal("log masking stopped running")
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+	// A restart of a pausable stage brings its work back.
+	b := backups.Load()
+	if err := c.RestartStage("backups"); err != nil {
+		t.Fatal(err)
+	}
+	for backups.Load() < b+3 {
+		if time.Now().After(deadline) {
+			t.Fatal("backups did not run again after a restart")
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+	if st, _ := reg.Get(supervisor.StageKey("backups")); st.State != supervisor.Running {
+		t.Fatalf("backups after restart: %+v", st)
+	}
+}
