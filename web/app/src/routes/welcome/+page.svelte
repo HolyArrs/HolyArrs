@@ -1010,4 +1010,19 @@
 		.source :global(.acts .ui-btn) { min-height: 44px; }
 		.seg label { min-height: 44px; }
 	}
+
+	/* One layer inside the glass card: lists are flat rows split by hairlines,
+	   choices are outlined, and only text fields keep a filled box. */
+	.tile { background: transparent; }
+	@media (hover: hover) { .tile:hover { background: color-mix(in srgb, var(--text) 4%, transparent); } }
+	.media-list { background: none; border: 0; border-radius: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: visible; }
+	.media-list .frow { padding-left: 2px; padding-right: 2px; }
+	.conn { gap: 0; border-top: 1px solid var(--line); }
+	.conn > li { border-bottom: 1px solid var(--line); }
+	.conn-row { background: none; border: 0; border-radius: 0; padding: 14px 2px 4px; }
+	.conn .row-acts { padding: 0 0 12px; }
+	.todo { gap: 0; border-top: 1px solid var(--line); }
+	.todo > li { border-bottom: 1px solid var(--line); }
+	.todo a, .todo-row { background: none; border: 0; border-radius: 0; padding: 0 2px; min-height: 52px; }
+	@media (hover: hover) { .todo a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 4%, transparent); } }
 </style>
