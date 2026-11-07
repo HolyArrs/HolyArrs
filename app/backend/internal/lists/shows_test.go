@@ -16,12 +16,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// labShows answers show lookups by any of a made-up show's ids.
+// labShows answers show lookups by any id of a made-up show.
 type labShows map[string]metadata.Show
 
 func (f labShows) SearchShows(context.Context, string) ([]metadata.Show, error) { return nil, nil }
 
-// day2 is the end of a day, as a source that knows only the day gives it.
+// day2 parses a YYYY-MM-DD date as the end of that day.
 func day2(s string) *time.Time {
 	t := day(s).Add(24*time.Hour - time.Second)
 	return &t
@@ -34,7 +34,7 @@ func (f labShows) Show(_ context.Context, id string) (metadata.Show, error) {
 	return metadata.Show{}, metadata.ErrShowNotFound
 }
 
-// newShow makes a lab show with two aired seasons and one more to come.
+// newShow makes a lab show with two aired seasons and one still to come.
 func newShow(name, tmdb, tvdb, imdb string) metadata.Show {
 	ids := map[string]string{"tmdb": tmdb, "tvdb": tvdb, "imdb": imdb}
 	ep := func(season, n int, day string) metadata.Episode {
@@ -80,7 +80,8 @@ func fakeShowLists(t *testing.T) *httptest.Server {
 	return srv
 }
 
-// showEnv is setup plus show details, a show Library folder and the show list stand-ins.
+// showEnv is setup plus show details, a show Library folder and the show
+// list stand-ins.
 func showEnv(t *testing.T) (*env, domain.LibraryFolder) {
 	t.Helper()
 	e := setup(t)
@@ -125,8 +126,7 @@ func onlySpecials() metadata.Show {
 	return sh
 }
 
-// Specials count as the first season only when they are all a show has.
-func TestFirstSeasonOnlySpecials(t *testing.T) {
+func TestFirstSeason_SpecialsCountOnlyWhenAlone(t *testing.T) {
 	e, lf := showEnv(t)
 	id, _, err := e.svc.Library.AddShow(context.Background(), "tmdb:700006", library.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
 	if err != nil {
@@ -137,8 +137,7 @@ func TestFirstSeasonOnlySpecials(t *testing.T) {
 	}
 }
 
-// The first season of a show with no season 1 is its earliest numbered one (Luis, 2026-11-03).
-func TestFirstSeasonWithoutSeasonOne(t *testing.T) {
+func TestFirstSeason_NoSeasonOneUsesEarliestNumbered(t *testing.T) {
 	e, lf := showEnv(t)
 	id, _, err := e.svc.Library.AddShow(context.Background(), "tmdb:700005", library.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
 	if err != nil {
@@ -163,7 +162,7 @@ func keptSeasons(t *testing.T, s *database.Store, titleID int64) map[int]bool {
 	return out
 }
 
-func TestShowListInputChecks(t *testing.T) {
+func TestAdd_ShowInputChecks(t *testing.T) {
 	e, lf := showEnv(t)
 	ctx := context.Background()
 	bad := []Input{
@@ -189,7 +188,7 @@ func TestShowListInputChecks(t *testing.T) {
 	if err != nil || m.TitleKind != "movie" || m.Seasons != "" || m.LibraryFolderID != e.lf.ID {
 		t.Fatalf("movie list %+v %v", m, err)
 	}
-	// Turning a list from movies to shows forgets its last sync.
+	// Turning a list from movies to shows clears its last sync.
 	if _, err := e.svc.Sync(ctx, m.ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +196,7 @@ func TestShowListInputChecks(t *testing.T) {
 	if err != nil || m.LastSyncedAt != nil || m.Seasons != library.SeasonsLatest || m.LibraryFolderID != lf.ID {
 		t.Fatalf("edit to shows %+v %v", m, err)
 	}
-	// A change without title_kind keeps the show list a show list.
+	// An edit without title_kind keeps a show list a show list.
 	m, err = Edit(ctx, e.s, m.ID, Input{Name: "Movies", Kind: KindTMDB, Ref: "61", Seasons: library.SeasonsFuture, NewSeasons: "none"}, domain.System)
 	if err != nil || m.TitleKind != "show" || m.Seasons != library.SeasonsFuture || m.NewSeasons != "all" {
 		t.Fatalf("edit without title_kind %+v %v", m, err)
@@ -224,7 +223,7 @@ func TestShowListInputChecks(t *testing.T) {
 	}
 }
 
-func TestTMDBShowListAddsShowsWithItsSeasonChoice(t *testing.T) {
+func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 	e, lf := showEnv(t)
 	ctx := context.Background()
 	if _, err := library.AddNeverAdd(ctx, e.s, domain.NeverAdd{Kind: "show", SourceIDs: map[string]string{"tmdb": "700003"}, Name: "Not Here"}, domain.System); err != nil {
@@ -253,7 +252,7 @@ func TestTMDBShowListAddsShowsWithItsSeasonChoice(t *testing.T) {
 	if got := keptSeasons(t, e.s, ferry.ID); !got[1] || got[2] || got[3] {
 		t.Fatalf("first season only: %+v", got)
 	}
-	// Look for it once added: the folder scan carries the whole-show search after it.
+	// With search on add, the folder scan carries the whole-show search.
 	var params string
 	if err := e.s.Read().QueryRow("SELECT params FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", library.KindScanTitle, ferry.ID).Scan(&params); err != nil {
 		t.Fatal(err)
@@ -261,14 +260,14 @@ func TestTMDBShowListAddsShowsWithItsSeasonChoice(t *testing.T) {
 	if !json.Valid([]byte(params)) || !strings.Contains(params, "search_show") {
 		t.Fatalf("scan params %s", params)
 	}
-	// Again: nothing new.
+	// Second run: nothing new.
 	res, _ = e.svc.Sync(ctx, l.ID, domain.System)
 	if res.Added != 0 || res.Already != 2 || res.NeverAdd != 1 {
 		t.Fatalf("second %+v", res)
 	}
 }
 
-func TestTraktShowListAndWatchlist(t *testing.T) {
+func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	e, _ := showEnv(t)
 	ctx := context.Background()
 	l, err := Add(ctx, e.s, Input{Name: "Trakt shows", Kind: KindTrakt, Ref: "luis/shows", TitleKind: "show", Seasons: library.SeasonsLatest}, domain.System)

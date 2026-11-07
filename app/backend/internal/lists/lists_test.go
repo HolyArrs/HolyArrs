@@ -13,26 +13,28 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Test-only stand-ins; the fakes refuse anything else.
+// Keys the fake servers accept. They refuse any other key.
 const (
 	fakeTMDBToken   = "tmdb-token-for-tests"
 	fakeTraktClient = "trakt-client-for-tests"
 )
 
+// now is the fixed clock the tests start from.
 var now = time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)
 
+// day parses a YYYY-MM-DD date for the lab titles.
 func day(s string) *time.Time {
 	t, _ := time.Parse("2006-01-02", s)
 	return &t
 }
 
+// movies are the made-up titles the metadata stand-in knows.
 var movies = []metadata.Movie{
 	{Name: "Paper Harbour", Year: 2023, IDs: map[string]string{"tmdb": "900002", "imdb": "tt9000020"}, CinemaDate: day("2023-05-05"), DigitalDate: day("2023-07-01")},
 	{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900003", "imdb": "tt9000030"}, CinemaDate: day("2022-09-09")},
@@ -40,8 +42,8 @@ var movies = []metadata.Movie{
 	{Name: "Salt Choir", Year: 2020, IDs: map[string]string{"tmdb": "900005", "imdb": "tt9000050"}, CinemaDate: day("2020-01-01")},
 }
 
-// fakeTMDB serves list 42 over two pages (one show mixed in) and refuses a
-// missing or wrong token. It never reaches the real TMDB.
+// fakeTMDB serves list 42 over two pages with one show mixed in, and refuses
+// a missing or wrong token. It never reaches the real TMDB.
 func fakeTMDB(t *testing.T, hits *atomic.Int32) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
@@ -67,7 +69,7 @@ func fakeTMDB(t *testing.T, hits *atomic.Int32) *httptest.Server {
 	return srv
 }
 
-// fakeTrakt serves luis/favourites and luis's watchlist.
+// fakeTrakt serves the list luis/favourites and the watchlist of luis.
 func fakeTrakt(t *testing.T) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("trakt-api-key") != fakeTraktClient || r.Header.Get("trakt-api-version") != "2" {
@@ -103,6 +105,7 @@ type env struct {
 	clock *time.Time
 }
 
+// setup opens a store and builds a Service wired to the fake servers.
 func setup(t *testing.T) *env {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
@@ -130,6 +133,7 @@ func setup(t *testing.T) *env {
 	return &env{s: s, q: q, svc: svc, lf: lf, hits: hits, clock: &clock}
 }
 
+// titles returns the Library titles by name.
 func titles(t *testing.T, s *database.Store) map[string]domain.Title {
 	t.Helper()
 	ts, err := database.Select[domain.Title](context.Background(), s.Read(), "titles", "1=1")
@@ -143,7 +147,7 @@ func titles(t *testing.T, s *database.Store) map[string]domain.Title {
 	return out
 }
 
-func TestListInputChecks(t *testing.T) {
+func TestAdd_InputChecks(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	bad := []Input{
@@ -181,8 +185,8 @@ func TestListInputChecks(t *testing.T) {
 	if err := Remove(ctx, e.s, l.ID); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("remove twice: %v", err)
 	}
-	// A step given to Add runs with the new id in the same write; when it
-	// fails, no list is kept.
+	// A step given to Add runs in the same write, so when it fails no list
+	// is kept.
 	var got int64
 	l, err = Add(ctx, e.s, Input{Name: "Hooked", Kind: KindTMDB, Ref: "44"}, domain.System, func(tx *sql.Tx, id int64) error {
 		got = id
@@ -200,7 +204,7 @@ func TestListInputChecks(t *testing.T) {
 	}
 }
 
-func TestTMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
+func TestSync_TMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	if _, err := library.AddNeverAdd(ctx, e.s, domain.NeverAdd{SourceIDs: map[string]string{"tmdb": "900003"}, Name: "Quiet Orchard"}, domain.System); err != nil {
@@ -225,7 +229,7 @@ func TestTMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	if got.LastSyncedAt == nil || got.LastError != "" || !strings.Contains(got.LastResult, "1 added") {
 		t.Fatalf("list after sync %+v", got)
 	}
-	// Again: nothing new, the one already added counts as already there.
+	// Second run: nothing new, the added title counts as already there.
 	res, _ = e.svc.Sync(ctx, l.ID, domain.System)
 	if res.Added != 0 || res.Already != 1 || res.NeverAdd != 1 {
 		t.Fatalf("second %+v", res)
@@ -236,7 +240,7 @@ func TestTMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	}
 }
 
-func TestTraktListAndWatchlist(t *testing.T) {
+func TestSync_TraktListAndWatchlist(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	l, err := Add(ctx, e.s, Input{Name: "Favourites", Kind: KindTrakt, Ref: "luis/favourites", SearchOnAdd: true}, domain.System)
@@ -259,7 +263,7 @@ func TestTraktListAndWatchlist(t *testing.T) {
 	}
 }
 
-func TestFailedFetchIsRecorded(t *testing.T) {
+func TestSync_FailedFetchIsRecorded(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	e.svc.TMDBToken = func(context.Context) (string, error) { return "wrong", nil }
@@ -278,7 +282,7 @@ func TestFailedFetchIsRecorded(t *testing.T) {
 	}
 }
 
-func TestScheduledSyncOnlyDueEnabledLists(t *testing.T) {
+func TestHandle_ScheduleReadsOnlyDueEnabledLists(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	if err := e.q.Start(ctx); err != nil {

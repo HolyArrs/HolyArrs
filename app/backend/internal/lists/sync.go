@@ -15,38 +15,37 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// maxPages caps how much of one list is read in one sync.
+// maxPages caps how many pages of one list a sync reads, so a huge list
+// cannot run forever.
 const maxPages = 20
 
-// Service reads Outside lists and adds their movies or shows.
+// Service reads Outside lists and adds their movies or shows to the Library.
 type Service struct {
 	Store    *database.Store
 	Queue    *jobs.Queue
 	Library  *library.Service
 	Metadata metadata.Provider
-	// TMDBBase and TraktBase default to the real services; tests and the
-	// browser tests point them at stand-ins.
+	// TMDBBase and TraktBase default to the real services. Tests point them
+	// at stand-ins.
 	TMDBBase  string
 	TraktBase string
-	// TMDBToken and TraktClient read the keys from the encrypted settings on
-	// each sync. They are sent only in headers and never logged.
+	// TMDBToken and TraktClient read the keys from settings on each sync.
+	// The keys go only in request headers and are never logged.
 	TMDBToken   func(ctx context.Context) (string, error)
 	TraktClient func(ctx context.Context) (string, error)
 	HTTP        *http.Client
 	Now         func() time.Time
 }
 
-// Result is what one sync of one list did.
+// Result counts what one sync of one list did.
 type Result struct {
 	Found    int      `json:"found"`
 	Added    int      `json:"added"`
@@ -57,28 +56,14 @@ type Result struct {
 	Names    []string `json:"added_names"`
 }
 
-// entry is one movie or show on a list.
+// entry is one movie or show on a list, with the ids the list gave.
 type entry struct{ tmdb, imdb, tvdb, name string }
 
-func (s *Service) now() time.Time {
-	if s.Now != nil {
-		return s.Now().UTC()
-	}
-	return time.Now().UTC()
-}
-
-func (s *Service) client() *http.Client {
-	if s.HTTP != nil {
-		return s.HTTP
-	}
-	return &http.Client{Timeout: 15 * time.Second}
-}
-
-// Register adds the list Job handler.
+// Register adds the list Job handler to the queue.
 func (s *Service) Register(q *jobs.Queue) { q.Handle(KindSync, s.handle) }
 
-// ProbeSync reports whether the scheduled list Job has a due enabled list.
-// It uses the same due predicate as handle and performs no writes.
+// ProbeSync reports whether any enabled list is due. It uses the same test
+// as the Job handler and writes nothing.
 func (s *Service) ProbeSync(ctx context.Context, now time.Time) (bool, any, error) {
 	ls, err := All(ctx, s.Store.Read())
 	if err != nil {
@@ -92,43 +77,9 @@ func (s *Service) ProbeSync(ctx context.Context, now time.Time) (bool, any, erro
 	return false, nil, nil
 }
 
-// handle reads one list (params list_id, from a person or a save) or every
-// enabled list that is due (the schedule). One failing list does not stop
-// the others.
-func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
-	by := domain.Actor{Kind: "job", ID: r.Job.ID}
-	if v, ok := r.Job.Params["list_id"].(float64); ok && v > 0 {
-		res, err := s.Sync(ctx, int64(v), by)
-		out := map[string]any{"list_id": int64(v), "result": res}
-		if err != nil && !errors.Is(err, database.ErrNotFound) {
-			// The problem is on the list for people to see; trying again
-			// with the same key or link would not help.
-			out["problem"] = err.Error()
-		}
-		r.SetResult(out)
-		return nil
-	}
-	ls, err := All(ctx, s.Store.Read())
-	if err != nil {
-		return err
-	}
-	now := s.now()
-	read, failed := 0, 0
-	for _, l := range ls {
-		if !due(l, now) {
-			continue
-		}
-		read++
-		if _, err := s.Sync(ctx, l.ID, by); err != nil {
-			failed++
-			log.Printf("lists: %s: %v", l.Name, err)
-		}
-	}
-	r.SetResult(map[string]any{"lists_read": read, "lists_failed": failed})
-	return nil
-}
-
-// Sync reads one list now and adds its new movies or shows.
+// Sync reads one list now and adds its new movies or shows. A failed read is
+// returned and saved on the list; a title that fails to add only counts in
+// the result.
 func (s *Service) Sync(ctx context.Context, id int64, by domain.Actor) (Result, error) {
 	res := Result{Names: []string{}}
 	l, err := Get(ctx, s.Store.Read(), id)
@@ -176,7 +127,59 @@ func (s *Service) Sync(ctx context.Context, id int64, by domain.Actor) (Result, 
 	return res, nil
 }
 
-// addOne adds one list movie unless it is already there or on the Never-add list.
+// now returns the current time in UTC, from the test clock when one is set.
+func (s *Service) now() time.Time {
+	if s.Now != nil {
+		return s.Now().UTC()
+	}
+	return time.Now().UTC()
+}
+
+// client returns the configured HTTP client, or one with a 15 second timeout.
+func (s *Service) client() *http.Client {
+	if s.HTTP != nil {
+		return s.HTTP
+	}
+	return &http.Client{Timeout: 15 * time.Second}
+}
+
+// handle reads one list when the Job has a list_id, or every due list on the
+// schedule. One failing list does not stop the others.
+func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
+	by := domain.Actor{Kind: "job", ID: r.Job.ID}
+	if v, ok := r.Job.Params["list_id"].(float64); ok && v > 0 {
+		res, err := s.Sync(ctx, int64(v), by)
+		out := map[string]any{"list_id": int64(v), "result": res}
+		if err != nil && !errors.Is(err, database.ErrNotFound) {
+			// The problem is shown on the list. A retry with the same key or
+			// link would fail the same way, so the Job still succeeds.
+			out["problem"] = err.Error()
+		}
+		r.SetResult(out)
+		return nil
+	}
+	ls, err := All(ctx, s.Store.Read())
+	if err != nil {
+		return err
+	}
+	now := s.now()
+	read, failed := 0, 0
+	for _, l := range ls {
+		if !due(l, now) {
+			continue
+		}
+		read++
+		if _, err := s.Sync(ctx, l.ID, by); err != nil {
+			failed++
+			log.Printf("lists: %s: %v", l.Name, err)
+		}
+	}
+	r.SetResult(map[string]any{"lists_read": read, "lists_failed": failed})
+	return nil
+}
+
+// addOne adds one list movie unless it is already in the Library or on the
+// Never-add list. It returns the outcome word, the title name and any error.
 func (s *Service) addOne(ctx context.Context, l domain.OutsideList, e entry, by domain.Actor) (string, string, error) {
 	db := s.Store.Read()
 	lookup := ""
@@ -220,9 +223,9 @@ func (s *Service) addOne(ctx context.Context, l domain.OutsideList, e entry, by 
 	return "failed", "", err
 }
 
-// addShow adds one list show unless it is already there or on the
-// Never-add list, with the list's season choice (Sonarr's list add: the
-// list's folder, rules, monitoring and search-on-add).
+// addShow adds one list show unless it is already in the Library or on the
+// Never-add list, using the list's folder, rules, seasons and search choice.
+// It returns the outcome word, the title name and any error.
 func (s *Service) addShow(ctx context.Context, l domain.OutsideList, e entry, by domain.Actor) (string, string, error) {
 	ids := map[string]string{}
 	for k, v := range map[string]string{"tmdb": e.tmdb, "tvdb": e.tvdb, "imdb": e.imdb} {
@@ -274,7 +277,7 @@ func (s *Service) addShow(ctx context.Context, l domain.OutsideList, e entry, by
 	return "failed", "", err
 }
 
-// record saves the outcome on the list and in History.
+// record saves the outcome on the list and in History, then tells open pages.
 func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, problem string, by domain.Actor) {
 	now := s.now()
 	text := describe(res)
@@ -300,7 +303,8 @@ func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, 
 	}
 }
 
-// get fetches one page and decodes it, with the key only in headers.
+// get fetches one page and decodes it into into. The identity keeps retry
+// state per service and key. The body is capped at 4 MiB.
 func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
 	identity := []string{what, endpoint}
 	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
@@ -357,8 +361,8 @@ func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[st
 	return resp.Header, nil
 }
 
-// fetchTMDB reads a TMDB list. A list may hold movies and shows together;
-// only the ones of the list's kind are kept.
+// fetchTMDB reads a TMDB list. A list can mix movies and shows, so only the
+// ones of the list's kind are kept.
 func (s *Service) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry, error) {
 	if s.TMDBToken == nil {
 		return nil, metadata.ErrNoAccess
@@ -401,8 +405,8 @@ func (s *Service) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry
 	return out, nil
 }
 
-// fetchTrakt reads a Trakt list or watchlist: its movies, or its shows for
-// a show list.
+// fetchTrakt reads a Trakt list or watchlist: its movies, or its shows for a
+// show list. Trakt gives the page count in a response header.
 func (s *Service) fetchTrakt(ctx context.Context, ref, titleKind string) ([]entry, error) {
 	if s.TraktClient == nil {
 		return nil, ErrNoTraktKey

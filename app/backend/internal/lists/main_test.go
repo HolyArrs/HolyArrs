@@ -1,14 +1,15 @@
 package lists
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
-// TestMain runs this package with the held-back features switched on
-// (internal/feature); the switched-off side is tested in internal/feature.
+// TestMain turns on the held-back features, since Trakt lists need one. The
+// switched-off side is tested in the feature package.
 func TestMain(m *testing.M) {
 	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))
 	os.Exit(m.Run())

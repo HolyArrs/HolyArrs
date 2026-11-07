@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestProbeSyncUsesDuePredicateWithoutWriting(t *testing.T) {
+func TestProbeSync_DueListNeedsRunAndWritesNothing(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	l, err := Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42", LibraryFolderID: e.lf.ID}, domain.System)
@@ -25,7 +25,7 @@ func TestProbeSyncUsesDuePredicateWithoutWriting(t *testing.T) {
 	if got := e.s.WriteCount(); got != writes {
 		t.Fatalf("probe wrote %d transactions", got-writes)
 	}
-	// Set the same fields Sync persists, then the list is not due yet.
+	// Mark the list as just synced, so it is not due yet.
 	if err := e.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE outside_lists SET last_synced_at = ? WHERE id = ?", database.FormatTime(now), l.ID)
 		return err

@@ -1,6 +1,6 @@
 // Package lists keeps Outside lists: TMDB and Trakt lists whose movies or
-// shows are added to the Library on a schedule (model.md 2.25). Titles on
-// the Never-add list are skipped, and every added title has why_added = list.
+// shows are added to the Library on a schedule. Titles on the Never-add list
+// are skipped, and every added title is marked as added by a list.
 package lists
 
 import (
@@ -27,7 +27,11 @@ const (
 	KindSync  = "sync_outside_lists"
 )
 
-// Errors from saving a list.
+// SeasonsFirst is the seasons choice that keeps only season one of a show.
+// Library has no such choice, so lists add it on top of the library ones.
+const SeasonsFirst = "first"
+
+// Errors returned when a list is saved or read.
 var (
 	ErrName       = errors.New("a list needs a name of at most 80 characters")
 	ErrNameTaken  = errors.New("another Outside list has that name")
@@ -40,11 +44,17 @@ var (
 	ErrNoTraktKey = errors.New("add your Trakt key (the client id of your Trakt app) in Outside lists settings first")
 )
 
-// Input is what a person sets on a list. Zero values take the defaults:
-// a movie list, the first Library folder of its kind, its Pick rules, kept
-// up to date, the Release gate default, no search on add, on, every 12
-// hours. A show list keeps all seasons up to date, and new ones, unless
-// told otherwise; the Release gate is for movies only.
+// Patterns for the list links and short forms people paste.
+var (
+	tmdbRef   = regexp.MustCompile(`^(?:https?://(?:www\.)?themoviedb\.org/list/)?(\d{1,12})(?:[-/?#].*)?$`)
+	traktURL  = regexp.MustCompile(`^https?://(?:www\.|app\.)?trakt\.tv/users/([A-Za-z0-9._-]+)/(?:lists/([A-Za-z0-9._-]+)|(watchlist))/?(?:[?#].*)?$`)
+	traktPair = regexp.MustCompile(`^([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$`)
+)
+
+// Input is what a person sets on a list. Zero values take defaults: a movie
+// list, the first Library folder of its kind, no Pick rules, kept up to date,
+// no search on add, enabled, synced every 12 hours. A show list takes all
+// seasons and all new seasons. The Release gate applies to movies only.
 type Input struct {
 	Name            string `json:"name"`
 	Kind            string `json:"kind"`
@@ -61,13 +71,8 @@ type Input struct {
 	SyncEveryHours  int    `json:"sync_every_hours"`
 }
 
-var (
-	tmdbRef   = regexp.MustCompile(`^(?:https?://(?:www\.)?themoviedb\.org/list/)?(\d{1,12})(?:[-/?#].*)?$`)
-	traktURL  = regexp.MustCompile(`^https?://(?:www\.|app\.)?trakt\.tv/users/([A-Za-z0-9._-]+)/(?:lists/([A-Za-z0-9._-]+)|(watchlist))/?(?:[?#].*)?$`)
-	traktPair = regexp.MustCompile(`^([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$`)
-)
-
-// NormalRef turns what a person pasted into the stored list reference.
+// NormalRef turns what a person pasted into the stored list reference. Trakt
+// lists are refused while the Trakt lists feature is off.
 func NormalRef(kind, ref string) (string, error) {
 	ref = strings.TrimSpace(ref)
 	switch kind {
@@ -91,11 +96,80 @@ func NormalRef(kind, ref string) (string, error) {
 	return "", ErrRef
 }
 
-// SeasonsFirst keeps only the first season of a show from a list up to
-// date; the other choices are the ones a show is added with by hand.
-const SeasonsFirst = "first"
+// Add saves a new Outside list. Each then function runs in the same
+// transaction with the new id, so callers can save related rows atomically.
+func Add(ctx context.Context, s *database.Store, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
+	var l domain.OutsideList
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		if err := fill(ctx, tx, in, &l); err != nil {
+			return err
+		}
+		id, err := database.Insert(tx, "outside_lists", &l, by)
+		if err != nil {
+			return err
+		}
+		for _, f := range then {
+			if err := f(tx, id); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return l, err
+}
 
-// fill checks an Input and turns it into a list row.
+// Edit changes a list. A new reference or kind clears the last sync, since
+// the old result no longer describes what the list reads.
+func Edit(ctx context.Context, s *database.Store, id int64, in Input, by domain.Actor) (domain.OutsideList, error) {
+	var l domain.OutsideList
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		if err := database.Get(ctx, tx, "outside_lists", id, &l); err != nil {
+			return err
+		}
+		kind, ref, titleKind := l.Kind, l.Ref, l.TitleKind
+		if err := fill(ctx, tx, in, &l); err != nil {
+			return err
+		}
+		if kind != l.Kind || ref != l.Ref || titleKind != l.TitleKind {
+			l.LastSyncedAt, l.LastResult, l.LastError = nil, "", ""
+		}
+		return database.Update(tx, "outside_lists", &l, by)
+	})
+	return l, err
+}
+
+// Remove deletes a list. Titles it added stay in the Library.
+func Remove(ctx context.Context, s *database.Store, id int64) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		res, err := tx.Exec("DELETE FROM outside_lists WHERE id = ?", id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return database.ErrNotFound
+		}
+		return nil
+	})
+}
+
+// Get returns one list by id.
+func Get(ctx context.Context, db database.Querier, id int64) (domain.OutsideList, error) {
+	var l domain.OutsideList
+	err := database.Get(ctx, db, "outside_lists", id, &l)
+	return l, err
+}
+
+// All returns every Outside list ordered by name, never nil.
+func All(ctx context.Context, db database.Lister) ([]domain.OutsideList, error) {
+	out, err := database.Select[domain.OutsideList](ctx, db, "outside_lists", "1=1 ORDER BY name COLLATE NOCASE")
+	if out == nil {
+		out = []domain.OutsideList{}
+	}
+	return out, err
+}
+
+// fill checks an Input and writes the result into l. It runs inside the
+// caller's transaction so folder and name checks match what gets saved.
 func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) error {
 	name := strings.TrimSpace(in.Name)
 	if name == "" || len(name) > 80 {
@@ -105,7 +179,7 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	if err != nil {
 		return err
 	}
-	// A change that leaves title_kind out keeps what the list adds.
+	// An edit that leaves title_kind out keeps what the list already adds.
 	kind := in.TitleKind
 	if kind == "" {
 		kind = l.TitleKind
@@ -122,7 +196,7 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 			seasons = library.SeasonsAll
 		}
 		if newSeasons == "" || seasons == library.SeasonsFuture {
-			newSeasons = "all" // future only keeps every season to come, as when adding by hand
+			newSeasons = "all" // "future" already means every new season, as when adding by hand
 		}
 		if (!library.ValidSeasonChoice(seasons) && seasons != SeasonsFirst) || (newSeasons != "all" && newSeasons != "none") {
 			return ErrSeasons
@@ -190,83 +264,12 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	return nil
 }
 
-// Add saves a new Outside list. then, when given, runs in the same
-// transaction with the new id.
-func Add(ctx context.Context, s *database.Store, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
-	var l domain.OutsideList
-	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := fill(ctx, tx, in, &l); err != nil {
-			return err
-		}
-		id, err := database.Insert(tx, "outside_lists", &l, by)
-		if err != nil {
-			return err
-		}
-		for _, f := range then {
-			if err := f(tx, id); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	return l, err
-}
-
-// Edit changes a list. A new reference or kind (of list or of title)
-// forgets the last sync.
-func Edit(ctx context.Context, s *database.Store, id int64, in Input, by domain.Actor) (domain.OutsideList, error) {
-	var l domain.OutsideList
-	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := database.Get(ctx, tx, "outside_lists", id, &l); err != nil {
-			return err
-		}
-		kind, ref, titleKind := l.Kind, l.Ref, l.TitleKind
-		if err := fill(ctx, tx, in, &l); err != nil {
-			return err
-		}
-		if kind != l.Kind || ref != l.Ref || titleKind != l.TitleKind {
-			l.LastSyncedAt, l.LastResult, l.LastError = nil, "", ""
-		}
-		return database.Update(tx, "outside_lists", &l, by)
-	})
-	return l, err
-}
-
-// Remove deletes a list. Titles it added stay in the Library.
-func Remove(ctx context.Context, s *database.Store, id int64) error {
-	return s.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.Exec("DELETE FROM outside_lists WHERE id = ?", id)
-		if err != nil {
-			return err
-		}
-		if n, _ := res.RowsAffected(); n == 0 {
-			return database.ErrNotFound
-		}
-		return nil
-	})
-}
-
-// Get reads one list.
-func Get(ctx context.Context, db database.Querier, id int64) (domain.OutsideList, error) {
-	var l domain.OutsideList
-	err := database.Get(ctx, db, "outside_lists", id, &l)
-	return l, err
-}
-
-// All lists every Outside list by name.
-func All(ctx context.Context, db database.Lister) ([]domain.OutsideList, error) {
-	out, err := database.Select[domain.OutsideList](ctx, db, "outside_lists", "1=1 ORDER BY name COLLATE NOCASE")
-	if out == nil {
-		out = []domain.OutsideList{}
-	}
-	return out, err
-}
-
-// due reports whether a list should be read now.
+// due reports whether a list is enabled and its sync interval has passed.
 func due(l domain.OutsideList, now time.Time) bool {
 	return l.Enabled && (l.LastSyncedAt == nil || !now.Before(l.LastSyncedAt.Add(time.Duration(l.SyncEveryHours)*time.Hour)))
 }
 
+// describe words a sync result for the list's last_result field.
 func describe(r Result) string {
 	s := fmt.Sprintf("%d on the list, %d added, %d already in the Library, %d on the Never-add list", r.Found, r.Added, r.Already, r.NeverAdd)
 	if r.Failed > 0 {
