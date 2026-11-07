@@ -1,12 +1,13 @@
-// Package metadata holds the US age-rating ladders for movies and shows and
-// decides whether a title's rating fits under a person's limit. A limit is
-// one value from either ladder; it is mapped onto the other ladder with a
-// fixed table and compared by position. No limit ("") allows everything.
-// With a limit set, a title without a rating, with a rating that is not on
-// the ladder for its kind, and every music artist are not allowed.
 package metadata
 
 import "strings"
+
+// The US age-rating ladders for movies and shows decide whether a title's
+// rating fits under a person's limit. A limit is one value from either
+// ladder; it is mapped onto the other ladder with a fixed table and compared
+// by position. No limit ("") allows everything. With a limit set, a title
+// without a rating, with a rating that is not on the ladder for its kind, and
+// every music artist are not allowed.
 
 // MovieRatings is the US movie ladder, lowest first.
 var MovieRatings = []string{"G", "PG", "PG-13", "R", "NC-17"}

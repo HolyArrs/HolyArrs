@@ -589,7 +589,7 @@ func (x tmdbExtras) directors() []string {
 	return out
 }
 
-// parseDay reads "2024-03-01" or a full time, as UTC midnight of that day.
+// parseDay reads a YYYY-MM-DD date or a full time, as UTC midnight of that day.
 func parseDay(s string) (time.Time, bool) {
 	if len(s) < 10 {
 		return time.Time{}, false
