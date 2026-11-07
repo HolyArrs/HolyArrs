@@ -28,7 +28,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -58,7 +59,7 @@ type Target struct {
 
 // fileName names one imported file by the naming settings (the same
 // function a rename uses).
-func (t Target) fileName(p parse.Result, source string) string {
+func (t Target) fileName(p releasename.Result, source string) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
 		ns = *t.Naming
@@ -131,7 +132,7 @@ func Scan(root string) ([]Candidate, error) {
 	return out, err
 }
 
-func isSample(path string, p parse.Result) bool {
+func isSample(path string, p releasename.Result) bool {
 	if p.Has("sample") {
 		return true
 	}
@@ -188,13 +189,13 @@ func lengthWords(secs int) string {
 	return strconv.Itoa(secs/60) + " minutes"
 }
 
-func confidence(c parse.Conf) float64 {
+func confidence(c releasename.Conf) float64 {
 	switch c {
-	case parse.Sure:
+	case releasename.Sure:
 		return 1
-	case parse.Likely:
+	case releasename.Likely:
 		return 0.7
-	case parse.Guess:
+	case releasename.Guess:
 		return 0.4
 	}
 	return 0
@@ -212,10 +213,10 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
 		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
-		p := parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size})
+		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size})
 		if p.Title.Value == "" {
 			// The file name alone may lack the title; try its folder.
-			p = parse.Parse(filepath.Base(filepath.Dir(c.Path)), parse.Hints{Size: c.Size})
+			p = releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size})
 		}
 		switch {
 		case programExt[ext] || p.Has("executable") || p.Has("double_extension"):
@@ -229,7 +230,7 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 			if m.Title == nil && p.Year.Value == 0 {
 				// A plain file name such as movie-1080p.mkv: its folder (the
 				// Release name) says which Title it is.
-				if fp := parse.Parse(filepath.Base(filepath.Dir(c.Path)), parse.Hints{Size: c.Size}); fp.Title.Value != "" {
+				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
 					if fm := judge.MatchTitle(fp, []judge.TitleRef{ref}); fm.Title != nil {
 						m = fm
 					}
@@ -1099,7 +1100,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			if err != nil {
 				return err
 			}
-			p := parse.Parse(filepath.Base(step.SourceFile), parse.Hints{})
+			p := releasename.Parse(filepath.Base(step.SourceFile), releasename.Hints{})
 			size := sizes[i]
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			newName = name

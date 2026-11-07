@@ -1,4 +1,4 @@
-package parse
+package releasename
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ type Hints struct {
 	// a running number and "Part 2" before tags a mini-series part.
 	Show bool
 	// Music says the name is judged for an album search: it is read as
-	// "Artist - Album (Year) [tags]" or a scene music name (stage 3.3.2).
+	// "Artist - Album (Year) [tags]" or a scene music name.
 	Music bool
 }
 

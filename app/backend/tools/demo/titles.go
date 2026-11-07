@@ -17,7 +17,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -197,7 +198,7 @@ func (w *world) skip(format string, a ...any) {
 // adopts it, as Library > Adopt does.
 func (w *world) adoptMovie(ctx context.Context, lf domain.LibraryFolder, m metadata.Movie, e movieEntry, seed int) (int64, error) {
 	release := movieRelease(m, e.Quality)
-	p := parse.Parse(release, parse.Hints{})
+	p := releasename.Parse(release, releasename.Hints{})
 	facts := naming.FactsFrom(m.Name, m.Year, m.IDs, p, release, ".mkv")
 	folder := naming.Folder(w.ns, facts)
 	dir := filepath.Join(lf.Path, folder)
@@ -302,7 +303,7 @@ func (w *world) shows(ctx context.Context) error {
 					q = "hdtv720"
 				}
 				release := fmt.Sprintf("%s.S%02dE%02d.%s", dotted(sh.Name), ep.Season, ep.Number, qualityTags[q])
-				p := parse.Parse(release, parse.Hints{})
+				p := releasename.Parse(release, releasename.Hints{})
 				facts := naming.FactsFrom(sh.Name, sh.Year, sh.IDs, p, release, ".mkv")
 				ef := naming.EpisodeFacts{Facts: facts, Order: naming.OrderAired, Season: ep.Season, Episodes: []int{ep.Number}, Titles: []string{ep.Name}}
 				rel := naming.EpisodePath(w.ns, folder, ef)

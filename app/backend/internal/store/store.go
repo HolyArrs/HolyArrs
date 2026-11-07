@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
 
 	_ "modernc.org/sqlite" // pure Go SQLite driver
 )
@@ -46,7 +46,7 @@ var ErrNotWritable = errors.New("config folder cannot be written")
 // no permission, disk full or over quota), keeping the cause; nil for any
 // other error.
 func NotWritable(dir string, err error) error {
-	why := fsplain.Why(err)
+	why := files.Why(err)
 	if why == "" || errors.Is(err, syscall.EINVAL) {
 		return nil
 	}
@@ -147,7 +147,7 @@ func checkFolder(dir string, check func(string) (bool, string, error), real bool
 	}
 	f, err := os.CreateTemp(dir, ".holyarrs-write-*")
 	if err != nil {
-		why := fsplain.Why(err)
+		why := files.Why(err)
 		if why == "" {
 			why = "the write test failed"
 		}
@@ -170,7 +170,7 @@ func MountType(dir string) string {
 			dir = r
 		}
 	}
-	return fsplain.FSType(string(b), filepath.ToSlash(dir))
+	return files.FSType(string(b), filepath.ToSlash(dir))
 }
 
 //go:embed migrations

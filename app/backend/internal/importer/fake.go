@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // fakeRules are the import-time fake checks (4.3.5). With
@@ -104,7 +104,7 @@ func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName str
 		return fmt.Sprintf("the file is %s, too small to be the full video; likely a fake", sizeText(size)), nil
 	}
 	if oldContainer[ext] && relName != "" {
-		if r := parse.Parse(relName, parse.Hints{}).Resolution; r.Value >= 720 {
+		if r := releasename.Parse(relName, releasename.Hints{}).Resolution; r.Value >= 720 {
 			return fmt.Sprintf("a %s file where the Release said %dp; likely a fake", ext, r.Value), nil
 		}
 	}

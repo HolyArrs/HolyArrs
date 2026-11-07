@@ -18,7 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -291,7 +292,7 @@ func (r ReleaseTest) validate() error {
 	if !knownQuality(r.Expected.Quality) {
 		return fmt.Errorf("expected quality %q is unknown", r.Expected.Quality)
 	}
-	p := parse.Parse(r.ReleaseName, parse.Hints{Show: r.Hints.Show, Music: r.Hints.Music})
+	p := releasename.Parse(r.ReleaseName, releasename.Hints{Show: r.Hints.Show, Music: r.Hints.Music})
 	actual := ExpectedFacts{Kind: p.Kind.Value, Quality: judge.StepFor(p), Resolution: p.Resolution.Value,
 		Source: p.Source.Value, Codec: p.Codec.Value, Flags: p.Flags}
 	if !equalFacts(actual, r.Expected) {

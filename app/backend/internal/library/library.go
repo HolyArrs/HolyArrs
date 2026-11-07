@@ -18,7 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -380,7 +381,7 @@ func gateReason(driver string, opens *time.Time) string {
 }
 
 func sortName(n string) string {
-	c := parse.CleanName(n)
+	c := releasename.CleanName(n)
 	for _, a := range []string{"the ", "a ", "an "} {
 		if strings.HasPrefix(c, a) {
 			return strings.TrimPrefix(c, a)
@@ -395,7 +396,7 @@ func sortName(n string) string {
 func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, pickRulesID int64, keep bool, now time.Time, by domain.Actor) error {
 	ext := path.Ext(a.File)
 	release := strings.TrimSuffix(path.Base(a.File), ext)
-	p := parse.Parse(release, parse.Hints{Size: a.Size})
+	p := releasename.Parse(release, releasename.Hints{Size: a.Size})
 	f := &domain.File{SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: a.File, Size: a.Size, AddedAt: now,
 		Quality:   domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 		Languages: inspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": judge.StepFor(p)}, ReleaseName: &release, Origin: "adopted",

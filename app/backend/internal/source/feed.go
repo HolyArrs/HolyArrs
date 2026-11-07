@@ -13,7 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
@@ -173,14 +174,14 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	hasArtist := slices.ContainsFunc(refs, func(r judge.TitleRef) bool { return r.Kind == "artist" })
 	byTitle := map[int64][]found{}
 	for _, f := range all {
-		m := judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size}), refs)
+		m := judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size}), refs)
 		if m.Title == nil && hasShow {
 			// Read again as a show name ("Part 2" before tags, "- 12").
-			m = judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Show: true}), refs)
+			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true}), refs)
 		}
 		if m.Title == nil && hasArtist {
 			// Read again as an album name ("Artist - Album (Year) [FLAC]").
-			m = judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Music: true}), refs)
+			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
 		}
 		// A tagged Source's release goes only to a title sharing a tag (#108).
 		// It is matched against every wanted title first, so it never lands

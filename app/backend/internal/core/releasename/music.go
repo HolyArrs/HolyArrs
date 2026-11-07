@@ -1,4 +1,4 @@
-package parse
+package releasename
 
 import (
 	"regexp"
@@ -11,7 +11,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// Music kinds (stage 3.3.2).
 const (
 	KindAlbum       = "album"       // one album: Artist - Album (Year) [FLAC]
 	KindDiscography = "discography" // many albums of one artist in one Release

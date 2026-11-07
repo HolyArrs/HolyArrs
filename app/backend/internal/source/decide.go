@@ -13,7 +13,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -120,7 +121,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	rels := make([]judge.Release, len(all))
 	vs := make([]judge.Verdict, len(all))
 	for i, f := range all {
-		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size})
+		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := judge.MatchTitle(p, []judge.TitleRef{ref})

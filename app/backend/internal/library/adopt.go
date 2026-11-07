@@ -22,7 +22,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -184,7 +185,7 @@ func nameScore(name string, year int, mName string, mYear int) float64 {
 // wordScore says how alike two names are by their words (0..1): 1 when
 // they clean to the same words, else the share of words both hold.
 func wordScore(name, other string) float64 {
-	a, b := parse.CleanName(name), parse.CleanName(other)
+	a, b := releasename.CleanName(name), releasename.CleanName(other)
 	switch {
 	case a == "" || b == "":
 		return 0
@@ -214,7 +215,7 @@ func folderName(s string) (string, int) {
 		y, _ := strconv.Atoi(m[2])
 		return strings.Trim(m[1], " -._(["), y
 	}
-	p := parse.Parse(s, parse.Hints{})
+	p := releasename.Parse(s, releasename.Hints{})
 	if p.Title.Value != "" && p.Year.Value != 0 {
 		return p.Title.Value, p.Year.Value
 	}

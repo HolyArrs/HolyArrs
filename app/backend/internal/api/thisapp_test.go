@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -19,7 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func logServer(t *testing.T) (*httptest.Server, *secrets.Vault, *applog.Log) {
+func logServer(t *testing.T) (*httptest.Server, *secrets.Vault, *logs.Log) {
 	t.Helper()
 	dir := t.TempDir()
 	s, err := store.Open(dir, store.Options{})
@@ -32,7 +32,7 @@ func logServer(t *testing.T) (*httptest.Server, *secrets.Vault, *applog.Log) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lg, err := applog.Open(filepath.Join(dir, "logs"))
+	lg, err := logs.Open(filepath.Join(dir, "logs"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,8 +90,8 @@ func TestLogViewerNeverShowsAVaultSecret(t *testing.T) {
 	l.Printf("downloader: qBittorrent failed: connection refused")
 	l.Printf("http://admin:<pw>@10.0.0.5:8080 asked with apikey=XXXX_KEY today")
 	var got struct {
-		Lines []applog.Line `json:"lines"`
-		Total int           `json:"total"`
+		Lines []logs.Line `json:"lines"`
+		Total int         `json:"total"`
 	}
 	b := do(t, "GET", srv.URL+"/api/v1/logs", "", 200)
 	if strings.Contains(string(b), secret) || strings.Contains(string(b), "admin:<pw>") || strings.Contains(string(b), "XXXX_KEY") {

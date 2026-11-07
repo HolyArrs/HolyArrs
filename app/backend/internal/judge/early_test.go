@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 func reasonOf(v Verdict, rule string) (Reason, bool) {
@@ -24,7 +24,7 @@ func reasonOf(v Verdict, rule string) (Reason, bool) {
 func TestPostedEarly(t *testing.T) {
 	out := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: parse.Parse(name, parse.Hints{}), Size: 4 * gb, Protocol: "torrent", Seeders: ptr(50),
+	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 4 * gb, Protocol: "torrent", Seeders: ptr(50),
 		PublishedAt: out.Add(-72 * time.Hour)}
 	set := setFor(t, rel, nil)
 	set.OutSince, set.Checks = &out, Checks{Early: true, Grace: 24 * time.Hour, Tiny: true}
@@ -52,7 +52,7 @@ func TestPostedEarly(t *testing.T) {
 // for an album's tracks.
 func TestTooSmall(t *testing.T) {
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: parse.Parse(name, parse.Hints{}), Size: 30 * mb, Protocol: "torrent", Seeders: ptr(50)}
+	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 30 * mb, Protocol: "torrent", Seeders: ptr(50)}
 	set := setFor(t, rel, nil)
 	set.Checks = Checks{Tiny: true}
 	rules := domain.GoodEveryday()
@@ -70,7 +70,7 @@ func TestTooSmall(t *testing.T) {
 		t.Fatal("an unknown size refused")
 	}
 	album := "Northern Lanterns - Harbour Songs (2024) [FLAC]"
-	p := parse.Parse(album, parse.Hints{Music: true})
+	p := releasename.Parse(album, releasename.Hints{Music: true})
 	mrel := Release{Name: album, Parse: p, Size: 2 << 20}
 	mset := SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1, 2, 3, 4, 5, 6}, Out: true, Checks: Checks{Tiny: true}}
 	if r, ok := reasonOf(Judge(mrel, mset, domain.GoodEveryday()), "safety:too_small"); !ok || r.Effect != "fail" {
@@ -83,7 +83,7 @@ func TestTooSmall(t *testing.T) {
 // person's own search adds no line.
 func TestUnknownSizeAndDate(t *testing.T) {
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: parse.Parse(name, parse.Hints{}), Protocol: "torrent", Seeders: ptr(50)}
+	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Protocol: "torrent", Seeders: ptr(50)}
 	set := setFor(t, rel, nil)
 	set.Checks = Checks{Early: true, Tiny: true}
 	rules := domain.GoodEveryday()
@@ -114,7 +114,7 @@ func TestUnknownSizeAndDate(t *testing.T) {
 func TestPackFloorWithoutRuntimes(t *testing.T) {
 	// Judged as one Release over unknown-length episodes: the floor only.
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: parse.Parse(name, parse.Hints{}), Size: 150 * mb, Protocol: "torrent", Seeders: ptr(50)}
+	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 150 * mb, Protocol: "torrent", Seeders: ptr(50)}
 	set := setFor(t, rel, nil)
 	set.RuntimeMinutes, set.FloorEpisodes = 0, 10
 	set.Checks = Checks{Tiny: true, EpisodeMinutes: 20}

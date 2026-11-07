@@ -7,28 +7,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 func TestPerMinuteSizeLimitArithmeticSaturates(t *testing.T) {
 	tests := []struct {
 		name    string
 		release string
-		hints   parse.Hints
+		hints   releasename.Hints
 		title   TitleRef
 		rules   domain.PickRulesBody
 		step    string
 	}{
 		{name: "video", release: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", title: TitleRef{ID: 1, Name: "Example Movie", Year: 2025}, rules: domain.GoodEveryday(), step: "1080p_web"},
-		{name: "music", release: musicCase(t, "U01"), hints: parse.Hints{Music: true}, title: TitleRef{ID: 2, Name: "Velvet Cartography", Kind: "artist"}, rules: domain.LosslessFirst(), step: "lossless"},
+		{name: "music", release: musicCase(t, "U01"), hints: releasename.Hints{Music: true}, title: TitleRef{ID: 2, Name: "Velvet Cartography", Kind: "artist"}, rules: domain.LosslessFirst(), step: "lossless"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.rules.SizeLimits = map[string]domain.SizeLimit{tc.step: {Min: 1 << 50, Max: 1 << 50, PerMinute: true}}
-			p := parse.Parse(tc.release, tc.hints)
+			p := releasename.Parse(tc.release, tc.hints)
 			v := Judge(Release{Name: tc.release, Parse: p, Size: 1 << 30}, SlotSet{
-				Match: Match{Title: &tc.title, Conf: parse.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
+				Match: Match{Title: &tc.title, Conf: releasename.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
 			}, tc.rules)
 			if !hasFail(v, "hard", "size") {
 				t.Fatalf("overflowed lower bound did not fail size: %+v", v.Reasons)
@@ -157,7 +157,7 @@ func defaultSize(res int) int64 {
 }
 
 func release(r row) Release {
-	p := parse.Parse(r.Name, parse.Hints{Size: r.Size, FileList: r.Files})
+	p := releasename.Parse(r.Name, releasename.Hints{Size: r.Size, FileList: r.Files})
 	size := r.Size
 	if size == 0 {
 		size = defaultSize(p.Resolution.Value)

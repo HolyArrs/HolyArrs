@@ -1,4 +1,4 @@
-package applog_test
+package logs_test
 
 import (
 	"context"
@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func onDisk(dir string) string {
-	a, _ := os.ReadFile(filepath.Join(dir, applog.FileName))
-	b, _ := os.ReadFile(filepath.Join(dir, applog.OldName))
+	a, _ := os.ReadFile(filepath.Join(dir, logs.FileName))
+	b, _ := os.ReadFile(filepath.Join(dir, logs.OldName))
 	return string(a) + string(b)
 }
 
@@ -37,7 +37,7 @@ func TestVaultRotationNeverShowsOldValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := filepath.Join(cfg, "logs")
-	l, err := applog.Open(dir)
+	l, err := logs.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,10 +55,10 @@ func TestVaultRotationNeverShowsOldValue(t *testing.T) {
 	}
 	// A line from before the masker knew it (an older version wrote it).
 	_ = l.Close()
-	f, _ := os.OpenFile(filepath.Join(dir, applog.FileName), os.O_APPEND|os.O_WRONLY, 0o600)
+	f, _ := os.OpenFile(filepath.Join(dir, logs.FileName), os.O_APPEND|os.O_WRONLY, 0o600)
 	_, _ = f.WriteString("2026/10/14 10:00:00 old first-value-aaaa1 and gone-value-bbbb2\n")
 	_ = f.Close()
-	l, _ = applog.Open(dir)
+	l, _ = logs.Open(dir)
 	v.OnPut = l.AddSecret
 
 	gone, err := v.Put(ctx, "test", "gone-value-bbbb2")
@@ -77,7 +77,7 @@ func TestVaultRotationNeverShowsOldValue(t *testing.T) {
 	_ = l.Close()
 
 	// Restart: a fresh log that never saw the old values.
-	l2, err := applog.Open(dir)
+	l2, err := logs.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestVaultRotationNeverShowsOldValue(t *testing.T) {
 		if strings.Contains(string(l2.Tail(1<<20)), old) {
 			t.Fatalf("%s in download", old)
 		}
-		got, _ := l2.Read(applog.Filter{})
+		got, _ := l2.Read(logs.Filter{})
 		for _, ln := range got {
 			if strings.Contains(ln.Text, old) {
 				t.Fatalf("%s in viewer", old)

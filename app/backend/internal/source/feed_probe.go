@@ -11,7 +11,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
@@ -139,13 +140,13 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			if seen {
 				continue
 			}
-			p := parse.Parse(item.Title, parse.Hints{Size: item.Size})
+			p := releasename.Parse(item.Title, releasename.Hints{Size: item.Size})
 			m := judge.MatchTitle(p, refs)
 			if m.Title == nil && hasShow {
-				m = judge.MatchTitle(parse.Parse(item.Title, parse.Hints{Size: item.Size, Show: true}), refs)
+				m = judge.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Show: true}), refs)
 			}
 			if m.Title == nil && hasArtist {
-				m = judge.MatchTitle(parse.Parse(item.Title, parse.Hints{Size: item.Size, Music: true}), refs)
+				m = judge.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
 			}
 			if m.Title != nil && tagset.SourceServes(answer.src.Tags, m.Title.Tags) {
 				return true, prepared, nil

@@ -14,7 +14,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -138,7 +139,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	// A track whose copy in place is as good (an MP3 over FLAC) gains
 	// nothing: that needs force too (#43, Lossless protection).
 	if c.cur != nil && domain.IsMusicRules(c.pr.Body) {
-		jr := judge.Release{Name: rel.Name, Parse: parse.Parse(rel.Name, parse.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
+		jr := judge.Release{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
 		if !judge.Gains(jr, c.pr.Body, c.cur) {
 			refused = true
 			overridden = append(overridden, trackName(c.it)+" already has a copy as good")
@@ -487,7 +488,7 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 	if kind != "show" && kind != "artist" {
 		return nil, nil, kind
 	}
-	jr := judge.Release{Name: rel.Name, Parse: parse.Parse(rel.Name, parse.Hints{Size: rel.Size, Show: kind == "show", Music: kind == "artist"}), Size: rel.Size, Protocol: rel.Protocol}
+	jr := judge.Release{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Show: kind == "show", Music: kind == "artist"}), Size: rel.Size, Protocol: rel.Protocol}
 	for _, id := range rel.MatchedSlotIDs {
 		var st string
 		if s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st) != nil ||

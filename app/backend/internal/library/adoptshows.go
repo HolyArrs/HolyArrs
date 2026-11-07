@@ -17,7 +17,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -42,7 +43,7 @@ func showFolderName(s string) (string, int) {
 	if reFolderYear.MatchString(s) {
 		return folderName(s)
 	}
-	p := parse.Parse(s, parse.Hints{Show: true})
+	p := releasename.Parse(s, releasename.Hints{Show: true})
 	if p.IsShow() && strings.TrimSpace(p.Title.Value) != "" {
 		return p.Title.Value, p.Year.Value
 	}
@@ -107,7 +108,7 @@ func mapEpisodeFiles(vids []AdoptVideo, sh metadata.Show, order string) []AdoptE
 	out := make([]AdoptEpisodeFile, 0, len(vids))
 	for _, v := range vids { // biggest first
 		f := AdoptEpisodeFile{Path: v.Path, Size: v.Size, Episodes: []string{}}
-		p := parse.Parse(path.Base(v.Path), parse.Hints{Size: v.Size, Show: true})
+		p := releasename.Parse(path.Base(v.Path), releasename.Hints{Size: v.Size, Show: true})
 		switch {
 		case !p.IsShow():
 			f.Why = "the file name gives no episode numbers"
@@ -339,7 +340,7 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		}
 		ext := path.Ext(af.Path)
 		release := strings.TrimSuffix(path.Base(af.Path), ext)
-		p := parse.Parse(release, parse.Hints{Size: af.Size, Show: true})
+		p := releasename.Parse(release, releasename.Hints{Size: af.Size, Show: true})
 		info := map[string]any{"step": judge.StepFor(p)}
 		if inspected, ok := inspectLibraryVideo(a.LibraryPath, af.Path, info, false); ok {
 			info = inspected

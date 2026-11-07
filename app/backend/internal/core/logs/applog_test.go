@@ -1,4 +1,4 @@
-package applog
+package logs
 
 import (
 	"fmt"

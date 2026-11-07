@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -129,7 +129,7 @@ func (a *API) scheduleView(ctx context.Context, db *sql.DB, sc domain.Schedule) 
 		j := jobs[0]
 		v.LastJob, v.LastJobEnded = j.State, j.EndedAt
 		if j.Error != nil {
-			v.LastJobError = applog.RedactPatterns(j.Error.Message)
+			v.LastJobError = logs.RedactPatterns(j.Error.Message)
 		}
 	}
 	return v, nil
@@ -166,7 +166,7 @@ func (a *API) listSchedules(w http.ResponseWriter, r *http.Request) {
 			if !ok || st.Kind != "stage" {
 				continue
 			}
-			st.Reason = applog.RedactPatterns(st.Reason)
+			st.Reason = logs.RedactPatterns(st.Reason)
 			loops = append(loops, LoopView{Status: st, Part: string(parts.Loops[name])})
 		}
 	}
@@ -208,7 +208,7 @@ func (a *API) activeJobs(w http.ResponseWriter, r *http.Request) {
 		}
 		v := ActiveJob{ID: j.ID, Kind: j.Kind, Label: label, State: j.State, Progress: j.Progress, QueuedAt: j.CreatedAt, StartedAt: j.StartedAt, ByPerson: j.AskedBy.Kind == "user"}
 		if j.ProgressNote != nil {
-			v.Note = applog.RedactPatterns(*j.ProgressNote)
+			v.Note = logs.RedactPatterns(*j.ProgressNote)
 		}
 		out = append(out, v)
 	}

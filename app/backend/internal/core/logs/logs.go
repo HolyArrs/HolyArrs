@@ -1,4 +1,4 @@
-// Package applog keeps the app's log for the log viewer and the log
+// Package logs keeps the app's log for the log viewer and the log
 // download on This app: every line the program logs goes to a file in the
 // config folder (logs/holyarrs.log, rotated to holyarrs.log.1, so at most
 // twice MaxFile on disk), with secrets masked as the line is written and
@@ -6,7 +6,7 @@
 // through the same masking (Mask). The set of masked values only grows: a
 // value that leaves the vault (changed or removed) stays masked in memory,
 // and the files are rewritten with it masked before it is forgotten.
-package applog
+package logs
 
 import (
 	"bufio"

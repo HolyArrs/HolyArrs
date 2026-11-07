@@ -13,7 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -189,7 +190,7 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 	rels := make([]judge.Release, len(all))
 	vs := make([]judge.Verdict, len(all))
 	for i, f := range all {
-		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Music: true})
+		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
@@ -211,7 +212,7 @@ func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules
 	add := func(rule, effect, detail string) {
 		ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: rule, Effect: effect, Detail: detail})
 	}
-	if p.Kind.Value == parse.KindDiscography {
+	if p.Kind.Value == releasename.KindDiscography {
 		if !rules.discography {
 			add("discography", "fail", "a whole discography; Releases with many albums are not taken (Settings > Search)")
 			return
@@ -269,7 +270,7 @@ func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules
 			ms += *t.it.LengthMS
 		}
 	}
-	if ms > 0 && p.Kind.Value != parse.KindDiscography { // a discography holds more than this album: its size is not checked
+	if ms > 0 && p.Kind.Value != releasename.KindDiscography { // a discography holds more than this album: its size is not checked
 		ss.RuntimeMinutes = max(1, (ms+30_000)/60_000)
 	}
 	var noGain []string

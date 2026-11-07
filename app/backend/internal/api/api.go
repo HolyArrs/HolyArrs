@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
@@ -32,6 +32,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -152,7 +153,7 @@ type Server struct {
 	// when it cannot arrange the exit. Tests record the call instead.
 	ExitApp func(how string) error
 	// Log is the app log for the log viewer and download (nil: none kept).
-	Log *applog.Log
+	Log *logs.Log
 	// ConfigDir and SavePath are shown on This app (ConfigDir defaults to
 	// the database folder).
 	ConfigDir string

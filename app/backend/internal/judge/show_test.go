@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // The show part of the fixed library in release-names-testset.md, next to
@@ -98,7 +98,7 @@ func TestShowVerdicts(t *testing.T) {
 	rules := domain.GoodEveryday()
 	for _, r := range showRows {
 		t.Run(r.ID, func(t *testing.T) {
-			p := parse.Parse(r.Name, parse.Hints{Size: r.Size, Show: true})
+			p := releasename.Parse(r.Name, releasename.Hints{Size: r.Size, Show: true})
 			m := MatchTitle(p, showLibrary)
 			if m.Title == nil || m.Title.ID != r.Title {
 				t.Fatalf("matched %+v (%s), want title %d", m.Title, m.Detail, r.Title)
@@ -145,11 +145,11 @@ func TestShowVerdicts(t *testing.T) {
 }
 
 func TestEpisodeNameNeverMatchesMovie(t *testing.T) {
-	p := parse.Parse("Harbor.of.Glass.S02E01.1080p.WEB-DL.H.264-QUILL", parse.Hints{})
+	p := releasename.Parse("Harbor.of.Glass.S02E01.1080p.WEB-DL.H.264-QUILL", releasename.Hints{})
 	if m := MatchTitle(p, showLibrary); m.Title == nil || m.Title.ID != 21 {
 		t.Fatalf("matched %+v, want the show", m.Title)
 	}
-	p = parse.Parse("Harbor.of.Glass.2018.1080p.WEB-DL.H.264-QUILL", parse.Hints{})
+	p = releasename.Parse("Harbor.of.Glass.2018.1080p.WEB-DL.H.264-QUILL", releasename.Hints{})
 	if m := MatchTitle(p, showLibrary); m.Title == nil || m.Title.ID != 2 {
 		t.Fatalf("matched %+v, want the movie", m.Title)
 	}
@@ -157,7 +157,7 @@ func TestEpisodeNameNeverMatchesMovie(t *testing.T) {
 
 func TestShowGateDetail(t *testing.T) {
 	rules := domain.GoodEveryday()
-	p := parse.Parse("Copper.Valley.S04.1080p.WEB-DL.H.264-QUILL", parse.Hints{})
+	p := releasename.Parse("Copper.Valley.S04.1080p.WEB-DL.H.264-QUILL", releasename.Hints{})
 	set := SlotSet{Match: MatchTitle(p, showLibrary), SlotIDs: []int64{1}, MinSeeders: ptr(1), RuntimeMinutes: 450,
 		GateDetail: "not every episode of season 4 has aired"}
 	v := Judge(Release{Name: p.Original, Parse: p, Size: 12 * gb, Protocol: "torrent", Seeders: ptr(9)}, set, rules)
@@ -169,7 +169,7 @@ func TestShowGateDetail(t *testing.T) {
 func TestRankEpisodes(t *testing.T) {
 	rules := domain.GoodEveryday()
 	mk := func(name string, slots ...int64) (Release, Verdict) {
-		p := parse.Parse(name, parse.Hints{})
+		p := releasename.Parse(name, releasename.Hints{})
 		set := SlotSet{Match: MatchTitle(p, showLibrary), SlotIDs: slots, Out: true, RuntimeMinutes: 45 * len(slots)}
 		rel := Release{Name: name, Parse: p, Size: int64(len(slots)) * 1200 * mb, Protocol: "torrent", PublishedAt: time.Now().Add(-time.Hour)}
 		return rel, Judge(rel, set, rules)
@@ -200,7 +200,7 @@ func TestRankEpisodes(t *testing.T) {
 
 func TestGainsPerEpisode(t *testing.T) {
 	rules := domain.GoodEveryday()
-	p := parse.Parse("Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL", parse.Hints{})
+	p := releasename.Parse("Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL", releasename.Hints{})
 	rel := Release{Name: p.Original, Parse: p}
 	if !Gains(rel, rules, nil) {
 		t.Fatal("a missing episode always gains")

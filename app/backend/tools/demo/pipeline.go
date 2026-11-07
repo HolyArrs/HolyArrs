@@ -18,7 +18,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -190,7 +191,7 @@ func (w *world) releaseFor(ctx context.Context, slotIDs []int64, name string, si
 	if err := w.s.Read().QueryRowContext(ctx, "SELECT id FROM sources WHERE protocol = 'torrent' ORDER BY id LIMIT 1").Scan(&srcID); err != nil {
 		return 0, fmt.Errorf("no torrent Source to file the Release under: %w", err)
 	}
-	p := parse.Parse(name, parse.Hints{Size: size})
+	p := releasename.Parse(name, releasename.Hints{Size: size})
 	parsed := map[string]any{}
 	if b, err := json.Marshal(p); err == nil {
 		_ = json.Unmarshal(b, &parsed)

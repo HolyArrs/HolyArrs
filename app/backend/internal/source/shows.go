@@ -17,7 +17,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
@@ -274,7 +275,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 	rels := make([]judge.Release, len(all))
 	vs := make([]judge.Verdict, len(all))
 	for i, f := range all {
-		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Show: true})
+		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
@@ -312,7 +313,7 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 	}
 	ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: "episode", Effect: "pass", Detail: "holds " + coverLabel(covered)})
 	pack := judge.IsPack(p)
-	if (p.Kind.Value == parse.KindMultiSeason || p.Kind.Value == parse.KindComplete) && !rules.multiSeason {
+	if (p.Kind.Value == releasename.KindMultiSeason || p.Kind.Value == releasename.KindComplete) && !rules.multiSeason {
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("several_seasons", "holds more than one season; Releases with several seasons are not taken (Settings > Search)"))
 		return
 	}

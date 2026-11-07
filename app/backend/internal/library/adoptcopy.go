@@ -10,7 +10,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -72,7 +73,7 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 	}
 	facts["edition"], facts["edition_source"] = edition, source
 	name := strings.TrimSuffix(filepath.Base(abs), filepath.Ext(abs))
-	p := parse.Parse(name, parse.Hints{})
+	p := releasename.Parse(name, releasename.Hints{})
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var slot domain.Slot
 		slots, err := store.Select[domain.Slot](ctx, tx, "slots", "version_id = ?", v.ID)

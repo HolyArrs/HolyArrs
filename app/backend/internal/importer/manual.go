@@ -20,7 +20,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -282,9 +283,9 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 }
 
 func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64]*byHandTitle, refs []judge.TitleRef, f *ByHandFile) error {
-	p := parse.Parse(filepath.Base(f.Path), parse.Hints{Size: f.Size})
+	p := releasename.Parse(filepath.Base(f.Path), releasename.Hints{Size: f.Size})
 	if p.Title.Value == "" {
-		p = parse.Parse(filepath.Base(filepath.Dir(f.Path)), parse.Hints{Size: f.Size})
+		p = releasename.Parse(filepath.Base(filepath.Dir(f.Path)), releasename.Hints{Size: f.Size})
 	}
 	f.Quality = judge.StepFor(p)
 	if isSample(f.Path, p) {
@@ -296,7 +297,7 @@ func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64
 	m := judge.MatchTitle(p, refs)
 	if m.Title == nil {
 		// A plain file name such as S01E02.mkv: its folder may say which.
-		if fp := parse.Parse(filepath.Base(filepath.Dir(f.Path)), parse.Hints{Size: f.Size}); fp.Title.Value != "" {
+		if fp := releasename.Parse(filepath.Base(filepath.Dir(f.Path)), releasename.Hints{Size: f.Size}); fp.Title.Value != "" {
 			if fm := judge.MatchTitle(fp, refs); fm.Title != nil {
 				m = fm
 			}
@@ -319,7 +320,7 @@ func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64
 		if bt.t.EpisodeOrder != nil && *bt.t.EpisodeOrder != "" {
 			order = *bt.t.EpisodeOrder
 		}
-		sp := parse.Parse(filepath.Base(f.Path), parse.Hints{Size: f.Size, Show: true})
+		sp := releasename.Parse(filepath.Base(f.Path), releasename.Hints{Size: f.Size, Show: true})
 		found, why := judge.MatchEpisodes(sp, order, bt.refs)
 		if len(found) == 0 {
 			f.Guess.Detail = why
@@ -468,7 +469,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	if ti.Year != nil {
 		year = *ti.Year
 	}
-	p := parse.Parse(filepath.Base(src), parse.Hints{Size: sfi.Size(), Show: item.Kind == "episode"})
+	p := releasename.Parse(filepath.Base(src), releasename.Hints{Size: sfi.Size(), Show: item.Kind == "episode"})
 	folder := safeName(ver.FolderName)
 	var target string
 	if item.Kind == "movie" {
@@ -536,7 +537,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 // Slot to in_library (or better_wanted when it is below good enough and
 // kept up to date), and records the Import and its Event.
 func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, target string, lf domain.LibraryFolder, ver domain.Version, item domain.Item,
-	ti domain.Title, sl domain.Slot, p parse.Result, by domain.Actor) error {
+	ti domain.Title, sl domain.Slot, p releasename.Result, by domain.Actor) error {
 	rel, err := filepath.Rel(lf.Path, target)
 	if err != nil {
 		return err

@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // Release is what the judge needs to know about one search result.
 type Release struct {
 	Name           string
-	Parse          parse.Result
+	Parse          releasename.Result
 	Size           int64
 	Protocol       string // torrent, usenet
 	Seeders        *int
@@ -44,7 +44,7 @@ type TitleRef struct {
 // Match is the result of matching a parse to the library.
 type Match struct {
 	Title  *TitleRef
-	Conf   parse.Conf
+	Conf   releasename.Conf
 	Detail string
 }
 
@@ -147,53 +147,53 @@ func (v *Verdict) failed() bool {
 }
 
 // MatchTitle finds the library Title a parse names (pick-rules.md 2.5, steps 2 and 3).
-func MatchTitle(p parse.Result, lib []TitleRef) Match {
+func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 	if p.IsMusic() {
 		return matchArtist(p, lib)
 	}
-	name := parse.CleanName(p.Title.Value)
+	name := releasename.CleanName(p.Title.Value)
 	var cands []*TitleRef
 	for i := range lib {
 		t := &lib[i]
 		if (t.Kind == "show") != p.IsShow() || t.Kind == "artist" {
 			continue // an episode name never matches a movie, nor a movie name a show; artists only music names
 		}
-		if parse.CleanName(t.Name) == name {
+		if releasename.CleanName(t.Name) == name {
 			cands = append(cands, t)
 			continue
 		}
 		for _, a := range t.Aliases {
-			if parse.CleanName(a) == name {
+			if releasename.CleanName(a) == name {
 				cands = append(cands, t)
 				break
 			}
 		}
 	}
 	if len(cands) == 0 {
-		return Match{Conf: parse.Unknown, Detail: fmt.Sprintf("no Title in the library is called %q", p.Title.Value)}
+		return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no Title in the library is called %q", p.Title.Value)}
 	}
 	if p.IsShow() {
 		return matchShow(p, cands)
 	}
 	if p.Year.Value == 0 {
 		if len(cands) == 1 {
-			return Match{Title: cands[0], Conf: parse.Guess,
+			return Match{Title: cands[0], Conf: releasename.Guess,
 				Detail: fmt.Sprintf("%s (%d) by name only; the name gives no year", cands[0].Name, cands[0].Year)}
 		}
-		return Match{Conf: parse.Unknown, Detail: fmt.Sprintf("%d Titles are called %q and the name gives no year", len(cands), p.Title.Value)}
+		return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("%d Titles are called %q and the name gives no year", len(cands), p.Title.Value)}
 	}
 	for _, t := range cands {
 		if t.Year == p.Year.Value {
-			return Match{Title: t, Conf: parse.Sure, Detail: fmt.Sprintf("%s (%d) by clean name and year", t.Name, t.Year)}
+			return Match{Title: t, Conf: releasename.Sure, Detail: fmt.Sprintf("%s (%d) by clean name and year", t.Name, t.Year)}
 		}
 	}
 	for _, t := range cands {
 		if d := t.Year - p.Year.Value; d == 1 || d == -1 {
-			return Match{Title: t, Conf: parse.Likely,
+			return Match{Title: t, Conf: releasename.Likely,
 				Detail: fmt.Sprintf("%s (%d) by clean name; the name says %d", t.Name, t.Year, p.Year.Value)}
 		}
 	}
-	return Match{Conf: parse.Unknown, Detail: fmt.Sprintf("no Title called %q matches year %d", p.Title.Value, p.Year.Value)}
+	return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no Title called %q matches year %d", p.Title.Value, p.Year.Value)}
 }
 
 // safetyTraits are checked by the safety step, so the never step leaves them out.
@@ -201,7 +201,7 @@ var safetyTraits = map[string]bool{"sample": true, "executable": true, "password
 
 // traitMatches says whether a named Trait matches. Points Traits need a sure
 // field (a "likely" web_dl from a bare "WEB" earns nothing).
-func traitMatches(trait string, p parse.Result) (bool, string) {
+func traitMatches(trait string, p releasename.Result) (bool, string) {
 	if id, ok := domain.OwnTraitID(trait); ok {
 		return ownMatches(id, p)
 	}
@@ -211,11 +211,11 @@ func traitMatches(trait string, p parse.Result) (bool, string) {
 	src := p.Source
 	switch trait {
 	case "hevc":
-		return p.Codec.Value == "h265" && p.Codec.Conf == parse.Sure, "video is HEVC"
+		return p.Codec.Value == "h265" && p.Codec.Conf == releasename.Sure, "video is HEVC"
 	case "ddp_audio":
 		return p.Audio.Format == "eac3", "audio is DDP (E-AC-3)"
 	case "web_dl":
-		return src.Value == "web_dl" && src.Conf == parse.Sure, "source is WEB-DL"
+		return src.Value == "web_dl" && src.Conf == releasename.Sure, "source is WEB-DL"
 	case "upscaled":
 		return p.Has("upscaled"), "marked as upscaled"
 	case "dubbed_only":
@@ -245,7 +245,7 @@ func traitMatches(trait string, p parse.Result) (bool, string) {
 }
 
 // StepFor maps a parse to its ladder step name, or "" when there is none.
-func StepFor(p parse.Result) string {
+func StepFor(p releasename.Result) string {
 	if p.Music != nil {
 		return musicStep(p.Music)
 	}
@@ -337,7 +337,7 @@ func Judge(rel Release, set SlotSet, rules domain.PickRulesBody) Verdict {
 	v := Verdict{SlotIDs: set.SlotIDs}
 
 	// Parse warnings.
-	if p.Resolution.Conf == parse.Guess {
+	if p.Resolution.Conf == releasename.Guess {
 		v.add("parse", "resolution_guess", "warn", strings.Join(p.Notes, "; "), 0)
 	}
 
@@ -346,10 +346,10 @@ func Judge(rel Release, set SlotSet, rules domain.PickRulesBody) Verdict {
 	case set.Match.Title == nil:
 		v.add("match", "none", "fail", set.Match.Detail, 0)
 		return v.refuse()
-	case set.Match.Conf == parse.Guess:
+	case set.Match.Conf == releasename.Guess:
 		v.add("match", "needs_hand_pick", "fail", set.Match.Detail+"; pick the Title by hand", 0)
 		return v.refuse()
-	case set.Match.Conf == parse.Likely:
+	case set.Match.Conf == releasename.Likely:
 		v.add("match", "year_near", "warn", set.Match.Detail, 0)
 	default:
 		v.add("match", "title", "pass", set.Match.Detail, 0)
@@ -512,7 +512,7 @@ func hasFail(v Verdict, step, prefix string) bool {
 	return false
 }
 
-func sumPoints(p parse.Result, rules domain.PickRulesBody) int {
+func sumPoints(p releasename.Result, rules domain.PickRulesBody) int {
 	n := 0
 	for _, tp := range rules.Traits {
 		if ok, _ := traitMatches(tp.Trait, p); ok {
@@ -613,7 +613,7 @@ func (v *Verdict) size(rel Release, rules domain.PickRulesBody, step string, run
 var langNames = map[string]string{"en": "English", "fr": "French", "de": "German", "it": "Italian",
 	"es": "Spanish", "ru": "Russian", "ja": "Japanese", "ko": "Korean"}
 
-func (v *Verdict) language(p parse.Result, rules domain.PickRulesBody, t *TitleRef) {
+func (v *Verdict) language(p releasename.Result, rules domain.PickRulesBody, t *TitleRef) {
 	langs := p.Languages
 	if len(langs) == 0 {
 		v.add("hard", "language", "warn", "no language in the name; assumed the original language", 0)
@@ -819,7 +819,7 @@ func rank(rels []Release, vs []Verdict, rules domain.PickRulesBody, packsFirst b
 // rules' Good enough step (and points, when set). It is used when the Pick
 // rules of a Version change.
 func ReachesGoodEnough(releaseName string, rules domain.PickRulesBody) bool {
-	p := parse.Parse(releaseName, hintsFor(rules))
+	p := releasename.Parse(releaseName, hintsFor(rules))
 	idx := stepIndex(rules, StepFor(p))
 	if idx < 0 || idx < stepIndex(rules, rules.GoodEnoughAt) {
 		return false
@@ -830,14 +830,14 @@ func ReachesGoodEnough(releaseName string, rules domain.PickRulesBody) bool {
 // CurrentOf describes a File already in the Library from its release name,
 // for the "better than what we have" step (pick-rules.md section 4).
 func CurrentOf(releaseName string, importedAt time.Time, rules domain.PickRulesBody) Current {
-	p := parse.Parse(releaseName, hintsFor(rules))
+	p := releasename.Parse(releaseName, hintsFor(rules))
 	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt}
 }
 
 // StepOf is the ladder step a name parses to and its place in the rules'
 // ladder (-1 when the step is unknown or not on the ladder).
 func StepOf(name string, rules domain.PickRulesBody) (string, int) {
-	step := StepFor(parse.Parse(name, hintsFor(rules)))
+	step := StepFor(releasename.Parse(name, hintsFor(rules)))
 	if step == "" {
 		return "", -1
 	}

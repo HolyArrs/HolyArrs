@@ -27,7 +27,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
@@ -54,6 +54,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -320,7 +321,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// The app log for the log viewer: every line also goes to a capped
 	// file in the config folder, secrets masked; the program output (docker
 	// logs) is masked the same way.
-	applogs, err := applog.Open(filepath.Join(c.ConfigDir, "logs"))
+	applogs, err := logs.Open(filepath.Join(c.ConfigDir, "logs"))
 	if err != nil {
 		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
 			return refuseEarly(ctx, c, nw)

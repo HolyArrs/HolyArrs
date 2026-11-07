@@ -23,7 +23,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -309,7 +309,7 @@ func selinuxType() string {
 	if err != nil {
 		return ""
 	}
-	return fsplain.SELinuxType(string(b))
+	return files.SELinuxType(string(b))
 }
 
 func yesNo(b bool) string {
@@ -382,7 +382,7 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 		r.add(s, OK, "writable", "")
 	} else {
 		text := "not writable"
-		if why := fsplain.Why(err); why != "" {
+		if why := files.Why(err); why != "" {
 			text += ": " + why
 		}
 		r.add(s, Fail, text, writeFix(dir, uid, gid, owner, err))
@@ -416,7 +416,7 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 	default:
 		text := "on a shared or network folder (" + kind + "); the database must be on a local disk"
 		if fs := store.MountType(dir); fs != "" {
-			if label, _ := fsplain.Family(fs); label != "" {
+			if label, _ := files.Family(fs); label != "" {
 				text = "on " + label + " (" + fs + "); the database must be on a local disk"
 			}
 		}
@@ -482,7 +482,7 @@ func UnmappedConfig(dir string) string {
 			dir = r
 		}
 	}
-	return fsplain.Unmapped(string(b), filepath.ToSlash(dir))
+	return files.Unmapped(string(b), filepath.ToSlash(dir))
 }
 
 // writable creates and removes a temporary file in dir.

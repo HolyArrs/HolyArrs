@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // hintsFor reads stored names as music when the Pick rules judge music.
-func hintsFor(rules domain.PickRulesBody) parse.Hints {
-	return parse.Hints{Music: domain.IsMusicRules(rules)}
+func hintsFor(rules domain.PickRulesBody) releasename.Hints {
+	return releasename.Hints{Music: domain.IsMusicRules(rules)}
 }
 
 // musicStep maps what a music name says to a music ladder step
 // (pick-rules.md section 8). "" when the name gives no format or bit rate.
-func musicStep(m *parse.MusicInfo) string {
+func musicStep(m *releasename.MusicInfo) string {
 	if m.Lossless {
 		if m.BitDepth >= 24 || m.SampleRate > 48 || m.Format == "dsd" {
 			return "lossless_hires"
@@ -52,7 +52,7 @@ func musicStep(m *parse.MusicInfo) string {
 }
 
 // musicTrait says whether a music Trait matches.
-func musicTrait(trait string, p parse.Result) (bool, string) {
+func musicTrait(trait string, p releasename.Result) (bool, string) {
 	m := p.Music
 	switch trait {
 	case "cd_source":
@@ -77,7 +77,7 @@ func musicTrait(trait string, p parse.Result) (bool, string) {
 	return false, "unknown trait " + trait
 }
 
-func hasEdition(m *parse.MusicInfo, e string) bool {
+func hasEdition(m *releasename.MusicInfo, e string) bool {
 	for _, x := range m.Editions {
 		if x == e {
 			return true
@@ -107,14 +107,14 @@ func (v *Verdict) musicSize(size, lo, hi int64) {
 
 // matchArtist finds the artist a music name names, by clean name or alias
 // (the alternative readings of a scene name too).
-func matchArtist(p parse.Result, lib []TitleRef) Match {
+func matchArtist(p releasename.Result, lib []TitleRef) Match {
 	m := p.Music
 	names := []string{m.Artist}
 	for _, a := range m.Alts {
 		names = append(names, a.Artist)
 	}
 	for _, n := range names {
-		want := parse.CleanName(n)
+		want := releasename.CleanName(n)
 		if want == "" {
 			continue
 		}
@@ -123,31 +123,31 @@ func matchArtist(p parse.Result, lib []TitleRef) Match {
 			if t.Kind != "artist" {
 				continue
 			}
-			if parse.CleanName(t.Name) == want {
-				return Match{Title: t, Conf: parse.Sure, Detail: t.Name + " by clean name"}
+			if releasename.CleanName(t.Name) == want {
+				return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by clean name"}
 			}
 			for _, a := range t.Aliases {
-				if parse.CleanName(a) == want {
-					return Match{Title: t, Conf: parse.Sure, Detail: fmt.Sprintf("%s by its other name %s", t.Name, a)}
+				if releasename.CleanName(a) == want {
+					return Match{Title: t, Conf: releasename.Sure, Detail: fmt.Sprintf("%s by its other name %s", t.Name, a)}
 				}
 			}
 		}
 	}
 	// No clear split ("Artist Album 2019 FLAC"): the words may start with
 	// an artist's name.
-	if m.Conf == parse.Guess {
-		whole := parse.CleanName(m.Artist)
+	if m.Conf == releasename.Guess {
+		whole := releasename.CleanName(m.Artist)
 		for i := range lib {
 			t := &lib[i]
-			if n := parse.CleanName(t.Name); t.Kind == "artist" && n != "" && strings.HasPrefix(whole+" ", n+" ") {
-				return Match{Title: t, Conf: parse.Sure, Detail: t.Name + " by the start of the name"}
+			if n := releasename.CleanName(t.Name); t.Kind == "artist" && n != "" && strings.HasPrefix(whole+" ", n+" ") {
+				return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by the start of the name"}
 			}
 		}
 	}
 	if m.Various {
-		return Match{Conf: parse.Unknown, Detail: "a various artists Release; it names no single artist"}
+		return Match{Conf: releasename.Unknown, Detail: "a various artists Release; it names no single artist"}
 	}
-	return Match{Conf: parse.Unknown, Detail: fmt.Sprintf("no artist in the library is called %q", m.Artist)}
+	return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no artist in the library is called %q", m.Artist)}
 }
 
 // AlbumRef is one album of an artist as the matcher sees it.
@@ -160,16 +160,16 @@ type AlbumRef struct {
 // AlbumName is the album a music name holds for a matched artist: the
 // album part, or the words after the artist's name when the name had no
 // clear split; the alternative readings are tried too.
-func albumNames(p parse.Result, artist string) []string {
+func albumNames(p releasename.Result, artist string) []string {
 	m := p.Music
 	out := []string{m.Album}
 	for _, a := range m.Alts {
-		if parse.CleanName(a.Artist) == parse.CleanName(artist) {
+		if releasename.CleanName(a.Artist) == releasename.CleanName(artist) {
 			out = append(out, a.Album)
 		}
 	}
-	if m.Conf == parse.Guess {
-		whole, n := parse.CleanName(m.Artist), parse.CleanName(artist)
+	if m.Conf == releasename.Guess {
+		whole, n := releasename.CleanName(m.Artist), releasename.CleanName(artist)
 		if rest, ok := strings.CutPrefix(whole, n+" "); ok {
 			out = append(out, rest)
 		}
@@ -181,19 +181,19 @@ func albumNames(p parse.Result, artist string) []string {
 // year tells same-named albums apart; a different year alone (a later
 // remaster) only warns. It returns the album, a warning and, when none
 // matches, why.
-func MatchAlbum(p parse.Result, artist string, albums []AlbumRef) (*AlbumRef, string, string) {
+func MatchAlbum(p releasename.Result, artist string, albums []AlbumRef) (*AlbumRef, string, string) {
 	if p.Music == nil {
 		return nil, "", "not a music name"
 	}
 	var cands []*AlbumRef
 	for _, n := range albumNames(p, artist) {
-		want := parse.CleanName(n)
+		want := releasename.CleanName(n)
 		if want == "" {
 			continue
 		}
 		for i := range albums {
 			a := &albums[i]
-			if parse.CleanName(a.Name) == want {
+			if releasename.CleanName(a.Name) == want {
 				cands = append(cands, a)
 			}
 		}

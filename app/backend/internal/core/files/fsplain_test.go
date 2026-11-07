@@ -1,4 +1,4 @@
-package fsplain
+package files
 
 import (
 	"errors"

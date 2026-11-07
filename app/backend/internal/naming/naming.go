@@ -20,7 +20,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -617,7 +618,7 @@ func Save(ctx context.Context, st *store.Store, s Settings, by domain.Actor, the
 }
 
 // FactsFrom builds Facts from a parsed release name: what an import knows.
-func FactsFrom(title string, year int, ids map[string]string, p parse.Result, release, ext string) Facts {
+func FactsFrom(title string, year int, ids map[string]string, p releasename.Result, release, ext string) Facts {
 	f := Facts{Title: title, Year: year, Step: judge.StepFor(p), Group: p.Group.Value, Release: release, Ext: ext,
 		TMDB: ids["tmdb"], IMDB: ids["imdb"]}
 	if len(p.Edition) > 0 {

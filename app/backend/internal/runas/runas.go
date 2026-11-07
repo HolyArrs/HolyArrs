@@ -12,13 +12,12 @@ package runas
 import (
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"io/fs"
 	"path"
 	"strconv"
 	"strings"
 	"syscall"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
 )
 
 // Marker is set in the environment of the process started after the switch,
@@ -260,8 +259,8 @@ func ownerWarning(dir string, uid, gid int, err error, owner int, uidMap, gidMap
 		// Files owned by a host user outside this container's ID range
 		// show as nobody; the host-side numbers only make sense under a
 		// shifted map.
-		hu, ok1 := fsplain.HostID(uidMap, uid)
-		hg, ok2 := fsplain.HostID(gidMap, gid)
+		hu, ok1 := files.HostID(uidMap, uid)
+		hg, ok2 := files.HostID(gidMap, gid)
 		if ok1 && ok2 && (hu != uid || hg != gid) {
 			return fmt.Sprintf("could not give %s to %d:%d (%v): its files belong to a host user this container can't see (rootless Docker/Podman or unprivileged LXC). "+
 				"On the host, run chown -R %d:%d on the folder mounted at %s", dir, uid, gid, err, hu, hg, dir)

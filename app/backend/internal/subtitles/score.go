@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
@@ -82,10 +82,10 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 		return refuse("forced does not match the wish")
 	}
 	show := v.Kind == "episode"
-	vr := parse.Parse(v.ReleaseName, parse.Hints{Show: show})
+	vr := releasename.Parse(v.ReleaseName, releasename.Hints{Show: show})
 
 	// The candidate's best release name (most release parts matched).
-	var best parse.Result
+	var best releasename.Result
 	bestN, exact := -1, false
 	for _, name := range c.ReleaseNames[:min(len(c.ReleaseNames), MaxReleaseNames)] {
 		if len(name) > 512 {
@@ -94,7 +94,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 		if foldName(name) == foldName(v.ReleaseName) && foldName(name) != "" {
 			exact = true
 		}
-		r := parse.Parse(name, parse.Hints{Show: show})
+		r := releasename.Parse(name, releasename.Hints{Show: show})
 		n := len(releaseMatches(vr, r))
 		if n > bestN {
 			best, bestN = r, n
@@ -117,7 +117,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 	}
 	// Year.
 	year := c.Year
-	if year == 0 && bestN >= 0 && best.Year.Conf != parse.Unknown {
+	if year == 0 && bestN >= 0 && best.Year.Conf != releasename.Unknown {
 		year = best.Year.Value
 	}
 	switch {
@@ -182,7 +182,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 }
 
 // releaseMatches lists the release parts two parsed names share.
-func releaseMatches(v, c parse.Result) []string {
+func releaseMatches(v, c releasename.Result) []string {
 	var out []string
 	if v.Group.Value != "" && strings.EqualFold(v.Group.Value, c.Group.Value) {
 		out = append(out, "group")

@@ -16,7 +16,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
 )
 
@@ -78,7 +79,7 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 			if err != nil {
 				rel = filepath.Base(c.Path)
 			}
-			if !isSample(rel, parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size})) {
+			if !isSample(rel, releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size})) {
 				return nil, noop, ""
 			}
 		}

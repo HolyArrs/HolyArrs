@@ -19,7 +19,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -47,7 +48,7 @@ type ShowTarget struct {
 
 // episodePath is where a file holding eps goes, relative to the Library
 // folder, by the naming settings (the same function a rename uses).
-func (t ShowTarget) episodePath(p parse.Result, source string, eps []Episode) string {
+func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
 		ns = *t.Naming
@@ -62,7 +63,7 @@ func (t ShowTarget) episodePath(p parse.Result, source string, eps []Episode) st
 }
 
 // EpisodeFactsFor builds the naming facts of a file holding eps.
-func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p parse.Result, release, ext string, eps []Episode) naming.EpisodeFacts {
+func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p releasename.Result, release, ext string, eps []Episode) naming.EpisodeFacts {
 	f := naming.EpisodeFacts{Facts: naming.FactsFrom(show, year, ids, p, release, ext), Order: order}
 	for i, e := range eps {
 		if i == 0 {
@@ -101,7 +102,7 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
 		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
-		p := parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size, Show: true})
+		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})
 		switch {
 		case programExt[ext] || p.Has("executable") || p.Has("double_extension"):
 			s.Method, s.Why = "refuse", []string{"a program file, not a video"}
@@ -122,7 +123,7 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 					if alt == "" {
 						continue
 					}
-					if fm := judge.MatchTitle(parse.Parse(alt, parse.Hints{Show: true}), lib); fm.Title != nil {
+					if fm := judge.MatchTitle(releasename.Parse(alt, releasename.Hints{Show: true}), lib); fm.Title != nil {
 						m = fm
 						break
 					}
@@ -785,7 +786,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if fi, err := os.Stat(step.TargetPath); err == nil {
 				size = fi.Size()
 			}
-			p := parse.Parse(filepath.Base(step.SourceFile), parse.Hints{Show: !music})
+			p := releasename.Parse(filepath.Base(step.SourceFile), releasename.Hints{Show: !music})
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			if music && relName != "" {
 				// A track's file name says nothing of its quality: the

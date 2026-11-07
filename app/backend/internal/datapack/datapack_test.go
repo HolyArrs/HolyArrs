@@ -15,7 +15,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -205,10 +206,10 @@ func TestMaximumAcceptedPerMinuteLimitStaysSafeInJudge(t *testing.T) {
 	if err := p.Validate(); err != nil {
 		t.Fatalf("maximum data-pack size limit rejected: %v", err)
 	}
-	parsed := parse.Parse("Example.Movie.2025.1080p.WEB-DL.H265-TEST", parse.Hints{})
+	parsed := releasename.Parse("Example.Movie.2025.1080p.WEB-DL.H265-TEST", releasename.Hints{})
 	title := judge.TitleRef{ID: 1, Name: "Example Movie", Year: 2025}
 	v := judge.Judge(judge.Release{Name: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", Parse: parsed, Size: 1 << 30}, judge.SlotSet{
-		Match: judge.Match{Title: &title, Conf: parse.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
+		Match: judge.Match{Title: &title, Conf: releasename.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
 	}, p.PickRules[0].Rules)
 	for _, reason := range v.Reasons {
 		if reason.Step == "hard" && reason.Rule == "size" && reason.Effect == "fail" {
@@ -500,7 +501,9 @@ func TestPickRuleWithOwnTraitIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, edit := range []func(*domain.PickRulesBody){
-		func(b *domain.PickRulesBody) { b.Traits = append(slices.Clone(b.Traits), domain.TraitPoints{Trait: "own:3", Points: 10}) },
+		func(b *domain.PickRulesBody) {
+			b.Traits = append(slices.Clone(b.Traits), domain.TraitPoints{Trait: "own:3", Points: 10})
+		},
 		func(b *domain.PickRulesBody) { b.MustHave = []string{"own:3"} },
 		func(b *domain.PickRulesBody) { b.Never = append(slices.Clone(b.Never), "own:3") },
 	} {

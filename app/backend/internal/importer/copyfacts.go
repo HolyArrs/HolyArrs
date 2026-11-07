@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // EditionFileName emits Plex's documented edition tag. Other server mappings
@@ -160,7 +160,7 @@ func EditionKey(name string) string {
 // ParsedEdition returns one unambiguous edition stated by the name. Empty is
 // unknown or ambiguous; callers that accept a correction require confirmation.
 func ParsedEdition(name string) string {
-	editions := parse.Parse(name, parse.Hints{}).Edition
+	editions := releasename.Parse(name, releasename.Hints{}).Edition
 	if len(editions) != 1 {
 		return ""
 	}
@@ -195,8 +195,8 @@ func AudioMeets(facts map[string]any, wanted []string) bool {
 }
 
 func copyRefusal(v domain.Version, fileName, releaseName, confirmed string, facts map[string]any) string {
-	fileEditions := parse.Parse(fileName, parse.Hints{}).Edition
-	releaseEditions := parse.Parse(releaseName, parse.Hints{}).Edition
+	fileEditions := releasename.Parse(fileName, releasename.Hints{}).Edition
+	releaseEditions := releasename.Parse(releaseName, releasename.Hints{}).Edition
 	edition, releaseEdition := "", ""
 	if len(fileEditions) == 1 {
 		edition = fileEditions[0]

@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // Own traits (#97): a name test finds any word or pattern in the Release
@@ -35,7 +35,7 @@ func TestOwnTraitsMatchNameWordsPatternsAndGroups(t *testing.T) {
 		{"Dune.Part.Two.2024.1080p.WEB.H264-EVOLVE", "own:2", false},
 		{"Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "own:3", false}, // deleted
 	} {
-		ok, why := traitMatches(c.trait, parse.Parse(c.name, parse.Hints{}))
+		ok, why := traitMatches(c.trait, releasename.Parse(c.name, releasename.Hints{}))
 		if ok != c.want {
 			t.Errorf("%s %s: %v (%s), want %v", c.trait, c.name, ok, why, c.want)
 		}

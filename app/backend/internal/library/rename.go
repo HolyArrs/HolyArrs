@@ -21,7 +21,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
@@ -189,7 +190,7 @@ func fileFacts(t domain.Title, f domain.File) naming.Facts {
 		year = *t.Year
 	}
 	ext := path.Ext(f.RelativePath)
-	fa := naming.FactsFrom(t.Name, year, t.SourceIDs, parse.Parse(release, parse.Hints{}), release, ext)
+	fa := naming.FactsFrom(t.Name, year, t.SourceIDs, releasename.Parse(release, releasename.Hints{}), release, ext)
 	if edition, ok := f.MediaInfo["edition"].(string); ok {
 		fa.Edition = edition
 	}
@@ -252,7 +253,7 @@ func episodeFacts(t domain.Title, f domain.File, eps []importer.Episode) naming.
 	if t.EpisodeOrder != nil && *t.EpisodeOrder != "" {
 		order = *t.EpisodeOrder
 	}
-	fa := importer.EpisodeFactsFor(t.Name, year, t.SourceIDs, order, parse.Parse(release, parse.Hints{Show: true}), release, path.Ext(f.RelativePath), eps)
+	fa := importer.EpisodeFactsFor(t.Name, year, t.SourceIDs, order, releasename.Parse(release, releasename.Hints{Show: true}), release, path.Ext(f.RelativePath), eps)
 	if step, ok := f.MediaInfo["step"].(string); ok && step != "" {
 		fa.Step = step
 	}

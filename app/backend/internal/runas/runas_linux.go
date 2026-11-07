@@ -4,13 +4,12 @@ package runas
 
 import (
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"syscall"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
 )
 
 // Start applies FILE__, UMASK and PUID/PGID. Started as root it fixes the
@@ -198,7 +197,7 @@ func fixOwner(configDir string, uid, gid int) {
 		uidMap, _ := os.ReadFile("/proc/self/uid_map")
 		gidMap, _ := os.ReadFile("/proc/self/gid_map")
 		attr, _ := os.ReadFile("/proc/self/attr/current")
-		log.Printf("holyarrs: warning: %s", fixWarning(configDir, uid, gid, first, int(st.Uid), topRight, string(uidMap), string(gidMap), fsplain.SELinuxType(string(attr))))
+		log.Printf("holyarrs: warning: %s", fixWarning(configDir, uid, gid, first, int(st.Uid), topRight, string(uidMap), string(gidMap), files.SELinuxType(string(attr))))
 	}
 }
 
