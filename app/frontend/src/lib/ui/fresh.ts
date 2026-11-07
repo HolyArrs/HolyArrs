@@ -1,4 +1,6 @@
 
+// Freshness tags on cards and which rows already say the same thing.
+
 export type FreshKind = 'new_episode' | 'new_season' | 'recently_added' | 'coming' | 'season_coming' | 'new_release';
 
 export interface Fresh {
@@ -7,10 +9,17 @@ export interface Fresh {
 	rank?: number;
 }
 
+export type OwnState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
+
+const TYPE_WORD = { movie: 'Movie', show: 'Show' } as const;
+
+// Most urgent first; pickFresh keeps the earliest.
 export const FRESH_ORDER: readonly FreshKind[] = ['new_episode', 'new_season', 'recently_added', 'coming', 'season_coming', 'new_release'];
 
+// Only these make sense on music cards.
 const MUSIC: readonly FreshKind[] = ['recently_added', 'new_release'];
 
+// A row's own title already says this, so the tag would repeat it.
 export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
 	best: ['new_release'],
 	new_services: ['new_release'],
@@ -24,6 +33,7 @@ export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
 	new_seasons: ['new_season']
 };
 
+// Drops tags that are unknown, empty, wrong for music, or redundant in the row.
 export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean; row?: string } = {}): Fresh | null {
 	if (!f || !FRESH_ORDER.includes(f.kind) || !f.text) return null;
 	if (where.music && !MUSIC.includes(f.kind)) return null;
@@ -31,12 +41,11 @@ export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean
 	return f;
 }
 
-const TYPE_WORD = { movie: 'Movie', show: 'Show' } as const;
-
 export function typeWord(kind: string | undefined): string {
 	return kind === 'movie' || kind === 'show' ? TYPE_WORD[kind] : '';
 }
 
+// Joins type and details, skipping blanks and repeats.
 export function metaLine(kind: string | undefined, rest: readonly (string | number | null | undefined)[]): string[] {
 	return [typeWord(kind), ...rest.map((r) => (r == null ? '' : String(r)))].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
 }
@@ -50,8 +59,6 @@ export function pickFresh(list: readonly (Fresh | null | undefined)[]): Fresh | 
 	for (const f of list) if (f && (!best || FRESH_ORDER.indexOf(f.kind) < FRESH_ORDER.indexOf(best.kind))) best = f;
 	return best;
 }
-
-export type OwnState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
 
 export function cardBadges(o: { fresh?: Fresh | null; owned?: { state: OwnState } | null; music?: boolean; row?: string }) {
 	return {

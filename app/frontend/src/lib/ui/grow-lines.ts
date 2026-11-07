@@ -1,12 +1,7 @@
 
 import type { Fresh } from './fresh.ts';
 
-export function shortRuntime(min?: number): string {
-	if (!min || min <= 0) return '';
-	const h = Math.floor(min / 60);
-	const m = Math.round(min % 60);
-	return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
-}
+// Text lines shown on the grown card: facts, tags, house state and why.
 
 export interface FactsIn {
 	kind: 'movie' | 'show';
@@ -19,16 +14,31 @@ export interface FactsIn {
 
 export type Fact = { text: string; part: 'year' | 'length' | 'rating' | 'stars' };
 
-export function growFacts(f: FactsIn): Fact[] {
-	const out: Fact[] = [];
-	if (f.year) out.push({ text: String(f.year), part: 'year' });
-	const length = f.kind === 'show' ? (f.seasons ? `${f.seasons} season${f.seasons === 1 ? '' : 's'}` : '') : shortRuntime(f.runtime);
-	if (length) out.push({ text: length, part: 'length' });
-	if (f.certification) out.push({ text: f.certification, part: 'rating' });
-	if (f.score) out.push({ text: `★ ${(Math.round(f.score * 10) / 10).toFixed(1)}`, part: 'stars' });
-	return out;
+export interface HouseIn {
+	state?: string;
+	label?: string;
+	mine?: boolean;
+	askers?: string[];
+	fresh?: Fresh | null;
 }
 
+export interface WhyIn {
+	rowType?: string;
+	rowTitle?: string;
+	fresh?: Fresh | null;
+	streaming?: { name: string; rank?: number } | null;
+}
+
+// Streaming rank, then row reason, then freshness.
+export function whyShown(w: WhyIn): string {
+	if (w.streaming?.rank) return `#${w.streaming.rank} on ${w.streaming.name} today`;
+	if (w.rowType && SEEDED.has(w.rowType) && w.rowTitle) return w.rowTitle;
+	if (w.fresh?.text) return w.fresh.text;
+	return '';
+}
+
+
+// Moods that clash with a genre read wrong, so they are dropped.
 const PLAIN = new Set(['Reality', 'Talk', 'News', 'Soap']);
 const CLASH: Record<string, string[]> = {
 	Scary: ['Family', 'Kids', 'Animation', 'Comedy'],
@@ -39,6 +49,28 @@ const CLASH: Record<string, string[]> = {
 };
 const MOODS = new Set(['Dark', 'Exciting', 'Feel-good', 'Suspenseful', 'Witty', 'Romantic', 'Emotional', 'Mind-bending', 'Cozy', 'Gritty', 'Inspiring', 'Scary']);
 
+
+const SEEDED = new Set(['because_have', 'because_asked', 'person', 'household']);
+
+
+export function shortRuntime(min?: number): string {
+	if (!min || min <= 0) return '';
+	const h = Math.floor(min / 60);
+	const m = Math.round(min % 60);
+	return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+}
+
+export function growFacts(f: FactsIn): Fact[] {
+	const out: Fact[] = [];
+	if (f.year) out.push({ text: String(f.year), part: 'year' });
+	const length = f.kind === 'show' ? (f.seasons ? `${f.seasons} season${f.seasons === 1 ? '' : 's'}` : '') : shortRuntime(f.runtime);
+	if (length) out.push({ text: length, part: 'length' });
+	if (f.certification) out.push({ text: f.certification, part: 'rating' });
+	if (f.score) out.push({ text: `★ ${(Math.round(f.score * 10) / 10).toFixed(1)}`, part: 'stars' });
+	return out;
+}
+
+// Fills up to two tags from genres after moods; plain genres get no moods.
 export function fitTags(moods: readonly string[] | undefined, genres: readonly string[] | undefined, max = 3): string[] {
 	const g = genres ?? [];
 	const plain = g.some((x) => PLAIN.has(x));
@@ -54,14 +86,7 @@ export function fitTags(moods: readonly string[] | undefined, genres: readonly s
 	return out.slice(0, max);
 }
 
-export interface HouseIn {
-	state?: string;
-	label?: string;
-	mine?: boolean;
-	askers?: string[];
-	fresh?: Fresh | null;
-}
-
+// Library state wins over every other line.
 export function houseLine(h: HouseIn): string {
 	switch (h.state) {
 		case 'available':
@@ -76,22 +101,6 @@ export function houseLine(h: HouseIn): string {
 			return h.label || 'Asked for';
 	}
 	if (h.fresh && (h.fresh.kind === 'coming' || h.fresh.kind === 'season_coming') && h.fresh.text) return h.fresh.text;
-	return '';
-}
-
-export interface WhyIn {
-	rowType?: string;
-	rowTitle?: string;
-	fresh?: Fresh | null;
-	streaming?: { name: string; rank?: number } | null;
-}
-
-const SEEDED = new Set(['because_have', 'because_asked', 'person', 'household']);
-
-export function whyShown(w: WhyIn): string {
-	if (w.streaming?.rank) return `#${w.streaming.rank} on ${w.streaming.name} today`;
-	if (w.rowType && SEEDED.has(w.rowType) && w.rowTitle) return w.rowTitle;
-	if (w.fresh?.text) return w.fresh.text;
 	return '';
 }
 

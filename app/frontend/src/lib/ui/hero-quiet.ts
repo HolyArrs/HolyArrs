@@ -1,9 +1,13 @@
+// Hero trailer phases: words hide once the video has played a while.
+
 
 export type HeroPhase = 'still' | 'playing' | 'quiet' | 'ended';
 export type HeroEvent = 'play' | 'settle' | 'stop' | 'reset';
 
+// ms of playing before the words fade.
 export const QUIET_AFTER = 6000;
 
+// Quiet stays quiet until reset; stop never leaves still or quiet.
 export function heroStep(phase: HeroPhase, ev: HeroEvent): HeroPhase {
 	switch (ev) {
 		case 'reset':
@@ -19,6 +23,7 @@ export function heroStep(phase: HeroPhase, ev: HeroEvent): HeroPhase {
 
 export const wordsShown = (p: HeroPhase) => p !== 'quiet';
 
+// Drives the phase and the one timer that moves playing to quiet.
 export function heroQuiet(
 	onchange: (p: HeroPhase) => void,
 	timers: { set: (f: () => void, ms: number) => ReturnType<typeof setTimeout>; clear: (t: ReturnType<typeof setTimeout>) => void } = {
