@@ -7,6 +7,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "node scripts/vendor-hls.mjs && vite build && node scripts/precompress.mjs && node scripts/check-words.mjs",
+		"postbuild": "node -e \"require('node:fs').writeFileSync('dist/.gitkeep', '')\"",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && svelte-check --tsconfig ../tests/tsconfig.check.json --fail-on-warnings",
 		"test": "vitest run",
 		"e2e": "playwright test"
@@ -14,7 +15,6 @@
 	"devDependencies": {
 		"@axe-core/playwright": "^4.13.0",
 		"@fontsource-variable/geist": "^5.3.0",
-		"@fontsource-variable/geist-mono": "^5.3.0",
 		"@fontsource/silkscreen": "^5.3.0",
 		"@playwright/test": "^1.64.0",
 		"@sveltejs/adapter-static": "^4.0.0",
