@@ -2,6 +2,7 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/paths.ts';
 	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata-health.svelte.ts';
@@ -29,22 +30,18 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else}
-	<section class="card" id="metadata-card" tabindex="-1" aria-labelledby="h-server">
-		<div class="card-head">
-			<h2 id="h-server" class="h2">Metadata server</h2>
-			<span class="chip {metadataHealth.up ? 'ok' : 'fail'}">{metadataHealth.up ? 'Answering' : 'Down'}</span>
+	<SettingsCard id="metadata-card" title="Metadata server">
+		<div class="srow">
+			<div class="txt"><span class="label">{metadataHealth.up ? 'Connected' : 'Not answering'}</span>{#if !metadataHealth.up}<span class="hint" role="status">{METADATA_DOWN}</span>{/if}</div>
+			<div class="ctl state">
+				<span class="st" class:fail={!metadataHealth.up}><i></i>{metadataHealth.up ? 'Answering' : 'Down'}</span>
+				<Button variant="secondary" size="sm" onclick={recheck} disabled={checking} aria-busy={checking}>Check again</Button>
+			</div>
 		</div>
-		{#if metadataHealth.up}
-			<p class="small muted">Connected</p>
-		{:else}
-			<p class="notice warn" role="status">{METADATA_DOWN}</p>
-		{/if}
-		<Button variant="secondary" onclick={recheck} disabled={checking} aria-busy={checking} style="margin-top: var(--s-4)">Check again</Button>
-	</section>
+	</SettingsCard>
 
 	<!-- Keep in step with docs/metadata-privacy.md (tmdb-privacy.test.ts checks both). -->
-	<section class="card" id="metadata-sent" aria-labelledby="h-sent">
-		<h2 id="h-sent" class="h2">What we send</h2>
+	<SettingsCard id="metadata-sent" title="What we send" description="Your public IP address goes too, like any web request">
 		<ul class="sent">
 			<li><b>An install token.</b> Identifies this install, not you.</li>
 			<li><b>What you look up.</b> Search words and IDs of what a page shows.</li>
@@ -52,20 +49,26 @@
 			<li><b>Small request headers.</b> <code>Accept</code>, <code>Cache-Control</code>, <code>If-None-Match</code> and <code>X-Fetch: ahead</code> when a page is loaded ahead of time.</li>
 			<li><b>Install count by country.</b> Installs are counted per country. Turn off <a href={to('/settings/this-app') + '#count-install'}>Count this install</a> and requests carry <code>X-Country-Count: off</code>.</li>
 		</ul>
-		<p class="small muted">Your public IP address, like any web request.</p>
-		<h3 class="h3">Never sent</h3>
+	</SettingsCard>
+
+	<SettingsCard id="metadata-never" title="Never sent">
 		<ul class="sent">
 			<li>Your files, folder paths or file names.</li>
 			<li>Your library: which titles you have, what is downloading, your history.</li>
 			<li>Accounts: user names, passwords, sign-in sessions, who requested what.</li>
 			<li>Keys and addresses of your Downloaders, Sources, media servers and lists.</li>
 		</ul>
-	</section>
+	</SettingsCard>
 {/if}
 
 <style>
-	.sent { margin: var(--s-2) 0 var(--s-3); padding-left: 1.2em; display: grid; gap: 6px; }
+	.sent { margin: 0; padding: 0 !important; list-style: none; box-shadow: none !important; }
+	.sent > li { padding: 13px 0; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; }
+	.sent > li + li { box-shadow: inset 0 1px 0 var(--line); }
+	.sent b { color: var(--text); font-weight: 600; }
 	.sent code { font-size: .9em; overflow-wrap: anywhere; }
-	#metadata-sent { margin-top: var(--s-4); }
-	#metadata-sent .h3 { margin-top: var(--s-3); }
+	.state { display: flex; align-items: center; gap: 14px; }
+	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
+	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
+	.st.fail i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
 </style>

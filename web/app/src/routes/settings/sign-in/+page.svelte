@@ -365,10 +365,10 @@
 	<SettingsCard id="passwords-card" title="Passwords">
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
-				<Field id="min-pw" label="Shortest password allowed">
-					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby={Number(minLength) < 8 ? 'min-pw-hint min-pw-warn' : 'min-pw-hint'} />
-					<span id="min-pw-hint" class="hint">4 to 64 characters. It counts for new passwords: first setup, invites, password changes and reset-owner. Passwords people already have keep working.</span>
-				</Field>
+				<div class="srow">
+					<div class="txt"><label class="label" for="min-pw">Shortest password allowed</label><span id="min-pw-hint" class="hint">4 to 64 characters, for new passwords only</span></div>
+					<div class="ctl pw-ctl"><input id="min-pw" class="input" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby={Number(minLength) < 8 ? 'min-pw-hint min-pw-warn' : 'min-pw-hint'} /></div>
+				</div>
 				{#if Number(minLength) < 8}
 					<p id="min-pw-warn" class="notice warn">
 						Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins, which helps, but it does not make a short
@@ -376,7 +376,7 @@
 					</p>
 				{/if}
 				{#if isOwner}
-					<Button variant="primary" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</Button>
+					<div class="pw-save"><Button variant="primary" size="sm" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</Button></div>
 				{:else}
 					<p class="hint">Owner only</p>
 				{/if}
@@ -655,4 +655,7 @@
 		align-items: center;
 		gap: 6px 10px;
 	}
+	.passwords fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+	.pw-ctl { max-width: 120px; }
+	.pw-save { padding: 4px 0 14px; }
 </style>

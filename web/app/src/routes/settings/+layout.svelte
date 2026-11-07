@@ -341,8 +341,10 @@
 	.settings-content :global(section.ui-settings > .body > :first-child:last-child:not(.srow, .field)) { padding-block: 14px; }
 	.settings-content :global(section.ui-settings > .body > :is(ul, ol, p, .row)) { padding-block: 12px; }
 	/* One label style for every row: switch, text box or dropdown. */
-	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend))) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
+	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend), .adv-body > .field > :is(label:first-child, .label, legend))) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
 	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }
+	/* A table inside a sheet uses the sheet's surface; no second box. */
+	.settings-content :global(section.ui-settings > .body > .ui-table) { margin: 4px -18px; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; }
 	/* Advanced and footer sit under the sheet, quiet. */
 	.settings-content :global(section.ui-settings > .advanced) { margin: 6px 6px 0; border: 0; }
 	.settings-content :global(section.ui-settings > .advanced > summary) { padding-inline: 0; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }

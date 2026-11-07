@@ -787,4 +787,13 @@
 			padding-top: 0;
 		}
 	}
+	/* Connect an AI app: address on top, then two clear parts; no divider between a label and its value. */
+	:global(#ai-connect > .body) { gap: 8px !important; padding-top: 16px !important; padding-bottom: 18px !important; }
+	:global(#ai-connect > .body > *) { box-shadow: none !important; padding-block: 0 !important; }
+	.addr-label { margin-top: 0; font: 600 15px/1.3 var(--font-ui); }
+	.addr-row { margin: 2px 0 0; }
+	.addr { flex: 1; padding: 10px 14px; border-radius: 12px; font-size: 14px; }
+	.mode { margin: 4px 0 0; }
+	.part { margin-top: 14px !important; padding-top: 18px !important; box-shadow: inset 0 1px 0 var(--line) !important; gap: 12px; }
+	.part > h3 { color: var(--text-muted); font: 600 11px/1.2 var(--font-ui) !important; letter-spacing: .08em; text-transform: uppercase; }
 </style>
