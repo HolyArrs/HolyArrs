@@ -136,6 +136,18 @@
 	let leaving = false;
 	async function home(path = '/') {
 		playLoader('', SETUP_HOLD_MS);
+		// Finished: the rest of the app opens. A failed save keeps the owner on Done,
+		// before the step entries fold back.
+		error = '';
+		try {
+			await api.post('/auth/setup/done');
+			session.s.setupOpen = false;
+		} catch {
+			leaving = false;
+			error = "Couldn't finish setup. Try again.";
+			loaderReady();
+			return;
+		}
 		try {
 			sessionStorage.setItem(DONE_KEY, '1');
 		} catch {
@@ -150,8 +162,6 @@
 				history.go(-n);
 			});
 		}
-		// Finished: the rest of the app opens (a failed save keeps the owner here).
-		await api.post('/auth/setup/done').then(() => (session.s.setupOpen = false), () => {});
 		await goto(to(path), { replace: true }).finally(loaderReady);
 	}
 
@@ -215,6 +225,11 @@
 		} catch {
 			// show empty rows
 		}
+		// Back or reload, once a folder is saved: show the parts as saved, so Continue
+		// doesn't switch one off. A fresh install keeps the defaults.
+		if (have.length) await refreshParts().catch(() => {});
+		const on = partsOn();
+		if (have.length && partsNow.answer && (on.movies || on.shows || on.music)) media = { movies: on.movies, shows: on.shows, music: on.music };
 		// Keep anything typed while the list was loading.
 		rows = kindRows.map((k) => {
 			const f = have.find((x) => x.kind === k.kind);
@@ -427,8 +442,14 @@
 	}
 	// Fresh setup always asks for a Source next; after an import only when none came over.
 	async function afterDownloader() {
-		if (fromApps && (await sourceCount()) > 0) return go('done');
-		go('source');
+		if (busy) return;
+		busy = true;
+		try {
+			if (fromApps && (await sourceCount()) > 0) return go('done');
+			go('source');
+		} finally {
+			busy = false;
+		}
 	}
 
 	// ---- Source ----

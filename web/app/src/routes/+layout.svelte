@@ -347,7 +347,7 @@
 		// Everyone signed in watches their own downloads; the rest of Downloads is for managers.
 		if (p === '/downloads') return true;
 		if (p.startsWith('/downloads')) return allowed('manage_library');
-		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
+		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/import-files' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/requests')) return allowed('wishlist');
 		// Status sits under Manage, as in the side menu.
 		if (p.startsWith('/status')) return allowed('manage_library');

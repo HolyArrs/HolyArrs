@@ -65,7 +65,11 @@ export function startBellFeeds(canManage: boolean): () => void {
 				known.add(m.id);
 				const w = messageWords(m);
 				if (told.has(m.id)) toasts.record(w.title, w.tone, { body: w.body });
-				else toasts.push(w.title, w.tone, { body: w.body, action: { label: 'Requests', run: () => void goto(to('/requests')) } });
+				else {
+					// Ready: open the title. Anything else: the request itself on Requests.
+					const open = m.kind === 'ready' && m.title_id ? { label: 'Open', path: `/library/${m.title_id}` } : { label: 'Requests', path: m.ask_id ? `/requests?ask=${m.ask_id}` : '/requests' };
+					toasts.push(w.title, w.tone, { body: w.body, action: { label: open.label, run: () => void goto(to(open.path)) } });
+				}
 				told.add(m.id);
 			}
 			if (unread.length) saveTold(told);

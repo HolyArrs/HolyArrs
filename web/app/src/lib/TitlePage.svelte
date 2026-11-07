@@ -1641,8 +1641,8 @@
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
 {/if}
 {#if mayAsk}
-	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />
-	<AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={(_s, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />
+	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => { if (typeof body.title_id === 'number') { toasts.push(`${details?.name ?? kindWord} is already in your Library`, 'info'); void goto(to(`/library/${body.title_id}`)); } }} />
+	<AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={(_s, body) => { if (typeof body.title_id === 'number') { toasts.push(`${details?.name ?? kindWord} is already in your Library`, 'info'); void goto(to(`/library/${body.title_id}`)); } }} />
 {/if}
 
 <style>

@@ -1818,7 +1818,7 @@
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
-				{#if r.replaced}<a class="tdl" href={to('/downloads/history?tab=turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
+				{#if r.replaced}<a class="tdl" href={to('/library/turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
 				{@render btns(r)}
 			</div>
 			{/if}
