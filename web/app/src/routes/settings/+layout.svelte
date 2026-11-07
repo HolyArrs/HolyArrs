@@ -223,6 +223,11 @@
 
 
 <style>
+	/* Settings reads in one font: paths, keys, addresses and field values use the app font
+	   with even-width digits (the log viewer keeps its fixed-width lines). */
+	.settings-content :global(:is(.mono, input, textarea, select, dl.facts dd, code, kbd)),
+	.settings-content :global(:is([class*='path'], [class*='key'], [class*='url'], [class*='addr'], .hint)) { font-family: var(--font-ui) !important; font-variant-numeric: tabular-nums; letter-spacing: normal; }
+	.settings-content :global([data-testid='log-lines'] .text), .settings-content :global(pre) { font-family: var(--font-mono) !important; }
 	/* ---------- the wall: this Library's posters, blurred, dimmed, still ---------- */
 	.sx-wall { position: fixed; inset: 0 0 0 var(--space, 0px); z-index: -1; overflow: hidden; pointer-events: none; transition: opacity 500ms var(--ease-out); }
 	.sx-wall.dim { opacity: 0.55; }
