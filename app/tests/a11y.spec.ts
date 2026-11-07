@@ -30,7 +30,7 @@ const pages = [
 	'/settings/this-app',
 	'/settings/tmdb',
 	'/settings/music',
-	'/settings/wishlist',
+	'/settings/requests',
 	'/settings/alerts',
 	'/settings/media-servers',
 	'/settings/pick-rules',

@@ -153,7 +153,7 @@ test('the owner finds it from Requests and marks it fixed with a reply', async (
 });
 
 test('the member sees it fixed, with the reply and a Fixed message', async () => {
-	await member.goto('/reports');
+	await member.goto('/requests/reports');
 	const card = member.getByTestId('report').filter({ hasText: movie });
 	await expect(card.getByTestId('report-state')).toContainText('Fixed');
 	await expect(card.getByTestId('report-reply')).toHaveText(reply);

@@ -26,7 +26,7 @@ test('phone: bottom menu, one column, no sideways scroll on any page', async ({ 
 		'/settings/account',
 		'/settings/users',
 		'/settings/music',
-		'/settings/wishlist',
+		'/settings/requests',
 		'/settings/alerts',
 		'/account',
 		'/requests',

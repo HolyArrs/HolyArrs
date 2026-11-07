@@ -103,7 +103,7 @@ test('the save bar shows only with a change; Discard puts it back', async () => 
 });
 
 test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', async () => {
-	await page.goto('/settings/wishlist');
+	await page.goto('/settings/requests');
 	await page.getByLabel('Movie requests', { exact: true }).fill('7');
 	await expect(page.getByTestId('savebar')).toBeVisible();
 	// Another page of the People group, from its capsule row.
@@ -119,12 +119,12 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sign-in and security' }).click();
 	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
 	await expect(page.getByRole('heading', { name: 'Sign-in and security', level: 1 })).toBeVisible();
-	await page.goto('/settings/wishlist');
+	await page.goto('/settings/requests');
 	await expect(page.getByLabel('Movie requests', { exact: true })).not.toHaveValue('7');
 });
 
 test('Save in the bar saves through the page form, with a toast', async () => {
-	await page.goto('/settings/wishlist');
+	await page.goto('/settings/requests');
 	const field = page.getByLabel('Movie requests', { exact: true });
 	const before = await field.inputValue();
 	await field.fill(String(Number(before) + 1));

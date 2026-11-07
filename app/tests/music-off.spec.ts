@@ -77,7 +77,7 @@ test('Explore opened with type=music falls back and shows no music rows', async 
 });
 
 test('New & Popular has no Music tab', async () => {
-	await visit('/new');
+	await visit('/popular');
 	await expect(musicRadio()).toHaveCount(0);
 });
 
@@ -123,7 +123,7 @@ test('Downloads shows no music', async () => {
 
 test('no music endpoint is asked while browsing Home, Explore, New & Popular, Search and Library', async () => {
 	seen.length = 0;
-	for (const path of ['/', '/explore', '/new', '/search', '/search?q=salt', '/library']) await visit(path);
+	for (const path of ['/', '/explore', '/popular', '/search', '/search?q=salt', '/library']) await visit(path);
 	expect(musicHits()).toEqual([]);
 });
 
