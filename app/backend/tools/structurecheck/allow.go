@@ -30,7 +30,6 @@ var oversized = map[string]bool{
 	"app/frontend/src/lib/explore.ts":                        true,
 	"app/backend/internal/api/exploremusic.go":               true,
 	"app/backend/internal/music/rowtpl/catalog.go":           true,
-	"app/backend/internal/metadata/discover.go":              true,
 	"app/backend/internal/library/rename.go":                 true,
 	"app/backend/internal/auth/perms.go":                     true,
 	"app/backend/internal/source/source.go":                  true,
