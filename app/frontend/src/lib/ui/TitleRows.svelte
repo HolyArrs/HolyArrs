@@ -1,19 +1,20 @@
 <script lang="ts">
+	// Shelves under a title: where to stream, reviews, collection, similar and more-from rows.
 	import type { Snippet } from 'svelte';
+	import IconButton from './IconButton.svelte';
+	import Sheet from './Sheet.svelte';
+	import Shelf from './Shelf.svelte';
+	import TitleReviews from './TitleReviews.svelte';
+	import WideCard from './WideCard.svelte';
+	import { defaultRegion, serviceRegion } from './region.ts';
+	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem, type QuickAskSheet } from './title-cards.ts';
+	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
+	import { audienceOf } from './title-status.ts';
+	import type { FilmographyPage } from './people.ts';
 	import { api } from '../core/api.ts';
 	import { detailPath, to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
-	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
-		import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem, type QuickAskSheet } from './title-cards.ts';
-		import { defaultRegion, serviceRegion } from './region.ts';
-	import { audienceOf } from './title-status.ts';
-	import type { FilmographyPage } from './people.ts';
 	import type { Ask } from '../core/types.ts';
-	import Shelf from './Shelf.svelte';
-	import WideCard from './WideCard.svelte';
-	import Sheet from './Sheet.svelte';
-	import TitleReviews from './TitleReviews.svelte';
-		import IconButton from './IconButton.svelte';
 
 	let {
 		kind,
@@ -33,7 +34,31 @@
 		quickAsk: QuickAskSheet;
 	} = $props();
 
+	type Pair = { c: ExploreCard; item: ProviderItem };
+
 	const region = serviceRegion(defaultRegion());
+
+	let moreFrom = $state<{ person: string; items: ProviderItem[] } | null>(null);
+	let withLead = $state<ProviderItem[]>([]);
+	let allSimilar = $state(false);
+	let flow: ReturnType<QuickAskSheet> | undefined = $state();
+
+	const lead = $derived(info?.cast.find((p) => p.id) ?? null);
+	const who = $derived(audienceOf(session.can));
+	const collection = $derived(info?.collection ? pairsOf(info.collection.parts, 'collection') : []);
+	// Titles already in the collection row are dropped so nothing shows twice.
+	const similar = $derived.by(() => {
+		const seen = new Set(collection.map((p) => p.c.key));
+		return info ? pairsOf(info.similar, 'similar').filter((p) => !seen.has(p.c.key)) : [];
+	});
+	// A row with fewer than four cards looks broken, so it stays hidden.
+	const more = $derived(moreFrom && moreFrom.items.length >= 4 ? pairsOf(moreFrom.items, 'more-from') : []);
+	const withLeadCards = $derived.by(() => {
+		const seen = new Set(more.map((p) => p.c.key.replace(/^more-from-/, '')));
+		return pairsOf(withLead, 'with-lead').filter((p) => !seen.has(p.c.key.replace(/^with-lead-/, '')));
+	});
+
+	// Details load again whenever the title changes; the old request is cancelled.
 	$effect(() => {
 		const k = kind;
 		const t = tmdb;
@@ -46,8 +71,6 @@
 			});
 		return () => ctl.abort();
 	});
-
-	let moreFrom = $state<{ person: string; items: ProviderItem[] } | null>(null);
 	$effect(() => {
 		const k = kind;
 		const t = tmdb;
@@ -60,9 +83,6 @@
 			});
 		return () => ctl.abort();
 	});
-
-	const lead = $derived(info?.cast.find((p) => p.id) ?? null);
-	let withLead = $state<ProviderItem[]>([]);
 	$effect(() => {
 		const id = lead?.id?.replace(/^tmdb:/, '');
 		withLead = [];
@@ -70,6 +90,7 @@
 		const ctl = new AbortController();
 		api.get<FilmographyPage>(`/people/${encodeURIComponent(id)}?role=actor&sort=popular&page_size=24&page=1`, ctl.signal)
 			.then((r) => {
+				// Known-for is the better list; fall back to all movies when it is empty.
 				const list = r.known_for?.length ? r.known_for : r.movies;
 				withLead = list.filter((m) => m.ids?.tmdb).map((m) => ({ tmdb_id: m.ids.tmdb, kind: 'movie', name: m.name, year: m.year || undefined, poster: m.poster, backdrop: m.backdrop, overview: m.overview, in_library: !!m.title_id, title_id: m.title_id, ask: m.ask ? { ...m.ask, state: m.ask.state as Ask['state'] } : null }));
 			})
@@ -78,22 +99,12 @@
 		return () => ctl.abort();
 	});
 
-	const who = $derived(audienceOf(session.can));
-	type Pair = { c: ExploreCard; item: ProviderItem };
-	const pairsOf = (items: ProviderItem[], row: string): Pair[] => items.filter((i) => i.tmdb_id !== tmdb || i.kind !== kind).map((item) => ({ c: discoverCard(item, row), item }));
-	const collection = $derived(info?.collection ? pairsOf(info.collection.parts, 'collection') : []);
-	const similar = $derived.by(() => {
-		const seen = new Set(collection.map((p) => p.c.key));
-		return info ? pairsOf(info.similar, 'similar').filter((p) => !seen.has(p.c.key)) : [];
-	});
-	const more = $derived(moreFrom && moreFrom.items.length >= 4 ? pairsOf(moreFrom.items, 'more-from') : []);
-	const withLeadCards = $derived.by(() => {
-		const seen = new Set(more.map((p) => p.c.key.replace(/^more-from-/, '')));
-		return pairsOf(withLead, 'with-lead').filter((p) => !seen.has(p.c.key.replace(/^with-lead-/, '')));
-	});
+	// Leaves out the current title itself.
+	function pairsOf(items: ProviderItem[], row: string): Pair[] {
+		return items.filter((i) => i.tmdb_id !== tmdb || i.kind !== kind).map((item) => ({ c: discoverCard(item, row), item }));
+	}
+	// Library titles open the library page, others open the detail page.
 	const hrefOf = (item: ProviderItem) => (item.title_id ? to(`/library/${item.title_id}`) : to(detailPath(item.kind, item.tmdb_id)));
-	let allSimilar = $state(false);
-	let flow: ReturnType<QuickAskSheet> | undefined = $state();
 </script>
 
 {#snippet card({ c: raw, item }: Pair)}

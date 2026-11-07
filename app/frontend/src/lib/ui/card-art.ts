@@ -1,4 +1,6 @@
 
+// Chooses which art a poster card shows: backdrop with logo, or backdrop with the name.
+
 export type CardVariant = 'titled' | 'logo' | 'name';
 
 export interface CardArtPick {
@@ -13,11 +15,13 @@ export interface CardTemplate {
 	logo: string | null;
 }
 
+// Returns nothing when the server sent no art, so callers keep their own fallback.
 export function pickFrom(d: { card_art?: string; card_logo?: string; art_has_title?: boolean } | null | undefined): CardArtPick | undefined {
 	if (!d || (!d.card_art && !d.card_logo)) return undefined;
 	return { art: d.card_art, logo: d.card_logo || null, hasTitle: !!d.art_has_title };
 }
 
+// Art that already has the title baked in is skipped as a backdrop to avoid doubled text.
 export function cardTemplate(
 	pick: CardArtPick | undefined,
 	known: { backdrop?: string | null; logo?: string | null },

@@ -1,20 +1,21 @@
 <script lang="ts">
+	// Wide poster card with cover art, hover grow preview and badges.
 	import type { Snippet } from 'svelte';
-	import Badge from './Badge.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
-	import StatusPill, { type StatusKind } from './StatusPill.svelte';
+	import Badge from './Badge.svelte';
+	import CardBadges, { type CardOwned } from './CardBadges.svelte';
+	import GrowCard from './GrowCard.svelte';
+	import HoverPreview from './HoverPreview.svelte';
 	import Icon, { type IconName } from './Icon.svelte';
-	import { sized } from '../core/tmdb-image.ts';
+	import StatusPill, { type StatusKind } from './StatusPill.svelte';
+	import { cardTemplate, type CardArtPick } from './card-art.ts';
+	import { freshLabel, shownFresh, typeWord, type Fresh } from './fresh.ts';
+	import { GROW_DELAY } from './grow.ts';
 	import { shelfNear, whenLoaded } from './lazy-art.ts';
 	import { press, viewTransitionName } from '../core/motion.ts';
-	import HoverPreview from './HoverPreview.svelte';
-	import CardBadges, { type CardOwned } from './CardBadges.svelte';
-	import { freshLabel, shownFresh, typeWord, type Fresh } from './fresh.ts';
+	import { sized } from '../core/tmdb-image.ts';
 	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY, scrollHold } from '../core/trailer/trailer.ts';
-	import GrowCard from './GrowCard.svelte';
-	import { GROW_DELAY } from './grow.ts';
-	import { cardTemplate, type CardArtPick } from './card-art.ts';
 
 	let {
 		title,
@@ -83,19 +84,57 @@
 		growService?: { name: string; logo?: string } | null;
 		followTmdb?: boolean;
 	} = $props();
+
 	let root = $state<HTMLElement>();
 	let artEl = $state<HTMLElement>();
 	let hit = $state<HTMLElement>();
 	let byKey = $state(false);
 	let open = $state(false);
 	let leaving = $state(false);
+	let logoFailed = $state(false);
+	let failed = $state(false);
+	let pickFailed = $state(false);
+	let tall = $state(false);
+	let cw = $state(0);
+	let loaded = $state(false);
+
+	const shownLogo = $derived(logoFailed ? null : sized(logo ?? null, 'poster') || null);
+	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? null }, { art: pickFailed, logo: logoFailed }) : null);
+	const src = $derived((tpl ? tpl.image : image) || poster || null);
+	// A poster is used as the fill only when the card is small, so a tall image is not stretched wide.
+	const posterFill = $derived(!!src && src === poster && src !== image && cw > 0 && cw * (globalThis.devicePixelRatio || 1) <= 500);
+	const art = $derived(src ? sized(src, posterFill ? 'poster' : 'backdrop', cw) : null);
+	const coverLogo = $derived(tpl?.variant === 'logo' && tpl.logo ? sized(tpl.logo, 'poster') || null : null);
+	// Smaller logo file for the card itself; the full size is kept for the grow preview.
+	const cardLogo = $derived(tpl?.variant === 'logo' && tpl.logo && cw ? sized(tpl.logo, 'poster', cw * 0.4) || null : null);
+	const growLogo = $derived(tpl ? (coverLogo ?? (tpl.variant === 'titled' && pick?.logo && !logoFailed ? sized(pick.logo, 'poster') || null : null)) : shownLogo);
+	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
+	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
+	const typedWord = $derived(typed ? typeWord(kind) : '');
+	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
+	const strip = $derived(pct === undefined ? shownFresh(fresh, { row }) : null);
+	const marked = $derived(!!(strip || owned));
+	// Spoken label for the strip, skipped when the subtitle already says the same.
+	const stripWords = $derived(strip && !(sub && freshLabel(strip).endsWith(sub)) ? freshLabel(strip) : '');
+
+	// Closes any open preview and timers when the card goes away.
+	$effect(() => () => shut());
+	$effect(() => {
+		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
+	});
+	$effect(() => {
+		if (root) cw = root.clientWidth;
+	});
+
+	// A drag on the row must not open previews under the pointer.
+	const dragging = () => !!root?.closest('.dragging');
 	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
 		if (dragging() || scrollHold()) return;
 		leaving = false;
 		open = true;
 	});
 	const closer = dwell(cover ? 60 : 140, () => (cover ? (leaving = true) : (open = false)));
-	const dragging = () => !!root?.closest('.dragging');
+	const near = shelfNear();
 	function enter() {
 		if (!preview || !finePointer() || dragging() || scrollHold()) return;
 		closer.cancel();
@@ -115,7 +154,7 @@
 		open = false;
 		leaving = false;
 	}
-	$effect(() => () => shut());
+	// Tab from the preview moves to the next control after the card, since the preview sits outside the row.
 	function tabOut(back: boolean) {
 		shut();
 		if (back || !root) return void (hit?.focus(), opener.cancel());
@@ -127,40 +166,13 @@
 		);
 		(after ?? hit)?.focus();
 	}
-	$effect(() => {
-		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
-	});
-	let logoFailed = $state(false);
-	const shownLogo = $derived(logoFailed ? null : sized(logo ?? null, 'poster') || null);
-	let failed = $state(false);
-	let pickFailed = $state(false);
-	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? null }, { art: pickFailed, logo: logoFailed }) : null);
-	const src = $derived((tpl ? tpl.image : image) || poster || null);
-	let tall = $state(false);
-	let cw = $state(0);
-	$effect(() => {
-		if (root) cw = root.clientWidth;
-	});
-	const posterFill = $derived(!!src && src === poster && src !== image && cw > 0 && cw * (globalThis.devicePixelRatio || 1) <= 500);
-	const art = $derived(src ? sized(src, posterFill ? 'poster' : 'backdrop', cw) : null);
-	const coverLogo = $derived(tpl?.variant === 'logo' && tpl.logo ? sized(tpl.logo, 'poster') || null : null);
-	const cardLogo = $derived(tpl?.variant === 'logo' && tpl.logo && cw ? sized(tpl.logo, 'poster', cw * 0.4) || null : null);
-	const growLogo = $derived(tpl ? (coverLogo ?? (tpl.variant === 'titled' && pick?.logo && !logoFailed ? sized(pick.logo, 'poster') || null : null)) : shownLogo);
+	// The picked art falls back to the plain image once before the card gives up.
 	function artError() {
 		if (cover && pick?.art && src === pick.art && !pickFailed) {
 			pickFailed = true;
 			loaded = false;
 		} else failed = true;
 	}
-	let loaded = $state(false);
-	const near = shelfNear();
-	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
-	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
-	const typedWord = $derived(typed ? typeWord(kind) : '');
-	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
-	const strip = $derived(pct === undefined ? shownFresh(fresh, { row }) : null);
-	const marked = $derived(!!(strip || owned));
-	const stripWords = $derived(strip && !(sub && freshLabel(strip).endsWith(sub)) ? freshLabel(strip) : '');
 </script>
 
 <div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
@@ -209,6 +221,7 @@
 {/if}
 
 <style>
+	/* Cards that need art vanish with their list item when none loads. */
 	.ui-wide.gone, :global(li:has(> .ui-wide.gone)) { display: none; }
 	.ui-wide { position: relative; min-width: 0; }
 	.hit { display: flex; flex-direction: column; gap: 2px; color: var(--text); border-radius: var(--r-card); }
@@ -224,6 +237,7 @@
 	}
 	.over { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 	.over.bottom { top: auto; bottom: 8px; }
+	/* Leaves room for the owned mark that sits at the top. */
 	.over.pushed { top: 42px; }
 	.over.lifted { bottom: 30px; }
 	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(0 0 0 / 35%); overflow: hidden; }
@@ -239,8 +253,10 @@
 	.cover .art { margin-bottom: 0; }
 	.art img.inset { position: absolute; left: 8%; top: 50%; translate: 0 -50%; right: auto; bottom: auto; width: 34%; height: auto; aspect-ratio: 1; object-fit: cover; opacity: 1; border-radius: 6px; box-shadow: 0 6px 18px rgb(0 0 0 / .45); z-index: 1; }
 	.big .art { border-radius: var(--r-panel); }
+	/* The grow preview replaces the art, so the original hides under it. */
 	.cover.grown .art { visibility: hidden; }
 	.scrim { position: absolute; inset: auto 0 0; height: 60%; background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.18) 55%, transparent); pointer-events: none; }
+	/* Height in cqw keeps the logo box in step with the card width. */
 	.name { position: absolute; left: 6%; bottom: 9%; z-index: 1; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; }
 	.name.lifted { bottom: 20%; }
 	.name:has(.word) { width: 62%; }

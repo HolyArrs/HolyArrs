@@ -1,7 +1,12 @@
 
+// Mouse drag-to-scroll with a short glide on release, for horizontal rows.
+
+// Pixels of movement before a press counts as a drag, so plain clicks still work.
 const THRESHOLD = 5;
+// Share of speed kept each frame during the glide.
 const FRICTION = 0.95;
 
+// Attached as an action; touch keeps native scrolling, only the mouse is handled here.
 export function dragScroll(el: HTMLElement) {
 	let down = false;
 	let moved = false;
@@ -22,6 +27,7 @@ export function dragScroll(el: HTMLElement) {
 		el.style.scrollSnapType = snap;
 		el.style.scrollBehavior = '';
 	}
+	// Snap is off while gliding, otherwise it would fight the motion.
 	function glide() {
 		if (Math.abs(velocity) < 0.3) {
 			restoreSnap();
@@ -57,6 +63,7 @@ export function dragScroll(el: HTMLElement) {
 		}
 		const now = performance.now();
 		const dt = Math.max(1, now - lastT);
+		// Scaled to px per 16ms frame so the glide matches the frame rate.
 		velocity = ((e.clientX - lastX) / dt) * 16;
 		lastX = e.clientX;
 		lastT = now;
@@ -73,6 +80,7 @@ export function dragScroll(el: HTMLElement) {
 		else frame = requestAnimationFrame(glide);
 	}
 	function onClick(e: MouseEvent) {
+		// Swallow the click that ends a drag so cards do not open.
 		if (moved) {
 			e.preventDefault();
 			e.stopPropagation();

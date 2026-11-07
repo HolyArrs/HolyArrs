@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Plays one trailer over a card or hero, trying each source in turn until one works.
 	import { onDestroy, untrack } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../core/trailer/trailer.ts';
@@ -37,27 +38,26 @@
 		start?: number;
 		sharp?: boolean;
 	} = $props();
+
 	const target = () => screenTarget('cover');
+	// Read once so later prop changes do not seek a playing trailer.
 	const startAt = untrack(() => start);
+	// Adds a small on-screen log when the page url has trailerdebug.
+	const debugOn = typeof location !== 'undefined' && location.search.includes('trailerdebug');
+	const origin = typeof location !== 'undefined' ? location.origin : '';
+
 	let seeded = false;
-	function seed(e: Event) {
-		const v = e.currentTarget as HTMLVideoElement;
-		if (seeded || startAt <= 0.5) return;
-		seeded = true;
-		if (startAt < (v.duration || Infinity) - 1) v.currentTime = startAt;
-	}
-	function grab(v: HTMLVideoElement | undefined | null): HTMLCanvasElement | null {
-		if (!v || !v.videoWidth || !v.videoHeight) return null;
-		const c = document.createElement('canvas');
-		c.width = v.videoWidth;
-		c.height = v.videoHeight;
-		try {
-			c.getContext('2d')?.drawImage(v, 0, 0);
-		} catch {
-			return null;
-		}
-		return c;
-	}
+	let embedTime = 0;
+	let release: (() => void) | null = null;
+	// Timer that moves to the next source when a start never arrives.
+	let guard: ReturnType<typeof setTimeout> | null = null;
+	let stopped = false;
+
+	// Stream cleanups for the picture video and the sound video.
+	let detach: (() => void) | null = null;
+	let upDetach: (() => void) | null = null;
+	// Time of the last control press, so the same click does not also expand.
+	let ctlAt = 0;
 
 	let at = $state(0);
 	let shown = $state(false);
@@ -68,20 +68,16 @@
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
 	let box = $state<HTMLElement>();
-	let embedTime = 0;
-	const src = $derived(sources[at]);
-	const origin = typeof location !== 'undefined' ? location.origin : '';
-
-	let release: (() => void) | null = null;
-	let guard: ReturnType<typeof setTimeout> | null = null;
-	let stopped = false;
-
-	let detach: (() => void) | null = null;
+	// Second video that carries sound while the muted picture video keeps playing.
 	let up = $state<{ url: string; start: number } | null>(null);
 	let upVideo = $state<HTMLVideoElement>();
 	let swapped = $state(false);
-	let upDetach: (() => void) | null = null;
-	const live = () => (swapped ? upVideo : video);
+	let dbgLines = $state<string[]>([]);
+	let ctlBox = $state<HTMLElement>();
+	let expandBtn = $state<HTMLButtonElement>();
+	let heard = $state(false);
+
+	const src = $derived(sources[at]);
 
 	$effect(() => {
 		const v = video;
@@ -97,26 +93,7 @@
 		};
 	});
 
-	function dropUp() {
-		if (up) dbg('drop sound stream');
-		upDetach?.();
-		upDetach = null;
-		up = null;
-		swapped = false;
-	}
-
-	const debugOn = typeof location !== 'undefined' && location.search.includes('trailerdebug');
-	let dbgLines = $state<string[]>([]);
-	function dbg(m: string) {
-		if (!debugOn) return;
-		untrack(() => (dbgLines = [...dbgLines.slice(-11), `${(performance.now() / 1000).toFixed(1)}s ${m}`]));
-	}
-	function switchToPass(url: string) {
-		dbg(`switch to sound stream (video=${!!video} up=${!!up})`);
-		if (!video || up) return;
-		up = { url, start: video.currentTime + 1.2 };
-	}
-
+	// Starts the sound stream, waits until it is in step with the picture, then swaps them.
 	$effect(() => {
 		const v = upVideo;
 		const u = up;
@@ -184,6 +161,67 @@
 		};
 	});
 
+	// Every new source or replay gets a fresh time limit to start playing.
+	$effect(() => {
+		void src;
+		void run;
+		if (src) armGuard();
+	});
+
+	// Controls sit above a clickable cover, so clicks are caught first and sent to the right action.
+	$effect(() => {
+		const take = (e: MouseEvent) => {
+			if (expandBtn && (e.target as Element | null)?.closest?.('button.expand') === expandBtn) {
+				e.stopImmediatePropagation();
+				if (corner) ctlAt = 0;
+				return expand(e);
+			}
+			const b = (e.target as Element | null)?.closest?.('button[data-act]');
+			if (!b || !ctlBox?.contains(b)) return;
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			ctlAt = Date.now();
+			const act = b.getAttribute('data-act');
+			if (act === 'sound') toggleMute();
+			else if (act === 'pause') togglePause();
+			else if (act === 'replay') replay();
+			else if (act === 'expand') ((ctlAt = 0), expand(e));
+		};
+		window.addEventListener('click', take, true);
+		return () => window.removeEventListener('click', take, true);
+	});
+	// The browser can mute on its own, so the real sound state is polled.
+	$effect(() => {
+		if (!shown) return;
+		const read = () => {
+			const lv = live();
+			heard = src?.kind === 'embed' ? !muted : !!lv && !lv.muted;
+		};
+		read();
+		const t = setInterval(read, 300);
+		return () => clearInterval(t);
+	});
+	// Gives up on the sound stream if it has not taken over in 10 seconds.
+	$effect(() => {
+		if (!up || swapped) return;
+		const t = setTimeout(() => {
+			if (up && !swapped) {
+				dbg('sound stream timed out');
+				dropUp();
+				muted = true;
+			}
+		}, 10000);
+		return () => clearTimeout(t);
+	});
+
+	// Jumps to the start time once the length is known, unless that is near the end.
+	function seed(e: Event) {
+		const v = e.currentTarget as HTMLVideoElement;
+		if (seeded || startAt <= 0.5) return;
+		seeded = true;
+		if (startAt < (v.duration || Infinity) - 1) v.currentTime = startAt;
+	}
+	// Reuses a video that was already started in the background so playback begins at once.
 	function takeWarm(node: HTMLVideoElement) {
 		return untrack(() => takeWarmNow(node));
 	}
@@ -231,6 +269,7 @@
 
 	function armGuard() {
 		clearGuard();
+		// Eight seconds is long enough for a slow start, short enough to try the next source.
 		guard = setTimeout(next, 8000);
 	}
 
@@ -262,6 +301,7 @@
 		return hasSound(src);
 	}
 
+	// Direct sources switch to the sound stream; touch devices on native HLS swap the source in place.
 	function unmute() {
 		if (src?.kind === 'direct' && !swapped && onUnmute(src) === 'switch' && src.pass && !video?.currentSrc.includes('/trailer/stream/')) {
 			muted = false;
@@ -301,15 +341,10 @@
 		onended?.();
 	}
 
-	$effect(() => {
-		void src;
-		void run;
-		if (src) armGuard();
-	});
-
 	function post(func: string, args: unknown[] = []) {
 		frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube-nocookie.com');
 	}
+	// Only messages from our own embed frame are trusted.
 	function onMessage(e: MessageEvent) {
 		if (e.origin !== 'https://www.youtube-nocookie.com' || !frame || e.source !== frame.contentWindow) return;
 		let d: { event?: string; info?: unknown };
@@ -333,52 +368,6 @@
 		}
 	}
 
-	let ctlAt = 0;
-	let ctlBox = $state<HTMLElement>();
-	let expandBtn = $state<HTMLButtonElement>();
-	$effect(() => {
-		const take = (e: MouseEvent) => {
-			if (expandBtn && (e.target as Element | null)?.closest?.('button.expand') === expandBtn) {
-				e.stopImmediatePropagation();
-				if (corner) ctlAt = 0;
-				return expand(e);
-			}
-			const b = (e.target as Element | null)?.closest?.('button[data-act]');
-			if (!b || !ctlBox?.contains(b)) return;
-			e.preventDefault();
-			e.stopImmediatePropagation();
-			ctlAt = Date.now();
-			const act = b.getAttribute('data-act');
-			if (act === 'sound') toggleMute();
-			else if (act === 'pause') togglePause();
-			else if (act === 'replay') replay();
-			else if (act === 'expand') ((ctlAt = 0), expand(e));
-		};
-		window.addEventListener('click', take, true);
-		return () => window.removeEventListener('click', take, true);
-	});
-	let heard = $state(false);
-	$effect(() => {
-		if (!shown) return;
-		const read = () => {
-			const lv = live();
-			heard = src?.kind === 'embed' ? !muted : !!lv && !lv.muted;
-		};
-		read();
-		const t = setInterval(read, 300);
-		return () => clearInterval(t);
-	});
-	$effect(() => {
-		if (!up || swapped) return;
-		const t = setTimeout(() => {
-			if (up && !swapped) {
-				dbg('sound stream timed out');
-				dropUp();
-				muted = true;
-			}
-		}, 10000);
-		return () => clearTimeout(t);
-	});
 	function toggleMute(e?: MouseEvent) {
 		ctlAt = Date.now();
 		e?.preventDefault();
@@ -420,6 +409,7 @@
 		run += 1;
 	}
 
+	// Hands the current time, size and a still frame to the full screen player.
 	function expand(e: MouseEvent) {
 		if (Date.now() - ctlAt < 600) return;
 		e.preventDefault();
@@ -441,6 +431,41 @@
 		dropUp();
 		release?.();
 	});
+
+	// Copies the current frame so full screen can show it while it loads; may fail for cross-origin video.
+	function grab(v: HTMLVideoElement | undefined | null): HTMLCanvasElement | null {
+		if (!v || !v.videoWidth || !v.videoHeight) return null;
+		const c = document.createElement('canvas');
+		c.width = v.videoWidth;
+		c.height = v.videoHeight;
+		try {
+			c.getContext('2d')?.drawImage(v, 0, 0);
+		} catch {
+			return null;
+		}
+		return c;
+	}
+
+	function dropUp() {
+		if (up) dbg('drop sound stream');
+		upDetach?.();
+		upDetach = null;
+		up = null;
+		swapped = false;
+	}
+
+	function dbg(m: string) {
+		if (!debugOn) return;
+		untrack(() => (dbgLines = [...dbgLines.slice(-11), `${(performance.now() / 1000).toFixed(1)}s ${m}`]));
+	}
+	// Starts the sound stream a little ahead of the picture to cover its load time.
+	function switchToPass(url: string) {
+		dbg(`switch to sound stream (video=${!!video} up=${!!up})`);
+		if (!video || up) return;
+		up = { url, start: video.currentTime + 1.2 };
+	}
+
+	const live = () => (swapped ? upVideo : video);
 </script>
 
 <svelte:window onmessage={onMessage} />
@@ -535,12 +560,15 @@
 {/if}
 
 <style>
+	/* Debug log only; never shown without the debug flag. */
 	.dbg { position: fixed; left: 8px; bottom: 8px; z-index: 99999; max-width: 520px; margin: 0; padding: 8px 10px; font: 12px/1.35 ui-monospace, monospace; color: #9f9; background: rgb(0 0 0 / 85%); border-radius: 8px; white-space: pre-wrap; pointer-events: none; }
 	.ui-trailer { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; container-type: size; }
 	.ui-trailer.shown { opacity: 1; }
 	.ui-trailer.quick { transition-duration: var(--dur-fast); }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
+	/* Scales the 16:9 embed so it covers the box like the video does. */
 	iframe { left: 50%; top: 50%; width: max(100%, 177.78cqh); height: max(100%, 56.25cqw); translate: -50% -50%; }
+	/* The sound video sits hidden above the picture until it takes over. */
 	video.up { opacity: 0; z-index: 1; }
 	video.up.swapped { opacity: 1; }
 	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; }

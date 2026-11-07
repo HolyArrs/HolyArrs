@@ -1,4 +1,5 @@
 <script lang="ts">
+	// One titled block on the title page: a fold on phones, a plain section elsewhere.
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import Icon from './Icon.svelte';
@@ -13,8 +14,10 @@
 		children
 	}: { id: string; title: string; testid?: string; primary?: boolean; focusable?: boolean; head?: Snippet; children: Snippet } = $props();
 
+	// Matches the layout breakpoint where sections turn into folds.
 	const PHONE = '(max-width: 767px)';
 	let phone = $state(typeof window !== 'undefined' && window.matchMedia(PHONE).matches);
+	// Re-sync on mount because the first value is a guess before the page is in the browser.
 	onMount(() => {
 		const q = window.matchMedia(PHONE);
 		const sync = () => (phone = q.matches);

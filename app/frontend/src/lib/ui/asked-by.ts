@@ -1,7 +1,10 @@
 
+// Wording and helpers for the "who asked for this title" labels.
+
 export type Asker = { id: number; name: string; asked_at: string; me: boolean };
 export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }> };
 
+// All label text lives here so wording changes in one place.
 export const WORDS = {
 	you: 'You asked',
 	one: (a: string) => `Asked by ${a}`,
@@ -14,16 +17,19 @@ export const WORDS = {
 	listTitle: 'Who asked'
 } as const;
 
+// Falls back to the full name when it is blank so a label never shows empty.
 export function firstName(name: string): string {
 	return (name || '').trim().split(/\s+/)[0] || name;
 }
 
+// Bad dates give an empty string so the caller can skip the date part.
 export function shortDate(iso: string): string {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '';
 	return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
+// Puts the viewer first and counts everyone else as "others".
 export function askedByLine(askers: Asker[]): string {
 	if (!askers.length) return '';
 	const others = askers.filter((a) => !a.me);
@@ -36,6 +42,7 @@ export function askedByLine(askers: Asker[]): string {
 	return WORDS.many(n[0], n.length - 1);
 }
 
+// Tooltip names the first other person, since the viewer already knows their own ask.
 export function askedByTip(askers: Asker[]): string {
 	if (!askers.length) return '';
 	const first = askers[0];
@@ -58,6 +65,7 @@ export function initial(name: string): string {
 	return (firstName(name)[0] || '?').toUpperCase();
 }
 
+// The server caps one request, so ids are deduped and cut to 200.
 export async function loadAskedBy(get: <T>(path: string) => Promise<T>, ids: number[]): Promise<AskedByAnswer> {
 	const uniq = [...new Set(ids.filter((n) => n > 0))].slice(0, 200);
 	if (!uniq.length) return { titles: {} };

@@ -1,10 +1,11 @@
 <script lang="ts">
+	// Review shelf for a title: score summary, source pills, sort pills and review cards.
+	import Shelf from './Shelf.svelte';
+	import Sheet from './Sheet.svelte';
+	import { ordersOf, orderWord, pillState, reviewsPath, scoreText, votesText, type Review, type ReviewsAnswer } from './title-reviews.ts';
 	import { api } from '../core/api.ts';
 	import { date } from '../core/format.ts';
 	import { shownScore } from '../core/rating.ts';
-	import { ordersOf, orderWord, pillState, reviewsPath, scoreText, votesText, type Review, type ReviewsAnswer } from './title-reviews.ts';
-	import Shelf from './Shelf.svelte';
-	import Sheet from './Sheet.svelte';
 
 	let { kind, tmdb }: { kind: 'movie' | 'show'; tmdb: string | null | undefined } = $props();
 
@@ -16,37 +17,23 @@
 	let failed = $state(false);
 	let reading = $state<Review | null>(null);
 	let sheet = $state(false);
-	const hasContent = $derived(!!answer && reviews.length > 0);
 	let seenContent = $state(false);
-	$effect.pre(() => {
-		void tmdb;
-		seenContent = false;
-	});
-	$effect(() => {
-		if (hasContent) seenContent = true;
-	});
 
+	const hasContent = $derived(!!answer && reviews.length > 0);
 	const ps = $derived(pillState(answer?.sources, picked));
 	const orders = $derived(ordersOf(answer?.sources, ps.active));
 	const moreToRead = $derived(!!answer && answer.page < answer.pages);
 
-	function load(page: number, ctl?: AbortController) {
-		const t = tmdb;
-		if (!t) return;
-		loading = true;
-		failed = false;
-		api.get<ReviewsAnswer>(reviewsPath(kind, t, picked, page, order), ctl?.signal)
-			.then((a) => {
-				answer = a;
-				reviews = page > 1 ? [...reviews, ...(a.reviews ?? [])] : (a.reviews ?? []);
-				if (a.source && a.source !== picked) picked = a.source;
-			})
-			.catch(() => {
-				if (!ctl?.signal.aborted) failed = true;
-			})
-			.finally(() => (loading = false));
-	}
-
+	// Resets before render when the title changes so old content does not keep the shelf open.
+	$effect.pre(() => {
+		void tmdb;
+		seenContent = false;
+	});
+	// Remembers that content existed, so an emptied source still shows its pills.
+	$effect(() => {
+		if (hasContent) seenContent = true;
+	});
+	// Reloads page one on any input change and cancels the request still in flight.
 	$effect(() => {
 		void kind;
 		void tmdb;
@@ -57,6 +44,23 @@
 		return () => ctl.abort();
 	});
 
+	function load(page: number, ctl?: AbortController) {
+		const t = tmdb;
+		if (!t) return;
+		loading = true;
+		failed = false;
+		api.get<ReviewsAnswer>(reviewsPath(kind, t, picked, page, order), ctl?.signal)
+			.then((a) => {
+				answer = a;
+				reviews = page > 1 ? [...reviews, ...(a.reviews ?? [])] : (a.reviews ?? []);
+				// The server may switch source when the asked one has nothing.
+				if (a.source && a.source !== picked) picked = a.source;
+			})
+			.catch(() => {
+				if (!ctl?.signal.aborted) failed = true;
+			})
+			.finally(() => (loading = false));
+	}
 	function choose(id: string) {
 		if (id === picked) return;
 		answer = answer && { ...answer, reviews: [] };
@@ -68,8 +72,11 @@
 		reading = r;
 		sheet = true;
 	}
+
 	const initial = (name: string) => (name.trim()[0] ?? '?').toUpperCase();
+	// Same name always gives the same avatar colour.
 	const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+	// Matches the card clamp of 5 lines, so only cut-off text gets a More button.
 	const long = (r: Review) => r.text.length > 260 || r.text.split('\n').length > 5;
 </script>
 
