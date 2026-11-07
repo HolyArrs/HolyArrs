@@ -17,7 +17,7 @@ import (
 // mainPlus is this build's main migrations plus one more.
 func mainPlus(t *testing.T, extra string) fstest.MapFS {
 	t.Helper()
-	src := os.DirFS(filepath.Join("..", "..", "internal", "store", "migrations", "main"))
+	src := os.DirFS(filepath.Join("..", "..", "internal", "core", "database", "migrations", "main"))
 	out := fstest.MapFS{}
 	es, err := fs.ReadDir(src, ".")
 	if err != nil {
