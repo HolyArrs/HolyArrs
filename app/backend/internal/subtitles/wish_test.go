@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestCleanWants(t *testing.T) {
+func TestWish_CleanWants(t *testing.T) {
 	got, err := CleanWants([]Want{{Language: "eng"}, {Language: "es-MX", HearingImpaired: HIOnly}, {Language: "English", Forced: true}})
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestCleanWants(t *testing.T) {
 	}
 }
 
-func TestWishInheritance(t *testing.T) {
+func TestWish_WishInheritance(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
 	db := f.st.Read()
@@ -45,7 +45,7 @@ func TestWishInheritance(t *testing.T) {
 	en := []Want{{Language: "en", HearingImpaired: HINormal}}
 	es := []Want{{Language: "es", HearingImpaired: HIEither}}
 
-	// Nothing set and an empty default: nothing wanted (Bazarr: nothing is
+	// Nothing set and an empty default: nothing wanted (nothing is
 	// searched until a title has a language set).
 	r, err := WishFor(ctx, db, f.show, f.showVer, f.ep1)
 	if err != nil || r.From != FromDefault || len(r.Wants) != 0 {
@@ -117,7 +117,7 @@ func TestWishInheritance(t *testing.T) {
 	}
 }
 
-func TestSettingsRoundTrip(t *testing.T) {
+func TestWish_SettingsRoundTrip(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
 	d := ReadSettings(ctx, f.st.Read())
@@ -140,7 +140,7 @@ func TestSettingsRoundTrip(t *testing.T) {
 	for _, bad := range []func(*Settings){
 		func(s *Settings) { s.PassMarkMovie = 101 },
 		func(s *Settings) { s.HISuffix = "deaf" },
-		// Review 4.16 check (a): the suffix goes into file names, so only
+		// the suffix goes into file names, so only
 		// the three words pass; path pieces and long text never do.
 		func(s *Settings) { s.HISuffix = "../../x" },
 		func(s *Settings) { s.HISuffix = "hi/../../x" },
@@ -170,7 +170,7 @@ func TestSettingsRoundTrip(t *testing.T) {
 	}
 }
 
-func TestNormLanguage(t *testing.T) {
+func TestWish_NormLanguage(t *testing.T) {
 	for in, want := range map[string]string{"eng": "en", "EN": "en", "en-US": "en", "pt_BR": "pt", "ger": "de", "deu": "de", "French": "fr",
 		"und": "", "": "", "zxx": "", "chi": "zh", "zho": "zh", "pob": "pt"} {
 		if got := NormLanguage(in); got != want {

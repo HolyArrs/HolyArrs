@@ -434,7 +434,7 @@ type cached struct {
 	site sites.Site
 }
 
-// pause rests a failing site (design section 4) and records an Event.
+// pause rests a failing site and records an Event.
 func (s *Service) pause(ctx context.Context, r SiteRow, cause error) {
 	var n int
 	var kind string

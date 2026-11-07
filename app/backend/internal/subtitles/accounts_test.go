@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
-func TestAddic7edChallengePausesAndExplains(t *testing.T) {
+func TestAddic7ed_ChallengePausesSite(t *testing.T) {
 	f := newFix(t)
 	wishAll(t, f, Want{Language: "en"})
 	ctx := context.Background()
@@ -97,7 +97,7 @@ func siteState(t *testing.T, f *fix, id int64) (state, reason string, until time
 	return state, r.String, until
 }
 
-func TestOpenSubtitlesSaves(t *testing.T) {
+func TestOpenSubtitles_Saves(t *testing.T) {
 	f := newFix(t)
 	wishAll(t, f, Want{Language: "en"})
 	s, id := accountSvc(t, f, osLab(), mkPass)
@@ -115,7 +115,7 @@ func TestOpenSubtitlesSaves(t *testing.T) {
 
 // A refused sign-in rests the site with login_refused; the password never
 // shows in its Events.
-func TestOpenSubtitlesLoginRefusedPauses(t *testing.T) {
+func TestOpenSubtitles_LoginRefusedPauses(t *testing.T) {
 	f := newFix(t)
 	wishAll(t, f, Want{Language: "en"})
 	s, id := accountSvc(t, f, osLab(), "wrong-made-up-word")
@@ -132,7 +132,7 @@ func TestOpenSubtitlesLoginRefusedPauses(t *testing.T) {
 }
 
 // No downloads left: the site rests until the reset time the site gave.
-func TestOpenSubtitlesQuotaRests(t *testing.T) {
+func TestOpenSubtitles_QuotaRests(t *testing.T) {
 	f := newFix(t)
 	wishAll(t, f, Want{Language: "en"})
 	site := osLab()
@@ -145,7 +145,7 @@ func TestOpenSubtitlesQuotaRests(t *testing.T) {
 	}
 }
 
-func TestAccountKinds(t *testing.T) {
+func TestAccount_Kinds(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
 	v, _ := secrets.Open(ctx, f.st, make([]byte, secrets.KeySize))

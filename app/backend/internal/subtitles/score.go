@@ -38,8 +38,7 @@ type Score struct {
 	Refused string `json:"refused,omitempty"`
 }
 
-// weights per part, for episodes and movies (design/domain/subtitles.md,
-// section 5). Each column adds up to 100.
+// weights gives the points per scored part, as {episode, movie}. Each column adds up to 100.
 var weights = map[string][2]int{
 	"name":       {46, 34},
 	"year":       {22, 16},

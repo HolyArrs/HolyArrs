@@ -1,7 +1,3 @@
-// Package subtitles keeps the subtitles of movies and shows: what each one
-// wishes for, what is already there (built in or beside the video), the
-// search on Subtitle sites, scoring against the Pass mark, saving next to
-// the video, and timing fixes (design/domain/subtitles.md).
 package subtitles
 
 import "strings"

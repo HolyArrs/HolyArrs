@@ -55,7 +55,7 @@ type Settings struct {
 	SyncStepMS  int     `json:"sync_step_ms"`
 }
 
-// DefaultSettings are Bazarr's defaults in our words.
+// DefaultSettings returns the settings used before anyone changes them.
 func DefaultSettings() Settings {
 	return Settings{Languages: []Want{}, PassMarkMovie: 70, PassMarkEpisode: 90, UseBuiltIn: true, HISuffix: "hi",
 		SearchHours: 6, Better: true, BetterHours: 12, BetterDays: 7, Batch: 100, Adaptive: true,

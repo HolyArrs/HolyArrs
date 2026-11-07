@@ -165,7 +165,7 @@ type Have struct {
 	Track           int    `json:"track,omitempty"`
 }
 
-// meets reports whether h is what w wishes for (design section 2).
+// meets reports whether h is what w wishes for.
 func meets(w Want, h Have) bool {
 	if h.Language != w.Language || h.Forced != w.Forced {
 		return false

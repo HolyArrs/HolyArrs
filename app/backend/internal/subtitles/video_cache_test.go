@@ -53,7 +53,7 @@ func builtInRows(t *testing.T, f *fix) []Subtitle {
 	return out
 }
 
-func TestLookSkipsUnchangedVideo(t *testing.T) {
+func TestVideoCache_LookSkipsUnchangedVideo(t *testing.T) {
 	f := newFix(t)
 	b, err := os.ReadFile("container/testdata/lab-built-in.mkv")
 	if err != nil {
@@ -105,7 +105,7 @@ func TestLookSkipsUnchangedVideo(t *testing.T) {
 
 // Turning built-in subtitles off or on reads the video again even when it
 // did not change.
-func TestLookReadsAgainWhenBuiltInSettingsChange(t *testing.T) {
+func TestVideoCache_LookReadsAgainWhenBuiltInSettingsChange(t *testing.T) {
 	f := newFix(t)
 	b, err := os.ReadFile("container/testdata/lab-built-in.mkv")
 	if err != nil {
@@ -153,7 +153,7 @@ func (h *hashSeen) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.next.ServeHTTP(w, r)
 }
 
-func TestSearchUsesStoredHashForUnchangedVideo(t *testing.T) {
+func TestVideoCache_SearchUsesStoredHashForUnchangedVideo(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
 	p := f.abs(movieRel)

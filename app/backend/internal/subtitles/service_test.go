@@ -73,7 +73,7 @@ func eventsOf(t *testing.T, st *database.Store, kind string) []domain.Event {
 
 // A lab file with built-in English (and forced Spanish) is not searched
 // for those; French is.
-func TestBuiltInCountsTowardTheWish(t *testing.T) {
+func TestSearch_BuiltInCountsTowardTheWish(t *testing.T) {
 	f := newFix(t)
 	b, err := os.ReadFile(filepath.Join("container", "testdata", "lab-built-in.mkv"))
 	if err != nil {
@@ -108,7 +108,7 @@ func TestBuiltInCountsTowardTheWish(t *testing.T) {
 }
 
 // A lab movie gets its subtitle file, named with its language, and an Event.
-func TestSaveNamesAndEvents(t *testing.T) {
+func TestService_SaveNamesAndEvents(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -155,7 +155,7 @@ func TestSaveNamesAndEvents(t *testing.T) {
 
 // Weak subtitles are skipped and the wish is tried again later; a zipped
 // answer is unpacked; a found file is never overwritten.
-func TestPassMarkZipAndFoundFiles(t *testing.T) {
+func TestService_PassMarkZipAndFoundFiles(t *testing.T) {
 	f := newFix(t)
 	site := &fakesite.Site{Subs: []fakesite.Sub{
 		{ID: "weak", Kind: "movie", Language: "en", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.720p.WEB.x264-OTHER", Format: "srt", Text: fakesite.Cue("x", 1000)},
@@ -202,7 +202,7 @@ func TestPassMarkZipAndFoundFiles(t *testing.T) {
 }
 
 // A better subtitle replaces the saved one, which goes to the holding folder.
-func TestBetterSubtitle(t *testing.T) {
+func TestService_BetterSubtitle(t *testing.T) {
 	f := newFix(t)
 	site := &fakesite.Site{Subs: []fakesite.Sub{
 		{ID: "ok", Kind: "movie", Language: "en", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.1080p.BluRay.x264-OTHER", Format: "srt", Text: fakesite.Cue("first", 1000)},
@@ -248,7 +248,7 @@ func TestBetterSubtitle(t *testing.T) {
 }
 
 // A failing site rests and is not asked again until the rest is over.
-func TestSitePause(t *testing.T) {
+func TestService_SitePause(t *testing.T) {
 	f := newFix(t)
 	site := fakesite.Lab()
 	site.Fail = 503
@@ -284,7 +284,7 @@ func TestSitePause(t *testing.T) {
 }
 
 // Timing fixes and turning a subtitle down.
-func TestSyncAndTurnDown(t *testing.T) {
+func TestService_SyncAndTurnDown(t *testing.T) {
 	f := newFix(t)
 	site := fakesite.Lab()
 	s, q := svc(t, f, site)
@@ -319,7 +319,7 @@ func TestSyncAndTurnDown(t *testing.T) {
 	if len(*q) != 1 {
 		t.Fatalf("no new search queued: %+v", *q)
 	}
-	// Review 4.16 (6): events carry paths inside the Library folder.
+	// events carry paths inside the Library folder.
 	if es := eventsOf(t, f.st, EventTurnedDown); len(es) != 1 || !relInLib(es[0].Data["moved_to"]) {
 		t.Fatalf("turned-down event %+v", es)
 	}
@@ -333,7 +333,7 @@ func TestSyncAndTurnDown(t *testing.T) {
 // A placed import queues a search; a better copy holds the old File's
 // subtitles aside and queues the new File; the missing schedule finds
 // Files not looked at and due wishes.
-func TestEventsAndSchedules(t *testing.T) {
+func TestService_EventsAndSchedules(t *testing.T) {
 	f := newFix(t)
 	s, q := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -402,7 +402,7 @@ func TestEventsAndSchedules(t *testing.T) {
 	}
 }
 
-func TestMusicAndOddFiles(t *testing.T) {
+func TestService_MusicAndOddFiles(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	if _, err := s.Search(context.Background(), 9999, SearchOptions{}, domain.System); err != ErrNotFound {
@@ -431,9 +431,9 @@ func (f *fix) slotOf(t *testing.T, fileID int64) int64 {
 	return id
 }
 
-// Review 4.16 (7): at most MaxCandidatesPerSite candidates of one site are
+// at most MaxCandidatesPerSite candidates of one site are
 // scored.
-func TestSearchCapsCandidatesPerSite(t *testing.T) {
+func TestService_SearchCapsCandidatesPerSite(t *testing.T) {
 	f := newFix(t)
 	site := &fakesite.Site{}
 	for i := range MaxCandidatesPerSite + 50 {
@@ -455,9 +455,9 @@ func fetchedRow(fileID int64, lang string) *Subtitle {
 	return &Subtitle{FileID: fileID, Language: lang, Place: "beside", Origin: "fetched", State: "present", Sync: map[string]any{}}
 }
 
-// Review 4.16 (5): when the last rename of a save fails, the file it held
+// when the last rename of a save fails, the file it held
 // aside goes back to its name and its row stays present.
-func TestSaveFailurePutsHeldFileBack(t *testing.T) {
+func TestService_SaveFailurePutsHeldFileBack(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -481,10 +481,10 @@ func TestSaveFailurePutsHeldFileBack(t *testing.T) {
 	}
 }
 
-// Review 4.16 (5): a save cut off after its file is in place but before its
+// a save cut off after its file is in place but before its
 // row is written is finished by the next look: the file is ours (fetched),
 // never "found", so a later better subtitle may replace it.
-func TestSaveCutOffBeforeRowIsRecoveredOnLook(t *testing.T) {
+func TestService_SaveCutOffBeforeRowIsRecoveredOnLook(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -513,7 +513,7 @@ func TestSaveCutOffBeforeRowIsRecoveredOnLook(t *testing.T) {
 	}
 }
 
-func TestReplacementCutOffAfterInstallRecoversNewSubtitle(t *testing.T) {
+func TestService_ReplacementCutOffAfterInstallRecoversNewSubtitle(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -549,7 +549,7 @@ func TestReplacementCutOffAfterInstallRecoversNewSubtitle(t *testing.T) {
 	}
 }
 
-func TestFileMatchesProofRejectsWrongSizeAndLinks(t *testing.T) {
+func TestService_FileMatchesProofRejectsWrongSizeAndLinks(t *testing.T) {
 	dir := t.TempDir()
 	large := filepath.Join(dir, "large.srt")
 	f, err := os.Create(large)
@@ -578,7 +578,7 @@ func TestFileMatchesProofRejectsWrongSizeAndLinks(t *testing.T) {
 	}
 }
 
-func TestSaveCutOffAfterHoldRestoresOldSubtitleOnLook(t *testing.T) {
+func TestService_SaveCutOffAfterHoldRestoresOldSubtitleOnLook(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -616,7 +616,7 @@ func TestSaveCutOffAfterHoldRestoresOldSubtitleOnLook(t *testing.T) {
 	}
 }
 
-func TestSaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testing.T) {
+func TestService_SaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
@@ -664,9 +664,9 @@ func TestSaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testing.T) {
 	}
 }
 
-// Review 4.16 check (b): a save error sent on Events and the live stream
+// a save error sent on Events and the live stream
 // names paths inside the Library folder only, never where it is on disk.
-func TestFailedEventHidesLibraryFolder(t *testing.T) {
+func TestService_FailedEventHidesLibraryFolder(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()

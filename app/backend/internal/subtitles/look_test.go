@@ -9,7 +9,7 @@ import (
 
 // New default languages list what every File misses without asking any
 // site: the look Job reads the Files never looked at, in batches.
-func TestLookJobListsMissingWithoutSites(t *testing.T) {
+func TestLookJob_ListsMissingWithoutSites(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
 	s := &Service{Store: f.st}

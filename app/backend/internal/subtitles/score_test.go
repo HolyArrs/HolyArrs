@@ -6,8 +6,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
-// The scoring test set of design/domain/subtitles.md, section 9.
-func TestScoringTestSet(t *testing.T) {
+// The fixed set of scoring cases.
+func TestScore_FixedSet(t *testing.T) {
 	ep := Video{Kind: "episode", Title: "Quiet Harbour", Year: 2019, Season: 1, Episode: 2, ReleaseName: "Quiet.Harbour.S01E02.1080p.WEB.h264-GRP"}
 	mv := Video{Kind: "movie", Title: "The Lantern", Year: 2010, ReleaseName: "The.Lantern.2010.1080p.BluRay.x264-GRP"}
 	en := Want{Language: "en", HearingImpaired: HINormal}
@@ -59,7 +59,7 @@ func TestScoringTestSet(t *testing.T) {
 	}
 }
 
-func TestScoreHints(t *testing.T) {
+func TestScore_Hints(t *testing.T) {
 	mv := Video{Kind: "movie", Title: "The Lantern", Aliases: []string{"La Linterna"}, Year: 2010, ReleaseName: "x", FPS: 23.976}
 	base := sites.Candidate{Title: "La Linterna", Year: 2010}
 	s := ScoreCandidate(mv, Want{Language: "en", HearingImpaired: HIOnly}, base)
@@ -81,7 +81,7 @@ func TestScoreHints(t *testing.T) {
 	}
 }
 
-func TestRankTies(t *testing.T) {
+func TestRank_Ties(t *testing.T) {
 	cs := []Scored{
 		{Candidate: sites.Candidate{Key: "a", Downloads: 5}, Score: Score{Total: 80}, Priority: 25, Order: 0},
 		{Candidate: sites.Candidate{Key: "b", Trusted: true}, Score: Score{Total: 80}, Priority: 25, Order: 1},
@@ -99,9 +99,9 @@ func TestRankTies(t *testing.T) {
 	}
 }
 
-// Review 4.16 (7): only the first MaxReleaseNames names of a candidate are
+// only the first MaxReleaseNames names of a candidate are
 // scored; an exact name past the cap is not seen.
-func TestScoreCapsReleaseNames(t *testing.T) {
+func TestScore_CapsReleaseNames(t *testing.T) {
 	mv := Video{Kind: "movie", Title: "The Lantern", Year: 2010, ReleaseName: "The.Lantern.2010.1080p.BluRay.x264-GRP"}
 	var names []string
 	for range MaxReleaseNames {
