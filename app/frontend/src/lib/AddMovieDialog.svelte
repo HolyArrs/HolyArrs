@@ -8,7 +8,8 @@
 	import { loadChoices, saveChoices, secondVersion } from './library.ts';
 	import { builtInDefaults, gateChoices as gates, startChoices } from './title-defaults.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
-	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './core/types.ts';
+	import type { LibraryFolder, LookupMovie, PickRulesView, TitleView } from './core/types.ts';
+	import type { TitleDefaults } from './mediafiles/index.ts';
 
 	// Add a movie to the Library: folder, Pick rules, Release gate, Keep up
 	// to date, Search when added and an optional second Version. Used by Search and

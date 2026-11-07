@@ -15,7 +15,8 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/lists.ts';
-	import type { LibraryFolder, NeverAddEntry, OutsideList, PickRulesView } from '#lib/core/types.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { NeverAddEntry, OutsideList } from '#lib/requests/index.ts';
 
 	let lists = $state<OutsideList[]>([]);
 	let folders = $state<LibraryFolder[]>([]);

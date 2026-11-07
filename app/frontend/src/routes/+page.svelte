@@ -17,8 +17,9 @@
 	import { agoLong, bytes, duration, percent } from '#lib/core/format.ts';
 	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
 	import type { Fresh } from '#lib/ui/fresh.ts';
-	import type { DownloadRow } from '#lib/downloaders.ts';
-	import type { Ask, Health, HealthChecks, LibraryFolder } from '#lib/core/types.ts';
+	import type { DownloadRow } from '#lib/core/types.ts';
+	import type { Ask, LibraryFolder } from '#lib/core/types.ts';
+	import type { Health, HealthChecks } from '#lib/health/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';

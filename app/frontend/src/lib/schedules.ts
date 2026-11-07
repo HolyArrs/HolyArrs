@@ -1,6 +1,6 @@
 // The Schedules page: intervals in words, states and the unit an interval
 // is edited in.
-import type { StageState } from './core/types.ts';
+import type { StageState } from './health/index.ts';
 
 export interface ScheduleRow {
 	kind: string;

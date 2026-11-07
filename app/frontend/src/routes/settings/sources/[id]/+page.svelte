@@ -13,7 +13,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { testCount } from '#lib/core/test-tag.ts';
-	import type { SourceCall, SourceDay, SourceView } from '#lib/core/types.ts';
+	import type { SourceCall, SourceDay, SourceView } from '#lib/sources/index.ts';
 
 	let src = $state<SourceView | null>(null);
 	let days = $state<SourceDay[]>([]);

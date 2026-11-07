@@ -62,7 +62,8 @@
 		showProgress,
 		type ReleaseScope
 	} from './shows.ts';
-	import type { Ask, EpisodeView, EventPage, EventRecord, LookupShow, PickRulesView, TitleView } from './core/types.ts';
+	import type { Ask, EpisodeView, EventPage, EventRecord, PickRulesView, TitleView } from './core/types.ts';
+	import type { LookupShow } from './shows/index.ts';
 	import AskShowDialog from './AskShowDialog.svelte';
 
 	let {

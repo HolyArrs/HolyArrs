@@ -9,7 +9,9 @@
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from './explore.ts';
 	import { seasonWords } from './shows.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
-	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from './core/types.ts';
+	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
+	import type { GateDefaults } from './mediafiles/index.ts';
+	import type { LookupShow, ShowSettings } from './shows/index.ts';
 	import AddMovieDialog from './AddMovieDialog.svelte';
 	import AddShowDialog from './AddShowDialog.svelte';
 	import AskShowDialog from './AskShowDialog.svelte';

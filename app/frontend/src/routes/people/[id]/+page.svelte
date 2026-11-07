@@ -19,7 +19,7 @@
 	import { detailPath } from '#lib/title-details.ts';
 	import { followsByTmdb } from '#lib/explore.ts';
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
-	import type { AskLimit } from '#lib/core/types.ts';
+	import type { AskLimit } from '#lib/requests/index.ts';
 	import { loadWikiFacts, type WikiFacts } from '#lib/ui/wiki-facts.ts';
 	import { setTopCrumbs } from '#lib/core/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';

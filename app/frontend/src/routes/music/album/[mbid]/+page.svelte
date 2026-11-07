@@ -28,7 +28,8 @@
 	import { followHint, followLabel, followPath, setFollow } from '#lib/ui/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/core/types.ts';
+	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 
 	// An album's page: the cover beside its title and actions, the tracklist
 	// with what the Library has, its other editions, and where to go next.

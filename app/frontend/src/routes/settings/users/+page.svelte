@@ -15,7 +15,7 @@
 	import { ago, date } from '#lib/core/format.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sessions from '#lib/Sessions.svelte';
-	import type { AskSettings, LimitKind, PersonLimit } from '#lib/core/types.ts';
+	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
 	import { kindAsks } from '#lib/requests.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { kidLabel, ratingChoices } from '#lib/kid.ts';

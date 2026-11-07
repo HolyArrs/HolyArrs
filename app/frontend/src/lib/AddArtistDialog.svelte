@@ -8,7 +8,8 @@
 	import { api, message } from './core/api.ts';
 	import { pickId } from './library.ts';
 	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from './music/music.ts';
-	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './core/types.ts';
+	import type { LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
+	import type { LookupArtist, MusicSettings } from './music/index.ts';
 
 	let {
 		folders,

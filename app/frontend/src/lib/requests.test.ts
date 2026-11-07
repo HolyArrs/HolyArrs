@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './requests.ts';
-import type { AskKindLimit, AskLimit, AskState } from './core/types.ts';
+import type { AskState } from './core/types.ts';
+import type { AskKindLimit, AskLimit } from './requests/index.ts';
 
 describe('requests words', () => {
 	it('joins names', () => {

@@ -8,7 +8,8 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice } from '#lib/downloaders.ts';
+	import { type Decision, type DownloadRow } from '#lib/core/types.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
 	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dlstore.ts';
@@ -19,7 +20,8 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { ImportRecord, TitleView } from '#lib/core/types.ts';
+	import type { TitleView } from '#lib/core/types.ts';
+	import type { ImportRecord } from '#lib/downloads/index.ts';
 	import DlSections from '#lib/downloads/DlSections.svelte';
 	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';

@@ -2,7 +2,7 @@
 // person. Asked again on page changes, on Slot news and every minute.
 
 import { api } from './core/api.ts';
-import type { Decision } from './downloaders.ts';
+import type { Decision } from './core/types.ts';
 
 export const decisions = $state<{ count: number; items: Decision[] }>({ count: 0, items: [] });
 

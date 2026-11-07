@@ -24,8 +24,10 @@
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
 	import { listReports } from '#lib/reports.ts';
-	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/core/types.ts';
-	import type { DownloadRow } from '#lib/downloaders.ts';
+	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { AskLimit } from '#lib/requests/index.ts';
+	import type { SearchView } from '#lib/sources/index.ts';
+	import type { DownloadRow } from '#lib/core/types.ts';
 	import { liveByTitle, liveFacts, stepFacts, type TitleLive } from '#lib/approvals/live.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { albumWords } from '#lib/music/music.ts';

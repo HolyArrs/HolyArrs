@@ -14,7 +14,7 @@ export interface SlotView {
 	reason?: string;
 	active_download_id?: number;
 	/** The active (or last) Download in plain words. */
-	download?: import('../downloaders.ts').DownloadView;
+	download?: DownloadView;
 	file?: Omit<CopyFile, "ID" | "VersionID"> & Partial<Pick<CopyFile, "ID" | "VersionID">> | null;
 }
 
@@ -120,93 +120,12 @@ export interface AlbumSummary {
 	state: string;
 }
 
-export interface PressingTrack {
-	id: string;
-	recording_id: string;
-	disc: number;
-	number: number;
-	position: number;
-	name: string;
-	length_ms?: number;
-}
-
-/** PressingView is one Pressing (edition) of an album with its tracks. */
-export interface PressingView {
-	id: number;
-	mbid: string;
-	name: string;
-	status: string;
-	country?: string;
-	date?: string;
-	disambiguation?: string;
-	formats: string[];
-	track_count: number;
-	chosen: boolean;
-	chosen_by?: string;
-	tracks: PressingTrack[];
-}
-
-export interface TrackView {
-	id: number;
-	disc: number;
-	number: number;
-	name?: string;
-	length_ms?: number;
-	recording_id?: string;
-	release_date?: string;
-	keep_up_to_date: boolean;
-	dropped?: boolean;
-	ids: Record<string, string>;
-	slots: EpisodeSlot[];
-}
-
-/** AskableAlbum is an album of a looked-up artist as the ask dialog shows it. */
-export interface AskableAlbum {
-	mbid: string;
-	name: string;
-	type: string;
-	secondary_types: string[];
-	release_date?: string;
-	kept: boolean;
-	left_out: boolean;
-}
-
 export interface AskAlbum {
 	mbid: string;
 	name: string;
 	year?: number;
 	/** The songs (recording ids) an approver kept; absent: every song. */
 	songs?: string[];
-}
-
-/** LookupArtist is a MusicBrainz artist with what the Library knows of it. */
-export interface LookupArtist {
-	mbid: string;
-	name: string;
-	sort_name?: string;
-	type?: string;
-	disambiguation?: string;
-	country?: string;
-	status: string;
-	score?: number;
-	/** the artist's picture (music picture route) */
-	image?: string;
-	title_id?: number;
-	never_add?: boolean;
-	ask?: { id: number; state: AskState; state_label: string; mine: boolean; people: number; albums?: AskAlbum[] };
-	ask_albums?: AskableAlbum[];
-}
-
-/** MusicSettings are the add-an-artist defaults and MusicBrainz settings. */
-export interface MusicSettings {
-	album_choice: string;
-	new_albums: string;
-	album_types: string[];
-	secondary_types: string[];
-	release_statuses: string[];
-	pressing_rule: string;
-	musicbrainz_url: string;
-	cache_hours: number;
 }
 
 /** SeasonSummary is one season of a show with its episode counts. */
@@ -276,33 +195,6 @@ export interface EpisodeView {
 	dropped?: boolean;
 	ids: Record<string, string>;
 	slots: EpisodeSlot[];
-}
-
-/** LookupShow is a looked-up show (without episodes) with what the Library knows. */
-export interface LookupShow {
-	source: string;
-	name: string;
-	year?: number;
-	overview?: string;
-	status: string;
-	network?: string;
-	runtime?: number;
-	ids: Record<string, string>;
-	poster?: string;
-	seasons?: { number: number; name?: string }[];
-	title_id?: number;
-	never_add?: boolean;
-	/** The open request for it, if someone asked. */
-	ask?: AskBrief;
-}
-
-export interface ShowSettings {
-	season_choice: string;
-	new_seasons: string;
-	episode_order: string;
-	details_source: string;
-	keep_specials: boolean;
-	episode_wait_minutes: number;
 }
 
 /** VersionView is one wanted copy of a title, such as HD or 4K. */
@@ -416,49 +308,6 @@ export interface Ask {
 	/** Why an approved ask will not reach the Library, when the server knows. */
 	problem?: string;
 	mine: boolean;
-}
-
-/** The kinds a weekly limit counts: each person has one limit per kind. */
-export type LimitKind = 'movies' | 'shows' | 'music';
-
-export interface AskKindLimit {
-	/** 0 is no limit. */
-	per_week: number;
-	used: number;
-	left: number;
-	/** When the next ask of this kind frees up, if none are left. */
-	retry_at?: string;
-	no_limit: boolean;
-}
-
-export interface AskLimit {
-	/** No limit at all (people who may approve). */
-	no_limit: boolean;
-	movies: AskKindLimit;
-	shows: AskKindLimit;
-	music: AskKindLimit;
-}
-
-/** A person's own weekly limit per kind; null takes that kind's default. */
-export interface PersonLimit {
-	movies_per_week: number | null;
-	shows_per_week: number | null;
-	music_per_week: number | null;
-}
-
-export interface AskSettings {
-	movies_per_week: number;
-	shows_per_week: number;
-	music_per_week: number;
-	library_folder_id: number;
-	pick_rules_id: number;
-	search_on_approve: boolean;
-	show_library_folder_id: number;
-	show_pick_rules_id: number;
-	music_library_folder_id: number;
-	music_pick_rules_id: number;
-	/** People may have their Plex watchlist asked for as them. */
-	plex_watchlists?: boolean;
 }
 
 export interface AppMessage {
@@ -601,63 +450,6 @@ export interface Choice {
 	warnings: string[];
 }
 
-/** SearchView is one search for Home: how far it is and what it found. */
-export interface SearchView {
-	job_id: number;
-	kind: 'search_slot' | 'search_missing' | 'feed_check' | 'search_season' | 'search_album';
-	state: string;
-	by_hand: boolean;
-	only_show: boolean;
-	title_id?: number;
-	title_name?: string;
-	version?: string;
-	/** Shows: the episode (S01E02) or season (S01) searched. */
-	episode?: string;
-	/** Artists: the album searched. */
-	album?: string;
-	progress: number;
-	note?: string;
-	started_at?: string;
-	ended_at?: string;
-	found: number;
-	refused: number;
-	outcome?: 'chosen' | 'held' | 'shown' | 'none' | 'failed' | 'episodes' | 'album';
-	picked?: string;
-	error?: string;
-}
-
-export interface SearchSettings {
-	feed_check_minutes: number;
-	missing_search_count: number;
-	missing_search_better: boolean;
-	try_next_downloader: boolean;
-	missing_search_shows: boolean;
-	/** all: every episode a season pack holds must gain; any: one is enough. */
-	season_pack_upgrade: 'all' | 'any';
-	/** rank: a season pack wins ties; always: a passing pack comes first. */
-	season_pack_prefer: 'rank' | 'always';
-	multi_season_packs: boolean;
-	/** The nightly and bulk searches cover albums. */
-	missing_search_music: boolean;
-	/** A Release with a whole discography may fill an album. */
-	music_discography_packs: boolean;
-	/** Files a Release may lack against the album's tracks; -1 off. */
-	album_track_tolerance: number;
-	/** Early and fake Releases (4.3.5). */
-	refuse_early_releases: boolean;
-	early_release_grace_hours: number;
-	refuse_tiny_releases: boolean;
-	/** Least video and track file placed at import; 0 uses the fixed floors. */
-	import_min_video_mb: number;
-	import_min_track_kb: number;
-	/** The fixed least sizes at import and the judged-size check; off leaves empty files and the sizes set. */
-	import_size_floors: boolean;
-	/** Automatic searches hold a Release of unknown size or dates for a person; off warns only. */
-	hold_unknown_releases: boolean;
-	/** Length taken for an episode of unknown length by the size floor; 1 to 240. */
-	episode_default_minutes: number;
-}
-
 export interface Download {
 	ID: number;
 	DownloaderID: number;
@@ -671,16 +463,6 @@ export interface Download {
 	SavePath: string;
 	StartedAt: string | null;
 	FinishedAt: string | null;
-}
-
-export interface ImportRecord {
-	ID: number;
-	State: string;
-	/** The download it imported (none for a by-hand import of a folder). */
-	DownloadID?: number | null;
-	CreatedAt: string;
-	Plan?: { source_file: string; target_path?: string; confidence?: number }[] | null;
-	Result?: { source_file: string; outcome: string; placed_by?: string; error?: string }[] | null;
 }
 
 export interface EventRecord {
@@ -724,85 +506,6 @@ export interface HealthCheck {
 	checked_at: string;
 	/** The state the flap guard has confirmed (what Alerts and Home go by); older servers leave it out. */
 	confirmed?: 'ok' | 'warning' | 'error';
-}
-
-/** One stage or linked app and its state (GET /health/states). */
-export interface StageState {
-	key: string;
-	kind: 'stage' | 'source' | 'downloader' | 'subtitle_site' | 'media_server' | 'part';
-	name: string;
-	state: 'off' | 'starting' | 'running' | 'retrying' | 'failed';
-	reason: string;
-	since: string;
-	stuck: boolean;
-	restarts: number;
-}
-
-export interface HealthStates {
-	safe_mode: boolean;
-	states: StageState[];
-}
-
-export interface HealthChecks {
-	checks: HealthCheck[];
-	worst: 'ok' | 'warning' | 'error';
-	/** Torrent clients the Downloads reader cannot serve now (downloads sync on only). */
-	sync?: { id: number; name: string; health: 'degraded' | 'checking'; stale?: boolean; seen_at?: string }[];
-}
-
-export interface HealthSettings {
-	every_minutes: number;
-	flap_guard: number;
-	low_space_mb: number;
-	update_check_url: string;
-	update_check?: boolean;
-	update_check_every_days?: number;
-	update_check_local?: boolean;
-	update_prerelease?: boolean;
-	update_check_default?: string;
-}
-
-/** One Job running or waiting right now (GET /jobs/active). */
-export interface ActiveJob {
-	id: number;
-	kind: string;
-	label: string;
-	state: 'running' | 'queued';
-	/** 0 to 1; 0 while the Job has not said how far it is. */
-	progress: number;
-	note?: string;
-	queued_at: string;
-	started_at?: string;
-	by_person: boolean;
-}
-
-export interface UpdateInfo {
-	on: boolean;
-	feed: string;
-	checked_at?: string;
-	latest?: string;
-	newer: boolean;
-	link?: string;
-	no_release?: boolean;
-	problem?: string;
-	version: string;
-}
-
-export interface MediaServerView {
-	id: number;
-	name: string;
-	kind: 'plex' | 'jellyfin' | 'emby';
-	url: string;
-	token: string;
-	enabled: boolean;
-	on_import: boolean;
-	on_rename: boolean;
-	on_delete: boolean;
-	path_from: string;
-	path_to: string;
-	allow_local_network: boolean;
-	last_ok_at?: string;
-	last_error?: string;
 }
 
 export interface CalendarEntry {
@@ -862,110 +565,6 @@ export interface CalendarFollower {
 	me?: boolean;
 }
 
-export interface Health {
-	ok: boolean;
-	version: string;
-	schema: number;
-	uptime_s: number;
-	write_wait_p95_ms: number;
-	write_wait_samples: number;
-	writes: number;
-	sources: { name: string; state: string }[] | null;
-	downloaders: { name: string; state: string }[] | null;
-	live_clients: number;
-	url_base?: string;
-}
-
-export interface SourceHealth {
-	state: 'working' | 'unreachable' | 'auth_failed' | 'disabled';
-	text: string;
-	until?: string;
-	/** Why it waits: slowed, down, blocked or key. */
-	reason?: 'slowed' | 'down' | 'blocked' | 'key';
-	/** A site's protection stops it: bot_check or site_ban (#106). */
-	block?: string;
-}
-
-export interface SourceUse {
-	feed: boolean;
-	auto_search: boolean;
-	hand_search: boolean;
-}
-
-export interface SourceLimits {
-	searches_per_window?: number;
-	grabs_per_window?: number;
-	window_seconds?: number;
-	gap_ms?: number;
-	timeout_ms?: number;
-}
-
-export interface SourceSummary {
-	last_success: string | null;
-	last_failure: string | null;
-	calls_24h: number;
-	failures_24h: number;
-	avg_ms_24h: number;
-}
-
-export interface SourceView {
-	id: number;
-	name: string;
-	protocol: 'torrent' | 'usenet';
-	format: 'torznab' | 'newznab' | 'rss' | 'bridge';
-	url: string;
-	api_key: string;
-	use_for: SourceUse;
-	kinds: string[] | null;
-	categories: Record<string, number[]> | null;
-	min_seeders: number | null;
-	limits: SourceLimits;
-	/** With any, the Source serves only titles sharing one (#108). */
-	tags?: string[];
-	state: string;
-	health: SourceHealth;
-	priority: number;
-	allow_local_network: boolean;
-	proxy: string;
-	proxy_password: string;
-	proxy_allow_local_network: boolean;
-	summary: SourceSummary;
-}
-
-export interface SourceDay {
-	day: string;
-	calls: number;
-	failures: number;
-	grabs: number;
-	avg_ms: number;
-}
-
-export interface SourceCall {
-	at: string;
-	op: 'caps' | 'search' | 'feed' | 'test';
-	ok: boolean;
-	ms: number;
-	error_kind: string;
-}
-
-export interface BackupInfo {
-	name: string;
-	kind: string;
-	created_at: string;
-	size: number;
-	detail?: string;
-}
-
-export interface ApiKey {
-	id: number;
-	label: string;
-	hint: string;
-	created_at: string;
-	last_used_at?: string;
-	/** What the key may reach; ['mcp'] is an AI key. */
-	scopes?: string[];
-}
-
 export interface PickRulesView {
 	id: number;
 	name: string;
@@ -981,114 +580,6 @@ export interface PickRulesStep {
 	allowed: boolean;
 }
 
-/** PickRulesSize bounds a Release's size in bytes; with per_minute, per minute of runtime. */
-export interface PickRulesSize {
-	min: number;
-	max: number;
-	per_minute: boolean;
-}
-
-/** PickRulesBody is what a set of Pick rules takes (internal/domain/pickrules.go). */
-export interface PickRulesBody {
-	steps: PickRulesStep[];
-	good_enough_at: string;
-	traits: { trait: string; points: number }[];
-	must_have: string[];
-	never: string[];
-	min_points: number;
-	good_enough_points?: number;
-	/** By step; "*" is every step. */
-	size_limits: Record<string, PickRulesSize>;
-	protocol: { prefer: 'torrent' | 'usenet' | 'either'; wait_minutes_torrent: number; wait_minutes_usenet: number; skip_wait_at_good_enough: boolean };
-	language: { wanted: string[]; original_ok: boolean };
-	order: 'quality_then_points' | 'points_then_quality';
-	upgrade_min_points: number;
-	proper_policy: { mode: 'take_any' | 'same_group_only' | 'prefer_only' | 'ignore'; max_age_days?: number };
-}
-
-/** OwnTrait is one of your own traits (#97): a test on the Release name or its release group; Pick rules name it by key (own:<id>). */
-export interface OwnTrait {
-	id: number;
-	key: string;
-	name: string;
-	match: 'name' | 'group';
-	/** Plain words (any case) or /pattern/. */
-	terms: string[];
-}
-
-/** PickRulesUse counts what uses one set of Pick rules. */
-export interface PickRulesUse {
-	versions: number;
-	library_folders: number;
-	outside_lists: number;
-	wishlist: number;
-	title_defaults: number;
-}
-
-/** PickRulesDetail is one set of Pick rules with its body and where it is used. */
-export interface PickRulesDetail {
-	id: number;
-	name: string;
-	kinds: string[];
-	preset: boolean;
-	revision: number;
-	body: PickRulesBody;
-	in_use: PickRulesUse;
-}
-
-/** KindDefaults is what a new movie or show gets; 0 means the first folder and the folder's own Pick rules. */
-export interface KindDefaults {
-	library_folder_id: number;
-	pick_rules_id: number;
-	keep_up_to_date: boolean;
-	search_on_add: boolean;
-}
-
-/** TitleDefaults are the Movies and TV defaults (GET /settings/title-defaults). */
-export interface TitleDefaults {
-	movie: KindDefaults;
-	show: KindDefaults;
-}
-
-export interface GateDefaults {
-	release_gate: string;
-	gate_delay_days: number;
-	bulk_search_respects_gate: boolean;
-}
-
-/** OutsideList is a TMDB or Trakt list whose movies are added on a schedule. */
-export interface OutsideList {
-	id: number;
-	name: string;
-	kind: 'tmdb_list' | 'trakt_list';
-	/** What the list adds: movie or show. */
-	title_kind: 'movie' | 'show';
-	ref: string;
-	library_folder_id: number;
-	pick_rules_id: number | null;
-	keep_up_to_date: boolean;
-	search_on_add: boolean;
-	release_gate: string;
-	/** Show lists: which seasons a new show keeps up to date, and new seasons (all, none). */
-	seasons: string;
-	new_seasons: string;
-	enabled: boolean;
-	sync_every_hours: number;
-	last_synced_at?: string;
-	last_result: string;
-	last_error: string;
-}
-
-/** NeverAddEntry is a title outside lists must never add. */
-export interface NeverAddEntry {
-	id: number;
-	kind: string;
-	ids: Record<string, string>;
-	name: string;
-	reason: string;
-	created_at: string;
-}
-
 /** TitleCopy is a movie's main file as the Library list shows it. */
 export interface TitleCopy {
 	file_id: number;
@@ -1098,4 +589,126 @@ export interface TitleCopy {
 	container: string;
 	audio_languages: string[];
 	protected: boolean;
+}
+
+/** DownloadView is a Download in plain words (the movie page). */
+export interface DownloadView {
+	id: number;
+	state: string;
+	label: string;
+	text: string;
+	progress: number;
+	speed: number;
+	/** Upload speed, seeds and peers (torrents; older servers omit them). */
+	up_speed?: number;
+	seeds?: number;
+	peers?: number;
+	seeds_total?: number;
+	peers_total?: number;
+	eta?: number;
+	active: boolean;
+}
+
+/** DownloadRow is one row of the Downloads screen. */
+export interface DownloadRow extends DownloadView {
+	phase: string;
+	name: string;
+	title_id?: number;
+	title: string;
+	year?: number;
+	version: string;
+	downloader: string;
+	/** The folder or file the Downloader holds it in, as it sees it. */
+	path?: string;
+	/** The Downloader's adapter (qbittorrent, sabnzbd...) and its protocol. */
+	downloader_kind?: string;
+	protocol?: string;
+	size: number;
+	started_at?: string;
+	finished_at?: string;
+	updated_at: string;
+	slot_state?: string;
+	can_act: boolean;
+	/** HolyArrs may not change this row's Downloader: only its own records (Remove, Mark failed). */
+	client_locked?: boolean;
+	/** A failed copy HolyArrs turned down and moved on from (searching again or another copy on its way). */
+	replaced?: boolean;
+	kind?: 'movie' | 'show' | 'artist';
+	episodes?: EpisodeLine[];
+	covers?: string;
+	album?: string;
+	/** Optional artwork supplied with an activity row; Library metadata remains the fallback. */
+	artwork?: string;
+	/** A seeding torrent's share ratio, when the Downloader reports one. */
+	ratio?: number;
+	/** A client torrent's own seeding rules (-2 the Downloader's rule, -1 none). */
+	/** A client torrent's finer state: checking, moving, errored, missing (files gone) or idle_seed (finished, nobody asking now). */
+	/** A client torrent's place in the Downloader's queue (absent: not queued). */
+	queue_pos?: number;
+	/** The host of the tracker a client torrent works with now. */
+	tracker?: string;
+	/** Who asked for the row's title ("Added in <client>" when nobody did; absent with no title). */
+	requested_by?: string;
+	/** The Source the release came from (downloads HolyArrs sent). */
+	source_name?: string;
+	source_id?: number;
+	/** When the Usenet post was made (RFC3339). */
+	posted_at?: string;
+	/** Trackers not all well: error, warning, or announce (none answering). */
+	tracker_problem?: 'error' | 'warning' | 'announce';
+	/** A downloading torrent's full copies in the swarm (under 1: nobody holds every piece). */
+	availability?: number;
+	/** A client torrent's own speed caps in bytes per second (absent: none). */
+	limit_down?: number;
+	limit_up?: number;
+	client_hint?: 'checking' | 'moving' | 'errored' | 'missing' | 'idle_seed' | 'verifying' | 'repairing' | 'unpacking' | 'finishing' | 'script';
+	limits?: { ratio: number; seeding_minutes: number; inactive_minutes: number; action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed' };
+	/** Read straight from the client's own list: no HolyArrs download id; addressed by downloader_id and hash. */
+	client_item?: boolean;
+	/** HolyArrs did not send it (a torrent added in the client by hand or by another app). */
+	outside?: boolean;
+	/** An outside torrent matched to a Library title: title, kind and covers come from that match. */
+	linked?: boolean;
+	downloader_id?: number;
+	hash?: string;
+	/** The client's own category for it. */
+	category?: string;
+	/** The row's key in push updates: "<downloader id>:<external id>". */
+	live_key?: string;
+}
+
+/** EpisodeLine is one episode (or track) a download covers, with where its
+ *  Slot is; a track carries its disc in season and its number in episode. */
+export interface EpisodeLine {
+	slot_id: number;
+	season: number;
+	episode: number;
+	label: string;
+	name?: string;
+	state: string;
+	track?: boolean;
+}
+
+/** Decision is one movie on Needs a decision. */
+export interface Decision {
+	slot_id: number;
+	title_id: number;
+	title: string;
+	year?: number;
+	version: string;
+	versions: number;
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent';
+	reason: string;
+	release_id?: number;
+	release_name?: string;
+	has_copy: boolean;
+	since: string;
+	kind?: 'movie' | 'show' | 'artist';
+	episode?: EpisodeLine;
+	album?: string;
+	download_id?: number;
+	pack_slot_ids?: number[];
+	pack?: EpisodeLine[];
+	/** Optional artwork supplied with a decision; Library metadata remains the fallback. */
+	artwork?: string;
 }

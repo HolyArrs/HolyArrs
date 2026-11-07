@@ -15,7 +15,8 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import OwnTraits from './OwnTraits.svelte';
-	import type { PickRulesUse, PickRulesView } from '#lib/core/types.ts';
+	import type { PickRulesView } from '#lib/core/types.ts';
+	import type { PickRulesUse } from '#lib/downloads/index.ts';
 
 	// People without the settings permission see the rules but cannot change them.
 	const mayEdit = $derived(session.can('settings'));

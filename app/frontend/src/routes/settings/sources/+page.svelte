@@ -21,7 +21,7 @@
 	import SourceCheck from '#lib/ui/SourceCheck.svelte';
 	import ConnectBridge from './ConnectBridge.svelte';
 	import { emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources.ts';
-	import type { SourceHealth, SourceView } from '#lib/core/types.ts';
+	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 
 	let sources = $state<SourceView[]>([]);
 	let loaded = $state(false);

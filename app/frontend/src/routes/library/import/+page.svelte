@@ -36,7 +36,9 @@
 		type JobView
 	} from '#lib/organise.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { LibraryFolder, LookupArtist, LookupMovie, LookupShow } from '#lib/core/types.ts';
+	import type { LibraryFolder, LookupMovie } from '#lib/core/types.ts';
+	import type { LookupArtist } from '#lib/music/index.ts';
+	import type { LookupShow } from '#lib/shows/index.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);

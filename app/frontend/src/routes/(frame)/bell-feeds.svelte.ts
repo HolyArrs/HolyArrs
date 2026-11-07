@@ -10,7 +10,7 @@ import { to } from '#lib/core/paths.ts';
 import { cut, messageWords } from './bell-words.ts';
 import { inbox } from '#lib/requests.svelte.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
-import type { UpdateInfo } from '#lib/core/types.ts';
+import type { UpdateInfo } from '#lib/updates/index.ts';
 import type { PinnedAlert } from '#lib/attention-alerts.ts';
 
 /** Pinned rows from these feeds (Settings warnings are added by the panel). */

@@ -5,7 +5,7 @@
 // toRev applies only on top of exactly fromRev. Older patches are already
 // in the snapshot and are dropped; a patch past the rev the page holds
 // means messages were missed, so the page reads its snapshot again.
-import type { DownloadRow } from '../downloaders.ts';
+import type { DownloadRow } from '../core/types.ts';
 
 export type DlPatch = {
 	kind: 'patch';

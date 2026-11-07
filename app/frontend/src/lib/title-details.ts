@@ -4,7 +4,8 @@
 // which also says whether the Library has it and who asked.
 import { ApiError } from './core/api.ts';
 import { shownScore } from './core/rating.ts';
-import type { AskBrief, LookupMovie, LookupShow } from './core/types.ts';
+import type { AskBrief, LookupMovie } from './core/types.ts';
+import type { LookupShow } from './shows/index.ts';
 
 export type DetailKind = 'movie' | 'show';
 

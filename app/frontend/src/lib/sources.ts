@@ -1,5 +1,5 @@
 // Source helpers, kept apart from the pages so they can be tested.
-import type { SourceHealth, SourceView } from './core/types.ts';
+import type { SourceHealth, SourceView } from './sources/index.ts';
 import type { Tone } from './core/format.ts';
 
 export const healthWords: Record<SourceHealth['state'], string> = {

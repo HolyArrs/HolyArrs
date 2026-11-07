@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
-import type { DownloadRow } from '../downloaders.ts';
+import type { DownloadRow } from '../core/types.ts';
 
 const row = (o: Partial<DownloadRow>): DownloadRow => ({
 	id: 1, phase: 'downloading', state: 'downloading', label: '', text: '', progress: 0, speed: 0, active: false,

@@ -45,7 +45,7 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/core/types.ts';
+	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/downloads/index.ts';
 
 	interface Form {
 		name: string;

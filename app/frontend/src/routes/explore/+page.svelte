@@ -60,7 +60,9 @@
 	} from '#lib/explore.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
-	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/core/types.ts';
+	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { GateDefaults } from '#lib/mediafiles/index.ts';
+	import type { LookupShow, ShowSettings } from '#lib/shows/index.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import QuickAsk from '#lib/QuickAsk.svelte';

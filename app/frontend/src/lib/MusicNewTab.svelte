@@ -11,7 +11,8 @@
 	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music/music-trending.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './core/types.ts';
+	import type { Ask, LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
+	import type { LookupArtist, MusicSettings } from './music/index.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';

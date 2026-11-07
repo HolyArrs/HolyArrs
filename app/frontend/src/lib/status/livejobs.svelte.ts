@@ -5,7 +5,7 @@
 // stream of progress pushes cannot starve it.
 import { api } from '../core/api.ts';
 import { live } from '../core/live.svelte.ts';
-import type { ActiveJob } from '../core/types.ts';
+import type { ActiveJob } from '../health/index.ts';
 import type { StatusRow } from './status.ts';
 
 /** A finished (or running) job as the history route gives it. */

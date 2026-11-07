@@ -50,7 +50,8 @@
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/core/trailer/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/core/trailer/hero-video.ts';
 	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/core/types.ts';
+	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { LookupArtist, MusicSettings } from '#lib/music/types.ts';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
 	import ArtistLibraryTab from '#lib/music/ArtistLibrary.svelte';
 	import type { Snippet } from 'svelte';

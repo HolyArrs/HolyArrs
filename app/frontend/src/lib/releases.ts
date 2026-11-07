@@ -1,6 +1,7 @@
 // Words for Releases, their verdicts and searches, shared by the Movie
 // page, the Held and Turned down lists and Home.
-import type { Reason, ReleaseView, SearchView } from './core/types.ts';
+import type { Reason, ReleaseView } from './core/types.ts';
+import type { SearchView } from './sources/index.ts';
 
 const outcomeWords: Record<string, string> = {
 	chosen: 'Chosen',

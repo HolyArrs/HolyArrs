@@ -16,7 +16,8 @@
 	import { decided } from './requests.ts';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 	import { albumWords, artistProgress } from './music/music.ts';
-	import type { Ask, LookupArtist, TitleView } from './core/types.ts';
+	import type { Ask, TitleView } from './core/types.ts';
+	import type { LookupArtist } from './music/index.ts';
 
 	let {
 		title,

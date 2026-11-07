@@ -11,7 +11,7 @@
 // Stalled and Seeding are one-word row statuses only: a stalled download
 // counts under In progress > Downloading, a seeding one under Done, and a
 // failed one only under Problems.
-import type { DownloadRow } from '../downloaders.ts';
+import type { DownloadRow } from '../core/types.ts';
 
 export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
 

@@ -1,6 +1,6 @@
 // Usenet bits of the Downloads page: which rows can be retried, the words
 // for a job's steps after its bytes are in, and the Servers and Repair tabs.
-import type { DownloadRow } from '../downloaders.ts';
+import type { DownloadRow } from '../core/types.ts';
 
 /** One step of a finished job, as /usenet answers it. */
 export type JobStage = { stage: string; lines: string[] };

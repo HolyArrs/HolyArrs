@@ -1,4 +1,5 @@
 // Downloader helpers, kept apart from the pages so they can be tested.
+import type { DownloadRow, Decision } from './core/types.ts';
 import type { Tone } from './core/format.ts';
 
 export interface DownloaderHealth {
@@ -65,24 +66,6 @@ export interface DownloaderAttempt {
 /** pendingAttempts returns only sends that still need the owner's decision. */
 export function pendingAttempts(attempts: DownloaderAttempt[] | undefined): DownloaderAttempt[] {
 	return (attempts ?? []).filter((attempt) => attempt.state === 'pending');
-}
-
-/** DownloadView is a Download in plain words (the movie page). */
-export interface DownloadView {
-	id: number;
-	state: string;
-	label: string;
-	text: string;
-	progress: number;
-	speed: number;
-	/** Upload speed, seeds and peers (torrents; older servers omit them). */
-	up_speed?: number;
-	seeds?: number;
-	peers?: number;
-	seeds_total?: number;
-	peers_total?: number;
-	eta?: number;
-	active: boolean;
 }
 
 export { testVersion } from './core/test-tag.ts';
@@ -192,74 +175,6 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 	};
 }
 
-/** DownloadRow is one row of the Downloads screen. */
-export interface DownloadRow extends DownloadView {
-	phase: string;
-	name: string;
-	title_id?: number;
-	title: string;
-	year?: number;
-	version: string;
-	downloader: string;
-	/** The folder or file the Downloader holds it in, as it sees it. */
-	path?: string;
-	/** The Downloader's adapter (qbittorrent, sabnzbd...) and its protocol. */
-	downloader_kind?: string;
-	protocol?: string;
-	size: number;
-	started_at?: string;
-	finished_at?: string;
-	updated_at: string;
-	slot_state?: string;
-	can_act: boolean;
-	/** HolyArrs may not change this row's Downloader: only its own records (Remove, Mark failed). */
-	client_locked?: boolean;
-	/** A failed copy HolyArrs turned down and moved on from (searching again or another copy on its way). */
-	replaced?: boolean;
-	kind?: 'movie' | 'show' | 'artist';
-	episodes?: EpisodeLine[];
-	covers?: string;
-	album?: string;
-	/** Optional artwork supplied with an activity row; Library metadata remains the fallback. */
-	artwork?: string;
-	/** A seeding torrent's share ratio, when the Downloader reports one. */
-	ratio?: number;
-	/** A client torrent's own seeding rules (-2 the Downloader's rule, -1 none). */
-	/** A client torrent's finer state: checking, moving, errored, missing (files gone) or idle_seed (finished, nobody asking now). */
-	/** A client torrent's place in the Downloader's queue (absent: not queued). */
-	queue_pos?: number;
-	/** The host of the tracker a client torrent works with now. */
-	tracker?: string;
-	/** Who asked for the row's title ("Added in <client>" when nobody did; absent with no title). */
-	requested_by?: string;
-	/** The Source the release came from (downloads HolyArrs sent). */
-	source_name?: string;
-	source_id?: number;
-	/** When the Usenet post was made (RFC3339). */
-	posted_at?: string;
-	/** Trackers not all well: error, warning, or announce (none answering). */
-	tracker_problem?: 'error' | 'warning' | 'announce';
-	/** A downloading torrent's full copies in the swarm (under 1: nobody holds every piece). */
-	availability?: number;
-	/** A client torrent's own speed caps in bytes per second (absent: none). */
-	limit_down?: number;
-	limit_up?: number;
-	client_hint?: 'checking' | 'moving' | 'errored' | 'missing' | 'idle_seed' | 'verifying' | 'repairing' | 'unpacking' | 'finishing' | 'script';
-	limits?: { ratio: number; seeding_minutes: number; inactive_minutes: number; action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed' };
-	/** Read straight from the client's own list: no HolyArrs download id; addressed by downloader_id and hash. */
-	client_item?: boolean;
-	/** HolyArrs did not send it (a torrent added in the client by hand or by another app). */
-	outside?: boolean;
-	/** An outside torrent matched to a Library title: title, kind and covers come from that match. */
-	linked?: boolean;
-	downloader_id?: number;
-	hash?: string;
-	/** The client's own category for it. */
-	category?: string;
-	/** The row's key in push updates: "<downloader id>:<external id>". */
-	live_key?: string;
-}
-
 /** rowPath is the API path of a row's client controls: a HolyArrs download by its id, a client item by Downloader and hash. */
 export function rowPath(r: Pick<DownloadRow, 'id' | 'client_item' | 'downloader_id' | 'hash'>): string {
 	return r.client_item && r.hash ? `/downloaders/${r.downloader_id}/items/${r.hash}` : `/downloads/${r.id}`;
@@ -268,18 +183,6 @@ export function rowPath(r: Pick<DownloadRow, 'id' | 'client_item' | 'downloader_
 /** kindOf is a row's library type; a client item HolyArrs does not know has none. */
 export function kindOf(r: Pick<DownloadRow, 'kind' | 'client_item'>): 'movie' | 'show' | 'artist' | '' {
 	return r.kind || (r.client_item ? '' : 'movie');
-}
-
-/** EpisodeLine is one episode (or track) a download covers, with where its
- *  Slot is; a track carries its disc in season and its number in episode. */
-export interface EpisodeLine {
-	slot_id: number;
-	season: number;
-	episode: number;
-	label: string;
-	name?: string;
-	state: string;
-	track?: boolean;
 }
 
 /** manyWords says whether a download fills many Slots of one Title (a show's
@@ -365,30 +268,6 @@ export function removeStart(s: Pick<DownloaderSettings, 'remove_delete_files' | 
 /** removeBody is what is sent; search again counts only with Turned down. */
 export function removeBody(c: RemoveChoice): RemoveChoice {
 	return { delete_files: c.delete_files, turn_down: c.turn_down, search_again: c.turn_down && c.search_again };
-}
-
-/** Decision is one movie on Needs a decision. */
-export interface Decision {
-	slot_id: number;
-	title_id: number;
-	title: string;
-	year?: number;
-	version: string;
-	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent';
-	reason: string;
-	release_id?: number;
-	release_name?: string;
-	has_copy: boolean;
-	since: string;
-	kind?: 'movie' | 'show' | 'artist';
-	episode?: EpisodeLine;
-	album?: string;
-	download_id?: number;
-	pack_slot_ids?: number[];
-	pack?: EpisodeLine[];
-	/** Optional artwork supplied with a decision; Library metadata remains the fallback. */
-	artwork?: string;
 }
 
 /** decisionName names what waits: the movie (and year) or the show and episode. */

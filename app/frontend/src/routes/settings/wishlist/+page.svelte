@@ -11,7 +11,8 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import type { AskSettings, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { AskSettings } from '#lib/requests/index.ts';
 
 	let settings = $state<AskSettings>({
 		movies_per_week: 10,

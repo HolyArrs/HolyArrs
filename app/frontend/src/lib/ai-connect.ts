@@ -5,7 +5,7 @@
 // apps refuse browser sign-in, so the page makes a key for the app and fills
 // it in. Cloud apps (Claude app, ChatGPT, Gemini) reach HolyArrs from the
 // internet, so they need a public https address.
-import type { ApiKey } from './core/types.ts';
+import type { ApiKey } from './arrapi/index.ts';
 import { APP_DATA, type AppData, type AppStep } from './ai-apps.ts';
 
 /** The scope an AI key holds, and nothing else. */

@@ -1,6 +1,6 @@
 // problem picks the few words the Status cell shows after the status word
 // when a download is at risk; the tooltip keeps the full line.
-import type { DownloadRow } from '../downloaders.ts';
+import type { DownloadRow } from '../core/types.ts';
 import { protocolOf } from './size.ts';
 import { stageOf } from './status-tabs.ts';
 

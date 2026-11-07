@@ -1,5 +1,5 @@
 // Source health in words and tones, told apart by why a Source waits.
-import type { SourceHealth } from './core/types.ts';
+import type { SourceHealth } from './sources/index.ts';
 import type { Tone } from './core/format.ts';
 import { healthWords, sourceTone } from './sources.ts';
 

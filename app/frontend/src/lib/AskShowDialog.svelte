@@ -5,7 +5,8 @@
 	import Button from './ui/Button.svelte';
 	import { api, message, ApiError } from './core/api.ts';
 	import { seasonName, seasonWords } from './shows.ts';
-	import type { Ask, LookupShow } from './core/types.ts';
+	import type { Ask } from './core/types.ts';
+	import type { LookupShow } from './shows/index.ts';
 
 	let {
 		onasked,

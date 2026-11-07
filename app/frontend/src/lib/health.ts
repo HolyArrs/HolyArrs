@@ -1,5 +1,6 @@
 // Health checks: words for their kinds and results.
-import type { HealthCheck, StageState } from './core/types.ts';
+import type { HealthCheck } from './core/types.ts';
+import type { StageState } from './health/index.ts';
 
 const kinds: Record<string, string> = {
 	library_folder: 'Library folder',

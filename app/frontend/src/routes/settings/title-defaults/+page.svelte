@@ -17,7 +17,9 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { GateDefaults, LibraryFolder, PickRulesView, ShowSettings, TitleDefaults } from '#lib/core/types.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import type { GateDefaults, TitleDefaults } from '#lib/mediafiles/index.ts';
+	import type { ShowSettings } from '#lib/shows/index.ts';
 
 	interface Parts {
 		defaults: TitleDefaults;

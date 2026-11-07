@@ -19,7 +19,8 @@
 	import { partNeeds, partStops, type PartName, type PartsAnswer, type PartView } from '#lib/parts.ts';
 	import { isConfirm, linkAction, linkTarget, type Confirm } from '#lib/controls.ts';
 	import { linkLabel, runTone, runWord, splitStates } from '#lib/health.ts';
-	import type { EventRecord, HealthStates, StageState } from '#lib/core/types.ts';
+	import type { EventRecord } from '#lib/core/types.ts';
+	import type { HealthStates, StageState } from '#lib/health/index.ts';
 
 	let parts = $state<PartsAnswer | null>(null);
 	let states = $state<HealthStates | null>(null);

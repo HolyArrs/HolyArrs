@@ -1,6 +1,6 @@
 // Phone helpers for the Downloads list: the second line under a row's title,
 // and the long press that starts picking rows.
-import type { DownloadRow, EpisodeLine } from '../downloaders.ts';
+import type { DownloadRow, EpisodeLine } from '../core/types.ts';
 
 type SubRow = Pick<DownloadRow, 'kind' | 'year' | 'covers' | 'album' | 'title' | 'name'> & { episodes?: Pick<EpisodeLine, 'season' | 'episode' | 'label' | 'name'>[] };
 

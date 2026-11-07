@@ -36,7 +36,9 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import { Orbit, SkRail, SkGrid } from '#lib/ui/sk/index.ts';
 	import { plainReason } from '#lib/core/plain.ts';
-	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
+	import type { LookupShow } from '#lib/shows/index.ts';
 	import type { PersonSummary } from '#lib/people.ts';
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
 	import { appPicture, artistHref } from '#lib/music/music-pages.ts';

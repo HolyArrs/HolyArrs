@@ -17,7 +17,8 @@
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
 	import { to } from './core/paths.ts';
 	import SongLine from './ui/SongLine.svelte';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './core/types.ts';
+	import type { Ask, LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
+	import type { LookupArtist, MusicSettings } from './music/index.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
 	import IconButton from './ui/IconButton.svelte';

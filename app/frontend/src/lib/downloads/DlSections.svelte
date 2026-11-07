@@ -43,8 +43,10 @@
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../core/motion.ts';
 	import { DUR, easeIn, easeOut, sheetIn, sheetOut } from '../core/transitions.ts';
-	import { kindOf, manyWords, rowName, rowPath, type Decision, type DownloadRow } from '../downloaders.ts';
-	import type { ImportRecord, TitleView } from '../core/types.ts';
+	import { kindOf, manyWords, rowName, rowPath } from '../downloaders.ts';
+	import { type Decision, type DownloadRow } from '../core/types.ts';
+	import type { TitleView } from '../core/types.ts';
+	import type { ImportRecord } from './types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, shortReason, stageOf, statusHint, statusWord, stepLine, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';

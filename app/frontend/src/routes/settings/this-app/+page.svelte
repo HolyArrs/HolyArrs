@@ -15,7 +15,7 @@
 	import { ago, bytes, dateTime, duration, words } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import type { Health } from '#lib/core/types.ts';
+	import type { Health } from '#lib/health/index.ts';
 
 	// App-wide settings kept here: picture storage, the install count and
 	// History keep times. Autoplay trailers and the sign-in art live on

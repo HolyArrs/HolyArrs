@@ -15,7 +15,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import type { OwnTrait } from '#lib/core/types.ts';
+	import type { OwnTrait } from '#lib/downloads/index.ts';
 
 	let { mayEdit }: { mayEdit: boolean } = $props();
 

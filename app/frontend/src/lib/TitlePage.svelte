@@ -10,7 +10,9 @@
 	import { seasonWords } from '#lib/shows.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
 	import { preloadHero } from '#lib/core/tmdb-image.ts';
-	import type { Ask, EventRecord, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/core/types.ts';
+	import type { Ask, EventRecord, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { GateDefaults } from '#lib/mediafiles/index.ts';
+	import type { LookupShow, ShowSettings } from '#lib/shows/index.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';

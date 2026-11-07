@@ -9,7 +9,8 @@
 	import { to } from '../core/paths.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { RELEASE_PAGES, releaseLink } from '../update.ts';
-	import type { HealthCheck, UpdateInfo } from '../core/types.ts';
+	import type { HealthCheck } from '../core/types.ts';
+	import type { UpdateInfo } from '../updates/index.ts';
 	import Button from '../ui/Button.svelte';
 	import Releases from './Releases.svelte';
 	import GoBack from './GoBack.svelte';

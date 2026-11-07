@@ -11,7 +11,9 @@
 	import { detailsSources, episodeOrders, seasonChoices } from './shows.ts';
 	import { builtInDefaults, startChoices } from './title-defaults.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
-	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from './core/types.ts';
+	import type { LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
+	import type { LookupShow, ShowSettings } from './shows/index.ts';
+	import type { TitleDefaults } from './mediafiles/index.ts';
 
 	let {
 		folders,

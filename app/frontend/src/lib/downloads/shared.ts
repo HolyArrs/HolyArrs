@@ -1,5 +1,6 @@
 // The artwork and the name a Downloads row uses.
-import { manyWords, rowName, type DownloadRow } from '../downloaders.ts';
+import { manyWords, rowName } from '../downloaders.ts';
+import { type DownloadRow } from '../core/types.ts';
 import type { TitleView } from '../core/types.ts';
 
 /** poster is the row's own artwork, else its Title's first poster. */

@@ -14,7 +14,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { BackupInfo } from '#lib/core/types.ts';
+	import type { BackupInfo } from '#lib/backups/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
 	type Preset = 'balanced' | 'light' | 'careful';

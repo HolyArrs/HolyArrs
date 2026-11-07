@@ -1,6 +1,7 @@
 // Movies and TV defaults: what a new movie or show gets, and where the add
 // dialogs start. Kept apart from the pages so it can be tested.
-import type { LibraryFolder, PickRulesView, TitleDefaults } from './core/types.ts';
+import type { LibraryFolder, PickRulesView } from './core/types.ts';
+import type { TitleDefaults } from './mediafiles/index.ts';
 
 export type TitleKind = 'movie' | 'show';
 

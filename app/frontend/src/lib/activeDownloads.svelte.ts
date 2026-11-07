@@ -2,7 +2,8 @@
 // progress. Same source as the Downloads page (/downloads/view).
 
 import { api } from './core/api.ts';
-import { nowPhases, type DownloadRow } from './downloaders.ts';
+import { nowPhases } from './downloaders.ts';
+import { type DownloadRow } from './core/types.ts';
 
 export const activeDownloads = $state<{ count: number; percent: number }>({ count: 0, percent: 0 });
 

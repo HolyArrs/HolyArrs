@@ -4,7 +4,8 @@
 	import Button from './ui/Button.svelte';
 	import { api, message, ApiError } from './core/api.ts';
 	import { albumKind, albumWords, albumYear } from './music/music.ts';
-	import type { Ask, AskableAlbum, LookupArtist } from './core/types.ts';
+	import type { Ask } from './core/types.ts';
+	import type { AskableAlbum, LookupArtist } from './music/index.ts';
 
 	let {
 		onasked,

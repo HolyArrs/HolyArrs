@@ -15,7 +15,8 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
-	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/core/types.ts';
+	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { TrackView } from '#lib/music/types.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from '#lib/music/music.ts';

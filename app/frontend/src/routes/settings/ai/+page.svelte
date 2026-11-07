@@ -15,7 +15,7 @@
 	import { ago, date } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { getBase } from '#lib/core/paths.ts';
-	import type { ApiKey } from '#lib/core/types.ts';
+	import type { ApiKey } from '#lib/arrapi/index.ts';
 	import {
 		AI_SCOPE,
 		CHECK_QUESTION,

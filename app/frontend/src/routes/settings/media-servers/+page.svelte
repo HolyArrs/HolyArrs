@@ -13,7 +13,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import type { MediaServerView } from '#lib/core/types.ts';
+	import type { MediaServerView } from '#lib/mediaservers/index.ts';
 
 	type Kind = MediaServerView['kind'];
 	const kindWord: Record<Kind, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };

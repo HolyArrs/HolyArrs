@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { decisionName, episodeStateWords, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords, type Decision, type DownloadRow } from './downloaders.ts';
+import { decisionName, episodeStateWords, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
+import { type Decision, type DownloadRow } from './core/types.ts';
 import { downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 
 const saved: DownloaderView = {

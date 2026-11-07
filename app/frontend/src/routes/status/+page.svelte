@@ -11,7 +11,9 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { checkMetadata, metadataHealth } from '#lib/metadata-health.svelte.ts';
-	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/core/types.ts';
+	import type { AlertView } from '#lib/core/types.ts';
+	import type { HealthChecks, HealthStates } from '#lib/health/index.ts';
+	import type { OutsideList } from '#lib/requests/index.ts';
 	import type { ScheduleRow } from '#lib/schedules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';

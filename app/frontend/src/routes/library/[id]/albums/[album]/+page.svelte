@@ -36,7 +36,8 @@
 	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength } from '#lib/music/music.ts';
 	import { NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/reask.ts';
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
-	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/core/types.ts';
+	import type { AlbumSummary, EventPage, EventRecord, TitleView } from '#lib/core/types.ts';
+	import type { PressingView, TrackView } from '#lib/music/index.ts';
 	import ReportSheet from '#lib/reports/ReportSheet.svelte';
 	import { hasFile } from '#lib/reports.ts';
 

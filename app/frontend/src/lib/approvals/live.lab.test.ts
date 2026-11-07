@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { liveByTitle, liveFacts } from "./live.ts";
 import { lifecycle } from "./lifecycle.ts";
 import lab from "./testdata/lab139.json";
-import type { Ask, SearchView } from "../core/types.ts";
-import type { DownloadRow } from "../downloaders.ts";
+import type { Ask } from "../core/types.ts";
+import type { SearchView } from "../sources/index.ts";
+import type { DownloadRow } from "../core/types.ts";
 
 type Snap = {
   searches: { running?: SearchView[] };

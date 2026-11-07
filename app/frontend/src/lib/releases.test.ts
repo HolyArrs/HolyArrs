@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chooseWarnings, facts, feedMinutesOk, keyReasons, listedName, pager, searchLine, verdict, verdictTone } from './releases.ts';
-import type { ReleaseView, SearchView } from './core/types.ts';
+import type { ReleaseView } from './core/types.ts';
+import type { SearchView } from './sources/index.ts';
 
 function rel(over: Partial<ReleaseView> = {}): ReleaseView {
 	return {

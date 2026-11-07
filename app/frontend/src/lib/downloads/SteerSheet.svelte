@@ -5,7 +5,7 @@
 	import Button from '../ui/Button.svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import type { DownloadRow } from '../downloaders.ts';
+	import type { DownloadRow } from '../core/types.ts';
 	import { byClient, bytesOf, checkLimits, kbOf, modeOf, valueOf, type LimitMode, type ShareLimits, type SteerMode } from './manage.ts';
 
 	let { open = $bindable(false), mode, rows, ondone }: { open?: boolean; mode: SteerMode; rows: DownloadRow[]; ondone?: () => void } = $props();

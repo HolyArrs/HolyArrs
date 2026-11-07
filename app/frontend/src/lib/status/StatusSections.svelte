@@ -17,7 +17,9 @@
 	import RunsTimeline from './RunsTimeline.svelte';
 	import Updates from './Updates.svelte';
 	import WhyNote from './WhyNote.svelte';
-	import type { Health, HealthCheck, UpdateInfo } from '../core/types.ts';
+	import type { HealthCheck } from '../core/types.ts';
+	import type { Health } from '../health/index.ts';
+	import type { UpdateInfo } from '../updates/index.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {

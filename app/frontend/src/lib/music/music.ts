@@ -1,6 +1,7 @@
 // Words and small rules for the music screens: album choices and kinds,
 // album and artist progress, track lengths and Pressing names.
-import type { AlbumSummary, ArtistInfo, AskAlbum, PressingView } from '../core/types.ts';
+import type { AlbumSummary, ArtistInfo, AskAlbum } from '../core/types.ts';
+import type { PressingView } from './types.ts';
 import { to } from '../core/paths.ts';
 
 /** albumChoices are the add-an-artist choices of which albums to keep up to date. */

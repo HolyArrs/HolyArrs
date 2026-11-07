@@ -11,7 +11,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { feedMinutesOk } from '#lib/releases.ts';
-	import type { SearchSettings } from '#lib/core/types.ts';
+	import type { SearchSettings } from '#lib/sources/index.ts';
 
 	let settings = $state<SearchSettings>({
 		feed_check_minutes: 15,

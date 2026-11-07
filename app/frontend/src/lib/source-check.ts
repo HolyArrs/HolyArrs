@@ -1,4 +1,4 @@
-import type { SourceHealth } from './core/types.ts';
+import type { SourceHealth } from './sources/index.ts';
 import type { Tone } from './core/format.ts';
 import { sourceTone } from './sources.ts';
 

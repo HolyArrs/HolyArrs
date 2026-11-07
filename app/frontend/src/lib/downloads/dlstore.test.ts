@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DownloadRow } from '../downloaders.ts';
+import type { DownloadRow } from '../core/types.ts';
 import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type DlHealth, type DlPatch } from './dlstore.ts';
 
 const row = (over: Partial<DownloadRow>): DownloadRow =>
