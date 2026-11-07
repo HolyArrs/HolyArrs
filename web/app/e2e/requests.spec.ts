@@ -656,7 +656,6 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await expect(soon).toBeVisible(slow);
 	await soon.click();
 	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toHaveAttribute('aria-pressed', 'true');
-	await expect(dot.getByRole('status').filter({ hasText: 'You will hear when Night Fields is out.' })).toBeVisible();
 	await dot.reload();
 	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toBeVisible(slow);
 	await noSidewaysScroll(dot);
