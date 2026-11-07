@@ -1,0 +1,22 @@
+{
+  "body": {
+    "name": "string",
+    "sendUpdatesToClient": "bool",
+    "trigger": "string",
+    "updateScheduledTask": "bool"
+  },
+  "commandName": "string",
+  "duration": "string",
+  "ended": "string",
+  "id": "number",
+  "name": "string",
+  "priority": "string",
+  "queued": "string",
+  "result": "string",
+  "sendUpdatesToClient": "bool",
+  "started": "string",
+  "stateChangeTime": "string",
+  "status": "string",
+  "trigger": "string",
+  "updateScheduledTask": "bool"
+}
