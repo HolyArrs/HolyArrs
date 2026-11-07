@@ -22,6 +22,9 @@
 	import DlBar from './DlBar.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlStatus from './DlStatus.svelte';
+	import DlTabsView from './DlTabsView.svelte';
+	import { PaneDetail } from './pane-detail.svelte.ts';
+	import { CONN_HINT, CONN_WORD, tabsOf, type PaneTab } from './pane-facts.ts';
 	import GhostEmpty from './GhostEmpty.svelte';
 	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
@@ -147,241 +150,6 @@
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
-	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-	// The detail tabs follow the download's kind: a torrent has peers and
-	// trackers, a Usenet job its servers; a job's verify, repair and unpack
-	// steps sit at the top of its Log, where they land when they happen.
-	const TORRENT_TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
-	const USENET_TABS = ['Info', 'Servers', 'Log'] as const;
-	type PaneTab = (typeof TORRENT_TABS)[number] | (typeof USENET_TABS)[number];
-	const tabsOf = (r: DownloadRow): readonly PaneTab[] => (protocolOf(r) === 'torrent' ? TORRENT_TABS : USENET_TABS);
-	// Selection and folder state for the Files, Peers and Trackers tables.
-	let sel = $state<Record<string, string>>({});
-	let closed = $state<Record<string, boolean>>({});
-	// qBittorrent's file priorities: 0 skip, 1 normal, 6 high, 7 maximum.
-	const PRIOS: { v: number; label: string }[] = [{ v: 0, label: 'Skip' }, { v: 1, label: 'Normal' }, { v: 6, label: 'High' }, { v: 7, label: 'Maximum' }];
-	// The Files tab: a filter box (Ctrl+F while the tab shows, Esc clears) and
-	// a selection of files and folders (Ctrl or Cmd click, Shift range) that
-	// gets one priority at once.
-	let fq = $state('');
-	let fsel = $state<Set<string>>(new Set());
-	let fAnchor = '';
-	let fqEl = $state<HTMLInputElement>();
-	$effect(() => {
-		// Another download opened: its files start unfiltered and unpicked.
-		void openId;
-		fq = '';
-		fsel = new Set();
-	});
-	function fileClick(e: MouseEvent | KeyboardEvent, r: DownloadRow, keys: string[], key: string) {
-		sel[`${r.id}:f`] = key;
-		if (e.ctrlKey || e.metaKey) {
-			const n = new Set(fsel);
-			if (n.has(key)) n.delete(key);
-			else n.add(key);
-			fsel = n;
-			fAnchor = key;
-		} else if (e.shiftKey && fAnchor && keys.includes(fAnchor)) {
-			const [a, b] = [keys.indexOf(fAnchor), keys.indexOf(key)].sort((x, y) => x - y);
-			fsel = new Set([...fsel, ...keys.slice(a, b + 1)]);
-		} else {
-			fsel = new Set([key]);
-			fAnchor = key;
-		}
-	}
-	const flagsOf = (p: { progress: number; speed: number; up_speed: number }) => `${p.progress >= 1 ? 'S ' : ''}${p.speed > 0 ? 'D ' : ''}${p.up_speed > 0 ? 'U' : ''}`.trim() || '–';
-	const CONN_WORD = { connected: 'Connected', firewalled: 'Firewalled', disconnected: 'Disconnected' } as const;
-	const CONN_HINT = { connected: 'Other peers can reach this Downloader.', firewalled: 'Peers can’t connect in. Open the listening port.', disconnected: 'The Downloader has no network.' } as const;
-	const TRACKER_WORD: Record<string, string> = { working: 'Working', not_contacted: 'Not contacted yet', not_working: 'Not working', error: 'Error', unreachable: 'Unreachable', disabled: 'Off' };
-
-	// The open download's real detail, read from the server (and through it
-	// from the torrent client) while its pane is open. Nothing is made up:
-	// what is not reported shows as a dash or an empty table.
-	type TorrentDetail = { size: number; downloaded: number; uploaded: number; wasted: number; speed: number; up_speed: number; eta: number; ratio: number; seeds: number; seeds_total: number; peers: number; peers_total: number; added_at?: string; done_at?: string; save_path: string; private?: boolean; seeding_time?: number; time_active?: number; last_seen?: string; last_activity?: string };
-	type Detail = { downloader: string; requested_by: string; torrent?: TorrentDetail; torrent_error?: string; log: { at: string; kind: string; summary: string }[] };
-	type TFile = { index: number; name: string; size: number; progress: number; priority: number };
-	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
-	type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
-	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string; usenet?: UsenetView; usenetErr?: string };
-	let det = $state.raw<Det>({ id: 0 });
-	// Panel reads never show the server's own words; a calm line and Retry instead.
-	const CALM_ERR = "Couldn't read this from the Downloader just now.";
-	// Info: one surface of facts in groups; a fact with no value is left out, and so is an empty group.
-	type Fact = { k: string; v: string; tid?: string; path?: boolean };
-	function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string; rows: Fact[] }[] {
-		const t = d?.torrent;
-		const speed = t?.speed ?? r.speed ?? 0;
-		const up = t?.up_speed ?? r.up_speed ?? 0;
-		const eta = t?.eta ?? r.eta ?? 0;
-		const size = t?.size || r.size || 0;
-		const seeding = (t ? t.downloaded >= t.size && t.size > 0 : false) || r.progress >= 1;
-		const got = t ? `${bytes(t.downloaded)} of ${bytes(t.size)}` : r.size ? `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}` : '';
-		const f = (k: string, v: string | false | undefined | null, tid?: string, path?: boolean): Fact | null => (v ? { k, v, tid, path } : null);
-		const ratio = f('Share ratio', t ? t.ratio.toFixed(2) : r.ratio != null ? Number(r.ratio).toFixed(2) : '');
-		const uploaded = f('Uploaded', t ? bytes(t.uploaded) : '', 'dl-info-uploaded');
-		const seedTime = f('Seeding time', t?.seeding_time ? duration(t.seeding_time) : '', 'dl-info-seedtime');
-		const activity = f('Last activity', t?.last_activity ? ago(t.last_activity) : '', 'dl-info-activity');
-		const downRow = f('Down', speed ? `${bytes(speed)}/s` : '');
-		const upRow = f('Up', up ? `${bytes(up)}/s` : '');
-		const transfer = seeding
-			? [ratio, uploaded, seedTime, activity, f('Size', size ? bytes(size) : ''), upRow, downRow, f('Wasted', t?.wasted ? bytes(t.wasted) : '')]
-			: [f('Downloaded', got), downRow, upRow, f('Time left', eta ? duration(eta) : ''), uploaded, ratio, activity, f('Wasted', t?.wasted ? bytes(t.wasted) : '')];
-		const swarm = [f('Seeds', t ? swarmLine(t.seeds, t.seeds_total) : ''), f('Peers', t ? swarmLine(t.peers, t.peers_total) : ''), f('Private', t?.private == null ? '' : t.private ? 'Yes' : 'No')];
-		const dates = [
-			f('Added', dateTime(t?.added_at ?? r.started_at)),
-			// Usenet: how old the post is on the newsgroups (retention), a pane fact rather than a column.
-			f('Posted', r.posted_at ? `${shortAge(r.posted_at)} ago` : ''),
-			f('Done', dateTime(t?.done_at ?? r.finished_at)),
-			f('Time active', t?.time_active ? duration(t.time_active) : ''),
-			seeding ? null : seedTime,
-			// The release name: the row shows a show's episodes instead, and a tooltip is out of reach on touch.
-			f('Release', r.name, 'dl-info-release', true),
-			f('Save path', t?.save_path, undefined, true),
-			f('Downloader', d?.downloader || r.downloader),
-			f('Requested by', d?.requested_by, 'dl-info-asker')
-		];
-		const caps = r.limit_down || r.limit_up ? `${r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · ${r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}` : '';
-		const rules = [f('Speed limits', caps, 'dl-info-caps'), f('Seeding rules', r.limits ? limitsWords(r.limits) : '', 'dl-info-limits')];
-		const keep = (xs: (Fact | null)[]) => xs.filter((x): x is Fact => !!x);
-		return [
-			{ cap: 'Transfer', rows: keep(transfer) },
-			{ cap: 'Swarm', rows: keep(swarm) },
-			{ cap: 'Dates', rows: keep(dates) },
-			{ cap: 'Rules', rows: keep(rules) }
-		].filter((g) => g.rows.length);
-	}
-	// A Usenet job's Info in the same shape as a torrent's: what moved, when, and where it sits.
-	function usenetGroups(r: DownloadRow, d: Detail | undefined, im: ImportRecord | undefined): { cap: string; rows: Fact[] }[] {
-		const f = (k: string, v: string | false | undefined | null, tid?: string, path?: boolean): Fact | null => (v ? { k, v, tid, path } : null);
-		const done = r.progress >= 1;
-		const got = r.size ? (done ? bytes(r.size) : `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}`) : '';
-		const transfer = [f(done ? 'Size' : 'Downloaded', got), f('Down', r.speed ? `${bytes(r.speed)}/s` : ''), f('Time left', !done && r.eta ? duration(r.eta) : '')];
-		const dates = [f('Posted', r.posted_at ? `${shortAge(r.posted_at)} ago` : ''), f('Added', dateTime(r.started_at)), f('Done', dateTime(r.finished_at))];
-		const folder = im?.Plan?.find((p) => p.target_path)?.target_path || r.path;
-		const where = [f('Release', r.name, 'dl-info-release', true), f('Downloader', d?.downloader || r.downloader), f('Category', r.category), f('Folder', folder, undefined, true), f('Requested by', d?.requested_by || r.requested_by, 'dl-info-asker')];
-		const keep = (xs: (Fact | null)[]) => xs.filter((x): x is Fact => !!x);
-		return [
-			{ cap: 'Transfer', rows: keep(transfer) },
-			{ cap: 'Dates', rows: keep(dates) },
-			{ cap: 'Where', rows: keep(where) }
-		].filter((g) => g.rows.length);
-	}
-	let filesBusy = $state(false);
-	// The client is read live for as long as it may hold the torrent: while
-	// it downloads, and when it is finished or seeding too.
-	const live = (r: DownloadRow) => !!r.client_item || (r.phase !== 'removed' && r.phase !== 'vanished');
-	async function readDetail(r: DownloadRow, tab: string) {
-		const id = r.id;
-		const path = rowPath(r);
-		const next: Partial<Det> & { id: number } = { id };
-		try {
-			next.detail = await api.get<Detail>(`${path}/detail`);
-		} catch {
-			// Keep the last Info on a failed refresh.
-		}
-		if (protocolOf(r) === 'torrent' && live(r)) {
-			if (tab === 'Files') {
-				try {
-					next.files = (await api.get<{ files: TFile[] }>(`${path}/files`)).files ?? [];
-					next.filesErr = undefined;
-				} catch {
-					// A failed refresh keeps the last list; the calm note shows only with none.
-					next.filesErr = CALM_ERR;
-				}
-			}
-			if (tab === 'Peers' || tab === 'Trackers') {
-				try {
-					const sw = await api.get<{ trackers: Tracker[]; peers: Peer[] }>(`${path}/swarm`);
-					next.trackers = sw.trackers ?? [];
-					next.peers = [...(sw.peers ?? [])].sort((a, b) => a.address.localeCompare(b.address));
-					next.swarmErr = undefined;
-				} catch {
-					next.swarmErr = CALM_ERR;
-				}
-			}
-		}
-		if (protocolOf(r) === 'usenet' && live(r) && (tab === 'Servers' || tab === 'Log')) {
-			try {
-				next.usenet = await api.get<UsenetView>(`${path}/usenet`);
-				next.usenetErr = undefined;
-			} catch {
-				next.usenetErr = CALM_ERR;
-			}
-		}
-		if (openId !== id) return;
-		// Only a real change is written, so a quiet poll costs no re-render.
-		const merged = mergeDetail(det, next);
-		if (merged !== det) det = merged;
-	}
-	// Tracker editing in the Trackers tab: a picked tracker can get a new
-	// address or tier, or go; new ones are added one per line.
-	let trUrl = $state('');
-	let trTier = $state(0);
-	let trAdd = $state('');
-	let trBusy = $state(false);
-	$effect(() => {
-		// Typed tracker addresses belong to the download they were typed for.
-		void openId;
-		trUrl = '';
-		trAdd = '';
-	});
-	function pickTracker(r: DownloadRow, x: Tracker) {
-		sel[`${r.id}:t`] = x.ref || x.url;
-		trUrl = '';
-		trTier = x.tier;
-	}
-	async function trackerCall(r: DownloadRow, run: () => Promise<unknown>, done: string): Promise<boolean> {
-		trBusy = true;
-		try {
-			await run();
-			toasts.push(done, 'ok');
-			await readDetail(r, 'Trackers');
-			return true;
-		} catch (e) {
-			toasts.push("Couldn't update trackers", 'fail', { body: message(e) });
-			return false;
-		} finally {
-			trBusy = false;
-		}
-	}
-	const trPath = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${r.hash}/trackers`;
-	async function addTrackers(r: DownloadRow) {
-		const { urls, bad } = splitTrackers(trAdd);
-		if (bad.length) return toasts.push('Not a tracker address', 'fail', { body: bad[0] });
-		if (!urls.length) return;
-		if (await trackerCall(r, () => api.post(trPath(r), { urls }), urls.length === 1 ? 'Tracker added' : `${urls.length} trackers added`)) trAdd = '';
-	}
-	function saveTracker(r: DownloadRow, x: Tracker) {
-		const url = trUrl.trim();
-		const tier = Number(trTier);
-		if (url && splitTrackers(url).bad.length) return toasts.push('Not a tracker address', 'fail');
-		void trackerCall(r, () => api.put(trPath(r), { ref: x.ref, url, ...(tier !== x.tier ? { tier } : {}) }), 'Tracker saved');
-	}
-	function removeTracker(r: DownloadRow, x: Tracker) {
-		void trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), 'Tracker removed');
-	}
-	// A priority change is a control route: an old sign-in is asked for the
-	// password first (inline, in the Files tab), then the change is sent again.
-	let prioWait = $state<{ r: DownloadRow; indexes: number[]; priority: number } | null>(null);
-	async function setPrio(r: DownloadRow, indexes: number[], priority: number) {
-		if (!indexes.length) return;
-		filesBusy = true;
-		try {
-			await api.put(`${rowPath(r)}/files`, { indexes, priority });
-			prioWait = null;
-			await readDetail(r, 'Files');
-		} catch (e) {
-			if (e instanceof ApiError && e.status === 403 && (e.body.code === 'reauth' || /confirm your local password/i.test(e.message))) {
-				prioWait = { r, indexes, priority };
-				void readDetail(r, 'Files');
-				return;
-			}
-			toasts.push("Couldn't set file priority", 'fail', { body: message(e) });
-		} finally {
-			filesBusy = false;
-		}
-	}
-	const fileIndexes = (files: TFile[], key: string) => files.filter((f) => f.name === key || f.name.startsWith(key + '/')).map((f) => f.index);
 
 	// What each Downloader says about itself (speeds, free space, totals).
 	type ClientStatus = { paused: boolean; speed: number; up_speed: number; speed_limit?: number; up_limit?: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
@@ -636,41 +404,9 @@
 	// divider sets a height by hand, a double-click goes back to fitting.
 	let paneFit = $state(true);
 	let paneOpen = $state(true);
-	// Read the open download's detail now and every 3 seconds while it shows.
-	// The effect depends only on which row, which tab and whether the pane shows:
-	// not on the row object (replaced on every list refresh) nor on det (which
-	// readDetail writes), so it never restarts itself.
 	let grabY: number | null = null;
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
-	// A password ask belongs to the row and tab it was made in.
-	$effect(() => {
-		void openId;
-		void openTab;
-		untrack(() => (prioWait = null));
-	});
-	$effect(() => {
-		const id = openId;
-		const tab = openTab;
-		if (!id || !tab || !paneOpen) return;
-		const read = () =>
-			untrack(() => {
-				const r = everyRow.find((x) => x.id === id);
-				// A decision with no download yet (negative id) has nothing to read.
-				if (r && !watch && !(r.id < 0 && !r.client_item)) void readDetail(r, tab);
-			});
-		read();
-		const t = setInterval(() => {
-			if (document.visibilityState === 'visible') read();
-		}, 3000);
-		const back = () => {
-			if (document.visibilityState === 'visible') read();
-		};
-		document.addEventListener('visibilitychange', back);
-		return () => {
-			clearInterval(t);
-			document.removeEventListener('visibilitychange', back);
-		};
-	});
+	const pane = new PaneDetail({ openId: () => openId, openTab: () => openTab, paneOpen: () => paneOpen, rows: () => everyRow, watch: () => watch });
 	// The Downloaders' own status for the pills, every 5 seconds (managers only: watchers would get a 403 each time).
 	$effect(() => {
 		if (watch) return;
@@ -816,24 +552,14 @@
 		window.addEventListener('keydown', slashKey, true);
 		return () => window.removeEventListener('keydown', slashKey, true);
 	});
-	function trNav(e: KeyboardEvent) {
-		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-		const tr = e.currentTarget as HTMLElement;
-		const next = (e.key === 'ArrowDown' ? tr.nextElementSibling : tr.previousElementSibling) as HTMLElement | null;
-		if (!next) return;
-		e.preventDefault();
-		e.stopPropagation();
-		next.focus();
-		next.click();
-	}
 	function listKey(e: KeyboardEvent) {
 		// A menu or sheet already handled this key: the list behind it stays put.
 		if (e.defaultPrevented) return;
 		// Ctrl+F jumps to the files filter only from inside the pane; elsewhere the browser's Find stays.
-		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && fqEl && openRow && paneOpen && tabNow(openRow) === 'Files' && (e.target as HTMLElement | null)?.closest('.dpane')) {
+		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && pane.fqEl && openRow && paneOpen && tabNow(openRow) === 'Files' && (e.target as HTMLElement | null)?.closest('.dpane')) {
 			e.preventDefault();
-			fqEl.focus();
-			fqEl.select();
+			pane.fqEl.focus();
+			pane.fqEl.select();
 			return;
 		}
 		if (!watch && (e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
@@ -1602,221 +1328,13 @@
 	{/each}
 {/snippet}
 
-{#snippet calm(r: DownloadRow, tab: string, err: string | undefined)}
-	{#if err}
-		<p class="calm" role="status" data-testid="dl-panel-error"><span>{err}</span><button type="button" class="xbn" onclick={() => void readDetail(r, tab)} data-testid="dl-panel-retry">Try again</button></p>
-	{:else}
-		<p class="calm wait" aria-live="polite" data-testid="dl-panel-wait">Reading from the Downloader…</p>
-	{/if}
-{/snippet}
-
-{#snippet tabsView(r: DownloadRow)}
-	{@const tor = protocolOf(r) === 'torrent'}
-	{@const tab = tabNow(r)}
-	{@const d = det.id === r.id ? det.detail : undefined}
-	{@const t = d?.torrent}
-	{#if tab === 'Info'}
-		{@const shown = tor ? infoGroups(r, d) : usenetGroups(r, d, importOf.get(r.id))}
-		<div class="facts" data-testid="dl-info">
-			{#if stageOf(r) === 'failed' || problem(r)?.tone === 'fail'}<a class="hlink" href={to('/downloads/history?step=failed')} data-testid="dl-see-history">See in History</a>{/if}
-			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{CALM_ERR}</span><button type="button" class="xbn" onclick={() => void readDetail(r, 'Info')} data-testid="dl-panel-retry">Try again</button></p>{/if}
-			{#if shown.length}
-				<div class="fcols" style="--fn: {shown.length}">
-					{#each shown as g (g.cap)}
-						<div class="fcol">
-							<h3 class="fcap">{g.cap}</h3>
-							<dl class="fgrid" aria-label={g.cap}>
-								{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? x.v : undefined} data-testid={x.tid}>{x.v}</dd></div>{/each}
-							</dl>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="fnone">Nothing reported yet.</p>
-			{/if}
-		</div>
-	{:else if tab === 'Files'}
-		{@const files = det.id === r.id ? det.files : undefined}
-		{#if !tor || !files}
-			{@render calm(r, 'Files', tor && det.id === r.id ? det.filesErr : undefined)}
-		{:else if !files.length}
-			<GhostEmpty compact testid="dl-files-none" title="No files yet" text="The file list appears once the download has its details." />
-		{:else}
-			{@const shownF = filterFiles(files, fq)}
-			{@const rowsT = fileTree(shownF.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
-			{@const keys = rowsT.map((x) => x.key)}
-			{#if prioWait && prioWait.r.id === r.id && !watch}
-				{@const w = prioWait}
-				<div class="calm prf" data-testid="dl-files-proof">
-					<p class="xt">Confirm your password to change file priority.</p>
-					<Confirm action="password" onCancel={() => (prioWait = null)}>
-						<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(w.r, w.indexes, w.priority)} data-testid="dl-files-proof-go">Change priority</button>
-					</Confirm>
-				</div>
-			{/if}
-			<div class="fbar" hidden={files.length === 1}>
-				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
-				{#if fsel.size && !watch && mayEdit(r)}
-					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} selected</span>
-					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(r, indexesUnder(files, fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
-					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
-				{/if}
-			</div>
-			{#if files.length === 1}
-				{@const f = files[0]}
-				{@const pc = Math.floor(f.progress * 100)}
-				<div class="tblw" data-testid="dl-filetable"><table class="t2">
-					<thead><tr><th class="c-name">Name</th><th class="c-num c-size">Size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th></tr></thead>
-					<tbody><tr class:off={f.priority === 0} data-testid="dl-filerow" data-single="true">
-						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
-						<td class="c-num c-size">{bytes(f.size)}</td>
-						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !mayEdit(r)} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
-					</tr></tbody>
-				</table></div>
-			{:else if !shownF.length}
-				<GhostEmpty compact testid="dl-files-nomatch" title="No files match" text="Try fewer words, or clear the filter." />
-			{:else}
-			<div class="tblw" data-testid="dl-filetable"><table class="t2">
-				<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th></tr></thead>
-				<tbody>
-					{#each rowsT as x, ri (x.key)}
-						{@const pc = x.size ? Math.floor((x.done / x.size) * 100) : 0}
-						{@const f = x.dir ? undefined : shownF[x.i]}
-						{@const kids = x.dir ? files.filter((y) => y.name.startsWith(x.key + '/')) : []}
-						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
-						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-						<tr class:sel={sel[`${r.id}:f`] === x.key || fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={fsel.has(x.key)} onclick={(e) => fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
-							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !mayEdit(r)} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
-							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
-							<td class="c-num c-size">{bytes(x.size)}</td>
-							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !mayEdit(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
-							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table></div>
-			{/if}
-		{/if}
-	{:else if tab === 'Peers'}
-		{@const peers = det.id === r.id ? det.peers : undefined}
-		{#if !peers}
-			{@render calm(r, 'Peers', det.id === r.id ? det.swarmErr : undefined)}
-		{:else if !peers.length && r.progress >= 1}
-			<p class="quiet0" role="status" data-testid="dl-peers-quiet">{quietPeers(t?.last_activity)}</p>
-		{:else}
-			<div class="tblw" data-testid="dl-peertable"><table class="t2">
-				<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
-				<tbody>
-					{#each peers as p, ri (p.address)}
-						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-						<tr class:sel={sel[`${r.id}:p`] === p.address} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:p`] = p.address)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:p`] = p.address; }} data-testid="dl-peerrow">
-							<td class="c-name"><span class="fn">{p.address}</span></td>
-							<td class="c-cl"><span class="fn">{p.client || '–'}</span></td>
-							<td class="c-prog"><span class="pbar"><i style="width: {Math.floor(p.progress * 100)}%"></i></span><span class="pv">{Math.floor(p.progress * 100)}%</span></td>
-							<td class="c-num">{bytes(p.speed)}/s</td>
-							<td class="c-num">{bytes(p.up_speed)}/s</td>
-							<td class="c-fl">{flagsOf(p)}</td>
-						</tr>
-					{/each}
-					{#if !peers.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-peers-none" title="No peers connected" text={r.progress >= 1 ? 'Nobody is downloading from this torrent right now.' : 'Peers show up here while the torrent is active.'} /></td></tr>{/if}
-				</tbody>
-			</table></div>
-		{/if}
-	{:else if tab === 'Trackers'}
-		{@const trs = det.id === r.id ? det.trackers : undefined}
-		{#if !trs}
-			{@render calm(r, 'Trackers', det.id === r.id ? det.swarmErr : undefined)}
-		{:else}
-			<div class="tblw" data-testid="dl-trackertable"><table class="t2">
-				<thead><tr><th class="c-name">Tracker</th><th class="c-num c-tier">Tier</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
-				<tbody>
-					{#each trs as x, ri (x.url + x.tier)}
-						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-						<tr class:sel={sel[`${r.id}:t`] === (x.ref || x.url)} class:fixed={x.fixed} tabindex={ri === 0 ? 0 : -1} onclick={() => pickTracker(r, x)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') pickTracker(r, x); }} data-testid="dl-trackerrow" data-fixed={x.fixed ? 'true' : undefined}>
-							<td class="c-name"><span class="fn">{x.url}</span></td>
-							<td class="c-num c-tier">{x.fixed ? '' : x.tier}</td>
-							<td><span class="st-{x.status === 'working' ? 'working' : x.status === 'not_contacted' ? 'updating' : 'error'}">{TRACKER_WORD[x.status] ?? x.status}</span></td>
-							<td class="c-num">{x.peers}</td>
-							<td class="c-num">{x.seeds}</td>
-							<td class="c-msg"><span class="fn">{x.message}</span></td>
-							<td class="c-num">{x.next_check ? mmss(x.next_check) : x.fixed ? '' : '–'}</td>
-						</tr>
-					{/each}
-					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
-				</tbody>
-			</table></div>
-			{#if !watch && mayEdit(r) && r.downloader_id && r.hash}
-				{@const chosen = trs.find((x) => x.ref && sel[`${r.id}:t`] === x.ref)}
-				<div class="tred" data-testid="dl-tracker-edit">
-					{#if chosen}
-						<p class="tl"><b>{chosen.url}</b> <span class="k">The full address stays hidden</span></p>
-						<div class="trow">
-							<input type="text" class="tfld" placeholder="New address (leave empty to keep it)" bind:value={trUrl} spellcheck="false" aria-label="New tracker address" data-testid="dl-tracker-url" />
-							<input type="number" class="tfld tier" min="0" max="255" bind:value={trTier} aria-label="Tier" data-testid="dl-tracker-tier" />
-							<button type="button" class="xbn" disabled={trBusy} onclick={() => saveTracker(r, chosen)} data-testid="dl-tracker-save">Save</button>
-							<button type="button" class="xbn" disabled={trBusy} onclick={() => removeTracker(r, chosen)} data-testid="dl-tracker-remove">Remove</button>
-						</div>
-					{/if}
-					<div class="trow">
-						<textarea class="tfld" rows="1" placeholder="Add trackers: udp://… or https://…, one per line" bind:value={trAdd} spellcheck="false" aria-label="Add trackers" data-testid="dl-tracker-add-input"></textarea>
-						<button type="button" class="xbn" disabled={trBusy || !trAdd.trim()} onclick={() => addTrackers(r)} data-testid="dl-tracker-add">Add</button>
-					</div>
-				</div>
-			{/if}
-		{/if}
-	{:else if tab === 'Servers'}
-		{@const uv = det.id === r.id ? det.usenet : undefined}
-		{@const srv = serverRows(uv)}
-		{#if !uv && live(r)}
-			{@render calm(r, 'Servers', det.id === r.id ? det.usenetErr : undefined)}
-		{:else if srv.length}
-			<div class="tblw" data-testid="dl-servertable"><table class="t2">
-				<thead><tr><th class="c-name">Server</th><th class="c-num">This download</th><th class="c-num">Found</th></tr></thead>
-				<tbody>
-					{#each srv as s (s.name)}
-						<tr data-testid="dl-serverrow"><td class="c-name"><span class="fn">{s.name}</span></td><td class="c-num">{s.job || '–'}</td><td class="c-num">{s.found || '–'}</td></tr>
-					{/each}
-				</tbody>
-			</table></div>
-		{:else}
-			<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
-		{/if}
-	{:else}
-		{@const log = d?.log ?? []}
-		<!-- A Usenet job's verify, repair and unpack steps are its newest lines, so they lead the Log. -->
-		{@const steps = tor ? [] : repairSteps(det.id === r.id ? det.usenet : undefined)}
-		{#if log.length || steps.length}
-			<div class="lgw" data-testid="dl-log">
-				{#each steps as g (g.title)}
-					<h4 class="lgday">{g.title}</h4>
-					<ol class="lg" data-testid="dl-repair">
-						{#each g.lines as l, i (i)}<li class:bad={badKind(l)}><time></time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l}</span></li>{/each}
-					</ol>
-				{/each}
-				{#each logDays(log) as g (g.day)}
-					<h4 class="lgday">{g.day}</h4>
-					<ol class="lg">
-						{#each g.lines as l, i (i)}<li class:bad={badKind(l.kind)}><time>{new Date(l.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l.summary}</span></li>{/each}
-					</ol>
-				{/each}
-			</div>
-		{:else if !d}
-			{@render calm(r, 'Log', undefined)}
-		{:else}
-			<GhostEmpty compact testid="dl-log-none" title="Nothing logged yet" text="What happens to this download shows up here." />
-		{/if}
-	{/if}
-{/snippet}
-
 {#snippet panel(r: DownloadRow)}
 	{@const ds = decisionsOf(r)}
 	{@const sizeWord = r.size ? bytes(r.size) : 'Not reported yet'}
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="phd">
 			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
-			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></span></p>
+			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></span></p>
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
@@ -1830,7 +1348,7 @@
 		<div class="pb" data-testid="dl-panel" data-card="d">
 			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 			<div class="xb">
-				{#key tabNow(r)}<div class="tview" role="tabpanel" id="dlv-{r.id}" aria-labelledby="dlt-{r.id}-{tabNow(r)}">{@render tabsView(r)}</div>{/key}
+				{#key tabNow(r)}<div class="tview" role="tabpanel" id="dlv-{r.id}" aria-labelledby="dlt-{r.id}-{tabNow(r)}"><DlTabsView {r} tab={tabNow(r)} {pane} {importOf} {watch} {mayEdit} /></div>{/key}
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 			</div>
 		</div>
@@ -1978,7 +1496,9 @@
 	/* The next divider sits a gap after the column, so the logo and icon shift half a gap to sit centred between the two lines. */
 	.ch[data-col='poster'] { justify-content: center; }
 	.ch[data-col='poster'] .lbl { display: flex; }
-	@media (min-width: 641px) { .ch[data-col='proto']:has(:global(svg)) .lbl, .pcell:not(.named) > .pm, .ch[data-col='poster'] .lbl, .dline > .post, .ch[data-col='kind']:has(:global(svg)) .lbl, .kcell > .kt:not(.wide) { transform: translateX(calc(var(--gap) / 2 - 4px)); } }
+	@media (min-width: 641px) {
+		.ch[data-col='proto']:has(:global(svg)) .lbl, .pcell:not(.named) > .pm, .ch[data-col='poster'] .lbl, .dline > .post, .ch[data-col='kind']:has(:global(svg)) .lbl, .kcell > .kt:not(.wide) { transform: translateX(calc(var(--gap) / 2 - 4px)); }
+	}
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; flex: none; width: var(--lg, 18px); height: var(--lg, 18px); object-fit: contain; }
@@ -1992,7 +1512,6 @@
 	.strip b { font-weight: 600; }
 	.sp { gap: 8px; }
 	.up { color: var(--info-text); }
-
 	.tops { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0 16px; }
 	.types { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 12px; border-radius: var(--r-btn); background: var(--surface-2); }
 	.ty { min-height: 28px; padding: 0 10px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
@@ -2004,8 +1523,6 @@
 	.cw.zero { opacity: 0.72; }
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
-
-
 	/* One column grid for every row of both sections. */
 	.dlgrid { --gap: 6px; min-width: 0; }
 	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
@@ -2027,20 +1544,21 @@
 	.selbar .sn b { color: var(--text); }
 	.psel, .qline, .tt .tphone, .nm .ep { display: none; }
 	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-	@media (prefers-reduced-motion: reduce) { .psel { animation: none; } }
-	@media (hover: none) { .pk { opacity: 1; } }
+	@media (prefers-reduced-motion: reduce) {
+		.psel { animation: none; }
+	}
+	@media (hover: none) {
+		.pk { opacity: 1; }
+	}
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: max(44px, calc(var(--pi, 26px) * 1.5 + 6px)); }
 	.drow > .dline { cursor: pointer; }
 	.drow > .dline:hover { background: var(--surface-2); }
 	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
-
-	.bin:focus-visible, .lk:focus-visible, .fold:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-
+	.bin:focus-visible, .lk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
 	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
 	.post.square { height: var(--pi, 26px); --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 3px; }
-
 	.nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 	.tt, .rel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tt { font: var(--t-callout); font-weight: 500; display: flex; align-items: center; min-width: 0; }
@@ -2049,7 +1567,6 @@
 	.tt .ver { flex: none; }
 	.rel { color: var(--text-muted); font: var(--t-caption); }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
-
 	.prg { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
 	.prg.queued i { background: var(--info); }
@@ -2061,7 +1578,6 @@
 	.hcell { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 24px; padding: 0 8px; }
 	.hsz { flex: none; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
 	.bl { font-weight: 600; text-shadow: 0 0 3px var(--surface-1); }
-
 	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
 	.st .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st .sw, .st .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2079,14 +1595,14 @@
 	.st.held .dot { background: var(--wait); }
 	.st.bad .dot { background: var(--fail); }
 	.st.bad { color: var(--fail-text); }
-
 	.dline > .ph { display: none; }
 	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */
-	@media (min-width: 641px) { .dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; } }
+	@media (min-width: 641px) {
+		.dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; }
+	}
 	:global(html.col-resizing), :global(html.col-resizing *) { cursor: col-resize !important; user-select: none !important; }
 	.txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.num { text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
 	/* The header row is exactly 28px (the ⋯ button may be taller), so every divider line stays inside it, clear of the border below. */
 	.chead { grid-template-rows: minmax(0, 1fr); position: relative; height: 28px; border-bottom: 1px solid var(--line); color: color-mix(in srgb, var(--text) 78%, transparent); font: var(--t-caption); font-weight: 600; }
 	.chead + .dlrows { border-top: 0; }
@@ -2114,15 +1630,6 @@
 	.help { margin: 6px 6px 0; color: var(--text-muted); font: var(--t-caption); }
 	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-	.fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 0 0 8px; min-width: 0; }
-	.fbar .tfld { flex: 1 1 180px; max-width: 320px; }
-	.tred { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px; min-width: 0; }
-	.tred .tl { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font: var(--t-footnote); }
-	.trow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
-	.tfld { flex: 1 1 200px; min-width: 0; box-sizing: border-box; min-height: 36px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: var(--t-footnote); resize: vertical; }
-	.tfld.tier { flex: 0 0 72px; }
-	.tfld:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	tr.fixed td { color: var(--text-muted); }
 	/* Sorting shows as a line under the column name (blue going up, red going down), so it takes no width. */
 	.sbar { position: absolute; left: 0; right: calc(4px - var(--gap)); bottom: 0; height: 2px; border-radius: 1px; background: var(--info); }
 	.sbar.desc { background: var(--fail); }
@@ -2140,7 +1647,6 @@
 	.bin { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.bin:hover:not(:disabled) { color: var(--fail-text); background: var(--surface-3); }
 	.bin:disabled { opacity: 0.35; cursor: not-allowed; }
-
 	/* The panel starts at the Title column: ▾ + poster + two gaps. */
 	/* Details: the grown poster under the ▾ and poster columns, the facts to its right. */
 	.xb { min-width: 0; }
@@ -2164,12 +1670,7 @@
 	.xtab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	.xtab:focus-visible, .xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.fl { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font: var(--t-footnote); min-width: 0; }
-	.fn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fs { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.lg { list-style: none; padding: 0; margin: 0; display: grid; gap: 3px; font: var(--t-caption); min-width: 0; max-height: 220px; overflow: auto; }
-	.lg li { overflow-wrap: anywhere; }
-	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
-	.lg .bad { color: var(--fail-text); }
 	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; overflow: clip; }
 	.body { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -2177,17 +1678,6 @@
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
-	.tblw { margin-top: 10px; max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-	.fnm { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
-	.fold { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--text-muted); cursor: pointer; }
-	.fold.sp0 { cursor: default; }
-	.fold :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
-	.fold.shut :global(svg) { transform: rotate(-90deg); }
-	.pbar { display: inline-block; vertical-align: middle; width: 56px; height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
-	.pbar i { display: block; height: 100%; background: var(--ok); }
-	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
-	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
-	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); background: none; }
 	.col { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
@@ -2225,12 +1715,7 @@
 	.pb .big.square { height: 112px; }
 	.pb .kv { gap: 3px 14px; font: var(--t-callout); }
 	.pb .xtab { min-height: 28px; padding: 0 10px; font: var(--t-callout); font-weight: 500; }
-	.pb .t2 { font: var(--t-callout); }
-	.pb .t2 th { padding: 3px 8px; }
-	.pb .t2 td { padding: 2px 8px; }
-	.pb .tblw { margin-top: 6px; }
 	.pb .dep { margin-top: 8px; padding: 6px 10px; }
-	.pb .lg { font: var(--t-callout); }
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
@@ -2312,8 +1797,12 @@
 	.tabs { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); --hl-line: var(--line-strong); --hl-sub: color-mix(in srgb, var(--text) 86%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
 	/* Dark: the red words are lightened so they read on the grey pill (4.5:1 or more). */
 	:global(:root[data-theme='dark']) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
-	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); } }
-	@media (prefers-reduced-motion: reduce) { .pw, .tab, .stab, .subwrap { transition: none; } }
+	@media (prefers-color-scheme: dark) {
+		:global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.pw, .tab, .stab, .subwrap { transition: none; }
+	}
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.story { border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); }
 	.src { margin-top: 8px; }
@@ -2329,11 +1818,9 @@
 	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
 	.xa { margin: 8px 0 0; }
 	.lk { min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
-
 	.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 10px; }
 	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 	.tot { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-
 	/* Polish pass: one radius scale (--r-sm 6, --r-btn 10, --r-card 12, --r-panel 16, pill),
 	   one depth scale (--shadow-card, --shadow-lift, --shadow-modal), a 4/8 spacing grid. */
 	.app { --r-poster: 4px; }
@@ -2348,17 +1835,14 @@
 	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
 	.st { gap: 8px; }
 	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }
-	.pcl, .bin, .pick, .fold { border-radius: var(--r-sm); }
-	.tfld { border-radius: var(--r-btn); }
+	.pcl, .bin { border-radius: var(--r-sm); }
 	.ghost, .picker { box-shadow: var(--shadow-lift); }
 	.dep { border-radius: var(--r-card); box-shadow: var(--shadow-card); }
-
 	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
 	.dv { height: 12px; border-top: 1px solid var(--line); }
 	.dv i { top: 4px; width: 36px; margin-left: -18px; border-radius: var(--r-pill); transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.dv:not(.fixed):hover i, .dv:focus-visible i { transform: scaleX(1.5); opacity: 1; }
 	.dv:not(.fixed):active i { transform: scaleX(1.8) scaleY(1.3); background: var(--text-muted); }
-
 	/* Panel header: title, underline tabs with a sliding ink, collapse. */
 	.phd { position: relative; min-height: 48px; padding: 0 var(--dl-gutter); gap: 0 16px; }
 	.phd .xtabs { position: relative; align-self: stretch; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
@@ -2369,7 +1853,6 @@
 	.phd .xtab:focus-visible { box-shadow: inset var(--focus-ring); border-radius: var(--r-sm); }
 	.ink { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left; transform: translateX(var(--ix, 0)) scaleX(var(--iw, 0)); transition: transform var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
 	.ink.gone { opacity: 0; }
-
 	/* Panel body: tab content crossfades in; the footer holds every action. */
 	.pb { padding: 12px var(--dl-gutter); gap: 16px; animation: fadein var(--dur) var(--ease-out); }
 	.tview { animation: tabin var(--dur) var(--ease-out); }
@@ -2387,77 +1870,18 @@
 	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
 	.tdl:hover { color: var(--text); }
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-
-
-	/* Files, Peers, Trackers: full width, a sticky header that matches the main list, hairline rows. */
-	.pb .tblw { margin-top: 0; max-height: max(160px, calc(var(--ph, 260px) - 150px)); overflow: auto; border-radius: var(--r-card); background: var(--surface-1); }
-	.t2 { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
-	.pb .t2 th { position: sticky; top: 0; z-index: 1; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; white-space: nowrap; }
-	.pb .t2 td { height: 36px; padding: 0 12px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; transition: background-color var(--dur-fast) var(--ease-out); }
-	.t2 tbody tr:last-child td { border-bottom: 0; }
-	.pb .t2 .c-num { width: 1%; text-align: right; }
-	.pb .t2 .c-chk { width: 32px; padding-right: 0; }
-	.t2 .c-prog { width: 128px; }
-	.t2 .c-prio { width: 1%; }
-	.t2 .c-name, .t2 .c-msg { max-width: 0; width: 40%; }
-	.t2 .c-name .fn, .t2 .c-msg .fn { display: block; }
-	.t2 .c-name .fnm .fn { display: inline; }
-	.t2 tbody tr { cursor: default; outline: none; }
-	.t2 tbody tr:hover td { background: var(--surface-2); }
-	.t2 tbody tr.sel td { background: color-mix(in srgb, var(--accent) 7%, var(--surface-1)); }
-	.t2 tbody tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
-	.t2 tbody tr:focus-visible td { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
-	.t2 tbody tr.off td { color: var(--text-muted); }
-	/* Depth for Files, Peers and Trackers: a raised surface, a tinted header band, hairline zebra rows and a lift on hover. */
-	.pb .tblw { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); }
-	.pb .t2 th { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
-	.pb .t2 td { border-bottom-color: var(--line); }
-	.pb .t2 tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--surface-3) 28%, var(--surface-2)); }
-	.pb .t2 tbody tr:hover td { background: var(--surface-3); }
-	.pb .t2 tbody tr.sel td { background: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
-	.pb .t2 tbody tr { animation: fadein var(--dur) var(--ease-out); }
-	.pb .t2 td.c-chk input[type='checkbox'] { appearance: none; display: inline-grid; place-content: center; width: 16px; height: 16px; margin: 0; border: 1.5px solid var(--line-strong); border-radius: 5px; background: var(--surface-1); cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
-	.pb .t2 td.c-chk input[type='checkbox']::after { content: ''; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg) scale(0); transition: transform var(--dur-fast) var(--ease-out); }
-	.pb .t2 td.c-chk input[type='checkbox']:checked { border-color: var(--accent); background: var(--accent); }
-	.pb .t2 td.c-chk input[type='checkbox']:checked::after { transform: translateY(-1px) rotate(-45deg) scale(1); }
-	.pb .t2 td.c-chk input[type='checkbox']:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pb .t2 td.c-chk input[type='checkbox']:disabled { opacity: 0.5; cursor: default; }
-	.pb .t2 .pick { max-width: 120px; height: 28px; padding: 0 24px 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface-1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center; color: var(--text); font: var(--t-callout); appearance: none; cursor: pointer; }
-	.pb .t2 .pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.calm { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-2); color: var(--text-muted); font: var(--t-footnote); }
-	.calm.wait { border-color: transparent; background: none; padding-left: 0; }
-	.calm .xbn { margin-left: auto; }
 	a.xbn { display: inline-flex; align-items: center; text-decoration: none; }
-	.pbar { width: 64px; height: 4px; border-radius: var(--r-pill); }
-	.pbar i { border-radius: inherit; transition: width var(--dur-slow) var(--ease-out); }
-	.pv { min-width: 36px; margin-left: 8px; color: var(--text-muted); }
-	.fbar { padding: 0 0 8px; gap: 8px; }
-
-	/* Log: a quiet timeline; time column, a dot on a thin line, the event. */
-	.pb .lg { gap: 0; max-height: none; font: var(--t-callout); }
-	.lg li { display: grid; grid-template-columns: max-content 16px minmax(0, 1fr); column-gap: 8px; align-items: start; padding: 4px 0; }
-	.lg time { margin: 0; white-space: nowrap; }
-	.lgd { position: relative; align-self: stretch; }
-	.lgd::before { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; margin-left: -0.5px; background: var(--line); }
-	.lgd::after { content: ''; position: absolute; left: 50%; top: 5px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--surface-1); box-shadow: inset 0 0 0 1.5px var(--text-muted); }
-	.lg li:first-child .lgd::before { top: 8px; }
-	.lg li:last-child .lgd::before { bottom: auto; height: 12px; }
-	.lg li:only-child .lgd::before { display: none; }
-	.lg .bad .lgd::after { background: var(--fail); box-shadow: none; }
-	.lgt { overflow-wrap: anywhere; }
-
 	@media (prefers-reduced-motion: reduce) {
-		.drow, .pb, .tview, .pb .t2 tbody tr { animation: none; }
-		.ink, .dv i, .drow > .dline, .pact .xbn, .t2 td, .pbar i { transition: none; }
+		.drow, .pb, .tview { animation: none; }
+		.ink, .dv i, .drow > .dline, .pact .xbn { transition: none; }
 	}
-
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
 		.dlgrid { --gap: 8px; --pi: 26px !important; }
 		.chead { display: none; }
 		.tin { min-width: 0; }
 		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
-		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
+	.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
 		.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 		.dline > [data-col] { display: none; }
@@ -2473,9 +1897,9 @@
 		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
 		/* The row's ⋯ menu sits at the card's right edge, beside both lines. */
-		.dline > [data-col='bin'] { display: flex; grid-area: mn; align-self: center; justify-content: center; }
+	.dline > [data-col='bin'] { display: flex; grid-area: mn; align-self: center; justify-content: center; }
 		/* Not picking: the box stays for screen readers, out of sight and out of the way. */
-		.tg .pk:not(.any) { width: 1px; height: 1px; margin: 0; opacity: 0; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
+	.tg .pk:not(.any) { width: 1px; height: 1px; margin: 0; opacity: 0; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
 		.dline > [data-col='title'] .rel { display: none; }
 		.dline > [data-col='title'] .tt { font: 600 15px/19px var(--font-ui); }
@@ -2485,20 +1909,20 @@
 		.tg .pk.any { width: 20px; height: 20px; margin-left: 4px; }
 		.dline:has(.pk.any) { grid-template-columns: 32px 36px minmax(0, 1fr) 40px auto 44px; }
 		/* The status line: full width for the tabs, with speed and free space as a quiet line under it. */
-		.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
+	.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
 		.tabrow :global([data-testid='dl-stat']) { display: none; }
 		.qline { display: flex; align-items: center; gap: 6px; min-height: 24px; margin: 0; padding: 2px var(--dl-gutter) 4px; color: var(--text-muted); font: 400 12px/16px var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 		.qline .qd { color: color-mix(in srgb, var(--ok) 45%, var(--text-muted)); font-weight: 600; }
 		/* The speed on the phone's status line opens the speed limit, as the Speed pills do on wider screens; a taller hit area keeps the line itself low. */
-		.qbtn { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+	.qbtn { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
 		/* 44px tall on its own; the line grows to hold it, starting below the tabs' tap area (their ::after reaches 10px under them). */
-		.qbtn::after { content: ''; position: absolute; inset: 0 -8px; }
+	.qbtn::after { content: ''; position: absolute; inset: 0 -8px; }
 		.qline:has(.qbtn) { min-height: 48px; padding-top: 4px; padding-bottom: 0; }
 		.qbtn:focus-visible { outline: none; border-radius: 6px; box-shadow: var(--focus-ring); }
 		.qcap { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-weight: 400; }
 		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); }
 		/* The selection bar sits over the tab bar, thumb-sized. */
-		.selbar { display: none; }
+	.selbar { display: none; }
 		.psel { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 8px); z-index: 45; display: grid; gap: 4px; padding: 6px 8px 8px; border: 1px solid var(--line-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface-1) 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: var(--shadow-modal); animation: pselIn 220ms var(--ease-out); }
 		.pst { display: flex; align-items: center; gap: 4px; }
 		.pst .sn { flex: 1; padding-left: 8px; color: var(--text-muted); font: 400 13px/1 var(--font-ui); }
@@ -2522,7 +1946,7 @@
 		.big.square { height: 56px; }
 		.fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
-		.strip { gap: 4px 14px; }
+	.strip { gap: 4px 14px; }
 		.picker { display: none; }
 	}
 	@media (max-width: 640px) {
@@ -2536,7 +1960,7 @@
 		.pb .big.square { height: 56px; }
 		.pt { flex-basis: 100%; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
-			.gen { grid-template-columns: minmax(0, 1fr); }
+		.gen { grid-template-columns: minmax(0, 1fr); }
 	}
 	/* Phones: title, tabs, then the actions on their own row, never over the sheet. */
 	@media (max-width: 640px) {
@@ -2560,14 +1984,8 @@
 		.dpane { border-radius: var(--r-panel) var(--r-panel) 0 0; box-shadow: var(--shadow-modal); }
 		.pb { grid-template-columns: minmax(0, 1fr); }
 		.pb .big { display: none; }
-		.pb .tblw { max-height: 40dvh; }
 		.pact { flex-wrap: wrap; }
 	}
-	/* Info cards share the Files table's depth: raised surface, tinted title band, full-width hairline rows, zebra. */
-	.quiet0 { margin: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.lgw { display: grid; gap: 4px; }
-	.lgday { margin: 6px 0 0; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
-	.lgday:first-child { margin-top: 0; }
 	.pt span { font-variant-numeric: tabular-nums; }
 	/* The main list in the same family: raised surface, tinted header band, zebra rows, a lift on hover. */
 	@media (min-width: 641px) {
@@ -2599,20 +2017,6 @@
 		:global(:root:not([data-theme='light'])) .pm[data-tone='sab'] { --cm: #f0c84a; }
 		:global(:root:not([data-theme='light'])) .pm[data-tone='nzb'] { --cm: #6cd08c; }
 	}
-
-	/* Log: one raised card like the Files table, each day a tinted band, rows split by hairlines. */
-	.lgw { gap: 0; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); overflow: hidden; min-width: 0; }
-	.lgday { margin: 0; padding: 8px 14px; background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-1)); border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-	.lgday:not(:first-child) { border-top: 1px solid var(--line); }
-	.lgw .lg { gap: 0; padding: 4px 14px; max-height: none; }
-	.lgw .lg li { padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
-	.lgw .lg li:last-child { border-bottom: 0; }
-	.lgw .lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	/* Files filter: the same surface and edge as the table under it. */
-	.fbar .tfld { min-height: 34px; padding: 7px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.05); transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
-	.fbar .tfld:hover { border-color: var(--line-strong); }
-	.fbar .tfld:focus-visible { border-color: var(--line-strong); box-shadow: var(--focus-ring); }
-
 	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
 	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
 	/* Swarm: one line, two marks and a ratio pill, on the same three tracks as the header's facet words so each number sits under its word; a four-digit count or a 99.0 ratio still fits the fixed width. */
@@ -2628,78 +2032,55 @@
 	.fc.on { color: var(--text); font-weight: 600; }
 	.fc:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
 	.fc .sbar { right: 0; bottom: -7px; }
-	@media (min-width: 1800px) { .pb { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; } .pb .big { width: 200px; height: 300px; } .pb .big.square { height: 200px; } }
+	@media (min-width: 1800px) {
+		.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; }
+		.pb .big { width: 200px; height: 300px; }
+		.pb .big.square { height: 200px; }
+	}
 	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
 	.pb .big :global(.poster) { border-radius: var(--r-card); }
 	.pb .big.square { height: 160px; }
-	.facts { justify-self: start; width: fit-content; max-width: 100%; box-sizing: border-box; min-width: 0; padding: 4px 0; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: hidden; }
-	.fcap { margin: 0; padding: 10px 12px 2px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-	.fcols { display: grid; grid-template-columns: repeat(var(--fn, 4), minmax(0, 420px)); }
-	@media (min-width: 1500px) { .fcols { grid-template-columns: repeat(var(--fn, 4), minmax(240px, 420px)); } }
-	.fcol { min-width: 0; padding: 0 0 6px; }
-	.fcol + .fcol { border-left: 1px solid var(--line); }
-	.fgrid { display: block; margin: 0; padding: 0 16px; }
-	.fr { display: flex; align-items: center; gap: 16px; min-width: 0; height: 36px; box-sizing: border-box; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.fr dt { flex: none; color: var(--text-muted); }
-	.fr dd { flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.fr dd.path { direction: rtl; }
-	.fr:last-child { border-bottom-color: transparent; }
-	.prf { flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 8px; }
-	.hlink { display: inline-block; margin: 6px 12px 2px; color: var(--accent-text); font: var(--t-footnote); }
-	.fnone { margin: 0; padding: 10px 12px; color: var(--text-muted); font: var(--t-callout); }
-	.calm.slim { margin: 4px 8px 4px; padding: 4px 4px 4px 10px; gap: 8px; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 50%, var(--surface-2)); font: var(--t-caption); }
-	.calm.slim .xbn { min-height: 24px; }
-	@media (max-width: 1100px) and (min-width: 768px) {
-		.fcols { grid-template-columns: repeat(min(var(--fn, 2), 2), minmax(0, 420px)); }
-		.fcol:nth-child(odd) { border-left: 0; }
-		.fcol:nth-child(even) { border-left: 1px solid var(--line); }
-		.fcol:nth-child(n + 3) { border-top: 1px solid var(--line); }
-	}
 	@media (max-width: 767px) {
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
 		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
 		.pb .big.square { height: 56px; }
-		.fcols { grid-template-columns: minmax(0, 1fr); }
-		.fcol + .fcol { border-left: 0; border-top: 1px solid var(--line); }
-		.facts { width: auto; justify-self: stretch; }
 	}
 	@media (max-width: 640px) {
 		.pb { grid-template-columns: minmax(0, 1fr); }
 		.pb .big { display: none; }
 	}
-/* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
+	/* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
 	/* Chrome drops the ::-webkit rules below (and draws its own bar with arrows) once scrollbar-width/-color are set, so those are Firefox only. */
 	@supports not selector(::-webkit-scrollbar) {
-		.tw, .pb, .tblw, .lg, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
-		.tw:hover, .pb:hover, .tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
+		.tw, .pb, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
+		.tw:hover, .pb:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
 	}
-	.tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .tblw::-webkit-scrollbar, .lg::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+	.tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
 	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
-	.tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .tblw::-webkit-scrollbar-track, .lg::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
-	.tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner, .tblw::-webkit-scrollbar-corner { background: transparent; }
-	.tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .tblw::-webkit-scrollbar-button, .lg::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-	.tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb, .tblw::-webkit-scrollbar-thumb, .lg::-webkit-scrollbar-thumb, .picker::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner { background: transparent; }
+	.tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+	.tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb, .picker::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
 	/* Desktop: the table is a card set in like the toolbar above it (14px from the side menu). */
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
 		/* The toolbar and the pill row are cards on the page: no page-wide rules under them (they ran off the cards' edges). */
-		.hdr, .tabrow { border-bottom: 0; }
+	.hdr, .tabrow { border-bottom: 0; }
 		/* The list, the divider and the pane are one slab of the table's surface; only its four outer corners are rounded. */
-		.col { overflow: clip; border-radius: var(--r-card); }
+	.col { overflow: clip; border-radius: var(--r-card); }
 		.col > .listbox { background: var(--surface-2); border-radius: var(--r-card) var(--r-card) 0 0; }
 		.dv { background: var(--surface-2); }
 		/* The table's own frame drew a second line inside the card: the rows' lines are enough. */
-		.col .tin { border-color: transparent; box-shadow: none; }
+	.col .tin { border-color: transparent; box-shadow: none; }
 		/* The header and row checkboxes sit centred in the same 28px lane. */
-		.hk, .tg:has(> .pk) { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
+	.hk, .tg:has(> .pk) { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
 		.hk .hpk, .tg > .pk { margin: 0; translate: none; transform: none; }
 		/* With its centring margin gone, the box is centred by its top. */
-		.tg > .pk { left: 6px; top: calc(50% - 8px); }
+	.tg > .pk { left: 6px; top: calc(50% - 8px); }
 		/* The poster column starts under the checkbox lane's divider: centre its icon and posters between that line and the next. */
-		.ch[data-col='poster'] .lbl, .dline > .post { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
+	.ch[data-col='poster'] .lbl, .dline > .post { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
-	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover, .tblw::-webkit-scrollbar-thumb:hover, .lg::-webkit-scrollbar-thumb:hover, .picker::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
-
+	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover, .picker::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
 	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
 	.hdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
@@ -2717,25 +2098,13 @@
 	.phd .ink { display: none; }
 	.pb .big { width: 120px; height: 180px; border: 1px solid var(--line); box-shadow: none; }
 	.pb .big.square { height: 120px; }
-	.facts { width: auto; justify-self: stretch; padding: 2px 0; border-color: var(--line); border-radius: var(--r-card); background: color-mix(in srgb, var(--surface-1) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	/* Each column is its own height, so a divider ends at its content instead of running on into empty space. */
-	.fcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); align-items: start; overflow: hidden; }
-	.fcol + .fcol { border-left: 0; }
-	.fcol { border-right: 1px solid var(--line); margin-right: -1px; }
-	/* Sentence case, like the column headings: one voice on the page. */
-	.fcap { padding: 12px 16px 4px; letter-spacing: 0; text-transform: none; }
-	.pb .t2 th, .lgday { letter-spacing: 0; text-transform: none; }
-	.hlink { margin: 10px 16px 2px; font-weight: 600; }
-	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: var(--r-card); border-color: var(--line); }
 	@media (min-width: 641px) {
 		/* The pane is part of the table's slab: same surface, same edges, no frame of its own; the divider's hairline and grip are the seam. */
-		.dpane { margin: 0; border-radius: 0; background: var(--surface-2); overflow: hidden; }
+	.dpane { margin: 0; border-radius: 0; background: var(--surface-2); overflow: hidden; }
 		.dpane .phd { padding: 8px var(--dl-gutter); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
 		.pb { padding: 12px var(--dl-gutter) 16px; background: transparent; }
-		/* The facts sit on the slab with their column hairlines only: no second frame inside the pane. */
-		.dpane .facts { background: transparent; box-shadow: none; border-color: transparent; }
 		/* The title takes the room it needs (up to 42% of the header) and the tabs centre in what is left. */
-		.dpane .pt { flex: 0 1 auto; min-width: 0; max-width: 42%; }
+	.dpane .pt { flex: 0 1 auto; min-width: 0; max-width: 42%; }
 		.dpane .phd .xtabs { margin-inline: auto; }
 	}
 	/* Narrower desktops: the title fills the first row beside the actions, so the tabs wrap to a second row of their own. Never three rows. */
@@ -2744,12 +2113,13 @@
 		.dpane .phd .xtabs { order: 2; flex: 0 1 auto; margin: 0 auto 6px 0; }
 		.dpane .pact, .dpane .pcl { order: 1; flex: none; }
 	}
-	@media (min-width: 1800px) { .pb .big { width: 140px; height: 210px; } .pb .big.square { height: 140px; } }
+	@media (min-width: 1800px) {
+		.pb .big { width: 140px; height: 210px; }
+		.pb .big.square { height: 140px; }
+	}
 	@media (max-width: 767px) {
 		.pb .big { width: 56px; height: 84px; }
 		.pb .big.square { height: 56px; }
-		.fcol { border-right: 0; margin-right: 0; }
-		.fcol + .fcol { border-top: 1px solid var(--line); }
 	}
 	@media (max-width: 640px) {
 		.pb .big { display: none; }
@@ -2759,11 +2129,9 @@
 	/* Phones: every control a thumb can hit is at least 32px tall. */
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
-		.pcl, .fold { width: 32px; height: 32px; }
-		.trchip, .qrv, .lk, .xbn, .calm.slim .xbn, .mch .retry { min-height: 32px; }
+		.pcl { width: 32px; height: 32px; }
+		.trchip, .qrv, .lk, .xbn, .mch .retry { min-height: 32px; }
 		.phd .xtab { min-height: 32px; }
-		.pb .t2 td.c-chk input[type='checkbox'] { width: 24px; height: 24px; }
-		.pb .t2 .c-chk { width: 40px; }
 	}
 	/* Touch phones: every control a finger hits gets a 44px target; the
 	   hit area grows with an invisible ::after, so nothing moves and desktop is unchanged. */
@@ -2780,5 +2148,7 @@
 		.psx::after { content: ''; position: absolute; inset: -6px -6px -6px 0; }
 	}
 	/* A disabled bin is only a stand-in: a tap on it goes to the row underneath. */
-	@media (pointer: coarse) { .bin:disabled { pointer-events: none; } }
+	@media (pointer: coarse) {
+		.bin:disabled { pointer-events: none; }
+	}
 </style>
