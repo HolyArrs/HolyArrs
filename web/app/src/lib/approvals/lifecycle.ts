@@ -26,6 +26,8 @@ export interface Life {
 
 /** What else is known about an approved ask; each part is left out when unknown. */
 export interface LifeFacts {
+	/** The download row behind it, for a link to Downloads. */
+	downloadId?: number;
 	/** The download's 0..1. */
 	progress?: number;
 	/** What the pipeline is doing for it right now (from the live searches and downloads). */

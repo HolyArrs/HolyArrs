@@ -99,7 +99,7 @@ test('a pack whose files cannot be placed waits on Needs a decision as one card'
 	await card.getByRole('button', { name: /^More/ }).first().click();
 	for (const name of ['Add the pack to Turned down', 'Stop looking for these episodes']) await expect(page.getByRole('menuitem', { name })).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(card.getByTestId('decision').first().getByRole('link', { name: 'Choose a release by hand' })).toHaveAttribute('href', /\/library\/\d+#h-rel$/);
+	await expect(card.getByTestId('decision').first().getByRole('link', { name: 'Choose a release by hand' })).toHaveAttribute('href', /\/library\/\d+\?tab=library&pick=1#h-rel$/);
 	await axe(page, 'needs a decision with a pack');
 });
 
