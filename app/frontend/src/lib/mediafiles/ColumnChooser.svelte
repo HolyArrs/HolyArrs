@@ -1,3 +1,4 @@
+<!-- Popover to show, hide and reorder table columns. -->
 <script lang="ts">
 	import Popover from '../ui/Popover.svelte';
 	import Icon from '../ui/Icon.svelte';
@@ -17,6 +18,7 @@
 		if (dragFrom !== null) onchange(moveColumn(columns, dragFrom, i));
 		dragFrom = dragOver = null;
 	}
+	// Arrow keys reorder for people who cannot drag; focus follows the moved row.
 	function handleKey(e: KeyboardEvent, i: number) {
 		const to = e.key === 'ArrowUp' ? i - 1 : e.key === 'ArrowDown' ? i + 1 : -1;
 		if (to < 0 || to >= columns.length) return;
@@ -66,5 +68,6 @@
 	input { width: 16px; height: 16px; accent-color: var(--accent); }
 	.grip { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: grab; }
 	.grip:focus-visible, .reset:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Sticky so Reset stays reachable when the list scrolls. */
 	.reset { margin-top: 4px; padding: 8px; border: 0; border-top: 1px solid var(--line); color: var(--accent); font: var(--t-callout); text-align: left; cursor: pointer; position: sticky; bottom: -6px; margin-bottom: -6px; padding-bottom: 14px; background: var(--surface-1); z-index: 1; }
 </style>

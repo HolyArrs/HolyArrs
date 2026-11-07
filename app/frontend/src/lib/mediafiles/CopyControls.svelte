@@ -1,15 +1,16 @@
+<!-- Lists each Version's copy with protect, keep-and-add and adopt actions. -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, message } from '../core/api.ts';
-	import { copyEdition, inspectedAudio, languageList, versionCriteria } from './copy-controls.ts';
-	import { session } from '../core/session.svelte.ts';
-	import { toasts } from '../core/toasts.svelte.ts';
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
 	import Badge from '../ui/Badge.svelte';
 	import { shortFolder } from '../ui/TitleHero.svelte';
 	import Skeleton from '../ui/Skeleton.svelte';
 	import Icon from '../ui/Icon.svelte';
+	import { copyEdition, inspectedAudio, languageList, versionCriteria } from './copy-controls.ts';
+	import { api, message } from '../core/api.ts';
+	import { session } from '../core/session.svelte.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import { plainReason } from '../core/plain.ts';
 	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from '../core/types.ts';
 
@@ -41,6 +42,8 @@
 	let adoptVersion = $state<VersionView | null>(null);
 	let adoptPath = $state('');
 
+	onMount(() => void load());
+
 	const fileFor = (versionId: number) => files.find((file) => file.VersionID === versionId);
 
 	async function load() {
@@ -62,6 +65,7 @@
 		await onchange();
 	}
 
+	// Removing protection needs the box ticked first.
 	async function setProtection(file: CopyFile, protectedValue: boolean) {
 		busy = `protect-${file.ID}`;
 		try {
@@ -77,6 +81,7 @@
 		}
 	}
 
+	// Fetched once, on first use, and cut down to this kind.
 	async function choices() {
 		if (!rules.length) rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules.filter((rule) => !rule.kinds.length || rule.kinds.includes(kind));
 		if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders.filter((folder) => folder.kind === kind);
@@ -145,7 +150,6 @@
 		}
 	}
 
-	onMount(() => void load());
 </script>
 
 <section class="cc" aria-labelledby="copy-controls-title" data-testid="copy-controls">
@@ -248,6 +252,7 @@
 	.cc-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--text); }
 	.cc-btn { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
 	.cc-btn:disabled { opacity: .45; cursor: default; }
+	/* Larger hit areas on touch screens. */
 	@media (pointer: coarse) { .cc-btn { height: 44px; } .cc-check input { width: 20px; height: 20px; } }
 	@media (max-width: 600px) { .cc-row { padding: 12px 16px; } }
 </style>

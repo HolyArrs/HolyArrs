@@ -1,3 +1,4 @@
+<!-- Segmented view picker; the active option shows its label and an optional art size menu. -->
 <script lang="ts" generics="T extends string">
 	import Icon, { type IconName } from '../ui/Icon.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
@@ -19,6 +20,8 @@
 		compact?: boolean;
 	} = $props();
 	let buttons: HTMLButtonElement[] = $state([]);
+
+	// Arrows wrap around and move focus with the selection, like a radio group.
 	function key(e: KeyboardEvent, i: number) {
 		const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
 		if (!step) return;
@@ -53,6 +56,7 @@
 	.seg:not(:has(.size)) button { padding-right: 12px; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
+	/* Labels slide open on the active option only. */
 	.lbl { display: inline-block; max-width: 0; margin-left: 0; overflow: hidden; opacity: 0; transition: max-width var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out), margin var(--dur) var(--ease-out); }
 	.on .lbl { max-width: 96px; margin-left: 6px; opacity: 1; }
 	.compact .on .lbl { max-width: 0; margin-left: 0; opacity: 0; }

@@ -1,3 +1,4 @@
+<!-- Shared page frame for library tool pages: title bar, count and styled slots. -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	let { title, count = '', bar, children }: { title: string; count?: string; bar?: Snippet; children: Snippet } = $props();
@@ -12,6 +13,7 @@
 </div>
 
 <style>
+	/* Page children are styled through :global so each tool page can reuse these class names. */
 	.tp { display: flex; flex-direction: column; gap: 14px; padding-bottom: 48px; min-width: 0;
 		--sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a);
 		--edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%));
@@ -22,6 +24,7 @@
 	.tp-name { display: inline-flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0 8px 0 0; font: 700 22px/1.2 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; white-space: nowrap; }
 	.tp-count { color: var(--text-muted); font: 500 14px/1 var(--font-ui); letter-spacing: 0; font-variant-numeric: tabular-nums; }
 	.tp :global(.tp-gap) { flex: 1 1 auto; }
+	/* Control capsule; the 44px children keep touch targets large. */
 	.tp :global(.tp-cap) { display: flex; flex: none; align-items: center; gap: 2px; min-width: 0; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.tp :global(.tp-cap:empty) { display: none; }
 	.tp :global(.tp-cap .ui-btn.secondary), .tp :global(.tp-cap .trigger.button) { height: 44px; min-height: 44px; padding-inline: 12px; border-radius: 10px; background: none; box-shadow: none; }
@@ -38,6 +41,7 @@
 
 
 	.tp :global(.tp-sheet) { position: relative; isolation: isolate; min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
+	/* Faint noise keeps the large gradient from banding. */
 	.tp :global(.tp-sheet)::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 	.tp :global(.tp-pad) { padding: 16px 20px; }
 

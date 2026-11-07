@@ -1,26 +1,23 @@
+<!-- Held or turned down releases with undo, clear all and paging. -->
 <script lang="ts">
-	import { to } from '../core/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/core/api.ts';
-	import { live } from '#lib/core/live.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { bytes, date, dateTime } from '#lib/core/format.ts';
-	import { facts, keyReasons, listedName, pager } from './releases.ts';
-	import LibraryToolPage from './LibraryToolPage.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
-	import { titleArt } from './title-art.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import LibraryToolPage from './LibraryToolPage.svelte';
+	import { facts, keyReasons, listedName, pager } from './releases.ts';
+	import { titleArt } from './title-art.ts';
+	import { to } from '../core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { bytes, date, dateTime } from '#lib/core/format.ts';
 	import { plainReason } from '#lib/core/plain.ts';
 	import type { ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
 	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();
-	const held = $derived(list === 'held');
-	const dl = $derived(from === 'downloads');
-	const undoWord = $derived(held ? 'Stop holding' : dl ? 'Undo' : 'Take off');
-
 	let rows = $state<ReleaseView[]>([]);
 	let total = $state(0);
 	let offset = $state(0);
@@ -28,8 +25,22 @@
 	let loaded = $state(false);
 	let error = $state('');
 	let busy = $state(false);
+	let art = $state<Map<number, string>>(new Map());
+
+	const held = $derived(list === 'held');
+	const dl = $derived(from === 'downloads');
+	const undoWord = $derived(held ? 'Stop holding' : dl ? 'Undo' : 'Take off');
 	const pages = $derived(pager(total, limit, offset));
 
+	// Reload when the server says releases changed or after a reconnect.
+	onMount(() => {
+		void load();
+		if (from === 'library') void titleArt().then((m) => (art = m));
+		const offs = [live.on('releases', load), live.on('slot', load), live.on('resync', load)];
+		return () => offs.forEach((off) => off());
+	});
+
+	// If removing the last row empties this page, step back one page.
 	async function load() {
 		try {
 			const p = await api.get<ReleasePage>(`/${list}?limit=${limit}&offset=${offset}`);
@@ -47,14 +58,6 @@
 		}
 	}
 
-	let art = $state<Map<number, string>>(new Map());
-	onMount(() => {
-		void load();
-		if (from === 'library') void titleArt().then((m) => (art = m));
-		const offs = [live.on('releases', load), live.on('slot', load), live.on('resync', load)];
-		return () => offs.forEach((off) => off());
-	});
-
 	async function removeOne(r: ReleaseView) {
 		busy = true;
 		try {
@@ -67,6 +70,7 @@
 		}
 	}
 
+	// Asks first because this affects every row, not only this page.
 	async function clearAll() {
 		const ask = held
 			? `Stop holding all ${total} Releases? Their movies and episodes go back to looking.`
@@ -158,6 +162,7 @@
 </LibraryToolPage>
 
 <style>
+	/* Tab style links inside the shared capsule. */
 	.switch-list a { display: inline-flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 10px; color: var(--text-muted); font: 600 13.5px/1 var(--font-ui); white-space: nowrap; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 	.switch-list a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.switch-list a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -167,6 +172,7 @@
 	.grow { min-width: 0; flex: 1; }
 	.for { font: var(--t-headline); color: var(--text); }
 
+	/* Taller tap area for the title link on phones. */
 	@media (max-width: 767px) and (pointer: coarse) { .for { display: inline-block; padding-block: 12px; } }
 	.rel-name { margin-top: 2px; color: var(--text-muted); font: var(--t-callout); overflow-wrap: anywhere; }
 	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }

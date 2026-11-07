@@ -1,6 +1,9 @@
+<!-- Poster card for a library title: lazy fade-in, status bar, hover details and tilt. -->
 <script lang="ts" module>
+	// One observer shared by every poster; each card registers its own reveal callback.
 	let io: IntersectionObserver | undefined;
 	const pending = new Map<Element, () => void>();
+	// Staggers cards that appear together, capped so a big batch does not drag on.
 	function watch(node: Element, show: () => void): () => void {
 		if (typeof IntersectionObserver === 'undefined') return void show(), () => {};
 		io ??= new IntersectionObserver((entries) => {
@@ -27,11 +30,11 @@
 	import { onMount } from 'svelte';
 	import Icon, { type IconName } from '../ui/Icon.svelte';
 	import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
-	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
-	import { sized } from '../core/tmdb-image.ts';
 	import { whenLoaded } from '../ui/lazy-art.ts';
 	import { tiltFor, type BarTone, type PosterDetail } from './poster.ts';
 	import type { LibState } from './library-state.ts';
+	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
+	import { sized } from '../core/tmdb-image.ts';
 
 	let {
 		title,
@@ -82,6 +85,8 @@
 	let loaded = $state(false);
 	let failed = $state(false);
 	let cw = $state(0);
+	let touch = $state(false);
+	let raf = 0;
 	const pic = $derived(sized(image, 'poster', cw || 200));
 	const kindIcon = $derived<IconName>(kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const words = $derived(ls?.label ?? (bar.tone === 'ok' ? 'In the Library' : ''));
@@ -92,12 +97,14 @@
 		if (reducedMotion()) return void (shown = true);
 		return watch(root, () => (shown = true));
 	});
+	$effect(() => () => cancelAnimationFrame(raf));
 
-	let touch = $state(false);
+	// Touch screens get no hover panel, so skip rendering it.
 	onMount(() => void (touch = matchMedia('(hover: none)').matches));
 
-	let raf = 0;
+	// Tilt only for a real mouse and when motion is welcome.
 	const canTilt = () => typeof matchMedia !== 'undefined' && matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion();
+	// Redraw once per frame so pointer events do not queue style writes.
 	function move(e: PointerEvent) {
 		if (!frame || e.pointerType !== 'mouse' || selecting || !canTilt()) return;
 		const r = frame.getBoundingClientRect();
@@ -113,7 +120,6 @@
 		frame?.style.setProperty('--rx', '0deg');
 		frame?.style.setProperty('--ry', '0deg');
 	}
-	$effect(() => () => cancelAnimationFrame(raf));
 </script>
 
 <div class="lp" class:square={kind === 'artist'} class:shown class:selecting class:selected class:attention bind:this={root} bind:clientWidth={cw}>
@@ -180,6 +186,7 @@
 	.line.idle i { background: rgb(255 255 255 / 55%); }
 
 
+	/* Frosted hover panel; the --gp vars carry the light and dark colours. */
 	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-in); }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); } }
 	:global([data-theme='dark']) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); }
@@ -209,6 +216,7 @@
 		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	}
 
+	/* Keyboard focus should not leave the card tilted. */
 	.frame:focus-within:not(:hover) { --rx: 0deg !important; --ry: 0deg !important; }
 	.badge { transition: opacity var(--dur-fast) var(--ease-out); }
 

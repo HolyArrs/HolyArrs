@@ -1,9 +1,10 @@
+<!-- Confirm sheet for deleting a title, with a dry-run preview of what will happen. -->
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import { deleteSummary, type RemovePlan } from './organise.ts';
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { deleteSummary, type RemovePlan } from './organise.ts';
 
 	let { open = $bindable(false), titleId, name, kind, ondone }: { open?: boolean; titleId: number; name: string; kind: 'movie' | 'show' | 'artist'; ondone?: (p: RemovePlan) => void } = $props();
 
@@ -13,18 +14,12 @@
 	let plan = $state<RemovePlan | null>(null);
 	let error = $state('');
 	let busy = $state(false);
+	// Counts previews so a slow older answer cannot overwrite a newer one.
 	let ask = 0;
 
-	async function planIt() {
-		const n = ++ask;
-		error = '';
-		try {
-			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, { delete_files: files, never_add: never, apply: false });
-			if (n === ask) plan = p;
-		} catch (e) {
-			if (n === ask) error = message(e);
-		}
-	}
+	const sure = $derived(!files || typed.trim().toLowerCase() === name.trim().toLowerCase());
+
+	// Each time the sheet opens it starts clean; untrack so edits inside do not rerun this.
 	$effect(() => {
 		if (!open) return;
 		untrack(() => {
@@ -36,7 +31,18 @@
 		});
 	});
 
-	const sure = $derived(!files || typed.trim().toLowerCase() === name.trim().toLowerCase());
+	async function planIt() {
+		const n = ++ask;
+		error = '';
+		try {
+			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, { delete_files: files, never_add: never, apply: false });
+			if (n === ask) plan = p;
+		} catch (e) {
+			if (n === ask) error = message(e);
+		}
+	}
+
+	// Held files get an Undo that restores them from the holding folder.
 	async function run() {
 		busy = true;
 		error = '';
@@ -55,6 +61,7 @@
 			busy = false;
 		}
 	}
+	// Changing an option makes the typed confirmation and the preview stale.
 	function flip(which: 'files' | 'never') {
 		if (which === 'files') files = !files;
 		else never = !never;
@@ -117,6 +124,7 @@
 	.ds-plan { padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.ds-h { margin: 0 0 8px; color: var(--text-muted); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.ds-plan ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; font: 500 14px/1.4 var(--font-ui); }
+	/* Placeholder while the preview loads. */
 	.ds-skel { height: 44px; border-radius: 8px; background: color-mix(in srgb, var(--text) 8%, transparent); animation: pulse 1.2s ease-in-out infinite alternate; }
 	@keyframes pulse { to { opacity: .5; } }
 	.ds-type { display: grid; gap: 8px; font: 500 14px/1.3 var(--font-ui); }
