@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SegmentedControl from './ui/SegmentedControl.svelte';
-	import { setTagsAt, setTitleLook, TAG_SPOTS, tagsAt, titleLook, TITLE_LOOKS, type TagsAt, type TitleLook } from './title-look.svelte.ts';
+	import { setTagsAt, setTitleLook, TAG_SPOTS, tagsAt, titleLook, TITLE_LOOKS, type TagsAt, type TitleLook } from './discover/title-look.svelte.ts';
 
 	// A floating switch between the hero options being compared.
 	let value = $state<TitleLook>(titleLook.value);

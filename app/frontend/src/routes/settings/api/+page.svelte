@@ -16,7 +16,7 @@
 	import ApiKeysCard from './ApiKeysCard.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/apidocs.ts';
+	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/arrapi/api-docs.ts';
 
 	let spec = $state<Spec | null>(null);
 	let ops = $state<ApiOp[]>([]);

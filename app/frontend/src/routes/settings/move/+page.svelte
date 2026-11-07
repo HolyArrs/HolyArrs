@@ -10,16 +10,16 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import { session } from '#lib/core/session.svelte.ts';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import MoveSteps from '#lib/move/MoveSteps.svelte';
-	import StepFoot from '#lib/move/StepFoot.svelte';
-	import ReadSheet, { type ReadAnswer, type SavedKey } from '#lib/move/ReadSheet.svelte';
-	import ItemsSheet, { type SheetRow, type ShowList } from '#lib/move/ItemsSheet.svelte';
-	import ReadStep from '#lib/move/ReadStep.svelte';
-	import ChooseStep from '#lib/move/ChooseStep.svelte';
-	import BeforeSheet from '#lib/move/BeforeSheet.svelte';
-	import MoveStep from '#lib/move/MoveStep.svelte';
-	import DoneStep from '#lib/move/DoneStep.svelte';
-	import { createFollower } from '#lib/move/poll.ts';
+	import MoveSteps from '#lib/migrate/MoveSteps.svelte';
+	import StepFoot from '#lib/migrate/StepFoot.svelte';
+	import ReadSheet, { type ReadAnswer, type SavedKey } from '#lib/migrate/ReadSheet.svelte';
+	import ItemsSheet, { type SheetRow, type ShowList } from '#lib/migrate/ItemsSheet.svelte';
+	import ReadStep from '#lib/migrate/ReadStep.svelte';
+	import ChooseStep from '#lib/migrate/ChooseStep.svelte';
+	import BeforeSheet from '#lib/migrate/BeforeSheet.svelte';
+	import MoveStep from '#lib/migrate/MoveStep.svelte';
+	import DoneStep from '#lib/migrate/DoneStep.svelte';
+	import { createFollower } from '#lib/migrate/poll.ts';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -47,7 +47,7 @@
 		type Report,
 		type Snapshot,
 		type Step
-	} from '#lib/move.ts';
+	} from '#lib/migrate/move.ts';
 
 	// Settings > Move from other apps: four steps, one at a time. The step and
 	// the reads in use live in the address (?step=choose&read=3,5, or ?move=7

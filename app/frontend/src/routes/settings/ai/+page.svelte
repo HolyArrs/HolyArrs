@@ -39,7 +39,7 @@
 		type Part,
 		type Picked,
 		type Row
-	} from '#lib/ai-connect.ts';
+	} from '#lib/ai/ai-connect.ts';
 
 	let loaded = $state(false);
 	let error = $state('');

@@ -14,14 +14,14 @@
 	import type { AlertView } from '#lib/core/types.ts';
 	import type { HealthChecks, HealthStates } from '#lib/health/index.ts';
 	import type { OutsideList } from '#lib/requests/index.ts';
-	import type { ScheduleRow } from '#lib/schedules.ts';
+	import type { ScheduleRow } from '#lib/health/schedules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { testLabel } from '#lib/core/test-tag.ts';
-	import Sections from '#lib/status/StatusSections.svelte';
-	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/status/status.ts';
+	import Sections from '#lib/health/HealthSections.svelte';
+	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/health/rows.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);

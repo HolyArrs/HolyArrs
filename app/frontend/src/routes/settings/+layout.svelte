@@ -12,12 +12,12 @@
 	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/core/settings.ts';
 	import { homeArt, startArt } from './(home)/art.svelte.ts';
 	import { wall } from './(home)/pick.ts';
-	import { backdrop } from '#lib/backdrop.svelte.ts';
+	import { backdrop } from '#lib/accounts/backdrop.svelte.ts';
 	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
-	import { pageState, stateWords } from '#lib/settings-status.ts';
+	import { settingsNow, refreshSettingsStatus } from '#lib/alerts/settings-status.svelte.ts';
+	import { pageState, stateWords } from '#lib/alerts/settings-status.ts';
 	import '../(frame)/settings-looks.css';
 
 	// Settings (Luis, 2026-11-06, design settings-views v4): the home is five

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
-	import { backdrop, setBackdrop, type Backdrop } from '#lib/backdrop.svelte.ts';
+	import { theme, setTheme, type ThemeChoice } from '#lib/accounts/theme.svelte.ts';
+	import { backdrop, setBackdrop, type Backdrop } from '#lib/accounts/backdrop.svelte.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/ui/rating-picks.svelte.ts';
-	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
-	import Table from '#lib/ui/Table.svelte';
+	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/accounts/about-picks.svelte.ts';
+	import Table from '#lib/accounts/Table.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';

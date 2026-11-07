@@ -2,7 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
-	import AlertsPanel from '#lib/AlertsPanel.svelte';
+	import AlertsPanel from '#lib/alerts/AlertsPanel.svelte';
 	import { forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
 	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';

@@ -15,7 +15,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import SsoCard from '#lib/signin/SsoCard.svelte';
+	import SsoCard from '#lib/accounts/SsoCard.svelte';
 
 	let skipLocal = $state(false);
 	let loaded = $state(false);

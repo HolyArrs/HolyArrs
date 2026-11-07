@@ -8,13 +8,13 @@
 	import { page } from '$app/state';
 	import { ApiError, message } from '#lib/core/api.ts';
 	import { session, type FoundServer, type SignInResult } from '#lib/core/session.svelte.ts';
-	import { safeNext } from '#lib/next.ts';
-	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import SigninPortals from '#lib/SigninPortals.svelte';
-	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
-	import { forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
-	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
-	import { setTheme, theme } from '#lib/theme.svelte.ts';
+	import { safeNext } from '#lib/accounts/next.ts';
+	import SigninBackdrop from '#lib/accounts/SigninBackdrop.svelte';
+	import SigninPortals from '#lib/accounts/SigninPortals.svelte';
+	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/accounts/signin-art.ts';
+	import { forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/accounts/recent-people.ts';
+	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/accounts/pixel-trail.ts';
+	import { setTheme, theme } from '#lib/accounts/theme.svelte.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 

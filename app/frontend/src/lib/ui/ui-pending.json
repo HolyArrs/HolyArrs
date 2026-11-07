@@ -1,9 +1,6 @@
 [
-	"lib/ui/AlertSymbol.svelte",
 	"lib/ui/Hero.svelte",
 	"lib/ui/ListRow.svelte",
 	"lib/ui/OpsCheckChip.svelte",
-	"lib/ui/StepCapsule.svelte",
-	"lib/ui/Table.svelte",
 	"lib/ui/VariantBar.svelte"
 ]

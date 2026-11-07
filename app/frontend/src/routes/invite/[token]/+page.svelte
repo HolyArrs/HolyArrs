@@ -7,10 +7,10 @@
 	import { page } from '$app/state';
 	import { api, ApiError, message } from '#lib/core/api.ts';
 	import { session, type SignInResult } from '#lib/core/session.svelte.ts';
-	import { theme } from '#lib/theme.svelte.ts';
-	import { alreadyLinked, inviteTiles, type Way } from '#lib/signinArt.ts';
-	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import SigninPortals from '#lib/SigninPortals.svelte';
+	import { theme } from '#lib/accounts/theme.svelte.ts';
+	import { alreadyLinked, inviteTiles, type Way } from '#lib/accounts/signin-art.ts';
+	import SigninBackdrop from '#lib/accounts/SigninBackdrop.svelte';
+	import SigninPortals from '#lib/accounts/SigninPortals.svelte';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 	const linkPart = $derived(page.params.token ?? '');

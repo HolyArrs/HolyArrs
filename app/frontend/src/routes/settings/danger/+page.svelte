@@ -6,7 +6,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { isConfirm, type Confirm } from '#lib/controls.ts';
+	import { isConfirm, type Confirm } from '#lib/setup/controls.ts';
 
 	const allowed = $derived(session.can('users'));
 	let busy = $state('');
