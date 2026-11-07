@@ -2,7 +2,7 @@
 // and downloads lists (no outside calls): one small entry per Library title.
 import { notAlbumName } from './ask-parts.ts';
 import type { AskStep } from '../core/types.ts';
-import type { SearchView } from '../sources/index.ts';
+import type { SearchView } from '../core/types.ts';
 import type { DownloadRow } from '../core/types.ts';
 import type { LifeFacts } from './lifecycle.ts';
 

@@ -2,7 +2,7 @@
 	import Poster from './ui/Poster.svelte';
 	import { to } from './core/paths.ts';
 	import { press } from './core/motion.ts';
-	import type { PersonSummary } from './people.ts';
+	import type { PersonSummary } from './ui/people.ts';
 
 	let { person }: { person: PersonSummary } = $props();
 	const known = $derived(person.known_for.map((m) => (m.year ? `${m.name} (${m.year})` : m.name)).slice(0, 3).join(', '));

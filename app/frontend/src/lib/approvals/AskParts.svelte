@@ -8,7 +8,7 @@
 	import { slide } from 'svelte/transition';
 	import { DUR, easeOut } from '../core/transitions.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { appPicture, coverFor } from '../music/music-pages.ts';
+	import { appPicture, coverFor } from '../music/index.ts';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';

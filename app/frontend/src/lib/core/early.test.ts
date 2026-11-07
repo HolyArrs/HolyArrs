@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createClient, EARLY_MAX, type EarlyAsks } from './api.ts';
 import { headPath, readServices, serviceRegion } from '../explore.ts';
 import { fetchMusicExplore } from '../music/music-trending.ts';
-import { musicPrefetchURLs } from '../music-prefetch.ts';
+import { musicPrefetchURLs } from '../music/music-prefetch.ts';
 import { firstPageURL } from '../person-prefetch.ts';
 import { loadDetails } from '../title-details.ts';
 

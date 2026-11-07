@@ -1,5 +1,5 @@
 import type { ExploreType } from './explore.ts';
-import type { MusicCardData, MusicExploreAnswer } from './music/music-trending.ts';
+import type { MusicCardData, MusicExploreAnswer } from './music/index.ts';
 
 /** One tile of Search's Browse grid (GET /explore/browse): a genre, or one of its mood rows. */
 export interface BrowseTile {

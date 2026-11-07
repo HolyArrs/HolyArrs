@@ -6,8 +6,8 @@
 	// The add-an-artist dialog: Library folder, Pick rules, which albums to
 	// keep up to date, new albums, album kinds and Pressing statuses.
 	import { api, message } from './core/api.ts';
-	import { pickId } from './library.ts';
-	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from './music/music.ts';
+	import { pickId } from './mediafiles/index.ts';
+	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from './music/index.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
 	import type { LookupArtist, MusicSettings } from './music/index.ts';
 

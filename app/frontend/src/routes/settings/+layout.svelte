@@ -15,8 +15,7 @@
 	import { backdrop } from '#lib/backdrop.svelte.ts';
 	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { partsNow } from '#lib/parts.svelte.ts';
-	import { offPartName } from '#lib/parts.ts';
+	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { pageState, stateWords } from '#lib/settings-status.ts';
 	import '../(frame)/settings-looks.css';

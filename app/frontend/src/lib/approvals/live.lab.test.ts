@@ -3,7 +3,7 @@ import { liveByTitle, liveFacts } from "./live.ts";
 import { lifecycle } from "./lifecycle.ts";
 import lab from "./testdata/lab139.json";
 import type { Ask } from "../core/types.ts";
-import type { SearchView } from "../sources/index.ts";
+import type { SearchView } from "../core/types.ts";
 import type { DownloadRow } from "../core/types.ts";
 
 type Snap = {

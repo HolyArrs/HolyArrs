@@ -4,7 +4,7 @@
 // again with that id does it.
 
 import { api as defaultClient, type Client } from './core/api.ts';
-import { switchPlan, type PartName, type PartsAnswer } from './parts.ts';
+import { switchPlan, type PartName, type PartsAnswer } from './mediafiles/index.ts';
 
 /** Confirm is the server's first answer to a control that asks first. */
 export interface Confirm {

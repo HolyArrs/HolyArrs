@@ -13,7 +13,7 @@
 	import { refreshDecisions } from '../decisions.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { plainReason } from '../core/plain.ts';
-	import { editionDecisionBody } from '../copy-controls.ts';
+	import { editionDecisionBody } from '../mediafiles/index.ts';
 	import Button from '../ui/Button.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 

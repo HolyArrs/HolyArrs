@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { api, message } from './core/api.ts';
-	import { editionDecisionBody } from './copy-controls.ts';
+	import { editionDecisionBody } from './mediafiles/index.ts';
 	import { toasts } from './core/toasts.svelte.ts';
 	import Button from './ui/Button.svelte';
 	import Icon from './ui/Icon.svelte';

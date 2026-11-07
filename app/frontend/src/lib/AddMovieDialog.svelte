@@ -5,9 +5,7 @@
 	import { to } from './core/paths.ts';
 	import { api, message } from './core/api.ts';
 	import { plainReason } from './core/plain.ts';
-	import { loadChoices, saveChoices, secondVersion } from './library.ts';
-	import { builtInDefaults, gateChoices as gates, startChoices } from './title-defaults.ts';
-	import { savedDefaults } from './title-defaults.svelte.ts';
+	import { loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults } from './mediafiles/index.ts';
 	import type { LibraryFolder, LookupMovie, PickRulesView, TitleView } from './core/types.ts';
 	import type { TitleDefaults } from './mediafiles/index.ts';
 

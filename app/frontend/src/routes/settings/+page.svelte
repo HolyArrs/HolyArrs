@@ -12,8 +12,7 @@
 	import { grouped, groups as allGroups, sections as all, visible } from '#lib/core/settings.ts';
 	import { searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { partsNow } from '#lib/parts.svelte.ts';
-	import { offPartName } from '#lib/parts.ts';
+	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
 	import { settingsNow } from '#lib/settings-status.svelte.ts';
 	import { groupState, stateWords, type GroupState } from '#lib/settings-status.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';

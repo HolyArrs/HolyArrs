@@ -11,7 +11,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { collectionBody, collectionResultLine, collectionStart, type CollectionChoice, type CollectionDetail, type CollectionReview } from '#lib/collections.ts';
+	import { collectionBody, collectionResultLine, collectionStart, type CollectionChoice, type CollectionDetail, type CollectionReview } from '#lib/mediafiles/index.ts';
 
 	const id = Number(page.params.id);
 	let detail = $state<CollectionDetail | null>(null);

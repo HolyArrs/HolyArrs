@@ -22,7 +22,7 @@
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { session } from '#lib/core/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
-	import MusicTileGrid from '#lib/ui/MusicTileGrid.svelte';
+	import { MusicTileGrid, appPicture, artistHref, fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData, albumWords } from '#lib/music/index.ts';
 	import MusicBrowseSections from '#lib/ui/MusicBrowseSections.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
@@ -39,24 +39,20 @@
 	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 	import type { LookupShow } from '#lib/shows/index.ts';
-	import type { PersonSummary } from '#lib/people.ts';
+	import type { PersonSummary } from '#lib/ui/people.ts';
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
-	import { appPicture, artistHref } from '#lib/music/music-pages.ts';
-	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music/music-trending.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import QuickAsk from '#lib/QuickAsk.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { albumWords } from '#lib/music/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
 	import { live } from '#lib/live-search.ts';
 	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';
-	import { partOn, partsNow, refreshParts } from '#lib/parts.svelte.ts';
+	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';
 	import { detailPath } from '#lib/title-details.ts';
 	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import { posterStatus } from '#lib/library.ts';
 	import { describes, found, plainPath, understood, type PlainAnswer } from '#lib/plain-search.ts';
 
 	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;

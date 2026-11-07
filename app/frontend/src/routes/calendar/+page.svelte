@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
-	import { libraryBrief } from '#lib/owned.ts';
+	import { libraryBrief, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -8,7 +8,6 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { date } from '#lib/core/format.ts';
 	import { glideScroll, popIn, popOut } from '#lib/core/transitions.ts';

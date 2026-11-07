@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ReleaseList from '#lib/ReleaseList.svelte';
+	import { ReleaseList } from '#lib/mediafiles/index.ts';
 </script>
 
 <svelte:head><title>Held · HolyArrs</title></svelte:head>

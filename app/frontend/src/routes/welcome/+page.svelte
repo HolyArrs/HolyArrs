@@ -15,8 +15,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
-	import { needsProblem, type PartName } from '#lib/parts.ts';
+	import { partsNow, refreshParts, needsProblem, type PartName } from '#lib/mediafiles/index.ts';
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';

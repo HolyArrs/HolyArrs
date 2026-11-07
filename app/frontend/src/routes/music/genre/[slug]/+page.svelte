@@ -4,7 +4,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { ownedIndex } from '#lib/explore.ts';
-	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
+	import { MusicTrendingRows } from '#lib/music/index.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// A Music genre page (Music only): the genre's band, then its rows —

@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { forgetPictures, pictureFor, pictureKey, pictureOf, ratioOf, registerPictures, withVersion } from './pictures.ts';
+import { forgetPictures, pictureFor, pictureKey, pictureOf, ratioOf, registerPictures, versioned, withVersion } from './pictures.ts';
 import { createClient } from './api.ts';
-import { versioned } from '../music/photo-version.ts';
 import { heroPictures } from '../hero-prefetch.ts';
 
 const al = '21159e3f-172e-43f6-aa7d-8e06a81fea49';

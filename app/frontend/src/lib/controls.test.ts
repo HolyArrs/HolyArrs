@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createClient } from './core/api.ts';
 import { applyParts, isConfirm, linkTarget } from './controls.ts';
-import type { PartName, PartsAnswer } from './parts.ts';
+import type { PartName, PartsAnswer } from './mediafiles/parts.ts';
 
 function answer(on: Record<PartName, boolean>): PartsAnswer {
 	return {

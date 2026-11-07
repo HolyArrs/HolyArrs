@@ -15,8 +15,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshParts } from '#lib/parts.svelte.ts';
-	import { partNeeds, partStops, type PartName, type PartsAnswer, type PartView } from '#lib/parts.ts';
+	import { refreshParts, partNeeds, partStops, type PartName, type PartsAnswer, type PartView } from '#lib/mediafiles/index.ts';
 	import { isConfirm, linkAction, linkTarget, type Confirm } from '#lib/controls.ts';
 	import { linkLabel, runTone, runWord, splitStates } from '#lib/health.ts';
 	import type { EventRecord } from '#lib/core/types.ts';

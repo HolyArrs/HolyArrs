@@ -12,7 +12,7 @@
 	import emby from 'simple-icons/icons/emby.svg?raw';
 	import discord from 'simple-icons/icons/discord.svg?raw';
 	import { to } from '#lib/core/paths.ts';
-	import { coverFor } from '#lib/music/music-pages.ts';
+	import { coverFor } from '#lib/music/index.ts';
 	import { initials, type Person } from './pick.ts';
 
 	let { group, posters = [], people = [] }: { group: string; posters?: string[]; people?: Person[] } = $props();

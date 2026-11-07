@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
+	import { libraryTitles, ownedLibrary } from '#lib/mediafiles/index.ts';
 	import { api } from './core/api.ts';
 	import { to } from './core/paths.ts';
-	import { artName, similarTitles } from './title-page.ts';
+	import { artName, similarTitles } from './mediafiles/index.ts';
 	import type { TitleView } from './core/types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import WideCard from './ui/WideCard.svelte';

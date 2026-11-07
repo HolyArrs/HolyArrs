@@ -4,12 +4,11 @@
 </script>
 
 <script lang="ts">
-	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
+	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
-	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/core/api.ts';
@@ -63,13 +62,13 @@
 	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
 	import type { LookupShow, ShowSettings } from '#lib/shows/index.ts';
-	import { seasonWords } from '#lib/shows.ts';
+	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import QuickAsk from '#lib/QuickAsk.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import TopServicesRow from '#lib/TopServicesRow.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
-	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
+	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
@@ -77,9 +76,6 @@
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
 	import GenreBanner from '#lib/ui/GenreBanner.svelte';
 	import { GENRES } from '#lib/explore.ts';
-	import { fetchMusicGenre, musicCardHref, musicImage, type MusicCardData } from '#lib/music/music-trending.ts';
-	import { coverFor } from '#lib/music/music-pages.ts';
-	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
 	import { fitTile } from '#lib/core/tmdb-image.ts';

@@ -3,7 +3,7 @@
 	import Badge from './Badge.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../core/motion.ts';
-	import { tmdbSized } from '../library-art.ts';
+	import { tmdbSized } from './library-art.ts';
 
 	// Title page hero: full-bleed backdrop (the darkened poster when there is none),
 	// legibility gradient, title or logo art, meta line, badges, status,

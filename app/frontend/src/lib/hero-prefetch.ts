@@ -4,7 +4,7 @@
 // preloads the next card's in the same row (arrowing along a row). Only
 // pictures whose record says they are stored are asked, at the exact
 // address the page will ask, so nothing is fetched twice.
-import { appPicture, coverFor } from './music/music-pages.ts';
+import { appPicture, coverFor } from './music/index.ts';
 import { pictureFor } from './core/pictures.ts';
 import { remembered, type DetailKind } from './title-details.ts';
 import { proxied } from './core/tmdb-image.ts';

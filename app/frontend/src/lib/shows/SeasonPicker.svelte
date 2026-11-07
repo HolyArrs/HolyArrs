@@ -1,0 +1,37 @@
+<script lang="ts">
+	import Menu, { type MenuItem } from '../ui/Menu.svelte';
+	import { seasonName } from './labels.ts';
+
+	// The season picker of a show page: one menu of seasons; the season that
+	// is airing now carries a "New" mark, in the menu and beside the picker.
+	let {
+		seasons,
+		value,
+		fresh,
+		onpick
+	}: {
+		seasons: { number: number; name?: string }[];
+		value: number;
+		/** The season marked New, if any. */
+		fresh?: number;
+		onpick: (n: number) => void;
+	} = $props();
+	const nameOf = (s: { number: number; name?: string }) => s.name || seasonName(s.number);
+	const cur = $derived(seasons.find((s) => s.number === value));
+	const items = $derived<MenuItem[]>(seasons.map((s) => ({ label: nameOf(s), checked: s.number === value, hint: s.number === fresh ? 'New' : undefined, onselect: () => onpick(s.number) })));
+</script>
+
+<span class="picker" data-testid="season-picker">
+	{#if seasons.length > 1}
+		<Menu label="Pick a season" variant="button" icon="tv" text={cur ? nameOf(cur) : 'Season'} align="end" {items} />
+	{:else if cur}
+		<span class="one">{nameOf(cur)}</span>
+	{/if}
+	{#if fresh !== undefined && fresh === value}<span class="new" data-testid="season-new">New</span>{/if}
+</span>
+
+<style>
+	.picker { display: inline-flex; align-items: center; gap: 8px; }
+	.one { font: var(--t-callout); font-weight: 600; }
+	.new { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent-fill); color: var(--text-on-red); font: 700 12px/1 var(--font-ui); letter-spacing: .02em; }
+</style>

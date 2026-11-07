@@ -4,7 +4,7 @@
 	import { api } from '../core/api.ts';
 	import { loadWikiFacts } from './wiki-facts.ts';
 	import { pictureOf } from '../core/pictures.ts';
-	import { tmdbSized } from '../library-art.ts';
+	import { tmdbSized } from './library-art.ts';
 
 	// A person in a cast and crew shelf: round photo (initials fallback), name, role.
 	let { name, role, image, href, size = 96, needsArt = false }: { name: string; role?: string; image?: string | null; href?: string; size?: number; /** Artist rows: no photo, no circle (its list item is left out too). */ needsArt?: boolean } = $props();

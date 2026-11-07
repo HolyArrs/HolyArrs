@@ -712,3 +712,28 @@ export interface Decision {
 	/** Optional artwork supplied with a decision; Library metadata remains the fallback. */
 	artwork?: string;
 }
+
+/** SearchView is one search for Home: how far it is and what it found. */
+export interface SearchView {
+	job_id: number;
+	kind: 'search_slot' | 'search_missing' | 'feed_check' | 'search_season' | 'search_album';
+	state: string;
+	by_hand: boolean;
+	only_show: boolean;
+	title_id?: number;
+	title_name?: string;
+	version?: string;
+	/** Shows: the episode (S01E02) or season (S01) searched. */
+	episode?: string;
+	/** Artists: the album searched. */
+	album?: string;
+	progress: number;
+	note?: string;
+	started_at?: string;
+	ended_at?: string;
+	found: number;
+	refused: number;
+	outcome?: 'chosen' | 'held' | 'shown' | 'none' | 'failed' | 'episodes' | 'album';
+	picked?: string;
+	error?: string;
+}

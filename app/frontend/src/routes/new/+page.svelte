@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
+	import { libraryTitles, ownedLibrary, partOff, partOn, savedDefaults } from '#lib/mediafiles/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -8,7 +8,6 @@
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
@@ -18,14 +17,13 @@
 	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
 	import type { LookupShow, ShowSettings } from '#lib/shows/index.ts';
-	import { seasonWords } from '#lib/shows.ts';
+	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import QuickAsk from '#lib/QuickAsk.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import NewRail from '#lib/ui/NewRail.svelte';
-	import MusicNewTab from '#lib/MusicNewTab.svelte';
+	import { MusicNewTab } from '#lib/music/index.ts';
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import { whyShown, type Why } from '#lib/why-shown.ts';
 	import PosterCard from '#lib/ui/PosterCard.svelte';

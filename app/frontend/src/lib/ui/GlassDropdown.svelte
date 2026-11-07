@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from '../live-search.ts';
-	import { appPicture, coverFor } from '../music/music-pages.ts';
+	import { appPicture, coverFor } from '../music/index.ts';
 	import { pictureOf } from '../core/pictures.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { SkTrackRow } from './sk/index.ts';

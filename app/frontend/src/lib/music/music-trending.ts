@@ -1,4 +1,4 @@
-import { versioned } from './photo-version.ts';
+import { versioned } from '../core/pictures.ts';
 // Music trending: the metadata server's weekly lists (ListenBrainz
 // worldwide, Deezer's charts per country) as artist and album rows.
 import { api, ApiError, type Client } from '../core/api.ts';

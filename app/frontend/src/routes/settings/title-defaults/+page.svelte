@@ -9,9 +9,8 @@
 	import { to } from '#lib/core/paths.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
-	import { changedParts, foldersFor, gateChoices, rulesFor } from '#lib/title-defaults.ts';
-	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows.ts';
+	import { savedDefaults, changedParts, foldersFor, gateChoices, rulesFor } from '#lib/mediafiles/index.ts';
+	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';

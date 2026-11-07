@@ -18,7 +18,7 @@
 	import { plainReason } from '#lib/core/plain.ts';
 	import { detailPath } from '#lib/title-details.ts';
 	import { followsByTmdb } from '#lib/explore.ts';
-	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
+	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/ui/people.ts';
 	import type { AskLimit } from '#lib/requests/index.ts';
 	import { loadWikiFacts, type WikiFacts } from '#lib/ui/wiki-facts.ts';
 	import { setTopCrumbs } from '#lib/core/top-crumbs.svelte.ts';
@@ -27,7 +27,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import HeroMotion from '#lib/ui/HeroMotion.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
-	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
+	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '#lib/core/trailer/autoplay.svelte.ts';
 	import { HERO_DELAY } from '#lib/core/trailer/trailer.ts';
 	import { fromHandoff, openTheater } from '#lib/core/trailer/theater.svelte.ts';

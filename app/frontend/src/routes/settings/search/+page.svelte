@@ -10,7 +10,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { feedMinutesOk } from '#lib/releases.ts';
+	import { feedMinutesOk } from '#lib/mediafiles/index.ts';
 	import type { SearchSettings } from '#lib/sources/index.ts';
 
 	let settings = $state<SearchSettings>({

@@ -3,7 +3,7 @@
 	// with a search bar and one Filter. Routine work is left out.
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
-	import { libraryBrief } from '#lib/owned.ts';
+	import { libraryBrief } from '#lib/mediafiles/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import SearchLook from '#lib/history-looks/SearchLook.svelte';
 	import type { TitleView } from '#lib/core/types.ts';

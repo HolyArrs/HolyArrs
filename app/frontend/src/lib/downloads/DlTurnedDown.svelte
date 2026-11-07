@@ -11,7 +11,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bytes, date } from '#lib/core/format.ts';
-	import { facts, keyReasons, listedName, pager } from '#lib/releases.ts';
+	import { facts, keyReasons, listedName, pager } from '#lib/mediafiles/index.ts';
 	import { plainReason } from '#lib/core/plain.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';

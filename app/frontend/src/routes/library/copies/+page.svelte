@@ -4,16 +4,14 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
-	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
+	import { LibraryToolPage, titleArt, codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/mediafiles/index.ts';
 	import DlFind from '#lib/downloads/DlFind.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
-	import { titleArt } from '#lib/title-art.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/library-copies.ts';
 
 	const pageSize = 50;
 	let page = $state<LibraryCopyPage>({ copies: [], total: 0, limit: pageSize, offset: 0, codecs: {} });

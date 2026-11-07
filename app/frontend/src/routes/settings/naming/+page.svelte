@@ -10,21 +10,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import {
-		airDateChoices,
-		colonChoices,
-		episodeExampleRows,
-		multiEpisodeChoices,
-		illegalChoices,
-		musicExampleRows,
-		musicWords,
-		showWords,
-		type EpisodeExamples,
-		type FileRules,
-		type MusicExamples,
-		type NamingSettings,
-		type NamingView
-	} from '#lib/organise.ts';
+	import { airDateChoices, colonChoices, episodeExampleRows, multiEpisodeChoices, illegalChoices, musicExampleRows, musicWords, showWords, type EpisodeExamples, type FileRules, type MusicExamples, type NamingSettings, type NamingView } from '#lib/mediafiles/index.ts';
 
 	let ns = $state<NamingSettings>({ file_pattern: '', folder_pattern: '', colon: 'smart', illegal: 'replace', rename_on_import: true, adopt_scan_limit: 5000 });
 	let fr = $state<FileRules>({ holding_days: 7, min_free_mb: 100, skip_free_space_check: false });

@@ -6,7 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message } from '#lib/core/api.ts';
 	import { to } from '#lib/core/paths.ts';
-	import { seasonName } from '#lib/shows.ts';
+	import { seasonName } from '#lib/shows/index.ts';
 	import { episodeWord, hasFile, kindHint, kindIcon, makeReport, noteMax, partWords, reportKinds, type ReportKind, type ReportView } from '#lib/reports.ts';
 
 	// Report a problem (#95) with a title in the Library: what is wrong, and

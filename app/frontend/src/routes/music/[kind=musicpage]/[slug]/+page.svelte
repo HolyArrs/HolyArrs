@@ -4,8 +4,8 @@
 	import { api } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { ownedIndex } from '#lib/explore.ts';
-	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
-	import type { MusicPageKind } from '#lib/music/music-trending.ts';
+	import { MusicTrendingRows } from '#lib/music/index.ts';
+	import type { MusicPageKind } from '#lib/music/index.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// A Music Browse page for a mood, season, decade or activity: the same

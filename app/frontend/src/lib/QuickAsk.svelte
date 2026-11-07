@@ -7,8 +7,8 @@
 	import { refreshInbox } from './requests.svelte.ts';
 	import { loadDetails } from './title-details.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from './explore.ts';
-	import { seasonWords } from './shows.ts';
-	import { savedDefaults } from './title-defaults.svelte.ts';
+	import { seasonWords } from './shows/index.ts';
+	import { savedDefaults } from './mediafiles/index.ts';
 	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
 	import type { GateDefaults } from './mediafiles/index.ts';
 	import type { LookupShow, ShowSettings } from './shows/index.ts';

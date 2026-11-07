@@ -6,7 +6,7 @@
 // may see Users, and only after the page is up.
 
 import { api } from '#lib/core/api.ts';
-import { libraryBrief } from '#lib/owned.ts';
+import { libraryBrief } from '#lib/mediafiles/index.ts';
 import { proxied } from '#lib/core/tmdb-image.ts';
 import { to } from '#lib/core/paths.ts';
 import { pickPosters, type Person } from './pick.ts';

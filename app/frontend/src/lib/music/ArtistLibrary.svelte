@@ -4,22 +4,19 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
-	import DeleteSheet from '#lib/DeleteSheet.svelte';
+	import { ReleaseSheet, DeleteSheet, splitSteps, type RenameStep, RenamePreview } from '#lib/mediafiles/index.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import CompactRow from '#lib/history-looks/CompactRow.svelte';
 	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import { groupDownloads } from '#lib/history.ts';
-	import { splitSteps, type RenameStep } from '#lib/organise.ts';
-	import RenamePreview from '#lib/RenamePreview.svelte';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
 	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { TrackView } from '#lib/music/types.ts';
+	import type { TrackView } from './types.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/core/paths.ts';
-	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from '#lib/music/music.ts';
+	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from './labels.ts';
 
 	// An artist's Library tab: what you have, the albums grouped by kind (closed
 	// until opened, with their tracks and a link to the album page), keep up to
@@ -203,7 +200,7 @@
 	let deleteOpen = $state(false);
 	let renameOpen = $state(false);
 
-	// Settings the movie way (Luis 2026-11-05): choices on the row, a row only when it can do something.
+	// Settings like a movie's: choices on the row, a row only when it can do something.
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
 	let renameCount = $state(0);

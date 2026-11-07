@@ -1,6 +1,6 @@
 // Subtitles: the words and small sums behind Settings > Subtitles, the
 // Missing subtitles list and the subtitle panel of movie and show pages.
-import { episodeCode } from './shows.ts';
+import { episodeCode } from './core/episodes.ts';
 
 export type HI = 'normal' | 'hi' | 'either';
 

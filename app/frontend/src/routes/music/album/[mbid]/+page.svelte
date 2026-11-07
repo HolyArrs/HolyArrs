@@ -17,17 +17,13 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
-	import { albumYear } from '#lib/music/music.ts';
+	import { albumYear, GapNotice, gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView, albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack, paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/core/pictures.ts';
-	import GapNotice from '#lib/music/GapNotice.svelte';
-	import { gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView } from '#lib/music/reask.ts';
-	import { albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow } from '#lib/ui/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 

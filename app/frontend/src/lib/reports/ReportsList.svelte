@@ -18,7 +18,7 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import type { SearchView } from '#lib/sources/index.ts';
+	import type { SearchView } from '#lib/core/types.ts';
 	import { factsLine, filterOf, fixReport, kindHint, kindIcon, listReports, noteMax, quickReplies, reopenReport, reportFilters, reportHref, searchBody, sortReports, stateCounts, titleLine, whoName, type ReportFilter, type ReportView } from '#lib/reports.ts';
 
 	// Reports (#36): the Requests page's sibling, in the same language. One toolbar

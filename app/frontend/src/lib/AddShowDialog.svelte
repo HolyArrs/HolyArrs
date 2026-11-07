@@ -7,10 +7,8 @@
 	// keep up to date, new seasons, episode order and details source. It
 	// starts from the Movies and TV defaults and the show settings.
 	import { api, message } from './core/api.ts';
-	import { secondVersion } from './library.ts';
-	import { detailsSources, episodeOrders, seasonChoices } from './shows.ts';
-	import { builtInDefaults, startChoices } from './title-defaults.ts';
-	import { savedDefaults } from './title-defaults.svelte.ts';
+	import { secondVersion, builtInDefaults, startChoices, savedDefaults } from './mediafiles/index.ts';
+	import { detailsSources, episodeOrders, seasonChoices } from './shows/index.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from './core/types.ts';
 	import type { LookupShow, ShowSettings } from './shows/index.ts';
 	import type { TitleDefaults } from './mediafiles/index.ts';

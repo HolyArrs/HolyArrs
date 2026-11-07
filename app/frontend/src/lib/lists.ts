@@ -1,5 +1,5 @@
 // Outside list helpers, kept apart from the page so they can be tested.
-import { seasonChoices } from './shows.ts';
+import { seasonChoices } from './shows/index.ts';
 
 /** titleKinds are what a list adds. */
 export const titleKinds: [string, string][] = [

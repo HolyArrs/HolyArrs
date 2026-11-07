@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { askedByDated, askedByTip, firstName, initial, shortDate, WORDS, type Asker } from '../askedby.ts';
+	import { askedByDated, askedByTip, firstName, initial, shortDate, WORDS, type Asker } from './asked-by.ts';
 
 	// Asked by on the title page: "Asked by Ana · 12 Oct" under the title.
 	// It opens to the full list when more than one person asked.

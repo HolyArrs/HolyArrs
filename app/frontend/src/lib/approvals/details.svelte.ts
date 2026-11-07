@@ -11,7 +11,7 @@ import type { Ask } from '../core/types.ts';
 import { detailKey } from './approvals.ts';
 import { readInfo, type AskInfo, type EpisodeInfo } from './inbox.ts';
 import { musicDefaults, type ArtistAlbum, type MusicKinds } from './ask-parts.ts';
-import { appPicture, type ArtistCoreData } from '../music/music-pages.ts';
+import { appPicture, type ArtistCoreData } from '../music/index.ts';
 
 const got = $state<Record<string, TitleDetails | null>>({});
 const info = $state<Record<string, AskInfo | null>>({});

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { libraryBrief } from '#lib/owned.ts';
+	import { libraryBrief } from '#lib/mediafiles/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { onMount } from 'svelte';

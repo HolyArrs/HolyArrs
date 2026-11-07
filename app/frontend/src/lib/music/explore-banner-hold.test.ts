@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 // Explore Music: the "Your genre" banner came in after the rows and pushed them down
 // (CLS 0.15). Its place is held with the same banner (placeholders) until the rows answer.
 const page = readFileSync(join(__dirname, '..', '..', 'routes', 'explore', '+page.svelte'), 'utf8');
-const rows = readFileSync(join(__dirname, '..', 'MusicTrendingRows.svelte'), 'utf8');
+const rows = readFileSync(join(__dirname, 'MusicTrendingRows.svelte'), 'utf8');
 
 describe('Explore Music banner place', () => {
 	it('is held by the same banner until the music rows answer', () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { to } from '../core/paths.ts';
-	import MusicTileGrid from './MusicTileGrid.svelte';
+	import { MusicTileGrid } from '../music/index.ts';
 
 	// Search > Music Browse (music_lists_v1 row templates): titled sections of the
 	// shared Music tile, every tile of the section shown. A tile with no album

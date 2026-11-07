@@ -2,8 +2,8 @@
 	import type { Snippet } from 'svelte';
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
-	import { coverFor } from '../music/music-pages.ts';
-	import { tmdbSized } from '../library-art.ts';
+	import { coverFor } from '../music/index.ts';
+	import { tmdbSized } from './library-art.ts';
 
 	// For work screens: leading art or icon, title, subtitle, trailing status
 	// and actions. Only the main area is a link, so trailing buttons stay separate.
