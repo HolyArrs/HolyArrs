@@ -29,7 +29,8 @@ test.beforeAll(async ({ browser }) => {
 	await page.getByLabel('Folder path').fill(oldLib);
 	await page.getByLabel('Name').fill('Old library');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.getByText(oldLib)).toBeVisible();
+	// the row shows its name and a short path (full path on hover)
+	await expect(page.locator('#main .folder').filter({ hasText: 'Old library' })).toBeVisible();
 });
 
 test('import: scan shows matched, unsure and unmatched; fix the unsure one; adopt without moving anything', async () => {
