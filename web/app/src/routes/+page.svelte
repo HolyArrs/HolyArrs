@@ -32,6 +32,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/Icon.svelte';
+	import { inbox } from '#lib/requests.svelte.ts';
 
 	// Home is "my stuff": the server sends the row order per person (GET /home);
 	// every row hides when it has nothing.
@@ -462,6 +463,14 @@
 		const b = busy;
 		if (wasBusy && !b && !manager) void loadAll();
 		wasBusy = b;
+	});
+	// Members get no live stream: when the bell's minute check brings a new message
+	// (approved, declined, ready), Home reads again.
+	let lastMsg: number | undefined;
+	$effect(() => {
+		const top = inbox.messages.length ? Math.max(...inbox.messages.map((m) => m.id)) : undefined;
+		if (!manager && lastMsg !== undefined && top !== undefined && top !== lastMsg) void loadAll();
+		lastMsg = top;
 	});
 	const waitingCopy = $derived(!manager && !busy && mine.some((a) => a.state === 'approved'));
 	$effect(() => {

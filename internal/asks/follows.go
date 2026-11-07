@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -18,10 +20,17 @@ var ErrNotFollowable = errors.New("only a movie, a show or an artist in the Libr
 // Followed is one title a person follows.
 type Followed struct {
 	TitleID    int64  `json:"title_id"`
-	Kind       string `json:"kind"` // movie, show or artist
+	Kind       string `json:"kind"` // movie, show, artist or album
 	Name       string `json:"name"`
 	Year       *int   `json:"year,omitempty"`
 	FollowedAt string `json:"followed_at"`
+	// A follow of something not in the Library: its TMDB id (movie, show) or
+	// MusicBrainz id and artist (album). Name is empty for TMDB ones (the app
+	// looks it up). Unfollow is the address that stops it (DELETE).
+	TMDBID   string `json:"tmdb_id,omitempty"`
+	MBID     string `json:"mbid,omitempty"`
+	Artist   string `json:"artist,omitempty"`
+	Unfollow string `json:"unfollow"`
 }
 
 // Follow puts a title's dates on p's calendar and lets p hear about a
@@ -164,9 +173,41 @@ func (s *Service) Following(ctx context.Context, userID int64) ([]Followed, erro
 			y := int(year.Int64)
 			f.Year = &y
 		}
+		f.Unfollow = fmt.Sprintf("/titles/%d/follow", f.TitleID)
 		out = append(out, f)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	// Follows of titles not in the Library yet: shows and movies by TMDB id
+	// (skipping any whose title is now followed in the Library), then albums.
+	more, err := s.Store.Read().QueryContext(ctx, `SELECT 'show', tmdb_id, '', '', created_at FROM tmdb_follows tf WHERE user_id = ? AND kind = 'show'
+			AND NOT EXISTS (SELECT 1 FROM follows f JOIN titles t ON t.id = f.title_id WHERE f.user_id = tf.user_id AND t.kind = 'show' AND json_extract(t.source_ids, '$.tmdb') = tf.tmdb_id)
+		UNION ALL SELECT 'movie', tmdb_id, '', '', created_at FROM tmdb_movie_follows mf WHERE user_id = ?
+			AND NOT EXISTS (SELECT 1 FROM follows f JOIN titles t ON t.id = f.title_id WHERE f.user_id = mf.user_id AND t.kind = 'movie' AND json_extract(t.source_ids, '$.tmdb') = mf.tmdb_id)
+		UNION ALL SELECT 'album', mbid, name, artist, created_at FROM album_follows WHERE user_id = ?
+		ORDER BY 1, 5`, userID, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer more.Close()
+	for more.Next() {
+		var f Followed
+		var id string
+		if err := more.Scan(&f.Kind, &id, &f.Name, &f.Artist, &f.FollowedAt); err != nil {
+			return nil, err
+		}
+		if f.Kind == "album" {
+			f.MBID = id
+			f.Unfollow = "/metadata/album/" + url.PathEscape(id) + "/follow"
+		} else {
+			f.TMDBID = id
+			f.Unfollow = "/metadata/" + f.Kind + "/" + url.PathEscape(id) + "/follow"
+		}
+		out = append(out, f)
+	}
+	return out, more.Err()
 }
 
 // SendAlbumNotices tells the people who follow an artist about its new
