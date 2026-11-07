@@ -23,6 +23,8 @@
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlStatus from './DlStatus.svelte';
 	import DlTabsView from './DlTabsView.svelte';
+	import DlMorePop from './DlMorePop.svelte';
+	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { CONN_HINT, CONN_WORD, tabsOf, type PaneTab } from './pane-facts.ts';
 	import GhostEmpty from './GhostEmpty.svelte';
@@ -151,36 +153,7 @@
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 
-	// What each Downloader says about itself (speeds, free space, totals).
-	type ClientStatus = { paused: boolean; speed: number; up_speed: number; speed_limit?: number; up_limit?: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
-	type Client = { id: number; name: string; protocol?: string; status?: ClientStatus; error?: string };
-	let clients = $state<Client[]>([]);
-	let clientsRead = $state(false);
-	async function readClients() {
-		try {
-			clients = (await api.get<{ clients: Client[] }>('/downloads/clients')).clients ?? [];
-		} catch {
-			clients = [];
-		}
-		clientsRead = true;
-	}
-	// Slow mode: a torrent Downloader's second, slower set of speed limits.
-	let slowBusy = $state(0);
-	async function setSlow(c: Client, on: boolean) {
-		slowBusy = c.id;
-		try {
-			await api.post(`/downloaders/${c.id}/slow-mode`, { on });
-			await readClients();
-		} catch (e) {
-			toasts.push("Couldn't change slow mode", 'fail', { body: message(e) });
-		} finally {
-			slowBusy = 0;
-		}
-	}
-	const reporting = $derived(clients.filter((c) => c.status && !c.error));
-	const sumOf = (k: keyof ClientStatus) => reporting.reduce((n, c) => n + (Number(c.status?.[k]) || 0), 0);
-	const freeAll = $derived(reporting.map((c) => c.status?.free_space ?? 0).filter((n) => n > 0));
-	const health = $derived(!clientsRead ? 'Not reported' : !clients.length ? 'Not connected' : reporting.length === clients.length ? 'Connected' : reporting.length ? `${reporting.length} of ${clients.length} connected` : 'Not connected');
+	const dls = new Downloaders(() => watch);
 	const tabNow = (r: DownloadRow): PaneTab => {
 		const t = tabOf(r.id);
 		return tabsOf(r).includes(t) ? t : 'Info';
@@ -258,16 +231,16 @@
 	}
 	const sum = $derived(totals(allQueue));
 	// Upload comes from the Downloaders themselves once they report: seeding uploads without any downloading row.
-	const upSum = $derived(reporting.length ? sumOf('up_speed') : (upTotal ?? sum.up));
+	const upSum = $derived(dls.reporting.length ? dls.sumOf('up_speed') : (upTotal ?? sum.up));
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
 	// The Downloaders' own caps: the tightest one is the Speed limit button's word.
-	const capNow = $derived(Math.min(...reporting.map((c) => c.status?.speed_limit ?? 0).filter((n) => n > 0)));
+	const capNow = $derived(Math.min(...dls.reporting.map((c) => c.status?.speed_limit ?? 0).filter((n) => n > 0)));
 	const toReview = $derived(reviewCount(allQueue));
 	// Time left: the longest of the rows' own estimates and a Usenet queue's.
-	const etaAll = $derived(Math.max(sum.eta || 0, ...clients.map((c) => (c.error ? 0 : (c.status?.time_left ?? 0)))));
+	const etaAll = $derived(Math.max(sum.eta || 0, ...dls.clients.map((c) => (c.error ? 0 : (c.status?.time_left ?? 0)))));
 	const etaWords = $derived(etaAll ? duration(etaAll) : '');
 	// Usenet has no upload: with only Usenet Downloaders the Up pill goes.
-	const noUp = $derived(clientsRead && clients.length > 0 && !clients.some((c) => c.protocol === 'torrent'));
+	const noUp = $derived(dls.loaded && dls.clients.length > 0 && !dls.clients.some((c) => c.protocol === 'torrent'));
 	/** The review call opens Problems › Review. */
 	function openReview() {
 		choose('problems');
@@ -407,22 +380,6 @@
 	let grabY: number | null = null;
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
 	const pane = new PaneDetail({ openId: () => openId, openTab: () => openTab, paneOpen: () => paneOpen, rows: () => everyRow, watch: () => watch });
-	// The Downloaders' own status for the pills, every 5 seconds (managers only: watchers would get a 403 each time).
-	$effect(() => {
-		if (watch) return;
-		void readClients();
-		const t = setInterval(() => {
-			if (document.visibilityState === 'visible') void readClients();
-		}, 5000);
-		const back = () => {
-			if (document.visibilityState === 'visible') void readClients();
-		};
-		document.addEventListener('visibilitychange', back);
-		return () => {
-			clearInterval(t);
-			document.removeEventListener('visibilitychange', back);
-		};
-	});
 	try {
 		const v = typeof localStorage === 'undefined' ? null : Number(localStorage.getItem(PANE_KEY));
 		if (v && Number.isFinite(v)) paneH = Math.max(120, Math.min(900, Math.round(v)));
@@ -1373,8 +1330,8 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
-<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? `Speed limit: ${bytes(capNow)}/s. Change it` : 'Set a speed limit'} data-testid="dl-q-down"><span class="sr">Speed: </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">Speed limit </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. Set a speed limit</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? bytes(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
+<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? `Speed limit: ${bytes(capNow)}/s. Change it` : 'Set a speed limit'} data-testid="dl-q-down"><span class="sr">Speed: </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">Speed limit </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. Set a speed limit</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...dls.freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
@@ -1423,46 +1380,9 @@
 {/if}
 </div>
 </div>
-{#snippet morePop()}<span class="mop" class:warn={notes.length > 0 || clients.some((c) => c.error)}><Popover label="More status" icon="more" placement="below" align="end" width={320}>{#snippet children()}
-	<!-- One card per Downloader (its state, its own numbers, its own control), then the totals as tiles. -->
-	<div class="mo" data-testid="sb-status">
-		{#each notes.filter((n) => !clients.some((c) => n.startsWith(c.name))) as n (n)}<p class="mnote" data-testid="dl-note">{n}</p>{/each}
-		{#if !clients.length}<p class="mnote">{health}</p>{/if}
-		{#each clients as c (c.id)}
-			{@const s = c.status}
-			{@const usenet = c.protocol === 'usenet'}
-			{@const tone = c.error ? 'warn' : s?.connection === 'disconnected' ? 'bad' : s?.connection === 'firewalled' ? 'warn' : s?.paused ? 'held' : 'ok'}
-			<!-- The dot carries the state; a word appears only when something is off, so a card never says "Connected" while its neighbours seem not to. -->
-			{@const word = c.error ? '' : s?.connection && s.connection !== 'connected' ? CONN_WORD[s.connection] : s?.paused ? 'Paused' : ''}
-			{@const hint = c.error ? 'Not answering' : s?.connection ? CONN_HINT[s.connection] : s?.paused ? 'Paused' : 'Answering'}
-			<div class="mc" class:warn={!!c.error} data-testid="sb-client">
-				<div class="mch">
-					<i class="dot {tone}" role="img" aria-label={hint} title={hint}></i>
-					<b class="cname">{c.name}</b>
-					<span class="kind">{usenet ? 'Usenet' : 'Torrent'}</span>
-					{#if word}<span class="cn" data-testid="sb-connection">{word}</span>{/if}
-					{#if c.error}<button type="button" class="xbn quiet retry" onclick={() => void readClients()} data-testid="sb-retry">Try again</button>{/if}
-				</div>
-				{#if c.error}<p class="mnote">{c.error}</p>
-				{:else if s}
-					<div class="mcg">
-						<span><small>Down</small>{bytes(s.speed)}/s</span>
-						{#if usenet}<span><small>Free</small>{s.free_space ? bytes(s.free_space) : '–'}</span><span><small>Today</small>{s.day_down ? bytes(s.day_down) : '–'}</span>
-						{:else}<span><small>Up</small>{bytes(s.up_speed)}/s</span><span data-testid="sb-session"><small>Session</small>↑ {bytes(s.session_up)}</span>{/if}
-					</div>
-					{#if s.slow_mode != null}<label class="slow"><span>Slow mode</span><input type="checkbox" role="switch" checked={s.slow_mode} disabled={watch || slowBusy === c.id} onchange={(e) => setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
-				{/if}
-			</div>
-		{/each}
-		<div class="mt" data-testid="sb-totals">
-			<span><small>Today</small><b>{sumOf('day_down') ? bytes(sumOf('day_down')) : '–'}</b></span>
-			<span><small>This month</small><b>{sumOf('month_down') ? bytes(sumOf('month_down')) : '–'}</b></span>
-			<span><small>All time</small><b>{sumOf('all_time_down') ? bytes(sumOf('all_time_down')) : '–'}</b></span>
-		</div>
-	</div>
-{/snippet}</Popover></span>{/snippet}
 <!-- Connection health stays readable for screen readers and tests. -->
-<div class="vh"><span data-testid="sb-health">{health}</span></div>
+{#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}
+<div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
 
 {#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
@@ -1719,30 +1639,6 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	/* The status popover: one card per Downloader, then the totals as tiles. */
-	.mo { margin: 0; padding: 6px; display: grid; gap: 8px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.mnote { margin: 0; padding: 0 4px; color: var(--text-muted); }
-	.mc { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.mc.warn { box-shadow: 0 0 0 1px color-mix(in srgb, var(--wait) 45%, transparent); }
-	.mch { display: flex; align-items: center; gap: 8px; min-width: 0; }
-	.mch .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-	.mch .dot.held { background: var(--text-muted); }
-	.mch .dot.warn { background: var(--wait); }
-	.mch .dot.bad { background: var(--fail); }
-	.cname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-	.mch .kind { flex: none; padding: 1px 8px; border-radius: 999px; box-shadow: 0 0 0 1px var(--line-strong); color: var(--text-muted); font: var(--t-caption); }
-	.mch .cn { flex: none; color: var(--text-muted); font: var(--t-caption); }
-	.mch .retry { flex: none; min-height: 28px; padding: 0 10px; }
-	.mcg, .mt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-	.mcg > span, .mt > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-	.mcg small, .mt small { color: var(--text-muted); font: var(--t-caption); }
-	.mt > span { padding: 8px 10px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.mt b { font: 600 15px / 1.2 var(--font-ui); }
-	.slow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding-top: 6px; border-top: 1px solid var(--line); cursor: pointer; min-height: 28px; color: var(--text-muted); }
-	.slow input { width: 18px; height: 18px; accent-color: var(--accent); }
-	/* The status trigger carries an amber dot while there is a note to read. */
-	.mop { position: relative; display: inline-flex; }
-	.mop.warn::after { content: ''; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--wait); box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
 	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
 	.kcell .kt.none { color: var(--text-muted); }
 	/* Wide, the pill starts right after the divider like every other column's text. */
@@ -1865,8 +1761,6 @@
 	.pact .xbn { min-height: 32px; padding: 0 10px; border-radius: var(--r-btn); font: var(--t-subhead); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
 	.pact .more { display: inline-flex; }
-	.xbn.quiet { border-color: transparent; background: none; color: var(--text-muted); }
-	.xbn.quiet:hover:not(:disabled) { border-color: color-mix(in srgb, var(--fail) 35%, transparent); background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail-text); }
 	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
 	.tdl:hover { color: var(--text); }
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -2130,7 +2024,7 @@
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
 		.pcl { width: 32px; height: 32px; }
-		.trchip, .qrv, .lk, .xbn, .mch .retry { min-height: 32px; }
+		.trchip, .qrv, .lk, .xbn { min-height: 32px; }
 		.phd .xtab { min-height: 32px; }
 	}
 	/* Touch phones: every control a finger hits gets a 44px target; the
