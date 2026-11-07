@@ -46,6 +46,19 @@ const (
 	maxPartial = 4 * MaxLine
 )
 
+// Hidden replaces every masked value.
+const Hidden = "[hidden]"
+
+// Levels, from least to most serious.
+const (
+	Info    = "info"
+	Warning = "warning"
+	Error   = "error"
+)
+
+// maxRead caps how much of the files one read looks at.
+const maxRead = 2 * MaxFile
+
 // shortStop are common words never masked as short secrets: a short vault
 // value such as "admin" would otherwise hide that word in every line.
 var shortStop = map[string]bool{
@@ -55,14 +68,27 @@ var shortStop = map[string]bool{
 	"login": true, "open": true, "path": true, "host": true, "port": true, "file": true, "data": true,
 }
 
-// Hidden replaces every masked value.
-const Hidden = "[hidden]"
+var (
+	// scheme://user:password@host
+	urlCreds = regexp.MustCompile(`([a-zA-Z][a-zA-Z0-9+.-]*://)[^/\s@:]+:[^/\s@]+@`)
+	// ?apikey=..., &token=... in links
+	queryKey = regexp.MustCompile(`(?i)([?&;](?:api_?key|apikey|key|token|access_token|refresh_token|passkey|password|passwd|pass|secret|auth|sig|signature|session)=)[^&\s"'<>]+`)
+	// key: value or key=value for secret names (headers, settings, JSON); a
+	// quoted value is masked up to its closing quote
+	pairKey = regexp.MustCompile(`(?i)\b((?:x-)?api[-_ ]?key|token|access[-_ ]?token|password|passwd|secret|client[-_ ]?secret|cookie|set-cookie|authorization|passkey|setup[-_ ]?code)("?\s*[:=]\s*)(?:"([^"]*)"|'([^']*)'|([^\s"',;&]+))`)
+	// Authorization: Bearer xyz, Basic xyz
+	bearer = regexp.MustCompile(`(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}`)
+	// HolyArrs API keys
+	hak = regexp.MustCompile(`\bhak_[A-Za-z0-9_-]+`)
+	// "setup code ABC" in the first-run line
+	setupCode = regexp.MustCompile(`(?i)(setup code )\S+`)
+	// long token-like runs: 32+ letters, digits, - or _ holding both letters and digits
+	longTok = regexp.MustCompile(`\b[A-Za-z0-9_-]{32,}\b`)
+)
 
-// Levels, from least to most serious.
-const (
-	Info    = "info"
-	Warning = "warning"
-	Error   = "error"
+var (
+	errorWords   = regexp.MustCompile(`(?i)\b(panic|panicked|crash|crashed|error|errors|failed|fatal)\b`)
+	warningWords = regexp.MustCompile(`(?i)\b(warn|warning|could not|cannot|not answering|refused|retry|retrying|timed out|stalled|rolled back|left behind|did not)\b`)
 )
 
 // Line is one log line.
@@ -104,6 +130,30 @@ type masks struct {
 	gen   int
 }
 
+type maskWriter struct {
+	l *Log
+	w io.Writer
+}
+
+// Filter picks lines for the viewer.
+type Filter struct {
+	// Level is the least serious level shown ("" shows every line).
+	Level string
+	// Text must appear in the line (any case).
+	Text     string
+	From, To time.Time
+	Offset   int
+	Limit    int
+}
+
+// Vault is what Sync reads: the current secret values, and the old values
+// of changed or removed ones still waiting to be masked in the files.
+type Vault interface {
+	Values(ctx context.Context) ([]string, error)
+	RetiredValues(ctx context.Context) ([]string, int64, error)
+	ForgetRetired(ctx context.Context, upTo int64) error
+}
+
 // Open opens (or makes) the logs folder dir.
 func Open(dir string) (*Log, error) {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
@@ -118,20 +168,6 @@ func Open(dir string) (*Log, error) {
 
 // Dir is the logs folder.
 func (l *Log) Dir() string { return l.dir }
-
-func (l *Log) openFile() error {
-	f, err := os.OpenFile(filepath.Join(l.dir, FileName), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
-	}
-	st, err := f.Stat()
-	if err != nil {
-		_ = f.Close()
-		return err
-	}
-	l.f, l.size = f, st.Size()
-	return nil
-}
 
 // Close closes the file.
 func (l *Log) Close() error {
@@ -235,6 +271,180 @@ func (l *Log) Retire(vals []string) error {
 	return nil
 }
 
+// Write takes what the standard logger writes: one entry per call, ending
+// in a newline. Control characters inside an entry (a newline in a logged
+// value included) are shown escaped, so a value cannot forge a line or keep
+// terminal colours; the entry is masked, then appended to the file. A write
+// without a line end is held until one comes. It never fails the caller.
+func (l *Log) Write(p []byte) (int, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.partial = append(l.partial, p...)
+	if n := len(l.partial); n > 0 && l.partial[n-1] == '\n' {
+		l.writeLine(string(l.partial[:n-1]))
+		l.partial = nil
+	} else if n > maxPartial {
+		l.writeLine(string(l.partial))
+		l.partial = nil
+	}
+	return len(p), nil
+}
+
+// Clean shows control characters as escapes: carriage return and newline
+// as \r and \n, a tab as a space, every other C0 character, ESC and DEL as
+// \xNN.
+func Clean(s string) string {
+	if !strings.ContainsFunc(s, isCtl) {
+		return s
+	}
+	const hex = "0123456789abcdef"
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r == '\r':
+			b.WriteString(`\r`)
+		case r == '\n':
+			b.WriteString(`\n`)
+		case r == '\t':
+			b.WriteByte(' ')
+		case isCtl(r):
+			b.WriteString(`\x`)
+			b.WriteByte(hex[r>>4])
+			b.WriteByte(hex[r&15])
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// Mask wraps the program's own output (docker logs) so it gets the same
+// masking and escaping as the file, except the first-run setup code: the
+// owner reads it there to make the first account.
+func (l *Log) Mask(w io.Writer) io.Writer { return maskWriter{l, w} }
+
+func (m maskWriter) Write(p []byte) (int, error) {
+	s, nl := strings.CutSuffix(string(p), "\n")
+	out := m.l.redact(Clean(s), true)
+	if nl {
+		out += "\n"
+	}
+	if _, err := io.WriteString(m.w, out); err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
+
+// Redact masks secrets in one line: the known vault values (and their
+// encoded forms), credentials in links, secret query parameters, key=value
+// and key: value pairs with a secret name, bearer tokens, HolyArrs API keys,
+// the first-run setup code and long token-like runs.
+func (l *Log) Redact(s string) string { return l.redact(s, false) }
+
+// RedactPatterns masks what the patterns of Redact catch, without the
+// vault values.
+func RedactPatterns(s string) string { return redactPatterns(s, false) }
+
+// LevelOf guesses a line's level from its words.
+func LevelOf(text string) string {
+	switch {
+	case errorWords.MatchString(text):
+		return Error
+	case warningWords.MatchString(text):
+		return Warning
+	}
+	return Info
+}
+
+// Read answers the lines that match f, newest first, and how many match.
+// Every line is masked again as it is read.
+func (l *Log) Read(f Filter) ([]Line, int) {
+	all := l.lines()
+	text := strings.ToLower(strings.TrimSpace(f.Text))
+	min := rank(f.Level)
+	var match []Line
+	for i := len(all) - 1; i >= 0; i-- {
+		ln := parse(all[i])
+		if rank(ln.Level) < min {
+			continue
+		}
+		if text != "" && !strings.Contains(strings.ToLower(ln.Text), text) {
+			continue
+		}
+		if !f.From.IsZero() && (ln.At.IsZero() || ln.At.Before(f.From)) {
+			continue
+		}
+		if !f.To.IsZero() && (ln.At.IsZero() || !ln.At.Before(f.To)) {
+			continue
+		}
+		match = append(match, ln)
+	}
+	total := len(match)
+	if f.Offset >= total {
+		return []Line{}, total
+	}
+	match = match[f.Offset:]
+	if f.Limit > 0 && len(match) > f.Limit {
+		match = match[:f.Limit]
+	}
+	return match, total
+}
+
+// Tail is the newest log text, at most max bytes of whole lines, masked
+// again as it is read: what the log download hands out.
+func (l *Log) Tail(max int) []byte {
+	all := l.lines()
+	var keep []string
+	n := 0
+	for i := len(all) - 1; i >= 0; i-- {
+		s := all[i]
+		if n+len(s)+1 > max {
+			break
+		}
+		n += len(s) + 1
+		keep = append(keep, s)
+	}
+	var b bytes.Buffer
+	for i := len(keep) - 1; i >= 0; i-- {
+		b.WriteString(keep[i])
+		b.WriteByte('\n')
+	}
+	return b.Bytes()
+}
+
+// Sync brings the mask set up to date with the vault: current values are
+// added, retired ones are masked in the files and only then forgotten by
+// the vault.
+func (l *Log) Sync(ctx context.Context, v Vault) error {
+	vals, err := v.Values(ctx)
+	if err != nil {
+		return err
+	}
+	l.SetSecrets(vals)
+	old, upTo, err := v.RetiredValues(ctx)
+	if err != nil || upTo == 0 {
+		return err
+	}
+	if err := l.Retire(old); err != nil {
+		return err
+	}
+	return v.ForgetRetired(ctx, upTo)
+}
+
+func (l *Log) openFile() error {
+	f, err := os.OpenFile(filepath.Join(l.dir, FileName), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	st, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return err
+	}
+	l.f, l.size = f, st.Size()
+	return nil
+}
+
 // add puts values (their JSON leaves and encoded forms too) in the mask set
 // and answers the forms they give.
 func (l *Log) add(vals []string) []string {
@@ -332,76 +542,7 @@ func leaves(v string) []string {
 	return out
 }
 
-// Write takes what the standard logger writes: one entry per call, ending
-// in a newline. Control characters inside an entry (a newline in a logged
-// value included) are shown escaped, so a value cannot forge a line or keep
-// terminal colours; the entry is masked, then appended to the file. A write
-// without a line end is held until one comes. It never fails the caller.
-func (l *Log) Write(p []byte) (int, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.partial = append(l.partial, p...)
-	if n := len(l.partial); n > 0 && l.partial[n-1] == '\n' {
-		l.writeLine(string(l.partial[:n-1]))
-		l.partial = nil
-	} else if n > maxPartial {
-		l.writeLine(string(l.partial))
-		l.partial = nil
-	}
-	return len(p), nil
-}
-
-// Clean shows control characters as escapes: carriage return and newline
-// as \r and \n, a tab as a space, every other C0 character, ESC and DEL as
-// \xNN.
-func Clean(s string) string {
-	if !strings.ContainsFunc(s, isCtl) {
-		return s
-	}
-	const hex = "0123456789abcdef"
-	var b strings.Builder
-	for _, r := range s {
-		switch {
-		case r == '\r':
-			b.WriteString(`\r`)
-		case r == '\n':
-			b.WriteString(`\n`)
-		case r == '\t':
-			b.WriteByte(' ')
-		case isCtl(r):
-			b.WriteString(`\x`)
-			b.WriteByte(hex[r>>4])
-			b.WriteByte(hex[r&15])
-		default:
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
 func isCtl(r rune) bool { return r < 0x20 || r == 0x7f }
-
-// Mask wraps the program's own output (docker logs) so it gets the same
-// masking and escaping as the file, except the first-run setup code: the
-// owner reads it there to make the first account.
-func (l *Log) Mask(w io.Writer) io.Writer { return maskWriter{l, w} }
-
-type maskWriter struct {
-	l *Log
-	w io.Writer
-}
-
-func (m maskWriter) Write(p []byte) (int, error) {
-	s, nl := strings.CutSuffix(string(p), "\n")
-	out := m.l.redact(Clean(s), true)
-	if nl {
-		out += "\n"
-	}
-	if _, err := io.WriteString(m.w, out); err != nil {
-		return 0, err
-	}
-	return len(p), nil
-}
 
 func (l *Log) writeLine(s string) {
 	if l.f == nil {
@@ -427,30 +568,6 @@ func (l *Log) writeLine(s string) {
 	n, _ := l.f.Write(b)
 	l.size += int64(n)
 }
-
-var (
-	// scheme://user:password@host
-	urlCreds = regexp.MustCompile(`([a-zA-Z][a-zA-Z0-9+.-]*://)[^/\s@:]+:[^/\s@]+@`)
-	// ?apikey=..., &token=... in links
-	queryKey = regexp.MustCompile(`(?i)([?&;](?:api_?key|apikey|key|token|access_token|refresh_token|passkey|password|passwd|pass|secret|auth|sig|signature|session)=)[^&\s"'<>]+`)
-	// key: value or key=value for secret names (headers, settings, JSON); a
-	// quoted value is masked up to its closing quote
-	pairKey = regexp.MustCompile(`(?i)\b((?:x-)?api[-_ ]?key|token|access[-_ ]?token|password|passwd|secret|client[-_ ]?secret|cookie|set-cookie|authorization|passkey|setup[-_ ]?code)("?\s*[:=]\s*)(?:"([^"]*)"|'([^']*)'|([^\s"',;&]+))`)
-	// Authorization: Bearer xyz, Basic xyz
-	bearer = regexp.MustCompile(`(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}`)
-	// HolyArrs API keys
-	hak = regexp.MustCompile(`\bhak_[A-Za-z0-9_-]+`)
-	// "setup code ABC" in the first-run line
-	setupCode = regexp.MustCompile(`(?i)(setup code )\S+`)
-	// long token-like runs: 32+ letters, digits, - or _ holding both letters and digits
-	longTok = regexp.MustCompile(`\b[A-Za-z0-9_-]{32,}\b`)
-)
-
-// Redact masks secrets in one line: the known vault values (and their
-// encoded forms), credentials in links, secret query parameters, key=value
-// and key: value pairs with a secret name, bearer tokens, HolyArrs API keys,
-// the first-run setup code and long token-like runs.
-func (l *Log) Redact(s string) string { return l.redact(s, false) }
 
 func (l *Log) redact(s string, keepSetup bool) string {
 	if p := l.known.Load(); p != nil {
@@ -502,10 +619,6 @@ func isWord(c byte) bool {
 	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c >= 0x80
 }
 
-// RedactPatterns masks what the patterns of Redact catch, without the
-// vault values.
-func RedactPatterns(s string) string { return redactPatterns(s, false) }
-
 func redactPatterns(s string, keepSetup bool) string {
 	s = urlCreds.ReplaceAllString(s, "${1}"+Hidden+"@")
 	s = queryKey.ReplaceAllString(s, "${1}"+Hidden)
@@ -535,22 +648,6 @@ func redactPatterns(s string, keepSetup bool) string {
 	return s
 }
 
-var (
-	errorWords   = regexp.MustCompile(`(?i)\b(panic|panicked|crash|crashed|error|errors|failed|fatal)\b`)
-	warningWords = regexp.MustCompile(`(?i)\b(warn|warning|could not|cannot|not answering|refused|retry|retrying|timed out|stalled|rolled back|left behind|did not)\b`)
-)
-
-// LevelOf guesses a line's level from its words.
-func LevelOf(text string) string {
-	switch {
-	case errorWords.MatchString(text):
-		return Error
-	case warningWords.MatchString(text):
-		return Warning
-	}
-	return Info
-}
-
 func rank(level string) int {
 	switch level {
 	case Error:
@@ -573,20 +670,6 @@ func parse(raw string) Line {
 	ln.Level = LevelOf(ln.Text)
 	return ln
 }
-
-// Filter picks lines for the viewer.
-type Filter struct {
-	// Level is the least serious level shown ("" shows every line).
-	Level string
-	// Text must appear in the line (any case).
-	Text     string
-	From, To time.Time
-	Offset   int
-	Limit    int
-}
-
-// maxRead caps how much of the files one read looks at.
-const maxRead = 2 * MaxFile
 
 // lines reads the old and the current file, oldest line first, each line
 // masked and escaped. The write lock is not held while reading: the file
@@ -639,87 +722,4 @@ func (l *Log) lines() []string {
 	l.cache, l.cacheAt = out, key
 	l.cacheMu.Unlock()
 	return out
-}
-
-// Read answers the lines that match f, newest first, and how many match.
-// Every line is masked again as it is read.
-func (l *Log) Read(f Filter) ([]Line, int) {
-	all := l.lines()
-	text := strings.ToLower(strings.TrimSpace(f.Text))
-	min := rank(f.Level)
-	var match []Line
-	for i := len(all) - 1; i >= 0; i-- {
-		ln := parse(all[i])
-		if rank(ln.Level) < min {
-			continue
-		}
-		if text != "" && !strings.Contains(strings.ToLower(ln.Text), text) {
-			continue
-		}
-		if !f.From.IsZero() && (ln.At.IsZero() || ln.At.Before(f.From)) {
-			continue
-		}
-		if !f.To.IsZero() && (ln.At.IsZero() || !ln.At.Before(f.To)) {
-			continue
-		}
-		match = append(match, ln)
-	}
-	total := len(match)
-	if f.Offset >= total {
-		return []Line{}, total
-	}
-	match = match[f.Offset:]
-	if f.Limit > 0 && len(match) > f.Limit {
-		match = match[:f.Limit]
-	}
-	return match, total
-}
-
-// Tail is the newest log text, at most max bytes of whole lines, masked
-// again as it is read: what the log download hands out.
-func (l *Log) Tail(max int) []byte {
-	all := l.lines()
-	var keep []string
-	n := 0
-	for i := len(all) - 1; i >= 0; i-- {
-		s := all[i]
-		if n+len(s)+1 > max {
-			break
-		}
-		n += len(s) + 1
-		keep = append(keep, s)
-	}
-	var b bytes.Buffer
-	for i := len(keep) - 1; i >= 0; i-- {
-		b.WriteString(keep[i])
-		b.WriteByte('\n')
-	}
-	return b.Bytes()
-}
-
-// Vault is what Sync reads: the current secret values, and the old values
-// of changed or removed ones still waiting to be masked in the files.
-type Vault interface {
-	Values(ctx context.Context) ([]string, error)
-	RetiredValues(ctx context.Context) ([]string, int64, error)
-	ForgetRetired(ctx context.Context, upTo int64) error
-}
-
-// Sync brings the mask set up to date with the vault: current values are
-// added, retired ones are masked in the files and only then forgotten by
-// the vault.
-func (l *Log) Sync(ctx context.Context, v Vault) error {
-	vals, err := v.Values(ctx)
-	if err != nil {
-		return err
-	}
-	l.SetSecrets(vals)
-	old, upTo, err := v.RetiredValues(ctx)
-	if err != nil || upTo == 0 {
-		return err
-	}
-	if err := l.Retire(old); err != nil {
-		return err
-	}
-	return v.ForgetRetired(ctx, upTo)
 }

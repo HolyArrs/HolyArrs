@@ -25,6 +25,9 @@ var (
 	rePart        = regexp.MustCompile(`(?i)\b(?:Part|Pt)` + sep + `?(\d{1,2}|[IVX]{1,5})\b`)
 )
 
+var roman = map[string]int{"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
+	"XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15}
+
 type showHit struct {
 	kind string
 	n    ShowNumbers
@@ -48,9 +51,6 @@ func span(a, b int) []int {
 	}
 	return out
 }
-
-var roman = map[string]int{"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
-	"XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15}
 
 // findShow looks for episode numbers in a name (group and extensions
 // already taken off). It returns where the numbers start and end. anime

@@ -25,9 +25,6 @@ var networkFS = map[int64]string{
 	0x858458f6: "ramfs",
 }
 
-// fsKindOf names a statfs magic number, or "" for a local disk.
-func fsKindOf(magic int64) string { return networkFS[magic&0xffffffff] }
-
 func IsNetworkShare(dir string) (bool, string, error) {
 	var st syscall.Statfs_t
 	if err := syscall.Statfs(dir, &st); err != nil {
@@ -36,3 +33,6 @@ func IsNetworkShare(dir string) (bool, string, error) {
 	kind := fsKindOf(int64(st.Type))
 	return kind != "", kind, nil
 }
+
+// fsKindOf names a statfs magic number, or "" for a local disk.
+func fsKindOf(magic int64) string { return networkFS[magic&0xffffffff] }

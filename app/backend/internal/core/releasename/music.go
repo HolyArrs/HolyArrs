@@ -16,41 +16,13 @@ const (
 	KindDiscography = "discography" // many albums of one artist in one Release
 )
 
-// MusicInfo is what an album Release name says.
-type MusicInfo struct {
-	Artist string `json:"artist"`
-	Album  string `json:"album,omitempty"`
-	// Alts are other readings of the same name: a scene name whose artist
-	// holds a hyphen ("Jay-Z-Album-...") or a name with no clear split.
-	Alts       []MusicAlt `json:"alts,omitempty"`
-	Format     string     `json:"format,omitempty"` // flac, alac, wav, ape, wavpack, dsd, mp3, aac, vorbis, opus, wma
-	Lossless   bool       `json:"lossless,omitempty"`
-	Bitrate    int        `json:"bitrate,omitempty"`     // kbps
-	VBR        string     `json:"vbr,omitempty"`         // V0, V1, V2 or VBR
-	BitDepth   int        `json:"bit_depth,omitempty"`   // 16, 24, 32
-	SampleRate float64    `json:"sample_rate,omitempty"` // kHz
-	Source     string     `json:"source,omitempty"`      // cd, web, vinyl, sacd, cassette, dvd
-	Editions   []string   `json:"editions,omitempty"`    // deluxe, remaster, live, bonus, expanded, anniversary, reissue, limited, special, japan, edition
-	Discs      []int      `json:"discs,omitempty"`       // CD2 names disc 2 only
-	DiscCount  int        `json:"disc_count,omitempty"`  // 2CD
-	YearTo     int        `json:"year_to,omitempty"`     // the last year of a discography
-	Various    bool       `json:"various,omitempty"`     // Various Artists (VA)
-	Scene      bool       `json:"scene,omitempty"`       // Artist-Album-TAGS-YEAR-GROUP
-	Conf       Conf       `json:"conf"`
-}
-
-// MusicAlt is another reading of a music name.
-type MusicAlt struct {
-	Artist string `json:"artist"`
-	Album  string `json:"album"`
-}
-
-// IsMusic says the name was read as music.
-func (r *Result) IsMusic() bool { return r.Music != nil }
-
 // maxMusicName bounds the part of a name that is read; longer names are
 // cut (a hostile 200 kB name costs the same as a normal one).
 const maxMusicName = 2048
+
+// maxSafetyScan bounds the safety-word scan: a longer name is scanned at
+// its start and its end (each half of the bound).
+const maxSafetyScan = 1 << 20
 
 var (
 	reMusicDepthRate = regexp.MustCompile(`\b(16|24|32) ?[-/ ] ?(44\.1|44|48|88\.2|88|96|176\.4|176|192|352\.8|384)\b`)
@@ -96,6 +68,38 @@ var musicBitrates = map[int]bool{32: true, 48: true, 64: true, 80: true, 96: tru
 var musicOther = setOf("vbr", "cbr", "v0", "v1", "v2", "apx", "aps", "kbps", "kbit", "log", "cue", "lossless", "hires",
 	"proper", "repack", "scene", "discography", "discografia", "diskografie", "image", "img", "transcode", "transcoded",
 	"sample", "password", "passworded", "khz", "bit", "24bit", "16bit")
+
+// MusicInfo is what an album Release name says.
+type MusicInfo struct {
+	Artist string `json:"artist"`
+	Album  string `json:"album,omitempty"`
+	// Alts are other readings of the same name: a scene name whose artist
+	// holds a hyphen ("Jay-Z-Album-...") or a name with no clear split.
+	Alts       []MusicAlt `json:"alts,omitempty"`
+	Format     string     `json:"format,omitempty"` // flac, alac, wav, ape, wavpack, dsd, mp3, aac, vorbis, opus, wma
+	Lossless   bool       `json:"lossless,omitempty"`
+	Bitrate    int        `json:"bitrate,omitempty"`     // kbps
+	VBR        string     `json:"vbr,omitempty"`         // V0, V1, V2 or VBR
+	BitDepth   int        `json:"bit_depth,omitempty"`   // 16, 24, 32
+	SampleRate float64    `json:"sample_rate,omitempty"` // kHz
+	Source     string     `json:"source,omitempty"`      // cd, web, vinyl, sacd, cassette, dvd
+	Editions   []string   `json:"editions,omitempty"`    // deluxe, remaster, live, bonus, expanded, anniversary, reissue, limited, special, japan, edition
+	Discs      []int      `json:"discs,omitempty"`       // CD2 names disc 2 only
+	DiscCount  int        `json:"disc_count,omitempty"`  // 2CD
+	YearTo     int        `json:"year_to,omitempty"`     // the last year of a discography
+	Various    bool       `json:"various,omitempty"`     // Various Artists (VA)
+	Scene      bool       `json:"scene,omitempty"`       // Artist-Album-TAGS-YEAR-GROUP
+	Conf       Conf       `json:"conf"`
+}
+
+// MusicAlt is another reading of a music name.
+type MusicAlt struct {
+	Artist string `json:"artist"`
+	Album  string `json:"album"`
+}
+
+// IsMusic says the name was read as music.
+func (r *Result) IsMusic() bool { return r.Music != nil }
 
 // musicTagWord says a lower-case word is a music tag (not part of a name).
 func musicTagWord(w string) bool {
@@ -340,10 +344,6 @@ func parseMusic(name string, h Hints) Result {
 	slices.Sort(r.Flags)
 	return r
 }
-
-// maxSafetyScan bounds the safety-word scan: a longer name is scanned at
-// its start and its end (each half of the bound).
-const maxSafetyScan = 1 << 20
 
 func isFormatRune(r rune) bool { return unicode.Is(unicode.Cf, r) }
 

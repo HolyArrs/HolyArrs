@@ -12,7 +12,7 @@ import (
 	"syscall"
 )
 
-// Start applies FILE__, UMASK and PUID/PGID. Started as root it fixes the
+// StartRunAs applies FILE__, UMASK and PUID/PGID. Started as root it fixes the
 // owner of configDir, switches user and starts the program again, so it only
 // returns in the final process. Any error should stop start-up.
 func StartRunAs(configDir string) error {

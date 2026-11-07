@@ -1,9 +1,3 @@
-// Package files holds plain file-system helpers. It turns what the system
-// says about a folder into plain words: which filesystem the folder is on
-// (from /proc/self/mountinfo), what that means in everyday terms, why a write
-// failed, which host user an ID belongs to and whether /config was mapped at
-// all. It only reads text it is given and never decides whether HolyArrs
-// starts. When it is unsure it returns "".
 package files
 
 import (
@@ -14,47 +8,11 @@ import (
 	"syscall"
 )
 
+const desktopFix = "use a named volume for /config (-v holyarrs-config:/config); media folders can stay as they are"
+
 // mount is one mountinfo line: the root inside its filesystem, where it is
 // mounted, and the filesystem type.
 type mount struct{ root, point, fstype string }
-
-// parse reads one mountinfo line (id parent major:minor root mountpoint
-// options [optional...] - fstype source superoptions). The source and the
-// options are never kept: they can hold host paths, share names or
-// credentials.
-func parse(line string) (mount, bool) {
-	f := strings.Fields(line)
-	if len(f) < 5 {
-		return mount{}, false
-	}
-	for i := 5; i < len(f)-1; i++ {
-		if f[i] == "-" {
-			return mount{root: Unescape(f[3]), point: path.Clean(Unescape(f[4])), fstype: f[i+1]}, true
-		}
-	}
-	return mount{}, false
-}
-
-// best is the mount that holds dir: the longest mount point that is dir or
-// one of its parents. Later lines win a tie (a mount on top of another).
-func best(mountinfo, dir string) (mount, bool) {
-	dir = path.Clean(dir)
-	var out mount
-	found := false
-	for _, line := range strings.Split(mountinfo, "\n") {
-		m, ok := parse(line)
-		if !ok {
-			continue
-		}
-		if m.point != "/" && m.point != dir && !strings.HasPrefix(dir, m.point+"/") {
-			continue
-		}
-		if !found || len(m.point) >= len(out.point) {
-			out, found = m, true
-		}
-	}
-	return out, found
-}
 
 // FSType is the filesystem type of the mount that holds dir ("ext4",
 // "9p", "fuse.shfs"), or "" when unsure. dir should already be absolute
@@ -66,18 +24,6 @@ func FSType(mountinfo, dir string) string {
 		return ""
 	}
 	return m.fstype
-}
-
-func plainType(s string) bool {
-	if s == "" || len(s) > 32 {
-		return false
-	}
-	for _, r := range s {
-		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '.' || r == '_' || r == '-') {
-			return false
-		}
-	}
-	return true
 }
 
 // Unescape turns the octal escapes mountinfo uses (\040 for a space, \011
@@ -99,8 +45,6 @@ func Unescape(s string) string {
 	}
 	return b.String()
 }
-
-const desktopFix = "use a named volume for /config (-v holyarrs-config:/config); media folders can stay as they are"
 
 // Family names a filesystem the database cannot use safely in everyday
 // words, with the fix. A local disk (and anything not listed) gives "", "".
@@ -214,6 +158,56 @@ func Unmapped(mountinfo, dir string) string {
 		return "anonymous"
 	}
 	return ""
+}
+
+// parse reads one mountinfo line (id parent major:minor root mountpoint
+// options [optional...] - fstype source superoptions). The source and the
+// options are never kept: they can hold host paths, share names or
+// credentials.
+func parse(line string) (mount, bool) {
+	f := strings.Fields(line)
+	if len(f) < 5 {
+		return mount{}, false
+	}
+	for i := 5; i < len(f)-1; i++ {
+		if f[i] == "-" {
+			return mount{root: Unescape(f[3]), point: path.Clean(Unescape(f[4])), fstype: f[i+1]}, true
+		}
+	}
+	return mount{}, false
+}
+
+// best is the mount that holds dir: the longest mount point that is dir or
+// one of its parents. Later lines win a tie (a mount on top of another).
+func best(mountinfo, dir string) (mount, bool) {
+	dir = path.Clean(dir)
+	var out mount
+	found := false
+	for _, line := range strings.Split(mountinfo, "\n") {
+		m, ok := parse(line)
+		if !ok {
+			continue
+		}
+		if m.point != "/" && m.point != dir && !strings.HasPrefix(dir, m.point+"/") {
+			continue
+		}
+		if !found || len(m.point) >= len(out.point) {
+			out, found = m, true
+		}
+	}
+	return out, found
+}
+
+func plainType(s string) bool {
+	if s == "" || len(s) > 32 {
+		return false
+	}
+	for _, r := range s {
+		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '.' || r == '_' || r == '-') {
+			return false
+		}
+	}
+	return true
 }
 
 func isHex64(s string) bool {

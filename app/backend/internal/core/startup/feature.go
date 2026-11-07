@@ -24,7 +24,7 @@ var HeldFeatures = []string{AIApps, PlexWatchlists, RowTitleStats, TraktLists, A
 // AlertChannelsMore is off.
 var ProvenAlertKinds = map[string]bool{"discord": true, "email": true}
 
-// On reports whether a feature switch is listed in HOLYARRS_FLAGS.
+// FeatureOn reports whether a feature switch is listed in HOLYARRS_FLAGS.
 func FeatureOn(name string) bool {
 	for _, f := range strings.Split(os.Getenv("HOLYARRS_FLAGS"), ",") {
 		if strings.TrimSpace(f) == name {
@@ -34,8 +34,8 @@ func FeatureOn(name string) bool {
 	return false
 }
 
-// Off lists the held-back features that are switched off right now, for the
-// web app (sent with the signed-in person's details).
+// FeaturesOff lists the held-back features that are switched off right now.
+// The web app gets the list with the signed-in person's details.
 func FeaturesOff() []string {
 	out := []string{}
 	for _, n := range HeldFeatures {

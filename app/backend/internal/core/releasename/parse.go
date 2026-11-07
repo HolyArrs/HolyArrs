@@ -10,9 +10,6 @@ import (
 	"unicode"
 )
 
-// Conf is how sure the parser is about one field.
-type Conf string
-
 // Confidence levels (pick-rules.md section 2.3).
 const (
 	Sure    Conf = "sure"
@@ -20,57 +17,6 @@ const (
 	Guess   Conf = "guess"
 	Unknown Conf = "unknown"
 )
-
-// Field is one parsed value with its confidence.
-type Field[T any] struct {
-	Value T    `json:"value"`
-	Conf  Conf `json:"conf"`
-}
-
-func sure[T any](v T) Field[T]   { return Field[T]{v, Sure} }
-func likely[T any](v T) Field[T] { return Field[T]{v, Likely} }
-
-// Audio is the parsed audio track.
-type Audio struct {
-	Format   string `json:"format,omitempty"`   // aac, ac3, eac3, dts, dts_hd_ma, truehd, flac, mp3, opus
-	Channels string `json:"channels,omitempty"` // "5.1", "7.1"
-	Atmos    bool   `json:"atmos,omitempty"`
-}
-
-// Hints are what the Source sent besides the name.
-type Hints struct {
-	Size     int64
-	FileList []string
-	// Show says the name is judged for a show search: a bare "- 12" is then
-	// a running number and "Part 2" before tags a mini-series part.
-	Show bool
-	// Music says the name is judged for an album search: it is read as
-	// "Artist - Album (Year) [tags]" or a scene music name.
-	Music bool
-}
-
-// Result is a parsed Release name.
-type Result struct {
-	Original   string          `json:"original"`
-	Kind       Field[string]   `json:"kind"`
-	Title      Field[string]   `json:"title"`
-	Year       Field[int]      `json:"year"`
-	Resolution Field[int]      `json:"resolution"`
-	Source     Field[string]   `json:"source"`
-	Codec      Field[string]   `json:"codec"`
-	HDR        Field[[]string] `json:"hdr"`
-	Audio      Audio           `json:"audio"`
-	Languages  []string        `json:"languages,omitempty"`
-	Edition    []string        `json:"edition,omitempty"`
-	Group      Field[string]   `json:"group"`
-	Fix        int             `json:"fix,omitempty"`
-	Flags      []string        `json:"flags,omitempty"` // sorted
-	Notes      []string        `json:"notes,omitempty"`
-	// Show holds the episode numbers of a show Release; nil for a movie.
-	Show *ShowNumbers `json:"show,omitempty"`
-	// Music holds what an album Release name says; nil for movies and shows.
-	Music *MusicInfo `json:"music,omitempty"`
-}
 
 // Kinds a parse can have besides "movie".
 const (
@@ -83,22 +29,6 @@ const (
 	KindAbsolute     = "absolute"      // anime running number: - 112
 	KindSpecial      = "special"       // season 0, episode 0, OVA 2
 )
-
-// ShowNumbers are the numbers a show Release names.
-type ShowNumbers struct {
-	Seasons  []int  `json:"seasons,omitempty"`  // one season; several for a multi-season pack
-	Episodes []int  `json:"episodes,omitempty"` // empty for a whole season
-	AirDate  string `json:"air_date,omitempty"` // YYYY-MM-DD (daily shows)
-	Absolute []int  `json:"absolute,omitempty"` // anime running numbers
-	Special  bool   `json:"special,omitempty"`  // season 0, episode 0, OVA
-	Conf     Conf   `json:"conf"`               // guess when a number may be something else
-}
-
-// IsShow says whether the name is a show Release (any kind but movie).
-func (r *Result) IsShow() bool { return r.Show != nil }
-
-// Has reports whether the Result carries flag f.
-func (r *Result) Has(f string) bool { return slices.Contains(r.Flags, f) }
 
 // All patterns are compiled once, at start.
 var (
@@ -148,26 +78,108 @@ var editions = []struct{ words, name string }{
 	{"remastered", "Remastered"}, {"imax", "IMAX"}, {"unrated", "Unrated"}, {"anniversary", "Anniversary"},
 }
 
-func setOf(words ...string) map[string]bool {
-	m := make(map[string]bool, len(words))
-	for _, w := range words {
-		m[w] = true
-	}
-	return m
-}
-
-func isTag(tok string) bool {
-	t := strings.ToLower(tok)
-	if tagWords[t] || reResWord.MatchString(t) || reDDP.MatchString(t) || reFix.MatchString(t) {
-		return true
-	}
-	if _, ok := langWords[t]; ok {
-		return true
-	}
-	return false
-}
-
 var nextYear = time.Now().Year() + 1
+
+// fold maps accented Latin letters to plain ones (standard library only, so
+// no Unicode normalisation tables).
+var fold = func() map[rune]string {
+	m := map[rune]string{}
+	add := func(to string, from string) {
+		for _, c := range from {
+			m[c] = to
+		}
+	}
+	add("a", "àáâãäåāăą")
+	add("c", "çćĉċč")
+	add("d", "ďđ")
+	add("e", "èéêëēĕėęě")
+	add("g", "ĝğġģ")
+	add("h", "ĥħ")
+	add("i", "ìíîïĩīĭįı")
+	add("j", "ĵ")
+	add("k", "ķ")
+	add("l", "ĺļľŀł")
+	add("n", "ñńņňŉ")
+	add("o", "òóôõöøōŏő")
+	add("r", "ŕŗř")
+	add("s", "śŝşš")
+	add("t", "ţťŧ")
+	add("u", "ùúûüũūŭůűų")
+	add("w", "ŵ")
+	add("y", "ýÿŷ")
+	add("z", "źżž")
+	m['ß'] = "ss"
+	m['æ'] = "ae"
+	m['œ'] = "oe"
+	return m
+}()
+
+// Conf is how sure the parser is about one field.
+type Conf string
+
+// Field is one parsed value with its confidence.
+type Field[T any] struct {
+	Value T    `json:"value"`
+	Conf  Conf `json:"conf"`
+}
+
+// Audio is the parsed audio track.
+type Audio struct {
+	Format   string `json:"format,omitempty"`   // aac, ac3, eac3, dts, dts_hd_ma, truehd, flac, mp3, opus
+	Channels string `json:"channels,omitempty"` // "5.1", "7.1"
+	Atmos    bool   `json:"atmos,omitempty"`
+}
+
+// Hints are what the Source sent besides the name.
+type Hints struct {
+	Size     int64
+	FileList []string
+	// Show says the name is judged for a show search: a bare "- 12" is then
+	// a running number and "Part 2" before tags a mini-series part.
+	Show bool
+	// Music says the name is judged for an album search: it is read as
+	// "Artist - Album (Year) [tags]" or a scene music name.
+	Music bool
+}
+
+// Result is a parsed Release name.
+type Result struct {
+	Original   string          `json:"original"`
+	Kind       Field[string]   `json:"kind"`
+	Title      Field[string]   `json:"title"`
+	Year       Field[int]      `json:"year"`
+	Resolution Field[int]      `json:"resolution"`
+	Source     Field[string]   `json:"source"`
+	Codec      Field[string]   `json:"codec"`
+	HDR        Field[[]string] `json:"hdr"`
+	Audio      Audio           `json:"audio"`
+	Languages  []string        `json:"languages,omitempty"`
+	Edition    []string        `json:"edition,omitempty"`
+	Group      Field[string]   `json:"group"`
+	Fix        int             `json:"fix,omitempty"`
+	Flags      []string        `json:"flags,omitempty"` // sorted
+	Notes      []string        `json:"notes,omitempty"`
+	// Show holds the episode numbers of a show Release; nil for a movie.
+	Show *ShowNumbers `json:"show,omitempty"`
+	// Music holds what an album Release name says; nil for movies and shows.
+	Music *MusicInfo `json:"music,omitempty"`
+}
+
+// ShowNumbers are the numbers a show Release names.
+type ShowNumbers struct {
+	Seasons  []int  `json:"seasons,omitempty"`  // one season; several for a multi-season pack
+	Episodes []int  `json:"episodes,omitempty"` // empty for a whole season
+	AirDate  string `json:"air_date,omitempty"` // YYYY-MM-DD (daily shows)
+	Absolute []int  `json:"absolute,omitempty"` // anime running numbers
+	Special  bool   `json:"special,omitempty"`  // season 0, episode 0, OVA
+	Conf     Conf   `json:"conf"`               // guess when a number may be something else
+}
+
+// IsShow says whether the name is a show Release (any kind but movie).
+func (r *Result) IsShow() bool { return r.Show != nil }
+
+// Has reports whether the Result carries flag f.
+func (r *Result) Has(f string) bool { return slices.Contains(r.Flags, f) }
 
 // Parse reads a Release name.
 func Parse(name string, h Hints) Result {
@@ -324,6 +336,56 @@ func Parse(name string, h Hints) Result {
 	}
 	slices.Sort(r.Flags)
 	return r
+}
+
+// CleanName is the form names are matched in: lower case, accents removed,
+// punctuation removed, "&" read as "and", and a leading "the", "a" or "an" dropped.
+func CleanName(s string) string {
+	var b strings.Builder
+	for _, c := range strings.ToLower(s) {
+		if f, ok := fold[c]; ok {
+			b.WriteString(f)
+			continue
+		}
+		switch {
+		case c == '&':
+			b.WriteString(" and ")
+		case unicode.IsLetter(c) || unicode.IsDigit(c):
+			b.WriteRune(c)
+		case unicode.Is(unicode.Mn, c):
+			// combining mark: drop
+		default:
+			b.WriteByte(' ')
+		}
+	}
+	words := strings.Fields(b.String())
+	if len(words) > 1 && (words[0] == "the" || words[0] == "a" || words[0] == "an") {
+		words = words[1:]
+	}
+	return strings.Join(words, " ")
+}
+
+func sure[T any](v T) Field[T] { return Field[T]{v, Sure} }
+
+func likely[T any](v T) Field[T] { return Field[T]{v, Likely} }
+
+func setOf(words ...string) map[string]bool {
+	m := make(map[string]bool, len(words))
+	for _, w := range words {
+		m[w] = true
+	}
+	return m
+}
+
+func isTag(tok string) bool {
+	t := strings.ToLower(tok)
+	if tagWords[t] || reResWord.MatchString(t) || reDDP.MatchString(t) || reFix.MatchString(t) {
+		return true
+	}
+	if _, ok := langWords[t]; ok {
+		return true
+	}
+	return false
 }
 
 func reNumber(s string) bool {
@@ -522,64 +584,3 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	set("internal", "internal")
 	_ = h
 }
-
-// CleanName is the form names are matched in: lower case, accents removed,
-// punctuation removed, "&" read as "and", and a leading "the", "a" or "an" dropped.
-func CleanName(s string) string {
-	var b strings.Builder
-	for _, c := range strings.ToLower(s) {
-		if f, ok := fold[c]; ok {
-			b.WriteString(f)
-			continue
-		}
-		switch {
-		case c == '&':
-			b.WriteString(" and ")
-		case unicode.IsLetter(c) || unicode.IsDigit(c):
-			b.WriteRune(c)
-		case unicode.Is(unicode.Mn, c):
-			// combining mark: drop
-		default:
-			b.WriteByte(' ')
-		}
-	}
-	words := strings.Fields(b.String())
-	if len(words) > 1 && (words[0] == "the" || words[0] == "a" || words[0] == "an") {
-		words = words[1:]
-	}
-	return strings.Join(words, " ")
-}
-
-// fold maps accented Latin letters to plain ones (standard library only, so
-// no Unicode normalisation tables).
-var fold = func() map[rune]string {
-	m := map[rune]string{}
-	add := func(to string, from string) {
-		for _, c := range from {
-			m[c] = to
-		}
-	}
-	add("a", "àáâãäåāăą")
-	add("c", "çćĉċč")
-	add("d", "ďđ")
-	add("e", "èéêëēĕėęě")
-	add("g", "ĝğġģ")
-	add("h", "ĥħ")
-	add("i", "ìíîïĩīĭįı")
-	add("j", "ĵ")
-	add("k", "ķ")
-	add("l", "ĺļľŀł")
-	add("n", "ñńņňŉ")
-	add("o", "òóôõöøōŏő")
-	add("r", "ŕŗř")
-	add("s", "śŝşš")
-	add("t", "ţťŧ")
-	add("u", "ùúûüũūŭůűų")
-	add("w", "ŵ")
-	add("y", "ýÿŷ")
-	add("z", "źżž")
-	m['ß'] = "ss"
-	m['æ'] = "ae"
-	m['œ'] = "oe"
-	return m
-}()

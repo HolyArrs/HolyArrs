@@ -21,6 +21,51 @@ const filePrefix = "FILE__"
 // defaultID is the user and group HolyArrs switches to without PUID/PGID.
 const defaultID = 1000
 
+const (
+	// Keep runs as the current user (not started as root).
+	Keep RunAsAction = iota
+	// Switch fixes the config folder's owner, switches to UID:GID and
+	// starts again.
+	Switch
+	// StayRoot keeps running as root because PUID=0 and PGID=0 asked for it.
+	StayRoot
+)
+
+// NotInContainer is the start-up error for root outside a container without
+// PUID/PGID, where switching to 1000:1000 could hand the folder to a stranger.
+const NotInContainer = "started as root outside a container: set PUID and PGID, or run HolyArrs as its own service user"
+
+// nobody is the user ID a file shows when its owner is not mapped in this
+// user namespace.
+const nobody = 65534
+
+// startMask is the umask HolyArrs runs with. Linux sets it at start-up; other
+// systems keep the usual 022.
+var startMask = 0o022
+
+// ownFiles are HolyArrs's own files in the config folder (the databases with
+// their -wal and -shm, the master key, the logs). Files copied in by root
+// (docker cp into a named volume, sudo cp, a root backup tool) keep root as
+// owner while the folder itself is right, so these are checked too.
+var ownFiles = []string{
+	"holyarrs.db", "holyarrs.db-wal", "holyarrs.db-shm",
+	"holyarrs-events.db", "holyarrs-events.db-wal", "holyarrs-events.db-shm",
+	"holyarrs.key", "logs", "logs/holyarrs.log",
+}
+
+// RunAsAction is what start-up does about the user.
+type RunAsAction int
+
+// RunAsPlan is what DecideRunAs chose.
+type RunAsPlan struct {
+	Action   RunAsAction
+	UID, GID int
+	// Umask is the mask to apply, or -1 to keep the current one.
+	Umask int
+	// Note is one line to log, or empty.
+	Note string
+}
+
 // LoadFileEnv sets NAME from the file named by every FILE__NAME variable in
 // environ, with one trailing newline removed. Errors name the variable and the
 // file, never the value.
@@ -51,16 +96,6 @@ func LoadFileEnv(environ []string, readFile func(string) ([]byte, error), setenv
 	return nil
 }
 
-// unwrapPath drops the path from a file error, since the message already
-// names it.
-func unwrapPath(err error) error {
-	var pe *fs.PathError
-	if errors.As(err, &pe) {
-		return pe.Err
-	}
-	return err
-}
-
 // ParseUmask reads UMASK as an octal number such as "022" or "0002".
 func ParseUmask(s string) (int, error) {
 	s = strings.TrimSpace(s)
@@ -70,41 +105,6 @@ func ParseUmask(s string) (int, error) {
 	}
 	return int(n), nil
 }
-
-func parseID(name, s string) (int, error) {
-	n, err := strconv.ParseUint(strings.TrimSpace(s), 10, 32)
-	if err != nil || n == 1<<32-1 {
-		return 0, fmt.Errorf("%s %q is not a number such as 1000", name, s)
-	}
-	return int(n), nil
-}
-
-// RunAsAction is what start-up does about the user.
-type RunAsAction int
-
-const (
-	// Keep runs as the current user (not started as root).
-	Keep RunAsAction = iota
-	// Switch fixes the config folder's owner, switches to UID:GID and
-	// starts again.
-	Switch
-	// StayRoot keeps running as root because PUID=0 and PGID=0 asked for it.
-	StayRoot
-)
-
-// RunAsPlan is what DecideRunAs chose.
-type RunAsPlan struct {
-	Action   RunAsAction
-	UID, GID int
-	// Umask is the mask to apply, or -1 to keep the current one.
-	Umask int
-	// Note is one line to log, or empty.
-	Note string
-}
-
-// NotInContainer is the start-up error for root outside a container without
-// PUID/PGID, where switching to 1000:1000 could hand the folder to a stranger.
-const NotInContainer = "started as root outside a container: set PUID and PGID, or run HolyArrs as its own service user"
 
 // InContainer reports whether HolyArrs runs in a container: /.dockerenv
 // (Docker), /run/.containerenv (Podman) or a non-empty container variable
@@ -169,10 +169,6 @@ func DecideRunAs(euid, egid int, lookup func(string) (string, bool), switched, i
 	return p, nil
 }
 
-// startMask is the umask HolyArrs runs with. Linux sets it at start-up; other
-// systems keep the usual 022.
-var startMask = 0o022
-
 // Perm is perm with the start-up umask applied, which is what creating a file
 // with perm gives. Use it where a mode is set with chmod, so UMASK decides.
 func Perm(perm fs.FileMode) fs.FileMode {
@@ -231,9 +227,52 @@ func MountsUnder(mountinfo, dir string) map[string]bool {
 	return out
 }
 
-// nobody is the user ID a file shows when its owner is not mapped in this
-// user namespace.
-const nobody = 65534
+// SwitchFailed is the start-up error when root cannot switch user. EINVAL
+// means the ID does not exist in this user namespace (unprivileged LXC,
+// rootless Docker/Podman); anything else is most likely missing
+// capabilities.
+func SwitchFailed(uid, gid int, err error) error {
+	if errors.Is(err, syscall.EINVAL) {
+		return fmt.Errorf("started as root but could not switch to %d:%d (%v): PUID/PGID %d:%d does not exist inside this container "+
+			"(most likely unprivileged LXC or rootless Docker/Podman). Pick IDs this container maps, "+
+			"or see the Rootless Docker and Podman section of the install guide. HolyArrs will not run as root",
+			uid, gid, err, uid, gid)
+	}
+	return fmt.Errorf("started as root but could not switch to %d:%d (%v). "+
+		"Add back the CHOWN, DAC_OVERRIDE, SETUID and SETGID capabilities if the container drops them (cap_drop: ALL), "+
+		"or run the container as that user with user: \"%d:%d\". HolyArrs will not run as root",
+		uid, gid, err, uid, gid)
+}
+
+// OwnFilesNeedFix reports whether any of HolyArrs's own files that exists is
+// not owned by uid:gid. owner returns ok false for a file that is not there.
+// A normal start costs a few stats.
+func OwnFilesNeedFix(owner func(name string) (uid, gid int, ok bool), uid, gid int) bool {
+	for _, name := range ownFiles {
+		if u, g, ok := owner(name); ok && NeedsOwnerFix(u, g, uid, gid) {
+			return true
+		}
+	}
+	return false
+}
+
+// unwrapPath drops the path from a file error, since the message already
+// names it.
+func unwrapPath(err error) error {
+	var pe *fs.PathError
+	if errors.As(err, &pe) {
+		return pe.Err
+	}
+	return err
+}
+
+func parseID(name, s string) (int, error) {
+	n, err := strconv.ParseUint(strings.TrimSpace(s), 10, 32)
+	if err != nil || n == 1<<32-1 {
+		return 0, fmt.Errorf("%s %q is not a number such as 1000", name, s)
+	}
+	return int(n), nil
+}
 
 // ownerWarning is the log line when the config folder could not be given
 // to uid:gid. err is the first failure, owner the folder's owner as seen
@@ -283,45 +322,6 @@ func unescapeMount(s string) string {
 		b.WriteByte(s[i])
 	}
 	return b.String()
-}
-
-// SwitchFailed is the start-up error when root cannot switch user. EINVAL
-// means the ID does not exist in this user namespace (unprivileged LXC,
-// rootless Docker/Podman); anything else is most likely missing
-// capabilities.
-func SwitchFailed(uid, gid int, err error) error {
-	if errors.Is(err, syscall.EINVAL) {
-		return fmt.Errorf("started as root but could not switch to %d:%d (%v): PUID/PGID %d:%d does not exist inside this container "+
-			"(most likely unprivileged LXC or rootless Docker/Podman). Pick IDs this container maps, "+
-			"or see the Rootless Docker and Podman section of the install guide. HolyArrs will not run as root",
-			uid, gid, err, uid, gid)
-	}
-	return fmt.Errorf("started as root but could not switch to %d:%d (%v). "+
-		"Add back the CHOWN, DAC_OVERRIDE, SETUID and SETGID capabilities if the container drops them (cap_drop: ALL), "+
-		"or run the container as that user with user: \"%d:%d\". HolyArrs will not run as root",
-		uid, gid, err, uid, gid)
-}
-
-// ownFiles are HolyArrs's own files in the config folder (the databases with
-// their -wal and -shm, the master key, the logs). Files copied in by root
-// (docker cp into a named volume, sudo cp, a root backup tool) keep root as
-// owner while the folder itself is right, so these are checked too.
-var ownFiles = []string{
-	"holyarrs.db", "holyarrs.db-wal", "holyarrs.db-shm",
-	"holyarrs-events.db", "holyarrs-events.db-wal", "holyarrs-events.db-shm",
-	"holyarrs.key", "logs", "logs/holyarrs.log",
-}
-
-// OwnFilesNeedFix reports whether any of HolyArrs's own files that exists is
-// not owned by uid:gid. owner returns ok false for a file that is not there.
-// A normal start costs a few stats.
-func OwnFilesNeedFix(owner func(name string) (uid, gid int, ok bool), uid, gid int) bool {
-	for _, name := range ownFiles {
-		if u, g, ok := owner(name); ok && NeedsOwnerFix(u, g, uid, gid) {
-			return true
-		}
-	}
-	return false
 }
 
 // ownerOnFolder is the owner lookup for OwnFilesNeedFix. Like the walk, it
