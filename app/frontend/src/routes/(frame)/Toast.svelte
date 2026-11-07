@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '#lib/ui/Icon.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
-	import AlertSymbol from '#lib/alerts/AlertSymbol.svelte';
+	import { AlertSymbol } from '#lib/alerts/index.ts';
 
 	// One notification, Apple TV style: a dark glass pill with a filled symbol whose
 	// shape and colour carry the tone, a short title and an optional second line.

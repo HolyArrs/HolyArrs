@@ -19,7 +19,7 @@
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Hero from '#lib/ui/Hero.svelte';
 	import ListRow from '#lib/ui/ListRow.svelte';
-	import Table from '#lib/accounts/Table.svelte';
+	import { Table } from '#lib/accounts/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';

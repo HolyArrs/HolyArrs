@@ -1,5 +1,5 @@
-// Plex watchlist sync (roadmap #102): words for My account's card and the
-// small "from a Plex watchlist" line on asks.
+// Plex watchlist sync: words for the account card and the small "from a Plex
+// watchlist" line on asks.
 
 export type WatchlistItem = {
 	name: string;

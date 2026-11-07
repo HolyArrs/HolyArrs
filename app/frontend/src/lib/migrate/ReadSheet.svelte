@@ -51,7 +51,7 @@
 	} = $props();
 
 	let kind = $state<AppKind>('radarr');
-	// Reading from a backup file waits for a later release (Luis 2026-11-05); the server still has it.
+	// Reading from a backup file is held back; the server still supports it.
 	let way = $state<'api' | 'backup'>('api');
 	let address = $state('');
 	let key = $state('');

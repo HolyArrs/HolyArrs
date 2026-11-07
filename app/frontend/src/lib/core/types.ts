@@ -755,3 +755,25 @@ export interface LookupShow {
 	/** The open request for it, if someone asked. */
 	ask?: AskBrief;
 }
+
+export interface ApiKey {
+	id: number;
+	label: string;
+	hint: string;
+	created_at: string;
+	last_used_at?: string;
+	/** What the key may reach; ['mcp'] is an AI key. */
+	scopes?: string[];
+}
+
+export interface UpdateInfo {
+	on: boolean;
+	feed: string;
+	checked_at?: string;
+	latest?: string;
+	newer: boolean;
+	link?: string;
+	no_release?: boolean;
+	problem?: string;
+	version: string;
+}

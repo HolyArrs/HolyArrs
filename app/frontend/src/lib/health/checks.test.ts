@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { linkLabel, runTone, runWord, splitStates } from './checks.ts';
-import type { StageState } from './index.ts';
+import type { StageState } from './types.ts';
 
 const st = (over: Partial<StageState>): StageState => ({
 	key: 'stage:x',

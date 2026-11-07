@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, everyKind, needsAttention } from './rows.ts';
 import { nextRun, type ScheduleRow } from './schedules.ts';
-import type { StageState } from './index.ts';
+import type { StageState } from './types.ts';
 
 const link = (kind: StageState['kind'], id: number, state: StageState['state'], name = `${kind} ${id}`): StageState => ({
 	key: `link:${kind}:${id}`, kind, name, state, reason: state === 'failed' ? "Can't reach it" : '', since: '2026-11-02T09:00:00Z', stuck: false, restarts: 0

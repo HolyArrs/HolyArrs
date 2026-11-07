@@ -9,9 +9,9 @@
 	// way. One canvas, time based; the clock stops while the tab is hidden or
 	// the user is signing in; off with reduced motion.
 	import { onMount } from 'svelte';
-	import { MASKS } from '#lib/accounts/pixel-trail.ts';
-	import { IDLE_MS } from '#lib/accounts/signin-art.ts';
-	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT, pausesPortals } from '#lib/accounts/signin-portals.ts';
+	import { MASKS } from './pixel-trail.ts';
+	import { IDLE_MS } from './signin-art.ts';
+	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT, pausesPortals } from './signin-portals.ts';
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let edgeEl: HTMLDivElement | undefined = $state();

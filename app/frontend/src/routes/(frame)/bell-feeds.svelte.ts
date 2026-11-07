@@ -10,8 +10,8 @@ import { to } from '#lib/core/paths.ts';
 import { cut, messageWords } from './bell-words.ts';
 import { inbox } from '#lib/requests/index.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
-import type { UpdateInfo } from '#lib/updates/index.ts';
-import type { PinnedAlert } from '#lib/alerts/attention-alerts.ts';
+import type { UpdateInfo } from '#lib/core/types.ts';
+import type { PinnedAlert } from '#lib/alerts/index.ts';
 
 /** Pinned rows from these feeds (Settings warnings are added by the panel). */
 export const feedPins = $state<{ update: PinnedAlert | null }>({ update: null });

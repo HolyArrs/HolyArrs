@@ -17,7 +17,7 @@
 	import { ago, dateTime } from '#lib/core/format.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { loadProfile, profile } from '#lib/accounts/profile.svelte.ts';
+	import { loadProfile, profile, kidLabel, watchlistLine } from '#lib/accounts/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/core/plain.ts';
 	import { partsNow } from '#lib/mediafiles/index.ts';
@@ -28,8 +28,6 @@
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { albumWords } from '#lib/music/index.ts';
 	import { titleStatus } from '#lib/ui/title-status.ts';
-	import { kidLabel } from '#lib/accounts/kid.ts';
-	import { watchlistLine } from '#lib/accounts/watchlist.ts';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);

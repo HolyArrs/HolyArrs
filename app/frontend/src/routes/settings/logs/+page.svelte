@@ -11,7 +11,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { dateTime } from '#lib/core/format.ts';
-	import { emptyFilter, levelTone, levelWord, logQuery, pageWords, type LogFilter, type LogPage } from '#lib/health/logs.ts';
+	import { emptyFilter, levelTone, levelWord, logQuery, pageWords, type LogFilter, type LogPage } from '#lib/health/index.ts';
 
 	let filter = $state<LogFilter>(emptyFilter());
 	let result = $state<LogPage | null>(null);

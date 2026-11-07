@@ -4,12 +4,14 @@
 	import AlertSymbol from './AlertSymbol.svelte';
 	import Sheet from '../ui/Sheet.svelte';
 	import { alertsPanel, toasts } from '../core/toasts.svelte.ts';
-	import { pinned } from './attention-alerts.ts';
-	import { decisionPins, feedPins } from '../../routes/(frame)/bell-feeds.svelte.ts';
+	import { pinned, type PinnedAlert } from './attention-alerts.ts';
 	import { sections } from '../core/settings.ts';
 	import { settingsNow } from './settings-status.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { to } from '../core/paths.ts';
+
+	// before and after are pinned rows from other parts of the app: a new version first, downloads waiting for a decision last.
+	let { before = [], after = [] }: { before?: PinnedAlert[]; after?: PinnedAlert[] } = $props();
 
 	// Recent alerts: the last 50 alerts on this device, newest first. Desktop: a glass
 	// panel beside the side menu's bell. Phone: a sheet from the bottom.
@@ -24,9 +26,9 @@
 
 	// Settings health warnings stay pinned on top until they are fixed (no × on them).
 	const fixes = $derived([
-		...(feedPins.update ? [feedPins.update] : []),
+		...before,
 		...(session.can('settings') ? pinned(settingsNow.answer?.items ?? [], sections) : []),
-		...decisionPins()
+		...after
 	]);
 
 	// Opening shows everything waiting and clears the count (once per opening: alerts

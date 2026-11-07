@@ -2,7 +2,7 @@
 // of row, grouped in a fixed order. Pure, so grouping and wording are testable.
 import type { AlertView, HealthCheck } from '../core/types.ts';
 import type { OutsideList } from '../requests/index.ts';
-import type { StageState } from './index.ts';
+import type { StageState } from './types.ts';
 import type { ScheduleRow } from './schedules.ts';
 
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';

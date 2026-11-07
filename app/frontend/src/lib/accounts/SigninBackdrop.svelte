@@ -40,7 +40,7 @@
 		sized,
 		type ArtPick,
 		type ArtShot
-	} from '#lib/accounts/signin-art.ts';
+	} from './signin-art.ts';
 
 	const CACHE = 'holyarrs-signin-art';
 	const SEED = 'holyarrs-signin-seed'; // the style element app.html adds for the first frame

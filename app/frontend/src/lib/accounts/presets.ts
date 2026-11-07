@@ -1,4 +1,4 @@
-// Role presets (spec §7): display-only shortcuts onto the existing permission
+// Role presets: display-only shortcuts onto the existing permission
 // checkboxes. Saving still sends the plain permission list.
 import type { Perm } from '../core/session.svelte.ts';
 

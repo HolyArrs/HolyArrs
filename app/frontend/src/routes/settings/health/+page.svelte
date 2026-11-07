@@ -13,11 +13,11 @@
 	import { ago } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { checkName, stateWord } from '#lib/health/checks.ts';
-	import { refreshSettingsStatus } from '#lib/alerts/settings-status.svelte.ts';
+	import { checkName, stateWord } from '#lib/health/index.ts';
+	import { refreshSettingsStatus } from '#lib/alerts/index.ts';
 	import type { HealthChecks, HealthSettings } from '#lib/health/index.ts';
-	import type { UpdateInfo } from '#lib/updates/index.ts';
-	import { updatePrivacy } from '#lib/updates/update-notice.ts';
+	import type { UpdateInfo } from '#lib/core/types.ts';
+	import { updatePrivacy } from '#lib/updates/index.ts';
 
 	let checks = $state<HealthChecks | null>(null);
 	let settings = $state<HealthSettings | null>(null);

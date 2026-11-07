@@ -12,16 +12,15 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { checkMetadata, metadataHealth } from '#lib/metadata/index.ts';
 	import type { AlertView } from '#lib/core/types.ts';
-	import type { HealthChecks, HealthStates } from '#lib/health/index.ts';
+	import type { HealthChecks, HealthStates, ScheduleRow } from '#lib/health/index.ts';
 	import type { OutsideList } from '#lib/requests/index.ts';
-	import type { ScheduleRow } from '#lib/health/schedules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { testLabel } from '#lib/core/test-tag.ts';
-	import Sections from '#lib/health/HealthSections.svelte';
-	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/health/rows.ts';
+	import { Updates } from '#lib/updates/index.ts';
+	import { HealthSections as Sections, buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/health/index.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);
@@ -215,7 +214,9 @@
 				<div class="body">
 					{#if error}<LoadError hasData message={error} onretry={retry} />
 					{:else if failedText}<LoadError hasData message={failedText} onretry={retry} />{/if}
-					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {reader} {failed} {hidden} {checkRuns} />
+					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {reader} {failed} {hidden} {checkRuns}>
+						{#snippet updates(p)}<Updates {...p} />{/snippet}
+					</Sections>
 				</div>
 			{/if}
 		</PageLoader>

@@ -15,11 +15,11 @@
 	import Skeleton from '../ui/Skeleton.svelte';
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
-	import Updates from '../updates/Updates.svelte';
 	import WhyNote from './WhyNote.svelte';
 	import type { HealthCheck } from '../core/types.ts';
-	import type { Health } from './index.ts';
-	import type { UpdateInfo } from '../updates/index.ts';
+	import type { Health } from './types.ts';
+	import type { UpdateInfo } from '../core/types.ts';
+	import type { Snippet } from 'svelte';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './rows.ts';
 
 	let {
@@ -33,7 +33,8 @@
 		reader,
 		failed = [],
 		hidden = [],
-		checkRuns = 0
+		checkRuns = 0,
+		updates
 	}: {
 		groups: StatusGroup[];
 		tab: string;
@@ -51,6 +52,8 @@
 		hidden?: string[];
 		/** Goes up after every Check again or row check, so Storage reloads its disks. */
 		checkRuns?: number;
+		/** The Updates tab, drawn by the page so health does not depend on updates. */
+		updates: Snippet<[{ upd: Update | null; docker: boolean | null; reader: HealthCheck | undefined; checksKnown: boolean; canAct: boolean; onupd: (u: Update) => void }]>;
 	} = $props();
 
 	type Disk = { path: string; kind: string; label: string; free_bytes: number; total_bytes: number };
@@ -280,7 +283,7 @@
 				<p class="none fail-line">Could not check for updates. <Button variant="plain" size="sm" onclick={loadUpdate}>Try again</Button></p>
 			</section>
 		{:else}
-			<Updates {upd} docker={about ? about.docker : null} {reader} checksKnown={!failed.includes('health checks')} {canAct} onupd={(u) => (upd = u)} />
+			{@render updates({ upd, docker: about ? about.docker : null, reader, checksKnown: !failed.includes('health checks'), canAct, onupd: (u) => (upd = u) })}
 		{/if}
 	{:else}
 		<section class="st-plate" aria-labelledby="s-about">

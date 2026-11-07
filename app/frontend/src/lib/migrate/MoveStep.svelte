@@ -9,7 +9,7 @@
 	import { to } from '../core/paths.ts';
 	import { needsGroups, plural, type Report } from './move.ts';
 
-	// Step 4: what to know before moving, then the move itself with its
+	// What to know before moving, then the move itself with its
 	// progress. The page keeps following it if you leave and come back.
 	let {
 		dry,

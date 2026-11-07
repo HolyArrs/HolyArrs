@@ -12,8 +12,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, dateTime } from '#lib/core/format.ts';
-	import { runTone, runWord } from '#lib/health/checks.ts';
-	import { busyNow, dot, every, groupSchedules, mayRun, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/health/schedules.ts';
+	import { runTone, runWord, busyNow, dot, every, groupSchedules, mayRun, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/health/index.ts';
 
 	let rows = $state<ScheduleRow[] | null>(null);
 	let loops = $state<LoopRow[]>([]);

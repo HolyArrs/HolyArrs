@@ -23,7 +23,7 @@
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from './ask-words.ts';
 	import { askedFor } from './asked-for.ts';
-	import { watchlistLine } from '../accounts/watchlist.ts';
+	import { watchlistLine } from '../accounts/index.ts';
 	import type { Ask } from '../core/types.ts';
 
 	let { ctx }: { ctx: BoardCtx } = $props();

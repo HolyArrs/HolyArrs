@@ -32,7 +32,7 @@
 	import { askTab } from './ask-words.ts';
 	import { askHref } from './board.ts';
 	import { askedFor } from './asked-for.ts';
-	import { watchlistLine } from '../accounts/watchlist.ts';
+	import { watchlistLine } from '../accounts/index.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../core/types.ts';
 

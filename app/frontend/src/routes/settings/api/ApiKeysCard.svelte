@@ -6,7 +6,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, date } from '#lib/core/format.ts';
-	import type { ApiKey } from '#lib/arrapi/index.ts';
+	import type { ApiKey } from '#lib/core/types.ts';
 
 	// API keys for other apps: make one (shown once), see when each was
 	// last used, revoke. Moved here from Sign-in and security; same calls.

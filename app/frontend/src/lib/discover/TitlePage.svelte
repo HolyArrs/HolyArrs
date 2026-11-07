@@ -26,9 +26,9 @@
 	import TitleTrailers from './TitleTrailers.svelte';
 	import { loadExtras, scoreName, scoreText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/ui/rating-picks.svelte.ts';
-	import { aboutPicks, aboutShown } from '#lib/accounts/about-picks.svelte.ts';
+	import { aboutPicks, aboutShown } from '#lib/accounts/index.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/ui/wiki-facts.ts';
-	import type { TagsAt, TitleLook } from '#lib/discover/title-look.svelte.ts';
+	import type { TagsAt, TitleLook } from './title-look.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';

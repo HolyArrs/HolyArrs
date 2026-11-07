@@ -15,31 +15,8 @@
 	import { ago, date } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { getBase } from '#lib/core/paths.ts';
-	import type { ApiKey } from '#lib/arrapi/index.ts';
-	import {
-		AI_SCOPE,
-		CHECK_QUESTION,
-		DEEPLINK_LABEL,
-		GROUPS,
-		GUIDES_URL,
-		ROWS,
-		agentPrompt,
-		aiURL,
-		appsFor,
-		canSignIn,
-		codeParts,
-		deeplinkHref,
-		isAIKey,
-		onlyLocal,
-		pickFor,
-		testedLine,
-		whereText,
-		type AIApp,
-		type Ctx,
-		type Part,
-		type Picked,
-		type Row
-	} from '#lib/ai/ai-connect.ts';
+	import type { ApiKey } from '#lib/core/types.ts';
+	import { AI_SCOPE, CHECK_QUESTION, DEEPLINK_LABEL, GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, appsFor, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, testedLine, whereText, type AIApp, type Ctx, type Part, type Picked, type Row } from '#lib/ai/index.ts';
 
 	let loaded = $state(false);
 	let error = $state('');

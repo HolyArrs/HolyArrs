@@ -1,6 +1,6 @@
 <script lang="ts">
-	// Why HolyArrs: Luis's note, opened from Status > About. A retro window in the site's look: it powers on,
-	// types its lines, slams its tags on like stickers, and Luis and Peanut run across the title bar now and then.
+	// The About note, opened from Status > About: a small retro window that powers on, types its lines,
+	// slams its tags on like stickers, and now and then sends the title-bar runners across.
 	import { tick } from 'svelte';
 	import { to } from '../core/paths.ts';
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
@@ -109,7 +109,7 @@
 		playing = false;
 	}
 
-	// ── Luis and Peanut ──
+	// ── Title-bar runners ──
 	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
 	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
 	let scene = 0;

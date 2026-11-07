@@ -13,8 +13,7 @@
 	import { searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow } from '#lib/alerts/settings-status.svelte.ts';
-	import { groupState, stateWords, type GroupState } from '#lib/alerts/settings-status.ts';
+	import { settingsNow, groupState, stateWords, type GroupState } from '#lib/alerts/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import GroupArt from './(home)/GroupArt.svelte';

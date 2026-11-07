@@ -16,9 +16,7 @@ export type Corner = 0 | 1 | 2 | 3;
 
 export const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 export const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
-export const easeOutBack = (p: number, s = 2.2) => 1 + (s + 1) * (p - 1) ** 3 + s * (p - 1) ** 2;
 export const easeOutCubic = (p: number) => 1 - (1 - p) ** 3;
-export const easeInBack = (p: number, s = 1.9) => (s + 1) * p ** 3 - s * p ** 2;
 
 /** Which leg runs at clock t (seconds since mount), and how far into it. Null before the first. */
 export function legAt(t: number, legs: number): { index: number; local: number } | null {

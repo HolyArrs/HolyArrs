@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Account from '#lib/accounts/Account.svelte';
+	import { Account } from '#lib/accounts/index.ts';
 </script>
 
 <svelte:head><title>My account · HolyArrs</title></svelte:head>

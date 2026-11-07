@@ -2,8 +2,8 @@
 	import { onMount, untrack } from 'svelte';
 	import { notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
-	import AlertsPanel from '#lib/alerts/AlertsPanel.svelte';
-	import { forgetFeeds } from './bell-feeds.svelte.ts';
+	import { AlertsPanel } from '#lib/alerts/index.ts';
+import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
 	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
@@ -179,7 +179,7 @@
 		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>+{toasts.counts.waiting} more</button>
 	{/if}
 </div>
-{#if signedIn}<AlertsPanel />{/if}
+{#if signedIn}<AlertsPanel before={feedPins.update ? [feedPins.update] : []} after={decisionPins()} />{/if}
 
 <style>
 	.alerts-demo { position: fixed; z-index: 89; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; border-radius: 999px; font: var(--t-subhead); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 6px 20px rgb(0 0 0 / 35%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }

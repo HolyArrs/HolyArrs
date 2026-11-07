@@ -10,15 +10,13 @@
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session, type Perm, type Role } from '#lib/core/session.svelte.ts';
-	import { presetOf, presetPerms, presetsFor, type PresetId } from '#lib/accounts/presets.ts';
+	import { presetOf, presetPerms, presetsFor, type PresetId, Sessions, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, date } from '#lib/core/format.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import Sessions from '#lib/accounts/Sessions.svelte';
 	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
 	import { kindAsks } from '#lib/requests/index.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { kidLabel, ratingChoices } from '#lib/accounts/kid.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
