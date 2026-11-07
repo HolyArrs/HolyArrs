@@ -1,38 +1,5 @@
-// Source helpers, kept apart from the pages so they can be tested.
 import type { SourceHealth, SourceView } from './types.ts';
 import type { Tone } from '../core/format.ts';
-
-export const healthWords: Record<SourceHealth['state'], string> = {
-	working: 'Working',
-	unreachable: 'Unreachable',
-	auth_failed: 'Key turned down',
-	disabled: 'Paused'
-};
-
-/** sourceTone colours a Source's health chip. */
-export function sourceTone(state: string): Tone {
-	if (state === 'working') return 'ok';
-	if (state === 'disabled') return 'idle';
-	return 'fail';
-}
-
-/** ms says a response time in words. */
-export function ms(n: number | null | undefined): string {
-	if (!n) return '—';
-	if (n < 1000) return `${Math.round(n)} ms`;
-	return `${(n / 1000).toFixed(1)} s`;
-}
-
-/** uses lists what a Source is used for, in words. */
-export function uses(s: Pick<SourceView, 'use_for'>): string {
-	const out: string[] = [];
-	if (s.use_for?.feed) out.push('newest list');
-	if (s.use_for?.auto_search) out.push('searches on its own');
-	if (s.use_for?.hand_search) out.push('search by hand');
-	return out.length ? out.join(' · ') : 'not used';
-}
-
-export const opWords: Record<string, string> = { caps: 'Read what it can do', search: 'Search', feed: 'Newest list', test: 'Test' };
 
 export interface SourceForm {
 	name: string;
@@ -55,6 +22,35 @@ export interface SourceForm {
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
 	tags: string[];
+}
+
+export const healthWords: Record<SourceHealth['state'], string> = {
+	working: 'Working',
+	unreachable: 'Unreachable',
+	auth_failed: 'Key turned down',
+	disabled: 'Paused'
+};
+
+export const opWords: Record<string, string> = { caps: 'Read what it can do', search: 'Search', feed: 'Newest list', test: 'Test' };
+
+export function sourceTone(state: string): Tone {
+	if (state === 'working') return 'ok';
+	if (state === 'disabled') return 'idle';
+	return 'fail';
+}
+
+export function ms(n: number | null | undefined): string {
+	if (!n) return '—';
+	if (n < 1000) return `${Math.round(n)} ms`;
+	return `${(n / 1000).toFixed(1)} s`;
+}
+
+export function uses(s: Pick<SourceView, 'use_for'>): string {
+	const out: string[] = [];
+	if (s.use_for?.feed) out.push('newest list');
+	if (s.use_for?.auto_search) out.push('searches on its own');
+	if (s.use_for?.hand_search) out.push('search by hand');
+	return out.length ? out.join(' · ') : 'not used';
 }
 
 export function emptyForm(): SourceForm {
@@ -82,7 +78,6 @@ export function emptyForm(): SourceForm {
 	};
 }
 
-/** formFrom fills the form from a saved Source; secrets stay masked. */
 export function formFrom(s: SourceView): SourceForm {
 	const f = emptyForm();
 	return {
@@ -110,7 +105,7 @@ export function formFrom(s: SourceView): SourceForm {
 	};
 }
 
-/** formBody turns the form into the API body. An rss Source only feeds. */
+// An rss Source only feeds.
 export function formBody(f: SourceForm): Record<string, unknown> {
 	const rss = f.format === 'rss';
 	return {
@@ -137,7 +132,6 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 	};
 }
 
-/** barHeight scales a day's count to a bar height in percent. */
 export function barHeight(n: number, most: number): number {
 	if (!most || n <= 0) return 0;
 	return Math.max(4, Math.round((n / most) * 100));

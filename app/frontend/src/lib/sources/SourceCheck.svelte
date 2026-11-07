@@ -1,16 +1,14 @@
 <script lang="ts">
-	// Test search: asks every enabled Source for one title at once and shows
-	// who answered. Owners and admins only; it sits on the Sources page.
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Field from '../ui/Field.svelte';
 	import Button from '../ui/Button.svelte';
 	import TestTag from '../ui/TestTag.svelte';
+	import { ms } from './api.ts';
+	import { checkCount, checkSummary, checkTone, checkWord, defaultQuery, type CheckKind, type SourceCheck } from './check.ts';
 	import { api } from '../core/api.ts';
 	import { plainMessage as message } from '../core/settings.ts';
 	import { to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
-	import { ms } from './api.ts';
-	import { checkCount, checkSummary, checkTone, checkWord, defaultQuery, type CheckKind, type SourceCheck } from './check.ts';
 
 	let kind = $state<CheckKind>('movie');
 	let query = $state(defaultQuery.movie);
@@ -81,7 +79,7 @@
 		gap: var(--s-3);
 		align-items: end;
 	}
-	/* Side-by-side fields: label above its control (the Settings row grid would split them). */
+	/* The Settings row grid would split label and control, so stack them here. */
 	.ask > :global(.field) { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px; padding-block: 0 !important; border-top: 0 !important; box-shadow: none !important; }
 	.ask > :global(.field > label) { display: block; text-align: left; justify-self: start; }
 	.ask { padding-block: 14px; }

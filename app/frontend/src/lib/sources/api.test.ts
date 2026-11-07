@@ -25,20 +25,20 @@ const saved: SourceView = {
 };
 
 describe('sources', () => {
-	it('colours health', () => {
+	it('shows the right tone for each Source state', () => {
 		expect(sourceTone('working')).toBe('ok');
 		expect(sourceTone('disabled')).toBe('idle');
 		expect(sourceTone('auth_failed')).toBe('fail');
 		expect(sourceTone('unreachable')).toBe('fail');
 	});
 
-	it('says times', () => {
+	it('shows a response time in ms or seconds', () => {
 		expect(ms(0)).toBe('—');
 		expect(ms(240)).toBe('240 ms');
 		expect(ms(1500)).toBe('1.5 s');
 	});
 
-	it('says uses', () => {
+	it('lists what a Source is used for', () => {
 		expect(uses(saved)).toBe('newest list · search by hand');
 		expect(uses({ use_for: { feed: false, auto_search: false, hand_search: false } })).toBe('not used');
 	});
@@ -63,7 +63,7 @@ describe('sources', () => {
 		expect(formBody({ ...emptyForm(), protocol: 'usenet', min_seeders: 5 }).min_seeders).toBe(0);
 	});
 
-	it('scales bars', () => {
+	it('draws each day bar in proportion to the busiest day', () => {
 		expect(barHeight(0, 10)).toBe(0);
 		expect(barHeight(10, 10)).toBe(100);
 		expect(barHeight(1, 1000)).toBe(4);
@@ -73,19 +73,19 @@ describe('sources', () => {
 
 describe('source health by reason', async () => {
 	const { healthTone, healthWord, pausedUntil } = await import('./health.ts');
-	it('tells waits apart', () => {
+	it('shows the reason a Source waits', () => {
 		expect(healthWord({ state: 'unreachable', reason: 'slowed' })).toBe('Slowed down');
 		expect(healthTone({ state: 'unreachable', reason: 'slowed' })).toBe('wait');
 		expect(healthWord({ state: 'unreachable', reason: 'blocked' })).toBe('Blocked');
 		expect(healthWord({ state: 'auth_failed', reason: 'key' })).toBe('Key refused');
 		expect(healthTone({ state: 'unreachable', reason: 'down' })).toBe('fail');
 	});
-	it('falls back to the state', () => {
+	it('shows the state when there is no reason', () => {
 		expect(healthWord({ state: 'working' })).toBe('Working');
 		expect(healthTone({ state: 'disabled' })).toBe('idle');
 		expect(healthWord({ state: 'unreachable' })).toBe('Unreachable');
 	});
-	it('says paused until a time', () => {
+	it('shows when a paused Source tries again', () => {
 		expect(pausedUntil({})).toBe('');
 		expect(pausedUntil({ until: 'nope' })).toBe('');
 		expect(pausedUntil({ until: '2026-11-02T14:05:00Z' })).toMatch(/^Paused until /);
