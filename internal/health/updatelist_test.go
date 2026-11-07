@@ -17,6 +17,7 @@ type listServer struct {
 	srv  *httptest.Server
 	mu   sync.Mutex
 	down bool
+	hits int
 	data []byte
 	sig  []byte
 }
@@ -26,6 +27,7 @@ func newListServer(t *testing.T) *listServer {
 	l.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l.mu.Lock()
 		defer l.mu.Unlock()
+		l.hits++
 		switch {
 		case l.down:
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -164,5 +166,28 @@ func TestUpdateListEmptyPinnedKeysKeepsGitHub(t *testing.T) {
 	}
 	if i := w.e.CheckUpdate(context.Background()); i.Latest != "v1.2.0" || f.calls.Load() != 1 {
 		t.Fatalf("old path: %+v", i)
+	}
+}
+
+// Release proof B2: with the check turned off, no list is asked for at
+// all, and turning it back on reports the newer release again.
+func TestUpdateListCheckOffAsksNothing(t *testing.T) {
+	w, k, srv, pages := listWorld(t)
+	srv.set(k, 3, "v1.2.0", "")
+	ctx := context.Background()
+	if err := w.e.saveSetting(ctx, settingUpdateOn, "off"); err != nil {
+		t.Fatal(err)
+	}
+	if i := w.e.CheckUpdate(ctx); i.On || i.Newer || i.Latest != "" {
+		t.Fatalf("off: %+v", i)
+	}
+	if srv.hits != 0 || pages.hits != 0 {
+		t.Fatalf("asked with the check off: %d + %d", srv.hits, pages.hits)
+	}
+	if err := w.e.saveSetting(ctx, settingUpdateOn, "on"); err != nil {
+		t.Fatal(err)
+	}
+	if i := w.e.CheckUpdate(ctx); !i.Newer || i.Latest != "v1.2.0" || i.Link == "" {
+		t.Fatalf("on again: %+v", i)
 	}
 }
