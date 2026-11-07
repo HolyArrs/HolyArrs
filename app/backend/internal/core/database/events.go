@@ -20,6 +20,32 @@ var eventGuard = func(name string, f func()) {
 	f()
 }
 
+// EventFilter narrows a History list. Zero fields do not filter.
+type EventFilter struct {
+	TitleID int64
+	// Kinds keeps Events of these kinds; a kind ending in "*" is a prefix
+	// (import_* is every import outcome).
+	Kinds    []string
+	From, To time.Time // From is inclusive, To exclusive
+	Limit    int       // 1 to 500, default 50
+	Offset   int
+	// An episode's Events: those of its Slots (the Event's own Slot or a
+	// pack's slot_ids) and those naming the episode (item_id, item_ids).
+	SlotIDs []int64
+	ItemIDs []int64
+	// An album's Events also take those naming the album (part_id,
+	// album_id).
+	PartID int64
+	// SourceID keeps the Events of one Source: grabs whose Release came
+	// from it (data.release_id) and those naming it (data.source_id).
+	SourceID int64
+	// HideFeed drops the routine feed checks.
+	HideFeed bool
+	// HideKinds drops Events of these exact kinds (from the list and the
+	// count), whatever Kinds asks for.
+	HideKinds []string
+}
+
 // SetEventGuard sets the function that runs each event hook.
 func SetEventGuard(g func(name string, f func())) { eventGuard = g }
 
@@ -65,32 +91,6 @@ func (s *Store) AddEvent(ctx context.Context, e *Event) error {
 func (s *Store) RecentEvents(ctx context.Context, limit int) ([]Event, error) {
 	es, _, err := s.Events(ctx, EventFilter{Limit: limit})
 	return es, err
-}
-
-// EventFilter narrows a History list. Zero fields do not filter.
-type EventFilter struct {
-	TitleID int64
-	// Kinds keeps Events of these kinds; a kind ending in "*" is a prefix
-	// (import_* is every import outcome).
-	Kinds    []string
-	From, To time.Time // From is inclusive, To exclusive
-	Limit    int       // 1 to 500, default 50
-	Offset   int
-	// An episode's Events: those of its Slots (the Event's own Slot or a
-	// pack's slot_ids) and those naming the episode (item_id, item_ids).
-	SlotIDs []int64
-	ItemIDs []int64
-	// An album's Events also take those naming the album (part_id,
-	// album_id).
-	PartID int64
-	// SourceID keeps the Events of one Source: grabs whose Release came
-	// from it (data.release_id) and those naming it (data.source_id).
-	SourceID int64
-	// HideFeed drops the routine feed checks.
-	HideFeed bool
-	// HideKinds drops Events of these exact kinds (from the list and the
-	// count), whatever Kinds asks for.
-	HideKinds []string
 }
 
 // Events lists the Events that match f, newest first, and how many match

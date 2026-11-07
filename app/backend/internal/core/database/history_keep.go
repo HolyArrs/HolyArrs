@@ -13,6 +13,21 @@ import (
 // KindCleanHistory is the daily Job that removes old History Events.
 const KindCleanHistory = "clean_history"
 
+// AuditKeepDays is how long audit Events are kept (fixed).
+const AuditKeepDays = 365
+
+// MaxHistoryKeepDays bounds both values (about ten years).
+const MaxHistoryKeepDays = 3650
+
+const (
+	settingKeepRoutine = "history_keep_routine_days"
+	settingKeepOther   = "history_keep_other_days"
+)
+
+// pruneBatch is how many Events one write removes, so the events database
+// is never locked for long.
+const pruneBatch = 2000
+
 // RoutineEventKinds are the kinds the History page files under Routine
 // (web/app/src/lib/history-looks.ts, the routine tab): searches, feed
 // checks, refreshed details and folder scans. Keep the two lists alike.
@@ -30,8 +45,11 @@ var RoutineEventKinds = []string{
 // secrets_imported is the owner's import of a secrets file (credentials).
 var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "setting_changed", "secrets_imported", "account_changed", "backup_used", "control_used"}
 
-// AuditKeepDays is how long audit Events are kept (fixed).
-const AuditKeepDays = 365
+// DefaultHistoryKeep: routine work for 30 days, everything else forever.
+var DefaultHistoryKeep = HistoryKeep{RoutineDays: 30}
+
+// ErrHistoryKeep is a keep time out of range.
+var ErrHistoryKeep = errors.New("keep times are whole days from 0 (forever) to 3650")
 
 // HistoryKeep is how long History keeps Events, in days. 0 keeps them
 // forever.
@@ -39,20 +57,6 @@ type HistoryKeep struct {
 	RoutineDays int `json:"routine_days"`
 	OtherDays   int `json:"other_days"`
 }
-
-// DefaultHistoryKeep: routine work for 30 days, everything else forever.
-var DefaultHistoryKeep = HistoryKeep{RoutineDays: 30}
-
-// MaxHistoryKeepDays bounds both values (about ten years).
-const MaxHistoryKeepDays = 3650
-
-// ErrHistoryKeep is a keep time out of range.
-var ErrHistoryKeep = errors.New("keep times are whole days from 0 (forever) to 3650")
-
-const (
-	settingKeepRoutine = "history_keep_routine_days"
-	settingKeepOther   = "history_keep_other_days"
-)
 
 // ReadHistoryKeep reads the keep times from the this_app settings group;
 // a missing or unreadable value is its default.
@@ -88,10 +92,6 @@ func (s *Store) SaveHistoryKeep(ctx context.Context, k HistoryKeep, by Actor) er
 		return nil
 	})
 }
-
-// pruneBatch is how many Events one write removes, so the events database
-// is never locked for long.
-const pruneBatch = 2000
 
 // PruneEvents removes Events older than their keep time, a batch per
 // write, and returns how many went. Nothing in the app reads old Events to

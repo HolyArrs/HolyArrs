@@ -13,6 +13,17 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
+// claimPage is how many queued Jobs a gated claim reads at a time; it
+// reads page after page until it finds one the gate does not hold.
+const claimPage = 200
+
+// errGateOn stops an ungated claim when a part was turned off meanwhile.
+var errGateOn = errors.New("a part was turned off; claim through the gate")
+
+// errCancelled is the cause a person's cancel gives the Job's context, so a
+// stop that lands later still reads as a cancel.
+var errCancelled = errors.New("job cancelled")
+
 // Handler does the work of one Job kind. Returning an error retries the Job
 // with back-off until it runs out of attempts.
 type Handler func(ctx context.Context, r *Run) error
@@ -55,10 +66,6 @@ type OffKinds interface {
 	OffKinds() []string
 }
 
-// claimPage is how many queued Jobs a gated claim reads at a time; it
-// reads page after page until it finds one the gate does not hold.
-const claimPage = 200
-
 // Queue runs Jobs stored in the database on a fixed pool of workers.
 type Queue struct {
 	s     *database.Store
@@ -79,6 +86,31 @@ type Queue struct {
 	stop    context.CancelFunc
 	wg      sync.WaitGroup
 }
+
+// gatedCand is one queued Job a gated claim looks at.
+type gatedCand struct {
+	id      int64
+	kind    string
+	subject *database.Subject
+}
+
+// Run is one attempt at a Job, handed to its Handler.
+type Run struct {
+	Job      Job
+	q        *Queue
+	result   map[string]any
+	prepared any
+	app      context.Context // the queue's own context: done when the app stops
+	ctx      context.Context // this attempt's context
+}
+
+type preparedJob struct {
+	kind    string
+	value   any
+	expires time.Time
+}
+
+type errCode interface{ Code() string }
 
 // New makes a Queue. Call Handle for each kind, then Start.
 func New(s *database.Store, opt Options) *Queue {
@@ -128,15 +160,6 @@ func (q *Queue) SetGate(g Gate) {
 	q.gate = g
 }
 
-func (q *Queue) activeGate() Gate {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	if q.gate == nil || !q.gate.Active() {
-		return nil
-	}
-	return q.gate
-}
-
 // Running returns the Jobs this Queue's workers run now.
 func (q *Queue) Running() []Job {
 	q.mu.Lock()
@@ -159,6 +182,138 @@ func (q *Queue) Enqueue(ctx context.Context, kind string, subject *database.Subj
 // the Job before it is set.
 func (q *Queue) EnqueueAt(ctx context.Context, kind string, subject *database.Subject, params map[string]any, dedupeKey string, by database.Actor, runAfter time.Time) (id int64, created bool, err error) {
 	return q.enqueueAt(ctx, kind, subject, params, dedupeKey, by, runAfter, nil)
+}
+
+// Start puts Jobs left running by a crash back in the queue and starts the
+// workers.
+func (q *Queue) Start(ctx context.Context) error {
+	err := q.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE jobs SET state = 'queued', progress_note = 'restarted after a stop', updated_at = ? WHERE state = 'running'",
+			database.FormatTime(time.Now()))
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("recovering jobs: %w", err)
+	}
+	ctx, q.stop = context.WithCancel(ctx)
+	if q.opt.Pools == nil {
+		for range q.opt.Workers {
+			q.wg.Add(1)
+			go q.work(ctx, "")
+		}
+		return nil
+	}
+	for _, p := range []Pool{PoolCore, PoolIO, PoolHeavy} {
+		for range q.opt.Pools[p] {
+			q.wg.Add(1)
+			go q.work(ctx, p)
+		}
+	}
+	return nil
+}
+
+// Stop cancels running Jobs and waits for the workers. Cancelled-by-stop
+// Jobs stay running in the database and are recovered on the next Start.
+func (q *Queue) Stop() {
+	if q.stop != nil {
+		q.stop()
+	}
+	q.wg.Wait()
+	q.mu.Lock()
+	clear(q.scheduleNoop)
+	clear(q.prepared)
+	q.mu.Unlock()
+}
+
+// Stopping says the Job's context ended because the app is stopping, not
+// because someone cancelled the Job: the Job stays running in the database
+// and is run again after the restart.
+func (r *Run) Stopping() bool {
+	return r.app != nil && r.app.Err() != nil && !r.cancelledByUser()
+}
+
+// TakePrepared returns a successful schedule probe's in-memory result once.
+// Retries and Jobs recovered after a restart receive nil and fetch afresh.
+func (r *Run) TakePrepared() any {
+	prepared := r.prepared
+	r.prepared = nil
+	return prepared
+}
+
+// Progress records how far the Job is (0 to 1) with a short note.
+func (r *Run) Progress(ctx context.Context, p float64, note string) error {
+	p = min(max(p, 0), 1)
+	err := r.q.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE jobs SET progress = ?, progress_note = ?, updated_at = ? WHERE id = ?",
+			p, note, database.FormatTime(time.Now()), r.Job.ID)
+		return err
+	})
+	if err == nil {
+		r.Job.Progress, r.Job.ProgressNote = p, &note
+		r.q.notify(r.Job)
+	}
+	return err
+}
+
+// SetResult stores a result to save when the Job is done.
+func (r *Run) SetResult(v map[string]any) { r.result = v }
+
+// SaveResult stores a result now, while the Job still runs, so the part
+// done so far is kept if the Job is cancelled or the app stops; it is
+// also the result saved when the Job is done.
+func (r *Run) SaveResult(ctx context.Context, v map[string]any) error {
+	r.result = v
+	res, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	return r.q.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE jobs SET result = ?, updated_at = ? WHERE id = ?", string(res), database.FormatTime(time.Now()), r.Job.ID)
+		return err
+	})
+}
+
+// Cancel stops a queued or running Job.
+func (q *Queue) Cancel(ctx context.Context, id int64) error {
+	var state string
+	err := q.s.Write(ctx, func(tx *sql.Tx) error {
+		if err := tx.QueryRow("SELECT state FROM jobs WHERE id = ?", id).Scan(&state); err != nil {
+			return err
+		}
+		if state == "queued" {
+			ts := database.FormatTime(time.Now())
+			_, err := tx.Exec("UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE id = ?", ts, ts, id)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	switch state {
+	case "queued":
+		q.clearPrepared(id)
+		return nil
+	case "running":
+		q.mu.Lock()
+		c := q.live[id]
+		q.mu.Unlock()
+		if c == nil {
+			return fmt.Errorf("job %d is running elsewhere", id)
+		}
+		c()
+		return nil
+	}
+	return fmt.Errorf("job %d is %s and cannot be cancelled", id, state)
+}
+
+func (q *Queue) activeGate() Gate {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.gate == nil || !q.gate.Active() {
+		return nil
+	}
+	return q.gate
 }
 
 func (q *Queue) enqueueAt(ctx context.Context, kind string, subject *database.Subject, params map[string]any, dedupeKey string, by database.Actor, runAfter time.Time, prepared any) (id int64, created bool, err error) {
@@ -209,47 +364,6 @@ func (q *Queue) poke() {
 	case q.wake <- struct{}{}:
 	default:
 	}
-}
-
-// Start puts Jobs left running by a crash back in the queue and starts the
-// workers.
-func (q *Queue) Start(ctx context.Context) error {
-	err := q.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET state = 'queued', progress_note = 'restarted after a stop', updated_at = ? WHERE state = 'running'",
-			database.FormatTime(time.Now()))
-		return err
-	})
-	if err != nil {
-		return fmt.Errorf("recovering jobs: %w", err)
-	}
-	ctx, q.stop = context.WithCancel(ctx)
-	if q.opt.Pools == nil {
-		for range q.opt.Workers {
-			q.wg.Add(1)
-			go q.work(ctx, "")
-		}
-		return nil
-	}
-	for _, p := range []Pool{PoolCore, PoolIO, PoolHeavy} {
-		for range q.opt.Pools[p] {
-			q.wg.Add(1)
-			go q.work(ctx, p)
-		}
-	}
-	return nil
-}
-
-// Stop cancels running Jobs and waits for the workers. Cancelled-by-stop
-// Jobs stay running in the database and are recovered on the next Start.
-func (q *Queue) Stop() {
-	if q.stop != nil {
-		q.stop()
-	}
-	q.wg.Wait()
-	q.mu.Lock()
-	clear(q.scheduleNoop)
-	clear(q.prepared)
-	q.mu.Unlock()
 }
 
 func (q *Queue) work(ctx context.Context, pool Pool) {
@@ -337,9 +451,6 @@ func (q *Queue) claim(ctx context.Context, pool Pool) (Job, bool, error) {
 	return j, found && err == nil, err
 }
 
-// errGateOn stops an ungated claim when a part was turned off meanwhile.
-var errGateOn = errors.New("a part was turned off; claim through the gate")
-
 // claimGated is claim while a part is off: it reads the next Jobs on the
 // read pool (leaving out in SQL the kinds held whatever their subject),
 // skips those the gate holds, page after page, and claims the first other
@@ -367,13 +478,6 @@ func (q *Queue) claimGated(ctx context.Context, g Gate, kinds string, args []any
 		}
 		return q.claimHeldCheck(ctx, g, *c)
 	}
-}
-
-// gatedCand is one queued Job a gated claim looks at.
-type gatedCand struct {
-	id      int64
-	kind    string
-	subject *database.Subject
 }
 
 // gatedPage reads one page of queued Jobs and returns the first the gate
@@ -443,81 +547,11 @@ func (q *Queue) claimHeldCheck(ctx context.Context, g Gate, c gatedCand) (Job, b
 	return j, found && err == nil, err
 }
 
-// Run is one attempt at a Job, handed to its Handler.
-type Run struct {
-	Job      Job
-	q        *Queue
-	result   map[string]any
-	prepared any
-	app      context.Context // the queue's own context: done when the app stops
-	ctx      context.Context // this attempt's context
-}
-
-// errCancelled is the cause a person's cancel gives the Job's context, so a
-// stop that lands later still reads as a cancel.
-var errCancelled = errors.New("job cancelled")
-
 // cancelledByUser says someone cancelled the Job before anything else
 // ended its context.
 func (r *Run) cancelledByUser() bool {
 	return r.ctx != nil && errors.Is(context.Cause(r.ctx), errCancelled)
 }
-
-// Stopping says the Job's context ended because the app is stopping, not
-// because someone cancelled the Job: the Job stays running in the database
-// and is run again after the restart.
-func (r *Run) Stopping() bool {
-	return r.app != nil && r.app.Err() != nil && !r.cancelledByUser()
-}
-
-type preparedJob struct {
-	kind    string
-	value   any
-	expires time.Time
-}
-
-// TakePrepared returns a successful schedule probe's in-memory result once.
-// Retries and Jobs recovered after a restart receive nil and fetch afresh.
-func (r *Run) TakePrepared() any {
-	prepared := r.prepared
-	r.prepared = nil
-	return prepared
-}
-
-// Progress records how far the Job is (0 to 1) with a short note.
-func (r *Run) Progress(ctx context.Context, p float64, note string) error {
-	p = min(max(p, 0), 1)
-	err := r.q.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET progress = ?, progress_note = ?, updated_at = ? WHERE id = ?",
-			p, note, database.FormatTime(time.Now()), r.Job.ID)
-		return err
-	})
-	if err == nil {
-		r.Job.Progress, r.Job.ProgressNote = p, &note
-		r.q.notify(r.Job)
-	}
-	return err
-}
-
-// SetResult stores a result to save when the Job is done.
-func (r *Run) SetResult(v map[string]any) { r.result = v }
-
-// SaveResult stores a result now, while the Job still runs, so the part
-// done so far is kept if the Job is cancelled or the app stops; it is
-// also the result saved when the Job is done.
-func (r *Run) SaveResult(ctx context.Context, v map[string]any) error {
-	r.result = v
-	res, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	return r.q.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET result = ?, updated_at = ? WHERE id = ?", string(res), database.FormatTime(time.Now()), r.Job.ID)
-		return err
-	})
-}
-
-type errCode interface{ Code() string }
 
 func (q *Queue) run(ctx context.Context, j Job) {
 	q.mu.Lock()
@@ -610,40 +644,6 @@ func (q *Queue) finish(j Job, result map[string]any, runErr error, code string, 
 	if database.Get(ctx, q.s.Read(), "jobs", j.ID, &fresh) == nil {
 		q.notify(fresh)
 	}
-}
-
-// Cancel stops a queued or running Job.
-func (q *Queue) Cancel(ctx context.Context, id int64) error {
-	var state string
-	err := q.s.Write(ctx, func(tx *sql.Tx) error {
-		if err := tx.QueryRow("SELECT state FROM jobs WHERE id = ?", id).Scan(&state); err != nil {
-			return err
-		}
-		if state == "queued" {
-			ts := database.FormatTime(time.Now())
-			_, err := tx.Exec("UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE id = ?", ts, ts, id)
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	switch state {
-	case "queued":
-		q.clearPrepared(id)
-		return nil
-	case "running":
-		q.mu.Lock()
-		c := q.live[id]
-		q.mu.Unlock()
-		if c == nil {
-			return fmt.Errorf("job %d is running elsewhere", id)
-		}
-		c()
-		return nil
-	}
-	return fmt.Errorf("job %d is %s and cannot be cancelled", id, state)
 }
 
 func (q *Queue) clearPrepared(id int64) {

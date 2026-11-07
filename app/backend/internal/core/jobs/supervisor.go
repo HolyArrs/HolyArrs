@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-// State is one of the five states a stage or linked app shows.
-type State string
-
 const (
 	Off      State = "off"
 	Starting State = "starting"
@@ -26,6 +23,11 @@ const (
 	Retrying State = "retrying"
 	Failed   State = "failed"
 )
+
+var def atomic.Pointer[Registry]
+
+// State is one of the five states a stage or linked app shows.
+type State string
 
 // Status is what the health page shows for one stage or linked app.
 type Status struct {
@@ -61,10 +63,24 @@ type Registry struct {
 	also  []func()
 }
 
+// Loop is one named background loop.
+type Loop struct {
+	Name  string // short key, e.g. backups
+	Label string // plain words, e.g. Backups
+	// Every > 0 makes Run one pass, started every Every; zero makes Run a
+	// loop that lasts until ctx ends and is started again if it ends early.
+	Every time.Duration
+	// Deadline caps one pass (default Every): its context ends then, and a
+	// pass still running is shown stuck until it returns.
+	Deadline time.Duration
+	Run      func(ctx context.Context) error
+}
+
+// errCrash is a run that panicked.
+type errCrash struct{ v any }
+
 // NewRegistry makes an empty Registry.
 func NewRegistry() *Registry { return &Registry{items: map[string]*Status{}} }
-
-var def atomic.Pointer[Registry]
 
 // SetDefault sets the Registry the package-level Guard reports to.
 func SetDefault(r *Registry) { def.Store(r) }
@@ -72,52 +88,12 @@ func SetDefault(r *Registry) { def.Store(r) }
 // Default returns the Registry set by SetDefault (may be nil).
 func Default() *Registry { return def.Load() }
 
-func (r *Registry) logf(format string, args ...any) {
-	if r.Logf != nil {
-		r.Logf(format, args...)
-		return
-	}
-	log.Printf(format, args...)
-}
-
-func (r *Registry) delay(crashes int) time.Duration {
-	d, top := r.BaseDelay, r.MaxDelay
-	if d <= 0 {
-		d = time.Second
-	}
-	if top <= 0 {
-		top = 5 * time.Minute
-	}
-	for i := 1; i < crashes && d < top; i++ {
-		d *= 2
-	}
-	return min(d, top)
-}
-
 // Set records the state of one stage or linked app.
 func (r *Registry) Set(key, kind, name string, st State, reason string) {
 	r.update(key, func(s *Status) {
 		s.Kind, s.Name = kind, name
 		s.State, s.Reason = st, reason
 	})
-}
-
-func (r *Registry) update(key string, f func(*Status)) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	s := r.items[key]
-	if s == nil {
-		s = &Status{Key: key}
-		r.items[key] = s
-	}
-	was := s.State
-	f(s)
-	if s.State != was || s.Since.IsZero() {
-		s.Since = time.Now().UTC()
-	}
-	if r.OnChange != nil {
-		r.OnChange(*s)
-	}
 }
 
 // Update changes one Status in place (the time changes with the state).
@@ -193,42 +169,10 @@ func (r *Registry) GoGuard(name string, f func()) {
 	}()
 }
 
-// Loop is one named background loop.
-type Loop struct {
-	Name  string // short key, e.g. backups
-	Label string // plain words, e.g. Backups
-	// Every > 0 makes Run one pass, started every Every; zero makes Run a
-	// loop that lasts until ctx ends and is started again if it ends early.
-	Every time.Duration
-	// Deadline caps one pass (default Every): its context ends then, and a
-	// pass still running is shown stuck until it returns.
-	Deadline time.Duration
-	Run      func(ctx context.Context) error
-}
-
 // StageKey is the Registry key of a stage.
 func StageKey(name string) string { return "stage:" + name }
 
-// errCrash is a run that panicked.
-type errCrash struct{ v any }
-
 func (e errCrash) Error() string { return fmt.Sprintf("crashed: %T", e.v) }
-
-func call(ctx context.Context, f func(context.Context) error) (err error) {
-	defer func() {
-		if p := recover(); p != nil {
-			err = errCrash{p}
-		}
-	}()
-	return f(ctx)
-}
-
-// crashed logs a crash by the loop's name and the panic's type only: the
-// panic text may hold a secret.
-func (r *Registry) crashed(name string, err error) string {
-	r.logf("supervisor: %s %s; it starts again after a delay", name, err.Error())
-	return "It crashed and starts again on its own. The log has the time it happened."
-}
 
 // Go starts a supervised loop. It returns at once; ending ctx stops it, and
 // Wait waits for it. The channel closes once the loop has returned.
@@ -248,6 +192,95 @@ func (r *Registry) Go(ctx context.Context, l Loop) <-chan struct{} {
 		r.long(ctx, key, l)
 	}()
 	return done
+}
+
+// Guard runs one piece of background work (an Alert send, an Event hook) and
+// catches a crash in it, marking stage name failed; a call that ends well
+// puts a failed stage back to running.
+func (r *Registry) Guard(name string, f func()) {
+	key := StageKey(name)
+	err := call(context.Background(), func(context.Context) error { f(); return nil })
+	if err != nil {
+		reason := r.crashed(name, err)
+		r.update(key, func(s *Status) {
+			if s.Kind == "" {
+				s.Kind, s.Name = "stage", name
+			}
+			s.State, s.Reason = Failed, reason
+		})
+		return
+	}
+	if st, ok := r.Get(key); ok && st.State == Failed && !st.Stuck {
+		r.update(key, func(s *Status) { s.State, s.Reason = Running, "" })
+	}
+}
+
+// Guard is Registry.Guard on the default Registry; with none it still
+// catches and logs the crash.
+func Guard(name string, f func()) {
+	if r := Default(); r != nil {
+		r.Guard(name, f)
+		return
+	}
+	if err := call(context.Background(), func(context.Context) error { f(); return nil }); err != nil {
+		log.Printf("supervisor: %s %s", name, err.Error())
+	}
+}
+
+func (r *Registry) logf(format string, args ...any) {
+	if r.Logf != nil {
+		r.Logf(format, args...)
+		return
+	}
+	log.Printf(format, args...)
+}
+
+func (r *Registry) delay(crashes int) time.Duration {
+	d, top := r.BaseDelay, r.MaxDelay
+	if d <= 0 {
+		d = time.Second
+	}
+	if top <= 0 {
+		top = 5 * time.Minute
+	}
+	for i := 1; i < crashes && d < top; i++ {
+		d *= 2
+	}
+	return min(d, top)
+}
+
+func (r *Registry) update(key string, f func(*Status)) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s := r.items[key]
+	if s == nil {
+		s = &Status{Key: key}
+		r.items[key] = s
+	}
+	was := s.State
+	f(s)
+	if s.State != was || s.Since.IsZero() {
+		s.Since = time.Now().UTC()
+	}
+	if r.OnChange != nil {
+		r.OnChange(*s)
+	}
+}
+
+func call(ctx context.Context, f func(context.Context) error) (err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = errCrash{p}
+		}
+	}()
+	return f(ctx)
+}
+
+// crashed logs a crash by the loop's name and the panic's type only: the
+// panic text may hold a secret.
+func (r *Registry) crashed(name string, err error) string {
+	r.logf("supervisor: %s %s; it starts again after a delay", name, err.Error())
+	return "It crashed and starts again on its own. The log has the time it happened."
 }
 
 // sleep waits d or until ctx ends; false means ctx ended.
@@ -343,38 +376,5 @@ func (r *Registry) periodic(ctx context.Context, key string, l Loop) {
 		if !sleep(ctx, wait) {
 			return
 		}
-	}
-}
-
-// Guard runs one piece of background work (an Alert send, an Event hook) and
-// catches a crash in it, marking stage name failed; a call that ends well
-// puts a failed stage back to running.
-func (r *Registry) Guard(name string, f func()) {
-	key := StageKey(name)
-	err := call(context.Background(), func(context.Context) error { f(); return nil })
-	if err != nil {
-		reason := r.crashed(name, err)
-		r.update(key, func(s *Status) {
-			if s.Kind == "" {
-				s.Kind, s.Name = "stage", name
-			}
-			s.State, s.Reason = Failed, reason
-		})
-		return
-	}
-	if st, ok := r.Get(key); ok && st.State == Failed && !st.Stuck {
-		r.update(key, func(s *Status) { s.State, s.Reason = Running, "" })
-	}
-}
-
-// Guard is Registry.Guard on the default Registry; with none it still
-// catches and logs the crash.
-func Guard(name string, f func()) {
-	if r := Default(); r != nil {
-		r.Guard(name, f)
-		return
-	}
-	if err := call(context.Background(), func(context.Context) error { f(); return nil }); err != nil {
-		log.Printf("supervisor: %s %s", name, err.Error())
 	}
 }

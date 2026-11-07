@@ -27,6 +27,15 @@ const (
 	EventsFile = "holyarrs-events.db"
 )
 
+// Overrides for the refusals above. Each lifts only its own kind.
+const (
+	// EnvAllowDesktopFolder lifts the Docker Desktop for Mac (fakeowner)
+	// refusal, for someone who checked that locks work there.
+	EnvAllowDesktopFolder = "HOLYARRS_ALLOW_DESKTOP_FOLDER"
+	// EnvConfigInMemory keeps the config folder in memory anyway.
+	EnvConfigInMemory = "HOLYARRS_CONFIG_IN_MEMORY"
+)
+
 // ErrNetworkShare is returned when the config folder is on a network share,
 // a folder shared from the host, or FUSE. The error is a *NetShareError
 // that carries the kind.
@@ -40,140 +49,12 @@ var ErrInMemory = errors.New("config folder is in memory, so everything in it is
 // folder.
 var ErrNotWritable = errors.New("config folder cannot be written")
 
-// NotWritable wraps err, from writing in the config folder dir, as
-// ErrNotWritable when the reason is a plain one a person fixes (read-only,
-// no permission, disk full or over quota), keeping the cause; nil for any
-// other error.
-func NotWritable(dir string, err error) error {
-	why := files.Why(err)
-	if why == "" || errors.Is(err, syscall.EINVAL) {
-		return nil
-	}
-	return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
-}
-
-// Overrides for the refusals above. Each lifts only its own kind.
-const (
-	// EnvAllowDesktopFolder lifts the Docker Desktop for Mac (fakeowner)
-	// refusal, for someone who checked that locks work there.
-	EnvAllowDesktopFolder = "HOLYARRS_ALLOW_DESKTOP_FOLDER"
-	// EnvConfigInMemory keeps the config folder in memory anyway.
-	EnvConfigInMemory = "HOLYARRS_CONFIG_IN_MEMORY"
-)
+//go:embed migrations
+var embedded embed.FS
 
 // NetShareError is the refusal of a config folder on a share; Kind is the
 // statfs kind ("9p", "fuse", "nfs", "fakeowner"...).
 type NetShareError struct{ Kind string }
-
-func (e *NetShareError) Error() string {
-	return "config folder is on a shared or network folder (" + e.Kind + ")"
-}
-
-// Unwrap makes errors.Is(err, ErrNetworkShare) true.
-func (e *NetShareError) Unwrap() error { return ErrNetworkShare }
-
-// ShareFix is the plain fix for a config folder refused as a share of this
-// kind. It holds no path, so the start-up page can show it.
-func ShareFix(kind string) string {
-	switch kind {
-	case "9p":
-		return `This folder is shared from the host (Docker Desktop on Windows shares C:\ folders this way, and so do VM folder shares). The database is not safe there. Put /config on a named volume (holyarrs-config:/config), or on the VM's own disk. Media folders can stay where they are.`
-	case "fakeowner":
-		return "This folder is shared from the Mac by Docker Desktop, where file locks do not work, so the database is not safe there. Put /config on a named volume (holyarrs-config:/config). Media folders can stay where they are."
-	case "fuse":
-		return "This is a FUSE filesystem (for example an Unraid user share under /mnt/user, mergerfs or rclone), where the database is not safe. On Unraid, use /mnt/<pool>/appdata/holyarrs, or set the appdata share to Exclusive access (turn on Permit exclusive shares in Settings > Global Share Settings first). On a Mac, use a named volume (holyarrs-config:/config). Otherwise put /config on a local disk."
-	}
-	return "The database needs a local disk: put /config on a local disk of the machine that runs HolyArrs. Media folders can stay on the share."
-}
-
-// on reads a yes/no override.
-func on(name string) bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
-	case "1", "yes", "true", "on":
-		return true
-	}
-	return false
-}
-
-// DesktopFolderAllowed reports the Docker Desktop folder override.
-func DesktopFolderAllowed() bool { return on(EnvAllowDesktopFolder) }
-
-// ConfigInMemoryAllowed reports the in-memory override.
-func ConfigInMemoryAllowed() bool { return on(EnvConfigInMemory) }
-
-// InMemory reports whether a kind from NetworkShare is memory, not a share.
-func InMemory(kind string) bool { return kind == "tmpfs" || kind == "ramfs" }
-
-// testTemp reports a test binary's own temporary folder: on systems where
-// /tmp is tmpfs every test would otherwise be refused. The real check still
-// refuses memory anywhere else (for example /dev/shm).
-func testTemp(dir string) bool {
-	exe := filepath.Base(os.Args[0])
-	if !strings.HasSuffix(exe, ".test") && !strings.HasSuffix(exe, ".test.exe") {
-		return false
-	}
-	rel, err := filepath.Rel(os.TempDir(), dir)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-}
-
-// checkFolder refuses a config folder the database cannot use safely, before
-// any database file is made, then checks that it can be written. real is
-// false when a test hook does the share check.
-func checkFolder(dir string, check func(string) (bool, string, error), real bool) error {
-	share, kind, err := check(dir)
-	if err != nil {
-		return fmt.Errorf("checking config folder: %w", err)
-	}
-	switch {
-	case !share:
-	case InMemory(kind):
-		if ConfigInMemoryAllowed() {
-			log.Printf("holyarrs: warning: config folder %s is in memory (%s), kept there because %s is set; everything in it is lost at the next restart", dir, kind, EnvConfigInMemory)
-		} else if !real || !testTemp(dir) {
-			return fmt.Errorf("%w (%s): %s; put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set %s=yes to keep it in memory anyway", ErrInMemory, kind, dir, EnvConfigInMemory)
-		}
-	case kind == "fakeowner" && DesktopFolderAllowed():
-		log.Printf("holyarrs: warning: config folder %s is a Docker Desktop folder share, used anyway because %s is set; file locks there may not work", dir, EnvAllowDesktopFolder)
-	default:
-		msg := ShareFix(kind)
-		if kind == "fakeowner" {
-			msg += " If you have checked that file locks work in this folder, " + EnvAllowDesktopFolder + "=1 starts HolyArrs on it anyway."
-		}
-		if fs := MountType(dir); fs != "" && fs != kind {
-			msg = "mount type " + fs + "; " + msg
-		}
-		return fmt.Errorf("%w: %s; %s", &NetShareError{Kind: kind}, dir, msg)
-	}
-	f, err := os.CreateTemp(dir, ".holyarrs-write-*")
-	if err != nil {
-		why := files.Why(err)
-		if why == "" {
-			why = "the write test failed"
-		}
-		return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
-	}
-	_ = f.Close()
-	_ = os.Remove(f.Name())
-	return nil
-}
-
-// MountType is the mount type of dir from /proc/self/mountinfo (Linux),
-// for the log, doctor and the support bundle; "" when unknown.
-func MountType(dir string) string {
-	b, err := os.ReadFile("/proc/self/mountinfo")
-	if err != nil {
-		return ""
-	}
-	if abs, err := filepath.Abs(dir); err == nil {
-		if r, err := filepath.EvalSymlinks(abs); err == nil {
-			dir = r
-		}
-	}
-	return files.FSType(string(b), filepath.ToSlash(dir))
-}
-
-//go:embed migrations
-var embedded embed.FS
 
 // Options tunes Open. The zero value is the normal setup.
 type Options struct {
@@ -207,6 +88,63 @@ type Store struct {
 	hookMu  sync.RWMutex
 	hooks   []func(Event)
 	filesMu sync.Mutex
+}
+
+// NotWritable wraps err, from writing in the config folder dir, as
+// ErrNotWritable when the reason is a plain one a person fixes (read-only,
+// no permission, disk full or over quota), keeping the cause; nil for any
+// other error.
+func NotWritable(dir string, err error) error {
+	why := files.Why(err)
+	if why == "" || errors.Is(err, syscall.EINVAL) {
+		return nil
+	}
+	return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
+}
+
+func (e *NetShareError) Error() string {
+	return "config folder is on a shared or network folder (" + e.Kind + ")"
+}
+
+// Unwrap makes errors.Is(err, ErrNetworkShare) true.
+func (e *NetShareError) Unwrap() error { return ErrNetworkShare }
+
+// ShareFix is the plain fix for a config folder refused as a share of this
+// kind. It holds no path, so the start-up page can show it.
+func ShareFix(kind string) string {
+	switch kind {
+	case "9p":
+		return `This folder is shared from the host (Docker Desktop on Windows shares C:\ folders this way, and so do VM folder shares). The database is not safe there. Put /config on a named volume (holyarrs-config:/config), or on the VM's own disk. Media folders can stay where they are.`
+	case "fakeowner":
+		return "This folder is shared from the Mac by Docker Desktop, where file locks do not work, so the database is not safe there. Put /config on a named volume (holyarrs-config:/config). Media folders can stay where they are."
+	case "fuse":
+		return "This is a FUSE filesystem (for example an Unraid user share under /mnt/user, mergerfs or rclone), where the database is not safe. On Unraid, use /mnt/<pool>/appdata/holyarrs, or set the appdata share to Exclusive access (turn on Permit exclusive shares in Settings > Global Share Settings first). On a Mac, use a named volume (holyarrs-config:/config). Otherwise put /config on a local disk."
+	}
+	return "The database needs a local disk: put /config on a local disk of the machine that runs HolyArrs. Media folders can stay on the share."
+}
+
+// DesktopFolderAllowed reports the Docker Desktop folder override.
+func DesktopFolderAllowed() bool { return on(EnvAllowDesktopFolder) }
+
+// ConfigInMemoryAllowed reports the in-memory override.
+func ConfigInMemoryAllowed() bool { return on(EnvConfigInMemory) }
+
+// InMemory reports whether a kind from NetworkShare is memory, not a share.
+func InMemory(kind string) bool { return kind == "tmpfs" || kind == "ramfs" }
+
+// MountType is the mount type of dir from /proc/self/mountinfo (Linux),
+// for the log, doctor and the support bundle; "" when unknown.
+func MountType(dir string) string {
+	b, err := os.ReadFile("/proc/self/mountinfo")
+	if err != nil {
+		return ""
+	}
+	if abs, err := filepath.Abs(dir); err == nil {
+		if r, err := filepath.EvalSymlinks(abs); err == nil {
+			dir = r
+		}
+	}
+	return files.FSType(string(b), filepath.ToSlash(dir))
 }
 
 // LockFiles coordinates protection changes with replacement and removal.
@@ -294,41 +232,6 @@ func Open(dir string, opt Options) (*Store, error) {
 	return s, nil
 }
 
-func dsn(path string, cacheKiB int, readOnly bool) string {
-	q := url.Values{}
-	for _, p := range []string{
-		"journal_mode(WAL)",
-		"busy_timeout(5000)",
-		"synchronous(NORMAL)",
-		fmt.Sprintf("cache_size(-%d)", cacheKiB),
-		"mmap_size(0)",
-		"foreign_keys(1)",
-	} {
-		q.Add("_pragma", p)
-	}
-	if readOnly {
-		q.Add("_pragma", "query_only(1)")
-	} else {
-		q.Set("_txlock", "immediate")
-	}
-	return fileURI(path) + "?" + q.Encode()
-}
-
-func openPool(path string, cacheKiB int, readOnly bool, conns int) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", dsn(path, cacheKiB, readOnly))
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(conns)
-	db.SetMaxIdleConns(conns)
-	db.SetConnMaxIdleTime(5 * time.Minute)
-	if err := db.Ping(); err != nil {
-		_ = db.Close()
-		return nil, fmt.Errorf("opening %s: %w", path, err)
-	}
-	return db, nil
-}
-
 // Read returns the read-only pool for the main database.
 func (s *Store) Read() *sql.DB { return s.read }
 
@@ -403,18 +306,6 @@ func (s *Store) Snapshot(dir string) (mainCopy, eventsCopy string, err error) {
 	return mainCopy, eventsCopy, nil
 }
 
-// ownerOnly makes database files and their -wal/-shm files readable by
-// the owner only (they hold password and key hashes); SQLite creates them
-// with the process umask. A file that is not there or cannot be changed is
-// left as it is.
-func ownerOnly(paths ...string) {
-	for _, p := range paths {
-		for _, f := range []string{p, p + "-wal", p + "-shm"} {
-			_ = os.Chmod(f, 0o600)
-		}
-	}
-}
-
 // SchemaVersions returns the newest migration known to this build for the
 // main and events databases.
 func SchemaVersions() (mainV, eventsV int) {
@@ -432,12 +323,121 @@ func SchemaVersions() (mainV, eventsV int) {
 	return mainV, eventsV
 }
 
+// FileURI is fileURI for other packages that open a database file by
+// hand, so a '#' or '?' in a folder name cannot point SQLite elsewhere.
+func FileURI(path string) string { return fileURI(path) }
+
+// on reads a yes/no override.
+func on(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
+	case "1", "yes", "true", "on":
+		return true
+	}
+	return false
+}
+
+// testTemp reports a test binary's own temporary folder: on systems where
+// /tmp is tmpfs every test would otherwise be refused. The real check still
+// refuses memory anywhere else (for example /dev/shm).
+func testTemp(dir string) bool {
+	exe := filepath.Base(os.Args[0])
+	if !strings.HasSuffix(exe, ".test") && !strings.HasSuffix(exe, ".test.exe") {
+		return false
+	}
+	rel, err := filepath.Rel(os.TempDir(), dir)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// checkFolder refuses a config folder the database cannot use safely, before
+// any database file is made, then checks that it can be written. real is
+// false when a test hook does the share check.
+func checkFolder(dir string, check func(string) (bool, string, error), real bool) error {
+	share, kind, err := check(dir)
+	if err != nil {
+		return fmt.Errorf("checking config folder: %w", err)
+	}
+	switch {
+	case !share:
+	case InMemory(kind):
+		if ConfigInMemoryAllowed() {
+			log.Printf("holyarrs: warning: config folder %s is in memory (%s), kept there because %s is set; everything in it is lost at the next restart", dir, kind, EnvConfigInMemory)
+		} else if !real || !testTemp(dir) {
+			return fmt.Errorf("%w (%s): %s; put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set %s=yes to keep it in memory anyway", ErrInMemory, kind, dir, EnvConfigInMemory)
+		}
+	case kind == "fakeowner" && DesktopFolderAllowed():
+		log.Printf("holyarrs: warning: config folder %s is a Docker Desktop folder share, used anyway because %s is set; file locks there may not work", dir, EnvAllowDesktopFolder)
+	default:
+		msg := ShareFix(kind)
+		if kind == "fakeowner" {
+			msg += " If you have checked that file locks work in this folder, " + EnvAllowDesktopFolder + "=1 starts HolyArrs on it anyway."
+		}
+		if fs := MountType(dir); fs != "" && fs != kind {
+			msg = "mount type " + fs + "; " + msg
+		}
+		return fmt.Errorf("%w: %s; %s", &NetShareError{Kind: kind}, dir, msg)
+	}
+	f, err := os.CreateTemp(dir, ".holyarrs-write-*")
+	if err != nil {
+		why := files.Why(err)
+		if why == "" {
+			why = "the write test failed"
+		}
+		return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
+	}
+	_ = f.Close()
+	_ = os.Remove(f.Name())
+	return nil
+}
+
+func dsn(path string, cacheKiB int, readOnly bool) string {
+	q := url.Values{}
+	for _, p := range []string{
+		"journal_mode(WAL)",
+		"busy_timeout(5000)",
+		"synchronous(NORMAL)",
+		fmt.Sprintf("cache_size(-%d)", cacheKiB),
+		"mmap_size(0)",
+		"foreign_keys(1)",
+	} {
+		q.Add("_pragma", p)
+	}
+	if readOnly {
+		q.Add("_pragma", "query_only(1)")
+	} else {
+		q.Set("_txlock", "immediate")
+	}
+	return fileURI(path) + "?" + q.Encode()
+}
+
+func openPool(path string, cacheKiB int, readOnly bool, conns int) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", dsn(path, cacheKiB, readOnly))
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(conns)
+	db.SetMaxIdleConns(conns)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("opening %s: %w", path, err)
+	}
+	return db, nil
+}
+
+// ownerOnly makes database files and their -wal/-shm files readable by
+// the owner only (they hold password and key hashes); SQLite creates them
+// with the process umask. A file that is not there or cannot be changed is
+// left as it is.
+func ownerOnly(paths ...string) {
+	for _, p := range paths {
+		for _, f := range []string{p, p + "-wal", p + "-shm"} {
+			_ = os.Chmod(f, 0o600)
+		}
+	}
+}
+
 // fileURI is path as a SQLite file: URI; '%', '?' and '#' in a folder name
 // are escaped so they do not end the path.
 func fileURI(path string) string {
 	return "file:" + strings.NewReplacer("%", "%25", "?", "%3F", "#", "%23").Replace(filepath.ToSlash(path))
 }
-
-// FileURI is fileURI for other packages that open a database file by
-// hand, so a '#' or '?' in a folder name cannot point SQLite elsewhere.
-func FileURI(path string) string { return fileURI(path) }

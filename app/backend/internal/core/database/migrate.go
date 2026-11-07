@@ -21,10 +21,103 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
+// backupTries is how many times the pre-update backup is tried.
+const backupTries = 3
+
+// SkipSpaceCheckEnv set to yes skips the free space check before an update.
+const SkipSpaceCheckEnv = "HOLYARRS_SKIP_SPACE_CHECK"
+
+// forbiddenStmt matches statements a migration must not run. BEGIN inside a
+// trigger (BEGIN ... END) is allowed; a transaction BEGIN is not.
+var forbiddenStmt = regexp.MustCompile(`(?im)(^|;)\s*(PRAGMA\b|VACUUM\b|COMMIT\b|END\s+TRANSACTION\b|ROLLBACK\b|BEGIN\s*(;|\z|TRANSACTION\b|DEFERRED\b|IMMEDIATE\b|EXCLUSIVE\b))`)
+
+// Errors that stop an update of the data before (or right after) it runs.
+// The data is left as it was, or the pinned backup is named.
+var (
+	ErrNoSpace     = errors.New("not enough free space")
+	ErrBackup      = errors.New("the backup before the update failed")
+	ErrCheckFailed = errors.New("the data check after the update failed")
+	ErrMigration   = errors.New("the update of the data failed")
+)
+
+// Test hooks: free space on a folder's disk, whether two folders share a
+// disk, and the pre-update backup.
+var (
+	freeSpace  = files.DiskFree
+	sameVolume = files.OnSameVolume
+	takeBackup = pinnedBackup
+)
+
 type migration struct {
 	version int
 	name    string
 	sql     string
+}
+
+// NewerDataError means a database holds migrations this build does not know:
+// a newer HolyArrs ran on this config folder. Nothing is changed.
+type NewerDataError struct {
+	Label      string
+	Have, Know int
+}
+
+type querier interface {
+	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
+}
+
+// Migration is one numbered SQL step of the built-in schema.
+type Migration struct {
+	Version int
+	Name    string
+	SQL     string
+}
+
+// SchemaVersion is the newest migration applied to db, read the way the
+// migrator reads it (doctor uses it to tell a database still being set up).
+func SchemaVersion(db *sql.DB) (int, error) { return version(db) }
+
+func (e *NewerDataError) Error() string {
+	return fmt.Sprintf("this data is from a newer HolyArrs (schema %d, this build knows %d). Run that version again, or restore a backup.", e.Have, e.Know)
+}
+
+// CheckBackupSum compares a pre-update backup with the sha256 file written
+// next to it. A backup without that file (an older build's) passes.
+func CheckBackupSum(p string) error {
+	b, err := os.ReadFile(p + ".sha256")
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	want, _, _ := strings.Cut(string(b), " ")
+	got, err := fileSHA256(p)
+	if err != nil {
+		return err
+	}
+	if got != want {
+		return fmt.Errorf("%s does not match its sha256 file", filepath.Base(p))
+	}
+	return nil
+}
+
+// EmbeddedMigrations lists the built-in steps of one database in order. dir
+// is "migrations/main" or "migrations/events". Tests of other packages use it
+// to build older schemas.
+func EmbeddedMigrations(dir string) ([]Migration, error) {
+	src, err := fs.Sub(embedded, dir)
+	if err != nil {
+		return nil, err
+	}
+	ms, err := loadMigrations(src)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Migration, len(ms))
+	for i, m := range ms {
+		out[i] = Migration{Version: m.version, Name: m.name, SQL: m.sql}
+	}
+	return out, nil
 }
 
 func loadMigrations(src fs.FS) ([]migration, error) {
@@ -61,10 +154,6 @@ func loadMigrations(src fs.FS) ([]migration, error) {
 	return out, nil
 }
 
-// forbiddenStmt matches statements a migration must not run. BEGIN inside a
-// trigger (BEGIN ... END) is allowed; a transaction BEGIN is not.
-var forbiddenStmt = regexp.MustCompile(`(?im)(^|;)\s*(PRAGMA\b|VACUUM\b|COMMIT\b|END\s+TRANSACTION\b|ROLLBACK\b|BEGIN\s*(;|\z|TRANSACTION\b|DEFERRED\b|IMMEDIATE\b|EXCLUSIVE\b))`)
-
 func stripComments(s string) string {
 	lines := strings.Split(s, "\n")
 	for i, l := range lines {
@@ -75,10 +164,6 @@ func stripComments(s string) string {
 	return strings.Join(lines, "\n")
 }
 
-// SchemaVersion is the newest migration applied to db, read the way the
-// migrator reads it (doctor uses it to tell a database still being set up).
-func SchemaVersion(db *sql.DB) (int, error) { return version(db) }
-
 func version(db *sql.DB) (int, error) {
 	var v sql.NullInt64
 	if err := db.QueryRow("SELECT max(version) FROM schema_migrations").Scan(&v); err != nil {
@@ -87,37 +172,11 @@ func version(db *sql.DB) (int, error) {
 	return int(v.Int64), nil
 }
 
-// NewerDataError means a database holds migrations this build does not know:
-// a newer HolyArrs ran on this config folder. Nothing is changed.
-type NewerDataError struct {
-	Label      string
-	Have, Know int
-}
-
-func (e *NewerDataError) Error() string {
-	return fmt.Sprintf("this data is from a newer HolyArrs (schema %d, this build knows %d). Run that version again, or restore a backup.", e.Have, e.Know)
-}
-
-// Errors that stop an update of the data before (or right after) it runs.
-// The data is left as it was, or the pinned backup is named.
-var (
-	ErrNoSpace     = errors.New("not enough free space")
-	ErrBackup      = errors.New("the backup before the update failed")
-	ErrCheckFailed = errors.New("the data check after the update failed")
-	ErrMigration   = errors.New("the update of the data failed")
-)
-
-// backupTries is how many times the pre-update backup is tried.
-const backupTries = 3
-
 // headroom is the free space kept on top of what a backup or update
 // needs: 10% of the database, at least 50 MB.
 func headroom(size int64) uint64 {
 	return max(uint64(50<<20), uint64(size)/10)
 }
-
-// SkipSpaceCheckEnv set to yes skips the free space check before an update.
-const SkipSpaceCheckEnv = "HOLYARRS_SKIP_SPACE_CHECK"
 
 func skipSpaceCheck() bool {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv(SkipSpaceCheckEnv))) {
@@ -126,14 +185,6 @@ func skipSpaceCheck() bool {
 	}
 	return false
 }
-
-// Test hooks: free space on a folder's disk, whether two folders share a
-// disk, and the pre-update backup.
-var (
-	freeSpace  = files.DiskFree
-	sameVolume = files.OnSameVolume
-	takeBackup = pinnedBackup
-)
 
 // plan makes sure schema_migrations exists and returns the pending
 // migrations and the version applied. Data newer than this build is refused.
@@ -275,10 +326,6 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 		return fmt.Errorf("%w (%s): %s; %s", ErrCheckFailed, label, res, where)
 	}
 	return nil
-}
-
-type querier interface {
-	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
 }
 
 // integrityCheck runs the full PRAGMA integrity_check; "ok" means sound.
@@ -464,51 +511,4 @@ func fileSHA256(p string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-// CheckBackupSum compares a pre-update backup with the sha256 file written
-// next to it. A backup without that file (an older build's) passes.
-func CheckBackupSum(p string) error {
-	b, err := os.ReadFile(p + ".sha256")
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	want, _, _ := strings.Cut(string(b), " ")
-	got, err := fileSHA256(p)
-	if err != nil {
-		return err
-	}
-	if got != want {
-		return fmt.Errorf("%s does not match its sha256 file", filepath.Base(p))
-	}
-	return nil
-}
-
-// Migration is one numbered SQL step of the built-in schema.
-type Migration struct {
-	Version int
-	Name    string
-	SQL     string
-}
-
-// EmbeddedMigrations lists the built-in steps of one database in order. dir
-// is "migrations/main" or "migrations/events". Tests of other packages use it
-// to build older schemas.
-func EmbeddedMigrations(dir string) ([]Migration, error) {
-	src, err := fs.Sub(embedded, dir)
-	if err != nil {
-		return nil, err
-	}
-	ms, err := loadMigrations(src)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]Migration, len(ms))
-	for i, m := range ms {
-		out[i] = Migration{Version: m.version, Name: m.name, SQL: m.sql}
-	}
-	return out, nil
 }

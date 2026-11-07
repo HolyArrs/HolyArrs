@@ -2,14 +2,14 @@ package database
 
 import "time"
 
+// System is the actor for changes HolyArrs makes on its own.
+var System = Actor{Kind: "system"}
+
 // Actor says who made a change: a user, a job, a linked app or the system.
 type Actor struct {
 	Kind string `json:"kind"` // user, job, link, system
 	ID   int64  `json:"id,omitempty"`
 }
-
-// System is the actor for changes HolyArrs makes on its own.
-var System = Actor{Kind: "system"}
 
 // Meta is on every record.
 type Meta struct {

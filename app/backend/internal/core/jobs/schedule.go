@@ -11,6 +11,23 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
+type scheduleNoop struct {
+	fingerprint string
+	next        time.Time
+}
+
+type scheduleProbeResult struct {
+	schedule Schedule
+	needed   bool
+	prepared any
+	err      error
+}
+
+type scheduleProbeWork struct {
+	schedule Schedule
+	probe    ScheduleProbe
+}
+
 // UpdateSchedule changes a schedule and, when turning it off, cancels its
 // queued scheduled work in the same write. Jobs explicitly started by hand
 // are left alone. Re-enabling plans one future pass from now.
@@ -76,63 +93,6 @@ func (q *Queue) UpdateSchedule(ctx context.Context, kind string, every *int64, e
 	return nil
 }
 
-type scheduleNoop struct {
-	fingerprint string
-	next        time.Time
-}
-
-func scheduleFingerprint(sc Schedule) string {
-	next := ""
-	if sc.NextRun != nil {
-		next = sc.NextRun.UTC().Format(time.RFC3339Nano)
-	}
-	return sc.UpdatedAt.UTC().Format(time.RFC3339Nano) + "|" + strconv.FormatInt(sc.EverySeconds, 10) + "|" + next
-}
-
-func (q *Queue) scheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	probe := q.probe[sc.Kind]
-	if probe == nil {
-		return nil, false
-	}
-	mark, ok := q.scheduleNoop[sc.Kind]
-	return probe, q.scheduleProbeInFlight[sc.Kind] || ok && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next)
-}
-
-func (q *Queue) beginScheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	probe := q.probe[sc.Kind]
-	mark, marked := q.scheduleNoop[sc.Kind]
-	if probe == nil || q.scheduleProbeInFlight[sc.Kind] || marked && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next) {
-		return nil, false
-	}
-	q.scheduleProbeInFlight[sc.Kind] = true
-	return probe, true
-}
-
-func (q *Queue) endScheduleProbe(kind string) {
-	q.mu.Lock()
-	delete(q.scheduleProbeInFlight, kind)
-	q.mu.Unlock()
-}
-
-func (q *Queue) markScheduleNoop(sc Schedule, now time.Time) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	q.scheduleNoop[sc.Kind] = scheduleNoop{
-		fingerprint: scheduleFingerprint(sc),
-		next:        now.Add(time.Duration(sc.EverySeconds) * time.Second),
-	}
-}
-
-func (q *Queue) clearScheduleNoop(kind string) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	delete(q.scheduleNoop, kind)
-}
-
 // EffectiveScheduleNext returns the next visible pass for a schedule. A
 // process-local no-work result overlays the persisted due time without
 // changing the schedule's durable history.
@@ -148,114 +108,6 @@ func (q *Queue) EffectiveScheduleNext(sc Schedule) *time.Time {
 	}
 	next := *sc.NextRun
 	return &next
-}
-
-type scheduleProbeResult struct {
-	schedule Schedule
-	needed   bool
-	prepared any
-	err      error
-}
-
-func scheduleDueUnchanged(sc, before Schedule, now time.Time) bool {
-	return sc.Enabled && scheduleFingerprint(sc) == scheduleFingerprint(before) && (sc.NextRun == nil || !sc.NextRun.After(now))
-}
-
-func (q *Queue) schedulePartOff(kind string) bool {
-	g := q.activeGate()
-	return g != nil && g.KindOff(kind)
-}
-
-func (q *Queue) scheduledJobLive(ctx context.Context, kind string) (bool, error) {
-	var live int
-	err := q.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", "schedule:"+kind).Scan(&live)
-	return live > 0, err
-}
-
-func (q *Queue) currentSchedule(ctx context.Context, before Schedule, now time.Time) (Schedule, bool, error) {
-	var current Schedule
-	if err := database.Get(ctx, q.s.Read(), "schedules", before.ID, &current); err != nil {
-		return current, false, err
-	}
-	return current, scheduleDueUnchanged(current, before, now) && !q.schedulePartOff(current.Kind), nil
-}
-
-func (q *Queue) enqueueSchedule(ctx context.Context, before Schedule, now time.Time, prepared any) (accepted bool, err error) {
-	var live int
-	dedupeKey := "schedule:" + before.Kind
-	if err := q.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", dedupeKey).Scan(&live); err != nil {
-		return false, err
-	}
-	if live > 0 {
-		return false, nil
-	}
-	var id int64
-	var created bool
-	var job *Job
-	err = q.s.Write(ctx, func(tx *sql.Tx) error {
-		var current Schedule
-		if err := database.Get(ctx, tx, "schedules", before.ID, &current); err != nil {
-			return err
-		}
-		if !scheduleDueUnchanged(current, before, now) || q.schedulePartOff(current.Kind) {
-			return nil
-		}
-		params := map[string]any{"scheduled": true}
-		if current.LastRun != nil {
-			params["last_start"] = current.LastRun.UTC().Format(time.RFC3339Nano)
-		}
-		job = &Job{Kind: current.Kind, Params: params, Priority: "normal", State: "queued",
-			MaxAttempts: q.opt.MaxAttempts, RunAfter: time.Now().UTC(), AskedBy: database.System}
-		dedupeKey := "schedule:" + current.Kind
-		job.DedupeKey = &dedupeKey
-		scanErr := tx.QueryRow("SELECT id FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", dedupeKey).Scan(&id)
-		switch {
-		case scanErr == nil:
-			return nil
-		case errors.Is(scanErr, sql.ErrNoRows):
-			id, err = database.Insert(tx, "jobs", job, database.System)
-			if err != nil {
-				return err
-			}
-			created = true
-			accepted = true
-			if prepared != nil {
-				q.mu.Lock()
-				q.prepared[id] = preparedJob{kind: current.Kind, value: prepared,
-					expires: now.Add(time.Duration(current.EverySeconds) * time.Second)}
-				q.mu.Unlock()
-			}
-		default:
-			return scanErr
-		}
-		ts := database.FormatTime(now)
-		_, err = tx.Exec("UPDATE schedules SET last_run = ?, next_run = ?, updated_at = ? WHERE id = ?",
-			ts, database.FormatTime(now.Add(time.Duration(current.EverySeconds)*time.Second)), ts, current.ID)
-		return err
-	})
-	if err != nil {
-		q.clearPrepared(id)
-		return false, err
-	}
-	if created {
-		q.notify(*job)
-		q.poke()
-	}
-	return accepted, nil
-}
-
-type scheduleProbeWork struct {
-	schedule Schedule
-	probe    ScheduleProbe
-}
-
-func safeScheduleProbe(ctx context.Context, probe ScheduleProbe, now time.Time) (needed bool, prepared any, err error) {
-	defer func() {
-		if p := recover(); p != nil {
-			needed, prepared, err = true, nil, fmt.Errorf("schedule probe panicked (%T)", p)
-		}
-	}()
-	return probe(ctx, now)
 }
 
 // RunSchedules queues a Job for every enabled schedule that is due, and
@@ -352,6 +204,154 @@ func (q *Queue) RunSchedules(ctx context.Context, now time.Time) ([]string, erro
 		}
 	}
 	return kinds, nil
+}
+
+func scheduleFingerprint(sc Schedule) string {
+	next := ""
+	if sc.NextRun != nil {
+		next = sc.NextRun.UTC().Format(time.RFC3339Nano)
+	}
+	return sc.UpdatedAt.UTC().Format(time.RFC3339Nano) + "|" + strconv.FormatInt(sc.EverySeconds, 10) + "|" + next
+}
+
+func (q *Queue) scheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	probe := q.probe[sc.Kind]
+	if probe == nil {
+		return nil, false
+	}
+	mark, ok := q.scheduleNoop[sc.Kind]
+	return probe, q.scheduleProbeInFlight[sc.Kind] || ok && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next)
+}
+
+func (q *Queue) beginScheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	probe := q.probe[sc.Kind]
+	mark, marked := q.scheduleNoop[sc.Kind]
+	if probe == nil || q.scheduleProbeInFlight[sc.Kind] || marked && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next) {
+		return nil, false
+	}
+	q.scheduleProbeInFlight[sc.Kind] = true
+	return probe, true
+}
+
+func (q *Queue) endScheduleProbe(kind string) {
+	q.mu.Lock()
+	delete(q.scheduleProbeInFlight, kind)
+	q.mu.Unlock()
+}
+
+func (q *Queue) markScheduleNoop(sc Schedule, now time.Time) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.scheduleNoop[sc.Kind] = scheduleNoop{
+		fingerprint: scheduleFingerprint(sc),
+		next:        now.Add(time.Duration(sc.EverySeconds) * time.Second),
+	}
+}
+
+func (q *Queue) clearScheduleNoop(kind string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	delete(q.scheduleNoop, kind)
+}
+
+func scheduleDueUnchanged(sc, before Schedule, now time.Time) bool {
+	return sc.Enabled && scheduleFingerprint(sc) == scheduleFingerprint(before) && (sc.NextRun == nil || !sc.NextRun.After(now))
+}
+
+func (q *Queue) schedulePartOff(kind string) bool {
+	g := q.activeGate()
+	return g != nil && g.KindOff(kind)
+}
+
+func (q *Queue) scheduledJobLive(ctx context.Context, kind string) (bool, error) {
+	var live int
+	err := q.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", "schedule:"+kind).Scan(&live)
+	return live > 0, err
+}
+
+func (q *Queue) currentSchedule(ctx context.Context, before Schedule, now time.Time) (Schedule, bool, error) {
+	var current Schedule
+	if err := database.Get(ctx, q.s.Read(), "schedules", before.ID, &current); err != nil {
+		return current, false, err
+	}
+	return current, scheduleDueUnchanged(current, before, now) && !q.schedulePartOff(current.Kind), nil
+}
+
+func (q *Queue) enqueueSchedule(ctx context.Context, before Schedule, now time.Time, prepared any) (accepted bool, err error) {
+	var live int
+	dedupeKey := "schedule:" + before.Kind
+	if err := q.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", dedupeKey).Scan(&live); err != nil {
+		return false, err
+	}
+	if live > 0 {
+		return false, nil
+	}
+	var id int64
+	var created bool
+	var job *Job
+	err = q.s.Write(ctx, func(tx *sql.Tx) error {
+		var current Schedule
+		if err := database.Get(ctx, tx, "schedules", before.ID, &current); err != nil {
+			return err
+		}
+		if !scheduleDueUnchanged(current, before, now) || q.schedulePartOff(current.Kind) {
+			return nil
+		}
+		params := map[string]any{"scheduled": true}
+		if current.LastRun != nil {
+			params["last_start"] = current.LastRun.UTC().Format(time.RFC3339Nano)
+		}
+		job = &Job{Kind: current.Kind, Params: params, Priority: "normal", State: "queued",
+			MaxAttempts: q.opt.MaxAttempts, RunAfter: time.Now().UTC(), AskedBy: database.System}
+		dedupeKey := "schedule:" + current.Kind
+		job.DedupeKey = &dedupeKey
+		scanErr := tx.QueryRow("SELECT id FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", dedupeKey).Scan(&id)
+		switch {
+		case scanErr == nil:
+			return nil
+		case errors.Is(scanErr, sql.ErrNoRows):
+			id, err = database.Insert(tx, "jobs", job, database.System)
+			if err != nil {
+				return err
+			}
+			created = true
+			accepted = true
+			if prepared != nil {
+				q.mu.Lock()
+				q.prepared[id] = preparedJob{kind: current.Kind, value: prepared,
+					expires: now.Add(time.Duration(current.EverySeconds) * time.Second)}
+				q.mu.Unlock()
+			}
+		default:
+			return scanErr
+		}
+		ts := database.FormatTime(now)
+		_, err = tx.Exec("UPDATE schedules SET last_run = ?, next_run = ?, updated_at = ? WHERE id = ?",
+			ts, database.FormatTime(now.Add(time.Duration(current.EverySeconds)*time.Second)), ts, current.ID)
+		return err
+	})
+	if err != nil {
+		q.clearPrepared(id)
+		return false, err
+	}
+	if created {
+		q.notify(*job)
+		q.poke()
+	}
+	return accepted, nil
+}
+
+func safeScheduleProbe(ctx context.Context, probe ScheduleProbe, now time.Time) (needed bool, prepared any, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			needed, prepared, err = true, nil, fmt.Errorf("schedule probe panicked (%T)", p)
+		}
+	}()
+	return probe(ctx, now)
 }
 
 func (q *Queue) releaseScheduleProbes(results <-chan scheduleProbeResult, remaining int) {

@@ -33,6 +33,16 @@ const KeyFile = "holyarrs.key"
 // EnvKeyFile names a key file to use instead of the one in the config folder.
 const EnvKeyFile = "HOLYARRS_MASTER_KEY_FILE"
 
+const (
+	checkKind = "check"
+	checkText = "holyarrs master key check"
+)
+
+// Masked is what an API response shows in place of a secret that is set.
+const Masked = "••••••••"
+
+const settingRef = "secret:"
+
 var (
 	// ErrNotFound means no secret has the id.
 	ErrNotFound = errors.New("no such secret")
@@ -49,6 +59,29 @@ var (
 	// when a mounted host file did not exist.
 	ErrKeyIsFolder = errors.New("the path is a folder, not a key file")
 )
+
+// Keys that hold secrets wherever an older setup may have kept them in the clear.
+var (
+	extraSecretKeys   = []string{"apikey", "api_key", "password", "token"}
+	settingSecretKeys = map[string]bool{"tmdb_token": true}
+)
+
+// Vault reads and writes secrets.
+type Vault struct {
+	s    *database.Store
+	aead cipher.AEAD
+	// OnPut, when set, is told every value stored, before the store call
+	// returns: the app log masks a new secret before anything can log it.
+	OnPut func(plain string)
+}
+
+type plainSource struct {
+	id    int64
+	extra map[string]string
+	ref   sql.NullInt64
+}
+
+type plainSetting struct{ grp, key, val string }
 
 // LoadKey reads the master key. named, when set, is a key file the person
 // supplied: it must exist. Otherwise the key file in dir is read, or made on
@@ -129,67 +162,6 @@ func SavedIn(dir string) (bool, error) {
 	return true, nil
 }
 
-// folderErr marks a read error on a path that is a folder.
-func folderErr(p string, err error) error {
-	if st, serr := os.Stat(p); serr == nil && st.IsDir() {
-		return fmt.Errorf("%w: %w", ErrKeyIsFolder, err)
-	}
-	return err
-}
-
-func keyIn(p string, b []byte) ([]byte, error) {
-	k, err := decodeKey(b)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %w", ErrKeyUnreadable, p, err)
-	}
-	return k, nil
-}
-
-// decodeKey accepts 64 hex digits, base64 of 32 bytes or 32 raw bytes.
-// Blank lines and lines starting with '#' are skipped, so a key kit with
-// notes in it is a key file too.
-func decodeKey(b []byte) ([]byte, error) {
-	var keep []string
-	for _, ln := range strings.Split(string(b), "\n") {
-		ln = strings.TrimSpace(ln)
-		if ln == "" || strings.HasPrefix(ln, "#") {
-			continue
-		}
-		keep = append(keep, ln)
-	}
-	s := strings.Join(keep, "")
-	if k, err := hex.DecodeString(s); err == nil && len(k) == KeySize {
-		return k, nil
-	}
-	if k, err := base64.StdEncoding.DecodeString(s); err == nil && len(k) == KeySize {
-		return k, nil
-	}
-	if len(b) == KeySize {
-		return b, nil
-	}
-	return nil, errors.New("master key file must hold 32 bytes (64 hex digits or base64)")
-}
-
-// Vault reads and writes secrets.
-type Vault struct {
-	s    *database.Store
-	aead cipher.AEAD
-	// OnPut, when set, is told every value stored, before the store call
-	// returns: the app log masks a new secret before anything can log it.
-	OnPut func(plain string)
-}
-
-func (v *Vault) told(plain string) {
-	if v.OnPut != nil && plain != "" {
-		v.OnPut(plain)
-	}
-}
-
-const (
-	checkKind = "check"
-	checkText = "holyarrs master key check"
-)
-
 // Open makes a Vault and checks the key against the database: the first
 // open stores a check value, later opens must be able to read it.
 func Open(ctx context.Context, s *database.Store, key []byte) (*Vault, error) {
@@ -221,41 +193,6 @@ func Open(ctx context.Context, s *database.Store, key []byte) (*Vault, error) {
 		}
 	}
 	return v, nil
-}
-
-func aad(id int64) []byte { return []byte("holyarrs-secret:" + strconv.FormatInt(id, 10)) }
-
-func (v *Vault) seal(id int64, plain string) (string, error) {
-	nonce := make([]byte, v.aead.NonceSize())
-	if _, err := rand.Read(nonce); err != nil {
-		return "", err
-	}
-	out := v.aead.Seal(nonce, nonce, []byte(plain), aad(id))
-	return "v1:" + base64.StdEncoding.EncodeToString(out), nil
-}
-
-func (v *Vault) open(id int64, stored string) (string, error) {
-	b64, ok := strings.CutPrefix(stored, "v1:")
-	if !ok {
-		return "", errors.New("unknown secret format")
-	}
-	b, err := base64.StdEncoding.DecodeString(b64)
-	n := v.aead.NonceSize()
-	if err != nil || len(b) < n {
-		return "", errors.New("damaged secret")
-	}
-	plain, err := v.aead.Open(nil, b[:n], b[n:], aad(id))
-	if err != nil {
-		return "", ErrWrongKey
-	}
-	return string(plain), nil
-}
-
-func now() string { return database.FormatTime(time.Now()) }
-
-func actor(a database.Actor) string {
-	b, _ := json.Marshal(a)
-	return string(b)
 }
 
 // PutTx stores a new secret inside an open write and returns its id.
@@ -395,9 +332,6 @@ func (v *Vault) Delete(ctx context.Context, id int64) error {
 	})
 }
 
-// Masked is what an API response shows in place of a secret that is set.
-const Masked = "••••••••"
-
 // Mask is what an API response shows for a secret: never the value, only
 // whether one is set.
 func Mask(plain string) string {
@@ -406,8 +340,6 @@ func Mask(plain string) string {
 	}
 	return Masked
 }
-
-const settingRef = "secret:"
 
 // SetSetting stores a secret setting, such as the TMDB token, encrypted. The
 // settings row holds only a reference.
@@ -461,20 +393,6 @@ func (v *Vault) Setting(ctx context.Context, grp, key string) (string, error) {
 	}
 	return v.Get(ctx, id)
 }
-
-// Keys that hold secrets wherever an older setup may have kept them in the clear.
-var (
-	extraSecretKeys   = []string{"apikey", "api_key", "password", "token"}
-	settingSecretKeys = map[string]bool{"tmdb_token": true}
-)
-
-type plainSource struct {
-	id    int64
-	extra map[string]string
-	ref   sql.NullInt64
-}
-
-type plainSetting struct{ grp, key, val string }
 
 // MigratePlaintext moves secrets an older setup stored in the clear (Source
 // extras and secret settings) into the vault, and says how many it moved.
@@ -531,6 +449,119 @@ func (v *Vault) MigratePlaintext(ctx context.Context) (int, error) {
 	return moved, err
 }
 
+// CheckFile reports whether key opens the secrets in a database file, such
+// as one inside a backup. A database without secrets passes.
+func CheckFile(path string, key []byte) error {
+	db, err := sql.Open("sqlite", database.FileURI(path)+"?mode=ro")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	var id int64
+	var stored string
+	err = db.QueryRow("SELECT id, value FROM secrets WHERE kind = ? ORDER BY id LIMIT 1", checkKind).Scan(&id, &stored)
+	if errors.Is(err, sql.ErrNoRows) || (err != nil && strings.Contains(err.Error(), "no such table")) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	blk, err := aes.NewCipher(key)
+	if err != nil {
+		return err
+	}
+	aead, err := cipher.NewGCM(blk)
+	if err != nil {
+		return err
+	}
+	if got, err := (&Vault{aead: aead}).open(id, stored); err != nil || got != checkText {
+		return ErrWrongKey
+	}
+	return nil
+}
+
+// folderErr marks a read error on a path that is a folder.
+func folderErr(p string, err error) error {
+	if st, serr := os.Stat(p); serr == nil && st.IsDir() {
+		return fmt.Errorf("%w: %w", ErrKeyIsFolder, err)
+	}
+	return err
+}
+
+func keyIn(p string, b []byte) ([]byte, error) {
+	k, err := decodeKey(b)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s: %w", ErrKeyUnreadable, p, err)
+	}
+	return k, nil
+}
+
+// decodeKey accepts 64 hex digits, base64 of 32 bytes or 32 raw bytes.
+// Blank lines and lines starting with '#' are skipped, so a key kit with
+// notes in it is a key file too.
+func decodeKey(b []byte) ([]byte, error) {
+	var keep []string
+	for _, ln := range strings.Split(string(b), "\n") {
+		ln = strings.TrimSpace(ln)
+		if ln == "" || strings.HasPrefix(ln, "#") {
+			continue
+		}
+		keep = append(keep, ln)
+	}
+	s := strings.Join(keep, "")
+	if k, err := hex.DecodeString(s); err == nil && len(k) == KeySize {
+		return k, nil
+	}
+	if k, err := base64.StdEncoding.DecodeString(s); err == nil && len(k) == KeySize {
+		return k, nil
+	}
+	if len(b) == KeySize {
+		return b, nil
+	}
+	return nil, errors.New("master key file must hold 32 bytes (64 hex digits or base64)")
+}
+
+func (v *Vault) told(plain string) {
+	if v.OnPut != nil && plain != "" {
+		v.OnPut(plain)
+	}
+}
+
+func aad(id int64) []byte { return []byte("holyarrs-secret:" + strconv.FormatInt(id, 10)) }
+
+func (v *Vault) seal(id int64, plain string) (string, error) {
+	nonce := make([]byte, v.aead.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return "", err
+	}
+	out := v.aead.Seal(nonce, nonce, []byte(plain), aad(id))
+	return "v1:" + base64.StdEncoding.EncodeToString(out), nil
+}
+
+func (v *Vault) open(id int64, stored string) (string, error) {
+	b64, ok := strings.CutPrefix(stored, "v1:")
+	if !ok {
+		return "", errors.New("unknown secret format")
+	}
+	b, err := base64.StdEncoding.DecodeString(b64)
+	n := v.aead.NonceSize()
+	if err != nil || len(b) < n {
+		return "", errors.New("damaged secret")
+	}
+	plain, err := v.aead.Open(nil, b[:n], b[n:], aad(id))
+	if err != nil {
+		return "", ErrWrongKey
+	}
+	return string(plain), nil
+}
+
+func now() string { return database.FormatTime(time.Now()) }
+
+func actor(a database.Actor) string {
+	b, _ := json.Marshal(a)
+	return string(b)
+}
+
 func plainSources(tx *sql.Tx) ([]plainSource, error) {
 	rows, err := tx.Query("SELECT id, extra, secret_ref FROM sources")
 	if err != nil {
@@ -567,35 +598,4 @@ func plainSettings(tx *sql.Tx) ([]plainSetting, error) {
 		}
 	}
 	return out, rows.Err()
-}
-
-// CheckFile reports whether key opens the secrets in a database file, such
-// as one inside a backup. A database without secrets passes.
-func CheckFile(path string, key []byte) error {
-	db, err := sql.Open("sqlite", database.FileURI(path)+"?mode=ro")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	var id int64
-	var stored string
-	err = db.QueryRow("SELECT id, value FROM secrets WHERE kind = ? ORDER BY id LIMIT 1", checkKind).Scan(&id, &stored)
-	if errors.Is(err, sql.ErrNoRows) || (err != nil && strings.Contains(err.Error(), "no such table")) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	blk, err := aes.NewCipher(key)
-	if err != nil {
-		return err
-	}
-	aead, err := cipher.NewGCM(blk)
-	if err != nil {
-		return err
-	}
-	if got, err := (&Vault{aead: aead}).open(id, stored); err != nil || got != checkText {
-		return ErrWrongKey
-	}
-	return nil
 }

@@ -5,11 +5,6 @@ import (
 	"strings"
 )
 
-// Pool is a group of workers. Core work (health checks) never waits behind
-// outside input and output (searches, grabs, subtitle searches, details
-// lookups) or heavy disk work (scans, imports, renames).
-type Pool string
-
 const (
 	PoolCore  Pool = "core"
 	PoolIO    Pool = "io"
@@ -59,6 +54,11 @@ var kindPools = map[string]Pool{
 	"rescan_library":      PoolHeavy,
 	"subtitle_look":       PoolHeavy,
 }
+
+// Pool is a group of workers. Core work (health checks) never waits behind
+// outside input and output (searches, grabs, subtitle searches, details
+// lookups) or heavy disk work (scans, imports, renames).
+type Pool string
 
 // PoolOf returns the pool a Job kind runs in.
 func PoolOf(kind string) Pool {
