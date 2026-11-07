@@ -1,13 +1,17 @@
 <script lang="ts">
+	// Poster image that shows a placeholder until the art loads or if it fails.
+	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { to } from '../core/paths.ts';
 	import { proxied } from '../core/tmdb-image.ts';
-	import ArtPlaceholder from './ArtPlaceholder.svelte';
+
 	let { src, name }: { src?: string | null; name: string } = $props();
+
 	let broken = $state(false);
-	const usable = $derived(!!src && !broken && (src.startsWith('https://') || src.startsWith('/')));
 	let loaded = $state(false);
 	let width = $state(0);
-	const sized = /^\/api\/v1\/(?:artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)|music-trending\/art\/(?:artist|album)\/[^/?]+|albums\/\d+\/cover)(?:\?(?!.*size=).*)?$/;
+
+	const usable = $derived(!!src && !broken && (src.startsWith('https://') || src.startsWith('/')));
+	// Small posters ask the server for a 250px copy to save bandwidth.
 	const shown = $derived.by(() => {
 		const url = src ?? '';
 		const viaCache = proxied(url);
@@ -15,6 +19,9 @@
 		const small = sized.test(url) && width <= 125 && width * (globalThis.devicePixelRatio || 1) <= 250;
 		return to(small ? `${url}${url.includes('?') ? '&' : '?'}size=250` : url);
 	});
+
+	// Only our own art routes can resize, and only when no size is set yet.
+	const sized = /^\/api\/v1\/(?:artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)|music-trending\/art\/(?:artist|album)\/[^/?]+|albums\/\d+\/cover)(?:\?(?!.*size=).*)?$/;
 </script>
 
 <div class="poster" bind:clientWidth={width}>
@@ -38,6 +45,7 @@
 		place-items: center;
 		isolation: isolate;
 	}
+	/* Faint inner edge so dark art does not blend into the page. */
 	.poster::after {
 		content: '';
 		position: absolute;

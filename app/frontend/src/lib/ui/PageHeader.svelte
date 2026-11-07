@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Page title with optional subtitle and actions, plus a small title bar that appears on phones when scrolled.
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 
@@ -9,6 +10,7 @@
 		size = 'large'
 	}: { title: string; subtitle?: string; back?: { href: string; label: string }; actions?: Snippet; size?: 'large' | 'title1' } = $props();
 
+	// Watches the big title; once it scrolls above the screen the mini bar shows.
 	let head = $state<HTMLElement>();
 	let shrunk = $state(false);
 	$effect(() => {
@@ -38,6 +40,7 @@
 	.title1 h1 { font: var(--t-title1); letter-spacing: var(--t-title1-track); }
 	p { margin-top: 4px; color: var(--text-muted); font: var(--t-body); max-width: 62ch; }
 	.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+	/* Phone only bar that fades in once the page title has scrolled away. */
 	.mini { display: none; }
 	@media (max-width: 767px) {
 		.mini {

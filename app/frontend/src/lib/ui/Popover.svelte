@@ -1,7 +1,8 @@
 <script lang="ts">
+	// Button that opens a floating panel placed to stay inside the viewport.
 	import type { Snippet } from 'svelte';
-	import { popIn, popOut } from '../core/transitions.ts';
 	import Icon, { type IconName } from './Icon.svelte';
+	import { popIn, popOut } from '../core/transitions.ts';
 	import { press } from '../core/motion.ts';
 
 	let {
@@ -39,23 +40,16 @@
 	} = $props();
 
 	const id = $props.id();
+
 	let root = $state<HTMLElement>();
 	let button = $state<HTMLButtonElement>();
 	let panel = $state<HTMLElement>();
+	let pos = $state('');
+	let flip = $state(false);
 
-	export function close(returnFocus = true) {
-		if (!open) return;
-		open = false;
-		if (returnFocus) button?.focus({ preventScroll: true });
-	}
-	function toggle() {
-		open = !open;
-	}
-	function leave(e: FocusEvent) {
-		const to = e.relatedTarget as Node | null;
-		if (to && root && !root.contains(to)) close(false);
-	}
+	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
 
+	// Outside click and Escape close it; focus moves into the panel on the next tick.
 	$effect(() => {
 		if (!open) return;
 		const outside = (e: PointerEvent) => {
@@ -81,8 +75,33 @@
 		};
 	});
 
-	let pos = $state('');
-	let flip = $state(false);
+	// Capture scroll so scrolling any parent keeps the panel next to its button.
+	$effect(() => {
+		if (!open || !panel) return;
+		place();
+		const again = () => place();
+		window.addEventListener('scroll', again, true);
+		window.addEventListener('resize', again);
+		return () => {
+			window.removeEventListener('scroll', again, true);
+			window.removeEventListener('resize', again);
+		};
+	});
+
+	export function close(returnFocus = true) {
+		if (!open) return;
+		open = false;
+		if (returnFocus) button?.focus({ preventScroll: true });
+	}
+	function toggle() {
+		open = !open;
+	}
+	function leave(e: FocusEvent) {
+		const to = e.relatedTarget as Node | null;
+		if (to && root && !root.contains(to)) close(false);
+	}
+
+	// Flips to the roomier side, keeps 8px from the edges, and offsets for a positioned parent.
 	function place() {
 		if (!button || !panel) return;
 		const b = button.getBoundingClientRect();
@@ -99,19 +118,6 @@
 		left -= o.left;
 		pos = up ? `left: ${left}px; bottom: ${o.bottom - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom - o.top + 6}px;`;
 	}
-	$effect(() => {
-		if (!open || !panel) return;
-		place();
-		const again = () => place();
-		window.addEventListener('scroll', again, true);
-		window.addEventListener('resize', again);
-		return () => {
-			window.removeEventListener('scroll', again, true);
-			window.removeEventListener('resize', again);
-		};
-	});
-
-	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
 </script>
 
 <div class="ui-pop" bind:this={root} onfocusout={leave}>
@@ -160,6 +166,7 @@
 	.button:hover { background: var(--surface-3); }
 	.row { width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-btn); text-align: left; }
 	.row:hover, .row[aria-expanded='true'] { background: var(--surface-3); }
+	/* Fixed so scroll containers cannot clip it. */
 	.panel {
 		position: fixed; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto;
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);

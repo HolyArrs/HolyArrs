@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Collapsible section that hides rarely used settings.
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 
@@ -24,6 +25,7 @@
 		font: var(--t-headline);
 		font-size: 15px;
 	}
+	/* Hides the default Safari arrow; the icon replaces it. */
 	summary::-webkit-details-marker { display: none; }
 	summary:hover { color: var(--text); }
 	summary :global(.icon) { transition: transform var(--dur-fast) var(--ease-out); }

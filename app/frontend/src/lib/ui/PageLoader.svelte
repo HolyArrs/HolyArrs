@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	// Shared across loaders so aria-busy stays on while any one is busy.
 	let busyCount = 0;
 	function markBusy(on: boolean): void {
 		busyCount = Math.max(0, busyCount + (on ? 1 : -1));
@@ -10,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	// Shows a calm loader after a short delay and fades the page in when data arrives.
 	import { untrack, type Snippet } from 'svelte';
 	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../core/pageload.ts';
 
@@ -23,15 +25,16 @@
 		onretry
 	}: { loading: boolean; children?: Snippet; status?: string; label?: string; immediate?: boolean; cached?: boolean; onretry?: () => void } = $props();
 
-	const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
 	let held = $state(false);
 	let stage = $state<PageStage>(untrack(() => (loading ? 'hidden' : 'orbit')));
 	let start = now();
 	let fade = false;
 	let content = $state<HTMLElement>();
+
 	const busy = $derived(loading || held);
 	const line = $derived(pageLine(stage, status, immediate));
 
+	// Runs before paint so the loader never flashes the old content.
 	$effect.pre(() => {
 		if (loading) {
 			start = now();
@@ -60,6 +63,11 @@
 		if (matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 		for (const el of Array.from(content.children)) el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: PAGE_FADE_MS, easing: 'ease-out' });
 	});
+
+	// Falls back to Date when performance is missing.
+	function now() {
+		return typeof performance === 'undefined' ? Date.now() : performance.now();
+	}
 </script>
 
 {#if busy}
@@ -95,6 +103,7 @@
 	.pl-in { display: contents; }
 	.ow { position: relative; width: 64px; height: 64px; }
 	.ow svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+	/* Only this will-change is worth it: the ring spins forever. */
 	.rs { animation: pl-turn 1.17s linear infinite; will-change: transform; }
 	.ms { animation: pl-breathe 2.6s ease-in-out infinite; }
 	.line { margin: 0; min-height: 1.3em; max-width: min(360px, 80vw); font: var(--t-callout); color: var(--text-muted); }
@@ -107,6 +116,7 @@
 	@keyframes pl-pulse { 50% { opacity: .4; } }
 	@media (prefers-reduced-motion: reduce) {
 		.pl.on { animation: none; }
+		/* Pulse instead of spin; important beats the base rule. */
 		.rs { animation: pl-pulse 1.6s ease-in-out infinite !important; animation-duration: 1.6s !important; animation-iteration-count: infinite !important; }
 		.ms { animation: none !important; }
 	}
