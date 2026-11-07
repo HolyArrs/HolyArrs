@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestAlbumFolderName(t *testing.T) {
@@ -132,7 +132,7 @@ func TestAdoptMusicMovesNothing(t *testing.T) {
 	if chosen != relOldDx {
 		t.Fatalf("pressing %s", chosen)
 	}
-	files, _ := store.Select[domain.File](ctx, s.Read(), "files", "version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY relative_path", id)
+	files, _ := database.Select[domain.File](ctx, s.Read(), "files", "version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY relative_path", id)
 	if len(files) != 6 {
 		t.Fatalf("files %d", len(files))
 	}

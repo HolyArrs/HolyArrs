@@ -10,10 +10,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func body(m map[string]any) string {
@@ -21,9 +21,9 @@ func body(m map[string]any) string {
 	return string(b)
 }
 
-func dlServer(t *testing.T) (*httptest.Server, *store.Store) {
+func dlServer(t *testing.T) (*httptest.Server, *database.Store) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,39 +185,39 @@ func TestMarkFailedRoute(t *testing.T) {
 			table string
 			v     any
 		}{{"library_folders", lf}, {"titles", ti}} {
-			if _, err := store.Insert(tx, x.table, x.v, domain.System); err != nil {
+			if _, err := database.Insert(tx, x.table, x.v, domain.System); err != nil {
 				return err
 			}
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		ver := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true}
-		if _, err := store.Insert(tx, "versions", ver, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", ver, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: ver.ID, State: domain.SlotDownloading}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		rel := &domain.Release{SourceID: src.ID, Name: "Salt.Choir.2020.1080p.WEB.H264-HOLYARRS", LinkRef: "http://x/a.torrent", Protocol: "torrent", Size: 1,
 			Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{sl.ID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: qb.URL, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: dr.ID, ReleaseID: &rel.ID, SlotIDs: []int64{sl.ID}, ExternalID: "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcd", State: "downloading", Progress: 0.3,
 			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET active_download_id = ? WHERE id = ?", dl.ID, sl.ID); err != nil {

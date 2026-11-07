@@ -21,10 +21,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -141,7 +141,7 @@ type Notifier interface {
 
 // Service runs asks.
 type Service struct {
-	Store    *store.Store
+	Store    *database.Store
 	Library  *library.Service
 	Metadata metadata.Provider
 	// Alerts sends Discord and email Alerts (nil sends none).
@@ -200,7 +200,7 @@ func overLimit(p Person, kind, rating string) error {
 
 // libraryOverLimit refuses when the Library title id (0: none) is rated
 // above p's limit.
-func libraryOverLimit(ctx context.Context, db store.Querier, p Person, kind string, id int64) error {
+func libraryOverLimit(ctx context.Context, db database.Querier, p Person, kind string, id int64) error {
 	if id == 0 {
 		return nil
 	}
@@ -286,14 +286,14 @@ func (s *Service) checkLimit(ctx context.Context, db querier, p Person, kind str
 
 // querier reads from the database or from inside a write.
 type querier interface {
-	store.Lister
-	store.Querier
+	database.Lister
+	database.Querier
 }
 
 // PersonLimits reads one person's own weekly limit per kind; nil uses the
 // default. The older all-kinds value (per_week) counts for each kind that
 // has no value of its own.
-func PersonLimits(ctx context.Context, db store.Querier, userID int64) (movies, shows, music *int, err error) {
+func PersonLimits(ctx context.Context, db database.Querier, userID int64) (movies, shows, music *int, err error) {
 	var all, m, sh, mu sql.NullInt64
 	err = db.QueryRowContext(ctx, "SELECT per_week, movies_per_week, shows_per_week, music_per_week FROM user_ask_settings WHERE user_id = ?", userID).Scan(&all, &m, &sh, &mu)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -339,7 +339,7 @@ func (s *Service) kindLimit(ctx context.Context, db querier, p Person, kind stri
 	// else's ask is free, and a turned down ask frees its place.
 	rows, err := db.QueryContext(ctx, `SELECT p.asked_at FROM ask_people p JOIN asks a ON a.id = p.ask_id
 		WHERE p.user_id = ? AND p.counted = 1 AND p.asked_at > ? AND a.state != 'turned_down' AND a.kind = ? ORDER BY p.asked_at`,
-		p.UserID, store.FormatTime(now.Add(-Window)), askKinds[kind])
+		p.UserID, database.FormatTime(now.Add(-Window)), askKinds[kind])
 	if err != nil {
 		return l, err
 	}
@@ -350,7 +350,7 @@ func (s *Service) kindLimit(ctx context.Context, db querier, p Person, kind stri
 		if err := rows.Scan(&t); err != nil {
 			return l, err
 		}
-		at, _ := time.Parse(store.TimeLayout, t)
+		at, _ := time.Parse(database.TimeLayout, t)
 		times = append(times, at)
 	}
 	if err := rows.Err(); err != nil {
@@ -432,9 +432,9 @@ func (s *Service) shownAs(ctx context.Context, by Person) string {
 	return "an admin"
 }
 
-func get(ctx context.Context, q store.Querier, id int64) (domain.Ask, error) {
+func get(ctx context.Context, q database.Querier, id int64) (domain.Ask, error) {
 	var a domain.Ask
-	err := store.Get(ctx, q, "asks", id, &a)
+	err := database.Get(ctx, q, "asks", id, &a)
 	return a, err
 }
 
@@ -452,7 +452,7 @@ func (s *Service) Ask4K(ctx context.Context, p Person, tmdbID string) (Result, e
 
 // fourKVersion finds the title's 4K Version (labelled 4K or on the 4K
 // Pick rules), 0 when it has none.
-func fourKVersion(ctx context.Context, db store.Querier, titleID int64) (int64, error) {
+func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
 	var id int64
 	err := db.QueryRowContext(ctx, `SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
 		WHERE v.title_id = ? AND (v.label = ? COLLATE NOCASE OR p.name = ?) ORDER BY v.id LIMIT 1`, titleID, domain.FourKName, domain.FourKName).Scan(&id)
@@ -463,13 +463,13 @@ func fourKVersion(ctx context.Context, db store.Querier, titleID int64) (int64, 
 }
 
 // HasFourK says the title already has a 4K Version (a 4K ask is refused then).
-func HasFourK(ctx context.Context, db store.Querier, titleID int64) (bool, error) {
+func HasFourK(ctx context.Context, db database.Querier, titleID int64) (bool, error) {
 	id, err := fourKVersion(ctx, db, titleID)
 	return id != 0, err
 }
 
 // fourKRules is the 4K Pick rules preset's id (0 when it was removed).
-func fourKRules(ctx context.Context, db store.Querier) (int64, error) {
+func fourKRules(ctx context.Context, db database.Querier) (int64, error) {
 	var id int64
 	err := db.QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ? ORDER BY id LIMIT 1", domain.FourKName).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -563,10 +563,10 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 		if err := s.checkLimit(ctx, tx, p, KindMovies); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "asks", &a, p.actor()); err != nil {
+		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, store.FormatTime(now))
+		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, database.FormatTime(now))
 		return err
 	})
 	if err != nil {
@@ -604,7 +604,7 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	}
 	// Joining costs nothing from the weekly limit: nothing new is fetched.
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("INSERT OR IGNORE INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", id, p.UserID, store.FormatTime(s.now()))
+		_, err := tx.Exec("INSERT OR IGNORE INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", id, p.UserID, database.FormatTime(s.now()))
 		return err
 	})
 	if err != nil {
@@ -722,9 +722,9 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		if len(opt.Albums) > 0 || len(opt.Songs) > 0 {
 			a.Albums = narrowed.Albums
 		}
-		return store.Update(tx, "asks", &a, by.actor())
+		return database.Update(tx, "asks", &a, by.actor())
 	})
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, database.ErrNotFound) {
 		err = ErrNotOpen
 	}
 	if err != nil {
@@ -756,7 +756,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	if err != nil {
 		// Put the ask back as it was, so it can be decided again.
 		if rerr := s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
-			return store.Update(tx, "asks", &before, by.actor())
+			return database.Update(tx, "asks", &before, by.actor())
 		}); rerr != nil {
 			log.Printf("asks: put back ask %d: %v", id, rerr)
 		}
@@ -857,7 +857,7 @@ func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt
 				return 0, err
 			}
 			var t domain.Title
-			if store.Get(ctx, db, "titles", tid, &t) == nil {
+			if database.Get(ctx, db, "titles", tid, &t) == nil {
 				s.Library.VersionEvent(ctx, t, "Added the "+v.Label+" Version", v, by.actor())
 			}
 			return tid, nil
@@ -905,7 +905,7 @@ func (s *Service) TurnDown(ctx context.Context, id int64, by Person, note string
 				return err
 			}
 			if n == 0 {
-				return store.ErrNotFound
+				return database.ErrNotFound
 			}
 			return ErrNotOpen
 		}
@@ -913,7 +913,7 @@ func (s *Service) TurnDown(ctx context.Context, id int64, by Person, note string
 			return err
 		}
 		a.State, a.DecidedBy, a.DecidedAt, a.Note = domain.AskTurnedDown, &by.UserID, &now, note
-		return store.Update(tx, "asks", &a, by.actor())
+		return database.Update(tx, "asks", &a, by.actor())
 	})
 	if err != nil {
 		return a, err
@@ -1029,7 +1029,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 		log.Printf("asks: followed movies ready: %v", err)
 	}
 	// A 4K ask is ready once its 4K copy is in (labelled 4K or on the 4K Pick rules).
-	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", `kind = 'movie' AND state = 'approved' AND title_id IS NOT NULL AND EXISTS (
+	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", `kind = 'movie' AND state = 'approved' AND title_id IS NOT NULL AND EXISTS (
 		SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = asks.title_id AND sl.state IN ('in_library', 'better_wanted')
 		AND (asks.four_k = 0 OR sl.version_id IN (SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
 			WHERE v.title_id = asks.title_id AND (v.label = '4K' COLLATE NOCASE OR p.name = '4K')))) ORDER BY id`)
@@ -1058,7 +1058,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 		var moved int64
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			res, err := tx.Exec("UPDATE asks SET state = 'available', available_at = ?, updated_at = ? WHERE id = ? AND state = 'approved'",
-				store.FormatTime(now), store.FormatTime(now), a.ID)
+				database.FormatTime(now), database.FormatTime(now), a.ID)
 			if err == nil {
 				moved, _ = res.RowsAffected()
 			}
@@ -1142,7 +1142,7 @@ func (s *Service) people(ctx context.Context, askID int64) ([]person, error) {
 		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &at, &p.FromWatchlist); err != nil {
 			return nil, err
 		}
-		p.AskedAt, _ = time.Parse(store.TimeLayout, at)
+		p.AskedAt, _ = time.Parse(database.TimeLayout, at)
 		out = append(out, p)
 	}
 	return out, rows.Err()
@@ -1151,7 +1151,7 @@ func (s *Service) people(ctx context.Context, askID int64) ([]person, error) {
 // tell leaves an in-app message for each person and sends the Alerts.
 func (s *Service) tell(ctx context.Context, a domain.Ask, people []person, moment, subject, text string) {
 	kind := strings.TrimPrefix(moment, "ask_")
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, p := range people {
 			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, ask_id, title_id) VALUES (?, ?, ?, ?, ?, ?)",

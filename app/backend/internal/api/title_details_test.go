@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func detailedMovie() metadata.Movie {
@@ -22,15 +22,15 @@ func detailedMovie() metadata.Movie {
 		Genres: []string{"Drama", "Adventure"}, Rating: "PG-13", People: []string{"A1", "D1"}}
 }
 
-func detailsRig(t *testing.T, p metadata.Provider) (*httptest.Server, *store.Store, *library.Service) {
+func detailsRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.Store, *library.Service) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
 		return err
 	})
 	if err != nil {

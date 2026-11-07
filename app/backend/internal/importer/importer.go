@@ -29,6 +29,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -603,7 +604,7 @@ type Publisher interface {
 
 // Importer imports finished Downloads through the store.
 type Importer struct {
-	Store *store.Store
+	Store *database.Store
 	Live  Publisher // may be nil
 	Ops   Ops
 	// SavePath is where completed downloads are, as HolyArrs sees it
@@ -746,7 +747,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	defer unlock()
 	db := im.Store.Read()
 	var d domain.Download
-	if err := store.Get(ctx, db, "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, db, "downloads", downloadID, &d); err != nil {
 		return nil, fmt.Errorf("download %d: %w", downloadID, err)
 	}
 	if d.State != "finished" && d.State != "seeding" {
@@ -756,7 +757,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		return nil, fmt.Errorf("download %d has no Slot", downloadID)
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, db, "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, db, "downloaders", d.DownloaderID, &dr); err != nil {
 		return nil, err
 	}
 	var sl domain.Slot
@@ -764,7 +765,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	var lf domain.LibraryFolder
 	var it domain.Item
 	var ti domain.Title
-	if err := store.Get(ctx, db, "slots", d.SlotIDs[0], &sl); err != nil {
+	if err := database.Get(ctx, db, "slots", d.SlotIDs[0], &sl); err != nil {
 		return nil, err
 	}
 	var kind, titleState string
@@ -797,14 +798,14 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		id    int64
 		dst   any
 	}{{"versions", sl.VersionID, &ver}, {"items", sl.ItemID, &it}} {
-		if err := store.Get(ctx, db, g.table, g.id, g.dst); err != nil {
+		if err := database.Get(ctx, db, g.table, g.id, g.dst); err != nil {
 			return nil, err
 		}
 	}
-	if err := store.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return nil, err
 	}
-	if err := store.Get(ctx, db, "titles", it.TitleID, &ti); err != nil {
+	if err := database.Get(ctx, db, "titles", it.TitleID, &ti); err != nil {
 		return nil, err
 	}
 	year := 0
@@ -878,7 +879,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		return imp, nil
 	}
 	// A run cut off after placing left an import in placing: reuse it.
-	prior, err := store.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
+	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -913,9 +914,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			moved = true
 		}
 		if imp.ID > 0 {
-			return store.Update(tx, "imports", imp, by)
+			return database.Update(tx, "imports", imp, by)
 		}
-		_, err := store.Insert(tx, "imports", imp, by)
+		_, err := database.Insert(tx, "imports", imp, by)
 		return err
 	}); err != nil {
 		return nil, err
@@ -955,7 +956,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 				}
 			}
 			imp.Result[sameIdx].HeldAside = to
-			if err := im.Store.Write(ctx, func(tx *sql.Tx) error { return store.Update(tx, "imports", imp, by) }); err != nil {
+			if err := im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) }); err != nil {
 				return imp, err
 			}
 			if err := moveFile(oldAbs, to); err != nil {
@@ -1010,7 +1011,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 							break
 						}
 					}
-					err = im.Store.Write(ctx, func(tx *sql.Tx) error { return store.Update(tx, "imports", imp, by) })
+					err = im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
 				}
 				if err == nil {
 					err = moveFile(oldAbs, to)
@@ -1081,7 +1082,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 				relPath += "#replaced-" + strconv.FormatInt(up.old.ID, 10)
 			}
 			if _, err := tx.Exec("UPDATE files SET state = 'replaced', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				relPath, store.FormatTime(now), actorText(by), up.old.ID); err != nil {
+				relPath, database.FormatTime(now), actorText(by), up.old.ID); err != nil {
 				return err
 			}
 		}
@@ -1117,7 +1118,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			if g := p.Group.Value; g != "" {
 				f.Group = &g
 			}
-			id, err := store.Insert(tx, "files", f, by)
+			id, err := database.Insert(tx, "files", f, by)
 			if err != nil {
 				return err
 			}
@@ -1131,7 +1132,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		default:
 			imp.State = "failed"
 		}
-		if err := store.Update(tx, "imports", imp, by); err != nil {
+		if err := database.Update(tx, "imports", imp, by); err != nil {
 			return err
 		}
 		ge := false

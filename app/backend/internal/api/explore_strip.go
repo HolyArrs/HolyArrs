@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -289,7 +290,7 @@ func (a *API) stripTasteRefs(ctx context.Context, member int64, kid bool, now ti
 			var t tasteRef
 			var at string
 			err := rows.Scan(&t.kind, &t.tmdbID, &at)
-			when, _ := time.Parse(store.TimeLayout, at)
+			when, _ := time.Parse(database.TimeLayout, at)
 			t.weight = 2 * math.Exp(-math.Max(0, now.Sub(when).Hours()/24)/120)
 			return t, err
 		}, member)

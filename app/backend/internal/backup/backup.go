@@ -24,9 +24,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Kinds of backup.
@@ -100,7 +100,7 @@ type Meta struct {
 
 // Manager makes, lists, prunes and restores backups.
 type Manager struct {
-	Store   *store.Store
+	Store   *database.Store
 	Dir     string // the config folder
 	Version string
 	Now     func() time.Time
@@ -261,7 +261,7 @@ func (m *Manager) Create(ctx context.Context, kind string) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	return m.write(ctx, kind, map[string]string{store.MainFile: mainCopy, store.EventsFile: evCopy}, nil)
+	return m.write(ctx, kind, map[string]string{database.MainFile: mainCopy, database.EventsFile: evCopy}, nil)
 }
 
 // ctxReader stops a copy once ctx ends.
@@ -340,7 +340,7 @@ func (m *Manager) write(ctx context.Context, kind string, files map[string]strin
 		}
 		at = at.Add(time.Millisecond)
 	}
-	sm, se := store.SchemaVersions()
+	sm, se := database.SchemaVersions()
 	meta := Meta{App: "holyarrs", Version: m.Version, SchemaMain: sm, SchemaEvents: se, Kind: kind, CreatedAt: at, Note: KeyNote}
 	if edit != nil {
 		edit(&meta)
@@ -483,7 +483,7 @@ func (m *Manager) setting(ctx context.Context, key string) (string, error) {
 
 func (m *Manager) setSetting(ctx context.Context, key, val string, by domain.Actor) error {
 	who, _ := json.Marshal(by)
-	t := store.FormatTime(m.now())
+	t := database.FormatTime(m.now())
 	return m.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -560,7 +560,7 @@ func (m *Manager) roomFor() error {
 		return nil
 	}
 	var need int64
-	for _, f := range []string{store.MainFile, store.MainFile + "-wal", store.EventsFile, store.EventsFile + "-wal"} {
+	for _, f := range []string{database.MainFile, database.MainFile + "-wal", database.EventsFile, database.EventsFile + "-wal"} {
 		if st, err := os.Stat(filepath.Join(m.Dir, f)); err == nil {
 			need += st.Size()
 		}
@@ -641,7 +641,7 @@ func (m *Manager) AdoptMigrationCopies() (int, error) {
 			continue
 		}
 		p := filepath.Join(m.backupDir(), e.Name())
-		if err := store.CheckBackupSum(p); err != nil {
+		if err := database.CheckBackupSum(p); err != nil {
 			log.Printf("backup: not adopting %s: %v", e.Name(), err)
 			continue
 		}
@@ -689,9 +689,9 @@ func (m *Manager) AdoptMigrationCopies() (int, error) {
 		files := map[string]string{}
 		var parts []string
 		for _, c := range g {
-			inner := store.MainFile
+			inner := database.MainFile
 			if c.label == "events" {
-				inner = store.EventsFile
+				inner = database.EventsFile
 			}
 			files[inner] = c.path
 			parts = append(parts, fmt.Sprintf("%s %d to %d", c.label, c.from, c.to))
@@ -806,7 +806,7 @@ func (m *Manager) NewestPreUpdate() (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	sm, se := store.SchemaVersions()
+	sm, se := database.SchemaVersions()
 	var newest *Info
 	for i, x := range all {
 		if x.Kind != KindPreUpdate {
@@ -867,7 +867,7 @@ const MaxUpload = 2 << 30
 // maxUnpacked caps all entries of a restore zip together.
 var maxUnpacked int64 = MaxUpload
 
-var allowed = map[string]bool{MetaFile: true, store.MainFile: true, store.EventsFile: true}
+var allowed = map[string]bool{MetaFile: true, database.MainFile: true, database.EventsFile: true}
 
 // Stage checks an uploaded backup and puts it in place for the next start.
 // Nothing is staged unless every check passes.
@@ -942,10 +942,10 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 	if meta == nil || meta.App != "holyarrs" {
 		return errors.New("this is not a HolyArrs backup")
 	}
-	if !got[store.MainFile] {
+	if !got[database.MainFile] {
 		return errors.New("the backup holds no database")
 	}
-	sm, se := store.SchemaVersions()
+	sm, se := database.SchemaVersions()
 	if meta.SchemaMain > sm || meta.SchemaEvents > se {
 		return fmt.Errorf("the backup comes from a newer HolyArrs (%s); update first", meta.Version)
 	}
@@ -958,7 +958,7 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 		}
 	}
 	if m.CheckKey != nil {
-		if err := m.CheckKey(filepath.Join(out, store.MainFile)); err != nil {
+		if err := m.CheckKey(filepath.Join(out, database.MainFile)); err != nil {
 			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the HolyArrs docs, in docs/backups.md): %w", err)
 		}
 	}
@@ -1027,7 +1027,7 @@ func writeJournal(dir string, j journal) error {
 		if err := os.Remove(p + ".tmp"); err != nil && !errors.Is(err, os.ErrNotExist) && !sharingErr(err) {
 			return err
 		}
-		err := store.WriteFileSynced(p, b, 0o600)
+		err := database.WriteFileSynced(p, b, 0o600)
 		if err == nil || !sharingErr(err) || time.Now().After(deadline) {
 			return err
 		}
@@ -1056,7 +1056,7 @@ func removeJournal(dir string) error {
 	if err := os.Remove(filepath.Join(dir, JournalFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	return store.SyncDir(dir)
+	return database.SyncDir(dir)
 }
 
 func syncMoveDirs(dir string, j journal) error {
@@ -1070,7 +1070,7 @@ func syncMoveDirs(dir string, j journal) error {
 			seen[d] = true
 			// A folder already gone (restore-staged removed just before a
 			// cut-off) has nothing left to sync.
-			if err := store.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
+			if err := database.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
 		}
@@ -1224,7 +1224,7 @@ func ApplyStaged(dir string) (bool, error) {
 		return false, err
 	}
 	j := journal{Keep: keepRel}
-	for _, db := range []string{store.MainFile, store.EventsFile} {
+	for _, db := range []string{database.MainFile, database.EventsFile} {
 		if _, err := os.Stat(filepath.Join(staged, db)); err != nil {
 			continue // not in the backup: keep the current one
 		}

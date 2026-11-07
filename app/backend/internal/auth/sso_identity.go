@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var errIdentityLinked = errors.New("this identity is already linked to another account")
@@ -107,13 +107,13 @@ func (a *Auth) ssoIdentity(ctx context.Context, kind, issuer, subject, display s
 					break
 				}
 			}
-			id, err = store.Insert(tx, "users", &domain.User{Name: name, Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}, domain.System)
+			id, err = database.Insert(tx, "users", &domain.User{Name: name, Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}, domain.System)
 			if err != nil {
 				return err
 			}
 		}
 		_, err = tx.Exec(`INSERT INTO sso_links(kind, issuer, subject, user_id, display_name, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-			kind, issuer, subject, id, truncate(display, 200), store.FormatTime(a.now()))
+			kind, issuer, subject, id, truncate(display, 200), database.FormatTime(a.now()))
 		return err
 	})
 	return id, name, err

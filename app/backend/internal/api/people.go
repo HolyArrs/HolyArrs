@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (a *API) peopleRoutes(m *http.ServeMux) {
@@ -492,8 +492,8 @@ func (a *API) titlePeople(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var title domain.Title
-	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &title); err != nil {
-		if errors.Is(err, store.ErrNotFound) {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &title); err != nil {
+		if errors.Is(err, database.ErrNotFound) {
 			fail(w, http.StatusNotFound, "not found")
 		} else {
 			internal(w, err)

@@ -29,8 +29,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // passFile is where seed leaves the members' generated sign-in value; run
@@ -146,7 +146,7 @@ func seed(args []string) {
 	if *dir == "" {
 		log.Fatal("-config is required")
 	}
-	s, err := store.Open(*dir, store.Options{})
+	s, err := database.Open(*dir, database.Options{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func seed(args []string) {
 				role = "owner"
 			}
 			u := &domain.User{Name: fmt.Sprintf("member%02d", i), Role: role, PasswordHash: hash, State: "active", Perms: "[]"}
-			if _, err := store.Insert(tx, "users", u, domain.System); err != nil {
+			if _, err := database.Insert(tx, "users", u, domain.System); err != nil {
 				return err
 			}
 		}
@@ -202,12 +202,12 @@ func seed(args []string) {
 			if kind == "show" {
 				t.Status = "running"
 			}
-			id, err := store.Insert(tx, "titles", t, domain.System)
+			id, err := database.Insert(tx, "titles", t, domain.System)
 			if err != nil {
 				return fmt.Errorf("title %d: %w", i, err)
 			}
 			added := now.Add(-time.Duration(rng.Intn(400*24)) * time.Hour)
-			if _, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", store.FormatTime(added), id); err != nil {
+			if _, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", database.FormatTime(added), id); err != nil {
 				return err
 			}
 		}
@@ -227,7 +227,7 @@ func seed(args []string) {
 		for m := 1; m <= *members; m++ {
 			k := perMember[(m-1)%len(perMember)]
 			for i := 0; i < k; i++ {
-				at := store.FormatTime(now.Add(-time.Duration(i+1) * 24 * time.Hour))
+				at := database.FormatTime(now.Add(-time.Duration(i+1) * 24 * time.Hour))
 				kind := []string{"movie", "show"}[i%2]
 				res, err := tx.Exec(`INSERT INTO asks (created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, year, state, asked_by, asked_at)
 					VALUES (?, '{}', ?, '{}', ?, ?, ?, ?, 'asked', ?, ?)`, at, at, kind, fmt.Sprint(7000+m*100+i), fmt.Sprintf("Asked %02d-%02d", m, i), 1990+(m*7+i)%35, m, at)

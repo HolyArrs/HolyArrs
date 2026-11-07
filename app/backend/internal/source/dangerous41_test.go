@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // failedDownload records a failed Download of release id with reason why.
@@ -19,12 +19,12 @@ func failedDownload(t *testing.T, f fixture, id int64, hash, why string) {
 	t.Helper()
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &id, SlotIDs: []int64{f.slotID}, ExternalID: hash, State: "failed", StateReason: &why,
 			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -127,7 +127,7 @@ func TestHeldDangerousNotSentAfterTheWait(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	held := addRelease(t, f, web1080, "held")
 	exec(t, f, `UPDATE releases SET info_hash = ?, verdict = json('{"outcome":"held","reasons":[]}') WHERE id = ?`, h, held)
-	exec(t, f, `UPDATE slots SET state = 'held', held_release_id = ?, next_try_at = ? WHERE id = ?`, held, store.FormatTime(time.Now().Add(-time.Minute)), f.slotID)
+	exec(t, f, `UPDATE slots SET state = 'held', held_release_id = ?, next_try_at = ? WHERE id = ?`, held, database.FormatTime(time.Now().Add(-time.Minute)), f.slotID)
 	other := addRelease(t, f, "Dune.Part.Two.2024.1080p.WEB-DL-OTHERNAME", "turned_down")
 	failedDownload(t, f, other, h, "dangerous files: Dune.mkv.exe")
 	var chosen []int64

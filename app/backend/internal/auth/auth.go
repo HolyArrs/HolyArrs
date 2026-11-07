@@ -25,11 +25,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Names on the wire.
@@ -111,7 +111,7 @@ const maxChecks = 4
 
 // Auth guards every route.
 type Auth struct {
-	s               *store.Store
+	s               *database.Store
 	now             func() time.Time
 	hash            hashParams
 	skipLocal       atomic.Bool
@@ -169,7 +169,7 @@ type failure struct {
 }
 
 // New makes Auth and loads its settings.
-func New(s *store.Store, opt Options) *Auth {
+func New(s *database.Store, opt Options) *Auth {
 	a := &Auth{s: s, now: opt.Now, hash: normalHash, fails: map[string]*failure{}, hosts: map[string]bool{"localhost": true},
 		checks: make(chan struct{}, maxChecks)}
 	if a.now == nil {
@@ -659,7 +659,7 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 			return errOwnerExists
 		}
 		var err error
-		id, err = store.Insert(tx, "users", &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
+		id, err = database.Insert(tx, "users", &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
 		if err != nil || newHost == "" {
 			return err
 		}
@@ -898,11 +898,11 @@ func (a *Auth) saveKnown(ch *knownChange) {
 			}
 		}
 		if _, err := tx.Exec("DELETE FROM known_places WHERE user_key = ? AND last_at < ?",
-			ch.put.userKey, store.FormatTime(ch.at.Add(-knownPlaceFor))); err != nil {
+			ch.put.userKey, database.FormatTime(ch.at.Add(-knownPlaceFor))); err != nil {
 			return err
 		}
 		_, err := tx.Exec(`INSERT INTO known_places(user_key, ip_key, last_at) VALUES (?, ?, ?)
-			ON CONFLICT(user_key, ip_key) DO UPDATE SET last_at = excluded.last_at`, ch.put.userKey, ch.put.ipKey, store.FormatTime(ch.at))
+			ON CONFLICT(user_key, ip_key) DO UPDATE SET last_at = excluded.last_at`, ch.put.userKey, ch.put.ipKey, database.FormatTime(ch.at))
 		return err
 	})
 	if err != nil {
@@ -914,7 +914,7 @@ func (a *Auth) saveKnown(ch *knownChange) {
 // first, under the same limits as noteKnown.
 func (a *Auth) loadKnown(ctx context.Context) {
 	rows, err := a.s.Read().QueryContext(ctx, "SELECT user_key, ip_key, last_at FROM known_places WHERE last_at >= ? ORDER BY last_at",
-		store.FormatTime(a.now().Add(-knownPlaceFor)))
+		database.FormatTime(a.now().Add(-knownPlaceFor)))
 	if err != nil {
 		log.Printf("auth: could not read known sign-in places: %v", err)
 		return
@@ -1252,13 +1252,13 @@ func (a *Auth) startSessionIn(w http.ResponseWriter, r *http.Request, userID int
 				return err
 			}
 		}
-		t := store.FormatTime(now)
+		t := database.FormatTime(now)
 		localAt := ""
 		if method == AuthMethodLocalPassword || method == AuthMethodLocalSetup {
 			localAt = t
 		}
 		_, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, sum(tok), userID, csrf, t, t, t, store.FormatTime(now.Add(AbsoluteTimeout)),
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, sum(tok), userID, csrf, t, t, t, database.FormatTime(now.Add(AbsoluteTimeout)),
 			truncate(r.UserAgent(), 200), family, method, localAt)
 		return err
 	})
@@ -1280,7 +1280,7 @@ func truncate(s string, n int) string {
 }
 
 func parseTime(s string) time.Time {
-	t, _ := time.Parse(store.TimeLayout, s)
+	t, _ := time.Parse(database.TimeLayout, s)
 	return t
 }
 
@@ -1323,7 +1323,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 		return Who{}, false
 	}
 	who.Via = "session"
-	t := store.FormatTime(now)
+	t := database.FormatTime(now)
 	switch {
 	case now.Sub(parseTime(rotated)) > RotateEvery:
 		tok := token(32)
@@ -1338,7 +1338,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 			if grace.After(abs) {
 				grace = abs
 			}
-			_, err := tx.Exec("UPDATE sessions SET expires_at = ?, rotated_at = ?, replaced = 1 WHERE hash = ?", store.FormatTime(grace), t, h)
+			_, err := tx.Exec("UPDATE sessions SET expires_at = ?, rotated_at = ?, replaced = 1 WHERE hash = ?", database.FormatTime(grace), t, h)
 			return err
 		})
 		if err == nil {
@@ -1389,8 +1389,8 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 // Cleanup drops ended sessions.
 func (a *Auth) Cleanup(ctx context.Context) error {
 	now := a.now()
-	expiresAt := store.FormatTime(now)
-	idleBefore := store.FormatTime(now.Add(-IdleTimeout))
+	expiresAt := database.FormatTime(now)
+	idleBefore := database.FormatTime(now.Add(-IdleTimeout))
 	var needed bool
 	if err := a.s.Read().QueryRowContext(ctx, `SELECT EXISTS(
 		SELECT 1 FROM sessions WHERE expires_at <= ? OR last_seen_at < ?
@@ -1425,7 +1425,7 @@ func (a *Auth) checkKey(ctx context.Context, k string) (Who, bool) {
 	now := a.now()
 	if !used.Valid || now.Sub(parseTime(used.String)) > touchEvery {
 		_ = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE api_keys SET last_used_at = ? WHERE id = ?", store.FormatTime(now), keyID)
+			_, err := tx.Exec("UPDATE api_keys SET last_used_at = ? WHERE id = ?", database.FormatTime(now), keyID)
 			return err
 		})
 	}
@@ -1480,7 +1480,7 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	body.Scopes = slices.Compact(slices.Sorted(slices.Values(body.Scopes)))
 	scopeJSON, _ := json.Marshal(body.Scopes)
 	k := keyPrefix + token(32)
-	now := store.FormatTime(a.now())
+	now := database.FormatTime(a.now())
 	actor, _ := json.Marshal(Actor(r.Context()))
 	var id int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
@@ -1637,7 +1637,7 @@ func (a *Auth) failedEvent(r *http.Request, name, how string) {
 		res, err := tx.Exec(`UPDATE events SET data = json_set(data, '$.count', coalesce(json_extract(data, '$.count'), 1) + 1, '$.last_at', ?),
 			updated_at = ? WHERE id = (SELECT id FROM events WHERE kind = 'sign_in_failed' AND json_extract(data, '$.ip') = ? AND json_extract(data, '$.name') = ?
 			AND coalesce(json_extract(data, '$.how'), 'password') = ? AND at >= ? ORDER BY id DESC LIMIT 1)`,
-			store.FormatTime(now), store.FormatTime(now), ip, name, how, store.FormatTime(now.Add(-10*time.Minute)))
+			database.FormatTime(now), database.FormatTime(now), ip, name, how, database.FormatTime(now.Add(-10*time.Minute)))
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -1647,7 +1647,7 @@ func (a *Auth) failedEvent(r *http.Request, name, how string) {
 		return
 	}
 	_ = a.s.AddEvent(ctx, &domain.Event{At: now, Kind: "sign_in_failed", Summary: failedSummary(name, how),
-		Data: map[string]any{"name": name, "how": how, "ip": ip, "count": 1, "last_at": store.FormatTime(now)}})
+		Data: map[string]any{"name": name, "how": how, "ip": ip, "count": 1, "last_at": database.FormatTime(now)}})
 }
 
 // ssoRefusal is how an OIDC or forward-auth sign-in was refused, for its row.

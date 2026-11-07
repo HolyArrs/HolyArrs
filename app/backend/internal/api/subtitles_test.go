@@ -11,18 +11,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
 // subtitleMovie adds a movie with one File on disk; it returns the title,
 // the File and the Library folder.
-func subtitleMovie(t *testing.T, s *store.Store) (int64, int64, string) {
+func subtitleMovie(t *testing.T, s *database.Store) (int64, int64, string) {
 	t.Helper()
 	var titleID, fileID int64
 	var lib string
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		ts, by := store.FormatTime(time.Now()), `{"kind":"system"}`
+		ts, by := database.FormatTime(time.Now()), `{"kind":"system"}`
 		var lf, rules int64
 		if err := tx.QueryRow("SELECT id, path FROM library_folders LIMIT 1").Scan(&lf, &lib); err != nil {
 			return err

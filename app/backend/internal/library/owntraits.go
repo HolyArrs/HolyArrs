@@ -8,9 +8,9 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ErrOwnTraitName says another own trait already has this name.
@@ -24,8 +24,8 @@ type OwnTraitInput struct {
 }
 
 // OwnTraits lists every own trait by name.
-func OwnTraits(ctx context.Context, st *store.Store) ([]domain.OwnTrait, error) {
-	return store.Select[domain.OwnTrait](ctx, st.Read(), "own_traits", "1=1 ORDER BY lower(name), id")
+func OwnTraits(ctx context.Context, st *database.Store) ([]domain.OwnTrait, error) {
+	return database.Select[domain.OwnTrait](ctx, st.Read(), "own_traits", "1=1 ORDER BY lower(name), id")
 }
 
 // loadMu keeps two reloads from crossing: a slow one that read the table
@@ -34,7 +34,7 @@ var loadMu sync.Mutex
 
 // LoadOwnTraits hands the stored own traits to the judge; the app calls it
 // at start, and every change below calls it after saving.
-func LoadOwnTraits(ctx context.Context, st *store.Store) error {
+func LoadOwnTraits(ctx context.Context, st *database.Store) error {
 	loadMu.Lock()
 	defer loadMu.Unlock()
 	ts, err := OwnTraits(ctx, st)
@@ -47,7 +47,7 @@ func LoadOwnTraits(ctx context.Context, st *store.Store) error {
 
 // reload is LoadOwnTraits after a saved change: the change stands either
 // way, so a failure is logged and tried once more instead of answered.
-func reload(ctx context.Context, st *store.Store) {
+func reload(ctx context.Context, st *database.Store) {
 	if err := LoadOwnTraits(ctx, st); err != nil {
 		if err = LoadOwnTraits(context.WithoutCancel(ctx), st); err != nil {
 			log.Printf("own traits: the judge keeps the old list until the next change or start: %v", err)
@@ -67,7 +67,7 @@ func ownNameTaken(tx *sql.Tx, name string, not int64) error {
 }
 
 // CreateOwnTrait checks and stores a new own trait.
-func CreateOwnTrait(ctx context.Context, st *store.Store, in OwnTraitInput, by domain.Actor) (domain.OwnTrait, error) {
+func CreateOwnTrait(ctx context.Context, st *database.Store, in OwnTraitInput, by domain.Actor) (domain.OwnTrait, error) {
 	t := domain.OwnTrait{Name: in.Name, Match: in.Match, Terms: in.Terms}
 	if err := domain.CheckOwnTrait(&t); err != nil {
 		return t, err
@@ -76,7 +76,7 @@ func CreateOwnTrait(ctx context.Context, st *store.Store, in OwnTraitInput, by d
 		if err := ownNameTaken(tx, t.Name, 0); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "own_traits", &t, by)
+		_, err := database.Insert(tx, "own_traits", &t, by)
 		return err
 	})
 	if err != nil {
@@ -88,21 +88,21 @@ func CreateOwnTrait(ctx context.Context, st *store.Store, in OwnTraitInput, by d
 
 // UpdateOwnTrait changes an own trait; Pick rules that use it judge by the
 // new terms from then on.
-func UpdateOwnTrait(ctx context.Context, st *store.Store, id int64, in OwnTraitInput, by domain.Actor) (domain.OwnTrait, error) {
+func UpdateOwnTrait(ctx context.Context, st *database.Store, id int64, in OwnTraitInput, by domain.Actor) (domain.OwnTrait, error) {
 	next := domain.OwnTrait{Name: in.Name, Match: in.Match, Terms: in.Terms}
 	if err := domain.CheckOwnTrait(&next); err != nil {
 		return next, err
 	}
 	var t domain.OwnTrait
 	err := st.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "own_traits", id, &t); err != nil {
+		if err := database.Get(ctx, tx, "own_traits", id, &t); err != nil {
 			return err
 		}
 		if err := ownNameTaken(tx, next.Name, id); err != nil {
 			return err
 		}
 		t.Name, t.Match, t.Terms = next.Name, next.Match, next.Terms
-		return store.Update(tx, "own_traits", &t, by)
+		return database.Update(tx, "own_traits", &t, by)
 	})
 	if err != nil {
 		return t, err
@@ -114,15 +114,15 @@ func UpdateOwnTrait(ctx context.Context, st *store.Store, id int64, in OwnTraitI
 // DeleteOwnTrait removes an own trait and takes it out of every Pick rule's
 // points, must-have and never lists (a must-have nobody can meet would
 // otherwise turn every Release down). It answers how many Pick rules changed.
-func DeleteOwnTrait(ctx context.Context, st *store.Store, id int64, by domain.Actor) (int, error) {
+func DeleteOwnTrait(ctx context.Context, st *database.Store, id int64, by domain.Actor) (int, error) {
 	key := domain.OwnTraitKey(id)
 	changed := 0
 	err := st.Write(ctx, func(tx *sql.Tx) error {
 		var t domain.OwnTrait
-		if err := store.Get(ctx, tx, "own_traits", id, &t); err != nil {
+		if err := database.Get(ctx, tx, "own_traits", id, &t); err != nil {
 			return err
 		}
-		ps, err := store.Select[domain.PickRules](ctx, tx, "pick_rules", "body LIKE ?", "%\""+key+"\"%")
+		ps, err := database.Select[domain.PickRules](ctx, tx, "pick_rules", "body LIKE ?", "%\""+key+"\"%")
 		if err != nil {
 			return err
 		}
@@ -137,7 +137,7 @@ func DeleteOwnTrait(ctx context.Context, st *store.Store, id int64, by domain.Ac
 			}
 			p.Body = b
 			p.Revision++
-			if err := store.Update(tx, "pick_rules", &p, by); err != nil {
+			if err := database.Update(tx, "pick_rules", &p, by); err != nil {
 				return err
 			}
 			changed++

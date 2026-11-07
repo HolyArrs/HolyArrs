@@ -15,13 +15,13 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -92,7 +92,7 @@ type Report struct {
 // Mover runs moves. It never moves, renames or deletes a media file and
 // never contacts or writes to the old apps: it works from kept Snapshots.
 type Mover struct {
-	Store   *store.Store
+	Store   *database.Store
 	Library *library.Service
 	Queue   *jobs.Queue
 	// PartOn says whether a part is on (movies, shows, music, subtitles,
@@ -129,7 +129,7 @@ var (
 )
 
 // LoadPlan builds the Plan for kept Snapshots.
-func LoadPlan(ctx context.Context, st *store.Store, ids []int64, ch Choices) (*Plan, error) {
+func LoadPlan(ctx context.Context, st *database.Store, ids []int64, ch Choices) (*Plan, error) {
 	if len(ids) == 0 {
 		return nil, ErrNoSnapshotPicked
 	}
@@ -159,7 +159,7 @@ func LoadPlan(ctx context.Context, st *store.Store, ids []int64, ch Choices) (*P
 // not on this server as it is: to a Library folder here with the same last
 // name, or else to the only Library folder here of the same kind (an old
 // Sonarr "/data/TV Shows" goes to the one shows folder).
-func SuggestRules(ctx context.Context, st *store.Store, p *Plan) []PathRule {
+func SuggestRules(ctx context.Context, st *database.Store, p *Plan) []PathRule {
 	var here []string
 	kindOf := map[string]string{}
 	rows, err := st.Read().QueryContext(ctx, "SELECT path, kind FROM library_folders ORDER BY id")
@@ -538,7 +538,7 @@ func (r *run) markTx(tx *sql.Tx, key, what string, id int64, before, after strin
 		}
 	}
 	_, err := tx.Exec(`INSERT OR REPLACE INTO move_made (move_id, key, what, row_id, before, after, fingerprint, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		r.move, key, what, id, before, after, fp, store.FormatTime(r.m.now()))
+		r.move, key, what, id, before, after, fp, database.FormatTime(r.m.now()))
 	return err
 }
 
@@ -764,7 +764,7 @@ func (r *run) askSettings(it Item) (string, string) {
 			beforeState[key] = state
 			afterState[key] = settingValue{Exists: true, Value: strconv.Itoa(*value)}
 		}
-		now := store.FormatTime(r.m.now())
+		now := database.FormatTime(r.m.now())
 		for k, state := range afterState {
 			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -853,7 +853,7 @@ func (r *run) protocol(it Item) (string, string) {
 		return ResNotFound, "the ready-made Pick rules " + pp.Preset + " are not here any more"
 	}
 	var cur domain.PickRules
-	if err := store.Get(r.ctx, r.m.Store.Read(), "pick_rules", id, &cur); err != nil {
+	if err := database.Get(r.ctx, r.m.Store.Read(), "pick_rules", id, &cur); err != nil {
 		return ResFailed, err.Error()
 	}
 	want := domain.ProtocolRule{Prefer: pp.Prefer, WaitMinutesUsenet: pp.WaitUsenet, WaitMinutesTorrent: pp.WaitTorrent, SkipWaitAtGoodEnough: pp.SkipAtGoodEnough}
@@ -997,7 +997,7 @@ func (r *run) title(it Item) (string, string) {
 	// Adopting runs its own steps; when the mark cannot be kept the title
 	// leaves the Library again, so nothing stays that undo cannot find.
 	if mk := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error { return r.markTx(tx, it.Key, "title", id, "", "") }); mk != nil {
-		if _, removeErr := r.m.Library.Remove(context.WithoutCancel(r.ctx), id, library.RemoveChoice{}, true, r.by); removeErr != nil && !errors.Is(removeErr, store.ErrNotFound) && !errors.Is(removeErr, library.ErrAlreadyRemoved) {
+		if _, removeErr := r.m.Library.Remove(context.WithoutCancel(r.ctx), id, library.RemoveChoice{}, true, r.by); removeErr != nil && !errors.Is(removeErr, database.ErrNotFound) && !errors.Is(removeErr, library.ErrAlreadyRemoved) {
 			recoveryErr := r.m.Store.Write(context.WithoutCancel(r.ctx), func(tx *sql.Tx) error { return r.markTx(tx, it.Key, "title", id, "", "") })
 			if recoveryErr == nil {
 				return ResFailed, "adopted, its first undo mark failed and cleanup failed; a recovery mark was kept: " + mk.Error() + "; " + removeErr.Error()
@@ -1023,7 +1023,7 @@ func (r *run) title(it Item) (string, string) {
 		return nil
 	})
 	if err != nil {
-		if _, removeErr := r.m.Library.Remove(context.WithoutCancel(r.ctx), id, library.RemoveChoice{}, true, r.by); removeErr != nil && !errors.Is(removeErr, store.ErrNotFound) && !errors.Is(removeErr, library.ErrAlreadyRemoved) {
+		if _, removeErr := r.m.Library.Remove(context.WithoutCancel(r.ctx), id, library.RemoveChoice{}, true, r.by); removeErr != nil && !errors.Is(removeErr, database.ErrNotFound) && !errors.Is(removeErr, library.ErrAlreadyRemoved) {
 			return ResFailed, "adopted, but its choices were not kept and cleanup failed; the undo mark was kept: " + err.Error() + "; " + removeErr.Error()
 		}
 		markErr := r.m.Store.Write(context.WithoutCancel(r.ctx), func(tx *sql.Tx) error {
@@ -1259,7 +1259,7 @@ func (r *run) applyMusicPolicyTx(tx *sql.Tx, titleID int64, p *MusicPolicyPlan) 
 	secondary, _ := json.Marshal(p.SecondaryTypes)
 	statuses, _ := json.Marshal(p.ReleaseStatuses)
 	who, _ := json.Marshal(r.by)
-	now := store.FormatTime(r.m.now())
+	now := database.FormatTime(r.m.now())
 	var newAlbums any
 	if p.NewAlbums != nil {
 		newAlbums = *p.NewAlbums
@@ -1327,7 +1327,7 @@ func (r *run) neverAdd(it Item) (string, string) {
 	var id int64
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		var err error
-		if id, err = store.Insert(tx, "never_add", &row, r.by); err != nil {
+		if id, err = database.Insert(tx, "never_add", &row, r.by); err != nil {
 			return err
 		}
 		return r.markTx(tx, it.Key, "never_add", id, "", "")
@@ -1398,7 +1398,7 @@ func (r *run) downloader(it Item) (string, string) {
 	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
 		PathMap: maps, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false, ClearFinished: true}
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
-		id, err := store.Insert(tx, "downloaders", &row, r.by)
+		id, err := database.Insert(tx, "downloaders", &row, r.by)
 		if err != nil {
 			return err
 		}
@@ -1559,7 +1559,7 @@ func (r *run) person(it Item) (string, string) {
 	var id int64
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		var err error
-		if id, err = store.Insert(tx, "users", &u, r.by); err != nil {
+		if id, err = database.Insert(tx, "users", &u, r.by); err != nil {
 			return err
 		}
 		if _, err = tx.Exec("INSERT INTO user_ask_settings (user_id, per_week, movies_per_week, shows_per_week, email) VALUES (?, NULL, ?, ?, ?)",
@@ -1609,14 +1609,14 @@ func (r *run) createAsk(it Item, row *domain.Ask, by int64, asked time.Time, exp
 				return errUndoReplaced
 			}
 		}
-		if id, err = store.Insert(tx, "asks", row, r.by); err != nil {
+		if id, err = database.Insert(tx, "asks", row, r.by); err != nil {
 			return err
 		}
 		// A moved ask never counts against the person's weekly limit.
-		if _, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", id, by, store.FormatTime(asked)); err != nil {
+		if _, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", id, by, database.FormatTime(asked)); err != nil {
 			return err
 		}
-		baseline, _ := json.Marshal(askBaseline{UserID: by, AskedAt: store.FormatTime(asked), UserFingerprint: askerFP})
+		baseline, _ := json.Marshal(askBaseline{UserID: by, AskedAt: database.FormatTime(asked), UserFingerprint: askerFP})
 		return r.markTx(tx, it.Key, "ask", id, "", string(baseline))
 	})
 	return id, err
@@ -1699,10 +1699,10 @@ func (r *run) ask(it Item) (string, string) {
 			if err != nil || userFP != expectedUserFP {
 				return errUndoReplaced
 			}
-			if _, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", existing, by, store.FormatTime(asked)); err != nil {
+			if _, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", existing, by, database.FormatTime(asked)); err != nil {
 				return err
 			}
-			mark, _ := json.Marshal(askPersonMark{AskID: existing, UserID: by, AskedAt: store.FormatTime(asked), AskFingerprint: askFP, UserFingerprint: userFP})
+			mark, _ := json.Marshal(askPersonMark{AskID: existing, UserID: by, AskedAt: database.FormatTime(asked), AskFingerprint: askFP, UserFingerprint: userFP})
 			return r.markTx(tx, it.Key, "ask_person", 0, string(mark), "")
 		})
 		return result(err, ResCreated, "added this person's request to the existing request")
@@ -1780,7 +1780,7 @@ func (r *run) alert(it Item) (string, string) {
 		row.SMTPSecurity = a.SMTPSecurity
 	}
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
-		id, err := store.Insert(tx, "alerts", &row, r.by)
+		id, err := database.Insert(tx, "alerts", &row, r.by)
 		if err != nil {
 			return err
 		}
@@ -1887,10 +1887,10 @@ func (m *Mover) setState(ctx context.Context, id int64, state string, rep *Repor
 		}
 		b, _ := json.Marshal(rep)
 		if state == "undone" {
-			_, err := tx.Exec("UPDATE moves SET state = 'undone', undo_state = '', report = ?, undone_at = ? WHERE id = ?", string(b), store.FormatTime(m.now()), id)
+			_, err := tx.Exec("UPDATE moves SET state = 'undone', undo_state = '', report = ?, undone_at = ? WHERE id = ?", string(b), database.FormatTime(m.now()), id)
 			return err
 		}
-		if _, err := tx.Exec("UPDATE moves SET state = ?, report = ?, finished_at = ? WHERE id = ?", state, string(b), store.FormatTime(m.now()), id); err != nil {
+		if _, err := tx.Exec("UPDATE moves SET state = ?, report = ?, finished_at = ? WHERE id = ?", state, string(b), database.FormatTime(m.now()), id); err != nil {
 			return err
 		}
 		if state == "done" && (rep == nil || rep.Counts[ResFailed] == 0) {
@@ -1948,7 +1948,7 @@ func (m *Mover) Recover(ctx context.Context) error {
 	return m.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE moves SET state = 'failed', report = CASE WHEN report IN ('', '{}') THEN ? ELSE report END, finished_at = ?
 			WHERE state IN ('queued', 'running') AND (job_id IS NULL OR NOT EXISTS (SELECT 1 FROM jobs j WHERE j.id = moves.job_id AND j.state IN ('queued', 'running')))`,
-			string(b), store.FormatTime(m.now()))
+			string(b), database.FormatTime(m.now()))
 		if err != nil {
 			return err
 		}
@@ -2005,7 +2005,7 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 }
 
 // GetMove reads one move.
-func GetMove(ctx context.Context, st *store.Store, id int64) (Move, error) {
+func GetMove(ctx context.Context, st *database.Store, id int64) (Move, error) {
 	ms, err := moves(ctx, st, "WHERE id = ?", id)
 	if err != nil {
 		return Move{}, err
@@ -2017,7 +2017,7 @@ func GetMove(ctx context.Context, st *store.Store, id int64) (Move, error) {
 }
 
 // ListMoves lists the moves, newest first, without their reports.
-func ListMoves(ctx context.Context, st *store.Store) ([]Move, error) {
+func ListMoves(ctx context.Context, st *database.Store) ([]Move, error) {
 	ms, err := moves(ctx, st, "ORDER BY id DESC LIMIT 100")
 	for i := range ms {
 		if ms[i].Report != nil {
@@ -2027,7 +2027,7 @@ func ListMoves(ctx context.Context, st *store.Store) ([]Move, error) {
 	return ms, err
 }
 
-func moves(ctx context.Context, st *store.Store, where string, args ...any) ([]Move, error) {
+func moves(ctx context.Context, st *database.Store, where string, args ...any) ([]Move, error) {
 	rows, err := st.Read().QueryContext(ctx, `SELECT id, created_at, owner_id, snapshots, choices, state, COALESCE(job_id, 0), report,
 		COALESCE(finished_at, ''), COALESCE(undone_at, ''), undo_state, COALESCE(undo_job_id, 0) FROM moves `+where, args...)
 	if err != nil {
@@ -2296,7 +2296,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		case "outside_list":
 			return del(" AND enabled = 0", "you turned it on since, so it stays; remove it under Settings > Outside lists")
 		case "title":
-			if _, e := m.Library.Remove(ctx, x.row, library.RemoveChoice{}, true, by); e != nil && !errors.Is(e, store.ErrNotFound) && !errors.Is(e, library.ErrAlreadyRemoved) {
+			if _, e := m.Library.Remove(ctx, x.row, library.RemoveChoice{}, true, by); e != nil && !errors.Is(e, database.ErrNotFound) && !errors.Is(e, library.ErrAlreadyRemoved) {
 				return ResFailed, e.Error()
 			}
 			return ResRemoved, "left the Library; its files stay where they are"
@@ -2307,7 +2307,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 				return ResRemoved, ""
 			case errors.Is(e, library.ErrFolderInUse):
 				return ResKept, "the titles that were in it stay in History as removed, so the folder stays"
-			case errors.Is(e, store.ErrNotFound):
+			case errors.Is(e, database.ErrNotFound):
 				return ResKept, "already gone"
 			}
 			return ResFailed, e.Error()
@@ -2323,7 +2323,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 			return ResKept, keptUnknown
 		}
 		err := m.Store.Write(ctx, func(tx *sql.Tx) error {
-			return undoMusicPolicyTx(ctx, tx, x, old, moved, by, store.FormatTime(m.now()))
+			return undoMusicPolicyTx(ctx, tx, x, old, moved, by, database.FormatTime(m.now()))
 		})
 		switch {
 		case errors.Is(err, errUndoGone):
@@ -2385,7 +2385,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 			return ResKept, keptUnknown
 		}
 		err := m.Store.Write(ctx, func(tx *sql.Tx) error {
-			return undoAskSettingsTx(ctx, tx, old, moved, by, store.FormatTime(m.now()))
+			return undoAskSettingsTx(ctx, tx, old, moved, by, database.FormatTime(m.now()))
 		})
 		if errors.Is(err, errUndoChanged) {
 			return ResKept, keptChanged
@@ -2436,7 +2436,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 			return ResKept, keptUnknown
 		}
 		var cur domain.PickRules
-		if err := store.Get(ctx, m.Store.Read(), "pick_rules", x.row, &cur); errors.Is(err, store.ErrNotFound) {
+		if err := database.Get(ctx, m.Store.Read(), "pick_rules", x.row, &cur); errors.Is(err, database.ErrNotFound) {
 			return ResKept, "already gone"
 		} else if err != nil {
 			return ResFailed, err.Error()

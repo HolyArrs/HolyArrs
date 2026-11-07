@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestProtectedCopyCannotBeReplaced(t *testing.T) {
@@ -21,7 +21,7 @@ func TestProtectedCopyCannotBeReplaced(t *testing.T) {
 		t.Fatal(err)
 	}
 	var old domain.File
-	if err := store.Get(ctx, w.s.Read(), "files", oldID, &old); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "files", oldID, &old); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(w.lib, filepath.FromSlash(old.RelativePath))

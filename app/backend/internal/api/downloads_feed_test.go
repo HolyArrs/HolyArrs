@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // feedStore does one background read by hand: every torrent Downloader's
@@ -21,7 +21,7 @@ func feedStore(t *testing.T, a *API) *dlsync.Sync {
 		a.s.DLSync = &dlsync.Sync{Store: &dlsync.Store{}, DB: a.s.Store}
 	}
 	ctx := context.Background()
-	ds, err := store.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
+	ds, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func feedStore(t *testing.T, a *API) *dlsync.Sync {
 func matchStored(t *testing.T, a *API) {
 	t.Helper()
 	ctx := context.Background()
-	ds, err := store.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
+	ds, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
 	if err != nil {
 		t.Fatal(err)
 	}

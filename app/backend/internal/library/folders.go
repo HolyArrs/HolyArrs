@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // MinFreeSpace is the free space under which a Library folder gets a
@@ -85,8 +85,8 @@ func canLink(from, to string) (bool, string) {
 
 // DownloadPaths lists the folders Downloaders save into, as HolyArrs sees
 // them: extra (the save path set at start) plus every path map's own side.
-func DownloadPaths(ctx context.Context, db store.Lister, extra ...string) ([]string, error) {
-	dls, err := store.Select[domain.Downloader](ctx, db, "downloaders", "state != 'disabled'")
+func DownloadPaths(ctx context.Context, db database.Lister, extra ...string) ([]string, error) {
+	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "state != 'disabled'")
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func overlaps(a, b string) bool {
 
 // AddFolder adds a Library folder after checking it. then, when given,
 // runs in the same transaction with the new id.
-func AddFolder(ctx context.Context, s *store.Store, in FolderInput, downloadPaths []string, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.LibraryFolder, error) {
+func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadPaths []string, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.LibraryFolder, error) {
 	var lf domain.LibraryFolder
 	if in.Path == "" || !filepath.IsAbs(in.Path) {
 		return lf, ErrFolderPath
@@ -174,7 +174,7 @@ func AddFolder(ctx context.Context, s *store.Store, in FolderInput, downloadPath
 	lf = domain.LibraryFolder{Path: in.Path, Kind: in.Kind, Label: in.Label, DefaultPickRules: in.DefaultPickRules,
 		FreeSpace: max(h.FreeSpace, 0), Health: h.State, HealthReason: h.Reason, HealthCheckedAt: &now, SameDiskAs: []int64{}}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		all, err := store.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
+		all, err := database.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
 		if err != nil {
 			return err
 		}
@@ -189,7 +189,7 @@ func AddFolder(ctx context.Context, s *store.Store, in FolderInput, downloadPath
 		if err := pickRulesExist(tx, in.DefaultPickRules); err != nil {
 			return err
 		}
-		id, err := store.Insert(tx, "library_folders", &lf, by)
+		id, err := database.Insert(tx, "library_folders", &lf, by)
 		if err != nil {
 			return err
 		}
@@ -245,14 +245,14 @@ type FolderChange struct {
 }
 
 // UpdateFolder changes a Library folder's label and default Pick rules.
-func UpdateFolder(ctx context.Context, s *store.Store, id int64, c FolderChange, by domain.Actor) (domain.LibraryFolder, error) {
+func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChange, by domain.Actor) (domain.LibraryFolder, error) {
 	var lf domain.LibraryFolder
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "library_folders", id, &lf); err != nil {
+		if err := database.Get(ctx, tx, "library_folders", id, &lf); err != nil {
 			return err
 		}
 		if c.Label != nil && *c.Label != "" && *c.Label != lf.Label {
-			all, err := store.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
+			all, err := database.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
 			if err != nil {
 				return err
 			}
@@ -267,7 +267,7 @@ func UpdateFolder(ctx context.Context, s *store.Store, id int64, c FolderChange,
 			}
 			lf.DefaultPickRules = c.DefaultPickRules
 		}
-		return store.Update(tx, "library_folders", &lf, by)
+		return database.Update(tx, "library_folders", &lf, by)
 	})
 	return lf, err
 }
@@ -298,7 +298,7 @@ func freeLabel(all []domain.LibraryFolder, kind, label string, skip int64, numbe
 }
 
 // DeleteFolder removes a Library folder no Version uses. Nothing on disk is touched.
-func DeleteFolder(ctx context.Context, s *store.Store, id int64) error {
+func DeleteFolder(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var n int
 		if err := tx.QueryRow("SELECT count(*) FROM versions WHERE library_folder_id = ?", id).Scan(&n); err != nil {
@@ -312,7 +312,7 @@ func DeleteFolder(ctx context.Context, s *store.Store, id int64) error {
 			return err
 		}
 		if k, _ := res.RowsAffected(); k == 0 {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		return nil
 	})
@@ -324,8 +324,8 @@ func DeleteFolder(ctx context.Context, s *store.Store, id int64) error {
 // time, and only its free space is read again (no probe files, so a
 // sleeping disk is not written to). A folder never checked, or last found
 // missing or not writable, gets the full test anyway.
-func RecheckFolder(ctx context.Context, s *store.Store, id int64, downloadPaths []string, by domain.Actor, quick bool) (lf domain.LibraryFolder, changed bool, err error) {
-	if err := store.Get(ctx, s.Read(), "library_folders", id, &lf); err != nil {
+func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPaths []string, by domain.Actor, quick bool) (lf domain.LibraryFolder, changed bool, err error) {
+	if err := database.Get(ctx, s.Read(), "library_folders", id, &lf); err != nil {
 		return lf, false, err
 	}
 	if quick && lf.HealthCheckedAt != nil && (lf.Health == "ok" || lf.Health == "no_hardlink") {
@@ -336,7 +336,7 @@ func RecheckFolder(ctx context.Context, s *store.Store, id int64, downloadPaths 
 			now := time.Now().UTC()
 			err = s.Write(ctx, func(tx *sql.Tx) error {
 				_, err := tx.Exec(`UPDATE library_folders SET health_reason = ?, free_space = ?, updated_at = ?, updated_by = ? WHERE id = ?`,
-					reason, max(free, 0), store.FormatTime(now), actorText(by), id)
+					reason, max(free, 0), database.FormatTime(now), actorText(by), id)
 				return err
 			})
 			lf.HealthReason, lf.FreeSpace = reason, max(free, 0)
@@ -349,7 +349,7 @@ func RecheckFolder(ctx context.Context, s *store.Store, id int64, downloadPaths 
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE library_folders SET health = ?, health_reason = ?, free_space = ?, health_checked_at = ?,
 			updated_at = ?, updated_by = ? WHERE id = ?`,
-			h.State, h.Reason, max(h.FreeSpace, 0), store.FormatTime(now), store.FormatTime(now), actorText(by), id)
+			h.State, h.Reason, max(h.FreeSpace, 0), database.FormatTime(now), database.FormatTime(now), actorText(by), id)
 		return err
 	})
 	lf.Health, lf.HealthReason, lf.FreeSpace, lf.HealthCheckedAt = h.State, h.Reason, max(h.FreeSpace, 0), &now

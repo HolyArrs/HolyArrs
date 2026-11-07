@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func TestCleanupSkipsWriteWhenNothingCanExpire(t *testing.T) {
@@ -46,14 +46,14 @@ func TestCleanupDropsOnlyExpiredOrIdleSessions(t *testing.T) {
 		for _, session := range []struct {
 			hash, seen, expires string
 		}{
-			{hash: "expired-at-boundary", seen: store.FormatTime(now), expires: store.FormatTime(now)},
-			{hash: "idle-before-boundary", seen: store.FormatTime(idleBoundary.Add(-time.Second)), expires: store.FormatTime(now.Add(time.Hour))},
-			{hash: "seen-at-boundary", seen: store.FormatTime(idleBoundary), expires: store.FormatTime(now.Add(time.Hour))},
-			{hash: "fresh", seen: store.FormatTime(now), expires: store.FormatTime(now.Add(time.Hour))},
+			{hash: "expired-at-boundary", seen: database.FormatTime(now), expires: database.FormatTime(now)},
+			{hash: "idle-before-boundary", seen: database.FormatTime(idleBoundary.Add(-time.Second)), expires: database.FormatTime(now.Add(time.Hour))},
+			{hash: "seen-at-boundary", seen: database.FormatTime(idleBoundary), expires: database.FormatTime(now.Add(time.Hour))},
+			{hash: "fresh", seen: database.FormatTime(now), expires: database.FormatTime(now.Add(time.Hour))},
 		} {
 			if _, err := tx.Exec(`INSERT INTO sessions
 				(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family)
-				VALUES (?, 1, 'csrf', ?, ?, ?, ?, '', ?)`, session.hash, store.FormatTime(now), store.FormatTime(now),
+				VALUES (?, 1, 'csrf', ?, ?, ?, ?, '', ?)`, session.hash, database.FormatTime(now), database.FormatTime(now),
 				session.seen, session.expires, session.hash); err != nil {
 				return err
 			}

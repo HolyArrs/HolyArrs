@@ -3,13 +3,22 @@ package database
 import (
 	"context"
 	"database/sql"
+	"log"
 	"strings"
 	"time"
 )
 
-// eventGuard runs a hook so that a crash in it is caught. The program sets it
-// to the supervisor's guard at start.
-var eventGuard = func(_ string, f func()) { f() }
+// eventGuard runs a hook so that a crash in it never reaches the caller. By
+// default it logs the crash; the program sets it to the supervisor's guard at
+// start so the crash also shows in the health stages.
+var eventGuard = func(name string, f func()) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("database: %s hook crashed: %T", name, r)
+		}
+	}()
+	f()
+}
 
 // SetEventGuard sets the function that runs each event hook.
 func SetEventGuard(g func(name string, f func())) { eventGuard = g }

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Album search over HTTP (stage 3.3): the search routes take an album, a
@@ -66,7 +66,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 		var js []domain.Job
 		for _, j := range out.JobIDs {
 			var job domain.Job
-			if err := store.Get(ctx, s.Read(), "jobs", j, &job); err != nil {
+			if err := database.Get(ctx, s.Read(), "jobs", j, &job); err != nil {
 				t.Fatal(err)
 			}
 			js = append(js, job)
@@ -159,19 +159,19 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		rel := &domain.Release{SourceID: src.ID, Name: "Lab Band - First Light (2020) [FLAC]", LinkRef: "http://x/1.torrent", Protocol: "torrent",
 			Size: 300 << 20, Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: slots, FoundBy: "hand_search", JobID: &albumJob.ID,
 			State: "judged", Verdict: map[string]any{"outcome": "chosen", "passed": true, "rank": 1, "reasons": []any{
 				map[string]any{"step": "match", "rule": "album", "effect": "pass", "detail": "holds First Light"}}}}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		relID = rel.ID
 		_, err := tx.Exec("UPDATE jobs SET state = 'done', result = '{\"releases\":1,\"refused\":0}', ended_at = ? WHERE id = ?",
-			store.FormatTime(albumJob.CreatedAt), albumJob.ID)
+			database.FormatTime(albumJob.CreatedAt), albumJob.ID)
 		return err
 	})
 	if err != nil {

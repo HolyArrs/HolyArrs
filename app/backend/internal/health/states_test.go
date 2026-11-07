@@ -9,8 +9,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -23,7 +23,7 @@ func TestLinkStates(t *testing.T) {
 	now := time.Now().UTC()
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		src := func(name, state string, reason *string) error {
-			_, err := store.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: "http://x/" + name,
+			_, err := database.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: "http://x/" + name,
 				UseFor: domain.SourceUse{AutoSearch: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
 				Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600}, Priority: 25, State: state,
 				PauseReason: reason, Extra: map[string]string{}}, domain.System)
@@ -38,7 +38,7 @@ func TestLinkStates(t *testing.T) {
 			}
 		}
 		for _, x := range []struct{ n, st string }{{"d-ok", "ok"}, {"d-off", "disabled"}, {"d-down", "unreachable"}, {"d-auth", "auth_failed"}} {
-			if _, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: x.n, Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q/" + x.n,
+			if _, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: x.n, Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q/" + x.n,
 				Category: "c", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: x.st, LastError: "dial tcp 10.9.8.7:8080: /srv/private"}, domain.System); err != nil {
 				return err
 			}
@@ -55,7 +55,7 @@ func TestLinkStates(t *testing.T) {
 		for _, m := range []domain.MediaServer{{Name: "m-ok", Enabled: true, LastOKAt: &now}, {Name: "m-off"}, {Name: "m-new", Enabled: true},
 			{Name: "m-bad", Enabled: true, LastError: "401 from http://10.9.8.7/x?token=abc"}} {
 			m.Kind, m.URL = "jellyfin", "http://j/"+m.Name
-			if _, err := store.Insert(tx, "media_servers", &m, domain.System); err != nil {
+			if _, err := database.Insert(tx, "media_servers", &m, domain.System); err != nil {
 				return err
 			}
 		}

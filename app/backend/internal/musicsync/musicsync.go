@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Source is the metadata server's package list.
@@ -76,7 +76,7 @@ type Stats struct {
 
 // Sync is the local package store and its copy job.
 type Sync struct {
-	Store    *store.Store
+	Store    *database.Store
 	Source   Source
 	Pictures Pictures
 	// Every is the schedule (DefaultEvery when 0).
@@ -140,7 +140,7 @@ func (s *Sync) Load(ctx context.Context) error {
 	// A copy made before (cursor past 0) answers coverage until this one ends.
 	s.synced = s.synced || cursor > 0
 	s.stats.Packages, s.stats.Albums, s.stats.Bytes, s.stats.Cursor = len(arts), albs, size, cursor
-	if t, err := time.Parse(store.TimeLayout, at); err == nil {
+	if t, err := time.Parse(database.TimeLayout, at); err == nil {
 		s.stats.LastSync = t
 	}
 	s.mu.Unlock()
@@ -272,7 +272,7 @@ func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) (int, [
 		pics, _ := json.Marshal(artistPictures(p))
 		rows = append(rows, row{p, body, pics})
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, r := range rows {
 			if _, err := tx.Exec(`INSERT INTO music_packages (mbid, version, hash, rank, complete, body, pictures, stored_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)

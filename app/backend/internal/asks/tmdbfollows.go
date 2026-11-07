@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -63,7 +63,7 @@ func (s *Service) FollowShowTMDB(ctx context.Context, p Person, tmdbID string) (
 			return 0, err
 		}
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	return 0, s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("INSERT INTO tmdb_follows (user_id, kind, tmdb_id, created_at) VALUES (?, 'show', ?, ?) ON CONFLICT DO NOTHING", p.UserID, tmdbID, now)
 		return err
@@ -140,7 +140,7 @@ func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) 
 	if id != 0 {
 		return s.FollowTitle(ctx, p, id)
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("INSERT INTO tmdb_movie_follows (user_id, tmdb_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.UserID, tmdbID, now)
 		return err
@@ -220,7 +220,7 @@ func (s *Service) landMovieFollows(ctx context.Context, titleID int64, tmdbID st
 		}
 		keep[id] = true
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	moved := 0
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		moved = 0
@@ -287,7 +287,7 @@ func (s *Service) TellMovieFollows(ctx context.Context) (int, error) {
 	}
 	told := 0
 	for _, m := range ms {
-		now := store.FormatTime(s.now())
+		now := database.FormatTime(s.now())
 		text := m.name + " is in the Library"
 		var tell []person
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -439,7 +439,7 @@ func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, erro
 		})
 		return 0, nil
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	text := name + " is in the Library"
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, uid := range all {

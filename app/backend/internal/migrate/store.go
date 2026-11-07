@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // MaxSnapshot is the largest Snapshot kept (its JSON, in bytes).
@@ -35,7 +35,7 @@ type Saved struct {
 }
 
 // Save keeps a Snapshot for owner and returns its row.
-func Save(ctx context.Context, st *store.Store, owner int64, s *Snapshot) (Saved, error) {
+func Save(ctx context.Context, st *database.Store, owner int64, s *Snapshot) (Saved, error) {
 	var row Saved
 	err := st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
@@ -93,7 +93,7 @@ func scanSaved(sc interface{ Scan(...any) error }, extra ...any) (Saved, error) 
 }
 
 // List lists the kept Snapshots, newest first.
-func List(ctx context.Context, st *store.Store) ([]Saved, error) {
+func List(ctx context.Context, st *database.Store) ([]Saved, error) {
 	rows, err := st.Read().QueryContext(ctx, `SELECT `+savedCols+` FROM migrate_snapshots ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func List(ctx context.Context, st *store.Store) ([]Saved, error) {
 }
 
 // Get returns one kept Snapshot and its row.
-func Get(ctx context.Context, st *store.Store, id int64) (Saved, *Snapshot, error) {
+func Get(ctx context.Context, st *database.Store, id int64) (Saved, *Snapshot, error) {
 	var data string
 	s, err := scanSaved(st.Read().QueryRowContext(ctx, `SELECT `+savedCols+`, data FROM migrate_snapshots WHERE id = ?`, id), &data)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -128,7 +128,7 @@ func Get(ctx context.Context, st *store.Store, id int64) (Saved, *Snapshot, erro
 }
 
 // Delete removes one kept Snapshot.
-func Delete(ctx context.Context, st *store.Store, id int64) error {
+func Delete(ctx context.Context, st *database.Store, id int64) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, `DELETE FROM migrate_snapshots WHERE id = ?`, id)
 		if err != nil {

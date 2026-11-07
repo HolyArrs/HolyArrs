@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const relName = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
@@ -148,7 +148,7 @@ func TestExecuteRefusedStepsDoNothing(t *testing.T) {
 // --- through the store ---
 
 type world struct {
-	s                 *store.Store
+	s                 *database.Store
 	slotID, dlID, vID int64
 	dl, lib           string
 }
@@ -157,7 +157,7 @@ func ptr[T any](v T) *T { return &v }
 
 func setup(t *testing.T) world {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,31 +173,31 @@ func setup(t *testing.T) world {
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: FolderName(ti.Name, 2024), IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotDownloading}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "holyarrs", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: d.ID, SlotIDs: []int64{sl.ID}, ExternalID: "abc", Progress: 1, State: "finished",
 			FilesSeen: []domain.SeenFile{{Name: relName + ".mkv", Size: 2048}}, SavePath: w.dl, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		w.slotID, w.dlID, w.vID = sl.ID, dl.ID, v.ID
@@ -239,23 +239,23 @@ func TestImportPlacesAndRecords(t *testing.T) {
 	if imp.State != "done" || len(imp.Result) != 1 || imp.Result[0].PlacedBy != "hardlink" {
 		t.Fatalf("import %+v", imp)
 	}
-	files, _ := store.Select[domain.File](ctx, w.s.Read(), "files", "")
+	files, _ := database.Select[domain.File](ctx, w.s.Read(), "files", "")
 	if len(files) != 1 || files[0].Origin != "imported" || files[0].PlacedBy != "hardlink" || files[0].VersionID != w.vID ||
 		files[0].RelativePath != filepath.ToSlash(filepath.Join("Dune - Part Two (2024)", "Dune - Part Two (2024) 1080p WEB.mkv")) {
 		t.Fatalf("files %+v", files)
 	}
 	var sl domain.Slot
-	_ = store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
 	if sl.State != domain.SlotInLibrary || sl.FileID == nil || *sl.FileID != files[0].ID {
 		t.Fatalf("slot %+v", sl)
 	}
 	var d domain.Download
-	_ = store.Get(ctx, w.s.Read(), "downloads", w.dlID, &d)
+	_ = database.Get(ctx, w.s.Read(), "downloads", w.dlID, &d)
 	if d.State != "finished" && d.State != "seeding" {
 		t.Fatalf("download %s", d.State)
 	}
 	// The import Event names the movie, the slot and where each file went.
-	es, _, _ := w.s.Events(ctx, store.EventFilter{Kinds: []string{"import_done"}})
+	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{"import_done"}})
 	if len(es) != 1 || es[0].TitleID == nil || es[0].SlotID == nil || es[0].Data["from"] == nil {
 		t.Fatalf("import events %+v", es)
 	}

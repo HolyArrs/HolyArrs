@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // doctor copies the config folder, runs every health check once on the
@@ -30,7 +30,7 @@ func doctor(ctx context.Context, o options, out io.Writer) error {
 	if err := copyConfig(o.ConfigDir, tmp); err != nil {
 		return fmt.Errorf("copying the config folder: %w", err)
 	}
-	s, err := store.Open(tmp, store.Options{})
+	s, err := database.Open(tmp, database.Options{})
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func copyConfig(from, to string) error {
 }
 
 // diagnose returns the report lines.
-func diagnose(ctx context.Context, s *store.Store, dir string, now time.Time) ([]string, error) {
+func diagnose(ctx context.Context, s *database.Store, dir string, now time.Time) ([]string, error) {
 	bm := &backup.Manager{Store: s, Dir: dir, Version: "doctor"}
 	he := &health.Engine{Store: s, Version: "doctor", Now: func() time.Time { return now },
 		Backups: func(ctx context.Context) (health.Backups, error) {
@@ -119,7 +119,7 @@ func diagnose(ctx context.Context, s *store.Store, dir string, now time.Time) ([
 	}
 	out = append(out, "== Jobs that failed in the last 7 days")
 	rows, err := db.QueryContext(ctx, "SELECT kind, COALESCE(error, ''), count(*) FROM jobs WHERE state = 'failed' AND updated_at > ? GROUP BY kind, error ORDER BY 3 DESC LIMIT 20",
-		store.FormatTime(now.Add(-7*24*time.Hour)))
+		database.FormatTime(now.Add(-7*24*time.Hour)))
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func diagnose(ctx context.Context, s *store.Store, dir string, now time.Time) ([
 	}
 	rows.Close()
 	out = append(out, "== Problem Events in the last 7 days")
-	evs, _, err := s.Events(ctx, store.EventFilter{Limit: 500})
+	evs, _, err := s.Events(ctx, database.EventFilter{Limit: 500})
 	if err != nil {
 		return nil, err
 	}

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Joining through an invite with Plex, Jellyfin or Emby instead of a new
@@ -144,11 +144,11 @@ func (a *Auth) inviteJoin(ctx context.Context, tok, provider, extID, extName str
 			return err
 		}
 		u.Name = name
-		if id, err = store.Insert(tx, "users", &u, domain.System); err != nil {
+		if id, err = database.Insert(tx, "users", &u, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-			id, provider, extID, truncate(extName, 200), store.FormatTime(a.now())); err != nil {
+			id, provider, extID, truncate(extName, 200), database.FormatTime(a.now())); err != nil {
 			return err
 		}
 		return a.useInvite(tx, tok, id)

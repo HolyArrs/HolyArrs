@@ -11,15 +11,15 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // An ask's Event names who asked, who decided and the decline note, so on
 // /live it reaches people who approve only, not every manager; other
 // Events (Reports) still reach managers (coord-1330a).
 func TestAskEventsReachOnlyApproversLive(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

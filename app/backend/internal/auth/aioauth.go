@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Signing in an AI app (roadmap #89): instead of pasting an AI key, an AI
@@ -513,7 +513,7 @@ func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
 		return "", err
 	}
 	k := keyPrefix + token(32)
-	now := store.FormatTime(a.now())
+	now := database.FormatTime(a.now())
 	by := domain.Actor{Kind: "user", ID: c.user}
 	actor, _ := json.Marshal(by)
 	scopes, _ := json.Marshal([]string{ScopeMCP})

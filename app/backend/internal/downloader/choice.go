@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Back-off after a Downloader fails: 1 minute, doubling, at most 30.
@@ -189,7 +189,7 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 			wait = backoffMost
 		}
 		_, err := tx.Exec("UPDATE downloaders SET state = ?, fail_count = fail_count + 1, backoff_until = ?, last_error = ?, checked_at = ?, updated_at = ? WHERE id = ?",
-			state, store.FormatTime(now.Add(wait)), firstLine(cause.Error()), store.FormatTime(now), store.FormatTime(now), d.ID)
+			state, database.FormatTime(now.Add(wait)), firstLine(cause.Error()), database.FormatTime(now), database.FormatTime(now), d.ID)
 		return err
 	})
 	m.publish("downloader", map[string]any{"id": d.ID, "state": state})
@@ -203,7 +203,7 @@ func (m *Manager) downloaderOK(ctx context.Context, d domain.Downloader) {
 	now := m.now()
 	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE downloaders SET state = CASE WHEN state = 'disabled' THEN state ELSE 'ok' END, fail_count = 0, backoff_until = NULL,
-			last_error = '', checked_at = ?, updated_at = ? WHERE id = ?`, store.FormatTime(now), store.FormatTime(now), d.ID)
+			last_error = '', checked_at = ?, updated_at = ? WHERE id = ?`, database.FormatTime(now), database.FormatTime(now), d.ID)
 		return err
 	})
 	m.publish("downloader", map[string]any{"id": d.ID, "state": "ok"})
@@ -240,7 +240,7 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 	}
 	if d.CheckedAt == nil || m.now().Sub(*d.CheckedAt) > time.Minute {
 		_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE downloaders SET checked_at = ? WHERE id = ?", store.FormatTime(m.now()), d.ID)
+			_, err := tx.Exec("UPDATE downloaders SET checked_at = ? WHERE id = ?", database.FormatTime(m.now()), d.ID)
 			return err
 		})
 	}
@@ -250,7 +250,7 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 // CheckAll is the status check: every Downloader that is not paused or
 // removed is asked once.
 func (m *Manager) CheckAll(ctx context.Context) {
-	dls, err := store.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 AND state != 'disabled' ORDER BY id")
+	dls, err := database.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 AND state != 'disabled' ORDER BY id")
 	if err != nil {
 		return
 	}

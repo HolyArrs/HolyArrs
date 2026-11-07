@@ -16,8 +16,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 //go:embed testdata/synthetic-pack.json
@@ -175,7 +175,7 @@ func TestPickRuleTraitContextsAndDuplicateNames(t *testing.T) {
 		t.Fatalf("duplicate-name error = %v", err)
 	}
 
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestMaximumAcceptedPerMinuteLimitStaysSafeInJudge(t *testing.T) {
 }
 
 func TestImportIsOneInactiveWriteAndDuplicateConflicts(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestImportIsOneInactiveWriteAndDuplicateConflicts(t *testing.T) {
 }
 
 func TestRejectedImportHasNoSideEffects(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func TestCallerInputErrorsAreClassified(t *testing.T) {
 }
 
 func TestListAndExportRevalidateStoredPack(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,9 +317,9 @@ func TestListAndExportRevalidateStoredPack(t *testing.T) {
 	}
 }
 
-func importedPack(t *testing.T) (*store.Store, Pack) {
+func importedPack(t *testing.T) (*database.Store, Pack) {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,7 +331,7 @@ func importedPack(t *testing.T) (*store.Store, Pack) {
 	return st, p
 }
 
-func addSecondRule(t *testing.T, st *store.Store, p Pack) Pack {
+func addSecondRule(t *testing.T, st *database.Store, p Pack) Pack {
 	t.Helper()
 	second := p.PickRules[0]
 	second.ID, second.Name = "balanced-web-copy", "Balanced web copy"
@@ -432,7 +432,7 @@ func TestApplyRuleNameConflictRollsBackAllSelections(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "pick_rules", &domain.PickRules{Name: "Balanced web copy", Kinds: []string{"movie"}, Revision: 1, Body: domain.GoodEveryday()}, domain.System)
+		_, err := database.Insert(tx, "pick_rules", &domain.PickRules{Name: "Balanced web copy", Kinds: []string{"movie"}, Revision: 1, Body: domain.GoodEveryday()}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -483,7 +483,7 @@ func TestApplyIgnoresUnselectedBehaviorRace(t *testing.T) {
 	}
 }
 
-func tableCounts(t *testing.T, st *store.Store, tables ...string) []int {
+func tableCounts(t *testing.T, st *database.Store, tables ...string) []int {
 	t.Helper()
 	out := make([]int, len(tables))
 	for i, table := range tables {

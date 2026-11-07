@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Tags (#108): a grab goes to the Downloaders sharing a tag with the title,
@@ -73,7 +73,7 @@ func TestGrabWithNoDownloaderForTheTagsWaitsOnADecision(t *testing.T) {
 		t.Fatalf("the Job should end, not retry: %v", err)
 	}
 	var sl domain.Slot
-	if err := store.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
 	if sl.State != domain.SlotNeedsADecision || sl.LastReason == nil || !strings.HasPrefix(*sl.LastReason, "not sent: no torrent Downloader has this title's tags (anime)") {

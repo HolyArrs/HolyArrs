@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The client controls: what the Downloaders themselves do with a download
@@ -63,7 +63,7 @@ func asTorrent(e downloader.Engine, f func(downloader.TorrentController) error) 
 
 func clientControlError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such download")
 	case errors.Is(err, downloader.ErrNotActive), errors.Is(err, downloader.ErrNotSupported), errors.Is(err, downloader.ErrReadOnly):
 		fail(w, http.StatusConflict, err.Error())
@@ -159,13 +159,13 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	var d domain.Download
-	if err := store.Get(ctx, db, "downloads", id, &d); err != nil {
+	if err := database.Get(ctx, db, "downloads", id, &d); err != nil {
 		clientControlError(w, err)
 		return
 	}
 	out := DownloadDetailView{Log: []DownloadLogLine{}}
 	var dr domain.Downloader
-	if store.Get(ctx, db, "downloaders", d.DownloaderID, &dr) == nil {
+	if database.Get(ctx, db, "downloaders", d.DownloaderID, &dr) == nil {
 		out.Downloader = dr.Name
 	}
 	switch d.StartedBy.Kind {
@@ -190,7 +190,7 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 		var l DownloadLogLine
 		var at string
 		if rows.Scan(&at, &l.Kind, &l.Summary) == nil {
-			l.At, _ = time.Parse(store.TimeLayout, at)
+			l.At, _ = time.Parse(database.TimeLayout, at)
 			out.Log = append(out.Log, l)
 		}
 	}
@@ -388,7 +388,7 @@ func (a *API) speedLimit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var d domain.Downloader
-	if err := store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d); err != nil || d.Removed {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d); err != nil || d.Removed {
 		fail(w, http.StatusNotFound, "no such Downloader")
 		return
 	}

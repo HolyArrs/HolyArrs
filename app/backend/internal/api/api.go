@@ -32,6 +32,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -49,7 +50,7 @@ import (
 
 // Server is what the API needs.
 type Server struct {
-	Store *store.Store
+	Store *database.Store
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
 	DLSync   *dlsync.Sync
@@ -763,7 +764,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	var vs []domain.Version
 	if facts != nil {
 		vs = facts.versions[t.ID]
-	} else if vs, err = store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
+	} else if vs, err = database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
 		return v, err
 	}
 	for _, ver := range vs {
@@ -797,7 +798,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	var slots []domain.Slot
 	if batch != nil {
 		slots = batch.slots[t.ID]
-	} else if slots, err = store.Select[domain.Slot](ctx, db, "slots",
+	} else if slots, err = database.Select[domain.Slot](ctx, db, "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID); err != nil {
 		return v, err
 	}
@@ -806,7 +807,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		if batch != nil {
 			ver = batch.labels[s.VersionID]
 		} else {
-			_ = store.Get(ctx, db, "versions", s.VersionID, &ver)
+			_ = database.Get(ctx, db, "versions", s.VersionID, &ver)
 		}
 		sv := SlotView{ID: s.ID, Version: ver.Label, VersionID: ver.ID, State: string(s.State), StateLabel: StateLabels[s.State], DownloadID: s.ActiveDownloadID}
 		if s.LastReason != nil {
@@ -818,7 +819,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			if batch != nil {
 				d, found = batch.downloads[*s.ActiveDownloadID]
 			} else {
-				found = store.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil
+				found = database.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil
 			}
 			if found {
 				dv := downloadView(d)
@@ -831,7 +832,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			if batch != nil {
 				f, found = batch.files[*s.FileID]
 			} else {
-				found = store.Get(ctx, db, "files", *s.FileID, &f) == nil
+				found = database.Get(ctx, db, "files", *s.FileID, &f) == nil
 			}
 			if found {
 				sv.File = &f
@@ -882,7 +883,7 @@ func gateReason(t domain.Title, open bool) string {
 }
 
 func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
-	ts, err := a.s.Store.SearchTitles(r.Context(), r.URL.Query().Get("q"))
+	ts, err := store.SearchTitles(r.Context(), a.s.Store, r.URL.Query().Get("q"))
 	if errors.Is(err, store.ErrTitleSearchQuery) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
@@ -933,7 +934,7 @@ func (a *API) titleID(w http.ResponseWriter, r *http.Request) (domain.Title, boo
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var t domain.Title
 	if err == nil {
-		err = store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t)
+		err = database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t)
 	}
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such Title")
@@ -951,7 +952,7 @@ func limit(r *http.Request, def int) int {
 }
 
 func (a *API) listDownloads(w http.ResponseWriter, r *http.Request) {
-	ds, err := store.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
+	ds, err := database.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
 	if err != nil {
 		internal(w, err)
 		return
@@ -963,7 +964,7 @@ func (a *API) listDownloads(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listImports(w http.ResponseWriter, r *http.Request) {
-	is, err := store.Select[domain.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
+	is, err := database.Select[domain.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
 	if err != nil {
 		internal(w, err)
 		return
@@ -1001,7 +1002,7 @@ func parseDay(v string) (time.Time, error) {
 // to is a day that is included (or an exact time that is not).
 func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	f := store.EventFilter{Limit: limit(r, 50)}
+	f := database.EventFilter{Limit: limit(r, 50)}
 	if v := q.Get("title"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
@@ -1177,7 +1178,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	// The audit trail (sign-ins, API keys, settings changes) is only for
 	// the owner and people who manage users or settings.
 	if who, signed := auth.From(r.Context()); signed && !who.MaySeeAudit() {
-		f.HideKinds = store.AuditEventKinds
+		f.HideKinds = database.AuditEventKinds
 	}
 	// Asks' Events name who asked and who decided, with the decline note:
 	// only for people who approve, as on the asks routes.
@@ -1238,7 +1239,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listJobs(w http.ResponseWriter, r *http.Request) {
-	js, err := store.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
+	js, err := database.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
 	if err != nil {
 		internal(w, err)
 		return

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.1.3 minor 5: Windows device names get a suffix so the path can be made.
@@ -142,7 +142,7 @@ func TestReplaceWithNewNameSurvivesCrashAfterHold(t *testing.T) {
 		t.Fatalf("held %v", held)
 	}
 	var old domain.File
-	_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	rel, _ := filepath.Rel(w.lib, held[0])
 	if old.State != "replaced" || old.RelativePath != filepath.ToSlash(rel) {
 		t.Fatalf("old %s %q, held at %s", old.State, old.RelativePath, rel)

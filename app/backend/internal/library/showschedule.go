@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Show refresh rules (Sonarr's show refresh, backend/jobs.md task 9).
@@ -54,10 +54,10 @@ func ShouldRefreshShow(t domain.Title, f ShowFacts, now time.Time) (yes bool, wh
 }
 
 // showFacts reads the facts the refresh rules need for one show.
-func showFacts(ctx context.Context, db store.Lister, titleID int64, now time.Time) (ShowFacts, error) {
+func showFacts(ctx context.Context, db database.Lister, titleID int64, now time.Time) (ShowFacts, error) {
 	var f ShowFacts
 	rows, err := db.QueryContext(ctx, `SELECT COALESCE(name, ''), air_date FROM items WHERE title_id = ? AND kind = 'episode'
-		AND json_extract(numbers, '$.season') > 0 AND air_date IS NOT NULL AND air_date <= ?`, titleID, store.FormatTime(now))
+		AND json_extract(numbers, '$.season') > 0 AND air_date IS NOT NULL AND air_date <= ?`, titleID, database.FormatTime(now))
 	if err != nil {
 		return f, err
 	}
@@ -70,7 +70,7 @@ func showFacts(ctx context.Context, db store.Lister, titleID int64, now time.Tim
 		if placeholderNames[name] {
 			f.AiredWithoutName = true
 		}
-		if t, err := time.Parse(store.TimeLayout, air); err == nil && (f.LastAired == nil || t.After(*f.LastAired)) {
+		if t, err := time.Parse(database.TimeLayout, air); err == nil && (f.LastAired == nil || t.After(*f.LastAired)) {
 			f.LastAired = &t
 		}
 	}
@@ -83,7 +83,7 @@ const KindRefreshShows = "refresh_shows"
 // ShowRefreshPlan picks the shows a refresh-all run covers.
 func (s *Service) ShowRefreshPlan(ctx context.Context, byHand bool) (ids []int64, why map[int64]string, err error) {
 	db := s.Store.Read()
-	ts, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' ORDER BY sort_name, id")
+	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' ORDER BY sort_name, id")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,7 +118,7 @@ func (s *Service) OpenEpisodeGates(ctx context.Context) (int, error) {
 	wait := time.Duration(defs.WaitMinutes) * time.Minute
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT i.title_id FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
 		WHERE i.kind = 'episode' AND s.state = 'not_out_yet' AND t.state != 'removed' AND i.air_date IS NOT NULL AND i.air_date <= ?`,
-		store.FormatTime(now.Add(-wait)))
+		database.FormatTime(now.Add(-wait)))
 	if err != nil {
 		return 0, err
 	}
@@ -137,7 +137,7 @@ func (s *Service) OpenEpisodeGates(ctx context.Context) (int, error) {
 		var opened []int64
 		var t domain.Title
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-			if err := store.Get(ctx, tx, "titles", id, &t); err != nil {
+			if err := database.Get(ctx, tx, "titles", id, &t); err != nil {
 				return err
 			}
 			var err error

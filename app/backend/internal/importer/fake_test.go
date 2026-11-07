@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func setFake(t *testing.T, s *store.Store, key, value string) {
+func setFake(t *testing.T, s *database.Store, key, value string) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, '2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}')
@@ -24,10 +24,10 @@ func setFake(t *testing.T, s *store.Store, key, value string) {
 	}
 }
 
-func releaseState(t *testing.T, s *store.Store, id int64) (string, string) {
+func releaseState(t *testing.T, s *database.Store, id int64) (string, string) {
 	t.Helper()
 	var r domain.Release
-	if err := store.Get(context.Background(), s.Read(), "releases", id, &r); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "releases", id, &r); err != nil {
 		t.Fatal(err)
 	}
 	why, _ := r.Verdict["turned_down_reason"].(string)

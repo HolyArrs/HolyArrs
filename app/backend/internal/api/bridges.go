@@ -10,8 +10,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Connect Jackett or Prowlarr (#96): a guided setup in Settings > Sources
@@ -427,7 +427,7 @@ func (a *API) bridgeOf(w http.ResponseWriter, r *http.Request) (bridge.Bridge, b
 		return bridge.Bridge{}, false
 	}
 	b, err := a.bridges().Get(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, database.ErrNotFound) {
 		fail(w, http.StatusNotFound, "no such connection")
 		return b, false
 	}

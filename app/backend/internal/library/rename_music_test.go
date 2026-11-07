@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // addLabArtist adds the lab artist with its details fetched: albums,
@@ -34,7 +34,7 @@ func refreshedLabArtist(t *testing.T, svc *Service) (int64, int64) {
 }
 
 // trackSlots maps "<album mbid>:<disc>:<track>" to the track's Slot.
-func trackSlots(t *testing.T, s *store.Store, titleID int64) map[string]int64 {
+func trackSlots(t *testing.T, s *database.Store, titleID int64) map[string]int64 {
 	t.Helper()
 	rows, err := s.Read().Query(`SELECT s.id, json_extract(p.source_ids, '$.musicbrainz'), json_extract(i.numbers, '$.disc'), json_extract(i.numbers, '$.track')
 		FROM slots s JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id WHERE i.title_id = ? AND i.kind = 'track' AND i.dropped_at IS NULL`, titleID)
@@ -56,7 +56,7 @@ func trackSlots(t *testing.T, s *store.Store, titleID int64) map[string]int64 {
 }
 
 // putTrack writes a track file and its File row.
-func putTrack(t *testing.T, s *store.Store, root string, vID int64, rel, origin string, slotIDs ...int64) domain.File {
+func putTrack(t *testing.T, s *database.Store, root string, vID int64, rel, origin string, slotIDs ...int64) domain.File {
 	t.Helper()
 	writeFile(t, filepath.Join(root, filepath.FromSlash(rel)), "audio:"+rel)
 	release := "Lab Band - Old Days (2010) [FLAC]"
@@ -65,7 +65,7 @@ func putTrack(t *testing.T, s *store.Store, root string, vID int64, rel, origin 
 	if slotIDs == nil {
 		f.SlotIDs = []int64{}
 	}
-	if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", &f, domain.System); return err }); err != nil {
+	if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", &f, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
 	return f

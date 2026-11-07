@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Explore → Music, flag music_rows_v7 (plan 2026-10-23): the v3 rows plus
@@ -551,7 +551,7 @@ func (a *API) musicCursorSecret(ctx context.Context) ([]byte, error) {
 			return nil, err
 		}
 		v = base64.RawURLEncoding.EncodeToString(b)
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		by, _ := json.Marshal(domain.System)
 		err = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?) ON CONFLICT (grp, key) DO NOTHING`, key, v, now, string(by), now, string(by))

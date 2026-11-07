@@ -18,8 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // sameName says whether a looked-up name is the expected one (letters and
@@ -417,9 +417,9 @@ func (w *world) artists(ctx context.Context) error {
 			return fmt.Errorf("%s: %w", e.Name, err)
 		}
 		w.m.Titles[key] = id
-		parts, err := store.Select[domain.Part](ctx, w.s.Read(), "parts",
+		parts, err := database.Select[domain.Part](ctx, w.s.Read(), "parts",
 			"title_id = ? AND kind = 'album' AND included = 1 AND release_type = 'album' AND release_date IS NOT NULL AND release_date < ? ORDER BY release_date",
-			id, store.FormatTime(time.Now()))
+			id, database.FormatTime(time.Now()))
 		if err != nil {
 			return err
 		}
@@ -473,7 +473,7 @@ func spread(n, k int) []int {
 // posters refreshes every movie and show without a cached poster, which
 // fills the artwork cache through the app's own refresh.
 func (w *world) posters(ctx context.Context) error {
-	ts, err := store.Select[domain.Title](ctx, w.s.Read(), "titles", "kind IN ('movie', 'show') AND state != 'removed' AND artwork NOT LIKE '%poster:%' ORDER BY id")
+	ts, err := database.Select[domain.Title](ctx, w.s.Read(), "titles", "kind IN ('movie', 'show') AND state != 'removed' AND artwork NOT LIKE '%poster:%' ORDER BY id")
 	if err != nil {
 		return err
 	}

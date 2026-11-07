@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Runs inside the lab network: go test -tags lab ./internal/source/
@@ -35,11 +35,11 @@ func TestLabFakeIndexer(t *testing.T) {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
 	var sl domain.Slot
-	_ = store.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
+	_ = database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
 	if sl.State != domain.SlotChosen {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
-	rels, _ := store.Select[domain.Release](context.Background(), f.s.Read(), "releases", "state = 'chosen'")
+	rels, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "state = 'chosen'")
 	if len(rels) != 1 || rels[0].Name != "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS" {
 		t.Fatalf("chosen %+v", rels)
 	}

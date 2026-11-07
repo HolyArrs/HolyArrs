@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -25,13 +25,13 @@ type Manager interface {
 
 // Reader timings.
 const (
-	callTimeout  = 4 * time.Second   // one read of one client
+	callTimeout = 4 * time.Second // one read of one client
 	// sabFullTimeout is a SABnzbd read that pages the whole finished list
 	// (up to 25 pages on a big history); later reads use callTimeout.
 	sabFullTimeout = 30 * time.Second
-	kickDebounce = 1 * time.Second   // a kick reads at most this soon after the last read
-	widenCap     = 300 * time.Second // failures widen the cadence up to this
-	flushTimeout = 5 * time.Second   // FinalFlush's own deadline
+	kickDebounce   = 1 * time.Second   // a kick reads at most this soon after the last read
+	widenCap       = 300 * time.Second // failures widen the cadence up to this
+	flushTimeout   = 5 * time.Second   // FinalFlush's own deadline
 )
 
 // scanEvery is the coordinator's tick (tests shorten it).
@@ -46,7 +46,7 @@ var restartBackoff = []time.Duration{2 * time.Second, 5 * time.Second, 15 * time
 // Around), so safe mode and the part switch govern it.
 type Sync struct {
 	Store   *Store
-	DB      *store.Store
+	DB      *database.Store
 	Manager Manager
 	Lines   LinesFunc
 	Match   MatchFunc
@@ -293,7 +293,7 @@ func (s *Sync) ensurePollers(ctx context.Context, wg *sync.WaitGroup) {
 	if s.DB == nil {
 		return
 	}
-	all, err := store.Select[domain.Downloader](ctx, s.DB.Read(), "downloaders", "removed = 0")
+	all, err := database.Select[domain.Downloader](ctx, s.DB.Read(), "downloaders", "removed = 0")
 	if err != nil {
 		return
 	}
@@ -373,7 +373,7 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 			return
 		}
 		var d domain.Downloader
-		if err := store.Get(ctx, s.DB.Read(), "downloaders", id, &d); err != nil || d.Removed {
+		if err := database.Get(ctx, s.DB.Read(), "downloaders", id, &d); err != nil || d.Removed {
 			if err == nil || ctx.Err() != nil {
 				return
 			}

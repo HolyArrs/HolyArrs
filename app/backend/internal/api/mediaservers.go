@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // mediaServerRoutes are the media server link routes (5.1.14).
@@ -59,7 +59,7 @@ func mediaServerError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusConflict, err.Error())
 	case mediaserver.IsInputError(err):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such media server")
 	default:
 		internal(w, err)
@@ -80,7 +80,7 @@ func readMediaServer(w http.ResponseWriter, r *http.Request) (mediaserver.Input,
 }
 
 func (a *API) listMediaServers(w http.ResponseWriter, r *http.Request) {
-	ms, err := store.Select[domain.MediaServer](r.Context(), a.s.Store.Read(), "media_servers", "1=1 ORDER BY name")
+	ms, err := database.Select[domain.MediaServer](r.Context(), a.s.Store.Read(), "media_servers", "1=1 ORDER BY name")
 	if err != nil {
 		internal(w, err)
 		return
@@ -146,7 +146,7 @@ func (a *API) deleteMediaServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var m domain.MediaServer
-	if err := store.Get(r.Context(), a.s.Store.Read(), "media_servers", id, &m); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "media_servers", id, &m); err != nil {
 		mediaServerError(w, err)
 		return
 	}
@@ -168,7 +168,7 @@ func (a *API) testMediaServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var m domain.MediaServer
-	if err := store.Get(r.Context(), a.s.Store.Read(), "media_servers", id, &m); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "media_servers", id, &m); err != nil {
 		mediaServerError(w, err)
 		return
 	}

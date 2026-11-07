@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func audioMP4Box(kind string, payload []byte) []byte {
@@ -69,11 +69,11 @@ func setVersionAudio(t *testing.T, w world, languages ...string) {
 	t.Helper()
 	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
 		v := domain.Version{}
-		if err := store.Get(context.Background(), tx, "versions", w.vID, &v); err != nil {
+		if err := database.Get(context.Background(), tx, "versions", w.vID, &v); err != nil {
 			return err
 		}
 		v.AudioLanguages = append([]string(nil), languages...)
-		return store.Update(tx, "versions", &v, domain.System)
+		return database.Update(tx, "versions", &v, domain.System)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestMovieImportRejectsFilenameLanguageWhenInspectedAudioDoesNotMatch(t *tes
 
 	ctx := context.Background()
 	var old domain.File
-	if err := store.Get(ctx, w.s.Read(), "files", oldID, &old); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "files", oldID, &old); err != nil {
 		t.Fatal(err)
 	}
 	slot := slotOf(t, w)
@@ -112,13 +112,13 @@ func TestMovieImportRejectsFilenameLanguageWhenInspectedAudioDoesNotMatch(t *tes
 		t.Fatalf("old copy or Slot changed: file=%+v slot=%+v", old, slot)
 	}
 	var release domain.Release
-	if err := store.Get(ctx, w.s.Read(), "releases", releaseID, &release); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "releases", releaseID, &release); err != nil {
 		t.Fatal(err)
 	}
 	if release.State == "turned_down" || release.Verdict["turned_down_reason"] != nil {
 		t.Fatalf("copy-specific mismatch globally turned down the Release: %+v", release)
 	}
-	files, err := store.Select[domain.File](ctx, w.s.Read(), "files", "")
+	files, err := database.Select[domain.File](ctx, w.s.Read(), "files", "")
 	if err != nil || len(files) != 1 {
 		t.Fatalf("audio mismatch placed another file: %+v %v", files, err)
 	}
@@ -134,20 +134,20 @@ func TestMovieImportPersistsInspectedDualAudioOnSelectedVersionOnly(t *testing.T
 	var otherSlotID int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var selected domain.Version
-		if err := store.Get(ctx, tx, "versions", w.vID, &selected); err != nil {
+		if err := database.Get(ctx, tx, "versions", w.vID, &selected); err != nil {
 			return err
 		}
 		other := &domain.Version{TitleID: selected.TitleID, Label: "French dub", PickRulesID: selected.PickRulesID,
 			LibraryFolderID: selected.LibraryFolderID, FolderName: selected.FolderName + " [French]", AudioLanguages: []string{"fr"}}
-		if _, err := store.Insert(tx, "versions", other, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", other, domain.System); err != nil {
 			return err
 		}
 		var selectedSlot domain.Slot
-		if err := store.Get(ctx, tx, "slots", w.slotID, &selectedSlot); err != nil {
+		if err := database.Get(ctx, tx, "slots", w.slotID, &selectedSlot); err != nil {
 			return err
 		}
 		otherSlot := &domain.Slot{ItemID: selectedSlot.ItemID, VersionID: other.ID, State: domain.SlotWanted}
-		if _, err := store.Insert(tx, "slots", otherSlot, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", otherSlot, domain.System); err != nil {
 			return err
 		}
 		otherSlotID = otherSlot.ID
@@ -160,7 +160,7 @@ func TestMovieImportPersistsInspectedDualAudioOnSelectedVersionOnly(t *testing.T
 	if err != nil || imp.State != "done" {
 		t.Fatalf("dual-language import: %+v %v", imp, err)
 	}
-	files, err := store.Select[domain.File](ctx, w.s.Read(), "files", "")
+	files, err := database.Select[domain.File](ctx, w.s.Read(), "files", "")
 	if err != nil || len(files) != 1 {
 		t.Fatalf("files: %+v %v", files, err)
 	}
@@ -170,7 +170,7 @@ func TestMovieImportPersistsInspectedDualAudioOnSelectedVersionOnly(t *testing.T
 	}
 	selected := slotOf(t, w)
 	var other domain.Slot
-	if err := store.Get(ctx, w.s.Read(), "slots", otherSlotID, &other); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "slots", otherSlotID, &other); err != nil {
 		t.Fatal(err)
 	}
 	if selected.State != domain.SlotInLibrary || selected.FileID == nil || other.State != domain.SlotWanted || other.FileID != nil {

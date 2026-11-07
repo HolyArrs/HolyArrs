@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func shareKind(kind string) func(string) (bool, string, error) {
@@ -50,8 +50,8 @@ func TestConfigShareFixFollowsTheKind(t *testing.T) {
 				t.Fatalf("not a FAIL:\n%s", r.Text())
 			}
 			fix := r.Checks[len(r.Checks)-1].Fix
-			if fix != store.ShareFix(c.kind) {
-				t.Errorf("fix %q, want store.ShareFix(%q) = %q", fix, c.kind, store.ShareFix(c.kind))
+			if fix != database.ShareFix(c.kind) {
+				t.Errorf("fix %q, want database.ShareFix(%q) = %q", fix, c.kind, database.ShareFix(c.kind))
 			}
 			for _, w := range c.has {
 				if !strings.Contains(fix, w) {
@@ -192,7 +192,7 @@ func runDoctorStartup(t *testing.T, dir string) Report {
 
 func rawExec(t *testing.T, dir, q string, args ...any) {
 	t.Helper()
-	db, err := sql.Open("sqlite", filepath.Join(dir, store.MainFile))
+	db, err := sql.Open("sqlite", filepath.Join(dir, database.MainFile))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +205,7 @@ func rawExec(t *testing.T, dir, q string, args ...any) {
 func migratedStore(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{NetworkShare: func(string) (bool, string, error) { return false, "", nil }})
+	s, err := database.Open(dir, database.Options{NetworkShare: func(string) (bool, string, error) { return false, "", nil }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestDoctorOnAnEmptyDatabaseIsOneWarning(t *testing.T) {
 
 func TestDoctorOnNewerDataSaysSo(t *testing.T) {
 	dir := migratedStore(t)
-	know, _ := store.SchemaVersions()
+	know, _ := database.SchemaVersions()
 	rawExec(t, dir, "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, 'future.sql', 't')", know+1)
 	r := runDoctorStartup(t, dir)
 	if dataFailed(r) {

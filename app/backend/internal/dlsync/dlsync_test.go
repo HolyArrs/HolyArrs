@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func jobs(js ...downloader.Job) map[string]downloader.Job {
@@ -219,13 +219,12 @@ func TestCursorsSharedSessionAndParseErrorDropsCursor(t *testing.T) {
 	}
 }
 
-func openDB(t *testing.T) *store.Store {
+func openDB(t *testing.T) *database.Store {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	return s
 }
-

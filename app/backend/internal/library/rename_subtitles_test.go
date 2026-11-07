@@ -10,13 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // putSubRow records a beside subtitle of a File, as the subtitle search does.
-func putSubRow(t *testing.T, s *store.Store, fileID int64, rel, lang string) {
+func putSubRow(t *testing.T, s *database.Store, fileID int64, rel, lang string) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO subtitles (created_at, created_by, updated_at, updated_by, file_id, language, place, relative_path, origin, state)
@@ -28,7 +28,7 @@ func putSubRow(t *testing.T, s *store.Store, fileID int64, rel, lang string) {
 	}
 }
 
-func subRows(t *testing.T, s *store.Store, fileID int64) map[string]string {
+func subRows(t *testing.T, s *database.Store, fileID int64) map[string]string {
 	t.Helper()
 	rows, err := s.Read().Query("SELECT relative_path, state FROM subtitles WHERE file_id = ?", fileID)
 	if err != nil {

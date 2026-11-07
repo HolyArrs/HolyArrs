@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // decode reads a JSON body into v; false means an answer was already sent.
@@ -56,7 +56,7 @@ func libraryError(w http.ResponseWriter, err error) {
 		errors.Is(err, library.ErrFolderAbsent), errors.Is(err, library.ErrNoMetadataIDs), errors.Is(err, library.ErrVersionLabel),
 		errors.Is(err, library.ErrTooManyVersions), errors.Is(err, library.ErrCopyChoice):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "not found")
 	case errors.Is(err, metadata.ErrNotFound):
 		fail(w, http.StatusNotFound, "no movie with that id")
@@ -126,7 +126,7 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var t domain.Title
-	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
 		internal(w, err)
 		return
 	}
@@ -188,7 +188,7 @@ func (a *API) editTitle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	_ = store.Get(r.Context(), a.s.Store.Read(), "titles", t.ID, &t)
+	_ = database.Get(r.Context(), a.s.Store.Read(), "titles", t.ID, &t)
 	v, err := a.titleView(r.Context(), t)
 	if err != nil {
 		internal(w, err)
@@ -349,7 +349,7 @@ type PickRulesView struct {
 }
 
 func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
-	ps, err := store.Select[domain.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
+	ps, err := database.Select[domain.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -371,7 +371,7 @@ func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := store.Select[domain.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	fs, err := database.Select[domain.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -553,7 +553,7 @@ func (a *API) refreshTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, tid := range body.TitleIDs {
 		var t domain.Title
-		if err := store.Get(r.Context(), a.s.Store.Read(), "titles", tid, &t); err != nil {
+		if err := database.Get(r.Context(), a.s.Store.Read(), "titles", tid, &t); err != nil {
 			fail(w, http.StatusNotFound, "no Title "+itoa(tid))
 			return
 		}

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestTurnedDownRemovalKeepsAttemptAuditLink(t *testing.T) {
@@ -16,10 +16,10 @@ func TestTurnedDownRemovalKeepsAttemptAuditLink(t *testing.T) {
 	id := addRelease(t, f, tv720, "turned_down")
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "Audit NZBGet", Adapter: "nzbget", Protocol: "usenet", URL: "http://nzbget", Category: "holyarrs", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		_, err := tx.Exec(`INSERT INTO downloader_attempts(downloader_id, release_id, slot_id, marker, category, state, created_at, updated_at)
 			VALUES(?, ?, ?, 'nzbget-<audit-fixture>', 'holyarrs', 'abandoned', ?, ?)`, d.ID, id, f.slotID, now, now)
 		return err

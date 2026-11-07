@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func replaceShowDownloadWithAudioMP4(t *testing.T, w showWorld, name string, languages ...string) {
@@ -42,11 +42,11 @@ func setShowVersionAudio(t *testing.T, w showWorld, languages ...string) {
 	t.Helper()
 	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var version domain.Version
-		if err := store.Get(context.Background(), tx, "versions", w.vID, &version); err != nil {
+		if err := database.Get(context.Background(), tx, "versions", w.vID, &version); err != nil {
 			return err
 		}
 		version.AudioLanguages = append([]string(nil), languages...)
-		return store.Update(tx, "versions", &version, domain.System)
+		return database.Update(tx, "versions", &version, domain.System)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestShowImportRejectsFilenameLanguageWhenInspectedAudioDoesNotMatch(t *test
 	if slot := w.slot(t, 1); slot.State != domain.SlotNeedsADecision || slot.FileID != nil {
 		t.Fatalf("show Slot did not wait for a decision: %+v", slot)
 	}
-	files, err := store.Select[domain.File](context.Background(), w.s.Read(), "files", "")
+	files, err := database.Select[domain.File](context.Background(), w.s.Read(), "files", "")
 	if err != nil || len(files) != 0 {
 		t.Fatalf("audio mismatch placed files: %+v %v", files, err)
 	}
@@ -84,20 +84,20 @@ func TestShowImportPersistsInspectedDualAudioOnSelectedVersionOnly(t *testing.T)
 	var otherSlotID int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var selected domain.Version
-		if err := store.Get(ctx, tx, "versions", w.vID, &selected); err != nil {
+		if err := database.Get(ctx, tx, "versions", w.vID, &selected); err != nil {
 			return err
 		}
 		other := &domain.Version{TitleID: selected.TitleID, Label: "French dub", PickRulesID: selected.PickRulesID,
 			LibraryFolderID: selected.LibraryFolderID, FolderName: selected.FolderName + " [French]", AudioLanguages: []string{"fr"}}
-		if _, err := store.Insert(tx, "versions", other, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", other, domain.System); err != nil {
 			return err
 		}
 		var selectedSlot domain.Slot
-		if err := store.Get(ctx, tx, "slots", w.slots[1], &selectedSlot); err != nil {
+		if err := database.Get(ctx, tx, "slots", w.slots[1], &selectedSlot); err != nil {
 			return err
 		}
 		otherSlot := &domain.Slot{ItemID: selectedSlot.ItemID, VersionID: other.ID, State: domain.SlotWanted}
-		if _, err := store.Insert(tx, "slots", otherSlot, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", otherSlot, domain.System); err != nil {
 			return err
 		}
 		otherSlotID = otherSlot.ID
@@ -110,7 +110,7 @@ func TestShowImportPersistsInspectedDualAudioOnSelectedVersionOnly(t *testing.T)
 	if err != nil || imp.State != "done" {
 		t.Fatalf("dual-language show import: %+v %v", imp, err)
 	}
-	files, err := store.Select[domain.File](ctx, w.s.Read(), "files", "")
+	files, err := database.Select[domain.File](ctx, w.s.Read(), "files", "")
 	if err != nil || len(files) != 1 {
 		t.Fatalf("files: %+v %v", files, err)
 	}
@@ -120,7 +120,7 @@ func TestShowImportPersistsInspectedDualAudioOnSelectedVersionOnly(t *testing.T)
 	}
 	selected := w.slot(t, 1)
 	var other domain.Slot
-	if err := store.Get(ctx, w.s.Read(), "slots", otherSlotID, &other); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "slots", otherSlotID, &other); err != nil {
 		t.Fatal(err)
 	}
 	if selected.State != domain.SlotBetterWanted || selected.FileID == nil || other.State != domain.SlotWanted || other.FileID != nil {

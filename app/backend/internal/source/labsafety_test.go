@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // labFeed serves the lab fake indexer's own feed file (research\lab\
@@ -40,7 +40,7 @@ func labFeed(t *testing.T) string {
 	return srv.URL + "/api"
 }
 
-func labExec(t *testing.T, s *store.Store, q string, args ...any) {
+func labExec(t *testing.T, s *database.Store, q string, args ...any) {
 	t.Helper()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }); err != nil {
 		t.Fatal(err)
@@ -49,7 +49,7 @@ func labExec(t *testing.T, s *store.Store, q string, args ...any) {
 
 func day(s string) string {
 	d, _ := time.Parse("2006-01-02", s)
-	return store.FormatTime(d)
+	return database.FormatTime(d)
 }
 
 // 4.3.5 on the lab feed, movies: the early 2160p copy and the program
@@ -72,7 +72,7 @@ func TestLabFeedMovieEarlyAndFake(t *testing.T) {
 func TestLabFeedEpisodeEarlyAndFake(t *testing.T) {
 	f := seedShow(t, labFeed(t), nil)
 	labExec(t, f.s, "UPDATE titles SET name = 'Arcane', sort_name = 'arcane', year = 2021, source_ids = '{\"tvdb\":\"371028\",\"imdb\":\"tt11126994\"}' WHERE id = ?", f.titleID)
-	labExec(t, f.s, "UPDATE items SET air_date = ?, air_day = '2021-11-06', runtime = 20 WHERE id = ?", store.FormatTime(time.Date(2021, 11, 6, 19, 0, 0, 0, time.UTC)), f.items["S01E01"])
+	labExec(t, f.s, "UPDATE items SET air_date = ?, air_day = '2021-11-06', runtime = 20 WHERE id = ?", database.FormatTime(time.Date(2021, 11, 6, 19, 0, 0, 0, time.UTC)), f.items["S01E01"])
 	if j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E01"]}, nil); j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
@@ -94,7 +94,7 @@ func TestLabFeedAlbumEarlyAndFake(t *testing.T) {
 	}
 	wantRefused(t, f.fixture, "Lab Lanterns - Harbour Light (2024) [FLAC] [WEB]", "posted_early")
 	wantRefused(t, f.fixture, "Lab Lanterns - Harbour Light (2024) [FLAC] PASSWORDED", "password_protected")
-	rs, _ := store.Select[domain.Release](context.Background(), f.s.Read(), "releases", "state = 'chosen'")
+	rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "state = 'chosen'")
 	if len(rs) != 1 || rs[0].Name != "Lab Lanterns - Harbour Light (2024) [FLAC]" {
 		t.Fatalf("chosen %+v", rs)
 	}

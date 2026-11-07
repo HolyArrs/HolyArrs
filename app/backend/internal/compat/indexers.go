@@ -15,10 +15,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Prowlarr's app sync (roadmap #85 phase 2; decision 0008 and its
@@ -367,14 +367,14 @@ func (h *handler) mayWriteSources(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-// ownSource reads a Source this side made; any other is store.ErrNotFound.
+// ownSource reads a Source this side made; any other is database.ErrNotFound.
 func (h *handler) ownSource(ctx context.Context, id int64) (domain.Source, error) {
 	var src domain.Source
-	if err := store.Get(ctx, h.Store.Read(), "sources", id, &src); err != nil {
+	if err := database.Get(ctx, h.Store.Read(), "sources", id, &src); err != nil {
 		return src, err
 	}
 	if src.Extra[extraSide] != h.side {
-		return src, store.ErrNotFound
+		return src, database.ErrNotFound
 	}
 	return src, nil
 }
@@ -471,7 +471,7 @@ func valueStringOf(kept, key string) string {
 }
 
 func (h *handler) listIndexers(w http.ResponseWriter, r *http.Request) {
-	srcs, err := store.Select[domain.Source](r.Context(), h.Store.Read(), "sources", "json_extract(extra, '$."+extraSide+"') = ? ORDER BY id", h.side)
+	srcs, err := database.Select[domain.Source](r.Context(), h.Store.Read(), "sources", "json_extract(extra, '$."+extraSide+"') = ? ORDER BY id", h.side)
 	if err != nil {
 		internalError(w, err)
 		return
@@ -586,7 +586,7 @@ func (h *handler) testIndexer(w http.ResponseWriter, r *http.Request) {
 // sourceFailure answers a Source that was not saved.
 func sourceFailure(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		notFound(w)
 	case errors.Is(err, source.ErrNoVault):
 		message(w, http.StatusServiceUnavailable, err.Error())

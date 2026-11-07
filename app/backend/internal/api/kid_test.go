@@ -21,11 +21,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -195,7 +195,7 @@ func (f *kidTMDB) provider() *metadata.TMDB {
 
 type kidRig struct {
 	srv   *httptest.Server
-	st    *store.Store
+	st    *database.Store
 	tmdb  *kidTMDB
 	owner *signedIn
 	ana   *signedIn // a member without a limit
@@ -214,7 +214,7 @@ var blockedIDs = []int64{9101, 9102, 9103, 9104, 9105}
 func newKidRig(t *testing.T, off ...parts.Part) *kidRig {
 	t.Helper()
 	dir := t.TempDir()
-	st, err := store.Open(dir, store.Options{})
+	st, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,7 +312,7 @@ func (k *kidRig) add(t *testing.T, kind, name, tmdbID, rating string, id int64, 
 		title := domain.Title{Kind: kind, Name: name, SortName: strings.ToLower(name), SourceIDs: ids, MetadataSource: src, Rating: rating,
 			WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released",
 			CinemaDate: cinema, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
 		if id != 0 {
@@ -333,14 +333,14 @@ func (k *kidRig) add(t *testing.T, kind, name, tmdbID, rating string, id int64, 
 			return err
 		}
 		item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
-		if _, err := store.Insert(tx, "items", &item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 			return err
 		}
 		version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: folderID, PickRulesID: rulesID}
-		if _, err := store.Insert(tx, "versions", &version, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "slots", &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotWanted}, domain.System)
+		_, err := database.Insert(tx, "slots", &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotWanted}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -788,7 +788,7 @@ func (s *slowDetails) Details(_ context.Context, kind, id string) (metadata.Deta
 }
 
 func TestKidRatingLookupsAtMostFour(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

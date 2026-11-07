@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // UpdateSchedule changes a schedule and, when turning it off, cancels its
@@ -18,7 +18,7 @@ import (
 func (q *Queue) UpdateSchedule(ctx context.Context, kind string, every *int64, enabled *bool, by domain.Actor, now time.Time) error {
 	var cancelled []domain.Job
 	err := q.s.Write(ctx, func(tx *sql.Tx) error {
-		scs, err := store.Select[domain.Schedule](ctx, tx, "schedules", "kind = ?", kind)
+		scs, err := database.Select[domain.Schedule](ctx, tx, "schedules", "kind = ?", kind)
 		if err != nil {
 			return err
 		}
@@ -40,17 +40,17 @@ func (q *Queue) UpdateSchedule(ctx context.Context, kind string, every *int64, e
 			next := now.Add(time.Duration(sc.EverySeconds) * time.Second)
 			sc.NextRun = &next
 		}
-		if err := store.Update(tx, "schedules", &sc, by); err != nil {
+		if err := database.Update(tx, "schedules", &sc, by); err != nil {
 			return err
 		}
 		if !disabling {
 			return nil
 		}
-		queued, err := store.Select[domain.Job](ctx, tx, "jobs", "kind = ? AND state = 'queued'", kind)
+		queued, err := database.Select[domain.Job](ctx, tx, "jobs", "kind = ? AND state = 'queued'", kind)
 		if err != nil {
 			return err
 		}
-		ts := store.FormatTime(now)
+		ts := database.FormatTime(now)
 		for _, j := range queued {
 			scheduled, _ := j.Params["scheduled"].(bool)
 			byHand, _ := j.Params["by_hand"].(bool)
@@ -175,7 +175,7 @@ func (q *Queue) scheduledJobLive(ctx context.Context, kind string) (bool, error)
 
 func (q *Queue) currentSchedule(ctx context.Context, before domain.Schedule, now time.Time) (domain.Schedule, bool, error) {
 	var current domain.Schedule
-	if err := store.Get(ctx, q.s.Read(), "schedules", before.ID, &current); err != nil {
+	if err := database.Get(ctx, q.s.Read(), "schedules", before.ID, &current); err != nil {
 		return current, false, err
 	}
 	return current, scheduleDueUnchanged(current, before, now) && !q.schedulePartOff(current.Kind), nil
@@ -195,7 +195,7 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 	var job *domain.Job
 	err = q.s.Write(ctx, func(tx *sql.Tx) error {
 		var current domain.Schedule
-		if err := store.Get(ctx, tx, "schedules", before.ID, &current); err != nil {
+		if err := database.Get(ctx, tx, "schedules", before.ID, &current); err != nil {
 			return err
 		}
 		if !scheduleDueUnchanged(current, before, now) || q.schedulePartOff(current.Kind) {
@@ -214,7 +214,7 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 		case scanErr == nil:
 			return nil
 		case errors.Is(scanErr, sql.ErrNoRows):
-			id, err = store.Insert(tx, "jobs", job, domain.System)
+			id, err = database.Insert(tx, "jobs", job, domain.System)
 			if err != nil {
 				return err
 			}
@@ -229,9 +229,9 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 		default:
 			return scanErr
 		}
-		ts := store.FormatTime(now)
+		ts := database.FormatTime(now)
 		_, err = tx.Exec("UPDATE schedules SET last_run = ?, next_run = ?, updated_at = ? WHERE id = ?",
-			ts, store.FormatTime(now.Add(time.Duration(current.EverySeconds)*time.Second)), ts, current.ID)
+			ts, database.FormatTime(now.Add(time.Duration(current.EverySeconds)*time.Second)), ts, current.ID)
 		return err
 	})
 	if err != nil {
@@ -264,8 +264,8 @@ func safeScheduleProbe(ctx context.Context, probe ScheduleProbe, now time.Time) 
 // Job gets the previous start as "last_start". It reads first and writes
 // only when something is due. A kind whose part is off is left due. It returns the kinds it queued.
 func (q *Queue) RunSchedules(ctx context.Context, now time.Time) ([]string, error) {
-	due, err := store.Select[domain.Schedule](ctx, q.s.Read(), "schedules",
-		"enabled = 1 AND (next_run IS NULL OR next_run <= ?) ORDER BY id", store.FormatTime(now))
+	due, err := database.Select[domain.Schedule](ctx, q.s.Read(), "schedules",
+		"enabled = 1 AND (next_run IS NULL OR next_run <= ?) ORDER BY id", database.FormatTime(now))
 	if err != nil || len(due) == 0 {
 		return nil, err
 	}

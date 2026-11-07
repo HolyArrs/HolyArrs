@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The torrent log: what happened to a torrent, for the panel's Log tab.
@@ -209,7 +209,7 @@ func (a *API) writeTorrentLog(ctx context.Context, downloaderID int64, hash stri
 	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		for _, l := range lines {
 			if _, err := tx.Exec("INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (?, ?, ?, ?, ?)",
-				downloaderID, hash, at.Format(store.TimeLayout), l.Kind, l.Summary); err != nil {
+				downloaderID, hash, at.Format(database.TimeLayout), l.Kind, l.Summary); err != nil {
 				return err
 			}
 		}
@@ -233,7 +233,7 @@ func (a *API) recordedLines(ctx context.Context, downloaderID int64, hash string
 		var l DownloadLogLine
 		var at string
 		if rows.Scan(&at, &l.Kind, &l.Summary) == nil {
-			l.At, _ = time.Parse(store.TimeLayout, at)
+			l.At, _ = time.Parse(database.TimeLayout, at)
 			out = append(out, l)
 		}
 	}

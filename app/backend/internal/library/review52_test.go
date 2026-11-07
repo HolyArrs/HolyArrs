@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 5.2 review: the Events 5.2 adds (adopted, file held, episodes removed,
@@ -25,7 +25,7 @@ func TestShowEventsCarryNothingSecret(t *testing.T) {
 	if _, err := svc.RemoveEpisodes(ctx, id, RemoveScope{Season: &two}, RemoveChoice{DeleteFiles: true}, true, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	es, _, err := s.Events(ctx, store.EventFilter{})
+	es, _, err := s.Events(ctx, database.EventFilter{})
 	if err != nil || len(es) < 3 {
 		t.Fatalf("events %d %v", len(es), err)
 	}
@@ -85,7 +85,7 @@ func TestEpisodeCaseOnlyRenames(t *testing.T) {
 		release := "Lab.Show.1080p.WEB.H264-HOLYARRS"
 		f := domain.File{SlotIDs: slotIDs, VersionID: vID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
 			MediaInfo: map[string]any{"step": "1080p_web"}, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", &f, domain.System); return err }); err != nil {
+		if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", &f, domain.System); return err }); err != nil {
 			t.Fatal(err)
 		}
 		return f

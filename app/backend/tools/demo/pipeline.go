@@ -19,6 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -214,7 +215,7 @@ func (w *world) releaseFor(ctx context.Context, slotIDs []int64, name string, si
 	var id int64
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		id, err = store.Insert(tx, "releases", rel, w.by)
+		id, err = database.Insert(tx, "releases", rel, w.by)
 		return err
 	})
 	if err == nil {
@@ -258,11 +259,11 @@ func (w *world) hold(ctx context.Context, titleID, slotID, relID int64, name str
 		if err := store.MoveSlotTx(tx, slotID, domain.SlotHeld, "holding "+name, w.by); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", relID, store.FormatTime(until), slotID); err != nil {
+		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", relID, database.FormatTime(until), slotID); err != nil {
 			return err
 		}
 		_, err := tx.Exec(`UPDATE releases SET state = 'held', hold_until = ?, verdict = json_set(verdict, '$.outcome', 'held', '$.pick_slot_ids', json(?)) WHERE id = ?`,
-			store.FormatTime(until), fmt.Sprintf("[%d]", slotID), relID)
+			database.FormatTime(until), fmt.Sprintf("[%d]", slotID), relID)
 		return err
 	})
 	if err != nil {
@@ -336,7 +337,7 @@ func (w *world) episodeSlots(ctx context.Context, titleID int64, season int, eps
 // Releases. Each case is done once; times are set afterwards.
 func (w *world) activity(ctx context.Context) error {
 	db := w.s.Read()
-	ds, err := store.Select[domain.Downloader](ctx, db, "downloaders", "protocol = 'torrent' AND removed = 0 ORDER BY priority, id")
+	ds, err := database.Select[domain.Downloader](ctx, db, "downloaders", "protocol = 'torrent' AND removed = 0 ORDER BY priority, id")
 	if err != nil {
 		return err
 	}
@@ -368,7 +369,7 @@ func (w *world) activity(ctx context.Context) error {
 			continue
 		}
 		var t domain.Title
-		if err := store.Get(ctx, db, "titles", id, &t); err != nil {
+		if err := database.Get(ctx, db, "titles", id, &t); err != nil {
 			return err
 		}
 		m := movieFromTitle(t)
@@ -478,7 +479,7 @@ func (w *world) activity(ctx context.Context) error {
 			continue
 		}
 		var t domain.Title
-		if err := store.Get(ctx, db, "titles", id, &t); err != nil {
+		if err := database.Get(ctx, db, "titles", id, &t); err != nil {
 			return err
 		}
 		key := fmt.Sprintf("episodes %s S%02d %v", t.Name, sc.season, sc.eps)

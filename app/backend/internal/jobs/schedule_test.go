@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestRunSchedules(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestRunSchedules(t *testing.T) {
 	if len(kinds) != 2 {
 		t.Fatalf("next day %v", kinds)
 	}
-	js, _ := store.Select[domain.Job](ctx, s.Read(), "jobs", "kind = 'refresh_titles' AND state = 'queued'")
+	js, _ := database.Select[domain.Job](ctx, s.Read(), "jobs", "kind = 'refresh_titles' AND state = 'queued'")
 	if len(js) != 1 || js[0].Params["last_start"] != now.Format(time.RFC3339Nano) || js[0].Params["scheduled"] != true {
 		t.Fatalf("jobs %+v", js)
 	}

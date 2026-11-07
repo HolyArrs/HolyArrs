@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // movie is a movie as the Radarr side answers it. hasFile, statistics and
@@ -175,7 +175,7 @@ func mediaFileOf(f domain.File, root, folder string) *mediaFile {
 // leaves out what a lookup answer leaves out.
 func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, args ...any) ([]movie, error) {
 	db := h.Store.Read()
-	ts, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'movie' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
+	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'movie' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
 	if err != nil || len(ts) == 0 {
 		return []movie{}, err
 	}
@@ -191,7 +191,7 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 	if err != nil {
 		return nil, err
 	}
-	fs, err := store.Select[domain.File](ctx, db, "files", `id IN (SELECT s.file_id FROM slots s JOIN items i ON i.id = s.item_id
+	fs, err := database.Select[domain.File](ctx, db, "files", `id IN (SELECT s.file_id FROM slots s JOIN items i ON i.id = s.item_id
 		JOIN versions v ON v.id = s.version_id AND v.is_main = 1 WHERE i.kind = 'movie' AND s.file_id IS NOT NULL AND i.title_id IN `+idList(ids)+`)`)
 	if err != nil {
 		return nil, err

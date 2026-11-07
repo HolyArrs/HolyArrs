@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ErrBadFolder says a Movies and TV default names a Library folder that is
@@ -50,7 +50,7 @@ func (d *TitleDefaults) field(key string) (*KindDefaults, string) {
 }
 
 // ReadTitleDefaults reads the Movies and TV defaults and which keys were saved.
-func ReadTitleDefaults(ctx context.Context, db store.Lister) (TitleDefaults, map[string]bool, error) {
+func ReadTitleDefaults(ctx context.Context, db database.Lister) (TitleDefaults, map[string]bool, error) {
 	d := BuiltInTitleDefaults()
 	saved := map[string]bool{}
 	rows, err := db.QueryContext(ctx, `SELECT key, value FROM settings WHERE grp = 'what_to_pick' AND key IN
@@ -101,7 +101,7 @@ func checkKindDefaults(tx *sql.Tx, kind string, kd KindDefaults) error {
 // SetTitleDefaults checks and stores the Movies and TV defaults named in
 // keys (TitleDefaultKeys; nil stores them all). A key left out stays as it
 // is, unsaved when it was never saved, and a kind with no key is not checked.
-func SetTitleDefaults(ctx context.Context, s *store.Store, d TitleDefaults, keys []string, by domain.Actor) error {
+func SetTitleDefaults(ctx context.Context, s *database.Store, d TitleDefaults, keys []string, by domain.Actor) error {
 	if keys == nil {
 		keys = TitleDefaultKeys
 	}
@@ -118,7 +118,7 @@ func SetTitleDefaults(ctx context.Context, s *store.Store, d TitleDefaults, keys
 				return err
 			}
 		}
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		for _, k := range keys {
 			if !slices.Contains(TitleDefaultKeys, k) {
 				continue
@@ -139,7 +139,7 @@ func SetTitleDefaults(ctx context.Context, s *store.Store, d TitleDefaults, keys
 
 // UsableDefault says a saved folder or Pick rules id still exists and fits
 // kind; a gone one falls back to the built-in choice (0).
-func UsableDefault(ctx context.Context, db store.Querier, table, kind string, id int64) bool {
+func UsableDefault(ctx context.Context, db database.Querier, table, kind string, id int64) bool {
 	if id == 0 {
 		return false
 	}

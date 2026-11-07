@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type fakePeople struct {
@@ -87,9 +87,9 @@ func (f *fakePeople) PopularPeople(_ context.Context, page int) (metadata.Person
 	}, Page: page, TotalPages: 8, TotalResults: 160}, nil
 }
 
-func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *store.Store) {
+func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.Store) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,18 +127,18 @@ func TestPersonFilmographyJoinsOwnedNeverAddAndAskWithStablePages(t *testing.T) 
 			return err
 		}
 		title := domain.Title{Kind: "movie", Name: "Alpha", SortName: "alpha", Year: &year, SourceIDs: map[string]string{"tmdb": "101"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
 		never := domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "102"}, Name: "Beta", Reason: "test", CreatedAt: time.Now()}
-		if _, err := store.Insert(tx, "never_add", &never, domain.System); err != nil {
+		if _, err := database.Insert(tx, "never_add", &never, domain.System); err != nil {
 			return err
 		}
 		ask := domain.Ask{Kind: "movie", TMDBID: "103", Name: "Gamma", State: domain.AskAsked, AskedBy: 1, AskedAt: time.Now(), SourceIDs: map[string]string{"tmdb": "103"}}
-		if _, err := store.Insert(tx, "asks", &ask, domain.System); err != nil {
+		if _, err := database.Insert(tx, "asks", &ask, domain.System); err != nil {
 			return err
 		}
-		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, 1, ?, 1)", ask.ID, store.FormatTime(time.Now()))
+		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, 1, ?, 1)", ask.ID, database.FormatTime(time.Now()))
 		return err
 	})
 	if err != nil {
@@ -177,7 +177,7 @@ func TestMoviePeopleUsesStoredTMDBIdentity(t *testing.T) {
 	var title domain.Title
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title = domain.Title{Kind: "movie", Name: "Alpha", SortName: "alpha", Year: &year, SourceIDs: map[string]string{"tmdb": "101"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		_, err := store.Insert(tx, "titles", &title, domain.System)
+		_, err := database.Insert(tx, "titles", &title, domain.System)
 		return err
 	})
 	if err != nil {
@@ -196,7 +196,7 @@ func TestShowPeopleUsesStoredTMDBIdentity(t *testing.T) {
 	var title domain.Title
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title = domain.Title{Kind: "show", Name: "Show", SortName: "show", SourceIDs: map[string]string{"tmdb": "201"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "running"}
-		_, err := store.Insert(tx, "titles", &title, domain.System)
+		_, err := database.Insert(tx, "titles", &title, domain.System)
 		return err
 	})
 	if err != nil {

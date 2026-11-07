@@ -8,27 +8,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func dueSchedule(t *testing.T, s *store.Store, kind string, every int64, now time.Time) domain.Schedule {
+func dueSchedule(t *testing.T, s *database.Store, kind string, every int64, now time.Time) domain.Schedule {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE schedules SET enabled = (kind = ?), every_seconds = ?, next_run = ?, updated_at = ?", kind, every, store.FormatTime(now), store.FormatTime(now.Add(-time.Hour)))
+		_, err := tx.Exec("UPDATE schedules SET enabled = (kind = ?), every_seconds = ?, next_run = ?, updated_at = ?", kind, every, database.FormatTime(now), database.FormatTime(now.Add(-time.Hour)))
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	scs, err := store.Select[domain.Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
+	scs, err := database.Select[domain.Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
 	if err != nil || len(scs) != 1 {
 		t.Fatal(err)
 	}
 	return scs[0]
 }
 
-func jobCount(t *testing.T, s *store.Store, kind string) int {
+func jobCount(t *testing.T, s *database.Store, kind string) int {
 	t.Helper()
 	var n int
 	if err := s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", kind).Scan(&n); err != nil {
@@ -52,7 +52,7 @@ func TestScheduleProbeNoWorkUsesMemoryOnlyUntilNextProbe(t *testing.T) {
 	})
 
 	writes := s.WriteCount()
-	_, eventsBefore, err := s.Events(context.Background(), store.EventFilter{Limit: 1})
+	_, eventsBefore, err := s.Events(context.Background(), database.EventFilter{Limit: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestScheduleProbeNoWorkUsesMemoryOnlyUntilNextProbe(t *testing.T) {
 	if calls.Load() != 1 || s.WriteCount() != writes || jobCount(t, s, sc.Kind) != 0 || changes.Load() != 0 {
 		t.Fatalf("false probe calls=%d writes=%d jobs=%d changes=%d", calls.Load(), s.WriteCount()-writes, jobCount(t, s, sc.Kind), changes.Load())
 	}
-	_, eventsAfter, err := s.Events(context.Background(), store.EventFilter{Limit: 1})
+	_, eventsAfter, err := s.Events(context.Background(), database.EventFilter{Limit: 1})
 	if err != nil || eventsAfter != eventsBefore {
 		t.Fatalf("false probe events: before=%d after=%d err=%v", eventsBefore, eventsAfter, err)
 	}
@@ -96,7 +96,7 @@ func TestScheduleProbeWatermarkInvalidatesOnEditAndRestart(t *testing.T) {
 	_, _ = q.RunSchedules(context.Background(), now)
 
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE schedules SET every_seconds = ?, updated_at = ? WHERE kind = ?", 1800, store.FormatTime(now.Add(time.Second)), sc.Kind)
+		_, err := tx.Exec("UPDATE schedules SET every_seconds = ?, updated_at = ? WHERE kind = ?", 1800, database.FormatTime(now.Add(time.Second)), sc.Kind)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -121,7 +121,7 @@ func TestScheduleProbeWatermarkInvalidatesOnEditAndRestart(t *testing.T) {
 type scheduleOffGate struct{ kind string }
 
 func (g scheduleOffGate) Active() bool { return true }
-func (g scheduleOffGate) Held(context.Context, store.Querier, string, *domain.Subject) bool {
+func (g scheduleOffGate) Held(context.Context, database.Querier, string, *domain.Subject) bool {
 	return false
 }
 func (g scheduleOffGate) KindOff(kind string) bool { return kind == g.kind }
@@ -132,7 +132,7 @@ type scheduleToggleGate struct {
 }
 
 func (g *scheduleToggleGate) Active() bool { return true }
-func (g *scheduleToggleGate) Held(_ context.Context, _ store.Querier, kind string, _ *domain.Subject) bool {
+func (g *scheduleToggleGate) Held(_ context.Context, _ database.Querier, kind string, _ *domain.Subject) bool {
 	return kind == g.kind && g.off.Load()
 }
 func (g *scheduleToggleGate) KindOff(kind string) bool { return kind == g.kind && g.off.Load() }
@@ -224,7 +224,7 @@ func TestSlowScheduleProbeDoesNotStarveLaterSchedule(t *testing.T) {
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 	dueSchedule(t, s, "refresh_titles", 86400, now)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = 'health_check'", store.FormatTime(now))
+		_, err := tx.Exec("UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = 'health_check'", database.FormatTime(now))
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -262,7 +262,7 @@ func TestCancelledSchedulePassDoesNotWaitForStuckProbeOrStartAnother(t *testing.
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 	dueSchedule(t, s, "refresh_titles", 86400, now)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = 'health_check'", store.FormatTime(now))
+		_, err := tx.Exec("UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = 'health_check'", database.FormatTime(now))
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -325,21 +325,21 @@ func TestCancelledSchedulePassDoesNotWaitForStuckProbeOrStartAnother(t *testing.
 func TestScheduleProbeDiscardsResultAfterScheduleChanges(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
-		change func(*testing.T, *store.Store, domain.Schedule, time.Time)
-		check  func(*testing.T, *store.Store, domain.Schedule, time.Time)
+		change func(*testing.T, *database.Store, domain.Schedule, time.Time)
+		check  func(*testing.T, *database.Store, domain.Schedule, time.Time)
 	}{
 		{
 			name: "disabled",
-			change: func(t *testing.T, s *store.Store, sc domain.Schedule, now time.Time) {
+			change: func(t *testing.T, s *database.Store, sc domain.Schedule, now time.Time) {
 				t.Helper()
 				if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-					_, err := tx.Exec("UPDATE schedules SET enabled = 0, updated_at = ? WHERE id = ?", store.FormatTime(now.Add(time.Second)), sc.ID)
+					_, err := tx.Exec("UPDATE schedules SET enabled = 0, updated_at = ? WHERE id = ?", database.FormatTime(now.Add(time.Second)), sc.ID)
 					return err
 				}); err != nil {
 					t.Fatal(err)
 				}
 			},
-			check: func(t *testing.T, s *store.Store, sc domain.Schedule, _ time.Time) {
+			check: func(t *testing.T, s *database.Store, sc domain.Schedule, _ time.Time) {
 				t.Helper()
 				var enabled bool
 				if err := s.Read().QueryRow("SELECT enabled FROM schedules WHERE id = ?", sc.ID).Scan(&enabled); err != nil || enabled {
@@ -349,24 +349,24 @@ func TestScheduleProbeDiscardsResultAfterScheduleChanges(t *testing.T) {
 		},
 		{
 			name: "interval edited",
-			change: func(t *testing.T, s *store.Store, sc domain.Schedule, now time.Time) {
+			change: func(t *testing.T, s *database.Store, sc domain.Schedule, now time.Time) {
 				t.Helper()
 				if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 					_, err := tx.Exec("UPDATE schedules SET every_seconds = 1800, next_run = ?, updated_at = ? WHERE id = ?",
-						store.FormatTime(now.Add(30*time.Minute)), store.FormatTime(now.Add(time.Second)), sc.ID)
+						database.FormatTime(now.Add(30*time.Minute)), database.FormatTime(now.Add(time.Second)), sc.ID)
 					return err
 				}); err != nil {
 					t.Fatal(err)
 				}
 			},
-			check: func(t *testing.T, s *store.Store, sc domain.Schedule, now time.Time) {
+			check: func(t *testing.T, s *database.Store, sc domain.Schedule, now time.Time) {
 				t.Helper()
 				var every int64
 				var next string
 				if err := s.Read().QueryRow("SELECT every_seconds, next_run FROM schedules WHERE id = ?", sc.ID).Scan(&every, &next); err != nil {
 					t.Fatal(err)
 				}
-				if every != 1800 || next != store.FormatTime(now.Add(30*time.Minute)) {
+				if every != 1800 || next != database.FormatTime(now.Add(30*time.Minute)) {
 					t.Fatalf("edited clock overwritten: every=%d next=%s", every, next)
 				}
 			},
@@ -439,9 +439,9 @@ func TestScheduleProbeDiscardsResultWhenPartTurnsOff(t *testing.T) {
 	}
 }
 
-func dueScheduleRecord(t *testing.T, s *store.Store, kind string) domain.Schedule {
+func dueScheduleRecord(t *testing.T, s *database.Store, kind string) domain.Schedule {
 	t.Helper()
-	scs, err := store.Select[domain.Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
+	scs, err := database.Select[domain.Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
 	if err != nil || len(scs) != 1 {
 		t.Fatalf("schedule %s: %v %v", kind, scs, err)
 	}

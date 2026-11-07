@@ -6,15 +6,15 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The trailers check follows trailer autoplay: on by default, off once the
 // owner turns autoplay off (nothing is looked up then, so a kept failure
 // could never clear), and on again with it.
 func TestTrailersCheckFollowsAutoplay(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

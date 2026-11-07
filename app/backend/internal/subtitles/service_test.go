@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
@@ -61,9 +61,9 @@ func relInLib(v any) bool {
 	return ok && p != "" && !filepath.IsAbs(p) && !strings.Contains(p, `\`) && !strings.HasPrefix(p, "/")
 }
 
-func eventsOf(t *testing.T, st *store.Store, kind string) []domain.Event {
+func eventsOf(t *testing.T, st *database.Store, kind string) []domain.Event {
 	t.Helper()
-	es, _, err := st.Events(context.Background(), store.EventFilter{Kinds: []string{kind}, Limit: 100})
+	es, _, err := st.Events(context.Background(), database.EventFilter{Kinds: []string{kind}, Limit: 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestSyncAndTurnDown(t *testing.T) {
 	wishAll(t, f, Want{Language: "en"})
 	res, _ := s.Search(ctx, f.movieFile, SearchOptions{}, domain.System)
 	rel := res.Outcomes[0].Path
-	rows, _ := store.Select[Subtitle](ctx, f.st.Read(), "subtitles", "place = 'beside' AND state = 'present'")
+	rows, _ := database.Select[Subtitle](ctx, f.st.Read(), "subtitles", "place = 'beside' AND state = 'present'")
 	nr, err := s.Sync(ctx, rows[0].ID, subtext.Fix{OffsetMS: 2000}, domain.System)
 	if err != nil {
 		t.Fatal(err)
@@ -366,7 +366,7 @@ func TestEventsAndSchedules(t *testing.T) {
 	// A better copy: the old File's saved subtitle goes to the holding folder.
 	var newFile int64
 	err := f.st.Write(ctx, func(tx *sql.Tx) error {
-		ts := store.FormatTime(now())
+		ts := database.FormatTime(now())
 		res, err := tx.Exec(`INSERT INTO files (created_at, created_by, updated_at, updated_by, slot_ids, version_id, relative_path, added_at, origin, placed_by)
 			VALUES (?, ?, ?, ?, ?, ?, 'The Lantern (2010)/The Lantern (2010) 2160p.mkv', ?, 'imported', 'copy')`, ts, sysActor, ts, sysActor, "["+itoa(slot)+"]", f.movieVer, ts)
 		if err != nil {
@@ -521,7 +521,7 @@ func TestReplacementCutOffAfterInstallRecoversNewSubtitle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	old, err := store.Select[Subtitle](ctx, f.st.Read(), "subtitles", "file_id = ? AND state = 'present' AND relative_path = ?", f.movieFile, rel)
+	old, err := database.Select[Subtitle](ctx, f.st.Read(), "subtitles", "file_id = ? AND state = 'present' AND relative_path = ?", f.movieFile, rel)
 	if err != nil || len(old) != 1 {
 		t.Fatalf("old rows %+v: %v", old, err)
 	}
@@ -586,7 +586,7 @@ func TestSaveCutOffAfterHoldRestoresOldSubtitleOnLook(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	old, err := store.Select[Subtitle](ctx, f.st.Read(), "subtitles", "file_id = ? AND place = 'beside' AND state = 'present' AND relative_path = ?", f.movieFile, rel)
+	old, err := database.Select[Subtitle](ctx, f.st.Read(), "subtitles", "file_id = ? AND place = 'beside' AND state = 'present' AND relative_path = ?", f.movieFile, rel)
 	if err != nil || len(old) != 1 {
 		t.Fatalf("old rows %+v: %v", old, err)
 	}
@@ -630,7 +630,7 @@ func TestSaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	old, err := store.Select[Subtitle](ctx, f.st.Read(), "subtitles", "file_id = ? AND state = 'present' AND relative_path = ?", f.movieFile, hiRel)
+	old, err := database.Select[Subtitle](ctx, f.st.Read(), "subtitles", "file_id = ? AND state = 'present' AND relative_path = ?", f.movieFile, hiRel)
 	if err != nil || len(old) != 1 {
 		t.Fatalf("old rows %+v: %v", old, err)
 	}

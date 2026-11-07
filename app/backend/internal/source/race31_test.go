@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // addRelease stores a judged Release for the fixture's Slot.
@@ -19,7 +19,7 @@ func addRelease(t *testing.T, f fixture, name, state string) int64 {
 		r := &domain.Release{SourceID: f.srcID, Name: name, LinkRef: "x", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: []int64{f.slotID}, Verdict: map[string]any{}, FoundBy: "hand_search", State: state}
 		var err error
-		id, err = store.Insert(tx, "releases", r, domain.System)
+		id, err = database.Insert(tx, "releases", r, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

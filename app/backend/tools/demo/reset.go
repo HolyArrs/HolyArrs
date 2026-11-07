@@ -12,9 +12,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // reset removes what seed added, through the app's own delete paths: the
@@ -69,19 +69,19 @@ func (w *world) reset(ctx context.Context) error {
 		for _, id := range w.m.Titles {
 			if _, err := tx.Exec(`UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE state = 'queued'
 				AND json_extract(subject, '$.type') = 'title' AND json_extract(subject, '$.id') = ?`,
-				store.FormatTime(w.o.now()), store.FormatTime(w.o.now()), id); err != nil {
+				database.FormatTime(w.o.now()), database.FormatTime(w.o.now()), id); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
 	for _, id := range w.m.Downloaders {
-		if err := downloader.Remove(ctx, w.s, id, w.by); err != nil && !errors.Is(err, store.ErrNotFound) {
+		if err := downloader.Remove(ctx, w.s, id, w.by); err != nil && !errors.Is(err, database.ErrNotFound) {
 			w.say("   Downloader %d: %v", id, err)
 		}
 	}
 	for _, id := range w.m.Folders {
-		if err := library.DeleteFolder(ctx, w.s, id); err != nil && !errors.Is(err, store.ErrNotFound) {
+		if err := library.DeleteFolder(ctx, w.s, id); err != nil && !errors.Is(err, database.ErrNotFound) {
 			w.say("   Library folder %d kept: %v", id, err)
 		}
 	}

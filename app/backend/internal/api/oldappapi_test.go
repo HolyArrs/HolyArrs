@@ -16,6 +16,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
@@ -23,7 +24,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -34,7 +34,7 @@ import (
 type oldAppFix struct {
 	t                     *testing.T
 	srv                   *httptest.Server
-	s                     *store.Store
+	s                     *database.Store
 	pc                    *parts.Control
 	own                   *http.Client
 	csrf                  string
@@ -103,7 +103,7 @@ func (f *oldAppFix) arrOK(key, method, path, body string, want int) any {
 func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -492,7 +492,7 @@ func (f *oldAppFix) putFile(sl domain.Slot, rel string, res int) {
 		fl := domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: rel, Size: 1000, AddedAt: time.Now().UTC(),
 			Quality: domain.Quality{Resolution: res, Source: "web_dl"}, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
 			PlacedBy: "hardlink", Role: "main", State: "present"}
-		id, err := store.Insert(tx, "files", &fl, domain.System)
+		id, err := database.Insert(tx, "files", &fl, domain.System)
 		if err != nil {
 			return err
 		}
@@ -505,7 +505,7 @@ func (f *oldAppFix) putFile(sl domain.Slot, rel string, res int) {
 
 func (f *oldAppFix) jobs(kind string) []domain.Job {
 	f.t.Helper()
-	js, err := store.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = ? ORDER BY id", kind)
+	js, err := database.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = ? ORDER BY id", kind)
 	if err != nil {
 		f.t.Fatal(err)
 	}
@@ -697,13 +697,13 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	slots := f.slotsOf(showID)
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := domain.Downloader{Adapter: "qbittorrent", Name: "Lab qBit", Protocol: "torrent", URL: "http://lab.invalid", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", &dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", &dr, domain.System); err != nil {
 			return err
 		}
 		eta := int64(125)
 		d := domain.Download{DownloaderID: dr.ID, ExternalID: "ABCDEF", SlotIDs: []int64{slots[[2]int{1, 1}].ID, slots[[2]int{1, 2}].ID},
 			State: "downloading", Progress: 0.5, ETA: &eta, SavePath: "/downloads/lab", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", &d, domain.System)
+		_, err := database.Insert(tx, "downloads", &d, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

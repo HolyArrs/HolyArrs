@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func apiMovieCopy(t *testing.T, s *store.Store, protected bool) (domain.File, domain.Version, domain.Slot) {
+func apiMovieCopy(t *testing.T, s *database.Store, protected bool) (domain.File, domain.Version, domain.Slot) {
 	t.Helper()
 	var f domain.File
 	var v domain.Version
@@ -23,27 +24,27 @@ func apiMovieCopy(t *testing.T, s *store.Store, protected bool) (domain.File, do
 			return err
 		}
 		rules := &domain.PickRules{Name: "Copy search", Kinds: []string{"movie"}, Revision: 1, Body: domain.PickRulesBody{}}
-		if _, err := store.Insert(tx, "pick_rules", rules, domain.System); err != nil {
+		if _, err := database.Insert(tx, "pick_rules", rules, domain.System); err != nil {
 			return err
 		}
 		title := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
-		if _, err := store.Insert(tx, "titles", title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", title, domain.System); err != nil {
 			return err
 		}
 		item := &domain.Item{TitleID: title.ID, Kind: "movie", Numbers: domain.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}
-		if _, err := store.Insert(tx, "items", item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
 		v = domain.Version{TitleID: title.ID, Label: "4K", PickRulesID: rules.ID, LibraryFolderID: folderID, FolderName: "Arrival", KeepUpToDate: true, IsMain: true, AudioLanguages: []string{"en"}}
-		if _, err := store.Insert(tx, "versions", &v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", &v, domain.System); err != nil {
 			return err
 		}
 		f = domain.File{Protected: protected, SlotIDs: []int64{}, VersionID: v.ID, RelativePath: "Arrival/Arrival.mkv", Size: 10, AddedAt: time.Now().UTC(), Quality: domain.Quality{Codec: "av1"}, Languages: []string{}, MediaInfo: map[string]any{"inspection_status": "complete", "container": "matroska", "video_codec": "hevc", "audio_languages": []string{"en"}, "audio_tracks": 1}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", &f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", &f, domain.System); err != nil {
 			return err
 		}
 		slot = domain.Slot{ItemID: item.ID, VersionID: v.ID, State: domain.SlotInLibrary, FileID: &f.ID}
-		if _, err := store.Insert(tx, "slots", &slot, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", &slot, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE files SET slot_ids=json_array(?) WHERE id=?", slot.ID, f.ID)

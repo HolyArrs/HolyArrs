@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func ptr[T any](v T) *T { return &v }
 
 type world struct {
-	s       *store.Store
+	s       *database.Store
 	slotID  int64
 	relID   int64
 	fake    *fakeQbit
@@ -47,7 +47,7 @@ func (w *world) now() time.Time {
 // qBittorrent Downloader pointing at a fake.
 func setup(t *testing.T) (*world, *Manager) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,31 +67,31 @@ func setup(t *testing.T) (*world, *Manager) {
 			table string
 			v     any
 		}{{"library_folders", lf}, {"titles", ti}} {
-			if _, err := store.Insert(tx, x.table, x.v, domain.System); err != nil {
+			if _, err := database.Insert(tx, x.table, x.v, domain.System); err != nil {
 				return err
 			}
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotChosen}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{},
 			AllowLocal: true} // the lab indexer is on the local network; qBittorrent fetches its links (#152)
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		rel := &domain.Release{SourceID: src.ID, Name: "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/dune-part-two.torrent",
 			Protocol: "torrent", Size: 29588180, InfoHash: ptr(hash), Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{sl.ID},
 			Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rel.ID, sl.ID); err != nil {
@@ -99,7 +99,7 @@ func setup(t *testing.T) (*world, *Manager) {
 		}
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: u, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		w.slotID, w.relID = sl.ID, rel.ID
@@ -128,7 +128,7 @@ func setup(t *testing.T) (*world, *Manager) {
 func (w *world) download(t *testing.T, id int64) domain.Download {
 	t.Helper()
 	var d domain.Download
-	if err := store.Get(context.Background(), w.s.Read(), "downloads", id, &d); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "downloads", id, &d); err != nil {
 		t.Fatal(err)
 	}
 	return d
@@ -137,7 +137,7 @@ func (w *world) download(t *testing.T, id int64) domain.Download {
 func (w *world) slot(t *testing.T) domain.Slot {
 	t.Helper()
 	var s domain.Slot
-	if err := store.Get(context.Background(), w.s.Read(), "slots", w.slotID, &s); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &s); err != nil {
 		t.Fatal(err)
 	}
 	return s
@@ -293,7 +293,7 @@ func TestGrabRetryAfterKillDoesNotDuplicate(t *testing.T) {
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		dl := &domain.Download{DownloaderID: 1, ReleaseID: &w.relID, SlotIDs: []int64{w.slotID}, ExternalID: hash, State: "sent",
 			FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		dlID = dl.ID
@@ -374,7 +374,7 @@ func addDeadDownloader(t *testing.T, w *world) {
 	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "Down qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:1", Category: "holyarrs",
 			Priority: 0, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := store.Insert(tx, "downloaders", d, domain.System)
+		_, err := database.Insert(tx, "downloaders", d, domain.System)
 		return err
 	})
 	if err != nil {
@@ -430,12 +430,12 @@ func TestGrabDoesNotReuseRejectedDownload(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		dl := &domain.Download{DownloaderID: 1, ReleaseID: &w.relID, SlotIDs: []int64{w.slotID}, ExternalID: hash, State: "finished",
 			FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		oldID = dl.ID
 		imp := &domain.Import{DownloadID: &dl.ID, FromPath: "/x", Kind: "movie", Plan: []domain.PlanStep{}, Result: []domain.PlaceResult{}, Mode: "auto", State: "rejected"}
-		_, err := store.Insert(tx, "imports", imp, domain.System)
+		_, err := database.Insert(tx, "imports", imp, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

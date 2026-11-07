@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestConcurrentEngineCacheUsesOneSession(t *testing.T) {
@@ -88,10 +88,10 @@ func TestOptionalGrabUsesSourcePolicyAndStableOperation(t *testing.T) {
 	ctx := context.Background()
 	var d domain.Downloader
 	var rel domain.Release
-	if err := store.Get(ctx, w.s.Read(), "downloaders", int64(1), &d); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "downloaders", int64(1), &d); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
 		t.Fatal(err)
 	}
 	d.Adapter = "deluge"

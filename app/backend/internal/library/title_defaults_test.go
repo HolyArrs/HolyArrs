@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestTitleDefaultsBuiltIn(t *testing.T) {
@@ -71,7 +71,7 @@ func TestAddShowSearchOnAdd(t *testing.T) {
 		t.Fatal(err)
 	}
 	var scan domain.Job
-	if err := store.Get(ctx, s.Read(), "jobs", jobID, &scan); err != nil {
+	if err := database.Get(ctx, s.Read(), "jobs", jobID, &scan); err != nil {
 		t.Fatal(err)
 	}
 	if scan.Kind != KindScanTitle {
@@ -83,7 +83,7 @@ func TestAddShowSearchOnAdd(t *testing.T) {
 	if err := svc.next(ctx, &jobs.Run{Job: scan}, id); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := store.Select[domain.Job](ctx, s.Read(), "jobs", "kind = 'search_season' ORDER BY id")
+	ss, err := database.Select[domain.Job](ctx, s.Read(), "jobs", "kind = 'search_season' ORDER BY id")
 	if err != nil || len(ss) == 0 {
 		t.Fatalf("season searches %v %v", ss, err)
 	}
@@ -100,7 +100,7 @@ func TestAddShowSearchOnAdd(t *testing.T) {
 		t.Fatal(err)
 	}
 	var scan2 domain.Job
-	_ = store.Get(ctx, s2.Read(), "jobs", jobID2, &scan2)
+	_ = database.Get(ctx, s2.Read(), "jobs", jobID2, &scan2)
 	if err := svc2.next(ctx, &jobs.Run{Job: scan2}, id2); err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestAddShowSearchOnAdd(t *testing.T) {
 	}
 }
 
-func countJobs(t *testing.T, s *store.Store, kind string) int {
+func countJobs(t *testing.T, s *database.Store, kind string) int {
 	t.Helper()
 	var n int
 	if err := s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", kind).Scan(&n); err != nil {

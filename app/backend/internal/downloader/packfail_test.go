@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // packWorld turns the world's Release into a pack chosen for two more
@@ -28,11 +28,11 @@ func packWorld(t *testing.T) (*world, *Manager, int64, []int64) {
 			if err := tx.QueryRow("SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&it.TitleID); err != nil {
 				return err
 			}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
-			if _, err := store.Insert(tx, "slots", o, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 				return err
 			}
 			ids = append(ids, o.ID)

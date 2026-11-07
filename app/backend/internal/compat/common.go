@@ -10,8 +10,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // status answers the server test. Seerr reads urlBase (and uses it as the
@@ -30,7 +30,7 @@ func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 // music ones) as the old apps' quality profiles: the callers read only id
 // and name.
 func (h *handler) qualityProfiles(w http.ResponseWriter, r *http.Request) {
-	ps, err := store.Select[domain.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
+	ps, err := database.Select[domain.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
 		internalError(w, err)
 		return
@@ -55,7 +55,7 @@ func (h *handler) folderKind() string {
 
 // rootFolders lists this side's Library folders.
 func (h *handler) rootFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := store.Select[domain.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
+	fs, err := database.Select[domain.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
 	if err != nil {
 		internalError(w, err)
 		return
@@ -120,7 +120,7 @@ func (h *handler) addTag(w http.ResponseWriter, r *http.Request) {
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		res, err := tx.Exec("INSERT INTO compat_tags(label, created_at) VALUES (?, ?)", in.Label, store.FormatTime(h.now()))
+		res, err := tx.Exec("INSERT INTO compat_tags(label, created_at) VALUES (?, ?)", in.Label, database.FormatTime(h.now()))
 		if err != nil {
 			return err
 		}

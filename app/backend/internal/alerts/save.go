@@ -8,10 +8,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Input is what a person sets on an Alert. URL, Password, Secret, BotToken
@@ -219,7 +219,7 @@ func nameUsed(tx *sql.Tx, name string, id int64) error {
 }
 
 // Add stores a new Alert; its secrets go to the vault.
-func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.Alert, error) {
+func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.Alert, error) {
 	var a domain.Alert
 	if err := fill(in, &a, true); err != nil {
 		return a, err
@@ -243,16 +243,16 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 			}
 			a.PasswordSecretID = &id
 		}
-		_, err := store.Insert(tx, "alerts", &a, by)
+		_, err := database.Insert(tx, "alerts", &a, by)
 		return err
 	})
 	return a, err
 }
 
 // Change saves an Alert; an empty URL or password keeps the stored one.
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Alert, error) {
+func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Alert, error) {
 	var a domain.Alert
-	if err := store.Get(ctx, s.Read(), "alerts", id, &a); err != nil {
+	if err := database.Get(ctx, s.Read(), "alerts", id, &a); err != nil {
 		return a, err
 	}
 	old := a
@@ -311,7 +311,7 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			}
 			a.PasswordSecretID = nil
 		}
-		return store.Update(tx, "alerts", &a, by)
+		return database.Update(tx, "alerts", &a, by)
 	})
 	return a, err
 }
@@ -332,10 +332,10 @@ func secretFor(kind string, in Input) (string, string) {
 }
 
 // Remove deletes an Alert and its secrets.
-func Remove(ctx context.Context, s *store.Store, id int64) error {
+func Remove(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var a domain.Alert
-		if err := store.Get(ctx, tx, "alerts", id, &a); err != nil {
+		if err := database.Get(ctx, tx, "alerts", id, &a); err != nil {
 			return err
 		}
 		for _, ref := range []*int64{a.URLSecretID, a.PasswordSecretID} {
@@ -350,7 +350,7 @@ func Remove(ctx context.Context, s *store.Store, id int64) error {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		return nil
 	})

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Move credentials live in the move_credentials table: an old app's
@@ -62,7 +62,7 @@ func moveAddress(raw string) (string, error) {
 }
 
 // SaveMoveCredential stores (or replaces) the credential for an old app.
-func SaveMoveCredential(ctx context.Context, st *store.Store, v *secrets.Vault, kind string, c MoveCredential, by domain.Actor) error {
+func SaveMoveCredential(ctx context.Context, st *database.Store, v *secrets.Vault, kind string, c MoveCredential, by domain.Actor) error {
 	if !validMoveKind(kind) {
 		return errors.New("unknown old app")
 	}
@@ -85,14 +85,14 @@ func SaveMoveCredential(ctx context.Context, st *store.Store, v *secrets.Vault, 
 		}
 		ab, _ := json.Marshal(by)
 		_, err = tx.ExecContext(ctx, "INSERT INTO move_credentials (kind, secret_id, created_at, created_by) VALUES (?, ?, ?, ?)",
-			kind, id, store.FormatTime(time.Now()), string(ab))
+			kind, id, database.FormatTime(time.Now()), string(ab))
 		return err
 	})
 }
 
 // ReadMoveCredential reads the credential for an old app without using
 // it up.
-func ReadMoveCredential(ctx context.Context, st *store.Store, v *secrets.Vault, kind string) (MoveCredential, bool, error) {
+func ReadMoveCredential(ctx context.Context, st *database.Store, v *secrets.Vault, kind string) (MoveCredential, bool, error) {
 	c, _, found, err := ReadMoveCredentialVersion(ctx, st, v, kind)
 	return c, found, err
 }
@@ -104,7 +104,7 @@ type MoveCredentialVersion struct {
 
 // ReadMoveCredentialVersion also returns the immutable vault row identity
 // that a successful read must still own when it consumes the credential.
-func ReadMoveCredentialVersion(ctx context.Context, st *store.Store, v *secrets.Vault, kind string) (MoveCredential, MoveCredentialVersion, bool, error) {
+func ReadMoveCredentialVersion(ctx context.Context, st *database.Store, v *secrets.Vault, kind string) (MoveCredential, MoveCredentialVersion, bool, error) {
 	var c MoveCredential
 	if v == nil || !validMoveKind(kind) {
 		return c, MoveCredentialVersion{}, false, nil
@@ -134,7 +134,7 @@ func ReadMoveCredentialVersion(ctx context.Context, st *store.Store, v *secrets.
 
 // ListMoveCredentials says which old apps have a saved credential, with
 // their addresses; never a key.
-func ListMoveCredentials(ctx context.Context, st *store.Store, v *secrets.Vault) ([]SavedMove, error) {
+func ListMoveCredentials(ctx context.Context, st *database.Store, v *secrets.Vault) ([]SavedMove, error) {
 	out := []SavedMove{}
 	for _, k := range MoveKinds {
 		c, ok, err := ReadMoveCredential(ctx, st, v, k)
@@ -200,7 +200,7 @@ func ForgetMoveCredentialTx(ctx context.Context, tx *sql.Tx, kind string, versio
 
 // ForgetMoveCredential deletes one old app's credential (kind) or, with
 // kind empty, all of them. It says how many it deleted.
-func ForgetMoveCredential(ctx context.Context, st *store.Store, kind string) (int, error) {
+func ForgetMoveCredential(ctx context.Context, st *database.Store, kind string) (int, error) {
 	n := 0
 	err := st.Write(ctx, func(tx *sql.Tx) error {
 		for _, k := range MoveKinds {

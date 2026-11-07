@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestQuietFeedHealthMergesWithoutWrites(t *testing.T) {
@@ -17,7 +17,7 @@ func TestQuietFeedHealthMergesWithoutWrites(t *testing.T) {
 	Record(ctx, f.s, f.srcID, "search", 100*time.Millisecond, nil)
 	writes := f.s.WriteCount()
 	var src domain.Source
-	if err := store.Get(ctx, f.s.Read(), "sources", f.srcID, &src); err != nil {
+	if err := database.Get(ctx, f.s.Read(), "sources", f.srcID, &src); err != nil {
 		t.Fatal(err)
 	}
 	s.rememberQuietFeedCall(ctx, src, now.Add(-25*time.Hour), 300*time.Millisecond)
@@ -60,7 +60,7 @@ func TestQuietFeedHealthBoundsAndExpires(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	ctx := context.Background()
 	var src domain.Source
-	if err := store.Get(ctx, f.s.Read(), "sources", f.srcID, &src); err != nil {
+	if err := database.Get(ctx, f.s.Read(), "sources", f.srcID, &src); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < maxQuietDayCalls+10; i++ {
@@ -80,7 +80,7 @@ func TestQuietFeedHealthBoundsAndExpires(t *testing.T) {
 	if err != nil || len(st.Recent) != 0 || len(s.quietCalls) != 0 {
 		t.Fatalf("expired quiet history: recent %d, sources %d, %v", len(st.Recent), len(s.quietCalls), err)
 	}
-	if st.Summary.LastSuccess != nil && *st.Summary.LastSuccess < store.FormatTime(now.AddDate(0, 0, 96)) {
+	if st.Summary.LastSuccess != nil && *st.Summary.LastSuccess < database.FormatTime(now.AddDate(0, 0, 96)) {
 		t.Fatal("expired success retained")
 	}
 }

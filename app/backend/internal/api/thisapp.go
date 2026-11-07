@@ -15,8 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // maxLogDownload caps the log download (the newest whole lines).
@@ -89,8 +89,8 @@ func (a *API) storage(w http.ResponseWriter, r *http.Request) {
 	free := importer.FreeSpace(dir)
 	out := []PathInfo{
 		{Name: "Config folder", Path: dir, Free: free},
-		{Name: "Main database", Path: filepath.Join(dir, store.MainFile), Bytes: fileSize(filepath.Join(dir, store.MainFile)), Free: free},
-		{Name: "History database", Path: filepath.Join(dir, store.EventsFile), Bytes: fileSize(filepath.Join(dir, store.EventsFile)), Free: free},
+		{Name: "Main database", Path: filepath.Join(dir, database.MainFile), Bytes: fileSize(filepath.Join(dir, database.MainFile)), Free: free},
+		{Name: "History database", Path: filepath.Join(dir, database.EventsFile), Bytes: fileSize(filepath.Join(dir, database.EventsFile)), Free: free},
 		{Name: "Backups", Path: filepath.Join(dir, "backups"), Free: free},
 		{Name: "Artwork", Path: filepath.Join(dir, "artwork"), Free: free},
 	}

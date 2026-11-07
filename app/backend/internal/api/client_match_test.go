@@ -11,9 +11,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestGuessOf(t *testing.T) {
@@ -96,14 +96,14 @@ func mediaClient(t *testing.T) *httptest.Server {
 	return qb
 }
 
-func addQB(t *testing.T, st *store.Store, url string) int64 {
+func addQB(t *testing.T, st *database.Store, url string) int64 {
 	t.Helper()
 	var id int64
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: url, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		var err error
-		id, err = store.Insert(tx, "downloaders", dr, domain.System)
+		id, err = database.Insert(tx, "downloaders", dr, domain.System)
 		return err
 	})
 	if err != nil {
@@ -112,7 +112,7 @@ func addQB(t *testing.T, st *store.Store, url string) int64 {
 	return id
 }
 
-func count(t *testing.T, st *store.Store, q string, args ...any) int {
+func count(t *testing.T, st *database.Store, q string, args ...any) int {
 	t.Helper()
 	var n int
 	if err := st.Read().QueryRow(q, args...).Scan(&n); err != nil {

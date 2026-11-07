@@ -9,8 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -73,7 +73,7 @@ func TestHealthSettingsOverHTTP(t *testing.T) {
 func TestHealthStatesOverHTTP(t *testing.T) {
 	reg := supervisor.NewRegistry()
 	reg.Set(supervisor.StageKey("backups"), "stage", "Backups", supervisor.Retrying, "the disk is full")
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 		t.Fatalf("link %+v", l)
 	}
 	// Without a Registry the list still answers, as an empty list.
-	s2, err := store.Open(t.TempDir(), store.Options{})
+	s2, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

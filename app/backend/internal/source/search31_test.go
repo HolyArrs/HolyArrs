@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // item is one torznab result for the tests' own feeds.
@@ -82,7 +82,7 @@ func runKind(t *testing.T, f fixture, sr *Searcher, kind string, subj *domain.Su
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		var j domain.Job
-		if err := store.Get(ctx, f.s.Read(), "jobs", id, &j); err != nil {
+		if err := database.Get(ctx, f.s.Read(), "jobs", id, &j); err != nil {
 			t.Fatal(err)
 		}
 		if j.State != "queued" && j.State != "running" || (j.State == "queued" && j.Attempt > 0) {
@@ -97,7 +97,7 @@ func runKind(t *testing.T, f fixture, sr *Searcher, kind string, subj *domain.Su
 func slotState(t *testing.T, f fixture) domain.Slot {
 	t.Helper()
 	var sl domain.Slot
-	if err := store.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl); err != nil {
+	if err := database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
 	return sl
@@ -105,7 +105,7 @@ func slotState(t *testing.T, f fixture) domain.Slot {
 
 func relByName(t *testing.T, f fixture, name string) domain.Release {
 	t.Helper()
-	rs, err := store.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ? ORDER BY id DESC LIMIT 1", name)
+	rs, err := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ? ORDER BY id DESC LIMIT 1", name)
 	if err != nil || len(rs) != 1 {
 		t.Fatalf("release %s: %v %d", name, err, len(rs))
 	}
@@ -202,7 +202,7 @@ func TestHeldThenBetterThenWaitOver(t *testing.T) {
 		t.Fatal("grabbed during the wait")
 	}
 	// The wait ends.
-	exec(t, f, "UPDATE slots SET next_try_at = ?", store.FormatTime(time.Now().Add(-time.Minute)))
+	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
 	j := runKind(t, f, sr, KindGrabHeld, nil, nil)
 	if j.State != "done" || slotState(t, f).State != domain.SlotChosen || len(chosen) != 1 || chosen[0] != second.ID {
 		t.Fatalf("after the wait: job %s slot %s chosen %v", j.State, slotState(t, f).State, chosen)
@@ -224,21 +224,21 @@ func TestMissingSearchSkipsNotOutYetAndBusy(t *testing.T) {
 			var pr, lfID, tiID int64
 			_ = tx.QueryRow("SELECT pick_rules_id, library_folder_id, title_id FROM versions LIMIT 1").Scan(&pr, &lfID, &tiID)
 			it := &domain.Item{TitleID: tiID, Kind: "movie", KeepUpToDate: true}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			v := &domain.Version{TitleID: tiID, Label: fmt.Sprintf("V%d", i), PickRulesID: pr, LibraryFolderID: lfID, FolderName: fmt.Sprintf("x%d", i), KeepUpToDate: true}
-			if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+			if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: st}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			extra = append(extra, sl.ID)
 		}
 		// The fixture's Slot was searched lately; the new wanted one never.
-		_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = (SELECT item_id FROM slots WHERE id = ?)", store.FormatTime(time.Now()), f.slotID)
+		_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = (SELECT item_id FROM slots WHERE id = ?)", database.FormatTime(time.Now()), f.slotID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -266,7 +266,7 @@ func TestMissingSearchSkipsNotOutYetAndBusy(t *testing.T) {
 
 func queuedSearches(t *testing.T, f fixture) []int64 {
 	t.Helper()
-	js, err := store.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = ? ORDER BY id", KindSearchSlot)
+	js, err := database.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = ? ORDER BY id", KindSearchSlot)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,7 +289,7 @@ func TestSearchMergesSourcesAndDedupes(t *testing.T) {
 		src := &domain.Source{Name: "Second", Protocol: "torrent", Format: "torznab", URL: bURL, AllowLocal: true,
 			UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
 			Categories: map[string][]int{"movie": {2000}}, Priority: 30, State: "enabled", Extra: map[string]string{}}
-		_, err := store.Insert(tx, "sources", src, domain.System)
+		_, err := database.Insert(tx, "sources", src, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -322,15 +322,15 @@ func TestPicksLimitPerSource(t *testing.T) {
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		r := &domain.Release{SourceID: f.srcID, Name: "Other", LinkRef: "x", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: []int64{}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &r.ID, SlotIDs: []int64{}, ExternalID: "e", State: "downloading", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestCleanImportFolders(t *testing.T) {
@@ -193,7 +193,7 @@ func TestByHandRefusesOutside(t *testing.T) {
 		t.Fatal("the file outside was moved")
 	}
 	var sl domain.Slot
-	_ = store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
 	if sl.FileID != nil {
 		t.Fatalf("slot filled %+v", sl)
 	}

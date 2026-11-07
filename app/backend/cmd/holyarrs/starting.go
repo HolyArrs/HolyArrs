@@ -18,10 +18,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small
@@ -73,24 +73,24 @@ func failedHandler(msg string) http.Handler {
 // publicReason says what went wrong without paths or other details, since
 // the page is open to anyone; the log keeps the full error.
 func publicReason(err error) string {
-	var nd *store.NewerDataError
-	var ns *store.NetShareError
+	var nd *database.NewerDataError
+	var ns *database.NetShareError
 	switch {
 	case errors.As(err, &nd):
 		return "this data is from a newer HolyArrs. Run that version again, or restore a backup." + goBack
 	case errors.As(err, &ns):
-		return "the config folder is on a shared or network folder (" + ns.Kind + "). " + store.ShareFix(ns.Kind)
-	case errors.Is(err, store.ErrInMemory):
-		return "the config folder is in memory (tmpfs or ramfs), so everything in it would be lost at the next restart. Put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set " + store.EnvConfigInMemory + "=yes to keep it in memory anyway, then restart."
-	case errors.Is(err, store.ErrNotWritable) && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EDQUOT)):
+		return "the config folder is on a shared or network folder (" + ns.Kind + "). " + database.ShareFix(ns.Kind)
+	case errors.Is(err, database.ErrInMemory):
+		return "the config folder is in memory (tmpfs or ramfs), so everything in it would be lost at the next restart. Put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set " + database.EnvConfigInMemory + "=yes to keep it in memory anyway, then restart."
+	case errors.Is(err, database.ErrNotWritable) && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EDQUOT)):
 		return "the disk that holds the config folder is full or over its quota. Free some space and restart. Nothing was changed."
-	case errors.Is(err, store.ErrNotWritable):
+	case errors.Is(err, database.ErrNotWritable):
 		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that its files belong to PUID/PGID. When the container starts as root (the default), HolyArrs already tried to give them to PUID/PGID before this page showed, so a plain restart will not help: on a NAS share (NFS or SMB) fix the owner or the share's permissions on the NAS, or set PUID/PGID to the user that owns the folder there; a folder on the host can be fixed with chown -R. With a user: setting HolyArrs does not change owners; remove it to let HolyArrs fix them at the next start. Then restart. Nothing was changed."
-	case errors.Is(err, store.ErrNoSpace):
-		return "not enough free disk space to update safely. Free some space and restart (or set " + store.SkipSpaceCheckEnv + "=yes to skip this check). Nothing was changed."
-	case errors.Is(err, store.ErrBackup):
+	case errors.Is(err, database.ErrNoSpace):
+		return "not enough free disk space to update safely. Free some space and restart (or set " + database.SkipSpaceCheckEnv + "=yes to skip this check). Nothing was changed."
+	case errors.Is(err, database.ErrBackup):
 		return "the backup before updating failed, so nothing was changed. Check that the backups folder can be written, see the log, and restart."
-	case errors.Is(err, store.ErrMigration):
+	case errors.Is(err, database.ErrMigration):
 		return "the update of the data failed and the step that failed was undone. You can run the version you had before again (change the image tag back); if it says the data is newer, its page offers to put back the data from before the update." + goBack
 	case errors.Is(err, secrets.ErrKeyMissing):
 		return "the master key file is missing. Put " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + ") back in the config folder, then restart. Nothing was changed." + newMachine
@@ -104,7 +104,7 @@ func publicReason(err error) string {
 		return "the master key file cannot be read by HolyArrs: its owner or mode is wrong. On the host, give it to your PUID and PGID and make it private: chown PUID:PGID " + secrets.KeyFile + " and chmod 600 " + secrets.KeyFile + " (use your own numbers and the file's real path), then restart. Nothing was changed."
 	case errors.Is(err, secrets.ErrKeyUnreadable):
 		return "the master key file cannot be read: it does not hold a key. Put back a good copy of " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + "), then restart. Nothing was changed."
-	case errors.Is(err, store.ErrCheckFailed):
+	case errors.Is(err, database.ErrCheckFailed):
 		return "the data check after updating failed. You can run the version you had before again (change the image tag back); its page offers to put back the data from before the update." + goBack
 	}
 	return "see the log for details." + goBack
@@ -142,14 +142,14 @@ func refuseEarly(ctx context.Context, c config, err error) error {
 	return err
 }
 
-// needsPerson reports whether a store.Open error is one the app should
+// needsPerson reports whether a database.Open error is one the app should
 // keep showing (newer data, no space, no backup, failed check, a config
 // folder on a share, in memory or not writable) instead of exiting into a
 // restart loop.
 func needsPerson(err error) bool {
-	var nd *store.NewerDataError
-	return errors.As(err, &nd) || errors.Is(err, store.ErrNoSpace) || errors.Is(err, store.ErrBackup) || errors.Is(err, store.ErrCheckFailed) || errors.Is(err, store.ErrMigration) ||
-		errors.Is(err, store.ErrNetworkShare) || errors.Is(err, store.ErrInMemory) || errors.Is(err, store.ErrNotWritable)
+	var nd *database.NewerDataError
+	return errors.As(err, &nd) || errors.Is(err, database.ErrNoSpace) || errors.Is(err, database.ErrBackup) || errors.Is(err, database.ErrCheckFailed) || errors.Is(err, database.ErrMigration) ||
+		errors.Is(err, database.ErrNetworkShare) || errors.Is(err, database.ErrInMemory) || errors.Is(err, database.ErrNotWritable)
 }
 
 // unmappedConfigWarning is the boxed start-up warning when /config is not
@@ -222,7 +222,7 @@ func goBackBackup(dir string) (backup.Info, bool) {
 func refusedHandler(dir string, err error, done chan<- struct{}) http.Handler {
 	msg := publicReason(err)
 	plain := failedHandler(msg)
-	var nd *store.NewerDataError
+	var nd *database.NewerDataError
 	if !errors.As(err, &nd) {
 		return plain
 	}

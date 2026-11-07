@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // flipGate holds nothing when read on the read pool but holds every Job
@@ -15,7 +15,7 @@ import (
 type flipGate struct{}
 
 func (flipGate) Active() bool { return true }
-func (flipGate) Held(_ context.Context, db store.Querier, _ string, _ *domain.Subject) bool {
+func (flipGate) Held(_ context.Context, db database.Querier, _ string, _ *domain.Subject) bool {
 	_, inWrite := db.(*sql.Tx)
 	return inWrite
 }

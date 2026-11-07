@@ -18,6 +18,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -220,7 +221,7 @@ func showcaseProviders(ctx context.Context, w *world) (providers, error) {
 func (w *world) showcaseWipe(ctx context.Context) error {
 	db := w.s.Read()
 	// Stand-in downloads first, through the Downloader manager.
-	dls, err := store.Select[domain.Download](ctx, db, "downloads", "state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') ORDER BY id")
+	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -233,7 +234,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	as, err := store.Select[domain.Ask](ctx, db, "asks", "1=1 ORDER BY id")
+	as, err := database.Select[domain.Ask](ctx, db, "asks", "1=1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -253,7 +254,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 	}); err != nil {
 		return err
 	}
-	ts, err := store.Select[domain.Title](ctx, db, "titles", "state != 'removed' ORDER BY id")
+	ts, err := database.Select[domain.Title](ctx, db, "titles", "state != 'removed' ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -263,10 +264,10 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 		}
 	}
 	_ = w.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE state = 'queued'", store.FormatTime(time.Now()), store.FormatTime(time.Now()))
+		_, err := tx.Exec("UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE state = 'queued'", database.FormatTime(time.Now()), database.FormatTime(time.Now()))
 		return err
 	})
-	ds, _ := store.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
+	ds, _ := database.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
 	for _, d := range ds {
 		if err := downloader.Remove(ctx, w.s, d.ID, w.by); err != nil {
 			w.say("   Downloader %d: %v", d.ID, err)
@@ -295,7 +296,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 // reports. Titles, files, asks and accounts stay.
 func (w *world) showcaseClearDownloads(ctx context.Context) error {
 	db := w.s.Read()
-	active, err := store.Select[domain.Download](ctx, db, "downloads", "state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') ORDER BY id")
+	active, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -314,7 +315,7 @@ func (w *world) showcaseClearDownloads(ctx context.Context) error {
 	}); err != nil {
 		return err
 	}
-	ds, _ := store.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
+	ds, _ := database.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
 	for _, d := range ds {
 		if err := downloader.Remove(ctx, w.s, d.ID, w.by); err != nil {
 			w.say("   Downloader %d: %v", d.ID, err)
@@ -366,7 +367,7 @@ const (
 	standInSource     = "Showcase stand-in indexer (disabled)"
 )
 
-func ownerPerson(ctx context.Context, db store.Querier) (asks.Person, error) {
+func ownerPerson(ctx context.Context, db database.Querier) (asks.Person, error) {
 	var p asks.Person
 	err := db.QueryRowContext(ctx, "SELECT id, name FROM users WHERE role = 'owner' ORDER BY id LIMIT 1").Scan(&p.UserID, &p.Name)
 	if err != nil {
@@ -456,7 +457,7 @@ func (w *world) standIns(ctx context.Context) error {
 	if n == 0 {
 		src := &domain.Source{Name: standInSource, Protocol: "torrent", Format: "torznab", URL: "http://127.0.0.1:9/showcase", AllowLocal: true,
 			Kinds: []string{"movie", "show", "music"}, Categories: map[string][]int{"movie": {2000}}, Priority: 50, State: "disabled", Extra: map[string]string{}}
-		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "sources", src, w.by); return err }); err != nil {
+		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "sources", src, w.by); return err }); err != nil {
 			return err
 		}
 		w.say("   added the stand-in indexer (disabled)")
@@ -483,7 +484,7 @@ func (w *world) members(ctx context.Context) error {
 			continue
 		}
 		u := &domain.User{Name: m.Name, Role: auth.RoleMember, State: "active", Perms: string(perms), MaxRating: m.MaxRating, RatingCountry: "US"}
-		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "users", u, w.by); return err }); err != nil {
+		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "users", u, w.by); return err }); err != nil {
 			return err
 		}
 		w.say("   added member %s (age limit %q, no password)", m.Name, m.MaxRating)
@@ -510,7 +511,7 @@ func (w *world) showcaseAgent(ctx context.Context, in io.Reader) error {
 		var role string
 		err := tx.QueryRow("SELECT id, role FROM users WHERE name = ?", name).Scan(&id, &role)
 		if errors.Is(err, sql.ErrNoRows) {
-			_, err = store.Insert(tx, "users", &domain.User{Name: name, Role: auth.RoleAdmin, PasswordHash: h, State: "active", Perms: string(perms), RatingCountry: "US"}, w.by)
+			_, err = database.Insert(tx, "users", &domain.User{Name: name, Role: auth.RoleAdmin, PasswordHash: h, State: "active", Perms: string(perms), RatingCountry: "US"}, w.by)
 			return err
 		}
 		if err != nil {
@@ -757,7 +758,7 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 		w.m.Titles[key] = id
 		_ = w.saveManifest(ctx)
 		var future int
-		_ = w.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM parts WHERE title_id = ? AND kind = 'album' AND release_date > ?", id, store.FormatTime(time.Now())).Scan(&future)
+		_ = w.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM parts WHERE title_id = ? AND kind = 'album' AND release_date > ?", id, database.FormatTime(time.Now())).Scan(&future)
 		w.say("   %-48s %s (%d albums kept, %d not out yet)", e.Name, e.Scenario, kept, future)
 	}
 	return nil
@@ -766,9 +767,9 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 // keepAlbums keeps up to n studio albums spread over the career, or with
 // allBut every studio album except the newest allBut.
 func (w *world) keepAlbums(ctx context.Context, id int64, n, allBut int) int {
-	parts, err := store.Select[domain.Part](ctx, w.s.Read(), "parts",
+	parts, err := database.Select[domain.Part](ctx, w.s.Read(), "parts",
 		"title_id = ? AND kind = 'album' AND included = 1 AND release_type = 'album' AND release_date IS NOT NULL AND release_date < ? ORDER BY release_date",
-		id, store.FormatTime(time.Now()))
+		id, database.FormatTime(time.Now()))
 	if err != nil {
 		return 0
 	}
@@ -866,7 +867,7 @@ func (w *world) artistShort(ctx context.Context, e showcaseArtist) bool {
 		WHERE i.part_id = p.id AND i.kind = 'track' AND s.file_id IS NOT NULL)), 0)
 		FROM parts p WHERE p.title_id = ? AND p.kind = 'album' AND p.dropped_at IS NULL AND p.release_type = 'album'
 		AND coalesce(p.secondary_types, '[]') IN ('[]', 'null', '') AND p.release_date IS NOT NULL AND p.release_date < ?`,
-		id, store.FormatTime(time.Now())).Scan(&n, &had)
+		id, database.FormatTime(time.Now())).Scan(&n, &had)
 	want := min(e.Albums, n)
 	if e.AllBut > 0 {
 		want = n - e.AllBut

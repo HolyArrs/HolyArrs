@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // route: GET /api/v1/events
@@ -117,7 +117,7 @@ func TestEveryLoopStepLeavesAnEvent(t *testing.T) {
 }
 
 // addTitleFor stores a bare movie and returns its id.
-func addTitleFor(t *testing.T, s *store.Store, name string) int64 {
+func addTitleFor(t *testing.T, s *database.Store, name string) int64 {
 	t.Helper()
 	var id int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -125,7 +125,7 @@ func addTitleFor(t *testing.T, s *store.Store, name string) int64 {
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{},
 			MusicTypes: []string{}, Artwork: []string{}}
 		var err error
-		id, err = store.Insert(tx, "titles", ti, domain.System)
+		id, err = database.Insert(tx, "titles", ti, domain.System)
 		return err
 	})
 	if err != nil {

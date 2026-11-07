@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Last-known rows (loaded or after a failed read) carry no speeds or ETA.
@@ -32,7 +32,7 @@ func TestReadClearsFallback(t *testing.T) {
 	r := newRig(t, own(0.2))
 	ctx := context.Background()
 	var d domain.Downloader
-	if err := store.Get(ctx, r.db.Read(), "downloaders", r.dlID, &d); err != nil {
+	if err := database.Get(ctx, r.db.Read(), "downloaders", r.dlID, &d); err != nil {
 		t.Fatal(err)
 	}
 	r.s.Store.SetFallback(r.dlID, true)

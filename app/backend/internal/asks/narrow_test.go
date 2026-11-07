@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestApproveSomeSeasonsOfAShowAsk(t *testing.T) {
@@ -96,7 +96,7 @@ func TestApproveSomeAlbumsOfAWholeArtistAsk(t *testing.T) {
 		t.Fatal(err)
 	}
 	var a domain.Ask
-	if err := store.Get(ctx, r.st.Read(), "asks", got.ID, &a); err != nil {
+	if err := database.Get(ctx, r.st.Read(), "asks", got.ID, &a); err != nil {
 		t.Fatal(err)
 	}
 	if len(a.Albums) != 1 || a.Albums[0].MBID != mSecond {
@@ -109,7 +109,7 @@ func TestApproveSomeAlbumsOfAWholeArtistAsk(t *testing.T) {
 }
 
 // episodeKeeps reads Keep up to date per episode of a season ("S1E2": on).
-func episodeKeeps(t *testing.T, st *store.Store, titleID int64) map[string]bool {
+func episodeKeeps(t *testing.T, st *database.Store, titleID int64) map[string]bool {
 	t.Helper()
 	rows, err := st.Read().Query(`SELECT p.number, json_extract(i.numbers, '$.episode'), p.keep_up_to_date AND i.keep_up_to_date FROM items i JOIN parts p ON p.id = i.part_id
 		WHERE i.title_id = ? AND i.kind = 'episode'`, titleID)

@@ -11,8 +11,8 @@ import (
 	"sort"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const restoreUsage = "usage:\n" +
@@ -81,9 +81,9 @@ func openBackups(dir string) (*backup.Manager, func(), error) {
 	if _, err := os.Stat(dir); err != nil {
 		return nil, nil, fmt.Errorf("config folder: %w", err)
 	}
-	unlock, err := store.LockDir(dir)
+	unlock, err := files.LockDir(dir)
 	if err != nil {
-		if errors.Is(err, store.ErrDirLocked) {
+		if errors.Is(err, files.ErrDirLocked) {
 			return nil, nil, errors.New("HolyArrs is running on this config folder; stop it first (docker stop <container>), then run this again")
 		}
 		return nil, nil, err

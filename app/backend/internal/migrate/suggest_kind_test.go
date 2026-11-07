@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // An old folder with no Library folder of the same name goes to the only
 // Library folder of its kind here (Sonarr's "/data/TV Shows" to the shows one).
 func TestSuggestRulesByKind(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

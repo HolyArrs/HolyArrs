@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindCheck keeps every Jackett bridge's Sources in step with its sites.
@@ -54,7 +54,7 @@ var ErrTaken = errors.New("already connected")
 
 // Service keeps bridges and their Sources.
 type Service struct {
-	Store *store.Store
+	Store *database.Store
 	Vault *secrets.Vault
 
 	mu      sync.Mutex
@@ -66,13 +66,13 @@ type Service struct {
 
 // List is every bridge, oldest first.
 func (s *Service) List(ctx context.Context) ([]Bridge, error) {
-	return store.Select[Bridge](ctx, s.Store.Read(), "bridges", "1=1 ORDER BY id")
+	return database.Select[Bridge](ctx, s.Store.Read(), "bridges", "1=1 ORDER BY id")
 }
 
 // Get is one bridge.
 func (s *Service) Get(ctx context.Context, id int64) (Bridge, error) {
 	var b Bridge
-	err := store.Get(ctx, s.Store.Read(), "bridges", id, &b)
+	err := database.Get(ctx, s.Store.Read(), "bridges", id, &b)
 	return b, err
 }
 
@@ -121,7 +121,7 @@ func (s *Service) Add(ctx context.Context, kind, url, key, callback string, by d
 			}
 			b.SecretRef = &id
 		}
-		_, err := store.Insert(tx, "bridges", &b, by)
+		_, err := database.Insert(tx, "bridges", &b, by)
 		return err
 	})
 	return b, err
@@ -159,7 +159,7 @@ func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by
 		}
 		b.CallbackURL = callback
 		delete(b.Extra, extraKnown) // connecting again brings back the sites the person removed
-		return store.Update(tx, "bridges", &b, by)
+		return database.Update(tx, "bridges", &b, by)
 	})
 	if err != nil {
 		return b, err
@@ -205,10 +205,10 @@ func (s *Service) Remove(ctx context.Context, b Bridge, keepSources bool) (int, 
 // is on this Prowlarr).
 func (s *Service) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
 	if b.Kind == KindProwlarr {
-		return store.Select[domain.Source](ctx, s.Store.Read(), "sources",
+		return database.Select[domain.Source](ctx, s.Store.Read(), "sources",
 			"json_extract(extra, '$.old_app') IS NOT NULL AND lower(url) LIKE lower(?) ESCAPE '\\' ORDER BY id", likePrefix(b.URL))
 	}
-	return store.Select[domain.Source](ctx, s.Store.Read(), "sources", "json_extract(extra, '$.bridge') = ? ORDER BY id", strconv.FormatInt(b.ID, 10))
+	return database.Select[domain.Source](ctx, s.Store.Read(), "sources", "json_extract(extra, '$.bridge') = ? ORDER BY id", strconv.FormatInt(b.ID, 10))
 }
 
 // likePrefix is a LIKE pattern matching addresses that start with u.
@@ -249,7 +249,7 @@ func (s *Service) record(ctx context.Context, b Bridge, sites int, changed bool,
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, e := tx.ExecContext(ctx, `UPDATE bridges SET last_check = ?, last_error = ?, site_count = ?, updated_at = ? WHERE id = ?`,
-			store.FormatTime(now), words, sites, store.FormatTime(now), b.ID)
+			database.FormatTime(now), words, sites, database.FormatTime(now), b.ID)
 		return e
 	})
 	s.quiet(b.ID, now)
@@ -306,7 +306,7 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		if _, ok := bySite[site.ID]; !ok {
 			// A Source the person added by hand for this site joins the bridge
 			// instead of getting a twin.
-			if own, err := store.Select[domain.Source](ctx, s.Store.Read(), "sources",
+			if own, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
 				"lower(rtrim(url, '/')) = lower(?) AND json_extract(extra, '$.bridge') IS NULL AND json_extract(extra, '$.old_app') IS NULL ORDER BY id LIMIT 1",
 				strings.TrimRight(feed, "/")); err == nil && len(own) == 1 {
 				src := own[0]

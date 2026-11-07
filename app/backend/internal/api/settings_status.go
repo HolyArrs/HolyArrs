@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -42,10 +42,10 @@ type namedState struct{ Name, State string }
 
 // statusInput is what the status rules look at. A nil field is not known.
 type statusInput struct {
-	Checks      []domain.HealthCheck
-	States      []supervisor.Status
-	Folders     *int
-	Sources     []namedState
+	Checks  []domain.HealthCheck
+	States  []supervisor.Status
+	Folders *int
+	Sources []namedState
 	// SourcesNear are the words for Sources close to a search or pick limit.
 	SourcesNear []string
 	Downloaders []namedState
@@ -323,7 +323,7 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 		return in, err
 	}
 	in.Folders = &folders
-	srcs, err := store.Select[domain.Source](ctx, db, "sources", "1=1 ORDER BY priority, name")
+	srcs, err := database.Select[domain.Source](ctx, db, "sources", "1=1 ORDER BY priority, name")
 	if err != nil {
 		return in, err
 	}
@@ -345,7 +345,7 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 			}
 		}
 	}
-	dls, err := store.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
+	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
 		return in, err
 	}
@@ -393,7 +393,7 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 
 // goneDefaults words each saved Movies and TV default whose folder or Pick
 // rules no longer exist (adds then use the built-in choice).
-func goneDefaults(ctx context.Context, st *store.Store) ([]string, error) {
+func goneDefaults(ctx context.Context, st *database.Store) ([]string, error) {
 	d, saved, err := library.ReadTitleDefaults(ctx, st.Read())
 	if err != nil {
 		return nil, err

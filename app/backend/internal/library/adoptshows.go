@@ -18,8 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // maxShowVideos is the most videos one show folder scan reads.
@@ -151,7 +151,7 @@ func mapEpisodeFiles(vids []AdoptVideo, sh metadata.Show, order string) []AdoptE
 // its videos to the episodes of the best match. Nothing is written.
 func PlanShowAdoptFrom(ctx context.Context, db reader, shows metadata.ShowSources, folderID int64, after string) (AdoptPlan, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
 		return AdoptPlan{}, ErrNoFolder
 	}
 	if lf.Kind != "show" {
@@ -178,7 +178,7 @@ func PlanShowAdoptFrom(ctx context.Context, db reader, shows metadata.ShowSource
 		return p, fmt.Errorf("the Library folder cannot be read: %w", err)
 	}
 	known := map[string]int64{}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
 	if err != nil {
 		return p, err
 	}
@@ -313,7 +313,7 @@ type ShowAdoption struct {
 // is below good enough and kept up to date).
 func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRulesID int64, keep bool, files []AdoptEpisodeFile, a *ShowAdoption, now time.Time, by domain.Actor) error {
 	var pr domain.PickRules
-	if err := store.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
 	for _, af := range files {
@@ -355,7 +355,7 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		if g := p.Group.Value; g != "" {
 			f.Group = &g
 		}
-		fileID, err := store.Insert(tx, "files", f, by)
+		fileID, err := database.Insert(tx, "files", f, by)
 		if err != nil {
 			return err
 		}
@@ -417,10 +417,10 @@ func (s *Service) adoptShowOne(ctx context.Context, lf domain.LibraryFolder, c A
 func (s *Service) recordFoundEpisodes(ctx context.Context, lf domain.LibraryFolder, v domain.Version, known map[string]bool, by domain.Actor) (int, error) {
 	db := s.Store.Read()
 	var t domain.Title
-	if err := store.Get(ctx, db, "titles", v.TitleID, &t); err != nil {
+	if err := database.Get(ctx, db, "titles", v.TitleID, &t); err != nil {
 		return 0, err
 	}
-	items, err := store.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' ORDER BY id", t.ID)
+	items, err := database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' ORDER BY id", t.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -475,7 +475,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf domain.LibraryFold
 		f := &domain.File{SlotIDs: slotIDs, VersionID: v.ID, RelativePath: af.Path, Size: af.Size, AddedAt: s.now(), Languages: []string{},
 			MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
 		f.Languages = inspectedLanguages(info)
-		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", f, by); return err }); err != nil {
+		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, by); return err }); err != nil {
 			return n, err
 		}
 		n++

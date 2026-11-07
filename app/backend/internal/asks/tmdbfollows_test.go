@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestKidFollowByTMDBKeepsTheLimit(t *testing.T) {
@@ -44,7 +44,7 @@ func TestLandingDropsFollowersOverTheirLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	// ana became a Kid after following.
-	now := store.FormatTime(r.clock)
+	now := database.FormatTime(r.clock)
 	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("INSERT INTO tmdb_follows (user_id, kind, tmdb_id, created_at) VALUES (?, 'show', '100', ?)", r.ana.UserID, now); err != nil {
 			return err

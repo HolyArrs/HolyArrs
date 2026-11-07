@@ -18,10 +18,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // importSecrets is `holyarrs import-secrets`: it reads the owner's secrets
@@ -75,12 +76,12 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	unlock, lockErr := store.LockDir(*dir)
+	unlock, lockErr := files.LockDir(*dir)
 	var lines []importsecrets.Line
 	switch {
 	case lockErr == nil:
 		defer unlock()
-		if _, err := os.Stat(filepath.Join(*dir, store.MainFile)); err != nil {
+		if _, err := os.Stat(filepath.Join(*dir, database.MainFile)); err != nil {
 			warn("no HolyArrs database in the config folder; start HolyArrs once first, or pass -config <folder>")
 			return 2
 		}
@@ -91,7 +92,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 				return 2
 			}
 		}
-		s, err := store.Open(*dir, store.Options{})
+		s, err := database.Open(*dir, database.Options{})
 		if err != nil {
 			warn("opening the config folder: %s", hide(err.Error()))
 			return 2
@@ -118,7 +119,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 		}
 		say("mode: offline (HolyArrs is stopped; writing to the config folder)")
 		lines = importsecrets.Apply(ctx, importsecrets.Deps{Store: s, Vault: vault, By: domain.System}, f, *dry)
-	case errors.Is(lockErr, store.ErrDirLocked):
+	case errors.Is(lockErr, files.ErrDirLocked):
 		if f == nil {
 			warn("HolyArrs is running: pass -file <path> so its address and owner key can be read from the secrets file")
 			return 2

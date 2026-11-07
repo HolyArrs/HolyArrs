@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // I1: a Release chosen from a Source and not yet sent counts against the
@@ -35,11 +35,11 @@ func TestTurnedDownRemovalKeepsDownloadLink(t *testing.T) {
 	plain := addRelease(t, f, br1080, "turned_down")
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &id, SlotIDs: []int64{}, ExternalID: "e", State: "downloading", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -74,7 +74,7 @@ func TestFeedStoresReleaseOncePerRun(t *testing.T) {
 	exec(t, f, `INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state)
 		SELECT created_at, created_by, updated_at, updated_by, item_id, (SELECT max(id) FROM versions), 'wanted' FROM slots LIMIT 1`)
 	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
-	rs, err := store.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080)
+	rs, err := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080)
 	if err != nil || len(rs) != 1 {
 		t.Fatalf("stored %d times: %v", len(rs), err)
 	}
@@ -96,11 +96,11 @@ func TestTurnedDownRemovalKeepsRefusedNeedingForce(t *testing.T) {
 	exec(t, f, `UPDATE releases SET matched_slot_ids = json_array(?), verdict = json('{"outcome":"refused","passed":false,"reasons":[{"step":"hard","rule":"safety:executable","effect":"fail","detail":"contains a program file, not a video"}],"turned_down_reason":"dangerous files"}') WHERE id = ?`, f.slotID, exe)
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &exe, SlotIDs: []int64{f.slotID}, ExternalID: "e", State: "failed", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

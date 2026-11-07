@@ -21,8 +21,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ByHandMax is the most files one scan by hand lists.
@@ -158,11 +158,11 @@ func (im *Importer) byHandTitle(ctx context.Context, db *sql.DB, cache map[int64
 		return bt, nil
 	}
 	bt := &byHandTitle{slots: map[int64]domain.Slot{}}
-	if err := store.Get(ctx, db, "titles", id, &bt.t); err != nil {
+	if err := database.Get(ctx, db, "titles", id, &bt.t); err != nil {
 		return nil, err
 	}
 	_ = db.QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1", id).Scan(&bt.main)
-	items, err := store.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind IN ('movie', 'episode') AND dropped_at IS NULL", id)
+	items, err := database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind IN ('movie', 'episode') AND dropped_at IS NULL", id)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (im *Importer) byHandTitle(ctx context.Context, db *sql.DB, cache map[int64
 		}
 		bt.refs = append(bt.refs, episodeRef(it))
 	}
-	slots, err := store.Select[domain.Slot](ctx, db, "slots", "version_id = ?", bt.main)
+	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ?", bt.main)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func episodeRef(it domain.Item) judge.EpisodeRef {
 func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, error) {
 	out := ByHandScan{Path: root, Files: []ByHandFile{}}
 	db := im.Store.Read()
-	folders, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
+	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return out, err
 	}
@@ -219,7 +219,7 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 		return out, err
 	}
 	out.Path = root
-	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed'")
+	titles, err := database.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed'")
 	if err != nil {
 		return out, err
 	}
@@ -346,7 +346,7 @@ func (im *Importer) ImportByHand(ctx context.Context, items []ByHandItem, by dom
 	if err != nil {
 		return nil, err
 	}
-	folders, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
+	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +434,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	var ver domain.Version
 	var ti domain.Title
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "slots", slotID, &sl); err != nil {
+	if err := database.Get(ctx, db, "slots", slotID, &sl); err != nil {
 		return refuse("no such Slot")
 	}
 	for _, g := range []struct {
@@ -442,15 +442,15 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 		id    int64
 		dst   any
 	}{{"items", sl.ItemID, &item}, {"versions", sl.VersionID, &ver}} {
-		if err := store.Get(ctx, db, g.table, g.id, g.dst); err != nil {
+		if err := database.Get(ctx, db, g.table, g.id, g.dst); err != nil {
 			return r, err
 		}
 	}
-	if err := store.Get(ctx, db, "titles", item.TitleID, &ti); err != nil {
+	if err := database.Get(ctx, db, "titles", item.TitleID, &ti); err != nil {
 		return r, err
 	}
 	r.TitleID = ti.ID
-	if err := store.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return r, err
 	}
 	switch {
@@ -554,7 +554,7 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 	release := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
 	var pr domain.PickRules
 	ge := false
-	if store.Get(ctx, im.Store.Read(), "pick_rules", ver.PickRulesID, &pr) == nil {
+	if database.Get(ctx, im.Store.Read(), "pick_rules", ver.PickRulesID, &pr) == nil {
 		ge = judge.ReachesGoodEnough(release, pr.Body)
 	}
 	state, why := domain.SlotInLibrary, "imported by hand"
@@ -575,7 +575,7 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		if g := p.Group.Value; g != "" {
 			f.Group = &g
 		}
-		id, err := store.Insert(tx, "files", f, by)
+		id, err := database.Insert(tx, "files", f, by)
 		if err != nil {
 			return err
 		}
@@ -583,10 +583,10 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		// Like an adopted file, the Slot takes its new state straight away:
 		// no Download stands between (those Slots were refused above).
 		if _, err := tx.Exec(`UPDATE slots SET file_id = ?, good_enough = ?, state = ?, last_reason = ?, held_release_id = NULL, active_download_id = NULL,
-			updated_at = ?, updated_by = ? WHERE id = ?`, id, ge, string(state), why, store.FormatTime(time.Now()), actorText(by), sl.ID); err != nil {
+			updated_at = ?, updated_by = ? WHERE id = ?`, id, ge, string(state), why, database.FormatTime(time.Now()), actorText(by), sl.ID); err != nil {
 			return err
 		}
-		_, err = store.Insert(tx, "imports", imp, by)
+		_, err = database.Insert(tx, "imports", imp, by)
 		return err
 	})
 	if err != nil {

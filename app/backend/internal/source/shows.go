@@ -18,6 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
@@ -93,7 +94,7 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 		return nil
 	}
 	var f domain.File
-	if err := store.Get(ctx, db, "files", *sl.FileID, &f); err != nil || f.State != "present" {
+	if err := database.Get(ctx, db, "files", *sl.FileID, &f); err != nil || f.State != "present" {
 		return nil
 	}
 	name := strings.TrimSuffix(path.Base(f.RelativePath), path.Ext(f.RelativePath))
@@ -146,10 +147,10 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Version) (showSet, error) {
 	db := s.Store.Read()
 	set := showSet{ti: ti, ver: ver, target: map[int64]bool{}, notOut: map[int64]bool{}}
-	if err := store.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
 		return set, err
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ?", ti.ID)
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ?", ti.ID)
 	if err != nil {
 		return set, err
 	}
@@ -157,12 +158,12 @@ func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Ver
 	for _, p := range parts {
 		partKept[p.ID] = p.KeepUpToDate && p.DroppedAt == nil
 	}
-	its, err := store.Select[domain.Item](ctx, db, "items", `title_id = ? AND kind = 'episode' AND dropped_at IS NULL
+	its, err := database.Select[domain.Item](ctx, db, "items", `title_id = ? AND kind = 'episode' AND dropped_at IS NULL
 		ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')`, ti.ID)
 	if err != nil {
 		return set, err
 	}
-	slots, err := store.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", ver.ID, ti.ID)
+	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", ver.ID, ti.ID)
 	if err != nil {
 		return set, err
 	}
@@ -576,7 +577,7 @@ func (s *Searcher) settleHeldMany(ctx context.Context, slotIDs []int64, releaseI
 			if err := moveSlotTx(tx, id, domain.SlotHeld, "holding "+name, by, releaseID); err != nil {
 				return err
 			}
-			if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, store.FormatTime(until), id); err != nil {
+			if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, database.FormatTime(until), id); err != nil {
 				return err
 			}
 		}
@@ -598,7 +599,7 @@ func pickReleaseTx(tx *sql.Tx, releaseID int64, state string, until *time.Time, 
 			SELECT value FROM json_each(COALESCE(json_extract(verdict, '$.pick_slot_ids'), '[]')) UNION SELECT value FROM json_each(?)))),
 		matched_slot_ids = (SELECT json_group_array(value) FROM (SELECT value FROM json_each(matched_slot_ids) UNION SELECT value FROM json_each(?))),
 		updated_at = ?, updated_by = ? WHERE id = ?`,
-		state, timeOrNil(until), jsonText(slotIDs), jsonText(slotIDs), store.FormatTime(time.Now()), actorText(by), releaseID)
+		state, timeOrNil(until), jsonText(slotIDs), jsonText(slotIDs), database.FormatTime(time.Now()), actorText(by), releaseID)
 	return err
 }
 
@@ -675,16 +676,16 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	by := jobActor(r)
 	jobID := r.Job.ID
 	var part domain.Part
-	if err := store.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil {
+	if err := database.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil {
 		return fmt.Errorf("season %d: %w", r.Job.Subject.ID, err)
 	}
 	var ti domain.Title
-	if err := store.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
+	if err := database.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
 		return err
 	}
 	vid, _ := r.Job.Params["version_id"].(float64)
 	var ver domain.Version
-	if err := store.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
+	if err := database.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
 		return fmt.Errorf("search_season needs a version_id of the show")
 	}
 	hand, _ := r.Job.Params["by_hand"].(bool)
@@ -761,7 +762,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 				to = domain.SlotBetterWanted
 			}
 			if st := s.slotState(ctx, e.sl.ID); st == domain.SlotSearching {
-				_ = s.Store.MoveSlot(ctx, e.sl.ID, to, reason, by)
+				_ = store.MoveSlot(ctx, s.Store, e.sl.ID, to, reason, by)
 				s.publish("slot", map[string]any{"id": e.sl.ID, "state": to, "reason": reason})
 			}
 		}
@@ -772,7 +773,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		set.target[e.sl.ID] = true
 		targets = append(targets, e.sl.ID)
 		if !show {
-			if err := s.Store.MoveSlot(ctx, e.sl.ID, domain.SlotSearching, "searching season "+strconv.Itoa(season), by); err != nil {
+			if err := store.MoveSlot(ctx, s.Store, e.sl.ID, domain.SlotSearching, "searching season "+strconv.Itoa(season), by); err != nil {
 				delete(set.target, e.sl.ID)
 				continue
 			}
@@ -812,7 +813,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, e := range looking {
-			if _, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", store.FormatTime(now), e.it.ID); err != nil {
+			if _, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(now), e.it.ID); err != nil {
 				return err
 			}
 		}
@@ -912,7 +913,7 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 // title that shares one of them (#108); titleTags are the title's.
 func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags []string) ([]found, []string, int, []skippedSource, error) {
 	now := time.Now().UTC()
-	srcs, err := store.Select[domain.Source](ctx, s.Store.Read(), "sources",
+	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
 		"state IN ('enabled', 'paused') ORDER BY priority, id")
 	if err != nil {
 		return nil, nil, 0, nil, err

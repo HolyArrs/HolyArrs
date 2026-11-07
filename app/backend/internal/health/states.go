@@ -8,9 +8,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -34,7 +34,7 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 	add := func(kind string, id int64, name string, st supervisor.State, reason string) {
 		out = append(out, supervisor.Status{Key: "link:" + kind + ":" + strconv.FormatInt(id, 10), Kind: kind, Name: name, State: st, Reason: reason})
 	}
-	ss, err := store.Select[domain.Source](ctx, db, "sources", "1=1 ORDER BY id")
+	ss, err := database.Select[domain.Source](ctx, db, "sources", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 			add("source", s.ID, s.Name, supervisor.Running, "")
 		}
 	}
-	ds, err := store.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY id")
+	ds, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	ms, err := store.Select[domain.MediaServer](ctx, db, "media_servers", "1=1 ORDER BY id")
+	ms, err := database.Select[domain.MediaServer](ctx, db, "media_servers", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}

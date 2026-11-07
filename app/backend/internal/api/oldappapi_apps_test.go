@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The other apps that read the old-app API (roadmap #85, phase 2): Bazarr
@@ -73,7 +73,7 @@ func (f *oldAppFix) putFileAs(sl domain.Slot, fl domain.File) int64 {
 	var id int64
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var err error
-		if id, err = store.Insert(tx, "files", &fl, domain.System); err != nil {
+		if id, err = database.Insert(tx, "files", &fl, domain.System); err != nil {
 			return err
 		}
 		_, err = tx.Exec("UPDATE slots SET file_id = ?, state = 'in_library', active_download_id = NULL WHERE id = ?", id, sl.ID)
@@ -353,7 +353,7 @@ func TestOldAppUnpackerrQueue(t *testing.T) {
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := domain.Downloader{Adapter: "qbittorrent", Name: "Lab qBit", Protocol: "torrent", URL: "http://lab.invalid",
 			PathMap: []domain.PathMap{{Theirs: "/downloads", Ours: "/data/downloads"}}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", &dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", &dr, domain.System); err != nil {
 			return err
 		}
 		for _, d := range []struct {
@@ -369,7 +369,7 @@ func TestOldAppUnpackerrQueue(t *testing.T) {
 		} {
 			dl := domain.Download{DownloaderID: dr.ID, ExternalID: d.hash, SlotIDs: d.slots, State: "finished", Progress: 1, SavePath: d.save,
 				FilesSeen: d.seen, StartedBy: domain.System}
-			id, err := store.Insert(tx, "downloads", &dl, domain.System)
+			id, err := database.Insert(tx, "downloads", &dl, domain.System)
 			if err != nil {
 				return err
 			}
@@ -479,7 +479,7 @@ func TestOldAppHomepageWidgets(t *testing.T) {
 	// kept up to date only with unmonitored=true.
 	now := time.Now().UTC()
 	soon := now.Add(24 * time.Hour).Truncate(time.Second)
-	f.exec("UPDATE items SET air_date = ?, air_day = ?, air_timed = 1 WHERE id IN (?, ?)", store.FormatTime(soon), soon.Format("2006-01-02"), e102, f.itemOf(showID, 2, 1))
+	f.exec("UPDATE items SET air_date = ?, air_day = ?, air_timed = 1 WHERE id IN (?, ?)", database.FormatTime(soon), soon.Format("2006-01-02"), e102, f.itemOf(showID, 2, 1))
 	calendar := func(q string) []any {
 		t.Helper()
 		l := arrList(t, "calendar", f.arrOK(son, "GET", s+"calendar"+q, "", 200), -1)
@@ -509,13 +509,13 @@ func TestOldAppHomepageWidgets(t *testing.T) {
 	// The queue details: every row, unpaged; filtered by show or episode.
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := domain.Downloader{Adapter: "sabnzbd", Name: "Lab SAB", Protocol: "usenet", URL: "http://lab.invalid", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", &dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", &dr, domain.System); err != nil {
 			return err
 		}
 		eta := int64(60)
 		d := domain.Download{DownloaderID: dr.ID, ExternalID: "SAB01", SlotIDs: []int64{f.slotsOf(showID)[[2]int{1, 2}].ID}, State: "downloading",
 			Progress: 0.25, ETA: &eta, SavePath: "/downloads/tv", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", &d, domain.System)
+		_, err := database.Insert(tx, "downloads", &d, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

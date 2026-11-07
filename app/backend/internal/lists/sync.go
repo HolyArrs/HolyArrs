@@ -20,8 +20,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // maxPages caps how much of one list is read in one sync.
@@ -29,7 +29,7 @@ const maxPages = 20
 
 // Service reads Outside lists and adds their movies or shows.
 type Service struct {
-	Store    *store.Store
+	Store    *database.Store
 	Queue    *jobs.Queue
 	Library  *library.Service
 	Metadata metadata.Provider
@@ -99,7 +99,7 @@ func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
 	if v, ok := r.Job.Params["list_id"].(float64); ok && v > 0 {
 		res, err := s.Sync(ctx, int64(v), by)
 		out := map[string]any{"list_id": int64(v), "result": res}
-		if err != nil && !errors.Is(err, store.ErrNotFound) {
+		if err != nil && !errors.Is(err, database.ErrNotFound) {
 			// The problem is on the list for people to see; trying again
 			// with the same key or link would not help.
 			out["problem"] = err.Error()
@@ -279,7 +279,7 @@ func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, 
 	text := describe(res)
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE outside_lists SET last_synced_at = ?, last_result = ?, last_error = ?, updated_at = ? WHERE id = ?",
-			store.FormatTime(now), text, problem, store.FormatTime(now), l.ID)
+			database.FormatTime(now), text, problem, database.FormatTime(now), l.ID)
 		return err
 	})
 	if err != nil {

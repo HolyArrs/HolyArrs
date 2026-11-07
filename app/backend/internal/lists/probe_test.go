@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestProbeSyncUsesDuePredicateWithoutWriting(t *testing.T) {
@@ -27,7 +27,7 @@ func TestProbeSyncUsesDuePredicateWithoutWriting(t *testing.T) {
 	}
 	// Set the same fields Sync persists, then the list is not due yet.
 	if err := e.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE outside_lists SET last_synced_at = ? WHERE id = ?", store.FormatTime(now), l.ID)
+		_, err := tx.Exec("UPDATE outside_lists SET last_synced_at = ? WHERE id = ?", database.FormatTime(now), l.ID)
 		return err
 	}); err != nil {
 		t.Fatal(err)

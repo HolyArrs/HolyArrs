@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // mainWith is this build's main migrations plus extra ones (name: SQL).
@@ -64,8 +64,8 @@ func TestGoBackPagePutsBackPreUpdateData(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := 0
-	_, err = store.Open(dir, store.Options{})
-	var nd *store.NewerDataError
+	_, err = database.Open(dir, database.Options{})
+	var nd *database.NewerDataError
 	if !errors.As(err, &nd) {
 		t.Fatalf("got %v", err)
 	}
@@ -99,7 +99,7 @@ func TestGoBackPagePutsBackPreUpdateData(t *testing.T) {
 	if code, page := postCode(t, srv.URL, "AAAAA-AAAAA"); code != 403 || !strings.Contains(page, "does not match") {
 		t.Fatalf("wrong code: %d %q", code, page)
 	}
-	if _, err := store.Open(dir, store.Options{}); !errors.As(err, &nd) {
+	if _, err := database.Open(dir, database.Options{}); !errors.As(err, &nd) {
 		t.Fatalf("a wrong code changed the data: %v", err)
 	}
 	// Typed loosely (lower case, no dash) it still matches.
@@ -114,7 +114,7 @@ func TestGoBackPagePutsBackPreUpdateData(t *testing.T) {
 	if v, err := openVersion(t, dir); err != nil || v != before {
 		t.Fatalf("after: version %d %v, want %d", v, err, before)
 	}
-	kept, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", store.MainFile))
+	kept, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", database.MainFile))
 	if len(kept) != 1 {
 		t.Fatalf("newer data not kept aside: %v", kept)
 	}
@@ -131,7 +131,7 @@ func TestGoBackPageLimitsTries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = store.Open(dir, store.Options{})
+	_, err = database.Open(dir, database.Options{})
 	logs := captureLog(t)
 	srv := httptest.NewServer(refusedHandler(dir, err, make(chan struct{})))
 	defer srv.Close()
@@ -147,7 +147,7 @@ func TestGoBackPageLimitsTries(t *testing.T) {
 	if code, _ := postCode(t, srv.URL, m[1]); code != 429 {
 		t.Fatalf("after %d wrong tries: %d", maxCodeTries, code)
 	}
-	if _, err := store.Open(dir, store.Options{}); err == nil {
+	if _, err := database.Open(dir, database.Options{}); err == nil {
 		t.Fatal("the data was changed")
 	}
 }
@@ -159,7 +159,7 @@ func TestGoBackPageIgnoresPostsWithoutACode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = store.Open(dir, store.Options{})
+	_, err = database.Open(dir, database.Options{})
 	logs := captureLog(t)
 	srv := httptest.NewServer(refusedHandler(dir, err, make(chan struct{})))
 	defer srv.Close()
@@ -191,7 +191,7 @@ func TestGoBackPageOnlyWithABackup(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "x"), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for _, err := range []error{&store.NewerDataError{Have: 2, Know: 1}, store.ErrNoSpace} {
+	for _, err := range []error{&database.NewerDataError{Have: 2, Know: 1}, database.ErrNoSpace} {
 		srv := httptest.NewServer(refusedHandler(dir, err, make(chan struct{})))
 		resp, gerr := http.Get(srv.URL + "/")
 		if gerr != nil {
@@ -218,7 +218,7 @@ func TestGoBackTwoUpdatesTakesTheFittingBackup(t *testing.T) {
 	// start runs (adopting the update's copy, AfterStart).
 	start := func(v string, extra map[string]string) int {
 		t.Helper()
-		s, err := store.Open(dir, store.Options{MainMigrations: mainWith(t, extra)})
+		s, err := database.Open(dir, database.Options{MainMigrations: mainWith(t, extra)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -260,22 +260,22 @@ func TestGoBackTwoUpdatesTakesTheFittingBackup(t *testing.T) {
 // build (which now sees the first step) offers to put that copy back.
 func TestFailedSecondStepThenGoBack(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want, _ := s.Version()
 	_ = s.Close()
-	_, err = store.Open(dir, store.Options{MainMigrations: mainWith(t, map[string]string{
+	_, err = database.Open(dir, database.Options{MainMigrations: mainWith(t, map[string]string{
 		"9998_one.sql": "CREATE TABLE one(x);", "9999_two.sql": "CREATE TABLE two(x); INSERT INTO nope VALUES (1);"})})
-	if !errors.Is(err, store.ErrMigration) {
+	if !errors.Is(err, database.ErrMigration) {
 		t.Fatalf("got %v", err)
 	}
 	if !strings.Contains(publicReason(err), "change the image tag back") {
 		t.Fatalf("reason %q", publicReason(err))
 	}
-	_, err = store.Open(dir, store.Options{})
-	var nd *store.NewerDataError
+	_, err = database.Open(dir, database.Options{})
+	var nd *database.NewerDataError
 	if !errors.As(err, &nd) || nd.Have != 9998 {
 		t.Fatalf("older build: %v", err)
 	}

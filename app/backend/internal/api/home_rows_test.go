@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // homeFixture adds Library titles for the Home row tests, one write each.
 type homeFixture struct {
 	t *testing.T
-	s *store.Store
+	s *database.Store
 }
 
 func (f homeFixture) write(fn func(ins func(table string, v any))) {
@@ -23,7 +23,7 @@ func (f homeFixture) write(fn func(ins func(table string, v any))) {
 		var failed error
 		fn(func(table string, v any) {
 			if failed == nil {
-				_, failed = store.Insert(tx, table, v, domain.System)
+				_, failed = database.Insert(tx, table, v, domain.System)
 			}
 		})
 		return failed
@@ -44,7 +44,7 @@ func (f homeFixture) title(kind, name string) (domain.Title, domain.Version) {
 		ins("versions", &v)
 	})
 	// Made long ago, so a show is not "New show".
-	f.exec(`UPDATE titles SET created_at = ? WHERE id = ?`, store.FormatTime(time.Now().AddDate(-1, 0, 0)), t.ID)
+	f.exec(`UPDATE titles SET created_at = ? WHERE id = ?`, database.FormatTime(time.Now().AddDate(-1, 0, 0)), t.ID)
 	return t, v
 }
 
@@ -204,7 +204,7 @@ func TestHomeSoonDays(t *testing.T) {
 	want, wv := f.title("movie", "Want It")
 	f.item(domain.Item{TitleID: want.ID, Kind: "movie"}, wv, nil, "wanted")
 	for _, id := range []int64{have.ID, want.ID} {
-		f.exec(`UPDATE titles SET physical_date = ? WHERE id = ?`, store.FormatTime(disc), id)
+		f.exec(`UPDATE titles SET physical_date = ? WHERE id = ?`, database.FormatTime(disc), id)
 	}
 
 	ctx := context.Background()

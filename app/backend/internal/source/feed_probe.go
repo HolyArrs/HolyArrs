@@ -12,8 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
@@ -55,8 +55,8 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 		return true, nil, err
 	}
 	db := s.Store.Read()
-	srcs, err := store.Select[domain.Source](ctx, db, "sources",
-		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", store.FormatTime(now.UTC()))
+	srcs, err := database.Select[domain.Source](ctx, db, "sources",
+		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", database.FormatTime(now.UTC()))
 	if err != nil {
 		return true, nil, err
 	}
@@ -153,8 +153,8 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			}
 		}
 	}
-	current, err := store.Select[domain.Source](ctx, db, "sources",
-		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", store.FormatTime(now.UTC()))
+	current, err := database.Select[domain.Source](ctx, db, "sources",
+		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", database.FormatTime(now.UTC()))
 	if err != nil {
 		return true, nil, err
 	}

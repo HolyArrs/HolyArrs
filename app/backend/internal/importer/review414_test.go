@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.14 review minor 4: every part of a track's path stays under the name
@@ -112,7 +112,7 @@ func TestStrandedSweepBacksOffAfterFailedImports(t *testing.T) {
 		t.Helper()
 		end := time.Now().Add(-ago)
 		if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-			_, err := store.Insert(tx, "jobs", &domain.Job{Kind: KindImport, Subject: &domain.Subject{Type: "download", ID: w.dlID}, Params: map[string]any{},
+			_, err := database.Insert(tx, "jobs", &domain.Job{Kind: KindImport, Subject: &domain.Subject{Type: "download", ID: w.dlID}, Params: map[string]any{},
 				Priority: "normal", State: "failed", MaxAttempts: 3, Attempt: 3, RunAfter: end, EndedAt: &end, AskedBy: domain.System}, domain.System)
 			return err
 		}); err != nil {
@@ -131,7 +131,7 @@ func TestStrandedSweepBacksOffAfterFailedImports(t *testing.T) {
 		t.Fatal("queued again right after the second failure")
 	}
 	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET ended_at = ? WHERE kind = ?", store.FormatTime(time.Now().Add(-25*time.Minute)), KindImport)
+		_, err := tx.Exec("UPDATE jobs SET ended_at = ? WHERE kind = ?", database.FormatTime(time.Now().Add(-25*time.Minute)), KindImport)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -170,7 +170,7 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 				f := &domain.File{SlotIDs: []int64{w.slots[0]}, VersionID: vID, RelativePath: rp, Size: 100, AddedAt: time.Now().Add(-time.Hour),
 					Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &old, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 				var err error
-				if oldID, err = store.Insert(tx, "files", f, domain.System); err != nil {
+				if oldID, err = database.Insert(tx, "files", f, domain.System); err != nil {
 					return err
 				}
 				_, err = tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", oldID, w.slots[0])
@@ -209,7 +209,7 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 				t.Fatal("the held copy is not the old one")
 			}
 			var old domain.File
-			_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+			_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 			rel, _ := filepath.Rel(w.lib, held[0])
 			if old.State != "replaced" || old.RelativePath != filepath.ToSlash(rel) {
 				t.Fatalf("old %s %q, held at %s", old.State, old.RelativePath, rel)

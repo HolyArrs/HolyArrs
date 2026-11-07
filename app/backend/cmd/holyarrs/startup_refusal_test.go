@@ -10,24 +10,24 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 const secretDir = "/srv/private-config-dir"
 
 func shareErr(kind string) error {
-	return fmt.Errorf("%w: %s; %s", &store.NetShareError{Kind: kind}, secretDir, store.ShareFix(kind))
+	return fmt.Errorf("%w: %s; %s", &database.NetShareError{Kind: kind}, secretDir, database.ShareFix(kind))
 }
 
 // Refusals a person has to fix keep the page up instead of exiting into a
 // restart loop (restart: unless-stopped would start the same refusal).
 func TestStartupRefusalsNeedAPerson(t *testing.T) {
 	for name, err := range map[string]error{
-		"9p":           &store.NetShareError{Kind: "9p"},
+		"9p":           &database.NetShareError{Kind: "9p"},
 		"wrapped fuse": shareErr("fuse"),
 		"fakeowner":    shareErr("fakeowner"),
-		"in memory":    fmt.Errorf("%w: %s", store.ErrInMemory, secretDir),
-		"not writable": fmt.Errorf("%w: %s", store.ErrNotWritable, secretDir),
+		"in memory":    fmt.Errorf("%w: %s", database.ErrInMemory, secretDir),
+		"not writable": fmt.Errorf("%w: %s", database.ErrNotWritable, secretDir),
 	} {
 		if !needsPerson(err) {
 			t.Errorf("%s: needsPerson = false", name)
@@ -65,13 +65,13 @@ func TestPublicReasonForAShare(t *testing.T) {
 }
 
 func TestPublicReasonForMemoryAndReadOnly(t *testing.T) {
-	mem := publicReason(fmt.Errorf("%w: %s", store.ErrInMemory, secretDir))
+	mem := publicReason(fmt.Errorf("%w: %s", database.ErrInMemory, secretDir))
 	for _, w := range []string{"memory", "HOLYARRS_CONFIG_IN_MEMORY"} {
 		if !strings.Contains(mem, w) {
 			t.Errorf("in memory lacks %q: %s", w, mem)
 		}
 	}
-	ro := publicReason(fmt.Errorf("%w: %s", store.ErrNotWritable, secretDir))
+	ro := publicReason(fmt.Errorf("%w: %s", database.ErrNotWritable, secretDir))
 	if !strings.Contains(ro, "writ") {
 		t.Errorf("read-only config: %s", ro)
 	}
@@ -88,12 +88,12 @@ func TestPublicReasonForMemoryAndReadOnly(t *testing.T) {
 // that could lead someone to chown a healthy folder.
 func TestPublicReasonForAFullConfigDisk(t *testing.T) {
 	for _, no := range []syscall.Errno{syscall.ENOSPC, syscall.EDQUOT} {
-		msg := publicReason(fmt.Errorf("%w: %s: %s (%w)", store.ErrNotWritable, secretDir, "full", no))
+		msg := publicReason(fmt.Errorf("%w: %s: %s (%w)", database.ErrNotWritable, secretDir, "full", no))
 		if !strings.Contains(msg, "full") || strings.Contains(msg, "PUID") || strings.Contains(msg, ":ro") {
 			t.Errorf("%v: %s", no, msg)
 		}
 	}
-	ro := publicReason(fmt.Errorf("%w: %s: %s (%w)", store.ErrNotWritable, secretDir, "ro", syscall.EROFS))
+	ro := publicReason(fmt.Errorf("%w: %s: %s (%w)", database.ErrNotWritable, secretDir, "ro", syscall.EROFS))
 	if !strings.Contains(ro, ":ro") {
 		t.Errorf("read-only: %s", ro)
 	}

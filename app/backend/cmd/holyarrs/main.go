@@ -47,12 +47,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -128,7 +130,7 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 }
 
 // ensure adds the configured Source, Downloader and Library folder once.
-func ensure(ctx context.Context, s *store.Store, c config) error {
+func ensure(ctx context.Context, s *database.Store, c config) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		exists := func(q string, arg any) (bool, error) {
 			var n int
@@ -145,7 +147,7 @@ func ensure(ctx context.Context, s *store.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
+				if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
 					Health: "unknown", SameDiskAs: []int64{}}, domain.System); err != nil {
 					return err
 				}
@@ -157,7 +159,7 @@ func ensure(ctx context.Context, s *store.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := store.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
+				if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
 					URL: c.SourceURL, UseFor: domain.SourceUse{Feed: false, AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
 					Categories: map[string][]int{"movie": {2000}}, Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600},
 					Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}, domain.System); err != nil {
@@ -176,7 +178,7 @@ func ensure(ctx context.Context, s *store.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
+				if _, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
 					URL: c.QbitURL, Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}, domain.System); err != nil {
 					return err
 				}
@@ -314,6 +316,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		reg = supervisor.NewRegistry()
 	}
 	supervisor.SetDefault(reg)
+	database.SetEventGuard(supervisor.Guard)
 	const notStarted = "Safe mode: not started. Restart without safe mode to turn it on."
 	if err := os.MkdirAll(c.ConfigDir, 0o750); err != nil {
 		return err
@@ -323,7 +326,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// logs) is masked the same way.
 	applogs, err := logs.Open(filepath.Join(c.ConfigDir, "logs"))
 	if err != nil {
-		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
+		if nw := database.NotWritable(c.ConfigDir, err); nw != nil {
 			return refuseEarly(ctx, c, nw)
 		}
 		return fmt.Errorf("log folder: %w", err)
@@ -358,9 +361,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// The lock tells tools that change a stopped config folder (holyarrs-demo)
 	// that HolyArrs runs here; the system drops it when the process ends.
-	unlock, err := store.LockDir(c.ConfigDir)
+	unlock, err := files.LockDir(c.ConfigDir)
 	if err != nil {
-		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
+		if nw := database.NotWritable(c.ConfigDir, err); nw != nil {
 			return refuseEarly(ctx, c, nw)
 		}
 		return fmt.Errorf("config folder %s: %w", c.ConfigDir, err)
@@ -395,7 +398,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
+	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
 	if err != nil {
 		if !needsPerson(err) {
 			return err
@@ -727,8 +730,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
-	q.Handle(store.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
-		n, err := s.PruneEvents(ctx, store.ReadHistoryKeep(ctx, s.Read()), time.Now().UTC())
+	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
+		n, err := s.PruneEvents(ctx, database.ReadHistoryKeep(ctx, s.Read()), time.Now().UTC())
 		r.SetResult(map[string]any{"removed": n})
 		return err
 	})
@@ -1009,7 +1012,7 @@ func artistImages() *metadata.ArtistImages {
 // Its own clients reach public addresses only, or the local network too
 // (never cloud metadata addresses) when the music settings allow it or
 // the stand-in is used.
-func musicSource(s *store.Store, version string) *metadata.MusicBrainz {
+func musicSource(s *database.Store, version string) *metadata.MusicBrainz {
 	env := os.Getenv("HOLYARRS_MUSICBRAINZ_URL")
 	client := func(allow func(net.IP) bool) *http.Client {
 		t := http.DefaultTransport.(*http.Transport).Clone()
@@ -1115,7 +1118,7 @@ func main() {
 // logFolderCheck logs one line on the Library and download folders, and a
 // WARN line with the fix for each problem folder. It takes a few seconds at
 // most: a folder that is slower (a hung network share) is skipped with a note.
-func logFolderCheck(ctx context.Context, db store.Lister, savePath string) {
+func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
 	sum, warns := doctor.Startup(ctx, db, savePath, 3*time.Second)
 	log.Printf("holyarrs: %s", sum)
 	for _, w := range warns {
@@ -1161,7 +1164,7 @@ func resetOwner(args []string) int {
 		log.Printf("reset-owner: %v", err)
 		return 1
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{})
+	s, err := database.Open(c.ConfigDir, database.Options{})
 	if err != nil {
 		log.Printf("reset-owner: %v", err)
 		return 1

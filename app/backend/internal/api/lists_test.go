@@ -12,21 +12,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // listSetup is an API with Outside lists pointed at a stand-in TMDB that
 // serves list 7 (Dune and The Lantern Keepers), and a secrets vault.
-func listSetup(t *testing.T) (*httptest.Server, *store.Store) {
+func listSetup(t *testing.T) (*httptest.Server, *database.Store) {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestOutsideListsAPI(t *testing.T) {
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"LAB LIST","kind":"tmdb_list","ref":"8"}`, 409)
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		ts, _ := store.Select[domain.Title](ctx, s.Read(), "titles", "1=1")
+		ts, _ := database.Select[domain.Title](ctx, s.Read(), "titles", "1=1")
 		if len(ts) == 1 {
 			if ts[0].WhyAdded != "list" || ts[0].Name != "Dune: Part Two" {
 				t.Fatalf("title %+v", ts[0])

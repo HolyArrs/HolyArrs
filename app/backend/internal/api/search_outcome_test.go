@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // route: GET /api/v1/titles/{id}/search-outcome
@@ -20,11 +20,11 @@ func TestSearchOutcomeOwnerSeesSourcesMemberDoesNot(t *testing.T) {
 	err := r.st.Write(ctx, func(tx *sql.Tx) error {
 		title := domain.Title{Kind: "movie", Name: "Paper Harbour", SortName: "paper harbour", SourceIDs: map[string]string{"tmdb": "900002"}, MetadataSource: "tmdb",
 			Rating: "PG", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
 		titleID = title.ID
-		now := store.FormatTime(time.Now().UTC())
+		now := database.FormatTime(time.Now().UTC())
 		_, err := tx.Exec(`INSERT INTO asks (created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
 			VALUES (?, '{}', ?, '{}', 'movie', '900002', 'Paper Harbour', 'approved', ?, ?, ?)`, now, now, titleID, r.ana.id, now)
 		return err

@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Some feeds keep their passkey in the address path, not the query
@@ -155,14 +155,14 @@ func splitKeys(plain string) []string {
 // HidePathKeys moves passkeys an older save left in rss Source addresses
 // into the vault, and says how many Sources it changed. It then takes the
 // passkeys out of Release links stored before.
-func HidePathKeys(ctx context.Context, s *store.Store, v *secrets.Vault) (int, error) {
+func HidePathKeys(ctx context.Context, s *database.Store, v *secrets.Vault) (int, error) {
 	if v == nil {
 		return 0, nil
 	}
 	moved := 0
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		moved = 0
-		srcs, err := store.Select[domain.Source](ctx, tx, "sources", "format = 'rss' AND path_secret_ref IS NULL")
+		srcs, err := database.Select[domain.Source](ctx, tx, "sources", "format = 'rss' AND path_secret_ref IS NULL")
 		if err != nil {
 			return err
 		}
@@ -177,7 +177,7 @@ func HidePathKeys(ctx context.Context, s *store.Store, v *secrets.Vault) (int, e
 				return err
 			}
 			src.URL = stored
-			if err := store.Update(tx, "sources", &src, domain.System); err != nil {
+			if err := database.Update(tx, "sources", &src, domain.System); err != nil {
 				return err
 			}
 			moved++
@@ -192,8 +192,8 @@ func HidePathKeys(ctx context.Context, s *store.Store, v *secrets.Vault) (int, e
 
 // hideReleaseKeys takes the path passkeys out of a Source's stored Release
 // links. A Source whose keys cannot be read keeps its links: they still work.
-func hideReleaseKeys(ctx context.Context, s *store.Store, v *secrets.Vault) error {
-	srcs, err := store.Select[domain.Source](ctx, s.Read(), "sources", "format = 'rss' AND path_secret_ref IS NOT NULL")
+func hideReleaseKeys(ctx context.Context, s *database.Store, v *secrets.Vault) error {
+	srcs, err := database.Select[domain.Source](ctx, s.Read(), "sources", "format = 'rss' AND path_secret_ref IS NOT NULL")
 	if err != nil {
 		return err
 	}

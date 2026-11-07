@@ -11,12 +11,12 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -62,7 +62,7 @@ func AllOK(ls []Line) bool {
 
 // Deps is what an import writes with.
 type Deps struct {
-	Store *store.Store
+	Store *database.Store
 	Vault *secrets.Vault
 	By    domain.Actor
 }
@@ -378,7 +378,7 @@ func (r *run) indexer(item, name, addr, key, format string, local, clearKey bool
 		return
 	}
 	if err == nil {
-		err = store.Get(r.ctx, r.d.Store.Read(), "sources", src.ID, &src)
+		err = database.Get(r.ctx, r.d.Store.Read(), "sources", src.ID, &src)
 	}
 	if err != nil {
 		r.fail(item, err)
@@ -528,7 +528,7 @@ func (r *run) downloaderItem(item, adapter, name, addr, user, secret string, loc
 		return
 	}
 	if err == nil {
-		err = store.Get(r.ctx, r.d.Store.Read(), "downloaders", d.ID, &d)
+		err = database.Get(r.ctx, r.d.Store.Read(), "downloaders", d.ID, &d)
 	}
 	if err != nil {
 		r.fail(item, err)
@@ -607,7 +607,7 @@ func (r *run) mediaServer(item, kind, name, addr, tok string, local bool) {
 		return
 	}
 	if err == nil {
-		err = store.Get(r.ctx, r.d.Store.Read(), "media_servers", m.ID, &m)
+		err = database.Get(r.ctx, r.d.Store.Read(), "media_servers", m.ID, &m)
 	}
 	if err != nil {
 		r.fail(item, err)
@@ -758,7 +758,7 @@ func (r *run) alert(item string, in alerts.Input, same func(domain.Alert) bool) 
 		return
 	}
 	if err == nil {
-		err = store.Get(r.ctx, r.d.Store.Read(), "alerts", a.ID, &a)
+		err = database.Get(r.ctx, r.d.Store.Read(), "alerts", a.ID, &a)
 	}
 	if err != nil {
 		r.fail(item, err)

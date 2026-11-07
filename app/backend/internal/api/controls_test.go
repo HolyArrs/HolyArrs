@@ -18,17 +18,17 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 type ctlFix struct {
 	srv     *httptest.Server
-	s       *store.Store
+	s       *database.Store
 	pc      *parts.Control
 	reg     *supervisor.Registry
 	api     *API
@@ -55,7 +55,7 @@ func newCtl(t *testing.T, withAuth bool) *ctlFix {
 func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 
 func (f *ctlFix) events(t *testing.T) []domain.Event {
 	t.Helper()
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Kinds: []string{domain.EventControl}, Limit: 100})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{domain.EventControl}, Limit: 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +201,7 @@ func TestTitleOfAnOffPart(t *testing.T) {
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		var err error
-		id, err = store.Insert(tx, "titles", ti, domain.System)
+		id, err = database.Insert(tx, "titles", ti, domain.System)
 		return err
 	})
 	if err != nil {
@@ -269,12 +269,12 @@ func TestLinkRestart(t *testing.T) {
 		d := &domain.Downloader{Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:9", Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		var err error
-		if dl, err = store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if dl, err = database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		x := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://127.0.0.1:9", Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}, AllowLocal: true}
-		src, err = store.Insert(tx, "sources", x, domain.System)
+		src, err = database.Insert(tx, "sources", x, domain.System)
 		return err
 	})
 	if err != nil {

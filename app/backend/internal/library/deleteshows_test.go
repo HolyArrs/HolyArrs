@@ -9,15 +9,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // showDeleteWorld adopts the lab show tree (three adopted files: S01E01,
 // S01E02 and the multi-episode S02E01E02) and records the files left alone
 // as found by a rescan.
-func showDeleteWorld(t *testing.T) (*Service, *store.Store, domain.LibraryFolder, int64) {
+func showDeleteWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder, int64) {
 	t.Helper()
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
@@ -134,11 +134,11 @@ func TestDeleteSeason(t *testing.T) {
 		}
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.State == "removed" {
 		t.Error("the show was deleted")
 	}
-	if es, _, _ := svc.Store.Events(ctx, store.EventFilter{Kinds: []string{domain.EventEpisodesRemoved}}); len(es) != 1 || es[0].Summary != "Deleted Lab Show season 2 from the Library" {
+	if es, _, _ := svc.Store.Events(ctx, database.EventFilter{Kinds: []string{domain.EventEpisodesRemoved}}); len(es) != 1 || es[0].Summary != "Deleted Lab Show season 2 from the Library" {
 		t.Errorf("event %+v", es)
 	}
 }

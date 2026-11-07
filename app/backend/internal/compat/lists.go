@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The read-only lists start pages (Homepage) and subtitle apps (Bazarr)
@@ -45,7 +45,7 @@ func (h *handler) withFiles(ctx context.Context, eps []episode) error {
 		return nil
 	}
 	db := h.Store.Read()
-	fs, err := store.Select[domain.File](ctx, db, "files", "id IN "+idList(ids))
+	fs, err := database.Select[domain.File](ctx, db, "files", "id IN "+idList(ids))
 	if err != nil || len(fs) == 0 {
 		return err
 	}
@@ -53,7 +53,7 @@ func (h *handler) withFiles(ctx context.Context, eps []episode) error {
 	for _, f := range fs {
 		vids = append(vids, f.VersionID)
 	}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "id IN "+idList(vids))
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "id IN "+idList(vids))
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 		JOIN slots s ON s.item_id = i.id AND s.version_id = v.id
 		WHERE i.kind = 'episode' AND i.dropped_at IS NULL AND t.kind = 'show' AND t.state != 'removed' AND s.state != 'removed'
 		AND s.file_id IS NULL AND i.air_date IS NOT NULL AND i.air_date <= ? AND ` + filter
-	now := store.FormatTime(h.now())
+	now := database.FormatTime(h.now())
 	db := h.Store.Read()
 	var total int
 	if err := db.QueryRowContext(ctx, "SELECT count(DISTINCT i.id) "+from, now).Scan(&total); err != nil {

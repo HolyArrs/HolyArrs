@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func protectFile(t *testing.T, s *store.Store, id int64) {
+func protectFile(t *testing.T, s *database.Store, id int64) {
 	t.Helper()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET protected=1 WHERE id=?", id)
@@ -40,7 +40,7 @@ func TestProtectedMovieRemovalNeedsExplicitDeleteAcknowledgement(t *testing.T) {
 		t.Fatalf("remove error %v", err)
 	}
 	var title domain.Title
-	if err := store.Get(ctx, s.Read(), "titles", titleID, &title); err != nil {
+	if err := database.Get(ctx, s.Read(), "titles", titleID, &title); err != nil {
 		t.Fatal(err)
 	}
 	if title.State == "removed" || !onDisk(lf, files[0].RelativePath) || !fileRow(t, s, files[0].ID).Protected {
@@ -101,7 +101,7 @@ func TestProtectionPersistsWhenMissingAndAcrossRestart(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	reopened, err := store.Open(dir, store.Options{})
+	reopened, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

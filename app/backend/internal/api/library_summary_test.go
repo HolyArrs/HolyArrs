@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // route: GET /api/v1/library-summary
@@ -21,15 +21,15 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 			if n == 11 {
 				title.State = "removed"
 			}
-			if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+			if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 				return err
 			}
 			item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
-			if _, err := store.Insert(tx, "items", &item, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 				return err
 			}
 			version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1}
-			if _, err := store.Insert(tx, "versions", &version, domain.System); err != nil {
+			if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 				return err
 			}
 			slot := domain.Slot{ItemID: item.ID, VersionID: version.ID, State: "wanted"}
@@ -39,7 +39,7 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 			if n == 1 {
 				slot.State = "searching"
 			}
-			if _, err := store.Insert(tx, "slots", &slot, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", &slot, domain.System); err != nil {
 				return err
 			}
 		}

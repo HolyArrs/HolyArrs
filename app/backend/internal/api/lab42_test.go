@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -124,7 +125,7 @@ func video(seed byte, n int) []byte {
 // labShow is Copper Valley with three aired episodes of season 1 in one
 // Version, each Slot in state, a Source and the lab qBittorrent.
 type labShow struct {
-	s       *store.Store
+	s       *database.Store
 	srcID   int64
 	slots   []int64
 	shows   string
@@ -136,7 +137,7 @@ type labShow struct {
 // labNoSizeFloors turns the import size floors off in a lab test's own
 // database: its payloads are a few hundred KB on purpose, which the fake
 // guard (#42) would rightly refuse as too small to be the full video or track.
-func labNoSizeFloors(t *testing.T, s *store.Store) {
+func labNoSizeFloors(t *testing.T, s *database.Store) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', 'import_size_floors', 'false', '2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}')
@@ -150,7 +151,7 @@ func labNoSizeFloors(t *testing.T, s *store.Store) {
 
 func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,47 +164,47 @@ func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
 			return err
 		}
 		lf := &domain.LibraryFolder{Path: x.shows, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		y, order := 2025, "aired"
 		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: &y, Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", EpisodeOrder: &order, MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		season := 1
 		p := &domain.Part{TitleID: ti.ID, Kind: "season", Number: &season, Name: "Season 1", KeepUpToDate: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
-		if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Copper Valley (2025)", IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		x.titleID, x.partID, x.verID = ti.ID, p.ID, v.ID
 		for n, name := range []string{"The Mill", "Flood", "Ash"} {
 			ep, name := n+1, name
 			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &ep}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			x.slots = append(x.slots, sl.ID)
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home (#152) */, Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		x.srcID = src.ID
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: qb, Category: lab42Cat, Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := store.Insert(tx, "downloaders", d, domain.System)
+		_, err := database.Insert(tx, "downloaders", d, domain.System)
 		return err
 	})
 	if err != nil {
@@ -219,7 +220,7 @@ func (x labShow) release(t *testing.T, name, link, hash string, size int64, slot
 	r := &domain.Release{SourceID: x.srcID, Name: name, LinkRef: link, Protocol: "torrent", Size: size, InfoHash: &h, Flags: []string{}, Parsed: map[string]any{},
 		MatchedSlotIDs: slots, Verdict: map[string]any{"pick_slot_ids": slots}, FoundBy: "auto_search", State: "chosen"}
 	err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		for _, id := range slots {
@@ -476,7 +477,7 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 	var d domain.Download
-	_ = store.Get(ctx, x.s.Read(), "downloads", first, &d)
+	_ = database.Get(ctx, x.s.Read(), "downloads", first, &d)
 	if d.Progress >= 1 || (d.State != "downloading" && d.State != "sent" && d.State != "queued" && d.State != "stalled") {
 		t.Fatalf("broken download %s %.2f", d.State, d.Progress)
 	}
@@ -492,7 +493,7 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 	deadline := time.Now().Add(3 * time.Minute)
 	for {
 		_, _ = m.SyncOnce(ctx)
-		_ = store.Get(ctx, x.s.Read(), "downloads", nextDL, &d)
+		_ = database.Get(ctx, x.s.Read(), "downloads", nextDL, &d)
 		if d.State == "finished" || d.State == "seeding" {
 			break
 		}

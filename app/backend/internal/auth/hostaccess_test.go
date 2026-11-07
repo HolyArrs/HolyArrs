@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // These tests cover sign-in behind HTTPS proxies and tailscale serve, the
@@ -70,7 +70,7 @@ func loginOn(t *testing.T, f *fixture, c *http.Client, host string, hdr map[stri
 }
 
 // gatedOn is the gated fixture on an existing store: a restart of the app.
-func gatedOn(t *testing.T, s *store.Store, opt Options) *fixture {
+func gatedOn(t *testing.T, s *database.Store, opt Options) *fixture {
 	t.Helper()
 	v, err := secrets.Open(context.Background(), s, make([]byte, secrets.KeySize))
 	if err != nil {

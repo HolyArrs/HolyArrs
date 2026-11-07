@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeClient is an in-memory Downloader engine that counts every call.
@@ -78,11 +78,11 @@ func (f *fakeClient) drop(id string)       { f.mu.Lock(); delete(f.jobs, id); f.
 func (f *fakeClient) listCount() int       { f.mu.Lock(); defer f.mu.Unlock(); return f.lists }
 
 type rig struct {
-	db       *store.Store
-	client   *fakeClient
-	m        *downloader.Manager
-	s        *Sync
-	dlID     int64
+	db     *database.Store
+	client *fakeClient
+	m      *downloader.Manager
+	s      *Sync
+	dlID   int64
 }
 
 const ownHash = "1111111111111111111111111111111111111111"
@@ -92,7 +92,7 @@ const ownHash = "1111111111111111111111111111111111111111"
 // reader.
 func newRig(t *testing.T, js ...downloader.Job) *rig {
 	t.Helper()
-	db, err := store.Open(t.TempDir(), store.Options{})
+	db, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,12 +101,12 @@ func newRig(t *testing.T, js ...downloader.Job) *rig {
 	err = db.Write(context.Background(), func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "Lab", Adapter: "transmission", Protocol: "torrent", URL: "http://lab", Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		r.dlID = d.ID
 		dl := &domain.Download{DownloaderID: d.ID, SlotIDs: []int64{}, ExternalID: ownHash, State: "sent", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
 		return err
 	})
 	if err != nil {
@@ -299,7 +299,7 @@ func TestNotStartedMakesNoCalls(t *testing.T) {
 	}
 }
 
-func logLines(t *testing.T, db *store.Store, hash string) []string {
+func logLines(t *testing.T, db *database.Store, hash string) []string {
 	t.Helper()
 	rows, err := db.Read().Query("SELECT summary FROM torrent_log WHERE hash = ? ORDER BY id", hash)
 	if err != nil {
@@ -391,7 +391,7 @@ func TestMatchQueueBackoffAndRestart(t *testing.T) {
 	}
 	r.s.Now, r.s.Match = now, fail
 	r.s.init()
-	at := clock.Format(store.TimeLayout)
+	at := clock.Format(database.TimeLayout)
 	if err := r.db.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("INSERT INTO dl_match_queue (downloader_id, key, name, next_try_at) VALUES (?, 'k1', 'Some.Movie.2020', ?)", r.dlID, at)
 		return err

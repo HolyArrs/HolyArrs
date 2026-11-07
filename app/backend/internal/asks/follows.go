@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // ErrNotFollowable says the title is not a movie, a show or an artist in
@@ -64,7 +64,7 @@ func (s *Service) follow(ctx context.Context, p Person, titleID int64, tellOnFil
 			return err
 		}
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.UserID, titleID, now)
 		if err != nil || !tellOnFile || kind != "movie" {
@@ -114,7 +114,7 @@ func (s *Service) FollowAsk(ctx context.Context, p Person, askID int64, follow b
 // followAskers starts the follows of an ask's askers who chose to follow,
 // once the ask has its Library title.
 func (s *Service) followAskers(ctx context.Context, askID, titleID int64) error {
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT OR IGNORE INTO follows (user_id, title_id, created_at) SELECT user_id, ?, ? FROM ask_people
 			WHERE ask_id = ? AND follow = 1`, titleID, now, askID)
@@ -215,7 +215,7 @@ func (s *Service) Following(ctx context.Context, userID int64) ([]Followed, erro
 // notice per artist, in the app and through the Alerts for the new_albums
 // moment. It returns how many artists it told about.
 func (s *Service) SendAlbumNotices(ctx context.Context) (int, error) {
-	due := store.FormatTime(s.now().Add(-EpisodeBatch))
+	due := database.FormatTime(s.now().Add(-EpisodeBatch))
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT n.title_id, t.name, count(*) FROM new_album_notices n JOIN titles t ON t.id = n.title_id
 		WHERE n.sent_at IS NULL GROUP BY n.title_id HAVING min(n.arrived_at) <= ? ORDER BY n.title_id`, due)
 	if err != nil {
@@ -245,7 +245,7 @@ func (s *Service) SendAlbumNotices(ctx context.Context) (int, error) {
 		if err != nil {
 			return told, err
 		}
-		now := store.FormatTime(s.now())
+		now := database.FormatTime(s.now())
 		text := AlbumWords(a.n, a.name)
 		err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 			if _, err := tx.Exec("UPDATE new_album_notices SET sent_at = ? WHERE title_id = ? AND sent_at IS NULL", now, a.id); err != nil {

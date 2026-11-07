@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -39,7 +40,7 @@ type sendAttempt struct {
 	created                      bool
 }
 
-func unfinishedAttempt(ctx context.Context, q store.Querier, releaseID, slotID int64) (*sendAttempt, error) {
+func unfinishedAttempt(ctx context.Context, q database.Querier, releaseID, slotID int64) (*sendAttempt, error) {
 	a := &sendAttempt{}
 	err := q.QueryRowContext(ctx, `SELECT a.id, a.downloader_id, a.release_id, a.slot_id, a.state, a.created_at, a.updated_at, a.marker, a.category, a.expected_id
 		FROM downloader_attempts a JOIN releases r ON r.id = a.release_id AND r.created_at = a.release_created_at
@@ -72,7 +73,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 				return ErrUncertain
 			}
 			var current domain.Slot
-			if err := store.Get(ctx, tx, "slots", slotID, &current); err != nil {
+			if err := database.Get(ctx, tx, "slots", slotID, &current); err != nil {
 				return err
 			}
 			if current.State != domain.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != releaseID {
@@ -95,14 +96,14 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 			return err
 		}
 		var currentSlot domain.Slot
-		if err := store.Get(ctx, tx, "slots", slotID, &currentSlot); err != nil {
+		if err := database.Get(ctx, tx, "slots", slotID, &currentSlot); err != nil {
 			return err
 		}
 		if currentSlot.State != domain.SlotChosen || currentSlot.ChosenReleaseID == nil || *currentSlot.ChosenReleaseID != releaseID {
 			return errors.New("the Slot is no longer chosen for this Release")
 		}
 		var current domain.Downloader
-		if err := store.Get(ctx, tx, "downloaders", d.ID, &current); err != nil {
+		if err := database.Get(ctx, tx, "downloaders", d.ID, &current); err != nil {
 			return err
 		}
 		sameSecret := d.SecretRef == nil && current.SecretRef == nil || d.SecretRef != nil && current.SecretRef != nil && *d.SecretRef == *current.SecretRef
@@ -136,7 +137,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 			return err
 		}
 		var rel domain.Release
-		if err := store.Get(ctx, tx, "releases", releaseID, &rel); err != nil {
+		if err := database.Get(ctx, tx, "releases", releaseID, &rel); err != nil {
 			return err
 		}
 		covered := []int64{slotID}
@@ -194,7 +195,7 @@ func pendingAttemptCount(tx *sql.Tx, downloaderID int64) (int, error) {
 // Attempts lists retained send outcomes without secrets or raw remote errors.
 func (m *Manager) Attempts(ctx context.Context, downloaderID int64) ([]Attempt, error) {
 	var d domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &d); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &d); err != nil {
 		return nil, err
 	}
 	rows, err := m.Store.Read().QueryContext(ctx, `SELECT id, downloader_id, release_id, slot_id, state, created_at, updated_at
@@ -225,7 +226,7 @@ func (m *Manager) AbandonAttempt(ctx context.Context, downloaderID, attemptID in
 		var state string
 		if err := tx.QueryRowContext(ctx, "SELECT state FROM downloader_attempts WHERE id = ? AND downloader_id = ?", attemptID, downloaderID).Scan(&state); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return store.ErrNotFound
+				return database.ErrNotFound
 			}
 			return err
 		}

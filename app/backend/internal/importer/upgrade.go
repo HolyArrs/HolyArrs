@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -46,7 +47,7 @@ func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Version, d domain.Download, plan []domain.PlanStep, fakes fakeRules, minutes int) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
 	var pr domain.PickRules
-	if err := store.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
 		return u, err
 	}
 	u.rules = pr.Body
@@ -55,7 +56,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 	}
 	if sl.FileID != nil {
 		var f domain.File
-		if err := store.Get(ctx, db, "files", *sl.FileID, &f); err == nil && f.State == "present" {
+		if err := database.Get(ctx, db, "files", *sl.FileID, &f); err == nil && f.State == "present" {
 			u.old = &f
 			u.oldName = strings.TrimSuffix(filepath.Base(f.RelativePath), filepath.Ext(f.RelativePath))
 			if f.ReleaseName != nil && *f.ReleaseName != "" {
@@ -322,12 +323,12 @@ func (im *Importer) reject(ctx context.Context, imp *domain.Import, sl domain.Sl
 	}
 	imp.State, imp.Mode = "rejected", "auto"
 	err := im.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "imports", imp, by); err != nil {
+		if _, err := database.Insert(tx, "imports", imp, by); err != nil {
 			return err
 		}
 		if d.ReleaseID != nil {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?),
-				updated_at = ?, updated_by = ? WHERE id = ?`, why, store.FormatTime(time.Now()), actorText(by), *d.ReleaseID); err != nil {
+				updated_at = ?, updated_by = ? WHERE id = ?`, why, database.FormatTime(time.Now()), actorText(by), *d.ReleaseID); err != nil {
 				return err
 			}
 		}

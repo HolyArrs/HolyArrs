@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type pickRulesDetail struct {
@@ -214,7 +214,7 @@ func TestPickRulesEditNeedsSettings(t *testing.T) {
 	k.ana.call("GET", path, "", 403)
 }
 
-func putSettingRow(t *testing.T, st *store.Store, grp, key, value string) {
+func putSettingRow(t *testing.T, st *database.Store, grp, key, value string) {
 	t.Helper()
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, 'x', '{}', 'x', '{}')
@@ -225,7 +225,7 @@ func putSettingRow(t *testing.T, st *store.Store, grp, key, value string) {
 	}
 }
 
-func putOutsideList(t *testing.T, st *store.Store, folderID, rulesID int64) {
+func putOutsideList(t *testing.T, st *database.Store, folderID, rulesID int64) {
 	t.Helper()
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO outside_lists(created_at, created_by, updated_at, updated_by, name, kind, ref, library_folder_id, pick_rules_id)

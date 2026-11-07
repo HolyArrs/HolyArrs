@@ -21,8 +21,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Default patterns (the same shape Radarr names movies by default).
@@ -487,7 +487,7 @@ func reserved(n string) bool {
 const group = "where_files_go"
 
 // Read reads the naming settings; unset or broken ones keep their default.
-func Read(ctx context.Context, db store.Lister) (Settings, error) {
+func Read(ctx context.Context, db database.Lister) (Settings, error) {
 	s := Defaults()
 	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = ?", group)
 	if err != nil {
@@ -579,7 +579,7 @@ func Read(ctx context.Context, db store.Lister) (Settings, error) {
 
 // Save stores valid naming settings. then, when given, runs in the same
 // transaction (the move tool marks its change there).
-func Save(ctx context.Context, st *store.Store, s Settings, by domain.Actor, then ...func(tx *sql.Tx) error) error {
+func Save(ctx context.Context, st *database.Store, s Settings, by domain.Actor, then ...func(tx *sql.Tx) error) error {
 	s.fillShows()
 	if err := s.Validate(); err != nil {
 		return err
@@ -592,7 +592,7 @@ func Save(ctx context.Context, st *store.Store, s Settings, by domain.Actor, the
 	}
 	actor, _ := json.Marshal(by)
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		for k, v := range map[string]string{"file_pattern": s.FilePattern, "folder_pattern": s.FolderPattern, "colon": s.Colon,
 			"illegal": s.Illegal, "rename_on_import": fmt.Sprint(s.RenameOnImport),
 			"adopt_scan_limit": strconv.Itoa(s.AdoptScanLimit), "music_adopt_scan_limit": strconv.Itoa(s.MusicAdoptScanLimit), "show_folder_pattern": s.ShowFolderPattern, "season_folders": fmt.Sprint(s.SeasonFolders),

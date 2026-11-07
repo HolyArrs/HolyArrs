@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
@@ -22,7 +22,7 @@ func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
 			if n == 24 {
 				title.State = "removed"
 			}
-			if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+			if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 				return err
 			}
 			// Movie 03 was added last although its id is low.
@@ -30,7 +30,7 @@ func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
 			if n == 3 {
 				at = base.Add(100 * time.Hour)
 			}
-			if _, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", store.FormatTime(at), title.ID); err != nil {
+			if _, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", database.FormatTime(at), title.ID); err != nil {
 				return err
 			}
 		}

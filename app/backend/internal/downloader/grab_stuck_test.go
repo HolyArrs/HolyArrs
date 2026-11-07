@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // grabRun is the grab Job for the world's Slot at the given try of five.
@@ -47,11 +47,11 @@ func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		dl := &domain.Download{DownloaderID: 1, ReleaseID: &w.relID, SlotIDs: []int64{w.slotID}, ExternalID: hash, State: "finished",
 			FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		imp := &domain.Import{DownloadID: &dl.ID, FromPath: "/x", Kind: "movie", Plan: []domain.PlanStep{}, Result: []domain.PlaceResult{}, Mode: "auto", State: "done"}
-		_, err := store.Insert(tx, "imports", imp, domain.System)
+		_, err := database.Insert(tx, "imports", imp, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -88,7 +89,7 @@ func busySlot(st domain.SlotState) bool {
 func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bool, by domain.Actor) (Choice, error) {
 	db := s.Store.Read()
 	var rel domain.Release
-	if err := store.Get(ctx, db, "releases", releaseID, &rel); err != nil {
+	if err := database.Get(ctx, db, "releases", releaseID, &rel); err != nil {
 		return Choice{}, ErrNoRelease
 	}
 	if slotID == 0 && len(rel.MatchedSlotIDs) > 1 {
@@ -185,7 +186,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		if _, err := tx.Exec(`UPDATE releases SET state = 'chosen', hold_until = NULL,
 			matched_slot_ids = CASE WHEN EXISTS (SELECT 1 FROM json_each(matched_slot_ids) WHERE value = ?) THEN matched_slot_ids
 				ELSE json_insert(matched_slot_ids, '$[#]', ?) END,
-			updated_at = ?, updated_by = ? WHERE id = ?`, slotID, slotID, store.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
+			updated_at = ?, updated_by = ? WHERE id = ?`, slotID, slotID, database.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
 			return err
 		}
 		// Chosen with force for an episode it was turned down for: it leaves
@@ -224,7 +225,7 @@ func (s *Searcher) TurnDown(ctx context.Context, releaseID int64, reason string,
 // every Slot it matched.
 func (s *Searcher) TurnDownFor(ctx context.Context, releaseID, slotID int64, reason string, by domain.Actor) error {
 	var rel domain.Release
-	if err := store.Get(ctx, s.Store.Read(), "releases", releaseID, &rel); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "releases", releaseID, &rel); err != nil {
 		return ErrNoRelease
 	}
 	if slotID > 0 && len(rel.MatchedSlotIDs) > 0 && !slices.Contains(rel.MatchedSlotIDs, slotID) {
@@ -235,7 +236,7 @@ func (s *Searcher) TurnDownFor(ctx context.Context, releaseID, slotID int64, rea
 	}
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL, verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?),
-			updated_at = ?, updated_by = ? WHERE id = ?`, reason, store.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
+			updated_at = ?, updated_by = ? WHERE id = ?`, reason, database.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
 			return err
 		}
 		if slotID > 0 {
@@ -316,7 +317,7 @@ func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (i
 		}
 		for _, rid := range ids {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, verdict = json_set(COALESCE(verdict, '{}'), '$.removed_by_hand', json('true')),
-				updated_at = ?, updated_by = ? WHERE id = ?`, store.FormatTime(time.Now()), actorText(by), rid); err != nil {
+				updated_at = ?, updated_by = ? WHERE id = ?`, database.FormatTime(time.Now()), actorText(by), rid); err != nil {
 				return err
 			}
 			if err := unholdTx(tx, rid, "Held Release removed by hand", by); err != nil {
@@ -351,7 +352,7 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 		// meanwhile only forgets those episodes.
 		res, err := tx.Exec(`UPDATE releases SET verdict = json_remove(verdict, '$.turned_down_slot_ids'), updated_at = ?, updated_by = ?
 			WHERE state != 'turned_down' AND json_extract(verdict, '$.turned_down_slot_ids') IS NOT NULL`+strings.TrimPrefix(where, "state = 'turned_down'"),
-			append([]any{store.FormatTime(time.Now()), actorText(by)}, args...)...)
+			append([]any{database.FormatTime(time.Now()), actorText(by)}, args...)...)
 		if err != nil {
 			return err
 		}
@@ -365,7 +366,7 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 				OR EXISTS (SELECT 1 FROM downloads dd WHERE dd.release_id = releases.id AND dd.state = 'failed' AND dd.state_reason LIKE 'dangerous files%')
 				THEN 'refused' ELSE 'passed_over' END,
 			verdict = json_set(COALESCE(verdict, '{}'), '$.taken_off_turned_down', json('true')),
-			updated_at = ?, updated_by = ? WHERE `+where+used, append([]any{store.FormatTime(time.Now()), actorText(by)}, args...)...)
+			updated_at = ?, updated_by = ? WHERE `+where+used, append([]any{database.FormatTime(time.Now()), actorText(by)}, args...)...)
 		if err != nil {
 			return err
 		}
@@ -431,7 +432,7 @@ func (s *Searcher) List(ctx context.Context, state string, limit, offset int) ([
 	if state == "held" {
 		order = "hold_until, id"
 	}
-	rels, err := store.Select[domain.Release](ctx, db, "releases", where+" ORDER BY "+order+" LIMIT ? OFFSET ?", append(args, limit, offset)...)
+	rels, err := database.Select[domain.Release](ctx, db, "releases", where+" ORDER BY "+order+" LIMIT ? OFFSET ?", append(args, limit, offset)...)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const sourceCaps = `<?xml version="1.0"?><caps><limits max="50"/><searching><search available="yes" supportedParams="q"/>
@@ -20,7 +20,7 @@ const sourceCaps = `<?xml version="1.0"?><caps><limits max="50"/><searching><sea
 func sourceServer(t *testing.T) (*httptest.Server, *secrets.Vault) {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.8.11: a show is added with a 4K Version, gets one Slot per episode per
@@ -68,7 +68,7 @@ func TestShowVersionsAPI(t *testing.T) {
 	}
 }
 
-func addEvent(t *testing.T, s *store.Store, titleID, slotID int64) {
+func addEvent(t *testing.T, s *database.Store, titleID, slotID int64) {
 	t.Helper()
 	if err := s.AddEvent(context.Background(), &domain.Event{Actor: domain.System, Kind: "test_version", TitleID: &titleID, SlotID: &slotID,
 		Summary: "test", Data: map[string]any{}}); err != nil {
@@ -119,11 +119,11 @@ func TestShowVersionRulesLabelsAndFolders(t *testing.T) {
 		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Other", SortName: "other", Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		ov := &domain.Version{TitleID: ti.ID, Label: "HD", IsMain: true, PickRulesID: movie, LibraryFolderID: lf, FolderName: folder + " [Remux]"}
-		_, err := store.Insert(tx, "versions", ov, domain.System)
+		_, err := database.Insert(tx, "versions", ov, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

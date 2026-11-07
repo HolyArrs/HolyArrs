@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func presetID(t *testing.T, s *store.Store, name string) int64 {
+func presetID(t *testing.T, s *database.Store, name string) int64 {
 	t.Helper()
 	var id int64
 	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", name).Scan(&id); err != nil {
@@ -44,13 +44,13 @@ func TestPickRulesCreateUpdateDelete(t *testing.T) {
 	if err != nil || p.Name != "Smaller files" || p.Revision != 2 || p.Body.MinPoints != 5 {
 		t.Fatalf("update: %+v %v", p, err)
 	}
-	if _, err := UpdatePickRules(ctx, s, 9999, in, domain.System); !errors.Is(err, store.ErrNotFound) {
+	if _, err := UpdatePickRules(ctx, s, 9999, in, domain.System); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("update missing: %v", err)
 	}
 	if err := DeletePickRules(ctx, s, p.ID, domain.System); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	if err := DeletePickRules(ctx, s, p.ID, domain.System); !errors.Is(err, store.ErrNotFound) {
+	if err := DeletePickRules(ctx, s, p.ID, domain.System); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("delete again: %v", err)
 	}
 }
@@ -68,7 +68,7 @@ func TestPickRulesPresetLock(t *testing.T) {
 		t.Fatalf("narrow preset kinds: %v", err)
 	}
 	var p domain.PickRules
-	_ = store.Get(ctx, s.Read(), "pick_rules", id, &p)
+	_ = database.Get(ctx, s.Read(), "pick_rules", id, &p)
 	p2, err := UpdatePickRules(ctx, s, id, PickRulesInput{Name: p.Name, Kinds: p.Kinds, Body: body}, domain.System)
 	if err != nil || p2.Body.MinPoints != 7 || !p2.Preset {
 		t.Fatalf("preset body change: %+v %v", p2, err)
@@ -191,7 +191,7 @@ func TestPickRulesUsesMatchesOneByOne(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps, err := store.Select[domain.PickRules](ctx, s.Read(), "pick_rules", "1=1 ORDER BY id")
+	ps, err := database.Select[domain.PickRules](ctx, s.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
 		t.Fatal(err)
 	}

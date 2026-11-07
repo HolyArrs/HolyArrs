@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var me = domain.Actor{Kind: "user", ID: 1}
 
-func newStore(t *testing.T, dir string) *store.Store {
+func newStore(t *testing.T, dir string) *database.Store {
 	t.Helper()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,16 +28,16 @@ func fastOpts() Options {
 	return Options{Workers: 2, BaseBackoff: 5 * time.Millisecond, PollInterval: 5 * time.Millisecond}
 }
 
-func getJob(t *testing.T, s *store.Store, id int64) domain.Job {
+func getJob(t *testing.T, s *database.Store, id int64) domain.Job {
 	t.Helper()
 	var j domain.Job
-	if err := store.Get(context.Background(), s.Read(), "jobs", id, &j); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "jobs", id, &j); err != nil {
 		t.Fatal(err)
 	}
 	return j
 }
 
-func waitState(t *testing.T, s *store.Store, id int64, want string) domain.Job {
+func waitState(t *testing.T, s *database.Store, id int64, want string) domain.Job {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
@@ -155,7 +155,7 @@ func TestCrashRecovery(t *testing.T) {
 	id, _, _ := q.Enqueue(ctx, "scan_folder", nil, nil, "scan:1", me)
 	// Simulate a crash mid-job: the row says running, the process is gone.
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET state = 'running', attempt = 1, started_at = ? WHERE id = ?", store.FormatTime(time.Now()), id)
+		_, err := tx.Exec("UPDATE jobs SET state = 'running', attempt = 1, started_at = ? WHERE id = ?", database.FormatTime(time.Now()), id)
 		return err
 	})
 	if err != nil {

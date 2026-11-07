@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
@@ -66,7 +67,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		return res, ErrBadDelay
 	}
 	var cur domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &cur); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &cur); err != nil {
 		return res, err
 	}
 	show := cur.Kind == "show"
@@ -83,7 +84,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	var newFolder *domain.LibraryFolder
 	if c.LibraryFolderID != nil {
 		var lf domain.LibraryFolder
-		if err := store.Get(ctx, s.Store.Read(), "library_folders", *c.LibraryFolderID, &lf); err != nil {
+		if err := database.Get(ctx, s.Store.Read(), "library_folders", *c.LibraryFolderID, &lf); err != nil {
 			return res, ErrNoFolder
 		}
 		if want, wrong := folderKindOf(cur.Kind); lf.Kind != want {
@@ -99,7 +100,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	var opened, closed []int64
 	needMove := false
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if c.KeepUpToDate != nil {
@@ -135,10 +136,10 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		if !show {
 			t.GateDriver, t.GateOpensAt = Gate(t.ReleaseGate, t.GateDelayDays, DatesOf(t))
 		}
-		if err := store.Update(tx, "titles", &t, by); err != nil {
+		if err := database.Update(tx, "titles", &t, by); err != nil {
 			return err
 		}
-		vs, err := store.Select[domain.Version](ctx, tx, "versions", "title_id = ?", titleID)
+		vs, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ?", titleID)
 		if err != nil {
 			return err
 		}
@@ -150,7 +151,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 					return err
 				}
 				v.PickRulesID = *c.PickRulesID
-				if err := store.Update(tx, "versions", &v, by); err != nil {
+				if err := database.Update(tx, "versions", &v, by); err != nil {
 					return err
 				}
 			}
@@ -161,7 +162,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 				}
 				if n == 0 {
 					v.LibraryFolderID = newFolder.ID
-					if err := store.Update(tx, "versions", &v, by); err != nil {
+					if err := database.Update(tx, "versions", &v, by); err != nil {
 						return err
 					}
 					res.FolderMoved = true
@@ -222,17 +223,17 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 // with a File, and swaps in_library and better_wanted to match.
 func goodEnoughTx(ctx context.Context, tx *sql.Tx, v domain.Version, keep bool, by domain.Actor) ([]SlotChange, error) {
 	var pr domain.PickRules
-	if err := store.Get(ctx, tx, "pick_rules", v.PickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, tx, "pick_rules", v.PickRulesID, &pr); err != nil {
 		return nil, err
 	}
-	slots, err := store.Select[domain.Slot](ctx, tx, "slots", "version_id = ? AND file_id IS NOT NULL", v.ID)
+	slots, err := database.Select[domain.Slot](ctx, tx, "slots", "version_id = ? AND file_id IS NOT NULL", v.ID)
 	if err != nil {
 		return nil, err
 	}
 	var out []SlotChange
 	for _, sl := range slots {
 		var f domain.File
-		if err := store.Get(ctx, tx, "files", *sl.FileID, &f); err != nil {
+		if err := database.Get(ctx, tx, "files", *sl.FileID, &f); err != nil {
 			continue
 		}
 		name := f.RelativePath

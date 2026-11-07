@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -42,7 +42,7 @@ func (o *onePackage) WantMusicPackage(_ context.Context, mbid string) error {
 }
 
 func TestMusicPagesUsePackagePictures(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

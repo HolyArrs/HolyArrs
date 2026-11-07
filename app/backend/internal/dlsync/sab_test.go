@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeSab is a SABnzbd as the reader sees it: a queue, a finished list and
@@ -104,7 +104,7 @@ func TestSabCursorsFastPathResetAndErrors(t *testing.T) {
 
 func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader) {
 	t.Helper()
-	db, err := store.Open(t.TempDir(), store.Options{})
+	db, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader)
 	d := &domain.Downloader{Name: "SAB", Adapter: "sabnzbd", Protocol: "usenet", URL: "http://sab", Category: "holyarrs", Priority: 1,
 		PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 	err = db.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		if outside == "" {

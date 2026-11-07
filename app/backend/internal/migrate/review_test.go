@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -126,7 +126,7 @@ func TestUndoKeepsReusedRows(t *testing.T) {
 	}
 	ana := int64(l.count(t, "SELECT id FROM users WHERE name = 'Ana'"))
 	err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		later := store.FormatTime(time.Now().Add(time.Hour))
+		later := database.FormatTime(time.Now().Add(time.Hour))
 		for tb, id := range ids {
 			if _, err := tx.Exec("UPDATE "+tb+" SET created_at = ?, name = name || ' mine' WHERE id = ?", later, id); err != nil {
 				return err
@@ -195,7 +195,7 @@ func TestPeopleNeedTheOwnersWord(t *testing.T) {
 	})
 	ctx := context.Background()
 	err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "users", &domain.User{Name: "ana", Role: "member", PasswordHash: "x", State: "active", Perms: "[]"}, domain.System)
+		_, err := database.Insert(tx, "users", &domain.User{Name: "ana", Role: "member", PasswordHash: "x", State: "active", Perms: "[]"}, domain.System)
 		return err
 	})
 	if err != nil {

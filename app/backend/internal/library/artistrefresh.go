@@ -9,10 +9,10 @@ import (
 	"slices"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindRefreshArtists is the 12-hour artist refresh, or every artist by hand.
@@ -39,7 +39,7 @@ type ArtistRefresh struct {
 func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Actor, jobID *int64) (ArtistRefresh, error) {
 	var out ArtistRefresh
 	var t domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return out, err
 	}
 	if t.Kind != "artist" {
@@ -64,7 +64,7 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		first := t.DroppedAt == nil
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				store.FormatTime(now), store.FormatTime(now), store.FormatTime(now), actorText(by), titleID)
+				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), actorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
@@ -77,12 +77,12 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		return out, err
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		applyArtist(&t, a)
 		t.DroppedAt, t.RefreshedAt = nil, &now
-		if err := store.Update(tx, "titles", &t, by); err != nil {
+		if err := database.Update(tx, "titles", &t, by); err != nil {
 			return err
 		}
 		var err error
@@ -101,7 +101,7 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 			log.Printf("library: stand-in picture for artist %d: %v", titleID, err)
 		}
 	}
-	albums, err := store.Select[domain.Part](ctx, s.Store.Read(), "parts", "title_id = ? AND kind = 'album' AND included = 1 AND dropped_at IS NULL ORDER BY release_date, id", titleID)
+	albums, err := database.Select[domain.Part](ctx, s.Store.Read(), "parts", "title_id = ? AND kind = 'album' AND included = 1 AND dropped_at IS NULL ORDER BY release_date, id", titleID)
 	if err != nil {
 		return out, err
 	}
@@ -183,7 +183,7 @@ func ShouldRefreshArtist(t domain.Title, newest *time.Time, now time.Time) (yes 
 // ArtistRefreshPlan picks the artists a refresh-all run covers.
 func (s *Service) ArtistRefreshPlan(ctx context.Context, byHand bool) (ids []int64, why map[int64]string, err error) {
 	db := s.Store.Read()
-	ts, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY sort_name, id")
+	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY sort_name, id")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -196,12 +196,12 @@ func (s *Service) ArtistRefreshPlan(ctx context.Context, byHand bool) (ids []int
 		}
 		var newest sql.NullString
 		if err := db.QueryRowContext(ctx, "SELECT max(release_date) FROM parts WHERE title_id = ? AND kind = 'album' AND release_date <= ?",
-			t.ID, store.FormatTime(now)).Scan(&newest); err != nil {
+			t.ID, database.FormatTime(now)).Scan(&newest); err != nil {
 			return nil, nil, err
 		}
 		var at *time.Time
 		if newest.Valid {
-			if v, err := time.Parse(store.TimeLayout, newest.String); err == nil {
+			if v, err := time.Parse(database.TimeLayout, newest.String); err == nil {
 				at = &v
 			}
 		}
@@ -257,13 +257,13 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 	var t domain.Title
 	var changed []string
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "parts", partID, &p); err != nil {
+		if err := database.Get(ctx, tx, "parts", partID, &p); err != nil {
 			return err
 		}
 		if p.Kind != "album" {
 			return ErrNotAlbum
 		}
-		if err := store.Get(ctx, tx, "titles", p.TitleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", p.TitleID, &t); err != nil {
 			return err
 		}
 		now := s.now()
@@ -272,18 +272,18 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 				return ErrAlbumNotIncluded
 			}
 			p.KeepUpToDate = *keep
-			if err := store.Update(tx, "parts", &p, by); err != nil {
+			if err := database.Update(tx, "parts", &p, by); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE items SET keep_up_to_date = ?, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track'",
-				*keep, store.FormatTime(now), actorText(by), p.ID); err != nil {
+				*keep, database.FormatTime(now), actorText(by), p.ID); err != nil {
 				return err
 			}
 			changed = append(changed, "Keep up to date "+map[bool]string{true: "on", false: "off"}[*keep])
 		}
 		if pressingID != 0 {
 			var pr domain.AlbumPressing
-			if err := store.Get(ctx, tx, "pressings", pressingID, &pr); errors.Is(err, store.ErrNotFound) || (err == nil && pr.PartID != p.ID) {
+			if err := database.Get(ctx, tx, "pressings", pressingID, &pr); errors.Is(err, database.ErrNotFound) || (err == nil && pr.PartID != p.ID) {
 				return ErrNoSuchPressing
 			} else if err != nil {
 				return err
@@ -293,7 +293,7 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 					return err
 				}
 				if _, err := tx.Exec("UPDATE pressings SET chosen = 1, chosen_by = 'person', updated_at = ?, updated_by = ? WHERE id = ?",
-					store.FormatTime(now), actorText(by), pr.ID); err != nil {
+					database.FormatTime(now), actorText(by), pr.ID); err != nil {
 					return err
 				}
 				if _, err := syncTracksTx(ctx, tx, t.ID, p, pr.Tracks, now, by); err != nil {
@@ -377,7 +377,7 @@ type ArtistChoices struct {
 func (s *Service) SetArtistChoices(ctx context.Context, titleID int64, c ArtistChoices, by domain.Actor) (domain.Title, int64, error) {
 	var t domain.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.Kind != "artist" {
@@ -404,7 +404,7 @@ func (s *Service) SetArtistChoices(ctx context.Context, titleID int64, c ArtistC
 				return ErrBadStatuses
 			}
 		}
-		return store.Update(tx, "titles", &t, by)
+		return database.Update(tx, "titles", &t, by)
 	})
 	if err != nil {
 		return t, 0, err
@@ -442,8 +442,8 @@ type AlbumSummary struct {
 
 // Albums summarises an artist's albums (newest first) from their tracks
 // and the main Version's Slots.
-func Albums(ctx context.Context, db store.Lister, titleID int64) ([]AlbumSummary, error) {
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' ORDER BY release_date IS NULL, release_date DESC, id", titleID)
+func Albums(ctx context.Context, db database.Lister, titleID int64) ([]AlbumSummary, error) {
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' ORDER BY release_date IS NULL, release_date DESC, id", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -451,7 +451,7 @@ func Albums(ctx context.Context, db store.Lister, titleID int64) ([]AlbumSummary
 		return []AlbumSummary{}, nil
 	}
 	// Three queries for the whole artist instead of two per album.
-	ps, err := store.Select[domain.AlbumPressing](ctx, db, "pressings",
+	ps, err := database.Select[domain.AlbumPressing](ctx, db, "pressings",
 		"part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'album')", titleID)
 	if err != nil {
 		return nil, err
@@ -492,12 +492,12 @@ type trackState struct {
 }
 
 // AlbumOf summarises one album.
-func AlbumOf(ctx context.Context, db store.Lister, p domain.Part) (AlbumSummary, error) {
+func AlbumOf(ctx context.Context, db database.Lister, p domain.Part) (AlbumSummary, error) {
 	return albumSummary(ctx, db, p)
 }
 
-func albumSummary(ctx context.Context, db store.Lister, p domain.Part) (AlbumSummary, error) {
-	ps, err := store.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ?", p.ID)
+func albumSummary(ctx context.Context, db database.Lister, p domain.Part) (AlbumSummary, error) {
+	ps, err := database.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ?", p.ID)
 	if err != nil {
 		return AlbumSummary{}, err
 	}
@@ -586,16 +586,16 @@ type ArtistTotals struct {
 
 // Totals counts an artist's albums and tracks in two aggregate queries, so
 // the Title list does not read every album and pressing row.
-func Totals(ctx context.Context, db store.Querier, titleID int64, now time.Time) (ArtistTotals, error) {
+func Totals(ctx context.Context, db database.Querier, titleID int64, now time.Time) (ArtistTotals, error) {
 	var t ArtistTotals
 	var next sql.NullString
 	err := db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(included), 0), min(CASE WHEN included AND release_date > ? THEN release_date END)
-		FROM parts WHERE title_id = ? AND kind = 'album'`, store.FormatTime(now), titleID).Scan(&t.Albums, &t.Included, &next)
+		FROM parts WHERE title_id = ? AND kind = 'album'`, database.FormatTime(now), titleID).Scan(&t.Albums, &t.Included, &next)
 	if err != nil {
 		return t, err
 	}
 	if next.Valid {
-		if at, err := time.Parse(store.TimeLayout, next.String); err == nil {
+		if at, err := time.Parse(database.TimeLayout, next.String); err == nil {
 			t.NextRelease = &at
 		}
 	}
@@ -630,10 +630,10 @@ func (s *Service) ChooseEdition(ctx context.Context, partID int64, release strin
 	if id == 0 {
 		var p domain.Part
 		var t domain.Title
-		if err := store.Get(ctx, s.Store.Read(), "parts", partID, &p); err != nil {
+		if err := database.Get(ctx, s.Store.Read(), "parts", partID, &p); err != nil {
 			return false, err
 		}
-		if err := store.Get(ctx, s.Store.Read(), "titles", p.TitleID, &t); err != nil {
+		if err := database.Get(ctx, s.Store.Read(), "titles", p.TitleID, &t); err != nil {
 			return false, err
 		}
 		src, err := s.artists()
@@ -680,7 +680,7 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 	}
 	var t domain.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.Kind != "artist" {
@@ -688,7 +688,7 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 		}
 		for _, id := range partIDs {
 			var p domain.Part
-			if err := store.Get(ctx, tx, "parts", id, &p); err != nil {
+			if err := database.Get(ctx, tx, "parts", id, &p); err != nil {
 				return err
 			}
 			if p.TitleID != t.ID || p.Kind != "album" {
@@ -698,11 +698,11 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 				// Kept up to date in the same write, so a refresh queued
 				// below can't drop the asked album before it is kept.
 				p.Included, p.KeepUpToDate = true, true
-				if err := store.Update(tx, "parts", &p, by); err != nil {
+				if err := database.Update(tx, "parts", &p, by); err != nil {
 					return err
 				}
 				if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track'",
-					store.FormatTime(s.now()), actorText(by), p.ID); err != nil {
+					database.FormatTime(s.now()), actorText(by), p.ID); err != nil {
 					return err
 				}
 			}

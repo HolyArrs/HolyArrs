@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -17,7 +18,7 @@ import (
 )
 
 type fix struct {
-	s            *store.Store
+	s            *database.Store
 	q            *jobs.Queue
 	c            *Control
 	reg          *supervisor.Registry
@@ -32,7 +33,7 @@ type fix struct {
 // queue's gate.
 func newFix(t *testing.T) *fix {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,31 +50,31 @@ func newFix(t *testing.T) *fix {
 		y := 2020
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Year: &y, Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		ver := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", ver, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", ver, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: ver.ID, State: domain.SlotDownloading}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		dr := &domain.Downloader{Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:9", Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: dr.ID, SlotIDs: []int64{sl.ID}, ExternalID: "abcd", State: "finished", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		f.slotID, f.dlID = sl.ID, dl.ID
@@ -92,7 +93,7 @@ func newFix(t *testing.T) *fix {
 				// The import moves the Slot through importing to in the
 				// Library, as the importer's state machine does.
 				if kind == "import_download" {
-					if err := s.MoveSlot(context.Background(), f.slotID, domain.SlotImporting, "", domain.System); err != nil {
+					if err := store.MoveSlot(context.Background(), s, f.slotID, domain.SlotImporting, "", domain.System); err != nil {
 						return err
 					}
 				}
@@ -102,7 +103,7 @@ func newFix(t *testing.T) *fix {
 					return ctx.Err()
 				}
 				if kind == "import_download" {
-					return s.MoveSlot(context.Background(), f.slotID, domain.SlotInLibrary, "", domain.System)
+					return store.MoveSlot(context.Background(), s, f.slotID, domain.SlotInLibrary, "", domain.System)
 				}
 			}
 			return nil
@@ -375,7 +376,7 @@ func TestSwitchesAreSaved(t *testing.T) {
 func TestPartLoopsAndStages(t *testing.T) {
 	reg := supervisor.NewRegistry()
 	reg.Logf = func(string, ...any) {}
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -514,7 +515,7 @@ func TestScreenOwner(t *testing.T) {
 func TestLogMaskingIsNeverPaused(t *testing.T) {
 	reg := supervisor.NewRegistry()
 	reg.Logf = func(string, ...any) {}
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

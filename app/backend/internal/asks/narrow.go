@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ErrNotAskedPart is a season or album the approver kept that the ask
@@ -145,7 +145,7 @@ func pickSongs(albums []domain.AskAlbum, picks []AlbumSongs) ([]domain.AskAlbum,
 // artist asks whose albums' tracks are now in the Library (matched by
 // recording id). Each album's pick is applied once.
 func (s *Service) applySongPicks(ctx context.Context) error {
-	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'artist' AND state IN ('approved', 'available') AND title_id IS NOT NULL AND albums LIKE '%\"songs\"%' ORDER BY id")
+	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'artist' AND state IN ('approved', 'available') AND title_id IS NOT NULL AND albums LIKE '%\"songs\"%' ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (s *Service) applySongs(ctx context.Context, a domain.Ask) error {
 			return err
 		}
 		changed := false
-		ts := store.FormatTime(s.now())
+		ts := database.FormatTime(s.now())
 		who, _ := json.Marshal(domain.System)
 		for i, al := range cur.Albums {
 			if len(al.Songs) == 0 || al.SongsDone {
@@ -200,6 +200,6 @@ func (s *Service) applySongs(ctx context.Context, a domain.Ask) error {
 		if !changed {
 			return nil
 		}
-		return store.Update(tx, "asks", &cur, domain.System)
+		return database.Update(tx, "asks", &cur, domain.System)
 	})
 }

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
@@ -160,7 +160,7 @@ func (in *SiteInput) check() (sites.Kind, error) {
 
 // Sites lists the Subtitle sites, by priority.
 func Sites(ctx context.Context, db *sql.DB) ([]SiteRow, error) {
-	rs, err := store.Select[SiteRow](ctx, db, "subtitle_sites", "1=1 ORDER BY priority, id")
+	rs, err := database.Select[SiteRow](ctx, db, "subtitle_sites", "1=1 ORDER BY priority, id")
 	if rs == nil {
 		rs = []SiteRow{}
 	}
@@ -192,7 +192,7 @@ func putAccount(tx *sql.Tx, v *secrets.Vault, a Account, old *int64, by domain.A
 // AddSite stores a new site; account details go to the vault. A site that
 // needs an account is refused until every detail it asks for is given.
 // then, when given, runs in the same transaction with the new id.
-func AddSite(ctx context.Context, st *store.Store, v *secrets.Vault, in SiteInput, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (SiteRow, error) {
+func AddSite(ctx context.Context, st *database.Store, v *secrets.Vault, in SiteInput, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (SiteRow, error) {
 	k, err := in.check()
 	if err != nil {
 		return SiteRow{}, err
@@ -213,7 +213,7 @@ func AddSite(ctx context.Context, st *store.Store, v *secrets.Vault, in SiteInpu
 			}
 			r.SecretRef = ref
 		}
-		id, err := store.Insert(tx, "subtitle_sites", &r, by)
+		id, err := database.Insert(tx, "subtitle_sites", &r, by)
 		r.ID = id
 		if err != nil {
 			return err
@@ -234,9 +234,9 @@ func AddSite(ctx context.Context, st *store.Store, v *secrets.Vault, in SiteInpu
 
 // EditSite changes a site; turning it on clears a pause. Account details
 // left empty keep the stored ones; any detail given replaces them all.
-func EditSite(ctx context.Context, st *store.Store, v *secrets.Vault, id int64, in SiteInput, by domain.Actor) (SiteRow, error) {
+func EditSite(ctx context.Context, st *database.Store, v *secrets.Vault, id int64, in SiteInput, by domain.Actor) (SiteRow, error) {
 	var r SiteRow
-	if err := store.Get(ctx, st.Read(), "subtitle_sites", id, &r); err != nil {
+	if err := database.Get(ctx, st.Read(), "subtitle_sites", id, &r); err != nil {
 		return r, ErrNotFound
 	}
 	if in.Kind == "" {
@@ -276,7 +276,7 @@ func EditSite(ctx context.Context, st *store.Store, v *secrets.Vault, id int64, 
 			}
 			r.SecretRef = ref
 		}
-		return store.Update(tx, "subtitle_sites", &r, by)
+		return database.Update(tx, "subtitle_sites", &r, by)
 	})
 	if err != nil && strings.Contains(err.Error(), "UNIQUE") {
 		return r, errors.New("a subtitle site with that name exists")
@@ -295,7 +295,7 @@ func originOf(raw string) string {
 
 // DeleteSite removes a site and its account details; saved subtitles keep
 // its name.
-func DeleteSite(ctx context.Context, st *store.Store, id int64) error {
+func DeleteSite(ctx context.Context, st *database.Store, id int64) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		var ref sql.NullInt64
 		if err := tx.QueryRowContext(ctx, "SELECT secret_ref FROM subtitle_sites WHERE id = ?", id).Scan(&ref); err != nil {
@@ -342,7 +342,7 @@ type TestResult struct {
 // a failing test never pauses the site.
 func (s *Service) TestSite(ctx context.Context, id int64) (TestResult, error) {
 	var r SiteRow
-	if err := store.Get(ctx, s.Store.Read(), "subtitle_sites", id, &r); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "subtitle_sites", id, &r); err != nil {
 		return TestResult{}, ErrNotFound
 	}
 	k, _ := sites.KindOf(r.Kind)
@@ -389,8 +389,8 @@ func TestWords(err error) string {
 // usable lists sites a search may ask now: enabled, or paused with the
 // pause over.
 func usable(ctx context.Context, db *sql.DB, at time.Time) ([]SiteRow, error) {
-	return store.Select[SiteRow](ctx, db, "subtitle_sites",
-		"state = 'enabled' OR (state = 'paused' AND paused_until <= ?) ORDER BY priority, id", store.FormatTime(at))
+	return database.Select[SiteRow](ctx, db, "subtitle_sites",
+		"state = 'enabled' OR (state = 'paused' AND paused_until <= ?) ORDER BY priority, id", database.FormatTime(at))
 }
 
 // client keeps one sites.Site per site row so its limits hold across Jobs.
@@ -448,7 +448,7 @@ func (s *Service) pause(ctx context.Context, r SiteRow, cause error) {
 		kind, d = sites.PauseFor(cause, n, now())
 		until = now().Add(d)
 		res, err := tx.ExecContext(ctx, `UPDATE subtitle_sites SET state = 'paused', pause_reason = ?, paused_until = ?, failures = ?, updated_at = ?
-			WHERE id = ? AND state != 'disabled'`, kind, store.FormatTime(until), n, store.FormatTime(now()), r.ID)
+			WHERE id = ? AND state != 'disabled'`, kind, database.FormatTime(until), n, database.FormatTime(now()), r.ID)
 		if err != nil {
 			return err
 		}
@@ -470,7 +470,7 @@ func (s *Service) recovered(ctx context.Context, r SiteRow) {
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE subtitle_sites SET state = CASE WHEN state = 'paused' THEN 'enabled' ELSE state END,
-			pause_reason = NULL, paused_until = NULL, failures = 0, updated_at = ? WHERE id = ?`, store.FormatTime(now()), r.ID)
+			pause_reason = NULL, paused_until = NULL, failures = 0, updated_at = ? WHERE id = ?`, database.FormatTime(now()), r.ID)
 		return err
 	})
 }
@@ -489,14 +489,14 @@ func (s *Service) countDownload(ctx context.Context, r SiteRow) bool {
 		if err := tx.QueryRowContext(ctx, "SELECT downloads_today, downloads_reset_at FROM subtitle_sites WHERE id = ?", r.ID).Scan(&used, &reset); err != nil {
 			return err
 		}
-		if !reset.Valid || reset.String <= store.FormatTime(now()) {
+		if !reset.Valid || reset.String <= database.FormatTime(now()) {
 			used = 0
 		}
 		if used >= r.Limits.DownloadsToDay {
 			return nil
 		}
 		ok = true
-		_, err := tx.ExecContext(ctx, "UPDATE subtitle_sites SET downloads_today = ?, downloads_reset_at = ? WHERE id = ?", used+1, store.FormatTime(day), r.ID)
+		_, err := tx.ExecContext(ctx, "UPDATE subtitle_sites SET downloads_today = ?, downloads_reset_at = ? WHERE id = ?", used+1, database.FormatTime(day), r.ID)
 		return err
 	})
 	if !ok {

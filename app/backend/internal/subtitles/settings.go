@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Schedule kinds.
@@ -179,7 +179,7 @@ func ReadSettings(ctx context.Context, db *sql.DB) Settings {
 
 // SaveSettings stores the settings and moves the two schedules. then, when
 // given, runs in the same transaction.
-func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Actor, then ...func(tx *sql.Tx) error) error {
+func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain.Actor, then ...func(tx *sql.Tx) error) error {
 	if err := s.Validate(); err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 		"subtitle_sync_step_ms": strconv.Itoa(s.SyncStepMS),
 	}
 	actor, _ := json.Marshal(by)
-	ts := store.FormatTime(time.Now())
+	ts := database.FormatTime(time.Now())
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		for _, k := range settingKeys {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
@@ -213,7 +213,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 				ON CONFLICT (kind) DO UPDATE SET next_run = CASE WHEN every_seconds != excluded.every_seconds THEN ? ELSE next_run END,
 				every_seconds = excluded.every_seconds, enabled = excluded.enabled, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
 				ts, string(actor), ts, string(actor), x.kind, x.hours*3600, x.enabled,
-				store.FormatTime(time.Now().Add(time.Duration(x.hours)*time.Hour))); err != nil {
+				database.FormatTime(time.Now().Add(time.Duration(x.hours)*time.Hour))); err != nil {
 				return err
 			}
 		}

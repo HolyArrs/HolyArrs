@@ -11,10 +11,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The old-app API (roadmap #85, decision 0008): Seerr and Overseerr add
@@ -192,7 +192,7 @@ func (a *API) putOldAppAPI(w http.ResponseWriter, r *http.Request) {
 // switches; a nil one is left as it is. Setup steps in this package (such
 // as connecting Prowlarr) turn the API on through it.
 func (a *API) saveOldAppSwitches(ctx context.Context, who domain.Actor, enabled, deleteFiles *bool) error {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	by, _ := json.Marshal(who)
 	return a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for key, v := range map[string]*bool{settingOldAppAPI: enabled, settingOldAppDelete: deleteFiles} {

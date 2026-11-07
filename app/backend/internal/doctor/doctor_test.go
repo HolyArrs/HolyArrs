@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func TestDoctorReportOnAFreshStore(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestDoctorReportOnAFreshStore(t *testing.T) {
 
 func TestDoctorFolders(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestDoctorFolders(t *testing.T) {
 	}
 }
 
-func writeFolder(s *store.Store, path string) error {
+func writeFolder(s *database.Store, path string) error {
 	return s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO library_folders (created_at, created_by, updated_at, updated_by, path, kind, label, health, same_disk_as)
 			VALUES ('t', '{}', 't', '{}', ?, 'movie', 'Movies', 'ok', '[]')`, path)
@@ -146,10 +146,10 @@ func (failRT) RoundTrip(*http.Request) (*http.Response, error) { return nil, err
 
 func TestOpenReadOnlyNeverCreates(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := store.OpenReadOnly(dir); err == nil {
+	if _, err := database.OpenReadOnly(dir); err == nil {
 		t.Fatal("opened a missing database")
 	}
-	if _, err := os.Stat(filepath.Join(dir, store.MainFile)); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, database.MainFile)); err == nil {
 		t.Fatal("created the database")
 	}
 }
@@ -178,7 +178,7 @@ func TestDoctorUnopenableDatabaseFails(t *testing.T) {
 	dir := t.TempDir()
 	// A folder where the database file should be: it exists but cannot be
 	// opened, like a database this user cannot read.
-	if err := os.Mkdir(filepath.Join(dir, store.MainFile), 0o755); err != nil {
+	if err := os.Mkdir(filepath.Join(dir, database.MainFile), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	got := dbChecks(t, dir)

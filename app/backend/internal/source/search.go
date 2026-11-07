@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
@@ -29,7 +30,7 @@ type Publisher interface {
 
 // Searcher runs search_slot Jobs.
 type Searcher struct {
-	Store *store.Store
+	Store *database.Store
 	Live  Publisher // may be nil
 	// OnChosen is told when a Release is chosen for a Slot (to send it to a Downloader).
 	OnChosen func(ctx context.Context, slotID, releaseID int64)
@@ -197,12 +198,12 @@ func revealLink(link string, keys []string) (string, error) {
 
 // GrabLink is the link to hand a Downloader for a Release: the stored link
 // with the Source's key, read from the vault, put back.
-func GrabLink(ctx context.Context, s *store.Store, sec SecretReader, rel domain.Release) (string, error) {
+func GrabLink(ctx context.Context, s *database.Store, sec SecretReader, rel domain.Release) (string, error) {
 	if !strings.Contains(rel.LinkRef, hidden) {
 		return rel.LinkRef, nil
 	}
 	var src domain.Source
-	if err := store.Get(ctx, s.Read(), "sources", rel.SourceID, &src); err != nil {
+	if err := database.Get(ctx, s.Read(), "sources", rel.SourceID, &src); err != nil {
 		return "", fmt.Errorf("the Release's Source: %w", err)
 	}
 	cfg, err := ConfigFor(ctx, src, sec)
@@ -262,13 +263,13 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		// Showing only: any Slot may be looked at; it does not move.
 	case from == domain.SlotNotOutYet && (handSearch || skipGate),
 		from == domain.SlotWanted, from == domain.SlotBetterWanted, from == domain.SlotStalled, from == domain.SlotFailed, from == domain.SlotRejected:
-		if err := s.Store.MoveSlot(ctx, slotID, domain.SlotSearching, "searching", by); err != nil {
+		if err := store.MoveSlot(ctx, s.Store, slotID, domain.SlotSearching, "searching", by); err != nil {
 			return err
 		}
 		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotSearching})
 	case from == domain.SlotNeedsADecision && handSearch:
 		// A person chose "search again" on Needs a decision (stage 4.1.2).
-		if err := s.Store.MoveSlot(ctx, slotID, domain.SlotSearching, "searching again by hand", by); err != nil {
+		if err := store.MoveSlot(ctx, s.Store, slotID, domain.SlotSearching, "searching again by hand", by); err != nil {
 			return err
 		}
 		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotSearching})
@@ -290,7 +291,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			if from == domain.SlotNeedsADecision {
 				to = from
 			}
-			if s.Store.MoveSlot(ctx, slotID, to, "the search stopped before it finished", by) == nil {
+			if store.MoveSlot(ctx, s.Store, slotID, to, "the search stopped before it finished", by) == nil {
 				s.publish("slot", map[string]any{"id": slotID, "state": to})
 			}
 		}()
@@ -320,7 +321,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 
 	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		if !show && from != domain.SlotHeld {
-			_ = s.Store.MoveSlot(ctx, slotID, restState(c, from), reason, by)
+			_ = store.MoveSlot(ctx, s.Store, slotID, restState(c, from), reason, by)
 			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": reason})
 		}
 		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, data)
@@ -360,7 +361,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", store.FormatTime(now), c.it.ID)
+		_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(now), c.it.ID)
 		return err
 	})
 
@@ -426,7 +427,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 				to = domain.SlotNeedsADecision
 				reason = "searched again and no Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
-			if err := s.Store.MoveSlot(ctx, slotID, to, reason, by); err != nil {
+			if err := store.MoveSlot(ctx, s.Store, slotID, to, reason, by); err != nil {
 				return err
 			}
 			s.publish("slot", map[string]any{"id": slotID, "state": to, "reason": reason})
@@ -489,7 +490,7 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 		res, err := tx.ExecContext(ctx, `UPDATE sources SET state = 'paused', pause_reason = ?, paused_until = ?,
 			extra = CASE WHEN ? = '' THEN json_remove(json_set(extra, '$.failures', ?), '$.block') ELSE json_set(extra, '$.failures', ?, '$.block', ?) END,
 			updated_at = ?, updated_by = ? WHERE id = ? AND state != 'disabled'`,
-			kind, store.FormatTime(until), detail, strconv.Itoa(n), strconv.Itoa(n), detail, store.FormatTime(now), systemActor(), src.ID)
+			kind, database.FormatTime(until), detail, strconv.Itoa(n), strconv.Itoa(n), detail, database.FormatTime(now), systemActor(), src.ID)
 		if err != nil {
 			return err
 		}
@@ -522,7 +523,7 @@ func (s *Searcher) recovered(ctx context.Context, src domain.Source) {
 		src.ID).Scan(&need); err != nil || !need {
 		return // read fresh: the copy may be older than a pause from another search
 	}
-	now := store.FormatTime(time.Now().UTC())
+	now := database.FormatTime(time.Now().UTC())
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `UPDATE sources SET state = 'enabled', pause_reason = NULL, paused_until = NULL,
 			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'paused'`, now, systemActor(), src.ID); err != nil {
@@ -542,8 +543,8 @@ func systemActor() string {
 // SweepSearching puts Slots left searching longer than olderThan back to
 // looking (a search cut off by a crash). It runs at start, before any Job.
 func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) (int, error) {
-	slots, err := store.Select[domain.Slot](ctx, s.Store.Read(), "slots", "state = 'searching' AND updated_at < ?",
-		store.FormatTime(time.Now().Add(-olderThan)))
+	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots", "state = 'searching' AND updated_at < ?",
+		database.FormatTime(time.Now().Add(-olderThan)))
 	if err != nil {
 		return 0, err
 	}
@@ -554,7 +555,7 @@ func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) 
 			continue
 		}
 		to := restState(c, domain.SlotSearching)
-		if s.Store.MoveSlot(ctx, sl.ID, to, "a search was cut off; looking again", domain.System) == nil {
+		if store.MoveSlot(ctx, s.Store, sl.ID, to, "a search was cut off; looking again", domain.System) == nil {
 			n++
 		}
 	}

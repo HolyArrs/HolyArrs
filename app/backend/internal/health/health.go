@@ -23,9 +23,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
@@ -74,7 +74,7 @@ type Backups struct {
 
 // Engine runs the checks.
 type Engine struct {
-	Store *store.Store
+	Store *database.Store
 	// Version is this program's version, for the update check.
 	Version string
 	// Backups reads the newest backup (nil skips the check).
@@ -219,7 +219,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		}
 		rs = append(rs, r)
 	}
-	old, err := store.Select[domain.HealthCheck](ctx, e.Store.Read(), "health_checks", "1=1")
+	old, err := database.Select[domain.HealthCheck](ctx, e.Store.Read(), "health_checks", "1=1")
 	if err != nil {
 		return true, nil, err
 	}
@@ -251,7 +251,7 @@ func (e *Engine) Run(ctx context.Context) ([]domain.HealthCheck, error) {
 	var events []*domain.Event
 	err = e.Store.Write(ctx, func(tx *sql.Tx) error {
 		events = nil
-		old, err := store.Select[domain.HealthCheck](ctx, tx, "health_checks", "1=1")
+		old, err := database.Select[domain.HealthCheck](ctx, tx, "health_checks", "1=1")
 		if err != nil {
 			return err
 		}
@@ -284,11 +284,11 @@ func (e *Engine) Run(ctx context.Context) ([]domain.HealthCheck, error) {
 			}
 			if had {
 				if _, err := tx.Exec(`UPDATE health_checks SET kind = ?, subject = ?, state = ?, message = ?, since = ?, checked_at = ?, streak = ?, confirmed = ? WHERE id = ?`,
-					c.Kind, c.Subject, c.State, c.Message, store.FormatTime(c.Since), store.FormatTime(c.CheckedAt), c.Streak, c.Confirmed, c.ID); err != nil {
+					c.Kind, c.Subject, c.State, c.Message, database.FormatTime(c.Since), database.FormatTime(c.CheckedAt), c.Streak, c.Confirmed, c.ID); err != nil {
 					return err
 				}
 			} else if _, err := tx.Exec(`INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				c.Key, c.Kind, c.Subject, c.State, c.Message, store.FormatTime(c.Since), store.FormatTime(c.CheckedAt), c.Streak, c.Confirmed); err != nil {
+				c.Key, c.Kind, c.Subject, c.State, c.Message, database.FormatTime(c.Since), database.FormatTime(c.CheckedAt), c.Streak, c.Confirmed); err != nil {
 				return err
 			}
 		}
@@ -324,8 +324,8 @@ func (e *Engine) Run(ctx context.Context) ([]domain.HealthCheck, error) {
 }
 
 // List returns the stored results, worst first.
-func List(ctx context.Context, s *store.Store) ([]domain.HealthCheck, error) {
-	cs, err := store.Select[domain.HealthCheck](ctx, s.Read(), "health_checks", "1=1")
+func List(ctx context.Context, s *database.Store) ([]domain.HealthCheck, error) {
+	cs, err := database.Select[domain.HealthCheck](ctx, s.Read(), "health_checks", "1=1")
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +446,7 @@ func mb(n int64) string { return strconv.FormatInt(n>>20, 10) + " MB" }
 // folders checks each movie Library folder: it must be there, and its disk
 // must have room.
 func (e *Engine) folders(ctx context.Context) ([]Result, error) {
-	lfs, err := store.Select[domain.LibraryFolder](ctx, e.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[domain.LibraryFolder](ctx, e.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -526,7 +526,7 @@ func inside(p, folder string) bool {
 
 // sources warns about every Source HolyArrs cannot use right now.
 func (e *Engine) sources(ctx context.Context) ([]Result, error) {
-	ss, err := store.Select[domain.Source](ctx, e.Store.Read(), "sources", "1=1 ORDER BY id")
+	ss, err := database.Select[domain.Source](ctx, e.Store.Read(), "sources", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -545,7 +545,7 @@ func (e *Engine) sources(ctx context.Context) ([]Result, error) {
 // downloaders warns about every Downloader that does not answer or turned
 // down its sign-in. One paused by a person is fine.
 func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
-	ds, err := store.Select[domain.Downloader](ctx, e.Store.Read(), "downloaders", "removed = 0 ORDER BY id")
+	ds, err := database.Select[domain.Downloader](ctx, e.Store.Read(), "downloaders", "removed = 0 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -576,7 +576,7 @@ const waitingFor = 3 * 24 * time.Hour
 // warning at first, an error once one has waited about 3 days. A download
 // paused by a person has no reason and is not counted.
 func (e *Engine) waiting(ctx context.Context) ([]Result, error) {
-	ds, err := store.Select[domain.Download](ctx, e.Store.Read(), "downloads",
+	ds, err := database.Select[domain.Download](ctx, e.Store.Read(), "downloads",
 		"state = 'paused' AND state_reason LIKE 'the Downloader can''t use the files%'")
 	if err != nil {
 		return nil, err

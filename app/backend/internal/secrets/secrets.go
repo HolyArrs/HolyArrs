@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KeySize is the master key length in bytes.
@@ -110,11 +110,11 @@ func Fingerprint(key []byte) string {
 // SavedIn reports whether the database in the config folder dir holds any
 // secret, the check value included. A missing database holds none.
 func SavedIn(dir string) (bool, error) {
-	p := filepath.Join(dir, store.MainFile)
+	p := filepath.Join(dir, database.MainFile)
 	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	}
-	db, err := store.OpenReadOnly(dir)
+	db, err := database.OpenReadOnly(dir)
 	if err != nil {
 		return false, err
 	}
@@ -173,7 +173,7 @@ func decodeKey(b []byte) ([]byte, error) {
 
 // Vault reads and writes secrets.
 type Vault struct {
-	s    *store.Store
+	s    *database.Store
 	aead cipher.AEAD
 	// OnPut, when set, is told every value stored, before the store call
 	// returns: the app log masks a new secret before anything can log it.
@@ -193,7 +193,7 @@ const (
 
 // Open makes a Vault and checks the key against the database: the first
 // open stores a check value, later opens must be able to read it.
-func Open(ctx context.Context, s *store.Store, key []byte) (*Vault, error) {
+func Open(ctx context.Context, s *database.Store, key []byte) (*Vault, error) {
 	if len(key) != KeySize {
 		return nil, errors.New("master key must be 32 bytes")
 	}
@@ -252,7 +252,7 @@ func (v *Vault) open(id int64, stored string) (string, error) {
 	return string(plain), nil
 }
 
-func now() string { return store.FormatTime(time.Now()) }
+func now() string { return database.FormatTime(time.Now()) }
 
 func actor(a domain.Actor) string {
 	b, _ := json.Marshal(a)
@@ -573,7 +573,7 @@ func plainSettings(tx *sql.Tx) ([]plainSetting, error) {
 // CheckFile reports whether key opens the secrets in a database file, such
 // as one inside a backup. A database without secrets passes.
 func CheckFile(path string, key []byte) error {
-	db, err := sql.Open("sqlite", store.FileURI(path)+"?mode=ro")
+	db, err := sql.Open("sqlite", database.FileURI(path)+"?mode=ro")
 	if err != nil {
 		return err
 	}

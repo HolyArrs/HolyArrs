@@ -15,12 +15,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (a *API) askRoutes(m *http.ServeMux) {
@@ -93,7 +93,7 @@ func askError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrAlbumNotIncluded), errors.Is(err, asks.ErrAlbumNotListedYet):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such ask")
 	case errors.Is(err, library.ErrBadArtistID), errors.Is(err, library.ErrArtistNeverAdd), errors.Is(err, library.ErrNoMusicSource),
 		errors.Is(err, library.ErrNoMusicFolder), errors.Is(err, library.ErrNotMusicFolder), errors.Is(err, library.ErrAlbumNotIncluded),
@@ -490,7 +490,7 @@ func (a *API) putAskLimit(w http.ResponseWriter, r *http.Request) {
 	if body.PerWeek != nil && l.Movies == nil && l.Shows == nil && l.Music == nil {
 		l = asks.PersonLimit{Movies: body.PerWeek, Shows: body.PerWeek, Music: body.PerWeek}
 	}
-	if err := asks.SetPersonLimit(r.Context(), a.s.Store, id, l); errors.Is(err, store.ErrNotFound) {
+	if err := asks.SetPersonLimit(r.Context(), a.s.Store, id, l); errors.Is(err, database.ErrNotFound) {
 		fail(w, http.StatusNotFound, "no such user")
 		return
 	} else if err != nil {
@@ -625,7 +625,7 @@ func alertError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusConflict, err.Error())
 	case alerts.IsInputError(err):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such Alert")
 	default:
 		internal(w, err)
@@ -633,7 +633,7 @@ func alertError(w http.ResponseWriter, err error) {
 }
 
 func (a *API) listAlerts(w http.ResponseWriter, r *http.Request) {
-	xs, err := store.Select[domain.Alert](r.Context(), a.s.Store.Read(), "alerts", "1=1 ORDER BY name")
+	xs, err := database.Select[domain.Alert](r.Context(), a.s.Store.Read(), "alerts", "1=1 ORDER BY name")
 	if err != nil {
 		internal(w, err)
 		return
@@ -743,7 +743,7 @@ func (a *API) testAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var x domain.Alert
-	if err := store.Get(r.Context(), a.s.Store.Read(), "alerts", id, &x); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "alerts", id, &x); err != nil {
 		alertError(w, err)
 		return
 	}

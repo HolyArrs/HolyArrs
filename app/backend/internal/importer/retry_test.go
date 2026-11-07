@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestCopyRefusesTargetThatAppearsBeforeFinish(t *testing.T) {
@@ -79,7 +79,7 @@ func TestMapPathMatchesWholeSegments(t *testing.T) {
 	}
 }
 
-func count(t *testing.T, s *store.Store, table string) int {
+func count(t *testing.T, s *database.Store, table string) int {
 	var n int
 	if err := s.Read().QueryRow("SELECT count(*) FROM " + table).Scan(&n); err != nil {
 		t.Fatal(err)
@@ -103,7 +103,7 @@ func crashThenRetry(t *testing.T, first, second Ops) {
 		t.Fatalf("import %+v, imports %d, files %d", imp, count(t, w.s, "imports"), count(t, w.s, "files"))
 	}
 	var sl domain.Slot
-	_ = store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
 	if sl.State != domain.SlotInLibrary {
 		t.Fatalf("slot %s", sl.State)
 	}
@@ -154,8 +154,8 @@ func TestSlotAndImportStayConsistentOnFailure(t *testing.T) {
 		t.Fatal("import should fail")
 	}
 	var sl domain.Slot
-	_ = store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
-	imps, _ := store.Select[domain.Import](ctx, w.s.Read(), "imports", "")
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
+	imps, _ := database.Select[domain.Import](ctx, w.s.Read(), "imports", "")
 	if sl.State != domain.SlotImporting || sl.FileID != nil || len(imps) != 1 || imps[0].State != "placing" || count(t, w.s, "files") != 0 {
 		t.Fatalf("slot %+v imports %+v", sl, imps)
 	}
@@ -287,7 +287,7 @@ func TestImportRefusesDotDotFolder(t *testing.T) {
 	}
 }
 
-func mapExec(t *testing.T, s *store.Store, q string, args ...any) {
+func mapExec(t *testing.T, s *database.Store, q string, args ...any) {
 	t.Helper()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(q, args...)

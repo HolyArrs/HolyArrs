@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type collectionRemoveBody struct {
@@ -127,7 +127,7 @@ func (a *API) removeCollection(w http.ResponseWriter, r *http.Request) {
 
 func collectionError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, library.ErrCollectionNotFound), errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, library.ErrCollectionNotFound), errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "movie collection not found")
 	case errors.Is(err, library.ErrCollectionSelection):
 		fail(w, http.StatusBadRequest, err.Error())

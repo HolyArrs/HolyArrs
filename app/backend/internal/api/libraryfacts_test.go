@@ -8,22 +8,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The Library table reads size on disk and the last aired episode.
 func TestLibraryFacts(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	now := time.Now().UTC().Truncate(time.Second)
-	day := func(d int) string { return store.FormatTime(now.AddDate(0, 0, d)) }
+	day := func(d int) string { return database.FormatTime(now.AddDate(0, 0, d)) }
 	var show int64
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		ts, by := store.FormatTime(now), `{"kind":"system"}`
+		ts, by := database.FormatTime(now), `{"kind":"system"}`
 		ex := func(q string, args ...any) int64 {
 			res, err := tx.Exec(q, args...)
 			if err != nil {

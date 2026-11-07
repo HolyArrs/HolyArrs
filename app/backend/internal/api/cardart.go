@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -84,7 +84,7 @@ func (a *API) readCardArt(ctx context.Context, keys [][2]string, lang string) ma
 			if rows.Scan(&kind, &id, &l, &r.Art, &r.Logo, &r.HasTitle, &at) != nil {
 				continue
 			}
-			r.at, _ = time.Parse(store.TimeLayout, at)
+			r.at, _ = time.Parse(database.TimeLayout, at)
 			out[cardKey(kind, id, l)] = r
 		}
 		_ = rows.Close()
@@ -320,7 +320,7 @@ func (a *API) storeCardArt(ctx context.Context, w cardWant, p metadata.CardArt) 
 	return a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO card_art (kind, tmdb_id, lang, art, logo, has_title, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (kind, tmdb_id, lang) DO UPDATE SET art = excluded.art, logo = excluded.logo, has_title = excluded.has_title, fetched_at = excluded.fetched_at`,
-			w.kind, w.id, w.lang, p.Art, p.Logo, p.HasTitle, store.FormatTime(time.Now()))
+			w.kind, w.id, w.lang, p.Art, p.Logo, p.HasTitle, database.FormatTime(time.Now()))
 		return err
 	})
 }

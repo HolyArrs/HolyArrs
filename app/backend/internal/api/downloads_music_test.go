@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // seedAlbum turns seed41's movie into an artist whose album Download covers
@@ -30,7 +30,7 @@ func seedAlbum(t *testing.T) (*dl41, []int64) {
 		rd := time.Date(2020, 5, 1, 0, 0, 0, 0, time.UTC)
 		p := &domain.Part{TitleID: titleID, Kind: "album", Name: "First Light", ReleaseDate: &rd, KeepUpToDate: true, SourceIDs: map[string]string{},
 			Pressings: []domain.Pressing{}, SecondaryTypes: []string{}, Included: true}
-		if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(`UPDATE items SET kind = 'track', part_id = ?, numbers = '{"disc":1,"track":1}', name = 'Dawn' WHERE id = ?`, p.ID, itemID); err != nil {
@@ -40,12 +40,12 @@ func seedAlbum(t *testing.T) (*dl41, []int64) {
 			st := map[int]domain.SlotState{2: domain.SlotInLibrary, 3: domain.SlotNeedsADecision}[n]
 			disc, num, name := 1, n, map[int]string{2: "Glass River", 3: "Night Train"}[n]
 			it := &domain.Item{TitleID: titleID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			reason := "the file could not be placed: not enough free space for the whole album"
 			sl := &domain.Slot{ItemID: it.ID, VersionID: verID, State: st, LastReason: &reason}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			ids = append(ids, sl.ID)

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Album search (stage 3.3): an album, a track's album or every album with a
@@ -31,7 +31,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Titl
 		return
 	}
 	listOnly := in.Choose != nil && !*in.Choose
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -49,7 +49,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Titl
 		album = *in.AlbumID
 	case in.SlotID != nil:
 		var sl domain.Slot
-		if err := store.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) {
+		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) {
 			fail(w, http.StatusNotFound, "no such Slot on this artist")
 			return
 		}

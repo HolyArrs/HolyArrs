@@ -15,10 +15,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // discoverTitles are the row headings the app may show.
@@ -325,7 +325,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	ref := services
 	if row == "similar" {
 		var t domain.Title
-		if err := store.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" || !a.titleAllowed(r, t) {
+		if err := database.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" || !a.titleAllowed(r, t) {
 			fail(w, http.StatusNotFound, "no such Title")
 			return
 		}

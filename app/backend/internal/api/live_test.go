@@ -15,10 +15,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type liveUser struct {
@@ -34,7 +34,7 @@ type liveSetup struct {
 	own  liveUser
 	mem  liveUser
 	mem2 liveUser
-	st   *store.Store
+	st   *database.Store
 }
 
 func (x liveSetup) call(t *testing.T, u liveUser, method, path, body string, csrf bool) (int, string) {
@@ -61,7 +61,7 @@ func (x liveSetup) call(t *testing.T, u liveUser, method, path, body string, csr
 func setupLive(t *testing.T) liveSetup {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

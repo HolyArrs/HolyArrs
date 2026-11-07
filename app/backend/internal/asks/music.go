@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Errors from asking for music.
@@ -136,10 +136,10 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 		if err := s.checkLimit(ctx, tx, p, KindMusic); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "asks", &a, p.actor()); err != nil {
+		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, store.FormatTime(now))
+		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, database.FormatTime(now))
 		return err
 	})
 	if errors.Is(err, errAskedMeanwhile) && !retried {
@@ -241,8 +241,8 @@ func widenAlbums(a, b []domain.AskAlbum) []domain.AskAlbum {
 
 // openArtistAsks finds the open asks (waiting or approved) for an artist,
 // oldest first.
-func openArtistAsks(ctx context.Context, q store.Lister, mbid string) ([]domain.Ask, error) {
-	return store.Select[domain.Ask](ctx, q, "asks", "kind = 'artist' AND state IN ('asked', 'approved') AND json_extract(source_ids, '$.musicbrainz') = ? ORDER BY id", mbid)
+func openArtistAsks(ctx context.Context, q database.Lister, mbid string) ([]domain.Ask, error) {
+	return database.Select[domain.Ask](ctx, q, "asks", "kind = 'artist' AND state IN ('asked', 'approved') AND json_extract(source_ids, '$.musicbrainz') = ? ORDER BY id", mbid)
 }
 
 // joinWiderArtist adds p to a waiting artist ask for fewer albums and
@@ -261,7 +261,7 @@ func albumsNotKept(ctx context.Context, db querier, titleID int64, want []domain
 	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&artistKeep); err != nil {
 		return nil, err
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY release_date IS NULL, release_date, id", titleID)
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY release_date IS NULL, release_date, id", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -306,14 +306,14 @@ func musicReady(ctx context.Context, db querier, titleID int64, albums []string,
 	where, args := "title_id = ? AND kind = 'album' AND dropped_at IS NULL", []any{titleID}
 	if len(albums) == 0 {
 		where += " AND included = 1 AND keep_up_to_date = 1 AND release_date IS NOT NULL AND release_date <= ?"
-		args = append(args, store.FormatTime(now))
+		args = append(args, database.FormatTime(now))
 	} else {
 		where += " AND json_extract(source_ids, '$.musicbrainz') IN (?" + strings.Repeat(", ?", len(albums)-1) + ")"
 		for _, id := range albums {
 			args = append(args, id)
 		}
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", where, args...)
+	parts, err := database.Select[domain.Part](ctx, db, "parts", where, args...)
 	if err != nil || len(parts) == 0 || (len(albums) > 0 && len(parts) < len(albums)) {
 		return false, err
 	}
@@ -411,7 +411,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 			return 0, err
 		}
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid)
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid)
 	if err != nil {
 		return 0, err
 	}
@@ -430,7 +430,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		if err := s.Library.IncludeAlbumsThen(ctx, tid, widen, searchAfter, by.actor()); err != nil {
 			return 0, err
 		}
-		if parts, err = store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid); err != nil {
+		if parts, err = database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid); err != nil {
 			return 0, err
 		}
 	}
@@ -469,7 +469,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 // readyArtists finds approved artist asks whose asked-for albums are all
 // in the Library (every track has a file).
 func (s *Service) readyArtists(ctx context.Context) ([]domain.Ask, error) {
-	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'artist' AND state = 'approved' AND title_id IS NOT NULL ORDER BY id")
+	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'artist' AND state = 'approved' AND title_id IS NOT NULL ORDER BY id")
 	if err != nil {
 		return nil, err
 	}

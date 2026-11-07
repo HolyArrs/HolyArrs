@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func onDisk(dir string) string {
@@ -26,7 +26,7 @@ func onDisk(dir string) string {
 func TestVaultRotationNeverShowsOldValue(t *testing.T) {
 	ctx := context.Background()
 	cfg := t.TempDir()
-	s, err := store.Open(cfg, store.Options{})
+	s, err := database.Open(cfg, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

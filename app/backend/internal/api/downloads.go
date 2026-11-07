@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -341,7 +342,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			JOIN asks a ON a.title_id = i.title_id WHERE a.state = 'approved')`
 		n = -1
 	}
-	ds, err := store.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, n)...)
+	ds, err := database.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, n)...)
 	if err != nil {
 		internal(w, err)
 		return
@@ -692,7 +693,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	err = a.manager().Remove(r.Context(), id, c, actor(r), who)
 	switch {
-	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such download")
 	case errors.Is(err, downloader.ErrNotActive):
 		fail(w, http.StatusConflict, err.Error())
@@ -700,7 +701,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 	default:
 		var d domain.Download
-		_ = store.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
+		_ = database.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
 		if d.ExternalID != "" {
 			a.forgetTorrents(r.Context(), d.DownloaderID, []string{d.ExternalID})
 		}
@@ -791,7 +792,7 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 		if rel.Valid {
 			dv.ReleaseID = &rel.Int64
 		}
-		dv.Since, _ = time.Parse(store.TimeLayout, since)
+		dv.Since, _ = time.Parse(database.TimeLayout, since)
 		dv.Why = why(dv.Reason)
 		out = append(out, dv)
 	}
@@ -809,7 +810,7 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 			}
 			if out[i].DownloadID != nil {
 				var d domain.Download
-				if store.Get(ctx, a.s.Store.Read(), "downloads", *out[i].DownloadID, &d) == nil && len(d.SlotIDs) > 1 {
+				if database.Get(ctx, a.s.Store.Read(), "downloads", *out[i].DownloadID, &d) == nil && len(d.SlotIDs) > 1 {
 					out[i].Pack = episodeLines(ctx, a.s.Store.Read(), d.SlotIDs)
 					for _, e := range out[i].Pack {
 						if e.State == string(domain.SlotNeedsADecision) {
@@ -963,7 +964,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 				if t.Kind == "show" || t.Kind == "artist" {
 					q = "UPDATE items SET keep_up_to_date = 0, updated_at = ? WHERE id = (SELECT item_id FROM slots WHERE id = ?)"
 				}
-				if _, err := tx.Exec(q, store.FormatTime(time.Now()), t.SlotID); err != nil {
+				if _, err := tx.Exec(q, database.FormatTime(time.Now()), t.SlotID); err != nil {
 					return err
 				}
 				st := domain.SlotWanted

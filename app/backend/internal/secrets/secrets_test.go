@@ -10,13 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func openStore(t *testing.T, dir string) *store.Store {
+func openStore(t *testing.T, dir string) *database.Store {
 	t.Helper()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestMigratesPlaintext(t *testing.T) {
 	s := openStore(t, dir)
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "sources", &domain.Source{Name: "Old", Protocol: "torrent", Format: "torznab", URL: "http://x/api",
+		if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Old", Protocol: "torrent", Format: "torznab", URL: "http://x/api",
 			Kinds: []string{"movie"}, Categories: map[string][]int{}, State: "enabled",
 			Extra: map[string]string{"apikey": "OLD_PLAIN_KEY", "lang": "en"}}, domain.System); err != nil {
 			return err
@@ -151,7 +151,7 @@ func TestMigratesPlaintext(t *testing.T) {
 		t.Fatalf("moved %d %v", n, err)
 	}
 	var src domain.Source
-	if err := store.Get(ctx, s.Read(), "sources", 1, &src); err != nil {
+	if err := database.Get(ctx, s.Read(), "sources", 1, &src); err != nil {
 		t.Fatal(err)
 	}
 	if _, left := src.Extra["apikey"]; left || src.Extra["lang"] != "en" || src.SecretRef == nil {

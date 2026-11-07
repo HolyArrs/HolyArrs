@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 type calendarArt struct {
@@ -54,7 +54,7 @@ func TestCalendarEntriesCarryArtwork(t *testing.T) {
 	}
 }
 
-func execRow(t *testing.T, st *store.Store, q string, args ...any) {
+func execRow(t *testing.T, st *database.Store, q string, args ...any) {
 	t.Helper()
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(q, args...)

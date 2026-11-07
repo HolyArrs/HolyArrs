@@ -12,13 +12,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Stage 4.14 on the lab, from a throwaway container in the lab network with
@@ -57,7 +57,7 @@ func albumFiles(seed byte, ext string) []labFile {
 }
 
 type labAlbum struct {
-	s      *store.Store
+	s      *database.Store
 	srv    *httptest.Server
 	m      *downloader.Manager
 	music  string
@@ -72,7 +72,7 @@ type labAlbum struct {
 // and runs the job queue wired as the app wires it.
 func newLabAlbum(t *testing.T) labAlbum {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,24 +89,24 @@ func newLabAlbum(t *testing.T) labAlbum {
 			return err
 		}
 		lf := &domain.LibraryFolder{Path: x.music, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Lab Lanterns", SortName: "lab lanterns", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": "lab"}, MetadataSource: "musicbrainz", KeepUpToDate: true, NewPartsPolicy: "all",
 			ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Lanterns", KeepUpToDate: true, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		date := time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)
 		album := "album"
 		p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: "Small Hours", ReleaseType: &album, ReleaseDate: &date, KeepUpToDate: true,
 			Included: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}}
-		if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
 		x.title, x.album = ti.ID, p.ID
@@ -114,11 +114,11 @@ func newLabAlbum(t *testing.T) labAlbum {
 			disc, num, name, length := 1, i+1, name, 4*60_000
 			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name,
 				AirDate: &date, LengthMS: &length, KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			x.slots = append(x.slots, sl.ID)
@@ -126,12 +126,12 @@ func newLabAlbum(t *testing.T) labAlbum {
 		so := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: src, AllowLocal: true,
 			UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}, Kinds: []string{"music"}, Categories: map[string][]int{"music": {3000}},
 			Priority: 25, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", so, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", so, domain.System); err != nil {
 			return err
 		}
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: labQbit(), Category: lab414Cat, Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := store.Insert(tx, "downloaders", d, domain.System)
+		_, err := database.Insert(tx, "downloaders", d, domain.System)
 		return err
 	})
 	if err != nil {

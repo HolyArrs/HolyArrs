@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Home rows, in the words the web app keys on.
@@ -305,7 +305,7 @@ func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any
 // from the last two weeks count as new; an older title still fills the row
 // with a plain line (Movie, Show, Music).
 func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
-	cut := store.FormatTime(now.AddDate(0, 0, -homeArrivedDays))
+	cut := database.FormatTime(now.AddDate(0, 0, -homeArrivedDays))
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, t.created_at,
 			i.id, COALESCE(p.id, 0), COALESCE(p.number, 0), COALESCE(p.name, ''), f.added_at
 		FROM slots s JOIN files f ON f.id = s.file_id JOIN items i ON i.id = s.item_id
@@ -386,13 +386,13 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 			var aired int
 			if err := db.QueryRowContext(ctx, `SELECT count(*) FROM items i JOIN parts p ON p.id = i.part_id
 				WHERE i.title_id = ? AND p.kind = 'season' AND p.number = ? AND i.air_date IS NOT NULL AND i.air_date <= ?`,
-				id, top.number, store.FormatTime(now)).Scan(&aired); err != nil {
+				id, top.number, database.FormatTime(now)).Scan(&aired); err != nil {
 				return nil, err
 			}
 			newCount := len(top.items)
 			c.Season = top.number
 			c.Href += fmt.Sprintf("?season=%d", top.number)
-			c.Line = homeShowLine(g.created >= store.FormatTime(now.AddDate(0, 0, -homeArrivedDays)), top.number, newCount, aired)
+			c.Line = homeShowLine(g.created >= database.FormatTime(now.AddDate(0, 0, -homeArrivedDays)), top.number, newCount, aired)
 		case "artist":
 			var albums []homeAlbum
 			for _, pid := range g.order {
@@ -446,7 +446,7 @@ func homeArtistLine(n int, albums []homeAlbum) string {
 // Library show whose first episode aired in the last month or airs in the
 // next one, newest first, one card per show.
 func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
-	from, until := store.FormatTime(now.AddDate(0, 0, -homeSeasonDays)), store.FormatTime(now.AddDate(0, 0, homeSeasonDays))
+	from, until := database.FormatTime(now.AddDate(0, 0, -homeSeasonDays)), database.FormatTime(now.AddDate(0, 0, homeSeasonDays))
 	// The bare air_timed and air_day come from the first episode's row (the one min picks).
 	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year, t.backdrop, t.logo, t.artwork, p.number, min(i.air_date) AS first, i.air_timed, i.air_day
 		FROM parts p JOIN titles t ON t.id = p.title_id JOIN items i ON i.part_id = p.id
@@ -565,7 +565,7 @@ func homeAskProgress(ctx context.Context, db *sql.DB, userID int64) (map[string]
 // the next date of each Library movie in the coming month, soonest first.
 // A movie already in the Library is out, so its later dates are left out.
 func homeComingSoon(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
-	from, until := store.FormatTime(now), store.FormatTime(now.AddDate(0, 0, homeSeasonDays))
+	from, until := database.FormatTime(now), database.FormatTime(now.AddDate(0, 0, homeSeasonDays))
 	day := func(v string) string { return v[:min(len(v), 10)] }
 	rows, err := db.QueryContext(ctx, `SELECT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, min(x.at), x.season, x.episode, x.timed, x.air_day FROM (
 			SELECT i.title_id AS id, i.air_date AS at, json_extract(i.numbers, '$.season') AS season, json_extract(i.numbers, '$.episode') AS episode,

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.8.11: a show with an HD and a 4K Version in the same Library folder.
@@ -33,18 +33,18 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 	}
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var main domain.Version
-		if err := store.Get(ctx, tx, "versions", w.vID, &main); err != nil {
+		if err := database.Get(ctx, tx, "versions", w.vID, &main); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: main.TitleID, Label: "4K", PickRulesID: main.PickRulesID, LibraryFolderID: main.LibraryFolderID,
 			FolderName: w.folder + " [4K]", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		uhdVer = v.ID
 		for n := 1; n <= 4; n++ {
 			var hd domain.Slot
-			if err := store.Get(ctx, tx, "slots", w.slots[n], &hd); err != nil {
+			if err := database.Get(ctx, tx, "slots", w.slots[n], &hd); err != nil {
 				return err
 			}
 			state := domain.SlotWanted
@@ -52,7 +52,7 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 				state = domain.SlotDownloading
 			}
 			sl := &domain.Slot{ItemID: hd.ItemID, VersionID: v.ID, State: state}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			uhdSlots[n] = sl.ID
@@ -63,12 +63,12 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 		ids := []int64{uhdSlots[1], uhdSlots[2]}
 		r := &domain.Release{SourceID: src, Name: uhdPack, LinkRef: "http://x/2.torrent", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: ids, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		d := &domain.Download{DownloaderID: dlr, ReleaseID: &r.ID, SlotIDs: ids, ExternalID: "uhd", Progress: 1, State: "finished",
 			FilesSeen: seen, SavePath: uhdDir, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", d, domain.System); err != nil {
 			return err
 		}
 		uhdDl = d.ID
@@ -85,7 +85,7 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 	// The HD pack left every 4K Slot alone.
 	for n, id := range uhdSlots {
 		var sl domain.Slot
-		_ = store.Get(ctx, w.s.Read(), "slots", id, &sl)
+		_ = database.Get(ctx, w.s.Read(), "slots", id, &sl)
 		if sl.FileID != nil || (n <= 2 && sl.State != domain.SlotDownloading) || (n > 2 && sl.State != domain.SlotWanted) {
 			t.Fatalf("4K E%d touched by the HD pack: %+v", n, sl)
 		}
@@ -96,7 +96,7 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 	for _, n := range []int{1, 2} {
 		hd := w.file(t, *w.slot(t, n).FileID)
 		var usl domain.Slot
-		_ = store.Get(ctx, w.s.Read(), "slots", uhdSlots[n], &usl)
+		_ = database.Get(ctx, w.s.Read(), "slots", uhdSlots[n], &usl)
 		if usl.FileID == nil {
 			t.Fatalf("4K E%d not placed: %+v", n, usl)
 		}

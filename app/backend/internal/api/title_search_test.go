@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // route: GET /api/v1/titles
@@ -22,7 +22,7 @@ func TestLibraryTitleSearch(t *testing.T) {
 			{Kind: "movie", Name: "Removed Amélie", SortName: "removed amelie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "removed"},
 		} {
 			title.NewPartsPolicy, title.ReleaseGate, title.GateDriver, title.Status = "all", "released", "none", "released"
-			if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+			if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 				return err
 			}
 		}

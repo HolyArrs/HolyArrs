@@ -13,9 +13,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // askedByNames reads GET /asked-by for one title as one person.
@@ -76,19 +76,19 @@ func TestAskedByEveryoneSees(t *testing.T) {
 	err := r.st.Write(ctx, func(tx *sql.Tx) error {
 		title := domain.Title{Kind: "movie", Name: "Paper Harbour", SortName: "paper harbour", SourceIDs: map[string]string{"tmdb": "900002"}, MetadataSource: "tmdb",
 			Rating: "PG", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
 		titleID = title.ID
 		now := time.Now().UTC()
 		res, err := tx.Exec(`INSERT INTO asks (created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
-			VALUES (?, '{}', ?, '{}', 'movie', '900002', 'Paper Harbour', 'approved', ?, ?, ?)`, store.FormatTime(now), store.FormatTime(now), titleID, r.ana.id, store.FormatTime(now))
+			VALUES (?, '{}', ?, '{}', 'movie', '900002', 'Paper Harbour', 'approved', ?, ?, ?)`, database.FormatTime(now), database.FormatTime(now), titleID, r.ana.id, database.FormatTime(now))
 		if err != nil {
 			return err
 		}
 		askID, _ := res.LastInsertId()
 		for i, id := range []int64{r.ana.id, r.bo.id, kai.id} {
-			if _, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at) VALUES (?, ?, ?)", askID, id, store.FormatTime(now.Add(time.Duration(i)*time.Minute))); err != nil {
+			if _, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at) VALUES (?, ?, ?)", askID, id, database.FormatTime(now.Add(time.Duration(i)*time.Minute))); err != nil {
 				return err
 			}
 		}

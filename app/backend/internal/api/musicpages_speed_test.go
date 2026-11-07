@@ -16,8 +16,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // slowArtists holds Artist and Pressings until release closes, counting
@@ -138,7 +138,7 @@ func TestMusicPagesFailingSourceNo502(t *testing.T) {
 // Top songs start with the page (not after the artist) and show on a cold
 // artist page; a failure leaves them out (Deezer's list stands in).
 func TestArtistPageTopSongsCold(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func TestArtistPageTopSongsCold(t *testing.T) {
 // Side data survives a restart (lookup_cache), an old answer is served at
 // once and asked again in the background, and a miss is remembered.
 func TestMusicSideKeptStaleAndMiss(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

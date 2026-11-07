@@ -9,11 +9,11 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeArtists is MusicBrainz over fixed answers.
@@ -115,9 +115,9 @@ func apiMusic() *fakeArtists {
 	}
 }
 
-func musicSetup(t *testing.T) (*httptest.Server, *store.Store, *library.Service, *fakeArtists) {
+func musicSetup(t *testing.T) (*httptest.Server, *database.Store, *library.Service, *fakeArtists) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

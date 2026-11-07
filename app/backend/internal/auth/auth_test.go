@@ -15,14 +15,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type fixture struct {
 	srv   *httptest.Server
 	a     *Auth
-	s     *store.Store
+	s     *database.Store
 	clock *fakeClock
 }
 
@@ -35,7 +35,7 @@ func okHandler(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("
 
 func setup(t *testing.T, opt Options) *fixture {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -418,7 +418,7 @@ func mustURL(s string) *url.URL { u, _ := url.Parse(s); return u }
 // First run has no setup code (decisions/0009): a leftover code file from
 // an older version is removed at start, and a "code" field is ignored.
 func TestSetupNeedsNoCode(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

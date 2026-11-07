@@ -6,19 +6,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func syncCollection(t *testing.T, s *store.Store, titleID int64, movie metadata.Movie) error {
+func syncCollection(t *testing.T, s *database.Store, titleID int64, movie metadata.Movie) error {
 	t.Helper()
 	return s.Write(context.Background(), func(tx *sql.Tx) error {
 		return syncMovieCollectionTx(context.Background(), tx, titleID, movie)
 	})
 }
 
-func collectionMemberships(t *testing.T, s *store.Store, titleID int64) map[string]string {
+func collectionMemberships(t *testing.T, s *database.Store, titleID int64) map[string]string {
 	t.Helper()
 	rows, err := s.Read().Query(`SELECT c.source_id, c.name FROM movie_collections c
 		JOIN movie_collection_titles ct ON ct.collection_id = c.id

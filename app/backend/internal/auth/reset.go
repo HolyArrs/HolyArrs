@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ReadNewOwner reads a name and a password for ResetOwner. It accepts
@@ -68,7 +68,7 @@ func cutLabel(line string) (string, string, bool) {
 // is none yet. It ends every session, removes every API key and turns off
 // two-factor sign-in, so anything
 // signed in with the old login has to sign in again.
-func ResetOwner(ctx context.Context, s *store.Store, name, password string) error {
+func ResetOwner(ctx context.Context, s *database.Store, name, password string) error {
 	if msg := passwordProblem(password, MinPasswordLength(ctx, s.Read())); msg != "" {
 		return errors.New(msg)
 	}
@@ -80,12 +80,12 @@ func ResetOwner(ctx context.Context, s *store.Store, name, password string) erro
 	if err != nil {
 		return err
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	var id int64
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		err := tx.QueryRow("SELECT id FROM users WHERE role = 'owner' ORDER BY id LIMIT 1").Scan(&id)
 		if errors.Is(err, sql.ErrNoRows) {
-			_, err = store.Insert(tx, "users", &domain.User{Name: name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
+			_, err = database.Insert(tx, "users", &domain.User{Name: name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
 			return err
 		}
 		if err != nil {

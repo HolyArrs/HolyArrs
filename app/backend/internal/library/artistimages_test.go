@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakePictures is a fake metadata server picture store holding the lab
@@ -59,10 +59,10 @@ func withPictures(t *testing.T, svc *Service, srv *httptest.Server) {
 	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/"}, HTTP: &http.Client{}}
 }
 
-func artworkOf(t *testing.T, s *store.Store, id int64) []string {
+func artworkOf(t *testing.T, s *database.Store, id int64) []string {
 	t.Helper()
 	var ti domain.Title
-	if err := store.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
 		t.Fatal(err)
 	}
 	return ti.Artwork
@@ -84,7 +84,7 @@ func TestArtistImageOnAdd(t *testing.T) {
 		t.Fatalf("the add asked for a picture itself: %d requests", n)
 	}
 	var j domain.Job
-	if err := store.Get(ctx, s.Read(), "jobs", jobID, &j); err != nil || j.Kind != KindRefreshTitle {
+	if err := database.Get(ctx, s.Read(), "jobs", jobID, &j); err != nil || j.Kind != KindRefreshTitle {
 		t.Fatalf("queued job %+v %v", j, err)
 	}
 	if err := svc.handleRefreshTitle(ctx, &jobs.Run{Job: j}); err != nil {

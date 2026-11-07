@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type attemptEngine struct {
@@ -93,13 +93,13 @@ func TestNZBGetJournalSurvivesRestartAndPinsOriginal(t *testing.T) {
 	if err := w.s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	w.s, err = store.Open(dir, store.Options{})
+	w.s, err = database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = w.s.Close() })
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE downloaders SET state = 'disabled', backoff_until = ? WHERE id = ?", store.FormatTime(time.Now().Add(time.Hour)), d.ID)
+		_, err := tx.Exec("UPDATE downloaders SET state = 'disabled', backoff_until = ? WHERE id = ?", database.FormatTime(time.Now().Add(time.Hour)), d.ID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -157,11 +157,11 @@ func TestNZBGetJournalAbandonedPairAllowsDifferentRelease(t *testing.T) {
 		t.Fatal("refused choice stranded the Slot", sl)
 	}
 	var rel domain.Release
-	if err := store.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
 		t.Fatal(err)
 	}
 	rel.ID, rel.Name, rel.LinkRef = 0, "Other.Release", "http://fake-indexer/other.nzb"
-	if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "releases", &rel, domain.System); return err }); err != nil {
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "releases", &rel, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := (&source.Searcher{Store: w.s}).Choose(ctx, rel.ID, w.slotID, false, domain.System); err != nil {
@@ -197,11 +197,11 @@ func TestOptionalGrabRejectsStaleReleaseChoice(t *testing.T) {
 		t.Fatal(err)
 	}
 	var other domain.Release
-	if err := store.Get(ctx, w.s.Read(), "releases", w.relID, &other); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "releases", w.relID, &other); err != nil {
 		t.Fatal(err)
 	}
 	other.ID, other.Name, other.LinkRef = 0, "Stale.Job.Release", "http://fake-indexer/stale.nzb"
-	if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "releases", &other, domain.System); return err }); err != nil {
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "releases", &other, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
 	m.Engine = func(domain.Downloader) (Engine, error) { t.Fatal("stale grab reached Downloader"); return nil, nil }
@@ -226,19 +226,19 @@ func TestOptionalJournalAbandonOnlyReleasesCurrentCoveredChoices(t *testing.T) {
 			ctx := context.Background()
 			var second domain.Slot
 			if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-				if err := store.Get(ctx, tx, "slots", w.slotID, &second); err != nil {
+				if err := database.Get(ctx, tx, "slots", w.slotID, &second); err != nil {
 					return err
 				}
 				var item domain.Item
-				if err := store.Get(ctx, tx, "items", second.ItemID, &item); err != nil {
+				if err := database.Get(ctx, tx, "items", second.ItemID, &item); err != nil {
 					return err
 				}
 				item.ID = 0
-				if _, err := store.Insert(tx, "items", &item, domain.System); err != nil {
+				if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 					return err
 				}
 				second.ID, second.ItemID = 0, item.ID
-				if _, err := store.Insert(tx, "slots", &second, domain.System); err != nil {
+				if _, err := database.Insert(tx, "slots", &second, domain.System); err != nil {
 					return err
 				}
 				if change == "not_covered" {
@@ -261,25 +261,25 @@ func TestOptionalJournalAbandonOnlyReleasesCurrentCoveredChoices(t *testing.T) {
 				case "different_choice":
 					_, err = tx.Exec("UPDATE slots SET chosen_release_id = NULL WHERE id = ?", second.ID)
 				case "slot_recreated":
-					_, err = tx.Exec("UPDATE slots SET created_at = ? WHERE id = ?", store.FormatTime(second.CreatedAt.Add(time.Hour)), second.ID)
+					_, err = tx.Exec("UPDATE slots SET created_at = ? WHERE id = ?", database.FormatTime(second.CreatedAt.Add(time.Hour)), second.ID)
 				case "version_recreated":
-					_, err = tx.Exec("UPDATE versions SET created_at = ? WHERE id = ?", store.FormatTime(time.Now().Add(time.Hour)), second.VersionID)
+					_, err = tx.Exec("UPDATE versions SET created_at = ? WHERE id = ?", database.FormatTime(time.Now().Add(time.Hour)), second.VersionID)
 				case "release_recreated":
-					_, err = tx.Exec("UPDATE releases SET created_at = ? WHERE id = ?", store.FormatTime(time.Now().Add(time.Hour)), w.relID)
+					_, err = tx.Exec("UPDATE releases SET created_at = ? WHERE id = ?", database.FormatTime(time.Now().Add(time.Hour)), w.relID)
 				}
 				return err
 			}); err != nil {
 				t.Fatal(err)
 			}
 			var before domain.Slot
-			if err := store.Get(ctx, w.s.Read(), "slots", second.ID, &before); err != nil {
+			if err := database.Get(ctx, w.s.Read(), "slots", second.ID, &before); err != nil {
 				t.Fatal(err)
 			}
 			if err := m.AbandonAttempt(ctx, d.ID, a.ID, domain.System); err != nil {
 				t.Fatal(err)
 			}
 			var after domain.Slot
-			if err := store.Get(ctx, w.s.Read(), "slots", second.ID, &after); err != nil {
+			if err := database.Get(ctx, w.s.Read(), "slots", second.ID, &after); err != nil {
 				t.Fatal(err)
 			}
 			if change == "none" {
@@ -314,9 +314,9 @@ func TestOptionalGrabChoiceChangedDuringSendKeepsAttemptPending(t *testing.T) {
 					case "choice":
 						_, err = tx.Exec("UPDATE slots SET chosen_release_id = NULL WHERE id = ?", w.slotID)
 					case "release_recreated":
-						_, err = tx.Exec("UPDATE releases SET created_at = ? WHERE id = ?", store.FormatTime(time.Now().Add(time.Hour)), w.relID)
+						_, err = tx.Exec("UPDATE releases SET created_at = ? WHERE id = ?", database.FormatTime(time.Now().Add(time.Hour)), w.relID)
 					case "version_recreated":
-						_, err = tx.Exec("UPDATE versions SET created_at = ? WHERE id = (SELECT version_id FROM slots WHERE id = ?)", store.FormatTime(time.Now().Add(time.Hour)), w.slotID)
+						_, err = tx.Exec("UPDATE versions SET created_at = ? WHERE id = (SELECT version_id FROM slots WHERE id = ?)", database.FormatTime(time.Now().Add(time.Hour)), w.slotID)
 					}
 					return err
 				}); err != nil {
@@ -519,10 +519,10 @@ func TestOptionalJournalDoesNotBindReusedIDs(t *testing.T) {
 			}
 			var rel domain.Release
 			var sl domain.Slot
-			if err := store.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
+			if err := database.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
 				t.Fatal(err)
 			}
-			if err := store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl); err != nil {
+			if err := database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl); err != nil {
 				t.Fatal(err)
 			}
 			if err := w.s.Write(ctx, func(tx *sql.Tx) error {
@@ -537,10 +537,10 @@ func TestOptionalJournalDoesNotBindReusedIDs(t *testing.T) {
 				}
 				// Explicitly recreate both ids, as SQLite can do without AUTOINCREMENT.
 				sl.ChosenReleaseID = nil
-				if _, err := store.Insert(tx, "slots", &sl, domain.System); err != nil {
+				if _, err := database.Insert(tx, "slots", &sl, domain.System); err != nil {
 					return err
 				}
-				if _, err := store.Insert(tx, "releases", &rel, domain.System); err != nil {
+				if _, err := database.Insert(tx, "releases", &rel, domain.System); err != nil {
 					return err
 				}
 				_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rel.ID, sl.ID)
@@ -595,7 +595,7 @@ func TestOptionalTorrentJournalPinsUnknownOutcomeAcrossRestart(t *testing.T) {
 				t.Fatal(err)
 			}
 			var err error
-			w.s, err = store.Open(dir, store.Options{})
+			w.s, err = database.Open(dir, database.Options{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -649,7 +649,7 @@ func TestOptionalJournalConcurrentFinalizationReusesDownload(t *testing.T) {
 	if len(got) != 1 || got[0].State != "resolved" || len(e.requests) != 2 || !e.requests[1].ReconcileOnly {
 		t.Fatal("concurrent recovery replayed or lost intent")
 	}
-	if _, count, err := w.s.Events(ctx, store.EventFilter{Kinds: []string{"download_sent"}}); err != nil || count != 1 {
+	if _, count, err := w.s.Events(ctx, database.EventFilter{Kinds: []string{"download_sent"}}); err != nil || count != 1 {
 		t.Fatal("concurrent finalization duplicated send history", count, err)
 	}
 	for _, topic := range []string{"event", "slot", "download"} {
@@ -671,19 +671,19 @@ func TestOptionalJournalPackDoesNotBindRecreatedSecondarySlot(t *testing.T) {
 	var second domain.Slot
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var first domain.Slot
-		if err := store.Get(ctx, tx, "slots", w.slotID, &first); err != nil {
+		if err := database.Get(ctx, tx, "slots", w.slotID, &first); err != nil {
 			return err
 		}
 		var item domain.Item
-		if err := store.Get(ctx, tx, "items", first.ItemID, &item); err != nil {
+		if err := database.Get(ctx, tx, "items", first.ItemID, &item); err != nil {
 			return err
 		}
 		item = domain.Item{TitleID: item.TitleID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", &item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 			return err
 		}
 		second = domain.Slot{ItemID: item.ID, VersionID: first.VersionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
-		if _, err := store.Insert(tx, "slots", &second, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", &second, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE releases SET matched_slot_ids = ?, verdict = json_set(verdict, '$.pick_slot_ids', json(?)) WHERE id = ?",
@@ -701,10 +701,10 @@ func TestOptionalJournalPackDoesNotBindRecreatedSecondarySlot(t *testing.T) {
 			if _, err := tx.Exec("DELETE FROM slots WHERE id = ?", second.ID); err != nil {
 				return err
 			}
-			if _, err := store.Insert(tx, "slots", &second, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", &second, domain.System); err != nil {
 				return err
 			}
-			_, err := tx.Exec("UPDATE slots SET created_at = ? WHERE id = ?", store.FormatTime(originalCreated.Add(time.Hour)), second.ID)
+			_, err := tx.Exec("UPDATE slots SET created_at = ? WHERE id = ?", database.FormatTime(originalCreated.Add(time.Hour)), second.ID)
 			return err
 		}); err != nil {
 			t.Fatal(err)
@@ -723,7 +723,7 @@ func TestOptionalJournalPackDoesNotBindRecreatedSecondarySlot(t *testing.T) {
 	if len(dl.SlotIDs) != 1 || dl.SlotIDs[0] != w.slotID {
 		t.Fatal("late response attached a recreated secondary Slot", dl.SlotIDs)
 	}
-	if err := store.Get(ctx, w.s.Read(), "slots", second.ID, &second); err != nil {
+	if err := database.Get(ctx, w.s.Read(), "slots", second.ID, &second); err != nil {
 		t.Fatal(err)
 	}
 	if second.State != domain.SlotChosen || second.ActiveDownloadID != nil || second.ChosenReleaseID == nil || *second.ChosenReleaseID != w.relID {
@@ -741,11 +741,11 @@ func TestOptionalJournalPackSharesOneAppend(t *testing.T) {
 			return err
 		}
 		item := &domain.Item{TitleID: titleID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: item.ID, VersionID: versionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		otherSlot = sl.ID
@@ -807,19 +807,19 @@ func TestOptionalJournalDifferentVersionsKeepSeparateIntents(t *testing.T) {
 	var secondSlot int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var sl domain.Slot
-		if err := store.Get(ctx, tx, "slots", w.slotID, &sl); err != nil {
+		if err := database.Get(ctx, tx, "slots", w.slotID, &sl); err != nil {
 			return err
 		}
 		var version domain.Version
-		if err := store.Get(ctx, tx, "versions", sl.VersionID, &version); err != nil {
+		if err := database.Get(ctx, tx, "versions", sl.VersionID, &version); err != nil {
 			return err
 		}
 		version.ID, version.Label, version.FolderName, version.IsMain = 0, "Other", "Other", false
-		if _, err := store.Insert(tx, "versions", &version, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 			return err
 		}
 		sl.ID, sl.VersionID = 0, version.ID
-		if _, err := store.Insert(tx, "slots", &sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", &sl, domain.System); err != nil {
 			return err
 		}
 		secondSlot = sl.ID

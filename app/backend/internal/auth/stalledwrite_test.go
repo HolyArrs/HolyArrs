@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Sign-in succeeds while another write is held up on purpose, and while
 // more ordinary writes wait behind it.
 func TestSignInWhileAWriteIsStalled(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{WriteCap: 300 * time.Millisecond})
+	s, err := database.Open(t.TempDir(), database.Options{WriteCap: 300 * time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}

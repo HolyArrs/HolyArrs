@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
@@ -284,7 +284,7 @@ func dropSecret(tx *sql.Tx, ref **int64) error {
 
 // Add stores a new Source; its key and proxy password go to the vault.
 // then, when given, runs in the same transaction with the new id.
-func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.Source, error) {
+func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.Source, error) {
 	var src domain.Source
 	key, pass, err := fill(in, &src, true)
 	if err != nil {
@@ -309,7 +309,7 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 		if err := putSecret(tx, v, &src.ProxySecretRef, "source_proxy_password", pass, by); err != nil {
 			return err
 		}
-		id, err := store.Insert(tx, "sources", &src, by)
+		id, err := database.Insert(tx, "sources", &src, by)
 		if err != nil {
 			return err
 		}
@@ -327,9 +327,9 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 // own: when the address's host changes, the key must be typed again (the
 // same for the proxy password). then, when given, may change the Source
 // further in the same transaction, just before it is written.
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor, then ...func(tx *sql.Tx, src *domain.Source) error) (domain.Source, error) {
+func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor, then ...func(tx *sql.Tx, src *domain.Source) error) (domain.Source, error) {
 	var src domain.Source
-	if err := store.Get(ctx, s.Read(), "sources", id, &src); err != nil {
+	if err := database.Get(ctx, s.Read(), "sources", id, &src); err != nil {
 		return src, err
 	}
 	old := src
@@ -409,7 +409,7 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 				return err
 			}
 		}
-		return store.Update(tx, "sources", &src, by)
+		return database.Update(tx, "sources", &src, by)
 	})
 	if err != nil {
 		return old, err
@@ -418,10 +418,10 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 }
 
 // Remove deletes a Source, its secrets, its Releases and its call record.
-func Remove(ctx context.Context, s *store.Store, id int64) error {
+func Remove(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var src domain.Source
-		if err := store.Get(ctx, tx, "sources", id, &src); err != nil {
+		if err := database.Get(ctx, tx, "sources", id, &src); err != nil {
 			return err
 		}
 		if err := dropSecret(tx, &src.SecretRef); err != nil {
@@ -440,10 +440,10 @@ func Remove(ctx context.Context, s *store.Store, id int64) error {
 
 // SetPaused pauses a Source by hand, or resumes it. Resuming also ends a
 // back-off pause, so it is tried again at once.
-func SetPaused(ctx context.Context, s *store.Store, id int64, paused bool, by domain.Actor) (domain.Source, error) {
+func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by domain.Actor) (domain.Source, error) {
 	var src domain.Source
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "sources", id, &src); err != nil {
+		if err := database.Get(ctx, tx, "sources", id, &src); err != nil {
 			return err
 		}
 		if paused {
@@ -455,7 +455,7 @@ func SetPaused(ctx context.Context, s *store.Store, id int64, paused bool, by do
 			}
 		}
 		src.PauseReason, src.PausedUntil = nil, nil
-		return store.Update(tx, "sources", &src, by)
+		return database.Update(tx, "sources", &src, by)
 	})
 	return src, err
 }

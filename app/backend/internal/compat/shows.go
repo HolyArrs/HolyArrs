@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // series is a show as the Sonarr side answers it. Empty values are left
@@ -151,7 +151,7 @@ func parseTime(s *string) *time.Time {
 	if s == nil {
 		return nil
 	}
-	t, err := time.Parse(store.TimeLayout, *s)
+	t, err := time.Parse(database.TimeLayout, *s)
 	if err != nil {
 		return nil
 	}
@@ -161,7 +161,7 @@ func parseTime(s *string) *time.Time {
 // seasonCountsOf reads the counts of every season of the shows in ids in
 // one grouped query (no query per show), keyed by show and season.
 func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]map[int]*seasonCounts, error) {
-	now := store.FormatTime(h.now())
+	now := database.FormatTime(h.now())
 	rows, err := h.Store.Read().QueryContext(ctx, `SELECT i.title_id, COALESCE(json_extract(i.numbers, '$.season'), 0) AS sn, count(*),
 		sum(s.file_id IS NOT NULL OR (i.keep_up_to_date = 1 AND i.air_date IS NOT NULL AND i.air_date <= ?)),
 		sum(s.file_id IS NOT NULL), COALESCE(sum(f.size), 0),
@@ -208,7 +208,7 @@ func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]ma
 // seasons and counts, in a fixed number of queries.
 func (h *handler) loadSeries(ctx context.Context, where string, args ...any) ([]series, error) {
 	db := h.Store.Read()
-	ts, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
+	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
 	if err != nil || len(ts) == 0 {
 		return []series{}, err
 	}
@@ -216,7 +216,7 @@ func (h *handler) loadSeries(ctx context.Context, where string, args ...any) ([]
 	for i, t := range ts {
 		ids[i] = t.ID
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "kind = 'season' AND dropped_at IS NULL AND title_id IN "+idList(ids)+" ORDER BY number")
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "kind = 'season' AND dropped_at IS NULL AND title_id IN "+idList(ids)+" ORDER BY number")
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (h *handler) loadSeries(ctx context.Context, where string, args ...any) ([]
 
 // mainVersions reads the main Version of each title in ids.
 func (h *handler) mainVersions(ctx context.Context, ids []int64) (map[int64]domain.Version, error) {
-	vs, err := store.Select[domain.Version](ctx, h.Store.Read(), "versions", "is_main = 1 AND title_id IN "+idList(ids))
+	vs, err := database.Select[domain.Version](ctx, h.Store.Read(), "versions", "is_main = 1 AND title_id IN "+idList(ids))
 	out := map[int64]domain.Version{}
 	for _, v := range vs {
 		out[v.TitleID] = v
@@ -254,7 +254,7 @@ func (h *handler) mainVersions(ctx context.Context, ids []int64) (map[int64]doma
 }
 
 func (h *handler) folders(ctx context.Context) (map[int64]domain.LibraryFolder, error) {
-	fs, err := store.Select[domain.LibraryFolder](ctx, h.Store.Read(), "library_folders", "1=1")
+	fs, err := database.Select[domain.LibraryFolder](ctx, h.Store.Read(), "library_folders", "1=1")
 	out := map[int64]domain.LibraryFolder{}
 	for _, f := range fs {
 		out[f.ID] = f
@@ -269,7 +269,7 @@ func (h *handler) folderByPath(ctx context.Context, p string) (int64, bool) {
 	if p == "" {
 		return 0, true
 	}
-	fs, err := store.Select[domain.LibraryFolder](ctx, h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
+	fs, err := database.Select[domain.LibraryFolder](ctx, h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
 	if err != nil {
 		return 0, false
 	}
@@ -668,7 +668,7 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	parts, err := store.Select[domain.Part](ctx, h.Store.Read(), "parts", "title_id = ? AND kind = 'season'", t.ID)
+	parts, err := database.Select[domain.Part](ctx, h.Store.Read(), "parts", "title_id = ? AND kind = 'season'", t.ID)
 	if err != nil {
 		internalError(w, err)
 		return
@@ -748,7 +748,7 @@ type episode struct {
 // episodesWhere reads the episodes of shows in the Library matching where,
 // each with the file of its main Version.
 func (h *handler) episodesWhere(ctx context.Context, where string, args ...any) ([]episode, error) {
-	its, err := store.Select[domain.Item](ctx, h.Store.Read(), "items", "kind = 'episode' AND dropped_at IS NULL AND title_id IN (SELECT id FROM titles WHERE kind = 'show' AND state != 'removed') AND "+
+	its, err := database.Select[domain.Item](ctx, h.Store.Read(), "items", "kind = 'episode' AND dropped_at IS NULL AND title_id IN (SELECT id FROM titles WHERE kind = 'show' AND state != 'removed') AND "+
 		where+" ORDER BY title_id, json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
 	if err != nil || len(its) == 0 {
 		return []episode{}, err

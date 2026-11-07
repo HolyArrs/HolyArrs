@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -45,7 +45,7 @@ type Gate interface {
 	// it always did.
 	Active() bool
 	// Held reports whether a queued Job of kind about subject must wait.
-	Held(ctx context.Context, db store.Querier, kind string, subject *domain.Subject) bool
+	Held(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) bool
 	// KindOff reports whether a scheduled kind is not to be queued now.
 	KindOff(kind string) bool
 }
@@ -63,7 +63,7 @@ const claimPage = 200
 
 // Queue runs Jobs stored in the database on a fixed pool of workers.
 type Queue struct {
-	s     *store.Store
+	s     *database.Store
 	opt   Options
 	mu    sync.Mutex
 	hand  map[string]Handler
@@ -83,7 +83,7 @@ type Queue struct {
 }
 
 // New makes a Queue. Call Handle for each kind, then Start.
-func New(s *store.Store, opt Options) *Queue {
+func New(s *database.Store, opt Options) *Queue {
 	if opt.Workers <= 0 {
 		opt.Workers = 2
 	}
@@ -186,7 +186,7 @@ func (q *Queue) enqueueAt(ctx context.Context, kind string, subject *domain.Subj
 			}
 		}
 		var err error
-		id, err = store.Insert(tx, "jobs", j, by)
+		id, err = database.Insert(tx, "jobs", j, by)
 		created = err == nil
 		if created && prepared != nil {
 			q.mu.Lock()
@@ -218,7 +218,7 @@ func (q *Queue) poke() {
 func (q *Queue) Start(ctx context.Context) error {
 	err := q.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE jobs SET state = 'queued', progress_note = 'restarted after a stop', updated_at = ? WHERE state = 'running'",
-			store.FormatTime(time.Now()))
+			database.FormatTime(time.Now()))
 		return err
 	})
 	if err != nil {
@@ -298,7 +298,7 @@ func (q *Queue) claim(ctx context.Context, pool Pool) (domain.Job, bool, error) 
 	// Look first on the read pool, so an idle queue never opens a write.
 	var one int
 	err := q.s.Read().QueryRowContext(ctx, "SELECT 1 FROM jobs WHERE state = 'queued' AND run_after <= ?"+kinds+" LIMIT 1",
-		append([]any{store.FormatTime(time.Now())}, args...)...).Scan(&one)
+		append([]any{database.FormatTime(time.Now())}, args...)...).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
 		return j, false, nil
 	}
@@ -312,7 +312,7 @@ func (q *Queue) claim(ctx context.Context, pool Pool) (domain.Job, bool, error) 
 			return errGateOn
 		}
 		var id int64
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		err := tx.QueryRow(`SELECT id FROM jobs WHERE state = 'queued' AND run_after <= ?`+kinds+`
 			ORDER BY CASE priority WHEN 'now' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END, run_after, id LIMIT 1`, append([]any{now}, args...)...).Scan(&id)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -325,7 +325,7 @@ func (q *Queue) claim(ctx context.Context, pool Pool) (domain.Job, bool, error) 
 			return err
 		}
 		found = true
-		return store.Get(ctx, tx, "jobs", id, &j)
+		return database.Get(ctx, tx, "jobs", id, &j)
 	})
 	if errors.Is(err, errGateOn) {
 		if g := q.activeGate(); g != nil {
@@ -358,7 +358,7 @@ func (q *Queue) claimGated(ctx context.Context, g Gate, kinds string, args []any
 			}
 		}
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	for offset := 0; ; offset += claimPage {
 		c, more, err := q.gatedPage(ctx, g, kinds, append([]any{now}, args...), offset)
 		if err != nil || c == nil {
@@ -428,7 +428,7 @@ func (q *Queue) claimHeldCheck(ctx context.Context, g Gate, c gatedCand) (domain
 		if g.Held(ctx, tx, c.kind, c.subject) {
 			return nil // turned off meanwhile: it waits
 		}
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		res, err := tx.Exec("UPDATE jobs SET state = 'running', attempt = attempt + 1, started_at = ?, updated_at = ? WHERE id = ? AND state = 'queued'", now, now, id)
 		if err != nil {
 			return err
@@ -437,7 +437,7 @@ func (q *Queue) claimHeldCheck(ctx context.Context, g Gate, c gatedCand) (domain
 			return nil // another worker took it
 		}
 		found = true
-		return store.Get(ctx, tx, "jobs", id, &j)
+		return database.Get(ctx, tx, "jobs", id, &j)
 	})
 	if found && err == nil {
 		q.notify(j)
@@ -491,7 +491,7 @@ func (r *Run) Progress(ctx context.Context, p float64, note string) error {
 	p = min(max(p, 0), 1)
 	err := r.q.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE jobs SET progress = ?, progress_note = ?, updated_at = ? WHERE id = ?",
-			p, note, store.FormatTime(time.Now()), r.Job.ID)
+			p, note, database.FormatTime(time.Now()), r.Job.ID)
 		return err
 	})
 	if err == nil {
@@ -514,7 +514,7 @@ func (r *Run) SaveResult(ctx context.Context, v map[string]any) error {
 		return err
 	}
 	return r.q.s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE jobs SET result = ?, updated_at = ? WHERE id = ?", string(res), store.FormatTime(time.Now()), r.Job.ID)
+		_, err := tx.Exec("UPDATE jobs SET result = ?, updated_at = ? WHERE id = ?", string(res), database.FormatTime(time.Now()), r.Job.ID)
 		return err
 	})
 }
@@ -583,7 +583,7 @@ func (q *Queue) finish(j domain.Job, result map[string]any, runErr error, code s
 	now := time.Now().UTC()
 	ctx := context.Background()
 	_ = q.s.Write(ctx, func(tx *sql.Tx) error {
-		ts := store.FormatTime(now)
+		ts := database.FormatTime(now)
 		switch {
 		case cancelled:
 			_, err := tx.Exec("UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE id = ?", ts, ts, j.ID)
@@ -601,7 +601,7 @@ func (q *Queue) finish(j domain.Job, result map[string]any, runErr error, code s
 		var fe interface{ Final() bool }
 		final := errors.As(runErr, &fe) && fe.Final()
 		if j.Attempt < j.MaxAttempts && code != "no_handler" && !final {
-			next := store.FormatTime(now.Add(q.backoff(j.Attempt)))
+			next := database.FormatTime(now.Add(q.backoff(j.Attempt)))
 			_, err := tx.Exec("UPDATE jobs SET state = 'queued', run_after = ?, error = ?, updated_at = ? WHERE id = ?", next, string(e), ts, j.ID)
 			return err
 		}
@@ -609,7 +609,7 @@ func (q *Queue) finish(j domain.Job, result map[string]any, runErr error, code s
 		return err
 	})
 	var fresh domain.Job
-	if store.Get(ctx, q.s.Read(), "jobs", j.ID, &fresh) == nil {
+	if database.Get(ctx, q.s.Read(), "jobs", j.ID, &fresh) == nil {
 		q.notify(fresh)
 	}
 }
@@ -622,7 +622,7 @@ func (q *Queue) Cancel(ctx context.Context, id int64) error {
 			return err
 		}
 		if state == "queued" {
-			ts := store.FormatTime(time.Now())
+			ts := database.FormatTime(time.Now())
 			_, err := tx.Exec("UPDATE jobs SET state = 'cancelled', ended_at = ?, updated_at = ? WHERE id = ?", ts, ts, id)
 			return err
 		}

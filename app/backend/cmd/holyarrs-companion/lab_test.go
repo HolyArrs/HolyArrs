@@ -19,7 +19,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // This opt-in lab uses the real API and auth with disposable state. Its only
@@ -31,7 +31,7 @@ func TestCompanionContainerLab(t *testing.T) {
 	old := log.Writer()
 	log.SetOutput(io.Discard) // first-run setup writes a private one-time code
 	t.Cleanup(func() { log.SetOutput(old) })
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal("disposable store could not start")
 	}

@@ -13,8 +13,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Reports (#95): anyone signed in tells the owner and admins about a
@@ -129,7 +129,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	}
 	db := s.Store.Read()
 	var t domain.Title
-	if err := store.Get(ctx, db, "titles", in.TitleID, &t); err != nil {
+	if err := database.Get(ctx, db, "titles", in.TitleID, &t); err != nil {
 		return ReportView{}, err
 	}
 	var have int
@@ -146,7 +146,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	}
 	if in.ItemID != 0 {
 		var it domain.Item
-		if err := store.Get(ctx, db, "items", in.ItemID, &it); errors.Is(err, store.ErrNotFound) || (err == nil && it.TitleID != t.ID) {
+		if err := database.Get(ctx, db, "items", in.ItemID, &it); errors.Is(err, database.ErrNotFound) || (err == nil && it.TitleID != t.ID) {
 			return ReportView{}, ErrReportPart
 		} else if err != nil {
 			return ReportView{}, err
@@ -234,7 +234,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 		if open >= maxOpenReports {
 			return ErrTooManyReports
 		}
-		_, err := store.Insert(tx, "reports", &r, p.actor())
+		_, err := database.Insert(tx, "reports", &r, p.actor())
 		return err
 	})
 	if openReportConflict(err) {
@@ -273,14 +273,14 @@ func (s *Service) FixReport(ctx context.Context, by Person, id int64, reply stri
 	now := s.now()
 	var r domain.Report
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "reports", id, &r); err != nil {
+		if err := database.Get(ctx, tx, "reports", id, &r); err != nil {
 			return err
 		}
 		if r.State != domain.ReportOpen {
 			return ErrReportFixed
 		}
 		r.State, r.ClosedBy, r.ClosedAt, r.Reply = domain.ReportFixed, &by.UserID, &now, reply
-		return store.UpdateWhere(tx, "reports", &r, by.actor(), "state = 'open'")
+		return database.UpdateWhere(tx, "reports", &r, by.actor(), "state = 'open'")
 	})
 	if err != nil {
 		return ReportView{}, err
@@ -306,14 +306,14 @@ func (s *Service) FixReport(ctx context.Context, by Person, id int64, reply stri
 func (s *Service) ReopenReport(ctx context.Context, by Person, id int64) (ReportView, error) {
 	var r domain.Report
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "reports", id, &r); err != nil {
+		if err := database.Get(ctx, tx, "reports", id, &r); err != nil {
 			return err
 		}
 		if r.State != domain.ReportFixed {
 			return ErrReportOpen
 		}
 		r.State, r.ClosedBy, r.ClosedAt, r.Reply = domain.ReportOpen, nil, nil, ""
-		return store.UpdateWhere(tx, "reports", &r, by.actor(), "state = 'fixed'")
+		return database.UpdateWhere(tx, "reports", &r, by.actor(), "state = 'fixed'")
 	})
 	if openReportConflict(err) {
 		return ReportView{}, ErrReportedAlready
@@ -357,7 +357,7 @@ func (s *Service) tellReporter(ctx context.Context, r domain.Report, v ReportVie
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id, report_id) VALUES (?, ?, 'fixed', ?, ?, ?)",
-			store.FormatTime(s.now()), p.ID, text, r.TitleID, r.ID)
+			database.FormatTime(s.now()), p.ID, text, r.TitleID, r.ID)
 		return err
 	})
 	if err != nil {
@@ -385,7 +385,7 @@ func (s *Service) ListReports(ctx context.Context, p Person, all bool, state str
 }
 
 // OpenReports counts the reports still open.
-func OpenReports(ctx context.Context, db store.Querier) (int, error) {
+func OpenReports(ctx context.Context, db database.Querier) (int, error) {
 	var n int
 	err := db.QueryRowContext(ctx, "SELECT count(*) FROM reports WHERE state = 'open'").Scan(&n)
 	return n, err
@@ -397,7 +397,7 @@ func (s *Service) reportView(ctx context.Context, id int64) (ReportView, error) 
 		return ReportView{}, err
 	}
 	if len(vs) == 0 {
-		return ReportView{}, store.ErrNotFound
+		return ReportView{}, database.ErrNotFound
 	}
 	return vs[0], nil
 }
@@ -406,7 +406,7 @@ func (s *Service) reportView(ctx context.Context, id int64) (ReportView, error) 
 // ORDER BY and LIMIT) with the names pages show.
 func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([]ReportView, error) {
 	db := s.Store.Read()
-	rs, err := store.Select[domain.Report](ctx, db, "reports", where, args...)
+	rs, err := database.Select[domain.Report](ctx, db, "reports", where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +428,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 	for _, r := range rs {
 		t, ok := titles[r.TitleID]
 		if !ok {
-			_ = store.Get(ctx, db, "titles", r.TitleID, &t)
+			_ = database.Get(ctx, db, "titles", r.TitleID, &t)
 			titles[r.TitleID] = t
 			var n int
 			_ = db.QueryRowContext(ctx, "SELECT count(*) FROM versions WHERE title_id = ?", r.TitleID).Scan(&n)
@@ -445,7 +445,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 		}
 		if r.ItemID != nil {
 			var it domain.Item
-			if store.Get(ctx, db, "items", *r.ItemID, &it) == nil {
+			if database.Get(ctx, db, "items", *r.ItemID, &it) == nil {
 				v.Episode, v.Track = it.Numbers.Episode, it.Numbers.Track
 				if it.Name != nil {
 					v.ItemName = *it.Name

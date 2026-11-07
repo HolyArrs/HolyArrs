@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // rar4 builds a tiny RAR 4 volume holding one stored file part.
@@ -75,11 +75,11 @@ func packedWorld(t *testing.T, files map[string][]byte) world {
 	}
 	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var d domain.Download
-		if err := store.Get(context.Background(), tx, "downloads", w.dlID, &d); err != nil {
+		if err := database.Get(context.Background(), tx, "downloads", w.dlID, &d); err != nil {
 			return err
 		}
 		d.FilesSeen = seen
-		return store.Update(tx, "downloads", &d, domain.System)
+		return database.Update(tx, "downloads", &d, domain.System)
 	})
 	if err != nil {
 		t.Fatal(err)

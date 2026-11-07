@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindCleanHolding empties old days out of the holding folders.
@@ -135,7 +135,7 @@ type RemovePlan struct {
 // planRemove works out a delete. Nothing changes.
 func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, now time.Time) (RemovePlan, domain.Title, error) {
 	var t domain.Title
-	if err := store.Get(ctx, db, "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return RemovePlan{}, t, err
 	}
 	if t.State == "removed" {
@@ -146,7 +146,7 @@ func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, n
 		return RemovePlan{}, t, err
 	}
 	p := RemovePlan{TitleID: t.ID, Name: t.Name, Scope: "title", Choice: c, Held: []RemoveFile{}, Kept: []RemoveFile{}, HoldingDays: rules.HoldingDays}
-	files, err := store.Select[domain.File](ctx, db, "files",
+	files, err := database.Select[domain.File](ctx, db, "files",
 		"state IN ('present', 'missing') AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
 		return p, t, err
@@ -154,10 +154,10 @@ func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, n
 	for _, f := range files {
 		var v domain.Version
 		var lf domain.LibraryFolder
-		if err := store.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
+		if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
 			return p, t, err
 		}
-		if err := store.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
+		if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
 			return p, t, err
 		}
 		rf := RemoveFile{FileID: f.ID, LibraryFolderID: lf.ID, Origin: f.Origin, Path: f.RelativePath, Protected: f.Protected, root: lf.Path}
@@ -246,7 +246,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 		what = "artist"
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		ts, who := store.FormatTime(s.now()), actorText(by)
+		ts, who := database.FormatTime(s.now()), actorText(by)
 		if _, err := tx.Exec("UPDATE titles SET state = 'removed', keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE id = ?", ts, who, t.ID); err != nil {
 			return err
 		}
@@ -267,7 +267,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 					ids[k] = v
 				}
 				n := domain.NeverAdd{Kind: "show", SourceIDs: ids, Name: t.Name, Reason: "deleted from the Library"}
-				if _, err := store.Insert(tx, "never_add", &n, by); err != nil {
+				if _, err := database.Insert(tx, "never_add", &n, by); err != nil {
 					return err
 				}
 			}
@@ -277,7 +277,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 				return err
 			} else if !on {
 				n := domain.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": t.SourceIDs["musicbrainz"]}, Name: t.Name, Reason: "deleted from the Library"}
-				if _, err := store.Insert(tx, "never_add", &n, by); err != nil {
+				if _, err := database.Insert(tx, "never_add", &n, by); err != nil {
 					return err
 				}
 			}
@@ -287,7 +287,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 				return err
 			} else if !on {
 				n := domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": t.SourceIDs["tmdb"]}, Name: t.Name, Reason: "deleted from the Library"}
-				if _, err := store.Insert(tx, "never_add", &n, by); err != nil {
+				if _, err := database.Insert(tx, "never_add", &n, by); err != nil {
 					return err
 				}
 			}
@@ -316,7 +316,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 // or a link stays.
 func (s *Service) removeEmptyFolders(ctx context.Context, titleID int64, held []RemoveFile, showFolder bool) {
 	db := s.Store.Read()
-	vs, _ := store.Select[domain.Version](ctx, db, "versions", "title_id = ?", titleID)
+	vs, _ := database.Select[domain.Version](ctx, db, "versions", "title_id = ?", titleID)
 	names := map[string]bool{}
 	if st, err := naming.Read(ctx, db); err == nil {
 		rows, err := db.QueryContext(ctx, "SELECT DISTINCT json_extract(numbers, '$.season') FROM items WHERE title_id = ? AND json_extract(numbers, '$.season') IS NOT NULL", titleID)
@@ -398,11 +398,11 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 	for i, h := range p.Held {
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE files SET state = 'gone', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				h.To, store.FormatTime(s.now()), actorText(by), h.FileID)
+				h.To, database.FormatTime(s.now()), actorText(by), h.FileID)
 			if err == nil {
 				// Built-in tracks leave with the video; a beside subtitle's
 				// row changes only once that subtitle has moved (below).
-				_, err = tx.Exec("UPDATE subtitles SET state = 'gone', updated_at = ? WHERE file_id = ? AND state = 'present' AND place <> 'beside'", store.FormatTime(s.now()), h.FileID)
+				_, err = tx.Exec("UPDATE subtitles SET state = 'gone', updated_at = ? WHERE file_id = ? AND state = 'present' AND place <> 'beside'", database.FormatTime(s.now()), h.FileID)
 			}
 			return err
 		})
@@ -487,7 +487,7 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 			}
 			rows.Close()
 			for _, id := range gone {
-				if _, err := tx.Exec("UPDATE subtitles SET state = 'gone', updated_at = ? WHERE id = ?", store.FormatTime(s.now()), id); err != nil {
+				if _, err := tx.Exec("UPDATE subtitles SET state = 'gone', updated_at = ? WHERE id = ?", database.FormatTime(s.now()), id); err != nil {
 					return err
 				}
 			}
@@ -512,7 +512,7 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 	}
 	today := s.now().Truncate(24 * time.Hour)
 	cutoff := today.AddDate(0, 0, -rules.HoldingDays)
-	lfs, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return 0, err
 	}
@@ -547,7 +547,7 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 			if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 				_, err := tx.Exec(`UPDATE files SET state = 'gone', updated_at = ?, updated_by = ? WHERE state IN ('replaced', 'gone')
 					AND substr(relative_path, 1, ?) = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`,
-					store.FormatTime(s.now()), actorText(by), len(prefix), prefix, lf.ID)
+					database.FormatTime(s.now()), actorText(by), len(prefix), prefix, lf.ID)
 				return err
 			}); err != nil {
 				return n, err

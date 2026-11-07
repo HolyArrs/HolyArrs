@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // More Explore → Music rows: new this week, rising artists, classics,
@@ -329,7 +329,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 	// The Library's albums, for anniversaries, live and EPs, debuts, decades.
 	var parts []domain.Part
 	if len(m.artists) > 0 {
-		parts, _ = store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL
+		parts, _ = database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`)
 	}
 	partHas := map[int64]bool{}
@@ -533,7 +533,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 
 	// Soundtracks for movies and shows in the Library.
 	{
-		ts, _ := store.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed' ORDER BY id DESC LIMIT 60")
+		ts, _ := database.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed' ORDER BY id DESC LIMIT 60")
 		var jobs []soundtrackJob
 		for _, t := range ts {
 			y := 0

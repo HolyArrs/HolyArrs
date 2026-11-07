@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestHealthOfEachState(t *testing.T) {
@@ -48,13 +48,13 @@ func TestHealthOfEachState(t *testing.T) {
 }
 
 // addSource adds one more Source to a seeded store.
-func addSource(t *testing.T, s *store.Store, name, u string, prio int, state string) int64 {
+func addSource(t *testing.T, s *database.Store, name, u string, prio int, state string) int64 {
 	t.Helper()
 	src := &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: u, AllowLocal: true,
 		UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
 		Categories: map[string][]int{"movie": {2000}}, Priority: prio, State: state, Extra: map[string]string{}}
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "sources", src, domain.System)
+		_, err := database.Insert(tx, "sources", src, domain.System)
 		return err
 	})
 	if err != nil {
@@ -111,7 +111,7 @@ func TestSeveralSourcesStatesAndStats(t *testing.T) {
 	}
 	state := func(id int64) Health {
 		var src domain.Source
-		if err := store.Get(ctx, f.s.Read(), "sources", id, &src); err != nil {
+		if err := database.Get(ctx, f.s.Read(), "sources", id, &src); err != nil {
 			t.Fatal(err)
 		}
 		return HealthOf(src)
@@ -327,9 +327,9 @@ func TestSOCKS5ProxyCarriesTheSource(t *testing.T) {
 	}
 }
 
-func openVault(t *testing.T) (*store.Store, *secrets.Vault) {
+func openVault(t *testing.T) (*database.Store, *secrets.Vault) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,7 +449,7 @@ func TestHealthUpdatesNeverOverwriteAChangedSource(t *testing.T) {
 	sr := &Searcher{Store: s}
 	sr.pause(ctx, stale, &Error{Kind: KindDown, Msg: "x"})
 	var got domain.Source
-	_ = store.Get(ctx, s.Read(), "sources", stale.ID, &got)
+	_ = database.Get(ctx, s.Read(), "sources", stale.ID, &got)
 	if got.State != "paused" || got.Extra["failures"] != "1" {
 		t.Fatalf("not paused: %+v", got)
 	}
@@ -458,12 +458,12 @@ func TestHealthUpdatesNeverOverwriteAChangedSource(t *testing.T) {
 		t.Fatalf("after pause: %+v %v", cfg, err)
 	}
 	sr.pause(ctx, stale, &Error{Kind: KindDown, Msg: "x"})
-	_ = store.Get(ctx, s.Read(), "sources", stale.ID, &got)
+	_ = database.Get(ctx, s.Read(), "sources", stale.ID, &got)
 	if got.Extra["failures"] != "2" {
 		t.Fatalf("failures counted from the stale copy: %q", got.Extra["failures"])
 	}
 	sr.recovered(ctx, stale)
-	_ = store.Get(ctx, s.Read(), "sources", stale.ID, &got)
+	_ = database.Get(ctx, s.Read(), "sources", stale.ID, &got)
 	if got.State != "enabled" || got.Extra["failures"] != "" || got.PauseReason != nil {
 		t.Fatalf("not recovered: %+v", got)
 	}
@@ -477,7 +477,7 @@ func TestHealthUpdatesNeverOverwriteAChangedSource(t *testing.T) {
 	stale.State = "paused"
 	sr.recovered(ctx, stale)
 	sr.pause(ctx, stale, &Error{Kind: KindDown, Msg: "x"})
-	_ = store.Get(ctx, s.Read(), "sources", stale.ID, &got)
+	_ = database.Get(ctx, s.Read(), "sources", stale.ID, &got)
 	if got.State != "disabled" || got.PauseReason != nil {
 		t.Fatalf("disabled Source changed: %+v", got)
 	}

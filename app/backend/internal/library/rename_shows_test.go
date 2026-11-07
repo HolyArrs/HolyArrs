@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.2.1: episode files are renamed by the show patterns (show folder,
@@ -42,7 +42,7 @@ func TestRenameEpisodesPreviewMatchesResult(t *testing.T) {
 		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "video:"+rel)
 		f := domain.File{SlotIDs: slotIDs, VersionID: vID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
 			MediaInfo: map[string]any{"step": "1080p_web"}, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", &f, domain.System); return err }); err != nil {
+		if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", &f, domain.System); return err }); err != nil {
 			t.Fatal(err)
 		}
 		return f

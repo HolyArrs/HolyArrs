@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const duneFeed = `<?xml version="1.0" encoding="UTF-8"?>
@@ -31,7 +31,7 @@ const duneFeed = `<?xml version="1.0" encoding="UTF-8"?>
 </channel></rss>`
 
 type fixture struct {
-	s      *store.Store
+	s      *database.Store
 	slotID int64
 	srcID  int64
 }
@@ -41,7 +41,7 @@ func ptr[T any](v T) *T { return &v }
 // seed adds a movie Title with one Item, Version and wanted Slot, and one Source.
 func seed(t *testing.T, srcURL string) fixture {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,32 +54,32 @@ func seed(t *testing.T, srcURL string) fixture {
 			return err
 		}
 		lf := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024),
 			Aliases: []string{}, SourceIDs: map[string]string{"imdb": "tt15239678", "tmdb": "693134"}, MetadataSource: "local",
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "released", State: "active"}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", KeepUpToDate: true, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Test", Protocol: "torrent", Format: "torznab", URL: srcURL, AllowLocal: true,
 			UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
 			Categories: map[string][]int{"movie": {2000}}, Priority: 25, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		f.slotID, f.srcID = sl.ID, src.ID
@@ -119,7 +119,7 @@ func runSearch(t *testing.T, f fixture, sr *Searcher) domain.Job {
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		var j domain.Job
-		if err := store.Get(ctx, f.s.Read(), "jobs", id, &j); err != nil {
+		if err := database.Get(ctx, f.s.Read(), "jobs", id, &j); err != nil {
 			t.Fatal(err)
 		}
 		if j.State != "queued" && j.State != "running" || (j.State == "queued" && j.Attempt > 0) {
@@ -153,13 +153,13 @@ func TestSearchJobChoosesWinner(t *testing.T) {
 	}
 	ctx := context.Background()
 	var sl domain.Slot
-	if err := store.Get(ctx, f.s.Read(), "slots", f.slotID, &sl); err != nil {
+	if err := database.Get(ctx, f.s.Read(), "slots", f.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
 	if sl.State != domain.SlotChosen {
 		t.Fatalf("slot state %s (%v)", sl.State, sl.LastReason)
 	}
-	rels, err := store.Select[domain.Release](ctx, f.s.Read(), "releases", "1=1 ORDER BY id")
+	rels, err := database.Select[domain.Release](ctx, f.s.Read(), "releases", "1=1 ORDER BY id")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +206,7 @@ func TestSearchJobNothingPasses(t *testing.T) {
 		t.Fatalf("job %s", j.State)
 	}
 	var sl domain.Slot
-	_ = store.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
+	_ = database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
 	if sl.State != domain.SlotWanted || sl.LastReason == nil || !strings.Contains(*sl.LastReason, "no Release") {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
@@ -220,7 +220,7 @@ func TestSearchJobPausesFailingSource(t *testing.T) {
 		t.Fatalf("job should record an error, state %s", j.State)
 	}
 	var src domain.Source
-	_ = store.Get(context.Background(), f.s.Read(), "sources", f.srcID, &src)
+	_ = database.Get(context.Background(), f.s.Read(), "sources", f.srcID, &src)
 	if src.State != "paused" || src.PauseReason == nil || *src.PauseReason != KindDown || src.PausedUntil == nil || !src.PausedUntil.After(time.Now()) {
 		t.Fatalf("source not paused: %+v", src)
 	}
@@ -228,7 +228,7 @@ func TestSearchJobPausesFailingSource(t *testing.T) {
 		t.Fatalf("failures %q", src.Extra["failures"])
 	}
 	var sl domain.Slot
-	_ = store.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
+	_ = database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
 	if sl.State != domain.SlotWanted {
 		t.Fatalf("slot %s", sl.State)
 	}
@@ -276,7 +276,7 @@ func TestSearchNeverStoresTheKeyAndGrabGetsItBack(t *testing.T) {
 	if j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
-	rels, _ := store.Select[domain.Release](ctx, f.s.Read(), "releases", "1=1 ORDER BY id")
+	rels, _ := database.Select[domain.Release](ctx, f.s.Read(), "releases", "1=1 ORDER BY id")
 	var dune domain.Release
 	for _, r := range rels {
 		if strings.Contains(r.LinkRef, "Zz9secret77") {

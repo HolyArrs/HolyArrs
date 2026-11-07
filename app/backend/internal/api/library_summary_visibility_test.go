@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func addSummaryTitle(t *testing.T, s *store.Store, kind, name string, slotState domain.SlotState) {
+func addSummaryTitle(t *testing.T, s *database.Store, kind, name string, slotState domain.SlotState) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title := domain.Title{
@@ -22,7 +22,7 @@ func addSummaryTitle(t *testing.T, s *store.Store, kind, name string, slotState 
 			WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all",
 			ReleaseGate: "released", GateDriver: "none", Status: "released",
 		}
-		if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
 		if kind != "movie" || slotState == "" {
@@ -33,18 +33,18 @@ func addSummaryTitle(t *testing.T, s *store.Store, kind, name string, slotState 
 			return err
 		}
 		folder := domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: name, Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", &folder, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", &folder, domain.System); err != nil {
 			return err
 		}
 		item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
-		if _, err := store.Insert(tx, "items", &item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 			return err
 		}
 		version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: folder.ID, PickRulesID: pickRulesID}
-		if _, err := store.Insert(tx, "versions", &version, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "slots", &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: slotState}, domain.System)
+		_, err := database.Insert(tx, "slots", &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: slotState}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -109,7 +109,7 @@ func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pickRulesID); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "library_folders", &folder, domain.System)
+		_, err := database.Insert(tx, "library_folders", &folder, domain.System)
 		return err
 	})
 	if err != nil {

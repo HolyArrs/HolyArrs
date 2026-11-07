@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const packName = "Copper.Valley.S01.1080p.WEB.H264-HOLYARRS"
@@ -21,7 +21,7 @@ const packName = "Copper.Valley.S01.1080p.WEB.H264-HOLYARRS"
 // showWorld is a show with four episodes of season 1 in one Version, and a
 // finished Download filling the episodes in dlEps.
 type showWorld struct {
-	s      *store.Store
+	s      *database.Store
 	dl     string
 	lib    string
 	vID    int64
@@ -39,7 +39,7 @@ func ep(n int) string {
 // and a Download for the episodes in dlEps.
 func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,18 +56,18 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr)
 		lf := &domain.LibraryFolder{Path: w.lib, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		order := "aired"
 		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: ptr(2025), Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", EpisodeOrder: &order,
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: w.folder, IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		w.vID = v.ID
@@ -76,7 +76,7 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 			season, num, name := 1, n, names[n]
 			it := &domain.Item{TitleID: ti.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &num}, Name: &name, KeepUpToDate: true,
 				SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			state := domain.SlotWanted
@@ -84,17 +84,17 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 				state = domain.SlotDownloading
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			w.slots[n] = sl.ID
 		}
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "holyarrs", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		var ids []int64
@@ -103,13 +103,13 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 		}
 		r := &domain.Release{SourceID: src.ID, Name: packName, LinkRef: "http://x/1.torrent", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: ids, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		w.relID = r.ID
 		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &r.ID, SlotIDs: ids, ExternalID: "pack", Progress: 1, State: "finished",
 			FilesSeen: seen, SavePath: w.dl, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		w.dlID = dl.ID
@@ -129,7 +129,7 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 func (w showWorld) slot(t *testing.T, n int) domain.Slot {
 	t.Helper()
 	var sl domain.Slot
-	if err := store.Get(context.Background(), w.s.Read(), "slots", w.slots[n], &sl); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slots[n], &sl); err != nil {
 		t.Fatal(err)
 	}
 	return sl
@@ -138,7 +138,7 @@ func (w showWorld) slot(t *testing.T, n int) domain.Slot {
 func (w showWorld) file(t *testing.T, id int64) domain.File {
 	t.Helper()
 	var f domain.File
-	if err := store.Get(context.Background(), w.s.Read(), "files", id, &f); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "files", id, &f); err != nil {
 		t.Fatal(err)
 	}
 	return f
@@ -147,7 +147,7 @@ func (w showWorld) file(t *testing.T, id int64) domain.File {
 func (w showWorld) release(t *testing.T) domain.Release {
 	t.Helper()
 	var r domain.Release
-	if err := store.Get(context.Background(), w.s.Read(), "releases", w.relID, &r); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "releases", w.relID, &r); err != nil {
 		t.Fatal(err)
 	}
 	return r
@@ -311,7 +311,7 @@ func TestEpisodeBetterCopyReplacesOld(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		f := &domain.File{SlotIDs: []int64{w.slots[1]}, VersionID: w.vID, RelativePath: rel, Size: 100, AddedAt: time.Now().Add(-time.Hour),
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &old, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		id, err := store.Insert(tx, "files", f, domain.System)
+		id, err := database.Insert(tx, "files", f, domain.System)
 		oldID = id
 		if err != nil {
 			return err

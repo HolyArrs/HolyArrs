@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // musicRoutes serves adding artists, their albums, Pressings and tracks,
@@ -99,7 +99,7 @@ func (a *API) askableAlbums(ctx context.Context, titleID int64, albums []metadat
 		if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&artistKeep); err != nil {
 			return nil, err
 		}
-		ps, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", titleID)
+		ps, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", titleID)
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +258,7 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var t domain.Title
-	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
 		internal(w, err)
 		return
 	}
@@ -387,7 +387,7 @@ func (a *API) albumID(w http.ResponseWriter, r *http.Request) (domain.Part, bool
 	if !ok {
 		return p, false
 	}
-	if err := store.Get(r.Context(), a.s.Store.Read(), "parts", id, &p); err != nil || p.Kind != "album" {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "parts", id, &p); err != nil || p.Kind != "album" {
 		fail(w, http.StatusNotFound, "no such album")
 		return p, false
 	}
@@ -420,7 +420,7 @@ func (a *API) getAlbum(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	ps, err := store.Select[domain.AlbumPressing](r.Context(), a.s.Store.Read(), "pressings", "part_id = ? ORDER BY chosen DESC, date, id", p.ID)
+	ps, err := database.Select[domain.AlbumPressing](r.Context(), a.s.Store.Read(), "pressings", "part_id = ? ORDER BY chosen DESC, date, id", p.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -494,13 +494,13 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db := a.s.Store.Read()
-	its, err := store.Select[domain.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
+	its, err := database.Select[domain.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
 		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track'), id`, p.ID)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	vs, err := store.Select[domain.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
+	vs, err := database.Select[domain.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -509,7 +509,7 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 	for _, v := range vs {
 		label[v.ID] = v.Label
 	}
-	slots, err := store.Select[domain.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
+	slots, err := database.Select[domain.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
 	if err != nil {
 		internal(w, err)
 		return

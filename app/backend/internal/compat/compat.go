@@ -28,13 +28,13 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The versions reported. The manuals set the floor: Seerr and Bazarr need
@@ -55,7 +55,7 @@ const bodyMax = 1 << 20
 
 // Deps are what the adapter reads and calls.
 type Deps struct {
-	Store    *store.Store
+	Store    *database.Store
 	Library  *library.Service
 	Metadata metadata.Provider
 	Queue    *jobs.Queue
@@ -277,23 +277,23 @@ func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 }
 
 // title reads a Title of kind; a removed one, one of another kind or a
-// missing id is store.ErrNotFound, so every route answers 404 for them.
+// missing id is database.ErrNotFound, so every route answers 404 for them.
 // Title ids are never reused (titles are only ever marked removed), which
 // is what lets an app keep the id it was given.
 func (h *handler) title(ctx context.Context, id int64, kind string) (domain.Title, error) {
 	var t domain.Title
-	if err := store.Get(ctx, h.Store.Read(), "titles", id, &t); err != nil {
+	if err := database.Get(ctx, h.Store.Read(), "titles", id, &t); err != nil {
 		return t, err
 	}
 	if t.Kind != kind || t.State == "removed" {
-		return t, store.ErrNotFound
+		return t, database.ErrNotFound
 	}
 	return t, nil
 }
 
 // internalError answers an unexpected failure.
 func internalError(w http.ResponseWriter, err error) {
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, database.ErrNotFound) {
 		notFound(w)
 		return
 	}

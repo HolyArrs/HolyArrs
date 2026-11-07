@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // organiseRoutes are the Organise routes (stage 5.1): naming and rename,
@@ -220,7 +220,7 @@ func (a *API) getJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var j domain.Job
-	if err := store.Get(r.Context(), a.s.Store.Read(), "jobs", id, &j); errors.Is(err, store.ErrNotFound) {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "jobs", id, &j); errors.Is(err, database.ErrNotFound) {
 		fail(w, http.StatusNotFound, "no such job")
 		return
 	} else if err != nil {

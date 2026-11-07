@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
@@ -78,7 +78,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		targets = append(targets, target{want: m, beat: -1, isNew: true})
 	}
 	if opt.Better || opt.Show {
-		saved, err := store.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
+		saved, err := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
 			"file_id = ? AND place = 'beside' AND state = 'present' AND origin = 'fetched' AND score IS NOT NULL", fileID)
 		if err != nil {
 			return res, err
@@ -210,13 +210,13 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 			_ = tx.QueryRowContext(ctx, "SELECT first_tried_at FROM subtitles WHERE file_id = ? AND place = 'wish' AND language = ? AND forced = ?",
 				fileID, t.want.Language, t.want.Forced).Scan(&first)
 			if set.Adaptive && first.Valid {
-				if ft, err := time.Parse(store.TimeLayout, first.String); err == nil && now().Sub(ft) > 21*24*time.Hour {
+				if ft, err := time.Parse(database.TimeLayout, first.String); err == nil && now().Sub(ft) > 21*24*time.Hour {
 					next = now().Add(7 * 24 * time.Hour)
 				}
 			}
 			_, err := tx.ExecContext(ctx, `UPDATE subtitles SET state = 'none_good_enough', tries = tries + 1, first_tried_at = COALESCE(first_tried_at, ?),
 				last_tried_at = ?, next_try_at = ?, updated_at = ? WHERE file_id = ? AND place = 'wish' AND language = ? AND forced = ?`,
-				store.FormatTime(now()), store.FormatTime(now()), store.FormatTime(next), store.FormatTime(now()), fileID, t.want.Language, t.want.Forced)
+				database.FormatTime(now()), database.FormatTime(now()), database.FormatTime(next), database.FormatTime(now()), fileID, t.want.Language, t.want.Forced)
 			return err
 		})
 		s.event(ctx, &domain.Event{Actor: by, Kind: EventNoneGood, TitleID: &titleID, SlotID: &slotID,
@@ -348,7 +348,7 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 			return "", fmt.Errorf("%s is not a regular file", rel)
 		}
 		if old == nil || old.RelativePath == nil || *old.RelativePath != rel {
-			mine, err := store.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
+			mine, err := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
 				"file_id = ? AND place = 'beside' AND state = 'present' AND relative_path = ? AND origin IN ('fetched', 'by_hand')", fc.file.ID, rel)
 			if err != nil {
 				return "", err
@@ -422,7 +422,7 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 	var saveID int64
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, "INSERT INTO subtitle_saves (created_at, file_id, relative_path, row, replace_ids) VALUES (?, ?, ?, ?, ?)",
-			store.FormatTime(t), row.FileID, rel, string(rowJSON), string(idsJSON))
+			database.FormatTime(t), row.FileID, rel, string(rowJSON), string(idsJSON))
 		if err == nil {
 			saveID, err = res.LastInsertId()
 		}
@@ -496,7 +496,7 @@ var saveHoldCrash func(held int) error
 // recordSave writes a finished save's row: the rows it replaces are
 // replaced, the wish it meets goes, and its subtitle_saves note is removed.
 func (s *Service) recordSave(ctx context.Context, tx *sql.Tx, row *Subtitle, replaceIDs []int64, saveID int64, by domain.Actor) error {
-	ts := store.FormatTime(now())
+	ts := database.FormatTime(now())
 	for _, id := range replaceIDs {
 		if _, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'replaced', updated_at = ? WHERE id = ?", ts, id); err != nil {
 			return err
@@ -507,7 +507,7 @@ func (s *Service) recordSave(ctx context.Context, tx *sql.Tx, row *Subtitle, rep
 		ts, row.FileID, *row.RelativePath); err != nil {
 		return err
 	}
-	if _, err := store.Insert(tx, "subtitles", row, by); err != nil {
+	if _, err := database.Insert(tx, "subtitles", row, by); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE file_id = ? AND place = 'wish' AND language = ? AND forced = ?", row.FileID, row.Language, row.Forced); err != nil {

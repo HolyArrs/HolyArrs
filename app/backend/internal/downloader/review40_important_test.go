@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // I1: an id that is not an info hash never reaches qBittorrent's selectors,
@@ -65,7 +65,7 @@ func TestGrabNeverOverwritesAnActiveDownload(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		dl := &domain.Download{DownloaderID: 1, SlotIDs: []int64{999}, ExternalID: hash, State: "downloading",
 			FilesSeen: []domain.SeenFile{}, SavePath: "/other", StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
 		otherID = dl.ID
 		return err
 	}); err != nil {
@@ -145,7 +145,7 @@ func TestSabnzbdFailedJobNotAdoptedAgain(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		r := &domain.Release{SourceID: 1, Name: "Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/good.nzb", Protocol: "usenet",
 			Size: 1238952, Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{w.slotID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		relID = r.ID
@@ -155,7 +155,7 @@ func TestSabnzbdFailedJobNotAdoptedAgain(t *testing.T) {
 		// The same job stalled earlier and was failed; its row remembers it.
 		old := &domain.Download{DownloaderID: did, ReleaseID: &relID, SlotIDs: []int64{w.slotID}, ExternalID: sabGood, State: "failed",
 			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := store.Insert(tx, "downloads", old, domain.System)
+		_, err := database.Insert(tx, "downloads", old, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

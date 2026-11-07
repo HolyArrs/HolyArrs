@@ -7,7 +7,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // events returns events migrations 1..n.
@@ -23,7 +23,7 @@ func events(n int) fstest.MapFS {
 // what a good start runs.
 func startAt(t *testing.T, dir, v string, n int) *Manager {
 	t.Helper()
-	s, err := store.Open(dir, store.Options{EventsMigrations: events(n)})
+	s, err := database.Open(dir, database.Options{EventsMigrations: events(n)})
 	if err != nil {
 		t.Fatal(err)
 	}

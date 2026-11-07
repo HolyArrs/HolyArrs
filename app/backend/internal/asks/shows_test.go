@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeShows answers one show by any of its ids.
@@ -63,7 +63,7 @@ type seasonRow struct {
 	n    int
 }
 
-func seasonKeeps(t *testing.T, st *store.Store, titleID int64) map[int]bool {
+func seasonKeeps(t *testing.T, st *database.Store, titleID int64) map[int]bool {
 	t.Helper()
 	rows, err := st.Read().Query("SELECT number, keep_up_to_date FROM parts WHERE title_id = ? AND kind = 'season'", titleID)
 	if err != nil {
@@ -290,10 +290,10 @@ func useAsk(t *testing.T, r *rig, userID int64, kind string) {
 			a.SourceIDs = map[string]string{"musicbrainz": "used-artist"}
 			a.TMDBID = ""
 		}
-		if _, err := store.Insert(tx, "asks", &a, domain.System); err != nil {
+		if _, err := database.Insert(tx, "asks", &a, domain.System); err != nil {
 			return err
 		}
-		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, userID, store.FormatTime(r.clock))
+		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, userID, database.FormatTime(r.clock))
 		return err
 	})
 	if err != nil {

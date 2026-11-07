@@ -15,8 +15,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // DefaultReleaseFeed is the HolyArrs project's newest-release address.
@@ -169,7 +169,7 @@ func (e *Engine) ResetUpdate(ctx context.Context) {
 }
 
 func (e *Engine) saveSetting(ctx context.Context, key, value string) error {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	by, _ := json.Marshal(domain.System)
 	return e.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // showRoutes serves adding shows, their seasons and episodes, and the show
@@ -171,7 +171,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var t domain.Title
-	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
 		internal(w, err)
 		return
 	}
@@ -320,12 +320,12 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		where += " AND json_extract(numbers, '$.season') = ?"
 		args = append(args, n)
 	}
-	its, err := store.Select[domain.Item](r.Context(), db, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
+	its, err := database.Select[domain.Item](r.Context(), db, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	vs, err := store.Select[domain.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
+	vs, err := database.Select[domain.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -334,7 +334,7 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	for _, v := range vs {
 		label[v.ID] = v.Label
 	}
-	slots, err := store.Select[domain.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", t.ID)
+	slots, err := database.Select[domain.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -342,7 +342,7 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	// files=1 adds each episode's file, for the episode details on the title page.
 	files := map[int64]*domain.File{}
 	if r.URL.Query().Get("files") == "1" {
-		fs, err := store.Select[domain.File](r.Context(), db, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, t.ID)
+		fs, err := database.Select[domain.File](r.Context(), db, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, t.ID)
 		if err != nil {
 			internal(w, err)
 			return
@@ -390,7 +390,7 @@ func (a *API) setEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	it, err := a.s.Library.SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, database.ErrNotFound) {
 		fail(w, http.StatusNotFound, "no such episode")
 		return
 	}

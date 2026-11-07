@@ -17,8 +17,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Plex watchlist sync (roadmap #102): people who turn it on have the
@@ -212,7 +212,7 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 		return res, err
 	}
 	res.Read = len(entries)
-	now := store.FormatTime(w.Asks.now())
+	now := database.FormatTime(w.Asks.now())
 	for _, e := range entries {
 		if e.kind == "movie" && !movies || e.kind == "show" && !shows {
 			continue // left for when that kind is turned on
@@ -367,7 +367,7 @@ func (w *Watchlists) checked(ctx context.Context, userID int64, problem string) 
 	return w.Asks.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO plex_watchlist_people (user_id, checked_at, error) VALUES (?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET checked_at = excluded.checked_at, error = excluded.error`,
-			userID, store.FormatTime(w.Asks.now()), problem)
+			userID, database.FormatTime(w.Asks.now()), problem)
 		return err
 	})
 }
@@ -548,7 +548,7 @@ func ReadWatchlist(ctx context.Context, db *sql.DB, userID int64) (WatchlistStat
 		return s, err
 	}
 	if at.Valid {
-		t, _ := time.Parse(store.TimeLayout, at.String)
+		t, _ := time.Parse(database.TimeLayout, at.String)
 		s.CheckedAt = &t
 	}
 	rows, err := db.QueryContext(ctx, `SELECT name, year, kind, state, ask_id, note, seen_at FROM plex_watchlist_items
@@ -563,14 +563,14 @@ func ReadWatchlist(ctx context.Context, db *sql.DB, userID int64) (WatchlistStat
 		if err := rows.Scan(&it.Name, &it.Year, &it.Kind, &it.State, &it.AskID, &it.Note, &seen); err != nil {
 			return s, err
 		}
-		it.SeenAt, _ = time.Parse(store.TimeLayout, seen)
+		it.SeenAt, _ = time.Parse(database.TimeLayout, seen)
 		s.Items = append(s.Items, it)
 	}
 	return s, rows.Err()
 }
 
 // SaveWatchlistSwitches stores which kinds a person has HolyArrs read.
-func SaveWatchlistSwitches(ctx context.Context, st *store.Store, userID int64, sw WatchlistSwitches) error {
+func SaveWatchlistSwitches(ctx context.Context, st *database.Store, userID int64, sw WatchlistSwitches) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO plex_watchlist_people (user_id, movies, shows) VALUES (?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET movies = excluded.movies, shows = excluded.shows`,

@@ -25,10 +25,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -136,7 +136,7 @@ func nameUsed(tx *sql.Tx, name string, id int64) error {
 }
 
 // Add stores a media server; its token goes to the vault.
-func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.MediaServer, error) {
+func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.MediaServer, error) {
 	var m domain.MediaServer
 	if err := fill(in, &m, true); err != nil {
 		return m, err
@@ -150,7 +150,7 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 			return err
 		}
 		m.TokenSecretID = &id
-		_, err = store.Insert(tx, "media_servers", &m, by)
+		_, err = database.Insert(tx, "media_servers", &m, by)
 		return err
 	})
 	return m, err
@@ -158,9 +158,9 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 
 // Change saves a media server; an empty token keeps the stored one, unless
 // the address moved to another host or scheme.
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.MediaServer, error) {
+func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.MediaServer, error) {
 	var m domain.MediaServer
-	if err := store.Get(ctx, s.Read(), "media_servers", id, &m); err != nil {
+	if err := database.Get(ctx, s.Read(), "media_servers", id, &m); err != nil {
 		return m, err
 	}
 	old := m
@@ -186,16 +186,16 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			}
 			m.TokenSecretID = &nid
 		}
-		return store.Update(tx, "media_servers", &m, by)
+		return database.Update(tx, "media_servers", &m, by)
 	})
 	return m, err
 }
 
 // Remove deletes a media server and its token.
-func Remove(ctx context.Context, s *store.Store, id int64) error {
+func Remove(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var m domain.MediaServer
-		if err := store.Get(ctx, tx, "media_servers", id, &m); err != nil {
+		if err := database.Get(ctx, tx, "media_servers", id, &m); err != nil {
 			return err
 		}
 		if m.TokenSecretID != nil {
@@ -218,7 +218,7 @@ func originOf(raw string) string {
 
 // Linker tells media servers about changed movie, show and music folders.
 type Linker struct {
-	Store *store.Store
+	Store *database.Store
 	Vault *secrets.Vault
 	// Delay gathers changes before they are sent, so a rename of many files
 	// is one call per folder (default 10 s).
@@ -424,7 +424,7 @@ func (l *Linker) Flush(ctx context.Context) {
 	if len(batch) == 0 {
 		return
 	}
-	ms, err := store.Select[domain.MediaServer](ctx, l.Store.Read(), "media_servers", "enabled = 1 ORDER BY id")
+	ms, err := database.Select[domain.MediaServer](ctx, l.Store.Read(), "media_servers", "enabled = 1 ORDER BY id")
 	if err != nil {
 		log.Printf("media servers: %v", err)
 		return
@@ -487,7 +487,7 @@ func winPath(p string) bool {
 }
 
 func (l *Linker) record(ctx context.Context, m domain.MediaServer, sent []Update, sendErr error) {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	msg := ""
 	if sendErr != nil {
 		msg = sendErr.Error()
@@ -741,7 +741,7 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 			res = strings.TrimSpace(info.ServerName + " " + info.Version)
 		}
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	_ = l.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		if err != nil {
 			log.Printf("media servers: %s: test: %v", m.Name, err)

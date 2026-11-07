@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // Connect Jackett or Prowlarr (#96), through the API, against fakes on this machine.
@@ -285,7 +285,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	hourAgo := store.FormatTime(time.Now().Add(-time.Hour - time.Minute))
+	hourAgo := database.FormatTime(time.Now().Add(-time.Hour - time.Minute))
 	noKeys := func(what string) {
 		t.Helper()
 		_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
@@ -294,7 +294,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 		}
 	}
 	// The setup session after its 24-hour cap.
-	dayAgo := store.FormatTime(time.Now().Add(-25 * time.Hour))
+	dayAgo := database.FormatTime(time.Now().Add(-25 * time.Hour))
 	exec("UPDATE sessions SET local_auth_at = ?, created_at = ?", hourAgo, dayAgo)
 	if st, out := f.session("POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
 		t.Fatalf("setup session after its day made old-app keys: %d %s", st, out)
@@ -314,7 +314,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	}
 	noKeys("a stale sign-in")
 	// The setup session inside its hour connects with no fresh password proof.
-	exec("UPDATE sessions SET created_at = ? WHERE family LIKE 'setup.%'", store.FormatTime(time.Now().Add(-50*time.Minute)))
+	exec("UPDATE sessions SET created_at = ? WHERE family LIKE 'setup.%'", database.FormatTime(time.Now().Add(-50*time.Minute)))
 	// Connect: the old-app API turns on, a key is made per side, HolyArrs is
 	// added to Prowlarr on both sides, and Prowlarr's sync writes the Sources.
 	st, out = f.session("POST", "/api/v1/bridges", body)

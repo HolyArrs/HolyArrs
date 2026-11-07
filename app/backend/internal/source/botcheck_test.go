@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func html(server string) map[string]string {
@@ -75,7 +75,7 @@ func TestBotCheckPauseHealthAndRecovery(t *testing.T) {
 	sr := &Searcher{Store: s}
 	get := func() domain.Source {
 		var got domain.Source
-		if err := store.Get(ctx, s.Read(), "sources", src.ID, &got); err != nil {
+		if err := database.Get(ctx, s.Read(), "sources", src.ID, &got); err != nil {
 			t.Fatal(err)
 		}
 		return got

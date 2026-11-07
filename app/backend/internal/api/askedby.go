@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func (a *API) askedByRoutes(m *http.ServeMux) {
@@ -94,7 +94,7 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Older rows were written in RFC 3339 rather than the store's layout.
-			t, err := time.Parse(store.TimeLayout, at)
+			t, err := time.Parse(database.TimeLayout, at)
 			if err != nil {
 				t, _ = time.Parse(time.RFC3339Nano, at)
 			}

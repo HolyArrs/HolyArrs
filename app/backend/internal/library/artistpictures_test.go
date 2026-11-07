@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // pictureWorld is a fake metadata server picture store (photo, wide,
@@ -71,10 +71,10 @@ func withPictureWorld(t *testing.T, svc *Service, w *pictureWorld) {
 	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{w.srv.URL + "/"}, HTTP: &http.Client{}}
 }
 
-func titleOf(t *testing.T, s *store.Store, id int64) domain.Title {
+func titleOf(t *testing.T, s *database.Store, id int64) domain.Title {
 	t.Helper()
 	var ti domain.Title
-	if err := store.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
 		t.Fatal(err)
 	}
 	return ti
@@ -171,7 +171,7 @@ func TestArtistPicturesQueuedOnAdd(t *testing.T) {
 	if w.order() != "" {
 		t.Fatalf("the add asked %s itself", w.order())
 	}
-	js, err := store.Select[domain.Job](ctx, s.Read(), "jobs", "kind = ?", KindArtistPictures)
+	js, err := database.Select[domain.Job](ctx, s.Read(), "jobs", "kind = ?", KindArtistPictures)
 	if err != nil || len(js) != 1 || js[0].Subject == nil || js[0].Subject.ID != id {
 		t.Fatalf("picture jobs %+v %v", js, err)
 	}

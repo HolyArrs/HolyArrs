@@ -36,10 +36,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Moments an Alert can speak for.
@@ -192,7 +192,7 @@ var DefaultBackoff = []time.Duration{5 * time.Second, 30 * time.Second, 2 * time
 
 // Sender sends messages through every Alert that is on for the moment.
 type Sender struct {
-	Store *store.Store
+	Store *database.Store
 	Vault *secrets.Vault
 	// OnResult is told when an Alert's last result changes (may be nil).
 	OnResult func(domain.Alert)
@@ -227,7 +227,7 @@ func client(a domain.Alert) *http.Client {
 // failing does not stop the others; the errors are joined, recorded on the
 // Alert and written as an Event.
 func (s *Sender) Send(ctx context.Context, m Message) error {
-	as, err := store.Select[domain.Alert](ctx, s.Store.Read(), "alerts", "enabled = 1 ORDER BY id")
+	as, err := database.Select[domain.Alert](ctx, s.Store.Read(), "alerts", "enabled = 1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -345,7 +345,7 @@ func alertOutcome(ctx context.Context, err error) outbound.Outcome {
 }
 
 func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr error) {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	msg := ""
 	if sendErr != nil {
 		msg = sendErr.Error()
@@ -375,7 +375,7 @@ func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr 
 	}
 	if s.OnResult != nil {
 		var fresh domain.Alert
-		if store.Get(ctx, s.Store.Read(), "alerts", a.ID, &fresh) == nil {
+		if database.Get(ctx, s.Store.Read(), "alerts", a.ID, &fresh) == nil {
 			s.OnResult(fresh)
 		}
 	}

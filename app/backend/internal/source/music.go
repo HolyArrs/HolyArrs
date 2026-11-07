@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -123,10 +124,10 @@ func (set albumSet) labels() map[int64]string {
 func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Version, part domain.Part) (albumSet, error) {
 	db := s.Store.Read()
 	set := albumSet{ti: ti, ver: ver, part: part, target: map[int64]bool{}, notOut: map[int64]bool{}}
-	if err := store.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
 		return set, err
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
 	if err != nil {
 		return set, err
 	}
@@ -137,12 +138,12 @@ func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Ve
 		}
 		set.albums = append(set.albums, a)
 	}
-	its, err := store.Select[domain.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
+	its, err := database.Select[domain.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
 		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track')`, part.ID)
 	if err != nil {
 		return set, err
 	}
-	slots, err := store.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
+	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
 	if err != nil {
 		return set, err
 	}
@@ -384,16 +385,16 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	by := jobActor(r)
 	jobID := r.Job.ID
 	var part domain.Part
-	if err := store.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil || part.Kind != "album" {
+	if err := database.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil || part.Kind != "album" {
 		return fmt.Errorf("album %d: not found", r.Job.Subject.ID)
 	}
 	var ti domain.Title
-	if err := store.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
+	if err := database.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
 		return err
 	}
 	vid, _ := r.Job.Params["version_id"].(float64)
 	var ver domain.Version
-	if err := store.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
+	if err := database.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
 		return fmt.Errorf("search_album needs a version_id of the artist")
 	}
 	hand, _ := r.Job.Params["by_hand"].(bool)
@@ -441,7 +442,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 			case t.cur != nil || t.sl.State == domain.SlotBetterWanted:
 				to = domain.SlotBetterWanted
 			}
-			_ = s.Store.MoveSlot(ctx, t.sl.ID, to, reason, by)
+			_ = store.MoveSlot(ctx, s.Store, t.sl.ID, to, reason, by)
 			s.publish("slot", map[string]any{"id": t.sl.ID, "state": to, "reason": reason})
 		}
 	}
@@ -452,7 +453,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 			set.notOut[t.sl.ID] = true
 		}
 		if !show {
-			if err := s.Store.MoveSlot(ctx, t.sl.ID, domain.SlotSearching, "searching "+part.Name, by); err != nil {
+			if err := store.MoveSlot(ctx, s.Store, t.sl.ID, domain.SlotSearching, "searching "+part.Name, by); err != nil {
 				continue
 			}
 			s.publish("slot", map[string]any{"id": t.sl.ID, "state": domain.SlotSearching})
@@ -494,7 +495,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, t := range looking {
-			if _, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", store.FormatTime(now), t.it.ID); err != nil {
+			if _, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(now), t.it.ID); err != nil {
 				return err
 			}
 		}
@@ -598,7 +599,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 	for _, k := range order {
 		group := groups[k]
 		var part domain.Part
-		if err := store.Get(ctx, s.Store.Read(), "parts", k.part, &part); err != nil {
+		if err := database.Get(ctx, s.Store.Read(), "parts", k.part, &part); err != nil {
 			continue
 		}
 		set, err := s.loadAlbum(ctx, group[0].ti, group[0].ver, part)

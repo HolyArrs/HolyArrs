@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Stage 3.3.5: a lab album search picks the expected Release end to end.
@@ -35,29 +35,29 @@ func TestLabAlbumSearch(t *testing.T) {
 		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Lab Lanterns", SortName: "lab lanterns", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": "lab"}, MetadataSource: "musicbrainz", KeepUpToDate: true, NewPartsPolicy: "all",
 			ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Lab Lanterns", KeepUpToDate: true, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		verID = v.ID
 		date := time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC)
 		p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: "Harbour Light", ReleaseType: ptr("album"), ReleaseDate: &date, KeepUpToDate: true,
 			Included: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}}
-		if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
 		partID = p.ID
 		for k := 1; k <= 12; k++ {
 			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: ptr(1), Track: ptr(k)},
 				Name: ptr(fmt.Sprintf("Song %d", k)), AirDate: &date, LengthMS: ptr(4 * 60_000), KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			slots = append(slots, sl.ID)

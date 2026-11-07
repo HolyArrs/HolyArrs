@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func collectionWorld(t *testing.T) (*Service, *store.Store, int64, []int64) {
+func collectionWorld(t *testing.T) (*Service, *database.Store, int64, []int64) {
 	t.Helper()
 	svc, s, _, first, _ := deleteWorld(t)
 	secondMovie := dune
@@ -110,13 +110,13 @@ func TestCollectionConfirmationRejectsChangedPendingDownloadIdentity(t *testing.
 		}
 		dr := &domain.Downloader{Name: "Collection test", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:1", Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err
 		}
 		for i, state := range []string{"downloading", "finished"} {
 			d := &domain.Download{DownloaderID: dr.ID, SlotIDs: []int64{slotID}, ExternalID: "collection-" + string(rune('a'+i)), State: state,
 				FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-			if _, err := store.Insert(tx, "downloads", d, domain.System); err != nil {
+			if _, err := database.Insert(tx, "downloads", d, domain.System); err != nil {
 				return err
 			}
 			if i == 0 {
@@ -158,17 +158,17 @@ func TestCollectionConfirmationRejectsChangedFinishedDownloadNeedsDecisionIdenti
 		}
 		dr := &domain.Downloader{Name: "Collection finished test", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:1", Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err
 		}
 		for i, importState := range []string{"waiting_for_you", "rejected"} {
 			d := &domain.Download{DownloaderID: dr.ID, SlotIDs: []int64{slotID}, ExternalID: "collection-finished-" + string(rune('a'+i)), State: "finished",
 				FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-			if _, err := store.Insert(tx, "downloads", d, domain.System); err != nil {
+			if _, err := database.Insert(tx, "downloads", d, domain.System); err != nil {
 				return err
 			}
 			im := &domain.Import{DownloadID: &d.ID, FromPath: "download", Kind: "movie", Plan: []domain.PlanStep{}, Mode: "auto", Result: []domain.PlaceResult{}, State: importState}
-			if _, err := store.Insert(tx, "imports", im, domain.System); err != nil {
+			if _, err := database.Insert(tx, "imports", im, domain.System); err != nil {
 				return err
 			}
 			if i == 0 {
@@ -266,7 +266,7 @@ func TestLargeCollectionSelectionIsDeterministicAndBounded(t *testing.T) {
 }
 
 func TestCollectionPartialFailureCanBeReviewedAndRetried(t *testing.T) {
-	svc, s, lf, cid, ids := func() (*Service, *store.Store, domain.LibraryFolder, int64, []int64) {
+	svc, s, lf, cid, ids := func() (*Service, *database.Store, domain.LibraryFolder, int64, []int64) {
 		svc, s, lf, first, files := deleteWorld(t)
 		secondMovie := dune
 		secondMovie.Name, secondMovie.Year, secondMovie.IDs = "Dune", 2021, map[string]string{"tmdb": "438631"}

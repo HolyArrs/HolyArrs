@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -112,7 +113,7 @@ func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	files, err := store.Select[domain.File](r.Context(), a.s.Store.Read(), "files", `version_id IN (SELECT id FROM versions WHERE title_id = ?) AND role = 'main' AND state IN ('present','missing') ORDER BY version_id,id`, t.ID)
+	files, err := database.Select[domain.File](r.Context(), a.s.Store.Read(), "files", `version_id IN (SELECT id FROM versions WHERE title_id = ?) AND role = 'main' AND state IN ('present','missing') ORDER BY version_id,id`, t.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -129,7 +130,7 @@ func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) titleVersions(ctx context.Context, titleID int64) ([]VersionView, error) {
-	vs, err := store.Select[domain.Version](ctx, a.s.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC,id", titleID)
+	vs, err := database.Select[domain.Version](ctx, a.s.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC,id", titleID)
 	out := []VersionView{}
 	for _, v := range vs {
 		out = append(out, versionView(ctx, a.s.Store.Read(), v))
@@ -170,14 +171,14 @@ func (a *API) retryMovieImport(r *http.Request, downloadID int64) (int64, error)
 	var jobID int64
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		var d domain.Download
-		if err := store.Get(r.Context(), tx, "downloads", downloadID, &d); err != nil {
+		if err := database.Get(r.Context(), tx, "downloads", downloadID, &d); err != nil {
 			return err
 		}
 		if len(d.SlotIDs) != 1 || d.State != "finished" && d.State != "seeding" {
 			return library.ErrCopyChoice
 		}
 		var sl domain.Slot
-		if err := store.Get(r.Context(), tx, "slots", d.SlotIDs[0], &sl); err != nil {
+		if err := database.Get(r.Context(), tx, "slots", d.SlotIDs[0], &sl); err != nil {
 			return err
 		}
 		var kind, state string
@@ -199,7 +200,7 @@ func (a *API) retryMovieImport(r *http.Request, downloadID int64) (int64, error)
 			return err
 		}
 		j := domain.Job{Kind: importer.KindImport, Subject: &domain.Subject{Type: "download", ID: downloadID}, Params: map[string]any{}, Priority: "normal", State: "queued", MaxAttempts: 3, RunAfter: time.Now().UTC(), AskedBy: actor(r), DedupeKey: &key}
-		jobID, err = store.Insert(tx, "jobs", &j, actor(r))
+		jobID, err = database.Insert(tx, "jobs", &j, actor(r))
 		return err
 	})
 	if err != nil {

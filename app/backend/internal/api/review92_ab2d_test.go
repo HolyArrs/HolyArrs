@@ -7,9 +7,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -78,7 +78,7 @@ func TestTitleViewTrimmedForMember(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	exec41(t, x.s, `UPDATE slots SET last_reason = 'turned down: Secret.Release-GRP'`)
 	a := New(Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
-	ts, err := store.Select[domain.Title](context.Background(), x.s.Read(), "titles", "1=1 LIMIT 1")
+	ts, err := database.Select[domain.Title](context.Background(), x.s.Read(), "titles", "1=1 LIMIT 1")
 	if err != nil || len(ts) != 1 {
 		t.Fatal(err)
 	}
@@ -219,14 +219,14 @@ func (s *newMusicSpy) ReleasesBetween(_ context.Context, _, _ string, _, artists
 // Building New Music never sends the Library's artists to the server; the
 // charts' artists still are.
 func TestMusicNewSendsNoLibraryArtists(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	lib := tmbid(4242)
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "titles", &domain.Title{Kind: "artist", GateDriver: "none", Name: "Mine", SortName: "mine", Aliases: []string{},
+		_, err := database.Insert(tx, "titles", &domain.Title{Kind: "artist", GateDriver: "none", Name: "Mine", SortName: "mine", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": lib}, MetadataSource: "musicbrainz", NewPartsPolicy: "all",
 			ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}, domain.System)
 		return err

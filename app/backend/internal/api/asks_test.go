@@ -19,10 +19,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // signedIn is one person's browser: cookies and the CSRF token.
@@ -53,7 +53,7 @@ func (s *signedIn) call(method, path, body string, want int) []byte {
 
 type askRig struct {
 	srv   *httptest.Server
-	st    *store.Store
+	st    *database.Store
 	asks  *asks.Service
 	owner *signedIn
 	ana   *signedIn
@@ -66,7 +66,7 @@ type askRig struct {
 func newAskRig(t *testing.T) *askRig {
 	t.Helper()
 	dir := t.TempDir()
-	st, err := store.Open(dir, store.Options{})
+	st, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func newAskRig(t *testing.T) *askRig {
 func insertFolder(t *testing.T) func(tx *sql.Tx) error {
 	dir := t.TempDir()
 	return func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: dir, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: dir, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
 		return err
 	}
 }

@@ -13,11 +13,11 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The artist and album pages: any MusicBrainz artist or album, in the
@@ -37,7 +37,7 @@ type PageAlbum struct {
 	Explicit bool   `json:"explicit,omitempty"`
 	// RecordingID is the song's MusicBrainz recording (the same on every edition).
 	RecordingID string `json:"recording_id,omitempty"`
-	Upcoming bool   `json:"upcoming,omitempty"`
+	Upcoming    bool   `json:"upcoming,omitempty"`
 	// State is the Library's: complete, partial, missing, downloading,
 	// not_out_yet, not_included, or "" when the artist is not in the Library.
 	State     string `json:"state,omitempty"`
@@ -97,8 +97,8 @@ type ArtistPageView struct {
 	// release groups: shown, never asked for (no MusicBrainz id).
 	StoreAlbums []PageStoreAlbum `json:"store_albums,omitempty"`
 	Similar     []PageArtist     `json:"similar"`
-	Related        []PageArtist          `json:"related"`
-	Kid            bool                  `json:"kid"`
+	Related     []PageArtist     `json:"related"`
+	Kid         bool             `json:"kid"`
 	// Incomplete: the music source did not answer in time; the page shows
 	// what is known and asks again.
 	Incomplete bool `json:"incomplete,omitempty"`
@@ -421,7 +421,7 @@ func (a *API) artistTopSongs(ctx context.Context, mbid string) *metadata.MusicTo
 
 // libraryArtist finds the Library's artist with this MusicBrainz id.
 func (a *API) libraryArtist(ctx context.Context, mbid string) (*domain.Title, error) {
-	ts, err := store.Select[domain.Title](ctx, a.s.Store.Read(), "titles",
+	ts, err := database.Select[domain.Title](ctx, a.s.Store.Read(), "titles",
 		"kind = 'artist' AND state != 'removed' AND lower(json_extract(source_ids, '$.musicbrainz')) = ? LIMIT 1", mbid)
 	if err != nil || len(ts) == 0 {
 		return nil, err

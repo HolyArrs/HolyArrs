@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // PickRulesDetail is one Pick rule with its body and what uses it.
@@ -71,7 +71,7 @@ func (a *API) pickRulesError(w http.ResponseWriter, r *http.Request, id int64, e
 	switch {
 	case errors.As(err, &fe):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such Pick rules")
 	case errors.Is(err, library.ErrPickRulesName):
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "Other Pick rules already have this name.", "field": "name"})
@@ -97,7 +97,7 @@ func (a *API) getPickRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var p domain.PickRules
-	if err := store.Get(r.Context(), a.s.Store.Read(), "pick_rules", id, &p); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "pick_rules", id, &p); err != nil {
 		a.pickRulesError(w, r, id, err)
 		return
 	}

@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fixtureInstall is a made-up installation credential.
@@ -22,7 +22,7 @@ var fixtureInstall = strings.Join([]string{"hai", "fixture", "install", "credent
 
 func testVault(t *testing.T) *secrets.Vault {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

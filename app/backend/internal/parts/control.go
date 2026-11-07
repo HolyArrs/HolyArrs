@@ -14,8 +14,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -52,7 +52,7 @@ const DefaultDrain = 2 * time.Minute
 // pauses, resumes and restarts single stages. It is the queue's Gate:
 // Jobs of a part that is off wait in the queue.
 type Control struct {
-	Store *store.Store
+	Store *database.Store
 	Reg   *supervisor.Registry
 	// SafeMode forces every part off (not saved) and refuses switches.
 	SafeMode bool
@@ -377,7 +377,7 @@ func (c *Control) save(ctx context.Context, off []Part, by domain.Actor) error {
 	}
 	raw, _ := json.Marshal(off)
 	actor, _ := json.Marshal(by)
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	return c.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -666,13 +666,13 @@ func (c *Control) OffKinds() []string {
 }
 
 // Held reports whether a queued Job must wait because its part is off.
-func (c *Control) Held(ctx context.Context, db store.Querier, kind string, subject *domain.Subject) bool {
+func (c *Control) Held(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) bool {
 	return !c.OwnerOn(c.jobPart(ctx, db, kind, subject))
 }
 
 // jobPart resolves a Job's owner; a title-decided Job whose title cannot
 // be found counts as shared media work.
-func (c *Control) jobPart(ctx context.Context, db store.Querier, kind string, subject *domain.Subject) Owner {
+func (c *Control) jobPart(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) Owner {
 	o, ok := JobKinds[kind]
 	if !ok {
 		return Core
@@ -687,7 +687,7 @@ func (c *Control) jobPart(ctx context.Context, db store.Querier, kind string, su
 }
 
 // SubjectPart finds the part of the title a Job subject is about.
-func SubjectPart(ctx context.Context, db store.Querier, subject *domain.Subject) (Part, bool) {
+func SubjectPart(ctx context.Context, db database.Querier, subject *domain.Subject) (Part, bool) {
 	if subject == nil {
 		return "", false
 	}
@@ -717,7 +717,7 @@ func SubjectPart(ctx context.Context, db store.Querier, subject *domain.Subject)
 }
 
 // TitlePart finds the part of one title by its id.
-func TitlePart(ctx context.Context, db store.Querier, id string) (Part, bool) {
+func TitlePart(ctx context.Context, db database.Querier, id string) (Part, bool) {
 	n, err := strconv.ParseInt(strings.TrimSpace(id), 10, 64)
 	if err != nil {
 		return "", false

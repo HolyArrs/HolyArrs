@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // upgradeFacts adds the old and new quality ("1080p WEB-DL") and release
@@ -14,7 +14,7 @@ import (
 func (im *Importer) upgradeFacts(ctx context.Context, data map[string]any, oldID, newID int64) {
 	for prefix, id := range map[string]int64{"old_": oldID, "new_": newID} {
 		var f domain.File
-		if store.Get(ctx, im.Store.Read(), "files", id, &f) != nil {
+		if database.Get(ctx, im.Store.Read(), "files", id, &f) != nil {
 			continue
 		}
 		if q := qualityText(f.Quality); q != "" {

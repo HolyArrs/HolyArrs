@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func day(s string) *time.Time {
@@ -25,9 +25,9 @@ func day(s string) *time.Time {
 
 // libSetup is an API with two TMDB-like movies, no Library folder yet and a
 // running queue with the library's handlers and a fake search.
-func libSetup(t *testing.T) (*httptest.Server, *store.Store, chan int64) {
+func libSetup(t *testing.T) (*httptest.Server, *database.Store, chan int64) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestAddTitleAPI(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("no search after add")
 	}
-	js, _ := store.Select[domain.Job](context.Background(), s.Read(), "jobs", "1=1 ORDER BY id")
+	js, _ := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "1=1 ORDER BY id")
 	if len(js) != 3 || js[0].Kind != "refresh_title" || js[1].Kind != "scan_title" || js[2].Kind != "search_slot" {
 		t.Fatalf("jobs %+v", js)
 	}
@@ -240,7 +240,7 @@ func TestRefreshAndCalendarAPI(t *testing.T) {
 	}
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		js, _ := store.Select[domain.Job](context.Background(), s.Read(), "jobs", "kind = 'refresh_titles'")
+		js, _ := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "kind = 'refresh_titles'")
 		if len(js) == 1 && js[0].State == "done" {
 			if js[0].Result["refreshed"] != float64(2) {
 				t.Fatalf("refresh all %+v", js[0].Result)

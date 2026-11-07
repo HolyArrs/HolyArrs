@@ -14,9 +14,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
@@ -359,10 +359,10 @@ func wholeAlbumSpace(plan []domain.PlanStep, low *SpaceError) {
 // AlbumFacts are the naming facts of an album: its name, kind, year and
 // edition (the chosen Pressing's disambiguation, else the album's), and
 // how many discs its tracks span. An import and a rename both use them.
-func AlbumFacts(ctx context.Context, db store.Querier, artist string, partID int64) (naming.TrackFacts, int, error) {
+func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID int64) (naming.TrackFacts, int, error) {
 	f := naming.TrackFacts{Artist: artist}
 	var p domain.Part
-	if err := store.Get(ctx, db, "parts", partID, &p); err != nil {
+	if err := database.Get(ctx, db, "parts", partID, &p); err != nil {
 		return f, 1, err
 	}
 	f.Album = p.Name
@@ -385,7 +385,7 @@ func AlbumFacts(ctx context.Context, db store.Querier, artist string, partID int
 
 // albumTarget gathers an album download's target: the artist folder, the
 // album and its tracks (the items given, which are the chosen Pressing's).
-func albumTarget(ctx context.Context, db store.Querier, lf domain.LibraryFolder, ver domain.Version, ti domain.Title, items []domain.Item,
+func albumTarget(ctx context.Context, db database.Querier, lf domain.LibraryFolder, ver domain.Version, ti domain.Title, items []domain.Item,
 	slotOf map[int64]int64, slots map[int64]*showSlot, dryRun bool, ns naming.Settings) (AlbumTarget, error) {
 	at := AlbumTarget{LibraryPath: lf.Path, ArtistFolder: safeName(ver.FolderName), Artist: ti.Name, Naming: &ns, KeepNames: !ns.RenameOnImport}
 	if at.ArtistFolder == "" || at.ArtistFolder == "." || at.ArtistFolder == ".." {

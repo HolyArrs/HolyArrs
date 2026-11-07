@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // movieFromTitle rebuilds the name facts a release name needs.
@@ -43,7 +43,7 @@ func (w *world) historyTimes(ctx context.Context) error {
 			n := hi - lo + 1
 			err := w.s.Write(ctx, func(tx *sql.Tx) error {
 				for id := lo; id <= hi; id++ {
-					at := store.FormatTime(start.Add(time.Duration(id-lo) * span / time.Duration(n)))
+					at := database.FormatTime(start.Add(time.Duration(id-lo) * span / time.Duration(n)))
 					if _, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", at, id); err != nil {
 						return err
 					}
@@ -60,7 +60,7 @@ func (w *world) historyTimes(ctx context.Context) error {
 				for id := lo; id <= hi; id++ {
 					at := start.Add(time.Duration(id-lo) * span / time.Duration(n))
 					if _, err := tx.Exec(`UPDATE events SET at = strftime('%Y-%m-%dT%H:%M:%fZ', ?, '+' || (id % 50) || ' seconds'), created_at = ?
-						WHERE title_id = ? AND id > ? AND id <= ?`, store.FormatTime(at), store.FormatTime(at), id, w.addSpan.events, w.addSpanEnd.events); err != nil {
+						WHERE title_id = ? AND id > ? AND id <= ?`, database.FormatTime(at), database.FormatTime(at), id, w.addSpan.events, w.addSpanEnd.events); err != nil {
 						return err
 					}
 				}
@@ -72,7 +72,7 @@ func (w *world) historyTimes(ctx context.Context) error {
 		}
 	}
 	for _, st := range w.stamps {
-		at := func(i int64) string { return store.FormatTime(st.at.Add(time.Duration(i) * st.step)) }
+		at := func(i int64) string { return database.FormatTime(st.at.Add(time.Duration(i) * st.step)) }
 		err := w.s.WriteEvents(ctx, func(tx *sql.Tx) error {
 			rows, err := tx.Query("SELECT id FROM events WHERE id > ? AND id <= ? ORDER BY id", st.from.events, st.to.events)
 			if err != nil {

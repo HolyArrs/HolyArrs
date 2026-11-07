@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // lightRater is a provider with the light rating lookup, counting calls;
@@ -30,7 +30,7 @@ func (l *lightRater) Rating(_ context.Context, kind, _ string) (string, error) {
 
 func newRatingAPI(t *testing.T) (*API, *lightRater) {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

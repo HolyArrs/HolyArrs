@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // checkQuery is the title a test search asks for when none is given.
@@ -50,7 +50,7 @@ func (a *API) checkSources(w http.ResponseWriter, r *http.Request) {
 	if kind != "show" && kind != "music" {
 		kind = "movie"
 	}
-	srcs, err := store.Select[domain.Source](r.Context(), a.s.Store.Read(), "sources", "state != 'disabled' ORDER BY priority, name")
+	srcs, err := database.Select[domain.Source](r.Context(), a.s.Store.Read(), "sources", "state != 'disabled' ORDER BY priority, name")
 	if err != nil {
 		internal(w, err)
 		return

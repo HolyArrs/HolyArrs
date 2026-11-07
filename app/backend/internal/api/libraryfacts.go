@@ -5,14 +5,14 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // titleSize sums the size of every file kept for a title, across all its
 // Versions, for the Library's size column.
 // titleActivity is the newest grab (a Download for one of its Slots) or
 // import (a file in one of its Versions); nil when there is none.
-func titleActivity(ctx context.Context, db store.Lister, titleID int64) (*time.Time, error) {
+func titleActivity(ctx context.Context, db database.Lister, titleID int64) (*time.Time, error) {
 	rows, err := db.QueryContext(ctx, `SELECT max(at) FROM (
 		SELECT max(added_at) AS at FROM files WHERE version_id IN (SELECT id FROM versions WHERE title_id = ?)
 		UNION ALL
@@ -31,14 +31,14 @@ func titleActivity(ctx context.Context, db store.Lister, titleID int64) (*time.T
 	if err := rows.Err(); err != nil || !at.Valid {
 		return nil, err
 	}
-	t, err := time.Parse(store.TimeLayout, at.String)
+	t, err := time.Parse(database.TimeLayout, at.String)
 	if err != nil {
 		return nil, nil
 	}
 	return &t, nil
 }
 
-func titleSize(ctx context.Context, db store.Lister, titleID int64) (int64, error) {
+func titleSize(ctx context.Context, db database.Lister, titleID int64) (int64, error) {
 	rows, err := db.QueryContext(ctx, `SELECT COALESCE(SUM(size), 0) FROM files
 		WHERE version_id IN (SELECT id FROM versions WHERE title_id = ?)`, titleID)
 	if err != nil {
@@ -56,10 +56,10 @@ func titleSize(ctx context.Context, db store.Lister, titleID int64) (int64, erro
 
 // lastAired is the newest air date of a show's episodes on or before now;
 // nil when nothing has aired yet.
-func lastAired(ctx context.Context, db store.Lister, titleID int64, now time.Time) (*time.Time, error) {
+func lastAired(ctx context.Context, db database.Lister, titleID int64, now time.Time) (*time.Time, error) {
 	// Stored times share one fixed-width UTC layout, so SQLite can pick the
 	// newest aired one instead of the server parsing every episode.
-	rows, err := db.QueryContext(ctx, `SELECT max(air_date) FROM items WHERE title_id = ? AND kind = 'episode' AND air_date IS NOT NULL AND air_date <= ?`, titleID, store.FormatTime(now))
+	rows, err := db.QueryContext(ctx, `SELECT max(air_date) FROM items WHERE title_id = ? AND kind = 'episode' AND air_date IS NOT NULL AND air_date <= ?`, titleID, database.FormatTime(now))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func lastAired(ctx context.Context, db store.Lister, titleID int64, now time.Tim
 		if err := rows.Scan(&air); err != nil {
 			return nil, err
 		}
-		at, err := time.Parse(store.TimeLayout, air.String)
+		at, err := time.Parse(database.TimeLayout, air.String)
 		if err != nil || at.After(now) {
 			continue
 		}

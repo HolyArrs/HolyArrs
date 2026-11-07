@@ -19,7 +19,7 @@ import (
 	xdraw "golang.org/x/image/draw"
 	_ "golang.org/x/image/webp" // registers the WebP decoder
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 const (
@@ -116,7 +116,7 @@ func (a *Auth) putAvatar(w http.ResponseWriter, r *http.Request) {
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO user_avatars(user_id, jpeg, etag, updated_at) VALUES (?, ?, ?, ?)
 			ON CONFLICT(user_id) DO UPDATE SET jpeg = excluded.jpeg, etag = excluded.etag, updated_at = excluded.updated_at`,
-			who.UserID, jpg, etag, store.FormatTime(a.now()))
+			who.UserID, jpg, etag, database.FormatTime(a.now()))
 		return err
 	})
 	if err != nil {

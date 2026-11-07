@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -60,13 +60,13 @@ func (f *usenetFake) server(t *testing.T) string {
 	return srv.URL
 }
 
-func addSab(t *testing.T, st *store.Store, url string) int64 {
+func addSab(t *testing.T, st *database.Store, url string) int64 {
 	t.Helper()
 	var did int64
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := &domain.Downloader{Writable: true, Name: "S", Adapter: "sabnzbd", Protocol: "usenet", URL: url, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := store.Insert(tx, "downloaders", dr, domain.System)
+		_, err := database.Insert(tx, "downloaders", dr, domain.System)
 		did = dr.ID
 		return err
 	})

@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/search/plainwords"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // plainSearchMax bounds each list of a plain-words search.
@@ -60,7 +61,7 @@ func (a *API) plainLibrary(ctx context.Context, r *http.Request, q plainwords.Qu
 	if q.Plain {
 		name = q.Text
 	}
-	ts, err := a.s.Store.SearchTitles(ctx, name)
+	ts, err := store.SearchTitles(ctx, a.s.Store, name)
 	if err != nil {
 		// A name too long or odd to match finds nothing; it is not an error.
 		ts = nil

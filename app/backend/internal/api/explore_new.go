@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // newPageTTL is how long a member's built New & Popular page is kept; the
@@ -289,7 +289,7 @@ func (a *API) newHousehold(ctx context.Context, me int64, now time.Time) newHous
 		i.air_date, COALESCE(json_extract(i.numbers, '$.season'), 0), COALESCE(json_extract(i.numbers, '$.episode'), 0)
 		FROM titles t JOIN items i ON i.title_id = t.id AND i.kind = 'episode' AND i.dropped_at IS NULL AND i.air_date >= ? AND i.air_date <= ?
 		WHERE t.kind = 'show' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') IS NOT NULL
-		ORDER BY i.air_date DESC, t.id LIMIT 400`, store.FormatTime(now.AddDate(0, 0, -14)), store.FormatTime(now.AddDate(0, 0, 8))); err == nil {
+		ORDER BY i.air_date DESC, t.id LIMIT 400`, database.FormatTime(now.AddDate(0, 0, -14)), database.FormatTime(now.AddDate(0, 0, 8))); err == nil {
 		for rows.Next() {
 			var e newEpisode
 			var genres, artwork, at string

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -121,7 +121,7 @@ func (a *API) scheduleView(ctx context.Context, db *sql.DB, sc domain.Schedule) 
 	} else if !sc.Enabled && v.State == "waiting" {
 		v.State = "off"
 	}
-	jobs, err := store.Select[domain.Job](ctx, db, "jobs", "kind = ? AND state IN ('done', 'failed', 'cancelled') ORDER BY id DESC LIMIT 1", sc.Kind)
+	jobs, err := database.Select[domain.Job](ctx, db, "jobs", "kind = ? AND state IN ('done', 'failed', 'cancelled') ORDER BY id DESC LIMIT 1", sc.Kind)
 	if err != nil {
 		return v, err
 	}
@@ -145,7 +145,7 @@ type LoopView struct {
 // loop the supervisor runs, with last and next run and state.
 func (a *API) listSchedules(w http.ResponseWriter, r *http.Request) {
 	db := a.s.Store.Read()
-	scs, err := store.Select[domain.Schedule](r.Context(), db, "schedules", "1=1 ORDER BY id")
+	scs, err := database.Select[domain.Schedule](r.Context(), db, "schedules", "1=1 ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -194,7 +194,7 @@ type ActiveJob struct {
 // activeJobs lists the Jobs running or waiting right now, running first,
 // then by their place in line.
 func (a *API) activeJobs(w http.ResponseWriter, r *http.Request) {
-	js, err := store.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs",
+	js, err := database.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs",
 		"state IN ('running', 'queued') ORDER BY CASE state WHEN 'running' THEN 0 ELSE 1 END, run_after, id LIMIT 50")
 	if err != nil {
 		internal(w, err)
@@ -216,7 +216,7 @@ func (a *API) activeJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) scheduleOf(w http.ResponseWriter, r *http.Request) (domain.Schedule, bool) {
-	scs, err := store.Select[domain.Schedule](r.Context(), a.s.Store.Read(), "schedules", "kind = ?", r.PathValue("kind"))
+	scs, err := database.Select[domain.Schedule](r.Context(), a.s.Store.Read(), "schedules", "kind = ?", r.PathValue("kind"))
 	if err != nil {
 		internal(w, err)
 		return domain.Schedule{}, false

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func protectSlotCopy(t *testing.T, f fixture, slotID, versionID int64) int64 {
@@ -20,7 +20,7 @@ func protectSlotCopy(t *testing.T, f fixture, slotID, versionID int64) int64 {
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		fl := &domain.File{Protected: true, SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: "protected.mkv",
 			Size: 1, AddedAt: time.Now(), Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 			return err
 		}
 		fileID = fl.ID

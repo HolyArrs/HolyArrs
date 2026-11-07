@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
@@ -44,7 +44,7 @@ func (s *Service) noteEpisodes(ctx context.Context, e domain.Event) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, id := range ids {
 			if _, err := tx.Exec(`INSERT INTO new_episode_notices (title_id, slot_id, arrived_at)
@@ -71,7 +71,7 @@ func (s *Service) noteEpisodes(ctx context.Context, e domain.Event) error {
 // notices off, and asks turned down, are skipped. It returns how many shows
 // it told about.
 func (s *Service) SendEpisodeNotices(ctx context.Context) (int, error) {
-	due := store.FormatTime(s.now().Add(-EpisodeBatch))
+	due := database.FormatTime(s.now().Add(-EpisodeBatch))
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT n.title_id, t.name, count(*) FROM new_episode_notices n JOIN titles t ON t.id = n.title_id
 		WHERE n.sent_at IS NULL GROUP BY n.title_id HAVING min(n.arrived_at) <= ? ORDER BY n.title_id`, due)
 	if err != nil {
@@ -101,7 +101,7 @@ func (s *Service) SendEpisodeNotices(ctx context.Context) (int, error) {
 		if err != nil {
 			return told, err
 		}
-		now := store.FormatTime(s.now())
+		now := database.FormatTime(s.now())
 		text := EpisodeWords(sh.n, sh.name)
 		err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 			if _, err := tx.Exec("UPDATE new_episode_notices SET sent_at = ? WHERE title_id = ? AND sent_at IS NULL", now, sh.id); err != nil {
