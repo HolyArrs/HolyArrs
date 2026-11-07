@@ -1024,5 +1024,8 @@
 	.todo { gap: 0; border-top: 1px solid var(--line); }
 	.todo > li { border-bottom: 1px solid var(--line); }
 	.todo a, .todo-row { background: none; border: 0; border-radius: 0; padding: 0 2px; min-height: 52px; }
+	/* Done and still-to-do read as one list. */
+	.todo:has(+ .todo) { margin-bottom: 0; }
+	.todo + .todo { border-top: 0; }
 	@media (hover: hover) { .todo a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 4%, transparent); } }
 </style>
