@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Season dropdown, or a plain label when there is one season.
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 	import { seasonName } from './labels.ts';
 
@@ -13,6 +14,8 @@
 		fresh?: number;
 		onpick: (n: number) => void;
 	} = $props();
+
+	// Provider names can be missing, so fall back to a generated label.
 	const nameOf = (s: { number: number; name?: string }) => s.name || seasonName(s.number);
 	const cur = $derived(seasons.find((s) => s.number === value));
 	const items = $derived<MenuItem[]>(seasons.map((s) => ({ label: nameOf(s), checked: s.number === value, hint: s.number === fresh ? 'New' : undefined, onselect: () => onpick(s.number) })));

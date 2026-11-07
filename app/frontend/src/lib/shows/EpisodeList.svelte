@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	// Episode rows with a still, meta line and optional slots per row.
 	export interface EpisodeRow {
 		key: string | number;
 		number: string;
@@ -14,8 +15,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '../ui/Icon.svelte';
-	import { sized } from '../core/tmdb-image.ts';
 	import { runtimeWords } from '../ui/TitleHero.svelte';
+	import { sized } from '../core/tmdb-image.ts';
 
 	let {
 		rows,
@@ -25,12 +26,13 @@
 		after
 	}: {
 		rows: EpisodeRow[];
-		// Shown for episodes that have no still.
 		fallback?: string | null;
 		status?: Snippet<[number]>;
 		action?: Snippet<[number]>;
 		after?: Snippet<[number]>;
 	} = $props();
+
+	// Stills that errored, so the placeholder shows instead of a broken image.
 	let failed = $state<Record<string, boolean>>({});
 </script>
 

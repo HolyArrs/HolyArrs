@@ -1,17 +1,19 @@
 <script lang="ts">
+	// Card and dialog for a show's Versions: list, add, change and remove.
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
-	import { api, message } from '../core/api.ts';
 	import Icon from '../ui/Icon.svelte';
 	import { secondVersion } from '../mediafiles/index.ts';
+	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from '../core/types.ts';
 
 	let { title, staff, onchange }: { title: TitleView; staff: boolean; onchange: () => void | Promise<void> } = $props();
 
 	let dialog: HTMLDialogElement | undefined = $state();
+	// Shows every Version instead of only the lead one.
 	let all = $state(false);
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
@@ -24,16 +26,12 @@
 	let vKeep = $state(true);
 	let vError = $state('');
 	let vBusy = $state(false);
+
 	const showFolders = $derived(folders.filter((f) => f.kind === 'show'));
+	// Main Version, or the first when none is flagged.
 	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
 
-	async function choices() {
-		if (!rules.length) {
-			rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules.filter((r) => !r.kinds.length || r.kinds.includes('show'));
-		}
-		if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
-	}
-
+	// Suggests a second Version that does not clash with an existing label.
 	export async function openAdd() {
 		editing = null;
 		vError = '';
@@ -98,9 +96,17 @@
 			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
 		}
 	}
+
+	// Loads pick rules and folders once, on the first dialog open.
+	async function choices() {
+		if (!rules.length) {
+			rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules.filter((r) => !r.kinds.length || r.kinds.includes('show'));
+		}
+		if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
+	}
 </script>
 
-<!-- With only Main, this card would repeat Quality and Folder from Settings. -->
+<!-- Hidden with one Version, since the card would only repeat Settings. -->
 {#if title.versions.length > 1}
 <TitleSection id="h-show-versions" title="Versions" testid="show-versions" primary>
 	{#snippet head()}
@@ -201,6 +207,7 @@
 	.path {
 		overflow-wrap: anywhere;
 	}
+	/* Native dialog styled as a modal card. */
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal::backdrop { background: var(--scrim); }
 	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }

@@ -1,16 +1,17 @@
 <script lang="ts">
+	// Side sheet for one episode: status, file facts, subtitles and history.
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import { qualityBadges } from '#lib/mediafiles/index.ts';
+	import { SubtitlePanel } from '#lib/subtitles/index.ts';
+	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
 	import { goto } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
-	import Icon from '#lib/ui/Icon.svelte';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
-	import { qualityBadges } from '#lib/mediafiles/index.ts';
-	import { SubtitlePanel } from '#lib/subtitles/index.ts';
-	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
-	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
 	import type { EventRecord, TitleView } from '#lib/core/types.ts';
 
 	export type SheetEpisode = {
@@ -24,6 +25,7 @@
 		keep_up_to_date?: boolean;
 		slots: { id: number; state: string; state_label: string; file?: Record<string, any> | null }[];
 	};
+
 	let {
 		open = $bindable(false),
 		ep,
@@ -37,12 +39,59 @@
 
 	let story = $state('');
 	let events = $state<EventRecord[]>([]);
+	let busy = $state('');
+	let keep = $state(true);
+	let subs = $state<TitleSubtitles | null>(null);
+	// Custom opens the full subtitle list.
+	let subsMore = $state(false);
+
 	// Routine events are left out of the short history.
 	const rows = $derived(groupDownloads(events.filter((e) => !isRoutine(e.Kind))));
 	const titles = $derived(new Map(show ? [[show.id, show]] : []));
-	let busy = $state('');
-	let keep = $state(true);
+	const subsOwn = $derived(subs?.wishes.find((w) => w.item_id === ep?.id));
+	// No wish means the show default; a wish with no languages means off.
+	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
+	const subsFile = $derived(subs?.files.find((f) => f.item_id === ep?.id));
+	const subsHint = $derived.by(() => {
+		if (subsMode === 'off') return 'No subtitles';
+		const wanted = subsFile?.wish?.languages ?? subsOwn?.languages ?? [];
+		const have = new Set((subsFile?.subtitles ?? []).filter((r) => r.state === 'present').map((r) => r.language));
+		const miss = wanted.filter((w) => !have.has(w.language));
+		const head = subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Default';
+		if (!wanted.length) return `${head} · none set`;
+		return miss.length ? `${head} · ${codes(miss)} missing` : `${head} · all here`;
+	});
+	const subsMenu = $derived<MenuItem[]>([
+		{ label: 'Choose languages…', icon: 'tools', onselect: () => (subsMore = true) },
+		{ label: 'Look for subtitles', icon: 'search', onselect: () => void findSubs() },
+		{ label: 'Choose a subtitle…', icon: 'copy', onselect: () => (subsMore = true) }
+	]);
+	const slot = $derived(ep?.slots[0]);
+	const file = $derived(slot?.file ?? null);
+	// Collapses the many slot states into the four the sheet styles.
+	const tone = $derived.by(() => {
+		const st = slot?.state ?? '';
+		return ['have', 'imported', 'in_library', 'kept'].includes(st) ? 'have' : ['downloading', 'importing', 'searching'].includes(st) ? 'downloading' : st === 'failed' ? 'failed' : 'missing';
+	});
+	const fileFacts = $derived.by(() => {
+		if (!file) return null;
+		const q = (file.Quality ?? {}) as Record<string, any>;
+		const m = (file.MediaInfo ?? {}) as Record<string, any>;
+		const src: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
+		return {
+			badges: qualityBadges([file]),
+			quality: [q.resolution ? `${q.resolution}p` : '', src[q.source] ?? '', m.video_codec ?? ''].filter(Boolean).join(' · '),
+			size: file.Size ? bytes(file.Size) : '',
+			name: String(file.RelativePath ?? '').split(/[\\/]/).pop() ?? '',
+			added: file.AddedAt ? ago(file.AddedAt) : '',
+			res: q.resolution ? `${q.resolution}p` : '',
+			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
+			audio: langs(m.audio_languages),
+			subs: langs(m.subtitle_languages ?? m.subtitles)
+		};
+	});
 
+	// Reloads history and the synopsis each time the sheet opens on an episode.
 	$effect(() => {
 		const e = ep;
 		if (!open || !e) return;
@@ -55,28 +104,12 @@
 				.get<{ episodes?: { number: number; overview?: string }[] }>(`/metadata/show/${encodeURIComponent(tmdb)}/seasons/${e.season}`)
 				.then((r) => (story = r.episodes?.find((x) => x.number === e.episode)?.overview ?? ''), () => {});
 	});
+	$effect(() => { if (open && ep && manage) { subsMore = false; void loadSubs(); } });
 
-	// Custom opens the full subtitle list.
-	let subs = $state<TitleSubtitles | null>(null);
-	let subsMore = $state(false);
 	async function loadSubs() {
 		if (!ep) return;
 		try { subs = await api.get<TitleSubtitles>(`/titles/${titleId}/subtitles`); } catch { subs = null; }
 	}
-	$effect(() => { if (open && ep && manage) { subsMore = false; void loadSubs(); } });
-	const subsOwn = $derived(subs?.wishes.find((w) => w.item_id === ep?.id));
-	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
-	const subsFile = $derived(subs?.files.find((f) => f.item_id === ep?.id));
-	const codes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
-	const subsHint = $derived.by(() => {
-		if (subsMode === 'off') return 'No subtitles';
-		const wanted = subsFile?.wish?.languages ?? subsOwn?.languages ?? [];
-		const have = new Set((subsFile?.subtitles ?? []).filter((r) => r.state === 'present').map((r) => r.language));
-		const miss = wanted.filter((w) => !have.has(w.language));
-		const head = subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Default';
-		if (!wanted.length) return `${head} · none set`;
-		return miss.length ? `${head} · ${codes(miss)} missing` : `${head} · all here`;
-	});
 	async function setSubs(mode: 'default' | 'off') {
 		if (!ep || mode === subsMode) return;
 		busy = 'subs';
@@ -98,37 +131,6 @@
 			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
 		}
 	}
-	const subsMenu = $derived<MenuItem[]>([
-		{ label: 'Choose languages…', icon: 'tools', onselect: () => (subsMore = true) },
-		{ label: 'Look for subtitles', icon: 'search', onselect: () => void findSubs() },
-		{ label: 'Choose a subtitle…', icon: 'copy', onselect: () => (subsMore = true) }
-	]);
-	const slot = $derived(ep?.slots[0]);
-	const file = $derived(slot?.file ?? null);
-	const tone = $derived.by(() => {
-		const st = slot?.state ?? '';
-		return ['have', 'imported', 'in_library', 'kept'].includes(st) ? 'have' : ['downloading', 'importing', 'searching'].includes(st) ? 'downloading' : st === 'failed' ? 'failed' : 'missing';
-	});
-	const langs = (v: unknown) => (Array.isArray(v) ? v : []).map((s) => String(s).toUpperCase()).filter(Boolean).slice(0, 8);
-	const fileFacts = $derived.by(() => {
-		if (!file) return null;
-		const q = (file.Quality ?? {}) as Record<string, any>;
-		const m = (file.MediaInfo ?? {}) as Record<string, any>;
-		const src: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
-		return {
-			badges: qualityBadges([file]),
-			quality: [q.resolution ? `${q.resolution}p` : '', src[q.source] ?? '', m.video_codec ?? ''].filter(Boolean).join(' · '),
-			size: file.Size ? bytes(file.Size) : '',
-			name: String(file.RelativePath ?? '').split(/[\\/]/).pop() ?? '',
-			added: file.AddedAt ? ago(file.AddedAt) : '',
-			res: q.resolution ? `${q.resolution}p` : '',
-			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
-			audio: langs(m.audio_languages),
-			subs: langs(m.subtitle_languages ?? m.subtitles)
-		};
-	});
-	const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
-
 	async function look() {
 		if (!slot) return;
 		busy = 'look';
@@ -155,6 +157,12 @@
 			busy = '';
 		}
 	}
+
+	const codes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
+	// Eight tags is all the file card has room for.
+	const langs = (v: unknown) => (Array.isArray(v) ? v : []).map((s) => String(s).toUpperCase()).filter(Boolean).slice(0, 8);
+	// Air dates are plain days, so UTC keeps them from shifting a day.
+	const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
 </script>
 
 <Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} size="md">

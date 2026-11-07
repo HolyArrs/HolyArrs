@@ -1,10 +1,11 @@
 <script lang="ts">
+	// Side sheet for one season: files on disk, rename preview and history.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { RenamePreview } from '#lib/mediafiles/index.ts';
+	import type { SheetEpisode } from './EpisodeSheet.svelte';
 	import { api } from '#lib/core/api.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
-	import type { SheetEpisode } from './EpisodeSheet.svelte';
 
 	let {
 		open = $bindable(false),
@@ -18,16 +19,8 @@
 
 	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
 	let loadingEvents = $state(false);
-	$effect(() => {
-		if (!open || mode !== 'history') return;
-		loadingEvents = true;
-		void api
-			.get<{ events?: typeof events }>(`/events?title=${titleId}&season=${season}&limit=50`)
-			.then((r) => (events = r.events ?? []), () => (events = []))
-			.finally(() => (loadingEvents = false));
-	});
 
-	const sources: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
+	// Rows come from each episode's first slot; episodes without a file are skipped.
 	const rows = $derived(
 		episodes
 			.map((e) => ({ e, f: e.slots[0]?.file as Record<string, any> | null | undefined }))
@@ -42,6 +35,7 @@
 					name: String(f!.RelativePath ?? '').split(/[\\/]/).pop() ?? '',
 					quality: [q.resolution ? `${q.resolution}p` : '', sources[q.source] ?? ''].filter(Boolean).join(' '),
 					size: f!.Size ? bytes(f!.Size) : '',
+					// Four tags is all the row has room for.
 					langs: [...new Set(langs)].slice(0, 4),
 					group: (f!.Group as string | null) ?? ''
 				};
@@ -49,6 +43,19 @@
 	);
 	const total = $derived(episodes.reduce((n, e) => n + Number(e.slots[0]?.file?.Size ?? 0), 0));
 	const label = $derived(season === 0 ? 'Specials' : `Season ${season}`);
+
+	// History loads only when its tab is open.
+	$effect(() => {
+		if (!open || mode !== 'history') return;
+		loadingEvents = true;
+		void api
+			.get<{ events?: typeof events }>(`/events?title=${titleId}&season=${season}&limit=50`)
+			.then((r) => (events = r.events ?? []), () => (events = []))
+			.finally(() => (loadingEvents = false));
+	});
+
+	// Short source names for the quality tag.
+	const sources: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
 </script>
 
 <Sheet bind:open title={label} placement="right" size="md">
@@ -87,6 +94,7 @@
 	.st-seg { display: inline-flex; justify-self: start; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.st-seg button { height: 30px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
 	.st-seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Bigger touch target on touch screens. */
 	@media (pointer: coarse) { .st-seg button { height: 40px; } }
 	.st-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
 	.st-del { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--fail-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }

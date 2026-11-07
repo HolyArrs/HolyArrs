@@ -1,33 +1,53 @@
 <script lang="ts">
-	import { api } from '../core/api.ts';
-	import { date } from '../core/format.ts';
+	// Season pills with a shelf of episode cards for the chosen season.
 	import Skeleton from '../ui/Skeleton.svelte';
 	import Shelf from '../ui/Shelf.svelte';
 	import ArtPlaceholder from '../ui/ArtPlaceholder.svelte';
-	import { sized } from '../core/tmdb-image.ts';
 	import { runtimeWords } from '../ui/TitleHero.svelte';
 	import { newSeason, newestSeason, seasonName } from './labels.ts';
 	import { animeEpisode, animePath, type AnimeView } from './anime.ts';
+	import { api } from '../core/api.ts';
+	import { date } from '../core/format.ts';
+	import { sized } from '../core/tmdb-image.ts';
+
+	type Ep = { number: number; name?: string; overview?: string; runtime?: number; still?: string; air_day?: string };
 
 	let { tmdb, seasons, fallback }: { tmdb: string; seasons: { number: number; episodes: number; year?: number }[]; fallback?: string | null } = $props();
 
+	let picked = $state<number | null>(null);
+	let eps = $state<Record<number, Ep[] | 'error'>>({});
+	// Best effort: the page works without anime data.
+	let anime = $state<AnimeView | null>(null);
+	// A failed picture falls back to the placeholder.
+	let stillState = $state<Record<string, 'ok' | 'bad'>>({});
+
+	// Specials sort last, the rest newest first.
 	const ordered = $derived([...seasons].sort((a, b) => Number(a.number === 0) - Number(b.number === 0) || b.number - a.number));
 	const fresh = $derived(newSeason(seasons));
-	let picked = $state<number | null>(null);
-	type Ep = { number: number; name?: string; overview?: string; runtime?: number; still?: string; air_day?: string };
-	let eps = $state<Record<number, Ep[] | 'error'>>({});
+	const shown = $derived(picked ?? newestSeason(seasons) ?? null);
+	const cur = $derived(shown === null ? undefined : seasons.find((s) => s.number === shown));
 
+	// A new show drops the old pick and cached episodes.
 	$effect(() => {
 		void tmdb;
 		picked = null;
 		eps = {};
 	});
-	const shown = $derived(picked ?? newestSeason(seasons) ?? null);
 	$effect(() => {
 		if (shown !== null && !eps[shown]) read(shown);
 	});
+	$effect(() => {
+		const id = tmdb;
+		const ctl = new AbortController();
+		anime = null;
+		api.get<AnimeView>(animePath('show', id), ctl.signal)
+			.then((v) => (anime = v.anime ? v : null))
+			.catch(() => {});
+		return () => ctl.abort();
+	});
 
 	const asked = new Set<string>();
+	// The set stops the effect from refetching a season while its request is in flight.
 	function read(n: number) {
 		const id = tmdb;
 		if (asked.has(`${id}:${n}`)) return;
@@ -40,17 +60,6 @@
 			});
 	}
 
-	// Best effort: the page works without anime data.
-	let anime = $state<AnimeView | null>(null);
-	$effect(() => {
-		const id = tmdb;
-		const ctl = new AbortController();
-		anime = null;
-		api.get<AnimeView>(animePath('show', id), ctl.signal)
-			.then((v) => (anime = v.anime ? v : null))
-			.catch(() => {});
-		return () => ctl.abort();
-	});
 	function cards(n: number) {
 		const list = eps[n];
 		if (!Array.isArray(list)) return [];
@@ -60,9 +69,6 @@
 			return { key: e.number, name: `${e.number}. ${e.name || `Episode ${e.number}`}`, still: e.still || fallback, line: [e.runtime ? runtimeWords(e.runtime) : '', abs ? `${when} · Absolute ${abs}` : when].filter(Boolean).join(' · '), overview: e.overview };
 		});
 	}
-	const cur = $derived(shown === null ? undefined : seasons.find((s) => s.number === shown));
-	// A failed picture falls back to the placeholder.
-	let stillState = $state<Record<string, 'ok' | 'bad'>>({});
 </script>
 
 {#if seasons.length}
@@ -108,11 +114,11 @@
 	.pill { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
 	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* Min-height, not padding: the scrolling row would clip a larger hit area. */
+	/* Touch targets grow by min-height because the scrolling row would clip extra padding. */
 	@media (max-width: 767px) and (pointer: coarse) { .pill { min-height: 44px; } }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 	.line { margin: 10px 0 2px; }
-	/* The pills already name the row. */
+	/* Hidden from view but kept for screen readers; the pills already name the row. */
 	.seasons :global(.ui-shelf header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 	.ep { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-self: start; }
 	.still { position: relative; display: block; aspect-ratio: 16 / 9; margin-bottom: 6px; border-radius: 10px; overflow: hidden; background: var(--surface-2); }

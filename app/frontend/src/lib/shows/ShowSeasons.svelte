@@ -1,19 +1,39 @@
 <script lang="ts">
-	import { api } from '../core/api.ts';
-	import { date } from '../core/format.ts';
+	// Season picker and lazy-loaded episode list for one show.
+	import Skeleton from '../ui/Skeleton.svelte';
 	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
 	import SeasonPicker from './SeasonPicker.svelte';
-	import Skeleton from '../ui/Skeleton.svelte';
 	import { newSeason, newestSeason, seasonName } from './labels.ts';
 	import { animeEpisode, animePath, seasonAnimeLine, type AnimeView } from './anime.ts';
+	import { api } from '../core/api.ts';
+	import { date } from '../core/format.ts';
+
+	type Ep = { number: number; name?: string; overview?: string; runtime?: number; still?: string; air_day?: string };
 
 	let { tmdb, seasons, fallback }: { tmdb: string; seasons: { number: number; episodes: number; year?: number }[]; fallback?: string | null } = $props();
 
 	let picked = $state<number | null>(null);
+	let eps = $state<Record<number, Ep[] | 'error'>>({});
+	// Best effort: the page works without anime data.
+	let anime = $state<AnimeView | null>(null);
+
+	// A pick that no longer exists falls back to the newest season.
 	const cur = $derived((picked !== null && seasons.some((s) => s.number === picked) ? picked : null) ?? newestSeason(seasons) ?? 0);
 	const fresh = $derived(newSeason(seasons));
-	type Ep = { number: number; name?: string; overview?: string; runtime?: number; still?: string; air_day?: string };
-	let eps = $state<Record<number, Ep[] | 'error'>>({});
+	const list = $derived(eps[cur]);
+	const rows = $derived<EpisodeRow[]>(
+		Array.isArray(list)
+			? list.map((e) => {
+				const abs = anime ? animeEpisode(anime, cur, e.number).absolute : undefined;
+				const when = e.air_day ? date(e.air_day) : 'No air date yet';
+				return { key: e.number, number: String(e.number), name: e.name || `Episode ${e.number}`, still: e.still, runtime: e.runtime, when: abs ? `${when} · Absolute ${abs}` : when, overview: e.overview };
+			})
+			: []
+	);
+	const curSeason = $derived(seasons.find((s) => s.number === cur));
+	const animeLine = $derived(curSeason ? seasonAnimeLine(anime, cur, curSeason.episodes) : '');
+
+	// Each season loads once, on first view.
 	$effect(() => {
 		const n = cur;
 		const id = tmdb;
@@ -27,8 +47,6 @@
 			});
 		return () => ctl.abort();
 	});
-	// Best effort: the page works without anime data.
-	let anime = $state<AnimeView | null>(null);
 	$effect(() => {
 		const id = tmdb;
 		const ctl = new AbortController();
@@ -38,18 +56,6 @@
 			.catch(() => {});
 		return () => ctl.abort();
 	});
-	const list = $derived(eps[cur]);
-	const rows = $derived<EpisodeRow[]>(
-		Array.isArray(list)
-			? list.map((e) => {
-				const abs = anime ? animeEpisode(anime, cur, e.number).absolute : undefined;
-				const when = e.air_day ? date(e.air_day) : 'No air date yet';
-				return { key: e.number, number: String(e.number), name: e.name || `Episode ${e.number}`, still: e.still, runtime: e.runtime, when: abs ? `${when} · Absolute ${abs}` : when, overview: e.overview };
-			})
-			: []
-	);
-	const curSeason = $derived(seasons.find((s) => s.number === cur));
-	const animeLine = $derived(curSeason ? seasonAnimeLine(anime, cur, curSeason.episodes) : '');
 </script>
 
 {#if seasons.length}
