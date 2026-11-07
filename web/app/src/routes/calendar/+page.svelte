@@ -872,7 +872,7 @@
 {:else if error && entries.length === 0}
 	<LoadError hasData={false} message="Calendar could not be loaded." onretry={load} />
 {:else if libraryEmpty}
-	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
+	<EmptyState icon="calendar" title="Nothing coming up" text="Dates for your movies, shows and artists show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 {:else}
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
 	<div class="cal-body" class:barred={barOn} class:month-off={monthHidden}>

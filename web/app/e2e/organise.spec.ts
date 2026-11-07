@@ -117,7 +117,7 @@ test('rename: a plan that changed since the preview renames nothing and says to 
 	await page.unroute('**/api/v1/rename');
 	const n = await steps.count();
 	await page.getByRole('button', { name: n === 1 ? 'Rename 1 file' : `Rename ${n} files` }).click();
-	await expect(page.getByRole('alert')).toContainText('Something changed since this preview, so nothing was renamed', { timeout: 30_000 });
+	await expect(page.getByRole('alert')).toContainText('Files changed, so nothing was renamed', { timeout: 30_000 });
 	expect(readdirSync(join(oldLib, 'Cinder (2012)'))).toEqual(['Cinder.2012.720p.BluRay.x264-OLD.mkv']);
 	expect(readdirSync(join(oldLib, 'Willow Signal {tmdb-900013}'))).toEqual(['willow signal.mkv']);
 });

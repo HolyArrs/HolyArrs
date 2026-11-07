@@ -278,7 +278,7 @@
 </script>
 
 {#if answer?.kid}
-	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
+	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it’s off for age-limited accounts." />
 {:else if answer || !failed}
 	<section class="music" class:v2={answer?.v2} data-testid="music-trending" aria-busy={!answer || undefined}>
 		{#if slug}

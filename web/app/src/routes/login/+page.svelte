@@ -748,7 +748,7 @@
 								<p class="form-error" role="status">/config isn't mapped. This setup is lost when the container is recreated. See "Forgot to map /config?" in the install guide.</p>
 							{/if}
 						{:else if mode === 'code'}
-							<p class="lead">{useBackup ? 'Enter one of your saved backup codes.' : 'Enter the 6-digit code from your authenticator app to finish signing in.'}</p>
+							<p class="lead">{useBackup ? 'Enter one of your saved backup codes.' : 'Enter the 6-digit code from your authenticator app.'}</p>
 						{:else if via === 'jellyfin' || via === 'emby'}
 							<p class="lead">Use your {wayWord[via]} name and password.</p>
 						{:else if via === 'choose'}

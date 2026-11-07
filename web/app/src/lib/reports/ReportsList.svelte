@@ -233,7 +233,7 @@
 			? { title: 'Nothing fixed yet', text: 'Reports you mark fixed are kept here.' }
 			: manage
 				? { title: filter === 'open' ? 'No open reports' : 'No reports yet', text: 'When someone reports a problem with a movie, show or album, it shows up here.' }
-				: { title: 'No reports yet', text: 'Found something wrong with a title in the Library? Open it, press More and choose Report a problem.' }
+				: { title: 'No reports yet', text: 'To report a title, open it and choose More › Report a problem.' }
 	);
 </script>
 

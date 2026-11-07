@@ -71,7 +71,7 @@
 	</div>
 {/if}
 
-<Sheet bind:open title="Confirm match" description="Pick the title each torrent holds. HolyArrs adds it to your Library and links the torrent, without searching." size="md">
+<Sheet bind:open title="Confirm match" description="Pick the title each torrent holds. It’s added to your Library without a search." size="md">
 	<ul class="ml" data-testid="dl-match-list">
 		{#each list as m (m.id)}
 			<li class="mi">

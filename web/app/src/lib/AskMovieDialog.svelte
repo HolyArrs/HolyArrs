@@ -75,7 +75,7 @@
 					? 'A 4K copy is its own ask: it goes on the Requests page and is approved apart from the regular copy.'
 					: picked.ask
 					? `Someone asked for it already (${picked.ask.state_label}). Asking joins their ask, and you hear when it is ready.`
-					: 'It goes on the Requests page. You hear when it is approved and when it is ready to watch.'}
+					: 'You’ll hear when it’s approved and when it’s ready.'}
 			</p>
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />

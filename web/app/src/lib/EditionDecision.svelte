@@ -30,7 +30,7 @@
 
 <form class="edition-decision" onsubmit={submit} data-testid="edition-decision">
 	<div class="decision-title"><span class="ic" aria-hidden="true"><Icon name="film" size={16} /></span><p class="t">Check this movie's edition</p></div>
-	<p class="note">Enter the edition shown by the download, such as Theatrical or Director cut. HolyArrs repeats every protection, audio and placement check before importing.</p>
+	<p class="note">Enter the edition, like Theatrical or Director’s cut. Every check runs again before import.</p>
 	<div class="field">
 		<label for="download-edition-{downloadId}">Edition</label>
 		<input id="download-edition-{downloadId}" class="input" bind:value={edition} maxlength="80" required />

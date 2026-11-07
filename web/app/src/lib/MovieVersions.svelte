@@ -128,7 +128,7 @@
 <dialog bind:this={dialog} aria-labelledby="movie-version-title" class="modal">
 	<form onsubmit={add}>
 		<h2 id="movie-version-title" class="h2">Add a Version of {title.name}</h2>
-		<p class="small muted">Another copy to keep next to the others, for example 4K, with its own Pick rules and folder.</p>
+		<p class="small muted">Another copy, like 4K, with its own Pick rules and folder.</p>
 		<div class="field" style="margin-top: var(--s-5)">
 			<label for="mv-label">Version name</label>
 			<input id="mv-label" class="input" bind:value={vLabel} maxlength="40" required />
@@ -141,12 +141,12 @@
 		<div class="field">
 			<label for="mv-audio">Required audio languages</label>
 			<input id="mv-audio" class="input" bind:value={vAudio} placeholder="For example, en, ja" />
-			<span class="hint">Every language must be present in inspected audio tracks. Subtitles are separate.</span>
+			<span class="hint">Audio must have every language. Subtitles don’t count.</span>
 		</div>
 		<div class="field">
 			<label for="mv-existing-folder">Existing movie folder (optional)</label>
 			<input id="mv-existing-folder" class="input" bind:value={vFolderName} maxlength="200" />
-			<span class="hint">Use one folder name inside the chosen Library folder when adopting an existing copy. Leave empty for a new folder.</span>
+			<span class="hint">To use a copy you have, name its folder. Leave empty for a new one.</span>
 		</div>
 		<div class="field">
 			<label for="mv-rules">Pick rules for this Version</label>

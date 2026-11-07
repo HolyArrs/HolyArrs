@@ -1065,7 +1065,7 @@
 {#if blocked}
 	<EmptyState icon="shield" title="This title is not available on this account." action={{ label: 'Back to Explore', href: to('/explore') }} />
 {:else if missing}
-	<EmptyState icon="search" title="We could not find this title" text="It may have been removed from the movie and show database. Try searching for it by name." action={{ label: 'Search', href: to('/search') }} />
+	<EmptyState icon="search" title="We could not find this title" text="It may have been removed. Try searching by name." action={{ label: 'Search', href: to('/search') }} />
 {:else if error && !details}
 	<LoadError hasData={false} message="Could not load this title. {error}" onretry={() => void load(kind, tmdb)} />
 {:else}

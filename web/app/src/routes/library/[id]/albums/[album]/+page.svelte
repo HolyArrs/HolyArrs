@@ -287,7 +287,7 @@
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
 				<ol class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
 			{:else if !tracks?.length}
-				<p class="small muted">{album.included ? NO_SONGS_LINE : 'This album is left out by the album kinds, so its tracks are not listed.'}</p>
+				<p class="small muted">{album.included ? NO_SONGS_LINE : 'Left out by album kinds, so no tracks are listed.'}</p>
 			{:else}
 				<ol class="tracks">
 					{#each tracks as t (t.id)}

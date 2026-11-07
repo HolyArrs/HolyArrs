@@ -73,7 +73,7 @@
 		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders', cta: 'Choose a folder' },
 		{ done: srcs.total > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources', cta: 'Add a Source' },
 		{ done: dls.total > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders', cta: 'Add a Downloader' },
-		{ done: false, text: 'Add your first title', detail: 'Search for a new movie, show or artist to fetch, or import the folders you already have on disk.', href: '/search', cta: 'Find a title' }
+		{ done: false, text: 'Add your first title', detail: 'Search for something new, or import folders you already have.', href: '/search', cta: 'Find a title' }
 	]);
 	const doneCount = $derived(steps.filter((s) => s.done).length);
 	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
@@ -849,7 +849,7 @@
 					<section class="prompt" aria-labelledby="h-welcome" data-testid="home-welcome">
 						<div>
 							<h2 id="h-welcome">Welcome to HolyArrs</h2>
-							<p>Nothing here yet. Find a movie, show or artist you love and ask for it. It shows up here when it arrives.</p>
+							<p>Nothing here yet. Ask for something you love and it shows up here.</p>
 						</div>
 						<Button variant="primary" size="lg" icon="compass" href={to('/explore')}>Start asking</Button>
 					</section>
