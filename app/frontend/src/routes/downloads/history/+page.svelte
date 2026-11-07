@@ -5,7 +5,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { libraryBrief } from '#lib/mediafiles/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import SearchLook from '#lib/downloads/HistoryPage.svelte';
+	import { HistoryPage as SearchLook } from '#lib/downloads/index.ts';
 	import type { TitleView } from '#lib/core/types.ts';
 
 	// The Library titles and member names, for search, posters and "who".

@@ -5,15 +5,14 @@
 	import { afterHandoff } from '#lib/core/loader.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { stageOf } from '#lib/downloads/status-tabs.ts';
+	import { stageOf, decisions } from '#lib/downloads/index.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
 	import { proxied, sized } from '#lib/core/tmdb-image.ts';
 	import { askArtist, askDetails, wantDetails, inbox } from '#lib/requests/index.ts';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
-	import { decisions } from '#lib/downloads/decisions.svelte.ts';
-	import { METADATA_DOWN, metadataOutage } from '#lib/metadata/health.svelte.ts';
+	import { METADATA_DOWN, metadataOutage, MetadataNotice } from '#lib/metadata/index.ts';
 	import { agoLong, bytes, duration, percent } from '#lib/core/format.ts';
 	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
 	import type { Fresh } from '#lib/ui/fresh.ts';
@@ -26,7 +25,6 @@
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import ArtPill from '#lib/ui/ArtPill.svelte';
 	import type { Tint } from '#lib/core/settings.ts';
-	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Button from '#lib/ui/Button.svelte';

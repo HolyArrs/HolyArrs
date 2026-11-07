@@ -2,7 +2,7 @@
 import { duration } from './core/format.ts';
 import { healthSentence, plainReason } from './core/plain.ts';
 import type { DownloadRow } from './core/types.ts';
-import { stageOf } from './downloads/status-tabs.ts';
+import { stageOf } from './downloads/index.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from './core/types.ts';
 import type { Fresh } from './ui/fresh.ts';
 

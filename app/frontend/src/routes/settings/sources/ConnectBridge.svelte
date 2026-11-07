@@ -9,7 +9,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { to } from '#lib/core/paths.ts';
-	import { reachWords } from '#lib/downloads/downloaders.ts';
+	import { reachWords } from '#lib/downloads/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';

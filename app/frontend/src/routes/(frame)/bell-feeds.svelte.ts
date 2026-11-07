@@ -4,7 +4,7 @@
 // update check every few hours for people who manage the app.
 import { goto } from '$app/navigation';
 import { api } from '#lib/core/api.ts';
-import { decisions } from '#lib/downloads/decisions.svelte.ts';
+import { decisions } from '#lib/downloads/index.ts';
 import { live } from '#lib/core/live.svelte.ts';
 import { to } from '#lib/core/paths.ts';
 import { cut, messageWords } from './bell-words.ts';

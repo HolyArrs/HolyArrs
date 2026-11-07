@@ -1053,8 +1053,7 @@
 	const kindWide = $derived(kindW > KIND_W[0]);
 	const posterW = $derived(POSTER_W.includes(layout.widths.poster) ? layout.widths.poster : POSTER_W[0]);
 	const near = (set: number[], w: number) => set.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
-	// Every picked column shows; when they are wider than the view the list scrolls sideways
-	// (columns used to drop out one by one on a narrow view, which read as a glitch).
+	// Every picked column shows; when they are wider than the view the list scrolls sideways.
 	const vis = $derived(visAll);
 	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
 	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
@@ -2766,7 +2765,7 @@
 		.pb .t2 td.c-chk input[type='checkbox'] { width: 24px; height: 24px; }
 		.pb .t2 .c-chk { width: 40px; }
 	}
-	/* Touch phones (#79): every control a finger hits gets a 44px target; the
+	/* Touch phones: every control a finger hits gets a 44px target; the
 	   hit area grows with an invisible ::after, so nothing moves and desktop is unchanged. */
 	@media (max-width: 767px) and (pointer: coarse) {
 		.tab, .stab, .trchip { position: relative; }

@@ -11,30 +11,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import {
-		applySize,
-		blankBody,
-		checkBody,
-		copyName,
-		fieldKey,
-		isMusic,
-		isOwnTrait,
-		kindChoices,
-		languages,
-		neverChoices,
-		orderChoices,
-		preferChoices,
-		properChoices,
-		sizeFields,
-		stepLabel,
-		tidyBody,
-		toggleKind,
-		traitLabel,
-		traitsFor,
-		usedWords,
-		type RulesKind,
-		type SizeFields
-	} from '#lib/downloads/pick-rules.ts';
+	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';

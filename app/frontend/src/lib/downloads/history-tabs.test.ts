@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL, byDay, dayItems, dayLine, lookTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf, loadArtSize, saveArtSize, loadDetailsOpen, saveDetailsOpen } from './history-tabs.ts';
+import { ALL, byDay, dayItems, dayLine, historyTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf } from './history-tabs.ts';
 import { groupDownloads } from './history.ts';
 import type { EventRecord } from '../core/types.ts';
 
@@ -16,7 +16,7 @@ describe('look tabs', () => {
 
 	it('no kind sits under two big tabs', () => {
 		const seen = new Map<string, string>();
-		for (const t of lookTabs) for (const s of t.subs) for (const k of s.kinds) {
+		for (const t of historyTabs) for (const s of t.subs) for (const k of s.kinds) {
 			expect(seen.get(k), k).toBeUndefined();
 			seen.set(k, t.key);
 		}
@@ -76,31 +76,5 @@ describe('days', () => {
 		const items = dayItems(rows);
 		expect(items.map((i) => i.type)).toEqual(['quiet', 'row', 'row']);
 		expect(items[0].type === 'quiet' && items[0].rows.length).toBe(2);
-	});
-});
-
-describe('remembered choices', () => {
-	const mem = () => {
-		const m = new Map<string, string>();
-		return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
-	};
-	it('keeps the poster size per member, medium by default', () => {
-		const s = mem();
-		expect(loadArtSize(1, s)).toBe('m');
-		saveArtSize(1, 'l', s);
-		expect(loadArtSize(1, s)).toBe('l');
-		expect(loadArtSize(2, s)).toBe('m');
-	});
-	it('keeps the details panel open unless hidden', () => {
-		const s = mem();
-		expect(loadDetailsOpen(1, s)).toBe(true);
-		saveDetailsOpen(1, false, s);
-		expect(loadDetailsOpen(1, s)).toBe(false);
-	});
-	it('falls back when storage throws', () => {
-		const bad = { getItem: () => { throw new Error('no'); }, setItem: () => { throw new Error('no'); } };
-		expect(loadArtSize(1, bad)).toBe('m');
-		expect(loadDetailsOpen(1, bad)).toBe(true);
-		expect(() => saveArtSize(1, 's', bad)).not.toThrow();
 	});
 });

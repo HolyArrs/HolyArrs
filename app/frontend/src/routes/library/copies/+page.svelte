@@ -5,7 +5,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { LibraryToolPage, titleArt, codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/mediafiles/index.ts';
-	import DlFind from '#lib/downloads/DlFind.svelte';
+	import { DlFind } from '#lib/downloads/index.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';

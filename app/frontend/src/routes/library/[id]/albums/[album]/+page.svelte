@@ -19,15 +19,13 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import CompactRow from '#lib/downloads/HistoryLine.svelte';
-	import { isRoutine } from '#lib/downloads/history-search.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import { crumbFor, RenamePreview, ShowDeleteDialog, ShowReleases } from '#lib/mediafiles/index.ts';
 	import { audienceStatus } from '#lib/ui/title-status.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
 	import '#lib/ui/title-page.css';
-	import { groupDownloads } from '#lib/downloads/history.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength, NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/index.ts';

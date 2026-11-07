@@ -36,7 +36,7 @@ export interface SourceHealth {
 	until?: string;
 	/** Why it waits: slowed, down, blocked or key. */
 	reason?: 'slowed' | 'down' | 'blocked' | 'key';
-	/** A site's protection stops it: bot_check or site_ban (#106). */
+	/** A site's protection stops it: bot_check or site_ban. */
 	block?: string;
 }
 
@@ -74,7 +74,7 @@ export interface SourceView {
 	categories: Record<string, number[]> | null;
 	min_seeders: number | null;
 	limits: SourceLimits;
-	/** With any, the Source serves only titles sharing one (#108). */
+	/** With any, the Source serves only titles sharing one. */
 	tags?: string[];
 	state: string;
 	health: SourceHealth;

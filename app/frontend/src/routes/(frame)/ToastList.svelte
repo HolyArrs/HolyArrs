@@ -5,15 +5,7 @@
 	import AlertsPanel from '#lib/AlertsPanel.svelte';
 	import { forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
-	import {
-		METADATA_BACK,
-		METADATA_DOWN_TITLE,
-		clearMetadataBack,
-		dismissMetadataDown,
-		metadataDownShown,
-		metadataOutage,
-		watchMetadata
-	} from '#lib/metadata/health.svelte.ts';
+	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
 	// Notifications drop in at the top right under the top bar (top, full width on

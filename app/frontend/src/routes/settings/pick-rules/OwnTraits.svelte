@@ -6,7 +6,7 @@
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { checkOwnTrait, ownTerms } from '#lib/downloads/pick-rules.ts';
+	import { checkOwnTrait, ownTerms } from '#lib/downloads/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';

@@ -17,10 +17,8 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { testCount } from '#lib/core/test-tag.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { healthTone, healthWord, pausedUntil } from '#lib/sources/health.ts';
-	import SourceCheck from '#lib/sources/SourceCheck.svelte';
+	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources/index.ts';
 	import ConnectBridge from './ConnectBridge.svelte';
-	import { emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources/api.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 
 	let sources = $state<SourceView[]>([]);

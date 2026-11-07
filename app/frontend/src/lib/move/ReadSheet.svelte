@@ -20,7 +20,7 @@
 	import TestTag from '../ui/TestTag.svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { reachWords } from '../downloads/downloaders.ts';
+	import { reachWords } from '../downloads/index.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { getContext, tick } from 'svelte';
 	import { apps, appName, placeholderFor, type AppKind } from '../move.ts';

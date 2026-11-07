@@ -1,7 +1,7 @@
 // History: the address it reads, the "who did it" filter, a row's step and
 // extra piece, and the actions a row's details offer.
 import { readFilter, type HistoryRow } from './history.ts';
-import { fineCheck, lookTabs, tabKinds } from './history-tabs.ts';
+import { fineCheck, historyTabs, tabKinds } from './history-tabs.ts';
 import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from './history-lines.ts';
 import { bytes } from '../core/format.ts';
 import type { Verb } from './history-kinds.ts';
@@ -103,7 +103,7 @@ export const stepBreak = searchSteps.findIndex((s) => s.key === 'asked');
 const mergedSteps: Record<string, string> = { out: 'added', chosen: 'sent', media: 'imported' };
 
 /** Every kind but routine work: what the search looks show with no step picked. */
-export const nonRoutineKinds = lookTabs.filter((t) => t.key !== 'routine').flatMap((t) => t.subs.flatMap((s) => s.kinds));
+export const nonRoutineKinds = historyTabs.filter((t) => t.key !== 'routine').flatMap((t) => t.subs.flatMap((s) => s.kinds));
 
 /** stepKinds is what the picked steps ask the server for (every kind but routine when none is picked). */
 export function stepKinds(steps: string[]): string[] {

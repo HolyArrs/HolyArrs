@@ -35,7 +35,7 @@ export interface PickRulesBody {
 	proper_policy: { mode: 'take_any' | 'same_group_only' | 'prefer_only' | 'ignore'; max_age_days?: number };
 }
 
-/** OwnTrait is one of your own traits (#97): a test on the Release name or its release group; Pick rules name it by key (own:<id>). */
+/** OwnTrait is one of your own traits: a test on the Release name or its release group; Pick rules name it by key (own:<id>). */
 export interface OwnTrait {
 	id: number;
 	key: string;

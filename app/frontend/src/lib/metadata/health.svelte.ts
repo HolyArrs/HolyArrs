@@ -1,5 +1,5 @@
 import { api } from '#lib/core/api.ts';
-import { nextCheckIn, outageDismiss, outageShown, outageStart, outageStep, type OutageState } from '#lib/metadata/outage.ts';
+import { nextCheckIn, outageDismiss, outageShown, outageStart, outageStep, type OutageState } from './outage.ts';
 
 /** The words of the notification shown while the metadata server is not answering. */
 export const METADATA_DOWN_TITLE = 'Metadata offline';

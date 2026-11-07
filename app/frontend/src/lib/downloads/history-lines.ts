@@ -71,7 +71,7 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 /** cap starts a line with a capital, leaving names like "qBittorrent" and "iPhone" as they are. */
 export const cap = (s: string) => (s && !/^[a-z][A-Z]/.test(s) ? s[0].toUpperCase() + s.slice(1) : s);
-/** The words for a reported problem's kind (#95). */
+/** The words for a reported problem's kind. */
 const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
 const problem = (v: unknown) => problemWords[str(v)] ?? str(v);
 
@@ -151,7 +151,7 @@ function who(e: EventRecord, ctx: LineContext): string {
 	return '';
 }
 
-/** Takes the title off the front of a summary ("Dune: approved by Luis" → "approved by Luis"). */
+/** Takes the title off the front of a summary ("Dune: approved by Maya" → "approved by Maya"). */
 function withoutTitle(summary: string, name: string): string {
 	let s = summary.trim();
 	if (name) {
@@ -198,7 +198,7 @@ export function folderName(e: EventRecord): string {
 
 /** The title an ask is about, read from its summary when the title is not in the Library. */
 function askedName(e: EventRecord): string | undefined {
-	// An AI app's ask: "AI (Claude, key home) asked for Dune for Maya".
+	// An AI app's ask: "AI (Chat app, key home) asked for Dune for Maya".
 	if (e.Kind.startsWith('ai_ask_')) {
 		const t = /^AI \(.*?\) (?:asked for|approved|turned down) (.+) for [^\s].*$/.exec(e.Summary)?.[1]?.trim();
 		return t && t !== 'a title' ? t.replace(/\s*\(\d{4}\)$/, '') : undefined;

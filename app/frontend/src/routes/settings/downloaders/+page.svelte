@@ -17,19 +17,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { live } from '#lib/core/live.svelte.ts';
-	import {
-		emptyForm,
-		formBody,
-		formFrom,
-		healthTone,
-		kindWords,
-		pendingAttempts,
-		type DownloaderAttempt,
-		type DownloaderForm,
-		type DownloaderHealth,
-		type DownloaderSettings,
-		type DownloaderView
-	} from '#lib/downloads/downloaders.ts';
+	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 
 	let list = $state<DownloaderView[]>([]);
 	let loaded = $state(false);

@@ -1,6 +1,6 @@
 // Why a Title's newest search came back empty. Owners and admins get the
 // Sources that were paused or failed; everyone else only "No results yet".
-import { reasonWords } from '../sources/health.ts';
+import { reasonWords } from '../sources/index.ts';
 
 export interface SkippedSource {
 	id: number;

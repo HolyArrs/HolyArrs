@@ -16,7 +16,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles/api.ts';
+	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles/index.ts';
 
 	const limit = 100;
 	let rows = $state<MissingRow[]>([]);

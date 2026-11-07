@@ -1,7 +1,7 @@
 // Words and checks for the Pick rules editor, kept apart from the pages so
 // they can be tested. The checks mirror the server's (domain.CheckPickRules)
 // so a mistake shows at once; the server still has the last word.
-import type { OwnTrait, PickRulesBody, PickRulesSize, PickRulesUse } from './index.ts';
+import type { OwnTrait, PickRulesBody, PickRulesSize, PickRulesUse } from './types.ts';
 
 export type RulesKind = 'movie' | 'show' | 'music';
 

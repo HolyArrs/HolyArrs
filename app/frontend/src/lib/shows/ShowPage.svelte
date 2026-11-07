@@ -13,7 +13,7 @@
 	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, slotKind, type ReleaseScope } from '../mediafiles/index.ts';
 	import { live } from '../core/live.svelte.ts';
 	import ShowVersions from './ShowVersions.svelte';
-	import SubtitlePanel from '../subtitles/SubtitlePanel.svelte';
+	import { SubtitlePanel } from '../subtitles/index.ts';
 	import { ago, date, dateTime, tone } from '../core/format.ts';
 	import AskedByLine from '../ui/AskedByLine.svelte';
 	import { loadAskedBy, type AskedByAnswer } from '../ui/asked-by.ts';
@@ -36,9 +36,7 @@
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { decided, AskShowDialog } from '../requests/index.ts';
-	import { groupDownloads } from '../downloads/history.ts';
-	import CompactRow from '../downloads/HistoryLine.svelte';
-	import { isRoutine } from '../downloads/history-search.ts';
+	import { groupDownloads, HistoryLine as CompactRow, isRoutine } from '../downloads/index.ts';
 	import {
 		detailsSources,
 		episodeLabel,

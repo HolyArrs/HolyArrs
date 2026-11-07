@@ -5,7 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
 	import { proxied } from '#lib/core/tmdb-image.ts';
-	import { detailPath, loadDetails, remember } from '#lib/metadata/index.ts';
+	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -20,7 +20,6 @@
 	import type { LookupShow } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import { MusicNewTab } from '#lib/music/index.ts';
 	import PosterCard from '#lib/ui/PosterCard.svelte';

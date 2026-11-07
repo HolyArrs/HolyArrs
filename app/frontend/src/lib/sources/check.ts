@@ -1,4 +1,4 @@
-import type { SourceHealth } from './index.ts';
+import type { SourceHealth } from './types.ts';
 import type { Tone } from '../core/format.ts';
 import { sourceTone } from './api.ts';
 
@@ -12,12 +12,6 @@ export interface SourceCheck {
 	ms: number;
 	error?: string;
 	health: SourceHealth;
-}
-
-export interface SourceCheckResult {
-	query: string;
-	kind: CheckKind;
-	sources: SourceCheck[];
 }
 
 export type CheckKind = 'movie' | 'show' | 'music';

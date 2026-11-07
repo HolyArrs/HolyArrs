@@ -29,7 +29,7 @@ export interface DownloaderView {
 	writable: boolean;
 	/** HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch says. */
 	writable_locked: boolean;
-	/** Titles with one of these go only to Downloaders that have it (#108). */
+	/** Titles with one of these go only to Downloaders that have it. */
 	tags?: string[];
 	health: DownloaderHealth;
 	checked_at?: string;

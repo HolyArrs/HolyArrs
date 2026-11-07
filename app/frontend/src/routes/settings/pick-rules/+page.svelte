@@ -6,7 +6,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { kindChoices, usedWords } from '#lib/downloads/pick-rules.ts';
+	import { kindChoices, usedWords } from '#lib/downloads/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';

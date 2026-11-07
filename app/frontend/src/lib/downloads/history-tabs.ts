@@ -8,7 +8,7 @@ import { details, groupDownloads, type HistoryRow } from './history.ts';
 import { clock, dayKey, dayLabel, rowTier, type Tier } from './history-kinds.ts';
 import type { EventRecord } from '../core/types.ts';
 
-export interface LookSub {
+export interface HistorySubTab {
 	key: string;
 	label: string;
 	hint: string;
@@ -16,20 +16,20 @@ export interface LookSub {
 	kinds: string[];
 }
 
-export interface LookTab {
+export interface HistoryTab {
 	key: string;
 	label: string;
 	hint: string;
 	/** What the tab says when it is empty. */
 	empty: string;
-	subs: LookSub[];
+	subs: HistorySubTab[];
 }
 
 export const ALL = 'all';
 
 const download = ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed', 'release_held', 'held_removed', 'download_sent', 'download_queued', 'download_downloading', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_removed', 'download_changed'];
 
-export const lookTabs: LookTab[] = [
+export const historyTabs: HistoryTab[] = [
 	{ key: ALL, label: 'All', hint: 'Every Event, newest first.', empty: 'No history yet.', subs: [] },
 	{
 		key: 'came',
@@ -86,7 +86,7 @@ export const lookTabs: LookTab[] = [
 
 /** tabKinds is what a tab (and sub-tab) asks the server for; undefined is every Event. */
 export function tabKinds(tab: string, sub = ''): string[] | undefined {
-	const t = lookTabs.find((x) => x.key === tab);
+	const t = historyTabs.find((x) => x.key === tab);
 	if (!t || t.key === ALL) return undefined;
 	const s = t.subs.find((x) => x.key === sub);
 	return s ? [...s.kinds] : t.subs.flatMap((x) => x.kinds);
@@ -95,14 +95,14 @@ export function tabKinds(tab: string, sub = ''): string[] | undefined {
 /** showOf reads &show=tab or tab.sub (unknown parts fall back to All and no sub-tab). */
 export function showOf(v: string | null): { show: string; sub: string } {
 	const [tab = '', sub = ''] = (v ?? '').split('.');
-	const t = lookTabs.find((x) => x.key === tab);
+	const t = historyTabs.find((x) => x.key === tab);
 	if (!t) return { show: ALL, sub: '' };
 	return { show: t.key, sub: t.subs.some((s) => s.key === sub) ? sub : '' };
 }
 
 /** showParam is the &show= value for a tab and sub-tab ('' for All). */
 export function showParam(show: string, sub: string): string {
-	if (show === ALL || !lookTabs.some((t) => t.key === show)) return '';
+	if (show === ALL || !historyTabs.some((t) => t.key === show)) return '';
 	return sub ? `${show}.${sub}` : show;
 }
 
@@ -110,7 +110,7 @@ const matches = (kind: string, list: string[]) => list.some((k) => (k.endsWith('
 
 /** tabOf names the big tab an Event kind is counted under ('' when only All has it). */
 export function tabOf(kind: string): string {
-	for (const t of lookTabs) for (const s of t.subs) if (matches(kind, s.kinds)) return t.key;
+	for (const t of historyTabs) for (const s of t.subs) if (matches(kind, s.kinds)) return t.key;
 	return '';
 }
 
@@ -209,37 +209,3 @@ export function whenShort(at: string, now = new Date()): string {
 
 /** Poster size of the History rows: small log rows, medium, or large posters. */
 export type ArtSize = 's' | 'm' | 'l';
-/** The same words the Library's Art size menu uses. */
-export const artLabels: Record<ArtSize, string> = { s: 'Small posters', m: 'Medium posters', l: 'Large posters' };
-
-type Store = Pick<Storage, 'getItem' | 'setItem'> | undefined;
-const key = (what: string, member: number | undefined) => `holyarrs.history-${what}.${member ?? 'me'}`;
-
-/** loadArtSize reads a member's poster size (medium when none is kept). */
-export function loadArtSize(member: number | undefined, store: Store = globalThis.localStorage): ArtSize {
-	try {
-		const v = store?.getItem(key('poster-size', member));
-		return v === 's' || v === 'l' ? v : 'm';
-	} catch {
-		return 'm';
-	}
-}
-export function saveArtSize(member: number | undefined, s: ArtSize, store: Store = globalThis.localStorage) {
-	try {
-		store?.setItem(key('poster-size', member), s);
-	} catch { /* Private windows may refuse. */ }
-}
-
-/** loadDetailsOpen reads whether a member keeps the details panel open (open when none is kept). */
-export function loadDetailsOpen(member: number | undefined, store: Store = globalThis.localStorage): boolean {
-	try {
-		return store?.getItem(key('details', member)) !== 'hidden';
-	} catch {
-		return true;
-	}
-}
-export function saveDetailsOpen(member: number | undefined, open: boolean, store: Store = globalThis.localStorage) {
-	try {
-		store?.setItem(key('details', member), open ? 'shown' : 'hidden');
-	} catch { /* Private windows may refuse. */ }
-}

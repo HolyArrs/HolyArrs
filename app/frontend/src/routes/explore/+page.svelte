@@ -10,7 +10,7 @@
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
-	import { detailPath, loadDetails, remember } from '#lib/metadata/index.ts';
+	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -24,7 +24,6 @@
 	import type { LookupShow } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';

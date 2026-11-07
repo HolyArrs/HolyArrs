@@ -5,7 +5,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
-	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata/health.svelte.ts';
+	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata/index.ts';
 
 
 	let loaded = $state(false);

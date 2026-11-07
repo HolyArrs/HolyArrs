@@ -7,8 +7,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago, words } from '#lib/core/format.ts';
-	import { barHeight, ms, opWords, uses } from '#lib/sources/api.ts';
-	import { healthTone, healthWord, pausedUntil } from '#lib/sources/health.ts';
+	import { barHeight, ms, opWords, uses, healthTone, healthWord, pausedUntil } from '#lib/sources/index.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';

@@ -30,9 +30,7 @@
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/ui/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import CompactRow from '#lib/downloads/HistoryLine.svelte';
-	import { isRoutine } from '#lib/downloads/history-search.ts';
-	import { groupDownloads } from '#lib/downloads/history.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { qualityBadges, ReleaseSheet, DeleteSheet, ShowDeleteDialog, RenamePreview, splitSteps, type RenameStep, savedDefaults } from '#lib/mediafiles/index.ts';
@@ -44,13 +42,12 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { tick, untrack } from 'svelte';
 	import { live } from '#lib/core/live.svelte.ts';
-	import { downloadTone } from '#lib/downloads/downloaders.ts';
 	import { date } from '#lib/core/format.ts';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/ui/asked-by.ts';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
 	import { MovieVersions } from '#lib/movies/index.ts';
-	import SubtitlePanel from '#lib/subtitles/SubtitlePanel.svelte';
-	import type { TitleSubtitles } from '#lib/subtitles/api.ts';
+	import { SubtitlePanel } from '#lib/subtitles/index.ts';
+	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
 	import '#lib/ui/title-page.css';
 	import { audienceOf, titleStatus } from '#lib/ui/title-status.ts';
 

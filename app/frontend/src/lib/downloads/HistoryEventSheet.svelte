@@ -8,8 +8,8 @@
 	import VerbMark from './HistoryVerb.svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import type { HistoryRow } from '#lib/downloads/history.ts';
-	import { glue, panelView, pathBits } from '#lib/downloads/history-panel.ts';
+	import type { HistoryRow } from './history.ts';
+	import { glue, panelView, pathBits } from './history-panel.ts';
 	import type { TitleView } from '#lib/core/types.ts';
 
 	// One History row in a sheet (a bottom sheet on phones): the same content

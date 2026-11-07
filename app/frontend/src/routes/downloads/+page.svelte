@@ -8,27 +8,17 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice } from '#lib/downloads/downloaders.ts';
+	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice, applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync, dlPush, decisions, refreshDecisions, DlSections, ConfirmMatch, byDownload, AddTorrents, SteerSheet, BULK_DONE, byClient, type BulkAction } from '#lib/downloads/index.ts';
 	import { type Decision, type DownloadRow } from '#lib/core/types.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
-	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dl-store.ts';
-	import { dlPush } from '#lib/downloads/push.svelte.ts';
-	import { decisions, refreshDecisions } from '#lib/downloads/decisions.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { TitleView } from '#lib/core/types.ts';
-	import type { ImportRecord } from '#lib/downloads/index.ts';
-	import DlSections from '#lib/downloads/DlSections.svelte';
-	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
-	import { byDownload } from '#lib/downloads/imports.ts';
-	import AddTorrents from '#lib/downloads/AddTorrents.svelte';
-	import SteerSheet from '#lib/downloads/SteerSheet.svelte';
-	import type { SteerMode } from '#lib/downloads/manage.ts';
-	import { BULK_DONE, byClient, type BulkAction } from '#lib/downloads/manage.ts';
+	import type { ImportRecord, SteerMode } from '#lib/downloads/index.ts';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));

@@ -16,23 +16,9 @@
 	import { dateTime } from '#lib/core/format.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import WishEditor from '#lib/subtitles/LanguageWants.svelte';
+	import { LanguageWants as WishEditor, accountMissing, accountWords, kindCovers, siteBody, siteForm, siteState, wishProblem, type Language, type SiteForm, type SiteKind, type SiteView, type SubtitleSettings } from '#lib/subtitles/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { live } from '#lib/core/live.svelte.ts';
-	import {
-		accountMissing,
-		accountWords,
-		kindCovers,
-		siteBody,
-		siteForm,
-		siteState,
-		wishProblem,
-		type Language,
-		type SiteForm,
-		type SiteKind,
-		type SiteView,
-		type SubtitleSettings
-	} from '#lib/subtitles/api.ts';
 
 	let settings = $state<SubtitleSettings | null>(null);
 	let langs = $state<Language[]>([]);

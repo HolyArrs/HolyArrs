@@ -1,4 +1,4 @@
-// Tags (#108): plain lowercase labels on titles, Downloaders and Sources.
+// Tags: plain lowercase labels on titles, Downloaders and Sources.
 // cleanTag matches the server's tagset.Clean for one label.
 import { api } from '../core/api.ts';
 
