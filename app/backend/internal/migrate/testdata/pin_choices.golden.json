@@ -1,0 +1,15 @@
+{
+  "path_rules": [
+    {
+      "from": "s",
+      "to": "s"
+    }
+  ],
+  "skip": [
+    "s"
+  ],
+  "people": {
+    "s": "s"
+  },
+  "approved_hash": "s"
+}

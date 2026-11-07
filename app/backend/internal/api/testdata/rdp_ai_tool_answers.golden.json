@@ -1,0 +1,77 @@
+{
+  "calendar": {
+    "dates": [],
+    "from": "string",
+    "my_follows": "number",
+    "people": "number",
+    "titles": "string",
+    "to": "string"
+  },
+  "downloads": {
+    "clients": [],
+    "downloads": [],
+    "next_cursor": "string",
+    "outside_total": "number",
+    "totals": {
+      "speed": "number",
+      "up_speed": "number"
+    }
+  },
+  "health": {
+    "safe_mode": "bool",
+    "states": [
+      {
+        "key": "string",
+        "kind": "string",
+        "last_pass": "string",
+        "name": "string",
+        "next_pass": "string",
+        "reason": "string",
+        "since": "string",
+        "state": "string",
+        "stuck": "bool"
+      }
+    ]
+  },
+  "library_lookup": {
+    "albums": [],
+    "people": [],
+    "titles": []
+  },
+  "my_asks": {
+    "asks": [],
+    "limit": {
+      "movies": {
+        "left": "number",
+        "no_limit": "bool",
+        "per_week": "number",
+        "used": "number"
+      },
+      "music": {
+        "left": "number",
+        "no_limit": "bool",
+        "per_week": "number",
+        "used": "number"
+      },
+      "no_limit": "bool",
+      "shows": {
+        "left": "number",
+        "no_limit": "bool",
+        "per_week": "number",
+        "used": "number"
+      }
+    }
+  },
+  "search_titles": {
+    "more": [],
+    "query": {
+      "genres": [],
+      "name": "string",
+      "people": [],
+      "plain": "bool",
+      "text": "string",
+      "words": []
+    },
+    "titles": []
+  }
+}
