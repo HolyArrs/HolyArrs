@@ -290,7 +290,6 @@
 	.look-fold {
 		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line);
 		--fin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px -14px rgb(0 0 0 / 35%); --fin-btn-r: var(--r-btn); }
-	.look-fold .settings-content :global(.ui-settings) { border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); }
 	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.look-fold :global(.ui-btn:active:not(:disabled)) { transform: scale(0.98); }
 	.look-fold :global(.input) { border-radius: var(--fin-btn-r); }
@@ -318,26 +317,37 @@
 	.settings-content :global(> .ui-head), .settings-content :global(.ui-head) { margin-bottom: 4px; }
 	.settings-content :global(.ui-head h1) { font: 600 20px/1.25 var(--font-ui); letter-spacing: -0.01em; }
 	.settings-content :global(.ui-head .row) { align-items: center; min-height: 40px; }
-	/* Every section box is a Status plate: frosted sheet, red tick, hairline under the title. */
-	.settings-content :global(:is(section.ui-settings, .card)) {
-		border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); border-radius: 20px;
-		background: color-mix(in srgb, var(--surface-1) 55%, transparent);
+	/* Every section is the Library folders pattern: a small grey heading, then one glass sheet of rows. */
+	.settings-content { grid-template-columns: minmax(0, 1fr) !important; gap: 22px !important; }
+	.settings-content :global(section.ui-settings) { padding: 0; border: 0; border-radius: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+	.settings-content :global(section.ui-settings > header) { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; padding: 0 6px 8px; border: 0; }
+	.settings-content :global(section.ui-settings > header > div) { display: contents; }
+	.settings-content :global(section.ui-settings > header h2) { color: var(--text-muted); font: 600 13px/1.2 var(--font-ui); letter-spacing: 0.02em; }
+	.settings-content :global(section.ui-settings > header p) { margin: 0; color: var(--text-faint, var(--text-muted)); font: 400 12px/1.2 var(--font-ui); }
+	/* The sheet. */
+	.settings-content :global(:is(section.ui-settings > .body, ul.card, div.card)) {
+		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
+		background: color-mix(in srgb, var(--surface-1) 60%, transparent);
 		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 20px 50px -30px rgb(0 0 0 / 0.5);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45);
 	}
-	.settings-content :global(section.ui-settings) { padding: 0; }
-	.settings-content :global(section.ui-settings > header) { display: flex; align-items: center; gap: 10px; padding: 16px 20px 14px; border-bottom: 1px solid var(--line); }
-	.settings-content :global(section.ui-settings > header::before) { content: ''; flex: none; width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 30%, transparent)); }
-	.settings-content :global(section.ui-settings > header h2) { font: 600 17px/1.25 var(--font-ui); letter-spacing: -0.01em; }
-	.settings-content :global(section.ui-settings > header p) { margin-top: 2px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
-	.settings-content :global(section.ui-settings > .body) { padding: 14px 20px 18px; }
-	.settings-content :global(section.ui-settings > :is(.advanced, footer)) { margin: 0 20px; }
-	.settings-content :global(section.ui-settings > footer) { padding-bottom: 16px; }
-	.settings-content :global(ul.card), .settings-content :global(div.card) { padding: 6px 20px; }
+	.settings-content :global(section.ui-settings > .body) { padding: 4px 18px; }
+	.settings-content :global(:is(ul.card, div.card)) { padding: 4px 18px; }
+	.settings-content :global(section.ui-settings.danger > .body) { border-color: color-mix(in srgb, var(--fail) 40%, transparent); }
+	/* Rows inside a sheet: room to breathe, a hairline between. */
+	.settings-content :global(section.ui-settings > .body > :is(.srow, .field, ul > li, .row, form > .srow, form > .field)) { padding-block: 14px; }
+	.settings-content :global(section.ui-settings > .body > * + *), .settings-content :global(section.ui-settings > .body > form > * + *) { box-shadow: inset 0 1px 0 var(--line); margin-top: 0 !important; }
+	.settings-content :global(section.ui-settings > .body > :first-child:last-child:not(.srow, .field)) { padding-block: 14px; }
+	/* One label style for every row: switch, text box or dropdown. */
+	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .field > :is(label:first-child, .label, legend))) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
+	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }
+	/* Advanced and footer sit under the sheet, quiet. */
+	.settings-content :global(section.ui-settings > .advanced) { margin: 6px 6px 0; border: 0; }
+	.settings-content :global(section.ui-settings > .advanced > summary) { padding-inline: 0; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
+	.settings-content :global(section.ui-settings > .advanced > .adv-body) { padding: 4px 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); }
+	.settings-content :global(section.ui-settings > footer) { padding: 10px 6px 0; border: 0; background: none; }
 	@media (max-width: 767px) {
-		.settings-content :global(:is(section.ui-settings, .card)) { border-radius: 16px; }
-		.settings-content :global(section.ui-settings > header) { padding: 14px 14px 12px; }
-		.settings-content :global(section.ui-settings > .body) { padding: 12px 14px 14px; }
-		.settings-content :global(ul.card), .settings-content :global(div.card) { padding: 4px 14px; }
+		.settings-content :global(:is(section.ui-settings > .body, ul.card, div.card)) { border-radius: 16px; }
+		.settings-content :global(section.ui-settings > .body), .settings-content :global(:is(ul.card, div.card)) { padding: 2px 14px; }
 	}
 </style>

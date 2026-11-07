@@ -15,10 +15,8 @@
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import type { LibraryFolder } from '#lib/types.ts';
-	import { page } from '$app/state';
 
-	// Grouped list (Luis's pick); five ways to mark a folder while he picks one (?view=1-5).
-	const view = $derived(['1', '2', '3', '4', '5'].includes(page.url.searchParams.get('view') ?? '') ? page.url.searchParams.get('view')! : '1');
+	// Grouped list with a plain line icon per folder (Luis's picks, 2026-11-06).
 	const kindWord = (k: string) => (k === 'show' ? 'Shows' : k === 'music' ? 'Music' : 'Movies');
 	const kindIcon = (k: string) => (k === 'show' ? 'tv' : k === 'music' ? 'music' : 'film') as 'tv' | 'music' | 'film';
 	// The last two parts of a path: enough to tell folders apart; the full path is in the tooltip.
@@ -193,7 +191,7 @@
 {:else if folders.length}
 	{#snippet row(f: LibraryFolder)}
 		<li class="folder k-{f.kind || 'movie'}" title="{f.path}{f.health_checked_at ? ` · checked ${dateTime(f.health_checked_at)}` : ''}">
-			<span class="ic">{#if view === '2' || view === '3' || view === '5'}<Icon name="folder" size={view === '2' ? 20 : 17} />{/if}</span>
+			<span class="ic"><Icon name="folder" size={20} /></span>
 			<div class="grow">
 				{#if editing === f.id}
 					<form class="ed" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
@@ -217,7 +215,7 @@
 			</div>
 		</li>
 	{/snippet}
-	<div class="fl-groups" data-icons={view}>
+	<div class="fl-groups">
 		{#each byKind as g (g.k)}
 			<section class="fl-group">
 				<h3><Icon name={kindIcon(g.k)} size={15} />{kindWord(g.k)}<span class="cnt">{g.items.length}</span></h3>
@@ -305,23 +303,8 @@
 		.folder .name { white-space: normal; }
 	}
 
-	/* Folder marks (?view): 1 none · 2 line icon · 3 glass tile · 4 kind stripe · 5 ring */
-	[data-icons] .fl .folder { grid-template-columns: 40px minmax(0, 1fr) auto auto auto; }
-	[data-icons] .ic, [data-icons] .k-show .ic, [data-icons] .k-music .ic { background: none; box-shadow: none; color: var(--text-muted); border-radius: 0; }
-	[data-icons='1'] .fl .folder { grid-template-columns: 0 minmax(0, 1fr) auto auto auto; column-gap: 0 16px; }
-	[data-icons='1'] .ic { width: 0; height: 0; overflow: hidden; }
-	[data-icons='1'] .fl .folder { column-gap: 16px; } [data-icons='1'] .grow { margin-left: -16px; }
-	[data-icons='2'] .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
-	[data-icons='2'] :is(.ic, .k-show .ic, .k-music .ic) { width: 24px; height: 24px; color: color-mix(in srgb, var(--text) 55%, transparent); }
-	[data-icons='3'] :is(.ic, .k-show .ic, .k-music .ic) { width: 38px; height: 38px; border-radius: 11px; color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--text) 9%, transparent); }
-	[data-icons='4'] .fl .folder { grid-template-columns: 4px minmax(0, 1fr) auto auto auto; }
-	[data-icons='4'] :is(.ic, .k-show .ic, .k-music .ic) { width: 4px; height: 32px; border-radius: 2px; background: #3b82f6; }
-	[data-icons='4'] .fl .k-show .ic { background: #8b5cf6; } [data-icons='4'] .fl .k-music .ic { background: #ec4899; }
-	[data-icons='5'] :is(.ic, .k-show .ic, .k-music .ic) { width: 38px; height: 38px; border-radius: 50%; color: var(--text-muted); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 16%, transparent); }
-	@media (max-width: 760px) {
-		[data-icons] .fl .folder { grid-template-columns: 40px minmax(0, 1fr) auto; }
-		[data-icons='1'] .fl .folder { grid-template-columns: 0 minmax(0, 1fr) auto; }
-		[data-icons='2'] .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; }
-		[data-icons='4'] .fl .folder { grid-template-columns: 4px minmax(0, 1fr) auto; }
-	}
+	/* The folder mark: a plain line icon, no tile. */
+	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
+	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
+	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
 </style>
