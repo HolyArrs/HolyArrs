@@ -1,6 +1,3 @@
-// The API page: the OpenAPI file turned into a list a person can read,
-// and example calls.
-
 export interface ApiOp {
 	method: string;
 	path: string;
@@ -25,9 +22,9 @@ export interface Spec {
 	'x-holyarrs-scopes'?: Record<string, string>;
 }
 
+// Only these verbs are shown; other keys under a path are not operations.
 const order = ['get', 'post', 'put', 'delete'];
 
-/** operations lists every operation, by tag, then path, then method. */
 export function operations(spec: Spec): ApiOp[] {
 	const out: ApiOp[] = [];
 	for (const [path, ops] of Object.entries(spec.paths ?? {})) {
@@ -49,14 +46,12 @@ export function operations(spec: Spec): ApiOp[] {
 	);
 }
 
-/** filterOps keeps operations whose path, summary or tag hold the words. */
 export function filterOps(ops: ApiOp[], q: string): ApiOp[] {
 	const w = q.trim().toLowerCase();
 	if (!w) return ops;
 	return ops.filter((o) => `${o.method} ${o.path} ${o.summary} ${o.tag}`.toLowerCase().includes(w));
 }
 
-/** groups splits operations by tag, keeping their order. */
 export function groups(ops: ApiOp[]): { tag: string; ops: ApiOp[] }[] {
 	const out: { tag: string; ops: ApiOp[] }[] = [];
 	for (const o of ops) {
@@ -67,7 +62,7 @@ export function groups(ops: ApiOp[]): { tag: string; ops: ApiOp[] }[] {
 	return out;
 }
 
-/** curl is an example call with the key in its header (never the address). */
+// The key goes in a header so it never ends up in the address.
 export function curl(base: string, method: string, path: string, body?: string): string {
 	const parts = ['curl'];
 	if (method !== 'GET') parts.push(`-X ${method}`);
