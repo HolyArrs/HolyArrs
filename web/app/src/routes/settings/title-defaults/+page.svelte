@@ -113,9 +113,9 @@
 					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
-			<Field id="td-movie-rules" label="Pick rules">
+			<Field id="td-movie-rules" label="Quality">
 				<select id="td-movie-rules" class="input" bind:value={form.defaults.movie.pick_rules_id}>
-					<option value={0}>The folder's own Pick rules</option>
+					<option value={0}>The folder's own quality</option>
 					{#each movieRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</Field>
@@ -146,9 +146,9 @@
 					{#each showFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
-			<Field id="td-show-rules" label="Pick rules">
+			<Field id="td-show-rules" label="Quality">
 				<select id="td-show-rules" class="input" bind:value={form.defaults.show.pick_rules_id}>
-					<option value={0}>The folder's own Pick rules</option>
+					<option value={0}>The folder's own quality</option>
 					{#each showRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</Field>
@@ -186,7 +186,7 @@
 		</SettingsCard>
 
 		<p class="hint where">
-			Each <a href={to('/settings/library-folders')}>Library folder</a> has Pick rules of its own. <a href={to('/settings/wishlist')}>Request rules</a> and
+			Each <a href={to('/settings/library-folders')}>Library folder</a> has a quality set of its own. <a href={to('/settings/wishlist')}>Request rules</a> and
 			<a href={to('/settings/outside-lists')}>Outside lists</a> keep their own choices.
 		</p>
 	</fieldset>

@@ -26,11 +26,10 @@
 	];
 	const TINTS = ['linear-gradient(160deg,#6b7d88,#3d4a52)', 'linear-gradient(160deg,#82709a,#4f4462)', 'linear-gradient(160deg,#94795a,#5f4b36)', 'linear-gradient(160deg,#5f7b97,#384d62)'];
 
-	// Library: a tidy shelf of whole posters (a row on wide cards, a 3 by 2
-	// wall on tall ones). Six slots, repeated when the Library is small.
-	const shelfP = $derived(posters.length >= 3 ? [0, 1, 2, 3, 4, 5].map((i) => posters[i % posters.length]) : []);
+	// Library: a tilted poster wall (twelve slots, repeated when the Library is small).
+	const shelfP = $derived(posters.length >= 3 ? Array.from({ length: 12 }, (_, i) => posters[i % posters.length]) : []);
 	const rel = $derived(posters.length >= 3 ? [posters[(posters.length > 7 ? 7 : 2) % posters.length], posters[(posters.length > 3 ? 3 : 1) % posters.length], posters[(posters.length > 4 ? 4 : 0) % posters.length]] : []);
-	const crowd = $derived(people.length >= 2 ? people.slice(0, 4) : []);
+	const crowd = $derived(people.length >= 2 ? people.slice(0, 5) : []);
 	const more = $derived(people.length - crowd.length);
 
 	// Line art (view 2) pieces.
@@ -60,7 +59,7 @@
 		{#if rel.length}
 			<span class="rel">
 				{#each rel as src, i (i)}
-					<span class="r"><img {src} alt="" decoding="async" /><span class="ln"><i></i><i></i><span class="pg"><b style="--p: {['100%', '72%', '38%'][i]}"></b></span></span></span>
+					<span class="r" style="--p: {['100%', '72%', '38%'][i]}"><img {src} alt="" decoding="async" /><span class="ln"><i></i><i></i></span><span class="pg"><b></b></span></span>
 				{/each}
 			</span>
 		{:else}
@@ -70,11 +69,11 @@
 		{#if crowd.length}
 			<span class="ppl">
 				{#each crowd as p, i (p.name + i)}
-					<span class="p" style="background: {TINTS[i % 4]}; z-index: {10 - i}" class:me={i === 0}>
-						{#if p.avatar}<img src={coverFor(p.avatar, 160).src} alt="" decoding="async" />{:else}{initials(p.name)}{/if}
+					<span class="p" style="--bg: {TINTS[i % 4]}; z-index: {10 - i}" class:me={i === 0}>
+						<span class="av">{#if p.avatar}<img src={coverFor(p.avatar, 160).src} alt="" decoding="async" />{:else}{initials(p.name)}{/if}</span><span class="nm">{p.name}</span>
 					</span>
 				{/each}
-				{#if more > 0}<span class="p more">+{more}</span>{/if}
+				{#if more > 0}<span class="p more"><span class="av">+{more}</span></span>{/if}
 			</span>
 		{:else}
 			<svg class="la" viewBox="0 0 320 200" preserveAspectRatio="xMidYMax slice">{@html pplLine}</svg>
@@ -89,7 +88,7 @@
 		</span>
 	{:else if group === 'system'}
 		<span class="srv">
-			<svg class="pulse" viewBox="0 0 400 60" preserveAspectRatio="none"><path class="base" d="M0 34H400" /><path d="M0 34H120l10-20 12 38 10-30 8 12H260l8-10 8 10H400" /></svg>
+			<svg class="pulse" viewBox="0 0 400 60" preserveAspectRatio="none"><path class="base" d="M0 34H120l10-20 12 38 10-30 8 12H260l8-10 8 10H400" /><path d="M0 34H120l10-20 12 38 10-30 8 12H260l8-10 8 10H400" /></svg>
 			{#each [0, 1, 2] as k (k)}<span class="u" style="--k: {k}"><span class="led"></span><span class="bay"></span><span class="vent"></span><span class="bay"></span></span>{/each}
 		</span>
 	{/if}
@@ -118,39 +117,67 @@
 	.sx-art img { display: block; }
 	svg { display: block; width: 100%; height: 100%; }
 
-	/* Library: whole posters on a shelf, nothing cut. Each poster's width is the
-	   smaller of what the row and the height allow, so the set always fits. */
-	.shelf { --g: clamp(6px, 2.4cqw, 14px); inset: 4cqh 6cqw 7cqh; display: flex; flex-wrap: wrap; align-content: flex-end; justify-content: center; gap: var(--g); --w: min(calc((88cqw - 4 * var(--g)) / 5), calc(89cqh * 2 / 3)); }
-	.shelf img { width: var(--w); aspect-ratio: 2 / 3; object-fit: cover; border-radius: clamp(6px, calc(var(--w) * 0.06), 10px); box-shadow: 0 6px 18px var(--art-shadow); outline: 1px solid var(--tile-line); outline-offset: -1px; background: var(--surface-2); }
-	.shelf img:nth-child(6) { display: none; }
-	@container (orientation: portrait) {
-		.shelf { --w: min(calc((88cqw - 2 * var(--g)) / 3), calc((89cqh - var(--g)) / 2 * 2 / 3)); }
-		.shelf { align-content: center; }
-		.shelf img:nth-child(6) { display: block; }
-	}
+	/* Library: a poster wall turned a little, running past every edge. */
+	.shelf img { position: absolute; display: block; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 10px 28px var(--art-shadow); outline: 1px solid var(--tile-line); outline-offset: -1px; background: var(--surface-2); }
 
-	/* Downloads: three releases coming down, the front one moving. */
-	.rel .r { position: absolute; left: calc((2 - var(--k)) * 4cqw + 6cqw); right: 6cqw; height: 26cqh; top: calc(var(--k) * 30cqh + 6cqh); display: flex; align-items: center; gap: 5cqh; padding: 0 5cqh 0 0; background: var(--tile); border: 1px solid var(--tile-line); border-radius: 3.5cqh; box-shadow: 0 1cqh 4cqh var(--art-shadow); overflow: hidden; }
-	.rel .r:nth-child(1) { --k: 0; opacity: 0.7; }
-	.rel .r:nth-child(2) { --k: 1; opacity: 0.88; }
-	.rel .r:nth-child(3) { --k: 2; }
-	.rel img { height: 100%; aspect-ratio: 2 / 3; object-fit: cover; flex: none; background: var(--surface-2); }
-	.rel .ln { flex: 1; display: flex; flex-direction: column; gap: 2.6cqh; min-width: 0; }
-	.rel .ln i { display: block; height: 2.6cqh; border-radius: 2cqh; background: var(--line-strong, var(--line)); }
+
+	.shelf { inset: -30cqh -30cqw; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.4cqw; align-content: center; transform: rotate(-12deg); }
+	.shelf img { position: static; width: 100%; }
+	.shelf img:nth-child(odd) { transform: translateY(18%); }
+	@container (orientation: landscape) { .shelf { grid-template-columns: repeat(6, 1fr); } }
+
+
+
+
+	/* Downloads: three releases coming down, filling the box. */
+	.rel .r { position: absolute; overflow: hidden; background: var(--tile); border: 1px solid var(--tile-line); box-shadow: 0 1cqh 4cqh var(--art-shadow); border-radius: 12px; }
+	.rel img { display: block; aspect-ratio: 2 / 3; object-fit: cover; background: var(--surface-2); }
+	.rel .ln { display: flex; flex-direction: column; gap: 2.6cqh; min-width: 0; }
+	.rel .ln i { display: block; height: max(5px, 2.6cqh); border-radius: 2cqh; background: var(--line-strong, var(--line)); }
 	.rel .ln i:nth-child(2) { width: 60%; background: var(--line); }
-	.rel .pg { position: relative; height: 2.2cqh; border-radius: 2cqh; background: var(--line); overflow: hidden; }
+	.rel .pg { position: relative; display: block; height: max(5px, 2.2cqh); border-radius: 2cqh; background: var(--line); overflow: hidden; }
 	.rel .pg b { position: absolute; inset: 0 auto 0 0; width: var(--p); background: var(--text-muted); border-radius: inherit; overflow: hidden; }
 	.rel .r:nth-child(3) .pg b { background: var(--accent); }
 	.rel .r:nth-child(3) .pg b::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent); transform: translateX(-100%); animation: sweep 2.4s var(--ease-glide) infinite; }
-	@keyframes sweep { to { transform: translateX(100%); } }
 
-	/* People: the people on this install. */
-	.ppl { display: flex; align-items: center; justify-content: center; padding: 0 6cqw 6cqh; --s: min(46cqh, 19cqw, 76px); }
-	.ppl .p { flex: none; width: var(--s); aspect-ratio: 1; margin-left: calc(var(--s) * -0.18); border-radius: 50%; display: grid; place-items: center; overflow: hidden; color: #fff; font: 600 calc(var(--s) * 0.36) / 1 var(--font-display, var(--font-ui)); letter-spacing: 0.01em; border: 3px solid var(--occl); box-shadow: 0 4px 14px var(--art-shadow); position: relative; }
-	.ppl .p:first-child { margin-left: 0; }
-	.ppl .p img { width: 100%; height: 100%; object-fit: cover; }
-	.ppl .p.me { box-shadow: 0 0 0 2px var(--accent), 0 4px 14px var(--art-shadow); }
-	.ppl .p.more { background: var(--surface-2); color: var(--text); font-size: calc(var(--s) * 0.3); z-index: 0; }
+	.rel .r { left: calc((2 - var(--k)) * 4cqw + 5cqw); right: 5cqw; height: calc((100cqh - 5cqh - 16px) / 3); top: calc(var(--k) * ((100cqh - 5cqh - 16px) / 3 + 8px)); display: grid; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; column-gap: 4cqw; padding-right: 4cqw; }
+	.rel img { height: 100%; grid-row: span 2; }
+	.rel .ln { align-self: end; padding-bottom: 1.6cqh; }
+	.rel .pg { margin-bottom: 18%; }
+	.rel .r:nth-child(1) { --k: 0; }
+	.rel .r:nth-child(2) { --k: 1; }
+	.rel .r:nth-child(3) { --k: 2; }
+	.rel .r:nth-child(1) { opacity: 0.7; }
+	.rel .r:nth-child(2) { opacity: 0.88; }
+
+
+
+	.rel .r:nth-child(3)::after { content: none; }
+
+
+	/* People: you in the middle, the others around you. */
+	.ppl .p { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 1.6cqh; min-width: 0; }
+	.ppl .av { display: grid; place-items: center; width: var(--s); aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: var(--bg, var(--surface-2)); color: #fff; font: 600 calc(var(--s) * 0.36) / 1 var(--font-display, var(--font-ui)); border: 3px solid var(--occl); box-shadow: 0 4px 14px var(--art-shadow); }
+	.ppl .av img { width: 100%; height: 100%; object-fit: cover; }
+	.ppl .me .av { box-shadow: 0 0 0 2px var(--accent), 0 4px 14px var(--art-shadow); }
+	.ppl .more .av { background: var(--surface-2); color: var(--text); font-size: calc(var(--s) * 0.3); }
+	.ppl .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
+
+
+	.ppl { --s: min(54cqh, 38cqw); --o: min(32cqh, 26cqw); }
+	.ppl .p { left: 50%; top: 47%; transform: translate(-50%, -50%); }
+	.ppl .p:not(.me) { --s: min(26cqh, 18cqw); }
+	.ppl .p:nth-child(2) { left: calc(50% - var(--o) * 1.25); top: calc(47% - var(--o) * 0.6); }
+	.ppl .p:nth-child(3) { left: calc(50% + var(--o) * 1.25); top: calc(47% - var(--o) * 0.5); }
+	.ppl .p:nth-child(4) { left: calc(50% - var(--o) * 1.15); top: calc(47% + var(--o) * 0.75); }
+	.ppl .p:nth-child(5), .ppl .more { left: calc(50% + var(--o) * 1.2); top: calc(47% + var(--o) * 0.7); }
+	.ppl .p:nth-child(5) ~ .more { display: none; }
+	.ppl .nm { display: none; }
+
+
+
+
+	@keyframes sweep { to { transform: translateX(100%); } }
 
 	/* Linked apps: the apps it talks to, wired to HolyArrs. */
 	.apps .cab path { fill: none; stroke: var(--line-strong, var(--line)); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-dasharray: 4 5; }

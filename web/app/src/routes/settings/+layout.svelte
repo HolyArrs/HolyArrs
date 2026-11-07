@@ -223,12 +223,17 @@
 
 
 <style>
+	/* Settings reads in one font: paths, keys, addresses and field values use the app font
+	   with even-width digits (the log viewer keeps its fixed-width lines). */
+	.settings-content :global(:is(.mono, input, textarea, select, dl.facts dd, code, kbd)),
+	.settings-content :global(:is([class*='path'], [class*='key'], [class*='url'], [class*='addr'], .hint)) { font-family: var(--font-ui) !important; font-variant-numeric: tabular-nums; letter-spacing: normal; }
+	.settings-content :global([data-testid='log-lines'] .text), .settings-content :global(pre) { font-family: var(--font-mono) !important; }
 	/* ---------- the wall: this Library's posters, blurred, dimmed, still ---------- */
 	.sx-wall { position: fixed; inset: 0 0 0 var(--space, 0px); z-index: -1; overflow: hidden; pointer-events: none; transition: opacity 500ms var(--ease-out); }
 	.sx-wall.dim { opacity: 0.55; }
 	.sx-wall .tiles { position: absolute; inset: -60px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; transform: rotate(-8deg) scale(1.15); filter: blur(22px) saturate(1.15); }
 	.sx-wall img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; display: block; }
-	.sx-wall .veil { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 86%, transparent), color-mix(in srgb, var(--bg) 86%, transparent)), radial-gradient(120% 80% at 50% 0, transparent, var(--bg)); }
+	.sx-wall .veil { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 58%, transparent), color-mix(in srgb, var(--bg) 70%, transparent)), radial-gradient(130% 90% at 50% 10%, transparent, color-mix(in srgb, var(--bg) 70%, transparent)); }
 	@media (max-width: 767px) { .sx-wall { left: 0; } .sx-wall .tiles { grid-template-columns: repeat(4, 1fr); } }
 
 	/* ---------- frame ---------- */
@@ -292,5 +297,47 @@
 	@media (prefers-reduced-motion: reduce) {
 		.look-fold .settings-content :global(.ui-settings), .look-fold :global(.ui-btn) { transition: none; }
 		.look-fold :global(.ui-btn:active:not(:disabled)) { transform: none; }
+	}
+	/* ---------- Status look (Luis, 2026-11-06): the section pages match the Status page ---------- */
+	/* One centred column, as wide as Status reads well. */
+	.settings-shell:not(.home) { max-width: 1120px; margin-inline: auto; }
+	.settings-shell:not(.home) .settings-workspace { max-width: none; }
+	.group-name { margin: 2px 0 14px; font: var(--t-large-title); letter-spacing: var(--t-large-title-track, -0.022em); }
+	/* Section tabs: the Status tab track (one pill, the open tab lifted in white). */
+	.caps { display: inline-flex; flex-wrap: nowrap; gap: 2px; max-width: 100%; margin: 0 0 20px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); overflow-x: auto; }
+	.cap { min-height: 32px; height: 32px; padding: 0 16px; background: none; box-shadow: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); font-size: 14px; }
+	.cap:hover { background: none; color: var(--text); }
+	.cap[aria-current='page'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
+	@media (pointer: coarse) { .cap { min-height: 40px; height: 40px; } }
+	@media (max-width: 767px) {
+		.group-name { font-size: 30px; }
+		.caps { display: flex; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 16px; }
+		.cap { padding: 0 14px; }
+	}
+	/* The open section's own title: a quiet bar with its buttons on the right (the tab already names it). */
+	.settings-content :global(> .ui-head), .settings-content :global(.ui-head) { margin-bottom: 4px; }
+	.settings-content :global(.ui-head h1) { font: 600 20px/1.25 var(--font-ui); letter-spacing: -0.01em; }
+	.settings-content :global(.ui-head .row) { align-items: center; min-height: 40px; }
+	/* Every section box is a Status plate: frosted sheet, red tick, hairline under the title. */
+	.settings-content :global(:is(section.ui-settings, .card)) {
+		border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); border-radius: 20px;
+		background: color-mix(in srgb, var(--surface-1) 55%, transparent);
+		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 20px 50px -30px rgb(0 0 0 / 0.5);
+	}
+	.settings-content :global(section.ui-settings) { padding: 0; }
+	.settings-content :global(section.ui-settings > header) { display: flex; align-items: center; gap: 10px; padding: 16px 20px 14px; border-bottom: 1px solid var(--line); }
+	.settings-content :global(section.ui-settings > header::before) { content: ''; flex: none; width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 30%, transparent)); }
+	.settings-content :global(section.ui-settings > header h2) { font: 600 17px/1.25 var(--font-ui); letter-spacing: -0.01em; }
+	.settings-content :global(section.ui-settings > header p) { margin-top: 2px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
+	.settings-content :global(section.ui-settings > .body) { padding: 14px 20px 18px; }
+	.settings-content :global(section.ui-settings > :is(.advanced, footer)) { margin: 0 20px; }
+	.settings-content :global(section.ui-settings > footer) { padding-bottom: 16px; }
+	.settings-content :global(ul.card), .settings-content :global(div.card) { padding: 6px 20px; }
+	@media (max-width: 767px) {
+		.settings-content :global(:is(section.ui-settings, .card)) { border-radius: 16px; }
+		.settings-content :global(section.ui-settings > header) { padding: 14px 14px 12px; }
+		.settings-content :global(section.ui-settings > .body) { padding: 12px 14px 14px; }
+		.settings-content :global(ul.card), .settings-content :global(div.card) { padding: 4px 14px; }
 	}
 </style>

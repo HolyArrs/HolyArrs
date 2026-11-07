@@ -48,7 +48,7 @@ export function visible(all: Section[], can: Can): Section[] {
 // old links still open the same page.
 export const groups: Group[] = [
 	{ id: 'library', label: 'Library', icon: 'library', line: 'Where titles live', about: 'Folders, parts, defaults, subtitles, file names and moving in.' },
-	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, Pick rules, search and schedules.' },
+	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, quality, search and schedules.' },
 	{ id: 'users', label: 'People', icon: 'people', line: 'Who comes in', about: 'Users, sign-in, request rules and appearance.' },
 	{ id: 'connections', label: 'Linked apps', icon: 'tv', line: 'What it connects', about: 'Media servers, alerts, AI apps, the API and metadata.' },
 	{ id: 'system', label: 'Server', icon: 'tools', line: 'Keeps it healthy', about: 'Health, backups, this app, logs and the danger zone.' },
@@ -67,7 +67,7 @@ export const sections: Section[] = [
 
 	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', label: 'Downloaders', icon: 'downloader', about: 'Your torrent and Usenet apps' },
 	{ href: '/settings/sources', group: 'downloads', tint: 'blue', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases' },
-	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Pick rules', icon: 'star', about: 'Which Release to take', need: 'library' },
+	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Quality', icon: 'star', about: 'Which Release to take', need: 'library' },
 	{ href: '/settings/search', group: 'downloads', tint: 'indigo', label: 'Search', icon: 'search', about: 'When and how HolyArrs searches' },
 	{ href: '/settings/schedules', group: 'downloads', tint: 'orange', label: 'Schedules', icon: 'clock', about: 'Timed jobs and Run now' },
 

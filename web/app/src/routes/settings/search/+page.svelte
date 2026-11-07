@@ -202,7 +202,7 @@
 				<Field id="pack-prefer" label="Season pack or single episodes" hint="Which wins when a season pack and single episodes are both on offer.">
 					<select id="pack-prefer" class="input" bind:value={settings.season_pack_prefer}>
 						<option value="rank">Best copy first; a season pack wins when they are equal</option>
-						<option value="always">A season pack whenever one passes the Pick rules</option>
+						<option value="always">A season pack whenever one passes the quality set</option>
 					</select>
 				</Field>
 			{#snippet advanced()}

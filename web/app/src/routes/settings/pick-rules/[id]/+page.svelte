@@ -239,7 +239,7 @@
 				await goto(to(`/settings/pick-rules/${d.id}`), { replace: true, reset: false });
 			} else {
 				show(await api.put<PickRulesDetail>(`/pick-rules/${id}`, payload));
-				toasts.push('Pick rules saved', 'ok');
+				toasts.push('Quality set saved', 'ok');
 			}
 		} catch (err) {
 			// A trait of yours removed meanwhile: show its chip as removed too.
@@ -258,12 +258,12 @@
 	}
 </script>
 
-<svelte:head><title>{id === null ? 'Add Pick rules' : savedName} · HolyArrs</title></svelte:head>
+<svelte:head><title>{id === null ? 'Add a quality set' : savedName} · HolyArrs</title></svelte:head>
 
 <PageHeader
-	title={id === null ? 'Add Pick rules' : savedName || 'Pick rules'}
+	title={id === null ? 'Add a quality set' : savedName || 'Quality'}
 	subtitle={id === null ? 'Choose the steps, traits, sizes and waits a new set takes.' : inUse ? usedWords(inUse) + '.' : undefined}
-	back={{ href: to('/settings/pick-rules'), label: 'Pick rules' }}
+	back={{ href: to('/settings/pick-rules'), label: 'Quality' }}
 >
 	{#snippet actions()}
 		{#if id !== null && mayEdit}<Button icon="copy" href={to(`/settings/pick-rules/new?from=${id}`)}>Make a copy</Button>{/if}
@@ -272,16 +272,16 @@
 
 <PageLoader loading={!loaded} label="Loading…">
 {#if id === null && !mayEdit}
-	<EmptyState icon="star" title="Needs the Settings permission" text="You can see the Pick rules there are." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
+	<EmptyState icon="star" title="Needs the Settings permission" text="You can see the quality sets there are." action={{ label: 'All quality sets', href: to('/settings/pick-rules') }} />
 {:else if gone}
-	<EmptyState icon="star" title="Pick rules not found" text="They may have been removed on another device." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
+	<EmptyState icon="star" title="Quality set not found" text="They may have been removed on another device." action={{ label: 'All quality sets', href: to('/settings/pick-rules') }} />
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	{#if !mayEdit}<p class="hint" data-testid="read-only">View only. Changing needs the Settings permission.</p>{/if}
-	<form class="sc-form" id="pick-rules-form" onsubmit={save} aria-label="Pick rules" novalidate>
+	<form class="sc-form" id="pick-rules-form" onsubmit={save} aria-label="Quality" novalidate>
 	<fieldset class="group cards" disabled={!mayEdit}>
-	<legend class="sr-only">{mayEdit ? 'Pick rules' : 'Pick rules, read only'}</legend>
+	<legend class="sr-only">{mayEdit ? 'Quality' : 'Quality, read only'}</legend>
 		<SettingsCard id="rules-name" title="Name and kinds">
 			{#if preset}
 				<p class="ro" data-testid="preset-name"><b>{form.name}</b><span class="muted">{` · ${kindWords}`}</span></p>

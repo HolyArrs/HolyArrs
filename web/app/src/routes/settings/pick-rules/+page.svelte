@@ -75,11 +75,11 @@
 	}
 </script>
 
-<svelte:head><title>Pick rules · HolyArrs</title></svelte:head>
+<svelte:head><title>Quality · HolyArrs</title></svelte:head>
 
-<PageHeader title="Pick rules">
+<PageHeader title="Quality">
 	{#snippet actions()}
-		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>Add Pick rules</Button>{/if}
+		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>Add a quality set</Button>{/if}
 	{/snippet}
 </PageHeader>
 
@@ -89,9 +89,9 @@
 	<SkSettings rows={3} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
-	<SettingsCard id="pick-rules-card" title="Your Pick rules" description="Each Library folder has its own; a title can override">
+	<SettingsCard id="pick-rules-card" title="Your quality sets" description="Each Library folder has its own; a title can override">
 		{#if rules.length === 0}
-			<EmptyState compact icon="star" title="No Pick rules" text="HolyArrs makes its ready-made Pick rules when it starts." action={mayEdit ? { label: 'Add Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
+			<EmptyState compact icon="star" title="No quality sets" text="HolyArrs makes its ready-made quality sets when it starts." action={mayEdit ? { label: 'Add a quality set', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="pick-rules">
 				{#each rules as r (r.id)}
@@ -119,9 +119,9 @@
 
 	<OwnTraits {mayEdit} />
 
-	<SettingsCard id="pick-rules-where" title="Where Pick rules are chosen">
+	<SettingsCard id="pick-rules-where" title="Where quality is chosen">
 		<ul class="where">
-			<li><a href={to('/settings/library-folders')}>Library folders</a>: each folder has its own Pick rules, which every new title there gets.</li>
+			<li><a href={to('/settings/library-folders')}>Library folders</a>: each folder has its own quality set, which every new title there gets.</li>
 			<li><a href={to('/settings/title-defaults')}>Movies and TV defaults</a>: the rules a new movie or show gets.</li>
 			<li><a href={to('/settings/wishlist#ask-rules')}>Request rules</a>: the rules approved requests get.</li>
 			<li><a href={to('/settings/outside-lists')}>Outside lists</a>: the rules titles from a list get.</li>
@@ -132,7 +132,7 @@
 	</SettingsCard>
 {/if}
 
-<Sheet bind:open={removeOpen} title="Remove these Pick rules?" description={removing?.name} size="sm">
+<Sheet bind:open={removeOpen} title="Remove this quality set?" description={removing?.name} size="sm">
 	<form id="remove-rules" onsubmit={remove}>
 		<p class="small">Can't be undone. Files stay.</p>
 		{#if removing?.in_use}<p class="small muted">{usedWords(removing.in_use)}. Pick other rules there first.</p>{/if}

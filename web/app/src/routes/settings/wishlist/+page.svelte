@@ -152,25 +152,25 @@
 				<span><b>Search when approved</b><br /><span class="hint">Movies search at once; shows at the next feed check</span></span>
 			</label>
 			{#snippet advanced()}
-				<Field id="ask-rules" label="Movie Pick rules" hint="Approvers can override per request">
+				<Field id="ask-rules" label="Movie quality" hint="Approvers can override per request">
 					<select id="ask-rules" class="input" bind:value={settings.pick_rules_id}>
-						<option value={0}>The folder's own Pick rules</option>
+						<option value={0}>The folder's own quality</option>
 						{#each movieRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
 					</select>
 				</Field>
-				<Field id="ask-show-rules" label="Show Pick rules">
+				<Field id="ask-show-rules" label="Show quality">
 					<select id="ask-show-rules" class="input" bind:value={settings.show_pick_rules_id}>
-						<option value={0}>The folder's own Pick rules</option>
+						<option value={0}>The folder's own quality</option>
 						{#each showRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
 					</select>
 				</Field>
-				<Field id="ask-music-rules" label="Music Pick rules">
+				<Field id="ask-music-rules" label="Music quality">
 					<select id="ask-music-rules" class="input" bind:value={settings.music_pick_rules_id}>
-						<option value={0}>The folder's own Pick rules</option>
+						<option value={0}>The folder's own quality</option>
 						{#each musicRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}

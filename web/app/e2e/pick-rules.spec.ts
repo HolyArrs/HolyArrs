@@ -30,7 +30,7 @@ test('copy Standard, change a step and a trait, save, and the changes stay after
 	await expect(row('Standard')).toContainText('Ready-made');
 	await more('Standard', 'Make a copy');
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/new\?from=\d+$/);
-	await expect(page.getByRole('heading', { name: 'Add Pick rules', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Add a quality set', level: 1 })).toBeVisible();
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Standard copy');
 
 	// A step: 4K web on.
@@ -68,7 +68,7 @@ test('a mistake is named on its field before anything is sent, and Save keeps a 
 
 	await page.getByLabel('Wait for Usenet (minutes)').fill('30');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Pick rules saved')).toBeVisible();
+	await expect(page.getByText('Quality set saved')).toBeVisible();
 	await expect(bar).toHaveCount(0);
 	await page.reload();
 	await expect(page.getByLabel('Wait for Usenet (minutes)')).toHaveValue('30');
@@ -79,7 +79,7 @@ test('removing asks first, and then the copy is gone', async () => {
 	await page.goto('/settings/pick-rules');
 	await expect(row('Standard copy')).toContainText('Not used yet');
 	await more('Standard copy', 'Remove');
-	const sheet = page.getByRole('dialog', { name: 'Remove these Pick rules?' });
+	const sheet = page.getByRole('dialog', { name: 'Remove this quality set?' });
 	await expect(sheet).toContainText('Standard copy');
 	await sheet.getByRole('button', { name: 'Cancel' }).click();
 	await expect(sheet).toBeHidden();
@@ -121,7 +121,7 @@ test('a new set starts for movies and TV shows; ticking Music switches to the mu
 	await expect(page.getByRole('switch', { name: '1080p web' })).toHaveCount(0);
 	// Nothing was made: leaving asks first.
 	// The page header has no back link; leave through the Settings menu.
-	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Pick rules', exact: true }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Quality', exact: true }).click();
 	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
 	await expect(page).toHaveURL(/\/settings\/pick-rules$/);
 });
@@ -203,7 +203,7 @@ test('accessibility: the list, the remove sheet and a copy in the editor with Ad
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await page.goto('/settings/pick-rules');
 	await more('Standard copy', 'Remove');
-	const sheet = page.getByRole('dialog', { name: 'Remove these Pick rules?' });
+	const sheet = page.getByRole('dialog', { name: 'Remove this quality set?' });
 	await expect(sheet).toBeVisible();
 	await sheet.evaluate((el) => Promise.all(el.getAnimations().map((x) => x.finished)));
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

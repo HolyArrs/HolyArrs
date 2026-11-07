@@ -82,7 +82,7 @@
 			const rest = (list ?? []).filter((x) => x.id !== t.id);
 			list = [...rest, t].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 			open = false;
-			toasts.push(editing ? `${t.name} saved` : `${t.name} made`, 'ok', editing ? undefined : { body: 'Ready for Pick rules' });
+			toasts.push(editing ? `${t.name} saved` : `${t.name} made`, 'ok', editing ? undefined : { body: 'Ready for quality sets' });
 		} catch (err) {
 			const field = err instanceof ApiError && typeof err.body.field === 'string' ? err.body.field : '';
 			if (field === 'name' || field === 'terms' || field === 'match') serverErrors = { [field]: message(err) };

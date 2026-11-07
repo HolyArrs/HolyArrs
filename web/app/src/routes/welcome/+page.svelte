@@ -573,11 +573,11 @@
 
 <svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
 
-{#if firstRun}<SigninBackdrop />{/if}
+{#if firstRun}<SigninBackdrop /><div class="dim" aria-hidden="true"></div>{/if}
 <div class="welcome" class:over-art={firstRun}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
-	<div class="brand"><img src={to(mark)} alt="" width="32" height="32" /><span>HolyArrs</span></div>
+	<div class="brand"><img src={to(mark)} alt={firstRun ? 'HolyArrs' : ''} width={firstRun ? 28 : 32} height={firstRun ? 28 : 32} />{#if !firstRun}<span>HolyArrs</span>{/if}</div>
 	{#if firstRun && prev && session.can('users') && (step !== 'import' || moveStep === 'read')}
 		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={back} disabled={busy} /></span>
 	{/if}
@@ -723,7 +723,7 @@
 				</div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlEditing != null ? 'Save' : dlForm ? 'Connect' : 'Continue'}</Button>
+			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlEditing != null ? 'Save' : dlForm ? `Connect ${kindWords[dl.kind]}` : 'Continue'}</Button>
 			{#if dlForm && dlList.length}
 				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlError = ''; dlAdding = false; dlEditing = null; dl = emptyForm(); }}>Cancel</button>
 			{:else}
@@ -1009,5 +1009,76 @@
 		.alt { min-height: 44px; }
 		.source :global(.acts .ui-btn) { min-height: 44px; }
 		.seg label { min-height: 44px; }
+	}
+
+	/* One layer inside the glass card: lists are flat rows split by hairlines,
+	   choices are outlined, and only text fields keep a filled box. */
+	.tile { background: transparent; }
+	@media (hover: hover) { .tile:hover { background: color-mix(in srgb, var(--text) 4%, transparent); } }
+	.media-list { background: none; border: 0; border-radius: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: visible; }
+	.media-list .frow { padding-left: 2px; padding-right: 2px; }
+	.conn { gap: 0; border-top: 1px solid var(--line); }
+	.conn > li { border-bottom: 1px solid var(--line); }
+	.conn-row { background: none; border: 0; border-radius: 0; padding: 14px 2px 4px; }
+	.conn .row-acts { padding: 0 0 12px; }
+	.todo { gap: 0; border-top: 1px solid var(--line); }
+	.todo > li { border-bottom: 1px solid var(--line); }
+	.todo a, .todo-row { background: none; border: 0; border-radius: 0; padding: 0 2px; min-height: 52px; }
+	/* Done and still-to-do read as one list. */
+	.todo:has(+ .todo) { margin-bottom: 0; }
+	.todo + .todo { border-top: 0; }
+	@media (hover: hover) { .todo a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 4%, transparent); } }
+	/* First run, "no card": content sits straight on the dimmed, blurred picture. */
+	.dim { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: rgb(10 10 12 / 0.55); -webkit-backdrop-filter: blur(28px) saturate(1.2); backdrop-filter: blur(28px) saturate(1.2); }
+	.welcome.over-art { width: min(440px, calc(100% - 32px)); color: #fff; --focus-ring: 0 0 0 2px rgb(10 10 12 / 0.9), 0 0 0 4px #fff; }
+	.welcome.over-art:has([data-testid='welcome-move']) { width: min(600px, calc(100% - 32px)); }
+	.sheet.glass, .sheet.glass.light { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+	.glass .corner { top: -8px; left: 0; }
+	.glass .corner :global(.ui-ibtn) { background: rgb(255 255 255 / 0.1); color: #fff; }
+	.glass .brand img { width: 28px; height: 28px; }
+	.glass .brand { min-height: 28px; }
+	.glass .dots { margin-top: 18px; }
+	.glass .dots li, .glass .dots li.done { background: rgb(255 255 255 / 0.3); }
+	.glass .dots li.now { width: 18px; background: #fff; }
+	.glass .head { margin: 22px 0 28px; }
+	.glass .head h1 { font: 700 30px/1.15 var(--font-ui); letter-spacing: -0.02em; color: #fff; }
+	.glass .head p { color: rgb(255 255 255 / 0.72); font: 400 15px/1.45 var(--font-ui); }
+	.glass :global(.ui-btn.primary) { height: 48px; min-height: 48px; border-radius: 999px; background: #fff; color: #111; border: 0; box-shadow: none; }
+	@media (hover: hover) { .glass :global(.ui-btn.primary:hover:not(:disabled)) { background: rgb(255 255 255 / 0.88); } }
+	.glass .alt { color: rgb(255 255 255 / 0.7); font-size: 15px; min-height: 44px; }
+	@media (hover: hover) { .glass .alt:hover:not(:disabled) { color: #fff; background: rgb(255 255 255 / 0.08); } }
+	.glass :global(.input) { min-height: 46px; height: 46px; border-radius: 12px; background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.1); color: #fff; }
+	.glass :global(.input::placeholder) { color: rgb(255 255 255 / 0.45); }
+	.glass :global(.input:hover) { border-color: rgb(255 255 255 / 0.2); }
+	.glass :global(.input:focus-visible) { border-color: rgb(255 255 255 / 0.6); box-shadow: 0 0 0 3px rgb(255 255 255 / 0.18); background-color: rgb(255 255 255 / 0.1); }
+	.glass :global(.input[aria-invalid='true']) { border-color: var(--fail); }
+	.glass :global(.field label), .glass .field > label { font: 600 13px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); }
+	.glass :global(.hint), .glass :global(.muted), .glass .hint { color: rgb(255 255 255 / 0.55); }
+	.glass :global(.cb-addr) { color: #fff; font-weight: 600; }
+	.glass :global(.link), .glass :global(.quiet) { color: rgb(255 255 255 / 0.7); }
+	.glass :global(.ui-seg) { display: grid; width: 100%; padding: 3px; border-radius: 12px; background: rgb(255 255 255 / 0.08); }
+	.glass :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 9px; background: rgb(255 255 255 / 0.92); }
+	.glass :global(.ui-seg button) { min-height: 40px; color: rgb(255 255 255 / 0.7); font-size: 15px; }
+	.glass :global(.ui-seg button[aria-checked='true']) { color: #111; }
+	.glass :global(.acts.one-row > .ui-btn) { flex: 1 1 100%; }
+	/* Rows: flat, white hairlines. */
+	.glass .media-list, .glass .conn, .glass .todo { border-color: rgb(255 255 255 / 0.1); }
+	.glass .media-list .frow + .frow, .glass .conn > li, .glass .todo > li { border-color: rgb(255 255 255 / 0.1); }
+	.glass .fname, .glass .conn-text b, .glass .path, .glass .todo a, .glass .todo-row { color: #fff; }
+	.glass .ficon, .glass .conn-text .addr, .glass .fsaved, .glass .todo-state, .glass .todo :global(svg) { color: rgb(255 255 255 / 0.6); }
+	.glass .frow.off .fname { color: rgb(255 255 255 / 0.55); }
+	.glass .set-tick { background: none; width: 18px; }
+	.glass .todo .set-tick :global(svg) { color: #fff; }
+	.glass :global(.bridges > li) { background: none; border: 0; border-radius: 0; border-top: 1px solid rgb(255 255 255 / 0.1); border-bottom: 1px solid rgb(255 255 255 / 0.1); padding: 14px 2px; }
+	.glass .add-row, .glass :global(.add-row) { border-color: rgb(255 255 255 / 0.18); color: rgb(255 255 255 / 0.7); }
+	/* Choice tiles: outlined, see-through, a faint fill on hover. */
+	.glass .tile { border-color: rgb(255 255 255 / 0.14); background: transparent; color: rgb(255 255 255 / 0.75); }
+	@media (hover: hover) { .glass .tile:hover { border-color: rgb(255 255 255 / 0.24); background: rgb(255 255 255 / 0.05); } }
+	.glass .tile-label { color: #fff; }
+	.glass .tile-sub { color: rgb(255 255 255 / 0.6); }
+	.glass .tile.on { border-color: rgb(255 255 255 / 0.9); background: rgb(255 255 255 / 0.1); color: #fff; }
+	@media (max-width: 520px) {
+		.glass .head h1 { font-size: 26px; }
+		.glass .head { margin: 18px 0 22px; }
 	}
 </style>

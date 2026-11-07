@@ -262,7 +262,7 @@
 				</select>
 				{#if kindFolders.length === 0}<span class="hint">Add a {titleKind} Library folder in Settings first.</span>{/if}
 			</Field>
-			<Field id="ol-rules" label="Pick rules">
+			<Field id="ol-rules" label="Quality">
 				<select id="ol-rules" class="input" bind:value={rulesId}>
 					<option value={0}>The Library folder's own</option>
 					{#each kindRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}

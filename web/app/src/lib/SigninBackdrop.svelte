@@ -802,7 +802,13 @@ void main() {
 		inset: 0;
 		z-index: 0;
 		overflow: hidden;
-		background: #050507;
+		/* Shown until (or when no) pictures arrive, e.g. a new install while the
+		   metadata server is busy: a warm glow instead of flat black. */
+		background:
+			radial-gradient(70% 55% at 50% 105%, rgba(217, 48, 37, 0.28), transparent 70%),
+			radial-gradient(60% 50% at 15% 0%, rgba(120, 70, 40, 0.22), transparent 70%),
+			radial-gradient(50% 45% at 90% 10%, rgba(60, 70, 110, 0.18), transparent 70%),
+			#050507;
 	}
 	.layer {
 		position: absolute;
