@@ -98,6 +98,7 @@ test('Rename files on the album page renames its tracks into the new album folde
 	expect(readdirSync(folder).sort()).toEqual(['01 - Song 1.1.flac', '02 - Song 1.2.flac', '03 - Song 1.3.flac']);
 	// The artist's Library tab has the whole artist's rename: nothing left.
 	await page.getByRole('link', { name: 'Tin Lanterns' }).first().click();
+	await openInLibrary(page);
 	await artistSetting(page, /^Rename files/);
 	const sheet = page.getByRole('dialog', { name: 'Rename files' });
 	await expect(sheet.getByTestId('rename-none')).toBeVisible();
@@ -142,8 +143,8 @@ test('deleting one track with its file moves it to the holding folder; the album
 	await expect(page.getByTestId('track-state').first()).toContainText(/In the Library|Better copy sought/);
 	await page.getByRole('button', { name: 'Delete track 02 Song 1.2' }).click();
 	const dialog = page.getByTestId('show-delete');
-	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Copper Wren – track 02 Song 1.2?');
-	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
+	await expect(page.getByRole('dialog', { name: 'Delete Copper Wren – track 02 Song 1.2?' })).toBeVisible();
+	await expect(dialog.getByRole('switch', { name: /Never add again/ })).toHaveCount(0);
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('1 file moves to the holding folder');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Low Orbit (2018)/02 - Song 1.2.mp3');
@@ -198,7 +199,7 @@ test('the album page, import and delete work at phone width', async ({ browser }
 });
 
 test('deleting the whole artist with Never-add keeps files it only found and leaves the Library', async () => {
-	await page.goto('/library');
+	await page.goto('/library?kind=artist');
 	await page.getByRole('link', { name: /Copper Wren/ }).first().click();
 	// The Library card opens the music artist page; Delete artist sits in the Library tab of its Library page.
 	await openInLibrary(page);
@@ -208,6 +209,6 @@ test('deleting the whole artist with Never-add keeps files it only found and lea
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Leaves your Library');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
 	await dialog.getByRole('button', { name: 'Delete artist', exact: true }).click();
-	await expect(page).toHaveURL(/\/library$/);
+	await expect(page).toHaveURL(/\/library(\?|$)/);
 	for (const f of [wrenFiles.one, wrenFiles.single, wrenFiles.loose]) expect(existsSync(f), f).toBe(true);
 });

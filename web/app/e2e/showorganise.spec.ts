@@ -96,8 +96,8 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	const sheet = page.getByRole('dialog', { name: 'Season 1 · Episode 2' });
 	await sheet.getByRole('button', { name: /^Delete episode/ }).click();
 	const dialog = page.getByTestId('show-delete');
-	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
-	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
+	await expect(page.getByRole('dialog', { name: 'Delete Quarry Bells S01E02?' })).toBeVisible();
+	await expect(dialog.getByRole('switch', { name: /Never add again/ })).toHaveCount(0);
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('it also holds S01E03, which stays');
 	await axe(page, 'delete an episode');
@@ -106,7 +106,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	// The whole season: from its Files, rename and history sheet.
 	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
 	await page.getByTestId('season-tools').getByRole('button', { name: 'Delete Season 1' }).click();
-	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
+	await expect(page.getByRole('dialog', { name: 'Delete Quarry Bells Season 1?' })).toBeVisible();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1: 3 episodes stop being kept up to date');
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files move to the holding folder');
