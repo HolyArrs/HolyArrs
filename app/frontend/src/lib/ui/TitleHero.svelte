@@ -1,7 +1,5 @@
 <script lang="ts" module>
-	// Shared helpers for title pages.
 
-	/** "2 hr 36 min" from minutes. */
 	export function runtimeWords(min?: number | null): string {
 		if (!min || min <= 0) return '';
 		const h = Math.floor(min / 60);
@@ -9,7 +7,6 @@
 		return [h ? `${h} hr` : '', m ? `${m} min` : ''].filter(Boolean).join(' ');
 	}
 
-	/** The last part of a path ("Dune (2021)" from C:\...\Movies\Dune (2021)), never the full path. */
 	export function shortFolder(path?: string | null): string {
 		const parts = (path ?? '').split(/[\\/]+/).filter(Boolean);
 		return parts[parts.length - 1] ?? '';
@@ -23,10 +20,6 @@
 	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
 	const metaCache = new Map<string, Promise<RichMeta | null>>();
 
-	/**
-	 * richMetadata asks GET /metadata/{kind}/{tmdb} for art and facts the
-	 * Library title lacks. A missing endpoint or title answers null.
-	 */
 	export function richMetadata(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show', tmdb: string | undefined | null): Promise<RichMeta | null> {
 		if (!tmdb) return Promise.resolve(null);
 		const key = `${kind}:${tmdb}`;
@@ -42,7 +35,6 @@
 					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: shownScore(n(raw.vote_average) ?? n(raw.score), n(raw.vote_count) ?? n(raw.votes)), overview: s(raw.overview), year: n(raw.year), backdrops, videos, moods, quality: s(raw.quality), seasons: Array.isArray(raw.seasons) ? raw.seasons.filter((x) => n((x as Raw)?.number)).length || undefined : n(raw.number_of_seasons) };
 				})
 				.catch(() => {
-					// A failed read is not remembered: the next page visit asks again.
 					metaCache.delete(key);
 					return null;
 				});
@@ -71,15 +63,6 @@
 	import RatingsStrip from './RatingsStrip.svelte';
 	import { ratingPicks, shownRatings } from './rating-picks.svelte.ts';
 
-	// The title page hero (movie, show, artist, album, not-yet-added titles):
-	// the Explore billboard (Billboard.svelte), so moving from Explore to a
-	// title keeps one look. Breadcrumb pill top-left, logo or title in the
-	// left 40 %, one facts line with the status, a short synopsis with Show
-	// more, then the action row: the page's main button (Ask, Add or In
-	// Library), a Trailer button, and the page's ⋯ menu. Movies and shows
-	// play the muted trailer after the dwell (desktop); the Trailer button
-	// opens the theater everywhere. With no backdrop the poster fills the
-	// frame, darkened; an album shows its cover square over a blurred copy.
 	let {
 		title,
 		kind,
@@ -110,22 +93,16 @@
 		tagline
 	}: {
 		title: string;
-		/** A movie or show: the muted trailer and the Trailer button. */
 		kind?: 'movie' | 'show';
 		tmdb?: string | null;
-		/** An artist's MusicBrainz id: fanart.tv pictures when the artist has none. */
 		mbid?: string | null;
 		backdrop?: string | null;
-		/** More backdrops for the slow crossfade (Layer 1). */
 		backdrops?: string[];
 		poster?: string | null;
 		logo?: string | null;
 		meta?: string[];
-		/** Age rating, shown in a bordered box (PG-13, TV-MA). */
 		certification?: string | null;
-		/** Score out of 10. */
 		score?: number | null;
-		/** Quality badges: 4K, Dolby Vision, Atmos, CC. */
 		badges?: string[];
 		status?: StatusKind;
 		percent?: number;
@@ -134,28 +111,19 @@
 		breadcrumb?: { href: string; label: string }[];
 		crumbIcon?: IconName;
 		vtName?: string;
-		/** Square art (music). */
 		square?: boolean;
-		/** An album cover, shown square bottom-left over its own blurred copy. */
 		cover?: string | null;
 		settled?: boolean;
-		/** The status line under the hero, such as who asked. */
 		byline?: Snippet;
 		actions?: Snippet;
-		/** The score badge and outside ratings in the facts line (off when the page shows them below). */
 		ratings?: boolean;
-		/** The facts line, age rating and award badges (off when the page shows them under the hero). */
 		showFacts?: boolean;
-		/** A tagline under the logo or title. */
 		tagline?: string | null;
 	} = $props();
 
 	let backdropFailed = $state(false);
 	let logoFailed = $state(false);
-	// A dark wordmark (black letters made for light posters) vanishes on the
-	// dark picture: it is drawn white instead, its shape unchanged.
 	let darkLogo = $state(false);
-	// The shown logo may come from another site; a CORS copy is read for the check.
 	function checkLogo(src: string) {
 		darkLogo = false;
 		const probe = new Image();
@@ -181,12 +149,9 @@
 			return false;
 		}
 	}
-	// A very wide wordmark (over 6:1) would come out a thin line in the logo box: it gets a floor height and more width.
 	let wideLogo = $state(false);
 	let posterFailed = $state(false);
 
-	// Awards from Wikidata (metadata server): a badge like "Oscar winner" or
-	// "3 Emmys", the awards listed on hover.
 	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
 	$effect(() => {
 		const k = kind;
@@ -198,8 +163,6 @@
 		return () => (live = false);
 	});
 
-	// fanart.tv art and outside ratings (metadata server, when its keys are set):
-	// the fanart logo only when TMDB has none or its logo fails to load.
 	let extras = $state<Extras>({ backgrounds: [], scores: [] });
 	let fanartLogoFailed = $state(false);
 	$effect(() => {
@@ -218,19 +181,15 @@
 
 	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
 	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
-	// No backdrop: the poster (or the cover) itself, cropped and darkened.
 	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
 
-	// Only the ratings this browser picked (Settings › Appearance).
 	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
 	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
-	// The breadcrumb lives in the top bar (one pattern on every page): the page's parent for a fresh visit, and its name.
 	$effect(() => {
 		setTopCrumbs(breadcrumb[0] ?? null, breadcrumb.length > 1 ? (breadcrumb.at(-1)?.label ?? title) : title);
 		return () => setTopCrumbs(null);
 	});
 
-	// The Trailer button shows once the title has a trailer; it opens the theater.
 	let videos = $state<Video[] | undefined>();
 	$effect(() => {
 		const k = kind;
@@ -242,7 +201,6 @@
 		return () => (live = false);
 	});
 	let opening = $state(false);
-	/** heroStill draws the hero's picture as it shows (cover, the hero's shape). */
 	function heroStill(hero: HTMLElement | null | undefined): HTMLCanvasElement | null {
 		const img = hero?.querySelector<HTMLImageElement>('.art img');
 		const r = hero?.getBoundingClientRect();
@@ -264,7 +222,6 @@
 		if (!kind || !tmdb || opening) return;
 		const btn = e.currentTarget as HTMLElement;
 		const hero = btn.closest('section');
-		// The hero's trailer is playing: hand off from it, as a click on the picture does (same second, sound, frame, rect).
 		const playing = hero?.querySelector<HTMLButtonElement>('.art button.expand');
 		if (playing) {
 			playing.click();
@@ -272,17 +229,14 @@
 		}
 		opening = true;
 		const r = hero?.getBoundingClientRect();
-		// The hero's picture is held while the big player loads (no black frame).
 		const still = heroStill(hero);
 		try {
-			// Nothing plays here: the player still opens and says why.
 			const s = await trailerClickSources(kind, tmdb, videos);
 			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], fallbacks: s.slice(1), time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
 		} finally {
 			opening = false;
 		}
 	}
-	// No autoplay on this device (phone, reduced motion, data saver, setting off): the Trailer button shows its word.
 	let still = $state(true);
 	onMount(() => void loadUISettings().then(() => (still = !autoplayHere())));
 </script>
@@ -316,7 +270,6 @@
 			{/if}
 		{/snippet}
 	</Billboard>
-	<!-- A title page: the story sits under the hero, in full, and never pops over the art. -->
 	{#if description}<p class="story" data-testid="title-story">{description}</p>{/if}
 	{#if byline}<div class="status-line">{@render byline()}</div>{/if}
 </div>
@@ -333,8 +286,6 @@
 	.bd.blur { filter: blur(40px) saturate(1.3) brightness(.6); transform: scale(1.2); }
 	.cover { display: block; width: clamp(120px, 14vw, 220px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 12px 40px rgb(0 0 0 / 50%); margin-bottom: 12px; }
 	.ui-thero :global(.bb-name.short) { min-height: 0; }
-	/* The billboard isolates its layers, so an open menu's panel can't rise past the sections below (the About band
-	   covered its last items on phones): lift the whole hero while a panel is open, still under the top bar. */
 	.ui-thero:has(:global(.ui-pop > .panel)) { position: relative; z-index: 10; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.b.award { border-color: rgb(245 197 24 / 75%); color: #f5c518; }

@@ -3,9 +3,6 @@
 	import IconButton from './IconButton.svelte';
 	import { reducedMotion } from '../core/motion.ts';
 
-	// A modal sheet on the native <dialog>: centred on wide screens, from the
-	// bottom on phones. Escape, the close button and a backdrop click close it;
-	// the browser returns focus to whatever opened it.
 	let {
 		open = $bindable(false),
 		title,
@@ -39,7 +36,6 @@
 	$effect(() => {
 		if (!dialog) return;
 		if (open && closing) {
-			// Reopened during the close animation: keep it open.
 			clearTimeout(shutTimer);
 			closing = false;
 		} else if (open && !dialog.open) {
@@ -130,7 +126,6 @@
 	@keyframes fade-out { to { opacity: 0; } }
 	@keyframes rise-in { from { transform: translateY(100%); } }
 	@keyframes sink-out { to { transform: translateY(100%); } }
-	/* A wide drawer from the bottom edge on every screen (Download details). */
 	.at-drawer { width: min(1040px, calc(100vw - 32px)); max-height: min(72dvh, 640px); margin: auto auto 0; border-radius: var(--r-modal) var(--r-modal) 0 0; }
 	.at-drawer[open] { animation: rise-in var(--dur) var(--ease-out) both; }
 	.at-drawer.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
@@ -144,9 +139,7 @@
 		.at-auto.closing, .at-bottom.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
 		.at-auto .inner::before, .at-bottom .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-top { margin-top: 12px; }
-		/* Clear the iPhone home indicator when the window has no footer. */
 		.at-auto .body:last-child, .at-bottom .body:last-child, .at-right .body:last-child { padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
-		/* Full screen on phones (the search palette). */
 		.at-full { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding-top: env(safe-area-inset-top); }
 		.at-full .inner { height: 100%; }
 		.at-full .body { flex: 1; display: flex; flex-direction: column; }
@@ -156,7 +149,6 @@
 	.at-side.closing { animation: slide-out var(--dur-fast) var(--ease-in) both; }
 	@keyframes slide-in { from { transform: translateX(-100%); } }
 	@keyframes slide-out { to { transform: translateX(-100%); } }
-	/* A wide panel from the right edge (Pick a release); a bottom sheet on phones. */
 	.at-right { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(var(--w), 100vw); border-radius: var(--r-panel) 0 0 var(--r-panel); }
 	.at-right .inner { height: 100%; }
 	.at-right[open] { animation: slide-from-right var(--dur) var(--ease-out) both; }

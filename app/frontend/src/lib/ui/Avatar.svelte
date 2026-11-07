@@ -1,10 +1,8 @@
 <script lang="ts">
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { coverFor } from '../core/pictures.ts';
-	// A person's round picture, or their initials when they have none (or it fails to load).
 	let { name, src = null, size = 32, label }: { name: string; src?: string | null; size?: number; label?: string } = $props();
 	let failed = $state(false);
-	// A new picture gets a fresh try.
 	$effect(() => {
 		src;
 		failed = false;

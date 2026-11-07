@@ -16,8 +16,6 @@
 	import { GROW_DELAY } from './grow.ts';
 	import { cardTemplate, type CardArtPick } from './card-art.ts';
 
-	// 16:9 card for episodes and downloads: progress line along the art's
-	// bottom edge, overlay badges, title and a meta line below.
 	let {
 		title,
 		href,
@@ -52,82 +50,50 @@
 		followTmdb = false,
 		needsArt = false
 	}: {
-		/** Rows: no cover, no card. A card with no picture, or whose picture fails, is left out (its list item too). */
 		needsArt?: boolean;
-		/** Title cards: the server's picture pick (card-art.ts). */
 		art?: CardArtPick;
-		/** The server's one freshness strip (bottom centre of the art). */
 		fresh?: Fresh | null;
-		/** Put the type (Movie, Show) first on the metadata line. */
 		typed?: boolean;
-		/** The row type, so the card never repeats the row's meaning. */
 		row?: string;
-		/** Solid round library status, top-right, with its aria-label and tooltip. */
 		owned?: CardOwned | null;
-		/** Solid type pill top-left (Explore's All). */
 		title: string;
 		href?: string;
 		image?: string | null;
-		/** A portrait poster, used only when there is no landscape picture (cropped around its centre). */
 		poster?: string | null;
 		subtitle?: string;
 		meta?: string;
 		badges?: string[];
 		status?: StatusKind;
 		statusLabel?: string;
-		/** 0–100; draws the line and announces the value. */
 		progress?: number;
 		vtName?: string;
 		width?: string;
-		/** What it is, for the artwork fallback's icon. */
 		kind?: 'movie' | 'show' | 'artist' | 'episode';
 		action?: Snippet;
-		/** Test id on the status pill. */
 		statusTestid?: string;
-		/** Where the badges sit on the art. */
 		badgesAt?: 'top' | 'bottom';
-		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
 		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number } | null;
-		/**
-		 * Title cards (Explore and Home rows of movies and shows): the logo or
-		 * name sits over the picture, nothing below, and a hover grows the
-		 * card itself in place (GrowCard) instead of opening a hover card.
-		 */
 		cover?: boolean;
-		/** The title logo (transparent PNG), from the row data. */
 		logo?: string | null;
-		/** The grown card's one-tap Ask/Add. */
 		growAction?: Snippet;
-		/** Explore: the grown card's ⌄ opens the More info panel (from the given rect). */
 		onmore?: (from: DOMRect) => void;
-		/** Big 4 shelves: a larger card (the row sets the width; the name grows with it). */
 		big?: boolean;
-		/** A small square picture over the art, bottom left (Home: an album cover on the artist's picture). */
 		inset?: string | null;
-		/** The grown card's context line (household status, else why shown). */
 		growContext?: { text: string; kind: 'house' | 'why' } | null;
-		/** The grown card's streaming service (logo at the end of the facts). */
 		growService?: { name: string; logo?: string } | null;
-		/** The grown card's bell follows the title by TMDB id (a show, or a movie not out yet). */
 		followTmdb?: boolean;
 	} = $props();
-	// The expanded card: a hover card (episodes, downloads) or the card grown in place (cover).
 	let root = $state<HTMLElement>();
 	let artEl = $state<HTMLElement>();
 	let hit = $state<HTMLElement>();
-	/** Opened by keyboard focus (not a hover): the grown card takes the focus. */
 	let byKey = $state(false);
 	let open = $state(false);
-	/** The grown card is shrinking back onto this card. */
 	let leaving = $state(false);
-	// A card is a title card or not for its whole life: the delays are read once.
-	// svelte-ignore state_referenced_locally
 	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
 		if (dragging() || scrollHold()) return;
 		leaving = false;
 		open = true;
 	});
-	// svelte-ignore state_referenced_locally
 	const closer = dwell(cover ? 60 : 140, () => (cover ? (leaving = true) : (open = false)));
 	const dragging = () => !!root?.closest('.dragging');
 	function enter() {
@@ -150,10 +116,8 @@
 		leaving = false;
 	}
 	$effect(() => () => shut());
-	/** Tab out of the grown card: on to the next card in the row, else the next tab stop after this card; Shift+Tab back to this card. */
 	function tabOut(back: boolean) {
 		shut();
-		// Back on this card: it stays closed (no reopen from the focus).
 		if (back || !root) return void (hit?.focus(), opener.cancel());
 		const r = root;
 		const next = r.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])');
@@ -163,35 +127,24 @@
 		);
 		(after ?? hit)?.focus();
 	}
-	// In view for a while: the trailer address is fetched ahead of any hover.
 	$effect(() => {
 		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
 	});
-	// Cover cards take their logo from the row data (logo or the server's card_logo pick); a card never fetches a title's details for it.
 	let logoFailed = $state(false);
 	const shownLogo = $derived(logoFailed ? null : sized(logo ?? null, 'poster') || null);
 	let failed = $state(false);
-	/** The server's picked picture failed to load (the template falls back). */
 	let pickFailed = $state(false);
-	// Title cards follow the card template: titled art, else logo, else name (all on the art).
 	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? null }, { art: pickFailed, logo: logoFailed }) : null);
 	const src = $derived((tpl ? tpl.image : image) || poster || null);
-	/** The shown picture is portrait (a poster): crop around its centre, not its top. */
 	let tall = $state(false);
-	// The card's rendered width picks the picture size (the grown card loads its own w1280).
 	let cw = $state(0);
 	$effect(() => {
 		if (root) cw = root.clientWidth;
 	});
-	// A poster standing in for a missing wide picture fills the card's width,
-	// so a poster size covers it (w342 for a 247 px desktop card, not a 780x1170
-	// file); a card wider than the biggest poster step keeps w780.
 	const posterFill = $derived(!!src && src === poster && src !== image && cw > 0 && cw * (globalThis.devicePixelRatio || 1) <= 500);
 	const art = $derived(src ? sized(src, posterFill ? 'poster' : 'backdrop', cw) : null);
 	const coverLogo = $derived(tpl?.variant === 'logo' && tpl.logo ? sized(tpl.logo, 'poster') || null : null);
-	// The logo on the card is 40% of its width.
 	const cardLogo = $derived(tpl?.variant === 'logo' && tpl.logo && cw ? sized(tpl.logo, 'poster', cw * 0.4) || null : null);
-	// The grown card lays the logo (titled art keeps it too) or the name over the trailer.
 	const growLogo = $derived(tpl ? (coverLogo ?? (tpl.variant === 'titled' && pick?.logo && !logoFailed ? sized(pick.logo, 'poster') || null : null)) : shownLogo);
 	function artError() {
 		if (cover && pick?.art && src === pick.art && !pickFailed) {
@@ -199,23 +152,17 @@
 			loaded = false;
 		} else failed = true;
 	}
-	// The name tile shows until the picture has loaded; in a row the picture
-	// waits until the row is near the screen.
 	let loaded = $state(false);
 	const near = shelfNear();
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
-	// The progress line owns the bottom edge; the strip steps aside for it.
-	// The type leads the metadata line ("Show · 2024"); never twice.
 	const typedWord = $derived(typed ? typeWord(kind) : '');
 	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
 	const strip = $derived(pct === undefined ? shownFresh(fresh, { row }) : null);
 	const marked = $derived(!!(strip || owned));
-	// The card's name reads the strip once: left out when it only repeats the line under the card (Home's rows).
 	const stripWords = $derived(strip && !(sub && freshLabel(strip).endsWith(sub)) ? freshLabel(strip) : '');
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, stripWords].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
@@ -223,7 +170,6 @@
 			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} class:tall alt="" loading="lazy" decoding="async" use:whenLoaded={(e) => { tall = !!e && e.naturalHeight > e.naturalWidth; loaded = true; }} onerror={artError} />{/key}{/if}
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
-				<!-- An inset cover (Home: an album on the artist's picture) sits where the name would: the caption under the card carries the name. -->
 				{#if !inset}<span class="name" class:lifted={!!strip} aria-hidden="true">
 					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
 				</span>{/if}
@@ -245,7 +191,6 @@
 			{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 			{#if meta}<span class="m">{meta}</span>{/if}
 		{:else}
-			<!-- Title cards: the title is on the art and the name sits under it too, then the muted meta line. -->
 			<span class="t under" title={title} aria-hidden="true">{title}</span>
 			{#if typedWord || sub}<span class="s" aria-hidden="true">{#if typedWord}{typedWord}{#if sub}<span class="dot">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 		{/if}
@@ -277,7 +222,6 @@
 		a.hit:hover .art { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 		a.hit:hover img { transform: scale(1.03); }
 	}
-	/* While the picture loads, the name tile carries the shared Silhouette sweep. */
 	.over { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 	.over.bottom { top: auto; bottom: 8px; }
 	.over.pushed { top: 42px; }
@@ -291,23 +235,16 @@
 	.s, .m { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.m { font-variant-numeric: tabular-nums; }
 	.act { position: absolute; right: 8px; top: 8px; }
-	/* Under the status circle, never on it. */
 	.act.below { top: 42px; }
-	/* Title cards: the logo or name over a bottom scrim, nothing below; the grown card takes the card's place. */
 	.cover .art { margin-bottom: 0; }
 	.art img.inset { position: absolute; left: 8%; top: 50%; translate: 0 -50%; right: auto; bottom: auto; width: 34%; height: auto; aspect-ratio: 1; object-fit: cover; opacity: 1; border-radius: 6px; box-shadow: 0 6px 18px rgb(0 0 0 / .45); z-index: 1; }
 	.big .art { border-radius: var(--r-panel); }
 	.cover.grown .art { visibility: hidden; }
 	.scrim { position: absolute; inset: auto 0 0; height: 60%; background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.18) 55%, transparent); pointer-events: none; }
-	/* One fixed box bottom-left for the logo or the name, the same on every card:
-	   6% in from the left, 40% of the width, about a quarter of the height. Wide
-	   logos meet the width, tall logos meet the height; both sit bottom-left. */
 	.name { position: absolute; left: 6%; bottom: 9%; z-index: 1; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; }
 	.name.lifted { bottom: 20%; }
-	/* A typed title (no logo) gets more room than a logo box, so one long word is not split on a phone card. */
 	.name:has(.word) { width: 62%; }
 	.word { font: 700 clamp(13px, 5.2cqw, 24px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
-	/* Status mark and strip: 22px under 280px of card, 26px above (whole pixels). */
 	.cover .art :global(.mark) { width: 22px; height: 22px; }
 	.cover .art :global(.mark svg) { width: 13px; height: 13px; }
 	.cover .art :global(.mark.downloading svg) { width: 18px; height: 18px; }

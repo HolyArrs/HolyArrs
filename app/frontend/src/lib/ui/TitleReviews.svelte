@@ -6,10 +6,6 @@
 	import Shelf from './Shelf.svelte';
 	import Sheet from './Sheet.svelte';
 
-	// Ratings & reviews: the source's score in one line under the heading,
-	// then one row of cards, a card per written review, newest first;
-	// More on a card opens the whole review. A pill per source the server has
-	// set up (TMDB first). Reviews are other people's words: never HTML.
 	let { kind, tmdb }: { kind: 'movie' | 'show'; tmdb: string | null | undefined } = $props();
 
 	let picked = $state('tmdb');
@@ -18,13 +14,10 @@
 	let reviews = $state<Review[]>([]);
 	let loading = $state(false);
 	let failed = $state(false);
-	/** The review open in the sheet. */
 	let reading = $state<Review | null>(null);
 	let sheet = $state(false);
-	// Shown only with written reviews: a score alone is already in the Ratings card at the bottom.
 	const hasContent = $derived(!!answer && reviews.length > 0);
 	let seenContent = $state(false);
-	// A new title starts fresh.
 	$effect.pre(() => {
 		void tmdb;
 		seenContent = false;
@@ -76,7 +69,6 @@
 		sheet = true;
 	}
 	const initial = (name: string) => (name.trim()[0] ?? '?').toUpperCase();
-	// A steady hue per author for the initial's circle.
 	const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 	const long = (r: Review) => r.text.length > 260 || r.text.split('\n').length > 5;
 </script>
@@ -89,8 +81,6 @@
 	</div>
 {/snippet}
 
-<!-- Like Apple TV: an empty section is not shown. Once a title had something here, switching to an
-     empty source keeps the section (and its switch) with one short line. -->
 {#if answer && (hasContent || (seenContent && ps.pills.length > 1))}
 	<div class="rv" data-testid="title-reviews">
 		<Shelf title="Ratings & reviews" anchor="title-reviews" item="340px" whole>
@@ -167,7 +157,6 @@
 	.pills { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 	.pill { min-height: 32px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
-	/* One card size for the whole row: reviews and More reviews. */
 	.rcard { position: relative; display: flex; flex-direction: column; gap: 10px; height: 236px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); min-width: 0; transition: transform var(--dur) var(--ease-spring), box-shadow var(--dur) var(--ease-out); }
 	.review:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 	.rcard p { margin: 0; }

@@ -10,11 +10,6 @@
 	import { GROW_WIDTH } from './grow.ts';
 	import { popOut } from '../core/transitions.ts';
 
-	// The Netflix-style expanded card: opened over a poster after a hover or
-	// keyboard-focus delay (PosterCard decides when), a scaled-up card with a
-	// 16:9 trailer area, title, year, genres, the poster's status and its
-	// one-tap Ask/Add. Lives at the end of <body> so rows never clip it, and
-	// always stays inside the window.
 	let {
 		anchor,
 		kind,
@@ -56,7 +51,6 @@
 	function place() {
 		if (!card) return;
 		const a = anchor.getBoundingClientRect();
-		// One width for every hover card (GROW_WIDTH), bigger than the poster it grows from, like Netflix; it starts at the poster's own size.
 		W = Math.min(GROW_WIDTH, document.documentElement.clientWidth - 16);
 		from = Math.min(1, a.width / W);
 		const h = card.offsetHeight;
@@ -65,7 +59,6 @@
 		origin = `${Math.round(a.left + a.width / 2 - pos.left)}px ${Math.round(a.top + a.height / 2 - pos.top)}px`;
 	}
 
-	// The portal: moved to <body> so overflow and transforms of rows do not clip it.
 	function portal(node: HTMLElement) {
 		document.body.appendChild(node);
 		return { destroy: () => node.remove() };
@@ -96,7 +89,6 @@
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="ui-hover"
 	bind:this={card}
@@ -154,10 +146,8 @@
 	a.t:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 	.s { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.act { flex: none; }
-	/* The art-glass button sits on the card surface here: use the surface tint in both themes. */
 	.act :global(.ui-ibtn.glass) { background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
 	.act :global(.ui-ibtn.glass:hover) { background: var(--surface-3); }
-	/* Same badge layer as the card, over the 16:9 media box. */
 	.badge { position: absolute; top: 0; left: 0; right: 0; aspect-ratio: 16 / 9; z-index: 3; pointer-events: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-hover { animation: none; } }
 </style>

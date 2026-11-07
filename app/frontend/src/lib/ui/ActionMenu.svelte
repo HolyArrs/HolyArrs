@@ -2,8 +2,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import Menu, { type MenuItem } from './Menu.svelte';
 
-	// A Menu whose trigger matches ActionButton: a glass pill with its word
-	// and a chevron (Library ▾), or with `round` a 44px glass circle (⋯).
 	let {
 		label,
 		caption,

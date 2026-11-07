@@ -1,10 +1,4 @@
 <script lang="ts" module>
-	// Status glyphs for the Requests page (chips, the progress capsule and the Filter menu).
-	// Path data hand-copied from Lucide (https://lucide.dev), ISC License,
-	// Copyright (c) Lucide Contributors. Glyphs: search, download, package, loader-circle,
-	// calendar, circle-check, circle-alert, circle-x, clock. Inlined, no runtime CDN.
-	// Each glyph has `fill` (the shape that takes the tinted duotone fill) and `d` (the strokes);
-	// `move` is the part that carries the micro-motion (the search fill moves with its lens).
 	export type StatusKey = 'pending' | 'upcoming' | 'searching' | 'downloading' | 'importing' | 'processing' | 'ready' | 'failed' | 'declined';
 	type Glyph = { fill?: string; d: string; move?: string; mark?: string };
 	const CIRCLE = 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z';
@@ -22,7 +16,6 @@
 		failed: { fill: CIRCLE, d: CIRCLE + 'M12 8v4M12 16h.01' },
 		declined: { fill: CIRCLE, d: CIRCLE + 'M15 9l-6 6M9 9l6 6' }
 	};
-	/** The status key for a status word ("Downloading · 40%" gives downloading). */
 	export function statusKey(word: string): StatusKey {
 		const w = word.split(' · ')[0].trim().toLowerCase();
 		return (w in glyphs ? w : 'processing') as StatusKey;
@@ -34,7 +27,6 @@
 	const g = $derived(glyphs[status]);
 </script>
 
-<!-- 24 grid drawn at 16px: a 2px Lucide stroke lands near 1.4px; 2.4 keeps it near 1.6px on screen. -->
 <svg class="si si-{status}" class:si-motion={motion} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 	{#if g.fill}<path class="si-fill" class:si-move={status === 'searching'} d={g.fill} fill="currentColor" stroke="none" />{/if}
 	{#if g.d}<path d={g.d} />{/if}

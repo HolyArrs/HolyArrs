@@ -3,15 +3,9 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
 
-	// A title hero action, 44px tall. `primary` is the filled white pill with
-	// its word inside (Search now, Add, Ask). `pill` is a glass pill with its
-	// word inside. Otherwise it is a round glass icon button: `label` is its
-	// accessible name and a tooltip shows after a short wait. `pressed` makes
-	// it an on/off toggle such as Keep up to date.
 	type Props = Omit<HTMLButtonAttributes, 'children'> & {
 		icon: IconName;
 		label: string;
-		/** Shorter visible word (pill and primary) or tooltip text (round); `label` stays the accessible name. */
 		caption?: string;
 		href?: string;
 		primary?: boolean;
@@ -22,7 +16,6 @@
 	let { icon, label, caption, href, primary = false, pill = false, pressed, busy = false, type = 'button', class: cls = '', ...rest }: Props = $props();
 	const round = $derived(!primary && !pill);
 	const word = $derived(caption ?? label);
-	// Pills show their word; the accessible name only differs when the caption is shorter.
 	const aria = $derived(round || (caption && caption !== label) ? label : undefined);
 </script>
 

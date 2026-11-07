@@ -3,10 +3,6 @@
 	import { onMount } from 'svelte';
 	import Icon from './Icon.svelte';
 
-	// One title page section: a heading and its content. On a phone (< 768px)
-	// it folds into a disclosure, open only when `primary`, so the page stays
-	// short. `head` holds extras beside the heading (outside the summary on a
-	// phone, so no button sits inside another).
 	let {
 		id,
 		title,
@@ -31,7 +27,6 @@
 {#if phone}
 	<details class="tp-section ui-fold" data-testid={testid} open={primary}>
 		<summary>
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex (only ever -1, for focus after a search) -->
 			<h2 {id} class="tp-h2" tabindex={focusable ? -1 : undefined}>{title}</h2>
 			<span class="chev" aria-hidden="true"><Icon name="chevronDown" size={18} /></span>
 		</summary>
@@ -42,12 +37,10 @@
 	<section class="tp-section" aria-labelledby={id} data-testid={testid}>
 		{#if head}
 			<div class="tp-head">
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex (only ever -1, for focus after a search) -->
 				<h2 {id} class="tp-h2" tabindex={focusable ? -1 : undefined}>{title}</h2>
 				{@render head()}
 			</div>
 		{:else}
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex (only ever -1, for focus after a search) -->
 			<h2 {id} class="tp-h2" tabindex={focusable ? -1 : undefined}>{title}</h2>
 		{/if}
 		{@render children()}

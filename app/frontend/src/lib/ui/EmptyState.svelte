@@ -2,7 +2,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import Button from './Button.svelte';
 
-	// Icon, one sentence, one action.
 	let {
 		icon = 'info',
 		title,

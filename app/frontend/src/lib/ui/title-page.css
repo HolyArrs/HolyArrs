@@ -1,17 +1,8 @@
-/* Title page layout (movie, show, artist, album): the Explore billboard
-   hero, then plain sections on the page background, each a heading and its
-   content; requester sections first, the manager Library section last.
-   Every title row uses the Explore wide card at Explore's own size token
-   (routes/explore/+page.svelte, .explore --title-item): about 279px at a
-   1536px window, never under 200px; on a phone 1.6 cards across.
-   The root rule is :is(div, article).tp so a short .tp class on a span elsewhere (GrowCard's trailer, once the Downloads phone title) never picks it up. */
 :is(div, article).tp { --tp-gap: clamp(28px, 3.9vw, 56px); container: tp / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: var(--tp-gap); min-width: 0; padding-bottom: 48px; }
-/* Wide rows sit almost edge to edge, as on Explore. */
 @media (min-width: 768px) { .tp .ui-shelf:has(.ui-wide) { --shelf-gap: 5px; } }
 @media (max-width: 767px) { :is(div, article).tp { --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }
 .tp > .ui-thero + * { margin-top: calc(20px - var(--tp-gap)); }
 .tp-h3 { margin: 0 0 10px; font: 700 17px/1.3 var(--font-ui); letter-spacing: -0.01em; }
-/* Where to stream beside the dates: one band, two columns. */
 .tp-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px 48px; padding: 18px 20px; border-radius: var(--r-card); background: var(--surface-1); }
 .tp-band:has(> :only-child) { grid-template-columns: 1fr; }
 .tp-band p { margin: 0; }
@@ -27,20 +18,17 @@
 .tp-row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .tp-row-end { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; flex: none; }
 
-/* A download in progress or just finished: one slim line under the hero. */
 .tp-dl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
 .tp-dl-text { margin: 0; color: var(--text-muted); font: var(--t-subhead); min-width: 0; overflow-wrap: anywhere; flex: 1 1 240px; }
 .tp-dl .tp-bar { flex: 1 1 160px; max-width: 280px; }
 .tp-dl + .tp-dl { margin-top: -1px; }
 .tp-dls { display: flex; flex-direction: column; margin-top: calc(var(--tp-gap) * -0.5); }
 
-/* About: a two-column definition list in the normal UI font. */
 .tp-about { display: grid; grid-template-columns: minmax(120px, max-content) minmax(0, 1fr); gap: 10px 28px; margin: 0; font: var(--t-body); }
 .tp-about dt { color: var(--text-muted); }
 .tp-about dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
 .tp-why { margin: 14px 0 0; color: var(--text); font: var(--t-body); max-width: 70ch; }
 
-/* Admin-only details (file names, folders, import notes). */
 .tp-details { margin-top: 10px; font: var(--t-subhead); color: var(--text-muted); }
 .tp-details summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; color: var(--text-muted); font-weight: 600; }
 .tp-details ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
@@ -59,14 +47,11 @@
 }
 .tp-btn { max-width: 100%; min-width: 0; }
 
-/* In-page anchors land below the sticky top bar. */
 .tp [id] { scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
-/* Phone: folded sections sit flush, one line between them. */
 @media (max-width: 767px) {
 	.ui-fold + .ui-fold { margin-top: calc(var(--tp-gap) * -1 - 1px); }
 }
 
-/* Versions: one row (the main Version); See all lays every Version out. */
 .tp-head-end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tp-vrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .tp-vrow > li, .tp-vrow > .tp-row { flex-direction: column; justify-content: flex-start; gap: 10px; padding: 14px 16px; border: 0; border-radius: var(--r-card); background: var(--surface-2); min-width: 0; }
@@ -74,5 +59,4 @@
 .tp-vrow > li[hidden] { display: none; }
 .tp-vrow .tp-row-end { justify-content: flex-start; }
 
-/* Whole-card cast rows: a face is never wider than its share of the row. */
 .tp .ui-shelf .ui-person .ph { width: min(var(--size), 100% - 8px); height: auto; aspect-ratio: 1; }

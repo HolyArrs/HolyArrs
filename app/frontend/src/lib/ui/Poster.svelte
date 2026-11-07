@@ -2,20 +2,14 @@
 	import { to } from '../core/paths.ts';
 	import { proxied } from '../core/tmdb-image.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
-	// A poster, or the title's initials on a quiet tile when there is no picture.
 	let { src, name }: { src?: string | null; name: string } = $props();
 	let broken = $state(false);
 	const usable = $derived(!!src && !broken && (src.startsWith('https://') || src.startsWith('/')));
 	let loaded = $state(false);
-	// A small slot (a History row, a Requests thumbnail) takes the 250 px copy
-	// instead of the stored 500-1000 px picture, by the cover rule in
-	// music-pages.ts coverSize: up to 125 css pixels on screens up to 2x. Library
-	// pictures, album covers and artist photos all have one.
 	let width = $state(0);
 	const sized = /^\/api\/v1\/(?:artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)|music-trending\/art\/(?:artist|album)\/[^/?]+|albums\/\d+\/cover)(?:\?(?!.*size=).*)?$/;
 	const shown = $derived.by(() => {
 		const url = src ?? '';
-		// A TMDB picture comes through HolyArrs' artwork cache, never from TMDB itself.
 		const viaCache = proxied(url);
 		if (viaCache !== url) return viaCache;
 		const small = sized.test(url) && width <= 125 && width * (globalThis.devicePixelRatio || 1) <= 250;

@@ -1,5 +1,4 @@
 <script lang="ts" module>
-	// How many PageLoaders on screen are busy; #main carries aria-busy while any is.
 	let busyCount = 0;
 	function markBusy(on: boolean): void {
 		busyCount = Math.max(0, busyCount + (on ? 1 : -1));
@@ -14,12 +13,6 @@
 	import { untrack, type Snippet } from 'svelte';
 	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../core/pageload.ts';
 
-	// The page loading screen: the branded Orbit (the same ring as the boot screen in
-	// app.html) centred in the content area while a page's main data loads. It appears only
-	// after 300 ms, stays at least 100 ms once shown, adds a status line at 3 s and a retry
-	// at 10 s, then the content fades in over 200 ms. Rules: lib/pageload.ts.
-	// `cached`: the page's answer came from the app's kept answers, so it swaps in at once.
-	// Loading inside an open page (more rows, a tab, a section) keeps the quiet placeholders.
 	let {
 		loading,
 		children,
@@ -31,8 +24,6 @@
 	}: { loading: boolean; children?: Snippet; status?: string; label?: string; immediate?: boolean; cached?: boolean; onretry?: () => void } = $props();
 
 	const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
-	// `held` keeps a shown Orbit up after the data arrived; `busy` follows `loading` in the same
-	// render, so the content never draws a frame without its data.
 	let held = $state(false);
 	let stage = $state<PageStage>(untrack(() => (loading ? 'hidden' : 'orbit')));
 	let start = now();
@@ -95,7 +86,6 @@
 {/if}
 
 <style>
-	/* Holds the content area from the first frame (no jump when the Orbit arrives), on the page background. */
 	.pl {
 		min-height: calc(100dvh - var(--topbar-h, 56px) - 96px);
 		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;

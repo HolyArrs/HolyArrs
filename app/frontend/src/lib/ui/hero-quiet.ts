@@ -1,13 +1,7 @@
-// The Explore hero's words, as Netflix runs them: a few seconds into the
-// trailer the overview folds away and the logo glides down. Once folded, the
-// words stay folded for that title (a quick glance, shown once): scrolling
-// away and back, the trailer ending or another player taking over never bring
-// them back; only a new title or a page load does. Every state can go to every other, so nothing gets stuck.
 
 export type HeroPhase = 'still' | 'playing' | 'quiet' | 'ended';
 export type HeroEvent = 'play' | 'settle' | 'stop' | 'reset';
 
-/** Seconds of trailer before the words fold away (measured: about 6 s). */
 export const QUIET_AFTER = 6000;
 
 export function heroStep(phase: HeroPhase, ev: HeroEvent): HeroPhase {
@@ -17,17 +11,14 @@ export function heroStep(phase: HeroPhase, ev: HeroEvent): HeroPhase {
 		case 'stop':
 			return phase === 'still' || phase === 'quiet' ? phase : 'ended';
 		case 'play':
-			// Resuming after a pause keeps the words folded; a fresh start shows them.
 			return phase === 'quiet' ? 'quiet' : 'playing';
 		case 'settle':
 			return phase === 'playing' ? 'quiet' : phase;
 	}
 }
 
-/** The overview and facts are shown in every phase but quiet. */
 export const wordsShown = (p: HeroPhase) => p !== 'quiet';
 
-/** A tiny driver: the phase plus the settle timer, with injectable timers for tests. */
 export function heroQuiet(
 	onchange: (p: HeroPhase) => void,
 	timers: { set: (f: () => void, ms: number) => ReturnType<typeof setTimeout>; clear: (t: ReturnType<typeof setTimeout>) => void } = {

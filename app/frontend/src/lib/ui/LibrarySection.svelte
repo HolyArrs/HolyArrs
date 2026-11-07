@@ -2,10 +2,6 @@
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 
-	// The manager-only Library section, always last on a title page: files,
-	// Versions, releases, subtitles, history and the search actions. Open by
-	// default; the caller shows it only with manage_library, so requesters
-	// never see paths or files.
 	let { note = 'Versions, files, releases, subtitles and history', children }: { note?: string; children: Snippet } = $props();
 	let open = $state(true);
 </script>

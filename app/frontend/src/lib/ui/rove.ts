@@ -1,20 +1,14 @@
-// Roving tab stop for a row of cards: Tab reaches the row once (the last
-// card used, else the first), the arrow keys, Home and End move between
-// cards. Every focusable inside the active card keeps its tab stop, so its
-// own buttons stay reachable; the other cards' are taken out (tabindex -1).
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]';
 
 function stops(card: Element): HTMLElement[] {
 	return [...card.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => {
 		if (el.closest('[inert]')) return false;
-		// Elements that were never tab stops (tabindex -1 before we came) stay out.
 		if (!el.dataset.rove) el.dataset.rove = el.getAttribute('tabindex') === '-1' ? 'skip' : 'on';
 		return el.dataset.rove === 'on';
 	});
 }
 
-/** Svelte action: put it on the element whose children are the cards. */
 export function rove(node: HTMLElement) {
 	let active = 0;
 	const cards = () => [...node.children].filter((c) => stops(c).length) as HTMLElement[];

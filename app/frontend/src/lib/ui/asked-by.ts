@@ -1,8 +1,3 @@
-// Asked by: who in the household asked for a title (title page only;
-// cards stay factual). Everyone in the household sees every asker.
-//
-// Every word this feature shows lives in WORDS, so a wording change is one
-// edit here.
 
 export type Asker = { id: number; name: string; asked_at: string; me: boolean };
 export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }> };
@@ -13,26 +8,22 @@ export const WORDS = {
 	two: (a: string, b: string) => `Asked by ${a} and ${b}`,
 	many: (a: string, others: number) => `Asked by ${a} and ${others} ${others === 1 ? 'other' : 'others'}`,
 	youAnd: (others: number) => `You and ${others} ${others === 1 ? 'other' : 'others'} asked`,
-	/** Tooltip: "Ana asked for this on 12 Oct." */
 	tip: (who: string, date: string) => `${who} asked for this on ${date}.`,
 	youTip: (date: string) => `You asked for this on ${date}.`,
 	dateSep: ' · ',
 	listTitle: 'Who asked'
 } as const;
 
-/** First name only: "Ana Lopez" -> "Ana". */
 export function firstName(name: string): string {
 	return (name || '').trim().split(/\s+/)[0] || name;
 }
 
-/** "12 Oct" in the reader's locale order, English month. */
 export function shortDate(iso: string): string {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '';
 	return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-/** The line: "You asked", "Asked by Ana", "Asked by Ana and Leo", "Asked by Ana and 2 others". */
 export function askedByLine(askers: Asker[]): string {
 	if (!askers.length) return '';
 	const others = askers.filter((a) => !a.me);
@@ -45,7 +36,6 @@ export function askedByLine(askers: Asker[]): string {
 	return WORDS.many(n[0], n.length - 1);
 }
 
-/** The tooltip for the first asker shown. */
 export function askedByTip(askers: Asker[]): string {
 	if (!askers.length) return '';
 	const first = askers[0];
@@ -57,7 +47,6 @@ export function askedByTip(askers: Asker[]): string {
 	return WORDS.tip(who, when);
 }
 
-/** Title page line: "Asked by Ana · 12 Oct". */
 export function askedByDated(askers: Asker[]): string {
 	const line = askedByLine(askers);
 	if (!line) return '';
@@ -65,12 +54,10 @@ export function askedByDated(askers: Asker[]): string {
 	return date ? line + WORDS.dateSep + date : line;
 }
 
-/** Initial for an avatar. */
 export function initial(name: string): string {
 	return (firstName(name)[0] || '?').toUpperCase();
 }
 
-/** Asks GET /asked-by for many titles at once; {} on no ids. */
 export async function loadAskedBy(get: <T>(path: string) => Promise<T>, ids: number[]): Promise<AskedByAnswer> {
 	const uniq = [...new Set(ids.filter((n) => n > 0))].slice(0, 200);
 	if (!uniq.length) return { titles: {} };

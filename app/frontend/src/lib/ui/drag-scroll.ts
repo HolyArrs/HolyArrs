@@ -1,7 +1,3 @@
-// Mouse drag-to-scroll for horizontal rows, so a desktop mouse can grab and
-// fling a row the way a finger does on a phone. Touch and pen keep the native
-// scrolling; only the mouse is handled here. A drag of more than a few pixels
-// swallows the click that follows, so letting go never opens a card.
 
 const THRESHOLD = 5;
 const FRICTION = 0.95;
@@ -84,7 +80,6 @@ export function dragScroll(el: HTMLElement) {
 		}
 	}
 	function onDragStart(e: DragEvent) {
-		// Images and links would start the browser's own drag ghost instead.
 		e.preventDefault();
 	}
 

@@ -3,11 +3,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SRC, buildGraph, isTest, usersOf } from '../../structure-graph.ts';
 
-// lib/ui holds only parts that two or more modules use. A page counts as the
-// module it belongs to; Home and the app frame count as users too, and the
-// /dev/ui showcase does not. ui-pending.json lists the parts that wait for their
-// own module's step, and an entry that no longer applies fails the test.
-// Refresh it with: UPDATE_PENDING=1 npx vitest run src/lib/ui/ui-usage.test.ts
 
 const PENDING_FILE = join(SRC, 'lib/ui/ui-pending.json');
 const pending: string[] = existsSync(PENDING_FILE) ? JSON.parse(readFileSync(PENDING_FILE, 'utf8')) : [];

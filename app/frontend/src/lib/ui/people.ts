@@ -53,7 +53,6 @@ export type PersonStats = { first_year?: number; last_year?: number; active: boo
 
 export type FilmSort = 'oldest' | 'newest' | 'popular';
 
-/** The hero's chips: years active, credits (films and shows), average score, household. */
 export function personChips(s: PersonStats | undefined, library: number, asked: number): string[] {
 	if (!s) return [];
 	const out: string[] = [];
@@ -69,7 +68,6 @@ export function personChips(s: PersonStats | undefined, library: number, asked: 
 	return out;
 }
 
-/** Credits grouped under decade headings, in the order they arrive; undated ones under "Coming soon". */
 export function byDecade(movies: PersonMovie[]): { label: string; movies: PersonMovie[] }[] {
 	const groups: { label: string; movies: PersonMovie[] }[] = [];
 	const at = new Map<string, number>();
@@ -108,9 +106,6 @@ function errorText(err: unknown): string {
 	return 'This movie could not be submitted.';
 }
 
-// runReviewed intentionally uses the existing one-movie routes. Each item
-// keeps its own result, so one refusal or weekly-limit answer does not hide
-// what happened to the other reviewed movies.
 export async function runReviewed(
 	post: (path: string, body: Record<string, unknown>) => Promise<unknown>,
 	action: 'add' | 'ask',

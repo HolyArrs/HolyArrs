@@ -1,6 +1,3 @@
-// Awards (Wikidata, CC0) and the Wikipedia bio (CC BY-SA 4.0) for a title
-// or person, from GET /api/v1/wiki/{kind}/{id}. Anything missing comes
-// back empty, so the page hides the badge and keeps TMDB's biography.
 
 import { to } from '../core/paths.ts';
 
@@ -12,8 +9,6 @@ const EMPTY: WikiFacts = { badges: [], awards: [], bio: null };
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
-// A person's backup photo: the metadata server's stored copy through the
-// artwork cache, or a TVmaze (or older Wikimedia) link.
 const ownPhoto = /^\/api\/v1\/artwork\/img\/person\/\d+\/\d+\.(?:webp|jpg)(?:\?v=[A-Za-z0-9_-]+)?$/;
 function personImage(v: string): string | undefined {
 	if (ownPhoto.test(v)) return to(v);
@@ -22,7 +17,6 @@ function personImage(v: string): string | undefined {
 
 export const CC_BY_SA = 'https://creativecommons.org/licenses/by-sa/4.0/';
 
-/** wikipediaURL keeps an https link on a *.wikipedia.org host, else ''. */
 export function wikipediaURL(v: unknown): string {
 	try {
 		const u = new URL(str(v));
@@ -32,10 +26,8 @@ export function wikipediaURL(v: unknown): string {
 	}
 }
 
-/** licenseURL keeps a Creative Commons https link, else the CC BY-SA 4.0 one. */
 export const licenseURL = (v: unknown) => (str(v).startsWith('https://creativecommons.org/') && !/[\s"<>]/.test(str(v)) ? str(v) : CC_BY_SA);
 
-/** cleanWikiFacts keeps sane badges and awards and a Wikipedia bio only with its link and license. */
 export function cleanWikiFacts(raw: unknown): WikiFacts {
 	if (!raw || typeof raw !== 'object') return EMPTY;
 	const r = raw as Record<string, unknown>;
@@ -50,7 +42,6 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: personImage(str(r.image)) };
 }
 
-/** awardsTip lists the awards for the badge's hover: wins first, a few lines. */
 export function awardsTip(awards: WikiAward[], max = 6): string {
 	const line = (a: WikiAward) => `${a.won ? 'Won' : 'Nominated'}: ${a.name}${a.year ? ` (${a.year})` : ''}`;
 	const major = awards.filter((a) => a.family);
@@ -61,8 +52,6 @@ export function awardsTip(awards: WikiAward[], max = 6): string {
 
 const cache = new Map<string, Promise<WikiFacts>>();
 
-/** loadWikiFacts asks once per title or person (TMDB id); failures answer empty. */
-/** A person's name (optional) lets the server look for a backup photo by name. */
 export function loadWikiFacts(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show' | 'person', id: string | null | undefined, name = ''): Promise<WikiFacts> {
 	if (!id || !/^[1-9][0-9]*$/.test(id)) return Promise.resolve(EMPTY);
 	const q = kind === 'person' && name ? `?name=${encodeURIComponent(name.slice(0, 100))}` : '';

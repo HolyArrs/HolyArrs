@@ -1,10 +1,6 @@
-// The grown card's two text lines under the title: the facts (year, length,
-// age rating, stars), then one context line (the household's status, else
-// why the card is shown). Pure, so the card and its tests share them.
 
 import type { Fresh } from './fresh.ts';
 
-/** "1h 46m" from minutes. */
 export function shortRuntime(min?: number): string {
 	if (!min || min <= 0) return '';
 	const h = Math.floor(min / 60);
@@ -15,18 +11,14 @@ export function shortRuntime(min?: number): string {
 export interface FactsIn {
 	kind: 'movie' | 'show';
 	year?: number;
-	/** Shows: how many seasons (specials not counted). */
 	seasons?: number;
-	/** Movies: minutes. */
 	runtime?: number;
 	certification?: string;
-	/** Already passed through shownScore (undefined under 25 votes). */
 	score?: number;
 }
 
 export type Fact = { text: string; part: 'year' | 'length' | 'rating' | 'stars' };
 
-/** growFacts: shows "2024 · 3 seasons · TV-PG · ★ 6.8", movies "2024 · 1h 46m · PG-13 · ★ 6.6"; missing parts are left out. */
 export function growFacts(f: FactsIn): Fact[] {
 	const out: Fact[] = [];
 	if (f.year) out.push({ text: String(f.year), part: 'year' });
@@ -37,9 +29,7 @@ export function growFacts(f: FactsIn): Fact[] {
 	return out;
 }
 
-/** Genres that carry no mood: a mood word on them is not trusted. */
 const PLAIN = new Set(['Reality', 'Talk', 'News', 'Soap']);
-/** The moods a genre plainly rules out. */
 const CLASH: Record<string, string[]> = {
 	Scary: ['Family', 'Kids', 'Animation', 'Comedy'],
 	Cozy: ['Horror', 'War', 'Crime', 'Thriller'],
@@ -49,11 +39,6 @@ const CLASH: Record<string, string[]> = {
 };
 const MOODS = new Set(['Dark', 'Exciting', 'Feel-good', 'Suspenseful', 'Witty', 'Romantic', 'Emotional', 'Mind-bending', 'Cozy', 'Gritty', 'Inspiring', 'Scary']);
 
-/**
- * fitTags: two or three words the title's data supports. Moods that the
- * genres contradict (or any mood on a Reality, Talk or News title) are
- * dropped; the genres top the list up to two.
- */
 export function fitTags(moods: readonly string[] | undefined, genres: readonly string[] | undefined, max = 3): string[] {
 	const g = genres ?? [];
 	const plain = g.some((x) => PLAIN.has(x));
@@ -69,19 +54,14 @@ export function fitTags(moods: readonly string[] | undefined, genres: readonly s
 	return out.slice(0, max);
 }
 
-/** The household's status for the context line (from the card's owned mark). */
 export interface HouseIn {
 	state?: string;
-	/** The mark's own words, such as "Downloading 42%". */
 	label?: string;
-	/** The signed-in person asked for it. */
 	mine?: boolean;
-	/** Names of others who asked, as this member may see them. */
 	askers?: string[];
 	fresh?: Fresh | null;
 }
 
-/** houseLine: "In your Library · up to date", "Downloading 42%", "Asked by Mia", "Coming Nov 14", or ''. */
 export function houseLine(h: HouseIn): string {
 	switch (h.state) {
 		case 'available':
@@ -106,10 +86,8 @@ export interface WhyIn {
 	streaming?: { name: string; rank?: number } | null;
 }
 
-/** Row types whose title is itself the reason (Because you have Slow Horses). */
 const SEEDED = new Set(['because_have', 'because_asked', 'person', 'household']);
 
-/** whyShown: "#3 on Netflix today", "Because you have Slow Horses", "New season", or ''. */
 export function whyShown(w: WhyIn): string {
 	if (w.streaming?.rank) return `#${w.streaming.rank} on ${w.streaming.name} today`;
 	if (w.rowType && SEEDED.has(w.rowType) && w.rowTitle) return w.rowTitle;
@@ -117,7 +95,6 @@ export function whyShown(w: WhyIn): string {
 	return '';
 }
 
-/** contextLine: the household status when there is one, else why the card is shown. */
 export function contextLine(h: HouseIn, w: WhyIn): { text: string; kind: 'house' | 'why' } | null {
 	const house = houseLine(h);
 	if (house) return { text: house, kind: 'house' };

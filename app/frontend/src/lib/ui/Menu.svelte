@@ -11,8 +11,6 @@
 	import Icon from './Icon.svelte';
 	import Popover from './Popover.svelte';
 
-	// A Popover holding a list of actions. Arrow keys, Home/End move;
-	// Enter/Space pick; picking closes the menu and returns focus.
 	let {
 		label,
 		items,
@@ -42,7 +40,6 @@
 	function entries(panel: HTMLElement) {
 		return [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')];
 	}
-	// Opened with ArrowUp: start on the last item.
 	let startAtEnd = false;
 	function focusFirst(panel: HTMLElement) {
 		const list = entries(panel);

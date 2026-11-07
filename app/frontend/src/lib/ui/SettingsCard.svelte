@@ -1,5 +1,4 @@
 <script lang="ts" module>
-	// Which Advanced disclosures a person left open, per person and per card, in this browser.
 	const PREFIX = 'holyarrs.settings.advanced.';
 	export function advancedKey(person: string, card: string): string {
 		return `${PREFIX}${person || 'someone'}.${card}`;
@@ -16,7 +15,6 @@
 			if (open) localStorage.setItem(key, '1');
 			else localStorage.removeItem(key);
 		} catch {
-			// Storage can be blocked; the disclosure still works for this visit.
 		}
 	}
 </script>
@@ -26,9 +24,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { session } from '../core/session.svelte.ts';
 
-	// A grouped settings block: title, one-line description, content, an
-	// optional Advanced disclosure (closed until the person opens it, then
-	// remembered) and an optional footer. tone="danger" outlines it in red.
 	let {
 		title,
 		description,
@@ -47,7 +42,6 @@
 		tone?: 'danger';
 		children?: Snippet;
 		advanced?: Snippet;
-		/** A stable name for this card's Advanced disclosure; defaults to id or title. */
 		advancedId?: string;
 		footer?: Snippet;
 	} = $props();

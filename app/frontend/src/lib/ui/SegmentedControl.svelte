@@ -1,8 +1,6 @@
 <script lang="ts" generics="T extends string">
 	import Icon, { type IconName } from './Icon.svelte';
 
-	// A small set of mutually exclusive choices. Arrow keys move the choice
-	// (radio group pattern); the thumb slides to the picked segment.
 	let {
 		options,
 		value = $bindable(),
@@ -17,13 +15,11 @@
 		label: string;
 		size?: 'sm' | 'md';
 		testid?: string;
-		/** The words a screen reader hears after a change (the page's content switched), e.g. l => `Showing ${l}`. */
 		announce?: (label: string) => string;
 		onchange?: (v: T) => void;
 	} = $props();
 	let said = $state('');
 
-	// A value that matches no option (a choice not made yet) shows no thumb.
 	const found = $derived(options.findIndex((o) => o.value === value));
 	const index = $derived(Math.max(0, found));
 	let buttons: HTMLButtonElement[] = $state([]);
@@ -66,8 +62,6 @@
 	.sm button { min-height: 28px; padding: 0 10px; font-size: 13px; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { button { min-height: 40px; } }
-	/* Phones: every segment is a 44px-tall target, whatever height a page draws it at
-	   (a page that scales the control down raises --seg-hit to match). */
 	@media (max-width: 767px) and (pointer: coarse) {
 		button { position: relative; }
 		button::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: var(--seg-hit, 44px); transform: translateY(-50%); }

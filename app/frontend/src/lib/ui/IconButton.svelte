@@ -5,7 +5,6 @@
 
 	type Props = Omit<HTMLButtonAttributes, 'children'> & {
 		icon: IconName;
-		/** Accessible name; also the tooltip. */
 		label: string;
 		variant?: 'plain' | 'tinted' | 'filled' | 'glass';
 		size?: 'sm' | 'md' | 'lg';
@@ -47,7 +46,6 @@
 	.ui-ibtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ui-ibtn[aria-pressed='true'], .ui-ibtn[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
 	.count { position: absolute; top: -3px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center; border-radius: 999px; background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/1 var(--font-ui); box-shadow: 0 0 0 2px var(--bg); }
-	/* Tooltip after 500ms; the accessible name never depends on it. */
 	[data-tip]::after {
 		content: attr(data-tip); position: absolute; z-index: 60; left: 50%; top: calc(100% + 6px);
 		translate: -50% -2px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none;
@@ -55,7 +53,6 @@
 		transition: opacity var(--dur-fast) var(--ease-out) 0ms, translate var(--dur-fast) var(--ease-out) 0ms;
 	}
 	.tip-above[data-tip]::after { top: auto; bottom: calc(100% + 6px); }
-	/* At the right edge of the screen: the tip lines up with the button's right side. */
 	.tip-below-end[data-tip]::after { left: auto; right: 0; translate: 0 -2px; }
 	.tip-below-end[data-tip]:hover::after, .tip-below-end[data-tip]:focus-visible::after { translate: 0 0; }
 	.tip-right[data-tip]::after { left: calc(100% + 8px); top: 50%; translate: -2px -50%; }

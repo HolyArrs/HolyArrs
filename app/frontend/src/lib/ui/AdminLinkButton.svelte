@@ -4,9 +4,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
 
-	// A link that looks like the kit Button and keeps every link attribute
-	// (download, target, rel, data-testid). Use Button for actions; this is for
-	// links that must stay links, such as a file download.
 	type Props = Omit<HTMLAnchorAttributes, 'children'> & {
 		href: string;
 		variant?: 'primary' | 'secondary' | 'plain' | 'destructive';

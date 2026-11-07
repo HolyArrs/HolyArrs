@@ -6,10 +6,6 @@
 	import type { TheaterHandoff } from '../core/trailer/theater.svelte.ts';
 	import { attachHLS, screenTarget } from '../core/trailer/hls-player.ts';
 
-	// A muted trailer over the hero or hover card art. Tries each source in
-	// order (our own <video> on the direct stream, then the privacy-enhanced
-	// YouTube embed) and fades in only once a picture is actually playing,
-	// so a refused or blocked one never shows. Only one plays at a time.
 	let {
 		sources,
 		title,
@@ -26,43 +22,30 @@
 		corner = false,
 		top = false
 	}: {
-		/** Full screen from a small expand button in the corner (hover cards); a click on the picture is left to the card's link. */
 		corner?: boolean;
-		/** Big heroes: the buttons sit top right with their tips below, the same spot on every page. */
 		top?: boolean;
 		sources: TrailerSource[];
 		title: string;
-		/** Loop (hover cards); the hero ends and shows its pictures again. */
 		repeat?: boolean;
 		controls?: boolean;
-		/** A pause/play button beside the sound (the hero, which autoplays for longer than 5 s). */
 		pausable?: boolean;
-		/** Every source failed: stay on the pictures. */
 		onfail?: () => void;
 		onended?: () => void;
 		onplaying?: () => void;
-		/** The pause button was pressed (true) or play pressed again (false). */
 		onpause?: (paused: boolean) => void;
-		/** Clicking the playing trailer opens it full screen: the source, the time played and where it sits. */
 		onexpand?: (o: TheaterHandoff) => void;
-		/** Seconds to start from (a hero carrying on where the full-screen player left off). */
 		start?: number;
-		/** Fetch a picture as tall as the player needs, up to 1080p (the hero); else at most 720p (hover cards). */
 		sharp?: boolean;
 	} = $props();
-	/** target is the tallest stream level worth fetching here. */
 	const target = () => screenTarget('cover');
-	/** Read once: a later change never seeks a running player. */
 	const startAt = untrack(() => start);
 	let seeded = false;
-	/** seed starts the first picture at startAt (direct streams; pass-through starts there itself). */
 	function seed(e: Event) {
 		const v = e.currentTarget as HTMLVideoElement;
 		if (seeded || startAt <= 0.5) return;
 		seeded = true;
 		if (startAt < (v.duration || Infinity) - 1) v.currentTime = startAt;
 	}
-	/** grab copies the playing frame, so the full-screen player never opens on black. */
 	function grab(v: HTMLVideoElement | undefined | null): HTMLCanvasElement | null {
 		if (!v || !v.videoWidth || !v.videoHeight) return null;
 		const c = document.createElement('canvas');
@@ -78,8 +61,6 @@
 
 	let at = $state(0);
 	let shown = $state(false);
-	// Trailers start muted; turning the sound on is remembered for this
-	// browser session, and later trailers then unmute once they play.
 	let muted = $state(true);
 	let run = $state(0);
 	let done = $state(false);
@@ -87,7 +68,6 @@
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
 	let box = $state<HTMLElement>();
-	/** Seconds played (the embed reports it in its info messages). */
 	let embedTime = 0;
 	const src = $derived(sources[at]);
 	const origin = typeof location !== 'undefined' ? location.origin : '';
@@ -96,10 +76,6 @@
 	let guard: ReturnType<typeof setTimeout> | null = null;
 	let stopped = false;
 
-	// Pass-through: the relayed stream on this source's <video> (kind pass),
-	// or on a second <video> the direct one hands over to when sound is
-	// turned on (kind direct with pass). The direct one stays visible and
-	// playing until the second is playing at the same moment.
 	let detach: (() => void) | null = null;
 	let up = $state<{ url: string; start: number } | null>(null);
 	let upVideo = $state<HTMLVideoElement>();
@@ -129,14 +105,10 @@
 		swapped = false;
 	}
 
-	// switchToPass starts the relayed stream a little ahead of the direct
-	// one, waits for the direct one to reach it, then plays it with sound.
-	// ?trailerdebug=1 shows each step of the sound switch on screen.
 	const debugOn = typeof location !== 'undefined' && location.search.includes('trailerdebug');
 	let dbgLines = $state<string[]>([]);
 	function dbg(m: string) {
 		if (!debugOn) return;
-		// untrack: dbg runs inside effects; reading dbgLines there would loop.
 		untrack(() => (dbgLines = [...dbgLines.slice(-11), `${(performance.now() / 1000).toFixed(1)}s ${m}`]));
 	}
 	function switchToPass(url: string) {
@@ -159,9 +131,6 @@
 		const old = video;
 		const go = () => {
 			if (gone || !old || swapped || asked) return;
-			// Too late (the relay took longer than the lead): aim further ahead.
-			// After a few misses, take the sound stream where the picture is and
-			// start it now (a tiny hitch beats falling back to mute).
 			if (old.currentTime > v.currentTime + 0.05) {
 				dbg(`picture ahead ${(old.currentTime - v.currentTime).toFixed(2)}s, try ${tries + 1}`);
 				if (++tries <= 3) {
@@ -199,7 +168,6 @@
 			dbg('FAIL ' + (typeof why === 'string' ? why : (v.error?.message || v.dataset.hlsError || (why as Error)?.message || 'error event')));
 			gone = true;
 			dropUp();
-			// This trailer stays quiet; the person's sound choice is kept for the next one.
 			muted = true;
 		};
 		v.addEventListener('canplay', go);
@@ -216,9 +184,6 @@
 		};
 	});
 
-	// Hover cards: take over the element warmed at hover start (already
-	// playing, muted, unseen) instead of starting a new one.
-	// Untracked: the attachment must not run again (and drop the element) when state changes.
 	function takeWarm(node: HTMLVideoElement) {
 		return untrack(() => takeWarmNow(node));
 	}
@@ -231,7 +196,6 @@
 		w.removeAttribute('aria-hidden');
 		w.setAttribute('aria-label', node.getAttribute('aria-label') ?? '');
 		w.disablePictureInPicture = true;
-		// The rendered element got no address (warm below), so it is simply swapped out.
 		node.replaceWith(w);
 		video = w;
 		w.addEventListener('playing', started);
@@ -257,7 +221,6 @@
 		clearGuard();
 		release?.();
 		release = null;
-		// Another player took over: for the hero this ends the trailer, so its words come back.
 		onended?.();
 	}
 
@@ -266,7 +229,6 @@
 		guard = null;
 	}
 
-	// Nothing playing within 8 s counts as a failure of that source.
 	function armGuard() {
 		clearGuard();
 		guard = setTimeout(next, 8000);
@@ -300,13 +262,9 @@
 		return hasSound(src);
 	}
 
-	// Unmuting without a recent click may pause the video; then it stays muted.
-	// A picture-only stream switches to pass-through instead.
 	function unmute() {
 		if (src?.kind === 'direct' && !swapped && onUnmute(src) === 'switch' && src.pass && !video?.currentSrc.includes('/trailer/stream/')) {
 			muted = false;
-			// Native HLS (iOS Safari): unmuted play must start inside the tap,
-			// so the same element takes the relayed stream right away.
 			if (nativeHLS() && video && matchMedia('(pointer: coarse)').matches) {
 				const v = video;
 				const t = v.currentTime;
@@ -349,7 +307,6 @@
 		if (src) armGuard();
 	});
 
-	// The embed talks through postMessage (enablejsapi): ready, state, errors.
 	function post(func: string, args: unknown[] = []) {
 		frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube-nocookie.com');
 	}
@@ -379,12 +336,8 @@
 	let ctlAt = 0;
 	let ctlBox = $state<HTMLElement>();
 	let expandBtn = $state<HTMLButtonElement>();
-	// The controls sit inside a card's link: the app's link router sees a
-	// click before the button's own handler could cancel it. So clicks on the
-	// controls are taken first (window capture), run here, and go no further.
 	$effect(() => {
 		const take = (e: MouseEvent) => {
-			// The full-screen click too: the card's link must not open the title page under the player.
 			if (expandBtn && (e.target as Element | null)?.closest?.('button.expand') === expandBtn) {
 				e.stopImmediatePropagation();
 				if (corner) ctlAt = 0;
@@ -404,9 +357,6 @@
 		window.addEventListener('click', take, true);
 		return () => window.removeEventListener('click', take, true);
 	});
-	// heard is what the person actually hears: the playing element's own
-	// muted flag (muted is the wish, which runs ahead while the sound stream
-	// starts or after a browser refused sound). The button shows heard.
 	let heard = $state(false);
 	$effect(() => {
 		if (!shown) return;
@@ -418,7 +368,6 @@
 		const t = setInterval(read, 300);
 		return () => clearInterval(t);
 	});
-	// A sound stream that has not started within 10 s gives up (quiet beats a wrong button).
 	$effect(() => {
 		if (!up || swapped) return;
 		const t = setTimeout(() => {
@@ -432,10 +381,8 @@
 	});
 	function toggleMute(e?: MouseEvent) {
 		ctlAt = Date.now();
-		// The hover card's art is a link: the button must not follow it.
 		e?.preventDefault();
 		e?.stopPropagation();
-		// Sound is on its way: a second press does not cancel it.
 		if (!heard && !muted && up && !swapped) return;
 		if (!heard) muted = true;
 		dbg(`sound button: ${muted ? 'unmute' : 'mute'} (src=${src?.kind}, swapped=${swapped})`);
@@ -458,7 +405,6 @@
 			else void lv.play().catch(() => {});
 		} else post(paused ? 'pauseVideo' : 'playVideo');
 	}
-	// Sound off before the switch finished: stay on the direct stream.
 	function dropUpIfWaiting() {
 		if (up && !swapped) dropUp();
 	}
@@ -475,7 +421,6 @@
 	}
 
 	function expand(e: MouseEvent) {
-		// A click on the sound or pause buttons never opens the full-screen player.
 		if (Date.now() - ctlAt < 600) return;
 		e.preventDefault();
 		e.stopPropagation();
@@ -483,9 +428,7 @@
 		const v = live();
 		const time = v ? v.currentTime : embedTime;
 		const rect = box.getBoundingClientRect();
-		// Full screen plays with sound: a picture-only direct trailer goes over pass-through.
 		const source: TrailerSource = swapped && up ? { kind: 'pass', url: up.url, key: src.key } : src.kind === 'direct' && !src.audio && src.pass ? { kind: 'pass', url: src.pass, key: src.key } : src;
-		// The sound and the frame on screen go with it.
 		const still = grab(v);
 		const quiet = !heard;
 		stop();
@@ -505,7 +448,6 @@
 <div class="ui-trailer" class:shown class:quick={repeat} bind:this={box}>
 	{#key `${at}:${run}`}
 		{#if src?.kind === 'direct'}
-			<!-- svelte-ignore a11y_media_has_caption -->
 			<video
 				bind:this={video}
 				{@attach takeWarm}
@@ -524,7 +466,6 @@
 				onended={ended}
 			></video>
 			{#if up}
-				<!-- svelte-ignore a11y_media_has_caption -->
 				<video
 					bind:this={upVideo}
 					class="up"
@@ -539,7 +480,6 @@
 				></video>
 			{/if}
 		{:else if src?.kind === 'pass'}
-			<!-- svelte-ignore a11y_media_has_caption -->
 			<video
 				bind:this={video}
 				muted
@@ -582,7 +522,6 @@
 			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="replay" />
 		{/if}
 		{#if onexpand && shown && !corner}
-			<!-- Heroes: a click on the picture opens full screen too; this is the visible way in. -->
 			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="expand" data-testid="trailer-expand" />
 		{/if}
 		{#if onexpand && shown && corner}
@@ -599,12 +538,9 @@
 	.dbg { position: fixed; left: 8px; bottom: 8px; z-index: 99999; max-width: 520px; margin: 0; padding: 8px 10px; font: 12px/1.35 ui-monospace, monospace; color: #9f9; background: rgb(0 0 0 / 85%); border-radius: 8px; white-space: pre-wrap; pointer-events: none; }
 	.ui-trailer { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; container-type: size; }
 	.ui-trailer.shown { opacity: 1; }
-	/* Hover cards: the picture is already moving; a short fade. */
 	.ui-trailer.quick { transition-duration: var(--dur-fast); }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
-	/* The embed is letterboxed 16:9; scale it to cover a wider or taller box. */
 	iframe { left: 50%; top: 50%; width: max(100%, 177.78cqh); height: max(100%, 56.25cqw); translate: -50% -50%; }
-	/* The pass-through video waits unseen until it plays, then covers the direct one. */
 	video.up { opacity: 0; z-index: 1; }
 	video.up.swapped { opacity: 1; }
 	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; }

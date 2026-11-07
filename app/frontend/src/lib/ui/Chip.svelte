@@ -2,8 +2,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
 
-	// A filter or choice token. With `selected` it is a toggle (aria-pressed);
-	// with `onremove` it shows a remove button.
 	let {
 		label,
 		selected,
@@ -18,9 +16,7 @@
 		selected?: boolean;
 		icon?: IconName;
 		count?: number;
-		/** A short line after the count, e.g. "4 seeding". */
 		note?: string;
-		/** The id of an element that describes the chip (a hint). */
 		describedby?: string;
 		onclick?: () => void;
 		onremove?: () => void;

@@ -1,12 +1,8 @@
-// One status vocabulary for a title's ask and Library state, used by every
-// poster, title hero, Requests row, search result and Explore card. Members
-// get the plain words (spec section 7); staff get more precise ones.
 import type { StatusKind } from './StatusPill.svelte';
 import type { AskState, SlotView } from '../core/types.ts';
 
 export type Audience = 'member' | 'staff';
 
-/** audienceOf: people who manage the Library or approve asks get the staff words. */
 export function audienceOf(can: (perm: 'manage_library' | 'approve') => boolean): Audience {
 	return can('manage_library') || can('approve') ? 'staff' : 'member';
 }
@@ -18,12 +14,9 @@ export interface StatusFacts {
 	percent?: number;
 	failed?: boolean;
 	comingSoon?: boolean;
-	/** The state of the title's ask, if anyone asked. */
 	ask?: AskState | null;
 	neverAdd?: boolean;
-	/** The title is in the Library list, with or without a file yet. */
 	tracked?: boolean;
-	/** The ask is the signed-in person's own. */
 	mine?: boolean;
 }
 
@@ -49,7 +42,6 @@ const memberWords: Record<StatusKind, string> = {
 	requested: 'Requested'
 };
 
-/** statusLabel is the word for one status kind, for members or staff. */
 export function statusLabel(kind: StatusKind, who: Audience, opts: { percent?: number; titleKind?: StatusFacts['titleKind'] } = {}): string {
 	if (kind === 'downloading' && opts.percent !== undefined) return `Downloading ${Math.round(opts.percent)}%`;
 	if (kind === 'in_library' && who === 'member' && opts.titleKind === 'artist') return 'Ready to listen';
@@ -58,12 +50,6 @@ export function statusLabel(kind: StatusKind, who: Audience, opts: { percent?: n
 
 const askKind: Record<AskState, StatusKind> = { asked: 'requested', approved: 'approved', turned_down: 'turned_down', available: 'in_library' };
 
-/**
- * audienceStatus says one status kind in the words for members or staff.
- * Members never see a failed download (they see their ask, or that the
- * title is on its way), and a Library title still being looked for is
- * "Requested" for them, never "Get it".
- */
 export function audienceStatus(kind: StatusKind, who: Audience, ctx: Pick<StatusFacts, 'tracked' | 'titleKind' | 'percent' | 'ask'> = {}): TitleStatus {
 	let k = kind;
 	if (who === 'member') {
@@ -73,11 +59,6 @@ export function audienceStatus(kind: StatusKind, who: Audience, ctx: Pick<Status
 	return { kind: k, label: statusLabel(k, who, ctx) };
 }
 
-/**
- * titleStatus picks the one status a title shows: downloading, then in the
- * Library, then a failed download, then its ask, then the Never-add list,
- * then coming soon, else missing; then says it for the audience.
- */
 export function titleStatus(f: StatusFacts, who: Audience): TitleStatus {
 	if (!f.downloading && !f.inLibrary && !f.failed && !f.ask && f.neverAdd) return { kind: 'turned_down', label: 'On the Never-add list' };
 	const kind: StatusKind = f.downloading
@@ -92,14 +73,12 @@ export function titleStatus(f: StatusFacts, who: Audience): TitleStatus {
 						? 'coming_soon'
 						: 'missing';
 	const st = audienceStatus(kind, who, f);
-	// The person's own open ask says so, so it reads apart from someone else's.
 	return f.mine && (st.kind === 'requested' || st.kind === 'approved') && f.ask ? { ...st, label: `You asked · ${st.label}` } : st;
 }
 
 const haveStates = new Set(['in_library', 'better_wanted', 'no_hardlink']);
 const askRank: Record<AskState, number> = { available: 3, approved: 2, asked: 1, turned_down: 0 };
 
-/** factsOf reads a Library title's slots and asks (so it is tracked). */
 export function factsOf(t: { slots?: SlotView[] | null; asks?: { state: AskState }[] | null }): StatusFacts {
 	const slots = t.slots ?? [];
 	const dl = slots.find((s) => s.download?.active || s.state === 'downloading' || s.state === 'importing');

@@ -1,8 +1,6 @@
 <script lang="ts" module>
-	// Our own line icons on a 24px grid, 1.75 stroke. No icon font, no CDN.
 	const paths = {
 		menu: 'M4 6h16M4 12h16M4 18h16',
-		// Can't reach: a cloud with a slash through it.
 		cloudOff: 'M8.2 8.3A4.5 4.5 0 0 0 7 17.5h9.5M12.3 6.6a5 5 0 0 1 4.9 4.1A3.5 3.5 0 0 1 19.6 16M3.5 3.5l17 17',
 		home: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z',
 		library: 'M5 4h3v16H5zM10.5 4h3v16h-3zM16 5.2l2.9-.8 3 15.4-2.9.8z',
@@ -23,8 +21,6 @@
 		key: 'M8.5 11a4 4 0 1 1 0 .1zM12 12.5h8.5M17.5 12.5v3M20 12.5v2.5',
 		folder: 'M3.5 6.5a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z',
 		source: 'M4 6.5h16M4 12h16M4 17.5h10M18 16l2 2-2 2',
-		// A plug: two prongs, the body, and its cord (the Downloads Source column).
-		// A picture: a frame, a sun and a hill (the Downloads Poster column).
 		image: 'M4 5h16v14H4zM9 9.5a1.5 1.5 0 1 1-.01 0M4 17l5-5 4 4 2.5-2.5L20 17',
 		plug: 'M9 3.5v4M15 3.5v4M7 7.5h10v3.5a5 5 0 0 1-10 0zM12 16v4.5',
 		downloader: 'M4 14.5h16v5H4zM12 4v7M8.5 7.5 12 11l3.5-3.5M7 17h.01',
@@ -42,9 +38,7 @@
 		copy: 'M8.5 8.5h11v11h-11zM15.5 8.5v-4h-11v11h4',
 		wish: 'M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z',
 		subtitle: 'M3.5 5.5h17v13h-17zM7 11.5h4M13 11.5h4M7 14.5h6.5M16 14.5h1',
-		// Bell: a full rounded dome on a flared lip, a stem on top and an arc clapper.
 		bell: 'M12 3.5v1.25M6.75 10.75a5.25 5.25 0 0 1 10.5 0v3.4c0 .8.3 1.55.85 2.1l.6.6c.4.4.12 1.15-.45 1.15H5.75c-.57 0-.85-.75-.45-1.15l.6-.6c.55-.55.85-1.3.85-2.1zM9.9 20.1a2.25 2.25 0 0 0 4.2 0',
-		// Following: the same bell with a check in the dome.
 		bellOn: 'M12 3.5v1.25M6.75 10.75a5.25 5.25 0 0 1 10.5 0v3.4c0 .8.3 1.55.85 2.1l.6.6c.4.4.12 1.15-.45 1.15H5.75c-.57 0-.85-.75-.45-1.15l.6-.6c.55-.55.85-1.3.85-2.1zM9.9 20.1a2.25 2.25 0 0 0 4.2 0M9.6 12.1l1.65 1.65 3.15-3.3',
 		music: 'M9 18V5.5l11-2V16M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
 		people: 'M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 19.5c.8-3.2 3.3-5 6.5-5s5.7 1.8 6.5 5M16 5a3 3 0 0 1 0 6M18 14.6c1.8.6 3 2.2 3.5 4.9',
@@ -60,7 +54,6 @@
 		play: 'M8 5.5v13l10.5-6.5z',
 		pause: 'M8.5 5.5v13M15.5 5.5v13',
 		inbox: 'M4 13.5 6.5 5h11l2.5 8.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 13.5h4.5l1 2h5l1-2H20',
-		// Requests: a list where some rows are ticked off.
 		requests: 'M4 6.5l1.5 1.5L8 5.5M4 12.5l1.5 1.5L8 11.5M4.5 18h3M11 7h9M11 13h9M11 18h9',
 		tools: 'M14.5 4.5a4 4 0 0 0-4.6 5.4L4.5 15.3l3.2 3.2 5.4-5.4a4 4 0 0 0 5.4-4.6l-2.6 2.6-2.4-.6-.6-2.4z',
 		eye: 'M2.5 12C4.6 8 8 5.5 12 5.5S19.4 8 21.5 12C19.4 16 16 18.5 12 18.5S4.6 16 2.5 12zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z',
@@ -71,7 +64,6 @@
 		sparkle: 'M11 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8zM18 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z',
 		alert: 'M12 4 21 19.5H3zM12 10v4.5M12 17.2v.1',
 		appearance: 'M12 3.5a8.5 8.5 0 1 1 0 17zM12 3.5a8.5 8.5 0 1 0 0 17',
-		// Badge glyphs: drawn inside a 4–20 box so they sit optically centred in a pill.
 		owned: 'M5.5 12.5l4 4 9-9.5',
 		dash: 'M6.5 12h11',
 		gauge: 'M4.5 16a7.5 7.5 0 1 1 15 0M12 16l3.5-5.5',
@@ -88,8 +80,6 @@
 </script>
 
 <script lang="ts">
-	// `stroke` is in grid units; small glyphs (badges) use a heavier unit so
-	// they render near 1.5px at 12–14px.
 	let { name, size = 20, label, stroke = 1.75 }: { name: IconName; size?: number; label?: string; stroke?: number } = $props();
 </script>
 

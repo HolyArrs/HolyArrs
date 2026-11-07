@@ -1,8 +1,4 @@
 <script lang="ts">
-	// Tags for a title, a Downloader or a Source: chips with a remove
-	// button, and a field that adds what is typed on Enter, a comma (typed or
-	// pasted) or leaving it. Backspace in the empty field takes the last tag
-	// off. The tags already in use are offered as suggestions.
 	import { onMount } from 'svelte';
 	import Chip from './Chip.svelte';
 	import { addTags, tagsInUse } from './tags.ts';
@@ -29,7 +25,7 @@
 		text = '';
 	}
 	function key(e: KeyboardEvent) {
-		if (e.isComposing) return; // an input method is still building the word
+		if (e.isComposing) return;
 		if (e.key === 'Enter' || e.key === ',') {
 			e.preventDefault();
 			commit();
@@ -52,7 +48,6 @@
 		bind:value={text}
 		onkeydown={key}
 		oninput={() => {
-			// A pasted "kids, 4k" adds both at once.
 			if (text.includes(',')) commit();
 		}}
 		onblur={commit}

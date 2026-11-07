@@ -1,5 +1,3 @@
-// The details a title page reads from GET /metadata/{kind}/{tmdb}: people,
-// where to stream, similar titles and the collection, tolerating missing fields.
 import type { ProviderItem } from './title-cards.ts';
 
 export type InfoKind = 'movie' | 'show';
@@ -10,7 +8,6 @@ export interface InfoPerson {
 	role: string;
 	character?: string;
 	profile?: string;
-	/** TMDB person id, for the link to their page. */
 	id?: string;
 }
 export interface InfoSeason {
@@ -49,31 +46,20 @@ export interface InfoDetails {
 	streaming: InfoService[];
 	similar: ProviderItem[];
 	collection: { name: string; parts: ProviderItem[] } | null;
-	/** Up to three mood words (TMDB keywords and genres). */
 	moods: string[];
-	/** ISO 639-1 code of the original language. */
 	originalLanguage?: string;
-	/** ISO 3166-1 codes of the countries it comes from. */
 	originCountry: string[];
-	/** TMDB's status word: Released, In Production, Ended, Canceled… */
 	status?: string;
 	tagline?: string;
-	/** The title in its own language, only when it differs. */
 	originalTitle?: string;
-	/** A movie's budget and box office, in US dollars. */
 	budget?: number;
 	revenue?: number;
-	/** The first production companies. */
 	studios: string[];
-	/** A show's kind (Scripted, Miniseries…), usual episode length in minutes, and the languages spoken in it. */
 	showType?: string;
 	episodeRuntime?: number;
 	spokenLanguages: string[];
-	/** YYYY-MM-DD: a movie's release in theaters, digitally and on disc; a show's first and last air date. */
 	dates: { theaters?: string; digital?: string; physical?: string; firstAir?: string; lastAir?: string };
-	/** A show's next episode to air. */
 	nextEpisode?: { season: number; episode: number; name?: string; airDate: string };
-	/** TMDB keyword names (topic tags). */
 	keywords: string[];
 	titleId?: number;
 	head: ProviderItem;
@@ -85,10 +71,8 @@ const pos = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 
 const words = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : []);
 const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
 
-/** MAX_CAST round faces in a short row. */
 export const MAX_CAST = 8;
 
-/** readInfo reads a /metadata/{kind}/{tmdb} answer, tolerating missing fields. */
 export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 	const people = arr(raw.people).map((p) => ({ name: str(p.name) ?? '', role: str(p.role) ?? 'actor', character: str(p.character), profile: str(p.profile), id: str(p.id) })).filter((p) => p.name);
 	const items = (v: unknown) => arr(v).filter((s) => str(s.tmdb_id) && str(s.name)) as unknown as ProviderItem[];
@@ -160,7 +144,6 @@ function readNext(v: unknown): InfoDetails['nextEpisode'] {
 	return airDate ? { season: typeof e.season === 'number' ? e.season : 0, episode: typeof e.episode === 'number' ? e.episode : 0, name: str(e.name), airDate } : undefined;
 }
 
-/** firstSeason is the season the picker starts on: season 1, else the first real one (specials last). */
 export function firstSeason(seasons: InfoSeason[]): number | null {
 	if (!seasons.length) return null;
 	return (seasons.find((s) => s.number === 1) ?? seasons.find((s) => s.number > 0) ?? seasons[0]).number;
@@ -170,7 +153,6 @@ export function seasonLabel(n: number): string {
 	return n === 0 ? 'Specials' : `Season ${n}`;
 }
 
-/** readEpisodes reads a /metadata/show/{tmdb}/seasons/{n} answer. */
 export function readEpisodes(raw: Raw): InfoEpisode[] {
 	return arr(raw.episodes)
 		.map((e) => ({ number: typeof e.number === 'number' ? e.number : 0, name: str(e.name), overview: str(e.overview), runtime: pos(e.runtime), still: str(e.still), airDay: str(e.air_day) }))
@@ -183,9 +165,7 @@ export function minutes(m?: number): string {
 	return h ? `${h}h ${m % 60 ? `${m % 60}m` : ''}`.trim() : `${m}m`;
 }
 
-/** facts is the line under the title: year · rating · runtime (movies) or seasons (shows). */
 export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime' | 'seasons'>): string[] {
-	// The type leads, as on every card: "Show · 4 seasons · 2024 · TV-MA".
 	const out: string[] = [];
 	if (d.kind === 'movie') {
 		const r = minutes(d.runtime);

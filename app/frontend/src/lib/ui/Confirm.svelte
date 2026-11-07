@@ -6,9 +6,6 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { needsConfirm, type Sensitive } from './sensitive.ts';
 
-	// Shows the sensitive control once the local sign-in is fresh; otherwise
-	// asks for the HolyArrs password (and a code) right here, inline, and then
-	// shows it. Nothing waits in a permanent card.
 	let { action, onCancel, children }: { action: Sensitive; onCancel?: () => void; children: Snippet } = $props();
 	const id = $props.id();
 	let typed = $state('');

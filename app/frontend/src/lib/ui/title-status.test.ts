@@ -54,7 +54,6 @@ describe('title status words', () => {
 		expect(titleStatus({ ask: 'asked', mine: true }, 'staff')).toEqual({ kind: 'requested', label: 'You asked · Waiting' });
 		expect(titleStatus({ ask: 'approved', mine: true }, 'member').label).toBe('You asked · Approved');
 		expect(titleStatus({ ask: 'asked', mine: false }, 'member').label).toBe('Requested');
-		// Once it is in the Library or downloading, that is what counts.
 		expect(titleStatus({ ask: 'available', mine: true, inLibrary: true }, 'member').label).toBe('Ready to watch');
 		expect(titleStatus({ ask: 'asked', mine: true, downloading: true }, 'member').label).toBe('Downloading');
 	});

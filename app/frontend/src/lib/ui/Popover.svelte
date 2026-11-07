@@ -4,8 +4,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
 
-	// A trigger and a floating panel. Closes on Escape, an outside click, or
-	// when content calls close(); focus goes back to the trigger.
 	let {
 		label,
 		icon,
@@ -23,12 +21,9 @@
 		ontriggerkey,
 		tabindex
 	}: {
-		/** Accessible name of the trigger. */
 		label: string;
 		icon?: IconName;
-		/** Visible trigger text (button and row variants). */
 		text?: string;
-		/** Custom trigger content, replaces icon/text. */
 		trigger?: Snippet;
 		variant?: 'icon' | 'button' | 'row';
 		align?: 'start' | 'end';
@@ -39,9 +34,7 @@
 		width?: number;
 		children: Snippet<[() => void]>;
 		onopen?: (panel: HTMLElement) => void;
-		/** Keys pressed on the trigger (a Menu opens on the arrow keys). */
 		ontriggerkey?: (e: KeyboardEvent) => void;
-		/** Trigger tab stop, for rows that keep one roving stop. */
 		tabindex?: number;
 	} = $props();
 
@@ -70,7 +63,6 @@
 		};
 		const esc = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
-				// Caught first, so a Sheet behind the panel stays open.
 				e.preventDefault();
 				e.stopPropagation();
 				close();
@@ -89,10 +81,6 @@
 		};
 	});
 
-	// Keep the panel on screen: a menu near the right edge of a phone would
-	// otherwise reach past it and make the whole page scroll sideways.
-	// The panel floats above the page (fixed to the viewport), so a parent
-	// that clips its overflow (a hero card) never cuts it off or scrolls.
 	let pos = $state('');
 	let flip = $state(false);
 	function place() {
@@ -102,13 +90,10 @@
 		const vh = window.innerHeight;
 		const h = panel.offsetHeight;
 		const w = Math.min(width, vw - 24);
-		// Flip to the roomier side when the asked side has no space.
 		const up = placement === 'above' ? b.top - 6 >= h || b.top > vh - b.bottom : vh - b.bottom - 6 < h && b.top > vh - b.bottom;
 		flip = up !== (placement === 'above');
 		let left = align === 'start' ? b.left : b.right - w;
 		left = Math.max(8, Math.min(left, vw - 8 - w));
-		// A transformed ancestor (the pinned pills slide with the top bar) becomes the
-		// containing block of a fixed panel; measure from it so the panel still lands on the button.
 		const p = panel.offsetParent;
 		const o = p && p !== document.body && p !== document.documentElement ? p.getBoundingClientRect() : { left: 0, top: 0, bottom: vh };
 		left -= o.left;
@@ -180,7 +165,6 @@
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);
 		box-shadow: var(--shadow-lift), 0 0 0 1px light-dark(var(--line), transparent);
 	}
-	/* On an album or artist colour the surfaces are see-through tints: the panel gets a solid, slightly lifted shade of the colour. */
 	:global(html[data-tint]) .panel { background: color-mix(in srgb, var(--tint-bg, #1d1d22) 86%, #fff); color: #fff; }
 	@media (pointer: coarse) { .icon { width: 44px; height: 44px; } .button { min-height: 44px; } }
 </style>

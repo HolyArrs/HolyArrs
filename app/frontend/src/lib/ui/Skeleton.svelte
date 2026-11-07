@@ -1,7 +1,4 @@
 <script lang="ts">
-	// Placeholder while content loads. It uses the shared Silhouette shimmer (tokens.css .sk):
-	// brand-tinted, one sweep for every tile, in the layout from the first frame and visible
-	// at 150 ms. For page-shaped placeholders use lib/ui/sk.
 	let {
 		shape = 'line',
 		width,

@@ -1,6 +1,3 @@
-// Card badges: one freshness badge (from the server's `fresh`: a bottom strip) and one library status circle. The type is
-// a word on the metadata line, never a badge. Everything here is pure so the
-// cards stay the same everywhere.
 
 export type FreshKind = 'new_episode' | 'new_season' | 'recently_added' | 'coming' | 'season_coming' | 'new_release';
 
@@ -14,11 +11,6 @@ export const FRESH_ORDER: readonly FreshKind[] = ['new_episode', 'new_season', '
 
 const MUSIC: readonly FreshKind[] = ['recently_added', 'new_release'];
 
-/**
- * ROW_SUPPRESS mirrors the server's explore.RowSuppress: a card never
- * repeats what its row already says. The server drops these first; the page
- * checks again so a cached answer never shows one.
- */
 export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
 	best: ['new_release'],
 	new_services: ['new_release'],
@@ -32,11 +24,6 @@ export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
 	new_seasons: ['new_season']
 };
 
-/**
- * shownFresh is the one badge a card shows, or null: music keeps Recently
- * Added and New Release only, and a row never repeats its own meaning (Just
- * arrived drops Recently Added...).
- */
 export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean; row?: string } = {}): Fresh | null {
 	if (!f || !FRESH_ORDER.includes(f.kind) || !f.text) return null;
 	if (where.music && !MUSIC.includes(f.kind)) return null;
@@ -46,22 +33,18 @@ export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean
 
 const TYPE_WORD = { movie: 'Movie', show: 'Show' } as const;
 
-/** typeWord is the first word of a card's metadata line ("Show"), or '' for other kinds. */
 export function typeWord(kind: string | undefined): string {
 	return kind === 'movie' || kind === 'show' ? TYPE_WORD[kind] : '';
 }
 
-/** metaLine puts the type first: "Show · 4 Seasons · 2024", "Movie · 2h 10m · 2024". */
 export function metaLine(kind: string | undefined, rest: readonly (string | number | null | undefined)[]): string[] {
 	return [typeWord(kind), ...rest.map((r) => (r == null ? '' : String(r)))].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
 }
 
-/** freshLabel is the strip's accessible name. */
 export function freshLabel(f: Fresh): string {
 	return f.text;
 }
 
-/** pickFresh takes the highest-priority strip from several candidates. */
 export function pickFresh(list: readonly (Fresh | null | undefined)[]): Fresh | null {
 	let best: Fresh | null = null;
 	for (const f of list) if (f && (!best || FRESH_ORDER.indexOf(f.kind) < FRESH_ORDER.indexOf(best.kind))) best = f;
@@ -70,7 +53,6 @@ export function pickFresh(list: readonly (Fresh | null | undefined)[]): Fresh | 
 
 export type OwnState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
 
-/** cardBadges caps a card at one freshness badge and one status circle; there is no type badge. */
 export function cardBadges(o: { fresh?: Fresh | null; owned?: { state: OwnState } | null; music?: boolean; row?: string }) {
 	return {
 		fresh: shownFresh(o.fresh, o),

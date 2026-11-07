@@ -7,7 +7,6 @@
 	import Skeleton from './Skeleton.svelte';
 	import Sheet from './Sheet.svelte';
 
-	// Cast and crew of a title as a PersonCircle shelf; each opens the person's page.
 	let { titleId }: { titleId: number } = $props();
 	type Credit = { person: PersonSummary; roles: string[]; characters: string[] };
 	let people = $state<Credit[]>([]);
@@ -23,7 +22,6 @@
 			.catch(() => { if (live) { phase = 'error'; } });
 		return () => { live = false; };
 	});
-	// One row on the page; See all opens everyone in a sheet.
 	const ROW = 12;
 	let all = $state(false);
 	const role = (c: Credit) => (c.characters?.length ? c.characters.join(', ') : c.roles.join(', '));

@@ -1,6 +1,3 @@
-// Which ratings a title page shows, picked per browser in Settings › Appearance.
-// Three by default: IMDb (viewers), Rotten Tomatoes critics and audience. A title
-// with none of the picked ones still shows one score, the first it has in ORDER.
 import type { OutsideScore } from './outside-ratings.ts';
 
 export type RatingSource = 'imdb' | 'rt_critics' | 'rt_audience' | 'metacritic' | 'letterboxd' | 'trakt' | 'tmdb';
@@ -34,12 +31,9 @@ let saved = false;
 try {
 	saved = typeof window !== 'undefined' && localStorage.getItem(KEY) !== null;
 } catch {
-	/* No storage: the defaults. */
 }
-// custom: picked here at least once; while false a title fills up to three scores.
 export const ratingPicks = $state<{ list: RatingSource[]; custom: boolean }>({ list: typeof window === 'undefined' ? DEFAULT_RATINGS : stored(), custom: saved });
 
-/** At most three scores at the top of a title page. */
 export const MAX_RATINGS = 3;
 
 export function setRatingPick(id: RatingSource, on: boolean) {
@@ -50,7 +44,6 @@ export function setRatingPick(id: RatingSource, on: boolean) {
 	try {
 		localStorage.setItem(KEY, JSON.stringify(next));
 	} catch {
-		/* Kept for this visit only. */
 	}
 }
 
@@ -60,21 +53,13 @@ export function resetRatingPicks() {
 	try {
 		localStorage.removeItem(KEY);
 	} catch {
-		/* Nothing kept. */
 	}
 }
 
-/**
- * shownRatings is what a title shows: the picked outside scores it has and the
- * TMDB score when picked; with none of them, the first score it has in ORDER.
- */
 export function shownRatings(scores: OutsideScore[], tmdb: number | null | undefined, picks: RatingSource[], fill = false): { scores: OutsideScore[]; tmdb: number | undefined } {
-	// None picked on purpose: no scores at the top (the full list stays at the bottom of the page).
 	if (!fill && picks.length === 0) return { scores: [], tmdb: undefined };
 	const out = scores.filter((s) => picks.includes(s.source as RatingSource));
 	let t = tmdb && picks.includes('tmdb') ? tmdb : undefined;
-	// Still on the default three (never changed here): a title missing one of
-	// them fills up to three with the next scores it has, TMDB last.
 	if (fill) {
 		for (const s of scores.filter((x) => !out.includes(x)).sort((a, b) => ORDER.indexOf(a.source as RatingSource) - ORDER.indexOf(b.source as RatingSource))) {
 			if (out.length >= 3) break;

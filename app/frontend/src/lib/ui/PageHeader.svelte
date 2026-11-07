@@ -2,15 +2,12 @@
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 
-	// One page header for every screen: large title, optional subtitle and
-	// actions (no back link: the top bar's breadcrumb shows where you came from). On phones a compact title appears in a sticky bar once
-	// the large title scrolls away.
 	let {
 		title,
 		subtitle,
 		actions,
 		size = 'large'
-	}: { title: string; subtitle?: string; /** Ignored: the top bar's breadcrumb leads back. */ back?: { href: string; label: string }; actions?: Snippet; size?: 'large' | 'title1' } = $props();
+	}: { title: string; subtitle?: string; back?: { href: string; label: string }; actions?: Snippet; size?: 'large' | 'title1' } = $props();
 
 	let head = $state<HTMLElement>();
 	let shrunk = $state(false);

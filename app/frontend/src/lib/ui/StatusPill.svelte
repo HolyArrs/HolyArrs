@@ -11,18 +11,15 @@
 		failed: 'fail',
 		coming_soon: 'idle'
 	};
-	/** statusWord is the default (staff) word for a status, from the one status vocabulary in title-status.ts. */
 	export function statusWord(kind: StatusKind, percent?: number): string {
 		return statusLabel(kind, 'staff', { percent });
 	}
 </script>
 
 <script lang="ts">
-	// Dot plus a word, never colour alone.
-	// Over art it becomes the shared glass pill with a line glyph instead of the dot.
 	import ArtPill from './ArtPill.svelte';
 	import type { IconName } from './Icon.svelte';
-	let { kind, percent, label, on = 'surface', compact = false, testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; /** Over art only: glyph alone, the word stays as its name. */ compact?: boolean; testid?: string } = $props();
+	let { kind, percent, label, on = 'surface', compact = false, testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; compact?: boolean; testid?: string } = $props();
 	const glyphs: Record<StatusKind, IconName> = {
 		in_library: 'owned',
 		downloading: 'download',
@@ -44,7 +41,6 @@
 
 <style>
 	.ui-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-subhead); white-space: nowrap; font-variant-numeric: tabular-nums; max-width: 100%; min-width: 0; }
-	/* A long label (two Versions' states) ends in an ellipsis instead of pushing the page wider. */
 	.t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex: none; }
 	.ok i { background: var(--ok); }

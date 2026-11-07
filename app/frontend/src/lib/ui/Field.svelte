@@ -1,10 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	// One form field: label, the control (input, select or textarea, passed as
-	// children with the same id), an optional hint and an error line. The
-	// control keeps its own name, id and validation; styles live in app.css
-	// (.field, .input, .hint) so every form looks the same.
 	let {
 		id,
 		label,

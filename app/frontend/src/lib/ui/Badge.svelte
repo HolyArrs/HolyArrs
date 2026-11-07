@@ -1,7 +1,4 @@
 <script lang="ts">
-	// Quality and rating marks: 4K, HDR, Dolby Vision, Atmos, CC, PG-13.
-	// Neutral and outlined; `on="art"` for use over artwork.
-	// Over art it is the shared glass pill (ArtPill), so day tags, status and type all match.
 	import ArtPill from './ArtPill.svelte';
 	let { label, on = 'surface', title }: { label: string; on?: 'surface' | 'art'; title?: string } = $props();
 </script>

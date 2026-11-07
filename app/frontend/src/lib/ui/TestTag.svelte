@@ -1,7 +1,4 @@
 <script lang="ts">
-	// A connection test's result as one small tag: a green tick with "<App> v<version>",
-	// or a red "Not connected". The full answer stays in the tooltip; the place
-	// that shows the tag puts a failure's reason on its own short red line.
 	import Icon from '#lib/ui/Icon.svelte';
 	import { testLabel } from '#lib/core/test-tag.ts';
 
@@ -13,7 +10,6 @@
 		hover = '',
 		testid
 	}: { ok: boolean; text?: string; app?: string; extra?: string; hover?: string; testid?: string } = $props();
-	// hover: the tooltip when it should say more than text (a time, a server name); text alone is read for the version.
 </script>
 
 {#if ok}

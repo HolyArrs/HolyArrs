@@ -3,10 +3,6 @@
 	import { viewTransitionName } from '../core/motion.ts';
 	import { proxied, sharpen } from '../core/tmdb-image.ts';
 
-	// Layer 1 of every hero: the backdrop at once (from the artwork cache),
-	// a slow Ken Burns zoom-and-pan, and a crossfade through the title's
-	// other backdrops. Transforms and opacity only (GPU), never layout.
-	// Reduce motion: the first picture, still.
 	let {
 		pictures,
 		vtName,
@@ -17,31 +13,23 @@
 		onerror,
 		onload
 	}: {
-		/** Already-sized addresses; the first shows straight away. */
 		pictures: string[];
 		vtName?: string;
 		position?: string;
 		filter?: string;
-		/** Milliseconds each picture stays. */
 		every?: number;
-		/** A trailer is playing over it: stop changing pictures. */
 		paused?: boolean;
-		/** The first picture failed. */
 		onerror?: () => void;
-		/** The first picture has loaded (or failed): the hero has painted. */
 		onload?: () => void;
 	} = $props();
 
 	let box = $state<HTMLElement>();
 	let active = $state(0);
-	// Later pictures load only once the hero has been on screen a while.
 	let more = $state(false);
 	let ready = $state<boolean[]>([]);
 	let visible = $state(true);
 	let still = $state(false);
 	const shown = $derived(more ? pictures : pictures.slice(0, 1));
-	// The small picture paints at once; the one sized to the rendered width
-	// (w1280 or original on wide screens) replaces it once it has loaded.
 	let wide = $state(0);
 	let sharp = $state<Record<string, string>>({});
 	$effect(() => {
@@ -80,7 +68,6 @@
 		if (still || paused || !visible || shown.length < 2) return;
 		const t = setInterval(() => {
 			if (document.hidden) return;
-			// Only move to a picture that has loaded.
 			for (let step = 1; step < shown.length; step++) {
 				const n = (active + step) % shown.length;
 				if (n === 0 || ready[n]) {
@@ -136,7 +123,6 @@
 		opacity: 0;
 		transition: opacity var(--dur-slow, 400ms) var(--ease-out);
 	}
-	/* Fades in once loaded; the frame is fixed size, so nothing shifts. */
 	img.in { opacity: 1; }
 	@keyframes kb {
 		from { transform: scale(1.02) translate3d(0, 0, 0); }

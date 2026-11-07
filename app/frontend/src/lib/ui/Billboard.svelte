@@ -9,14 +9,6 @@
 	import { THEATER_CHROME_MS, THEATER_SHRINK_MS } from '../core/motion.ts';
 	import { heroQuiet, wordsShown, type HeroPhase } from './hero-quiet.ts';
 
-	// The billboard every hero shares (Explore and the four title pages): an
-	// inset rounded frame inside the page gutter, the words in the left 40%,
-	// Layer 1 moving pictures at once and (Layer 2) a muted trailer once the
-	// page has settled and the hero has stayed in view for HERO_DELAY. About
-	// 6 s into the trailer the words fold away (hero-quiet.ts); with `reveal`
-	// hovering or focusing the hero brings them back. Phones, reduced motion,
-	// data saver or the Autoplay trailers setting off: no autoplay
-	// (autoplayHere), the pictures stay.
 	let {
 		label,
 		testid,
@@ -41,32 +33,23 @@
 	}: {
 		label: string;
 		testid?: string;
-		/** A movie or show: the trailer plays here. Artists and albums leave it out. */
 		kind?: 'movie' | 'show';
 		tmdb?: string | null;
 		title: string;
 		videos?: Video[];
-		/** Already-sized backdrops; the first shows at once. */
 		pictures?: string[];
 		vtName?: string;
 		position?: string;
-		/** The page has finished its first load. */
 		settled?: boolean;
-		/** Hover or focus brings folded words back (title pages). */
 		reveal?: boolean;
-		/** The trailer starts by itself once per visit: scrolling away and back leaves the pictures (title pages). */
 		once?: boolean;
 		onpictureerror?: () => void;
-		/** Art drawn instead of the pictures (an album cover, a poster). */
 		art?: Snippet;
-		/** Top-left (the breadcrumb). */
 		top?: Snippet;
 		heading: Snippet;
 		meta?: Snippet;
-		/** The words that fold away (the synopsis). */
 		fold?: Snippet;
 		actions?: Snippet;
-		/** Inside the content, under the actions. */
 		after?: Snippet;
 	} = $props();
 
@@ -75,20 +58,15 @@
 	let armed = $state(false);
 	let sources = $state<TrailerSource[]>([]);
 	let playing = $state(false);
-	// The trailer already played to its end here: scrolling away and back never starts it again (Replay or Trailer does).
 	let finished = $state(false);
-	// once: the trailer already started by itself on this visit.
 	let autoPlayed = $state(false);
 
 	let phase = $state<HeroPhase>('still');
 	const words = heroQuiet((p) => (phase = p));
 	const quiet = $derived(!wordsShown(phase));
 	$effect(() => () => words.dispose());
-	// The trailer (its lookup and its first segments) waits for the first
-	// paint and the hero picture, so it never competes with them or the rows.
 	let painted = $state(false);
 	let artLoaded = $state(false);
-	// The picture could not be read: the placeholder (initials) takes its place.
 	let artFailed = $state(false);
 	const artReady = $derived(artLoaded || !!art || !pictures.length);
 	const trailer = $derived(!!kind && !!tmdb && painted && artReady);
@@ -100,15 +78,12 @@
 		openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hero', returnTo: box?.querySelector<HTMLElement>('.actions a[href], .actions button') ?? null });
 	}
 
-	// The full-screen player shrinking back into this hero: the trailer carries
-	// on here from the second it will have reached when the shrink ends.
 	let resumeAt = $state(0);
 	let resumeRun = $state(0);
 	let resuming = false;
 	$effect(() => {
 		if (!theater.back) return;
 		const b = takeBack(kind, tmdb);
-		// A trailer picked from the page's trailer list is not the hero's: the hero stays still.
 		if (!b || b.ended || b.from === 'panel') return;
 		resumeAt = b.time + (THEATER_CHROME_MS + THEATER_SHRINK_MS) / 1000;
 		resumeRun += 1;
@@ -126,7 +101,6 @@
 		}
 	}
 
-	// A new title: back to the still pictures.
 	$effect(() => {
 		void kind;
 		void tmdb;
@@ -139,14 +113,11 @@
 	});
 
 	$effect(() => {
-		// Played to the end and still here: keep it as it is (its Replay button stays).
 		if (finished && inView) return;
-		// once: the trailer that started by itself keeps playing while in view; it only never starts again.
 		if (once && autoPlayed && inView && armed) return;
 		if (trailer && settled && inView && !finished && !(once && autoPlayed)) {
 			wait.start();
-			// The lookup starts now, not after the dwell.
-			prefetchTrailer(kind!, tmdb!, false); // the lookup only: a hero never takes a warmed video over
+			prefetchTrailer(kind!, tmdb!, false);
 		} else {
 			wait.cancel();
 			armed = false;
@@ -154,7 +125,6 @@
 		return () => wait.cancel();
 	});
 
-	// Armed and still in view: ask for the sources; out of view: drop the player.
 	$effect(() => {
 		if (!armed || !kind || !tmdb) {
 			sources = [];
@@ -173,7 +143,6 @@
 		return () => ctl.abort();
 	});
 
-	// A new picture: wait for it again.
 	$effect(() => {
 		void pictures[0];
 		artLoaded = false;
@@ -196,7 +165,6 @@
 <section class="ui-billboard" class:quiet class:reveal bind:this={box} data-hero aria-label={label} data-testid={testid}>
 	<div class="art" aria-hidden={!sources.length}>
 		{#if !art && (!pictures.length || artFailed || !artLoaded)}
-			<!-- No picture, or not yet: a soft shimmer while it loads, the title's initials when there is none. -->
 			<ArtPlaceholder name={!pictures.length || artFailed ? title : ''} shape="wide" loading={!!pictures.length && !artFailed} />
 		{/if}
 		{#if art}
@@ -226,8 +194,6 @@
 <style>
 	.ui-billboard {
 		--hero-ink: var(--on-art-ink, #0b0b0c);
-		/* Netflix's inset billboard (measured): inside the page gutter, 24 px corners,
-		   77 % of the viewport tall but never taller than a 2.18:1 card (1913 x 878 at 2048 x 1145). */
 		--hero-r: 24px;
 		position: relative; isolation: isolate; overflow: hidden;
 		margin: 8px 0 0;
@@ -240,26 +206,19 @@
 	.shade {
 		position: absolute; inset: 0; pointer-events: none;
 		background:
-			/* A soft dark pool behind the logo, tagline and buttons, so they read on bright frames. */
 			radial-gradient(70% 75% at 0% 100%, rgb(0 0 0 / 72%) 0%, rgb(0 0 0 / 45%) 40%, rgb(0 0 0 / 0%) 75%),
 			linear-gradient(to right, rgb(0 0 0 / 60%) 0%, rgb(0 0 0 / 0%) 60%),
 			linear-gradient(to top, rgb(0 0 0 / 62%) 0%, rgb(0 0 0 / 18%) 35%, rgb(0 0 0 / 0%) 70%),
-			/* Behind the breadcrumb and chips at the top: bright frames kept them under 3:1. */
 			linear-gradient(to bottom, rgb(0 0 0 / 45%) 0%, rgb(0 0 0 / 0%) 22%);
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
 	.shade.playing { opacity: .85; }
-	/* Whenever the hero trailer shows its own controls (pause, sound, full screen, or replay at the end), they take over from a Trailer button; otherwise it stays. */
 	.ui-billboard:has(:global(.ctl [data-act])) :global([data-off-while-playing]) { display: none; }
-	/* Room for the breadcrumb, so a tall logo never runs under it. */
 	.ui-billboard:has(> .top) { padding-top: 60px; }
 	.ui-billboard:has(> .top) .heading :global(.bb-logo img) { max-height: min(var(--title-h), calc(100% - 8px)); }
 	.top :global(:is(a, span, p, button, li)) { text-shadow: 0 1px 3px rgb(0 0 0 / 80%), 0 0 12px rgb(0 0 0 / 50%); }
 	.top { position: absolute; top: clamp(14px, 2vw, 24px); left: clamp(20px, 2vw, 40px); right: 16px; z-index: 2; }
-	/* Netflix keeps the billboard's words in the left ~40%, so the picture stays open. */
 	.content { position: relative; width: clamp(320px, max(40%, min(500px, 60%)), 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
-	/* About 6 s into the trailer the overview folds (height and opacity, ~1 s ease) and
-	   the logo glides down with it; it unfolds the same way. */
 	.fold { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows var(--dur-hero) var(--ease-in-out), opacity var(--dur-slow) var(--ease-in-out); }
 	.fold-in { min-height: 0; overflow: hidden; }
 	.quiet .fold { grid-template-rows: minmax(0, 0fr); opacity: 0; pointer-events: none; }
@@ -268,7 +227,6 @@
 	.ui-billboard:has(> .top) .content { --title-h: clamp(64px, 8vw, 130px); }
 	.heading { transform-origin: left bottom; transition: transform var(--dur-hero) var(--ease-in-out); }
 	.quiet .heading { transform: scale(.8); }
-	/* The facts line shrinks with the title, in the same motion. */
 	.meta { transform-origin: left center; transition: transform var(--dur-hero) var(--ease-in-out); }
 	.quiet .meta { transform: scale(.8); }
 	.quiet.reveal:hover .heading, .quiet.reveal:focus-within .heading, .quiet.reveal:hover .meta, .quiet.reveal:focus-within .meta { transform: none; }
@@ -279,11 +237,9 @@
 	.meta :global(p) { margin: 0; font: 600 clamp(15px, .9vw, 22px)/1.35 var(--font-ui); color: rgb(255 255 255 / 92%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.fold :global(.bb-desc) { margin: 0; font: 400 clamp(13px, 1.05vw, 16px)/1.45 var(--font-ui); color: rgb(255 255 255 / 92%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 100%; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.fold :global(.bb-desc.open) { -webkit-line-clamp: unset; line-clamp: unset; display: block; }
-	/* Netflix sizes the billboard's buttons and facts with the window (measured at 2048 px: 48 px pills, 18 px facts). */
 	.actions { --hero-btn: clamp(44px, 2.35vw, 60px); display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, .6vw, 14px); margin-top: 4px; }
 	.actions :global(.ui-act) { height: var(--hero-btn); min-width: var(--hero-btn); font-size: clamp(16px, 1vw, 22px); }
 	.actions :global(.ui-act.round) { width: var(--hero-btn); }
-	/* More actions (ActionMenu) matches the other hero buttons at every size. */
 	.actions :global(.ui-actmenu .ui-pop > .trigger) { height: var(--hero-btn); min-width: var(--hero-btn); font-size: clamp(16px, 1vw, 22px); }
 	.actions :global(.ui-actmenu.round .ui-pop > .trigger) { width: var(--hero-btn); }
 	.actions :global(.ui-ibtn) { width: var(--hero-btn); height: var(--hero-btn); }

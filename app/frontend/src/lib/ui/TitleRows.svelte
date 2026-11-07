@@ -15,13 +15,6 @@
 	import TitleReviews from './TitleReviews.svelte';
 		import IconButton from './IconButton.svelte';
 
-	// The requester rows of a movie or show page, read from the details
-	// answer (GET /metadata/{kind}/{tmdb}), in page order: Where to watch,
-	// the cast (middle), Ratings & reviews, the Collection, More like this
-	// and More from. The dates live in the page's About section. Every title row uses the
-	// Explore wide card at one size (--title-item, title-page.css); owned and
-	// asked titles carry their mark top-right. The current title never shows
-	// in its own rows. Rows with nothing in them are left out.
 	let {
 		kind,
 		tmdb,
@@ -33,15 +26,10 @@
 	}: {
 		kind: InfoKind;
 		tmdb: string | null | undefined;
-		/** The details answer, for the page (cast on a not-added title). */
 		info?: InfoDetails | null;
-		/** Between the band and the title rows (the cast). */
 		middle?: Snippet;
-		/** Where to stream as a band at the top (off when the page shows it elsewhere). */
 		band?: boolean;
-		/** Ratings & reviews after the title rows instead of before them. */
 		reviewsLast?: boolean;
-		/** The round + on a card, from the requests module. */
 		quickAsk: QuickAskSheet;
 	} = $props();
 
@@ -55,13 +43,10 @@
 		api.get<Record<string, unknown>>(`/metadata/${k}/${encodeURIComponent(t)}?region=${encodeURIComponent(region)}`, ctl.signal)
 			.then((raw) => (info = readInfo(k, t, raw)))
 			.catch(() => {
-				/* The rows are extras: the page works without them. */
 			});
 		return () => ctl.abort();
 	});
 
-	// More from the director (movies) or the creator (shows): the server
-	// answers at least four of their other titles, most popular first, or none.
 	let moreFrom = $state<{ person: string; items: ProviderItem[] } | null>(null);
 	$effect(() => {
 		const k = kind;
@@ -72,12 +57,10 @@
 		api.get<{ person?: string; items?: ProviderItem[] }>(`/metadata/${k}/${encodeURIComponent(t)}/more-from`, ctl.signal)
 			.then((r) => (moreFrom = { person: r.person ?? '', items: r.items ?? [] }))
 			.catch(() => {
-				/* An extra row: hidden when it cannot be read. */
 			});
 		return () => ctl.abort();
 	});
 
-	// More with the lead actor: their best-known movies, from their person page's answer.
 	const lead = $derived(info?.cast.find((p) => p.id) ?? null);
 	let withLead = $state<ProviderItem[]>([]);
 	$effect(() => {
@@ -91,7 +74,6 @@
 				withLead = list.filter((m) => m.ids?.tmdb).map((m) => ({ tmdb_id: m.ids.tmdb, kind: 'movie', name: m.name, year: m.year || undefined, poster: m.poster, backdrop: m.backdrop, overview: m.overview, in_library: !!m.title_id, title_id: m.title_id, ask: m.ask ? { ...m.ask, state: m.ask.state as Ask['state'] } : null }));
 			})
 			.catch(() => {
-				/* An extra row: hidden when it cannot be read. */
 			});
 		return () => ctl.abort();
 	});
@@ -111,7 +93,6 @@
 	});
 	const hrefOf = (item: ProviderItem) => (item.title_id ? to(`/library/${item.title_id}`) : to(detailPath(item.kind, item.tmdb_id)));
 	let allSimilar = $state(false);
-	/** The + on a card asks or adds as on Explore. */
 	let flow: ReturnType<QuickAskSheet> | undefined = $state();
 </script>
 

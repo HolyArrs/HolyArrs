@@ -2,8 +2,6 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import type { Tint } from '../core/settings.ts';
 
-	// The small rounded colour square in front of a Settings page, like the
-	// tiles in a phone's Settings app. Decorative: the page name sits next to it.
 	let { icon, tint = 'gray', size = 'md' }: { icon: IconName; tint?: Tint; size?: 'xs' | 'sm' | 'md' | 'lg' } = $props();
 	const px = $derived(size === 'xs' ? 12 : size === 'sm' ? 14 : size === 'lg' ? 19 : 16);
 </script>

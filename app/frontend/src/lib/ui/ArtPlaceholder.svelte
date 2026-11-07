@@ -1,11 +1,6 @@
 <script lang="ts">
 	import { inkOn, placeholderHue, placeholderText } from '../core/art-placeholder.ts';
 
-	// The one placeholder for every picture slot: initials (or a short name)
-	// on the picture's main colour (its record) or a calm tint from the name,
-	// shaped to the slot. It fills its parent (absolute) unless `inline` is
-	// set. `loading` adds a soft shimmer while the picture is on its way;
-	// never a progress circle or a broken-image icon.
 	let {
 		name,
 		shape = 'square',
@@ -15,13 +10,10 @@
 		color = null
 	}: {
 		name: string;
-		/** circle: people and artists; square: albums, songs, tiles; poster: 2:3; wide: 16:9 backdrops. */
 		shape?: 'circle' | 'square' | 'poster' | 'wide';
 		loading?: boolean;
 		inline?: boolean;
-		/** Inline width (css), when inline. */
 		size?: string;
-		/** The picture's main colour (#rrggbb) from its record, when known. */
 		color?: string | null;
 	} = $props();
 	const text = $derived(placeholderText(name));
@@ -39,7 +31,6 @@
 		background: linear-gradient(145deg, hsl(var(--h) 28% 30%), hsl(calc(var(--h) + 25) 30% 18%));
 		color: hsl(var(--h) 40% 86%); user-select: none;
 	}
-	/* The picture's own colour: the picture then fades in over it, never over grey. */
 	.aph.tinted { background: linear-gradient(145deg, color-mix(in srgb, var(--c) 88%, white), var(--c) 55%, color-mix(in srgb, var(--c) 80%, black)); }
 	.aph.ink-light { color: rgb(255 255 255 / .82); }
 	.aph.ink-dark { color: rgb(0 0 0 / .58); }
