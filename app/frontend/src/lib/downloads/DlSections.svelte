@@ -26,6 +26,7 @@
 	import DlMorePop from './DlMorePop.svelte';
 	import { createColumns } from './columns-grid.svelte.ts';
 	import DlColumnPicker from './DlColumnPicker.svelte';
+	import DlRow from './DlRow.svelte';
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { CONN_HINT, CONN_WORD, tabsOf, type PaneTab } from './pane-facts.ts';
@@ -44,8 +45,6 @@
 	import { ago, dateTime, duration, percent } from '../core/format.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { healthLine, quietPeers, logDays, badKind, clientMark, swarmLine, swarmTotal } from './panel-words.ts';
-	// Each client's own app icon (design/assets/clients, licenses in its README).
-	const CLIENT_ICONS = new Set(['qbittorrent', 'transmission', 'deluge', 'sabnzbd', 'nzbget']);
 	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from './downloaders.ts';
 	import { reducedMotion } from '../core/motion.ts';
@@ -649,109 +648,8 @@
 		e.preventDefault();
 		toggle(id);
 		tick().then(() => document.querySelector<HTMLElement>('.dpane [role="tab"][aria-selected="true"]')?.focus());
-	}	const dash = '—';
-	/** The Downloader's own configured name (as in the details); its kind goes in the tooltip. */
-	const dlName = (r: DownloadRow) => r.downloader || (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || dash;
-	const dlKind = (r: DownloadRow) => (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || '';
-	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
+	}
 </script>
-
-{#snippet lead(r: DownloadRow)}
-	<span class="tg">{#if !watch}<input type="checkbox" class="pk" class:any={choosing} tabindex="-1" checked={picked.has(r.id)} aria-label="Select {who(r)}" onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); pickOne(r.id); } else if (e.key === ' ') e.stopPropagation(); }} onclick={(e) => { e.stopPropagation(); if (e.shiftKey) { e.preventDefault(); pickTo(r.id); } else pickOne(r.id, e.currentTarget.checked); }} data-testid="dl-pick" />{/if}</span>
-{/snippet}
-
-{#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
-	{#if id === 'poster'}
-		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
-	{:else if id === 'kind'}
-		{@const kw = kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category)}{@const ki = cols.kindIcon(kw)}<span class="kcell" class:ph data-col="kind"><span class="kt" class:none={!ki} class:wide={cols.kindWide} data-testid="dl-kind" role="img" aria-label={kw || 'No type yet'} use:tip={kw ? (kindOf(r) ? kw : `${kw} (from the client's category)`) : 'No type yet'}>{#if cols.kindWide && kw}<span class="kp" data-k={ki ?? 'other'}>{kw}</span>{:else if ki}<Icon name={ki} size={16} />{:else}{dash}{/if}</span></span>
-	{:else if id === 'proto'}
-		{@const p = protocolOf(r)}
-		<span class="pcell" class:ph class:named={cols.srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if cols.srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
-	{:else if id === 'title'}
-		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tphone">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
-			<span class="rel" title={r.name}>{sub2(r)}</span>
-			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
-		</span>
-	{:else if id === 'progress'}
-			<!-- One bar on every row, 0 to 100: a finished row is full, never a tick in the bar's place, and nothing holds at 99. -->
-			{@const hs = hist && stageOf(r) !== 'failed' ? historyStatus(r, importOf.get(r.id)) : null}
-			{@const raw = percent(r.progress)}
-			{@const pct = hs && !hs.bad ? 100 : raw}
-			{@const tone = hs ? (hs.bad ? 'bad' : 'done') : stageOf(r) === 'paused' ? 'paused' : barTone(r)}
-			{@const dn = (r.speed ?? 0) >= 1024}
-			{@const upOn = (r.up_speed ?? 0) >= 1024}
-			{@const eta = r.active && r.eta ? duration(r.eta) : ''}
-			<!-- Speed and time left sit under the bar: one line of "how it is going" for the moving rows, nothing for the rest. -->
-			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn || eta)}<span class="spd" data-testid="dl-row-speed">{[dn ? `↓ ${bytes(r.speed)}/s` : '', upOn ? `↑ ${bytes(r.up_speed)}/s` : '', eta ? `${eta} left` : ''].filter(Boolean).join(' · ')}</span>{/if}</span>
-	{:else if id === 'status'}
-		{#if hist}
-			{@const s = historyStatus(r, importOf.get(r.id))}
-			{@const cut = s.text.indexOf(': ')}
-			{@const reason = cut > 0 ? shortReason(s.text.slice(cut + 2)) : ''}
-			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
-		{:else}
-			{@const t = barTone(r)}
-			{@const detail = statusDetail(r, importOf.get(r.id))}
-			{@const more = detail || statusHint(r)}
-			{@const why = problem(r)}
-			<!-- The word on its own line, a short line under it: the dot and the word carry the tone, the line stays quiet. -->
-			<!-- The line is the problem, else a waiting row's place in the Downloader's line, else the step it is at (or why it failed, or a seeding ratio). -->
-			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${cols.ordinal(r.queue_pos)} in line`) : stepLine(r, detail)}
-			{@const under = why?.text || line}
-			<span class="st {t}" class:ph class:two={!!under} data-col="status" title={[statusWord(r), under, more.toLowerCase() === under.toLowerCase() ? '' : more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid={stageOf(r) === 'queued' ? 'dl-in-line' : 'dl-step'}>{line}</span>{/if}</span></span>
-		{/if}
-	{:else if id === 'size'}
-		<span class="num" class:ph data-col="size">{r.size ? bytes(r.size) : dash}</span>
-	{:else if id === 'quality'}
-		<span class="txt" class:ph data-col="quality" title={r.name}>{quality(r.name) || dash}</span>
-	{:else if id === 'added'}
-		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
-	{:else if id === 'swarm'}
-		<!-- Connected seeds and peers, named; the swarm's totals stay in the tooltip; the ratio on its own line. -->
-		{#if r.protocol !== 'torrent'}<span class="num" class:ph data-col="swarm">{dash}</span>
-		{:else}
-			{@const st = swarmTotal(r.seeds, r.seeds_total)}
-			{@const pt = swarmTotal(r.peers, r.peers_total)}
-			{@const tip = [st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}
-			<!-- One compact line on the header's three tracks: a green mark with the seeds, a blue mark with the peers, the ratio as a pill (green from 1.0). -->
-			<span class="sw1" class:ph data-col="swarm" title="{tip} · ratio {r.ratio != null ? r.ratio.toFixed(2) : '–'}"><span class="n"><i class="dot s" aria-hidden="true"></i>{swarmNum(r.seeds)}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{swarmNum(r.peers)}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{ratioText(r.ratio)}</b>{/if}</span>
-		{/if}
-	{:else if id === 'tracker'}
-		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
-	{:else if id === 'requested'}
-		<!-- Who asked: a person, HolyArrs itself (a wanted title it grabbed on its own), or Outside (added straight in the client). -->
-		{@const person = !r.outside && r.requested_by ? r.requested_by : ''}
-		{@const who = r.outside ? 'Outside' : person || (session.can('manage_library') ? 'HolyArrs' : '')}
-		<span class="txt rq" class:ph class:soft={!person} data-col="requested" title={who}>{#if person}<i class="av" aria-hidden="true">{person.slice(0, 1).toUpperCase()}</i>{/if}{who || dash}</span>
-	{:else if id === 'source'}
-		<span class="txt" class:ph data-col="source" title={r.source_name ?? ''}>{#if r.source_name && r.source_id && session.can('settings')}<a href="/settings/sources/{r.source_id}" onclick={(e) => e.stopPropagation()}>{r.source_name}</a>{:else}{r.source_name || dash}{/if}</span>
-	{:else if id === 'category'}
-		{@const cw = categoryWords(r.category)}<span class="txt" class:ph data-col="category" title={r.category ?? ''}>{cw || dash}</span>
-	{:else}
-		<span class="num" class:ph data-col={id}>{dash}</span>
-	{/if}
-{/snippet}
-
-{#snippet bin(r: DownloadRow)}
-	<span class="del" data-col="bin">
-		{#if watch}{:else if rowItems(r).length}<span class="rm" data-testid="dl-row-menu"><Menu label="Actions for {who(r)}" icon="more" width={210} items={rowMenu(r)} tabindex={tabRow === r.id ? 0 : -1} /></span>
-		{:else}<button class="bin" type="button" disabled title="HolyArrs cannot change this one" aria-label="HolyArrs cannot change this one" tabindex={tabRow === r.id ? 0 : -1}><Icon name="more" size={19} /></button>{/if}
-	</span>
-{/snippet}
-
-{#snippet row(r: DownloadRow, hist: boolean)}
-	<li class="drow" class:sel={openId === r.id} class:picked={picked.has(r.id)} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => (rowFocus = r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" use:longPress={() => { if (!watch) pickOne(r.id, true); }} onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
-			{@render lead(r)}
-			{#each cols.cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
-			<span class="spare"></span>
-			{@render bin(r)}
-		</div>
-	</li>
-{/snippet}
 
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -884,7 +782,7 @@
 	<div class="tw" onscroll={cols.sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
 		<ul class="dlrows" class:vw={cols.windowed} bind:this={cols.ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={cols.windowed ? `padding-top: ${cols.span.a * cols.rh}px; padding-bottom: ${(list.length - cols.span.b) * cols.rh}px` : undefined}>
-			{#each cols.shownRows as r (r.id)}{@render row(r, inHistory(r))}{/each}
+			{#each cols.shownRows as r (r.id)}<DlRow {r} hist={inHistory(r)} {cols} {watch} {picked} {choosing} {openId} {tabRow} {importOf} {titles} {titlesReady} {rowMenu} onpickone={pickOne} onpickto={pickTo} onrowclick={rowClick} onrowkey={rowKey} onrowfocus={(id) => (rowFocus = id)} />{/each}
 		</ul>
 	</div></div>
 {:else}
@@ -927,17 +825,10 @@
 	.ch[data-col='poster'] { justify-content: center; }
 	.ch[data-col='poster'] .lbl { display: flex; }
 	@media (min-width: 641px) {
-		.ch[data-col='proto']:has(:global(svg)) .lbl, .pcell:not(.named) > .pm, .ch[data-col='poster'] .lbl, .dline > .post, .ch[data-col='kind']:has(:global(svg)) .lbl, .kcell > .kt:not(.wide) { transform: translateX(calc(var(--gap) / 2 - 4px)); }
+		.ch[data-col='proto']:has(:global(svg)) .lbl, .ch[data-col='poster'] .lbl, .ch[data-col='kind']:has(:global(svg)) .lbl { transform: translateX(calc(var(--gap) / 2 - 4px)); }
 	}
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
-	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
-	.cico { display: block; flex: none; width: var(--lg, 18px); height: var(--lg, 18px); object-fit: contain; }
-	/* Large Source: the logo, then the client's own name, starting after the divider. */
-	.pcell.named { justify-content: flex-start; gap: 6px; }
-	.pcell.named > .pm { flex: none; }
-	.pnm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.strip > span { display: inline-flex; align-items: center; gap: 6px; }
 	.k { color: var(--text-muted); font: var(--t-footnote); }
 	.strip b { font-weight: 600; }
 	.sp { gap: 8px; }
@@ -947,8 +838,6 @@
 	.ty { min-height: 28px; padding: 0 10px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.ty.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	.ty:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pm { display: inline-grid; place-items: center; width: 14px; height: 14px; margin-right: 6px; vertical-align: 1px; border-radius: 3px; background: var(--surface-3); color: var(--text-muted); font-size: 9px; font-weight: 700; line-height: 1; }
-	.kt { display: inline-block; box-sizing: border-box; height: 16px; margin-right: 6px; padding: 0 5px; vertical-align: 1px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-3); color: var(--text); font: var(--t-caption); font-size: 11px; line-height: 14px; font-weight: 600; white-space: nowrap; }
 	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
 	.cw.zero { opacity: 0.72; }
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
@@ -959,80 +848,34 @@
 	/* Muted text in the list is mixed from the text colour, so it stays readable (4.5:1+) on the card's tinted rows. */
 	.tin { min-width: var(--c-in); --text-muted: color-mix(in srgb, var(--text) 66%, var(--surface-2)); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-	.drow { display: block; border-bottom: 1px solid var(--line); }
-	.tg { position: relative; align-self: stretch; }
 	/* The row checkbox has its own slim column at the left, so it never covers the poster. */
 	.hk { position: relative; align-self: stretch; display: flex; align-items: center; }
 	.hk::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.hpk { width: 16px; height: 16px; margin: 0 0 0 4px; accent-color: var(--accent); cursor: pointer; }
 	.hpk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pk { position: absolute; left: 4px; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; accent-color: var(--accent); opacity: 0; cursor: pointer; z-index: 2; transition: opacity 120ms var(--ease-out); }
-	.drow:hover .pk, .pk.any, .pk:focus-visible { opacity: 1; }
-	.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.selbar .sn { font: var(--t-footnote); color: var(--text-muted); margin-right: 4px; }
 	.selbar .sn b { color: var(--text); }
-	.psel, .qline, .tt .tphone, .nm .ep { display: none; }
+	.psel, .qline { display: none; }
 	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 	@media (prefers-reduced-motion: reduce) {
 		.psel { animation: none; }
 	}
-	@media (hover: none) {
-		.pk { opacity: 1; }
-	}
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: max(44px, calc(var(--pi, 26px) * 1.5 + 6px)); }
-	.drow > .dline { cursor: pointer; }
-	.drow > .dline:hover { background: var(--surface-2); }
-	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 	.bin:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
 	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
 	.post.square { height: var(--pi, 26px); --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 3px; }
-	.nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-	.tt, .rel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.tt { font: var(--t-callout); font-weight: 500; display: flex; align-items: center; min-width: 0; }
-	/* The name shrinks with an ellipsis; the badges never do. */
-	.tt .tn, .tt .tphone { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-	.tt .ver { flex: none; }
-	.rel { color: var(--text-muted); font: var(--t-caption); }
-	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
-	.prg { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
-	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
-	.prg.queued i { background: var(--info); }
-	.prg.held i { background: var(--wait); }
-	/* A failed row's bar stays neutral: the dot and the status words carry the red, not three things at once. */
-	.prg.bad i { background: var(--text-muted); opacity: 0.3; }
-	.bl, .br { position: relative; overflow: hidden; text-overflow: ellipsis; }
+	.br { position: relative; overflow: hidden; text-overflow: ellipsis; }
 	.bw { font-weight: 500; }
 	.hcell { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 24px; padding: 0 8px; }
 	.hsz { flex: none; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
-	.bl { font-weight: 600; text-shadow: 0 0 3px var(--surface-1); }
-	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
-	.st .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-	.st .sw, .st .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.st .why { color: var(--text-muted); font: var(--t-caption); }
-	/* Two lines: the dot sits on the first. */
-	.st.two { align-items: flex-start; }
-	.st.two .dot { margin-top: 4px; }
-	/* Requested by: a person with their initial; HolyArrs itself and Outside stay quiet. */
-	.rq { display: flex; align-items: center; gap: 6px; }
-	.rq.soft { color: var(--text-muted); }
-	.rq .av { display: grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--text); color: var(--bg); font: 600 10px / 1 var(--font-ui); font-style: normal; }
-	.st .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-	.st.paused .dot { background: var(--text-muted); }
-	.st.queued .dot { background: var(--info); }
-	.st.held .dot { background: var(--wait); }
-	.st.bad .dot { background: var(--fail); }
-	.st.bad { color: var(--fail-text); }
-	.dline > .ph { display: none; }
 	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */
 	@media (min-width: 641px) {
 		.dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; }
 	}
 	:global(html.col-resizing), :global(html.col-resizing *) { cursor: col-resize !important; user-select: none !important; }
-	.txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
-	.num { text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	/* The header row is exactly 28px (the ⋯ button may be taller), so every divider line stays inside it, clear of the border below. */
 	.chead { grid-template-rows: minmax(0, 1fr); position: relative; height: 28px; border-bottom: 1px solid var(--line); color: color-mix(in srgb, var(--text) 78%, transparent); font: var(--t-caption); font-weight: 600; }
 	.chead + .dlrows { border-top: 0; }
@@ -1058,7 +901,6 @@
 	.ch.fixed::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
-	.del { display: flex; justify-content: flex-end; }
 	.bin { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.bin:hover:not(:disabled) { color: var(--fail-text); background: var(--surface-3); }
 	.bin:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -1090,13 +932,9 @@
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
-	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
-	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); background: none; }
 	.col { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
-	.drow.sel > .dline { position: relative; z-index: 1; background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
-	.drow.sel > .dline:hover { background: var(--surface-2); }
 	.dv { flex: none; position: relative; height: 9px; border-top: 1px solid var(--line); cursor: row-resize; touch-action: none; }
 	.dv.fixed { cursor: default; }
 	.dv i { position: absolute; left: 50%; top: 3px; width: 38px; height: 3px; margin-left: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0.6; }
@@ -1133,23 +971,7 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
-	.kcell .kt.none { color: var(--text-muted); }
-	/* Wide, the pill starts right after the divider like every other column's text. */
-	.kcell .kt.wide { justify-content: flex-start; }
-	/* The wide Type: a small pill in the type's own colour (film orange, TV blue, music green, anything else grey). */
-	.kp { padding: 1px 7px; border-radius: 999px; font: var(--t-caption); font-weight: 600; color: color-mix(in srgb, var(--kc) 70%, var(--text)); background: color-mix(in srgb, var(--kc) 16%, transparent); overflow: hidden; text-overflow: ellipsis; }
-	.kp[data-k='film'] { --kc: var(--wait); }
-	.kp[data-k='tv'] { --kc: var(--info); }
-	.kp[data-k='music'] { --kc: var(--ok); }
-	.kp[data-k='other'] { --kc: var(--text-muted); }
-	.kcell .kt { display: flex; justify-content: center; align-items: center; height: auto; padding: 0; border: 0; background: none; width: 100%; margin: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.pcell { justify-content: center; }
-	.pm { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); }
-	.prg.paused i { background: var(--text-muted); }
-	.pgw { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-	.spd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
-	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
+	.dline :global(.num) { text-align: right; font-variant-numeric: tabular-nums; }
 	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
 	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
 	.psearch { display: none; }
@@ -1215,15 +1037,7 @@
 	.app { --r-poster: 4px; }
 	.post, .post :global(.poster), .thumb, .thumb :global(.poster), .big, .big :global(.poster) { border-radius: var(--r-poster); }
 	.big { box-shadow: var(--shadow-card); }
-	.drow > .dline { transition: background-color var(--dur-fast) var(--ease-out); }
-	.drow.sel > .dline { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
-	.drow.sel > .dline:hover { background: var(--surface-1); }
-	.drow { animation: rowin var(--dur) var(--ease-out) backwards; }
-	/* Rows drawn while scrolling a long list appear at once. */
-	.dlrows.vw .drow { animation: none; }
 	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
-	.st { gap: 8px; }
-	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }
 	.pcl, .bin { border-radius: var(--r-sm); }
 	.dep { border-radius: var(--r-card); box-shadow: var(--shadow-card); }
 	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
@@ -1258,8 +1072,8 @@
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	a.xbn { display: inline-flex; align-items: center; text-decoration: none; }
 	@media (prefers-reduced-motion: reduce) {
-		.drow, .pb, .tview { animation: none; }
-		.ink, .dv i, .drow > .dline, .pact .xbn { transition: none; }
+		.pb, .tview { animation: none; }
+		.ink, .dv i, .pact .xbn { transition: none; }
 	}
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
@@ -1269,31 +1083,19 @@
 		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
 	.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
-		.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 		.dline > [data-col] { display: none; }
-		.dline > .ph { display: none; }
 		.dline > [data-col='poster'] { display: block; grid-area: post; align-self: start; }
 		.dline > [data-col='title'] { display: flex; grid-area: nm; }
 		.dline > [data-col='progress'] { display: flex; grid-area: bar; }
 		.dline > [data-col='status'] { display: flex; grid-area: st; }
 		.dline > [data-col='time'] { display: block; grid-area: time; }
 		.dline > [data-col='title'] { flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
-		.dline > [data-col='title'] .tn { display: none; }
-		.dline > [data-col='title'] .tphone { display: inline; }
-		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
 		/* The row's ⋯ menu sits at the card's right edge, beside both lines. */
 	.dline > [data-col='bin'] { display: flex; grid-area: mn; align-self: center; justify-content: center; }
-		/* Not picking: the box stays for screen readers, out of sight and out of the way. */
-	.tg .pk:not(.any) { width: 1px; height: 1px; margin: 0; opacity: 0; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
-		.dline > [data-col='title'] .rel { display: none; }
-		.dline > [data-col='title'] .tt { font: 600 15px/19px var(--font-ui); }
 		.dline > [data-col='status'] { font: 400 12px/16px var(--font-ui); }
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
-		.tg { align-self: center; }
-		.tg .pk.any { width: 20px; height: 20px; margin-left: 4px; }
-		.dline:has(.pk.any) { grid-template-columns: 32px 36px minmax(0, 1fr) 40px auto 44px; }
 		/* The status line: full width for the tabs, with speed and free space as a quiet line under it. */
 	.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
 		.tabrow :global([data-testid='dl-stat']) { display: none; }
@@ -1323,9 +1125,6 @@
 		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
-		.dline > [data-col='progress'] .bl, .spd { display: none; }
-		.dline > .spare { display: none; }
-		.tg { grid-area: tg; }
 		.post { grid-area: post; align-self: start; justify-self: center; }
 		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
 		.big { width: 56px; height: 84px; }
@@ -1363,7 +1162,7 @@
 		.dpane.shut .grab { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.prg i, .tg :global(svg), .bin, .cw, .post { transition: none; }
+		.bin, .cw, .post { transition: none; }
 	}
 	@media (max-width: 640px) {
 		.dpane { border-radius: var(--r-panel) var(--r-panel) 0 0; box-shadow: var(--shadow-modal); }
@@ -1377,41 +1176,11 @@
 		.tin { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: clip; }
 		.tin .chead { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
 		.listbox :global(.tin .chead) { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); }
-		.dlrows .drow:last-child { border-bottom: 0; }
-		.dlrows .drow:nth-child(even) > .dline { background: color-mix(in srgb, var(--surface-3) 28%, var(--surface-2)); }
-		.dlrows .drow > .dline:hover { background: var(--surface-3); box-shadow: 0 2px 8px -4px rgb(0 0 0 / 0.25); }
-		.dlrows .drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, var(--surface-2)); }
-		.dlrows .drow.sel > .dline, .dlrows .drow.sel > .dline:hover { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
-	}
-	/* Our own Downloader marks: short letters on a tinted rounded badge. */
-	.pm.cmk { display: inline-grid; place-items: center; width: auto; min-width: 22px; height: 22px; padding: 0 3px; border-radius: 5px; font: 700 9px/1 var(--font-ui); letter-spacing: 0.02em; color: var(--cm); background: color-mix(in srgb, var(--cm) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cm) 40%, transparent); }
-	.pm[data-tone='qb'] { --cm: #2f6fd6; }
-	.pm[data-tone='tr'] { --cm: #d23c3c; }
-	.pm[data-tone='de'] { --cm: #5b7388; }
-	.pm[data-tone='sab'] { --cm: #a87a00; }
-	.pm[data-tone='nzb'] { --cm: #2e8b4a; }
-	:global([data-theme='dark']) .pm[data-tone='qb'] { --cm: #7aa8f5; }
-	:global([data-theme='dark']) .pm[data-tone='tr'] { --cm: #f07a7a; }
-	:global([data-theme='dark']) .pm[data-tone='de'] { --cm: #9db3c6; }
-	:global([data-theme='dark']) .pm[data-tone='sab'] { --cm: #f0c84a; }
-	:global([data-theme='dark']) .pm[data-tone='nzb'] { --cm: #6cd08c; }
-	@media (prefers-color-scheme: dark) {
-		:global(:root:not([data-theme='light'])) .pm[data-tone='qb'] { --cm: #7aa8f5; }
-		:global(:root:not([data-theme='light'])) .pm[data-tone='tr'] { --cm: #f07a7a; }
-		:global(:root:not([data-theme='light'])) .pm[data-tone='de'] { --cm: #9db3c6; }
-		:global(:root:not([data-theme='light'])) .pm[data-tone='sab'] { --cm: #f0c84a; }
-		:global(:root:not([data-theme='light'])) .pm[data-tone='nzb'] { --cm: #6cd08c; }
 	}
 	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
 	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
 	/* Swarm: one line, two marks and a ratio pill, on the same three tracks as the header's facet words so each number sits under its word; a four-digit count or a 99.0 ratio still fits the fixed width. */
-	.sw1, .facets { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
-	.sw1 { min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.sw1 .n { display: inline-flex; align-items: center; gap: 4px; }
-	.sw1 .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
-	.sw1 .dot.p { background: var(--info); }
-	.sw1 .rp { justify-self: start; padding: 1px 6px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 500; font-variant-numeric: tabular-nums; }
-	.sw1 .rp.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok-text); }
+	.facets { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
 	/* The header's three facets: the picked one is bold and carries the sort line. */
 	.fc { position: relative; justify-self: start; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
 	.fc.on { color: var(--text); font-weight: 600; }
@@ -1458,21 +1227,19 @@
 		/* The table's own frame drew a second line inside the card: the rows' lines are enough. */
 	.col .tin { border-color: transparent; box-shadow: none; }
 		/* The header and row checkboxes sit centred in the same 28px lane. */
-	.hk, .tg:has(> .pk) { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
-		.hk .hpk, .tg > .pk { margin: 0; translate: none; transform: none; }
-		/* With its centring margin gone, the box is centred by its top. */
-	.tg > .pk { left: 6px; top: calc(50% - 8px); }
+	.hk { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
+		.hk .hpk { margin: 0; translate: none; transform: none; }
 		/* The poster column starts under the checkbox lane's divider: centre its icon and posters between that line and the next. */
-	.ch[data-col='poster'] .lbl, .dline > .post { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
+	.ch[data-col='poster'] .lbl { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
 	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
 	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
 	.hdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 	.hdot.paused { background: var(--text-muted); }
-	.hdot.queued { background: var(--info); }
 	.hdot.held { background: var(--wait); }
 	.hdot.bad { background: var(--fail); }
+	.hdot.queued { background: var(--info); }
 	.pt { gap: 3px; padding: 8px 0; }
 	.pt b { font: 600 17px / 1.25 var(--font-ui); letter-spacing: -0.01em; }
 	.phd .xtabs { align-self: center; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
