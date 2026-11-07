@@ -295,3 +295,37 @@ func TestPackageMap(t *testing.T) {
 		}
 	}
 }
+
+// TestCoreRowOrder: a core package imports only core packages on its own row
+// or a lower one.
+func TestCoreRowOrder(t *testing.T) {
+	root := repoRoot(t)
+	mod := modulePath(t, root)
+	for _, p := range corePackages(t, root) {
+		fromName := coreName(mod, p.ImportPath)
+		fromRow, ok := coreRows[fromName]
+		if !ok {
+			t.Errorf("%s has no row in coreRows", p.ImportPath)
+			continue
+		}
+		for _, imp := range slices.Concat(p.Imports, p.TestImports, p.XTestImports) {
+			if !strings.HasPrefix(imp, mod+"/"+internalAt+"core/") {
+				continue
+			}
+			toName := coreName(mod, imp)
+			if toName == fromName {
+				continue
+			}
+			if toRow, ok := coreRows[toName]; ok && toRow > fromRow {
+				t.Errorf("%s (row %d) imports %s (row %d)", p.ImportPath, fromRow, imp, toRow)
+			}
+		}
+	}
+}
+
+// coreName is the core package an import path sits in, sub-packages included.
+func coreName(mod, importPath string) string {
+	rest := strings.TrimPrefix(importPath, mod+"/"+internalAt+"core/")
+	name, _, _ := strings.Cut(rest, "/")
+	return name
+}

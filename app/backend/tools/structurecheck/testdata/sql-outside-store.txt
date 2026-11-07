@@ -110,6 +110,10 @@ app/backend/internal/compat/lists.go
 app/backend/internal/compat/movies.go
 app/backend/internal/compat/queue.go
 app/backend/internal/compat/shows.go
+app/backend/internal/core/database/events.go
+app/backend/internal/core/jobs/jobs.go
+app/backend/internal/core/jobs/schedule.go
+app/backend/internal/core/secrets/secrets.go
 app/backend/internal/datapack/apply.go
 app/backend/internal/datapack/datapack.go
 app/backend/internal/dlsync/match.go
@@ -135,8 +139,6 @@ app/backend/internal/importer/shows.go
 app/backend/internal/importer/upgrade.go
 app/backend/internal/importsecrets/apply.go
 app/backend/internal/importsecrets/movecreds.go
-app/backend/internal/jobs/jobs.go
-app/backend/internal/jobs/schedule.go
 app/backend/internal/library/addshow.go
 app/backend/internal/library/adopt.go
 app/backend/internal/library/adoptcopy.go
@@ -177,7 +179,6 @@ app/backend/internal/migrate/files.go
 app/backend/internal/musicsync/musicsync.go
 app/backend/internal/naming/naming.go
 app/backend/internal/parts/control.go
-app/backend/internal/secrets/secrets.go
 app/backend/internal/source/afterfail.go
 app/backend/internal/source/choose.go
 app/backend/internal/source/copychoices.go
@@ -191,11 +192,6 @@ app/backend/internal/source/pathkey.go
 app/backend/internal/source/save.go
 app/backend/internal/source/search.go
 app/backend/internal/source/shows.go
-app/backend/internal/store/events.go
-app/backend/internal/store/library_copies.go
-app/backend/internal/store/lookupcache.go
-app/backend/internal/store/slots.go
-app/backend/internal/store/title_search.go
 app/backend/internal/subtitles/fix.go
 app/backend/internal/subtitles/jobs.go
 app/backend/internal/subtitles/search.go

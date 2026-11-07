@@ -114,17 +114,8 @@ var coreRows = map[string]int{
 // so an import that breaks the layer order shows up before the move. A dash
 // means the package is split or dissolved and is not judged.
 var packageHome = map[string]string{
-	"store":         "core/database",
-	"fsplain":       "core/files",
-	"parse":         "core/releasename",
-	"secrets":       "core/secrets",
-	"applog":        "core/logs",
-	"jobs":          "core/jobs",
-	"supervisor":    "core/jobs",
-	"runas":         "core/startup",
-	"lowmem":        "core/startup",
-	"feature":       "core/startup",
-	"parts":         "core/startup",
+	"store":         "-",
+	"parts":         "-",
 	"domain":        "-",
 	"api":           "-",
 	"ratings":       "metadata",
@@ -166,8 +157,6 @@ var tableOwner = map[string]string{
 	"settings":        "core/database",
 	"events":          "core/database",
 	"schedules":       "core/jobs",
-	"jobs":            "core/jobs",
-	"secrets":         "core/secrets",
 	"secrets_retired": "core/secrets",
 
 	// accounts
