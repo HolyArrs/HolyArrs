@@ -4,7 +4,7 @@
 	import SidebarItem from './SidebarItem.svelte';
 	import type { NavItem, NavSection } from './nav.ts';
 
-	// The macOS-style sidebar (spec §4): brand, sections, account
+	// The sidebar: brand, sections, account
 	// footer. One selected fill slides between rows.
 	let {
 		id = 'sidebar',

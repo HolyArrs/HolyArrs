@@ -1,5 +1,4 @@
-// Find one setting, not just a page. Built by hand from
-// docs/design-review/apple/settings-inventory.md: every entry names the page,
+// Find one setting, not just a page. Built by hand: every entry names the page,
 // the element id the page gives that field or card, and the other words a
 // person might type for it.
 

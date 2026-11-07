@@ -1,4 +1,4 @@
-// The app's places, grouped the way the sidebar shows them (spec §4, §7).
+// The app's places, grouped the way the sidebar shows them.
 // Pure, so the permission rules are testable without a browser.
 
 import type { IconName } from '#lib/ui/Icon.svelte';
@@ -32,7 +32,7 @@ export interface NavInput {
 	off: (href: string) => boolean;
 	/** Library kinds whose part is on: movie, show, artist. */
 	kinds: ('movie' | 'show' | 'artist')[];
-	approvals: number;
+	waitingAsks: number;
 	decisions: number;
 	/** Downloads moving now and their average percent (staff only). */
 	active?: { count: number; percent: number };
@@ -85,7 +85,7 @@ export function buildNav(input: NavInput): NavSection[] {
 				...(!input.allowed('manage_library') ? [{ href: '/downloads', label: 'Downloads', icon: 'download', need: null } as NavItem] : []),
 				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null },
 				// Everyone finds Requests here; people who approve see how many are waiting.
-				{ href: '/requests', label: 'Requests', icon: 'requests', need: 'wishlist', ...(approver ? { badge: input.approvals, badgeLabel: `${input.approvals} waiting` } : { badge: input.unread, badgeLabel: `${input.unread} new` }) }
+				{ href: '/requests', label: 'Requests', icon: 'requests', need: 'wishlist', ...(approver ? { badge: input.waitingAsks, badgeLabel: `${input.waitingAsks} waiting` } : { badge: input.unread, badgeLabel: `${input.unread} new` }) }
 			]
 		},
 		{

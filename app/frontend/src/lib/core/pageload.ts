@@ -1,9 +1,9 @@
-// Page loading rules (Orbit loading screen, 2026-10-21). Pure functions so they can be
+// Page loading rules for the Orbit loading screen. Pure functions so they can be
 // tested; lib/ui/PageLoader.svelte applies them to the content area of every page.
 
 /** The Orbit shows only when a page takes longer than this; faster pages just appear. */
 export const PAGE_SHOW_AFTER_MS = 300;
-/** Once shown, the Orbit stays at least this long, so it never blinks (speed waves 2026-10-27: was 500). */
+/** Once shown, the Orbit stays at least this long, so it never blinks. */
 export const PAGE_MIN_SHOW_MS = 100;
 /** Content fades in over this long. */
 export const PAGE_FADE_MS = 200;

@@ -1,9 +1,9 @@
-// Silhouette timing rules (loading audit 2026-10-21). Pure functions so they can be tested;
+// Silhouette timing rules. Pure functions so they can be tested;
 // lib/ui/sk/Silhouette.svelte and the boot screen apply them.
 
 /** The skeleton becomes visible this long after loading starts (it holds its space from frame one). */
 export const SHOW_AFTER_MS = 150;
-/** Once visible, the skeleton stays at least this long, so it never flickers (speed waves 2026-10-27: was 400). */
+/** Once visible, the skeleton stays at least this long, so it never flickers. */
 export const MIN_SHOW_MS = 100;
 /** Content cross-fades in over this long. */
 export const FADE_MS = 200;

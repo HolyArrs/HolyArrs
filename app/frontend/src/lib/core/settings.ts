@@ -53,11 +53,9 @@ export function visible(all: Section[], can: Can): Section[] {
 	return all.filter((s) => mayOpen(s, can));
 }
 
-// Five groups, each a card on the Settings home (Luis, 2026-11-06, design
-// settings-views v4): Library, Downloads, People, Linked apps, Server. My
-// account lives in the account menu and stays here only for search and the
-// page's own group. Pages keep their routes; only the grouping changed, so
-// old links still open the same page.
+// Five groups, each a card on the Settings home: Library, Downloads, People,
+// Linked apps, Server. My account lives in the account menu and stays here
+// only for search and the page's own group.
 export const groups: Group[] = [
 	{ id: 'library', label: 'Library', icon: 'library', line: 'Where titles live', about: 'Folders, parts, defaults, subtitles, file names and moving in.' },
 	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, quality, search and schedules.' },

@@ -106,7 +106,7 @@
 			allowed: (n) => allowed(n),
 			off: (href) => !!offPartName(partsNow.answer, href),
 			kinds,
-			approvals: inbox.waiting,
+			waitingAsks: inbox.waiting,
 			decisions: decisions.count,
 			active: activeDownloads,
 			unread: inbox.unread,

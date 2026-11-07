@@ -2,8 +2,7 @@
 	import Icon from './Icon.svelte';
 	import { to } from '../core/paths.ts';
 
-	// Plain link rows to other settings pages, one per row, where a page
-	// used to repeat what another page owns.
+	// Plain link rows to other settings pages, one per row.
 	let { links, label = 'Related pages' }: { links: { href: string; label: string; note?: string; tone?: string }[]; label?: string } = $props();
 </script>
 

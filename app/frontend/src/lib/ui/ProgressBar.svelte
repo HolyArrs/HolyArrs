@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from './Icon.svelte';
 
-	// The fill slides (transform, no layout); at 100 a green tick pulses once (spec §3).
+	// The fill slides (transform, no layout); at 100 a green tick pulses once.
 	let {
 		value,
 		label,

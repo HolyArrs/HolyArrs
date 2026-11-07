@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildNav, currentHref, destinations, filterDestinations, homeHref, isCurrent, readSidebarPref, shellMode, writeSidebarPref, type NavInput } from './nav.ts';
 
-const owner: NavInput = { allowed: () => true, off: () => false, kinds: ['movie', 'show', 'artist'], approvals: 3, decisions: 1, unread: 0 };
+const owner: NavInput = { allowed: () => true, off: () => false, kinds: ['movie', 'show', 'artist'], waitingAsks: 3, decisions: 1, unread: 0 };
 const memberPerms = new Set(['wishlist']);
 const member: NavInput = { ...owner, allowed: (n) => memberPerms.has(n) };
 

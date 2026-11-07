@@ -47,7 +47,7 @@
 	.ui-ibtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ui-ibtn[aria-pressed='true'], .ui-ibtn[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
 	.count { position: absolute; top: -3px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center; border-radius: 999px; background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/1 var(--font-ui); box-shadow: 0 0 0 2px var(--bg); }
-	/* Tooltip after 500ms (spec §3); the accessible name never depends on it. */
+	/* Tooltip after 500ms; the accessible name never depends on it. */
 	[data-tip]::after {
 		content: attr(data-tip); position: absolute; z-index: 60; left: 50%; top: calc(100% + 6px);
 		translate: -50% -2px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none;

@@ -1,7 +1,6 @@
 import { proxied } from '#lib/core/tmdb-image.ts';
 
-// Smart preloading, one place for the rules every fetch-ahead follows
-// (speed plan 2026-10-28, item 10):
+// Smart preloading, one place for the rules every fetch-ahead follows:
 // - hover or focus a card for 150 ms: its page's data and main picture;
 // - a row scrolls into view: the next row's pictures;
 // - a page has settled: on idle, the code of the likely next pages;

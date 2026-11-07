@@ -1,4 +1,4 @@
-// Calm motion for the Apple direction (spec §3). Svelte actions plus a page
+// Calm motion. Svelte actions plus a page
 // change helper. Timings live in tokens.css; these only toggle state, so
 // reduced motion is honoured by the tokens as well as checked here.
 
@@ -140,7 +140,7 @@ export function navigateWithTransition(navigation: PageChange, doc: TransitionDo
 	if (!canViewTransition(doc)) return;
 	// Same page, other query (filters, tabs): no page animation.
 	if (navigation.from && navigation.to && navigation.from.url.pathname === navigation.to.url.pathname) return;
-	// Inside Settings the zoom, push and fade play instead (settings-home/zoom.ts);
+	// Inside Settings the zoom, push and fade play instead (routes/settings/(home)/zoom.ts);
 	// a View Transition would freeze the screen while the next page loads.
 	const inSettings = (u?: { url: URL } | null) => !!u && /\/settings(?:\/|$)/.test(u.url.pathname);
 	if (inSettings(navigation.from) && inSettings(navigation.to)) return;

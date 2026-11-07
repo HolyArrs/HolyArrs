@@ -1,4 +1,4 @@
-// The one picture placeholder (Luis, 2026-10-24): an item's initials or
+// The one picture placeholder: an item's initials or
 // short name on the picture's own main colour when its record is known
 // (so the picture fades in over its own colour), else on a calm tint whose
 // hue comes from the name.

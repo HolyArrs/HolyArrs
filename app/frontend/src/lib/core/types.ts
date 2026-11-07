@@ -28,7 +28,7 @@ export interface TitleView {
 	ids: Record<string, string> | null;
 	keep_up_to_date: boolean;
 	why_added: string;
-	/** Tags route the title's grabs and searches (#108). */
+	/** Tags route the title's grabs and searches. */
 	tags?: string[];
 	release_gate: string;
 	gate_delay_days: number;
@@ -299,7 +299,7 @@ export interface Ask {
 	decided_by?: Who;
 	/** Others who declined the same title on earlier requests, newest first. */
 	also_declined?: Who[];
-	/** Where an approved ask is now, from the server's records (#139). */
+	/** Where an approved ask is now, from the server's records. */
 	step?: AskStep;
 	decided_at?: string;
 	note?: string;

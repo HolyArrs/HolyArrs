@@ -18,7 +18,7 @@
 </script>
 
 <script lang="ts">
-	// Dot plus a word, never colour alone (spec §2).
+	// Dot plus a word, never colour alone.
 	// Over art it becomes the shared glass pill with a line glyph instead of the dot.
 	import ArtPill from './ArtPill.svelte';
 	import type { IconName } from './Icon.svelte';

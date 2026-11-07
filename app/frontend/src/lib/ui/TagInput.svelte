@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Tags (#108) for a title, a Downloader or a Source: chips with a remove
+	// Tags for a title, a Downloader or a Source: chips with a remove
 	// button, and a field that adds what is typed on Enter, a comma (typed or
 	// pasted) or leaving it. Backspace in the empty field takes the last tag
 	// off. The tags already in use are offered as suggestions.

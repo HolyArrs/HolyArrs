@@ -376,7 +376,7 @@ select.input {
 	color: var(--text);
 }
 
-/* Skeleton while loading: the Silhouette shimmer lives in lib/tokens.css (.sk). */
+/* Skeleton while loading: the Silhouette shimmer lives in lib/core/tokens.css (.sk). */
 .sk { position: relative; overflow: hidden; }
 
 @keyframes rise {

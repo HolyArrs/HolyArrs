@@ -1,5 +1,4 @@
-// The wide title card template (docs/design-review/apple/spec.md, card
-// system): the title is always on the art, never under it. Three variants
+// The wide title card template: the title is always on the art, never under it. Three variants
 // share one box bottom-left and one scrim, so a row reads as one pattern:
 //   titled - the backdrop already carries the title text;
 //   logo   - a textless backdrop with the title logo over it;

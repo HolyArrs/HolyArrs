@@ -1,5 +1,5 @@
 /*
- * The one settings content style (Grid, picked by Luis 2026-10-27): every
+ * The one settings content style (Grid): every
  * settings page lays its SettingsCards (.ui-settings) out as a dense
  * two-column grid of small cards; one column on narrow panes.
  * Text is calm: one quiet label style (small, muted), one value style
@@ -115,7 +115,7 @@
 	.settings-content .ui-settings { transition: none; }
 }
 
-/* One plain list per page, like Overseerr (Luis, 2026-11-02): cards stack in
+/* One plain list per page: cards stack in
    one column; every field puts its label on the left and its control (hint
    and error under it) on the right. Hand-built .card blocks follow the same
    rows as SettingsCards. */

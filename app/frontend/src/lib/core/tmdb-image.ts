@@ -1,6 +1,6 @@
 import { to } from './paths.ts';
 
-// TMDB pictures at the size each slot shows (Luis, 2026-10-26): posters
+// TMDB pictures at the size each slot shows: posters
 // w342, or w500 on phone and sharp screens; backdrops in rows w780; heroes
 // w1280, or original past 1600 pixels. They load through HolyArrs' artwork
 // cache (/api/v1/artwork/tmdb/<size>/<file>): the server fetches each
