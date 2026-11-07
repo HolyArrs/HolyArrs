@@ -237,6 +237,7 @@ type MusicPolicyPlan struct {
 	Albums          []MusicAlbumPlan `json:"albums,omitempty"`
 }
 
+// MusicAlbumPlan is one album the move adds under a music artist.
 type MusicAlbumPlan struct {
 	MBID         string `json:"mbid"`
 	KeepUpToDate bool   `json:"keep_up_to_date"`
@@ -497,6 +498,7 @@ func ValidRules(rules []PathRule) error {
 // RuleError is a path rule the move cannot use; its text is safe to show.
 type RuleError struct{ Text string }
 
+// Error returns the rule text.
 func (e *RuleError) Error() string { return e.Text }
 
 // BuildPlan turns Snapshots into a Plan.

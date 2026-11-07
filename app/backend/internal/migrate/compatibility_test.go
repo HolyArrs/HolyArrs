@@ -447,7 +447,7 @@ func TestCompatibilityLegacyQueuedMoveWithoutApprovalFailsClosed(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	// Directly exercise the recovered job boundary. It must reject the legacy
+	// Directly exercise the recovered job boundary. It must reject the old
 	// row before Run can write any imported domain row.
 	err := l.mv.handle(ctx, &jobs.Run{Job: domain.Job{Subject: &domain.Subject{Type: "move", ID: moveID}, CreatedBy: domain.Actor{Kind: "user", ID: 1}}})
 	if !errors.Is(err, ErrPlanChanged) {

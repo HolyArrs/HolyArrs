@@ -15,6 +15,7 @@ import (
 // turn into Requests.
 type seerrReader struct{ kind Kind }
 
+// Kind returns the app this reader handles.
 func (r seerrReader) Kind() Kind { return r.kind }
 
 // Permission bits, named as the manual quotes them.
@@ -78,6 +79,7 @@ func detect(ctx context.Context, t table) (Kind, bool) {
 	return Overseerr, true
 }
 
+// Probe checks the request app answers and reports its version.
 func (r seerrReader) Probe(ctx context.Context, src Source) (Info, error) {
 	if src.Via() == ViaBackup {
 		b, err := openBackup(src, seerrFiles)
@@ -127,6 +129,7 @@ func (r seerrReader) status(ctx context.Context, c *apiClient) (string, error) {
 	return v, nil
 }
 
+// Read fetches the request app's setup into a Snapshot.
 func (r seerrReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	if src.Via() == ViaBackup {
 		return r.fromBackup(ctx, src)

@@ -17,6 +17,7 @@ import (
 // it needs the password again.
 type qbitReader struct{}
 
+// Kind returns the app this reader handles.
 func (qbitReader) Kind() Kind { return QBittorrent }
 
 var qbitFiles = []string{"qbittorrent.conf", "qbittorrent.ini", "categories.json"}
@@ -63,6 +64,7 @@ func (r qbitReader) version(ctx context.Context, c *apiClient) (string, error) {
 	return v, nil
 }
 
+// Probe checks the downloader answers and reports its version.
 func (r qbitReader) Probe(ctx context.Context, src Source) (Info, error) {
 	if src.Via() == ViaBackup {
 		b, _, err := r.conf(src)
@@ -105,6 +107,7 @@ func (qbitReader) conf(src Source) (*backup, iniFile, error) {
 	return nil, nil, ErrNotBackup
 }
 
+// Read fetches the downloader's setup into a Snapshot.
 func (r qbitReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	d := &Downloader{NeedsPassword: true}
 	s := &Snapshot{Downloader: d}
@@ -175,6 +178,7 @@ func firstString(vs ...string) string {
 // usenet servers. Its keys and the servers' passwords are left behind.
 type sabReader struct{}
 
+// Kind returns the app this reader handles.
 func (sabReader) Kind() Kind { return SABnzbd }
 
 var sabFiles = []string{"sabnzbd.ini"}
@@ -236,6 +240,7 @@ func (r sabReader) ini(src Source) (iniFile, error) {
 	return f, nil
 }
 
+// Probe checks the downloader answers and reports its version.
 func (r sabReader) Probe(ctx context.Context, src Source) (Info, error) {
 	if src.Via() == ViaBackup {
 		f, err := r.ini(src)
@@ -255,6 +260,7 @@ func (r sabReader) Probe(ctx context.Context, src Source) (Info, error) {
 	return Info{Kind: SABnzbd, Via: ViaAPI, Version: v}, nil
 }
 
+// Read fetches the downloader's setup into a Snapshot.
 func (r sabReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	d := &Downloader{NeedsPassword: true}
 	s := &Snapshot{Downloader: d}

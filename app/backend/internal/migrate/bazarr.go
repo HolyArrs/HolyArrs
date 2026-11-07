@@ -14,6 +14,7 @@ import (
 // keys are left behind.
 type bazarrReader struct{}
 
+// Kind returns the app this reader handles.
 func (bazarrReader) Kind() Kind { return Bazarr }
 
 func (bazarrReader) client(src Source) (*apiClient, error) {
@@ -48,6 +49,7 @@ func (r bazarrReader) status(ctx context.Context, c *apiClient) (map[string]any,
 
 var bazarrFiles = []string{"bazarr.db", "config.yaml", "config.ini"}
 
+// Probe checks Bazarr answers and reports its version.
 func (r bazarrReader) Probe(ctx context.Context, src Source) (Info, error) {
 	if src.Via() == ViaBackup {
 		b, err := openBackup(src, bazarrFiles)
@@ -90,6 +92,7 @@ func alembic(ctx context.Context, t table) string {
 	return "database " + str(rows[0]["version_num"])
 }
 
+// Read fetches Bazarr's setup into a Snapshot.
 func (r bazarrReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	s := &Snapshot{Subtitles: &SubtitleSetup{}}
 	var langs, profiles []map[string]any

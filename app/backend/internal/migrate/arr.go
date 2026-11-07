@@ -16,6 +16,7 @@ import (
 // a Snapshot, so the two ways cannot drift apart.
 type arrReader struct{ kind Kind }
 
+// Kind returns the app this reader handles.
 func (r arrReader) Kind() Kind { return r.kind }
 
 // arrRows is what either way gathers: lower-case keys per row.
@@ -147,6 +148,7 @@ func (r arrReader) client(src Source) (*apiClient, error) {
 	return newAPIClient(src, func(req *http.Request) { req.Header.Set("X-Api-Key", key) })
 }
 
+// Probe checks the app answers and reports its version.
 func (r arrReader) Probe(ctx context.Context, src Source) (Info, error) {
 	if src.Via() == ViaBackup {
 		b, db, err := r.openDB(src)
@@ -190,6 +192,7 @@ func (r arrReader) status(ctx context.Context, c *apiClient) (map[string]any, er
 	return st, nil
 }
 
+// Read fetches the app's setup into a Snapshot.
 func (r arrReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	var rows *arrRows
 	var err error
