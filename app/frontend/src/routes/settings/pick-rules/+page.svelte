@@ -124,7 +124,7 @@
 		<ul class="where">
 			<li><a href={to('/settings/library-folders')}>Library folders</a>: each folder has its own quality set, which every new title there gets.</li>
 			<li><a href={to('/settings/title-defaults')}>Movies and TV defaults</a>: the rules a new movie or show gets.</li>
-			<li><a href={to('/settings/wishlist#ask-rules')}>Request rules</a>: the rules approved requests get.</li>
+			<li><a href={to('/settings/requests#ask-rules')}>Request rules</a>: the rules approved requests get.</li>
 			<li><a href={to('/settings/outside-lists')}>Outside lists</a>: the rules titles from a list get.</li>
 			<li>A title's page, for that title only</li>
 		</ul>

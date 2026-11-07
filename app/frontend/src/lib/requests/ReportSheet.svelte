@@ -194,7 +194,7 @@
 	{/if}
 	{#snippet footer()}
 		{#if sent}
-			<Button variant="plain" href={to('/reports')}>See your reports</Button>
+			<Button variant="plain" href={to('/requests/reports')}>See your reports</Button>
 			<Button variant="primary" onclick={() => (open = false)}>Done</Button>
 		{:else}
 			<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>

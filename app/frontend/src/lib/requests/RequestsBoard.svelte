@@ -342,7 +342,7 @@
 		</div>
 		<div class="right">
 			{#if ctx.reports >= 0}
-				<a class="rp-btn" href={to('/reports')} data-testid="reports-link" aria-label="Reports{ctx.reports ? `, ${ctx.reports} open` : ''}"><Icon name="alert" size={16} /><span class="rp-v">Reports</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
+				<a class="rp-btn" href={to('/requests/reports')} data-testid="reports-link" aria-label="Reports{ctx.reports ? `, ${ctx.reports} open` : ''}"><Icon name="alert" size={16} /><span class="rp-v">Reports</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
 			{/if}
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all<span class="aa-n">{toApprove.length}</span></button>

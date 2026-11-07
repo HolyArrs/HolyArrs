@@ -57,7 +57,7 @@ export const sections: Section[] = [
 	{ href: '/settings/schedules', group: 'downloads', tint: 'orange', label: 'Schedules', icon: 'clock', about: 'Timed jobs and Run now' },
 
 	{ href: '/settings/users', group: 'users', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite people, set roles', need: 'users' },
-	{ href: '/settings/wishlist', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Limits and what requests get' },
+	{ href: '/settings/requests', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Limits and what requests get' },
 	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Passwords, two-factor, local network' },
 	{ href: '/settings/appearance', group: 'users', tint: 'indigo', label: 'Appearance', icon: 'appearance', about: 'Theme and title pages', need: 'self' },
 

@@ -66,7 +66,7 @@ export function buildNav(input: NavInput): NavSection[] {
 			items: [
 				{ href: '/', label: 'Home', icon: 'home', need: null },
 				{ href: '/explore', label: 'Explore', icon: 'compass', need: null },
-				{ href: '/new', label: 'New & Popular', icon: 'sparkle', need: null }
+				{ href: '/popular', label: 'New & Popular', icon: 'sparkle', need: null }
 			]
 		},
 		{

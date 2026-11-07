@@ -187,7 +187,7 @@
 		</SettingsCard>
 
 		<p class="hint where">
-			Each <a href={to('/settings/library-folders')}>Library folder</a> has a quality set of its own. <a href={to('/settings/wishlist')}>Request rules</a> and
+			Each <a href={to('/settings/library-folders')}>Library folder</a> has a quality set of its own. <a href={to('/settings/requests')}>Request rules</a> and
 			<a href={to('/settings/outside-lists')}>Outside lists</a> keep their own choices.
 		</p>
 	</fieldset>

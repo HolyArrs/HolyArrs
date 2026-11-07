@@ -29,8 +29,8 @@ describe('paths and helpers', () => {
 	it('builds paths and reads the type', () => {
 		expect(newPath('shows', 2)).toBe('/explore/new?type=shows&page=2');
 		expect(newServicesPath('music')).toBe('/explore/new/services?type=all');
-		expect(newHref('movies')).toBe('/new?type=movies');
-		expect(newHref('music')).toBe('/new');
+		expect(newHref('movies')).toBe('/popular?type=movies');
+		expect(newHref('music')).toBe('/popular');
 		expect(parseNewType('x')).toBe('all');
 		expect(parseNewType('music')).toBe('music');
 		expect(isRanked('np_top_shows')).toBe(true);

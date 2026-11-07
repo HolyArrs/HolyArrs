@@ -23,9 +23,9 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import Toast from '../(frame)/Toast.svelte';
-	import SidebarItem from '../(frame)/SidebarItem.svelte';
-	import TabBar from '../(frame)/TabBar.svelte';
+	import Toast from '../../(frame)/Toast.svelte';
+	import SidebarItem from '../../(frame)/SidebarItem.svelte';
+	import TabBar from '../../(frame)/TabBar.svelte';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { reveal } from '#lib/core/motion.ts';
 

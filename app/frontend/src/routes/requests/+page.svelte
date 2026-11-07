@@ -640,7 +640,7 @@ import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 <div class="ap-top" class:mem={!approver}>
 <h1 class="sr-only">Requests</h1>
 <!-- Reports (#36): approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
-{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
+{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
 {#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
 		{#if session.can('ask') && !approver}
@@ -650,7 +650,7 @@ import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 			<a class="tb ask-k" href={to(`/search?kind=music`)}><Icon name="music" size={16} />Ask for music</a>
 			<a class="tb ink ask-one" href={to(`/search`)}><Icon name="plus" size={16} />Ask for something</a>
 		{/if}
-		{#if myReports > 0}<a class="tb ask-rp" href={to('/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />Your reports</a>{/if}
+		{#if myReports > 0}<a class="tb ask-rp" href={to('/requests/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />Your reports</a>{/if}
 		</div>
 {/if}
 

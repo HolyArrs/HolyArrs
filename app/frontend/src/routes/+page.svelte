@@ -698,7 +698,7 @@ import { inbox } from '#lib/core/inbox.svelte.ts';
 							<span class="sm">Pick what to ask for next</span>
 						</a>
 					{:else if key === 'popular'}
-						<a class="tile stat {cls}" href={to('/new')}>
+						<a class="tile stat {cls}" href={to('/popular')}>
 							{@render head('star', 'pink', 'New & Popular')}
 							<span class="word">What's trending</span>
 							<span class="sm">Top 10s and coming soon</span>

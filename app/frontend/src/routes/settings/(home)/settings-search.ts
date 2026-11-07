@@ -146,12 +146,12 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/pick-rules', 'pick-rules-card', 'Fixed copies', 'pick rules proper repack fixed copy re-release'),
 
 	// People and sign-in
-	e('/settings/wishlist', 'per-week-movies', 'Movie requests each week', 'wishlist limit request quota movies'),
-	e('/settings/wishlist', 'per-week-shows', 'Show requests each week', 'wishlist limit request quota shows'),
-	e('/settings/wishlist', 'per-week-music', 'Music requests each week', 'wishlist limit request quota music'),
-	e('/settings/wishlist', 'ask-folder', 'Library folder for approved requests', 'wishlist approved folder'),
-	e('/settings/wishlist', 'ask-rules', 'Quality for approved requests', 'wishlist approved pick rules quality', true),
-	e('/settings/wishlist', 'search-approved', 'Search when approved', 'wishlist approved search'),
+	e('/settings/requests', 'per-week-movies', 'Movie requests each week', 'wishlist limit request quota movies'),
+	e('/settings/requests', 'per-week-shows', 'Show requests each week', 'wishlist limit request quota shows'),
+	e('/settings/requests', 'per-week-music', 'Music requests each week', 'wishlist limit request quota music'),
+	e('/settings/requests', 'ask-folder', 'Library folder for approved requests', 'wishlist approved folder'),
+	e('/settings/requests', 'ask-rules', 'Quality for approved requests', 'wishlist approved pick rules quality', true),
+	e('/settings/requests', 'search-approved', 'Search when approved', 'wishlist approved search'),
 	e('/settings/users', 'inv-note', 'Invite someone', 'invite link add user family friend new user'),
 	e('/settings/users', 'people-card', 'Users and roles', 'users people roles permissions admin member kid preset devices'),
 	e('/settings/users', 'invites-card', 'Invite links', 'invites take back links'),

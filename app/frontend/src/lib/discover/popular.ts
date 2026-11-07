@@ -66,7 +66,7 @@ export function newServicePath(t: NewType, service: number, rowType: string): st
 
 /** The New & Popular link for an Explore tab (music has none: All). */
 export function newHref(t: string): string {
-	return t === 'movies' || t === 'shows' ? `/new?type=${t}` : '/new';
+	return t === 'movies' || t === 'shows' ? `/popular?type=${t}` : '/popular';
 }
 
 /** Ranked rows draw their place number. */
