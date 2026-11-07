@@ -7,7 +7,7 @@
 
 	// Silkscreen, the pixel font (SIL Open Font License, from @fontsource/silkscreen), loaded once from the app itself.
 	if (typeof document !== 'undefined' && typeof FontFace !== 'undefined' && ![...document.fonts].some((f) => f.family === 'Silkscreen')) {
-		const face = new FontFace('Silkscreen', `url(${silkscreen}) format('woff2')`, { display: 'swap' });
+		const face = new FontFace('Silkscreen', `url(${to(silkscreen)}) format('woff2')`, { display: 'swap' });
 		document.fonts.add(face);
 		void face.load().catch(() => {});
 	}

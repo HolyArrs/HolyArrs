@@ -1,6 +1,10 @@
 package main
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/store"
+	"time"
+	"database/sql"
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -58,5 +62,63 @@ func TestServesUnderURLBase(t *testing.T) {
 	}
 	if r, body := get("/holyarrs/api/v1/auth/state"); r.StatusCode != 200 || !strings.Contains(body, "needs_setup") {
 		t.Fatalf("api: %d %s", r.StatusCode, body)
+	}
+}
+
+// A base saved in Settings > This app is used from the next start; the
+// HOLYARRS_URL_BASE variable wins over it (B3, must be 100%).
+func TestSavedURLBaseAppliesAtNextStartAndEnvWins(t *testing.T) {
+	dir := t.TempDir()
+	s, err := store.Open(dir, store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := store.FormatTime(time.Now())
+	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', 'url_base', '"/saved"', ?, '"test"', ?, '"test"')`, now, now)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_ = s.Close()
+	status := func(addr, p string) int {
+		t.Helper()
+		cl := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+		r, err := cl.Get("http://" + addr + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.Body.Close()
+		return r.StatusCode
+	}
+
+	// The saved base is used at start.
+	c, err := parseFlags([]string{"-config", dir}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr, _, _, stop := runApp(t, c)
+	if got := status(addr, "/saved/api/v1/auth/state"); got != 200 {
+		t.Fatalf("saved base: %d", got)
+	}
+	if got := status(addr, "/api/v1/auth/state"); got != 404 {
+		t.Fatalf("root under a saved base: %d", got)
+	}
+	if err := stop(); err != nil {
+		t.Fatal(err)
+	}
+
+	// The variable wins over the saved base.
+	t.Setenv("HOLYARRS_URL_BASE", "/fromenv")
+	c, err = parseFlags([]string{"-config", dir}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr, _, _, _ = runApp(t, c)
+	if got := status(addr, "/fromenv/api/v1/auth/state"); got != 200 {
+		t.Fatalf("variable base: %d", got)
+	}
+	if got := status(addr, "/saved/api/v1/auth/state"); got != 404 {
+		t.Fatalf("saved base while the variable is set: %d", got)
 	}
 }

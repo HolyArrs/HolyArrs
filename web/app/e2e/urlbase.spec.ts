@@ -22,6 +22,8 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	});
 	page.on('response', (r) => {
 		if (r.status() === 404 && r.url().includes('/_app/')) outside.push(`404 ${r.url()}`);
+		// Pictures and fonts must load under the base too.
+		if (r.status() >= 400 && /\/(artwork|img|fonts?)\//.test(new URL(r.url()).pathname)) outside.push(`${r.status()} ${r.url()}`);
 	});
 
 	// healthz answers while the app is still starting; wait until it is ready.
@@ -63,6 +65,21 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect(page).toHaveURL(`${root}/settings`);
 	await page.goBack();
 	await expect(page).toHaveURL(new RegExp(`${root}/library(\\?kind=movie)?$`));
+
+	// Every Settings page and the main pages open under the base.
+	for (const p of ['/explore', '/status', '/requests', '/downloads', '/history', '/calendar', '/settings/library-folders', '/settings/naming', '/settings/downloaders', '/settings/sources', '/settings/search', '/settings/users', '/settings/sign-in', '/settings/appearance', '/settings/alerts', '/settings/api', '/settings/health', '/settings/logs', '/settings/this-app']) {
+		await page.goto(`${root}${p}`);
+		await expect(page).toHaveURL(new RegExp(`^${root}${p.replace(/[/]/g, '\/')}`));
+		await expect(page.locator('main')).toBeVisible();
+	}
+
+	// An invite link carries the base.
+	await page.goto(`${root}/settings/users`);
+	await page.getByRole('button', { name: 'Invite someone' }).click();
+	await page.getByLabel('Note for yourself').fill('Base test');
+	await page.getByRole('button', { name: 'Make an invite link' }).click();
+	const invite = (await page.locator('.fresh code').textContent())!.trim();
+	expect(new URL(invite).pathname).toMatch(/^\/holyarrs\/invite\//);
 
 	// Outside the base there is nothing.
 	expect((await page.request.get(`http://${proxy}/api/v1/auth/state`)).status()).toBe(404);
