@@ -1,7 +1,3 @@
-// Package urlbase lets HolyArrs run under a path such as /holyarrs behind
-// a reverse proxy: requests under the base are served with the base taken
-// off, everything else is not found, and the answers are fixed on the way
-// out (redirects and cookie paths get the base back).
 package webserver
 
 import (
@@ -11,16 +7,23 @@ import (
 	"strings"
 )
 
-// URLBaseEnv and Flag name the setting.
-const (
-	URLBaseEnv = "HOLYARRS_URL_BASE"
-)
+// URLBaseEnv names the environment variable that sets the URL base.
+const URLBaseEnv = "HOLYARRS_URL_BASE"
 
-// ErrBase refuses a base that is not a plain path.
-var ErrBase = errors.New("the URL base is a path such as /holyarrs: letters, digits, '-', '_', '.' and '/' only, no '..' or '//'")
+// ErrURLBase refuses a base that is not a plain path.
+var ErrURLBase = errors.New("the URL base is a path such as /holyarrs: letters, digits, '-', '_', '.' and '/' only, no '..' or '//'")
 
-// CleanURLBase checks and normalises a base: "" or "/" is no base; otherwise it
-// starts with / and does not end with one.
+type urlBaseKey struct{}
+
+// baseWriter puts the base back on same-site redirects and on cookie paths.
+type baseWriter struct {
+	http.ResponseWriter
+	base  string
+	wrote bool
+}
+
+// CleanURLBase checks and normalises a base. "" and "/" mean no base;
+// anything else starts with / and does not end with one.
 func CleanURLBase(base string) (string, error) {
 	b := strings.TrimSpace(base)
 	if b == "" || b == "/" {
@@ -31,38 +34,38 @@ func CleanURLBase(base string) (string, error) {
 	}
 	b = strings.TrimRight(b, "/")
 	if len(b) > 100 || strings.Contains(b, "//") {
-		return "", ErrBase
+		return "", ErrURLBase
 	}
 	for _, seg := range strings.Split(b[1:], "/") {
 		if seg == "" || seg == "." || seg == ".." {
-			return "", ErrBase
+			return "", ErrURLBase
 		}
 		for _, r := range seg {
 			if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' || r == '.') {
-				return "", ErrBase
+				return "", ErrURLBase
 			}
 		}
 	}
 	return b, nil
 }
 
-type ctxKey struct{}
-
-// URLBaseFrom is the base the request came under ("" without one).
+// URLBaseFrom is the base the request came in under, "" when there is none.
 func URLBaseFrom(ctx context.Context) string {
-	b, _ := ctx.Value(ctxKey{}).(string)
+	b, _ := ctx.Value(urlBaseKey{}).(string)
 	return b
 }
 
-// With puts base on ctx (tests and in-process callers).
+// WithURLBase returns ctx carrying base, for tests and in-process callers.
 func WithURLBase(ctx context.Context, base string) context.Context {
-	return context.WithValue(ctx, ctxKey{}, base)
+	return context.WithValue(ctx, urlBaseKey{}, base)
 }
 
-// Handler serves h under base. Without a base it only records "" on the
-// context. With one: base itself redirects to base/, a path under base is
-// served with base taken off, the root /healthz and /readyz are served as
-// they are, any other path is 404.
+// UnderURLBase serves h under base so HolyArrs can sit behind a reverse
+// proxy at a path such as /holyarrs. The base itself redirects to base/, a
+// path under it is served with the base taken off, and any other path is
+// not found. Exact GET and HEAD of /healthz and /readyz also answer at the
+// root, because the container health check cannot know a base that was set
+// by flag or in Settings. Without a base, h is returned as it is.
 func UnderURLBase(base string, h http.Handler) http.Handler {
 	if base == "" {
 		return h
@@ -73,15 +76,12 @@ func UnderURLBase(base string, h http.Handler) http.Handler {
 			http.Redirect(w, r, base+"/", http.StatusMovedPermanently)
 			return
 		}
-		// The container health check always calls the root, which cannot
-		// know a base set by flag or in Settings: exact GET and HEAD of
-		// /healthz and /readyz answer there too.
 		if (p == "/healthz" || p == "/readyz") && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 			h.ServeHTTP(w, r.WithContext(WithURLBase(r.Context(), base)))
 			return
 		}
 		rest, ok := strings.CutPrefix(p, base+"/")
-		// AI apps look for the sign-in server of base at the host's root
+		// AI apps look for the sign-in server of a base at the host root
 		// (RFC 8414: /.well-known/oauth-authorization-server<base>).
 		if p == "/.well-known/oauth-authorization-server"+base {
 			rest, ok = ".well-known/oauth-authorization-server", true
@@ -104,14 +104,31 @@ func UnderURLBase(base string, h http.Handler) http.Handler {
 	})
 }
 
-// baseWriter puts the base back on redirects to this app ("/x", never "//x"
-// or another host) and on cookie paths.
-type baseWriter struct {
-	http.ResponseWriter
-	base  string
-	wrote bool
+// WriteHeader fixes the headers, then sends them.
+func (w *baseWriter) WriteHeader(code int) {
+	w.fix()
+	w.ResponseWriter.WriteHeader(code)
 }
 
+// Write fixes the headers on the first write.
+func (w *baseWriter) Write(b []byte) (int, error) {
+	w.fix()
+	return w.ResponseWriter.Write(b)
+}
+
+// Flush keeps the live stream working through the wrapper.
+func (w *baseWriter) Flush() {
+	w.fix()
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+// Unwrap lets http.ResponseController reach the real writer.
+func (w *baseWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
+// fix prefixes a redirect to this app ("/x", never "//x" or another host)
+// and widens cookie paths from / to the base.
 func (w *baseWriter) fix() {
 	if w.wrote {
 		return
@@ -135,24 +152,3 @@ func (w *baseWriter) fix() {
 		hd["Set-Cookie"] = out
 	}
 }
-
-func (w *baseWriter) WriteHeader(code int) {
-	w.fix()
-	w.ResponseWriter.WriteHeader(code)
-}
-
-func (w *baseWriter) Write(b []byte) (int, error) {
-	w.fix()
-	return w.ResponseWriter.Write(b)
-}
-
-// Flush keeps the live stream (SSE) working through the wrapper.
-func (w *baseWriter) Flush() {
-	w.fix()
-	if f, ok := w.ResponseWriter.(http.Flusher); ok {
-		f.Flush()
-	}
-}
-
-// Unwrap lets http.ResponseController reach the real baseWriter.
-func (w *baseWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }

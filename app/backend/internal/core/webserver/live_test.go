@@ -52,7 +52,7 @@ func connect(t *testing.T, ctx context.Context, url, lastID string) *http.Respon
 	t.Helper()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if lastID != "" {
-		req.Header.Set("Last-LiveEvent-ID", lastID)
+		req.Header.Set("Last-Event-ID", lastID)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

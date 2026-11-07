@@ -11,13 +11,36 @@ import (
 	"sync"
 )
 
-// minSize is the smallest answer worth compressing when its length is known.
-const minSize = 1024
+// minCompressSize is the smallest answer worth gzipping when its length is
+// known up front.
+const minCompressSize = 1024
 
-var pool = sync.Pool{New: func() any { w, _ := gzip.NewWriterLevel(nil, gzip.DefaultCompression); return w }}
+var gzipPool = sync.Pool{New: func() any { w, _ := gzip.NewWriterLevel(nil, gzip.DefaultCompression); return w }}
 
-// AcceptsEncoding reports whether the request's Accept-Encoding allows enc
-// (q=0 refuses it).
+// gzipWriter decides on the first write whether the answer is gzipped.
+type gzipWriter struct {
+	http.ResponseWriter
+	gz      *gzip.Writer
+	decided bool
+}
+
+// Compress gzips the text-like answers of h for browsers that accept gzip.
+// Ranged and HEAD requests and the live stream pass through untouched.
+func Compress(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Accept-Encoding")
+		if r.Method == http.MethodHead || r.Header.Get("Range") != "" || r.URL.Path == "/live" || !AcceptsEncoding(r, "gzip") {
+			h.ServeHTTP(w, r)
+			return
+		}
+		gw := &gzipWriter{ResponseWriter: w}
+		defer gw.close()
+		h.ServeHTTP(gw, r)
+	})
+}
+
+// AcceptsEncoding reports whether the request's Accept-Encoding allows enc.
+// A q value of 0 refuses it.
 func AcceptsEncoding(r *http.Request, enc string) bool {
 	for _, part := range strings.Split(r.Header.Get("Accept-Encoding"), ",") {
 		name, params, _ := strings.Cut(strings.TrimSpace(part), ";")
@@ -34,7 +57,8 @@ func AcceptsEncoding(r *http.Request, enc string) bool {
 	return false
 }
 
-// Compressible says a Content-Type is text-like enough to gzip.
+// Compressible reports whether a Content-Type is text-like enough to gzip.
+// The event stream is excluded: it must reach the browser as it is written.
 func Compressible(ct string) bool {
 	ct = strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
 	switch {
@@ -49,54 +73,13 @@ func Compressible(ct string) bool {
 	return false
 }
 
-// Handler gzips h's compressible answers.
-func Compress(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Accept-Encoding")
-		if r.Method == http.MethodHead || r.Header.Get("Range") != "" || r.URL.Path == "/live" || !AcceptsEncoding(r, "gzip") {
-			h.ServeHTTP(w, r)
-			return
-		}
-		gw := &gzipWriter{ResponseWriter: w}
-		defer gw.close()
-		h.ServeHTTP(gw, r)
-	})
-}
-
-type gzipWriter struct {
-	http.ResponseWriter
-	gz      *gzip.Writer
-	decided bool
-}
-
-func (w *gzipWriter) decide(code int) {
-	if w.decided {
-		return
-	}
-	w.decided = true
-	hd := w.Header()
-	n, lenErr := strconv.Atoi(hd.Get("Content-Length"))
-	ct := hd.Get("Content-Type")
-	if code < 200 || code == http.StatusNoContent || code == http.StatusNotModified || code == http.StatusPartialContent ||
-		hd.Get("Content-Encoding") != "" || !Compressible(ct) || (lenErr == nil && n < minSize) {
-		return
-	}
-	hd.Del("Content-Length")
-	hd.Del("Accept-Ranges")
-	hd.Set("Content-Encoding", "gzip")
-	if et := hd.Get("ETag"); et != "" && !strings.HasPrefix(et, "W/") {
-		hd.Set("ETag", "W/"+et)
-	}
-	gz := pool.Get().(*gzip.Writer)
-	gz.Reset(w.ResponseWriter)
-	w.gz = gz
-}
-
+// WriteHeader settles whether to gzip, then sends the header.
 func (w *gzipWriter) WriteHeader(code int) {
 	w.decide(code)
 	w.ResponseWriter.WriteHeader(code)
 }
 
+// Write sends b, gzipped when the answer qualified.
 func (w *gzipWriter) Write(b []byte) (int, error) {
 	if !w.decided {
 		if w.Header().Get("Content-Type") == "" {
@@ -120,21 +103,47 @@ func (w *gzipWriter) Flush() {
 	}
 }
 
-// Hijack lets websocket-style handlers take the connection.
+// Hijack hands the connection over for handlers that take it.
 func (w *gzipWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if hj, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return hj.Hijack()
 	}
-	return nil, nil, errors.New("hijack not supported")
+	return nil, nil, errors.New("webserver: hijack not supported")
 }
 
-// Unwrap gives http.ResponseController the underlying gzipWriter.
+// Unwrap lets http.ResponseController reach the real writer.
 func (w *gzipWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
+// decide turns gzip on only for answers that are small enough to be worth
+// skipping, already encoded, bodiless or partial. The ETag becomes weak
+// because the bytes on the wire differ from the stored ones.
+func (w *gzipWriter) decide(code int) {
+	if w.decided {
+		return
+	}
+	w.decided = true
+	hd := w.Header()
+	n, lenErr := strconv.Atoi(hd.Get("Content-Length"))
+	ct := hd.Get("Content-Type")
+	if code < 200 || code == http.StatusNoContent || code == http.StatusNotModified || code == http.StatusPartialContent ||
+		hd.Get("Content-Encoding") != "" || !Compressible(ct) || (lenErr == nil && n < minCompressSize) {
+		return
+	}
+	hd.Del("Content-Length")
+	hd.Del("Accept-Ranges")
+	hd.Set("Content-Encoding", "gzip")
+	if et := hd.Get("ETag"); et != "" && !strings.HasPrefix(et, "W/") {
+		hd.Set("ETag", "W/"+et)
+	}
+	gz := gzipPool.Get().(*gzip.Writer)
+	gz.Reset(w.ResponseWriter)
+	w.gz = gz
+}
 
 func (w *gzipWriter) close() {
 	if w.gz != nil {
 		_ = w.gz.Close()
-		pool.Put(w.gz)
+		gzipPool.Put(w.gz)
 		w.gz = nil
 	}
 }

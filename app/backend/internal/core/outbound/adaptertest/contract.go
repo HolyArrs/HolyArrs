@@ -1,4 +1,5 @@
-// Package adaptertest supplies shared behavioral contracts for adapter tests.
+// Package adaptertest holds the behaviour contract that every outside-service
+// adapter must pass in its tests.
 package adaptertest
 
 import (
@@ -8,7 +9,7 @@ import (
 	"time"
 )
 
-// Contract describes the behavior every supported adapter operation must expose.
+// Contract describes the behaviour an adapter operation must show.
 type Contract struct {
 	Name         string
 	Success      func(context.Context) error
@@ -17,7 +18,11 @@ type Contract struct {
 	Unsupported  []string
 }
 
-// Run checks success, a meaningful remote failure, and caller cancellation.
+// Fake is an in-memory adapter that proves the contract itself.
+type Fake struct{ Err error }
+
+// Run checks success, a meaningful remote failure and, when asked, that a
+// canceled caller gets context.Canceled within two seconds.
 func Run(t *testing.T, c Contract) {
 	t.Helper()
 	t.Run(c.Name, func(t *testing.T) {
@@ -56,10 +61,7 @@ func Run(t *testing.T, c Contract) {
 	})
 }
 
-// Fake is an in-memory adapter used to prove the shared contract itself.
-type Fake struct{ Err error }
-
-// Do completes in memory, propagating cancellation before its configured result.
+// Do returns the context error if there is one, else the configured result.
 func (f Fake) Do(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err

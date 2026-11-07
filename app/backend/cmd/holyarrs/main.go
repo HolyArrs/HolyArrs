@@ -930,7 +930,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 	})
 	pc.Start(ctx)
-	swap.set(webserver.UnderURLBase(c.URLBase, webserver.Compress(limitBodies(a.Handler()))))
+	swap.set(routes(a, c))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)
 	if o.ready != nil {
 		o.ready(reg, ln.Addr().String())
