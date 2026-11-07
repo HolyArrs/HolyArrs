@@ -15,7 +15,7 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-GO_IMAGE = "golang:1.27.2@sha256:007a316059246276cb214df93950be77837545dc78007a73e0291a4963d5d3bf"
+GO_IMAGE = "golang:1.27.3@sha256:e519d3b0a5b285e5aa53ab9eef02bc6bbb9cb04608389b743a136a9ce75f0d1e"
 TARGETS = {"linux-amd64": ("linux", "amd64", ""),
            "linux-arm64": ("linux", "arm64", ""),
            "linux-armv7": ("linux", "arm", "7"),

@@ -11,7 +11,7 @@ RUN npm run build
 
 # Build stage: runs on the build machine and cross-compiles for the target,
 # so multi-arch builds (amd64, arm64, armv7) need no emulation.
-FROM --platform=$BUILDPLATFORM golang:1.27.2@sha256:007a316059246276cb214df93950be77837545dc78007a73e0291a4963d5d3bf AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.3@sha256:e519d3b0a5b285e5aa53ab9eef02bc6bbb9cb04608389b743a136a9ce75f0d1e AS build
 ARG TARGETOS=linux
 ARG TARGETARCH
 ARG TARGETVARIANT
