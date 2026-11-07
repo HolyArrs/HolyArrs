@@ -107,9 +107,7 @@
 		actions: actionRow,
 		ratings = true,
 		showFacts = true,
-		tagline,
-		heroStory,
-		heroCaps
+		tagline
 	}: {
 		title: string;
 		/** A movie or show: the muted trailer and the Trailer button. */
@@ -150,10 +148,6 @@
 		showFacts?: boolean;
 		/** A tagline under the logo or title. */
 		tagline?: string | null;
-		/** The story inside the hero (three lines at most), when the page shows it there. */
-		heroStory?: string | null;
-		/** A small-caps line above the story in the hero (director · country · minutes). */
-		heroCaps?: string | null;
 	} = $props();
 
 	let backdropFailed = $state(false);
@@ -305,8 +299,6 @@
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
 			{#if tagline}<p class="hero-tagline" data-testid="hero-tagline">{tagline}</p>{/if}
-			{#if heroCaps}<p class="hero-caps" data-testid="hero-caps">{heroCaps}</p>{/if}
-			{#if heroStory}<p class="hero-story" data-testid="hero-story">{heroStory}</p>{/if}
 		{/snippet}
 		{#snippet meta()}
 			{#if showFacts && facts.length}<p>{facts.join(' · ')}</p>{/if}
@@ -349,8 +341,6 @@
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }
-	.hero-caps { margin: 12px 0 0; color: rgb(255 255 255 / 92%); font: 600 13px/1.3 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
-	.hero-story { margin: 12px 0 0; max-width: 58ch; color: rgb(255 255 255 / 90%); font: 500 clamp(14px, 1.1vw, 16px)/1.5 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%), 0 0 18px rgb(0 0 0 / 45%); }
 	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }
