@@ -129,8 +129,10 @@
 </div>
 
 <style>
-	/* Desktop: the landing fits the window exactly (main's 24px top and 64px bottom padding taken out), so it never scrolls. */
-	.sx-home { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar) - 88px); min-height: 420px; }
+	/* Desktop: a compact landing, at most 640px tall and 1180px wide, centred.
+	   On short windows it shrinks to fit (main's 24px top and 64px bottom
+	   padding taken out), so it never scrolls. */
+	.sx-home { display: flex; flex-direction: column; width: 100%; max-width: 1180px; margin-inline: auto; height: min(640px, calc(100dvh - var(--topbar) - 88px)); min-height: 420px; }
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
 	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
 	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
@@ -188,9 +190,8 @@
 		.pp { font-size: 13px; }
 		.chip { top: 14px; right: 14px; }
 	}
-	/* An odd count (a part turned off): the last card takes the row. */
+	/* Four groups (a part turned off or not allowed): the last card takes the row, so no cell sits empty. */
 	.bento[data-count='4'] .sx-card:last-child { grid-column: span 2; }
-	@media (min-width: 1101px) { .bento[data-count='4'] .sx-card:last-child { grid-column: auto; } }
 
 	@media (prefers-reduced-motion: reduce) {
 		.sx-face, .lift, .art-hold :global(.sx-art) { transition: none; }
