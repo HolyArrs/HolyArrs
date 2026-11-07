@@ -307,10 +307,8 @@
 		<SettingsLinks
 			label="Elsewhere in Settings"
 			links={[
-				{ href: '/settings/health', label: 'Health checks', note: !checks || checks.checks.length === 0 ? 'No results yet' : bad.length === 0 ? `All ${checks.checks.length} checks are fine` : `${bad.length} of ${checks.checks.length} need a look · ${stateWord(checks.worst)}` },
 				{ href: '/settings/parts#stages-card', label: 'Stages', note: states?.safe_mode ? 'Safe mode' : `${split.stages.length} running in the background` },
 				{ href: '/settings/parts#links-card', label: 'Linked apps', note: split.links.length ? `${split.links.length} linked` : 'None yet' },
-				...(session.can('users') ? [{ href: '/settings/logs', label: 'Logs', note: 'Read and download the app log' }] : [])
 			]}
 		/>
 	</div>

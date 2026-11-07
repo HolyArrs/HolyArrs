@@ -85,10 +85,10 @@
 		<Field id="lg-to" label="To">
 			<input id="lg-to" class="input" type="date" bind:value={filter.to} onchange={() => apply()} />
 		</Field>
-	</div>
-	<div class="row" style="margin-top: var(--s-3)">
-		<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Apply</Button>
-		<Button variant="plain" type="button" onclick={clear}>Clear</Button>
+		<div class="go">
+			<Button variant="primary" size="sm" type="submit" disabled={busy} aria-busy={busy}>Apply</Button>
+			<Button variant="plain" size="sm" type="button" onclick={clear}>Clear</Button>
+		</div>
 	</div>
 </form>
 
@@ -124,38 +124,18 @@
 {/if}
 
 <style>
-	.row-fields {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-3);
-	}
-	.row-fields :global(.field) {
-		margin-top: 0;
-		min-width: 140px;
-	}
-	.row-fields .grow {
-		flex: 1 1 200px;
-	}
-	.lines {
-		list-style: none;
-		padding: 0;
-		margin: var(--s-3) 0 0;
-	}
-	.lines li {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--s-2);
-		padding: var(--s-2) 0;
-		border-top: 1px solid var(--line);
-	}
-	.text {
-		flex: 1 1 100%;
-		font-family: var(--font-mono);
-		font-size: 0.8125rem;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		min-width: 0;
-		color: var(--text);
-	}
+	/* Filters: one row, small labels above each control, buttons at the end. */
+	.filters { padding: 14px 18px !important; }
+	.row-fields { display: grid; grid-template-columns: 190px minmax(0, 1fr) 160px 160px auto; gap: 12px; align-items: end; }
+	.row-fields > :global(.field) { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; min-width: 0; }
+	.row-fields > :global(.field) > :global(label) { color: var(--text-muted) !important; font: 500 12px/1.2 var(--font-ui) !important; }
+	.go { display: flex; align-items: center; gap: 4px; padding-bottom: 4px; }
+	@media (max-width: 900px) { .row-fields { grid-template-columns: 1fr 1fr; } .row-fields > :global(.grow) { grid-column: 1 / -1; } .go { grid-column: 1 / -1; } }
+	/* Lines: level, time, then the message on one row. */
+	.lines { list-style: none; padding: 0 !important; margin: 0; box-shadow: none !important; }
+	.lines li { display: grid; grid-template-columns: 84px 128px minmax(0, 1fr); align-items: baseline; column-gap: 12px; padding: 9px 0; }
+	.lines li + li { box-shadow: inset 0 1px 0 var(--line); }
+	.lines li > time { font-family: var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.text { font-family: var(--font-mono); font-size: 12.5px; font-weight: 400; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; color: var(--text); background: none; padding: 0; }
+	@media (max-width: 600px) { .lines li { grid-template-columns: auto 1fr; row-gap: 4px; } .text { grid-column: 1 / -1; } }
 </style>

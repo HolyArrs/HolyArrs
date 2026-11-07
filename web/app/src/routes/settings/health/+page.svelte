@@ -114,15 +114,13 @@
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<section class="card" id="health-checks-card" aria-labelledby="h-checks" data-testid="health-checks" tabindex="-1">
 		<div class="card-head">
-			<h2 id="h-checks" class="h2">Results</h2>
+			<h2 id="h-checks" class="h2">Results <span class="sub">· Health Alerts send each break and fix</span></h2>
 			<span class="chip {checks.worst === 'ok' ? 'ok' : checks.worst === 'warning' ? 'wait' : 'fail'}" data-testid="health-worst">{stateWord(checks.worst)}</span>
 		</div>
-		<p class="small muted">Health Alerts send each break and fix</p>
 		{#if checks.sync?.length}
 			<ul class="rows checks" data-testid="health-sync">
 				{#each checks.sync as c (c.id)}
 					<li data-testid="health-sync-row" data-state={c.health}>
-						<span class="chip {c.health === 'degraded' ? 'fail' : 'wait'}">{c.health === 'degraded' ? 'Sync degraded' : 'Checking'}</span>
 						<span class="grow small">
 							<b>Download tracking</b> {c.name}
 							<br /><span class="muted"
@@ -131,7 +129,8 @@
 									: 'The last read is too old; a new one is on its way.'}</span
 							>
 						</span>
-						{#if c.seen_at}<time class="mono xs muted" datetime={c.seen_at} title="Last read">{ago(c.seen_at)}</time>{/if}
+						<span class="chip {c.health === 'degraded' ? 'fail' : 'wait'}">{c.health === 'degraded' ? 'Sync degraded' : 'Checking'}</span>
+						<time class="xs muted" datetime={c.seen_at ?? ''} title="Last read">{c.seen_at ? ago(c.seen_at) : ''}</time>
 					</li>
 				{/each}
 			</ul>
@@ -142,12 +141,12 @@
 			<ul class="rows checks">
 				{#each checks.checks as c (c.key)}
 					<li data-testid="health-check" data-state={c.state}>
-						<span class="chip {c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
 						<span class="grow small">
 							<b>{checkName(c.kind, c.subject).label}</b>{#if checkName(c.kind, c.subject).subject}{' '}<span class="subj" title={checkName(c.kind, c.subject).subject}>{shortPath(checkName(c.kind, c.subject).subject)}</span>{/if}
 							{#if c.message}<br /><span class="muted">{c.message}</span>{/if}
 						</span>
-						<time class="mono xs muted" datetime={c.since} title="Since">{ago(c.since)}</time>
+						<span class="chip {c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
+						<time class="xs muted" datetime={c.since} title="Since">{ago(c.since)}</time>
 					</li>
 				{/each}
 			</ul>
@@ -199,13 +198,12 @@
 {/if}
 
 <style>
-	.checks li {
-		align-items: flex-start;
-	}
-	.checks .grow {
-		min-width: 0;
-		overflow-wrap: anywhere;
-	}
+	/* One grid for every result: name and message, then the status in a fixed column, then the time. */
+	.checks > li { display: grid !important; grid-template-columns: minmax(0, 1fr) 96px 72px; align-items: center; column-gap: 16px; min-height: 52px; padding: 10px 0 !important; }
+	.checks > li > .grow { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+	.checks > li > .grow :global(.muted) { font-size: 13px; }
+	.checks > li > time { text-align: right; font-variant-numeric: tabular-nums; }
+	.sub { color: var(--text-faint, var(--text-muted)); font-weight: 400; letter-spacing: 0; }
 	.two {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -218,14 +216,8 @@
 		.two {
 			grid-template-columns: 1fr;
 		}
-		.checks li {
-			align-items: stretch;
-			flex-direction: column;
-			gap: var(--s-2);
-		}
-		.checks li > :global(.chip),
-		.checks li > time {
-			align-self: flex-start;
-		}
+		.checks > li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'name name' 'st time'; row-gap: 6px; }
+		.checks > li > .grow { grid-area: name; } .checks > li > :global(.chip) { grid-area: st; } .checks > li > time { grid-area: time; }
+		.sub { display: none; }
 	}
 </style>
