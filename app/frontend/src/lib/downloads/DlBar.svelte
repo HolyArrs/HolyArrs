@@ -1,10 +1,11 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../ui/Icon.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import TopMenu from './TopMenu.svelte';
 	import DlFind from './DlFind.svelte';
 	import { tip } from './tip.ts';
+	import { actionName } from './action-name.ts';
 	import { KIND_TABS } from './size.ts';
-	import Sheet from '../ui/Sheet.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 
 	// The Downloads toolbar: three glass capsules. Actions on the left; Library and Sources
 	// on the right. Every button is the same width (icon over label) so highlights sit centred.
@@ -61,9 +62,6 @@
 		{ key: 'torrent', label: 'Torrent', icon: 'torrent' }
 	];
 	type F = { key: string; label: string; icon: IconName };
-	// The accessible name starts with the visible label (WCAG 2.5.3); a longer hint follows it.
-	// A hint that already holds the label ("Start (select a download)", "Speed limit: 42 MB/s") is the whole name.
-	const nameOf = (a: Act) => (!a.hint || a.hint === a.label ? a.label : a.hint.includes(a.label) ? a.hint : `${a.label}: ${a.hint}`);
 
 	const pickKind = (k: string) => (kindOn = kindOn === k ? '' : k);
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
@@ -132,9 +130,9 @@
 	<span class="aw" data-testid="tb-{a.key}">
 		<span class="tw2" use:tip={a.hint !== a.label ? a.hint : ''}>
 			{#if a.href}
-				<a class="it act stk" href={a.href} aria-label={nameOf(a)}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
+				<a class="it act stk" href={a.href} aria-label={actionName(a)}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
 			{:else}
-				<button type="button" class="it act stk" disabled={a.disabled} aria-label={nameOf(a)} onclick={() => a.run?.()} data-testid="tb-{a.key}-btn"><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
+				<button type="button" class="it act stk" disabled={a.disabled} aria-label={actionName(a)} onclick={() => a.run?.()} data-testid="tb-{a.key}-btn"><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
 			{/if}
 		</span>
 		{#if a.more}<TopMenu label="More {a.key} actions" items={a.more} />{/if}
@@ -180,7 +178,7 @@
 			<Icon name="sliders" size={18} stroke={2} />
 			<span>Filters</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
 		</button>
-		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={nameOf(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
+		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={actionName(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
 		{#if allItems.length}<button type="button" class="pbn ico" bind:this={allBtn} aria-haspopup="menu" aria-label="All downloads" onclick={() => allBtn && allMenu?.show(allBtn)} data-testid="dl-all-btn"><Icon name="more" size={18} /></button><TopMenu bare bind:this={allMenu} label="All downloads" items={allItems} />{/if}
 	</div>
 </div>
