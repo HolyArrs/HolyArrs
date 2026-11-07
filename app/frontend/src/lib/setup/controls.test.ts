@@ -11,8 +11,8 @@ function answer(on: Record<PartName, boolean>): PartsAnswer {
 	};
 }
 
-describe('controls', () => {
-	it('reads link keys', () => {
+describe('setup controls', () => {
+	it('a link key points to its app, anything else to nothing', () => {
 		expect(linkTarget('link:downloader:3')).toEqual({ kind: 'downloader', id: '3' });
 		expect(linkTarget('link:subtitle_site:podnapisi')).toEqual({ kind: 'subtitle_site', id: 'podnapisi' });
 		expect(linkTarget('stage:search')).toBeNull();
@@ -21,7 +21,7 @@ describe('controls', () => {
 		expect(isConfirm({ parts: [] })).toBe(false);
 	});
 
-	it('switches parts in order and confirms a turn-off at once', async () => {
+	it('the user saves parts / they switch in order and turn-offs are confirmed at once', async () => {
 		const on: Record<PartName, boolean> = { movies: true, shows: true, music: true, subtitles: true, wishlist: true };
 		const calls: string[] = [];
 		const c = createClient(async (url: string, init?: RequestInit) => {
