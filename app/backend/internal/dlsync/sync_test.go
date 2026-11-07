@@ -25,7 +25,7 @@ type fakeClient struct {
 	jobs    map[string]downloader.Job
 	lists   int
 	gets    int
-	panicN  int // the next panicN List calls panic
+	panicN  int // how many of the next List calls panic
 	listErr error
 }
 
@@ -77,6 +77,7 @@ func (f *fakeClient) set(j downloader.Job) { f.mu.Lock(); f.jobs[j.ID] = j; f.mu
 func (f *fakeClient) drop(id string)       { f.mu.Lock(); delete(f.jobs, id); f.mu.Unlock() }
 func (f *fakeClient) listCount() int       { f.mu.Lock(); defer f.mu.Unlock(); return f.lists }
 
+// rig is a reader wired to a fake client, a Manager and a test database.
 type rig struct {
 	db     *database.Store
 	client *fakeClient
@@ -85,11 +86,10 @@ type rig struct {
 	dlID   int64
 }
 
+// ownHash is the hash of the HolyArrs Download in the rig.
 const ownHash = "1111111111111111111111111111111111111111"
 
-// newRig makes a store with one Downloader (a list-only adapter), one
-// active HolyArrs Download on it, a Manager reading a fake client, and a
-// reader.
+// newRig makes a store with one Downloader of a list-only adapter, one active HolyArrs Download on it, a Manager reading a fake client, and a reader.
 func newRig(t *testing.T, js ...downloader.Job) *rig {
 	t.Helper()
 	db, err := database.Open(t.TempDir(), database.Options{})
@@ -119,6 +119,7 @@ func newRig(t *testing.T, js ...downloader.Job) *rig {
 	return r
 }
 
+// testLines is a LinesFunc that logs state changes.
 func testLines(prev, cur downloader.Job) []LogLine {
 	if prev.Progress < 1 && cur.Progress >= 1 {
 		return []LogLine{{Kind: "completed", Summary: "Completed"}}
@@ -126,6 +127,7 @@ func testLines(prev, cur downloader.Job) []LogLine {
 	return nil
 }
 
+// fastTimers shortens the reader timers for the test.
 func fastTimers(t *testing.T) {
 	t.Helper()
 	oldScan, oldBack := scanEvery, restartBackoff
@@ -133,6 +135,7 @@ func fastTimers(t *testing.T) {
 	t.Cleanup(func() { scanEvery, restartBackoff = oldScan, oldBack })
 }
 
+// waitUntil polls ok until it is true or the wait runs out.
 func waitUntil(t *testing.T, what string, ok func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
@@ -154,22 +157,23 @@ func (r *rig) state(t *testing.T) (string, float64) {
 	return st, p
 }
 
+// own returns the HolyArrs Download at the given progress.
 func own(progress float64) downloader.Job {
 	return downloader.Job{ID: ownHash, Name: "Own", Category: "holyarrs", Progress: progress, State: downloader.StateDownloading}
 }
 
+// outsider returns a job HolyArrs did not send.
 func outsider(id string, progress float64) downloader.Job {
 	return downloader.Job{ID: id, Name: "Outside " + id, Category: "holyarrs", Progress: progress, State: downloader.StateDownloading}
 }
 
-// With sync on, the reader makes every list read (one per cadence tick)
-// and the Manager makes none, yet still applies the client's changes.
-func TestReaderOwnsListReads(t *testing.T) {
+// With the reader on, it must make every list read, one per cadence tick, and the Manager none, while the Manager still applies the client's changes.
+func TestSync_ReaderOwnsListReads(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t, own(0.2))
-	// A 200 ms cadence (freshness bound 600 ms): at 50 ms a slow machine (-race,
-	// a loaded CI) misses the 150 ms bound now and then and the Manager rightly
-	// falls back, which is not what this test is about.
+	// Use a 200 ms cadence, so the freshness bound is 600 ms. At 50 ms a slow
+	// machine (race detector, loaded CI) sometimes misses the 150 ms bound and
+	// the Manager rightly falls back, which this test is not about.
 	r.m.Active = 200 * time.Millisecond
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -185,17 +189,16 @@ func TestReaderOwnsListReads(t *testing.T) {
 	if r.s.Store.Current(r.dlID).Fallback {
 		t.Fatal("the Manager fell back to its own list reads; the reader owns list reads")
 	}
-	// At most one read per tick, plus a little slack.
+	// One read per tick at most, plus a little slack.
 	if lists, most := r.client.listCount(), int(elapsed/r.m.Active)+3; lists > most || lists == 0 {
 		t.Fatalf("%d list reads in %v, want 1..%d", lists, elapsed, most)
 	}
 }
 
-// Shutdown: the Manager is still busy 500 ms after cancel and the pollers
-// stay up until it returns; then they stop and the final flush commits.
-func TestShutdownOrderAndFinalFlush(t *testing.T) {
+// On shutdown the pollers must stay up while the Manager is still busy after cancel, then stop, and the final flush must commit.
+func TestSync_ShutdownOrderAndFinalFlush(t *testing.T) {
 	fastTimers(t)
-	scanEvery = time.Hour // only the final flush writes
+	scanEvery = time.Hour // so only the final flush writes
 	r := newRig(t, own(0.2), outsider("aaaa", 0.1))
 	ctx, cancel := context.WithCancel(context.Background())
 	var liveAfterCancel atomic.Bool
@@ -225,9 +228,8 @@ func TestShutdownOrderAndFinalFlush(t *testing.T) {
 	}
 }
 
-// A panic in the Manager's Run stops this run's pollers before the
-// supervisor starts Run again, so there is one poller per client.
-func TestRunPanicLeavesOnePoller(t *testing.T) {
+// A panic in the Manager's Run must stop that run's pollers before the supervisor starts Run again, so there is one poller per client.
+func TestSync_RunPanicLeavesOnePoller(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t, own(0.2))
 	func() {
@@ -256,10 +258,8 @@ func TestRunPanicLeavesOnePoller(t *testing.T) {
 	}
 }
 
-// A poller panic: the process lives on, the Manager falls back to its own
-// guarded list for that client, the poller restarts and the client is
-// fresh again.
-func TestPollerPanicDegradesAndRecovers(t *testing.T) {
+// After a poller panic the process must live on, the Manager must fall back to its own guarded list for that client, and the poller must restart and make the client fresh again.
+func TestSync_PollerPanicDegradesAndRecovers(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t, own(0.2))
 	ctx, cancel := context.WithCancel(context.Background())
@@ -279,9 +279,8 @@ func TestPollerPanicDegradesAndRecovers(t *testing.T) {
 	<-done
 }
 
-// Safe mode never runs the loop: the reader makes no call, Kick is a no-op
-// and the Manager keeps its own reads.
-func TestNotStartedMakesNoCalls(t *testing.T) {
+// Safe mode never runs the loop, so the reader must make no call, Kick must do nothing, and the Manager must keep its own reads.
+func TestSync_NotStartedMakesNoCalls(t *testing.T) {
 	r := newRig(t, own(0.2))
 	r.s.Kick(r.dlID)
 	time.Sleep(100 * time.Millisecond)
@@ -299,6 +298,7 @@ func TestNotStartedMakesNoCalls(t *testing.T) {
 	}
 }
 
+// logLines returns the stored log summaries of one item.
 func logLines(t *testing.T, db *database.Store, hash string) []string {
 	t.Helper()
 	rows, err := db.Read().Query("SELECT summary FROM torrent_log WHERE hash = ? ORDER BY id", hash)
@@ -315,9 +315,8 @@ func logLines(t *testing.T, db *database.Store, hash string) []string {
 	return out
 }
 
-// Part switched off and on again: no calls while off, and the next start
-// carries the log on from dl_items (one line for a change while off).
-func TestPartToggleResumesFromItems(t *testing.T) {
+// With the part switched off and on again there must be no calls while off, and the next start must carry the log on from dl_items with one line for a change made while off.
+func TestSync_PartToggleResumesFromItems(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t, own(0.2), outsider("bbbb", 0.5))
 	ctx, cancel := context.WithCancel(context.Background())
@@ -345,8 +344,8 @@ func TestPartToggleResumesFromItems(t *testing.T) {
 	}
 }
 
-// A process restart (a new reader on the same database) continues the log.
-func TestRestartKeepsLogContinuity(t *testing.T) {
+// A process restart, a new reader on the same database, must continue the log.
+func TestSync_RestartKeepsLogContinuity(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t, own(0.2), outsider("cccc", 0.5), outsider("dddd", 0.5))
 	ctx, cancel := context.WithCancel(context.Background())
@@ -378,9 +377,8 @@ func TestRestartKeepsLogContinuity(t *testing.T) {
 	}
 }
 
-// The match queue: backoff per failure, nomatch after six, a restart does
-// not try before next_try_at, and the bucket allows a burst of 10 then 2/s.
-func TestMatchQueueBackoffAndRestart(t *testing.T) {
+// The match queue must back off after each failure and mark nomatch after six. A restart must not try before next_try_at.
+func TestMatchQueue_BackoffAndRestart(t *testing.T) {
 	r := newRig(t)
 	clock := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
 	now := func() time.Time { return clock }
@@ -407,7 +405,7 @@ func TestMatchQueueBackoffAndRestart(t *testing.T) {
 		if n := r.s.matchStep(context.Background()); n != 0 {
 			t.Fatalf("tried again before next_try_at after failure %d", i+1)
 		}
-		// A restart (a new reader) is no earlier.
+		// A new reader after a restart must not retry any earlier.
 		s2 := &Sync{Store: &Store{}, DB: r.db, Manager: r.m, Now: now, Match: fail}
 		s2.init()
 		if n := s2.matchStep(context.Background()); n != 0 {
@@ -432,7 +430,8 @@ func TestMatchQueueBackoffAndRestart(t *testing.T) {
 	}
 }
 
-func TestBucketBurstThenRate(t *testing.T) {
+// The bucket must allow a burst of 10 and then 2 per second.
+func TestBucket_BurstThenRate(t *testing.T) {
 	b := bucket{rate: matchRate, burst: matchBurst}
 	t0 := time.Date(2026, 10, 31, 0, 0, 0, 0, time.UTC)
 	n := 0
@@ -443,7 +442,7 @@ func TestBucketBurstThenRate(t *testing.T) {
 		t.Fatalf("burst %d, want 10", n)
 	}
 	got := 0
-	for i := 1; i <= 100; i++ { // 10 s in 100 ms steps
+	for i := 1; i <= 100; i++ { // 10 s in steps of 100 ms
 		if b.take(t0.Add(time.Duration(i) * 100 * time.Millisecond)) {
 			got++
 		}
@@ -453,7 +452,8 @@ func TestBucketBurstThenRate(t *testing.T) {
 	}
 }
 
-func TestCadenceTable(t *testing.T) {
+// Cadence must follow the table of adapter, active count, viewer and outside items.
+func TestCadence_Table(t *testing.T) {
 	a, i := 2*time.Second, 30*time.Second
 	cases := []struct {
 		adapter           string
@@ -476,15 +476,14 @@ func TestCadenceTable(t *testing.T) {
 			t.Errorf("%s n=%d viewer=%v outside=%v: %v, want %v", c.adapter, c.n, c.viewer, c.outActive, got, c.want)
 		}
 	}
-	// Luis's own intervals replace the defaults, and idle is never slower.
+	// Custom intervals replace the defaults, and idle is never slower.
 	if got := Cadence("qbittorrent", 0, true, false, time.Second, 4*time.Second); got != 4*time.Second {
 		t.Errorf("viewer cadence slower than idle: %v", got)
 	}
 }
 
-// The reader never writes the downloads table: the Manager stays its only
-// writer among the new code (dlsync and the view's store path).
-func TestReaderNeverWritesDownloads(t *testing.T) {
+// The reader must never write the downloads table, so the Manager stays its only writer.
+func TestSync_NeverWritesDownloads(t *testing.T) {
 	write := regexp.MustCompile(`(?i)(UPDATE\s+downloads\b|INSERT\s+INTO\s+downloads\b|DELETE\s+FROM\s+downloads\b|store\.(Update|Insert|UpdateWhere)\([^)]*"downloads")`)
 	files, _ := filepath.Glob("*.go")
 	files = append(files, filepath.Join("..", "api", "downloads_sync.go"))
@@ -502,10 +501,8 @@ func TestReaderNeverWritesDownloads(t *testing.T) {
 	}
 }
 
-// AC12 on fakes: client-finished to download-finished latency with the
-// reader is no worse than the Manager reading the client itself (median
-// + 1 s, max + 2 s), 10 runs each.
-func TestFinishLatencyReaderVsOwnReads(t *testing.T) {
+// The latency from client-finished to download-finished with the reader must be no worse than with the Manager reading the client itself: median plus 1 s and max plus 2 s, over 10 runs each.
+func TestSync_FinishLatencyVsManagerReads(t *testing.T) {
 	fastTimers(t)
 	measure := func(reader bool) []time.Duration {
 		var out []time.Duration

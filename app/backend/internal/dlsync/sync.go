@@ -15,34 +15,30 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// Manager is what the reader needs from downloader.Manager.
-type Manager interface {
-	Reader(ctx context.Context, d domain.Downloader) (downloader.Engine, uint64, error)
-	ReportRead(ctx context.Context, d domain.Downloader, err error)
-	Generation(id int64) uint64
-	Interval(active int) time.Duration
-}
-
 // Reader timings.
 const (
-	callTimeout = 4 * time.Second // one read of one client
-	// sabFullTimeout is a SABnzbd read that pages the whole finished list
-	// (up to 25 pages on a big history); later reads use callTimeout.
+	callTimeout = 4 * time.Second // deadline of one read
+	// sabFullTimeout is a SABnzbd read that pages the whole finished list, up
+	// to 25 pages on a big history. Later reads use callTimeout.
 	sabFullTimeout = 30 * time.Second
 	kickDebounce   = 1 * time.Second   // a kick reads at most this soon after the last read
 	widenCap       = 300 * time.Second // failures widen the cadence up to this
 	flushTimeout   = 5 * time.Second   // FinalFlush's own deadline
 )
 
-// scanEvery is the coordinator's tick (tests shorten it).
+// SettingSABOutside is the settings key for showing Usenet items HolyArrs
+// did not send on the Downloads page.
+const SettingSABOutside = "downloads_sab_outside"
+
+// scanEvery is the coordinator's tick. Tests shorten it.
 var scanEvery = 2 * time.Second
 
 // restartBackoff is the wait before a poller that panicked starts again.
 var restartBackoff = []time.Duration{2 * time.Second, 5 * time.Second, 15 * time.Second, time.Minute, 300 * time.Second}
 
-// Sync is the background reader: one poller per Downloader owns every
-// list read, through the Manager's guarded engine; the Manager and the
-// Downloads view read its Store. It runs inside the "downloads" loop (see
+// Sync is the background reader. One poller per Downloader owns every list
+// read through the Manager's guarded engine, and the Manager and the Downloads
+// view read the Store it fills. It runs inside the "downloads" loop (see
 // Around), so safe mode and the part switch govern it.
 type Sync struct {
 	Store   *Store
@@ -50,10 +46,10 @@ type Sync struct {
 	Manager Manager
 	Lines   LinesFunc
 	Match   MatchFunc
-	// Pub sends push updates of the snapshots (nil: none).
+	// Pub publishes patches to the live stream; nil turns that off.
 	Pub *Publisher
 	Now func() time.Time
-	// Sleep waits (tests may shorten it); nil waits for real.
+	// Sleep replaces the real wait in tests; nil waits for real.
 	Sleep func(ctx context.Context, d time.Duration) error
 
 	cursors Cursors
@@ -69,54 +65,21 @@ type Sync struct {
 	onNow   bool
 }
 
-func (s *Sync) now() time.Time {
-	if s.Now != nil {
-		return s.Now()
-	}
-	return time.Now()
+// Manager is what the reader needs from downloader.Manager.
+type Manager interface {
+	Reader(ctx context.Context, d domain.Downloader) (downloader.Engine, uint64, error)
+	ReportRead(ctx context.Context, d domain.Downloader, err error)
+	Generation(id int64) uint64
+	Interval(active int) time.Duration
 }
 
-func (s *Sync) sleep(ctx context.Context, d time.Duration) error {
-	if s.Sleep != nil {
-		return s.Sleep(ctx, d)
-	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-t.C:
-		return nil
-	}
-}
-
-func (s *Sync) init() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.changed == nil {
-		s.changed = make(chan struct{}, 1)
-	}
-	if s.kicks == nil {
-		s.kicks = map[int64]chan struct{}{}
-	}
-	if s.pollers == nil {
-		s.pollers = map[int64]context.CancelFunc{}
-	}
-	if s.persist == nil {
-		s.persist = &persister{db: s.DB, lines: s.Lines, now: s.now}
-	}
-	if s.bucket.rate == 0 {
-		s.bucket.rate, s.bucket.burst = matchRate, matchBurst
-	}
-}
-
-// On is downloader.SyncSource.On: the reader runs.
+// On reports whether the reader runs. It implements downloader.SyncSource.
 func (s *Sync) On() bool {
 	return s != nil && s.started.Load()
 }
 
-// ClientStatus is a qBittorrent's state from the reader's last read, when
-// the reader is on and has one.
+// ClientStatus returns a qBittorrent's state from the reader's last read,
+// when the reader is on and has one.
 func (s *Sync) ClientStatus(id int64) (downloader.ClientStatus, bool) {
 	if !s.On() {
 		return downloader.ClientStatus{}, false
@@ -124,20 +87,23 @@ func (s *Sync) ClientStatus(id int64) (downloader.ClientStatus, bool) {
 	return s.cursors.Status(id)
 }
 
-// View is downloader.SyncSource.View.
+// View returns one client's snapshot for the Manager. It implements
+// downloader.SyncSource.
 func (s *Sync) View(id int64) downloader.SyncView { return s.Store.View(id) }
 
-// Fallback is downloader.SyncSource.Fallback.
+// Fallback marks whether the Manager reads a client itself. It implements
+// downloader.SyncSource.
 func (s *Sync) Fallback(id int64, on bool) { s.Store.SetFallback(id, on) }
 
-// Changed is downloader.SyncSource.Changed.
+// Changed returns a channel that gets a signal after a read changed
+// something. It implements downloader.SyncSource.
 func (s *Sync) Changed() <-chan struct{} {
 	s.init()
 	return s.changed
 }
 
-// Kick asks for a read of one client soon (debounced). A no-op when the
-// reader is not running.
+// Kick asks for a read of one client soon, debounced. It does nothing when
+// the reader is not running.
 func (s *Sync) Kick(id int64) {
 	if s == nil || !s.started.Load() {
 		return
@@ -154,8 +120,8 @@ func (s *Sync) Kick(id int64) {
 }
 
 // Watched records that someone views the Downloads page. When nobody did
-// before, every client is read soon, so the faster viewer cadence starts
-// now instead of after the idle wait.
+// before, every client is read soon, so the faster viewer cadence starts now
+// instead of after the idle wait.
 func (s *Sync) Watched() {
 	if s == nil || s.Store == nil {
 		return
@@ -179,15 +145,8 @@ func (s *Sync) Watched() {
 	}
 }
 
-func (s *Sync) signal() {
-	select {
-	case s.changed <- struct{}{}:
-	default:
-	}
-}
-
-// Around runs the "downloads" loop body run with the reader beside it.
-// Pollers outlive run until it returns (or panics), then they stop, are
+// Around runs the "downloads" loop body run with the reader beside it. The
+// pollers outlive run until it returns or panics, then they stop and are
 // waited for, and pending writes are flushed with their own deadline.
 func (s *Sync) Around(loopCtx context.Context, run func(context.Context)) {
 	if s == nil {
@@ -215,7 +174,7 @@ func (s *Sync) Around(loopCtx context.Context, run func(context.Context)) {
 		wg.Wait()
 		s.started.Store(false)
 		s.FinalFlush(loopCtx)
-		// The next start loads the last known rows again.
+		// Let the next start load the saved rows again.
 		s.mu.Lock()
 		s.onNow = false
 		s.mu.Unlock()
@@ -223,8 +182,8 @@ func (s *Sync) Around(loopCtx context.Context, run func(context.Context)) {
 	run(loopCtx)
 }
 
-// FinalFlush writes everything pending, with its own 5 s deadline, so an
-// already cancelled loop ctx does not abort the commit.
+// FinalFlush writes everything pending with its own deadline, so a loop ctx
+// that is already cancelled does not abort the commit.
 func (s *Sync) FinalFlush(loopCtx context.Context) {
 	if s == nil || s.persist == nil {
 		return
@@ -236,8 +195,97 @@ func (s *Sync) FinalFlush(loopCtx context.Context) {
 	}
 }
 
+// SABOutside reports whether Usenet items HolyArrs did not send are shown on
+// the Downloads page. It is on unless the setting says false.
+func (s *Sync) SABOutside(ctx context.Context) bool {
+	if s == nil || s.DB == nil {
+		return false
+	}
+	var v string
+	_ = s.DB.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", SettingGroup, SettingSABOutside).Scan(&v)
+	return v != "false"
+}
+
+// Cadence returns the read interval for one client: never slower than the
+// Manager's own loop (active with HolyArrs Downloads, idle without), and
+// faster while someone views the Downloads page.
+func Cadence(adapter string, n int, viewer, outsideActive bool, active, idle time.Duration) time.Duration {
+	pick := func(qbit, sab, other time.Duration) time.Duration {
+		switch adapter {
+		case "qbittorrent":
+			return qbit
+		case "sabnzbd", "nzbget":
+			return sab
+		}
+		return other
+	}
+	switch {
+	case n > 0 && viewer:
+		return pick(min(1500*time.Millisecond, active), min(2*time.Second, active), active)
+	case n > 0:
+		return active
+	case viewer && outsideActive:
+		return min(pick(1500*time.Millisecond, 3*time.Second, 3*time.Second), idle)
+	case viewer:
+		return min(pick(5*time.Second, 10*time.Second, 10*time.Second), idle)
+	}
+	return idle
+}
+
+// now returns the clock, which tests can replace.
+func (s *Sync) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
+}
+
+// sleep waits for d or until ctx ends; tests can replace it.
+func (s *Sync) sleep(ctx context.Context, d time.Duration) error {
+	if s.Sleep != nil {
+		return s.Sleep(ctx, d)
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
+}
+
+// init makes the maps and channels on first use, so the zero value works.
+func (s *Sync) init() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.changed == nil {
+		s.changed = make(chan struct{}, 1)
+	}
+	if s.kicks == nil {
+		s.kicks = map[int64]chan struct{}{}
+	}
+	if s.pollers == nil {
+		s.pollers = map[int64]context.CancelFunc{}
+	}
+	if s.persist == nil {
+		s.persist = &persister{db: s.DB, lines: s.Lines, now: s.now}
+	}
+	if s.bucket.rate == 0 {
+		s.bucket.rate, s.bucket.burst = matchRate, matchBurst
+	}
+}
+
+// signal tells Changed listeners without blocking.
+func (s *Sync) signal() {
+	select {
+	case s.changed <- struct{}{}:
+	default:
+	}
+}
+
 // coordinate keeps one poller per Downloader, flushes the persister and
-// paces the match queue.
+// paces the match queue until ctx ends.
 func (s *Sync) coordinate(ctx context.Context, wg *sync.WaitGroup) {
 	var lastMatch time.Time
 	for {
@@ -259,8 +307,8 @@ func (s *Sync) coordinate(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-// enter runs once per start: the last known rows come back as stale, so
-// changes while HolyArrs was off are diffed against them.
+// enter runs once per start. It loads the last known rows as stale, so
+// changes made while HolyArrs was off are diffed against them.
 func (s *Sync) enter(ctx context.Context) {
 	s.mu.Lock()
 	if s.onNow {
@@ -278,6 +326,7 @@ func (s *Sync) enter(ctx context.Context) {
 	}
 }
 
+// stopPollers cancels every poller.
 func (s *Sync) stopPollers() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -287,8 +336,8 @@ func (s *Sync) stopPollers() {
 	}
 }
 
-// ensurePollers starts a poller for every Downloader that has none and
-// stops the ones whose Downloader was removed.
+// ensurePollers starts a poller for every Downloader that has none and stops
+// the ones whose Downloader was removed.
 func (s *Sync) ensurePollers(ctx context.Context, wg *sync.WaitGroup) {
 	if s.DB == nil {
 		return
@@ -325,8 +374,8 @@ func (s *Sync) ensurePollers(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-// supervise runs one client's poller, restarting it after a panic with
-// backoff. A panic marks the client stale, so the Manager falls back.
+// supervise runs one client's poller and restarts it with backoff after a
+// panic. A panic marks the client failed, so the Manager reads it itself.
 func (s *Sync) supervise(ctx context.Context, id int64, kick chan struct{}) {
 	for crashes := 0; ctx.Err() == nil; crashes++ {
 		clean := false
@@ -346,8 +395,8 @@ func (s *Sync) supervise(ctx context.Context, id int64, kick chan struct{}) {
 	}
 }
 
-// poll reads one client on its cadence until ctx ends or the Downloader
-// is gone.
+// poll reads one client on its cadence until ctx ends or the Downloader is
+// gone.
 func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 	s.Store.Running(id, true)
 	defer s.Store.Running(id, false)
@@ -377,15 +426,16 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 			if err == nil || ctx.Err() != nil {
 				return
 			}
-			// A failed DB read: try again next step (ensurePollers stops
-			// this poller if the Downloader is really gone).
+			// The lookup failed, so retry on the next scan. ensurePollers stops
+			// this poller if the Downloader is really gone.
 			wait = scanEvery
 			continue
 		}
 		n := s.active(ctx, id)
 		every := s.cadence(d, n)
 		if s.Store.Current(id).Fallback {
-			// The Manager reads it itself: only one recovery read per floor.
+			// The Manager reads this client itself, so ask for one recovery read
+			// per its own interval.
 			every = s.Manager.Interval(n)
 		}
 		s.Store.SetFloor(id, every)
@@ -394,15 +444,15 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 		switch {
 		case err == nil:
 			fails = 0
-			// The wait follows what this read saw (a torrent that just
-			// started moving gets the faster step now, not one read later).
+			// Recompute from the new items, so a torrent that just started
+			// moving speeds up the next wait at once.
 			if !s.Store.Current(id).Fallback {
 				every = s.cadence(d, n)
 				s.Store.SetFloor(id, every)
 			}
 		case errors.Is(err, downloader.ErrAuth):
-			// Turned down the sign-in: stop until the settings change (a
-			// new engine generation) so the client never bans us.
+			// Stop until the settings change (a new engine generation).
+			// Retrying a refused sign-in could get HolyArrs banned.
 			gen := s.Manager.Generation(id)
 			for s.Manager.Generation(id) == gen {
 				if s.sleep(ctx, scanEvery) != nil {
@@ -420,8 +470,9 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 	}
 }
 
-// widen grows the cadence one step per failure (and one for a shared
-// session), capped, with +/-20% jitter when widened.
+// widen grows the cadence one step per failure, and one more for a shared
+// session, up to widenCap. A widened wait gets +/-20% jitter so clients do
+// not retry together.
 func widen(every time.Duration, fails int, shared bool) time.Duration {
 	steps := fails
 	if shared {
@@ -443,7 +494,7 @@ func (s *Sync) active(ctx context.Context, id int64) int {
 	return n
 }
 
-// cadence is the client's read interval from the cadence table.
+// cadence returns the client's read interval for its current load.
 func (s *Sync) cadence(d domain.Downloader, n int) time.Duration {
 	snap := s.Store.Current(d.ID)
 	outside := false
@@ -456,33 +507,8 @@ func (s *Sync) cadence(d domain.Downloader, n int) time.Duration {
 	return Cadence(d.Adapter, n, s.Store.Viewer(), outside, s.Manager.Interval(1), s.Manager.Interval(0))
 }
 
-// Cadence is the read interval for one client: never slower than the
-// Manager's own loop (active with HolyArrs Downloads, idle without), faster
-// while someone views the Downloads page.
-func Cadence(adapter string, n int, viewer, outsideActive bool, active, idle time.Duration) time.Duration {
-	pick := func(qbit, sab, other time.Duration) time.Duration {
-		switch adapter {
-		case "qbittorrent":
-			return qbit
-		case "sabnzbd", "nzbget":
-			return sab
-		}
-		return other
-	}
-	switch {
-	case n > 0 && viewer:
-		return pick(min(1500*time.Millisecond, active), min(2*time.Second, active), active)
-	case n > 0:
-		return active
-	case viewer && outsideActive:
-		return min(pick(1500*time.Millisecond, 3*time.Second, 3*time.Second), idle)
-	case viewer:
-		return min(pick(5*time.Second, 10*time.Second, 10*time.Second), idle)
-	}
-	return idle
-}
-
-// readBudget is one read's deadline: longer for SABnzbd's first full read.
+// readBudget returns one read's deadline, longer for SABnzbd's first full
+// read.
 func readBudget(d domain.Downloader, sabs *SabCursors) time.Duration {
 	if d.Adapter == "sabnzbd" && sabs.NeedsFull(d.ID) {
 		return sabFullTimeout
@@ -509,8 +535,8 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		p, err = s.cursors.Poll(cctx, d.ID, gen, ms)
 		jobs, scope, shared = p.Jobs, "", p.SharedSession
 	case (d.Adapter == "sabnzbd" || d.Adapter == "nzbget") && isSab(e):
-		// NZBGet answers the same two reads; with no change counter its
-		// history is read in full each time.
+		// NZBGet answers the same two reads but has no change counter, so
+		// its history is read in full each time.
 		var p SabPoll
 		p, err = s.sabs.Poll(cctx, d.ID, gen, e.(SabSource))
 		jobs = p.Jobs
@@ -526,7 +552,7 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		jobs, err = e.List(cctx, d.Category)
 	}
 	if ctx.Err() != nil && err != nil {
-		return err // stopping: not the client's fault
+		return err // stopping, so the client is not to blame
 	}
 	s.Manager.ReportRead(ctx, d, err)
 	if err != nil {
@@ -534,8 +560,8 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		return err
 	}
 	s.Store.SetShared(d.ID, shared)
-	// A good read ends any fallback, even with no HolyArrs download left
-	// for SyncOnce to clear it.
+	// A good read ends any fallback, even when no HolyArrs download is
+	// left to clear it.
 	s.Store.SetFallback(d.ID, false)
 	ch, prev, stale := s.Store.Apply(d.ID, gen, scope, jobs, s.now())
 	if !ch.Empty() {
@@ -553,13 +579,13 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 	return nil
 }
 
-// isSab says the engine has the paged SABnzbd reads.
+// isSab reports whether the engine has the paged SABnzbd reads.
 func isSab(e downloader.Engine) bool {
 	_, ok := e.(SabSource)
 	return ok
 }
 
-// inCategory keeps the jobs of one category ("" or "*" keeps all).
+// inCategory keeps the jobs of one category. "" or "*" keeps all.
 func inCategory(jobs []downloader.Job, cat string) []downloader.Job {
 	if cat == "" || cat == "*" {
 		return jobs
@@ -571,18 +597,4 @@ func inCategory(jobs []downloader.Job, cat string) []downloader.Job {
 		}
 	}
 	return out
-}
-
-// SettingSABOutside is the setting downloads.sab_outside (Usenet items
-// HolyArrs did not send shown on the Downloads page); default on.
-const SettingSABOutside = "downloads_sab_outside"
-
-// SABOutside reads downloads.sab_outside.
-func (s *Sync) SABOutside(ctx context.Context) bool {
-	if s == nil || s.DB == nil {
-		return false
-	}
-	var v string
-	_ = s.DB.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", SettingGroup, SettingSABOutside).Scan(&v)
-	return v != "false"
 }

@@ -13,8 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// nzbRPC answers listgroups, history and status like NZBGet and counts the
-// calls.
+// nzbRPC answers listgroups, history and status like NZBGet and counts the calls.
 type nzbRPC struct {
 	mu      sync.Mutex
 	calls   map[string]int
@@ -42,10 +41,8 @@ func (f *nzbRPC) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "result": res})
 }
 
-// The reader lists every NZBGet job (queue and history, any category)
-// through the queue and history reads, never List; with the outside
-// setting off only the Downloader's category shows.
-func TestNZBGetReaderListsEveryJob(t *testing.T) {
+// The reader must list every NZBGet job through the queue and history reads, never List. With the outside setting off only the Downloader's category shows.
+func TestSync_NzbgetListsEveryJob(t *testing.T) {
 	f := &nzbRPC{calls: map[string]int{},
 		groups: []map[string]any{
 			{"NZBID": 1, "NZBName": "A", "Category": "movies", "FileSizeLo": 100, "RemainingSizeLo": 50, "Status": "DOWNLOADING"},
@@ -77,8 +74,8 @@ func TestNZBGetReaderListsEveryJob(t *testing.T) {
 	if f.calls["listgroups"] == 0 || f.calls["history"] == 0 || f.calls["status"] == 0 {
 		t.Fatalf("calls %v", f.calls)
 	}
-	// No change counter: the history is read in full each time, and the
-	// short read budget applies (only SABnzbd's first read is long).
+	// With no change counter the history is read in full each time, and the
+	// short read budget applies, since only SABnzbd's first read is long.
 	if readBudget(domain.Downloader{ID: 9, Adapter: "nzbget"}, &SabCursors{}) != callTimeout {
 		t.Fatal("budget")
 	}
@@ -87,6 +84,7 @@ func TestNZBGetReaderListsEveryJob(t *testing.T) {
 	}
 }
 
+// nzbRig builds a reader over a fake NZBGet.
 func nzbRig(t *testing.T, e downloader.Engine, outside string) (*Sync, domain.Downloader) {
 	t.Helper()
 	s, d := sabRig(t, nil, outside)

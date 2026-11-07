@@ -5,7 +5,8 @@ import (
 	"testing"
 )
 
-func TestCursorsStatusAfterPoll(t *testing.T) {
+// Status must exist after a poll and be gone after Drop.
+func TestCursors_StatusAfterPoll(t *testing.T) {
 	var c Cursors
 	if _, ok := c.Status(1); ok {
 		t.Fatal("status before any read")

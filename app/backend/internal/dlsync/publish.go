@@ -9,17 +9,22 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// Push updates (topic "dl" on /live). Each client's store rev is its
-// sequence: a patch carries fromRev..toRev and only the fields that changed
-// between the two states. Snapshots are always read over REST.
-
 // Patch kinds.
 const (
 	KindPatch  = "patch"
 	KindHealth = "health"
 )
 
-// Patch is one dl message.
+// PublishWindow is how long changes of one client gather before one patch
+// goes out. The live protocol asks for 250 to 500 ms.
+var PublishWindow = 300 * time.Millisecond
+
+// healthEvery is how often every client's health is checked for events.
+var healthEvery = time.Second
+
+// Patch is one message on the "dl" live topic. A patch covers fromRev to
+// toRev of one client's store rev and carries only the fields that changed
+// between the two states; snapshots are always read over REST.
 type Patch struct {
 	Kind    string           `json:"kind"`
 	Boot    string           `json:"boot,omitempty"`
@@ -29,23 +34,46 @@ type Patch struct {
 	Upsert  []map[string]any `json:"upsert,omitempty"`
 	Remove  []string         `json:"remove,omitempty"`
 	Totals  *PatchTotals     `json:"totals,omitempty"`
-	// Health events: the client's health as the Downloads view words it.
+	// Fields below are set on health events only.
 	Health string     `json:"health,omitempty"`
 	Name   string     `json:"name,omitempty"`
 	Stale  bool       `json:"stale,omitempty"`
 	SeenAt *time.Time `json:"seen_at,omitempty"`
 }
 
-// PatchTotals are the speeds over every client (managers only).
+// PatchTotals is the speed over every client, sent to managers only.
 type PatchTotals struct {
 	Speed   int64 `json:"speed"`
 	UpSpeed int64 `json:"up_speed"`
 }
 
-// MergePatch folds a newer dl message into one still waiting for a slow
-// stream (live.Options.Merge). Two patches in sequence become one patch
-// over both windows; anything else keeps the newer message, and the
-// browser reads the page again when it sees the rev gap.
+// Publisher batches store changes per client into patches. Build makes and
+// sends the patch for one client from its state at fromRev to its state at
+// toRev; Health checks every client's health. Both run on the publisher's
+// goroutine only.
+type Publisher struct {
+	Store  *Store
+	Build  func(ctx context.Context, client int64, fromRev, toRev uint64, prev, cur map[string]downloader.Job)
+	Health func(ctx context.Context)
+	Now    func() time.Time
+
+	mu    sync.Mutex
+	base  map[int64]pubBase
+	due   map[int64]time.Time
+	wake  chan struct{}
+	ready bool
+}
+
+// pubBase is a client's state at the last patch.
+type pubBase struct {
+	rev   uint64
+	items map[string]downloader.Job
+}
+
+// MergePatch folds a newer dl message into an older one still waiting for a
+// slow stream. Two patches in sequence become one patch over both windows.
+// Anything else keeps the newer message, and the browser reads the page
+// again when it sees the rev gap.
 func MergePatch(old, cur json.RawMessage) json.RawMessage {
 	var a, b Patch
 	if json.Unmarshal(old, &a) != nil || json.Unmarshal(cur, &b) != nil {
@@ -70,7 +98,7 @@ func MergePatch(old, cur json.RawMessage) json.RawMessage {
 			return
 		}
 		if removed[k] {
-			// Gone and back within the window: the newer upsert is a whole row.
+			// Removed and back within the window, so the newer upsert is a whole row.
 			delete(removed, k)
 		}
 		m := ups[k]
@@ -117,50 +145,8 @@ func MergePatch(old, cur json.RawMessage) json.RawMessage {
 	return data
 }
 
-// PublishWindow is how long changes of one client gather before one patch
-// goes out (250-500 ms per the protocol).
-var PublishWindow = 300 * time.Millisecond
-
-// healthEvery is how often clients' health is looked at for health events.
-var healthEvery = time.Second
-
-// Publisher batches store changes per client into patches. Build makes and
-// sends the patch for one client from its state at fromRev to its state at
-// toRev; Health looks at every client's health. Both run on the
-// publisher's goroutine only.
-type Publisher struct {
-	Store  *Store
-	Build  func(ctx context.Context, client int64, fromRev, toRev uint64, prev, cur map[string]downloader.Job)
-	Health func(ctx context.Context)
-	Now    func() time.Time
-
-	mu    sync.Mutex
-	base  map[int64]pubBase
-	due   map[int64]time.Time
-	wake  chan struct{}
-	ready bool
-}
-
-type pubBase struct {
-	rev   uint64
-	items map[string]downloader.Job
-}
-
-func (p *Publisher) now() time.Time {
-	if p.Now != nil {
-		return p.Now()
-	}
-	return time.Now()
-}
-
-func (p *Publisher) init() {
-	if !p.ready {
-		p.base, p.due, p.wake, p.ready = map[int64]pubBase{}, map[int64]time.Time{}, make(chan struct{}, 1), true
-	}
-}
-
-// Note records that client id changed from prev (at prevRev). The first
-// note of a client sets its base; the patch is due one window later.
+// Note records that client id changed from prev, which was at prevRev. The
+// first note of a client sets its base, and the patch is due one window later.
 func (p *Publisher) Note(id int64, prevRev uint64, prev map[string]downloader.Job) {
 	if p == nil {
 		return
@@ -180,7 +166,7 @@ func (p *Publisher) Note(id int64, prevRev uint64, prev map[string]downloader.Jo
 	}
 }
 
-// Flush builds the patches that are due at now (all of them when force).
+// Flush builds the patches that are due, or all of them when force is set.
 func (p *Publisher) Flush(ctx context.Context, force bool) {
 	p.mu.Lock()
 	p.init()
@@ -200,7 +186,7 @@ func (p *Publisher) Flush(ctx context.Context, force bool) {
 		p.base[id] = pubBase{rev: cur.Rev, items: cur.Items}
 		p.mu.Unlock()
 		if cur.Rev <= b.rev {
-			continue // dropped or reset: browsers read the page again on the gap
+			continue // the client was dropped or reset, so browsers read the page again on the gap
 		}
 		if p.Build != nil {
 			p.Build(ctx, id, b.rev, cur.Rev, b.items, cur.Items)
@@ -208,20 +194,7 @@ func (p *Publisher) Flush(ctx context.Context, force bool) {
 	}
 }
 
-// next is when the earliest patch is due (zero when none).
-func (p *Publisher) next() time.Time {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	var t time.Time
-	for _, at := range p.due {
-		if t.IsZero() || at.Before(t) {
-			t = at
-		}
-	}
-	return t
-}
-
-// Run sends patches until ctx ends.
+// Run sends patches and health events until ctx ends.
 func (p *Publisher) Run(ctx context.Context) {
 	p.mu.Lock()
 	p.init()
@@ -253,4 +226,32 @@ func (p *Publisher) Run(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// now returns the clock, which tests can replace.
+func (p *Publisher) now() time.Time {
+	if p.Now != nil {
+		return p.Now()
+	}
+	return time.Now()
+}
+
+// init makes the maps on first use, so the zero value works.
+func (p *Publisher) init() {
+	if !p.ready {
+		p.base, p.due, p.wake, p.ready = map[int64]pubBase{}, map[int64]time.Time{}, make(chan struct{}, 1), true
+	}
+}
+
+// next returns when the earliest patch is due, or zero when none is.
+func (p *Publisher) next() time.Time {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var t time.Time
+	for _, at := range p.due {
+		if t.IsZero() || at.Before(t) {
+			t = at
+		}
+	}
+	return t
 }

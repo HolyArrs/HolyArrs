@@ -10,8 +10,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// Last-known rows (loaded or after a failed read) carry no speeds or ETA.
-func TestStaleSnapshotHasNoSpeeds(t *testing.T) {
+// Last-known rows, loaded or kept after a failed read, must carry no speeds or ETA.
+func TestStore_StaleSnapshotHasNoSpeeds(t *testing.T) {
 	s := &Store{}
 	s.Load(1, []downloader.Job{{ID: "a", Speed: 100, UpSpeed: 50, ETA: 9}})
 	if j := s.Current(1).Items["a"]; j.Speed != 0 || j.UpSpeed != 0 || j.ETA != 0 {
@@ -27,8 +27,8 @@ func TestStaleSnapshotHasNoSpeeds(t *testing.T) {
 	}
 }
 
-// A good reader read clears the fallback flag, even with nothing active.
-func TestReadClearsFallback(t *testing.T) {
+// A good reader read must clear the fallback flag, even with nothing active.
+func TestSync_ReadClearsFallback(t *testing.T) {
 	r := newRig(t, own(0.2))
 	ctx := context.Background()
 	var d domain.Downloader
@@ -44,8 +44,8 @@ func TestReadClearsFallback(t *testing.T) {
 	}
 }
 
-// A failed DB read does not end the poller; it tries again until stopped.
-func TestPollSurvivesDBError(t *testing.T) {
+// A failed database read must not end the poller, which tries again until stopped.
+func TestSync_PollSurvivesDBError(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t)
 	_ = r.db.Close()

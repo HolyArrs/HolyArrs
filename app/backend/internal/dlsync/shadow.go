@@ -1,8 +1,7 @@
 package dlsync
 
-// The old setting downloads.sync (group "links", key "downloads_sync").
-// The background reader is always on now; a stored value of any kind is
-// read as on and nothing else reads it.
+// Names of the stored setting that once switched the reader on or off. The
+// reader is always on now, so any stored value reads as on.
 const (
 	SettingGroup = "links"
 	SettingSync  = "downloads_sync"

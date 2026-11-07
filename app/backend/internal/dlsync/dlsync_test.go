@@ -13,6 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
+// jobSnapshot indexes jobs by id, the shape Diff takes.
 func jobSnapshot(js ...downloader.Job) map[string]downloader.Job {
 	m := map[string]downloader.Job{}
 	for _, j := range js {
@@ -21,7 +22,8 @@ func jobSnapshot(js ...downloader.Job) map[string]downloader.Job {
 	return m
 }
 
-func TestDiffAddChangeRemoveTransition(t *testing.T) {
+// Diff must report added, removed and changed items, and a state change as a transition.
+func TestDiff_AddChangeRemoveTransition(t *testing.T) {
 	prev := jobSnapshot(
 		downloader.Job{ID: "a", State: downloader.StateDownloading, Progress: 0.2, Speed: 100},
 		downloader.Job{ID: "b", State: downloader.StateDownloading, Progress: 0.5},
@@ -52,7 +54,8 @@ func TestDiffAddChangeRemoveTransition(t *testing.T) {
 	}
 }
 
-func TestDiffLimitsPointer(t *testing.T) {
+// Diff must compare pointer fields by value, so equal limits behind two pointers are no change.
+func TestDiff_PointerFieldsCompareByValue(t *testing.T) {
 	a := downloader.Job{ID: "a", Limits: &downloader.ShareLimits{Ratio: 1}}
 	b := downloader.Job{ID: "a", Limits: &downloader.ShareLimits{Ratio: 1}}
 	if !Diff(jobSnapshot(a), jobSnapshot(b)).Empty() {
@@ -64,7 +67,8 @@ func TestDiffLimitsPointer(t *testing.T) {
 	}
 }
 
-func TestStoreNilSafeAndFreshness(t *testing.T) {
+// A nil Store must answer safely, and a read is fresh for three cadences up to FreshCeiling.
+func TestStore_NilSafeAndFreshness(t *testing.T) {
 	var nilStore *Store
 	if s := nilStore.Current(1); s.Complete || s.Fresh || s.Items != nil || nilStore.Rev(1) != 0 {
 		t.Fatalf("nil store %+v", s)
@@ -78,7 +82,7 @@ func TestStoreNilSafeAndFreshness(t *testing.T) {
 	if c := s.Current(1); !c.Complete || !c.Fresh || c.Rev != 1 || len(c.Items) != 1 {
 		t.Fatalf("%+v", c)
 	}
-	now = now.Add(6 * time.Second) // 3 x floor
+	now = now.Add(6 * time.Second) // exactly 3 x floor
 	if !s.Current(1).Fresh {
 		t.Fatal("stale at exactly 3 x floor")
 	}
@@ -86,13 +90,13 @@ func TestStoreNilSafeAndFreshness(t *testing.T) {
 	if c := s.Current(1); c.Fresh || !c.Complete {
 		t.Fatalf("fresh past 3 x floor: %+v", c)
 	}
-	// A slow floor is capped by the 2 minute ceiling.
+	// A slow floor is still capped by FreshCeiling.
 	slow := &Store{Floor: 5 * time.Minute, Now: func() time.Time { return now }}
 	slow.Update(1, 0, nil, now.Add(-FreshCeiling-time.Second))
 	if slow.Current(1).Fresh {
 		t.Fatal("ceiling not applied")
 	}
-	// Copies: changing the returned map does not touch the store.
+	// Current returns a copy, so editing it must not change the store.
 	c := s.Current(1)
 	delete(c.Items, "a")
 	if len(s.Current(1).Items) != 1 {
@@ -100,7 +104,8 @@ func TestStoreNilSafeAndFreshness(t *testing.T) {
 	}
 }
 
-func TestStoreRevMovesOnlyOnChangeAndFailKeepsItems(t *testing.T) {
+// The rev must move only when something changed, and a failed read must keep the items.
+func TestStore_RevMovesOnlyOnChangeAndFailKeepsItems(t *testing.T) {
 	at := time.Now()
 	s := &Store{}
 	s.Update(1, 0, []downloader.Job{{ID: "a", Progress: 0.1}}, at)
@@ -120,8 +125,8 @@ func TestStoreRevMovesOnlyOnChangeAndFailKeepsItems(t *testing.T) {
 	if c := s.Current(1); c.Complete || c.Fresh || len(c.Items) != 1 {
 		t.Fatalf("after fail %+v", c)
 	}
-	// Generation change: the next whole read is diffed against the old
-	// items, so a removal in the gap is still seen.
+	// After a generation change the next whole read is diffed against the old
+	// items, so a removal during the gap is still seen.
 	s.Reset(1, 1)
 	ch = s.Update(1, 1, nil, at)
 	if c := s.Current(1); c.Gen != 1 || !c.Complete || len(ch.Removed) != 1 {
@@ -129,6 +134,7 @@ func TestStoreRevMovesOnlyOnChangeAndFailKeepsItems(t *testing.T) {
 	}
 }
 
+// fakeMain answers change-feed polls from a fixed list of bodies.
 type fakeMain struct {
 	answers []string
 	rids    []int64
@@ -161,6 +167,7 @@ const (
 	delta2 = `{"rid":2,"torrents":{"AAAA000000000000000000000000000000000000":{"progress":0.5}},"torrents_removed":["bbbb000000000000000000000000000000000000"]}`
 )
 
+// ids returns the ids of jobs in order.
 func ids(js []downloader.Job) []string {
 	var out []string
 	for _, j := range js {
@@ -170,7 +177,8 @@ func ids(js []downloader.Job) []string {
 	return out
 }
 
-func TestCursorsFullThenDeltaAndGenerationReset(t *testing.T) {
+// The change feed must start full, then send deltas, and a new generation must start again from rid 0.
+func TestCursors_FullThenDeltaAndGenerationReset(t *testing.T) {
 	var c Cursors
 	f := &fakeMain{answers: []string{full1, delta2}}
 	ctx := context.Background()
@@ -196,9 +204,10 @@ func TestCursorsFullThenDeltaAndGenerationReset(t *testing.T) {
 	}
 }
 
-func TestCursorsSharedSessionAndParseErrorDropsCursor(t *testing.T) {
+// Repeated full answers must flag a shared session, and a garbled answer must drop the cursor.
+func TestCursors_SharedSessionAndParseErrorDropsCursor(t *testing.T) {
 	var c Cursors
-	f := &fakeMain{answers: []string{full1}} // every answer full although we send a rid
+	f := &fakeMain{answers: []string{full1}} // every answer is full even though a rid is sent
 	ctx := context.Background()
 	var p MainPoll
 	for range 5 {
@@ -219,6 +228,7 @@ func TestCursorsSharedSessionAndParseErrorDropsCursor(t *testing.T) {
 	}
 }
 
+// openDB opens a fresh test database.
 func openDB(t *testing.T) *database.Store {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})

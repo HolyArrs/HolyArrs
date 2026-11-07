@@ -9,32 +9,19 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// MatchFunc looks one client item up and links it when sure. It must never
-// add to the Library (Phase 2 ships link-only). outcome is one of linked,
-// suggested, unsure, not_media or own; an error is retried later.
-type MatchFunc func(ctx context.Context, downloaderID int64, key, name, category string) (outcome string, titleID int64, err error)
-
 // Match queue pacing.
 const (
 	matchRate  = 2.0 // lookups per second, shared by every client
-	matchBurst = 10
-	matchTries = 6 // failures before nomatch
+	matchBurst = 10  // also the most rows taken per step
+	matchTries = 6   // failures before the item is marked nomatch
 )
 
-// matchBackoff is the wait after each failure: 1 m, 10 m, 1 h, 6 h, 24 h,
-// then weekly.
-func matchBackoff(failures int) time.Duration {
-	steps := []time.Duration{time.Minute, 10 * time.Minute, time.Hour, 6 * time.Hour, 24 * time.Hour}
-	if failures <= 0 {
-		return 0
-	}
-	if failures <= len(steps) {
-		return steps[failures-1]
-	}
-	return 7 * 24 * time.Hour
-}
+// MatchFunc looks one client item up and links it when sure. It must never
+// add to the Library, only link. outcome is one of linked, suggested,
+// unsure, not_media or own; an error is retried later.
+type MatchFunc func(ctx context.Context, downloaderID int64, key, name, category string) (outcome string, titleID int64, err error)
 
-// bucket is a token bucket.
+// bucket is a token bucket that limits lookups per second.
 type bucket struct {
 	rate   float64
 	burst  float64
@@ -43,22 +30,7 @@ type bucket struct {
 	mu     sync.Mutex
 }
 
-// take spends one token if there is one.
-func (b *bucket) take(now time.Time) bool {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.at.IsZero() {
-		b.tokens, b.at = b.burst, now
-	}
-	b.tokens = min(b.burst, b.tokens+now.Sub(b.at).Seconds()*b.rate)
-	b.at = now
-	if b.tokens < 1 {
-		return false
-	}
-	b.tokens--
-	return true
-}
-
+// matchRow is one queued lookup.
 type matchRow struct {
 	id                  int64
 	key, name, category string
@@ -95,6 +67,7 @@ func (s *Sync) matchStep(ctx context.Context) int {
 		outcome, titleID, err := s.Match(lctx, r.id, r.key, r.name, r.category)
 		cancel()
 		at := s.now()
+		// The write ignores cancel so a lookup that finished is not lost on stop.
 		_ = s.DB.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 			if err != nil {
 				tries := r.attempts + 1
@@ -118,6 +91,37 @@ func (s *Sync) matchStep(ctx context.Context) int {
 	return ran
 }
 
+// take spends one token if there is one. The bucket starts full.
+func (b *bucket) take(now time.Time) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.at.IsZero() {
+		b.tokens, b.at = b.burst, now
+	}
+	b.tokens = min(b.burst, b.tokens+now.Sub(b.at).Seconds()*b.rate)
+	b.at = now
+	if b.tokens < 1 {
+		return false
+	}
+	b.tokens--
+	return true
+}
+
+// matchBackoff is the wait after each failure: 1 minute, 10 minutes,
+// 1 hour, 6 hours, 24 hours, then weekly.
+func matchBackoff(failures int) time.Duration {
+	steps := []time.Duration{time.Minute, 10 * time.Minute, time.Hour, 6 * time.Hour, 24 * time.Hour}
+	if failures <= 0 {
+		return 0
+	}
+	if failures <= len(steps) {
+		return steps[failures-1]
+	}
+	return 7 * 24 * time.Hour
+}
+
+// firstLine keeps an error short enough to store: its first line, or its
+// first 300 bytes when it has no line break.
 func firstLine(s string) string {
 	for i, c := range s {
 		if c == '\n' {

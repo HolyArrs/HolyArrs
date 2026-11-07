@@ -21,16 +21,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// The reader and the Manager together against the lab qBittorrent only
-// (never a real client), behind a counting proxy (the lab request counter):
+// TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy:
 //
 //	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabReader -v ./internal/dlsync/
 //
-// Each run adds our own Dune test torrent from the lab's fake indexer as a
-// HolyArrs Download and times grab to finished (or to the first applied
-// state, see target), with downloads.sync legacy
-// and on (AC12 on the lab), then removes it. With on, the Manager must not
-// list the client at all.
+// It adds a test torrent from the lab indexer as a HolyArrs Download and times grab to finished, or to the first applied state (see the target below), then removes it. The Manager must not list the client at all.
 func TestLabReaderGrabToFinished(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_QBIT_KEY")
 	if key == "" {
@@ -55,9 +50,9 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 	const testHash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
 	fastTimers(t)
 
-	// target: "finished" times grab to finished (needs the lab seeder to
-	// reach the client); HOLYARRS_LAB_TARGET=downloading times grab to the
-	// Manager's first applied state when it does not.
+	// "finished" times grab to finished and needs the lab seeder to reach the
+	// client. HOLYARRS_LAB_TARGET=downloading times grab to the Manager's first
+	// applied state when it cannot.
 	want := os.Getenv("HOLYARRS_LAB_TARGET")
 	if want == "" {
 		want = "finished"

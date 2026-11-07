@@ -12,33 +12,36 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// LogLine is one torrent log line (the API's line format).
+// Persist timings.
+const (
+	flushEvery    = 5 * time.Second     // dirty rows are written at most this often
+	progressEvery = 60 * time.Second    // progress-only changes are written at most this often
+	goneKeep      = 30 * 24 * time.Hour // how long a removed item stays before the daily sweep deletes it
+	torrentLogCap = 200                 // log lines kept per item; the API caps its view the same
+)
+
+// LogLine is one torrent log line in the API's line format.
 type LogLine struct {
 	Kind, Summary string
 }
 
-// LinesFunc gives the torrent log lines for one item going from prev to
-// cur. The API supplies it, so there is one line format.
+// LinesFunc returns the torrent log lines for one item going from prev to
+// cur. The API supplies it so both sides share one line format.
 type LinesFunc func(prev, cur downloader.Job) []LogLine
 
-// Persist timings.
-const (
-	flushEvery    = 5 * time.Second  // dirty rows are written at most this often
-	progressEvery = 60 * time.Second // progress-only changes are written at most this often
-	goneKeep      = 30 * 24 * time.Hour
-	torrentLogCap = 200 // the API keeps the same cap
-)
-
+// itemKey identifies one item of one client.
 type itemKey struct {
 	id  int64
 	key string
 }
 
+// itemWrite is a pending dl_items write; gone marks a removal.
 type itemWrite struct {
 	job  downloader.Job
 	gone bool
 }
 
+// logWrite is pending torrent log lines for one item.
 type logWrite struct {
 	id    int64
 	key   string
@@ -46,6 +49,7 @@ type logWrite struct {
 	lines []LogLine
 }
 
+// matchWrite is a pending match queue row; rename asks to retry an existing row.
 type matchWrite struct {
 	id             int64
 	key, name, cat string
@@ -54,7 +58,8 @@ type matchWrite struct {
 }
 
 // persister batches what the reader saw into dl_items, torrent_log and
-// dl_match_queue. It writes nothing when nothing changed.
+// dl_match_queue, so the database is hit in one transaction and only when
+// something changed.
 type persister struct {
 	db    *database.Store
 	lines LinesFunc
@@ -70,26 +75,9 @@ type persister struct {
 	swept   time.Time
 }
 
-func (p *persister) init() {
-	if p.dirty == nil {
-		p.dirty, p.written = map[itemKey]itemWrite{}, map[itemKey]time.Time{}
-	}
-}
-
-// matchPriority: active items first, then finished, then the seeding archive.
-func matchPriority(j downloader.Job) int {
-	switch j.State {
-	case downloader.StateDownloading, downloader.StateQueued, downloader.StatePaused:
-		return 1
-	}
-	if j.UpSpeed > 0 {
-		return 2
-	}
-	return 3
-}
-
-// note takes one read's changes. note says why the change was not seen
-// live ("while HolyArrs was off") when prev was loaded stale; "" otherwise.
+// note queues the writes for one read's changes. why is set when prev was
+// loaded stale after a start, and is added to the log lines so they say the
+// change was not seen live.
 func (p *persister) note(id int64, ch Changes, prev, cur map[string]downloader.Job, why string) {
 	if p == nil || ch.Empty() {
 		return
@@ -151,8 +139,8 @@ func (p *persister) note(id int64, ch Changes, prev, cur map[string]downloader.J
 	}
 }
 
-// due says a flush should run now: a state moved (urgent) or flushEvery
-// passed with something dirty.
+// due reports whether a flush should run now: a state moved, or flushEvery
+// passed with something pending.
 func (p *persister) due() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -160,8 +148,8 @@ func (p *persister) due() bool {
 	return pending && (p.urgent || p.now().Sub(p.flushed) >= flushEvery)
 }
 
-// flush writes everything pending in one transaction. On failure the work
-// is put back for the next flush.
+// flush writes everything pending in one transaction. On failure the work is
+// put back for the next flush.
 func (p *persister) flush(ctx context.Context) error {
 	if p == nil || p.db == nil {
 		return nil
@@ -170,6 +158,7 @@ func (p *persister) flush(ctx context.Context) error {
 	p.mu.Lock()
 	p.init()
 	dirty, logs, matches := p.dirty, p.logs, p.matches
+	// Once a day, removed items older than goneKeep are deleted.
 	sweep := now.Sub(p.swept) >= 24*time.Hour
 	if len(dirty) == 0 && len(logs) == 0 && len(matches) == 0 && !sweep {
 		p.mu.Unlock()
@@ -212,7 +201,7 @@ func (p *persister) flush(ctx context.Context) error {
 		}
 		for _, m := range matches {
 			if m.rename {
-				// A new name is worth another try, even after nomatch.
+				// A new name deserves another try, even after nomatch.
 				if _, err := tx.Exec(`UPDATE dl_match_queue SET name = ?, attempts = 0, next_try_at = ?, outcome = '', last_error = ''
 					WHERE downloader_id = ? AND key = ? AND outcome IN ('', 'nomatch', 'unsure', 'not_media')`, m.name, at, m.id, m.key); err != nil {
 					return err
@@ -235,7 +224,8 @@ func (p *persister) flush(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if err != nil {
-		// Put the work back in front of anything noted meanwhile.
+		// Put the work back in front of anything noted meanwhile, but keep a
+		// newer write of the same item.
 		for k, w := range dirty {
 			if _, newer := p.dirty[k]; !newer {
 				p.dirty[k] = w
@@ -254,7 +244,7 @@ func (p *persister) flush(ctx context.Context) error {
 	return nil
 }
 
-// load reads the last known items of every client, gone ones left out.
+// load reads the last known items of every client, leaving out removed ones.
 func (p *persister) load(ctx context.Context) (map[int64][]downloader.Job, error) {
 	out := map[int64][]downloader.Job{}
 	if p == nil || p.db == nil {
@@ -279,4 +269,24 @@ func (p *persister) load(ctx context.Context) (map[int64][]downloader.Job, error
 		out[id] = append(out[id], j)
 	}
 	return out, rows.Err()
+}
+
+// init makes the maps on first use, so the zero value works.
+func (p *persister) init() {
+	if p.dirty == nil {
+		p.dirty, p.written = map[itemKey]itemWrite{}, map[itemKey]time.Time{}
+	}
+}
+
+// matchPriority orders lookups: active items first, then seeding ones, then
+// the rest of the archive.
+func matchPriority(j downloader.Job) int {
+	switch j.State {
+	case downloader.StateDownloading, downloader.StateQueued, downloader.StatePaused:
+		return 1
+	}
+	if j.UpSpeed > 0 {
+		return 2
+	}
+	return 3
 }

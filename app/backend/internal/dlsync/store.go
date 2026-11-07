@@ -1,7 +1,3 @@
-// Package dlsync keeps one in-memory snapshot per download client and works
-// out what changed between reads. In shadow mode (setting downloads.sync =
-// shadow) it is fed only from lists the Manager already reads, so it adds
-// no call to any client.
 package dlsync
 
 import (
@@ -14,12 +10,17 @@ import (
 // FreshCeiling is the longest a read counts as fresh, whatever the cadence.
 const FreshCeiling = 2 * time.Minute
 
+// viewerTTL is how long one view of the Downloads page counts as a viewer.
+const viewerTTL = 60 * time.Second
+
 // Snapshot is one client as last read.
 //
 // Complete: the last read returned the whole list without error. Fresh:
-// Complete and ReadAt within min(3 x the client's cadence, FreshCeiling)
-// of now. Stale: the items were loaded from dl_items after a start and no
-// read has replaced them yet. Running: a reader is following the client.
+// Complete and ReadAt within min(3 x the client's cadence, FreshCeiling) of
+// now. Stale: the items were loaded from dl_items after a start and no read
+// has replaced them yet. Running: a reader is following the client.
+// Fallback: the Manager reads the client itself. Failed: the last read
+// failed. Shared: another program seems to share the session.
 type Snapshot struct {
 	Gen      uint64
 	Rev      uint64
@@ -34,6 +35,21 @@ type Snapshot struct {
 	Shared   bool
 }
 
+// Store holds the snapshots. The zero value is ready, and a nil *Store
+// answers every Current with Complete=false, so callers need no checks.
+type Store struct {
+	// Floor is the reader's floor cadence. Zero uses FreshCeiling alone, and a
+	// client's own cadence, when set, takes its place.
+	Floor time.Duration
+	// Now replaces the clock in tests.
+	Now func() time.Time
+
+	mu       sync.Mutex
+	clients  map[int64]*client
+	viewedAt time.Time
+}
+
+// client is the stored state of one Downloader.
 type client struct {
 	gen      uint64
 	rev      uint64
@@ -43,65 +59,11 @@ type client struct {
 	scope    string
 	floor    time.Duration // this client's read cadence
 	running  bool
-	since    time.Time // reader start or last good read: the degraded bound counts from here
+	since    time.Time // reader start or last good read; the degraded bound counts from here
 	fallback bool
 	stale    bool
 	failed   bool
 	shared   bool
-}
-
-// viewerTTL is how long one view of the Downloads page counts as a viewer.
-const viewerTTL = 60 * time.Second
-
-// Store holds the snapshots. The zero value is ready; a nil *Store answers
-// every Current with Complete=false, so callers need no checks.
-type Store struct {
-	// Floor is the reader's floor cadence; zero uses FreshCeiling alone.
-	// A client's own cadence, when set, takes its place.
-	Floor time.Duration
-	// Now is for tests.
-	Now func() time.Time
-
-	mu       sync.Mutex
-	clients  map[int64]*client
-	viewedAt time.Time
-}
-
-func (s *Store) now() time.Time {
-	if s.Now != nil {
-		return s.Now()
-	}
-	return time.Now()
-}
-
-func (s *Store) bound() time.Duration {
-	if s.Floor > 0 {
-		return min(3*s.Floor, FreshCeiling)
-	}
-	return FreshCeiling
-}
-
-func (s *Store) boundOf(c *client) time.Duration {
-	if c.floor > 0 {
-		return min(3*c.floor, FreshCeiling)
-	}
-	return s.bound()
-}
-
-func (s *Store) fresh(c *client, now time.Time) bool {
-	return c.complete && !c.readAt.IsZero() && now.Sub(c.readAt) <= s.boundOf(c)
-}
-
-func (s *Store) get(id int64) *client {
-	if s.clients == nil {
-		s.clients = map[int64]*client{}
-	}
-	c := s.clients[id]
-	if c == nil {
-		c = &client{}
-		s.clients[id] = c
-	}
-	return c
 }
 
 // Current returns a copy of one client's snapshot.
@@ -119,7 +81,7 @@ func (s *Store) Current(id int64) Snapshot {
 	items := make(map[string]downloader.Job, len(c.items))
 	for k, v := range c.items {
 		if !fresh {
-			// Last-known rows: their speeds are not current.
+			// These are last-known rows, so their speeds would be wrong.
 			v.Speed, v.UpSpeed, v.ETA = 0, 0, 0
 		}
 		items[k] = v
@@ -128,7 +90,8 @@ func (s *Store) Current(id int64) Snapshot {
 		Stale: c.stale, Running: c.running, Fallback: c.fallback, Failed: c.failed, Shared: c.shared}
 }
 
-// View is one client as downloader.Manager reads it.
+// View returns one client as downloader.Manager reads it. It is degraded
+// when no reader runs or the last good read is older than the bound.
 func (s *Store) View(id int64) downloader.SyncView {
 	if s == nil {
 		return downloader.SyncView{Degraded: true}
@@ -152,7 +115,7 @@ func (s *Store) View(id int64) downloader.SyncView {
 	return v
 }
 
-// Rev is one client's revision; it moves only when something changed.
+// Rev returns one client's revision, which moves only when something changed.
 func (s *Store) Rev(id int64) uint64 {
 	if s == nil {
 		return 0
@@ -165,7 +128,7 @@ func (s *Store) Rev(id int64) uint64 {
 	return 0
 }
 
-// Revs is every client's revision.
+// Revs returns every client's revision.
 func (s *Store) Revs() map[int64]uint64 {
 	out := map[int64]uint64{}
 	if s == nil {
@@ -180,15 +143,15 @@ func (s *Store) Revs() map[int64]uint64 {
 }
 
 // Update records a whole read of a client at engine generation gen and
-// returns what changed against the previous read, even across a generation
-// change (so removals during the gap are still seen).
+// returns what changed against the previous read. It diffs across a
+// generation change too, so removals during the gap are still seen.
 func (s *Store) Update(id int64, gen uint64, jobs []downloader.Job, at time.Time) Changes {
 	ch, _, _ := s.Apply(id, gen, "", jobs, at)
 	return ch
 }
 
-// Apply is Update for a read that covered scope ("" everything), and also
-// returns the items before it and whether they were stale rows loaded
+// Apply is Update for a read that covered scope ("" is everything). It also
+// returns the items before the read and whether they were stale rows loaded
 // from dl_items.
 func (s *Store) Apply(id int64, gen uint64, scope string, jobs []downloader.Job, at time.Time) (Changes, map[string]downloader.Job, bool) {
 	cur := make(map[string]downloader.Job, len(jobs))
@@ -208,8 +171,8 @@ func (s *Store) Apply(id int64, gen uint64, scope string, jobs []downloader.Job,
 	return ch, prev, stale
 }
 
-// Fail records a read that did not return the whole list: the items stay
-// as last known but the snapshot is no longer Complete.
+// Fail records a read that did not return the whole list. The items stay as
+// last known, but the snapshot is no longer Complete.
 func (s *Store) Fail(id int64, gen uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -221,14 +184,14 @@ func (s *Store) Fail(id int64, gen uint64) {
 	}
 }
 
-// Reset marks a client's snapshot incomplete after a generation change,
-// Forget or "Try again"; the next whole read is diffed against the old items.
+// Reset marks a client's snapshot incomplete after a generation change, a
+// forget or a retry. The next whole read is diffed against the old items.
 func (s *Store) Reset(id int64, gen uint64) {
 	s.Fail(id, gen)
 }
 
-// Load puts last-known rows (from dl_items) in place as stale: shown, but
-// not Complete until the first good read replaces them.
+// Load puts last-known rows from dl_items in place as stale. They are shown
+// but not Complete until the first good read replaces them.
 func (s *Store) Load(id int64, jobs []downloader.Job) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -241,8 +204,8 @@ func (s *Store) Load(id int64, jobs []downloader.Job) {
 	c.rev++
 }
 
-// Running marks whether a reader follows the client; starting counts as
-// the beginning of the degraded bound.
+// Running marks whether a reader follows the client. Starting also starts
+// the degraded bound.
 func (s *Store) Running(id int64, on bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -253,7 +216,8 @@ func (s *Store) Running(id int64, on bool) {
 	}
 }
 
-// SetFloor records the client's current read cadence.
+// SetFloor records the client's current read cadence, which sets how long a
+// read counts as fresh.
 func (s *Store) SetFloor(id int64, d time.Duration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -267,7 +231,7 @@ func (s *Store) SetShared(id int64, on bool) {
 	s.get(id).shared = on
 }
 
-// SetFallback marks a client the Manager reads itself.
+// SetFallback marks whether the Manager reads the client itself.
 func (s *Store) SetFallback(id int64, on bool) {
 	if s == nil {
 		return
@@ -277,7 +241,7 @@ func (s *Store) SetFallback(id int64, on bool) {
 	s.get(id).fallback = on
 }
 
-// Drop forgets a client (its Downloader was removed).
+// Drop forgets a client whose Downloader was removed.
 func (s *Store) Drop(id int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -294,9 +258,52 @@ func (s *Store) Viewed() {
 	s.mu.Unlock()
 }
 
-// Viewer says the Downloads page was viewed within viewerTTL.
+// Viewer reports whether the Downloads page was viewed within viewerTTL.
 func (s *Store) Viewer() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return !s.viewedAt.IsZero() && s.now().Sub(s.viewedAt) < viewerTTL
+}
+
+// now returns the clock, which tests can replace.
+func (s *Store) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
+}
+
+// bound is how long a read counts as fresh with no cadence of its own.
+func (s *Store) bound() time.Duration {
+	if s.Floor > 0 {
+		return min(3*s.Floor, FreshCeiling)
+	}
+	return FreshCeiling
+}
+
+// boundOf is how long a read of client c counts as fresh: three of its
+// cadences, never more than FreshCeiling.
+func (s *Store) boundOf(c *client) time.Duration {
+	if c.floor > 0 {
+		return min(3*c.floor, FreshCeiling)
+	}
+	return s.bound()
+}
+
+// fresh reports whether c has a complete read inside its bound.
+func (s *Store) fresh(c *client, now time.Time) bool {
+	return c.complete && !c.readAt.IsZero() && now.Sub(c.readAt) <= s.boundOf(c)
+}
+
+// get returns the client for id, making it if needed. The caller holds mu.
+func (s *Store) get(id int64) *client {
+	if s.clients == nil {
+		s.clients = map[int64]*client{}
+	}
+	c := s.clients[id]
+	if c == nil {
+		c = &client{}
+		s.clients[id] = c
+	}
+	return c
 }

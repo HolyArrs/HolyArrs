@@ -13,8 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// fakeSab is a SABnzbd as the reader sees it: a queue, a finished list and
-// its change counter.
+// fakeSab is a SABnzbd as the reader sees it: a queue, a finished list and its change counter.
 type fakeSab struct {
 	mu      sync.Mutex
 	queue   []downloader.Job
@@ -53,6 +52,7 @@ func (f *fakeSab) History(_ context.Context, since int64) (downloader.HistoryPag
 	return downloader.HistoryPage{Last: f.counter, Changed: true, Jobs: append([]downloader.Job(nil), f.hist...)}, nil
 }
 
+// sabJob makes a job with the given id, category and state.
 func sabJob(id, cat, state string) downloader.Job {
 	p := 0.5
 	if state == downloader.StateFinished || state == downloader.StateFailed {
@@ -61,7 +61,8 @@ func sabJob(id, cat, state string) downloader.Job {
 	return downloader.Job{ID: id, Name: "Show.S01E01." + id, Category: cat, State: state, Progress: p}
 }
 
-func TestSabCursorsFastPathResetAndErrors(t *testing.T) {
+// The finished list must be read only when its counter moves, a lower counter means a restart, and an error must drop the counter.
+func TestSabCursors_FastPathResetAndErrors(t *testing.T) {
 	f := &fakeSab{queue: []downloader.Job{sabJob("q1", "tv", downloader.StateDownloading)},
 		hist: []downloader.Job{sabJob("h1", "tv", downloader.StateFinished), sabJob("q1", "tv", downloader.StateFinished)}, counter: 5}
 	var c SabCursors
@@ -73,12 +74,12 @@ func TestSabCursorsFastPathResetAndErrors(t *testing.T) {
 	if p.Jobs[0].State != downloader.StateDownloading {
 		t.Fatal("the queue row must win over the finished row with the same id")
 	}
-	// Unchanged: the finished list is kept, not read.
+	// Unchanged counter: the finished list is kept, not read.
 	p, err = c.Poll(ctx, 1, 0, f)
 	if err != nil || p.HistoryRead || len(p.Jobs) != 2 || f.sent[1] != 5 {
 		t.Fatalf("unchanged: %v %+v sent %v", err, p, f.sent)
 	}
-	// Restarted: the counter went down; a full read from 0 follows.
+	// Lower counter: SABnzbd restarted, so a full read from 0 follows.
 	f.counter, f.hist = 2, []downloader.Job{sabJob("h2", "tv", downloader.StateFailed)}
 	p, err = c.Poll(ctx, 1, 0, f)
 	if err != nil || !p.Reset || !p.HistoryRead || len(p.Jobs) != 2 {
@@ -87,7 +88,7 @@ func TestSabCursorsFastPathResetAndErrors(t *testing.T) {
 	if n := len(f.sent); f.sent[n-2] != 5 || f.sent[n-1] != 0 {
 		t.Fatalf("reset must read again from 0: %v", f.sent)
 	}
-	// An error drops the counter: the next poll reads everything.
+	// An error drops the counter, so the next poll reads everything.
 	f.histErr = errors.New("down")
 	if _, err = c.Poll(ctx, 1, 0, f); err == nil {
 		t.Fatal("error lost")
@@ -102,6 +103,7 @@ func TestSabCursorsFastPathResetAndErrors(t *testing.T) {
 	}
 }
 
+// sabRig builds a reader over a fake SABnzbd.
 func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader) {
 	t.Helper()
 	db, err := database.Open(t.TempDir(), database.Options{})
@@ -131,9 +133,8 @@ func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader)
 	return s, *d
 }
 
-// Every SABnzbd job shows by default (queue and finished list, any
-// category); with the setting off only the Downloader's category does.
-func TestSabReaderListsEveryJob(t *testing.T) {
+// Every SABnzbd job must show by default, queue and finished list in any category. With the setting off only the Downloader's category does.
+func TestSync_SabnzbdListsEveryJob(t *testing.T) {
 	f := &fakeSab{counter: 3,
 		queue: []downloader.Job{sabJob("q1", "holyarrs", downloader.StateDownloading), sabJob("q2", "tv", downloader.StatePaused)},
 		hist:  []downloader.Job{sabJob("h1", "movies", downloader.StateFinished), sabJob("h2", "holyarrs", downloader.StateFailed)}}
@@ -161,9 +162,8 @@ func TestSabReaderListsEveryJob(t *testing.T) {
 	}
 }
 
-// Until a full finished list has been read the poll gets the long budget;
-// after that the short one.
-func TestSabCursorsNeedsFull(t *testing.T) {
+// The first poll must get the long budget until a full finished list was read, then the short one.
+func TestSabCursors_NeedsFull(t *testing.T) {
 	f := &fakeSab{hist: []downloader.Job{sabJob("h1", "tv", downloader.StateFinished)}, counter: 5}
 	var c SabCursors
 	if !c.NeedsFull(1) {

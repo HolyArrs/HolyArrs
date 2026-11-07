@@ -7,6 +7,20 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
+// jobFields lists the Job fields compared by Diff, found once by reflection
+// so a new Job field is compared without touching this file.
+var jobFields = func() []reflect.StructField {
+	t := reflect.TypeFor[downloader.Job]()
+	out := make([]reflect.StructField, 0, t.NumField())
+	for i := range t.NumField() {
+		f := t.Field(i)
+		if f.IsExported() && f.Name != "ID" {
+			out = append(out, f)
+		}
+	}
+	return out
+}()
+
 // Changes is what moved between two reads of one client.
 type Changes struct {
 	Added       []string
@@ -26,25 +40,13 @@ type Transition struct {
 	ID, From, To string
 }
 
-// Empty says nothing moved.
+// Empty reports whether nothing was added, removed or changed.
 func (c Changes) Empty() bool {
 	return len(c.Added) == 0 && len(c.Removed) == 0 && len(c.Changed) == 0
 }
 
-var jobFields = func() []reflect.StructField {
-	t := reflect.TypeFor[downloader.Job]()
-	out := make([]reflect.StructField, 0, t.NumField())
-	for i := range t.NumField() {
-		f := t.Field(i)
-		if f.IsExported() && f.Name != "ID" {
-			out = append(out, f)
-		}
-	}
-	return out
-}()
-
-// Diff compares two reads, item by item and field by field. It is pure:
-// same input, same output, sorted by id.
+// Diff compares two reads item by item and field by field. The result is
+// sorted by id, so the same input always gives the same output.
 func Diff(prev, cur map[string]downloader.Job) Changes {
 	var c Changes
 	for id, j := range cur {
@@ -72,6 +74,8 @@ func Diff(prev, cur map[string]downloader.Job) Changes {
 	return c
 }
 
+// changedFields returns the names of the fields that differ between two
+// versions of one job. Pointers, slices and maps need a deep compare.
 func changedFields(a, b downloader.Job) []string {
 	va, vb := reflect.ValueOf(a), reflect.ValueOf(b)
 	var out []string

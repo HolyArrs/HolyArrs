@@ -18,15 +18,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// Change feed against the lab qBittorrent only (never a real client), with
-// a counting proxy in front (the lab request counter). The key comes from
-// labctl, which never prints it:
+// TestLabMaindata runs the change feed against the lab qBittorrent only, never a real client, behind a counting proxy. The key comes from labctl, which never prints it:
 //
 //	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabMaindata -v ./internal/dlsync/
 //
-// It adds our own Dune test torrent from the lab's fake indexer, polls the
-// change feed while it moves, checks every merged answer equals torrents/info
-// and logs bytes per full and delta answer, then removes the torrent.
+// It adds a test torrent from the lab indexer and polls the feed while it moves. Every merged answer must equal torrents/info. It logs bytes per full and delta answer, then removes the torrent.
 func TestLabMaindata(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_QBIT_KEY")
 	if key == "" {
@@ -95,8 +91,7 @@ func TestLabMaindata(t *testing.T) {
 	}
 }
 
-// parityDiff compares the change-feed rows with torrents/info, ignoring the
-// live counters that move between the two reads.
+// parityDiff compares the change-feed rows with torrents/info, ignoring live counters that move between the two reads.
 func parityDiff(feed, listed []downloader.Job) string {
 	norm := func(js []downloader.Job) map[string]downloader.Job {
 		m := map[string]downloader.Job{}
