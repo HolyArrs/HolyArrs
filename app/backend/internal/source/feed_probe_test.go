@@ -18,7 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestFeedProbeIsReadOnlyAndFindsMatchingRelease(t *testing.T) {
+func TestProbeFeed_ReadOnlyAndFindsMatch(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item("Arcane.S01E01.1080p.WEB.H264-HOLYARRS", time.Now(), 5, "")))
 	f := seed(t, lf.url(t))
@@ -51,7 +51,7 @@ func TestFeedProbeIsReadOnlyAndFindsMatchingRelease(t *testing.T) {
 	}
 }
 
-func TestFeedProbeRunsDurableJobForSourceRecovery(t *testing.T) {
+func TestProbeFeed_RunsJobForSourceRecovery(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item("Arcane.S01E01.1080p.WEB.H264-HOLYARRS", time.Now(), 5, "")))
 	f := seed(t, lf.url(t))
@@ -104,7 +104,7 @@ func runScheduledFeed(t *testing.T, f fixture, sr *Searcher, beforeStart func())
 	return domain.Job{}
 }
 
-func TestScheduledPreparedFeedScrubsReflectedKey(t *testing.T) {
+func TestHandleFeed_PreparedAnswerScrubsReflectedKey(t *testing.T) {
 	const secret = "YOUR_FAKE_SOURCE_KEY"
 	var hits int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -129,7 +129,7 @@ func TestScheduledPreparedFeedScrubsReflectedKey(t *testing.T) {
 	}
 }
 
-func TestScheduledFeedConsumesPreparedAnswerOnce(t *testing.T) {
+func TestHandleFeed_ConsumesPreparedAnswerOnce(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now(), 5, "")))
 	f := seed(t, lf.url(t))
@@ -145,7 +145,7 @@ func TestScheduledFeedConsumesPreparedAnswerOnce(t *testing.T) {
 	}
 }
 
-func TestScheduledFeedDiscardsPreparedAnswerAfterSourceEdit(t *testing.T) {
+func TestHandleFeed_DiscardsPreparedAnswerAfterSourceEdit(t *testing.T) {
 	first := &liveFeed{}
 	first.set(feedOf(item(web1080, time.Now(), 5, "")))
 	second := &liveFeed{}
@@ -160,7 +160,7 @@ func TestScheduledFeedDiscardsPreparedAnswerAfterSourceEdit(t *testing.T) {
 	}
 }
 
-func TestScheduledFeedRefetchesWhenWantedKindsChange(t *testing.T) {
+func TestHandleFeed_RefetchesWhenWantedKindsChange(t *testing.T) {
 	var mu sync.Mutex
 	var cats []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +183,7 @@ func TestScheduledFeedRefetchesWhenWantedKindsChange(t *testing.T) {
 	}
 }
 
-func TestFeedProbeTimeoutDiscardsPartialPreparedBatch(t *testing.T) {
+func TestProbeFeed_TimeoutDiscardsPartialBatch(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { <-r.Context().Done() }))
 	defer srv.Close()
 	f := seed(t, srv.URL)
@@ -217,7 +217,7 @@ func TestFeedProbeTimeoutDiscardsPartialPreparedBatch(t *testing.T) {
 	}
 }
 
-func TestFeedProbeDoesNotAttachQuietHistoryAfterSourceReuse(t *testing.T) {
+func TestProbeFeed_NoQuietHistoryAfterSourceReuse(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var once sync.Once
@@ -266,7 +266,7 @@ func TestFeedProbeDoesNotAttachQuietHistoryAfterSourceReuse(t *testing.T) {
 	}
 }
 
-func TestGrabHeldProbeUsesDuePredicateWithoutWriting(t *testing.T) {
+func TestProbeGrabHeld_DuePredicateWithoutWriting(t *testing.T) {
 	lf := &liveFeed{}
 	f := seed(t, lf.url(t))
 	sr := &Searcher{Store: f.s}

@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-func TestOutsideBreakerSuppressesOneSourceAndLeavesAnotherRunning(t *testing.T) {
+// TestOutsideBreaker_SuppressesOneSourceOnly checks that the breaker stops calls to one failing Source and leaves another running.
+func TestOutsideBreaker_SuppressesOneSourceOnly(t *testing.T) {
 	var badHits atomic.Int32
 	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		badHits.Add(1)
@@ -39,7 +40,8 @@ func TestOutsideBreakerSuppressesOneSourceAndLeavesAnotherRunning(t *testing.T) 
 	}
 }
 
-func TestOutsideDeadlineCoversResponseBody(t *testing.T) {
+// TestOutsideDeadline_CoversResponseBody checks that the call deadline also covers reading the response body.
+func TestOutsideDeadline_CoversResponseBody(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

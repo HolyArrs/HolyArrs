@@ -11,8 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Runs inside the lab network: go test -tags lab ./internal/source/
-// HOLYARRS_LAB_SOURCE defaults to the lab's fake indexer.
+// labURL returns the lab fake indexer address, from HOLYARRS_LAB_SOURCE when set.
 func labURL() string {
 	if u := os.Getenv("HOLYARRS_LAB_SOURCE"); u != "" {
 		return u
@@ -20,7 +19,7 @@ func labURL() string {
 	return "http://fake-indexer/api"
 }
 
-func TestLabFakeIndexer(t *testing.T) {
+func TestLab_FakeIndexer(t *testing.T) {
 	c := New(Config{URL: labURL(), Protocol: "torrent", AllowLocal: true})
 	caps, err := c.Caps(context.Background())
 	if err != nil {

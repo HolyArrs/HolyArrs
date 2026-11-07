@@ -13,8 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Log, cue, playlist, cover and text files are not counted as tracks.
-func TestTrackFilesIgnoreExtras(t *testing.T) {
+// TestTrackFiles_IgnoreExtras checks that log, cue, playlist, cover and text files are not counted as tracks.
+func TestTrackFiles_IgnoreExtras(t *testing.T) {
 	names := []string{"01 Song.flac", "02 Song.flac", "Album.log", "Album.cue", "Album.m3u", "folder.jpg", "back.PNG", "info.nfo", "notes.txt."}
 	if n := trackFiles(names, 99, 5); n != 2 {
 		t.Fatalf("file list: %d tracks, want 2", n)
@@ -26,9 +26,8 @@ func TestTrackFilesIgnoreExtras(t *testing.T) {
 	}
 }
 
-// With album_extra_files, a bare file count padded with extras no longer
-// passes for the whole album.
-func TestAlbumExtraFilesSetting(t *testing.T) {
+// TestAlbumExtraFiles_Setting checks that with album_extra_files on, a bare file count padded with extras no longer passes for the whole album.
+func TestAlbumExtraFiles_Setting(t *testing.T) {
 	name := "Velvet Cartography - Low Tide Atlas (2019) [FLAC] [CD]"
 	ms := &musicServer{answer: func(url.Values) []string { return []string{name + "#6"} }}
 	f := seedArtist(t, ms.start(t))
@@ -46,17 +45,14 @@ func TestAlbumExtraFilesSetting(t *testing.T) {
 	}
 }
 
-// A Release chosen by hand for an album whose tracks would end up with
-// different copies (one track keeps a copy as good) needs the person to
-// confirm, and the refusal names the tracks left out.
-func TestChooseAlbumMixNeedsConfirm(t *testing.T) {
+// TestChooseAlbum_MixNeedsConfirm checks that a hand choice that would leave tracks with different copies needs the person to confirm, and the refusal names the tracks left out.
+func TestChooseAlbum_MixNeedsConfirm(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
 	f.albumJob(t, sr, lta, map[string]any{"choose": false, "by_hand": true})
 	r := relByName(t, f.fixture, flac)
 	var err error
-	// After the search, the first track got a copy as good elsewhere.
 	err = f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		name := "Velvet Cartography - Low Tide Atlas (2019) [FLAC 24-96]"
 		fl := &domain.File{SlotIDs: []int64{f.slots[ltaTracks[0]]}, VersionID: f.verID, RelativePath: "1-1.flac", Size: 1, AddedAt: time.Now(),

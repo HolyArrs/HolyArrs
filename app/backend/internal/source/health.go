@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Source states as people see them.
+// States of a Source as people see them.
 const (
 	StateWorking     = "working"
 	StateUnreachable = "unreachable"
@@ -18,20 +18,10 @@ const (
 	StateDisabled    = "disabled"
 )
 
-// Health is a Source's state in plain words. Until is when HolyArrs tries
-// it again on its own (nil when it is not waiting).
-type Health struct {
-	State string     `json:"state"`
-	Text  string     `json:"text"`
-	Until *time.Time `json:"until,omitempty"`
-	// Reason tells waits apart: slowed, down, blocked or key (empty when
-	// the Source is not waiting).
-	Reason string `json:"reason,omitempty"`
-	// Block is the kind of block when a site's protection stops it (bot_check, site_ban).
-	Block string `json:"block,omitempty"`
-}
+// keepCalls is how long the call record is kept.
+const keepCalls = 90 * 24 * time.Hour
 
-// reasonWord is the short reason, by pause reason.
+// reasonWord maps a pause reason to its short word.
 var reasonWord = map[string]string{
 	KindDown:         "down",
 	KindBroken:       "down",
@@ -40,17 +30,66 @@ var reasonWord = map[string]string{
 	KindLoginRefused: "key",
 }
 
-// TryFailed puts a Source tried by hand back on its back-off pause.
-func (s *Searcher) TryFailed(ctx context.Context, src domain.Source, cause error) {
-	s.pause(ctx, src, cause)
-}
-
-// reasonText says why a Source is waiting, by pause reason.
+// reasonText maps a pause reason to the sentence that says why the Source waits.
 var reasonText = map[string]string{
 	KindDown:        "HolyArrs could not reach it.",
 	KindRateLimited: "It asked HolyArrs to slow down.",
 	KindBroken:      "It answered with something HolyArrs could not read.",
 	KindBlocked:     "Its address is on the local network, which this Source may not reach.",
+}
+
+// maxCallsPerSource caps the call record of one Source.
+var maxCallsPerSource = 50000
+
+// Health is a Source's state in plain words.
+// Until is when HolyArrs tries the Source again on its own, nil when it is not waiting.
+type Health struct {
+	State string     `json:"state"`
+	Text  string     `json:"text"`
+	Until *time.Time `json:"until,omitempty"`
+	// Reason tells the waits apart: slowed, down, blocked or key. It is empty when the Source is not waiting.
+	Reason string `json:"reason,omitempty"`
+	// Block is the kind of block when a site's protection stops the Source.
+	Block string `json:"block,omitempty"`
+}
+
+// Summary is a Source's last day at a glance.
+type Summary struct {
+	LastSuccess *string `json:"last_success"`
+	LastFailure *string `json:"last_failure"`
+	Calls       int     `json:"calls_24h"`
+	Failures    int     `json:"failures_24h"`
+	AvgMS       int     `json:"avg_ms_24h"`
+}
+
+// Day is one day of a Source's calls and grabs, in UTC.
+type Day struct {
+	Day      string `json:"day"`
+	Calls    int    `json:"calls"`
+	Failures int    `json:"failures"`
+	Grabs    int    `json:"grabs"`
+	AvgMS    int    `json:"avg_ms"`
+}
+
+// Call is one recorded call.
+type Call struct {
+	At        string `json:"at"`
+	Op        string `json:"op"`
+	OK        bool   `json:"ok"`
+	MS        int    `json:"ms"`
+	ErrorKind string `json:"error_kind"`
+}
+
+// Stats is a Source's record over time.
+type Stats struct {
+	Summary
+	Days   []Day  `json:"days"`
+	Recent []Call `json:"recent"`
+}
+
+// TryFailed puts a Source that was tried by hand back on its back-off pause.
+func (s *Searcher) TryFailed(ctx context.Context, src domain.Source, cause error) {
+	s.pause(ctx, src, cause)
 }
 
 // HealthOf says how a Source is doing.
@@ -77,14 +116,8 @@ func HealthOf(src domain.Source) Health {
 	return Health{State: StateWorking, Text: "Working."}
 }
 
-// keepCalls is how long the call record is kept.
-const keepCalls = 90 * 24 * time.Hour
-
-// maxCallsPerSource caps the call record per Source.
-var maxCallsPerSource = 50000
-
-// Record keeps one call to a Source for its stats, and drops calls older
-// than 90 days and the oldest past maxCallsPerSource.
+// Record keeps one call to a Source for its stats.
+// It drops calls older than the keep time and the oldest ones past maxCallsPerSource.
 func Record(ctx context.Context, s *database.Store, sourceID int64, op string, took time.Duration, err error) {
 	kind := ""
 	if err != nil {
@@ -109,18 +142,9 @@ func Record(ctx context.Context, s *database.Store, sourceID int64, op string, t
 	})
 }
 
-// Summary is a Source's last day at a glance.
-type Summary struct {
-	LastSuccess *string `json:"last_success"`
-	LastFailure *string `json:"last_failure"`
-	Calls       int     `json:"calls_24h"`
-	Failures    int     `json:"failures_24h"`
-	AvgMS       int     `json:"avg_ms_24h"`
-}
-
-// Summarise reads the last day of calls for every Source, by id. Every
-// lookup is one Source and a time window, on the (source_id, at) index; the
-// last success and failure are looked for within the kept record only.
+// Summarise reads the last day of calls for every Source, by id.
+// Each lookup is one Source and a time window on the (source_id, at) index.
+// The last success and failure are searched within the kept record only.
 func Summarise(ctx context.Context, db *sql.DB, now time.Time) (map[int64]Summary, error) {
 	day, kept := since(now, 1), database.FormatTime(now.Add(-keepCalls))
 	rows, err := db.QueryContext(ctx, `SELECT s.id,
@@ -146,37 +170,8 @@ func Summarise(ctx context.Context, db *sql.DB, now time.Time) (map[int64]Summar
 	return out, rows.Err()
 }
 
-func since(now time.Time, days int) string {
-	return database.FormatTime(now.Add(-time.Duration(days) * 24 * time.Hour))
-}
-
-// Day is one day of a Source's calls and grabs (UTC).
-type Day struct {
-	Day      string `json:"day"`
-	Calls    int    `json:"calls"`
-	Failures int    `json:"failures"`
-	Grabs    int    `json:"grabs"`
-	AvgMS    int    `json:"avg_ms"`
-}
-
-// Call is one recorded call.
-type Call struct {
-	At        string `json:"at"`
-	Op        string `json:"op"`
-	OK        bool   `json:"ok"`
-	MS        int    `json:"ms"`
-	ErrorKind string `json:"error_kind"`
-}
-
-// Stats is a Source's record over time.
-type Stats struct {
-	Summary
-	Days   []Day  `json:"days"`
-	Recent []Call `json:"recent"`
-}
-
-// StatsFor reads a Source's last days (oldest first, every day listed) and
-// its last 20 calls. A grab is a Release from it that was chosen.
+// StatsFor reads a Source's last days, oldest first with every day listed, and its last 20 calls.
+// A grab is a Release from the Source that was chosen.
 func StatsFor(ctx context.Context, db *sql.DB, sourceID int64, days int, now time.Time) (Stats, error) {
 	var st Stats
 	all, err := Summarise(ctx, db, now)
@@ -242,4 +237,9 @@ func StatsFor(ctx context.Context, db *sql.DB, sourceID int64, days int, now tim
 		st.Recent = append(st.Recent, c)
 	}
 	return st, rows.Err()
+}
+
+// since formats the time that many days before now.
+func since(now time.Time, days int) string {
+	return database.FormatTime(now.Add(-time.Duration(days) * 24 * time.Hour))
 }

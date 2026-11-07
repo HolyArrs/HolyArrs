@@ -1,5 +1,6 @@
-// Package source talks to Sources (Torznab and Newznab feeds): it reads their
-// caps, searches them and turns their XML into plain results.
+// Package source talks to Sources, the Torznab, Newznab and rss feeds that
+// list releases. It reads their caps, searches them, turns their XML into plain
+// items and runs the search jobs that judge and pick what they return.
 package source
 
 import (
@@ -10,7 +11,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
@@ -21,10 +21,15 @@ import (
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
-// Error kinds match the Source pause reasons in model.md section 2.9.
+// maxRetryAfter caps a Source's Retry-After, in seconds (one day).
+const maxRetryAfter = 86400
+
 const (
+	// Error kinds. They match the reasons a Source can be paused for.
 	KindDown         = "down"
 	KindRateLimited  = "rate_limited"
 	KindLoginRefused = "login_refused"
@@ -36,56 +41,54 @@ const (
 // Source's key cannot leak into logs.
 type Error struct {
 	Kind string
-	// Detail is the kind of block (BlockBotCheck, BlockSiteBan) when Kind is blocked by the site.
+	// Detail names the kind of block when Kind is blocked.
 	Detail     string
 	RetryAfter time.Duration
 	Msg        string
 	cause      error
 }
 
+// Error describes the failure without the URL.
 func (e *Error) Error() string { return "source " + e.Kind + ": " + e.Msg }
 
+// Unwrap returns the lower level error, if any.
 func (e *Error) Unwrap() error { return e.cause }
 
-// Code lets the jobs queue record the kind.
+// Code is the failure kind in the form the jobs queue records.
 func (e *Error) Code() string { return "source_" + e.Kind }
 
 // Config says how to reach one Source and how hard it may be used.
 type Config struct {
-	URL       string // base URL, with or without /api
-	APIKey    string // sent as a parameter; never logged
-	Protocol  string // torrent, usenet
-	GapMS     int    // least time between two requests
-	PerWindow int    // most requests per Window (0 means no cap)
+	URL       string
+	APIKey    string
+	Protocol  string
+	GapMS     int
+	PerWindow int
 	Window    time.Duration
-	Timeout   time.Duration // default 30s
+	Timeout   time.Duration
 	HTTP      *http.Client
-	// AllowAddr, when set, is asked about every address a request would
-	// connect to; false refuses the connection. nil means outbound.PublicOnly, unless
-	// AllowLocal is set.
+	// AllowAddr is asked about every address a request would connect to. Nil
+	// means public addresses only, or any but metadata ones when AllowLocal is set.
 	AllowAddr func(net.IP) bool
-	// AllowLocal lets the Source reach the local network (the person's
-	// per-Source choice).
+	// AllowLocal lets this Source reach the local network.
 	AllowLocal bool
-	// Format is torznab, newznab or rss. An rss Source is read as it is: its
-	// address plus Key (the address's query, kept secret) is the whole feed.
+	// Format is torznab, newznab or rss. An rss Source is read as it is: its URL
+	// plus APIKey (the URL's query) is the whole feed.
 	Format string
-	// Proxy, when set, carries every request (http, https or socks5). The
-	// proxy address must pass the same network policy as the Source, unless
-	// ProxyAllowLocal is set.
+	// Proxy carries every request when set. Its address goes through the same
+	// network policy as the Source unless ProxyAllowLocal is set.
 	Proxy           *url.URL
 	ProxyAllowLocal bool
-	// Observe, when set, is told about every call that reached the network:
-	// what it was, how long it took and how it ended.
+	// Observe is told about every call that reached the network.
 	Observe func(op string, took time.Duration, err error)
 	// resolve looks names up; nil means the system resolver. Tests set it.
 	resolve func(ctx context.Context, host string) ([]net.IP, error)
-	// PathKeys are the passkeys URL holds in its path; never logged.
+	// PathKeys are passkeys the URL holds in its path. They are never logged.
 	PathKeys []string
 }
 
 // Client is a Torznab/Newznab client for one Source. It is safe for
-// concurrent use; requests are spaced by the Source's limits.
+// concurrent use, and requests are spaced by the Source's limits.
 type Client struct {
 	cfg  Config
 	http *http.Client
@@ -96,7 +99,7 @@ type Client struct {
 	caps *Caps
 }
 
-// New makes a Client.
+// New makes a Client from cfg, filling in the defaults.
 func New(cfg Config) *Client {
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = 30 * time.Second
@@ -122,9 +125,8 @@ func New(cfg Config) *Client {
 	return &Client{cfg: cfg, http: &h}
 }
 
-// Transport is the Source's own checked way out, for fetching its Release
-// files (#152): through its proxy when it has one, with every address asked
-// of its network rule, as Client does.
+// Transport is the checked way out for fetching a Source's release files: it
+// uses the Source's proxy and asks its network rule about every address.
 func Transport(cfg Config) http.RoundTripper {
 	if cfg.AllowAddr == nil {
 		cfg.AllowAddr = outbound.PublicOnly
@@ -135,14 +137,13 @@ func Transport(cfg Config) http.RoundTripper {
 	return transport(cfg)
 }
 
-// transport dials the Source through the network policy. With a proxy, the
-// policy checks the proxy's address, and the Source's name is looked up and
-// checked here. The proxy is only ever handed the checked address, so it
-// cannot look the name up differently (a name only it knows, or one that
-// changes between the two lookups).
+// transport dials through the network policy. With a proxy, the policy checks
+// the proxy's address and the Source's name is looked up and checked here. The
+// proxy only gets the checked address, so it cannot resolve the name to
+// something else.
 func transport(cfg Config) *http.Transport {
 	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.Proxy = nil // the environment's proxy would hide the real address
+	t.Proxy = nil
 	if cfg.Proxy == nil {
 		t.DialContext = outbound.PolicyDialer(cfg.AllowAddr).DialContext
 		return t
@@ -153,7 +154,6 @@ func transport(cfg Config) *http.Transport {
 	}
 	d := outbound.PolicyDialer(allow)
 	p := *cfg.Proxy
-	// target is the checked address handed to the proxy.
 	target := func(ctx context.Context, addr string) (string, error) {
 		host, port, err := net.SplitHostPort(addr)
 		if err != nil {
@@ -184,9 +184,6 @@ func transport(cfg Config) *http.Transport {
 			return conn, nil
 		}
 	default:
-		// A tunnel (CONNECT) to the checked address, for http and https
-		// Sources alike; the transport speaks to the Source over it with
-		// the Source's name (Host header and TLS SNI).
 		t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			to, err := target(ctx, addr)
 			if err != nil {
@@ -198,9 +195,9 @@ func transport(cfg Config) *http.Transport {
 	return t
 }
 
-// checkName looks host up here and asks the policy about every answer. It
-// returns the address to hand the proxy. A name that cannot be looked up here
-// is refused: the proxy may know it, but we could not check where it leads.
+// checkName looks host up here and asks the policy about every answer. A name
+// we cannot look up is refused, because the proxy might know it but we could
+// not check where it leads.
 func checkName(ctx context.Context, cfg Config, host string) (net.IP, error) {
 	var ips []net.IP
 	if ip := net.ParseIP(host); ip != nil {
@@ -278,9 +275,6 @@ func httpConnect(ctx context.Context, d *net.Dialer, p *url.URL, addr string) (n
 	return conn, nil
 }
 
-// maxRetryAfter caps a Source's Retry-After, in seconds (one day).
-const maxRetryAfter = 86400
-
 // scrub takes the key and the proxy password out of a message, in every
 // spelling a URL may give them.
 func (c *Client) scrub(msg string) string {
@@ -304,8 +298,8 @@ func (c *Client) scrub(msg string) string {
 	return msg
 }
 
-// sameHostRedirect follows a redirect only to the same host, so the key
-// in the query never goes to another server.
+// sameHostRedirect follows a redirect only to the same host, so the key in
+// the query never goes to another server.
 func sameHostRedirect(req *http.Request, via []*http.Request) error {
 	if len(via) >= 5 {
 		return errors.New("too many redirects")
@@ -316,8 +310,8 @@ func sameHostRedirect(req *http.Request, via []*http.Request) error {
 	return nil
 }
 
-// Backoff is how long a Source stays paused after n failures in a row:
-// one minute, doubling, at most six hours.
+// Backoff is how long a Source stays paused after n failures in a row: one
+// minute, doubling, at most six hours.
 func Backoff(n int) time.Duration {
 	d := time.Minute
 	for i := 1; i < n && d < 6*time.Hour; i++ {
@@ -422,7 +416,7 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 		}
 		var ue *url.Error
 		if errors.As(err, &ue) {
-			err = ue.Err // drop the URL, it holds the key
+			err = ue.Err
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			msg := err.Error()
@@ -471,7 +465,8 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 	return body, nil
 }
 
-// feedError reads a Newznab error answer (an <error> root with code and description).
+// feedError reads a Newznab error answer, an error root with a code and a
+// description.
 func feedError(body []byte) error {
 	var e struct {
 		XMLName     xml.Name
@@ -499,7 +494,7 @@ type Caps struct {
 	MovieSearch bool
 	TVSearch    bool
 	MusicSearch bool
-	Params      map[string][]string // by search type: search, movie, tv, music
+	Params      map[string][]string
 	Categories  []int
 	Max         int
 }
@@ -550,7 +545,7 @@ type capsXML struct {
 	} `xml:"categories>category"`
 }
 
-// Caps reads (and remembers) what the Source can do.
+// Caps reads what the Source can do and remembers it.
 func (c *Client) Caps(ctx context.Context) (Caps, error) {
 	body, err := c.get(ctx, "caps", url.Values{"t": {"caps"}})
 	if err != nil {
@@ -579,25 +574,24 @@ func (c *Client) Caps(ctx context.Context) (Caps, error) {
 	return caps, nil
 }
 
-// Query is one movie search, or with TV set one show search.
+// Query is one movie search, or a show or album search when TV or Music is set.
 type Query struct {
 	Title      string
 	Year       int
-	IMDb       string // "tt" and digits
+	IMDb       string
 	TMDb       int
 	Categories []int
-	// Shows: TV makes it a tv search. Season 0 with no Episode asks for
-	// every season; Episode is a number, or "MM/DD" for a daily show (its
-	// Season is then the year). Words replaces the numbers for a Source
-	// with only a text search ("S01E02", "S01", "2026 03 14", "112").
+	// TV makes it a tv search. Season 0 with no Episode asks for every season.
+	// Episode is a number, or MM/DD for a daily show (Season is then the year).
+	// Words replaces the numbers for a Source that only has a text search.
 	TV      bool
 	Season  int
 	Episode string
 	Words   string
 	TVDB    int
 	TVMaze  int
-	// Music makes it an album search: by artist and album where the Source
-	// takes them, else a text search of both (stage 3.3.3).
+	// Music makes it an album search by artist and album where the Source takes
+	// them, otherwise a text search of both.
 	Music  bool
 	Artist string
 	Album  string
@@ -614,7 +608,7 @@ type Item struct {
 	Peers     *int
 	Published time.Time
 	InfoHash  string
-	Files     int // how many files the Source says it holds (0: not said)
+	Files     int
 }
 
 type rssXML struct {
@@ -743,15 +737,15 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 	return parseItems(body, c.cfg.Protocol)
 }
 
-// Feed reads the newest Releases: an rss Source's feed as it is, or a
-// Torznab/Newznab search with no words (their own newest list).
+// Feed reads the newest releases: an rss Source's feed as it is, or a
+// Torznab/Newznab search with no words.
 func (c *Client) Feed(ctx context.Context, categories []int) ([]Item, error) {
 	return c.feed(ctx, categories, c.cfg.Observe)
 }
 
-// feedProbe reads the feed through the same client's request limits without
-// recording call health. A schedule probe must not write Source counters;
-// the durable feed Job records the call when work or recovery is needed.
+// feedProbe reads the feed under the client's request limits without
+// recording call health. A schedule probe must not write Source counters; the
+// feed job records the call when work or recovery is needed.
 func (c *Client) feedProbe(ctx context.Context, categories []int, observer func(string, time.Duration, error)) ([]Item, error) {
 	return c.feed(ctx, categories, observer)
 }
@@ -775,8 +769,8 @@ func (c *Client) feed(ctx context.Context, categories []int, observer func(strin
 	return parseItems(body, c.cfg.Protocol)
 }
 
-// Test checks the Source answers: its caps for Torznab and Newznab, its
-// feed for rss. It says how many Releases the feed holds (0 for caps).
+// Test checks that the Source answers: its caps for Torznab and Newznab, its
+// feed for rss. It returns how many releases the feed holds, 0 for caps.
 func (c *Client) Test(ctx context.Context) (int, error) {
 	if c.cfg.Format == "rss" {
 		items, err := c.Feed(ctx, nil)
@@ -829,8 +823,6 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 					i.Peers = &n
 				}
 			case "infohash":
-				// Kept only when it is a real hash: it later selects
-				// torrents in a Downloader by id.
 				if h := strings.ToLower(strings.TrimSpace(a.Value)); ValidInfoHash(h) {
 					i.InfoHash = h
 				}

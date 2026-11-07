@@ -9,22 +9,25 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Quiet successful feed checks must not wake the disk merely to record that
-// nothing changed. Keep their health information in this process instead.
-// Scheduled checks run at most once a minute; this bound covers a full day
-// with spare room while preventing callers from growing the record forever.
+// Successful feed checks that change nothing must not wake the disk just to be recorded, so their
+// health data is kept in this process instead.
+// Scheduled checks run at most once a minute, so this bound covers a full day with room to spare
+// and stops the record from growing for ever.
 const maxQuietDayCalls = 2048
 
+// quietSample is one quiet check, with when it ran and how long it took.
 type quietSample struct {
 	at time.Time
 	ms int
 }
 
+// quietDay sums the quiet checks of one day.
 type quietDay struct {
 	calls int
 	ms    int64
 }
 
+// quietSourceCalls is the in-memory record of quiet checks for one Source.
 type quietSourceCalls struct {
 	last     time.Time
 	dayCalls []quietSample
@@ -32,6 +35,74 @@ type quietSourceCalls struct {
 	recent   []Call
 }
 
+// Summarise adds the successful quiet feed checks of this process to the durable summary.
+// Work, failures and recovery checks stay in the durable call record.
+func (s *Searcher) Summarise(ctx context.Context, now time.Time) (map[int64]Summary, error) {
+	all, err := Summarise(ctx, s.Store.Read(), now)
+	if err != nil {
+		return nil, err
+	}
+	s.quietMu.Lock()
+	defer s.quietMu.Unlock()
+	for id, q := range s.quietCalls {
+		if q.last.Before(now.Add(-keepCalls)) {
+			delete(s.quietCalls, id)
+			continue
+		}
+		q.prune(now)
+		if sum, exists := all[id]; exists {
+			all[id] = addQuietSummary(sum, q, now)
+		}
+	}
+	return all, nil
+}
+
+// StatsFor merges the durable history with the bounded quiet checks of this process.
+func (s *Searcher) StatsFor(ctx context.Context, sourceID int64, days int, now time.Time) (Stats, error) {
+	st, err := StatsFor(ctx, s.Store.Read(), sourceID, days, now)
+	if err != nil {
+		return st, err
+	}
+	s.quietMu.Lock()
+	defer s.quietMu.Unlock()
+	q := s.quietCalls[sourceID]
+	if q == nil {
+		return st, nil
+	}
+	if q.last.Before(now.Add(-keepCalls)) {
+		delete(s.quietCalls, sourceID)
+		return st, nil
+	}
+	q.prune(now)
+	st.Summary = addQuietSummary(st.Summary, q, now)
+	for i := range st.Days {
+		d := &st.Days[i]
+		x := q.days[d.Day]
+		ok := d.Calls - d.Failures
+		if ok+x.calls > 0 {
+			d.AvgMS = int((int64(d.AvgMS)*int64(ok) + x.ms) / int64(ok+x.calls))
+		}
+		d.Calls += x.calls
+	}
+	st.Recent = append(st.Recent, q.recent...)
+	slices.SortStableFunc(st.Recent, compareCallTime)
+	if len(st.Recent) > 20 {
+		st.Recent = st.Recent[:20]
+	}
+	return st, nil
+}
+
+// ForgetSource drops the in-memory history and client of a Source that was removed.
+func (s *Searcher) ForgetSource(sourceID int64) {
+	s.quietMu.Lock()
+	delete(s.quietCalls, sourceID)
+	s.quietMu.Unlock()
+	s.mu.Lock()
+	delete(s.clients, sourceID)
+	s.mu.Unlock()
+}
+
+// prune drops quiet data older than the day window and the kept record.
 func (q *quietSourceCalls) prune(now time.Time) {
 	cut := now.Add(-24 * time.Hour)
 	q.dayCalls = slices.DeleteFunc(q.dayCalls, func(c quietSample) bool { return c.at.Before(cut) })
@@ -45,12 +116,13 @@ func (q *quietSourceCalls) prune(now time.Time) {
 	q.recent = slices.DeleteFunc(q.recent, func(c Call) bool { return c.At < kept })
 }
 
+// rememberQuietFeedCall notes one successful feed check that wrote nothing to the database.
 func (s *Searcher) rememberQuietFeedCall(ctx context.Context, src domain.Source, at time.Time, took time.Duration) {
 	s.quietMu.Lock()
 	defer s.quietMu.Unlock()
-	// Hold the overlay lock across this read. Removal commits first and then
-	// takes the same lock in ForgetSource, so a finishing probe cannot restore
-	// deleted history. Source revisions also distinguish a reused row ID.
+	// Holding the lock across this read matters. Removal commits first and then takes the same lock in
+	// ForgetSource, so a probe that is finishing cannot bring back deleted history.
+	// The fingerprint also tells a reused row id from the old Source.
 	var current domain.Source
 	if err := database.Get(ctx, s.Store.Read(), "sources", src.ID, &current); err != nil ||
 		feedSourceFingerprint([]domain.Source{src}) != feedSourceFingerprint([]domain.Source{current}) {
@@ -86,6 +158,7 @@ func (s *Searcher) rememberQuietFeedCall(ctx context.Context, src domain.Source,
 	}
 }
 
+// compareCallTime orders calls newest first.
 func compareCallTime(a, b Call) int {
 	if a.At > b.At {
 		return -1
@@ -96,6 +169,7 @@ func compareCallTime(a, b Call) int {
 	return 0
 }
 
+// addQuietSummary folds the quiet checks into a durable summary, keeping the average weighted by call count.
 func addQuietSummary(sum Summary, q *quietSourceCalls, now time.Time) Summary {
 	if !q.last.Before(now.Add(-keepCalls)) {
 		last := database.FormatTime(q.last)
@@ -117,71 +191,4 @@ func addQuietSummary(sum Summary, q *quietSourceCalls, now time.Time) Summary {
 	}
 	sum.Calls += n
 	return sum
-}
-
-// Summarise includes successful quiet feed checks from this process. Work,
-// failures and recovery checks continue to use the durable call record.
-func (s *Searcher) Summarise(ctx context.Context, now time.Time) (map[int64]Summary, error) {
-	all, err := Summarise(ctx, s.Store.Read(), now)
-	if err != nil {
-		return nil, err
-	}
-	s.quietMu.Lock()
-	defer s.quietMu.Unlock()
-	for id, q := range s.quietCalls {
-		if q.last.Before(now.Add(-keepCalls)) {
-			delete(s.quietCalls, id)
-			continue
-		}
-		q.prune(now)
-		if sum, exists := all[id]; exists {
-			all[id] = addQuietSummary(sum, q, now)
-		}
-	}
-	return all, nil
-}
-
-// StatsFor merges the durable history with bounded process-local quiet checks.
-func (s *Searcher) StatsFor(ctx context.Context, sourceID int64, days int, now time.Time) (Stats, error) {
-	st, err := StatsFor(ctx, s.Store.Read(), sourceID, days, now)
-	if err != nil {
-		return st, err
-	}
-	s.quietMu.Lock()
-	defer s.quietMu.Unlock()
-	q := s.quietCalls[sourceID]
-	if q == nil {
-		return st, nil
-	}
-	if q.last.Before(now.Add(-keepCalls)) {
-		delete(s.quietCalls, sourceID)
-		return st, nil
-	}
-	q.prune(now)
-	st.Summary = addQuietSummary(st.Summary, q, now)
-	for i := range st.Days {
-		d := &st.Days[i]
-		x := q.days[d.Day]
-		ok := d.Calls - d.Failures
-		if ok+x.calls > 0 {
-			d.AvgMS = int((int64(d.AvgMS)*int64(ok) + x.ms) / int64(ok+x.calls))
-		}
-		d.Calls += x.calls
-	}
-	st.Recent = append(st.Recent, q.recent...)
-	slices.SortStableFunc(st.Recent, compareCallTime)
-	if len(st.Recent) > 20 {
-		st.Recent = st.Recent[:20]
-	}
-	return st, nil
-}
-
-// ForgetSource drops process-local history when its Source is removed.
-func (s *Searcher) ForgetSource(sourceID int64) {
-	s.quietMu.Lock()
-	delete(s.quietCalls, sourceID)
-	s.quietMu.Unlock()
-	s.mu.Lock()
-	delete(s.clients, sourceID)
-	s.mu.Unlock()
 }

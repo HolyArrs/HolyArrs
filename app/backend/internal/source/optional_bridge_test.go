@@ -10,7 +10,14 @@ import (
 	"time"
 )
 
-func TestOptionalProwlarrBridge(t *testing.T) {
+// uncachedJackettTransport keeps the real adapter and its dial policy, but makes the disposable bridge
+// serve the current definition and fixture instead of a cached earlier result.
+type uncachedJackettTransport struct {
+	http.RoundTripper
+}
+
+// TestBridge_OptionalProwlarr runs the Source client against a disposable Prowlarr when one is set up, and skips otherwise.
+func TestBridge_OptionalProwlarr(t *testing.T) {
 	base := os.Getenv("HOLYARRS_PROWLARR_URL")
 	key := os.Getenv("HOLYARRS_PROWLARR_API_KEY")
 	keyFile := os.Getenv("HOLYARRS_PROWLARR_API_KEY_FILE")
@@ -63,7 +70,8 @@ func TestOptionalProwlarrBridge(t *testing.T) {
 	}
 }
 
-func TestOptionalJackettBridge(t *testing.T) {
+// TestBridge_OptionalJackett runs the Source client against a disposable Jackett when one is set up, and skips otherwise.
+func TestBridge_OptionalJackett(t *testing.T) {
 	base := os.Getenv("HOLYARRS_JACKETT_URL")
 	keyFile := os.Getenv("HOLYARRS_JACKETT_API_KEY_FILE")
 	if base == "" && keyFile == "" {
@@ -108,12 +116,6 @@ func TestOptionalJackettBridge(t *testing.T) {
 	if got.Seeders == nil || *got.Seeders != 3 || got.GUID == "" || got.Link == "" {
 		t.Fatal("parsed disposable Jackett item lacks its expected seeders or identity")
 	}
-}
-
-// Keep the real adapter and its dial policy, but force the disposable bridge to
-// exercise the current definition and fixture rather than a previous result.
-type uncachedJackettTransport struct {
-	http.RoundTripper
 }
 
 func (t uncachedJackettTransport) RoundTrip(req *http.Request) (*http.Response, error) {

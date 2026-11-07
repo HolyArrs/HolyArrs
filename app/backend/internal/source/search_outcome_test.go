@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNoAnswerFailedSources(t *testing.T) {
+func TestNoAnswer_FailedSources(t *testing.T) {
 	sk := []skippedSource{{ID: 3, Name: "Alpha", Why: KindBlocked}}
 	reason, data, ok, failed := noAnswer([]string{"Alpha: refused"}, 0, sk)
 	if !ok || !failed || reason != "no Source answered: Alpha: refused" {
@@ -18,7 +18,7 @@ func TestNoAnswerFailedSources(t *testing.T) {
 	}
 }
 
-func TestNoAnswerAllPaused(t *testing.T) {
+func TestNoAnswer_AllPaused(t *testing.T) {
 	reason, data, ok, failed := noAnswer(nil, 0, []skippedSource{{ID: 1, Name: "A", Why: KindRateLimited}, {ID: 2, Name: "B", Why: "paused"}})
 	if !ok || failed || !strings.Contains(reason, "A: slowed down") || !strings.Contains(reason, "B: paused") {
 		t.Fatalf("got %q %v", reason, ok)
@@ -28,7 +28,7 @@ func TestNoAnswerAllPaused(t *testing.T) {
 	}
 }
 
-func TestNoAnswerSomeAnsweredOrNoneTried(t *testing.T) {
+func TestNoAnswer_SomeAnsweredOrNoneTried(t *testing.T) {
 	if _, _, ok, _ := noAnswer([]string{"A: x"}, 1, []skippedSource{{ID: 1}}); ok {
 		t.Fatal("a Source answered")
 	}
@@ -37,7 +37,7 @@ func TestNoAnswerSomeAnsweredOrNoneTried(t *testing.T) {
 	}
 }
 
-func TestFailWhy(t *testing.T) {
+func TestFailWhy_KindNames(t *testing.T) {
 	if got := failWhy(fmt.Errorf("wrap: %w", &Error{Kind: KindBlocked})); got != KindBlocked {
 		t.Fatal(got)
 	}

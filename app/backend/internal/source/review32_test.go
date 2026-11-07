@@ -16,42 +16,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// slotPubs records the Slot ids published live.
+// slotPubs records the Slot ids that were published live.
 type slotPubs struct {
 	mu  sync.Mutex
 	ids []int64
 }
 
-func (p *slotPubs) Publish(topic string, data any) uint64 {
-	if m, ok := data.(map[string]any); ok && topic == "slot" {
-		if id, ok := m["id"].(int64); ok {
-			p.mu.Lock()
-			p.ids = append(p.ids, id)
-			p.mu.Unlock()
-		}
-	}
-	return 0
-}
-
-// holdForFeed puts the fixture's Slot in held for tv720 with the wait over.
-func holdForFeed(t *testing.T) (fixture, domain.Release) {
-	t.Helper()
-	lf := &liveFeed{}
-	lf.set(feedOf(item(tv720, time.Now(), 50, "")))
-	f := seed(t, lf.url(t))
-	feedOn(t, f)
-	waitMinutes(t, f, 60)
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
-	if sl := slotState(t, f); sl.State != domain.SlotHeld {
-		t.Fatalf("slot %s", sl.State)
-	}
-	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
-	return f, relByName(t, f, tv720)
-}
-
-// I3: a Held Slot whose Release lists other Slots (an old pick list) is
-// still chosen when its wait is over, not left Held for ever.
-func TestGrabHeldSlotMissingFromPickList(t *testing.T) {
+// TestGrabHeld_SlotMissingFromPickList checks that a held Slot whose Release lists other Slots is still chosen when its wait is over, not left held for ever.
+func TestGrabHeld_SlotMissingFromPickList(t *testing.T) {
 	f, rel := holdForFeed(t)
 	exec(t, f, "UPDATE releases SET verdict = json_set(COALESCE(verdict, '{}'), '$.pick_slot_ids', json('[90001, 90002]')) WHERE id = ?", rel.ID)
 	var chosen []int64
@@ -62,8 +34,8 @@ func TestGrabHeldSlotMissingFromPickList(t *testing.T) {
 	}
 }
 
-// I3: an empty pick list is refused.
-func TestSettleChosenManyRefusesEmpty(t *testing.T) {
+// TestSettleChosenMany_RefusesEmpty checks that an empty pick list is refused.
+func TestSettleChosenMany_RefusesEmpty(t *testing.T) {
 	f := seed(t, "http://unused/api")
 	sr := &Searcher{Store: f.s}
 	if err := sr.settleChosenMany(context.Background(), nil, 1, "x", domain.System); err == nil {
@@ -71,9 +43,8 @@ func TestSettleChosenManyRefusesEmpty(t *testing.T) {
 	}
 }
 
-// I2: choosing a Release for one Slot records it on the Slot and as the
-// Release's pick list.
-func TestSettleChosenRecordsRelease(t *testing.T) {
+// TestSettleChosen_RecordsRelease checks that choosing a Release for one Slot records it on the Slot and as the Release's pick list.
+func TestSettleChosen_RecordsRelease(t *testing.T) {
 	f, rel := holdForFeed(t)
 	sr := &Searcher{Store: f.s}
 	runKind(t, f, sr, KindGrabHeld, nil, nil)
@@ -89,9 +60,8 @@ func TestSettleChosenRecordsRelease(t *testing.T) {
 	}
 }
 
-// M3: a season pack held for several Slots writes a chosen Event and a
-// live update for every Slot when the wait is over.
-func TestGrabHeldPackTellsEverySlot(t *testing.T) {
+// TestGrabHeld_PackTellsEverySlot checks that a season pack held for several Slots writes a chosen Event and a live update for every Slot when the wait is over.
+func TestGrabHeld_PackTellsEverySlot(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	ctx := context.Background()
@@ -143,9 +113,8 @@ func TestGrabHeldPackTellsEverySlot(t *testing.T) {
 	}
 }
 
-// I4: a season pack chosen by hand leaves out an episode whose copy is
-// already as good, with a warning naming it.
-func TestHandPackSkipsEpisodeThatWouldNotGain(t *testing.T) {
+// TestHandPack_SkipsEpisodeThatWouldNotGain checks that a season pack chosen by hand leaves out an episode whose copy is already as good, with a warning that names it.
+func TestHandPack_SkipsEpisodeThatWouldNotGain(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
 		if label == "S01E01" {
@@ -184,8 +153,8 @@ func TestHandPackSkipsEpisodeThatWouldNotGain(t *testing.T) {
 	}
 }
 
-// M2: a search cut off by a stop puts its Slots back from searching.
-func TestStoppedSearchesLeaveNoSlotSearching(t *testing.T) {
+// TestStoppedSearches_LeaveNoSlotSearching checks that a search cut off by a stop puts its Slots back from searching.
+func TestStoppedSearches_LeaveNoSlotSearching(t *testing.T) {
 	for _, c := range []struct {
 		name   string
 		kind   string
@@ -237,8 +206,8 @@ func TestStoppedSearchesLeaveNoSlotSearching(t *testing.T) {
 	}
 }
 
-// M2: at start, Slots left searching longer than the limit go back.
-func TestSweepStaleSearching(t *testing.T) {
+// TestSweepStale_Searching checks that at start, Slots left searching longer than the limit go back.
+func TestSweepStale_Searching(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	old := database.FormatTime(time.Now().Add(-2 * time.Hour))
@@ -252,4 +221,31 @@ func TestSweepStaleSearching(t *testing.T) {
 	if f.state(t, "S01E01") != domain.SlotWanted || f.state(t, "S01E02") != domain.SlotSearching {
 		t.Fatalf("%s %s", f.state(t, "S01E01"), f.state(t, "S01E02"))
 	}
+}
+
+func (p *slotPubs) Publish(topic string, data any) uint64 {
+	if m, ok := data.(map[string]any); ok && topic == "slot" {
+		if id, ok := m["id"].(int64); ok {
+			p.mu.Lock()
+			p.ids = append(p.ids, id)
+			p.mu.Unlock()
+		}
+	}
+	return 0
+}
+
+// holdForFeed puts the fixture's Slot in held for tv720 with the wait over.
+func holdForFeed(t *testing.T) (fixture, domain.Release) {
+	t.Helper()
+	lf := &liveFeed{}
+	lf.set(feedOf(item(tv720, time.Now(), 50, "")))
+	f := seed(t, lf.url(t))
+	feedOn(t, f)
+	waitMinutes(t, f, 60)
+	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	if sl := slotState(t, f); sl.State != domain.SlotHeld {
+		t.Fatalf("slot %s", sl.State)
+	}
+	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
+	return f, relByName(t, f, tv720)
 }

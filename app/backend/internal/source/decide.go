@@ -19,8 +19,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// Event kinds for searching (stage 3.1).
 const (
+	// Event kinds the search code writes to the event log.
 	EventReleaseChosen     = "release_chosen"
 	EventReleaseHeld       = "release_held"
 	EventSearchDone        = "search_done"
@@ -32,16 +32,23 @@ const (
 	EventFeedChecked       = "feed_checked"
 )
 
-// slotCtx is one Slot with everything judging it needs.
+// beforeSettle is a test hook called just before a Slot is settled, so a test can make a second pick race this one.
+var beforeSettle func(slotID int64)
+
+// pickStates are the Slot states a search may pick from. Anything else means another pick got there first.
+var pickStates = []domain.SlotState{domain.SlotSearching, domain.SlotWanted, domain.SlotBetterWanted, domain.SlotHeld}
+
+// slotCtx is a Slot with the Version, Item, Title and pick rules it is judged against, and the copy it holds now.
 type slotCtx struct {
 	sl  domain.Slot
 	ver domain.Version
 	it  domain.Item
 	ti  domain.Title
 	pr  domain.PickRules
-	cur *judge.Current // the File in place, when there is one
+	cur *judge.Current
 }
 
+// loadSlot reads one Slot with everything judging needs.
 func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) {
 	db := s.Store.Read()
 	var c slotCtx
@@ -60,11 +67,12 @@ func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) 
 	if err := database.Get(ctx, db, "pick_rules", c.ver.PickRulesID, &c.pr); err != nil {
 		return c, err
 	}
-	// The same reading of the copy in place as the searches (#43).
+
 	c.cur = currentOf(ctx, db, c.sl, c.pr)
 	return c, nil
 }
 
+// ref describes the Slot's Title for matching release names.
 func (c slotCtx) ref() judge.TitleRef {
 	ref := judge.TitleRef{ID: c.ti.ID, Name: c.ti.Name, Aliases: c.ti.Aliases}
 	if c.ti.Year != nil {
@@ -79,8 +87,7 @@ func (c slotCtx) ref() judge.TitleRef {
 	return ref
 }
 
-// dedupe keeps the first of Releases with the same info hash or name;
-// Sources come in priority order, so the better Source's copy stays.
+// dedupe drops repeats of one Release across Sources, matching on the lower-cased name or on the info hash.
 func dedupe(all []found) []found {
 	seen := map[string]bool{}
 	var out []found
@@ -104,9 +111,7 @@ func dedupe(all []found) []found {
 	return out
 }
 
-// judgeAll judges every Release for one Slot and ranks them. out says the
-// Release gate is open; hand says a person started a single-Item search;
-// skipGate says a bulk search may skip the gate (bulk_search_respects_gate off).
+// judgeAll judges and ranks every candidate for one Slot. out says the Slot's item is out, hand marks a person's search, and skipGate ignores the release gate.
 func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, hand, skipGate bool) ([]judge.Release, []judge.Verdict, error) {
 	bad := s.dangerousSeen(ctx)
 	turned, err := s.turnedDown(ctx, c.sl.ID)
@@ -137,20 +142,18 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	return rels, vs, nil
 }
 
-// overGrabLimit says whether a Source already gave its most picks in its
-// window (the picks-per-Source limit, counted by Downloads started from its
-// Releases).
+// overGrabLimit reports whether the Source has already given its picks for the current window, and says why in plain words. Picks not yet sent to a downloader count too, so a burst cannot pass the limit.
 func (s *Searcher) overGrabLimit(ctx context.Context, src domain.Source, now time.Time) (bool, string) {
 	l := src.Limits
 	if l.GrabsPerWindow <= 0 {
 		return false, ""
 	}
+	// A limit without a window counts a day.
 	window := time.Duration(l.WindowSeconds) * time.Second
 	if window <= 0 {
 		window = 24 * time.Hour
 	}
-	// Downloads started from its Releases, plus Releases chosen and not yet
-	// sent (a pick is a pick before the Downloader has it).
+
 	since := database.FormatTime(now.Add(-window))
 	var n int
 	err := s.Store.Read().QueryRowContext(ctx, `SELECT
@@ -163,8 +166,7 @@ func (s *Searcher) overGrabLimit(ctx context.Context, src domain.Source, now tim
 	return true, fmt.Sprintf("Source %s already gave %d picks in the last %s (its limit)", src.Name, n, window)
 }
 
-// pickWinner returns the index of the Release to choose or hold, skipping
-// Releases from a Source past its picks limit. -1 when none.
+// pickWinner returns the index of the best Release whose Source is within its limit, or -1. Releases ranked above it that were skipped for a limit are marked passed over, and the winner is marked chosen or held when it was not the top rank.
 func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []judge.Verdict, now time.Time) int {
 	order := make([]int, 0, len(vs))
 	for r := 1; ; r++ {
@@ -202,11 +204,7 @@ func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []judge.Verdi
 	return -1
 }
 
-// storeAll writes every Release with its verdict for one Slot, or updates
-// the stored row of a Release looked at again: its Slots are added to, its
-// verdict for this Slot is kept under by_slot, and a chosen Release stays
-// chosen. With show, nothing is chosen or held: the winner is kept as
-// judged so a person can choose.
+// storeAll saves every judged candidate in one write and returns the Release IDs in the same order. A candidate already stored is updated, never copied. A show Release held for a person to choose stays judged here, so each Slot keeps its own say.
 func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, foundBy string, slotID int64, all []found, rels []judge.Release,
 	vs []judge.Verdict, show bool) ([]int64, error) {
 	ids := make([]int64, len(all))
@@ -214,7 +212,8 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 		for i, f := range all {
 			v := vs[i]
 			state := v.Outcome
-			// A chosen winner stays judged until settleChosen wins the Slot.
+
+			// A chosen verdict is still only judged here. The Slot settles later and marks the Release chosen.
 			if state == "" || state == "chosen" || show && state == "held" {
 				state = "judged"
 			}
@@ -223,8 +222,7 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 				hold = nil
 			}
 			mine := map[string]any{"outcome": v.Outcome, "passed": v.Passed, "points": v.Points, "rank": v.Rank}
-			// The short verdict is kept for each Slot it was judged for (a
-			// season pack: every episode it fills).
+
 			bySlot := map[string]any{}
 			for _, id := range v.SlotIDs {
 				bySlot[strconv.FormatInt(id, 10)] = mine
@@ -273,31 +271,22 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 	return ids, err
 }
 
-// beforeSettle lets tests change a Slot between judging and settling.
-var beforeSettle func(slotID int64)
-
-// pickStates are the states a search or feed check may settle a pick from.
-var pickStates = []domain.SlotState{domain.SlotSearching, domain.SlotWanted, domain.SlotBetterWanted, domain.SlotHeld}
-
-// slotStateTx reads a Slot's state inside a write.
+// slotStateTx reads a Slot's state inside the caller's write.
 func slotStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
 	var from string
 	err := tx.QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&from)
 	return domain.SlotState(from), err
 }
 
-// busyErr says another pick got to the Slot first.
+// busyErr is the error for a Slot that is no longer in a state a pick can use.
 func busyErr(st domain.SlotState) error {
 	return fmt.Errorf("%w: it is %s", ErrBusy, strings.ReplaceAll(string(st), "_", " "))
 }
 
-// moveSlotTx moves a Slot, going through searching when there is no direct
-// arrow (model.md section 4: every pick passes through searching). A chosen
-// Slot stays chosen only for the same Release (releaseID already chosen).
+// moveSlotTx moves a Slot to a new state and records why. Choosing a Release whose send was abandoned is refused, and a move that skips the searching state goes through it first.
 func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by domain.Actor, releaseID int64) error {
 	if to == domain.SlotChosen {
-		// Abandonment is terminal for this Release in this Version. Refuse
-		// the choice before it can strand a Slot behind a stopped grab job.
+
 		var abandoned bool
 		if err := tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM downloader_attempts a
 			JOIN releases r ON r.id = a.release_id AND r.created_at = a.release_created_at
@@ -332,17 +321,14 @@ func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 		return err
 	}
 	if to == domain.SlotChosen {
-		// The Download reads which Release the Slot was chosen for.
+
 		_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", releaseID, slotID)
 		return err
 	}
 	return nil
 }
 
-// settleChosen makes a Release the Slot's pick in one write: the Release
-// is chosen, a Release held before is passed over, the Slot is chosen. The
-// Slot's state is read again inside the write; when another pick got there
-// first it returns ErrBusy and the Release is passed over.
+// settleChosen makes the Release the Slot's pick. It fails with ErrBusy when the Slot, its Title or its copy no longer allows it, and then the Release is marked passed over.
 func (s *Searcher) settleChosen(ctx context.Context, slotID, releaseID int64, name string, by domain.Actor) error {
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		from, err := choiceStateTx(tx, slotID)
@@ -366,8 +352,7 @@ func (s *Searcher) settleChosen(ctx context.Context, slotID, releaseID int64, na
 	return err
 }
 
-// settleHeld holds a Release for the Slot until its wait is over; ErrBusy
-// when the Slot is no longer looking.
+// settleHeld holds the Release for the Slot until the given time. It fails with ErrBusy when the Slot no longer allows it.
 func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name string, until time.Time, by domain.Actor) error {
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		from, err := choiceStateTx(tx, slotID)
@@ -394,8 +379,7 @@ func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name
 	return err
 }
 
-// lostRace marks a Release passed over when another pick settled its Slot
-// first.
+// lostRace marks a Release that lost its Slot to another pick as passed over, unless it is already settled.
 func (s *Searcher) lostRace(ctx context.Context, releaseID int64, by domain.Actor) {
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, updated_at = ?, updated_by = ?
@@ -404,8 +388,7 @@ func (s *Searcher) lostRace(ctx context.Context, releaseID int64, by domain.Acto
 	})
 }
 
-// passOverHeldTx marks the Slot's Held Release (other than keep) passed
-// over and clears the Slot's hold.
+// passOverHeldTx passes over the Slot's held Release unless it is the one to keep, and clears the hold.
 func passOverHeldTx(tx *sql.Tx, slotID, keep int64, by domain.Actor) error {
 	var held sql.NullInt64
 	if err := tx.QueryRow("SELECT held_release_id FROM slots WHERE id = ?", slotID).Scan(&held); err != nil {
@@ -421,7 +404,7 @@ func passOverHeldTx(tx *sql.Tx, slotID, keep int64, by domain.Actor) error {
 	return err
 }
 
-// restState is where a Slot goes back to when a search found nothing.
+// restState returns the state a Slot goes back to when it stays unsettled.
 func restState(c slotCtx, from domain.SlotState) domain.SlotState {
 	switch {
 	case from == domain.SlotNotOutYet:
@@ -432,6 +415,7 @@ func restState(c slotCtx, from domain.SlotState) domain.SlotState {
 	return domain.SlotWanted
 }
 
+// addEvent writes an event and publishes it. A failed write is not published.
 func (s *Searcher) addEvent(ctx context.Context, by domain.Actor, jobID *int64, titleID, slotID int64, kind, summary string, data map[string]any) {
 	e := &domain.Event{Actor: by, Kind: kind, JobID: jobID, Summary: summary, Data: data, GroupKey: fmt.Sprintf("slot:%d", slotID)}
 	if titleID > 0 {
@@ -445,6 +429,7 @@ func (s *Searcher) addEvent(ctx context.Context, by domain.Actor, jobID *int64, 
 	}
 }
 
+// nonNil turns a nil list into an empty one so it is stored as [] not null.
 func nonNil(ids []int64) []int64 {
 	if ids == nil {
 		return []int64{}
@@ -452,13 +437,16 @@ func nonNil(ids []int64) []int64 {
 	return ids
 }
 
+// jsonText encodes a value as JSON text for a SQL argument.
 func jsonText(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }
 
+// actorText encodes an actor as stored in updated_by.
 func actorText(a domain.Actor) string { return jsonText(a) }
 
+// timeOrNil formats a time for SQL, or returns nil for a missing one.
 func timeOrNil(t *time.Time) any {
 	if t == nil {
 		return nil

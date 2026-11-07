@@ -13,31 +13,28 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
-// KindSearchSeason is the Job kind that searches one season of a show for
-// one Version (stage 3.2.2).
+// KindSearchSeason is the job kind that searches one season of a show for one Version.
 const KindSearchSeason = "search_season"
 
-// Show search settings (group what_to_pick), each a decision in
-// decisions/log-autonomous.md.
 const (
-	SettingMissingShows = "missing_search_shows" // the nightly and bulk searches cover shows (default true)
-	SettingPackUpgrade  = "season_pack_upgrade"  // all (default): every episode a pack holds must gain; any: one is enough
-	SettingPackPrefer   = "season_pack_prefer"   // rank (default): a pack wins ties; always: a passing pack wins
-	SettingMultiSeason  = "multi_season_packs"   // a Release holding several seasons may be taken (default false)
+	// Show search settings.
+	SettingMissingShows = "missing_search_shows"
+	SettingPackUpgrade  = "season_pack_upgrade"
+	SettingPackPrefer   = "season_pack_prefer"
+	SettingMultiSeason  = "multi_season_packs"
 )
 
+// showRules are the season pack settings read once per search.
 type showRules struct {
 	packAny     bool
 	packsFirst  bool
@@ -55,28 +52,32 @@ func (s *Searcher) showRules(ctx context.Context) showRules {
 
 // epSlot is one episode of a show with its Slot in one Version.
 type epSlot struct {
-	ref     judge.EpisodeRef
-	it      domain.Item
-	sl      *domain.Slot // nil when the episode has no Slot in this Version
-	cur     *judge.Current
-	kept    bool // the episode, its season, the Version and the show are kept up to date
-	soon    bool // aired, or airs within a day (season packs may be taken then)
+	ref judge.EpisodeRef
+	it  domain.Item
+	// sl is nil when the episode has no Slot in this Version.
+	sl  *domain.Slot
+	cur *judge.Current
+	// kept means the episode, its season, the Version and the show are all kept up to date.
+	kept bool
+	// soon means aired, or airing within a day, when season packs may be taken.
+	soon    bool
 	runtime int
 }
 
-// showSet is a show search: the show's episodes in one Version and the
-// Slots asked for.
+// showSet is a show search: the show's episodes in one Version and the Slots asked for.
 type showSet struct {
 	ti     domain.Title
 	ver    domain.Version
 	pr     domain.PickRules
 	eps    []epSlot
-	target map[int64]bool // Slot ids searched for
-	notOut map[int64]bool // target Slots that were not out yet (a hand search skips the gate)
-	single bool           // an episode search: season packs are refused
+	target map[int64]bool
+	// notOut holds target Slots that were not out yet; a hand search skips that gate.
+	notOut map[int64]bool
+	// single is an episode search, where season packs are refused.
+	single bool
 }
 
-// EpisodeLabel names an episode Item: "S01E02", or its air day for a daily show.
+// EpisodeLabel names an episode item: S01E02, or its air day for a daily show.
 func EpisodeLabel(it domain.Item) string {
 	s, e := 0, 0
 	if it.Numbers.Season != nil {
@@ -88,8 +89,8 @@ func EpisodeLabel(it domain.Item) string {
 	return fmt.Sprintf("S%02dE%02d", s, e)
 }
 
-// currentOf describes the File a Slot holds, for the "better than what we
-// have" step; nil when it holds none.
+// currentOf describes the file a Slot holds for the better-than-what-we-have
+// step, or nil when it holds none.
 func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRules) *judge.Current {
 	if sl.FileID == nil {
 		return nil
@@ -105,9 +106,6 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 	if cur := judge.CurrentOf(name, f.AddedAt, pr.Body); cur.Step != "" {
 		return &cur
 	}
-	// A track whose stored name has no format word: its own extension, or
-	// for .m4a and .mka its codec, says what it is (#43: a lossless copy is
-	// protected however it was named).
 	if domain.IsMusicRules(pr.Body) {
 		if word := trackFormat(ctx, db, f); word != "" {
 			if cur := judge.CurrentOf(name+" ["+word+"]", f.AddedAt, pr.Body); cur.Step != "" {
@@ -118,8 +116,9 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 	return nil
 }
 
-// trackFormat is the format word of a track File: its extension, or for a
-// file that may hold either kind the codec read from it in its Library folder.
+// trackFormat is the format word of a track file: its extension, or for a file
+// that may hold either kind the codec read from its library folder. A lossless
+// copy must stay protected however it was named.
 func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 	ext := strings.ToLower(path.Ext(f.RelativePath))
 	switch ext {
@@ -135,7 +134,7 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 			return ""
 		}
 		if l, known := info.Lossless(); known && l {
-			return "LOSSLESS" // a word every lossless codec reads as
+			return "LOSSLESS"
 		}
 		return info.AudioWord()
 	case ".tak":
@@ -212,7 +211,7 @@ func (set showSet) ref() judge.TitleRef {
 	return r
 }
 
-// labels names each episode Slot (S01E02).
+// labels names each episode Slot, like S01E02.
 func (set showSet) labels() map[int64]string {
 	out := map[int64]string{}
 	for _, e := range set.eps {
@@ -230,7 +229,7 @@ func (set showSet) order() string {
 	return "aired"
 }
 
-// coverLabel names the episodes a Release holds in a few words.
+// coverLabel names the episodes a release holds in a few words.
 func coverLabel(eps []*epSlot) string {
 	if len(eps) == 0 {
 		return "no episode"
@@ -254,7 +253,7 @@ func coverLabel(eps []*epSlot) string {
 
 var lookingNow = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted}
 
-// judgeShow judges every Release for a show search and ranks them.
+// judgeShow judges every release for a show search and ranks them.
 func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand, skipGate bool, rules showRules) ([]judge.Release, []judge.Verdict, error) {
 	bad := s.dangerousSeen(ctx)
 	refs := make([]judge.EpisodeRef, len(set.eps))
@@ -299,8 +298,8 @@ func matchFail(rule, detail string) judge.Reason {
 	return judge.Reason{Step: "match", Rule: rule, Effect: "fail", Detail: detail}
 }
 
-// lines works out which episodes and Slots a show Release covers and the
-// season pack rules (decisions/log-autonomous.md, 3.2.2).
+// lines works out which episodes and Slots a show release covers and applies
+// the season pack rules.
 func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.EpisodeRef, byItem map[int64]*epSlot, rules showRules,
 	turnedFor func(int64) []string) {
 	p := rel.Parse
@@ -336,17 +335,16 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 		runtime += e.runtime
 	}
 	ss.RuntimeMinutes = runtime
+	// No length known: count the episodes instead.
 	if runtime == 0 {
-		ss.FloorEpisodes = len(covered) // no length known: the default each
+		ss.FloorEpisodes = len(covered)
 	}
-	// The Release cannot be older than the last episode it holds.
 	for _, e := range covered {
 		if a := e.it.AirDate; a != nil && (ss.OutSince == nil || a.After(*ss.OutSince)) {
 			ss.OutSince = a
 		}
 	}
 
-	// One episode: judged like a movie against its own Slot.
 	if len(covered) == 1 {
 		e := covered[0]
 		ss.SlotIDs = []int64{e.sl.ID}
@@ -361,8 +359,6 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 		return
 	}
 
-	// Several episodes: every episode it holds that is kept up to date must
-	// be out (season packs) and, unless the setting says any, must gain.
 	if pack {
 		for _, e := range covered {
 			if e.kept && !e.soon {
@@ -427,15 +423,15 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 	}
 }
 
-// showPick is one Release chosen or held for some Slots of a show search.
+// showPick is one release chosen or held for some Slots of a show search.
 type showPick struct {
 	idx   int
 	slots []int64
 	held  bool
 }
 
-// pickShow takes the passing Releases best first; one that holds an
-// episode already taken in this pass is skipped (one pick per Slot).
+// pickShow takes the passing releases best first. A release holding an episode
+// already taken in this pass is skipped, so each Slot gets one pick.
 func (s *Searcher) pickShow(ctx context.Context, all []found, vs []judge.Verdict, now time.Time) []showPick {
 	order := []int{}
 	for i := range vs {
@@ -472,9 +468,9 @@ func (s *Searcher) pickShow(ctx context.Context, all []found, vs []judge.Verdict
 	return out
 }
 
-// settlePicks settles show picks: each Release is chosen (or held) for all
-// its Slots in one write. It returns how many were chosen and held, and
-// the Slots they took.
+// settlePicks settles show picks, choosing or holding each release for all its
+// Slots in one write. It returns how many were chosen and held, and the Slots
+// they took.
 func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int64, titleID int64, labels map[int64]string, all []found, vs []judge.Verdict, ids []int64,
 	picks []showPick, how string) (int, int, map[int64]bool) {
 	chosen, held := 0, 0
@@ -519,10 +515,10 @@ func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int6
 	return chosen, held, took
 }
 
-// settleChosenMany makes a Release the pick of several Slots in one write
-// (a season pack or a multi-episode Release: one Release, one Download,
-// many Slots). Every Slot is read again inside the write; when one is no
-// longer looking it returns ErrBusy and nothing changes.
+// settleChosenMany makes a release the pick of several Slots in one write, as
+// for a season pack: one release, one Download, many Slots. Every Slot is read
+// again inside the write, and when one is no longer looking it returns ErrBusy
+// and nothing changes.
 func (s *Searcher) settleChosenMany(ctx context.Context, slotIDs []int64, releaseID int64, name string, by domain.Actor) error {
 	if len(slotIDs) == 0 {
 		return errors.New("no Slot to choose the Release for")
@@ -556,7 +552,7 @@ func (s *Searcher) settleChosenMany(ctx context.Context, slotIDs []int64, releas
 	return err
 }
 
-// settleHeldMany holds a Release for several Slots until its wait is over.
+// settleHeldMany holds a release for several Slots until its wait is over.
 func (s *Searcher) settleHeldMany(ctx context.Context, slotIDs []int64, releaseID int64, name string, until time.Time, by domain.Actor) error {
 	if len(slotIDs) == 1 {
 		return s.settleHeld(ctx, slotIDs[0], releaseID, name, until, by)
@@ -590,10 +586,10 @@ func (s *Searcher) settleHeldMany(ctx context.Context, slotIDs []int64, releaseI
 	return err
 }
 
-// pickReleaseTx marks a Release chosen or held for its Slots; the Slots it
-// fills are added to verdict.pick_slot_ids, which the Download reads (the
-// Slots of another Version picked for the same Release stay listed; the
-// Download keeps to one Version and to Slots still chosen for it).
+// pickReleaseTx marks a release chosen or held for its Slots. The Slots it
+// fills are added to the verdict's pick_slot_ids, which the Download reads;
+// Slots of another Version picked for the same release stay listed, and the
+// Download keeps to one Version and the Slots still chosen for it.
 func pickReleaseTx(tx *sql.Tx, releaseID int64, state string, until *time.Time, slotIDs []int64, by domain.Actor) error {
 	_, err := tx.Exec(`UPDATE releases SET state = ?, hold_until = ?,
 		verdict = json_set(COALESCE(verdict, '{}'), '$.pick_slot_ids', (SELECT json_group_array(value) FROM (
@@ -604,8 +600,8 @@ func pickReleaseTx(tx *sql.Tx, releaseID int64, state string, until *time.Time, 
 	return err
 }
 
-// PickSlots lists the Slots a Release was chosen or held for when it fills
-// more than one (verdict.pick_slot_ids); nil otherwise.
+// PickSlots lists the Slots a release was chosen or held for when it fills
+// more than one, or nil otherwise.
 func PickSlots(rel domain.Release) []int64 {
 	xs, _ := rel.Verdict["pick_slot_ids"].([]any)
 	if len(xs) < 2 {
@@ -620,8 +616,8 @@ func PickSlots(rel domain.Release) []int64 {
 	return out
 }
 
-// showQuery is the search for one episode (daily: its air day; absolute:
-// its running number) or, with ep nil, one season.
+// showQuery is the search for one episode (daily: its air day; absolute: its
+// running number) or, with ep nil, one season.
 func showQuery(ti domain.Title, season int, ep *epSlot) Query {
 	q := Query{Title: ti.Name, TV: true, Season: season}
 	q.TVDB, _ = strconv.Atoi(ti.SourceIDs["tvdb"])
@@ -647,7 +643,7 @@ func showQuery(ti domain.Title, season int, ep *epSlot) Query {
 	return q
 }
 
-// handlesTV says a Source is set up for shows (no kinds means every kind).
+// handlesTV says whether a Source is set up for shows; no kinds means every kind.
 func handlesTV(src domain.Source) bool {
 	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "tv")
 }
@@ -662,10 +658,10 @@ func tvCategories(src domain.Source) []int {
 
 // HandleSeason searches one season of a show for one Version.
 //
-// When every episode of the season that is kept up to date has aired and
-// is missing, the season is searched as a whole, so a season pack can fill
-// every Slot with one Download; episodes nothing covered are then searched
-// one by one. Otherwise each looking episode gets its own search.
+// When every kept episode of the season has aired and is missing, the season
+// is searched as a whole so a season pack can fill every Slot with one
+// Download, and episodes nothing covered are then searched one by one.
+// Otherwise each looking episode gets its own search.
 //
 // Params: version_id (required), by_hand, choose (false only judges and
 // stores, for a person to choose from), skip_gate, bulk.
@@ -691,8 +687,8 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	}
 	hand, _ := r.Job.Params["by_hand"].(bool)
 	skipGate, _ := r.Job.Params["skip_gate"].(bool)
-	// kept_only: a person searched the whole show, so only episodes kept up
-	// to date count (a season or episode searched by hand counts them all).
+	// kept_only means a person searched the whole show, so only kept episodes
+	// count. A season or episode searched by hand counts them all.
 	keptOnly, _ := r.Job.Params["kept_only"].(bool)
 	anyEp := hand && !keptOnly
 	show := false
@@ -724,8 +720,6 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		if ok && (e.kept || anyEp || show) {
 			looking = append(looking, e)
 		}
-		// A season is wholly missing when every kept episode has aired and
-		// has no copy: wanted, or back from a failed or refused download.
 		missing := e.sl.State == domain.SlotWanted || e.cur == nil && (e.sl.State == domain.SlotFailed || e.sl.State == domain.SlotRejected)
 		if e.kept && (!missing || !e.soon) {
 			whole = false
@@ -746,9 +740,9 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	// rest puts the Slots still searching back to looking. It also runs
-	// when the search is cut off (a stop or an error), so none is left
-	// searching; a stop has ended ctx, so it writes without it.
+	// rest puts the Slots still searching back to looking. It also runs when the
+	// search is cut off by a stop or an error, so none is left searching; a stop
+	// has ended ctx, so it writes without it.
 	rest := func(reason string) {
 		if show {
 			return
@@ -850,7 +844,6 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 	result["chosen"], result["held"] = chosen, held
-	// Episodes nothing covered: back to looking, then searched one by one.
 	var left []*epSlot
 	for _, e := range looking {
 		if set.target[e.sl.ID] && !took[e.sl.ID] {
@@ -885,8 +878,6 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 		return 0, errors.New("searching episodes needs the job queue")
 	}
 	n := 0
-	// Spread out like the missing search, so a season's worth of episode
-	// searches does not ask the Sources all at once.
 	start := time.Now().UTC()
 	for _, e := range eps {
 		params := map[string]any{}
@@ -909,9 +900,9 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 	return n, nil
 }
 
-// askAll asks every Source used for this kind of search; tv picks the
-// Sources and categories for shows. A Source with tags is asked only for a
-// title that shares one of them (#108); titleTags are the title's.
+// askAll asks every Source used for this kind of search; tv picks the Sources
+// and categories for shows. A Source with tags is asked only for a title that
+// shares one of them.
 func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags []string) ([]found, []string, int, []skippedSource, error) {
 	now := time.Now().UTC()
 	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
@@ -985,11 +976,13 @@ type skippedSource struct {
 	Why  string `json:"why"`
 }
 
-// failWhy names the kind of a Source failure, in the pause reason words.
+// failWhy names the kind of a Source failure in the pause reason words.
 func failWhy(err error) string {
 	var se *Error
+	// A site's bot check or ban.
+	//
 	if errors.As(err, &se) && se.Detail != "" {
-		return se.Detail // a site's bot check or ban (#106)
+		return se.Detail
 	}
 	if errors.As(err, &se) && se.Kind != "" {
 		return se.Kind
@@ -997,10 +990,10 @@ func failWhy(err error) string {
 	return KindDown
 }
 
-// noAnswer is the search_failed summary and data when no Source answered:
-// some failed, or every one was paused. ok is false when a Source answered
-// or none was tried at all. failed is false when every Source was only
-// paused: the search is written down but is not a failed job.
+// noAnswer is the search_failed summary and data when no Source answered. ok
+// is false when a Source answered or none was tried. failed is false when
+// every Source was only paused: the search is written down but is not a
+// failed job.
 func noAnswer(failures []string, answered int, skipped []skippedSource) (reason string, data map[string]any, ok, failed bool) {
 	if answered > 0 || len(skipped) == 0 {
 		return "", nil, false, false
@@ -1014,13 +1007,12 @@ func noAnswer(failures []string, answered int, skipped []skippedSource) (reason 
 		}
 	}
 	if tagsOnly {
-		// Every Source has tags this title lacks (#108): searching again changes nothing.
 		return "no Source takes this title's tags: " + strings.Join(failures, "; "), map[string]any{"sources": skipped}, true, false
 	}
 	return "no Source answered: " + strings.Join(failures, "; "), map[string]any{"sources": skipped}, true, failed
 }
 
-// tagsWhy starts the reason a tagged Source was not asked (#108).
+// tagsWhy starts the reason a tagged Source was not asked.
 const tagsWhy = "its tags ("
 
 // pauseWords says why a Source is paused in plain words.
@@ -1066,8 +1058,8 @@ func (s *Searcher) episodeSet(ctx context.Context, c slotCtx, out bool) (showSet
 	return set, nil, fmt.Errorf("episode Slot %d is not in its show", c.sl.ID)
 }
 
-// feedShow judges a feed check's Releases for one show, per Version: each
-// Release is matched to the episodes it holds and chosen (or held) for every
+// feedShow judges a feed check's releases for one show, per Version. Each
+// release is matched to the episodes it holds and chosen or held for every
 // looking Slot it fills, best first. It returns how many were chosen, held
 // and newly stored.
 func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, cs []slotCtx, fs []found, storedID map[string]int64,
@@ -1098,7 +1090,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 		cands := append([]found(nil), fs...)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
-				continue // feed checks look only for episodes kept up to date
+				continue
 			}
 			set.target[c.sl.ID] = true
 			if c.sl.State == domain.SlotHeld && c.sl.HeldReleaseID != nil {
@@ -1141,7 +1133,6 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 				stored++
 			}
 		}
-		// A Release already held for all its Slots stays held as it is.
 		keep := picks[:0]
 		for _, pk := range picks {
 			same := pk.held

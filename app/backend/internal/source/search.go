@@ -14,35 +14,34 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// KindSearchSlot is the Job kind that searches every enabled Source for one Slot.
+// KindSearchSlot is the job kind that searches every enabled Source for one Slot.
 const KindSearchSlot = "search_slot"
 
-// Publisher sends live events (live.Hub fits).
+// Publisher sends live events.
 type Publisher interface {
 	Publish(topic string, data any) uint64
 }
 
-// Searcher runs search_slot Jobs.
+// Searcher runs the search jobs.
 type Searcher struct {
 	Store *database.Store
-	Live  Publisher // may be nil
-	// OnChosen is told when a Release is chosen for a Slot (to send it to a Downloader).
+	Live  Publisher
+	// OnChosen is told when a release is chosen for a Slot, to send it to a Downloader.
 	OnChosen func(ctx context.Context, slotID, releaseID int64)
-	// Secrets opens a Source's secret_ref (its API key). Nil means no keys.
+	// Secrets opens a Source's secret_ref, its API key. Nil means no keys.
 	Secrets SecretReader
 	// Queue takes the searches a missing search queues.
 	Queue *jobs.Queue
 
 	mu         sync.Mutex
 	clients    map[int64]*Client
-	onAsk      func(name string) // tests: told before each Source is asked
+	onAsk      func(name string)
 	quietMu    sync.Mutex
 	quietCalls map[int64]*quietSourceCalls
 }
@@ -58,8 +57,8 @@ type SecretReader interface {
 	Get(ctx context.Context, id int64) (string, error)
 }
 
-// client keeps one Client per Source so its limits hold across Jobs.
-// A Source whose settings, key or proxy changed gets a new Client.
+// client keeps one Client per Source so its limits hold across jobs. A Source
+// whose settings, key or proxy changed gets a new Client.
 func (s *Searcher) client(ctx context.Context, src domain.Source) (*Client, error) {
 	cfg, err := ConfigFor(ctx, src, s.Secrets)
 	if err != nil {
@@ -94,15 +93,14 @@ func sameConfig(a, b Config) bool {
 		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal
 }
 
-// hidden marks where a Source key was taken out of a stored link. The
-// number says which key value, the letter which spelling (r as it is, q
-// query-escaped, p path-escaped).
+// hidden marks where a Source key was taken out of a stored link. The number
+// says which key value and the letter which spelling: r as it is, q
+// query-escaped, p path-escaped.
 const hidden = "HOLYARRSKEY"
 
-// secretValues lists the key values a result link may carry: a
-// Torznab/Newznab apikey, or the values in an rss Source's key (its
-// address's query, where feeds keep their passkey), then the passkeys
-// its address path holds.
+// secretValues lists the key values a result link may carry: a Torznab or
+// Newznab apikey, or the values in an rss Source's key, then the passkeys its
+// URL path holds.
 func secretValues(cfg Config) []string {
 	if cfg.APIKey == "" && len(cfg.PathKeys) == 0 {
 		return nil
@@ -113,7 +111,6 @@ func secretValues(cfg Config) []string {
 			out = append(out, cfg.APIKey)
 		}
 	} else {
-		// Feeds separate values with & or ; (u=1;tp=PASSKEY).
 		for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
 			_, v, _ := strings.Cut(part, "=")
 			if u, err := url.QueryUnescape(v); err == nil {
@@ -124,7 +121,7 @@ func secretValues(cfg Config) []string {
 			}
 		}
 	}
-	// Path passkeys come after, so markers stored before keep their number.
+	// Path passkeys come after the others, so stored markers keep their number.
 	for _, v := range cfg.PathKeys {
 		if len(v) >= 4 && !slices.Contains(out, v) {
 			out = append(out, v)
@@ -151,12 +148,10 @@ func spellings(keys []string) []spelling {
 	return out
 }
 
-// cleanLink takes the Source's key values out of a result link (in the
-// query or the path), so a stored Release never holds the Source secret;
-// GrabLink puts them back. Another apikey parameter is dropped.
+// cleanLink takes the Source's key values out of a result link, in the query
+// or the path, so a stored release never holds the secret. Another apikey
+// parameter is dropped.
 func cleanLink(link string, keys []string) string {
-	// A marker already in the feed's link was planted by someone else;
-	// break it so GrabLink never fills the Source key into it.
 	link = hideKeys(strings.ReplaceAll(link, hidden, "HOLYARRS-KEY"), keys)
 	u, err := url.Parse(link)
 	if err != nil {
@@ -171,7 +166,7 @@ func cleanLink(link string, keys []string) string {
 	return u.String()
 }
 
-// hideKeys swaps the key values in a link for their markers, keeping the
+// hideKeys swaps the key values in a link for their markers and keeps the
 // markers it already holds.
 func hideKeys(link string, keys []string) string {
 	for _, sp := range spellings(keys) {
@@ -197,7 +192,7 @@ func revealLink(link string, keys []string) (string, error) {
 	return link, nil
 }
 
-// GrabLink is the link to hand a Downloader for a Release: the stored link
+// GrabLink is the link to hand a Downloader for a release: the stored link
 // with the Source's key, read from the vault, put back.
 func GrabLink(ctx context.Context, s *database.Store, sec SecretReader, rel domain.Release) (string, error) {
 	if !strings.Contains(rel.LinkRef, hidden) {
@@ -222,22 +217,20 @@ func toMap(v any) map[string]any {
 }
 
 type found struct {
-	src  domain.Source
-	item Item
-	keys []string // the Source's key values, kept out of stored links
-	// relID is the stored Release when one is looked at again (a Held
-	// Release during a feed check); it is updated, not stored twice.
+	src   domain.Source
+	item  Item
+	keys  []string
 	relID int64
 }
 
-// Handle searches every enabled Source for the Job's Slot, judges each
-// Release with the Version's Pick rules, stores them with their verdicts and
+// Handle searches every enabled Source for the job's Slot, judges each
+// release with the Version's pick rules, stores them with their verdicts and
 // moves the Slot to chosen, held or back to where it was.
 //
-// Params: by_hand (a person searched this one Item: the protocol wait and,
-// with a warning, the Release gate are skipped), choose (default true;
-// false only judges and stores, for a person to choose from), skip_gate
-// (a bulk search when the gate setting is off).
+// Params: by_hand (a person asked: the protocol wait is skipped, and the
+// release gate with a warning), choose (default true; false only judges and
+// stores, for a person to choose from), skip_gate (a bulk search while the
+// gate setting is off).
 func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "slot" {
 		return errors.New("search_slot needs a slot subject")
@@ -248,8 +241,8 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
+	// An artist is searched through its albums.
 	if c.ti.Kind == "artist" {
-		// A track is searched as its album.
 		return s.queueAlbumFor(ctx, r, c)
 	}
 	handSearch, _ := r.Job.Params["by_hand"].(bool)
@@ -261,15 +254,14 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	from := c.sl.State
 	switch {
 	case show:
-		// Showing only: any Slot may be looked at; it does not move.
 	case from == domain.SlotNotOutYet && (handSearch || skipGate),
 		from == domain.SlotWanted, from == domain.SlotBetterWanted, from == domain.SlotStalled, from == domain.SlotFailed, from == domain.SlotRejected:
 		if err := store.MoveSlot(ctx, s.Store, slotID, domain.SlotSearching, "searching", by); err != nil {
 			return err
 		}
 		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotSearching})
+	// A person chose to search again from a decision they had to make.
 	case from == domain.SlotNeedsADecision && handSearch:
-		// A person chose "search again" on Needs a decision (stage 4.1.2).
 		if err := store.MoveSlot(ctx, s.Store, slotID, domain.SlotSearching, "searching again by hand", by); err != nil {
 			return err
 		}
@@ -281,8 +273,6 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	}
 
 	if !show {
-		// A search cut off (a stop or an error) puts the Slot back, so it
-		// is not left searching; a stop has ended ctx, so this writes without it.
 		defer func() {
 			ctx := context.WithoutCancel(ctx)
 			if s.slotState(ctx, slotID) != domain.SlotSearching {
@@ -347,8 +337,6 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if !show {
 		winner = s.pickWinner(ctx, all, vs, now)
 	}
-	// A Release that fills more Slots (a multi-episode Release) is chosen
-	// for all of them.
 	pickSlots := []int64{slotID}
 	if winner >= 0 && len(vs[winner].SlotIDs) > 1 {
 		pickSlots = vs[winner].SlotIDs
@@ -415,16 +403,12 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		reason := fmt.Sprintf("no Release passed the Pick rules (%d found, %d refused)", len(all), refused)
 		if from != domain.SlotHeld {
 			to := restState(c, from)
+			// A failed download with no other release and no copy in place goes to a person. With a copy it keeps looking for a better one.
 			if from == domain.SlotFailed && c.cur == nil {
-				// Its download failed and nothing else is left: a person
-				// decides (stage 4.0.3). With a copy in place it keeps
-				// looking for a better one instead.
 				to = domain.SlotNeedsADecision
 				reason = "the download failed and no other Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if from == domain.SlotNeedsADecision {
-				// "Search again" from Needs a decision found nothing: it
-				// stays there for the person (stage 4.1.2).
 				to = domain.SlotNeedsADecision
 				reason = "searched again and no Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
@@ -464,9 +448,9 @@ func (s *Searcher) turnedDown(ctx context.Context, slotID int64) ([]string, erro
 	return out, rows.Err()
 }
 
-// pause puts a failing Source on a back-off pause (model.md section 2.9).
-// Only the health columns change, read fresh in the same write, so a key or
-// proxy changed meanwhile stays, and a Source the person turned off stays off.
+// pause puts a failing Source on a back-off pause. Only the health columns
+// change, read fresh in the same write, so a key or proxy edited meanwhile
+// stays and a Source the person turned off stays off.
 func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 	kind, detail := KindDown, ""
 	var wait time.Duration
@@ -481,13 +465,12 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 		var failures sql.NullString
 		err := tx.QueryRowContext(ctx, `SELECT json_extract(extra, '$.failures') FROM sources WHERE id = ? AND state != 'disabled'`, src.ID).Scan(&failures)
 		if err != nil {
-			return err // gone or turned off
+			return err
 		}
 		n, _ = strconv.Atoi(failures.String)
 		n++
 		until = time.Now().UTC().Add(max(wait, Backoff(n)))
 		now := time.Now().UTC()
-		// The kind of block (#106) is kept beside the failure count, and cleared by any other failure.
 		res, err := tx.ExecContext(ctx, `UPDATE sources SET state = 'paused', pause_reason = ?, paused_until = ?,
 			extra = CASE WHEN ? = '' THEN json_remove(json_set(extra, '$.failures', ?), '$.block') ELSE json_set(extra, '$.failures', ?, '$.block', ?) END,
 			updated_at = ?, updated_by = ? WHERE id = ? AND state != 'disabled'`,
@@ -522,7 +505,7 @@ func (s *Searcher) recovered(ctx context.Context, src domain.Source) {
 	var need bool
 	if err := s.Store.Read().QueryRowContext(ctx, `SELECT state = 'paused' OR json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL FROM sources WHERE id = ?`,
 		src.ID).Scan(&need); err != nil || !need {
-		return // read fresh: the copy may be older than a pause from another search
+		return
 	}
 	now := database.FormatTime(time.Now().UTC())
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -542,7 +525,7 @@ func systemActor() string {
 }
 
 // SweepSearching puts Slots left searching longer than olderThan back to
-// looking (a search cut off by a crash). It runs at start, before any Job.
+// looking, after a crash cut a search off. It runs at start, before any job.
 func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) (int, error) {
 	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots", "state = 'searching' AND updated_at < ?",
 		database.FormatTime(time.Now().Add(-olderThan)))

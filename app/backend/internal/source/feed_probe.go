@@ -17,9 +17,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
+// feedProbeTimeout bounds one whole probe so a slow Source cannot stall the scheduler.
 const feedProbeTimeout = 45 * time.Second
+
+// feedProbeParallel is how many Sources the probe reads at once.
 const feedProbeParallel = 8
 
+// feedProbeAnswer is what one Source returned during a probe.
 type feedProbeAnswer struct {
 	src        domain.Source
 	items      []Item
@@ -32,6 +36,7 @@ type feedProbeAnswer struct {
 	err        error
 }
 
+// feedPrepared carries the probe answers to the feed check, so the check does not read the Sources a second time.
 type feedPrepared struct {
 	answers     []feedProbeAnswer
 	fingerprint [sha256.Size]byte
@@ -39,17 +44,7 @@ type feedPrepared struct {
 	musicWanted bool
 }
 
-func feedSourceFingerprint(srcs []domain.Source) [sha256.Size]byte {
-	// The digest binds prepared answers to the complete stored Source
-	// revisions without retaining a decrypted key in the Job or logs.
-	b, _ := json.Marshal(srcs)
-	return sha256.Sum256(b)
-}
-
-// ProbeFeed reads feeds and reports whether the durable feed Job has a
-// meaningful change to persist. It shares each Source client's request
-// spacing, but does not record call health, change Source state, add Events,
-// or advance a cursor. Any uncertainty asks the durable Job to run.
+// ProbeFeed reports whether a feed check would change anything. It reads the feeds once and, when work is found, hands the answers on as the prepared value. When nothing matches, the quiet calls are only remembered.
 func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, error) {
 	if due, _, err := s.ProbeGrabHeld(ctx, now); err != nil || due {
 		return true, nil, err
@@ -70,6 +65,7 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 		musicWanted = musicWanted || ref.Kind == "artist"
 	}
 
+	// A failed read, a recovering Source or a changed Source list all count as work, so the real check can record them.
 	probeCtx, cancel := context.WithTimeout(ctx, feedProbeTimeout)
 	defer cancel()
 	answers := make([]feedProbeAnswer, len(srcs))
@@ -167,4 +163,11 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 		}
 	}
 	return false, nil, nil
+}
+
+// feedSourceFingerprint hashes the Source list so the feed check can tell the probe answers are still for the same Sources.
+func feedSourceFingerprint(srcs []domain.Source) [sha256.Size]byte {
+
+	b, _ := json.Marshal(srcs)
+	return sha256.Sum256(b)
 }

@@ -38,7 +38,7 @@ type fixture struct {
 
 func ptr[T any](v T) *T { return &v }
 
-// seed adds a movie Title with one Item, Version and wanted Slot, and one Source.
+// seed adds a movie title with one item, Version and wanted Slot, and one Source.
 func seed(t *testing.T, srcURL string) fixture {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
@@ -142,7 +142,7 @@ func feedServer(t *testing.T, body string) string {
 	return srv.URL + "/api"
 }
 
-func TestSearchJobChoosesWinner(t *testing.T) {
+func TestHandle_ChoosesWinner(t *testing.T) {
 	f := seed(t, feedServer(t, duneFeed))
 	p := &pubs{}
 	var chosen []int64
@@ -199,7 +199,7 @@ func TestSearchJobChoosesWinner(t *testing.T) {
 	}
 }
 
-func TestSearchJobNothingPasses(t *testing.T) {
+func TestHandle_NothingPasses(t *testing.T) {
 	f := seed(t, feedServer(t, `<rss><channel></channel></rss>`))
 	j := runSearch(t, f, &Searcher{Store: f.s})
 	if j.State != "done" {
@@ -212,7 +212,7 @@ func TestSearchJobNothingPasses(t *testing.T) {
 	}
 }
 
-func TestSearchJobPausesFailingSource(t *testing.T) {
+func TestHandle_PausesFailingSource(t *testing.T) {
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusServiceUnavailable) })
 	f := seed(t, srv.URL)
 	j := runSearch(t, f, &Searcher{Store: f.s})
@@ -234,14 +234,14 @@ func TestSearchJobPausesFailingSource(t *testing.T) {
 	}
 }
 
-func TestCleanLinkDropsKey(t *testing.T) {
+func TestCleanLink_DropsKey(t *testing.T) {
 	got := cleanLink("http://src/dl?id=5&apikey=s3cret&x=1", nil)
 	if strings.Contains(got, "s3cret") || !strings.Contains(got, "id=5") {
 		t.Fatalf("got %q", got)
 	}
 }
 
-func TestRSSPasskeyHiddenInLinksAndBroughtBack(t *testing.T) {
+func TestGrabLink_RSSPasskeyHiddenAndRestored(t *testing.T) {
 	cfg := Config{Format: "rss"}
 	cfg.APIKey = "pass" + "key=Abc%2Fdef123&uid=5"
 	keys := secretValues(cfg)
@@ -254,13 +254,12 @@ func TestRSSPasskeyHiddenInLinksAndBroughtBack(t *testing.T) {
 	if err != nil || back != link {
 		t.Fatalf("back %q %v", back, err)
 	}
-	// The key changed since: the link cannot be made whole.
 	if _, err := revealLink(got, nil); err == nil {
 		t.Fatal("a hidden link without its key should fail")
 	}
 }
 
-func TestSearchNeverStoresTheKeyAndGrabGetsItBack(t *testing.T) {
+func TestHandle_NeverStoresKeyAndGrabRestoresIt(t *testing.T) {
 	key := "pk-" + "Zz9secret77"
 	feed := strings.Replace(duneFeed, "http://src/dune.torrent", "http://src/dl/"+key+"/dune.torrent?passkey="+key+"&amp;apikey="+key, 1)
 	f := seed(t, feedServer(t, feed))
@@ -303,7 +302,7 @@ type fakeSecrets map[int64]string
 
 func (f fakeSecrets) Get(_ context.Context, id int64) (string, error) { return f[id], nil }
 
-func TestClientUsesSecretKey(t *testing.T) {
+func TestClient_UsesSecretKey(t *testing.T) {
 	sr := &Searcher{Secrets: fakeSecrets{7: "key-from-vault"}}
 	ref := int64(7)
 	c, err := sr.client(context.Background(), domain.Source{Meta: domain.Meta{ID: 1}, URL: "http://x/api", SecretRef: &ref})

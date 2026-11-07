@@ -9,7 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestQuietFeedHealthMergesWithoutWrites(t *testing.T) {
+// TestQuietFeedHealth_MergesWithoutWrites checks that quiet feed checks show in stats without any database write.
+func TestQuietFeedHealth_MergesWithoutWrites(t *testing.T) {
 	f := seed(t, "http://example.invalid")
 	s := &Searcher{Store: f.s}
 	ctx := context.Background()
@@ -54,7 +55,8 @@ func TestQuietFeedHealthMergesWithoutWrites(t *testing.T) {
 	}
 }
 
-func TestQuietFeedHealthBoundsAndExpires(t *testing.T) {
+// TestQuietFeedHealth_BoundsAndExpires checks that quiet data stays bounded and expires with the kept record.
+func TestQuietFeedHealth_BoundsAndExpires(t *testing.T) {
 	f := seed(t, "http://example.invalid")
 	s := &Searcher{Store: f.s}
 	now := time.Now().UTC().Truncate(time.Second)

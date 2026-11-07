@@ -20,12 +20,62 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
-// Job kinds for stage 3.1; each also has a schedules row of the same kind.
 const (
-	KindFeedCheck     = "feed_check"     // read every feed Source, pick for Slots that want one
-	KindGrabHeld      = "grab_held"      // choose Held Releases whose wait is over
-	KindSearchMissing = "search_missing" // queue searches for Slots still looking
+	// Job kinds for the scheduled search work. Each also has a schedules row of the same name.
+	KindFeedCheck     = "feed_check"
+	KindGrabHeld      = "grab_held"
+	KindSearchMissing = "search_missing"
 )
+
+const (
+	// Settings in the what_to_pick group that steer the searches.
+	SettingMissingCount = "missing_search_count"
+	// SettingMissingBetter makes the scheduled search look for better copies too.
+	SettingMissingBetter = "missing_search_better"
+	// SettingRespectsGate makes bulk searches skip Slots that are not out yet.
+	SettingRespectsGate = "bulk_search_respects_gate"
+	// SettingBulkCap is the most Slots one bulk search asked by a person queues.
+	SettingBulkCap = "bulk_search_cap"
+	// defaultBulkCap is used when SettingBulkCap is unset or not a positive number.
+	defaultBulkCap = 500
+	// bulkStagger is the private name for BulkStagger.
+	bulkStagger = BulkStagger
+
+	// BulkStagger is the gap between the searches one bulk search queues, so Sources are not asked all at once.
+	BulkStagger = 2 * time.Second
+
+	// SettingArtistSearchCap is the most album searches one artist search queues. The rest wait for the next request or the nightly search.
+	SettingArtistSearchCap = "artist_search_cap"
+
+	// Releases posted well before their movie, episode or album came out, or far too small for what they hold, are refused. Both checks are on unless set to "false".
+	SettingRefuseEarly = "refuse_early_releases"
+	SettingEarlyGrace  = "early_release_grace_hours"
+	SettingRefuseTiny  = "refuse_tiny_releases"
+
+	// SettingHoldUnknown holds a Release of unknown size or date for a person to choose in automatic searches. Off by default, so such a Release only gets a warning.
+	SettingHoldUnknown = "hold_unknown_releases"
+
+	// SettingEpisodeMinutes is the length used for an episode of unknown length by the fake-size floor.
+	SettingEpisodeMinutes = "episode_default_minutes"
+
+	// SettingImportFloors turns the fixed least sizes at import off when set to "false".
+	SettingImportFloors = "import_size_floors"
+	// Defaults and limits for the settings above.
+	DefaultEpisodeMinutes  = 20
+	DefaultEarlyGrace      = 24
+	DefaultArtistSearchCap = 200
+	defaultMissingCount    = 20
+	maxMissingCount        = 500
+	searchSettingsGroup    = "what_to_pick"
+	// searchMissingByPerson marks a missing search started by a person.
+	searchMissingByPerson = "by_person"
+)
+
+// lookingStates are the Slot states a feed check picks for: missing, a better copy wanted, or holding a Release that something better may beat.
+var lookingStates = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotHeld}
+
+// askCatchUpPerRun is the most approved-ask titles one missing search catches up, since each is searched in full. A variable so tests can change it.
+var askCatchUpPerRun = 3
 
 // Register adds the search Job handlers to a queue.
 func (s *Searcher) Register(q *jobs.Queue) {
@@ -37,17 +87,9 @@ func (s *Searcher) Register(q *jobs.Queue) {
 	q.Handle(KindSearchAlbum, s.HandleAlbum)
 }
 
-// lookingStates are the Slot states a feed check picks for: still missing,
-// a better copy wanted, or holding a Release that something better may beat.
-var lookingStates = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotHeld}
-
-// HandleFeed reads the newest Releases of every Source used for feeds,
-// matches them to Titles whose Slots want one, judges them per Slot and
-// chooses or holds the best. Each feed Release is looked at once: a name
-// the feed check already stored from that Source, or one still waiting as
-// judged, is skipped; names other searches stored and settled are looked
-// at again. Held Releases whose wait is
-// over are chosen at the end.
+// HandleFeed reads the newest Releases of every feed Source, matches them to Titles whose Slots want one, judges them per Slot, and chooses or holds the best.
+// A feed Release is looked at once: a name already stored by the feed check, or still waiting as judged, is skipped. Names stored and settled by other searches are looked at again.
+// Held Releases whose wait is over are chosen at the end.
 func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	by := jobActor(r)
 	jobID := r.Job.ID
@@ -110,10 +152,12 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			if err == nil {
 				cats := src.Categories["movie"]
 				if handlesTV(src) && showsWanted {
+
 					// One feed read serves movies and shows.
 					cats = append(slices.Clone(cats), tvCategories(src)...)
 				}
 				if handlesMusic(src) && musicWanted {
+
 					// The same read serves albums too.
 					cats = append(slices.Clone(cats), musicCategories(src)...)
 				}
@@ -141,10 +185,9 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 	all = dedupe(all)
+	// Nothing to match: skip loading Slots, which at library scale costs one record per episode or track.
 	if len(all) == 0 {
-		// Do not materialize every wanted Slot when the feeds had nothing to
-		// match. At library scale that retained one slotCtx per episode or
-		// track, even though the matching loop below had no candidates.
+
 		grabbed, err := s.grabHeld(ctx, by, &jobID, now)
 		if err != nil {
 			return err
@@ -164,9 +207,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 		return nil
 	}
 
-	// Match against one compact record per Title first. Loading every wanted
-	// Slot here retained the whole library and did five point queries per Slot,
-	// although a feed normally names only a few Titles.
+	// Match against one small record per Title first. A feed normally names only a few Titles, so loading every Slot would waste memory and queries.
 	refs, err := s.wantedTitleRefs(ctx)
 	if err != nil {
 		return err
@@ -177,16 +218,17 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	for _, f := range all {
 		m := judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size}), refs)
 		if m.Title == nil && hasShow {
+
 			// Read again as a show name ("Part 2" before tags, "- 12").
 			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true}), refs)
 		}
 		if m.Title == nil && hasArtist {
+
 			// Read again as an album name ("Artist - Album (Year) [FLAC]").
 			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
 		}
-		// A tagged Source's release goes only to a title sharing a tag (#108).
-		// It is matched against every wanted title first, so it never lands
-		// on a look-alike title because the right one was left out.
+
+		// A tagged Source's Release goes only to a Title sharing a tag. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
 		if m.Title != nil && tagset.SourceServes(f.src.Tags, m.Title.Tags) {
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
 		}
@@ -209,7 +251,8 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	}
 
 	chosen, held, stored := 0, 0, 0
-	storedID := map[string]int64{} // each new Release is stored once; later Slots update it
+	// Each new Release is stored once; later Slots update it.
+	storedID := map[string]int64{}
 	keyOf := func(f found) string { return strconv.FormatInt(f.src.ID, 10) + "|" + f.item.Title }
 	for titleID, fs := range byTitle {
 		if cs := ctxs[titleID]; len(cs) > 0 && cs[0].ti.Kind == "show" {
@@ -262,7 +305,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			case w >= 0 && vs[w].Outcome == "chosen":
 				name := cands[w].item.Title
 				if err := s.settleChosen(ctx, c.sl.ID, ids[w], name, by); errors.Is(err, ErrBusy) {
-					continue // another pick got this Slot first
+					continue
 				} else if err != nil {
 					return err
 				}
@@ -304,6 +347,255 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
+// ProbeGrabHeld reports whether the scheduled held-Release Job can change a Slot. It only runs the due check that grabHeld uses.
+func (s *Searcher) ProbeGrabHeld(ctx context.Context, now time.Time) (bool, any, error) {
+	var due bool
+	err := s.Store.Read().QueryRowContext(ctx, `SELECT EXISTS (
+		SELECT 1 FROM slots WHERE state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ?)`,
+		database.FormatTime(now.UTC())).Scan(&due)
+	return due, nil, err
+}
+
+// HandleGrabHeld chooses every Held Release whose wait is over.
+func (s *Searcher) HandleGrabHeld(ctx context.Context, r *jobs.Run) error {
+	jobID := r.Job.ID
+	n, err := s.grabHeld(ctx, jobActor(r), &jobID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	r.SetResult(map[string]any{"chosen": n})
+	return nil
+}
+
+// HandleSearchMissing queues a search for Slots still looking, least recently searched first.
+// The scheduled run takes up to missing_search_count wanted Slots, plus better_wanted ones when missing_search_better is on. A person can pass which ("missing" or "better") to search the whole list up to bulk_search_cap. Slots not out yet are skipped while bulk_search_respects_gate is on.
+func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
+	db := s.Store.Read()
+	if s.Queue == nil {
+		return fmt.Errorf("search_missing needs the job queue")
+	}
+	states := []string{string(domain.SlotWanted)}
+	limit := defaultMissingCount
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingMissingCount)); err == nil && n >= 0 {
+		limit = min(n, maxMissingCount)
+	}
+	if Setting(ctx, db, SettingMissingBetter) == "true" {
+		states = append(states, string(domain.SlotBetterWanted))
+	}
+	if w, _ := r.Job.Params["which"].(string); w != "" {
+
+		limit = defaultBulkCap
+		if n, err := strconv.Atoi(Setting(ctx, db, SettingBulkCap)); err == nil && n > 0 {
+			limit = n
+		}
+		switch w {
+		case "missing":
+			states = []string{string(domain.SlotWanted)}
+		case "better":
+			states = []string{string(domain.SlotBetterWanted)}
+		default:
+			return fmt.Errorf("which must be missing or better")
+		}
+	}
+
+	// title_id keeps the search to one Title and all it still wants, as an approved request for a show or artist asks.
+	titleID, _ := r.Job.Params["title_id"].(float64)
+	if titleID > 0 {
+		limit = maxMissingCount
+	}
+	skipGate := Setting(ctx, db, SettingRespectsGate) == "false"
+	if skipGate && states[0] == string(domain.SlotWanted) {
+		states = append(states, string(domain.SlotNotOutYet))
+	}
+	ph := strings.TrimSuffix(strings.Repeat("?, ", len(states)), ", ")
+
+	// A person may keep a bulk search to one kind (movie, show or artist).
+	only, _ := r.Job.Params["kind"].(string)
+
+	// The shows and music switches apply to nightly and bulk searches. A search kept to one Title always covers its shows and music.
+	argsFor := func(shows, music bool) []any {
+		a := []any{}
+		for _, st := range states {
+			a = append(a, st)
+		}
+		return append(a, only, only, int64(titleID), int64(titleID), shows, music)
+	}
+	args := argsFor(titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false", titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false")
+	from := ` FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
+		JOIN titles t ON t.id = i.title_id
+		WHERE s.state IN (` + ph + `) AND (? = '' OR t.kind = ?) AND (? = 0 OR t.id = ?) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL
+		AND (t.kind = 'movie' OR (? AND t.kind = 'show' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
+			AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.dropped_at IS NULL)))
+			OR (? AND t.kind = 'artist' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
+			AND EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.included = 1 AND p.dropped_at IS NULL)))`
+
+	// Approved requests go first. A Title with an approved ask and something never searched gets the one-title search that approval starts, oldest approval first, whatever the cap. The same Job is used so the two never run twice.
+	// It is skipped while approval's own scan and search are still to run, and after a one-title search was queued since the approval. Then the Title rejoins the oldest-searched-first turn below. Without this, an ask approved behind a large never-searched Library would wait for months.
+	// Like approval, it covers shows and music whatever the nightly switches, unless "Search when approved" is off.
+	asked := 0
+	var askTitles []string
+	var startAfter time.Time
+	if titleID == 0 && states[0] == string(domain.SlotWanted) && limit > 0 {
+		var onApprove string
+		_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'ask_search_on_approve'").Scan(&onApprove)
+		approveOn := onApprove != "false"
+
+		// The approved asks are few. The jobs table only grows, so it is read once for the last one-title search of each Title, and through its state index for what is still to run.
+		cq := `WITH c AS (SELECT a.title_id AS id, MIN(a.decided_at) AS d FROM asks a WHERE a.state = 'approved' AND a.title_id IS NOT NULL GROUP BY a.title_id),
+			w AS (SELECT dedupe_key AS k, MAX(created_at) AS m FROM jobs WHERE dedupe_key LIKE 'search_wanted:%' GROUP BY dedupe_key)
+			SELECT c.id, (SELECT count(*)` + from + ` AND t.id = c.id) FROM c LEFT JOIN w ON w.k = 'search_wanted:' || c.id
+			WHERE (w.m IS NULL OR w.m < c.d) AND EXISTS (SELECT 1` + from + ` AND t.id = c.id AND i.last_searched_at IS NULL)
+			AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.state IN ('queued', 'running') AND (j.dedupe_key = 'search_wanted:' || c.id
+				OR (j.kind IN ('refresh_title', 'scan_title') AND json_extract(j.subject, '$.type') = 'title' AND json_extract(j.subject, '$.id') = c.id AND j.params LIKE '%search%')))
+			ORDER BY c.d, c.id LIMIT ` + strconv.Itoa(min(limit, askCatchUpPerRun))
+		ca := argsFor(approveOn || Setting(ctx, db, SettingMissingShows) != "false", approveOn || Setting(ctx, db, SettingMissingMusic) != "false")
+		trows, err := db.QueryContext(ctx, cq, append(append([]any{}, ca...), ca...)...)
+		if err != nil {
+			return err
+		}
+		type askTitle struct{ id, slots int64 }
+		var tids []askTitle
+		for trows.Next() {
+			var a askTitle
+			if err := trows.Scan(&a.id, &a.slots); err != nil {
+				trows.Close()
+				return err
+			}
+			tids = append(tids, a)
+		}
+		trows.Close()
+		if err := trows.Err(); err != nil {
+			return err
+		}
+
+		// Each Title's searches are spread bulkStagger apart from when its Job starts. The next Title starts after the last of them (its Slots are the most it can queue), so Titles do not ask the Sources together. The per-run cap keeps this wait short.
+		at := time.Now().UTC()
+		for _, a := range tids {
+			if _, _, err := s.Queue.EnqueueAt(ctx, KindSearchMissing, &domain.Subject{Type: "title", ID: a.id},
+				map[string]any{"title_id": a.id}, "search_wanted:"+strconv.FormatInt(a.id, 10), jobActor(r), at); err != nil {
+				return err
+			}
+			at = at.Add(time.Duration(min(a.slots, maxMissingCount)) * bulkStagger)
+			asked++
+			askTitles = append(askTitles, strconv.FormatInt(a.id, 10))
+		}
+		startAfter = at
+	}
+	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id` + from
+	if len(askTitles) > 0 {
+
+		// Their own search covers them, so the cap goes to the rest.
+		q += ` AND t.id NOT IN (` + strings.Join(askTitles, ", ") + `)`
+	}
+	q += ` ORDER BY i.last_searched_at IS NOT NULL, i.last_searched_at, s.id`
+	if limit >= 0 {
+		q += " LIMIT " + strconv.Itoa(limit)
+	}
+	rows, err := db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	type found struct {
+		id, part, ver int64
+		kind          string
+	}
+	var ids []int64
+	var list []found
+	for rows.Next() {
+		var f found
+		if err := rows.Scan(&f.id, &f.kind, &f.part, &f.ver); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, f.id)
+		list = append(list, f)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Episodes of one season in one Version are searched together as a season when there are several. A single one gets an episode search.
+	type seasonKey struct{ part, ver int64 }
+	perSeason := map[seasonKey]int{}
+	for _, f := range list {
+		if f.kind == "show" && f.part > 0 {
+			perSeason[seasonKey{f.part, f.ver}]++
+		}
+	}
+	queued, seasons, albums := 0, 0, 0
+	start := time.Now().UTC()
+	if startAfter.After(start) {
+		start = startAfter
+	}
+	seen := map[seasonKey]bool{}
+	for _, f := range list {
+		params := map[string]any{"bulk": true}
+		if skipGate {
+			params["skip_gate"] = true
+		}
+		kind, subject, key := KindSearchSlot, &domain.Subject{Type: "slot", ID: f.id}, "search_slot:"+strconv.FormatInt(f.id, 10)
+		if k := (seasonKey{f.part, f.ver}); f.kind == "show" && perSeason[k] > 1 {
+			if seen[k] {
+				continue
+			}
+			seen[k] = true
+			params["version_id"] = f.ver
+			kind, subject = KindSearchSeason, &domain.Subject{Type: "part", ID: f.part}
+			key = fmt.Sprintf("search_season:%d:%d", f.part, f.ver)
+		}
+		// Tracks are always searched as their album.
+		if k := (seasonKey{f.part, f.ver}); f.kind == "artist" && f.part > 0 {
+
+			if seen[k] {
+				continue
+			}
+			seen[k] = true
+			params["version_id"] = f.ver
+			kind, subject = KindSearchAlbum, &domain.Subject{Type: "part", ID: f.part}
+			key = fmt.Sprintf("search_album:%d:%d", f.part, f.ver)
+		}
+
+		// Spread the searches so Sources are not asked all at once. The time goes in with the Job, so no worker starts it early.
+		if _, created, err := s.Queue.EnqueueAt(ctx, kind, subject, params, key, jobActor(r), start.Add(time.Duration(queued)*bulkStagger)); err != nil {
+			return err
+		} else if created {
+			queued++
+			if kind == KindSearchSeason {
+				seasons++
+			}
+			if kind == KindSearchAlbum {
+				albums++
+			}
+		}
+	}
+	r.SetResult(map[string]any{"slots": len(ids), "queued": queued, "seasons": seasons, "albums": albums, "asks": asked})
+	return nil
+}
+
+// Setting reads one what_to_pick setting and returns "" when unset.
+func Setting(ctx context.Context, db *sql.DB, key string) string {
+	var v string
+	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", searchSettingsGroup, key).Scan(&v)
+	return v
+}
+
+// Checks reads the early-release and fake-size settings that judging needs.
+func Checks(ctx context.Context, db *sql.DB) judge.Checks {
+	grace := DefaultEarlyGrace
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingEarlyGrace)); err == nil && n >= 0 && n <= 720 {
+		grace = n
+	}
+	minutes := DefaultEpisodeMinutes
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingEpisodeMinutes)); err == nil && n >= 1 && n <= 240 {
+		minutes = n
+	}
+	return judge.Checks{Early: Setting(ctx, db, SettingRefuseEarly) != "false", Grace: time.Duration(grace) * time.Hour,
+		Tiny: Setting(ctx, db, SettingRefuseTiny) != "false", HoldUnknown: Setting(ctx, db, SettingHoldUnknown) == "true",
+		EpisodeMinutes: minutes}
+}
+
+// wantedTitleRefs lists one small record per active Title that still has a Slot looking, so a feed can be matched without loading every Slot.
 func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]judge.TitleRef, error) {
 	titles, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", `state = 'active' AND EXISTS (
 		SELECT 1 FROM items i JOIN slots sl ON sl.item_id = i.id
@@ -329,18 +621,7 @@ func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]judge.TitleRef, error
 	return refs, nil
 }
 
-// ProbeGrabHeld reports whether the scheduled held-Release Job can change a
-// Slot. It reads only the due predicate used by grabHeld.
-func (s *Searcher) ProbeGrabHeld(ctx context.Context, now time.Time) (bool, any, error) {
-	var due bool
-	err := s.Store.Read().QueryRowContext(ctx, `SELECT EXISTS (
-		SELECT 1 FROM slots WHERE state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ?)`,
-		database.FormatTime(now.UTC())).Scan(&due)
-	return due, nil, err
-}
-
-// storedFound turns a stored Release back into a candidate (its link stays
-// as stored, already without keys).
+// storedFound turns a held Release back into a candidate. Its link is already stored without keys.
 func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 	var rel domain.Release
 	if err := database.Get(ctx, s.Store.Read(), "releases", id, &rel); err != nil || rel.State != "held" {
@@ -360,17 +641,7 @@ func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 	return found{src: src, item: it, relID: rel.ID}, true
 }
 
-// HandleGrabHeld chooses every Held Release whose wait is over.
-func (s *Searcher) HandleGrabHeld(ctx context.Context, r *jobs.Run) error {
-	jobID := r.Job.ID
-	n, err := s.grabHeld(ctx, jobActor(r), &jobID, time.Now().UTC())
-	if err != nil {
-		return err
-	}
-	r.SetResult(map[string]any{"chosen": n})
-	return nil
-}
-
+// grabHeld chooses the Held Releases whose wait is over and returns how many Slots were settled.
 func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, now time.Time) (int, error) {
 	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots",
 		"state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ? ORDER BY next_try_at, id", database.FormatTime(now))
@@ -387,11 +658,12 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 		if err := database.Get(ctx, s.Store.Read(), "releases", *sl.HeldReleaseID, &rel); err != nil || rel.State != "held" {
 			continue
 		}
+		// The files turned out to be a program during the wait: refuse the Release and send its Slots back to looking.
 		if s.dangerousRel(ctx, rel) {
-			// Its files turned out to be a program during the wait (#41):
-			// refused, and its Slots go back to looking.
+
 			_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-				// Only while it is still held: a person may have chosen it meanwhile.
+
+				// Only while it is still held, since a person may have chosen it meanwhile.
 				res, err := tx.Exec(`UPDATE releases SET state = 'refused', hold_until = NULL,
 					verdict = json_set(COALESCE(verdict, '{}'), '$.outcome', 'refused', '$.dangerous_files', json('true')), updated_at = ?, updated_by = ? WHERE id = ? AND state = 'held'`,
 					database.FormatTime(now), actorText(by), rel.ID)
@@ -406,9 +678,8 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			done[sl.ID] = true
 			continue
 		}
-		// A season pack held for several Slots is chosen for all of them
-		// that still hold it.
-		// A Slot missing from the pick list (an old list) is chosen alone.
+
+		// A season pack held for several Slots is chosen for all that still hold it. A Slot missing from the pick list (an old list) is chosen alone.
 		pick := []int64{sl.ID}
 		if many := PickSlots(rel); len(many) > 1 && slices.Contains(many, sl.ID) {
 			pick = pick[:0]
@@ -440,295 +711,7 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 	return n, nil
 }
 
-// Search settings (group what_to_pick), each a decision in
-// decisions/log-autonomous.md.
-const (
-	SettingMissingCount  = "missing_search_count"  // Slots per scheduled missing search (default 20)
-	SettingMissingBetter = "missing_search_better" // the scheduled search also looks for better copies (default false)
-	SettingRespectsGate  = "bulk_search_respects_gate"
-	SettingBulkCap       = "bulk_search_cap" // most Slots one bulk search asked by a person queues (default 500)
-	defaultBulkCap       = 500
-	bulkStagger          = BulkStagger
-	// BulkStagger is the time between the searches one bulk search queues.
-	BulkStagger = 2 * time.Second
-	// SettingArtistSearchCap is the most album searches one Search now on an
-	// artist queues (default DefaultArtistSearchCap); the rest are left for
-	// the next click or the nightly search.
-	SettingArtistSearchCap = "artist_search_cap"
-	// Early and fake Releases (4.3.5): a Release posted before its movie,
-	// episode or album came out (less the grace hours, default 24) is
-	// refused, and one far too small for what it holds; both on unless "false".
-	SettingRefuseEarly = "refuse_early_releases"
-	SettingEarlyGrace  = "early_release_grace_hours"
-	SettingRefuseTiny  = "refuse_tiny_releases"
-	// SettingHoldUnknown holds a Release of unknown size or dates for a
-	// person's choice in automatic searches ("true"); by default such a
-	// Release only gets a warning line (fail-open).
-	SettingHoldUnknown = "hold_unknown_releases"
-	// SettingEpisodeMinutes is the length taken for an episode of unknown
-	// length by the fake-size floor (default DefaultEpisodeMinutes, 1 to 240).
-	SettingEpisodeMinutes = "episode_default_minutes"
-	// SettingImportFloors turns the fixed least sizes at import off ("false").
-	SettingImportFloors    = "import_size_floors"
-	DefaultEpisodeMinutes  = 20
-	DefaultEarlyGrace      = 24
-	DefaultArtistSearchCap = 200
-	defaultMissingCount    = 20
-	maxMissingCount        = 500
-	searchSettingsGroup    = "what_to_pick"
-	searchMissingByPerson  = "by_person"
-)
-
-// Setting reads one what_to_pick setting ("" when unset).
-func Setting(ctx context.Context, db *sql.DB, key string) string {
-	var v string
-	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", searchSettingsGroup, key).Scan(&v)
-	return v
-}
-
-// askCatchUpPerRun is the most approved-ask titles one missing search
-// catches up (each is searched in full, one after the other); a variable
-// for tests.
-var askCatchUpPerRun = 3
-
-// HandleSearchMissing queues a search_slot Job for Slots still looking,
-// oldest searched first. Scheduled: up to missing_search_count Slots that
-// are wanted (and better_wanted when missing_search_better is on). Params
-// from a person: which ("missing" or "better"), up to bulk_search_cap (default
-// 500) a run; the searches are queued a little apart. Slots not out
-// yet are skipped while bulk_search_respects_gate is on.
-func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
-	db := s.Store.Read()
-	if s.Queue == nil {
-		return fmt.Errorf("search_missing needs the job queue")
-	}
-	states := []string{string(domain.SlotWanted)}
-	limit := defaultMissingCount
-	if n, err := strconv.Atoi(Setting(ctx, db, SettingMissingCount)); err == nil && n >= 0 {
-		limit = min(n, maxMissingCount)
-	}
-	if Setting(ctx, db, SettingMissingBetter) == "true" {
-		states = append(states, string(domain.SlotBetterWanted))
-	}
-	if w, _ := r.Job.Params["which"].(string); w != "" {
-		// A person asked for the whole list, up to the per-run cap.
-		limit = defaultBulkCap
-		if n, err := strconv.Atoi(Setting(ctx, db, SettingBulkCap)); err == nil && n > 0 {
-			limit = n
-		}
-		switch w {
-		case "missing":
-			states = []string{string(domain.SlotWanted)}
-		case "better":
-			states = []string{string(domain.SlotBetterWanted)}
-		default:
-			return fmt.Errorf("which must be missing or better")
-		}
-	}
-	// title_id keeps the search to one title, all of what it still wants
-	// (an approved request for a show or an artist asks for this).
-	titleID, _ := r.Job.Params["title_id"].(float64)
-	if titleID > 0 {
-		limit = maxMissingCount
-	}
-	skipGate := Setting(ctx, db, SettingRespectsGate) == "false"
-	if skipGate && states[0] == string(domain.SlotWanted) {
-		states = append(states, string(domain.SlotNotOutYet))
-	}
-	ph := strings.TrimSuffix(strings.Repeat("?, ", len(states)), ", ")
-	// A person may keep a bulk search to one kind (movie, show or artist).
-	only, _ := r.Job.Params["kind"].(string)
-	// Episodes count when the show and their season are kept up to date
-	// too, and only once they are out (setting missing_search_shows, on by
-	// default).
-	// Those two settings are for the nightly and bulk searches: a search kept
-	// to one title (an approved request) always covers its shows and music.
-	argsFor := func(shows, music bool) []any {
-		a := []any{}
-		for _, st := range states {
-			a = append(a, st)
-		}
-		return append(a, only, only, int64(titleID), int64(titleID), shows, music)
-	}
-	args := argsFor(titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false", titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false")
-	from := ` FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
-		JOIN titles t ON t.id = i.title_id
-		WHERE s.state IN (` + ph + `) AND (? = '' OR t.kind = ?) AND (? = 0 OR t.id = ?) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL
-		AND (t.kind = 'movie' OR (? AND t.kind = 'show' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
-			AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.dropped_at IS NULL)))
-			OR (? AND t.kind = 'artist' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
-			AND EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.included = 1 AND p.dropped_at IS NULL)))`
-	// Approved requests first: a title with an approved ask that still has
-	// something never searched gets the one-title search approval starts
-	// (the same Job, so the two never run twice), oldest approval first. It
-	// covers what the ask is waiting for whatever the cap, once per approval:
-	// not while approval's own scan and search are still to run (a scan that
-	// failed or was stopped does not count), and not again after a one-title
-	// search was queued since the approval (one whose Sources all failed
-	// included; the turn below retries those). Then the
-	// title is back in the oldest-searched-first turn below. Without this an
-	// ask approved behind a large never-searched Library waits for months.
-	// Like approval, it covers shows and music whatever the nightly switches,
-	// unless "Search when approved" is off.
-	asked := 0
-	var askTitles []string
-	var startAfter time.Time
-	if titleID == 0 && states[0] == string(domain.SlotWanted) && limit > 0 {
-		var onApprove string
-		_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'ask_search_on_approve'").Scan(&onApprove)
-		approveOn := onApprove != "false"
-		// From the approved asks (few); the jobs table, which only grows, is
-		// read once for the last one-title search of each title (w), and
-		// through its state index for what is still to run.
-		cq := `WITH c AS (SELECT a.title_id AS id, MIN(a.decided_at) AS d FROM asks a WHERE a.state = 'approved' AND a.title_id IS NOT NULL GROUP BY a.title_id),
-			w AS (SELECT dedupe_key AS k, MAX(created_at) AS m FROM jobs WHERE dedupe_key LIKE 'search_wanted:%' GROUP BY dedupe_key)
-			SELECT c.id, (SELECT count(*)` + from + ` AND t.id = c.id) FROM c LEFT JOIN w ON w.k = 'search_wanted:' || c.id
-			WHERE (w.m IS NULL OR w.m < c.d) AND EXISTS (SELECT 1` + from + ` AND t.id = c.id AND i.last_searched_at IS NULL)
-			AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.state IN ('queued', 'running') AND (j.dedupe_key = 'search_wanted:' || c.id
-				OR (j.kind IN ('refresh_title', 'scan_title') AND json_extract(j.subject, '$.type') = 'title' AND json_extract(j.subject, '$.id') = c.id AND j.params LIKE '%search%')))
-			ORDER BY c.d, c.id LIMIT ` + strconv.Itoa(min(limit, askCatchUpPerRun))
-		ca := argsFor(approveOn || Setting(ctx, db, SettingMissingShows) != "false", approveOn || Setting(ctx, db, SettingMissingMusic) != "false")
-		trows, err := db.QueryContext(ctx, cq, append(append([]any{}, ca...), ca...)...)
-		if err != nil {
-			return err
-		}
-		type askTitle struct{ id, slots int64 }
-		var tids []askTitle
-		for trows.Next() {
-			var a askTitle
-			if err := trows.Scan(&a.id, &a.slots); err != nil {
-				trows.Close()
-				return err
-			}
-			tids = append(tids, a)
-		}
-		trows.Close()
-		if err := trows.Err(); err != nil {
-			return err
-		}
-		// Each title's searches are spread 2 s apart from when its Job
-		// starts, so the next title starts after the last of them (its Slots
-		// are the most searches it can queue), and the turn below after all,
-		// so titles do not ask the Sources at the same time. At most
-		// askCatchUpPerRun titles a run keep that wait short.
-		at := time.Now().UTC()
-		for _, a := range tids {
-			if _, _, err := s.Queue.EnqueueAt(ctx, KindSearchMissing, &domain.Subject{Type: "title", ID: a.id},
-				map[string]any{"title_id": a.id}, "search_wanted:"+strconv.FormatInt(a.id, 10), jobActor(r), at); err != nil {
-				return err
-			}
-			at = at.Add(time.Duration(min(a.slots, maxMissingCount)) * bulkStagger)
-			asked++
-			askTitles = append(askTitles, strconv.FormatInt(a.id, 10))
-		}
-		startAfter = at
-	}
-	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id` + from
-	if len(askTitles) > 0 {
-		// Their own search covers them; the cap goes to the rest.
-		q += ` AND t.id NOT IN (` + strings.Join(askTitles, ", ") + `)`
-	}
-	q += ` ORDER BY i.last_searched_at IS NOT NULL, i.last_searched_at, s.id`
-	if limit >= 0 {
-		q += " LIMIT " + strconv.Itoa(limit)
-	}
-	rows, err := db.QueryContext(ctx, q, args...)
-	if err != nil {
-		return err
-	}
-	type found struct {
-		id, part, ver int64
-		kind          string
-	}
-	var ids []int64
-	var list []found
-	for rows.Next() {
-		var f found
-		if err := rows.Scan(&f.id, &f.kind, &f.part, &f.ver); err != nil {
-			rows.Close()
-			return err
-		}
-		ids = append(ids, f.id)
-		list = append(list, f)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	// Episodes of one season in one Version are searched together, as a
-	// season, when there are several; a single one gets an episode search.
-	type seasonKey struct{ part, ver int64 }
-	perSeason := map[seasonKey]int{}
-	for _, f := range list {
-		if f.kind == "show" && f.part > 0 {
-			perSeason[seasonKey{f.part, f.ver}]++
-		}
-	}
-	queued, seasons, albums := 0, 0, 0
-	start := time.Now().UTC()
-	if startAfter.After(start) {
-		start = startAfter
-	}
-	seen := map[seasonKey]bool{}
-	for _, f := range list {
-		params := map[string]any{"bulk": true}
-		if skipGate {
-			params["skip_gate"] = true
-		}
-		kind, subject, key := KindSearchSlot, &domain.Subject{Type: "slot", ID: f.id}, "search_slot:"+strconv.FormatInt(f.id, 10)
-		if k := (seasonKey{f.part, f.ver}); f.kind == "show" && perSeason[k] > 1 {
-			if seen[k] {
-				continue
-			}
-			seen[k] = true
-			params["version_id"] = f.ver
-			kind, subject = KindSearchSeason, &domain.Subject{Type: "part", ID: f.part}
-			key = fmt.Sprintf("search_season:%d:%d", f.part, f.ver)
-		}
-		if k := (seasonKey{f.part, f.ver}); f.kind == "artist" && f.part > 0 {
-			// Tracks are always searched as their album.
-			if seen[k] {
-				continue
-			}
-			seen[k] = true
-			params["version_id"] = f.ver
-			kind, subject = KindSearchAlbum, &domain.Subject{Type: "part", ID: f.part}
-			key = fmt.Sprintf("search_album:%d:%d", f.part, f.ver)
-		}
-		// Spread the searches out so Sources are not asked all at once; the
-		// time goes in with the Job, so no worker starts it early.
-		if _, created, err := s.Queue.EnqueueAt(ctx, kind, subject, params, key, jobActor(r), start.Add(time.Duration(queued)*bulkStagger)); err != nil {
-			return err
-		} else if created {
-			queued++
-			if kind == KindSearchSeason {
-				seasons++
-			}
-			if kind == KindSearchAlbum {
-				albums++
-			}
-		}
-	}
-	r.SetResult(map[string]any{"slots": len(ids), "queued": queued, "seasons": seasons, "albums": albums, "asks": asked})
-	return nil
-}
-
-// Checks reads the early and fake-size settings for judging.
-func Checks(ctx context.Context, db *sql.DB) judge.Checks {
-	grace := DefaultEarlyGrace
-	if n, err := strconv.Atoi(Setting(ctx, db, SettingEarlyGrace)); err == nil && n >= 0 && n <= 720 {
-		grace = n
-	}
-	minutes := DefaultEpisodeMinutes
-	if n, err := strconv.Atoi(Setting(ctx, db, SettingEpisodeMinutes)); err == nil && n >= 1 && n <= 240 {
-		minutes = n
-	}
-	return judge.Checks{Early: Setting(ctx, db, SettingRefuseEarly) != "false", Grace: time.Duration(grace) * time.Hour,
-		Tiny: Setting(ctx, db, SettingRefuseTiny) != "false", HoldUnknown: Setting(ctx, db, SettingHoldUnknown) == "true",
-		EpisodeMinutes: minutes}
-}
-
-// movieOut is a movie's first known release day: cinema, digital or disc.
+// movieOut returns a movie's first known release day: cinema, digital or disc.
 func movieOut(t domain.Title) *time.Time {
 	var first *time.Time
 	for _, d := range []*time.Time{t.CinemaDate, t.DigitalDate, t.PhysicalDate} {

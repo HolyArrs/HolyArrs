@@ -11,25 +11,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// addRelease stores a judged Release for the fixture's Slot.
-func addRelease(t *testing.T, f fixture, name, state string) int64 {
-	t.Helper()
-	var id int64
-	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		r := &domain.Release{SourceID: f.srcID, Name: name, LinkRef: "x", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
-			MatchedSlotIDs: []int64{f.slotID}, Verdict: map[string]any{}, FoundBy: "hand_search", State: state}
-		var err error
-		id, err = database.Insert(tx, "releases", r, domain.System)
-		return err
-	}); err != nil {
-		t.Fatal(err)
-	}
-	return id
-}
-
-// C2: a person chooses a Release while a feed check is judging the same
-// Slot. The feed check skips that Slot and the job still finishes.
-func TestFeedCheckRacingHandChoice(t *testing.T) {
+// TestFeedCheck_RacingHandChoice checks that when a person chooses a Release while a feed check judges the same Slot, the check skips that Slot and the job still finishes.
+func TestFeedCheck_RacingHandChoice(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
@@ -55,8 +38,8 @@ func TestFeedCheckRacingHandChoice(t *testing.T) {
 	}
 }
 
-// C2: the Slot started downloading between judging and settling.
-func TestFeedCheckSlotAlreadyDownloading(t *testing.T) {
+// TestFeedCheck_SlotAlreadyDownloading checks the case where the Slot started downloading between judging and settling.
+func TestFeedCheck_SlotAlreadyDownloading(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
@@ -74,9 +57,8 @@ func TestFeedCheckSlotAlreadyDownloading(t *testing.T) {
 	}
 }
 
-// C2: settling refuses a Slot already chosen for another Release, and
-// accepts the same Release again.
-func TestSettleRefusesAnotherRelease(t *testing.T) {
+// TestSettle_RefusesAnotherRelease checks that settling refuses a Slot already chosen for another Release and accepts the same Release again.
+func TestSettle_RefusesAnotherRelease(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	ctx := context.Background()
 	sr := &Searcher{Store: f.s}
@@ -98,4 +80,20 @@ func TestSettleRefusesAnotherRelease(t *testing.T) {
 	if st == "chosen" {
 		t.Fatal("second Release marked chosen")
 	}
+}
+
+// addRelease stores a judged Release for the fixture's Slot.
+func addRelease(t *testing.T, f fixture, name, state string) int64 {
+	t.Helper()
+	var id int64
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		r := &domain.Release{SourceID: f.srcID, Name: name, LinkRef: "x", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
+			MatchedSlotIDs: []int64{f.slotID}, Verdict: map[string]any{}, FoundBy: "hand_search", State: state}
+		var err error
+		id, err = database.Insert(tx, "releases", r, domain.System)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return id
 }

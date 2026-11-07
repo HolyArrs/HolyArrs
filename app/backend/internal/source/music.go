@@ -20,364 +20,59 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// KindSearchAlbum is the Job kind that searches one album of an artist for
-// one Version (stage 3.3.3): one Release fills every track Slot it holds.
+// KindSearchAlbum is the Job kind that searches Sources for one album.
 const KindSearchAlbum = "search_album"
 
-// Music search settings (group what_to_pick), each a decision in
-// decisions/log-autonomous.md (3.3.3).
 const (
-	SettingMissingMusic   = "missing_search_music"    // the nightly and bulk searches cover albums (default true)
-	SettingDiscography    = "music_discography_packs" // a whole-discography Release may fill an album (default false)
-	SettingTrackTolerance = "album_track_tolerance"   // files a Release may lack against the album's tracks (default 0; -1 off)
-	SettingExtraFiles     = "album_extra_files"       // files a bare file count is taken to hold besides tracks (log, cue, cover; default 0)
+	// SettingMissingMusic lets the nightly and bulk searches cover albums.
+	SettingMissingMusic = "missing_search_music"
+	// SettingDiscography lets a Release holding a whole discography be taken for one album.
+	SettingDiscography = "music_discography_packs"
+	// SettingTrackTolerance is how many tracks a Release may lack before it is refused for a short count. -1 turns the check off.
+	SettingTrackTolerance = "album_track_tolerance"
+	// SettingExtraFiles is how many non-music files to ignore when counting a Release's tracks, when its file list is unknown.
+	SettingExtraFiles = "album_extra_files"
 )
 
-// extraFileExts are files an album Release holds besides its tracks; they
-// are not counted against the album's tracks.
+// extraFileExts are the file types that come with an album but are not tracks, so they are not counted.
 var extraFileExts = map[string]bool{"log": true, "cue": true, "m3u": true, "m3u8": true, "jpg": true, "jpeg": true, "png": true,
 	"gif": true, "bmp": true, "webp": true, "nfo": true, "txt": true, "pdf": true, "sfv": true, "md5": true, "accurip": true}
 
-// trackFiles is how many files of a Release count as tracks: the file list
-// without extras when the Source names the files, otherwise the count less
-// the extras it is taken to hold.
-func trackFiles(names []string, count, extra int) int {
-	if len(names) == 0 {
-		return max(count-max(extra, 0), 0)
-	}
-	n := 0
-	for _, f := range names {
-		f = strings.ToLower(strings.TrimRight(f, ". "))
-		if i := strings.LastIndexByte(f, '.'); i < 0 || !extraFileExts[f[i+1:]] {
-			n++
-		}
-	}
-	return n
-}
+// albumLooking are the Slot states an album search can pick for. Failed, rejected and stalled tracks are tried again.
+var albumLooking = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotFailed, domain.SlotRejected, domain.SlotStalled}
 
-type musicRules struct {
-	discography bool
-	tolerance   int // -1: no file count check
-	extraFiles  int // files a bare count is taken to hold besides tracks
-}
-
-func (s *Searcher) musicRules(ctx context.Context) musicRules {
-	db := s.Store.Read()
-	r := musicRules{discography: Setting(ctx, db, SettingDiscography) == "true"}
-	if n, err := strconv.Atoi(Setting(ctx, db, SettingTrackTolerance)); err == nil && n >= -1 {
-		r.tolerance = n
-	}
-	if n, err := strconv.Atoi(Setting(ctx, db, SettingExtraFiles)); err == nil && n >= 0 {
-		r.extraFiles = n
-	}
-	return r
-}
-
-// handlesMusic says a Source is set up for music (no kinds means every kind).
-func handlesMusic(src domain.Source) bool {
-	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "music")
-}
-
-// musicCategories are the categories a Source uses for music.
-func musicCategories(src domain.Source) []int {
-	if c := src.Categories["music"]; len(c) > 0 {
-		return c
-	}
-	return DefaultCategories["music"]
-}
-
-// trackSlot is one track of an album with its Slot in one Version.
-type trackSlot struct {
-	it   domain.Item
-	sl   *domain.Slot // nil when the track has no Slot in this Version
-	cur  *judge.Current
-	kept bool // the track, its album, the Version and the artist are kept up to date
-	disc int
-}
-
-// albumSet is an album search: the album's tracks in one Version and the
-// Slots asked for.
+// albumSet is one album of one artist with the tracks it is judged against. target holds the Slots this search is working for, and notOut those among them that are not out yet.
 type albumSet struct {
 	ti     domain.Title
 	ver    domain.Version
 	pr     domain.PickRules
 	part   domain.Part
-	albums []judge.AlbumRef // every album of the artist, to tell them apart
+	albums []judge.AlbumRef
 	tracks []trackSlot
-	target map[int64]bool // Slot ids searched for
-	notOut map[int64]bool // target Slots not out yet (a hand search may skip the gate)
+	target map[int64]bool
+	notOut map[int64]bool
 }
 
-// AlbumLabel names an album for lists: "Artist – Album".
+// trackSlot is a track with its Slot in the Version being searched, the copy it holds, and whether it is kept up to date.
+type trackSlot struct {
+	it   domain.Item
+	sl   *domain.Slot
+	cur  *judge.Current
+	kept bool
+	disc int
+}
+
+// musicRules are the music settings read once per search.
+type musicRules struct {
+	discography bool
+	tolerance   int
+	extraFiles  int
+}
+
+// AlbumLabel names an album as "artist – album".
 func AlbumLabel(artist, album string) string { return artist + " – " + album }
 
-func (set albumSet) labels() map[int64]string {
-	out := map[int64]string{}
-	for _, t := range set.tracks {
-		if t.sl != nil {
-			out[t.sl.ID] = set.part.Name
-		}
-	}
-	return out
-}
-
-// loadAlbum reads an album's tracks with their Slots in one Version.
-func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Version, part domain.Part) (albumSet, error) {
-	db := s.Store.Read()
-	set := albumSet{ti: ti, ver: ver, part: part, target: map[int64]bool{}, notOut: map[int64]bool{}}
-	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
-		return set, err
-	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
-	if err != nil {
-		return set, err
-	}
-	for _, p := range parts {
-		a := judge.AlbumRef{PartID: p.ID, Name: p.Name}
-		if p.ReleaseDate != nil {
-			a.Year = p.ReleaseDate.Year()
-		}
-		set.albums = append(set.albums, a)
-	}
-	its, err := database.Select[domain.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
-		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track')`, part.ID)
-	if err != nil {
-		return set, err
-	}
-	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
-	if err != nil {
-		return set, err
-	}
-	byItem := map[int64]*domain.Slot{}
-	for i := range slots {
-		byItem[slots[i].ItemID] = &slots[i]
-	}
-	albumKept := part.KeepUpToDate && part.Included && part.DroppedAt == nil
-	for _, it := range its {
-		t := trackSlot{it: it, sl: byItem[it.ID], disc: 1}
-		if it.Numbers.Disc != nil {
-			t.disc = *it.Numbers.Disc
-		}
-		t.kept = it.KeepUpToDate && albumKept && ver.KeepUpToDate && ti.KeepUpToDate
-		if t.sl != nil {
-			t.cur = currentOf(ctx, db, *t.sl, set.pr)
-		}
-		set.tracks = append(set.tracks, t)
-	}
-	return set, nil
-}
-
-func (set albumSet) ref() judge.TitleRef {
-	return judge.TitleRef{ID: set.ti.ID, Name: set.ti.Name, Aliases: set.ti.Aliases, Kind: "artist"}
-}
-
-// judgeAlbum judges every Release for an album search and ranks them.
-func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, hand, skipGate bool, rules musicRules) ([]judge.Release, []judge.Verdict) {
-	bad := s.dangerousSeen(ctx)
-	turned := map[int64][]string{}
-	turnedFor := func(slotID int64) []string {
-		if l, ok := turned[slotID]; ok {
-			return l
-		}
-		l, _ := s.turnedDown(ctx, slotID)
-		turned[slotID] = l
-		return l
-	}
-	tref := set.ref()
-	checks := Checks(ctx, s.Store.Read())
-	var outSince *time.Time
-	if set.part.ReleaseDate != nil && (set.part.ReleaseDatePrecision == nil || *set.part.ReleaseDatePrecision == "day") {
-		outSince = set.part.ReleaseDate
-	}
-	rels := make([]judge.Release, len(all))
-	vs := make([]judge.Verdict, len(all))
-	for i, f := range all {
-		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
-		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
-			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
-			OutSince: outSince, Checks: checks}
-		if ss.Match.Title != nil {
-			set.lines(&ss, rels[i], f.item.Files, rules, turnedFor)
-		}
-		vs[i] = judge.Judge(rels[i], ss, set.pr.Body)
-	}
-	judge.Rank(rels, vs, set.pr.Body)
-	return rels, vs
-}
-
-// lines works out which tracks and Slots an album Release fills and the
-// album rules (pick-rules.md section 8.4).
-func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules musicRules, turnedFor func(int64) []string) {
-	p := rel.Parse
-	m := p.Music
-	add := func(rule, effect, detail string) {
-		ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: rule, Effect: effect, Detail: detail})
-	}
-	if p.Kind.Value == releasename.KindDiscography {
-		if !rules.discography {
-			add("discography", "fail", "a whole discography; Releases with many albums are not taken (Settings > Search)")
-			return
-		}
-		add("discography", "warn", "a whole discography, taken for "+set.part.Name)
-	} else {
-		a, warn, why := judge.MatchAlbum(p, set.ti.Name, set.albums)
-		switch {
-		case a == nil:
-			add("album", "fail", why)
-			return
-		case a.PartID != set.part.ID:
-			add("not_asked", "fail", "holds "+a.Name+", not "+set.part.Name)
-			return
-		}
-		add("album", "pass", "holds "+set.part.Name)
-		if warn != "" {
-			add("album_year", "warn", warn)
-		}
-	}
-	var covered []*trackSlot
-	for i := range set.tracks {
-		t := &set.tracks[i]
-		if len(m.Discs) == 0 || slices.Contains(m.Discs, t.disc) {
-			covered = append(covered, t)
-		}
-	}
-	if len(covered) == 0 {
-		add("disc", "fail", fmt.Sprintf("names disc %v; %s has no such disc", m.Discs, set.part.Name))
-		return
-	}
-	if len(m.Discs) > 0 && len(covered) < len(set.tracks) {
-		add("disc", "warn", fmt.Sprintf("holds disc %s only (%d of %d tracks)", joinInts(m.Discs), len(covered), len(set.tracks)))
-	}
-	if files > 0 || len(rel.Files) > 0 {
-		files = trackFiles(rel.Files, files, rules.extraFiles)
-	}
-	if (files > 0 || len(rel.Files) > 0) && rules.tolerance >= 0 && files < len(covered)-rules.tolerance && !p.Has("single_image") { // an image is one file by nature; the never list says why
-		add("track_count", "fail", fmt.Sprintf("holds %d track files; the album has %d tracks", files, len(covered)))
-		return
-	}
-	for _, e := range m.Editions {
-		switch e {
-		case "deluxe", "expanded", "bonus":
-			add("edition", "warn", "a "+e+" edition; tracks beyond the chosen Pressing are left alone")
-		case "live":
-			if !slices.Contains(set.part.SecondaryTypes, "live") {
-				add("edition", "warn", "says live; "+set.part.Name+" is not a live album")
-			}
-		}
-	}
-	ms := 0
-	for _, t := range covered {
-		if t.it.LengthMS != nil {
-			ms += *t.it.LengthMS
-		}
-	}
-	if ms > 0 && p.Kind.Value != releasename.KindDiscography { // a discography holds more than this album: its size is not checked
-		ss.RuntimeMinutes = max(1, (ms+30_000)/60_000)
-	}
-	var noGain []string
-	var turnedTargets []int64
-	turnedAll, targetTurned := 0, false
-	date := "no release date"
-	if set.part.ReleaseDate != nil {
-		date = set.part.ReleaseDate.Format("2 Jan 2006")
-	}
-	ss.GateDetail = set.part.Name + " is out (" + date + ")"
-	for _, t := range covered {
-		if t.sl == nil {
-			continue
-		}
-		isTarget := set.target[t.sl.ID]
-		if !isTarget && !(t.kept && slices.Contains(lookingNow, t.sl.State)) {
-			continue
-		}
-		if l := turnedFor(t.sl.ID); slices.Contains(l, rel.Name) || rel.InfoHash != "" && slices.Contains(l, rel.InfoHash) {
-			turnedAll++
-			if isTarget {
-				targetTurned = true
-				turnedTargets = append(turnedTargets, t.sl.ID)
-			}
-			continue
-		}
-		if !judge.Gains(rel, set.pr.Body, t.cur) {
-			noGain = append(noGain, trackName(t.it))
-			continue
-		}
-		if isTarget && set.notOut[t.sl.ID] {
-			ss.Out = false
-			ss.GateDetail = set.part.Name + " is not out yet (" + date + ")"
-		}
-		ss.SlotIDs = append(ss.SlotIDs, t.sl.ID)
-	}
-	if len(noGain) > 0 {
-		add("album_gain", "fail", fmt.Sprintf("not every track would gain: %s already %s a copy as good", shortList(noGain), hasOrHave(len(noGain))))
-		ss.SlotIDs = nil
-		return
-	}
-	switch {
-	case len(ss.SlotIDs) == 0 && targetTurned:
-		// Judged for those Slots, so the verdict says it was turned down.
-		ss.SlotIDs, ss.TurnedDown = turnedTargets, []string{rel.Name}
-	case len(ss.SlotIDs) == 0:
-		add("no_gain", "fail", "no track of "+set.part.Name+" is looking for a copy")
-	case turnedAll > 0:
-		add("turned_down_some", "warn", fmt.Sprintf("turned down before for %d tracks; not used for those", turnedAll))
-	}
-}
-
-func hasOrHave(n int) string {
-	if n == 1 {
-		return "has"
-	}
-	return "have"
-}
-
-func trackName(it domain.Item) string {
-	if it.Name != nil && *it.Name != "" {
-		return *it.Name
-	}
-	n := 0
-	if it.Numbers.Track != nil {
-		n = *it.Numbers.Track
-	}
-	return "track " + strconv.Itoa(n)
-}
-
-func shortList(xs []string) string {
-	if len(xs) > 3 {
-		return strings.Join(xs[:3], ", ") + fmt.Sprintf(" and %d more", len(xs)-3)
-	}
-	return strings.Join(xs, ", ")
-}
-
-func joinInts(ns []int) string {
-	out := make([]string, len(ns))
-	for i, n := range ns {
-		out[i] = strconv.Itoa(n)
-	}
-	return strings.Join(out, ", ")
-}
-
-// albumQuery is the search for one album.
-func albumQuery(ti domain.Title, part domain.Part) Query {
-	q := Query{Music: true, Artist: ti.Name, Album: part.Name, Title: ti.Name + " " + part.Name}
-	if part.ReleaseDate != nil {
-		q.Year = part.ReleaseDate.Year()
-	}
-	return q
-}
-
-// lookingStates for an album search: what a track Slot may be searched from.
-var albumLooking = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotFailed, domain.SlotRejected, domain.SlotStalled}
-
-// HandleAlbum searches one album of an artist for one Version: the album is
-// asked for by artist and album name, every Release is judged against the
-// album's track Slots, and the best is chosen (or held) for all the tracks
-// it fills in one write. A Release naming one disc fills that disc only, so
-// a second pick may fill the rest.
-//
-// Params: version_id (required), by_hand, choose (false only judges and
-// stores, for a person to choose from), skip_gate, kept_only, bulk.
+// HandleAlbum searches Sources for one album and picks a single Release for every track that is looking. With the "choose" param off, it only stores and shows the results. Tracks go back to looking if the search stops or nothing passes.
 func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "part" {
 		return errors.New("search_album needs a part subject")
@@ -427,6 +122,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
+	// rest puts the tracks this search moved to searching back to where they were. It runs on a Job that was cancelled too, so it ignores the cancellation.
 	rest := func(reason string) {
 		if show {
 			return
@@ -548,8 +244,310 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-// queueAlbumFor queues the album search for a track Slot (a search_slot Job
-// on a track searches its whole album).
+// trackFiles counts the music files of a Release. With no file list it takes the stated count less the extra files expected.
+func trackFiles(names []string, count, extra int) int {
+	if len(names) == 0 {
+		return max(count-max(extra, 0), 0)
+	}
+	n := 0
+	for _, f := range names {
+		f = strings.ToLower(strings.TrimRight(f, ". "))
+		if i := strings.LastIndexByte(f, '.'); i < 0 || !extraFileExts[f[i+1:]] {
+			n++
+		}
+	}
+	return n
+}
+
+// musicRules reads the music settings.
+func (s *Searcher) musicRules(ctx context.Context) musicRules {
+	db := s.Store.Read()
+	r := musicRules{discography: Setting(ctx, db, SettingDiscography) == "true"}
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingTrackTolerance)); err == nil && n >= -1 {
+		r.tolerance = n
+	}
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingExtraFiles)); err == nil && n >= 0 {
+		r.extraFiles = n
+	}
+	return r
+}
+
+// handlesMusic reports whether the Source takes music searches. A Source with no kinds takes all.
+func handlesMusic(src domain.Source) bool {
+	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "music")
+}
+
+// musicCategories returns the Source's music categories, or the standard ones.
+func musicCategories(src domain.Source) []int {
+	if c := src.Categories["music"]; len(c) > 0 {
+		return c
+	}
+	return DefaultCategories["music"]
+}
+
+// labels names the album for each Slot that is part of it, for messages.
+func (set albumSet) labels() map[int64]string {
+	out := map[int64]string{}
+	for _, t := range set.tracks {
+		if t.sl != nil {
+			out[t.sl.ID] = set.part.Name
+		}
+	}
+	return out
+}
+
+// loadAlbum reads the album's tracks in disc and track order, with each Slot and the copy it holds, and the artist's other albums for matching names.
+func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Version, part domain.Part) (albumSet, error) {
+	db := s.Store.Read()
+	set := albumSet{ti: ti, ver: ver, part: part, target: map[int64]bool{}, notOut: map[int64]bool{}}
+	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
+		return set, err
+	}
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
+	if err != nil {
+		return set, err
+	}
+	for _, p := range parts {
+		a := judge.AlbumRef{PartID: p.ID, Name: p.Name}
+		if p.ReleaseDate != nil {
+			a.Year = p.ReleaseDate.Year()
+		}
+		set.albums = append(set.albums, a)
+	}
+	its, err := database.Select[domain.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
+		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track')`, part.ID)
+	if err != nil {
+		return set, err
+	}
+	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
+	if err != nil {
+		return set, err
+	}
+	byItem := map[int64]*domain.Slot{}
+	for i := range slots {
+		byItem[slots[i].ItemID] = &slots[i]
+	}
+	albumKept := part.KeepUpToDate && part.Included && part.DroppedAt == nil
+	for _, it := range its {
+		t := trackSlot{it: it, sl: byItem[it.ID], disc: 1}
+		if it.Numbers.Disc != nil {
+			t.disc = *it.Numbers.Disc
+		}
+		t.kept = it.KeepUpToDate && albumKept && ver.KeepUpToDate && ti.KeepUpToDate
+		if t.sl != nil {
+			t.cur = currentOf(ctx, db, *t.sl, set.pr)
+		}
+		set.tracks = append(set.tracks, t)
+	}
+	return set, nil
+}
+
+// ref describes the artist for matching release names.
+func (set albumSet) ref() judge.TitleRef {
+	return judge.TitleRef{ID: set.ti.ID, Name: set.ti.Name, Aliases: set.ti.Aliases, Kind: "artist"}
+}
+
+// judgeAlbum judges and ranks every candidate as an album. A Release date with only a month or year does not gate, since the day is unknown.
+func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, hand, skipGate bool, rules musicRules) ([]judge.Release, []judge.Verdict) {
+	bad := s.dangerousSeen(ctx)
+	turned := map[int64][]string{}
+	turnedFor := func(slotID int64) []string {
+		if l, ok := turned[slotID]; ok {
+			return l
+		}
+		l, _ := s.turnedDown(ctx, slotID)
+		turned[slotID] = l
+		return l
+	}
+	tref := set.ref()
+	checks := Checks(ctx, s.Store.Read())
+	var outSince *time.Time
+	if set.part.ReleaseDate != nil && (set.part.ReleaseDatePrecision == nil || *set.part.ReleaseDatePrecision == "day") {
+		outSince = set.part.ReleaseDate
+	}
+	rels := make([]judge.Release, len(all))
+	vs := make([]judge.Verdict, len(all))
+	for i, f := range all {
+		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
+		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
+			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
+		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
+			OutSince: outSince, Checks: checks}
+		if ss.Match.Title != nil {
+			set.lines(&ss, rels[i], f.item.Files, rules, turnedFor)
+		}
+		vs[i] = judge.Judge(rels[i], ss, set.pr.Body)
+	}
+	judge.Rank(rels, vs, set.pr.Body)
+	return rels, vs
+}
+
+// lines adds the album-level checks to a Release's slot set: which album it holds, which discs, whether the track count fits, and which tracks would gain. A failing check ends the list early. Only tracks that would all gain are set on the Release, so an album is never mixed from copies.
+func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules musicRules, turnedFor func(int64) []string) {
+	p := rel.Parse
+	m := p.Music
+	add := func(rule, effect, detail string) {
+		ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: rule, Effect: effect, Detail: detail})
+	}
+	if p.Kind.Value == releasename.KindDiscography {
+		if !rules.discography {
+			add("discography", "fail", "a whole discography; Releases with many albums are not taken (Settings > Search)")
+			return
+		}
+		add("discography", "warn", "a whole discography, taken for "+set.part.Name)
+	} else {
+		a, warn, why := judge.MatchAlbum(p, set.ti.Name, set.albums)
+		switch {
+		case a == nil:
+			add("album", "fail", why)
+			return
+		case a.PartID != set.part.ID:
+			add("not_asked", "fail", "holds "+a.Name+", not "+set.part.Name)
+			return
+		}
+		add("album", "pass", "holds "+set.part.Name)
+		if warn != "" {
+			add("album_year", "warn", warn)
+		}
+	}
+	var covered []*trackSlot
+	for i := range set.tracks {
+		t := &set.tracks[i]
+		if len(m.Discs) == 0 || slices.Contains(m.Discs, t.disc) {
+			covered = append(covered, t)
+		}
+	}
+	if len(covered) == 0 {
+		add("disc", "fail", fmt.Sprintf("names disc %v; %s has no such disc", m.Discs, set.part.Name))
+		return
+	}
+	if len(m.Discs) > 0 && len(covered) < len(set.tracks) {
+		add("disc", "warn", fmt.Sprintf("holds disc %s only (%d of %d tracks)", joinInts(m.Discs), len(covered), len(set.tracks)))
+	}
+	if files > 0 || len(rel.Files) > 0 {
+		files = trackFiles(rel.Files, files, rules.extraFiles)
+	}
+	if (files > 0 || len(rel.Files) > 0) && rules.tolerance >= 0 && files < len(covered)-rules.tolerance && !p.Has("single_image") {
+		add("track_count", "fail", fmt.Sprintf("holds %d track files; the album has %d tracks", files, len(covered)))
+		return
+	}
+	for _, e := range m.Editions {
+		switch e {
+		case "deluxe", "expanded", "bonus":
+			add("edition", "warn", "a "+e+" edition; tracks beyond the chosen Pressing are left alone")
+		case "live":
+			if !slices.Contains(set.part.SecondaryTypes, "live") {
+				add("edition", "warn", "says live; "+set.part.Name+" is not a live album")
+			}
+		}
+	}
+	// The runtime is the sum of the covered tracks, rounded to the nearest minute, for the fake-size check.
+	ms := 0
+	for _, t := range covered {
+		if t.it.LengthMS != nil {
+			ms += *t.it.LengthMS
+		}
+	}
+	if ms > 0 && p.Kind.Value != releasename.KindDiscography {
+		ss.RuntimeMinutes = max(1, (ms+30_000)/60_000)
+	}
+	var noGain []string
+	var turnedTargets []int64
+	turnedAll, targetTurned := 0, false
+	date := "no release date"
+	if set.part.ReleaseDate != nil {
+		date = set.part.ReleaseDate.Format("2 Jan 2006")
+	}
+	ss.GateDetail = set.part.Name + " is out (" + date + ")"
+	for _, t := range covered {
+		if t.sl == nil {
+			continue
+		}
+		isTarget := set.target[t.sl.ID]
+		if !isTarget && !(t.kept && slices.Contains(lookingNow, t.sl.State)) {
+			continue
+		}
+		if l := turnedFor(t.sl.ID); slices.Contains(l, rel.Name) || rel.InfoHash != "" && slices.Contains(l, rel.InfoHash) {
+			turnedAll++
+			if isTarget {
+				targetTurned = true
+				turnedTargets = append(turnedTargets, t.sl.ID)
+			}
+			continue
+		}
+		if !judge.Gains(rel, set.pr.Body, t.cur) {
+			noGain = append(noGain, trackName(t.it))
+			continue
+		}
+		if isTarget && set.notOut[t.sl.ID] {
+			ss.Out = false
+			ss.GateDetail = set.part.Name + " is not out yet (" + date + ")"
+		}
+		ss.SlotIDs = append(ss.SlotIDs, t.sl.ID)
+	}
+	if len(noGain) > 0 {
+		add("album_gain", "fail", fmt.Sprintf("not every track would gain: %s already %s a copy as good", shortList(noGain), hasOrHave(len(noGain))))
+		ss.SlotIDs = nil
+		return
+	}
+	switch {
+	case len(ss.SlotIDs) == 0 && targetTurned:
+
+		ss.SlotIDs, ss.TurnedDown = turnedTargets, []string{rel.Name}
+	case len(ss.SlotIDs) == 0:
+		add("no_gain", "fail", "no track of "+set.part.Name+" is looking for a copy")
+	case turnedAll > 0:
+		add("turned_down_some", "warn", fmt.Sprintf("turned down before for %d tracks; not used for those", turnedAll))
+	}
+}
+
+// hasOrHave returns the verb that agrees with a count.
+func hasOrHave(n int) string {
+	if n == 1 {
+		return "has"
+	}
+	return "have"
+}
+
+// trackName names a track by title, or by number when it has none.
+func trackName(it domain.Item) string {
+	if it.Name != nil && *it.Name != "" {
+		return *it.Name
+	}
+	n := 0
+	if it.Numbers.Track != nil {
+		n = *it.Numbers.Track
+	}
+	return "track " + strconv.Itoa(n)
+}
+
+// shortList joins up to three names and counts the rest.
+func shortList(xs []string) string {
+	if len(xs) > 3 {
+		return strings.Join(xs[:3], ", ") + fmt.Sprintf(" and %d more", len(xs)-3)
+	}
+	return strings.Join(xs, ", ")
+}
+
+// joinInts joins numbers with commas.
+func joinInts(ns []int) string {
+	out := make([]string, len(ns))
+	for i, n := range ns {
+		out[i] = strconv.Itoa(n)
+	}
+	return strings.Join(out, ", ")
+}
+
+// albumQuery builds the Source query for an album.
+func albumQuery(ti domain.Title, part domain.Part) Query {
+	q := Query{Music: true, Artist: ti.Name, Album: part.Name, Title: ti.Name + " " + part.Name}
+	if part.ReleaseDate != nil {
+		q.Year = part.ReleaseDate.Year()
+	}
+	return q
+}
+
+// queueAlbumFor queues an album search for a track's album instead of searching the track alone, and passes on the flags that matter. The dedupe key keeps one search per album and Version.
 func (s *Searcher) queueAlbumFor(ctx context.Context, r *jobs.Run, c slotCtx) error {
 	if s.Queue == nil || c.it.PartID == nil {
 		return errors.New("searching an album needs the job queue and the track's album")
@@ -576,10 +574,7 @@ func (s *Searcher) queueAlbumFor(ctx context.Context, r *jobs.Run, c slotCtx) er
 	return nil
 }
 
-// feedArtist judges a feed check's Releases for one artist, per album and
-// Version: each Release is matched to its album and chosen (or held) for
-// every looking track Slot it fills. It returns how many were chosen, held
-// and newly stored.
+// feedArtist matches feed Releases against the albums of one artist, one search per album and Version, and returns how many were chosen, held and stored. A pick that would only repeat what a Slot already holds is dropped.
 func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64, cs []slotCtx, fs []found, storedID map[string]int64,
 	keyOf func(found) string) (int, int, int, error) {
 	chosen, held, stored := 0, 0, 0
@@ -617,7 +612,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 		cands := append([]found(nil), fs...)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
-				continue // feed checks look only for albums kept up to date
+				continue
 			}
 			set.target[c.sl.ID] = true
 			if c.sl.State == domain.SlotHeld && c.sl.HeldReleaseID != nil {

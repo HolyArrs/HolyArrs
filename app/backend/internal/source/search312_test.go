@@ -13,9 +13,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Roadmap 3.1.2: a turned-down Release is never picked again; choosing it
-// by hand needs force and logs the reasons.
-func TestTurnedDownNeverPickedAndForceNeeded(t *testing.T) {
+// A turned-down release is never picked again. Choosing it by hand needs force
+// and logs the reasons.
+func TestHandle_TurnedDownNeverPickedAndForceNeeded(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(br1080, time.Now().Add(-time.Hour), 10, ""), item(tv720, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
@@ -36,7 +36,6 @@ func TestTurnedDownNeverPickedAndForceNeeded(t *testing.T) {
 	if relByName(t, f, tv720).State != "chosen" {
 		t.Fatal("the next best should be chosen")
 	}
-	// By hand: refused without force, with the reasons.
 	exec(t, f, "UPDATE slots SET state = 'wanted'")
 	_, err := sr.Choose(ctx, again.ID, 0, false, domain.Actor{Kind: "user", ID: 1})
 	var nf *NeedsForceError
@@ -51,15 +50,14 @@ func TestTurnedDownNeverPickedAndForceNeeded(t *testing.T) {
 	if evs[0].Kind != EventChosenByHand || evs[0].Data["reasons_overridden"] == nil {
 		t.Fatalf("event %+v", evs[0])
 	}
-	// A busy Slot cannot take another.
 	if _, err := sr.Choose(ctx, again.ID, 0, true, domain.System); !errors.Is(err, ErrBusy) {
 		t.Fatalf("busy %v", err)
 	}
 }
 
-// A hand choice for a Title that is not out yet works, with a warning; an
-// automatic search leaves the Slot alone, a hand search skips the gate.
-func TestGateSkippedOnlyByHand(t *testing.T) {
+// A hand choice for a title that is not out yet works, with a warning. An
+// automatic search leaves the Slot alone and a hand search skips the gate.
+func TestHandle_GateSkippedOnlyByHand(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
@@ -77,7 +75,6 @@ func TestGateSkippedOnlyByHand(t *testing.T) {
 	if !strings.Contains(fmt.Sprint(rel.Verdict["reasons"]), "gate_skipped") {
 		t.Fatalf("no gate warning in %v", rel.Verdict["reasons"])
 	}
-	// Choosing by hand while not out yet says so.
 	exec(t, f, "UPDATE slots SET state = 'not_out_yet'")
 	ch, err := sr.Choose(context.Background(), rel.ID, 0, false, domain.System)
 	if err != nil || len(ch.Warnings) != 1 || !strings.Contains(ch.Warnings[0], "gate") {
@@ -85,9 +82,9 @@ func TestGateSkippedOnlyByHand(t *testing.T) {
 	}
 }
 
-// Find a better copy: with a File in place, only a better Release passes,
-// and nothing passes once the File is good enough.
-func TestBetterCopySearch(t *testing.T) {
+// With a file in place only a better release passes, and nothing passes once
+// the file is good enough.
+func TestHandle_BetterCopySearch(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(tv720, time.Now().Add(-time.Hour), 10, ""), item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
@@ -114,7 +111,6 @@ func TestBetterCopySearch(t *testing.T) {
 	if relByName(t, f, tv720).State != "refused" || relByName(t, f, web1080).State != "chosen" {
 		t.Fatalf("720p tv %s, 1080p web %s", relByName(t, f, tv720).State, relByName(t, f, web1080).State)
 	}
-	// Good enough in place: nothing is taken and the Slot stays better_wanted.
 	addFile("Dune.Part.Two.2024.1080p.WEB-DL.x264-OLD")
 	exec(t, f, "UPDATE slots SET state = 'better_wanted'")
 	exec(t, f, "DELETE FROM releases")
@@ -127,8 +123,8 @@ func TestBetterCopySearch(t *testing.T) {
 	}
 }
 
-// Held and Turned down lists: paging, remove one, clear all.
-func TestListsPagingAndRemoval(t *testing.T) {
+// Held and turned-down lists: paging, remove one, clear all.
+func TestLists_PagingAndRemoval(t *testing.T) {
 	f := seed(t, "http://unused/api")
 	ctx := context.Background()
 	sr := &Searcher{Store: f.s}
@@ -166,7 +162,6 @@ func TestListsPagingAndRemoval(t *testing.T) {
 	if len(page) != 1 || page[0].ID != held[2] {
 		t.Fatalf("page 2: %+v", page)
 	}
-	// Removing the Held Release of a Slot sends it back to wanted.
 	if n, err := sr.RemoveHeld(ctx, held[0], domain.System); err != nil || n != 1 {
 		t.Fatalf("remove %d %v", n, err)
 	}

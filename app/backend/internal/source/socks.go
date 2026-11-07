@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-// socks5Connect asks a SOCKS5 proxy (RFC 1928, with the RFC 1929 name and
-// password when given) to connect conn to addr. An IP address is sent as
-// one (ATYP 1 or 4); a name is sent as it is and the proxy looks it up.
+// socks5Connect asks a SOCKS5 proxy to connect conn to addr, following RFC 1928 and RFC 1929 for the name and password.
+// An IP address is sent as an address and a name is sent as it is, so the proxy looks it up.
 func socks5Connect(ctx context.Context, conn net.Conn, addr, user, pass string) error {
 	if dl, ok := ctx.Deadline(); ok {
 		_ = conn.SetDeadline(dl)
 	} else {
+		// Without a caller deadline the handshake still must not hang.
 		_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 	}
 	defer conn.SetDeadline(time.Time{})

@@ -11,8 +11,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// addUHD gives the show fixture a 4K Version (the 4K Pick rules) with one
-// Slot per episode in the same state as the HD one.
+// addUHD gives the show fixture a 4K Version with one Slot per episode in the
+// same state as the HD one.
 func addUHD(t *testing.T, f showFix) (int64, map[string]int64) {
 	t.Helper()
 	ctx := context.Background()
@@ -57,9 +57,9 @@ func verSlotState(t *testing.T, f showFix, id int64) domain.SlotState {
 	return domain.SlotState(st)
 }
 
-// 4.8.11: a season search runs per Version; the HD pack fills only HD
-// Slots and the 4K pack only 4K Slots, each judged by its own Pick rules.
-func TestSeasonSearchPerVersion(t *testing.T) {
+// A season search runs per Version: the HD pack fills only HD Slots and the 4K
+// pack only 4K Slots, each judged by its own pick rules.
+func TestHandleSeason_PerVersion(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string {
 		return []string{
 			"Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL",
@@ -111,8 +111,8 @@ func TestSeasonSearchPerVersion(t *testing.T) {
 	}
 }
 
-// 4.8.11: the missing search queues one season search per Version.
-func TestMissingSearchPerVersion(t *testing.T) {
+// The missing search queues one season search per Version.
+func TestMissingSearch_PerVersion(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	uhd, _ := addUHD(t, f)

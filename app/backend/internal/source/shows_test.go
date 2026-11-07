@@ -23,8 +23,8 @@ const tvCaps = `<?xml version="1.0" encoding="UTF-8"?>
 <movie-search available="yes" supportedParams="q,imdbid,tmdbid"/>
 </searching><categories><category id="2000" name="Movies"/><category id="5000" name="TV"/></categories></caps>`
 
-// tvRSS lists Releases; a name may end in "|<size in MB>" (default 1200 MB
-// an episode, 3600 MB a season).
+// tvRSS lists releases. A name may end in |<size in MB>, default 1200 for an
+// episode and 3600 for a season.
 func tvRSS(names ...string) string {
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel>`)
@@ -45,8 +45,8 @@ func tvRSS(names ...string) string {
 	return b.String()
 }
 
-// tvServer answers caps and searches; answer picks the Releases for each
-// search's query. Every query is kept.
+// tvServer answers caps and searches. answer picks the releases for each
+// search's query, and every query is kept.
 type tvServer struct {
 	mu      sync.Mutex
 	queries []url.Values
@@ -68,18 +68,19 @@ func (ts *tvServer) start(t *testing.T) string {
 	return srv.URL + "/api"
 }
 
+// showFix is the show fixture.
 type showFix struct {
 	fixture
 	titleID, verID int64
-	parts          map[int]int64    // season number -> part id
-	slots          map[string]int64 // "S01E02" -> slot id
-	items          map[string]int64 // "S01E02" -> item id
+	parts          map[int]int64
+	slots          map[string]int64
+	items          map[string]int64
 	states         map[string]domain.SlotState
 }
 
-// seedShow adds Copper Valley: season 1 with three aired episodes, season 2
-// with one aired and one airing next month, every Slot wanted (or not out
-// yet), kept up to date, and one Source for shows. A Dune movie is there too.
+// seedShow adds a show with season 1 of three aired episodes and season 2 of
+// one aired and one airing next month. Every Slot is wanted or not out yet,
+// kept up to date, with one Source for shows. A movie is there too.
 func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slot)) showFix {
 	t.Helper()
 	f := showFix{fixture: seed(t, srcURL), parts: map[int]int64{}, slots: map[string]int64{}, items: map[string]int64{}}
@@ -177,7 +178,7 @@ func hasCode(rel domain.Release, code string) bool {
 	return false
 }
 
-func TestEpisodeSearch(t *testing.T) {
+func TestSearch_Episode(t *testing.T) {
 	ts := &tvServer{answer: func(q url.Values) []string {
 		return []string{
 			"Copper.Valley.S01E02.1080p.WEB-DL.H.264-QUILL",
@@ -221,7 +222,7 @@ func TestEpisodeSearch(t *testing.T) {
 	}
 }
 
-func TestEpisodeNotAiredIsNotSearchedButByHand(t *testing.T) {
+func TestHandleSeason_EpisodeNotAiredSearchedOnlyByHand(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S02E02.1080p.WEB-DL.H.264-QUILL"} }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
@@ -239,7 +240,7 @@ func TestEpisodeNotAiredIsNotSearchedButByHand(t *testing.T) {
 	}
 }
 
-func TestSeasonSearchTakesPack(t *testing.T) {
+func TestHandleSeason_TakesPack(t *testing.T) {
 	ts := &tvServer{answer: func(q url.Values) []string {
 		return []string{
 			"Copper.Valley.S01E01.1080p.WEB-DL.H.264-QUILL",
@@ -281,9 +282,8 @@ func TestSeasonSearchTakesPack(t *testing.T) {
 	}
 }
 
-func TestSeasonSearchFallsBackToEpisodes(t *testing.T) {
+func TestHandleSeason_FallsBackToEpisodes(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
-	// S01E01 already has a copy: the season is not wholly missing.
 	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
 		if label == "S01E01" {
 			sl.State = domain.SlotInLibrary
@@ -302,8 +302,7 @@ func TestSeasonSearchFallsBackToEpisodes(t *testing.T) {
 	}
 }
 
-func TestSeasonSearchLeftoversSearchedAlone(t *testing.T) {
-	// The season search finds only S01E01; S01E02 and S01E03 get their own searches.
+func TestHandleSeason_LeftoversSearchedAlone(t *testing.T) {
 	ts := &tvServer{answer: func(q url.Values) []string {
 		if q.Get("ep") == "" {
 			return []string{"Copper.Valley.S01E01.1080p.WEB-DL.H.264-QUILL"}
@@ -321,14 +320,13 @@ func TestSeasonSearchLeftoversSearchedAlone(t *testing.T) {
 	}
 }
 
-func TestFeedPackRules(t *testing.T) {
+func TestFeedShow_PackRules(t *testing.T) {
 	feed := []string{
-		"Copper.Valley.S02.1080p.WEB-DL.H.264-QUILL", // season 2 still airing
+		"Copper.Valley.S02.1080p.WEB-DL.H.264-QUILL",
 		"Copper.Valley.S02E01.1080p.WEB-DL.H.264-QUILL",
 		"Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL",
 	}
 	ts := &tvServer{answer: func(url.Values) []string { return feed }}
-	// S01E01 already has a copy as good as the pack.
 	var fileSlot int64
 	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
 		if label == "S01E01" {
@@ -356,7 +354,6 @@ func TestFeedPackRules(t *testing.T) {
 		t.Fatalf("pack over a copy as good: %s %v", pack.State, reasonCodes(pack))
 	}
 
-	// With "any episode may gain" the pack fills the two missing episodes.
 	setSetting(t, f.fixture, SettingPackUpgrade, "any")
 	feed = []string{"Copper.Valley.S01.1080p.WEB-DL.H.265-LARKSPUR"}
 	j = runKind(t, f.fixture, sr, KindFeedCheck, nil, nil)
@@ -398,7 +395,7 @@ func setSetting(t *testing.T, f fixture, key, value string) {
 	}
 }
 
-func TestTurnedDownForOneEpisode(t *testing.T) {
+func TestHandleSeason_TurnedDownForOneEpisode(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"} }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
@@ -419,7 +416,6 @@ func TestTurnedDownForOneEpisode(t *testing.T) {
 	if !slices.Contains(td2, pack.Name) || slices.Contains(td3, pack.Name) {
 		t.Fatalf("turned down per episode: E02 %v, E03 %v", td2, td3)
 	}
-	// Judged again for the season: it may still fill E01 and E03, never E02.
 	set, err := sr.loadShow(ctx, mustTitle(t, f), mustVersion(t, f))
 	if err != nil {
 		t.Fatal(err)
@@ -431,12 +427,10 @@ func TestTurnedDownForOneEpisode(t *testing.T) {
 	if !vs[0].Passed || slices.Contains(vs[0].SlotIDs, f.slots["S01E02"]) || len(vs[0].SlotIDs) != 2 {
 		t.Fatalf("judged per Slot: %+v", vs[0])
 	}
-	// A person may still choose it for another episode without force.
 	ch, err := sr.Choose(ctx, pack.ID, f.slots["S01E03"], false, domain.System)
 	if err != nil || ch.Forced {
 		t.Fatalf("choose for E03: %+v %v", ch, err)
 	}
-	// ...but for E02 only with force.
 	var nf *NeedsForceError
 	if _, err := sr.Choose(ctx, pack.ID, f.slots["S01E02"], false, domain.System); err == nil || !asNeedsForce(err, &nf) {
 		t.Fatalf("choose for E02 without force: %v", err)
@@ -465,7 +459,7 @@ func mustVersion(t *testing.T, f showFix) domain.Version {
 	return v
 }
 
-func TestChoosePackByHandFillsSeason(t *testing.T) {
+func TestChoose_PackByHandFillsSeason(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S01.720p.HDTV.x264-OXBOW"} }}
 	f := seedShow(t, ts.start(t), nil)
 	var grabs []int64
@@ -483,7 +477,7 @@ func TestChoosePackByHandFillsSeason(t *testing.T) {
 	}
 }
 
-func TestMissingSearchGroupsSeasons(t *testing.T) {
+func TestMissingSearch_GroupsSeasons(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
@@ -491,8 +485,6 @@ func TestMissingSearchGroupsSeasons(t *testing.T) {
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
-	// Season 1 (three missing) is one season search; S02E01 alone is an
-	// episode search; S02E02 has not aired; the movie gets its own.
 	if n, _ := j.Result["seasons"].(float64); n != 1 {
 		t.Fatalf("result %+v", j.Result)
 	}
@@ -505,7 +497,6 @@ func TestMissingSearchGroupsSeasons(t *testing.T) {
 		t.Fatalf("seasons %d, episode and movie searches %d, unaired %d", seasons, eps, unaired)
 	}
 
-	// Turned off: shows are left alone.
 	setSetting(t, f.fixture, SettingMissingShows, "false")
 	if _, err := f.s.Read().Exec("SELECT 1"); err != nil {
 		t.Fatal(err)
@@ -520,11 +511,10 @@ func TestMissingSearchGroupsSeasons(t *testing.T) {
 	}
 }
 
-func TestMissingSearchOneKind(t *testing.T) {
+func TestMissingSearch_OneKind(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	// Movies only: the movie is searched, the show's episodes are not.
 	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "movie"})
 	if n, _ := j.Result["slots"].(float64); j.State != "done" || n != 1 {
 		t.Fatalf("movies: %s %+v", j.State, j.Result)
@@ -535,7 +525,6 @@ func TestMissingSearchOneKind(t *testing.T) {
 	if movie != 1 || show != 1 {
 		t.Fatalf("movie searches %d, all searches %d", movie, show)
 	}
-	// Shows only: season 1 and S02E01, never the movie.
 	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "show"})
 	if n, _ := j.Result["slots"].(float64); n != 4 {
 		t.Fatalf("shows: %+v", j.Result)
@@ -545,7 +534,7 @@ func TestMissingSearchOneKind(t *testing.T) {
 	}
 }
 
-func TestDailyEpisodeQuery(t *testing.T) {
+func TestShowQuery_DailyEpisode(t *testing.T) {
 	day := time.Now().UTC().AddDate(0, 0, -3)
 	ts := &tvServer{answer: func(url.Values) []string {
 		return []string{"Copper.Valley." + day.Format("2006.01.02") + ".1080p.WEB-DL.H.264-NIGHTDESK"}
@@ -569,9 +558,9 @@ func TestDailyEpisodeQuery(t *testing.T) {
 	}
 }
 
-// #139: title_id keeps the missing search to one title (an approved show
-// request): its episodes are searched, the other title's movie is not.
-func TestMissingSearchOneTitle(t *testing.T) {
+// A title_id keeps the missing search to one title: its episodes are searched
+// and the other title's movie is not.
+func TestMissingSearch_OneTitle(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
@@ -586,9 +575,9 @@ func TestMissingSearchOneTitle(t *testing.T) {
 	}
 }
 
-// #139 review: the nightly "missing search covers shows" switch does not
-// stop the search an approved show request starts for its own title.
-func TestMissingSearchOneTitleIgnoresNightlyShowSwitch(t *testing.T) {
+// The nightly show switch does not stop the search an approved show request
+// starts for its own title.
+func TestMissingSearch_OneTitleIgnoresNightlyShowSwitch(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	setSetting(t, f.fixture, SettingMissingShows, "false")

@@ -12,13 +12,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func html(server string) map[string]string {
-	return map[string]string{"Server": server, "Content-Type": "text/html; charset=UTF-8"}
-}
-
-// A site's bot check or ban (#106) is told apart from a refused key; a plain
-// 403 still means the key. Only a local fake server answers, never a real site.
-func TestBotCheckIsToldApartFromARefusedKey(t *testing.T) {
+// TestBotCheck_ToldApartFromRefusedKey checks that a bot check or ban page is told apart from a refused key, while a plain 403 still means the key.
+// Only a local fake server answers, never a real site.
+func TestBotCheck_ToldApartFromRefusedKey(t *testing.T) {
 	for _, c := range []struct {
 		name   string
 		status int
@@ -36,7 +32,6 @@ func TestBotCheckIsToldApartFromARefusedKey(t *testing.T) {
 		{"cloudflare firewall block", 403, html("cloudflare"), "<html><head><title>Attention Required! | Cloudflare</title></head><body><h1>Sorry, you have been blocked</h1></body></html>", KindBlocked, BlockSiteBan},
 		{"plain 403", 403, nil, "Forbidden", KindLoginRefused, ""},
 		{"cloudflare 403 without a check page", 403, map[string]string{"Server": "cloudflare"}, "invalid api key", KindLoginRefused, ""},
-		// Cloudflare's script and widgets sit on ordinary pages too: a site's own error page stays what it is.
 		{"site's own 403 page behind cloudflare", 403, html("cloudflare"), "<html><head><title>Invalid API key</title></head><body><script src=\"/cdn-cgi/challenge-platform/scripts/jsd/main.js\"></script><div id=\"cf-chl-widget-1\"></div></body></html>", KindLoginRefused, ""},
 		{"feed error naming ddos-guard", 403, map[string]string{"Server": "ddos-guard", "Content-Type": "application/xml"}, "<error code=\"100\" description=\"key refused (ddos-guard)\"/>", KindLoginRefused, ""},
 		{"cloudflare rate limit", 429, html("cloudflare"), "<html><head><title>Access denied</title></head><body>error code: 1015</body></html>", KindRateLimited, ""},
@@ -63,9 +58,8 @@ func TestBotCheckIsToldApartFromARefusedKey(t *testing.T) {
 	}
 }
 
-// The kind of block is kept while the Source is paused, shown in its health
-// and the search outcome, and cleared when it answers again or fails otherwise.
-func TestBotCheckPauseHealthAndRecovery(t *testing.T) {
+// TestBotCheck_PauseHealthAndRecovery checks that the block kind is kept while paused, shown in health and the search outcome, and cleared when the Source answers again or fails another way.
+func TestBotCheck_PauseHealthAndRecovery(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	src, err := Add(ctx, s, v, Input{Name: "Guarded", Format: "torznab", URL: "http://guarded.example/api"}, domain.System)
@@ -94,7 +88,6 @@ func TestBotCheckPauseHealthAndRecovery(t *testing.T) {
 	if BlockOf(got) != BlockBotCheck || pauseWords(BlockBotCheck) != "blocked by the site's bot check" {
 		t.Fatalf("why %q", BlockOf(got))
 	}
-	// Another kind of failure replaces the block.
 	sr.pause(ctx, got, &Error{Kind: KindDown, Msg: "x"})
 	if got = get(); got.Extra["block"] != "" || got.Extra["failures"] != "2" {
 		t.Fatalf("block kept after another failure: %+v", got.Extra)
@@ -107,10 +100,14 @@ func TestBotCheckPauseHealthAndRecovery(t *testing.T) {
 	if got = get(); got.State != "enabled" || got.Extra["block"] != "" || got.Extra["failures"] != "" {
 		t.Fatalf("not recovered: %+v", got)
 	}
-	// The local-network block keeps its own words.
 	local := got
 	local.State, local.PauseReason = "paused", ptr(KindBlocked)
 	if h := HealthOf(local); !strings.Contains(h.Text, "local network") {
 		t.Fatalf("local block %+v", h)
 	}
+}
+
+// html returns response headers for an HTML page from the given server.
+func html(server string) map[string]string {
+	return map[string]string{"Server": server, "Content-Type": "text/html; charset=UTF-8"}
 }

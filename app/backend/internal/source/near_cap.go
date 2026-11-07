@@ -9,11 +9,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// nearCapShare is how full a limit is before Settings says it is close.
+// nearCapShare is how full a limit gets before Settings says it is close.
 const nearCapShare = 0.8
 
-// NearCap says whether a Source used 80% or more of its searches or picks
-// in its window, with the words to show. A limit of 0 means no limit.
+// NearCap says whether a Source used 80% or more of its searches or picks in its window, with the words to show.
+// A limit of 0 means no limit.
 func NearCap(ctx context.Context, st *database.Store, src domain.Source, now time.Time) (bool, string) {
 	l := src.Limits
 	if l.SearchesPerWindow <= 0 && l.GrabsPerWindow <= 0 {
@@ -33,8 +33,6 @@ func NearCap(ctx context.Context, st *database.Store, src domain.Source, now tim
 		}
 	}
 	if l.GrabsPerWindow > 0 {
-		// The same count overGrabLimit uses: Downloads from its Releases plus
-		// Releases chosen and not yet sent.
 		var n int
 		if err := db.QueryRowContext(ctx, `SELECT
 		(SELECT count(*) FROM downloads d JOIN releases r ON r.id = d.release_id WHERE r.source_id = ? AND d.created_at > ?) +

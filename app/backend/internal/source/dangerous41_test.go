@@ -14,26 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// failedDownload records a failed Download of release id with reason why.
-func failedDownload(t *testing.T, f fixture, id int64, hash, why string) {
-	t.Helper()
-	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
-			return err
-		}
-		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &id, SlotIDs: []int64{f.slotID}, ExternalID: hash, State: "failed", StateReason: &why,
-			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		_, err := database.Insert(tx, "downloads", dl, domain.System)
-		return err
-	}); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// #41: a Release refused only because it was turned down before is free
-// again once the Turned down list is cleared: no force needed.
-func TestTurnedDownOnlyRefusalClearsWithTheList(t *testing.T) {
+// TestTurnedDown_OnlyRefusalClearsWithTheList checks that a Release refused only because it was turned down is free again once the list is cleared, with no force needed.
+func TestTurnedDown_OnlyRefusalClearsWithTheList(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	ctx := context.Background()
 	b := addRelease(t, f, web1080, "turned_down")
@@ -52,10 +34,9 @@ func TestTurnedDownOnlyRefusalClearsWithTheList(t *testing.T) {
 	}
 }
 
-// #41: a clean-named Release whose files turned out to be a program
-// (fail_dangerous) still needs force after the list is cleared, and the
-// same torrent under another name from another listing is refused too.
-func TestDangerousFilesStayRefused(t *testing.T) {
+// TestDangerousFiles_StayRefused checks that a clean-named Release whose files proved to be a program still needs force after the list is cleared.
+// The same torrent under another name from another listing is refused too.
+func TestDangerousFiles_StayRefused(t *testing.T) {
 	const h = "0123456789abcdef0123456789abcdef01234567"
 	lf := &liveFeed{}
 	f := seed(t, lf.url(t))
@@ -84,15 +65,13 @@ func TestDangerousFilesStayRefused(t *testing.T) {
 	}
 }
 
-// #41: a real torrent that shares a name with a known program file (fakes
-// copy scene names) but has its own info hash stays free.
-func TestDangerousNameWithOtherHashStaysFree(t *testing.T) {
+// TestDangerousName_OtherHashStaysFree checks that a real torrent sharing a name with a known program file stays free when its info hash differs.
+// Fakes copy scene names, so the hash is what counts.
+func TestDangerousName_OtherHashStaysFree(t *testing.T) {
 	const bad = "0123456789abcdef0123456789abcdef01234567"
 	const good = "89abcdef0123456789abcdef0123456789abcdef"
 	lf := &liveFeed{}
 	f := seed(t, lf.url(t))
-	// The fake: the same scene name, its own hash, a Download that failed
-	// as dangerous.
 	a := addRelease(t, f, web1080, "turned_down")
 	exec(t, f, `UPDATE releases SET info_hash = ?, link_ref = 'http://src/fake.torrent' WHERE id = ?`, bad, a)
 	failedDownload(t, f, a, bad, "dangerous files: x.exe")
@@ -120,9 +99,8 @@ func TestDangerousNameWithOtherHashStaysFree(t *testing.T) {
 	}
 }
 
-// #41: a held Release whose torrent fails as dangerous during the wait is
-// not sent when the wait ends: refused, and its Slot looks again.
-func TestHeldDangerousNotSentAfterTheWait(t *testing.T) {
+// TestHeldDangerous_NotSentAfterTheWait checks that a held Release whose torrent fails as dangerous during the wait is refused and its Slot looks again.
+func TestHeldDangerous_NotSentAfterTheWait(t *testing.T) {
 	const h = "0123456789abcdef0123456789abcdef01234567"
 	f := seed(t, "http://127.0.0.1:1/api")
 	held := addRelease(t, f, web1080, "held")
@@ -145,8 +123,8 @@ func TestHeldDangerousNotSentAfterTheWait(t *testing.T) {
 	}
 }
 
-// A magnet link may carry its hash in base32.
-func TestListingHashBase32(t *testing.T) {
+// TestListingHash_Base32 checks that a magnet link may carry its hash in base32.
+func TestListingHash_Base32(t *testing.T) {
 	const h = "0123456789abcdef0123456789abcdef01234567"
 	b, _ := hex.DecodeString(h)
 	if got := listingHash("", "magnet:?xt=urn:btih:"+base32.StdEncoding.EncodeToString(b)+"&dn=x"); got != h {
@@ -154,5 +132,21 @@ func TestListingHashBase32(t *testing.T) {
 	}
 	if got := listingHash("", "magnet:?xt=urn:btih:"+strings.ToUpper(h)); got != h {
 		t.Fatalf("hex at the end: %q", got)
+	}
+}
+
+func failedDownload(t *testing.T, f fixture, id int64, hash, why string) {
+	t.Helper()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
+			return err
+		}
+		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &id, SlotIDs: []int64{f.slotID}, ExternalID: hash, State: "failed", StateReason: &why,
+			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
+		_, err := database.Insert(tx, "downloads", dl, domain.System)
+		return err
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

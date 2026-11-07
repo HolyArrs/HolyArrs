@@ -9,13 +9,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Tags (#108): a Source with tags serves only titles sharing one of them,
-// in searches (skipped, with the reason in the Job's result) and in feeds
-// (its releases are not matched to other titles).
-
 func feedHits(lf *liveFeed) int { lf.mu.Lock(); defer lf.mu.Unlock(); return lf.hits }
 
-func TestTaggedSourceIsSkippedForATitleWithoutItsTag(t *testing.T) {
+// A Source with tags serves only titles sharing one of them, in searches
+// (skipped, with the reason in the job's result) and in feeds (its releases are
+// not matched to other titles).
+func TestHandle_TaggedSourceSkippedForTitleWithoutTag(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(duneFeed)
 	f := seed(t, lf.url(t))
@@ -32,7 +31,6 @@ func TestTaggedSourceIsSkippedForATitleWithoutItsTag(t *testing.T) {
 		t.Fatalf("job %s, slot %s: %v", j.State, sl.State, sl.LastReason)
 	}
 
-	// With the tag on the title the Source is asked and a Release chosen.
 	exec(t, f, `UPDATE titles SET tags = '["kids"]'`)
 	exec(t, f, `UPDATE slots SET state = 'wanted'`)
 	var chosen int
@@ -42,7 +40,7 @@ func TestTaggedSourceIsSkippedForATitleWithoutItsTag(t *testing.T) {
 	}
 }
 
-func TestTaggedFeedReleasesMatchOnlyTitlesSharingATag(t *testing.T) {
+func TestFeed_TaggedReleasesMatchOnlyTitlesSharingTag(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
@@ -60,10 +58,10 @@ func TestTaggedFeedReleasesMatchOnlyTitlesSharingATag(t *testing.T) {
 	}
 }
 
-// A tagged Source's release is matched against every wanted title first: a
-// release for the untagged "Dune: Part Two" never lands on a look-alike
-// "Dune" that shares the Source's tag.
-func TestTaggedFeedReleaseNeverLandsOnALookAlikeTitle(t *testing.T) {
+// A tagged Source's release is matched against every wanted title first, so a
+// release for the untagged "Dune: Part Two" never lands on a look-alike "Dune"
+// that shares the Source's tag.
+func TestFeed_TaggedReleaseNeverLandsOnLookAlike(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))

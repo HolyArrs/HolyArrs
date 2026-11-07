@@ -11,10 +11,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 4.2.2: a failed season pack turns its Release down for every episode and
-// searches the season again (once, for all its Slots); the season search
-// takes another pack. A failed single episode is searched alone.
-func TestFailedPackSearchesSeasonAgain(t *testing.T) {
+// TestQueueAfterFailure_PackSearchesSeasonAgain checks that a failed season pack is turned down for every episode and the season is searched once for all its Slots.
+// A failed single episode is searched alone.
+func TestQueueAfterFailure_PackSearchesSeasonAgain(t *testing.T) {
 	failed := "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"
 	ts := &tvServer{answer: func(url.Values) []string {
 		return []string{failed, "Copper.Valley.S01.1080p.WEB-DL.H.264-OTHER", "Copper.Valley.S02E01.1080p.WEB-DL.H.264-QUILL"}
@@ -72,7 +71,6 @@ func TestFailedPackSearchesSeasonAgain(t *testing.T) {
 	if kinds[KindSearchSeason] != 1 || kinds[KindSearchSlot] != 1 {
 		t.Fatalf("queued %v", kinds)
 	}
-	// The queued season search is run below on its own.
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec("DELETE FROM jobs"); return err }); err != nil {
 		t.Fatal(err)
 	}

@@ -13,14 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Stage 3.3.5: a lab album search picks the expected Release end to end.
-// The lab fake indexer lists three album Releases of "Lab Lanterns -
-// Harbour Light (2024)" (research/lab/sample-library.json, albumListings):
-// a FLAC copy, an MP3 320 copy and a one-file image with a cue sheet. Under
-// Lossless first the FLAC copy must be chosen for all twelve tracks with one
-// pick; the MP3 copy is passed over and the image refused. Nothing is
-// downloaded (album download is stage 4.3).
-func TestLabAlbumSearch(t *testing.T) {
+// TestLab_AlbumSearch checks a 12-track album is picked as one Release against the lab indexer.
+func TestLab_AlbumSearch(t *testing.T) {
 	f := seed(t, labURL())
 	var verID, partID int64
 	var slots []int64

@@ -15,25 +15,8 @@ import (
 	"testing"
 )
 
-// fakeDNS answers only the names it holds; everything else fails to look up.
-func fakeDNS(m map[string][]string) func(context.Context, string) ([]net.IP, error) {
-	return func(_ context.Context, host string) ([]net.IP, error) {
-		var out []net.IP
-		for _, s := range m[host] {
-			out = append(out, net.ParseIP(s))
-		}
-		if len(out) == 0 {
-			return nil, errors.New("no such host")
-		}
-		return out, nil
-	}
-}
-
-// onlyLoopback stands in for "public" so the tests can reach 127.0.0.1
-// while every other address counts as local.
-func onlyLoopback(ip net.IP) bool { return ip.IsLoopback() }
-
-func TestHTTPProxyRefusesNameOnlyTheProxyKnows(t *testing.T) {
+// TestHTTPProxy_RefusesNameOnlyTheProxyKnows checks that a name we cannot look up is refused instead of left to the proxy.
+func TestHTTPProxy_RefusesNameOnlyTheProxyKnows(t *testing.T) {
 	var srcHits atomic.Int32
 	src := torznab(t, duneFeed, &srcHits)
 	addr, seen := connectProxy(t, strings.TrimPrefix(src.URL, "http://"))
@@ -50,14 +33,14 @@ func TestHTTPProxyRefusesNameOnlyTheProxyKnows(t *testing.T) {
 	}
 }
 
-func TestHTTPProxyGetsTheCheckedAddress(t *testing.T) {
+// TestHTTPProxy_GetsTheCheckedAddress checks that an HTTP proxy gets the address that was checked, never the name.
+func TestHTTPProxy_GetsTheCheckedAddress(t *testing.T) {
 	var host atomic.Value
 	src := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		host.Store(r.Host)
 		_, _ = w.Write(file(t, "caps.xml"))
 	})
 	_, port, _ := net.SplitHostPort(strings.TrimPrefix(src.URL, "http://"))
-	// The proxy would send the name somewhere else; it only ever gets the address.
 	addr, seen := connectProxy(t, strings.TrimPrefix(src.URL, "http://"))
 	pu, _ := url.Parse("http://" + addr)
 	c := New(Config{URL: "http://pinned.test:" + port + "/api", Proxy: pu, ProxyAllowLocal: true,
@@ -65,14 +48,15 @@ func TestHTTPProxyGetsTheCheckedAddress(t *testing.T) {
 	if _, err := c.Caps(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	// The proxy would send a name somewhere else, so it only ever gets the checked address.
 	if h, _ := seen.Load("connect"); h != "127.0.0.1:"+port {
 		t.Fatalf("the proxy was asked for %v, not the checked address", h)
 	}
 	if h := host.Load(); h != "pinned.test:"+port {
 		t.Fatalf("Host header %v", h)
 	}
-	// Rebinding: one local answer among the others refuses the whole name.
 	seen.Delete("connect")
+	// Rebinding: one local answer among the others refuses the whole name.
 	c = New(Config{URL: "http://pinned.test:" + port + "/api", Proxy: pu, ProxyAllowLocal: true,
 		AllowLocal: true, resolve: fakeDNS(map[string][]string{"pinned.test": {"127.0.0.1", "169.254.169.254"}})})
 	_, err := c.Caps(context.Background())
@@ -85,8 +69,86 @@ func TestHTTPProxyGetsTheCheckedAddress(t *testing.T) {
 	}
 }
 
-// socksSeen is a SOCKS5 proxy without sign-in that records the address
-// type and host it was asked for and connects names to target.
+// TestSOCKS5Proxy_RefusesNameOnlyTheProxyKnows checks that a SOCKS5 proxy is not handed a name we cannot look up.
+func TestSOCKS5Proxy_RefusesNameOnlyTheProxyKnows(t *testing.T) {
+	var srcHits atomic.Int32
+	src := torznab(t, duneFeed, &srcHits)
+	addr, seen := socksSeen(t, strings.TrimPrefix(src.URL, "http://"))
+	pu, _ := url.Parse("socks5://" + addr)
+	c := New(Config{URL: "http://only-at-proxy.test/api", Proxy: pu, ProxyAllowLocal: true,
+		AllowLocal: true, resolve: fakeDNS(nil)})
+	_, err := c.Caps(context.Background())
+	var se *Error
+	if !errors.As(err, &se) || se.Kind != KindBlocked || srcHits.Load() != 0 {
+		t.Fatalf("socks name only the proxy knows: %v", err)
+	}
+	if _, ok := seen.Load("host"); ok {
+		t.Fatal("the proxy was asked at all")
+	}
+	c = New(Config{URL: "http://pinned.test/api", Proxy: pu, ProxyAllowLocal: true,
+		AllowLocal: true, resolve: fakeDNS(map[string][]string{"pinned.test": {"127.0.0.1"}})})
+	if _, err := c.Caps(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	// A name we look up is sent as the checked address (ATYP 1), never as the name.
+	if a, _ := seen.Load("atyp"); a != byte(1) {
+		t.Fatalf("address type %v", a)
+	}
+	if h, _ := seen.Load("host"); h != "127.0.0.1" {
+		t.Fatalf("host %v", h)
+	}
+	// Rebinding: one local answer among the others refuses the whole name.
+	c = New(Config{URL: "http://pinned.test/api", Proxy: pu, ProxyAllowLocal: true,
+		AllowLocal: true, resolve: fakeDNS(map[string][]string{"pinned.test": {"127.0.0.1", "169.254.169.254"}})})
+	if _, err := c.Caps(context.Background()); !errors.As(err, &se) || se.Kind != KindBlocked {
+		t.Fatalf("socks mixed answers: %v", err)
+	}
+}
+
+// TestHTTPSThroughProxy_ConnectsToCheckedAddressKeepingName checks that an https request tunnels to the checked address while the certificate is still checked against the name.
+func TestHTTPSThroughProxy_ConnectsToCheckedAddressKeepingName(t *testing.T) {
+	var sni atomic.Value
+	src := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sni.Store(r.TLS.ServerName)
+		_, _ = w.Write(file(t, "caps.xml"))
+	}))
+	src.StartTLS()
+	t.Cleanup(src.Close)
+	_, port, _ := net.SplitHostPort(strings.TrimPrefix(src.URL, "https://"))
+	addr, seen := connectProxy(t, strings.TrimPrefix(src.URL, "https://"))
+	pu, _ := url.Parse("http://" + addr)
+	c := New(Config{URL: "https://example.com:" + port + "/api", Proxy: pu, ProxyAllowLocal: true,
+		AllowAddr: onlyLoopback, resolve: fakeDNS(map[string][]string{"example.com": {"127.0.0.1"}})})
+	c.http.Transport.(*http.Transport).TLSClientConfig = src.Client().Transport.(*http.Transport).TLSClientConfig.Clone()
+	if _, err := c.Caps(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if h, _ := seen.Load("connect"); h != "127.0.0.1:"+port {
+		t.Fatalf("CONNECT to %v", h)
+	}
+	if s := sni.Load(); s != "example.com" {
+		t.Fatalf("SNI %v", s)
+	}
+}
+
+// fakeDNS answers only the names it holds, and every other lookup fails.
+func fakeDNS(m map[string][]string) func(context.Context, string) ([]net.IP, error) {
+	return func(_ context.Context, host string) ([]net.IP, error) {
+		var out []net.IP
+		for _, s := range m[host] {
+			out = append(out, net.ParseIP(s))
+		}
+		if len(out) == 0 {
+			return nil, errors.New("no such host")
+		}
+		return out, nil
+	}
+}
+
+// onlyLoopback stands in for the public check so tests can reach 127.0.0.1 while every other address counts as local.
+func onlyLoopback(ip net.IP) bool { return ip.IsLoopback() }
+
+// socksSeen starts a SOCKS5 proxy without sign-in that records the address type and host it was asked for, and connects names to target.
 func socksSeen(t *testing.T, target string) (string, *sync.Map) {
 	t.Helper()
 	seen := &sync.Map{}
@@ -144,42 +206,7 @@ func socksSeen(t *testing.T, target string) (string, *sync.Map) {
 	return ln.Addr().String(), seen
 }
 
-func TestSOCKS5ProxyRefusesNameOnlyTheProxyKnows(t *testing.T) {
-	var srcHits atomic.Int32
-	src := torznab(t, duneFeed, &srcHits)
-	addr, seen := socksSeen(t, strings.TrimPrefix(src.URL, "http://"))
-	pu, _ := url.Parse("socks5://" + addr)
-	c := New(Config{URL: "http://only-at-proxy.test/api", Proxy: pu, ProxyAllowLocal: true,
-		AllowLocal: true, resolve: fakeDNS(nil)})
-	_, err := c.Caps(context.Background())
-	var se *Error
-	if !errors.As(err, &se) || se.Kind != KindBlocked || srcHits.Load() != 0 {
-		t.Fatalf("socks name only the proxy knows: %v", err)
-	}
-	if _, ok := seen.Load("host"); ok {
-		t.Fatal("the proxy was asked at all")
-	}
-	// A name we resolve is sent as the checked address (ATYP 1), never the name.
-	c = New(Config{URL: "http://pinned.test/api", Proxy: pu, ProxyAllowLocal: true,
-		AllowLocal: true, resolve: fakeDNS(map[string][]string{"pinned.test": {"127.0.0.1"}})})
-	if _, err := c.Caps(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	if a, _ := seen.Load("atyp"); a != byte(1) {
-		t.Fatalf("address type %v", a)
-	}
-	if h, _ := seen.Load("host"); h != "127.0.0.1" {
-		t.Fatalf("host %v", h)
-	}
-	// Rebinding: one local answer refuses the name.
-	c = New(Config{URL: "http://pinned.test/api", Proxy: pu, ProxyAllowLocal: true,
-		AllowLocal: true, resolve: fakeDNS(map[string][]string{"pinned.test": {"127.0.0.1", "169.254.169.254"}})})
-	if _, err := c.Caps(context.Background()); !errors.As(err, &se) || se.Kind != KindBlocked {
-		t.Fatalf("socks mixed answers: %v", err)
-	}
-}
-
-// connectProxy tunnels CONNECT requests and remembers the target asked for.
+// connectProxy starts an HTTP proxy that tunnels CONNECT requests and remembers the target it was asked for.
 func connectProxy(t *testing.T, target string) (string, *sync.Map) {
 	t.Helper()
 	seen := &sync.Map{}
@@ -215,29 +242,4 @@ func connectProxy(t *testing.T, target string) (string, *sync.Map) {
 		}
 	}()
 	return ln.Addr().String(), seen
-}
-
-func TestHTTPSThroughProxyConnectsToTheCheckedAddressKeepingTheName(t *testing.T) {
-	var sni atomic.Value
-	src := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sni.Store(r.TLS.ServerName)
-		_, _ = w.Write(file(t, "caps.xml"))
-	}))
-	src.StartTLS()
-	t.Cleanup(src.Close)
-	_, port, _ := net.SplitHostPort(strings.TrimPrefix(src.URL, "https://"))
-	addr, seen := connectProxy(t, strings.TrimPrefix(src.URL, "https://"))
-	pu, _ := url.Parse("http://" + addr)
-	c := New(Config{URL: "https://example.com:" + port + "/api", Proxy: pu, ProxyAllowLocal: true,
-		AllowAddr: onlyLoopback, resolve: fakeDNS(map[string][]string{"example.com": {"127.0.0.1"}})})
-	c.http.Transport.(*http.Transport).TLSClientConfig = src.Client().Transport.(*http.Transport).TLSClientConfig.Clone()
-	if _, err := c.Caps(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	if h, _ := seen.Load("connect"); h != "127.0.0.1:"+port {
-		t.Fatalf("CONNECT to %v", h)
-	}
-	if s := sni.Load(); s != "example.com" {
-		t.Fatalf("SNI %v", s)
-	}
 }

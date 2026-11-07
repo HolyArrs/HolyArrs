@@ -13,9 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// M2: a bulk search with the gate setting off may pick for a Slot not out
-// yet, and its verdict says the gate was skipped.
-func TestBulkSkipGatePicks(t *testing.T) {
+// TestBulkSearch_SkipGatePicks checks that a bulk search with the gate setting off may pick for a Slot not out yet, and its verdict says the gate was skipped.
+func TestBulkSearch_SkipGatePicks(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
@@ -29,9 +28,9 @@ func TestBulkSkipGatePicks(t *testing.T) {
 	}
 }
 
-// M4: choosing for a Slot that cannot take a pick is busy, not a failure.
-// Since stage 4.1.2 a Slot that needs a decision takes a hand choice.
-func TestChooseOnNeedsADecision(t *testing.T) {
+// TestChoose_OnNeedsADecision checks that choosing for a Slot that cannot take a pick is busy, not a failure.
+// A Slot that needs a decision does take a hand choice.
+func TestChoose_OnNeedsADecision(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	id := addRelease(t, f, tv720, "judged")
 	exec(t, f, "UPDATE slots SET state = 'needs_a_decision'")
@@ -47,8 +46,8 @@ func TestChooseOnNeedsADecision(t *testing.T) {
 	}
 }
 
-// Stage 4.1.2: "search again" on Needs a decision is a hand search.
-func TestHandSearchFromNeedsADecision(t *testing.T) {
+// TestHandSearch_FromNeedsADecision checks that searching again on a Slot that needs a decision is a hand search.
+func TestHandSearch_FromNeedsADecision(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
@@ -63,8 +62,8 @@ func TestHandSearchFromNeedsADecision(t *testing.T) {
 	}
 }
 
-// Stage 4.1.2: "search again" that finds nothing stays on Needs a decision.
-func TestHandSearchFromNeedsADecisionFindsNothing(t *testing.T) {
+// TestHandSearch_FromNeedsADecisionFindsNothing checks that a search again that finds nothing leaves the Slot needing a decision.
+func TestHandSearch_FromNeedsADecisionFindsNothing(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf())
 	f := seed(t, lf.url(t))
@@ -75,9 +74,8 @@ func TestHandSearchFromNeedsADecisionFindsNothing(t *testing.T) {
 	}
 }
 
-// M6: a feed check looks again at a name another search stored and passed
-// over; it skips names it stored itself.
-func TestFeedLooksAgainAtNamesOthersStored(t *testing.T) {
+// TestFeed_LooksAgainAtNamesOthersStored checks that a feed check looks again at a name another search stored and passed over, and skips names it stored itself.
+func TestFeed_LooksAgainAtNamesOthersStored(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
@@ -91,9 +89,8 @@ func TestFeedLooksAgainAtNamesOthersStored(t *testing.T) {
 	}
 }
 
-// M9: a bulk search asked by a person stops at the per-run cap and its
-// searches are spread out in time.
-func TestBulkSearchCappedAndStaggered(t *testing.T) {
+// TestBulkSearch_CappedAndStaggered checks that a bulk search asked by a person stops at the per-run cap and spreads its searches out in time.
+func TestBulkSearch_CappedAndStaggered(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	exec(t, f, `INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, keep_up_to_date, is_main)
 		SELECT created_at, created_by, updated_at, updated_by, title_id, '4K', pick_rules_id, library_folder_id, 'Dune 4K', 1, 0 FROM versions LIMIT 1`)
@@ -107,8 +104,7 @@ func TestBulkSearchCappedAndStaggered(t *testing.T) {
 	}
 	exec(t, f, "DELETE FROM settings WHERE key = 'bulk_search_cap'")
 	exec(t, f, "DELETE FROM jobs WHERE kind = 'search_slot'")
-	// The searches it queues do nothing here, so a worker that runs one
-	// never moves the run times the handler set.
+	// The queued searches do nothing here, so a worker that runs one never moves the run times the handler set.
 	before := time.Now().UTC().Add(-time.Second)
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchMissing, nil, map[string]any{"which": "missing"}, func(q *jobs.Queue) {
 		q.Handle(KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })

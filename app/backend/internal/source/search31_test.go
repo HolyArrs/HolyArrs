@@ -61,7 +61,7 @@ func exec(t *testing.T, f fixture, q string, args ...any) {
 	}
 }
 
-// runKind runs one Job of kind through a real queue and waits for it.
+// runKind runs one job of the kind through a real queue and waits for it.
 func runKind(t *testing.T, f fixture, sr *Searcher, kind string, subj *domain.Subject, params map[string]any, setup ...func(*jobs.Queue)) domain.Job {
 	t.Helper()
 	q := jobs.New(f.s, jobs.Options{Workers: 1, BaseBackoff: time.Hour, PollInterval: 5 * time.Millisecond})
@@ -126,8 +126,8 @@ const (
 	br1080  = "Dune.Part.Two.2024.1080p.BluRay.x264-GROUP"
 )
 
-// Roadmap 3.1.1: a feed hit grabs.
-func TestFeedHitChooses(t *testing.T) {
+// A feed hit is chosen.
+func TestFeed_HitChooses(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, ""), item("Arcane.S01E01.1080p.WEB.H264-HOLYARRS", time.Now(), 5, "")))
 	f := seed(t, lf.url(t))
@@ -145,13 +145,11 @@ func TestFeedHitChooses(t *testing.T) {
 	if rel.FoundBy != "feed" || rel.State != "chosen" || len(chosen) != 1 || chosen[0] != rel.ID {
 		t.Fatalf("release %+v chosen %v", rel, chosen)
 	}
-	// A Release for no Title in the Library is not kept.
 	var n int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM releases WHERE name LIKE 'Arcane%'").Scan(&n)
 	if n != 0 {
 		t.Fatal("stored a Release that matches nothing")
 	}
-	// The next feed check does not look at the same Release again.
 	exec(t, f, "UPDATE slots SET state = 'wanted'")
 	runKind(t, f, sr, KindFeedCheck, nil, nil)
 	if len(chosen) != 1 {
@@ -159,7 +157,7 @@ func TestFeedHitChooses(t *testing.T) {
 	}
 }
 
-func TestFeedSkipsSourcesNotUsedForFeeds(t *testing.T) {
+func TestFeed_SkipsSourcesNotUsedForFeeds(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
@@ -169,9 +167,9 @@ func TestFeedSkipsSourcesNotUsedForFeeds(t *testing.T) {
 	}
 }
 
-// Roadmap 3.1.1: a Held Release is grabbed after its wait, and a better one
-// arriving during the wait replaces it.
-func TestHeldThenBetterThenWaitOver(t *testing.T) {
+// A held release is grabbed after its wait, and a better one arriving during
+// the wait replaces it.
+func TestFeed_HeldThenBetterThenWaitOver(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(tv720, time.Now(), 50, "")))
 	f := seed(t, lf.url(t))
@@ -185,7 +183,6 @@ func TestHeldThenBetterThenWaitOver(t *testing.T) {
 	if sl.State != domain.SlotHeld || sl.HeldReleaseID == nil || *sl.HeldReleaseID != first.ID || first.State != "held" || first.HoldUntil == nil {
 		t.Fatalf("slot %s, release %s", sl.State, first.State)
 	}
-	// A better one shows up during the wait: it is held instead.
 	lf.set(feedOf(item(tv720, time.Now(), 50, ""), item(web1080, time.Now(), 50, "")))
 	runKind(t, f, sr, KindFeedCheck, nil, nil)
 	sl = slotState(t, f)
@@ -196,12 +193,10 @@ func TestHeldThenBetterThenWaitOver(t *testing.T) {
 	if got := relByName(t, f, tv720); got.State != "passed_over" {
 		t.Fatalf("first Held release is %s", got.State)
 	}
-	// Not over yet: nothing happens.
 	runKind(t, f, sr, KindGrabHeld, nil, nil)
 	if len(chosen) != 0 {
 		t.Fatal("grabbed during the wait")
 	}
-	// The wait ends.
 	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
 	j := runKind(t, f, sr, KindGrabHeld, nil, nil)
 	if j.State != "done" || slotState(t, f).State != domain.SlotChosen || len(chosen) != 1 || chosen[0] != second.ID {
@@ -212,12 +207,11 @@ func TestHeldThenBetterThenWaitOver(t *testing.T) {
 	}
 }
 
-// Roadmap 3.1.1: a bulk search skips not-out-yet and downloading Slots,
-// oldest searched first, and respects the count.
-func TestMissingSearchSkipsNotOutYetAndBusy(t *testing.T) {
+// A bulk search skips not-out-yet and downloading Slots, searches the oldest
+// first and respects the count.
+func TestMissingSearch_SkipsNotOutYetAndBusy(t *testing.T) {
 	f := seed(t, "http://unused/api")
 	ctx := context.Background()
-	// Three more Slots of the same Item kind: not out yet, downloading, and a second wanted.
 	var extra []int64
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		for i, st := range []domain.SlotState{domain.SlotNotOutYet, domain.SlotDownloading, domain.SlotWanted} {
@@ -237,7 +231,6 @@ func TestMissingSearchSkipsNotOutYetAndBusy(t *testing.T) {
 			}
 			extra = append(extra, sl.ID)
 		}
-		// The fixture's Slot was searched lately; the new wanted one never.
 		_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = (SELECT item_id FROM slots WHERE id = ?)", database.FormatTime(time.Now()), f.slotID)
 		return err
 	}); err != nil {
@@ -253,9 +246,7 @@ func TestMissingSearchSkipsNotOutYetAndBusy(t *testing.T) {
 	if len(got) != 1 || got[0] != extra[2] {
 		t.Fatalf("queued %v, want only the never-searched wanted Slot %d", got, extra[2])
 	}
-	// A person's "search all missing" has no count but still skips them.
 	exec(t, f, "DELETE FROM jobs WHERE kind = ?", KindSearchSlot)
-	// The queued search ran (and failed on the unused Source): put it back.
 	exec(t, f, "UPDATE slots SET state = 'wanted' WHERE id IN (?, ?)", f.slotID, extra[2])
 	runKind(t, f, sr, KindSearchMissing, nil, map[string]any{"which": "missing"})
 	got = queuedSearches(t, f)
@@ -277,8 +268,8 @@ func queuedSearches(t *testing.T, f fixture) []int64 {
 	return out
 }
 
-// Roadmap 3.1.1: two Sources are merged and deduped by info hash or name.
-func TestSearchMergesSourcesAndDedupes(t *testing.T) {
+// Two Sources are merged and deduped by info hash or name.
+func TestHandle_MergesSourcesAndDedupes(t *testing.T) {
 	a, b := &liveFeed{}, &liveFeed{}
 	a.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), item(tv720, time.Now().Add(-time.Hour), 10, "")))
 	b.set(feedOf(item("Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.265-RENAMED", time.Now().Add(-time.Hour), 10, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
@@ -306,19 +297,17 @@ func TestSearchMergesSourcesAndDedupes(t *testing.T) {
 	if r := relByName(t, f, tv720); r.SourceID != f.srcID {
 		t.Fatal("the copy from the higher-priority Source should stay")
 	}
-	// Showing only: nothing is chosen and the Slot does not move.
 	if slotState(t, f).State != domain.SlotWanted || relByName(t, f, br1080).State != "judged" {
 		t.Fatalf("show mode moved things: %s %s", slotState(t, f).State, relByName(t, f, br1080).State)
 	}
 }
 
-// Picks per Source: a Source past its limit is skipped for the next best.
-func TestPicksLimitPerSource(t *testing.T) {
+// A Source past its limit is skipped for the next best.
+func TestHandle_PicksLimitPerSource(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
 	exec(t, f, `UPDATE sources SET limits = '{"grabs_per_window":1,"window_seconds":3600}'`)
-	// One Download already came from this Source in the window.
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		r := &domain.Release{SourceID: f.srcID, Name: "Other", LinkRef: "x", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: []int64{}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}

@@ -11,10 +11,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 4.14.1: a failed album download (its Release turned down, every track
-// Slot failed) queues one album search for all its tracks, which takes the
-// next Release.
-func TestFailedAlbumSearchesAlbumAgain(t *testing.T) {
+// TestQueueAfterFailure_AlbumSearchesAlbumAgain checks that a failed album queues one album search for all its tracks, which takes the next Release.
+func TestQueueAfterFailure_AlbumSearchesAlbumAgain(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac, mp3} }}
 	f := seedArtist(t, ms.start(t))
 	ctx := context.Background()

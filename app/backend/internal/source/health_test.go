@@ -6,7 +6,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestHealthReason(t *testing.T) {
+// TestHealthOf_Reason checks the reason and block words for each pause state.
+func TestHealthOf_Reason(t *testing.T) {
 	for kind, want := range map[string]string{KindRateLimited: "slowed", KindDown: "down", KindBroken: "down", KindBlocked: "blocked", KindLoginRefused: "key", "odd": "down"} {
 		k := kind
 		h := HealthOf(domain.Source{State: "paused", PauseReason: &k})

@@ -21,7 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestHealthOfEachState(t *testing.T) {
+func TestHealth_EachState(t *testing.T) {
 	until := time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)
 	reason := func(s string) *string { return &s }
 	cases := []struct {
@@ -74,10 +74,10 @@ func torznab(t *testing.T, feed string, hits *atomic.Int32) *httptest.Server {
 	})
 }
 
-// Two working Sources are searched side by side in priority order; a Source
+// Two working Sources are searched side by side in priority order. A Source
 // that refuses the key shows auth_failed, one that does not answer shows
 // unreachable, a paused one is left alone, and every call is recorded.
-func TestSeveralSourcesStatesAndStats(t *testing.T) {
+func TestHandle_SeveralSourcesStatesAndStats(t *testing.T) {
 	var a, b, refused, off atomic.Int32
 	srvA := torznab(t, duneFeed, &a)
 	srvB := torznab(t, strings.Replace(duneFeed, "HOLYARRS", "SECOND", -1), &b)
@@ -159,7 +159,7 @@ const plainRSS = `<?xml version="1.0"?><rss version="2.0"><channel><title>lab</t
 <item><title>No link</title></item>
 </channel></rss>`
 
-func TestRSSFeedIsReadWithItsSecretQuery(t *testing.T) {
+func TestFeed_RSSReadWithSecretQuery(t *testing.T) {
 	var got string
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		got = r.URL.RawQuery
@@ -182,7 +182,7 @@ func TestRSSFeedIsReadWithItsSecretQuery(t *testing.T) {
 	}
 }
 
-func TestFeedParserRefusesJunk(t *testing.T) {
+func TestFeed_ParserRefusesJunk(t *testing.T) {
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("<html>not a feed")) })
 	_, err := New(Config{URL: srv.URL, Format: "rss", AllowLocal: true}).Feed(context.Background(), nil)
 	var se *Error
@@ -191,12 +191,11 @@ func TestFeedParserRefusesJunk(t *testing.T) {
 	}
 }
 
-func TestHTTPProxyCarriesTheSource(t *testing.T) {
+func TestProxy_HTTPCarriesSource(t *testing.T) {
 	var srcHits atomic.Int32
 	src := torznab(t, duneFeed, &srcHits)
 	addr, seen := connectProxy(t, strings.TrimPrefix(src.URL, "http://"))
 	pu, _ := url.Parse("http://" + addr)
-	// The proxy is local: refused unless allowed for it.
 	_, err := New(Config{URL: src.URL + "/api", AllowLocal: true, Proxy: pu}).Caps(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "network policy") {
 		t.Fatalf("local proxy without leave: %v", err)
@@ -208,8 +207,6 @@ func TestHTTPProxyCarriesTheSource(t *testing.T) {
 	if _, ok := seen.Load("connect"); !ok || srcHits.Load() != 1 {
 		t.Fatalf("proxy connected %v source %d", ok, srcHits.Load())
 	}
-	// The Source address is still checked: a local Source through an allowed
-	// proxy is refused when the Source may not reach the local network.
 	seen.Delete("connect")
 	_, err = New(Config{URL: src.URL + "/api", Proxy: pu, ProxyAllowLocal: true}).Caps(context.Background())
 	var se *Error
@@ -219,7 +216,7 @@ func TestHTTPProxyCarriesTheSource(t *testing.T) {
 	}
 }
 
-func TestProxyPasswordAndKeyNeverInErrors(t *testing.T) {
+func TestProxy_PasswordAndKeyNeverInErrors(t *testing.T) {
 	dead := httptest.NewServer(http.NotFoundHandler())
 	addr := dead.URL
 	dead.Close()
@@ -235,7 +232,7 @@ func TestProxyPasswordAndKeyNeverInErrors(t *testing.T) {
 	}
 }
 
-// socksServer is a tiny SOCKS5 proxy (name and password, or none).
+// socksServer is a tiny SOCKS5 proxy, with a name and password or none.
 func socksServer(t *testing.T, user, pass string, hits *atomic.Int32) string {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -309,7 +306,7 @@ func socksServer(t *testing.T, user, pass string, hits *atomic.Int32) string {
 	return ln.Addr().String()
 }
 
-func TestSOCKS5ProxyCarriesTheSource(t *testing.T) {
+func TestProxy_SOCKS5CarriesSource(t *testing.T) {
 	var hits, srcHits atomic.Int32
 	src := torznab(t, duneFeed, &srcHits)
 	addr := socksServer(t, "lab", "lab-pass", &hits)
@@ -341,7 +338,7 @@ func openVault(t *testing.T) (*database.Store, *secrets.Vault) {
 	return s, v
 }
 
-func TestSaveSourceKeepsKeysInTheVault(t *testing.T) {
+func TestSave_KeepsKeysInVault(t *testing.T) {
 	labKey := "lab-" + "key-1"
 	ctx := context.Background()
 	s, v := openVault(t)
@@ -364,11 +361,9 @@ func TestSaveSourceKeepsKeysInTheVault(t *testing.T) {
 	if _, err := Add(ctx, s, v, Input{Name: "lab", Format: "torznab", URL: "http://x.example/api"}, by); !errors.Is(err, ErrNameUsed) {
 		t.Fatalf("same name: %v", err)
 	}
-	// Moving to another host without the key again is refused.
 	if _, err := Change(ctx, s, v, src.ID, Input{Name: "Lab", URL: "http://other.example/api"}, by); !errors.Is(err, ErrKeyAgain) {
 		t.Fatalf("new host: %v", err)
 	}
-	// Same host, new path: the key stays.
 	if src, err = Change(ctx, s, v, src.ID, Input{Name: "Lab", URL: "http://lab.example/torznab/api", Priority: ptr(3)}, by); err != nil || src.Priority != 3 {
 		t.Fatalf("same host: %v %+v", err, src)
 	}
@@ -392,7 +387,6 @@ func TestSaveSourceKeepsKeysInTheVault(t *testing.T) {
 		}
 	}
 
-	// An rss address keeps its query (the passkey) in the vault.
 	r, err := Add(ctx, s, v, Input{Name: "Feed", Format: "rss", URL: "http://feed.example/rss?passkey=zz9"}, by)
 	if err != nil || r.URL != "http://feed.example/rss" || r.SecretRef == nil || r.UseFor.AutoSearch || !r.UseFor.Feed {
 		t.Fatalf("rss %+v %v", r, err)
@@ -401,7 +395,6 @@ func TestSaveSourceKeepsKeysInTheVault(t *testing.T) {
 		t.Fatalf("rss key %q", k)
 	}
 
-	// Pause and resume.
 	p, err := SetPaused(ctx, s, src.ID, true, by)
 	if err != nil || HealthOf(p).State != StateDisabled {
 		t.Fatalf("pause %+v %v", p, err)
@@ -411,7 +404,6 @@ func TestSaveSourceKeepsKeysInTheVault(t *testing.T) {
 		t.Fatalf("resume %+v %v", p, err)
 	}
 
-	// Removing drops its secrets.
 	ref := *src.SecretRef
 	if err := Remove(ctx, s, src.ID); err != nil {
 		t.Fatal(err)
@@ -421,7 +413,7 @@ func TestSaveSourceKeepsKeysInTheVault(t *testing.T) {
 	}
 }
 
-func TestExplainSaysPlainWords(t *testing.T) {
+func TestExplain_PlainWords(t *testing.T) {
 	if got := Explain(&Error{Kind: KindLoginRefused, Msg: "401 Unauthorized"}); !strings.Contains(got, "turned down the key") {
 		t.Fatal(got)
 	}
@@ -433,7 +425,7 @@ func TestExplainSaysPlainWords(t *testing.T) {
 	}
 }
 
-func TestHealthUpdatesNeverOverwriteAChangedSource(t *testing.T) {
+func TestHealth_UpdatesKeepChangedSource(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	by := domain.System
@@ -442,7 +434,6 @@ func TestHealthUpdatesNeverOverwriteAChangedSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The person changes the key and proxy password while a search runs.
 	if _, err := Change(ctx, s, v, stale.ID, Input{Name: "Lab", APIKey: "second-" + "key", Proxy: ptr("socks5://me:new-pass@10.0.0.9:1080")}, by); err != nil {
 		t.Fatal(err)
 	}
@@ -470,7 +461,6 @@ func TestHealthUpdatesNeverOverwriteAChangedSource(t *testing.T) {
 	if cfg, err = ConfigFor(ctx, got, v); err != nil || cfg.APIKey != "second-key" {
 		t.Fatalf("after recovered: %+v %v", cfg, err)
 	}
-	// Turned off by the person: neither a failure nor an answer turns it on.
 	if _, err := SetPaused(ctx, s, stale.ID, true, by); err != nil {
 		t.Fatal(err)
 	}

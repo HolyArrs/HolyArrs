@@ -12,16 +12,8 @@ import (
 	"time"
 )
 
-// TestLabProwlarrBridge is the Jackett/Prowlarr bridge (#47) against the lab
-// Prowlarr, which hands out the lab's fake indexer as one Torznab feed per
-// indexer. HolyArrs reads that feed as an ordinary Source: capabilities, a
-// movie search, and our own Dune test torrent with its info hash.
-//
-//	HOLYARRS_LAB_PROWLARR=http://127.0.0.1:18704/1/api HOLYARRS_LAB_PROWLARR_KEY=<lab key> go test -tags lab -run LabProwlarrBridge ./internal/source/
-//
-// The key comes from the environment only (labclients.py reads it from the
-// lab Prowlarr's own config) and is never printed.
-func TestLabProwlarrBridge(t *testing.T) {
+// TestLab_ProwlarrBridge talks to a real Prowlarr and is skipped unless its key is set.
+func TestLab_ProwlarrBridge(t *testing.T) {
 	base := os.Getenv("HOLYARRS_LAB_PROWLARR")
 	if base == "" {
 		base = "http://127.0.0.1:18704/1/api"
@@ -46,7 +38,7 @@ func TestLabProwlarrBridge(t *testing.T) {
 	}
 	var dune *Item
 	for i := range items {
-		// Our own test torrent; the fake indexer lists other Dune copies with no file behind them.
+
 		if items[i].Title == "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS" {
 			dune = &items[i]
 			break
@@ -55,8 +47,7 @@ func TestLabProwlarrBridge(t *testing.T) {
 	if dune == nil {
 		t.Fatalf("no Dune test torrent in %d items through Prowlarr", len(items))
 	}
-	// Prowlarr leaves the info hash out for a private indexer (real ones do the
-	// same), so HolyArrs learns it from the torrent: the link must hand it over.
+
 	if dune.Protocol != "torrent" || !strings.Contains(dune.Link, "/download") {
 		t.Fatalf("Dune through Prowlarr: protocol %q, link %q", dune.Protocol, dune.Link)
 	}

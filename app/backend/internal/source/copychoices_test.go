@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
+// protectSlotCopy gives the Slot a protected file and returns its ID.
 func protectSlotCopy(t *testing.T, f fixture, slotID, versionID int64) int64 {
 	t.Helper()
 	var fileID int64
@@ -33,7 +34,7 @@ func protectSlotCopy(t *testing.T, f fixture, slotID, versionID int64) int64 {
 	return fileID
 }
 
-func TestChooseCannotForceProtectedCopy(t *testing.T) {
+func TestChoose_CannotForceProtectedCopy(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	var versionID int64
 	if err := f.s.Read().QueryRow("SELECT version_id FROM slots WHERE id = ?", f.slotID).Scan(&versionID); err != nil {
@@ -51,7 +52,7 @@ func TestChooseCannotForceProtectedCopy(t *testing.T) {
 	}
 }
 
-func TestAutomaticChoiceRechecksProtectionInsideWrite(t *testing.T) {
+func TestChoose_AutomaticRechecksProtectionInsideWrite(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	releaseID := addRelease(t, f, "Dune.Part.Two.2024.2160p.WEB.H265-GROUP", "judged")
 	var versionID int64
@@ -73,7 +74,7 @@ func TestAutomaticChoiceRechecksProtectionInsideWrite(t *testing.T) {
 	}
 }
 
-func TestMovieEditionConstrainsEachVersion(t *testing.T) {
+func TestChoose_MovieEditionConstrainsEachVersion(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	c, err := (&Searcher{Store: f.s}).loadSlot(context.Background(), f.slotID)
 	if err != nil {
@@ -99,7 +100,6 @@ func TestMovieEditionConstrainsEachVersion(t *testing.T) {
 		}
 	}
 
-	// Another Version of the same movie keeps its own edition choice.
 	c.ver.Edition = "Theatrical"
 	_, verdicts, err = (&Searcher{Store: f.s}).judgeAll(context.Background(), c, all[:2], true, true, false)
 	if err != nil {
@@ -114,8 +114,6 @@ func TestMovieEditionConstrainsEachVersion(t *testing.T) {
 		t.Fatalf("unconstrained version changed quality-only behavior: %+v %v", verdicts, err)
 	}
 
-	// Joining several parsed labels does not turn an ambiguous name into one
-	// automatically trusted edition.
 	c.ver.Edition = "Directors Cut Extended"
 	_, verdicts, err = (&Searcher{Store: f.s}).judgeAll(context.Background(), c, all[3:4], true, true, false)
 	if err != nil || verdicts[0].Passed || !verdictHas(verdicts[0], "ambiguous") {
@@ -123,6 +121,7 @@ func TestMovieEditionConstrainsEachVersion(t *testing.T) {
 	}
 }
 
+// verdictHas reports whether any reason detail contains the word.
 func verdictHas(v judge.Verdict, word string) bool {
 	for _, reason := range v.Reasons {
 		if strings.Contains(reason.Detail, word) {
@@ -132,7 +131,7 @@ func verdictHas(v judge.Verdict, word string) bool {
 	return false
 }
 
-func TestShowPackLeavesProtectedEpisodeUntouched(t *testing.T) {
+func TestChoose_ShowPackLeavesProtectedEpisode(t *testing.T) {
 	ts := &tvServer{answer: func(_ url.Values) []string { return []string{"Copper.Valley.S01.720p.HDTV.x264-OXBOW"} }}
 	f := seedShow(t, ts.start(t), nil)
 	addFile(t, f, f.slots["S01E02"], "protected-episode")

@@ -10,7 +10,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestTurnedDownRemovalKeepsAttemptAuditLink(t *testing.T) {
+// TestTurnedDownRemoval_KeepsAttemptAuditLink checks that taking a Release off the Turned down list keeps the link from its attempt record.
+func TestTurnedDownRemoval_KeepsAttemptAuditLink(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	ctx := context.Background()
 	id := addRelease(t, f, tv720, "turned_down")

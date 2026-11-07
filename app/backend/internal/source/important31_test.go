@@ -12,9 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// I1: a Release chosen from a Source and not yet sent counts against the
-// Source's picks limit.
-func TestPicksLimitCountsChosenNotYetSent(t *testing.T) {
+// TestPicksLimit_CountsChosenNotYetSent checks that a Release chosen from a Source and not yet sent counts against its picks limit.
+func TestPicksLimit_CountsChosenNotYetSent(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
@@ -26,9 +25,8 @@ func TestPicksLimitCountsChosenNotYetSent(t *testing.T) {
 	}
 }
 
-// I1: taking a Release that has a Download off the Turned down list keeps
-// the row, so the Download still counts for its Source.
-func TestTurnedDownRemovalKeepsDownloadLink(t *testing.T) {
+// TestTurnedDownRemoval_KeepsDownloadLink checks that taking a Release with a Download off the Turned down list keeps the row, so the Download still counts for its Source.
+func TestTurnedDownRemoval_KeepsDownloadLink(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	ctx := context.Background()
 	id := addRelease(t, f, tv720, "turned_down")
@@ -62,13 +60,12 @@ func TestTurnedDownRemovalKeepsDownloadLink(t *testing.T) {
 	}
 }
 
-// I2: a feed Release that fits two Slots is stored once, with both Slots.
-func TestFeedStoresReleaseOncePerRun(t *testing.T) {
+// TestFeed_StoresReleaseOncePerRun checks that a feed Release that fits two Slots is stored once, with both Slots.
+func TestFeed_StoresReleaseOncePerRun(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
 	feedOn(t, f)
-	// A second Version of the same Title, with its own wanted Slot.
 	exec(t, f, `INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, keep_up_to_date, is_main)
 		SELECT created_at, created_by, updated_at, updated_by, title_id, '4K', pick_rules_id, library_folder_id, 'Dune 4K', 1, 0 FROM versions LIMIT 1`)
 	exec(t, f, `INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state)
@@ -86,10 +83,9 @@ func TestFeedStoresReleaseOncePerRun(t *testing.T) {
 	}
 }
 
-// #41: a Release the Pick rules refused for safety, once forced, sent and
-// turned down, stays refused when the Turned down list is cleared: picking
-// it again still needs force (no one-click send of a program file).
-func TestTurnedDownRemovalKeepsRefusedNeedingForce(t *testing.T) {
+// TestTurnedDownRemoval_KeepsRefusedNeedingForce checks that a Release refused for safety, forced, sent and turned down stays refused after the list is cleared.
+// Picking it again needs force, so a program file is never one click from sent.
+func TestTurnedDownRemoval_KeepsRefusedNeedingForce(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	ctx := context.Background()
 	exe := addRelease(t, f, "Dune.Part.Two.2024.1080p.WEB.H264-X.mkv.exe", "turned_down")
@@ -118,9 +114,8 @@ func TestTurnedDownRemovalKeepsRefusedNeedingForce(t *testing.T) {
 	}
 }
 
-// #41: a refused Release sent once with force and then removed (not turned
-// down) is still refused by its verdict: picking it again needs force.
-func TestForcedRefusedReleaseNeedsForceAgain(t *testing.T) {
+// TestForcedRefusedRelease_NeedsForceAgain checks that a refused Release sent once with force and then removed is still refused by its verdict.
+func TestForcedRefusedRelease_NeedsForceAgain(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	exe := addRelease(t, f, "Dune.Part.Two.2024.1080p.WEB.H264-X.mkv.exe", "chosen")
 	exec(t, f, `UPDATE releases SET matched_slot_ids = json_array(?), verdict = json('{"outcome":"refused","passed":false,"reasons":[{"step":"hard","rule":"safety:executable","effect":"fail","detail":"contains a program file, not a video"}]}') WHERE id = ?`, f.slotID, exe)

@@ -28,7 +28,7 @@ func file(t *testing.T, name string) []byte {
 	return b
 }
 
-func TestCaps(t *testing.T) {
+func TestCaps_ReadsAndRemembers(t *testing.T) {
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("t") != "caps" {
 			t.Errorf("t = %q", r.URL.Query().Get("t"))
@@ -51,7 +51,7 @@ func TestCaps(t *testing.T) {
 	}
 }
 
-func TestSearchByIMDbParsesResults(t *testing.T) {
+func TestSearch_ByIMDbParsesResults(t *testing.T) {
 	var got string
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("t") == "caps" {
@@ -89,7 +89,7 @@ func TestSearchByIMDbParsesResults(t *testing.T) {
 	}
 }
 
-func TestSearchFallsBackToText(t *testing.T) {
+func TestSearch_FallsBackToText(t *testing.T) {
 	var got string
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("t") == "caps" {
@@ -108,7 +108,7 @@ func TestSearchFallsBackToText(t *testing.T) {
 	}
 }
 
-func TestSourceErrorAndSecretNotLeaked(t *testing.T) {
+func TestError_KeyNotLeaked(t *testing.T) {
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<?xml version="1.0"?><error code="100" description="Incorrect user credentials"/>`))
 	})
@@ -118,7 +118,6 @@ func TestSourceErrorAndSecretNotLeaked(t *testing.T) {
 	if !errors.As(err, &se) || se.Kind != KindLoginRefused {
 		t.Fatalf("want login refused, got %v", err)
 	}
-	// A network error must not echo the URL with the key.
 	c2 := New(Config{URL: "http://127.0.0.1:1/api", Protocol: "torrent", AllowLocal: true, APIKey: "s3cret"})
 	_, err = c2.Caps(context.Background())
 	if err == nil || strings.Contains(err.Error(), "s3cret") {
@@ -129,7 +128,7 @@ func TestSourceErrorAndSecretNotLeaked(t *testing.T) {
 	}
 }
 
-func TestRateLimitedResponse(t *testing.T) {
+func TestSearch_RateLimitedResponse(t *testing.T) {
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Retry-After", "120")
 		w.WriteHeader(http.StatusTooManyRequests)
@@ -142,7 +141,7 @@ func TestRateLimitedResponse(t *testing.T) {
 	}
 }
 
-func TestGapBetweenRequests(t *testing.T) {
+func TestClient_GapBetweenRequests(t *testing.T) {
 	var n atomic.Int32
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		n.Add(1)
@@ -160,7 +159,7 @@ func TestGapBetweenRequests(t *testing.T) {
 	}
 }
 
-func TestSearchesPerWindow(t *testing.T) {
+func TestClient_SearchesPerWindow(t *testing.T) {
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(file(t, "caps.xml"))
 	})
@@ -177,7 +176,7 @@ func TestSearchesPerWindow(t *testing.T) {
 	}
 }
 
-func TestBackoff(t *testing.T) {
+func TestBackoff_DoublesToCap(t *testing.T) {
 	want := []time.Duration{time.Minute, 2 * time.Minute, 4 * time.Minute}
 	for i, w := range want {
 		if got := Backoff(i + 1); got != w {

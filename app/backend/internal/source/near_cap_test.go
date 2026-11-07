@@ -9,7 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func TestNearCap(t *testing.T) {
+// TestNearCap_Limits checks when a Source counts as close to its search or pick limit.
+func TestNearCap_Limits(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	src, err := Add(ctx, s, v, Input{Name: "Lab", Format: "torznab", URL: "http://lab.example/api"}, domain.System)

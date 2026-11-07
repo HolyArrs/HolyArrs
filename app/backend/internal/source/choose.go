@@ -20,72 +20,61 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// Errors a person's choice can meet.
+// turnedDownList selects Releases on the Turned down list: turned down whole, or for some Slots only.
+const turnedDownList = "(state = 'turned_down' OR json_extract(verdict, '$.turned_down_slot_ids') IS NOT NULL)"
+
+// dangerousWhy is the reason shown when a Release is refused because it once turned out to be a program.
+const dangerousWhy = "its files were a program when it was downloaded before"
+
 var (
+	// Errors the choosing and list calls return, so callers can tell them apart.
 	ErrNoRelease = errors.New("no such Release")
 	ErrNoSlot    = errors.New("say which Slot: the Release matched none")
 	ErrBusy      = errors.New("the Slot is busy")
 	ErrState     = errors.New("the Release is not in that list")
 )
 
-// NeedsForceError says a refused or turned-down Release needs force to be
-// chosen, with the reasons it failed.
+// magnetBtih finds the info hash in a magnet link, as 40 hex characters or 32 base32 characters.
+var magnetBtih = regexp.MustCompile(`(?i)[?&]xt=urn:btih:([0-9a-f]{40}|[a-z2-7]{32})(?:&|$)`)
+
+// NeedsForceError says a Release failed the Pick rules, so choosing it needs force. Reasons are shown to the person.
 type NeedsForceError struct{ Reasons []string }
 
 func (e *NeedsForceError) Error() string {
 	return "this Release failed the Pick rules (" + strings.Join(e.Reasons, "; ") + "); choose it with force to send it anyway"
 }
 
-// Choice is what choosing a Release by hand did.
+// Choice is what choosing a Release by hand did: the Slots it went to, whether it was forced, and warnings to show.
 type Choice struct {
 	ReleaseID int64    `json:"release_id"`
 	SlotID    int64    `json:"slot_id"`
-	SlotIDs   []int64  `json:"slot_ids,omitempty"` // a season pack or multi-episode Release: every Slot it was chosen for
+	SlotIDs   []int64  `json:"slot_ids,omitempty"`
 	Forced    bool     `json:"forced"`
 	Warnings  []string `json:"warnings"`
 }
 
-// failReasons lists a stored verdict's failed reasons in plain words.
-func failReasons(rel domain.Release) []string {
-	var out []string
-	rs, _ := rel.Verdict["reasons"].([]any)
-	for _, x := range rs {
-		m, _ := x.(map[string]any)
-		if m["effect"] == "fail" {
-			if d, _ := m["detail"].(string); d != "" {
-				out = append(out, d)
-			}
-		}
-	}
-	if rel.State == "turned_down" && len(TurnedDownSlots(rel)) == 0 {
-		why := "it was turned down"
-		if d, _ := rel.Verdict["turned_down_reason"].(string); d != "" {
-			why += ": " + d
-		}
-		out = append(out, why)
-	}
-	if len(out) == 0 {
-		out = []string{"it did not pass"}
-	}
-	return out
+// ListedRelease is a Release with the names a list shows beside it.
+type ListedRelease struct {
+	domain.Release
+	SourceName string
+	TitleID    int64
+	TitleName  string
+	SlotID     int64
+	Version    string
 }
 
-// canTakePick says a Slot may be given a Release by hand: not busy, not
-// removed, and with a way to chosen (directly or through searching).
-func canTakePick(st domain.SlotState) bool {
-	return !busySlot(st) && st != domain.SlotRemoved &&
-		(domain.Transition(st, domain.SlotChosen) == nil || domain.Transition(st, domain.SlotSearching) == nil)
+// dangerousRels holds the info hashes and names of Releases that were once downloaded as a program.
+type dangerousRels struct{ hashes, names map[string]bool }
+
+// has reports whether a listing is a known program. The hash decides when there is one, since a name can be reused.
+func (d dangerousRels) has(hash, name string) bool {
+	if hash != "" {
+		return d.hashes[strings.ToLower(hash)]
+	}
+	return name != "" && d.names[name]
 }
 
-// busySlot says a Slot is already getting a copy.
-func busySlot(st domain.SlotState) bool {
-	return st == domain.SlotChosen || st == domain.SlotDownloading || st == domain.SlotImporting || st == domain.SlotSearching
-}
-
-// Choose sends a Release a person picked to its Slot (slotID 0: the Slot it
-// matched). A refused or turned-down Release needs force; the reasons it
-// failed are kept on the Event. Choosing a Release for a Title that is not
-// out yet works, with a warning.
+// Choose picks a Release for a Slot by hand. With no slotID, a pack that matched several Slots goes to all that would gain, and otherwise to the first Slot it was not turned down for. A Release that failed the Pick rules, was turned down, or would not gain needs force, and the reasons come back in a NeedsForceError. Protected copies are never forced.
 func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bool, by domain.Actor) (Choice, error) {
 	db := s.Store.Read()
 	var rel domain.Release
@@ -98,10 +87,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 			return s.chooseMany(ctx, rel, many, skipped, kind == "artist", force, nil, by)
 		}
 		if len(many) == 0 && len(skipped) > 0 {
-			// Every Slot already has a copy as good (or a protected one):
-			// taking the Release over them would be no gain, which needs
-			// force like a refused Release (#43: an MP3 album over FLAC).
-			// With force it goes to every Slot without a protected copy.
+
 			why := []string{"nothing would gain: " + strings.Join(skipped, "; ")}
 			if !force {
 				return Choice{}, &NeedsForceError{Reasons: why}
@@ -137,8 +123,8 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		refused = true
 		overridden = append(overridden, dangerousWhy)
 	}
-	// A track whose copy in place is as good (an MP3 over FLAC) gains
-	// nothing: that needs force too (#43, Lossless protection).
+
+	// A music Slot that already has a copy as good is treated as refused, not silently replaced.
 	if c.cur != nil && domain.IsMusicRules(c.pr.Body) {
 		jr := judge.Release{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
 		if !judge.Gains(jr, c.pr.Body, c.cur) {
@@ -170,9 +156,9 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	if c.sl.State == domain.SlotInLibrary {
 		ch.Warnings = append(ch.Warnings, "this Version already has a good enough copy; the new one will replace it")
 	}
+	// The state is read again inside the write, so a copy protected or a Slot taken since the check above stops the pick.
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		// Read again inside the write: a search or feed check may have
-		// settled the Slot since it was loaded.
+
 		st, err := choiceStateTx(tx, slotID)
 		if err != nil {
 			return err
@@ -189,8 +175,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 			updated_at = ?, updated_by = ? WHERE id = ?`, slotID, slotID, database.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
 			return err
 		}
-		// Chosen with force for an episode it was turned down for: it leaves
-		// the Turned down list for that episode.
+
 		if only := TurnedDownSlots(rel); slices.Contains(only, slotID) {
 			if err := setTurnedDownSlotsTx(tx, rel.ID, slices.DeleteFunc(slices.Clone(only), func(x int64) bool { return x == slotID })); err != nil {
 				return err
@@ -213,16 +198,12 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	return ch, nil
 }
 
-// TurnDown marks a Release turned down: it is never picked again for its
-// Slots. A Held Release leaves its Slot, which goes back to looking.
+// TurnDown rejects a Release for every Slot it matched.
 func (s *Searcher) TurnDown(ctx context.Context, releaseID int64, reason string, by domain.Actor) error {
 	return s.TurnDownFor(ctx, releaseID, 0, reason, by)
 }
 
-// TurnDownFor turns a Release down for one Slot only (slotID > 0): a
-// season pack turned down for one episode stays on the list for that
-// episode and is still judged for the others. slotID 0 turns it down for
-// every Slot it matched.
+// TurnDownFor rejects a Release for one Slot, or for all when slotID is 0. Slots that were holding it go back to looking.
 func (s *Searcher) TurnDownFor(ctx context.Context, releaseID, slotID int64, reason string, by domain.Actor) error {
 	var rel domain.Release
 	if err := database.Get(ctx, s.Store.Read(), "releases", releaseID, &rel); err != nil {
@@ -261,44 +242,7 @@ func (s *Searcher) TurnDownFor(ctx context.Context, releaseID, slotID int64, rea
 	return nil
 }
 
-// unholdTx sends Slots holding this Release back to looking.
-func unholdTx(tx *sql.Tx, releaseID int64, reason string, by domain.Actor) error {
-	rows, err := tx.Query("SELECT id, file_id IS NOT NULL FROM slots WHERE held_release_id = ? AND state = 'held'", releaseID)
-	if err != nil {
-		return err
-	}
-	type hs struct {
-		id      int64
-		hasFile bool
-	}
-	var list []hs
-	for rows.Next() {
-		var h hs
-		if err := rows.Scan(&h.id, &h.hasFile); err != nil {
-			rows.Close()
-			return err
-		}
-		list = append(list, h)
-	}
-	rows.Close()
-	for _, h := range list {
-		to := domain.SlotWanted
-		if h.hasFile {
-			to = domain.SlotBetterWanted
-		}
-		if _, err := tx.Exec("UPDATE slots SET held_release_id = NULL, next_try_at = NULL WHERE id = ?", h.id); err != nil {
-			return err
-		}
-		if err := store.MoveSlotTx(tx, h.id, to, reason, by); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// RemoveHeld takes Held Releases off the list (id 0: all of them). Each
-// becomes passed over and its Slot goes back to looking. It returns how
-// many were removed.
+// RemoveHeld clears one Held Release (id above 0) or all of them, and returns how many. A Release that is not held returns ErrState.
 func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (int, error) {
 	n := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -334,11 +278,7 @@ func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (i
 	return n, err
 }
 
-// RemoveTurnedDown takes Releases off the Turned down list (id 0: all), so
-// they may be picked again. The rows are deleted, like an old block list
-// entry being removed; a Release a Download came from is kept as passed
-// over instead (or refused, when the Pick rules refused it), so the
-// Download keeps its Release and its Source's picks.
+// RemoveTurnedDown takes one Release (id above 0) or all off the Turned down list and returns how many. A Release with a download or send attempt is kept as passed over or refused, so its history stays. The others are deleted.
 func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Actor) (int, error) {
 	n := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -348,8 +288,7 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 			where += " AND id = ?"
 			args = append(args, id)
 		}
-		// A Release turned down for single episodes and chosen for others
-		// meanwhile only forgets those episodes.
+
 		res, err := tx.Exec(`UPDATE releases SET verdict = json_remove(verdict, '$.turned_down_slot_ids'), updated_at = ?, updated_by = ?
 			WHERE state != 'turned_down' AND json_extract(verdict, '$.turned_down_slot_ids') IS NOT NULL`+strings.TrimPrefix(where, "state = 'turned_down'"),
 			append([]any{database.FormatTime(time.Now()), actorText(by)}, args...)...)
@@ -359,8 +298,7 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 		forgot, _ := res.RowsAffected()
 		n += int(forgot)
 		used := " AND (EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = releases.id) OR EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.release_id = releases.id))"
-		// One the Pick rules refused (a forced .exe, say) stays refused, so
-		// picking it again still needs force (#41).
+
 		res, err = tx.Exec(`UPDATE releases SET state = CASE WHEN json_extract(verdict, '$.outcome') = 'refused' AND EXISTS (SELECT 1 FROM json_each(verdict, '$.reasons') rr
 				WHERE json_extract(rr.value, '$.effect') = 'fail' AND NOT (json_extract(rr.value, '$.step') = 'hard' AND json_extract(rr.value, '$.rule') = 'turned_down'))
 				OR EXISTS (SELECT 1 FROM downloads dd WHERE dd.release_id = releases.id AND dd.state = 'failed' AND dd.state_reason LIKE 'dangerous files%')
@@ -389,35 +327,7 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 	return n, err
 }
 
-func scanIDs(rows *sql.Rows, err error) ([]int64, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var ids []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
-}
-
-// ListedRelease is a Release on the Held or Turned down list, with the
-// Title and Source it belongs to.
-type ListedRelease struct {
-	domain.Release
-	SourceName string
-	TitleID    int64
-	TitleName  string
-	SlotID     int64
-	Version    string
-}
-
-// List pages through Releases in one state (held or turned_down), newest
-// first, and says how many there are.
+// List returns Releases in a state, newest first (held ones by wait end), with the total before paging.
 func (s *Searcher) List(ctx context.Context, state string, limit, offset int) ([]ListedRelease, int, error) {
 	db := s.Store.Read()
 	var total int
@@ -452,8 +362,7 @@ func (s *Searcher) List(ctx context.Context, state string, limit, offset int) ([
 	return out, total, nil
 }
 
-// TurnedDownSlots lists the Slots a Release was turned down for one by one
-// (verdict.turned_down_slot_ids); nil when it was turned down for all.
+// TurnedDownSlots returns the Slots a Release was turned down for. An empty list means it was turned down whole.
 func TurnedDownSlots(rel domain.Release) []int64 {
 	xs, _ := rel.Verdict["turned_down_slot_ids"].([]any)
 	var out []int64
@@ -465,9 +374,116 @@ func TurnedDownSlots(rel domain.Release) []int64 {
 	return out
 }
 
-// turnedDownFor says a Release is turned down for a Slot. A Release turned
-// down for single episodes stays so for them whatever its state (it may be
-// chosen for other episodes meanwhile).
+// RefusedByRules reports whether a Release was refused for a reason a person can override, not only for being turned down.
+func RefusedByRules(rel domain.Release) bool {
+	if rel.State == "refused" || rel.Verdict["dangerous_files"] == true {
+		return true
+	}
+	if o, _ := rel.Verdict["outcome"].(string); o != "refused" {
+		return false
+	}
+	reasons, _ := rel.Verdict["reasons"].([]any)
+	if len(reasons) == 0 {
+		return true
+	}
+	for _, x := range reasons {
+		r, _ := x.(map[string]any)
+		if r["effect"] == "fail" && !(r["step"] == "hard" && r["rule"] == "turned_down") {
+			return true
+		}
+	}
+	return false
+}
+
+// failReasons lists in plain words why a Release did not pass, never empty.
+func failReasons(rel domain.Release) []string {
+	var out []string
+	rs, _ := rel.Verdict["reasons"].([]any)
+	for _, x := range rs {
+		m, _ := x.(map[string]any)
+		if m["effect"] == "fail" {
+			if d, _ := m["detail"].(string); d != "" {
+				out = append(out, d)
+			}
+		}
+	}
+	if rel.State == "turned_down" && len(TurnedDownSlots(rel)) == 0 {
+		why := "it was turned down"
+		if d, _ := rel.Verdict["turned_down_reason"].(string); d != "" {
+			why += ": " + d
+		}
+		out = append(out, why)
+	}
+	if len(out) == 0 {
+		out = []string{"it did not pass"}
+	}
+	return out
+}
+
+// canTakePick reports whether a Slot in this state can be given a Release now.
+func canTakePick(st domain.SlotState) bool {
+	return !busySlot(st) && st != domain.SlotRemoved &&
+		(domain.Transition(st, domain.SlotChosen) == nil || domain.Transition(st, domain.SlotSearching) == nil)
+}
+
+// busySlot reports whether a Slot already has work in flight.
+func busySlot(st domain.SlotState) bool {
+	return st == domain.SlotChosen || st == domain.SlotDownloading || st == domain.SlotImporting || st == domain.SlotSearching
+}
+
+// unholdTx sends every Slot that was holding the Release back to looking. A Slot with a file goes to better wanted so the file is kept.
+func unholdTx(tx *sql.Tx, releaseID int64, reason string, by domain.Actor) error {
+	rows, err := tx.Query("SELECT id, file_id IS NOT NULL FROM slots WHERE held_release_id = ? AND state = 'held'", releaseID)
+	if err != nil {
+		return err
+	}
+	type hs struct {
+		id      int64
+		hasFile bool
+	}
+	var list []hs
+	for rows.Next() {
+		var h hs
+		if err := rows.Scan(&h.id, &h.hasFile); err != nil {
+			rows.Close()
+			return err
+		}
+		list = append(list, h)
+	}
+	rows.Close()
+	for _, h := range list {
+		to := domain.SlotWanted
+		if h.hasFile {
+			to = domain.SlotBetterWanted
+		}
+		if _, err := tx.Exec("UPDATE slots SET held_release_id = NULL, next_try_at = NULL WHERE id = ?", h.id); err != nil {
+			return err
+		}
+		if err := store.MoveSlotTx(tx, h.id, to, reason, by); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// scanIDs reads a column of IDs and closes the rows. It takes the query result directly so callers can pass it on.
+func scanIDs(rows *sql.Rows, err error) ([]int64, error) {
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// turnedDownFor reports whether the Release was turned down for this Slot.
 func turnedDownFor(rel domain.Release, slotID int64) bool {
 	if only := TurnedDownSlots(rel); len(only) > 0 {
 		return slices.Contains(only, slotID)
@@ -475,14 +491,7 @@ func turnedDownFor(rel domain.Release, slotID int64) bool {
 	return rel.State == "turned_down"
 }
 
-// turnedDownList is the SQL condition for the Turned down list: turned
-// down for every Slot, or for single episodes.
-const turnedDownList = "(state = 'turned_down' OR json_extract(verdict, '$.turned_down_slot_ids') IS NOT NULL)"
-
-// packSlots lists the Slots of a show Release a person may choose it for
-// at once: the Slots it matched that can take a pick and that it was not
-// turned down for. An episode with a copy in place is taken only when the
-// Release would be a better copy; skipped names those left out.
+// packSlots returns the matched Slots of a show or album Release that could take it, and why each other Slot was left out. Other kinds return none.
 func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int64, skipped []string, kind string) {
 	_ = s.Store.Read().QueryRowContext(ctx, `SELECT t.kind FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
 		WHERE s.id = ?`, rel.MatchedSlotIDs[0]).Scan(&kind)
@@ -519,49 +528,7 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 	return out, skipped, kind
 }
 
-// RefusedByRules says whether the Pick rules refused a Release, whatever its
-// state now: one sent with force and then removed, or taken off the Turned
-// down list, still needs force to be picked again (#41). A verdict whose
-// only failing reason is that it was turned down before does not count:
-// clearing the list clears that.
-func RefusedByRules(rel domain.Release) bool {
-	if rel.State == "refused" || rel.Verdict["dangerous_files"] == true {
-		return true
-	}
-	if o, _ := rel.Verdict["outcome"].(string); o != "refused" {
-		return false
-	}
-	reasons, _ := rel.Verdict["reasons"].([]any)
-	if len(reasons) == 0 {
-		return true // an older verdict without its reasons
-	}
-	for _, x := range reasons {
-		r, _ := x.(map[string]any)
-		if r["effect"] == "fail" && !(r["step"] == "hard" && r["rule"] == "turned_down") {
-			return true
-		}
-	}
-	return false
-}
-
-// dangerousRels are the info hashes and names of Releases whose Download
-// failed because its files were a program (fail_dangerous). The Downloads
-// stay as history, so this outlives clearing the Turned down list.
-type dangerousRels struct{ hashes, names map[string]bool }
-
-// has matches by info hash; by name only when there is no hash (a fake
-// may copy a real scene name, and the real torrent must stay free).
-func (d dangerousRels) has(hash, name string) bool {
-	if hash != "" {
-		return d.hashes[strings.ToLower(hash)]
-	}
-	return name != "" && d.names[name]
-}
-
-var magnetBtih = regexp.MustCompile(`(?i)[?&]xt=urn:btih:([0-9a-f]{40}|[a-z2-7]{32})(?:&|$)`)
-
-// listingHash is a listing's info hash, from its own field or its magnet
-// link (hex, or base32 as some sites write it).
+// listingHash returns the lower-case hex info hash of a listing, from the field or the magnet link, or "".
 func listingHash(hash, link string) string {
 	if hash != "" {
 		return hash
@@ -580,12 +547,7 @@ func listingHash(hash, link string) string {
 	return hex.EncodeToString(b)
 }
 
-// dangerousWhy is the reason a Release known to hold a program needs force.
-const dangerousWhy = "its files were a program when it was downloaded before"
-
-// dangerousRel says whether a Download of rel (by info hash or name) failed
-// because its files were a program: picking it again needs force, whatever
-// its stored verdict says (#41).
+// dangerousRel reports whether the Release is known to be a program, by its hash or name or by a failed download of it.
 func (s *Searcher) dangerousRel(ctx context.Context, rel domain.Release) bool {
 	h := ""
 	if rel.InfoHash != nil {
@@ -599,6 +561,7 @@ func (s *Searcher) dangerousRel(ctx context.Context, rel domain.Release) bool {
 	return n > 0
 }
 
+// dangerousSeen collects every hash and name whose download failed for dangerous files.
 func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
 	d := dangerousRels{hashes: map[string]bool{}, names: map[string]bool{}}
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT lower(d.external_id), COALESCE(r.name, '') FROM downloads d LEFT JOIN releases r ON r.id = d.release_id
@@ -621,9 +584,7 @@ func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
 	return d
 }
 
-// unprotectedSlots are the Slots a Release matched that can take a pick, that
-// it was not turned down for and that hold no protected copy: where a
-// forced pick of a Release that gains nothing goes.
+// unprotectedSlots returns the matched Slots that can take a pick and have no protected copy.
 func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []int64 {
 	var out []int64
 	for _, id := range rel.MatchedSlotIDs {
@@ -637,7 +598,7 @@ func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []i
 	return out
 }
 
-// episodeLabel names an episode as S01E02.
+// episodeLabel names an episode as S01E02 for messages.
 func episodeLabel(it domain.Item) string {
 	if it.Numbers.Season == nil || it.Numbers.Episode == nil {
 		return "an episode"
@@ -645,10 +606,7 @@ func episodeLabel(it domain.Item) string {
 	return fmt.Sprintf("S%02dE%02d", *it.Numbers.Season, *it.Numbers.Episode)
 }
 
-// chooseMany sends a season pack or multi-episode Release a person picked
-// to every Slot it fills, as one Download. For an album (album), leaving
-// tracks out would mix copies within it: that needs force, like a refused
-// Release.
+// chooseMany picks one Release for several Slots at once. Slots that cannot take it are passed over, and it fails only when none can. An album with left-out tracks needs force because the copies would mix.
 func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []int64, skipped []string, album, force bool, also []string, by domain.Actor) (Choice, error) {
 	ch := Choice{ReleaseID: rel.ID, SlotID: slots[0], Warnings: []string{}}
 	if len(skipped) > 0 {
@@ -681,7 +639,7 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 				return err
 			}
 			if !canTakePick(st) {
-				continue // got busy meanwhile
+				continue
 			}
 			if st == domain.SlotNotOutYet && !slices.Contains(ch.Warnings, notAired) {
 				ch.Warnings = append(ch.Warnings, notAired)
@@ -719,6 +677,7 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 	return ch, nil
 }
 
+// setTurnedDownSlotsTx replaces the Slots a Release is turned down for, and clears the list when empty.
 func setTurnedDownSlotsTx(tx *sql.Tx, releaseID int64, ids []int64) error {
 	if len(ids) == 0 {
 		_, err := tx.Exec("UPDATE releases SET verdict = json_remove(verdict, '$.turned_down_slot_ids') WHERE id = ?", releaseID)

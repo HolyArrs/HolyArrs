@@ -12,18 +12,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
+// tlPasskey is a passkey shaped like a real one, so looksSecret accepts it.
 const tlPasskey = "0f3a9c2b7d1e4f5a8b6c0d9e2f1a3b4c"
 
-func storedURL(t *testing.T, s *database.Store, id int64) string {
-	t.Helper()
-	var u string
-	if err := s.Read().QueryRow("SELECT url FROM sources WHERE id = ?", id).Scan(&u); err != nil {
-		t.Fatal(err)
-	}
-	return u
-}
-
-func TestLooksSecret(t *testing.T) {
+// TestLooksSecret_Shapes checks which path parts count as passkeys and which are plain names.
+func TestLooksSecret_Shapes(t *testing.T) {
 	for _, p := range []string{tlPasskey, "aZ3kQ9xW2mN7pL4vB8cR1tY6", "123e4567-e89b-12d3-a456-426614174000"} {
 		if !looksSecret(p) {
 			t.Errorf("%q should look like a passkey", p)
@@ -36,9 +29,8 @@ func TestLooksSecret(t *testing.T) {
 	}
 }
 
-// A passkey in an rss address path goes to the vault: the stored address
-// has a marker, the API sees it masked, and ConfigFor gives the real one.
-func TestPathPasskeyKeptInTheVault(t *testing.T) {
+// TestPathPasskey_KeptInTheVault checks that a passkey in an rss address goes to the vault, the API sees it masked, and ConfigFor gives the real one.
+func TestPathPasskey_KeptInTheVault(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	real := "https://rss24h.torrentleech.org/" + tlPasskey
@@ -69,7 +61,6 @@ func TestPathPasskeyKeptInTheVault(t *testing.T) {
 	if msg := New(cfg).scrub("Get " + real + ": refused"); strings.Contains(msg, tlPasskey) {
 		t.Fatalf("message kept the passkey: %q", msg)
 	}
-	// Remove drops the path secret too.
 	ref := *src.PathSecretRef
 	if err := Remove(ctx, s, src.ID); err != nil {
 		t.Fatal(err)
@@ -79,7 +70,8 @@ func TestPathPasskeyKeptInTheVault(t *testing.T) {
 	}
 }
 
-func TestOrdinaryRSSPathUntouched(t *testing.T) {
+// TestRSSPath_OrdinaryUntouched checks that an rss path without a passkey is stored as typed.
+func TestRSSPath_OrdinaryUntouched(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	for i, u := range []string{"https://feed.example/rss/movies", "https://feed.example/rss/new-movies-2024-hd-collection/", "https://feed.example"} {
@@ -97,9 +89,8 @@ func TestOrdinaryRSSPathUntouched(t *testing.T) {
 	}
 }
 
-// Sending the masked address back keeps the passkey; on another host it
-// must be typed again; a new address without one drops it.
-func TestPathPasskeyRoundTripThroughChange(t *testing.T) {
+// TestPathPasskey_RoundTripThroughChange checks that the masked address keeps the passkey, another host needs it typed again, and a new address without one drops it.
+func TestPathPasskey_RoundTripThroughChange(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	real := "https://rss24h.torrentleech.org/" + tlPasskey
@@ -131,9 +122,8 @@ func TestPathPasskeyRoundTripThroughChange(t *testing.T) {
 	}
 }
 
-// A marker typed into the address is broken, so the passkey is never
-// filled into a part of the address the person chose.
-func TestPlantedPathMarkerIsNotFilled(t *testing.T) {
+// TestPathMarker_PlantedIsNotFilled checks that a marker typed into the address is broken, so a passkey is never filled into a part the person chose.
+func TestPathMarker_PlantedIsNotFilled(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	src, err := Add(ctx, s, v, Input{Name: "P", Format: "rss", URL: "https://feed.example/" + pathMark + "0/" + tlPasskey}, domain.System)
@@ -144,15 +134,14 @@ func TestPlantedPathMarkerIsNotFilled(t *testing.T) {
 	if err != nil || cfg.URL != "https://feed.example/HOLYARRS-PATHKEY0/"+tlPasskey {
 		t.Fatalf("config %q %v", cfg.URL, err)
 	}
-	// A stored marker with no path secret is never fetched as it is.
 	src.PathSecretRef = nil
 	if _, err := ConfigFor(ctx, src, v); err == nil {
 		t.Fatal("a marker without its passkey should fail")
 	}
 }
 
-// The startup step moves a passkey an older save left in the clear.
-func TestHidePathKeysMovesOldRows(t *testing.T) {
+// TestHidePathKeys_MovesOldRows checks that the startup step moves a passkey an older save left in the clear.
+func TestHidePathKeys_MovesOldRows(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	real := "https://rss.torrentleech.org/" + tlPasskey
@@ -196,9 +185,8 @@ func TestHidePathKeysMovesOldRows(t *testing.T) {
 	}
 }
 
-// Release links stored before the passkey moved keep it in the clear; the
-// startup step takes it out and keeps the markers they already hold.
-func TestHidePathKeysCleansOldReleaseLinks(t *testing.T) {
+// TestHidePathKeys_CleansOldReleaseLinks checks that the startup step cleans Release links that still hold the passkey and keeps markers they already have.
+func TestHidePathKeys_CleansOldReleaseLinks(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	qkey := "q" + "key12345"
@@ -214,7 +202,6 @@ func TestHidePathKeysCleansOldReleaseLinks(t *testing.T) {
 		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
-		// As an older cleanLink stored them: the query key hidden, the path one not.
 		for _, l := range []string{cleanLink(withKey, []string{qkey}), plainLink} {
 			r := &domain.Release{SourceID: src.ID, Name: "R", LinkRef: l, Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 				MatchedSlotIDs: []int64{}, FoundBy: "feed", State: "seen"}
@@ -247,9 +234,8 @@ func TestHidePathKeysCleansOldReleaseLinks(t *testing.T) {
 	}
 }
 
-// A masked address that cannot keep its passkey says why, and leaves the
-// stored passkey as it was.
-func TestMaskedPathKeyErrorsSayWhy(t *testing.T) {
+// TestMaskedPathKey_ErrorsSayWhy checks that a masked address that cannot keep its passkey says why and leaves the stored passkey alone.
+func TestMaskedPathKey_ErrorsSayWhy(t *testing.T) {
 	ctx := context.Background()
 	s, v := openVault(t)
 	src, err := Add(ctx, s, v, Input{Name: "TL", Format: "rss", URL: "https://rss24h.torrentleech.org/" + tlPasskey}, domain.System)
@@ -278,4 +264,14 @@ func TestMaskedPathKeyErrorsSayWhy(t *testing.T) {
 	if err != nil || cfg.URL != "https://rss24h.torrentleech.org/"+tlPasskey || now.Format != "rss" {
 		t.Fatalf("after refused changes %q %q %v", now.Format, cfg.URL, err)
 	}
+}
+
+// storedURL reads a Source's address as it is stored.
+func storedURL(t *testing.T, s *database.Store, id int64) string {
+	t.Helper()
+	var u string
+	if err := s.Read().QueryRow("SELECT url FROM sources WHERE id = ?", id).Scan(&u); err != nil {
+		t.Fatal(err)
+	}
+	return u
 }

@@ -12,13 +12,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
+// protectedChoiceErr is the error for choosing a Release into a Slot whose copy is protected. It wraps ErrBusy so callers treat it as a lost race.
 func protectedChoiceErr() error {
 	return fmt.Errorf("%w: the copy in this Slot is protected", ErrBusy)
 }
 
-// choiceStateTx re-reads the durable copy guard in the same write that will
-// choose a Release. A search result or review loaded before protection changed
-// cannot replace the protected copy.
+// choiceStateTx reads a Slot's state inside the write that chooses for it, and refuses when its Title is not active or its copy is protected. Checking in the same transaction keeps a protection set meanwhile from being overwritten.
 func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
 	var slotState, titleState string
 	var protected bool
@@ -37,6 +36,7 @@ func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
 	return domain.SlotState(slotState), nil
 }
 
+// slotHasProtectedCopy reports whether the Slot's current file is protected.
 func slotHasProtectedCopy(ctx context.Context, db interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, slotID int64) bool {
@@ -46,15 +46,14 @@ func slotHasProtectedCopy(ctx context.Context, db interface {
 	return err == nil && protected
 }
 
+// refuseCopyChoice turns a verdict into a refusal with one copy-step reason and clears everything that would let it win.
 func refuseCopyChoice(v judge.Verdict, rule, detail string) judge.Verdict {
 	v.Reasons = append(v.Reasons, judge.Reason{Step: "copy", Rule: rule, Effect: "fail", Detail: detail})
 	v.Passed, v.Outcome, v.HoldUntil, v.Rank = false, "refused", nil, 0
 	return v
 }
 
-// copyChoiceVerdict applies Version-specific copy identity after the shared
-// quality judge. Filename languages are hints only; inspected media headers
-// remain the import-time authority.
+// copyChoiceVerdict adds the checks that depend on the Version a movie is chosen for. A wrong or unclear edition refuses the Release. A missing audio language only warns, because the media inspected at import decides.
 func copyChoiceVerdict(c slotCtx, rel judge.Release, v judge.Verdict) judge.Verdict {
 	if c.ti.Kind != "" && c.ti.Kind != "movie" {
 		return v

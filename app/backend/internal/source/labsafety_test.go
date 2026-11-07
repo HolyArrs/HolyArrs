@@ -13,9 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// labFeed serves the lab fake indexer's own feed file (research\lab\
-// fake-indexer\results.xml, or HOLYARRS_LAB_FEED) the way its nginx does:
-// caps for t=caps, the feed for every search. Skipped when the file is not there.
+// labFeed serves the lab indexer's saved feed and caps, and skips the test when the files are missing. HOLYARRS_LAB_FEED overrides the path.
 func labFeed(t *testing.T) string {
 	t.Helper()
 	path := os.Getenv("HOLYARRS_LAB_FEED")
@@ -40,6 +38,7 @@ func labFeed(t *testing.T) string {
 	return srv.URL + "/api"
 }
 
+// labExec runs one write statement and fails the test on error.
 func labExec(t *testing.T, s *database.Store, q string, args ...any) {
 	t.Helper()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }); err != nil {
@@ -47,14 +46,13 @@ func labExec(t *testing.T, s *database.Store, q string, args ...any) {
 	}
 }
 
+// day formats a calendar date the way the database stores times.
 func day(s string) string {
 	d, _ := time.Parse("2006-01-02", s)
 	return database.FormatTime(d)
 }
 
-// 4.3.5 on the lab feed, movies: the early 2160p copy and the program
-// behind a video name are refused; the lab's real Dune is chosen.
-func TestLabFeedMovieEarlyAndFake(t *testing.T) {
+func TestLabFeed_MovieEarlyAndFake(t *testing.T) {
 	f := seed(t, labFeed(t))
 	labExec(t, f.s, "UPDATE titles SET cinema_date = ?", day("2024-03-01"))
 	if j := runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil); j.State != "done" {
@@ -67,9 +65,7 @@ func TestLabFeedMovieEarlyAndFake(t *testing.T) {
 	}
 }
 
-// 4.3.5 on the lab feed, shows: the early and the 3 MB Arcane S01E01 are
-// refused; the lab's real one is chosen.
-func TestLabFeedEpisodeEarlyAndFake(t *testing.T) {
+func TestLabFeed_EpisodeEarlyAndFake(t *testing.T) {
 	f := seedShow(t, labFeed(t), nil)
 	labExec(t, f.s, "UPDATE titles SET name = 'Arcane', sort_name = 'arcane', year = 2021, source_ids = '{\"tvdb\":\"371028\",\"imdb\":\"tt11126994\"}' WHERE id = ?", f.titleID)
 	labExec(t, f.s, "UPDATE items SET air_date = ?, air_day = '2021-11-06', runtime = 20 WHERE id = ?", database.FormatTime(time.Date(2021, 11, 6, 19, 0, 0, 0, time.UTC)), f.items["S01E01"])
@@ -83,9 +79,7 @@ func TestLabFeedEpisodeEarlyAndFake(t *testing.T) {
 	}
 }
 
-// 4.3.5 on the lab feed, music: the early and the passworded Harbour Light
-// are refused; one of the lab's real copies is chosen.
-func TestLabFeedAlbumEarlyAndFake(t *testing.T) {
+func TestLabFeed_AlbumEarlyAndFake(t *testing.T) {
 	f := seedArtist(t, labFeed(t))
 	labExec(t, f.s, "UPDATE titles SET name = 'Lab Lanterns', sort_name = 'lab lanterns' WHERE id = ?", f.titleID)
 	labExec(t, f.s, "UPDATE parts SET name = 'Harbour Light', release_date = ? WHERE id = ?", day("2024-06-07"), f.albums[lta])

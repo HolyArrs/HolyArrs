@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
+// musicCaps is a Torznab caps answer that offers music search on category 3000.
 const musicCaps = `<?xml version="1.0" encoding="UTF-8"?>
 <caps><limits max="50" default="25"/><searching>
 <search available="yes" supportedParams="q"/>
@@ -23,8 +24,7 @@ const musicCaps = `<?xml version="1.0" encoding="UTF-8"?>
 <music-search available="yes" supportedParams="q,artist,album"/>
 </searching><categories><category id="2000" name="Movies"/><category id="3000" name="Audio"/></categories></caps>`
 
-// musicRSS lists Releases; a name may end in "|<size in MB>" (default 400)
-// and "#<files>".
+// musicRSS builds a Torznab feed of one album release per name. A name may end in "|MB" for its size and "#N" for its file count.
 func musicRSS(names ...string) string {
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel>`)
@@ -46,10 +46,12 @@ func musicRSS(names ...string) string {
 	return b.String()
 }
 
+// xmlEscape escapes the characters that would break the feed XML.
 func xmlEscape(s string) string {
 	return strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;").Replace(s)
 }
 
+// musicServer is a fake music indexer that records each query and answers it with the names that answer returns.
 type musicServer struct {
 	mu      sync.Mutex
 	queries []url.Values
@@ -71,24 +73,23 @@ func (ms *musicServer) start(t *testing.T) string {
 	return srv.URL + "/api"
 }
 
+// artistFix is a fixture with one artist, one Version and two albums, indexed by album name and track label.
 type artistFix struct {
 	fixture
 	titleID, verID int64
-	albums         map[string]int64 // album name -> part id
-	slots          map[string]int64 // "Low Tide Atlas 1-2" -> slot id
+	albums         map[string]int64
+	slots          map[string]int64
 }
 
 const (
+	// Album names and the two release names the tests search for.
 	lta  = "Low Tide Atlas"
 	hs   = "Harbour Songs"
 	flac = "Velvet Cartography - Low Tide Atlas (2019) [FLAC]"
 	mp3  = "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]|100"
 )
 
-// seedArtist adds Velvet Cartography on Lossless first: Low Tide Atlas
-// (2019, disc 1 with three tracks and disc 2 with two, 9 minutes each, all
-// wanted) and Harbour Songs (out next month, two tracks not out yet). A
-// Dune movie is there too, and one Source for movies and music.
+// seedArtist stores the artist: Low Tide Atlas (released, two discs of 3 and 2 tracks) and Harbour Songs (due next month, so its Slots are not out yet).
 func seedArtist(t *testing.T, srcURL string) artistFix {
 	t.Helper()
 	f := artistFix{fixture: seed(t, srcURL), albums: map[string]int64{}, slots: map[string]int64{}}
@@ -154,6 +155,7 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 	return f
 }
 
+// state returns the current state of the Slot for a track label such as "Low Tide Atlas 1-2".
 func (f artistFix) state(t *testing.T, label string) domain.SlotState {
 	t.Helper()
 	var st string
@@ -163,8 +165,10 @@ func (f artistFix) state(t *testing.T, label string) domain.SlotState {
 	return domain.SlotState(st)
 }
 
+// ltaTracks are the labels of every Low Tide Atlas track.
 var ltaTracks = []string{"Low Tide Atlas 1-1", "Low Tide Atlas 1-2", "Low Tide Atlas 1-3", "Low Tide Atlas 2-1", "Low Tide Atlas 2-2"}
 
+// albumJob runs an album search for one album with extra Job params.
 func (f artistFix) albumJob(t *testing.T, sr *Searcher, album string, params map[string]any) domain.Job {
 	t.Helper()
 	p := map[string]any{"version_id": f.verID}
@@ -174,7 +178,7 @@ func (f artistFix) albumJob(t *testing.T, sr *Searcher, album string, params map
 	return runKind(t, f.fixture, sr, KindSearchAlbum, &domain.Subject{Type: "part", ID: f.albums[album]}, p)
 }
 
-func TestAlbumSearchPicksOneReleaseForEveryTrack(t *testing.T) {
+func TestAlbumSearch_OneReleaseForEveryTrack(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string {
 		return []string{
 			mp3,
@@ -223,7 +227,7 @@ func TestAlbumSearchPicksOneReleaseForEveryTrack(t *testing.T) {
 	}
 }
 
-func TestTrackSearchSearchesItsAlbum(t *testing.T) {
+func TestTrackSearch_SearchesItsAlbum(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
@@ -238,7 +242,7 @@ func TestTrackSearchSearchesItsAlbum(t *testing.T) {
 	}
 }
 
-func TestAlbumNotOutIsSearchedOnlyByHand(t *testing.T) {
+func TestAlbumSearch_NotOutOnlyByHand(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{"Velvet Cartography - Harbour Songs (2026) [FLAC]|160"} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
@@ -255,7 +259,7 @@ func TestAlbumNotOutIsSearchedOnlyByHand(t *testing.T) {
 	}
 }
 
-func TestOneDiscFillsOnlyItsTracks(t *testing.T) {
+func TestAlbumSearch_OneDiscFillsOnlyItsTracks(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string {
 		return []string{"Velvet Cartography - Low Tide Atlas (2019) CD2 [FLAC]|160"}
 	}}
@@ -275,9 +279,7 @@ func TestOneDiscFillsOnlyItsTracks(t *testing.T) {
 	}
 }
 
-// Find a better copy per album: a 320 copy in place is replaced by lossless;
-// a Release no better for every track is refused.
-func TestAlbumBetterCopy(t *testing.T) {
+func TestAlbumSearch_BetterCopy(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string {
 		return []string{"Velvet Cartography - Low Tide Atlas (2019) [MP3 V0]|100", flac}
 	}}
@@ -311,7 +313,7 @@ func TestAlbumBetterCopy(t *testing.T) {
 	}
 }
 
-func TestAlbumTurnedDownNeverPickedAgain(t *testing.T) {
+func TestAlbumSearch_TurnedDownNeverPickedAgain(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
@@ -329,7 +331,7 @@ func TestAlbumTurnedDownNeverPickedAgain(t *testing.T) {
 	}
 }
 
-func TestDiscographyWithSetting(t *testing.T) {
+func TestAlbumSearch_DiscographySetting(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{"Velvet Cartography - Discography (2011-2024) [FLAC]|2000"} }}
 	f := seedArtist(t, ms.start(t))
 	exec(t, f.fixture, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by)
@@ -341,7 +343,7 @@ func TestDiscographyWithSetting(t *testing.T) {
 	}
 }
 
-func TestFeedCheckPicksAlbum(t *testing.T) {
+func TestHandleFeed_PicksAlbum(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac, "Dune.Part.Two.2024.1080p.WEB.H264-OTHER"} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
@@ -359,10 +361,10 @@ func TestFeedCheckPicksAlbum(t *testing.T) {
 	}
 }
 
-func TestMissingSearchQueuesAlbums(t *testing.T) {
+func TestHandleSearchMissing_QueuesAlbums(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return nil }}
 	f := seedArtist(t, ms.start(t))
-	exec(t, f.fixture, "UPDATE slots SET state = 'in_library' WHERE id = ?", f.slotID) // the movie
+	exec(t, f.fixture, "UPDATE slots SET state = 'in_library' WHERE id = ?", f.slotID)
 	sr := &Searcher{Store: f.s}
 	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing"})
 	if j.State != "done" || j.Result["albums"] != float64(1) || j.Result["queued"] != float64(1) {
@@ -377,10 +379,7 @@ func TestMissingSearchQueuesAlbums(t *testing.T) {
 	}
 }
 
-// Held per album: a wait holds the Release for every track; once the wait
-// is over it is chosen for all of them at once. A Source past its picks
-// limit gives way to the next.
-func TestAlbumHeldThenChosenAndPicksLimit(t *testing.T) {
+func TestAlbumSearch_HeldThenChosenAndPicksLimit(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac} }}
 	f := seedArtist(t, ms.start(t))
 	exec(t, f.fixture, `UPDATE pick_rules SET body = json_set(body, '$.protocol.wait_minutes_torrent', 100000) WHERE name = ?`, domain.LosslessFirstName)
@@ -400,7 +399,7 @@ func TestAlbumHeldThenChosenAndPicksLimit(t *testing.T) {
 			t.Fatalf("%s is %s after the wait", l, st)
 		}
 	}
-	// Picks limit: the Source already gave one pick in its window.
+
 	g := seedArtist(t, ms.start(t))
 	exec(t, g.fixture, `UPDATE sources SET limits = json_set(COALESCE(limits, '{}'), '$.grabs_per_window', 1, '$.window_seconds', 86400)`)
 	exec(t, g.fixture, `INSERT INTO releases (created_at, created_by, updated_at, updated_by, source_id, name, link_ref, protocol, size, flags, parsed, matched_slot_ids, verdict, found_by, state)
@@ -414,9 +413,7 @@ func TestAlbumHeldThenChosenAndPicksLimit(t *testing.T) {
 	}
 }
 
-// #43: choosing an MP3 album by hand over tracks that are all FLAC already
-// needs force, whatever state the Release is in: no track would gain.
-func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
+func TestChoose_LossyAlbumOverLosslessNeedsForce(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
 	f := seedArtist(t, ms.start(t))
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -439,7 +436,7 @@ func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
 	sr := &Searcher{Store: f.s}
 	f.albumJob(t, sr, lta, map[string]any{"choose": false})
 	r := relByName(t, f.fixture, "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]")
-	// Whatever the verdict made of it, a person picks it from the list.
+
 	ids := make([]string, len(ltaTracks))
 	for i, l := range ltaTracks {
 		ids[i] = fmt.Sprint(f.slots[l])
@@ -449,7 +446,7 @@ func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
 	if _, err := sr.Choose(context.Background(), r.ID, 0, false, domain.System); !errors.As(err, &nf) || !strings.Contains(strings.Join(nf.Reasons, " "), "already has a copy as good") {
 		t.Fatalf("picked over FLAC without force: %v", err)
 	}
-	// The same for one track named by the page.
+
 	if _, err := sr.Choose(context.Background(), r.ID, f.slots[ltaTracks[0]], false, domain.System); !errors.As(err, &nf) {
 		t.Fatalf("picked over FLAC for one track without force: %v", err)
 	}
@@ -461,9 +458,7 @@ func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
 	}
 }
 
-// #43: a FLAC copy whose stored name says no format (an adopted or older
-// row) is still known as lossless by its extension: an MP3 album is no gain.
-func TestCurrentCopyKnownByExtension(t *testing.T) {
+func TestCurrentCopy_KnownByExtension(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
 	f := seedArtist(t, ms.start(t))
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -488,7 +483,7 @@ func TestCurrentCopyKnownByExtension(t *testing.T) {
 	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
 		t.Fatalf("MP3 320 chosen over FLAC with a plain name: %s", st)
 	}
-	// Picked by hand for one track, it needs force too.
+
 	r := relByName(t, f.fixture, "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]")
 	exec(t, f.fixture, "UPDATE releases SET state = 'passed_over', matched_slot_ids = json_array(?) WHERE id = ?", f.slots[ltaTracks[0]], r.ID)
 	var nf *NeedsForceError
@@ -497,9 +492,7 @@ func TestCurrentCopyKnownByExtension(t *testing.T) {
 	}
 }
 
-// #43: a TAK copy with a plain stored name is lossless at search: an MP3
-// album is no gain over it.
-func TestTAKCopyKnownAtSearch(t *testing.T) {
+func TestCurrentCopy_TAKKnownAtSearch(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
 	f := seedArtist(t, ms.start(t))
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
