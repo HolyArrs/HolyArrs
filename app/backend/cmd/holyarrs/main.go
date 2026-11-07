@@ -43,7 +43,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -857,7 +857,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault}
 	sender.Watch(ctx)
-	media := &mediaserver.Linker{Store: s, Vault: vault}
+	media := &mediaservers.Linker{Store: s, Vault: vault}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {

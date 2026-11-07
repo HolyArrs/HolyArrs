@@ -1,6 +1,6 @@
 //go:build labms
 
-package mediaserver
+package mediaservers
 
 import (
 	"context"

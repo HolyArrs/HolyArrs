@@ -36,7 +36,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
@@ -140,7 +140,7 @@ type Server struct {
 	Health *health.Engine
 	// Media tells media servers about changed folders; New makes one when
 	// Secrets is set.
-	Media *mediaserver.Linker
+	Media *mediaservers.Linker
 	// Subtitles runs subtitle work; New makes one when nil.
 	Subtitles *subtitles.Service
 	// States holds the state of every supervised stage (may be nil).
@@ -171,6 +171,8 @@ type Server struct {
 // API serves HTTP.
 type API struct {
 	s Server
+	// media serves the media server routes (mediaservers).
+	media *mediaservers.Handlers
 	// bridgeSvc keeps the connected Jackett and Prowlarr (bridges.go, #96).
 	bridgeOnce sync.Once
 	bridgeSvc  *bridge.Service
@@ -283,7 +285,7 @@ func New(s Server) *API {
 		s.Health = &health.Engine{Store: s.Store, Version: s.Version}
 	}
 	if s.Media == nil && s.Secrets != nil {
-		s.Media = &mediaserver.Linker{Store: s.Store, Vault: s.Secrets}
+		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets}
 	}
 	if s.Subtitles == nil {
 		s.Subtitles = newSubtitles(s)
@@ -305,7 +307,7 @@ func New(s Server) *API {
 				}
 			}}
 	}
-	return &API{s: s}
+	return &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
 }
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.
@@ -409,7 +411,7 @@ func (a *API) Handler() http.Handler {
 	a.manualImportRoutes(m)
 	a.holdingRoutes(m)
 	a.healthRoutes(m)
-	a.mediaServerRoutes(m)
+	a.media.Routes(m)
 	a.showRoutes(m)
 	a.musicRoutes(m)
 	a.musicPageRoutes(m)

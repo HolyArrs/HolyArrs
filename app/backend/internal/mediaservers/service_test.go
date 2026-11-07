@@ -1,4 +1,4 @@
-package mediaserver
+package mediaservers
 
 import (
 	"bytes"

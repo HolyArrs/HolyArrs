@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"io"
 	"net/http"
 	"os"
@@ -195,5 +196,5 @@ func TestPinSourceAndMediaServerViewGolden(t *testing.T) {
 	ms := domain.MediaServer{Name: "Jellyfin", Kind: "jellyfin", URL: "http://jf:8096", TokenSecretID: &ref, Enabled: true, OnImport: true,
 		OnRename: true, OnDelete: false, PathFrom: "/data", PathTo: "/media", AllowLocal: true, LastOKAt: &at, LastError: "slow"}
 	ms.ID = 2
-	pinSMGolden(t, "pin_media_server_view.golden.json", mediaServerView(ms))
+	pinSMGolden(t, "pin_media_server_view.golden.json", mediaservers.ViewOf(ms))
 }
