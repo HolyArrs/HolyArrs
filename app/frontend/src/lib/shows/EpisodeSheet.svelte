@@ -13,8 +13,6 @@
 	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
 	import type { EventRecord, TitleView } from '#lib/core/types.ts';
 
-	// One episode, from the Library tab: its picture and story, where it stands,
-	// its file (quality, size, languages), keep up to date, and what happened to it.
 	export type SheetEpisode = {
 		id: number;
 		season?: number;
@@ -39,7 +37,7 @@
 
 	let story = $state('');
 	let events = $state<EventRecord[]>([]);
-	// History in the compact rows of the title pages, routine work left out.
+	// Routine events are left out of the short history.
 	const rows = $derived(groupDownloads(events.filter((e) => !isRoutine(e.Kind))));
 	const titles = $derived(new Map(show ? [[show.id, show]] : []));
 	let busy = $state('');
@@ -58,8 +56,7 @@
 				.then((r) => (story = r.episodes?.find((x) => x.number === e.episode)?.overview ?? ''), () => {});
 	});
 
-	// Subtitles as a choice like the title's Settings: Default, Off, or this episode's own languages;
-	// Custom opens the full list (languages, choose a subtitle, sync).
+	// Custom opens the full subtitle list.
 	let subs = $state<TitleSubtitles | null>(null);
 	let subsMore = $state(false);
 	async function loadSubs() {
@@ -162,7 +159,6 @@
 
 <Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} size="md">
 	{#if ep}
-		<!-- One column: picture, story, status when not in the library, File, Settings, History. -->
 		<div class="es" data-testid="episode-sheet">
 			<div class="es-still">
 				{#if ep.still}<img src={ep.still} alt="" decoding="async" />{/if}

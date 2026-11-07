@@ -23,22 +23,22 @@ const view: AnimeView = {
 };
 
 describe('anime title page', () => {
-	it('path', () => {
+	it('opens the anime lookup address for a show', () => {
 		expect(animePath('show', '9000')).toBe('/metadata/show/9000/anime');
 	});
-	it('title variants, duplicates folded', () => {
+	it('shows each title variant once on the title line', () => {
 		expect(titleLine(view.seasons[1].title)).toBe('Gousei Shou · Synthetic Show · 合成ショー');
 		expect(titleLine(view.seasons[2].title)).toBe('Gousei Shou 2nd Season');
 		expect(titleLine(undefined)).toBe('');
 	});
-	it('season line: title, absolute range and later cours', () => {
+	it('shows title, absolute range and later parts on a season line', () => {
 		expect(seasonAnimeLine(view, 1, 12)).toBe('Gousei Shou · Synthetic Show · 合成ショー · Absolute episodes 1–12');
 		expect(seasonAnimeLine(view, 2, 24)).toBe('Gousei Shou 2nd Season · Absolute episodes 13–36 · Part 2 from episode 13 (Gousei Shou Part 2)');
 		expect(seasonAnimeLine(view, 0, 2)).toBe('');
 		expect(seasonAnimeLine(view, 5, 2)).toBe('');
 		expect(seasonAnimeLine(null, 1, 12)).toBe('');
 	});
-	it('episode offsets for a season episode', () => {
+	it('counts an episode from the start of its part', () => {
 		expect(animeEpisode(view, 1, 5)).toEqual({ anilist: 11, episode: 5, absolute: 5 });
 		expect(animeEpisode(view, 2, 12)).toEqual({ anilist: 12, episode: 12, absolute: 24 });
 		expect(animeEpisode(view, 2, 13)).toEqual({ anilist: 13, episode: 1, absolute: 25 });

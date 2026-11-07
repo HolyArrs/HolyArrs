@@ -9,9 +9,6 @@
 	import { newSeason, newestSeason, seasonName } from './labels.ts';
 	import { animeEpisode, animePath, type AnimeView } from './anime.ts';
 
-	// Seasons of a show that is not in the Library, read only: one pill per
-	// season (newest first, Specials last) over a row of that season's episode
-	// cards. It opens on the newest season; picking a pill reads its episodes.
 	let { tmdb, seasons, fallback }: { tmdb: string; seasons: { number: number; episodes: number; year?: number }[]; fallback?: string | null } = $props();
 
 	const ordered = $derived([...seasons].sort((a, b) => Number(a.number === 0) - Number(b.number === 0) || b.number - a.number));
@@ -43,7 +40,7 @@
 			});
 	}
 
-	// Anime: absolute episode numbers beside the air date. Best effort.
+	// Best effort: the page works without anime data.
 	let anime = $state<AnimeView | null>(null);
 	$effect(() => {
 		const id = tmdb;
@@ -64,7 +61,7 @@
 		});
 	}
 	const cur = $derived(shown === null ? undefined : seasons.find((s) => s.number === shown));
-	// Each episode picture: loaded, or failed (the placeholder then shows its name).
+	// A failed picture falls back to the placeholder.
 	let stillState = $state<Record<string, 'ok' | 'bad'>>({});
 </script>
 
@@ -111,11 +108,11 @@
 	.pill { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
 	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* Touch phones: 44px season pills (min-height, since the scrolling row would clip a larger hit area). */
+	/* Min-height, not padding: the scrolling row would clip a larger hit area. */
 	@media (max-width: 767px) and (pointer: coarse) { .pill { min-height: 44px; } }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 	.line { margin: 10px 0 2px; }
-	/* The pills name the row, so its own heading is for screen readers only. */
+	/* The pills already name the row. */
 	.seasons :global(.ui-shelf header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 	.ep { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-self: start; }
 	.still { position: relative; display: block; aspect-ratio: 16 / 9; margin-bottom: 6px; border-radius: 10px; overflow: hidden; background: var(--surface-2); }

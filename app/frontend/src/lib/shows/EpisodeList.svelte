@@ -1,16 +1,12 @@
 <script lang="ts" module>
-	/** One row of a season's episode list. */
 	export interface EpisodeRow {
 		key: string | number;
-		/** The episode number in the season (or its code, such as S01E02). */
 		number: string;
 		name: string;
 		still?: string | null;
 		runtime?: number;
-		/** The air date in words, or "No air date yet". */
 		when?: string;
 		overview?: string;
-		/** A requester's mark: the episode is here to watch. */
 		here?: boolean;
 	}
 </script>
@@ -21,9 +17,6 @@
 	import { sized } from '../core/tmdb-image.ts';
 	import { runtimeWords } from '../ui/TitleHero.svelte';
 
-	// A season as a vertical list, the pattern streaming apps use for long
-	// seasons: the number, a still, the name, runtime and air date, and two
-	// lines of synopsis. Library pages add a status and an actions menu per row.
 	let {
 		rows,
 		fallback,
@@ -32,13 +25,10 @@
 		after
 	}: {
 		rows: EpisodeRow[];
-		/** The picture for episodes without a still (the show's backdrop). */
+		// Shown for episodes that have no still.
 		fallback?: string | null;
-		/** Beside the name: the row's status (managers). */
 		status?: Snippet<[number]>;
-		/** At the row's end: its actions menu. */
 		action?: Snippet<[number]>;
-		/** Under the synopsis: why it is or is not looked for. */
 		after?: Snippet<[number]>;
 	} = $props();
 	let failed = $state<Record<string, boolean>>({});

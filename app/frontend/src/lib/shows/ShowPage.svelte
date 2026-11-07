@@ -2,9 +2,6 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from '../core/plain.ts';
 	import { to } from '../core/paths.ts';
-	// One show: its seasons and episodes, Keep up to date per show, season
-	// and episode, air dates and why each episode is or is not looked for;
-	// Search now and Choose a release for the show, a season or an episode.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
@@ -69,7 +66,6 @@ import { decided } from '../core/plain.ts';
 		quickAsk
 	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void; askSheet: AskShowSheet; quickAsk: QuickAskSheet } = $props();
 
-	// Who asked.
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = title?.id;
@@ -78,7 +74,7 @@ import { decided } from '../core/plain.ts';
 	});
 	const askers = $derived(askedBy.titles[String(title.id)]?.askers ?? []);
 
-	// A failed refresh keeps what is shown and says so above it.
+	// On a failed refresh the old data stays on screen.
 	let loadErr = $state('');
 	let retrying = $state(false);
 	async function retry() {
@@ -93,7 +89,6 @@ import { decided } from '../core/plain.ts';
 
 	const staff = $derived(session.can('manage_library'));
 
-	// People who ask (not manage) ask for the seasons the Library does not keep.
 	let asker: ReturnType<AskShowSheet> | undefined = $state();
 	function askMore() {
 		const s: LookupShow = {
@@ -119,20 +114,17 @@ import { decided } from '../core/plain.ts';
 	let busy = $state('');
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
-	// Routine work stays out of the title page; History shows it all.
+	// Routine events are hidden here; the History page lists them.
 	const historyRows = $derived(groupDownloads(history.filter((e) => !isRoutine(e.Kind))).slice(0, 8));
 	const historyTitles = $derived(new Map([[title.id, title]]));
 	let refreshing = $state(false);
 
 	const statusWord: Record<string, string> = { running: 'Still running', ended: 'Ended', announced: 'Announced' };
 
-	// Rename files and delete (5.2.4): the rename preview for this show, and
-	// the delete dialog for the show, a season or an episode.
 	let renameDialog: HTMLDialogElement | undefined = $state();
 	let renameOpen = $state(false);
 	let deleter: ReturnType<typeof ShowDeleteDialog> | undefined = $state();
 
-	// Subtitles of one episode, in a dialog from its row.
 	let subDialog: HTMLDialogElement | undefined = $state();
 	let subEpisode = $state<EpisodeView | null>(null);
 
@@ -156,8 +148,6 @@ import { decided } from '../core/plain.ts';
 		void loadHistory();
 	}
 
-	// Searching: Search now picks by itself; Choose a release
-	// lists every Release for an episode or a season.
 	let scope = $state<ReleaseScope | null>(null);
 	let scopeJobs = $state<number[]>([]);
 	let searching = $state('');
@@ -170,7 +160,7 @@ import { decided } from '../core/plain.ts';
 			if (list) {
 				scope = list;
 				scopeJobs = r.job_ids;
-				// The list opens at the top of the Library section: bring it into view.
+				// The release list sits in the Library section, so scroll to it.
 				await tick();
 				document.querySelector('[data-testid="show-releases"]')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 			}
@@ -202,14 +192,14 @@ import { decided } from '../core/plain.ts';
 		const code = episodeLabel(ep, order);
 		void startSearch(
 			`e${ep.id}${list ? 'l' : ''}`,
-			// Search now looks for every Version's copy; a list is for the main Version.
+			// A release list is only for the main Version.
 			!list && ep.slots.length > 1 ? { item_id: ep.id } : { slot_id: sl.id },
 			`Searching ${code}`,
 			list ? { label: code, query: `item_id=${ep.id}`, slotId: sl.id, slotState: sl.state } : undefined
 		);
 	}
 
-	// Episode states move while searches run: read the open seasons again.
+	// Episode states change while searches run, so the open seasons are read again.
 	let again: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const soon = () => {
@@ -241,7 +231,7 @@ import { decided } from '../core/plain.ts';
 			history = h.events;
 			historyTotal = h.total;
 		} catch {
-			// History is a side card; the page works without it.
+			// The page works without the history card.
 		}
 	}
 
@@ -259,13 +249,11 @@ import { decided } from '../core/plain.ts';
 		}
 	}
 
-	// The season on screen: ?season=N (Home's cards), else the newest season
-	// that has aired or upcoming episodes until one is picked.
+	// ?season=N wins until a season is picked.
 	const askedSeason = Number(page.url.searchParams.get('season'));
 	let picked = $state<number | null>(Number.isInteger(askedSeason) && askedSeason > 0 ? askedSeason : null);
 	const cur = $derived((picked !== null && show?.seasons.some((x) => x.number === picked) ? picked : null) ?? newestSeason(show?.seasons ?? []) ?? 0);
 	const freshSeason = $derived(newSeason(show?.seasons ?? []));
-	// Each episode's two-line synopsis, from the season's details answer (cached on the server).
 	let synopses = $state<Record<number, Record<number, string>>>({});
 	$effect(() => {
 		const n = cur;
@@ -275,7 +263,7 @@ import { decided } from '../core/plain.ts';
 		api.get<{ episodes?: { number: number; overview?: string }[] }>(`/metadata/show/${encodeURIComponent(tmdb)}/seasons/${n}`, ctl.signal)
 			.then((r) => (synopses[n] = Object.fromEntries((r.episodes ?? []).filter((e) => e.overview).map((e) => [e.number, e.overview as string]))))
 			.catch(() => {
-				/* The synopsis is an extra: the list works without it. */
+				/* The list works without synopses. */
 			});
 		return () => ctl.abort();
 	});
@@ -314,7 +302,6 @@ import { decided } from '../core/plain.ts';
 		return items;
 	}
 
-	// Richer art and facts from the metadata endpoint, when the backend has it.
 	let rich = $state<RichMeta | null>(null);
 	$effect(() => {
 		const tmdb = title.ids?.tmdb;
@@ -326,7 +313,6 @@ import { decided } from '../core/plain.ts';
 	});
 	const heroMeta = $derived([title.year ? String(title.year) : '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : '', show?.network ?? '', show ? (statusWord[show.status] ?? show.status) : '', ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 2)].filter(Boolean));
 	const heroBadges = $derived(qualityBadges(title.slots.map((s) => s.file)));
-	// Per season (managers): search it, pick a Release, keep it up to date, delete it.
 	const seasonMenu = (n: number, keep: boolean): MenuItem[] => [
 		{ label: 'Search season', icon: 'search', onselect: () => searchSeason(n), disabled: searching === `s${n}` },
 		{ label: 'Choose a release', icon: 'grid', onselect: () => searchSeason(n, true), disabled: searching === `s${n}l` },
@@ -339,12 +325,10 @@ import { decided } from '../core/plain.ts';
 		const h = document.getElementById('h-library');
 		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 	}
-	/** An episode's still, when the backend sends one. */
 	const still = (ep: EpisodeView) => ep.still;
 	const heroKind = $derived(show?.missing ? 'missing' : show?.in_library ? 'in_library' : show?.not_out_yet ? 'coming_soon' : 'missing');
-	// One status vocabulary (title-status.ts); staff also see how many episodes are missing.
+	// Staff also see how many episodes are missing.
 	const heroWords = $derived(audienceStatus(!staff && show?.in_library ? 'in_library' : heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'show' }));
-	// Manager actions live in the hero's ⋯ menu; the Library section holds the rest.
 	const heroItems = $derived<MenuItem[]>([
 		{ label: 'Search now', icon: 'search', onselect: searchShow, disabled: searching === 'show' },
 		{ label: 'Keep up to date', checked: title.keep_up_to_date, disabled: busy === 'show', onselect: () => setKeep(!title.keep_up_to_date) },
@@ -408,7 +392,6 @@ import { decided } from '../core/plain.ts';
 		}
 	}
 
-	// The edit dialog
 	let editDialog: HTMLDialogElement | undefined = $state();
 	let rules = $state<PickRulesView[]>([]);
 	let eRules = $state(0);

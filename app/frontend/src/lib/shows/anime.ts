@@ -1,6 +1,3 @@
-// Anime on the title page: the server maps the TMDB show onto the anime
-// community ID lists (AniList title variants, cours, episode offsets).
-
 export type AnimeTitle = { anilist: number; romaji?: string; english?: string; native?: string };
 export type AnimeSeasonPart = { anilist?: number; offset: number; title?: AnimeTitle };
 export type AnimeSeason = {
@@ -16,7 +13,6 @@ export type AnimeView = { anime: boolean; mapped: boolean; alt_names: string[]; 
 
 export const animePath = (kind: string, tmdb: string) => `/metadata/${kind}/${encodeURIComponent(tmdb)}/anime`;
 
-/** A title's variants as one line: romaji, then English and native when they differ. */
 export function titleLine(t: AnimeTitle | undefined): string {
 	if (!t) return '';
 	const seen = new Set<string>();
@@ -31,7 +27,6 @@ export function titleLine(t: AnimeTitle | undefined): string {
 	return out.join(' · ');
 }
 
-/** The anime line under a season: its AniList title, absolute episode range and cours. */
 export function seasonAnimeLine(view: AnimeView | null | undefined, season: number, episodes: number): string {
 	const s = view?.seasons.find((x) => x.number === season);
 	if (!s) return '';
@@ -49,11 +44,7 @@ export function seasonAnimeLine(view: AnimeView | null | undefined, season: numb
 	return bits.join(' · ');
 }
 
-/**
- * Episode number inside the anime cour for a TMDB season episode: the cour
- * is the last part starting at or before it, and the number is counted
- * from that part's offset. Absolute numbering needs absolute_from.
- */
+// The cour is the last part that starts before the episode; the number counts from its offset.
 export function animeEpisode(view: AnimeView | null | undefined, season: number, episode: number): { anilist?: number; episode: number; absolute?: number } {
 	const s = view?.seasons.find((x) => x.number === season);
 	if (!s) return { episode };

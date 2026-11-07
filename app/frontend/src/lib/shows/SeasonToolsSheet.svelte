@@ -6,8 +6,6 @@
 	import { ago, bytes } from '#lib/core/format.ts';
 	import type { SheetEpisode } from './EpisodeSheet.svelte';
 
-	// One season's tools, from its row in the Library tab: rename its files,
-	// see its files (quality, size, languages, group) and its history.
 	let {
 		open = $bindable(false),
 		mode = $bindable('files'),

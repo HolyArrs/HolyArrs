@@ -2,8 +2,6 @@
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 	import { seasonName } from './labels.ts';
 
-	// The season picker of a show page: one menu of seasons; the season that
-	// is airing now carries a "New" mark, in the menu and beside the picker.
 	let {
 		seasons,
 		value,
@@ -12,7 +10,6 @@
 	}: {
 		seasons: { number: number; name?: string }[];
 		value: number;
-		/** The season marked New, if any. */
 		fresh?: number;
 		onpick: (n: number) => void;
 	} = $props();

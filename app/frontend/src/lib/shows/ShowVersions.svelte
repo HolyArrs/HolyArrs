@@ -3,8 +3,6 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
-	// The Versions card of a show (4.8.11): every wanted copy, such as HD and
-	// 4K, with its Pick rules and folder; staff add, change and remove them.
 	import { api, message } from '../core/api.ts';
 	import Icon from '../ui/Icon.svelte';
 	import { secondVersion } from '../mediafiles/index.ts';
@@ -14,12 +12,10 @@
 	let { title, staff, onchange }: { title: TitleView; staff: boolean; onchange: () => void | Promise<void> } = $props();
 
 	let dialog: HTMLDialogElement | undefined = $state();
-	// Versions are one row; See all lays every Version out.
 	let all = $state(false);
-	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
-	/** The Version being changed; null adds a new one. */
+	// null means a new Version is being added.
 	let editing = $state<VersionView | null>(null);
 	let vLabel = $state('4K');
 	let vAudio = $state('');
@@ -29,6 +25,7 @@
 	let vError = $state('');
 	let vBusy = $state(false);
 	const showFolders = $derived(folders.filter((f) => f.kind === 'show'));
+	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
 
 	async function choices() {
 		if (!rules.length) {
@@ -37,7 +34,6 @@
 		if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
 	}
 
-	/** Opens the add-a-Version form (also from the title page's More menu). */
 	export async function openAdd() {
 		editing = null;
 		vError = '';
@@ -104,7 +100,7 @@
 	}
 </script>
 
-<!-- Only with a second Version: Main alone repeats the Quality and Folder in Settings. Add a version stays in the tools menu. -->
+<!-- With only Main, this card would repeat Quality and Folder from Settings. -->
 {#if title.versions.length > 1}
 <TitleSection id="h-show-versions" title="Versions" testid="show-versions" primary>
 	{#snippet head()}

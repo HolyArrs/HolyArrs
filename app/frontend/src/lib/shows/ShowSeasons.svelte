@@ -7,9 +7,6 @@
 	import { newSeason, newestSeason, seasonName } from './labels.ts';
 	import { animeEpisode, animePath, seasonAnimeLine, type AnimeView } from './anime.ts';
 
-	// Episodes of a show that is not in the Library, from TMDB: the season
-	// picker (newest season first, marked New while it airs) and the season's
-	// episode list. Read only: nothing here is kept or looked for.
 	let { tmdb, seasons, fallback }: { tmdb: string; seasons: { number: number; episodes: number; year?: number }[]; fallback?: string | null } = $props();
 
 	let picked = $state<number | null>(null);
@@ -20,7 +17,7 @@
 	$effect(() => {
 		const n = cur;
 		const id = tmdb;
-		// No seasons yet (or a fallback 0 the show doesn't have): asking would 404.
+		// Asking for a season the show lacks would 404.
 		if (eps[n] || !seasons.some((s) => s.number === n)) return;
 		const ctl = new AbortController();
 		api.get<{ episodes?: Ep[] }>(`/metadata/show/${encodeURIComponent(id)}/seasons/${n}`, ctl.signal)
@@ -30,8 +27,7 @@
 			});
 		return () => ctl.abort();
 	});
-	// Anime: the AniList titles and how TMDB seasons map onto the cours
-	// (absolute numbers, later cours inside one season). Best effort.
+	// Best effort: the page works without anime data.
 	let anime = $state<AnimeView | null>(null);
 	$effect(() => {
 		const id = tmdb;

@@ -10,7 +10,7 @@ export interface ShowSettings {
 	episode_wait_minutes: number;
 }
 
-/** AskShowSheet is the ask dialog, handed in by the page because a shows part cannot import requests. */
+// Passed in by the page: the shows folder cannot import the requests folder.
 export type AskShowSheet = Component<
 	{
 		onasked: (show: LookupShow, r: { ask: Ask; joined: boolean; already: boolean }) => void;
