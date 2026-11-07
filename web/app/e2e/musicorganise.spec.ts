@@ -99,10 +99,10 @@ test('Rename files on the album page renames its tracks into the new album folde
 	// The artist's Library tab has the whole artist's rename: nothing left.
 	await page.getByRole('link', { name: 'Tin Lanterns' }).first().click();
 	await openInLibrary(page);
-	await artistSetting(page, /^Rename files/);
-	const sheet = page.getByRole('dialog', { name: 'Rename files' });
-	await expect(sheet.getByTestId('rename-none')).toBeVisible();
-	await sheet.getByRole('button', { name: 'Close', exact: true }).click();
+	// The Rename files row only shows while something needs renaming.
+	await page.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' }).click();
+	await expect(page.getByTestId('artist-library').getByRole('button', { name: /^Delete artist/ })).toBeVisible();
+	await expect(page.getByTestId('artist-library').getByRole('button', { name: /^Rename files/ })).toHaveCount(0);
 	// Back to the default album folder pattern for the tests after this one.
 	await page.goto('/settings/naming');
 	await page.getByTestId('music-naming').getByRole('textbox', { name: 'Album folder pattern', exact: true }).fill('{album} ({year})');
@@ -146,7 +146,7 @@ test('deleting one track with its file moves it to the holding folder; the album
 	await expect(page.getByRole('dialog', { name: 'Delete Copper Wren – track 02 Song 1.2?' })).toBeVisible();
 	await expect(dialog.getByRole('switch', { name: /Never add again/ })).toHaveCount(0);
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
-	await expect(dialog.getByTestId('delete-plan')).toContainText('1 file moves to the holding folder');
+	await expect(dialog.getByTestId('delete-plan')).toContainText('1 file to the holding folder');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Low Orbit (2018)/02 - Song 1.2.mp3');
 	await axe(page, 'delete a track');
 	await dialog.getByRole('button', { name: 'Delete track 02 Song 1.2' }).click();
@@ -182,7 +182,7 @@ test('the album page, import and delete work at phone width', async ({ browser }
 	await expect(phone.getByRole('button', { name: 'More actions', exact: true })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await titleAction(phone, 'More actions', 'Delete album');
-	await expect(phone.getByTestId('show-delete').getByTestId('delete-plan')).toContainText('Low Orbit (2 tracks)');
+	await expect(phone.getByTestId('show-delete').getByTestId('delete-plan')).toContainText('Low Orbit: 2 tracks');
 	await noSidewaysScroll(phone);
 	await axe(phone, 'delete an album on a phone');
 	await phone.getByTestId('show-delete').getByRole('button', { name: 'Cancel' }).click();
@@ -207,7 +207,7 @@ test('deleting the whole artist with Never-add keeps files it only found and lea
 	const dialog = page.getByTestId('delete-sheet');
 	await dialog.getByRole('switch', { name: /Never add again/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Leaves your Library');
-	await expect(dialog.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
+	await expect(dialog.getByTestId('delete-plan')).toContainText('Lists never add it again');
 	await dialog.getByRole('button', { name: 'Delete artist', exact: true }).click();
 	await expect(page).toHaveURL(/\/library(\?|$)/);
 	for (const f of [wrenFiles.one, wrenFiles.single, wrenFiles.loose]) expect(existsSync(f), f).toBe(true);

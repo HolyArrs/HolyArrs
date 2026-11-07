@@ -130,7 +130,7 @@
 	.sd-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 	.sd-row span:first-child { display: grid; gap: 3px; }
 	.sd-row b { font: 600 15px/1.2 var(--font-ui); }
-	.sd-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.sd-row small { color: color-mix(in srgb, var(--text) 40%, var(--text-muted)); font: 500 13px/1.3 var(--font-ui); }
 	.sd-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
 	.sd-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.sd-switch.on { background: var(--accent-fill); }

@@ -238,7 +238,7 @@
 	.es-row.es-subq { display: grid; gap: 10px; justify-content: stretch; }
 	.es-subq .q-seg { max-width: 420px; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); }
-	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; min-height: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; min-height: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: color-mix(in srgb, var(--text) 82%, transparent); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 	.q-seg > button.on, .q-more.on :global(.trigger) { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 2px rgb(0 0 0 / .2); }
 	.q-seg > button:focus-visible, .q-more :global(.trigger:focus-visible) { box-shadow: var(--focus-ring); }
 	.q-more { flex: 0 0 auto; display: flex; }
