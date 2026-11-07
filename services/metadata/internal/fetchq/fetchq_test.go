@@ -919,3 +919,17 @@ func TestRevive(t *testing.T) {
 		}
 	}
 }
+
+// The alarm names the source from a wrapped ErrConnection.
+func TestConnSource(t *testing.T) {
+	for msg, want := range map[string]string{
+		ErrConnection.Error() + ": Apple Music covers (is1-ssl.mzstatic.com)": "Apple Music covers (is1-ssl.mzstatic.com)",
+		ErrConnection.Error(): "the source",
+		"":                    "the source",
+		"dial tcp: refused":   "dial tcp: refused",
+	} {
+		if got := connSource(msg); got != want {
+			t.Errorf("%q: %q", msg, got)
+		}
+	}
+}

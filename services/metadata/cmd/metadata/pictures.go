@@ -347,7 +347,7 @@ func (sp *speed) runImage(ctx context.Context, key string, p int) (err error) {
 	case errors.Is(err, imgstore.ErrNoPicture):
 		return fetchq.ErrNotFound
 	case errors.Is(err, imgstore.ErrRetry) && upnet.ConnError(err):
-		return fetchq.ErrConnection
+		return connSite(err)
 	case errors.Is(err, imgstore.ErrRetry):
 		if job != "big" && sp.handler != nil && !sp.known(ctx, kind, mbid) {
 			return sp.mbq.WaitOn(api.QueueKey(answerKind(kind), mbid))

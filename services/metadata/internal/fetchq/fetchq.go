@@ -826,7 +826,7 @@ func (q *Queue) connRetry(ctx context.Context, key string, now time.Time, err er
 	q.connErr = trim(err.Error())
 	q.connLast = now
 	if q.connRun == 3 || q.connRun > 3 && q.connRun%50 == 0 {
-		q.o.Logf("fetchq %s ALARM: %d connection failures in a row (last: %s); jobs wait and are not counted", q.o.Name, q.connRun, q.connErr)
+		q.o.Logf("fetchq %s ALARM: %s did not connect %d times in a row; these jobs pause, retry on their own (up to every 5 min) and continue when it answers, nothing is lost", q.o.Name, connSource(q.connErr), q.connRun)
 	}
 	if q.o.ConnPause {
 		if until := now.Add(ConnWait(q.connRun - 1)); until.After(q.connUntil) {
@@ -1052,4 +1052,17 @@ func (q *Queue) Stats(ctx context.Context) Stats {
 		}
 	}
 	return st
+}
+
+// connSource is the source named in a connection error ("Apple Music
+// covers (is1-ssl.mzstatic.com)" from ErrConnection wrapped with it), else
+// the error itself, else "the source".
+func connSource(msg string) string {
+	if s, ok := strings.CutPrefix(msg, ErrConnection.Error()+": "); ok && s != "" {
+		return s
+	}
+	if msg == "" || msg == ErrConnection.Error() {
+		return "the source"
+	}
+	return msg
 }
