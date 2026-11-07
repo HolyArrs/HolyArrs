@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestCategoryTable(t *testing.T) {
+func TestCategories_TableIsValid(t *testing.T) {
 	ids := map[string]bool{}
 	sections := map[string]bool{}
 	for _, s := range BrowseSections {
@@ -55,7 +55,7 @@ func TestCategoryTable(t *testing.T) {
 	}
 }
 
-func TestTVSplitsAndExtras(t *testing.T) {
+func TestSectionCategories_TVSplitsAndExtras(t *testing.T) {
 	now := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
 	got := map[string]Request{}
 	for _, c := range SectionCategories("genres", "shows", false, now) {
@@ -98,7 +98,7 @@ func TestTVSplitsAndExtras(t *testing.T) {
 	}
 }
 
-func TestKidCategories(t *testing.T) {
+func TestCategories_KidSafe(t *testing.T) {
 	now := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
 	for _, s := range BrowseSections {
 		for _, sw := range []string{"movies", "shows", "all"} {
@@ -122,7 +122,7 @@ func TestKidCategories(t *testing.T) {
 	}
 }
 
-func TestPickCategoryTilesMinAndDedupe(t *testing.T) {
+func TestPickCategoryTiles_MinAndDedupe(t *testing.T) {
 	mk := func(prefix string, n int, pop float64) []Item {
 		var out []Item
 		for i := 0; i < n; i++ {
@@ -145,7 +145,7 @@ func TestPickCategoryTilesMinAndDedupe(t *testing.T) {
 	if got[0].Backdrop == got[1].Backdrop || !used[got[0].Backdrop] || !used[got[1].Backdrop] {
 		t.Fatalf("backdrops %q %q", got[0].Backdrop, got[1].Backdrop)
 	}
-	// Taste: a liked category goes first.
+	// A category matching taste goes first.
 	liked := mk("l", 12, 10)
 	for i := range liked {
 		liked[i].Backdrop = "/l" + strconv.Itoa(i)
@@ -157,7 +157,7 @@ func TestPickCategoryTilesMinAndDedupe(t *testing.T) {
 	}
 }
 
-func TestPageGenreTilesMin(t *testing.T) {
+func TestPageGenreTiles_MinTitles(t *testing.T) {
 	var items []Item
 	for i := 0; i < 12; i++ {
 		items = append(items, Item{TMDBID: strconv.Itoa(i), Kind: "show", Backdrop: "/c" + strconv.Itoa(i), Pop: 50, Genres: []string{"Crime", "Sci-Fi & Fantasy"}})

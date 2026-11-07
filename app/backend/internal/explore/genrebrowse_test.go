@@ -5,37 +5,7 @@ import (
 	"testing"
 )
 
-func browseItem(kind string, id int, pop float64, genres ...string) Item {
-	return Item{TMDBID: fmt.Sprint(id), Kind: kind, Name: fmt.Sprint("t", id), Backdrop: fmt.Sprintf("/b%s%d.jpg", kind, id), Pop: pop, Genres: genres}
-}
-
-func browsePage(items ...Item) Page {
-	return Page{Head: []Row{{ID: "a", Type: TypeTrending, Items: items}}}
-}
-
-func names(cards []GenreCard) []string {
-	out := []string{}
-	for _, c := range cards {
-		out = append(out, c.Name)
-	}
-	return out
-}
-
-// eight movie genres, the earlier ones on more titles.
-func movieSpread() []Item {
-	gs := []string{"Drama", "Comedy", "Action", "Thriller", "Horror", "Crime", "Romance", "Western"}
-	var items []Item
-	id := 1
-	for i, g := range gs {
-		for n := 0; n < len(gs)-i; n++ {
-			items = append(items, browseItem("movie", id, float64(10+id), g))
-			id++
-		}
-	}
-	return items
-}
-
-func TestBrowseGenresTasteFirstThenPopular(t *testing.T) {
+func TestBrowseGenres_TasteFirstThenPopular(t *testing.T) {
 	got := names(BrowseGenres(browsePage(movieSpread()...), "movies", []string{"Western", "Horror"}, false))
 	want := []string{"Western", "Horror", "Drama", "Comedy", "Action", "Thriller", "Crime", "Romance"}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
@@ -43,8 +13,7 @@ func TestBrowseGenresTasteFirstThenPopular(t *testing.T) {
 	}
 }
 
-func TestBrowseGenresNoDuplicateBackdrops(t *testing.T) {
-	// One title in every genre: each card needs its own backdrop.
+func TestBrowseGenres_NoDuplicateBackdrops(t *testing.T) {
 	shared := browseItem("movie", 900, 999, "Drama", "Comedy", "Action", "Thriller", "Horror", "Crime", "Romance", "Western")
 	cards := BrowseGenres(browsePage(append(movieSpread(), shared)...), "movies", nil, false)
 	seen := map[string]bool{}
@@ -59,7 +28,7 @@ func TestBrowseGenresNoDuplicateBackdrops(t *testing.T) {
 	}
 }
 
-func TestBrowseGenresKindAndIDs(t *testing.T) {
+func TestBrowseGenres_KindAndIDs(t *testing.T) {
 	items := movieSpread()
 	items = append(items, browseItem("show", 1, 50, "Reality"), browseItem("show", 2, 50, "Drama"))
 	cards := BrowseGenres(browsePage(items...), "movies", nil, false)
@@ -83,7 +52,7 @@ func TestBrowseGenresKindAndIDs(t *testing.T) {
 	}
 }
 
-func TestBrowseGenresKidSafe(t *testing.T) {
+func TestBrowseGenres_KidSafe(t *testing.T) {
 	items := movieSpread()
 	for i, g := range []string{"Family", "Animation", "Adventure", "Fantasy", "Music", "Documentary"} {
 		items = append(items, browseItem("movie", 500+i, 20, g))
@@ -95,7 +64,7 @@ func TestBrowseGenresKidSafe(t *testing.T) {
 	}
 }
 
-func TestBrowseGenresTooFewAndCap(t *testing.T) {
+func TestBrowseGenres_TooFewAndCap(t *testing.T) {
 	few := BrowseGenres(browsePage(browseItem("movie", 1, 1, "Drama", "Comedy")), "movies", nil, false)
 	if len(few) != 0 {
 		t.Fatalf("under the minimum should be empty, got %v", names(few))
@@ -109,7 +78,7 @@ func TestBrowseGenresTooFewAndCap(t *testing.T) {
 	}
 }
 
-func TestBrowseGenresMergeShowCombinedUnderAll(t *testing.T) {
+func TestBrowseGenres_MergeShowCombinedUnderAll(t *testing.T) {
 	items := append(movieSpread(),
 		browseItem("show", 500, 50, "Sci-Fi & Fantasy"),
 		browseItem("show", 501, 60, "Action & Adventure"),
@@ -134,10 +103,38 @@ func TestBrowseGenresMergeShowCombinedUnderAll(t *testing.T) {
 	if by["Drama"].Both {
 		t.Fatal("Drama is not merged")
 	}
-	// On the Shows tab the combined genre stays.
 	for _, c := range BrowseGenres(browsePage(items...), "shows", nil, false) {
 		if c.Both {
 			t.Fatalf("Both on Shows: %+v", c)
 		}
 	}
+}
+
+func browseItem(kind string, id int, pop float64, genres ...string) Item {
+	return Item{TMDBID: fmt.Sprint(id), Kind: kind, Name: fmt.Sprint("t", id), Backdrop: fmt.Sprintf("/b%s%d.jpg", kind, id), Pop: pop, Genres: genres}
+}
+
+func browsePage(items ...Item) Page {
+	return Page{Head: []Row{{ID: "a", Type: TypeTrending, Items: items}}}
+}
+
+func names(cards []GenreCard) []string {
+	out := []string{}
+	for _, c := range cards {
+		out = append(out, c.Name)
+	}
+	return out
+}
+
+func movieSpread() []Item {
+	gs := []string{"Drama", "Comedy", "Action", "Thriller", "Horror", "Crime", "Romance", "Western"}
+	var items []Item
+	id := 1
+	for i, g := range gs {
+		for n := 0; n < len(gs)-i; n++ {
+			items = append(items, browseItem("movie", id, float64(10+id), g))
+			id++
+		}
+	}
+	return items
 }

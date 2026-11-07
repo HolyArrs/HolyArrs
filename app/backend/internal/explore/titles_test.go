@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// genreItems makes n items whose genres cycle through the given sets.
 func genreItems(n int, genres ...[]string) []Item {
 	out := make([]Item, n)
 	for i := range out {
@@ -16,18 +17,21 @@ func genreItems(n int, genres ...[]string) []Item {
 	return out
 }
 
-// moment: Tuesday 2026-10-06, 14:00 local (no occasion, afternoon).
+// plainMoment is Tuesday 2026-10-06, 14:00 local, with no occasion.
 var plainMoment = Moment{Local: time.Date(2026, 10, 6, 14, 0, 0, 0, time.UTC)}
 
+// ctxAt builds a title context for a moment with nothing remembered.
 func ctxAt(m Moment) TitleContext {
 	return TitleContext{Member: 7, Moment: m, Day: m.Local.Format("2006-01-02"), Recent: map[string]string{}, Today: map[string]string{}}
 }
 
+// titleOne titles a single tail row.
 func titleOne(r Row, c TitleContext) Row {
 	pg, _ := TitlePage(Page{Tail: []Row{r}}, c)
 	return pg.Tail[0]
 }
 
+// tmpl finds a template by id.
 func tmpl(id string) Template {
 	for _, t := range Templates {
 		if t.ID == id {
@@ -37,7 +41,8 @@ func tmpl(id string) Template {
 	return Template{}
 }
 
-func TestTemplateLibrary(t *testing.T) {
+// TestTemplates_Library checks every template is well formed and unique.
+func TestTemplates_Library(t *testing.T) {
 	per := map[string]int{}
 	newWord := regexp.MustCompile(`(?i)\b(new|fresh|recent(ly)?|just out|latest)\b`)
 	for _, tp := range Templates {
@@ -71,7 +76,8 @@ func TestTemplateLibrary(t *testing.T) {
 	}
 }
 
-func TestMixThresholds(t *testing.T) {
+// TestMixOf_Thresholds checks the lead and pair limits.
+func TestMixOf_Thresholds(t *testing.T) {
 	h, c, d := []string{"Horror"}, []string{"Comedy"}, []string{"Drama"}
 	if m := MixOf(genreItems(10, h, c)); m.Lead == "" {
 		t.Fatalf("50%% horror should lead: %+v", m)
@@ -79,7 +85,6 @@ func TestMixThresholds(t *testing.T) {
 	if m := MixOf(genreItems(10, h, c, d)); m.Lead != "" {
 		t.Fatalf("a third should not lead: %+v", m)
 	}
-	// 4 horror, 3 comedy, 3 drama: no lead; horror+comedy is 70%.
 	items := genreItems(10, d)
 	for i := 0; i < 4; i++ {
 		items[i].Genres = h
@@ -93,9 +98,9 @@ func TestMixThresholds(t *testing.T) {
 	}
 }
 
-func TestTruthfulTitles(t *testing.T) {
+// TestTitlePage_TruthfulTitles checks a template never claims more than the row holds.
+func TestTitlePage_TruthfulTitles(t *testing.T) {
 	c := ctxAt(plainMoment)
-	// A row a third horror never says horror.
 	mixed := Row{ID: "hidden", Type: TypeHidden, Title: "Hidden gems", Items: genreItems(12, []string{"Horror"}, []string{"Comedy"}, []string{"Drama"})}
 	for day := 0; day < 30; day++ {
 		cc := c
@@ -105,7 +110,6 @@ func TestTruthfulTitles(t *testing.T) {
 			t.Fatalf("horror claimed on a mixed row: %q", got.Title)
 		}
 	}
-	// Old titles never get a new template, a genre row never says trending.
 	horror := Row{ID: "genre:Horror", Type: TypeGenre, Genre: "Horror", Title: "Horror picks for you", Items: genreItems(12, []string{"Horror"})}
 	seen := 0
 	for _, tp := range Templates {
@@ -128,7 +132,6 @@ func TestTruthfulTitles(t *testing.T) {
 	if seen < 10 {
 		t.Fatalf("only %d templates fit a horror row", seen)
 	}
-	// New titles may say new.
 	fresh := horror
 	fresh.Items = genreItems(12, []string{"Horror"})
 	for i := range fresh.Items {
@@ -140,7 +143,6 @@ func TestTruthfulTitles(t *testing.T) {
 	if _, ok := tmpl(findID(t, LayerGenre, "any", "New {genre}")).fill(factsOf(horror, c), c); ok {
 		t.Fatal("old row called new")
 	}
-	// Occasion words only in their dates; Halloween horror only on horror.
 	hw := ctxAt(Moment{Local: time.Date(2026, 10, 20, 20, 0, 0, 0, time.UTC)})
 	if _, ok := tmpl(findID(t, LayerOccasion, "halloween", "Halloween horror")).fill(factsOf(horror, hw), hw); !ok {
 		t.Fatal("Halloween horror should fit in late October")
@@ -151,12 +153,10 @@ func TestTruthfulTitles(t *testing.T) {
 	if _, ok := tmpl(findID(t, LayerOccasion, "halloween", "Halloween horror")).fill(factsOf(mixed, hw), hw); ok {
 		t.Fatal("Halloween horror on a mixed row")
 	}
-	// The moment never changes a row's items.
 	got := titleOne(horror, hw)
 	if len(got.Items) != len(horror.Items) || got.Items[0].Key() != horror.Items[0].Key() {
 		t.Fatal("titling changed the items")
 	}
-	// Because rows always name their seed.
 	because := Row{ID: "because_have:movie:1", Type: TypeBecauseHave, SeedName: "Alien", Title: "Because you have Alien", Items: genreItems(12, []string{"Science Fiction"})}
 	for day := 0; day < 20; day++ {
 		cc := c
@@ -167,6 +167,7 @@ func TestTruthfulTitles(t *testing.T) {
 	}
 }
 
+// findID finds the id of the template with this layer, key and text.
 func findID(t *testing.T, layer, key, text string) string {
 	t.Helper()
 	for _, tp := range Templates {
@@ -178,13 +179,13 @@ func findID(t *testing.T, layer, key, text string) string {
 	return ""
 }
 
-func TestLayerFallback(t *testing.T) {
-	c := ctxAt(Moment{Local: time.Date(2026, 10, 23, 23, 0, 0, 0, time.UTC)}) // Friday late night, Halloween season
+// TestTitlePage_LayerFallback checks the layers are tried from most specific down.
+func TestTitlePage_LayerFallback(t *testing.T) {
+	c := ctxAt(Moment{Local: time.Date(2026, 10, 23, 23, 0, 0, 0, time.UTC)})
 	horror := Row{ID: "genre:Horror", Type: TypeGenre, Title: "Horror picks for you", Items: genreItems(12, []string{"Horror"})}
 	if got := titleOne(horror, c); got.Layer != LayerOccasion {
 		t.Fatalf("occasion first, got %s %q", got.Layer, got.Title)
 	}
-	// Every occasion template rested: time of day next.
 	for _, tp := range Templates {
 		if tp.Layer == LayerOccasion {
 			c.Recent[tp.ID] = c.Day
@@ -210,7 +211,6 @@ func TestLayerFallback(t *testing.T) {
 	if got := titleOne(horror, c); got.Layer != LayerPlain || got.Title != "Horror picks for you" {
 		t.Fatalf("plain last, got %s %q", got.Layer, got.Title)
 	}
-	// Taste comes before reason when the genre is the member's.
 	c2 := ctxAt(plainMoment)
 	c2.Taste = []string{"Horror"}
 	for _, l := range []string{LayerTime, LayerGenre} {
@@ -223,7 +223,6 @@ func TestLayerFallback(t *testing.T) {
 	if got := titleOne(horror, c2); got.Layer != LayerTaste {
 		t.Fatalf("taste, got %s %q", got.Layer, got.Title)
 	}
-	// Fixed head rows keep their title and get a subtitle.
 	top := Row{ID: TypeCinemas, Type: TypeCinemas, Title: RowTitle(TypeCinemas, ""), Items: genreItems(10, []string{"Drama"})}
 	c3 := ctxAt(plainMoment)
 	pg, _ := TitlePage(Page{Head: []Row{top}}, c3)
@@ -232,7 +231,8 @@ func TestLayerFallback(t *testing.T) {
 	}
 }
 
-func TestKidTitles(t *testing.T) {
+// TestTitlePage_KidTitles checks a Kid only gets safe templates.
+func TestTitlePage_KidTitles(t *testing.T) {
 	c := ctxAt(Moment{Local: time.Date(2026, 10, 23, 23, 30, 0, 0, time.UTC)})
 	c.Kid = true
 	rows := []Row{
@@ -254,13 +254,12 @@ func TestKidTitles(t *testing.T) {
 	}
 }
 
-func TestTitlesStableWithinDay(t *testing.T) {
+// TestTitlePage_StableWithinDay checks titles hold for the whole local day.
+func TestTitlePage_StableWithinDay(t *testing.T) {
 	c := ctxAt(plainMoment)
 	rows := simRows(0)
 	a, shown := TitlePage(Page{Tail: rows}, c)
-	// Same day, nothing remembered yet: the same picks.
 	b, _ := TitlePage(Page{Tail: rows}, c)
-	// Same day after remembering: picks come back from Today.
 	c2 := ctxAt(plainMoment)
 	for _, s := range shown {
 		c2.Today[s.RowID] = s.TemplateID
@@ -283,19 +282,19 @@ func TestTitlesStableWithinDay(t *testing.T) {
 	}
 }
 
+// simGenres and simTypes feed the heavy user simulation.
 var simGenres = [][]string{{"Horror"}, {"Comedy"}, {"Drama"}, {"Action"}, {"Thriller"}, {"Science Fiction"}, {"Fantasy"}, {"Romance"},
 	{"Crime"}, {"Animation", "Family"}, {"Documentary"}, {"Mystery"}, {"Comedy", "Romance"}, {"Action", "Science Fiction"}, {"Drama", "Crime"}}
 
 var simTypes = []string{TypeBecauseHave, TypeGenre, TypePerson, TypeDecade, TypeHidden, TypeBest, TypeNewServices, TypeHousehold, TypePopularGenre, TypePopularDecade}
 
-// simRows is one heavy day: 50 titled rows of mixed types and genres.
+// simRows is one heavy day of 50 rows of mixed types and genres.
 func simRows(day int) []Row {
 	var rows []Row
 	for i := 0; i < 50; i++ {
 		k := day*7 + i
 		typ := simTypes[k%len(simTypes)]
 		g := simGenres[(k*5+day)%len(simGenres)]
-		// k%44: row ids stay unique on a day (44 is no multiple of len(simTypes)).
 		r := Row{ID: fmt.Sprintf("%s:%d", typ, k%44), Type: typ, Items: genreItems(12, g)}
 		switch typ {
 		case TypeBecauseHave:
@@ -316,7 +315,9 @@ func simRows(day int) []Row {
 	return rows
 }
 
-func TestHeavyUserNoRepeat21Days(t *testing.T) {
+// TestTitlePage_HeavyUserNoRepeat checks a heavy user sees no template again within
+// NoRepeatDays.
+func TestTitlePage_HeavyUserNoRepeat(t *testing.T) {
 	start := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 	last := map[string]int{}
 	distinct := map[string]bool{}
@@ -357,7 +358,8 @@ func TestHeavyUserNoRepeat21Days(t *testing.T) {
 	}
 }
 
-func TestMomentBoostBounded(t *testing.T) {
+// TestMomentBoost_Bounded checks the boost is 1 or 1 + BoostMax.
+func TestMomentBoost_Bounded(t *testing.T) {
 	late := Moment{Local: time.Date(2026, 10, 6, 23, 30, 0, 0, time.UTC)}
 	sat := Moment{Local: time.Date(2026, 10, 10, 9, 0, 0, 0, time.UTC)}
 	thr := Row{Items: genreItems(10, []string{"Thriller"})}
@@ -377,7 +379,8 @@ func TestMomentBoostBounded(t *testing.T) {
 	}
 }
 
-func TestSampleTitles(t *testing.T) {
+// TestTitlePage_SampleTitles titles a sample page.
+func TestTitlePage_SampleTitles(t *testing.T) {
 	moments := []Moment{
 		{Local: time.Date(2026, 10, 23, 23, 0, 0, 0, time.UTC)},
 		{Local: time.Date(2026, 10, 10, 9, 0, 0, 0, time.UTC)},

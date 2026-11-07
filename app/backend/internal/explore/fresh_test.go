@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Monday 19 Oct 2026, mid-afternoon.
+// freshNow is a Monday afternoon, so weekday names in the strips are fixed.
 var freshNow = time.Date(2026, 10, 19, 15, 0, 0, 0, time.UTC)
 
 func ago(days int) time.Time { return freshNow.AddDate(0, 0, -days) }
@@ -17,7 +17,7 @@ func text(b *Fresh) string {
 	return b.Text
 }
 
-func TestFreshRules(t *testing.T) {
+func TestPickFresh_Rules(t *testing.T) {
 	cases := []struct {
 		name string
 		f    FreshFacts
@@ -49,7 +49,7 @@ func TestFreshRules(t *testing.T) {
 	}
 }
 
-func TestFreshPriority(t *testing.T) {
+func TestPickFresh_Priority(t *testing.T) {
 	all := FreshFacts{Kind: "show", InLibrary: true, LastEpisode: ago(1), SeasonStart: ago(2), Added: ago(1),
 		Released: freshNow.AddDate(0, 0, 3), NextSeason: freshNow.AddDate(0, 1, 0), NextSeasonNumber: 4}
 	steps := []struct {
@@ -71,7 +71,7 @@ func TestFreshPriority(t *testing.T) {
 	}
 }
 
-func TestParseDay(t *testing.T) {
+func TestParseDay_Formats(t *testing.T) {
 	for _, s := range []string{"2026-10-19", "2026-10-19T08:00:00.000000000Z", "2026-10-19T08:00:00Z"} {
 		if d := ParseDay(s); d.Year() != 2026 || d.Day() != 19 {
 			t.Errorf("%s: %v", s, d)
@@ -82,7 +82,7 @@ func TestParseDay(t *testing.T) {
 	}
 }
 
-func TestRowSuppress(t *testing.T) {
+func TestPickFreshIn_RowSuppress(t *testing.T) {
 	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 	rel := FreshFacts{Kind: "movie", Released: now.AddDate(0, 0, -3)}
 	for _, row := range []string{TypeBest, TypeNewServices, "fresh", "new_from"} {
@@ -105,13 +105,13 @@ func TestRowSuppress(t *testing.T) {
 	if b := PickFreshIn(ep, now, "new_seasons"); b == nil || b.Kind != FreshNewEpisode {
 		t.Fatalf("new seasons row: got %+v", b)
 	}
-	// Music just arrived and new from rows repeat their only strips.
+	// Music rows only have the one strip, so it is dropped too.
 	if b := PickFreshIn(FreshFacts{Kind: "album", Music: true, InLibrary: true, Added: now}, now, "just_arrived"); b != nil {
 		t.Fatalf("music just arrived: got %+v", b)
 	}
 }
 
-func TestOneStrip(t *testing.T) {
+func TestPickFreshIn_NeverShowsSuppressed(t *testing.T) {
 	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 	all := FreshFacts{Kind: "show", InLibrary: true, Added: now, LastEpisode: now, SeasonStart: now, Released: now.AddDate(0, 0, -2)}
 	for row := range RowSuppress {

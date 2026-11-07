@@ -6,16 +6,8 @@ import (
 	"testing"
 )
 
-type overlapSnapshot struct {
-	Movie, Show struct {
-		Trending []string `json:"trending_week"`
-		Best     []string `json:"best_new_releases"`
-	}
-}
-
-// The 2026-10-19 snapshot: movies share 1 of 20 (5%), shows 3 of 20 (15%).
-// Both are under 50%, so "Best new releases" ships unchanged, in the tail.
-func TestBestNewReleasesOverlap_20261019_Movies5_Shows15_Keep(t *testing.T) {
+// Movies share 5% and shows 15%, both under 50%, so the row stays unchanged.
+func TestBestDecision_LowOverlapKeeps(t *testing.T) {
 	b, err := os.ReadFile("testdata/best_overlap_20261019.json")
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +26,7 @@ func TestBestNewReleasesOverlap_20261019_Movies5_Shows15_Keep(t *testing.T) {
 	}
 }
 
-func TestBestDecisionRule(t *testing.T) {
+func TestBestDecision_Rule(t *testing.T) {
 	cases := []struct {
 		movie, show float64
 		want        string
@@ -46,11 +38,18 @@ func TestBestDecisionRule(t *testing.T) {
 	}
 }
 
-func TestTopOverlapCountsOnlyTopN(t *testing.T) {
+func TestTopOverlap_CountsOnlyTopN(t *testing.T) {
 	if got := TopOverlap([]string{"1", "2", "3"}, []string{"3", "2", "9"}, 2); got != 0.5 {
 		t.Fatalf("got %v, want 0.5 (only 2 is shared in the top 2)", got)
 	}
 	if got := TopOverlap(nil, nil, 20); got != 0 {
 		t.Fatalf("empty lists: %v", got)
+	}
+}
+
+type overlapSnapshot struct {
+	Movie, Show struct {
+		Trending []string `json:"trending_week"`
+		Best     []string `json:"best_new_releases"`
 	}
 }

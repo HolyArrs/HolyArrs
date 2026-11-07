@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// LibTitle is one movie or show in the Library, as a seed source.
+// LibTitle is one movie or show in the Library, used as a seed source.
 type LibTitle struct {
 	TMDBID, Kind, Name string
 	Year               int
@@ -16,7 +16,7 @@ type LibTitle struct {
 	Added              time.Time
 }
 
-// AskSeed is one person on one ask. Kid says the person is a Kid.
+// AskSeed is one ask by one person. Kid marks an ask made by a Kid.
 type AskSeed struct {
 	TMDBID, Kind, Name string
 	Year               int
@@ -32,27 +32,18 @@ type Seed struct {
 	Year               int
 	Genres, People     []string
 	Weight             float64
-	// Recent says it was added or asked within 365 days, so it may name a
-	// Because row.
+	// Recent means added or asked within a year, so it may name a Because row.
 	Recent bool
 }
 
-// Key is kind:tmdb id.
+// Key returns the kind and TMDB id joined, which is unique per title.
 func (s Seed) Key() string { return s.Kind + ":" + s.TMDBID }
 
-func decay(now, at time.Time) float64 {
-	days := now.Sub(at).Hours() / 24
-	if days < 0 {
-		days = 0
-	}
-	return math.Exp(-days / 120)
-}
-
-// Seeds weighs the member's signals (5.1): own ask 2.0, another member's
-// 0.5; Library 1.0 when added within 365 days, else 0.5; each times
-// exp(-days/120). A Kid's seeds are their own asks only, and a Kid's asks
-// never seed an adult. lib is passed already filtered for a Kid's limit.
-// Strongest first.
+// Seeds weighs the member's signals, strongest first. An own ask counts 2.0 and
+// another member's 0.5. A Library title counts 1.0 if added within a year, else
+// 0.5. Each weight fades by exp(-days/120). A Kid is seeded by their own asks
+// only, and a Kid's asks never seed an adult. lib arrives already filtered to
+// the Kid's limit.
 func Seeds(member int64, kid bool, lib []LibTitle, asks []AskSeed, now time.Time) []Seed {
 	by := map[string]*Seed{}
 	add := func(s Seed, w float64) {
@@ -118,8 +109,8 @@ func SeedCount(seeds []Seed) int {
 	return n
 }
 
-// TailCap is the most tail rows a page gets (5.4): under 3 seeds 8, 3 to 9
-// seeds 20, 10 or more 40. A Kid's tail stops at 8 (a short page).
+// TailCap returns the most tail rows a page gets: 8 under 3 seeds, 20 for 3 to
+// 9, 40 for 10 or more. A Kid is capped at 8 to keep the page short.
 func TailCap(seeds int, kid bool) int {
 	n := 8
 	switch {
@@ -134,7 +125,7 @@ func TailCap(seeds int, kid bool) int {
 	return n
 }
 
-// Profile is a member's taste: a genre vector, a set of people and the
+// Profile is a member's taste: a genre weight vector, a set of people and the
 // median seed year.
 type Profile struct {
 	genres map[string]float64
@@ -142,8 +133,8 @@ type Profile struct {
 	year   int
 }
 
-// NewProfile builds the profile from seeds. Negative seeds take their
-// genre weights away at half strength.
+// NewProfile builds a profile from seeds. A negative seed takes genre weight
+// away at half strength, so one dislike does not outweigh a liking.
 func NewProfile(seeds []Seed) Profile {
 	p := Profile{genres: map[string]float64{}, people: map[string]bool{}}
 	var years []int
@@ -171,10 +162,11 @@ func NewProfile(seeds []Seed) Profile {
 	return p
 }
 
-// Empty says the profile has no signal.
+// Empty reports whether the profile has no signal.
 func (p Profile) Empty() bool { return len(p.genres) == 0 && len(p.people) == 0 && p.year == 0 }
 
-// TopGenres are the member's strongest genres with weight share >= min.
+// TopGenres returns up to n of the strongest genres whose share of the total
+// positive weight is at least minShare.
 func (p Profile) TopGenres(n int, minShare float64) []string {
 	total := 0.0
 	for _, w := range p.genres {
@@ -205,9 +197,9 @@ func (p Profile) TopGenres(n int, minShare float64) []string {
 	return out
 }
 
-// Affinity is 0.5·genreMatch + 0.3·peopleMatch + 0.2·eraMatch (5.3).
+// Affinity scores an item from 0 to 1 as 0.5 genre + 0.3 people + 0.2 era match.
 func (p Profile) Affinity(it Item) float64 {
-	// genreMatch: cosine of the item's genres (each 1) with the vector.
+	// Genre match is the cosine between the vector and the item's genres (each 1).
 	var dot, norm float64
 	for _, w := range p.genres {
 		norm += w * w
@@ -229,9 +221,21 @@ func (p Profile) Affinity(it Item) float64 {
 	}
 	era := 0.0
 	if p.year > 0 && it.Year > 0 {
+		// Era fades to 0 at 40 years from the median seed year.
 		era = clamp(1 - math.Abs(float64(it.Year-p.year))/40)
 	}
 	return 0.5*genre + 0.3*people + 0.2*era
 }
 
+// decay fades a signal by age with a 120 day time constant. A future date
+// counts as now.
+func decay(now, at time.Time) float64 {
+	days := now.Sub(at).Hours() / 24
+	if days < 0 {
+		days = 0
+	}
+	return math.Exp(-days / 120)
+}
+
+// clamp limits x to the range 0 to 1.
 func clamp(x float64) float64 { return math.Max(0, math.Min(1, x)) }

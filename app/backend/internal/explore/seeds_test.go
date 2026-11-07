@@ -6,11 +6,14 @@ import (
 	"time"
 )
 
+// day0 is the fixed now used by the seed tests.
 var day0 = time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 
+// near reports whether two floats are equal within rounding.
 func near(a, b float64) bool { return math.Abs(a-b) < 1e-6 }
 
-func TestSeedWeights(t *testing.T) {
+// TestSeeds_Weights checks own, other-member and Library weights and their decay.
+func TestSeeds_Weights(t *testing.T) {
 	lib := []LibTitle{
 		{TMDBID: "1", Kind: "movie", Name: "New", Added: day0},
 		{TMDBID: "2", Kind: "movie", Name: "Old", Added: day0.AddDate(-2, 0, 0)},
@@ -35,7 +38,8 @@ func TestSeedWeights(t *testing.T) {
 	}
 }
 
-func TestKidSeedsStayApart(t *testing.T) {
+// TestSeeds_KidStaysApart checks a Kid and an adult never seed each other.
+func TestSeeds_KidStaysApart(t *testing.T) {
 	asks := []AskSeed{{TMDBID: "1", Kind: "movie", Member: 1, At: day0}, {TMDBID: "2", Kind: "movie", Member: 2, At: day0, Kid: true}}
 	adult := Seeds(1, false, nil, asks, day0)
 	kid := Seeds(2, true, nil, asks, day0)
@@ -47,7 +51,8 @@ func TestKidSeedsStayApart(t *testing.T) {
 	}
 }
 
-func TestAffinity(t *testing.T) {
+// TestProfileAffinity_Scores checks the genre, people and era parts of the score.
+func TestProfileAffinity_Scores(t *testing.T) {
 	seeds := []Seed{{TMDBID: "1", Kind: "movie", Weight: 2, Genres: []string{"Drama"}, People: []string{"Dee"}, Year: 2000}}
 	p := NewProfile(seeds)
 	full := p.Affinity(Item{Genres: []string{"Drama"}, People: []string{"Dee"}, Year: 2000})
@@ -65,7 +70,8 @@ func TestAffinity(t *testing.T) {
 	}
 }
 
-func TestTailCap(t *testing.T) {
+// TestTailCap_BySeedCount checks the tail size steps and the Kid limit.
+func TestTailCap_BySeedCount(t *testing.T) {
 	for _, c := range []struct {
 		seeds int
 		kid   bool

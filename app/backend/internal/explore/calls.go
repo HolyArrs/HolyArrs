@@ -7,29 +7,11 @@ import (
 	"sync"
 )
 
-// Shared says every member of the household asks for the same list: the
-// region-wide rows, the cold-start genre rows, and the person and decade
-// rows drawn from the household's Library. It is fetched once per refresh
-// and shared (plan 5.2: counted apart from the per-member budget of 30).
-func (q Request) Shared() bool {
-	return q.Scope == ScopeShared
-}
-
 // ScopeShared marks a household-wide Request.
 const ScopeShared = "shared"
 
-// Outside is how many outside (TMDB) calls one Request costs: similar is
-// recommendations plus similar, a person is search plus credits.
-func (q Request) Outside() int {
-	switch q.List {
-	case "similar", "person":
-		return 2
-	}
-	return 1
-}
-
 // Calls counts the outside calls of one pool build by type, split into
-// region-wide (shared) and member-specific. Cache hits are not calls.
+// shared and member-specific ones. Cache hits are not counted.
 type Calls struct {
 	mu     sync.Mutex
 	ByType map[string]int
@@ -37,7 +19,23 @@ type Calls struct {
 	Member int
 }
 
-// Add counts one Request that went out.
+// Shared reports whether every member asks for the same list, so it is
+// fetched once per refresh and counted apart from the per-member budget.
+func (q Request) Shared() bool {
+	return q.Scope == ScopeShared
+}
+
+// Outside returns how many outside calls one Request costs.
+func (q Request) Outside() int {
+	// Similar needs recommendations plus similar; a person needs search plus credits.
+	switch q.List {
+	case "similar", "person":
+		return 2
+	}
+	return 1
+}
+
+// Add counts one Request that went out. A nil Calls ignores it.
 func (c *Calls) Add(q Request) {
 	if c == nil {
 		return
@@ -62,7 +60,7 @@ func (c *Calls) Add(q Request) {
 	}
 }
 
-// String is "member=N shared=M (type=n ...)".
+// String formats the counts as "member=N shared=M (type=n ...)".
 func (c *Calls) String() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()

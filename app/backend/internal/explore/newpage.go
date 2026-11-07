@@ -6,8 +6,7 @@ import (
 	"time"
 )
 
-// New & Popular row types. Every title on the page is new in one of the
-// ways below (its kind of newness), inside that kind's window.
+// Row types of the New & Popular page. Every title on it is new in one way, within that way's window.
 const (
 	TypeNPServices = "np_services"
 	TypeNPTopShows = "np_top_shows"
@@ -35,7 +34,7 @@ const (
 	NewUpcoming = "upcoming" // out in the next two weeks
 )
 
-// newWindows is how far back each kind counts as new (upcoming: ahead).
+// newWindows is how far back each kind counts as new, or ahead for upcoming.
 var newWindows = map[string]time.Duration{
 	NewService:  14 * day,
 	NewRelease:  45 * day,
@@ -45,7 +44,7 @@ var newWindows = map[string]time.Duration{
 	NewUpcoming: 14 * day,
 }
 
-// newTau is each kind's decay time: the freshness falls to 1/e after it.
+// newTau is each kind's decay time: freshness falls to 1/e after it.
 var newTau = map[string]time.Duration{
 	NewService: 7 * day,
 	NewEpisode: 7 * day,
@@ -54,19 +53,28 @@ var newTau = map[string]time.Duration{
 	NewSeries:  21 * day,
 }
 
-// NewWindow is the window of a kind of newness (0 for an unknown kind).
-func NewWindow(kind string) time.Duration { return newWindows[kind] }
+// NewRowCap is a row type's own cap when it is not RowMax. The services row
+// holds about 20 titles per service for its chips.
+var NewRowCap = map[string]int{TypeNPServices: 120, TypeNPTopShows: 10, TypeNPTopFilms: 10}
 
-// NewFact is why a title is new: its kind and when (the day it happened,
-// or will happen for upcoming). Season is the season number for NewSeason.
+// NewFixed are the row types that keep the top of the page in build order:
+// the two Top 10s, what everyone is watching, then the critics' best. The rest
+// are ordered by score.
+var NewFixed = map[string]bool{TypeNPTopShows: true, TypeNPTopFilms: true, TypeNPWatching: true, TypeNPAcclaim: true}
+
+// NewFact is why a title is new: its kind and the day it happened, or will
+// happen for upcoming. Season is the season number for NewSeason.
 type NewFact struct {
 	Kind   string
 	At     time.Time
 	Season int
 }
 
-// Freshness is F: exp(-age/τ) inside the kind's window, 0 outside it; an
-// upcoming title inside the next 14 days is 1.
+// NewWindow returns the window of a kind of newness, 0 for an unknown kind.
+func NewWindow(kind string) time.Duration { return newWindows[kind] }
+
+// Freshness returns exp(-age/tau) inside the kind's window and 0 outside it.
+// An upcoming title within its window counts as 1.
 func Freshness(f NewFact, now time.Time) float64 {
 	w := newWindows[f.Kind]
 	if w == 0 || f.At.IsZero() {
@@ -80,7 +88,7 @@ func Freshness(f NewFact, now time.Time) float64 {
 	}
 	age := now.Sub(f.At)
 	if age < 0 {
-		// Earlier today (the day stamp is midnight) or a clock ahead of TMDB.
+		// Earlier today (the day stamp is midnight) or a clock ahead of the source.
 		if age > -day {
 			age = 0
 		} else {
@@ -93,20 +101,17 @@ func Freshness(f NewFact, now time.Time) float64 {
 	return math.Exp(-float64(age) / float64(newTau[f.Kind]))
 }
 
-// InWindow says the fact is inside its kind's window at now.
+// InWindow reports whether the fact is inside its kind's window at now.
 func InWindow(f NewFact, now time.Time) bool { return Freshness(f, now) > 0 }
 
-// NewScore is F·(0.35+0.65·P)·(1+0.3·T): freshness first, popularity
-// within the pool (P, 0-1) next, then how much it suits the household (T,
-// 0-1).
+// NewScore returns F*(0.35+0.65*P)*(1+0.3*T): freshness first, then popularity
+// within the pool (P), then fit to the household (T). P and T run 0 to 1.
 func NewScore(f, p, t float64) float64 {
 	return f * (0.35 + 0.65*clamp01(p)) * (1 + 0.3*clamp01(t))
 }
 
-func clamp01(v float64) float64 { return math.Max(0, math.Min(1, v)) }
-
-// PopPercentile is each title's TMDB popularity percentile within the pool
-// (1 the most popular; ties share the higher place; a single title is 1).
+// PopPercentile returns each title's popularity percentile within the pool, 1
+// for the most popular. Ties share the higher place and a lone title is 1.
 func PopPercentile(pool []Item) map[string]float64 {
 	best := map[string]float64{}
 	for _, it := range pool {
@@ -128,24 +133,20 @@ func PopPercentile(pool []Item) map[string]float64 {
 			out[k] = 1
 			continue
 		}
-		// Count of titles at or below p, as a share of the rest.
+		// Titles at or below p, as a share of the rest.
 		i := sort.Search(n, func(i int) bool { return pops[i] > p })
 		out[k] = float64(i-1) / float64(n-1)
 	}
 	return out
 }
 
-// SortByScore orders items by score, best first; ties keep their order.
+// SortByScore orders items by score, best first. Ties keep their order.
 func SortByScore(items []Item, score func(Item) float64) {
 	sort.SliceStable(items, func(i, j int) bool { return score(items[i]) > score(items[j]) })
 }
 
-// NewRowCap is a row type's own cap when it is not RowMax: the services row
-// carries about 20 titles per service for its chips.
-var NewRowCap = map[string]int{TypeNPServices: 120, TypeNPTopShows: 10, TypeNPTopFilms: 10}
-
-// DedupeRows keeps each title once on the page (the first row wins), caps
-// rows at RowMax (or NewRowCap) and drops rows left under min.
+// DedupeRows keeps each title once on the page, first row wins, caps rows at
+// RowMax or NewRowCap and drops rows left under min.
 func DedupeRows(rows []Row, min int) []Row {
 	seen := map[string]bool{}
 	out := []Row{}
@@ -175,14 +176,8 @@ func DedupeRows(rows []Row, min int) []Row {
 	return out
 }
 
-// NewFixed are the row types that keep their place at the top of the page,
-// in the order they are built (the two Top 10s, what everyone is watching,
-// then the critics' best); the others are ordered by score.
-var NewFixed = map[string]bool{TypeNPTopShows: true, TypeNPTopFilms: true, TypeNPWatching: true, TypeNPAcclaim: true}
-
-// OrderNewRows puts the fixed rows first (in their order), then the rest
-// by the mean score of their first 8 titles times the row's weight (1 when
-// unset); ties keep their order.
+// OrderNewRows puts the NewFixed rows first, then the rest by the mean score
+// of their first 8 titles times the row weight, 1 when unset. Ties keep order.
 func OrderNewRows(rows []Row, score func(Item) float64, weight map[string]float64) []Row {
 	var fixed, rest []Row
 	for _, r := range rows {
@@ -214,8 +209,8 @@ func OrderNewRows(rows []Row, score func(Item) float64, weight map[string]float6
 	return append(fixed, rest...)
 }
 
-// RankMerge takes turns between ranked lists (each in rank order), each
-// title once, up to n.
+// RankMerge takes turns between ranked lists, keeps each title once and
+// returns up to n.
 func RankMerge(lists [][]Item, n int) []Item {
 	out := []Item{}
 	seen := map[string]bool{}
@@ -238,8 +233,7 @@ func RankMerge(lists [][]Item, n int) []Item {
 	return out
 }
 
-// CapPer keeps items in order with at most n per group (by group(it)), up
-// to max in all.
+// CapPer keeps items in order with at most n per group and max in all.
 func CapPer(items []Item, group func(Item) string, n, max int) []Item {
 	out := []Item{}
 	per := map[string]int{}
@@ -253,3 +247,6 @@ func CapPer(items []Item, group func(Item) string, n, max int) []Item {
 	}
 	return out
 }
+
+// clamp01 limits v to 0 through 1.
+func clamp01(v float64) float64 { return math.Max(0, math.Min(1, v)) }

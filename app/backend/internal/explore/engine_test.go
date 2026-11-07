@@ -11,16 +11,18 @@ import (
 	"time"
 )
 
-// fakeSource answers every Request with 40 items drawn from a pool of
-// 3000 ids per kind, picked by a hash of the request, so lists overlap a
-// little the way TMDB lists do. It records every request.
+// fakeSource answers every Request with 40 items from a pool of 3000 ids per
+// kind, picked by a hash of the request so lists overlap a little. It records
+// every request.
 type fakeSource struct {
 	mu   sync.Mutex
 	seen []string
 }
 
+// fakeGenres are the genres fakeSource hands out.
 var fakeGenres = []string{"Drama", "Comedy", "Action", "Thriller", "Animation", "Documentary", "Crime", "Family"}
 
+// List returns the fake items for q.
 func (f *fakeSource) List(_ context.Context, q Request) ([]Item, error) {
 	f.mu.Lock()
 	f.seen = append(f.seen, q.String())
@@ -30,13 +32,15 @@ func (f *fakeSource) List(_ context.Context, q Request) ([]Item, error) {
 	base := h.Sum64()
 	out := make([]Item, 0, 40)
 	for i := 0; i < 40; i++ {
+		// 7919 is a prime step so ids spread over the pool.
 		n := (base + uint64(i)*7919) % 3000
 		g := fakeGenres[n%uint64(len(fakeGenres))]
 		if q.Genre != "" {
 			g = q.Genre
 		}
 		kind := q.Kind
-		if kind == "" { // a person's credits hold both kinds
+		// A person's credits hold both kinds.
+		if kind == "" {
 			kind = []string{"movie", "show"}[i%2]
 		}
 		released := "2026-09-01"
@@ -49,44 +53,11 @@ func (f *fakeSource) List(_ context.Context, q Request) ([]Item, error) {
 	return out, nil
 }
 
-func seedsN(n int, member int64) []Seed {
-	var out []Seed
-	for i := 0; i < n; i++ {
-		out = append(out, Seed{TMDBID: fmt.Sprint(5000 + int(member)*100 + i), Kind: []string{"movie", "show"}[i%2], Name: fmt.Sprintf("Seed%d-%d", member, i),
-			Weight: 2 - float64(i)*0.1, Genres: []string{fakeGenres[(i+int(member))%len(fakeGenres)]}, Year: 2000 + i, Recent: true})
-	}
-	return out
-}
-
-func build(t *testing.T, in Input) (Pool, *fakeSource) {
-	t.Helper()
-	src := &fakeSource{}
-	if in.Now.IsZero() {
-		in.Now = day0
-	}
-	if in.Switch == "" {
-		in.Switch = "all"
-	}
-	p, err := Build(context.Background(), src, in)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return p, src
-}
-
-func order(rows []Row) []string {
-	var ids []string
-	for _, r := range rows {
-		ids = append(ids, r.ID)
-	}
-	return ids
-}
-
-// Criterion 2: no title twice in the first HeadDedupe rows; none more
-// than twice on the page; repeats at least 4 rows apart. Top rows keep
-// every title and are left out of the count, but rows under them skip
-// their titles in the first HeadDedupe rows. 50 generated members.
-func TestDedupFiftyMembers(t *testing.T) {
+// No title appears twice in the first HeadDedupe rows or more than twice on
+// the page, and repeats sit at least 4 rows apart. Top rows keep every title
+// and are left out of the count, but rows under them skip those titles in the
+// head. Checked for 50 generated members.
+func TestAssemble_NoRepeatedTitlesAcrossMembers(t *testing.T) {
 	for m := int64(1); m <= 50; m++ {
 		p, _ := build(t, Input{Member: m, Seeds: seedsN(int(m%15), m), Services: "8|9", Region: "US"})
 		pg := Assemble(p, m)
@@ -131,10 +102,9 @@ func TestDedupFiftyMembers(t *testing.T) {
 	}
 }
 
-// Criterion 3: an empty household gets a full head and a short tail (the
-// slot rows of the 2026-10-20 order moved up into the head), each row at
-// its minimum, and no personal row.
-func TestColdStart(t *testing.T) {
+// An empty household gets a full head, a short tail, every row at its
+// minimum and no personal row.
+func TestAssemble_ColdStart(t *testing.T) {
 	p, _ := build(t, Input{Member: 1})
 	pg := Assemble(p, 1)
 	if len(pg.Head) != HeadRows {
@@ -157,9 +127,9 @@ func TestColdStart(t *testing.T) {
 	}
 }
 
-// Criterion 4: same member and day give the same order; the next day
-// moves at least one tail row (typeFreshness frozen within the day).
-func TestStableWithinDay(t *testing.T) {
+// The same member and day give the same order; the next day moves at least
+// one tail row.
+func TestBuild_StableWithinDay(t *testing.T) {
 	in := Input{Member: 3, Seeds: seedsN(12, 3)}
 	p1, _ := build(t, in)
 	in.Today = &p1
@@ -176,7 +146,7 @@ func TestStableWithinDay(t *testing.T) {
 	}
 }
 
-func TestFreshnessFrozenPerDay(t *testing.T) {
+func TestFreshness_FrozenPerDay(t *testing.T) {
 	r := Row{ID: "x", Items: []Item{{TMDBID: "1", Kind: "movie"}}}
 	if freshness(r, nil, nil) != 1 {
 		t.Fatal("day one is not 1")
@@ -195,9 +165,9 @@ func TestFreshnessFrozenPerDay(t *testing.T) {
 	}
 }
 
-// Criterion 5: a Kid capped at 12 sees nothing over 12 or uncertified;
-// each filter is tested alone.
-func TestKidFilters(t *testing.T) {
+// A Kid sees only allowed titles; the candidate and response filters are
+// each tested alone.
+func TestBuild_KidFilters(t *testing.T) {
 	cert := func(it Item) string {
 		var n int
 		fmt.Sscan(it.TMDBID, &n)
@@ -222,10 +192,8 @@ func TestKidFilters(t *testing.T) {
 			}
 		}
 	}
-	// Candidate stage alone.
 	p, _ := build(t, Input{Member: 9, Kid: true, Seeds: seedsN(5, 9), Allow: allow})
 	check("candidate", Assemble(p, 9))
-	// Response stage alone.
 	p, _ = build(t, Input{Member: 9, Kid: true, Seeds: seedsN(5, 9)})
 	check("response", Assemble(p, 9).Filter(allow))
 	if TailCap(12, true) != 8 {
@@ -233,8 +201,8 @@ func TestKidFilters(t *testing.T) {
 	}
 }
 
-// Criterion 6: no outside request carries a member id, name, play or ask.
-func TestPrivacyOfRequests(t *testing.T) {
+// No outside request carries a member id, name, play or ask.
+func TestBuild_RequestsCarryNoPrivateData(t *testing.T) {
 	in := Input{Member: 424242, Seeds: seedsN(12, 4242), Services: "8", Region: "US", Members: 2,
 		Household: []HouseholdTitle{{Item: Item{TMDBID: "77", Kind: "movie", Name: "Asked"}, Asks: 3, Members: 2}}}
 	_, src := build(t, in)
@@ -250,13 +218,11 @@ func TestPrivacyOfRequests(t *testing.T) {
 	}
 }
 
-// Criterion 8: two members with different seeds get different Top picks
-// and tail orders.
-func TestPerMemberOrder(t *testing.T) {
+// Two members with different seeds get different Top picks and tail orders.
+func TestAssemble_PerMemberOrder(t *testing.T) {
 	p1, _ := build(t, Input{Member: 1, Seeds: seedsN(6, 1)})
 	p2, _ := build(t, Input{Member: 2, Seeds: seedsN(6, 2)})
 	a, b := Assemble(p1, 1), Assemble(p2, 2)
-	// H1 Trending on streaming, H2 Top picks.
 	if a.Head[1].Type != TypeTopPicks || b.Head[1].Type != TypeTopPicks {
 		t.Fatalf("H2 is not Top picks: %s %s", a.Head[1].Type, b.Head[1].Type)
 	}
@@ -268,10 +234,9 @@ func TestPerMemberOrder(t *testing.T) {
 	}
 }
 
-// Criterion 10: 2, 5 and 12 seeds get at most 8, 20 and 40 tail rows; 12
-// seeds get 14 or more (On your services folded into Top on your services; Best, services, Because you have and household
-// rows now sit in the head).
-func TestTailLength(t *testing.T) {
+// 2, 5 and 12 seeds get at most 8, 20 and 40 tail rows, and 12 seeds get 14
+// or more.
+func TestAssemble_TailLength(t *testing.T) {
 	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 14}} {
 		p, _ := build(t, Input{Member: 5, Seeds: seedsN(c.seeds, 5), Services: "8|9", Region: "US",
 			OwnedPeople: map[string]int{"Ann": 3, "Bo": 2, "Cy": 2, "Di": 2}, OwnedDecadeGenre: map[string]int{"1990s|Drama": 4, "2000s|Comedy": 3}, Members: 2, Household: household(5)})
@@ -282,7 +247,7 @@ func TestTailLength(t *testing.T) {
 	}
 }
 
-func TestDiversityNoSameTypeBackToBack(t *testing.T) {
+func TestAssemble_NoSameTypeBackToBack(t *testing.T) {
 	p, _ := build(t, Input{Member: 6, Seeds: seedsN(12, 6)})
 	pg := Assemble(p, 6)
 	types := map[string]int{}
@@ -294,7 +259,7 @@ func TestDiversityNoSameTypeBackToBack(t *testing.T) {
 	}
 	for i := 1; i < len(pg.Tail); i++ {
 		if pg.Tail[i].Type == pg.Tail[i-1].Type {
-			// Allowed only once every other type ran out.
+			// A repeat is allowed only once every other type ran out.
 			rest := map[string]bool{}
 			for _, r := range pg.Tail[i:] {
 				rest[r.Type] = true
@@ -306,7 +271,7 @@ func TestDiversityNoSameTypeBackToBack(t *testing.T) {
 	}
 }
 
-func TestPacedLimiter(t *testing.T) {
+func TestPaced_SpacesCalls(t *testing.T) {
 	p := &Paced{Source: &fakeSource{}, Gap: 20 * time.Millisecond}
 	start := time.Now()
 	for i := 0; i < 3; i++ {
@@ -324,7 +289,7 @@ func TestPacedLimiter(t *testing.T) {
 	}
 }
 
-func TestFranchise(t *testing.T) {
+func TestItem_Franchise(t *testing.T) {
 	a := Item{Kind: "movie", TMDBID: "1", Name: "Dune: Part Two"}
 	b := Item{Kind: "movie", TMDBID: "2", Name: "Dune"}
 	c := Item{Kind: "movie", TMDBID: "3", Name: "Toy Story 3"}
@@ -335,6 +300,39 @@ func TestFranchise(t *testing.T) {
 	if (Item{Kind: "movie", Name: "X", Collection: 9}).Franchise() != "c9" {
 		t.Fatal("collection not used")
 	}
+}
+
+func seedsN(n int, member int64) []Seed {
+	var out []Seed
+	for i := 0; i < n; i++ {
+		out = append(out, Seed{TMDBID: fmt.Sprint(5000 + int(member)*100 + i), Kind: []string{"movie", "show"}[i%2], Name: fmt.Sprintf("Seed%d-%d", member, i),
+			Weight: 2 - float64(i)*0.1, Genres: []string{fakeGenres[(i+int(member))%len(fakeGenres)]}, Year: 2000 + i, Recent: true})
+	}
+	return out
+}
+
+func build(t *testing.T, in Input) (Pool, *fakeSource) {
+	t.Helper()
+	src := &fakeSource{}
+	if in.Now.IsZero() {
+		in.Now = day0
+	}
+	if in.Switch == "" {
+		in.Switch = "all"
+	}
+	p, err := Build(context.Background(), src, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p, src
+}
+
+func order(rows []Row) []string {
+	var ids []string
+	for _, r := range rows {
+		ids = append(ids, r.ID)
+	}
+	return ids
 }
 
 func slotsOf(rows []Row) []string {

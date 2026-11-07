@@ -1,3 +1,6 @@
+// Package explore builds each member's Explore page: it fetches candidate
+// lists from an outside source within a call budget, scores them against the
+// member's taste and the household, and assembles the rows the page shows.
 package explore
 
 import (
@@ -11,119 +14,27 @@ import (
 	"time"
 )
 
-// Request is one outside list the pool build asks for. It carries only
-// title ids, genres, dates, services and the region, never anything about
-// a member.
-type Request struct {
-	// List: similar (recommendations + similar of Ref), trending,
-	// upcoming (movies coming out; shows airing now), best (Best new
-	// releases), discover, person (credits of the person named Ref),
-	// collection (the movies of TMDB collection Ref).
-	List  string
-	Kind  string
-	Ref   string
-	Genre string
-	// Discover filters.
-	From, To         string // release dates, YYYY-MM-DD
-	Services, Region string
-	MinVote          float64
-	MinVotes         int
-	MaxVotes         int
-	Sort             string // popularity (default), rating or recent (newest out first)
-	// AirFrom and AirTo (shows) keep shows with an episode airing in that
-	// window; Types (movies) reads From and To as release dates of those
-	// TMDB release types ("4|3": digital or cinema) in Region.
-	AirFrom, AirTo, Types string
-	// Keywords are TMDB keyword names joined by "|" (any of them).
-	Keywords string
-	// Browse category filters: Genres and Without are raw TMDB genre ids
-	// ("|" any, "," all), Lang an original language, Cert the highest US
-	// movie certification.
-	Genres, Without, Lang, Cert string
-	// Scope is ScopeShared for region-wide lists; it is not part of the
-	// cache key, so it never splits a shared list.
-	Scope string
-}
-
-func (q Request) String() string {
-	if q.AirFrom != "" || q.AirTo != "" || q.Types != "" {
-		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|a=%s-%s|t=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.AirFrom, q.AirTo, q.Types)
-	}
-	if q.Genres != "" || q.Without != "" || q.Lang != "" || q.Cert != "" {
-		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|g=%s|w=%s|l=%s|c=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.Genres, q.Without, q.Lang, q.Cert)
-	}
-	if q.Keywords != "" {
-		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords)
-	}
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort)
-}
-
-// Source answers Requests, in the source's order (best first).
-type Source interface {
-	List(ctx context.Context, q Request) ([]Item, error)
-}
-
-// CacheChecker is a Source that can say a Request would be answered
-// without an outside call; such Requests do not count against the budget.
-type CacheChecker interface {
-	Cached(ctx context.Context, q Request) bool
-}
-
-// MemberBudget is the most member-specific outside calls one pool build
-// makes (plan 5.2); region-wide lists are counted apart.
+// MemberBudget is the most member-specific outside calls one pool build makes.
+// Shared lists are counted apart.
 const MemberBudget = 30
 
-// HouseholdTitle is one title asked for by people in the household in
-// the last 30 days.
-type HouseholdTitle struct {
-	Item    Item
-	Asks    int
-	Members int
-}
-
-// Input is everything one pool build knows about a member. It never goes
-// to the Source; only Requests do.
-type Input struct {
-	Member int64
-	Kid    bool
-	// Switch is all, movies or shows.
-	Switch string
-	Now    time.Time
-	Seeds  []Seed
-	// Owned are kind:tmdb keys.
-	Owned map[string]bool
-	// OwnedPeople counts Library titles per credited person.
-	OwnedPeople map[string]int
-	// OwnedDecadeGenre counts Library titles per "1990s|Drama".
-	OwnedDecadeGenre map[string]int
-	Household        []HouseholdTitle
-	// MyAsks are the member's open asks, newest first.
-	MyAsks           []Item
-	Members          int
-	Services, Region string
-	// Collections are the TMDB collections the Library has a movie of,
-	// most owned first.
-	Collections []LibCollection
-	// Returning are Library shows whose next episode airs in 7 to 60
-	// days, soonest first.
-	Returning []Item
-	// Allow is the Kid limit at candidate time; nil allows all.
-	Allow func(Item) bool
-	// Today is the pool already built today (its typeFreshness is kept);
-	// Prev is the newest pool from an earlier day.
-	Today, Prev *Pool
-}
-
-// LibCollection is a TMDB collection the Library has Owned movies of.
-type LibCollection struct {
-	TMDBID string
-	Name   string
-	Owned  int
-}
-
-// PoolVersion is the row set a pool was built with; an older pool is
-// rebuilt.
+// PoolVersion is the row set a pool was built with; an older pool is rebuilt.
 const PoolVersion = 2
+
+// maxCollections caps how many collections one pool looks up.
+const maxCollections = 8
+
+// poolItems is how many items a pool keeps per row.
+const poolItems = 40
+
+// coldGenres fill in when the trending lists name too few genres.
+var coldGenres = []string{"Drama", "Comedy", "Action", "Thriller", "Animation", "Documentary", "Crime", "Family"}
+
+// coldDecades are the two decades the cold start shows as Popular rows.
+var coldDecades = []int{1990, 2000}
+
+// KidGenres are the family rows a Kid page always gets.
+var KidGenres = []string{"Family", "Animation"}
 
 // Pool is one member's scored candidate rows for one type switch and day.
 type Pool struct {
@@ -136,45 +47,112 @@ type Pool struct {
 	Rows    []Row  `json:"rows"`
 	// Taste are the member's strongest genres, for taste-match titles.
 	Taste []string `json:"taste,omitempty"`
-	// Leans are the genres at LeanShare or more of the member's taste (the
-	// hero's genre exclusions skip them).
+	// Leans are the genres at LeanShare or more of the member's taste; the
+	// hero's genre exclusions skip them.
 	Leans []string  `json:"leans,omitempty"`
 	Built time.Time `json:"built"`
 }
 
-// Day is the pool date of t (UTC).
-func Day(t time.Time) string { return t.UTC().Format("2006-01-02") }
-
-// Kinds are the title kinds a switch shows.
-func Kinds(sw string) []string {
-	switch sw {
-	case "movies":
-		return []string{"movie"}
-	case "shows":
-		return []string{"show"}
-	}
-	return []string{"movie", "show"}
+// Request is one outside list the pool build asks for. It carries only
+// title ids, genres, dates, services and the region, never anything about
+// a member.
+type Request struct {
+	// List is the kind of list: similar (recommendations and similar of Ref),
+	// trending, upcoming (movies coming out, shows airing now), best, discover,
+	// person (credits of the person named Ref) or collection (the movies of
+	// TMDB collection Ref).
+	List  string
+	Kind  string
+	Ref   string
+	Genre string
+	// From and To are release dates, YYYY-MM-DD.
+	From, To         string
+	Services, Region string
+	MinVote          float64
+	MinVotes         int
+	MaxVotes         int
+	// Sort is popularity (default), rating or recent (newest out first).
+	Sort string
+	// AirFrom and AirTo keep shows with an episode airing in that window.
+	// Types reads From and To as release dates of those TMDB release types
+	// ("4|3" is digital or cinema) in Region, for movies.
+	AirFrom, AirTo, Types string
+	// Keywords are TMDB keyword names joined by "|", any of them.
+	Keywords string
+	// Genres and Without are raw TMDB genre ids, "|" for any of and "," for
+	// all of. Lang is an original language and Cert the highest US movie
+	// certification.
+	Genres, Without, Lang, Cert string
+	// Scope is ScopeShared for region-wide lists. It is left out of the cache
+	// key so it never splits a shared list.
+	Scope string
 }
 
-// coldGenres are used when the trending lists name too few genres.
-var coldGenres = []string{"Drama", "Comedy", "Action", "Thriller", "Animation", "Documentary", "Crime", "Family"}
+// Input is everything one pool build knows about a member. It never goes
+// to the Source; only Requests do.
+type Input struct {
+	Member int64
+	Kid    bool
+	// Switch is all, movies or shows.
+	Switch string
+	Now    time.Time
+	Seeds  []Seed
+	// Owned holds the kind:tmdb keys of titles in the Library.
+	Owned map[string]bool
+	// OwnedPeople counts Library titles per credited person.
+	OwnedPeople map[string]int
+	// OwnedDecadeGenre counts Library titles per "1990s|Drama".
+	OwnedDecadeGenre map[string]int
+	Household        []HouseholdTitle
+	// MyAsks are the member's open asks, newest first.
+	MyAsks           []Item
+	Members          int
+	Services, Region string
+	// Collections are the TMDB collections the Library has a movie of, most
+	// owned first.
+	Collections []LibCollection
+	// Returning are Library shows whose next episode airs in 7 to 60 days,
+	// soonest first.
+	Returning []Item
+	// Allow is the Kid limit at candidate time; nil allows all.
+	Allow func(Item) bool
+	// Today is the pool already built today, whose row freshness is kept. Prev
+	// is the newest pool from an earlier day.
+	Today, Prev *Pool
+}
 
-// coldDecades are the two region defaults for Popular <decade> <genre>.
-var coldDecades = []int{1990, 2000}
+// HouseholdTitle is one title that people in the household asked for in the
+// last 30 days.
+type HouseholdTitle struct {
+	Item    Item
+	Asks    int
+	Members int
+}
 
-// KidGenres are the family rows a Kid page always gets.
-var KidGenres = []string{"Family", "Animation"}
+// LibCollection is a TMDB collection the Library owns movies of.
+type LibCollection struct {
+	TMDBID string
+	Name   string
+	Owned  int
+}
 
-// maxCollections caps the collections one pool looks up.
-const maxCollections = 8
+// Source answers Requests, in the source's order, best first.
+type Source interface {
+	List(ctx context.Context, q Request) ([]Item, error)
+}
 
-const poolItems = 40
+// CacheChecker is a Source that can say a Request would be answered without
+// an outside call. Such Requests do not count against the budget.
+type CacheChecker interface {
+	Cached(ctx context.Context, q Request) bool
+}
 
-// Build fetches and scores every candidate row for one member (5.2). The
-// Kid limit is applied to each list before scoring. Region-wide lists are
-// asked for like any other; the Source is expected to cache them.
+// Build fetches and scores every candidate row for one member. The Kid limit
+// is applied to each list before scoring. Shared lists are asked for like any
+// other; the Source is expected to cache them.
 func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	kinds := Kinds(in.Switch)
+	// allow keeps the kinds of the switch that pass the Kid limit and marks owned titles.
 	allow := func(items []Item) []Item {
 		out := make([]Item, 0, len(items))
 		for _, it := range items {
@@ -214,9 +192,8 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		}
 		return interleave(lists), nil
 	}
-	// spend keeps member-specific lists inside MemberBudget outside calls;
-	// lists the Source already has cached cost nothing. Callers ask in
-	// typePrior order, so the cheapest-to-lose rows are the ones dropped.
+	// spend keeps member lists inside MemberBudget. Cached lists cost nothing.
+	// Callers ask in priority order, so the rows dropped are the least wanted.
 	cached, _ := src.(CacheChecker)
 	used := 0
 	spend := func(q Request) bool {
@@ -262,6 +239,8 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		}
 	}
 	var errs []string
+	// soft records a failed list and reports whether it worked. A cancelled
+	// context is not recorded because the build stops on it.
 	soft := func(err error) bool {
 		if err == nil {
 			return true
@@ -273,7 +252,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		return false
 	}
 
-	// Region-wide rows.
+	// Shared rows.
 	trending, err := fetch(Request{List: "trending", Scope: ScopeShared})
 	if !soft(err) && ctx.Err() != nil {
 		return pool, ctx.Err()
@@ -295,7 +274,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 			}
 		}
 		addRow(Row{ID: TypeCinemas, Type: TypeCinemas, Items: coming})
-		// Finish the collection: the released parts the Library lacks.
+		// Finish the collection: released parts the Library lacks.
 		var missing []Item
 		for _, c := range in.Collections[:min(maxCollections, len(in.Collections))] {
 			parts, err := fetch(Request{List: "collection", Kind: "movie", Ref: c.TMDBID, Scope: ScopeShared})
@@ -339,7 +318,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	soft(err)
 	addRow(Row{ID: TypeHidden, Type: TypeHidden, Items: hidden})
 
-	// Household: at least 2 members; a Kid only when every item passes.
+	// The household row needs at least 2 members; a Kid only gets it when every item passes.
 	if in.Members >= 2 && len(in.Household) > 0 {
 		var hh []Item
 		ok := true
@@ -357,7 +336,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	}
 
 	if nSeeds < 3 {
-		// Cold start: non-personal Popular <genre> and Popular <decade> <genre>.
+		// Cold start: popular rows that need no member data.
 		genres := regionGenres(trending, 6)
 		for _, g := range genres {
 			items, err := fetch(Request{List: "discover", Genre: g, MinVotes: 200, Scope: ScopeShared})
@@ -421,7 +400,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		t := TypeBecauseHave
 		addRow(Row{ID: t + ":" + s.Key(), Type: t, Seed: s.Key(), SeedWeight: s.Weight, SeedName: s.Name, Title: RowTitle(t, s.Name), Items: dropKey(items, s.Key())})
 	}
-	// Because you asked for X: the member's two newest open asks.
+	// Because you asked for: the member's two newest open asks.
 	nAsked := 0
 	for _, ask := range in.MyAsks {
 		if nAsked == 2 {
@@ -480,7 +459,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		return pool, ctx.Err()
 	}
 
-	// Score: pop is normalised within the candidate set.
+	// Score: popularity is normalised within the candidate set.
 	sc := Scorer{Profile: profile, Now: in.Now}
 	var union []Item
 	for _, r := range rows {
@@ -527,9 +506,38 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	return pool, nil
 }
 
-// typeFreshness: 1 if the row changed since the previous day's pool, else
-// 0.5; 1 when there is no previous pool. A same-date rebuild keeps the
-// value stored that day.
+// Day returns the pool date of t, in UTC.
+func Day(t time.Time) string { return t.UTC().Format("2006-01-02") }
+
+// Kinds returns the title kinds a switch shows.
+func Kinds(sw string) []string {
+	switch sw {
+	case "movies":
+		return []string{"movie"}
+	case "shows":
+		return []string{"show"}
+	}
+	return []string{"movie", "show"}
+}
+
+// String is the cache key of the Request. It leaves out Scope, so a shared
+// list is never split from an identical member one.
+func (q Request) String() string {
+	if q.AirFrom != "" || q.AirTo != "" || q.Types != "" {
+		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|a=%s-%s|t=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.AirFrom, q.AirTo, q.Types)
+	}
+	if q.Genres != "" || q.Without != "" || q.Lang != "" || q.Cert != "" {
+		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|g=%s|w=%s|l=%s|c=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.Genres, q.Without, q.Lang, q.Cert)
+	}
+	if q.Keywords != "" {
+		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords)
+	}
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort)
+}
+
+// freshness is 1 when the row changed since the previous day's pool or there
+// is no previous pool, else 0.5. A rebuild on the same date keeps the value
+// stored that day, so row order stays stable within a day.
 func freshness(r Row, today, prev *Pool) float64 {
 	if today != nil {
 		for _, t := range today.Rows {
@@ -563,7 +571,7 @@ func contentHash(r Row) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// similarity blends rank (1 - i/n) 60/40 with facet overlap to the seed.
+// similarity blends rank (60 percent) with facet overlap to the seed (40 percent).
 func similarity(s Seed, items []Item) []Item {
 	n := len(items)
 	maxO := 0.0
@@ -599,7 +607,8 @@ func similarity(s Seed, items []Item) []Item {
 	return out
 }
 
-// regionGenres are the genres the trending lists name most, then defaults.
+// regionGenres returns the n genres the trending lists name most, padded
+// with the defaults.
 func regionGenres(trending []Item, n int) []string {
 	count := map[string]int{}
 	for _, it := range trending {
@@ -625,7 +634,7 @@ func regionGenres(trending []Item, n int) []string {
 	return list[:n]
 }
 
-// topCounts are the keys with count >= least, most first, at most n.
+// topCounts returns up to n keys with a count of at least least, most first.
 func topCounts(m map[string]int, least, n int) []string {
 	var list []string
 	for k, c := range m {

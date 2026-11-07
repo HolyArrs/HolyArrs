@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// stripFixture is one candidate per Browse category (kid-safe only for a
-// Kid), popularity falling down the table.
+// stripFixture returns one candidate per Browse category, only kid-safe ones for a Kid,
+// with popularity falling down the table.
 func stripFixture(kid bool) []StripCand {
 	var out []StripCand
 	for i, c := range Categories {
@@ -23,12 +23,15 @@ func stripFixture(kid bool) []StripCand {
 	return out
 }
 
-var may = time.Date(2026, 5, 13, 14, 0, 0, 0, time.UTC) // a Wednesday afternoon
+// may is a Wednesday afternoon.
+var may = time.Date(2026, 5, 13, 14, 0, 0, 0, time.UTC)
 
+// stripIn builds a strip input for a member with no history.
 func stripIn(cands []StripCand) StripIn {
 	return StripIn{Cands: cands, Local: may, Seed: "anna|2026-05-13", Max: StripMax}
 }
 
+// stripKeys returns the keys of the picked tiles.
 func stripKeys(tiles []CategoryTile) map[string]bool {
 	out := map[string]bool{}
 	for _, t := range tiles {
@@ -37,7 +40,7 @@ func stripKeys(tiles []CategoryTile) map[string]bool {
 	return out
 }
 
-func TestStripSizeSectionAndKinCaps(t *testing.T) {
+func TestPickStrip_SizeAndCaps(t *testing.T) {
 	got := PickStrip(stripIn(stripFixture(false)))
 	if len(got) != StripMax {
 		t.Fatalf("got %d tiles", len(got))
@@ -62,8 +65,7 @@ func TestStripSizeSectionAndKinCaps(t *testing.T) {
 	}
 }
 
-func TestStripWeightedSlotsSkipWeakSections(t *testing.T) {
-	// A small, unpopular section does not get a turn by default.
+func TestPickStrip_SkipsWeakSections(t *testing.T) {
 	var cands []StripCand
 	for i, c := range Categories {
 		if c.Section == "eras" {
@@ -82,11 +84,10 @@ func TestStripWeightedSlotsSkipWeakSections(t *testing.T) {
 	}
 }
 
-func TestStripExploreSlot(t *testing.T) {
+func TestPickStrip_ExploreSlot(t *testing.T) {
 	cands := stripFixture(false)
 	in := stripIn(cands)
 	first := PickStrip(in)
-	// Everything shown yesterday: the explore slot takes categories not shown lately.
 	in.Recent = stripKeys(first)
 	next := PickStrip(in)
 	fresh := 0
@@ -98,7 +99,6 @@ func TestStripExploreSlot(t *testing.T) {
 	if fresh < 3 || fresh > 4 {
 		t.Fatalf("explore slot has %d new categories, want 3-4", fresh)
 	}
-	// Seeded: the same member and day repeat; another day differs.
 	again := PickStrip(in)
 	for i := range next {
 		if next[i].Category != again[i].Category {
@@ -118,7 +118,7 @@ func TestStripExploreSlot(t *testing.T) {
 	}
 }
 
-func TestStripDropsRowsBelow(t *testing.T) {
+func TestPickStrip_DropsRowsBelow(t *testing.T) {
 	in := stripIn(stripFixture(false))
 	if !stripKeys(PickStrip(in))["action"] {
 		t.Fatal("fixture: Action should lead")
@@ -132,7 +132,7 @@ func TestStripDropsRowsBelow(t *testing.T) {
 	}
 }
 
-func TestStripSeasonAndHour(t *testing.T) {
+func TestPickStrip_SeasonAndHour(t *testing.T) {
 	c := StripCand{Key: "halloween", Tile: CategoryTile{Section: "collections"}}
 	oct := time.Date(2026, 10, 14, 14, 0, 0, 0, time.UTC)
 	if StripBoost(c, oct) <= 0 || StripBoost(c, may) != 0 {
@@ -153,7 +153,6 @@ func TestStripSeasonAndHour(t *testing.T) {
 	if StripBoost(kids, sat) <= 0 || StripBoost(kids, sat.Add(5*time.Hour)) != 0 || StripBoost(kids, may.Add(-5*time.Hour)) != 0 {
 		t.Fatal("weekend morning boost")
 	}
-	// In October Halloween makes the strip.
 	in := stripIn(stripFixture(false))
 	in.Local = oct
 	var cands []StripCand
@@ -174,7 +173,7 @@ func TestStripSeasonAndHour(t *testing.T) {
 	}
 }
 
-func TestStripFreshness(t *testing.T) {
+func TestPickStrip_Freshness(t *testing.T) {
 	now := time.Date(2026, 5, 13, 0, 0, 0, 0, time.UTC)
 	items := []Item{{Pop: 5, Released: "2026-05-05"}, {Pop: 9, Released: "2019-01-01"}}
 	c := NewStripCand(CategoryTile{Category: "heists", Section: "stories"}, items, now)
@@ -190,8 +189,7 @@ func TestStripFreshness(t *testing.T) {
 	}
 }
 
-func TestStripMemberTaste(t *testing.T) {
-	// Own asks weigh more than the household Library.
+func TestPickStrip_MemberTaste(t *testing.T) {
 	taste := NewStripTaste([]TasteTitle{
 		{Genres: []string{"Horror"}, Weight: 2},
 		{Genres: []string{"Horror"}, Weight: 2},
@@ -205,7 +203,6 @@ func TestStripMemberTaste(t *testing.T) {
 	if taste.GenreMatch(horror) <= taste.GenreMatch(comedy) {
 		t.Fatal("genre match")
 	}
-	// A low-popularity liked category beats popular ones.
 	cands := stripFixture(false)
 	for i := range cands {
 		cands[i].Genres = []string{"Drama"}
@@ -221,7 +218,7 @@ func TestStripMemberTaste(t *testing.T) {
 	}
 }
 
-func TestStripKeywordOverlap(t *testing.T) {
+func TestPickStrip_KeywordOverlap(t *testing.T) {
 	taste := NewStripTaste([]TasteTitle{{Keywords: []string{"Heist", "bank robbery"}, Weight: 1}, {Keywords: []string{"space"}, Weight: 0.2}})
 	heists := NewStripCand(CategoryTile{Category: "heists", Section: "stories"}, nil, time.Time{})
 	space := NewStripCand(CategoryTile{Category: "space", Section: "worlds"}, nil, time.Time{})
@@ -236,7 +233,7 @@ func TestStripKeywordOverlap(t *testing.T) {
 	}
 }
 
-func TestStripOpenRateAndDecay(t *testing.T) {
+func TestPickStrip_OpenRateAndDecay(t *testing.T) {
 	if got := StripOpenScore(StripStats{}); got != 0.2 {
 		t.Fatalf("prior %v", got)
 	}
@@ -263,7 +260,6 @@ func TestStripOpenRateAndDecay(t *testing.T) {
 	if !recent["a"] || recent["b"] {
 		t.Fatalf("recent %v", recent)
 	}
-	// A category the member keeps opening climbs; one they keep skipping falls.
 	in := StripIn{Local: may, Stats: map[string]StripStats{"liked": {Shown: 6, Opened: 5}, "skipped": {Shown: 30}}}
 	liked, skipped, plain := StripCand{Key: "liked"}, StripCand{Key: "skipped"}, StripCand{Key: "plain"}
 	if !(StripScore(liked, in, 0, false) > StripScore(plain, in, 0, false) && StripScore(plain, in, 0, false) > StripScore(skipped, in, 0, false)) {
@@ -271,7 +267,7 @@ func TestStripOpenRateAndDecay(t *testing.T) {
 	}
 }
 
-func TestStripColdStartAndKid(t *testing.T) {
+func TestPickStrip_ColdStartAndKid(t *testing.T) {
 	got := PickStrip(stripIn(stripFixture(false)))
 	n := 0
 	for _, x := range got {
@@ -290,7 +286,6 @@ func TestStripColdStartAndKid(t *testing.T) {
 			t.Fatalf("Kid got %s", x.Category)
 		}
 	}
-	// The new kid-safe eras and world entries exist.
 	for _, id := range []string{"classic-animation", "90s-family", "french-animation", "japanese-family", "world-adventures"} {
 		c, ok := CategoryByID(id)
 		if !ok || !c.Kid || len(c.Requests("all", true)) == 0 {
@@ -299,9 +294,9 @@ func TestStripColdStartAndKid(t *testing.T) {
 	}
 }
 
-// A partial answer (only some sections built) and the full one after it
+// TestPickStrip_SectionCapPartialThenFull checks a partial answer and the full one
 // both keep at most stripSectionCap tiles per section.
-func TestStripSectionCapPartialThenFull(t *testing.T) {
+func TestPickStrip_SectionCapPartialThenFull(t *testing.T) {
 	all := stripFixture(false)
 	var partial []StripCand
 	for _, c := range all {

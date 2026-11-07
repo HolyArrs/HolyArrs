@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// countingSource counts each distinct Request once, the way the server's
-// list cache makes a repeat a hit.
+// countingSource counts each distinct Request once, as a cache would make
+// a repeat a hit.
 type countingSource struct {
 	src   Source
 	mu    sync.Mutex
@@ -30,7 +30,7 @@ func (c *countingSource) List(ctx context.Context, q Request) ([]Item, error) {
 	return c.src.List(ctx, q)
 }
 
-func TestCallsSplitByTypeAndScope(t *testing.T) {
+func TestCalls_SplitByTypeAndScope(t *testing.T) {
 	c := &Calls{}
 	c.Add(Request{List: "trending", Kind: "movie", Scope: ScopeShared})
 	c.Add(Request{List: "similar", Kind: "movie", Ref: "1"})
@@ -46,13 +46,12 @@ func TestCallsSplitByTypeAndScope(t *testing.T) {
 		t.Fatal(got)
 	}
 	var none *Calls
-	none.Add(Request{List: "trending"}) // a nil counter is a no-op
+	none.Add(Request{List: "trending"})
 }
 
-// TestMemberCallBudget is plan 5.2's arithmetic: at most 30 member-specific
-// outside calls per build, region lists counted apart, for 0, 5 and 12
-// seeds on every switch.
-func TestMemberCallBudget(t *testing.T) {
+// A build makes at most 30 member calls, with shared calls counted apart,
+// for 0, 5 and 12 seeds on every switch.
+func TestBuild_MemberCallBudget(t *testing.T) {
 	people := map[string]int{"Ann": 9, "Bo": 7, "Cy": 5, "Di": 4}
 	dg := map[string]int{"1990s|Drama": 9, "2000s|Comedy": 8, "1980s|Action": 7}
 	for _, n := range []int{0, 5, 12} {
@@ -73,9 +72,8 @@ func TestMemberCallBudget(t *testing.T) {
 	}
 }
 
-// TestRegionCallsShared: a second member with other seeds adds no region
-// calls when both go through one cache.
-func TestRegionCallsShared(t *testing.T) {
+// A second member with other seeds adds no shared calls through one cache.
+func TestBuild_SharedCallsNotRepeated(t *testing.T) {
 	src := &countingSource{src: &fakeSource{}, calls: &Calls{}}
 	if _, err := Build(context.Background(), src, Input{Member: 1, Switch: "all", Now: day0, Seeds: seedsN(5, 1)}); err != nil {
 		t.Fatal(err)
@@ -89,9 +87,8 @@ func TestRegionCallsShared(t *testing.T) {
 	}
 }
 
-// TestPacedSharedByParallelBuilds: three builders at once still get one
-// call per Gap between them all (the global rate is unchanged).
-func TestPacedSharedByParallelBuilds(t *testing.T) {
+// Three builders at once still share one call per Gap.
+func TestPaced_ParallelBuildsShareRate(t *testing.T) {
 	gap := 15 * time.Millisecond
 	p := &Paced{Source: &fakeSource{}, Gap: gap}
 	var mu sync.Mutex
@@ -121,9 +118,8 @@ func TestPacedSharedByParallelBuilds(t *testing.T) {
 	}
 }
 
-// TestPacedBurst: after a quiet spell Burst calls go at once, and the
-// ones after them are spaced by Gap again.
-func TestPacedBurst(t *testing.T) {
+// After a quiet spell Burst calls go at once, then Gap spacing resumes.
+func TestPaced_Burst(t *testing.T) {
 	gap := 40 * time.Millisecond
 	p := &Paced{Source: &fakeSource{}, Gap: gap, Burst: 4}
 	start := time.Now()

@@ -2,47 +2,35 @@ package explore
 
 import "sort"
 
-// GenreCard is one card of the "Browse by genre" row: a genre of one
-// kind, with a backdrop from a popular title of that genre on the page.
-type GenreCard struct {
-	Kind     string `json:"kind"`
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Backdrop string `json:"backdrop"`
-	// From is the title the backdrop comes from (kind:tmdb id).
-	From string `json:"from"`
-	// Both: the genre page holds movies and shows (type=all, the movie id).
-	Both bool `json:"both,omitempty"`
-}
-
-// Genre row sizes: at most GenreRowMax cards; under GenreRowMin the row
-// does not show.
+// GenreRowMax is the most cards the genre row holds. GenreRowMin is the
+// fewest it needs to show; below that the row is left out as too thin.
 const (
 	GenreRowMax = 16
 	GenreRowMin = 6
 )
 
-// kidGenres are the genres a Kid's row may show.
+// kidGenres are the genres a kid's row may show.
 var kidGenres = map[string]bool{"Family": true, "Animation": true, "Kids": true, "Comedy": true, "Adventure": true,
 	"Action & Adventure": true, "Fantasy": true, "Sci-Fi & Fantasy": true, "Music": true, "Documentary": true}
 
-// genreID is the TMDB id of genre name for kind, 0 when unknown.
-func genreID(kind, name string) int {
-	for id, n := range Genres[kind] {
-		if n == name {
-			return id
-		}
-	}
-	return 0
+// GenreCard is one card of the genre row: a genre of one kind with a
+// backdrop taken from a popular title of that genre on the page.
+type GenreCard struct {
+	Kind     string `json:"kind"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Backdrop string `json:"backdrop"`
+	// From is the title the backdrop came from, as kind:tmdb id.
+	From string `json:"from"`
+	// Both marks a genre page that holds movies and shows.
+	Both bool `json:"both,omitempty"`
 }
 
-// BrowseGenres picks the genre cards for a tab from the page's rows (data
-// already built, no outside call). Genres the household likes (taste,
-// strongest first) lead; the rest follow by how much of the page they
-// fill, weighted by popularity. Each card's backdrop is the most popular
-// page title of that genre whose backdrop no earlier card uses; a genre
-// without one is left out. Under All a genre both kinds share shows once,
-// as the kind with more of it. A Kid gets only kid-safe genres.
+// BrowseGenres picks the genre cards for a tab from the rows already built,
+// with no outside call. Liked genres lead in taste order, the rest follow by
+// how much of the page they fill weighted by popularity. Each backdrop is
+// used once, so a genre with no fresh backdrop is dropped. Kids only get
+// kid-safe genres.
 func BrowseGenres(pg Page, sw string, taste []string, kid bool) []GenreCard {
 	kinds := Kinds(sw)
 	type cand struct {
@@ -78,7 +66,7 @@ func BrowseGenres(pg Page, sw string, taste []string, kid bool) []GenreCard {
 			}
 		}
 	}
-	// Under All, one card per genre name: the kind with more of it.
+	// Under All a genre both kinds share becomes one card, as the kind with more of it.
 	best := map[string]*cand{}
 	for _, c := range by {
 		if b := best[c.name]; b == nil || c.weight > b.weight || (c.weight == b.weight && c.kind < b.kind) {
@@ -133,4 +121,14 @@ func BrowseGenres(pg Page, sw string, taste []string, kid bool) []GenreCard {
 		return []GenreCard{}
 	}
 	return out
+}
+
+// genreID returns the TMDB id of genre name for kind, or 0 when unknown.
+func genreID(kind, name string) int {
+	for id, n := range Genres[kind] {
+		if n == name {
+			return id
+		}
+	}
+	return 0
 }

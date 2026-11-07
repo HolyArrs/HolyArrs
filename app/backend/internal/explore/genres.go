@@ -2,8 +2,8 @@ package explore
 
 import "sort"
 
-// Genres are TMDB's genre ids and names per kind (TMDB's own fixed lists),
-// for the genre picker and genre pages.
+// Genres holds TMDB's fixed genre ids and names per kind, for the genre picker
+// and genre pages.
 var Genres = map[string]map[int]string{
 	"movie": {28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 99: "Documentary", 18: "Drama",
 		10751: "Family", 14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
@@ -12,34 +12,23 @@ var Genres = map[string]map[int]string{
 		10751: "Family", 10762: "Kids", 9648: "Mystery", 10764: "Reality", 10765: "Sci-Fi & Fantasy", 10768: "War & Politics", 37: "Western"},
 }
 
-// showCombined maps a movie genre to the TV genre that combines it with
-// another (TMDB's TV genres are combined, its movie genres are separate).
+// showCombined maps a movie genre to the TV genre that merges it with another,
+// because TMDB's TV genres are combined while its movie genres are separate.
 var showCombined = map[string]string{"Science Fiction": "Sci-Fi & Fantasy", "Fantasy": "Sci-Fi & Fantasy",
 	"Action": "Action & Adventure", "Adventure": "Action & Adventure", "War": "War & Politics"}
 
-// movieSplit is the other way: a combined TV genre's movie genres.
+// movieSplit is the reverse of showCombined: the movie genres a combined TV
+// genre stands for.
 var movieSplit = map[string][]string{"Sci-Fi & Fantasy": {"Science Fiction", "Fantasy"},
 	"Action & Adventure": {"Action", "Adventure"}, "War & Politics": {"War"}}
 
-// ShowGenreFor is the combined TV genre a movie genre merges with, "" when none.
+// ShowGenreFor returns the combined TV genre a movie genre merges into, or "".
 func ShowGenreFor(movieGenre string) string { return showCombined[movieGenre] }
 
-// mergeGenre says which genre cards an item's genre g counts for under
-// All: a combined TV genre counts for its movie genres (as movie genres),
-// any other genre for itself.
-func mergeGenre(sw, kind, g string) (string, []string) {
-	if sw == "all" && kind == "show" {
-		if m := movieSplit[g]; m != nil {
-			return "movie", m
-		}
-	}
-	return kind, []string{g}
-}
-
-// GenreName is the name of genre id for kind, "" when unknown.
+// GenreName returns the name of genre id for kind, or "" when unknown.
 func GenreName(kind string, id int) string { return Genres[kind][id] }
 
-// HasGenre says the item lists the genre.
+// HasGenre reports whether the item lists the genre.
 func HasGenre(it Item, genre string) bool {
 	for _, g := range it.Genres {
 		if g == genre {
@@ -49,8 +38,8 @@ func HasGenre(it Item, genre string) bool {
 	return false
 }
 
-// MergeTop merges lists by popularity (highest first), a title once, and
-// keeps the first n.
+// MergeTop merges the lists by popularity, highest first, keeps each title
+// once and returns the first n.
 func MergeTop(lists [][]Item, n int) []Item {
 	var all []Item
 	seen := map[string]bool{}
@@ -69,12 +58,24 @@ func MergeTop(lists [][]Item, n int) []Item {
 	return all
 }
 
-// Interleave takes one from each list in turn (rank 1s first), a title
-// once, and keeps the first n.
+// Interleave takes one title from each list in turn, keeps each title once and
+// returns the first n.
 func Interleave(lists [][]Item, n int) []Item {
 	out := uniq(interleave(lists))
 	if len(out) > n {
 		out = out[:n]
 	}
 	return out
+}
+
+// mergeGenre returns the kind and genre names an item's genre g counts for.
+// Under All a combined TV genre counts as its movie genres so both kinds share
+// one card.
+func mergeGenre(sw, kind, g string) (string, []string) {
+	if sw == "all" && kind == "show" {
+		if m := movieSplit[g]; m != nil {
+			return "movie", m
+		}
+	}
+	return kind, []string{g}
 }

@@ -2,34 +2,30 @@ package explore
 
 import "sort"
 
-// BrowseTile is one tile of Search's Browse grid: a genre of one kind, or
-// one of that genre's mood rows (Mood set), with a backdrop from a popular
-// page title of the genre.
+// BrowseTile is one tile of the Search browse grid: a genre of one kind, or one
+// of that genre's mood rows, with a backdrop from a popular title of the genre.
 type BrowseTile struct {
 	Kind  string `json:"kind"`
 	Genre int    `json:"genre"`
-	// GenreName is the genre's TMDB name; Name is the tile's own words
-	// (the genre name, or the mood row's title).
+	// GenreName is the genre's TMDB name. Name is the tile's own label, the
+	// genre name or the mood row title.
 	GenreName string `json:"genre_name"`
 	Mood      string `json:"mood,omitempty"`
 	Name      string `json:"name"`
 	Backdrop  string `json:"backdrop"`
 	From      string `json:"from"`
-	// Both: the genre page holds movies and shows (type=all, the movie id).
+	// Both marks a genre page that holds movies and shows.
 	Both bool `json:"both,omitempty"`
 }
 
-// kidMoodsOff are mood rows a Kid never sees, even under a kid-safe genre.
+// kidMoodsOff are mood rows a kid never sees, even under a kid-safe genre.
 var kidMoodsOff = map[string]bool{"Adult animation": true, "True crime": true, "Serial killers": true, "Revenge": true}
 
-// BrowseTiles picks Search's Browse tiles from the page's rows (no outside
-// call): every genre of the tab's kinds that has a title with a backdrop,
-// biggest first, each followed by its mood rows (moods names them per
-// genre). A name shows once: under All a genre or mood both kinds have
-// goes with the kind that has more of it (the earlier one).
-// Each tile gets the most popular title of its genre whose backdrop no
-// earlier tile uses; a tile without one is left out. A Kid gets only
-// kid-safe genres and moods.
+// BrowseTiles picks the Search browse tiles from the rows already built, with
+// no outside call. Every genre of the tab's kinds that has a backdrop title
+// comes biggest first, each followed by its mood rows from moods. A name shows
+// once, so under All a genre both kinds have goes to the earlier kind. Each
+// backdrop is used once, and a tile with no fresh backdrop is dropped.
 func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string) []BrowseTile {
 	kinds := Kinds(sw)
 	type cand struct {
@@ -84,6 +80,8 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 		}
 		return list[i].kind < list[j].kind
 	})
+	// pick takes the most popular title whose backdrop no earlier tile uses,
+	// preferring ones that are not dark.
 	used := map[string]bool{}
 	named := map[string]bool{}
 	pick := func(c *cand) (Item, bool) {

@@ -15,19 +15,13 @@ import (
 	"unicode/utf8"
 )
 
-// Smart row titles. A row's title comes from a template library in
-// titles/*.json, in layers from the most specific (occasion) to the
-// fallback (the row's reason). A template may only claim what is true of
-// the row's items; the moment (time of day, occasion) never changes which
-// items a row holds. A member never sees a template again within 14 days
-// (the plain title is the alternative that always exists), titles hold
-// for the whole local day, and two rows on one page never share one.
-
+// titleFiles holds the template library, one JSON file per layer.
+//
 //go:embed titles/*.json
 var titleFiles embed.FS
 
-// Title layers, most specific first. LayerPlain is a row that kept its
-// plain title; LayerFixed is a head row whose title never changes.
+// Title layers, most specific first. LayerPlain marks a row that kept its plain
+// title and LayerFixed a head row whose title never changes.
 const (
 	LayerOccasion = "occasion"
 	LayerTime     = "time"
@@ -38,120 +32,28 @@ const (
 	LayerFixed    = "fixed"
 )
 
-// Layers are the template layers in the order they are tried.
-var Layers = []string{LayerOccasion, LayerTime, LayerGenre, LayerTaste, LayerReason}
-
-// TitleMax is the longest a filled title may be.
+// TitleMax is the longest a filled title may be, in characters.
 const TitleMax = 40
 
 // NoRepeatDays is how long a template rests for a member once shown.
 const NoRepeatDays = 14
 
-// layerCap is the most rows on one page a moment layer may title, so a
-// Friday night does not turn every row into "Friday night ...".
-var layerCap = map[string]int{LayerOccasion: 2, LayerTime: 3}
+// BoostMax is the most the moment raises a tail row's score. Row jitter is
+// about 5%, so a boost moves a row a place or two and never to the top alone.
+const BoostMax = 0.08
 
-// Template is one title pattern.
-type Template struct {
-	ID    string
-	Layer string
-	Key   string
-	Text  string
-	// Kid says the template may show on a Kid account.
-	Kid bool
-	// New says the template claims the row is new.
-	New bool
-	// Groups are genre-group sets the row must lead with (each set: any of).
-	Groups [][]string
-	// Types limits the template to these row types.
-	Types []string
-}
+// Layers are the template layers in the order they are tried.
+var Layers = []string{LayerOccasion, LayerTime, LayerGenre, LayerTaste, LayerReason}
 
-var slotRe = regexp.MustCompile(`\{([a-z_0-9]+)\}`)
-
-func (t Template) slots() []string {
-	var out []string
-	for _, m := range slotRe.FindAllStringSubmatch(t.Text, -1) {
-		out = append(out, m[1])
-	}
-	return out
-}
-
-func (t Template) has(slot string) bool { return strings.Contains(t.Text, "{"+slot+"}") }
-
-// Templates is the whole library, loaded once.
+// Templates is the whole library, loaded once at start.
 var Templates = mustTemplates()
 
-func mustTemplates() []Template {
-	out, err := loadTemplates()
-	if err != nil {
-		panic(err)
-	}
-	return out
-}
+// layerCap is the most rows on one page a moment layer may title, so a Friday
+// night does not turn every row into "Friday night ...".
+var layerCap = map[string]int{LayerOccasion: 2, LayerTime: 3}
 
-func loadTemplates() ([]Template, error) {
-	entries, err := titleFiles.ReadDir("titles")
-	if err != nil {
-		return nil, err
-	}
-	var out []Template
-	seen := map[string]bool{}
-	for _, e := range entries {
-		b, err := titleFiles.ReadFile("titles/" + e.Name())
-		if err != nil {
-			return nil, err
-		}
-		var f struct {
-			Layer     string   `json:"layer"`
-			Templates []string `json:"templates"`
-		}
-		if err := json.Unmarshal(b, &f); err != nil {
-			return nil, fmt.Errorf("%s: %w", e.Name(), err)
-		}
-		for _, line := range f.Templates {
-			parts := strings.Split(line, "|")
-			if len(parts) != 3 {
-				return nil, fmt.Errorf("%s: bad template %q", e.Name(), line)
-			}
-			t := Template{Layer: f.Layer, Key: parts[0], Text: parts[1]}
-			for _, fl := range strings.Split(parts[2], ",") {
-				switch {
-				case fl == "":
-				case fl == "k":
-					t.Kid = true
-				case fl == "n":
-					t.New = true
-				case strings.HasPrefix(fl, "g="):
-					t.Groups = append(t.Groups, strings.Split(fl[2:], "/"))
-				case strings.HasPrefix(fl, "t="):
-					t.Types = strings.Split(fl[2:], "/")
-				default:
-					return nil, fmt.Errorf("%s: bad flag %q in %q", e.Name(), fl, line)
-				}
-			}
-			h := fnv.New32a()
-			h.Write([]byte(t.Text))
-			t.ID = fmt.Sprintf("%s.%s.%08x", t.Layer, t.Key, h.Sum32())
-			if seen[t.ID] {
-				return nil, fmt.Errorf("%s: template %q twice", e.Name(), t.Text)
-			}
-			seen[t.ID] = true
-			out = append(out, t)
-		}
-	}
-	sort.SliceStable(out, func(i, j int) bool { return layerRank(out[i].Layer) < layerRank(out[j].Layer) })
-	return out, nil
-}
-
-func layerRank(l string) int {
-	for i, x := range Layers {
-		if x == l {
-			return i
-		}
-	}
-	return len(Layers)
-}
+// slotRe finds the {slot} markers in a template text.
+var slotRe = regexp.MustCompile(`\{([a-z_0-9]+)\}`)
 
 // genreGroups maps a TMDB genre name to the title genre groups it counts for.
 var genreGroups = map[string][]string{
@@ -164,7 +66,7 @@ var genreGroups = map[string][]string{
 	"Western": {"western"}, "Music": {"music"},
 }
 
-// groupWord is how a group reads inside a title.
+// groupWord is how a genre group reads inside a title.
 var groupWord = map[string]string{
 	"horror": "horror", "comedy": "comedy", "romance": "romance", "action": "action",
 	"thriller": "thriller", "scifi": "sci-fi", "fantasy": "fantasy", "drama": "drama",
@@ -172,39 +74,187 @@ var groupWord = map[string]string{
 	"documentary": "documentary", "anime": "anime", "war": "war", "western": "western", "music": "music",
 }
 
-// GenreGroups are the groups of TMDB genre names, deduplicated.
-func GenreGroups(genres []string) []string {
-	var out []string
-	for _, g := range genres {
-		for _, gr := range genreGroups[g] {
-			if !contains(out, gr) {
-				out = append(out, gr)
-			}
-		}
-	}
-	return out
+// kidBanned matches words a Kid's titles never hold.
+var kidBanned = regexp.MustCompile(`(?i)horror|scar[ey]|fright|after dark|lights off|creep|terror|blood|kill|murder|dare|bump|crime|thrill|tense|spooky`)
+
+// fixedTypes are the row types that keep their title and get a subtitle.
+var fixedTypes = map[string]bool{TypeTopServices: true, TypeTopPicks: true, TypeTrending: true, TypeBest: true, TypeBecauseHave: true, TypeBecauseAsked: true,
+	TypeCollection: true, TypeCinemas: true, TypeNewSeasons: true, TypeReturning: true, TypeClassics: true}
+
+// requiredSlot is the slot the titles of a row type must name.
+var requiredSlot = map[string]string{TypeBecauseHave: "name_of_seed", TypePerson: "person", TypeDecade: "decade", TypePopularDecade: "decade"}
+
+// slotOwner is the row types a slot belongs to. Other rows cannot fill it.
+var slotOwner = map[string][]string{"name_of_seed": {TypeBecauseHave}, "person": {TypePerson}, "decade": {TypeDecade, TypePopularDecade}}
+
+// TitleContext is what titling one page knows.
+type TitleContext struct {
+	Member int64
+	// Kid says the template may show on a Kid account.
+	Kid    bool
+	Moment Moment
+	// Day is the viewer's local date (YYYY-MM-DD).
+	Day string
+	// Taste is the member's strongest genres (TMDB names).
+	Taste []string
+	// Recent maps template id to the newest day shown, within NoRepeatDays.
+	Recent map[string]string
+	// Today maps row id to the template id already chosen today.
+	Today map[string]string
+	// Service names the member's one service, when there is just one.
+	Service string
 }
 
-// GenreMix is what a row's items say about genres: Lead is the group held
-// by at least half the items; Pair two groups that together cover 70% of
-// the items, each at least 30%. Either may be empty.
+// Template is one title pattern.
+type Template struct {
+	ID    string
+	Layer string
+	Key   string
+	Text  string
+	Kid   bool
+	// New says the template claims the row is new.
+	New bool
+	// Groups are genre-group sets the row must lead with (each set: any of).
+	Groups [][]string
+	// Types limits the template to these row types.
+	Types []string
+}
+
+// Shown is one template a page showed, kept so it can rest.
+type Shown struct {
+	RowID      string
+	TemplateID string
+}
+
+// GenreMix is what a row's items say about genres. Lead is the group held by
+// at least half the items. Pair is two groups that together cover 70% of the
+// items, each at least 30%. Either may be empty.
 type GenreMix struct {
 	Lead string
 	Pair [2]string
 }
 
-// Leads are every group the row may be called by.
-func (m GenreMix) Leads() []string {
-	var out []string
-	if m.Lead != "" {
-		out = append(out, m.Lead)
-	}
-	for _, g := range m.Pair {
-		if g != "" && !contains(out, g) {
-			out = append(out, g)
+// Moment is the viewer's local time.
+type Moment struct {
+	Local time.Time
+}
+
+// rowFacts are a row's fillable slots and what is true of it.
+type rowFacts struct {
+	r       Row
+	mix     GenreMix
+	slots   map[string]string
+	newRow  bool
+	release bool
+	taste   bool
+}
+
+// TitlePage gives the page's rows their titles. Fixed head rows keep their
+// title and get a subtitle. The rest get the most specific template that fits,
+// has rested NoRepeatDays and is not on the page already, else their plain
+// title. It returns a copy and the templates it showed.
+func TitlePage(pg Page, c TitleContext) (Page, []Shown) {
+	out := pg
+	out.Head = append([]Row(nil), pg.Head...)
+	out.Tail = append([]Row(nil), pg.Tail...)
+	used := map[string]bool{}
+	perLayer := map[string]int{}
+	var shown []Shown
+	title := func(r *Row) {
+		if fixedTypes[r.Type] {
+			r.Layer = LayerFixed
+			r.Subtitle = fixedSubtitle(*r, c)
+			return
 		}
+		if r.Plain == "" {
+			r.Plain = r.Title
+		}
+		f := factsOf(*r, c)
+		pick := func(t Template, text string) {
+			r.Title, r.TitleID, r.Layer = text, t.ID, t.Layer
+			r.Counted = 0
+			if t.has("count") {
+				r.Counted = len(r.Items)
+			}
+			// A moment title replaces the plain one, so the plain one moves to the subtitle.
+			if t.Layer == LayerOccasion || t.Layer == LayerTime {
+				r.Subtitle = r.Plain
+			}
+			used[t.ID] = true
+			perLayer[t.Layer]++
+			shown = append(shown, Shown{RowID: r.ID, TemplateID: t.ID})
+		}
+		// Keep the title chosen earlier today, so a title holds for the whole day.
+		if id := c.Today[r.ID]; id != "" && !used[id] {
+			for _, t := range Templates {
+				if t.ID == id {
+					if text, ok := t.fill(f, c); ok {
+						pick(t, text)
+						return
+					}
+				}
+			}
+		}
+		for _, layer := range Layers {
+			if cp, ok := layerCap[layer]; ok && perLayer[layer] >= cp {
+				continue
+			}
+			var best *Template
+			var bestText string
+			var bestH uint64
+			for i := range Templates {
+				t := &Templates[i]
+				if t.Layer != layer || used[t.ID] || c.Recent[t.ID] != "" {
+					continue
+				}
+				text, ok := t.fill(f, c)
+				if !ok {
+					continue
+				}
+				if h := titleHash(c.Member, c.Day, r.ID, t.ID); best == nil || h < bestH {
+					best, bestText, bestH = t, text, h
+				}
+			}
+			if best != nil {
+				pick(*best, bestText)
+				return
+			}
+		}
+		r.Title, r.TitleID, r.Layer, r.Counted = r.Plain, "", LayerPlain, 0
 	}
-	return out
+	for i := range out.Head {
+		title(&out.Head[i])
+	}
+	for i := range out.Tail {
+		title(&out.Tail[i])
+	}
+	return out, shown
+}
+
+// MomentBoost returns 1 + BoostMax when the row's genre mix fits the moment,
+// else 1. Late at night it is thriller, horror or sci-fi (never for a Kid). On
+// a weekend morning it is comedy, family or animation.
+func MomentBoost(r Row, m Moment, kid bool) float64 {
+	if m.Local.IsZero() {
+		return 1
+	}
+	leads := MixOf(r.Items).Leads()
+	any := func(gs ...string) bool {
+		for _, g := range gs {
+			if contains(leads, g) {
+				return true
+			}
+		}
+		return false
+	}
+	part := m.Part()
+	switch {
+	case part == "late_night" && !kid && any("thriller", "horror", "scifi"):
+		return 1 + BoostMax
+	case m.Weekend() && (part == "morning" || part == "early_morning") && any("comedy", "family", "animation"):
+		return 1 + BoostMax
+	}
+	return 1
 }
 
 // MixOf measures the genre mix of items.
@@ -256,12 +306,37 @@ func MixOf(items []Item) GenreMix {
 	return m
 }
 
-// Moment is the viewer's local time.
-type Moment struct {
-	Local time.Time
+// GenreGroups returns the deduplicated title groups of TMDB genre names.
+func GenreGroups(genres []string) []string {
+	var out []string
+	for _, g := range genres {
+		for _, gr := range genreGroups[g] {
+			if !contains(out, gr) {
+				out = append(out, gr)
+			}
+		}
+	}
+	return out
 }
 
-// Part is the part of day: early_morning 5-8, morning 8-12, afternoon
+// KidSafe reports whether text may show on a Kid account.
+func KidSafe(text string) bool { return !kidBanned.MatchString(text) }
+
+// Leads returns every group the row may be called by.
+func (m GenreMix) Leads() []string {
+	var out []string
+	if m.Lead != "" {
+		out = append(out, m.Lead)
+	}
+	for _, g := range m.Pair {
+		if g != "" && !contains(out, g) {
+			out = append(out, g)
+		}
+	}
+	return out
+}
+
+// Part returns the part of day: early_morning 5-8, morning 8-12, afternoon
 // 12-17, evening 17-22, late_night 22-5.
 func (m Moment) Part() string {
 	h := m.Local.Hour()
@@ -278,14 +353,14 @@ func (m Moment) Part() string {
 	return "late_night"
 }
 
-// Weekend is Saturday or Sunday.
+// Weekend reports whether it is Saturday or Sunday.
 func (m Moment) Weekend() bool {
 	d := m.Local.Weekday()
 	return d == time.Saturday || d == time.Sunday
 }
 
-// Occasions are the dated moments now, most specific first (release_day
-// is decided per row).
+// Occasions returns the dated moments of now, most specific first. release_day
+// is not here because it is decided per row.
 func (m Moment) Occasions() []string {
 	t := m.Local
 	mo, d := t.Month(), t.Day()
@@ -311,86 +386,29 @@ func (m Moment) Occasions() []string {
 	return out
 }
 
-// BoostMax is the most the moment raises a tail row's score (5%-scale
-// jitter is ±5%, so a boost moves a row a place or two, never to the top
-// on its own).
-const BoostMax = 0.08
-
-// MomentBoost is 1 + BoostMax when the row's genre mix fits the moment:
-// late at night thriller, horror or sci-fi (never for a Kid); on a weekend
-// morning comedy, family or animation. Otherwise 1.
-func MomentBoost(r Row, m Moment, kid bool) float64 {
-	if m.Local.IsZero() {
-		return 1
-	}
-	leads := MixOf(r.Items).Leads()
-	any := func(gs ...string) bool {
-		for _, g := range gs {
-			if contains(leads, g) {
-				return true
-			}
+// fixedSubtitle returns a head row's small line. It is always a plain fact.
+func fixedSubtitle(r Row, c TitleContext) string {
+	switch r.Type {
+	case TypeTopPicks:
+		return "Matched to your Library and asks"
+	case TypeTrending:
+		if g := MixOf(r.Items).Lead; g != "" && !(c.Kid && g == "horror") {
+			return "This week, mostly " + groupWord[g]
 		}
-		return false
+		return "What people watch this week"
+	case TypeCollection:
+		return "The parts missing from collections you have"
+	case TypeCinemas:
+		return "In the next 90 days"
+	case TypeNewSeasons:
+		return "Shows you have that are airing, then new shows"
+	case TypeReturning:
+		return "Back in the next two months"
 	}
-	part := m.Part()
-	switch {
-	case part == "late_night" && !kid && any("thriller", "horror", "scifi"):
-		return 1 + BoostMax
-	case m.Weekend() && (part == "morning" || part == "early_morning") && any("comedy", "family", "animation"):
-		return 1 + BoostMax
-	}
-	return 1
+	return ""
 }
 
-// kidBanned are words a Kid's titles never hold.
-var kidBanned = regexp.MustCompile(`(?i)horror|scar[ey]|fright|after dark|lights off|creep|terror|blood|kill|murder|dare|bump|crime|thrill|tense|spooky`)
-
-// KidSafe says text may show on a Kid account.
-func KidSafe(text string) bool { return !kidBanned.MatchString(text) }
-
-// TitleContext is what titling one page knows.
-type TitleContext struct {
-	Member int64
-	Kid    bool
-	Moment Moment
-	// Day is the viewer's local date (YYYY-MM-DD).
-	Day string
-	// Taste are the member's strongest genres (TMDB names).
-	Taste []string
-	// Recent is template id -> the newest day shown, within NoRepeatDays.
-	Recent map[string]string
-	// Today is row id -> template id already chosen today.
-	Today map[string]string
-	// Service names the member's one service, when there is just one.
-	Service string
-}
-
-// Shown is one template a page showed, to remember.
-type Shown struct {
-	RowID      string
-	TemplateID string
-}
-
-// fixedTypes keep their title and get a subtitle.
-var fixedTypes = map[string]bool{TypeTopServices: true, TypeTopPicks: true, TypeTrending: true, TypeBest: true, TypeBecauseHave: true, TypeBecauseAsked: true,
-	TypeCollection: true, TypeCinemas: true, TypeNewSeasons: true, TypeReturning: true, TypeClassics: true}
-
-// requiredSlot is the slot a row type's titles must name.
-var requiredSlot = map[string]string{TypeBecauseHave: "name_of_seed", TypePerson: "person", TypeDecade: "decade", TypePopularDecade: "decade"}
-
-// slotOwner is the row type a slot belongs to (other rows cannot fill it).
-var slotOwner = map[string][]string{"name_of_seed": {TypeBecauseHave}, "person": {TypePerson}, "decade": {TypeDecade, TypePopularDecade}}
-
-// rowFacts are a row's fillable slots and truths.
-type rowFacts struct {
-	r       Row
-	mix     GenreMix
-	slots   map[string]string
-	newRow  bool
-	release bool
-	taste   bool
-}
-
+// factsOf collects the slots a row can fill and the truths a template may claim.
 func factsOf(r Row, c TitleContext) rowFacts {
 	f := rowFacts{r: r, mix: MixOf(r.Items), slots: map[string]string{}}
 	if g := f.mix.Lead; g != "" {
@@ -405,6 +423,7 @@ func factsOf(r Row, c TitleContext) rowFacts {
 	} else if f.mix.Pair[0] != "" {
 		f.slots["genre"], f.slots["genre2"] = groupWord[f.mix.Pair[0]], groupWord[f.mix.Pair[1]]
 	}
+	// A Kid is never told a row is horror.
 	if c.Kid && (f.mix.Lead == "horror" || f.mix.Pair[0] == "horror" || f.mix.Pair[1] == "horror") {
 		delete(f.slots, "genre")
 		delete(f.slots, "genre2")
@@ -423,6 +442,7 @@ func factsOf(r Row, c TitleContext) rowFacts {
 	if c.Service != "" && r.Type == TypeNewServices {
 		f.slots["service"] = c.Service
 	}
+	// A count in a title only reads true for a fuller row.
 	if n := len(r.Items); n >= 8 {
 		f.slots["count"] = strconv.Itoa(n)
 	}
@@ -433,6 +453,7 @@ func factsOf(r Row, c TitleContext) rowFacts {
 		if err != nil {
 			continue
 		}
+		// New means released within 90 days, with a day of slack for time zones.
 		if age := c.Moment.Local.Sub(t).Hours() / 24; age >= -1 && age <= 90 {
 			recent++
 		}
@@ -449,7 +470,7 @@ func factsOf(r Row, c TitleContext) rowFacts {
 	return f
 }
 
-// fill says the filled title, or false when the template does not fit.
+// fill returns the filled title, or false when the template does not fit.
 func (t Template) fill(f rowFacts, c TitleContext) (string, bool) {
 	if c.Kid && (!t.Kid || !KidSafe(t.Text)) {
 		return "", false
@@ -518,7 +539,9 @@ func (t Template) fill(f rowFacts, c TitleContext) (string, bool) {
 			return "", false
 		}
 	}
+	// A title with an empty slot would read wrong, so it does not fit.
 	out := t.Text
+
 	for _, s := range t.slots() {
 		v := f.slots[s]
 		if v == "" {
@@ -536,11 +559,101 @@ func (t Template) fill(f rowFacts, c TitleContext) (string, bool) {
 	return out, true
 }
 
+// slots lists the slot names used in the text.
+func (t Template) slots() []string {
+	var out []string
+	for _, m := range slotRe.FindAllStringSubmatch(t.Text, -1) {
+		out = append(out, m[1])
+	}
+	return out
+}
+
+// has reports whether the text uses the slot.
+func (t Template) has(slot string) bool { return strings.Contains(t.Text, "{"+slot+"}") }
+
+// mustTemplates loads the library and panics on a bad file, so a broken
+// library is caught at start.
+func mustTemplates() []Template {
+	out, err := loadTemplates()
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+// loadTemplates reads titles/*.json. Each line is key|text|flags, with flags k
+// (Kid ok), n (claims new), g=a/b (lead group) and t=a/b (row types).
+func loadTemplates() ([]Template, error) {
+	entries, err := titleFiles.ReadDir("titles")
+	if err != nil {
+		return nil, err
+	}
+	var out []Template
+	seen := map[string]bool{}
+	for _, e := range entries {
+		b, err := titleFiles.ReadFile("titles/" + e.Name())
+		if err != nil {
+			return nil, err
+		}
+		var f struct {
+			Layer     string   `json:"layer"`
+			Templates []string `json:"templates"`
+		}
+		if err := json.Unmarshal(b, &f); err != nil {
+			return nil, fmt.Errorf("%s: %w", e.Name(), err)
+		}
+		for _, line := range f.Templates {
+			parts := strings.Split(line, "|")
+			if len(parts) != 3 {
+				return nil, fmt.Errorf("%s: bad template %q", e.Name(), line)
+			}
+			t := Template{Layer: f.Layer, Key: parts[0], Text: parts[1]}
+			for _, fl := range strings.Split(parts[2], ",") {
+				switch {
+				case fl == "":
+				case fl == "k":
+					t.Kid = true
+				case fl == "n":
+					t.New = true
+				case strings.HasPrefix(fl, "g="):
+					t.Groups = append(t.Groups, strings.Split(fl[2:], "/"))
+				case strings.HasPrefix(fl, "t="):
+					t.Types = strings.Split(fl[2:], "/")
+				default:
+					return nil, fmt.Errorf("%s: bad flag %q in %q", e.Name(), fl, line)
+				}
+			}
+			h := fnv.New32a()
+			h.Write([]byte(t.Text))
+			t.ID = fmt.Sprintf("%s.%s.%08x", t.Layer, t.Key, h.Sum32())
+			if seen[t.ID] {
+				return nil, fmt.Errorf("%s: template %q twice", e.Name(), t.Text)
+			}
+			seen[t.ID] = true
+			out = append(out, t)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return layerRank(out[i].Layer) < layerRank(out[j].Layer) })
+	return out, nil
+}
+
+// layerRank orders layers by when they are tried. Unknown layers sort last.
+func layerRank(l string) int {
+	for i, x := range Layers {
+		if x == l {
+			return i
+		}
+	}
+	return len(Layers)
+}
+
+// capFirst upper-cases the first letter.
 func capFirst(s string) string {
 	r, n := utf8.DecodeRuneInString(s)
 	return string(unicode.ToUpper(r)) + s[n:]
 }
 
+// without returns list minus s.
 func without(list []string, s string) []string {
 	out := []string{}
 	for _, x := range list {
@@ -551,6 +664,8 @@ func without(list []string, s string) []string {
 	return out
 }
 
+// titleHash gives a stable order among templates for one member, day and row,
+// so the pick holds all day.
 func titleHash(member int64, day, row, id string) uint64 {
 	h := fnv.New64a()
 	var b [8]byte
@@ -558,106 +673,4 @@ func titleHash(member int64, day, row, id string) uint64 {
 	h.Write(b[:])
 	h.Write([]byte("|" + day + "|" + row + "|" + id))
 	return h.Sum64()
-}
-
-// TitlePage gives the page's rows their titles: fixed head rows keep
-// their title and get a subtitle; the rest get the most specific template
-// that fits, has rested NoRepeatDays and is not on the page already, else
-// their plain title. It returns a copy and the templates it showed.
-func TitlePage(pg Page, c TitleContext) (Page, []Shown) {
-	out := pg
-	out.Head = append([]Row(nil), pg.Head...)
-	out.Tail = append([]Row(nil), pg.Tail...)
-	used := map[string]bool{}
-	perLayer := map[string]int{}
-	var shown []Shown
-	title := func(r *Row) {
-		if fixedTypes[r.Type] {
-			r.Layer = LayerFixed
-			r.Subtitle = fixedSubtitle(*r, c)
-			return
-		}
-		if r.Plain == "" {
-			r.Plain = r.Title
-		}
-		f := factsOf(*r, c)
-		pick := func(t Template, text string) {
-			r.Title, r.TitleID, r.Layer = text, t.ID, t.Layer
-			r.Counted = 0
-			if t.has("count") {
-				r.Counted = len(r.Items)
-			}
-			if t.Layer == LayerOccasion || t.Layer == LayerTime {
-				r.Subtitle = r.Plain
-			}
-			used[t.ID] = true
-			perLayer[t.Layer]++
-			shown = append(shown, Shown{RowID: r.ID, TemplateID: t.ID})
-		}
-		if id := c.Today[r.ID]; id != "" && !used[id] {
-			for _, t := range Templates {
-				if t.ID == id {
-					if text, ok := t.fill(f, c); ok {
-						pick(t, text)
-						return
-					}
-				}
-			}
-		}
-		for _, layer := range Layers {
-			if cp, ok := layerCap[layer]; ok && perLayer[layer] >= cp {
-				continue
-			}
-			var best *Template
-			var bestText string
-			var bestH uint64
-			for i := range Templates {
-				t := &Templates[i]
-				if t.Layer != layer || used[t.ID] || c.Recent[t.ID] != "" {
-					continue
-				}
-				text, ok := t.fill(f, c)
-				if !ok {
-					continue
-				}
-				if h := titleHash(c.Member, c.Day, r.ID, t.ID); best == nil || h < bestH {
-					best, bestText, bestH = t, text, h
-				}
-			}
-			if best != nil {
-				pick(*best, bestText)
-				return
-			}
-		}
-		r.Title, r.TitleID, r.Layer, r.Counted = r.Plain, "", LayerPlain, 0
-	}
-	for i := range out.Head {
-		title(&out.Head[i])
-	}
-	for i := range out.Tail {
-		title(&out.Tail[i])
-	}
-	return out, shown
-}
-
-// fixedSubtitle is a head row's small line: always a plain fact.
-func fixedSubtitle(r Row, c TitleContext) string {
-	switch r.Type {
-	case TypeTopPicks:
-		return "Matched to your Library and asks"
-	case TypeTrending:
-		if g := MixOf(r.Items).Lead; g != "" && !(c.Kid && g == "horror") {
-			return "This week, mostly " + groupWord[g]
-		}
-		return "What people watch this week"
-	case TypeCollection:
-		return "The parts missing from collections you have"
-	case TypeCinemas:
-		return "In the next 90 days"
-	case TypeNewSeasons:
-		return "Shows you have that are airing, then new shows"
-	case TypeReturning:
-		return "Back in the next two months"
-	}
-	return ""
 }

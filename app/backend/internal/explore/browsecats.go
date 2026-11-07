@@ -7,88 +7,20 @@ import (
 	"time"
 )
 
-// Search's sectioned Browse: a curated table of categories (genres, moods,
-// stories, worlds, eras, languages, collections), each one or two TMDB
-// discover queries built only from what the metadata server allows: genre
-// ids, keyword names (looked up once to ids), original language and
-// release-date ranges.
+// BrowseMin is the fewest titles with a backdrop a category needs to show.
+const BrowseMin = 12
 
-// BrowseSection is one heading of the Browse grid.
-type BrowseSection struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-}
+// kidWithout lists genre ids (valid for movies and shows) that a Kid never sees: horror, crime, thriller, war and politics.
+const kidWithout = "27|80|53|10752|10768"
 
-// BrowseSections are the Browse headings, in order.
+// BrowseSections are the Browse headings, in display order.
 var BrowseSections = []BrowseSection{
 	{"genres", "Genres"}, {"moods", "Moods"}, {"stories", "Stories & themes"}, {"worlds", "Worlds & settings"},
 	{"eras", "Eras"}, {"world", "Around the world"}, {"collections", "Collections"},
 }
 
-// CatQuery is one kind's discover query for a category. Genres and Without
-// are TMDB genre ids ("|" any of, "," all of); Keywords are keyword names
-// (any of).
-type CatQuery struct {
-	Genres, Without string
-	Keywords        []string
-	Lang            string
-	From, To        string
-}
-
-// Category is one Browse tile's definition. Movie or Show is nil when the
-// category is not for that kind.
-type Category struct {
-	ID, Section, Name string
-	Movie, Show       *CatQuery
-	// Kid: the category is kid-safe.
-	Kid bool
-	// Months limits the category to these months (Holiday), nil: always.
-	Months []time.Month
-}
-
-// BrowseMin is the fewest titles with a backdrop a category needs to show.
-const BrowseMin = 12
-
-func kw(k ...string) []string { return k }
-
-func both(q CatQuery) (*CatQuery, *CatQuery) { m, s := q, q; return &m, &s }
-
-func cat(id, section, name string, kid bool, q CatQuery) Category {
-	m, s := both(q)
-	return Category{ID: id, Section: section, Name: name, Movie: m, Show: s, Kid: kid}
-}
-
-func movieCat(id, section, name string, kid bool, q CatQuery) Category {
-	return Category{ID: id, Section: section, Name: name, Movie: &q, Kid: kid}
-}
-
-func showCat(id, section, name string, kid bool, q CatQuery) Category {
-	return Category{ID: id, Section: section, Name: name, Show: &q, Kid: kid}
-}
-
-func split(id, name string, kid bool, movieGenre, showGenre string, showKw []string) Category {
-	return Category{ID: id, Section: "genres", Name: name, Kid: kid,
-		Movie: &CatQuery{Genres: movieGenre}, Show: &CatQuery{Genres: showGenre, Keywords: showKw}}
-}
-
-func years(from, to int) CatQuery {
-	q := CatQuery{}
-	if from > 0 {
-		q.From = strconv.Itoa(from) + "-01-01"
-	}
-	if to > 0 {
-		q.To = strconv.Itoa(to) + "-12-31"
-	}
-	return q
-}
-
-func lang(l string) CatQuery { return CatQuery{Lang: l} }
-
-func kwq(k ...string) CatQuery { return CatQuery{Keywords: k} }
-
-// Categories is the Browse table, broad first within each section.
+// Categories is the Browse table, broad categories first within each section.
 var Categories = []Category{
-	// Genres: TMDB's genres, TV's combined ones split in two.
 	split("action", "Action", false, "28", "10759", nil),
 	cat("comedy", "genres", "Comedy", true, CatQuery{Genres: "35"}),
 	cat("drama", "genres", "Drama", false, CatQuery{Genres: "18"}),
@@ -122,7 +54,6 @@ var Categories = []Category{
 	movieCat("musicals", "genres", "Musicals", true, kwq("musical")),
 	movieCat("disaster", "genres", "Disaster", false, kwq("disaster", "natural disaster", "disaster movie")),
 
-	// Moods.
 	cat("feel-good", "moods", "Feel-good", true, kwq("feel-good", "heartwarming", "friendship")),
 	cat("dark", "moods", "Dark", false, kwq("dark", "nihilism", "bleak")),
 	cat("tearjerkers", "moods", "Tearjerkers", false, kwq("tearjerker", "grief", "terminal illness")),
@@ -144,7 +75,6 @@ var Categories = []Category{
 	cat("dark-comedy", "moods", "Dark comedy", false, kwq("dark comedy", "black comedy")),
 	cat("adrenaline", "moods", "Adrenaline", false, kwq("car chase", "shootout", "explosion", "one man army")),
 
-	// Stories & themes.
 	cat("heists", "stories", "Heists", false, kwq("heist", "bank robbery", "robbery")),
 	cat("revenge", "stories", "Revenge", false, kwq("revenge", "vigilante")),
 	cat("time-travel", "stories", "Time travel", true, kwq("time travel", "time loop")),
@@ -189,7 +119,6 @@ var Categories = []Category{
 	cat("assassins", "stories", "Assassins", false, kwq("assassin", "hitman", "contract killer")),
 	cat("rise-fall", "stories", "Rise and fall", false, kwq("rise and fall", "drug dealer", "drug cartel")),
 
-	// Worlds & settings.
 	cat("space", "worlds", "Space", true, kwq("space", "outer space", "spacecraft", "space travel")),
 	cat("dystopia", "worlds", "Dystopia", false, kwq("dystopia", "totalitarianism")),
 	cat("post-apocalyptic", "worlds", "Post-apocalyptic", false, kwq("post-apocalyptic future", "apocalypse", "end of the world")),
@@ -216,18 +145,15 @@ var Categories = []Category{
 	cat("fantasy-worlds", "worlds", "Fantasy worlds", true, kwq("fantasy world", "sword and sorcery", "epic fantasy")),
 	cat("jungle", "worlds", "Jungle", true, kwq("jungle", "rainforest", "amazon rainforest")),
 
-	// Eras (release years).
 	cat("classics", "eras", "Classics before 1970", false, years(0, 1969)),
 	cat("70s", "eras", "70s", false, years(1970, 1979)),
 	cat("80s", "eras", "80s", false, years(1980, 1989)),
 	cat("90s", "eras", "90s", false, years(1990, 1999)),
 	cat("2000s", "eras", "2000s", false, years(2000, 2009)),
 	cat("2010s", "eras", "2010s", false, years(2010, 2019)),
-	// Kid-safe eras: animation and family films by release years.
 	cat("classic-animation", "eras", "Classic animation", true, CatQuery{Genres: "16", To: "1999-12-31"}),
 	cat("90s-family", "eras", "90s family", true, CatQuery{Genres: "10751", From: "1990-01-01", To: "1999-12-31"}),
 
-	// Around the world (original language).
 	cat("korean", "world", "Korean", false, lang("ko")),
 	cat("japanese", "world", "Japanese", false, lang("ja")),
 	cat("spanish", "world", "Spanish", false, lang("es")),
@@ -242,12 +168,10 @@ var Categories = []Category{
 	cat("portuguese", "world", "Portuguese", false, lang("pt")),
 	cat("chinese", "world", "Chinese", false, lang("zh")),
 	cat("turkish", "world", "Turkish", false, lang("tr")),
-	// Kid-safe: animated adventures from around the world.
 	cat("french-animation", "world", "French animation", true, CatQuery{Lang: "fr", Genres: "16"}),
 	cat("japanese-family", "world", "Japanese family films", true, CatQuery{Lang: "ja", Genres: "10751"}),
 	cat("world-adventures", "world", "Animated adventures", true, CatQuery{Genres: "16,12", Keywords: kw("around the world", "travel", "journey")}),
 
-	// Collections.
 	cat("books", "collections", "Based on a book", true, kwq("based on novel or book", "based on novel", "based on young adult novel")),
 	cat("awards", "collections", "Award winners", false, kwq("oscar (award)", "academy award winner", "golden globe winner", "palme d'or")),
 	cat("comics", "collections", "Based on comics", true, kwq("based on comic", "based on manga", "based on graphic novel")),
@@ -264,11 +188,59 @@ var Categories = []Category{
 		Show:  &CatQuery{Keywords: kw("christmas", "holiday", "santa claus")}},
 }
 
-// kidWithout are genres a Kid's category queries always leave out (TMDB
-// ids valid for both kinds).
-const kidWithout = "27|80|53|10752|10768"
+// DarkBackdrop reports whether a backdrop is too dark to read as a tile. It is
+// nil when no sample is available, which counts as none being dark.
+var DarkBackdrop func(backdrop string) bool
 
-// CategoryByID finds a category.
+// combinedShowGenres are TV genres that are two genres in one; their tiles
+// come from the split categories instead.
+var combinedShowGenres = map[string]bool{"Action & Adventure": true, "Sci-Fi & Fantasy": true, "War & Politics": true}
+
+// browseNames maps TMDB genre names to the shorter name a tile shows.
+var browseNames = map[string]string{"Science Fiction": "Sci-Fi"}
+
+// BrowseSection is one heading of the Browse grid.
+type BrowseSection struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
+// CatQuery is one kind's discover query for a category. Genres and Without
+// are TMDB genre ids, "|" for any of and "," for all of. Keywords are
+// keyword names, any of.
+type CatQuery struct {
+	Genres, Without string
+	Keywords        []string
+	Lang            string
+	From, To        string
+}
+
+// Category defines one Browse tile. Movie or Show is nil when the category
+// is not for that kind.
+type Category struct {
+	ID, Section, Name string
+	Movie, Show       *CatQuery
+	// Kid marks the category as safe for a Kid.
+	Kid bool
+	// Months limits the category to these months; nil means always.
+	Months []time.Month
+}
+
+// CategoryTile is a category's tile in a section.
+type CategoryTile struct {
+	BrowseTile
+	Category string `json:"category"`
+	Section  string `json:"section"`
+	Count    int    `json:"count"`
+}
+
+// CategoryResult is a category's fetched titles, both kinds merged.
+type CategoryResult struct {
+	Cat   Category
+	Items []Item
+}
+
+// CategoryByID returns the category with the given id.
 func CategoryByID(id string) (Category, bool) {
 	for _, c := range Categories {
 		if c.ID == id {
@@ -278,31 +250,10 @@ func CategoryByID(id string) (Category, bool) {
 	return Category{}, false
 }
 
-// InSeason says the category shows this month.
-func (c Category) InSeason(now time.Time) bool {
-	if len(c.Months) == 0 {
-		return true
-	}
-	for _, m := range c.Months {
-		if now.Month() == m {
-			return true
-		}
-	}
-	return false
-}
-
-// Query is the category's query for kind, nil when it has none.
-func (c Category) Query(kind string) *CatQuery {
-	if kind == "show" {
-		return c.Show
-	}
-	return c.Movie
-}
-
-// SectionCategories are the categories of section for the tab sw: those
-// with a query for one of the tab's kinds, in season, kid-safe for a Kid;
-// under All a name shows once (the first category with it). A Kid never
-// gets a category whose query asks for a genre a Kid can't see.
+// SectionCategories returns the categories of section shown on tab sw: those
+// with a query for one of the tab's kinds and in season. A Kid only gets
+// kid-safe categories whose genres a Kid may see. Under All a name shows
+// once, for the first category that has it.
 func SectionCategories(section, sw string, kid bool, now time.Time) []Category {
 	kinds := Kinds(sw)
 	var out []Category
@@ -326,58 +277,49 @@ func SectionCategories(section, sw string, kid bool, now time.Time) []Category {
 	return out
 }
 
-func kidBlocked(genres string) bool {
-	for _, g := range strings.FieldsFunc(genres, func(r rune) bool { return r == '|' || r == ',' }) {
-		if strings.Contains("|"+kidWithout+"|", "|"+g+"|") {
-			return true
-		}
-	}
-	return false
-}
-
-// Requests are the discover requests that fill category c on tab sw (one
-// per kind). A Kid's leave out kidWithout and, for movies, anything above
-// US PG.
-func (c Category) Requests(sw string, kid bool) []Request {
-	var out []Request
-	for _, k := range Kinds(sw) {
-		q := c.Query(k)
-		if q == nil || (kid && kidBlocked(q.Genres)) {
-			continue
-		}
-		r := Request{List: "discover", Kind: k, Genres: q.Genres, Without: q.Without, Keywords: strings.Join(q.Keywords, "|"),
-			Lang: q.Lang, From: q.From, To: q.To, MinVotes: 20}
-		if kid {
-			r.Without = kidWithout
-			if k == "movie" {
-				r.Cert = "PG"
+// PageGenreTiles returns the Genres section's fast tiles, built from the
+// member's page with no outside call: each genre of the tab with at least
+// BrowseMin titles that have a backdrop. Combined TV genres are left to
+// their split categories. Each tile's backdrop is recorded in used.
+func PageGenreTiles(pg Page, sw string, kid bool, used map[string]bool) []BrowseTile {
+	count := map[string]int{}
+	seen := map[string]bool{}
+	kinds := Kinds(sw)
+	for _, rows := range [][]Row{pg.Head, pg.Tail} {
+		for _, r := range rows {
+			for _, it := range r.Items {
+				if it.Backdrop == "" || !kindIn(kinds, it.Kind) || seen[it.Key()] {
+					continue
+				}
+				seen[it.Key()] = true
+				for _, g0 := range it.Genres {
+					_, names := mergeGenre(sw, it.Kind, g0)
+					for _, g := range names {
+						count[g]++
+					}
+				}
 			}
 		}
-		out = append(out, r)
+	}
+	out := []BrowseTile{}
+	for _, t := range BrowseTiles(pg, sw, kid, nil) {
+		if combinedShowGenres[t.GenreName] || count[t.GenreName] < BrowseMin {
+			continue
+		}
+		if n := browseNames[t.GenreName]; n != "" {
+			t.Name = n
+		}
+		used[t.Backdrop] = true
+		out = append(out, t)
 	}
 	return out
 }
 
-// CategoryTile is a category's tile in a section.
-type CategoryTile struct {
-	BrowseTile
-	Category string `json:"category"`
-	Section  string `json:"section"`
-	Count    int    `json:"count"`
-}
-
-// CategoryResult is a category's fetched titles (both kinds merged).
-type CategoryResult struct {
-	Cat   Category
-	Items []Item
-}
-
-// PickCategoryTiles turns fetched categories into tiles: a category shows
-// only with at least BrowseMin titles that have a backdrop, its art the
-// most popular such title whose backdrop no tile used (used is shared
-// across sections and updated). Order: categories matching the household's
-// taste (genre names) first, then by popularity. skip holds names already
-// shown (the page's genre tiles).
+// PickCategoryTiles turns fetched categories into tiles. A category needs at
+// least BrowseMin titles with a backdrop; its art is the most popular such
+// title whose backdrop no tile used yet, and used is updated across
+// sections. Categories matching the household's taste (genre names) come
+// first, then by popularity. skip holds names already shown as genre tiles.
 func PickCategoryTiles(res []CategoryResult, taste []string, used, skip map[string]bool) []CategoryTile {
 	likes := map[string]bool{}
 	for _, t := range taste {
@@ -413,6 +355,7 @@ func PickCategoryTiles(res []CategoryResult, taste []string, used, skip map[stri
 					s.liked++
 				}
 			}
+			// Titles the household owns or watches weigh more than a genre match.
 			if it.Owned || it.HH > 0 {
 				s.liked += 2
 			}
@@ -421,6 +364,7 @@ func PickCategoryTiles(res []CategoryResult, taste []string, used, skip map[stri
 	}
 	sort.SliceStable(list, func(i, j int) bool {
 		li, lj := list[i].liked/float64(len(list[i].withBackdrop)), list[j].liked/float64(len(list[j].withBackdrop))
+		// A category counts as liked when half its titles match taste or the household.
 		if (li >= 0.5) != (lj >= 0.5) {
 			return li >= 0.5
 		}
@@ -442,12 +386,102 @@ func PickCategoryTiles(res []CategoryResult, taste []string, used, skip map[stri
 	return out
 }
 
-// DarkBackdrop reports a backdrop known to be too dark to read as a tile
-// (the server sets it from a small cached sample; nil: none is).
-var DarkBackdrop func(backdrop string) bool
+// InSeason reports whether the category shows in the month of now.
+func (c Category) InSeason(now time.Time) bool {
+	if len(c.Months) == 0 {
+		return true
+	}
+	for _, m := range c.Months {
+		if now.Month() == m {
+			return true
+		}
+	}
+	return false
+}
 
-// darkLast is items with the too-dark backdrops moved to the end (kept
-// only for when nothing brighter is left), order otherwise kept.
+// Query returns the category's query for kind, or nil when it has none.
+func (c Category) Query(kind string) *CatQuery {
+	if kind == "show" {
+		return c.Show
+	}
+	return c.Movie
+}
+
+// Requests returns the discover requests that fill the category on tab sw,
+// one per kind. A Kid's requests leave out kidWithout and, for movies,
+// anything above PG.
+func (c Category) Requests(sw string, kid bool) []Request {
+	var out []Request
+	for _, k := range Kinds(sw) {
+		q := c.Query(k)
+		if q == nil || (kid && kidBlocked(q.Genres)) {
+			continue
+		}
+		// MinVotes keeps obscure titles with a handful of votes out of a tile.
+		r := Request{List: "discover", Kind: k, Genres: q.Genres, Without: q.Without, Keywords: strings.Join(q.Keywords, "|"),
+			Lang: q.Lang, From: q.From, To: q.To, MinVotes: 20}
+		if kid {
+			r.Without = kidWithout
+			if k == "movie" {
+				r.Cert = "PG"
+			}
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+// kw, both, cat, movieCat, showCat, split, years, lang and kwq build the
+// table rows above with less repetition.
+func kw(k ...string) []string { return k }
+
+func both(q CatQuery) (*CatQuery, *CatQuery) { m, s := q, q; return &m, &s }
+
+func cat(id, section, name string, kid bool, q CatQuery) Category {
+	m, s := both(q)
+	return Category{ID: id, Section: section, Name: name, Movie: m, Show: s, Kid: kid}
+}
+
+func movieCat(id, section, name string, kid bool, q CatQuery) Category {
+	return Category{ID: id, Section: section, Name: name, Movie: &q, Kid: kid}
+}
+
+func showCat(id, section, name string, kid bool, q CatQuery) Category {
+	return Category{ID: id, Section: section, Name: name, Show: &q, Kid: kid}
+}
+
+func split(id, name string, kid bool, movieGenre, showGenre string, showKw []string) Category {
+	return Category{ID: id, Section: "genres", Name: name, Kid: kid,
+		Movie: &CatQuery{Genres: movieGenre}, Show: &CatQuery{Genres: showGenre, Keywords: showKw}}
+}
+
+func years(from, to int) CatQuery {
+	q := CatQuery{}
+	if from > 0 {
+		q.From = strconv.Itoa(from) + "-01-01"
+	}
+	if to > 0 {
+		q.To = strconv.Itoa(to) + "-12-31"
+	}
+	return q
+}
+
+func lang(l string) CatQuery { return CatQuery{Lang: l} }
+
+func kwq(k ...string) CatQuery { return CatQuery{Keywords: k} }
+
+// kidBlocked reports whether a genre list holds any genre a Kid never sees.
+func kidBlocked(genres string) bool {
+	for _, g := range strings.FieldsFunc(genres, func(r rune) bool { return r == '|' || r == ',' }) {
+		if strings.Contains("|"+kidWithout+"|", "|"+g+"|") {
+			return true
+		}
+	}
+	return false
+}
+
+// darkLast moves items with a too-dark backdrop to the end, keeping the rest
+// in order, so a dark one is used only when nothing brighter is left.
 func darkLast(items []Item) []Item {
 	if DarkBackdrop == nil {
 		return items
@@ -462,49 +496,4 @@ func darkLast(items []Item) []Item {
 		}
 	}
 	return append(out, dim...)
-}
-
-// combinedShowGenres are TV genres the Browse splits in two (their tiles
-// come from categories instead).
-var combinedShowGenres = map[string]bool{"Action & Adventure": true, "Sci-Fi & Fantasy": true, "War & Politics": true}
-
-// browseNames are display names for TMDB genre names.
-var browseNames = map[string]string{"Science Fiction": "Sci-Fi"}
-
-// PageGenreTiles are the Genres section's fast tiles, straight from the
-// member's page (no outside call): each genre of the tab that has at least
-// BrowseMin titles with a backdrop on the page. TV's combined genres are
-// left to their split categories. used gets each tile's backdrop.
-func PageGenreTiles(pg Page, sw string, kid bool, used map[string]bool) []BrowseTile {
-	count := map[string]int{}
-	seen := map[string]bool{}
-	kinds := Kinds(sw)
-	for _, rows := range [][]Row{pg.Head, pg.Tail} {
-		for _, r := range rows {
-			for _, it := range r.Items {
-				if it.Backdrop == "" || !kindIn(kinds, it.Kind) || seen[it.Key()] {
-					continue
-				}
-				seen[it.Key()] = true
-				for _, g0 := range it.Genres {
-					_, names := mergeGenre(sw, it.Kind, g0)
-					for _, g := range names {
-						count[g]++
-					}
-				}
-			}
-		}
-	}
-	out := []BrowseTile{}
-	for _, t := range BrowseTiles(pg, sw, kid, nil) {
-		if combinedShowGenres[t.GenreName] || count[t.GenreName] < BrowseMin {
-			continue
-		}
-		if n := browseNames[t.GenreName]; n != "" {
-			t.Name = n
-		}
-		used[t.Backdrop] = true
-		out = append(out, t)
-	}
-	return out
 }

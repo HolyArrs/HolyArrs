@@ -7,30 +7,27 @@ import (
 	"sort"
 )
 
-// HeroPool is how many candidates the hero looks at before the quality gate
-// (trailer, logo, backdrop); HeroCount is how many it shows.
+// HeroPool is how many candidates the hero looks at before the quality gate.
+// HeroCount is how many it shows.
 const (
 	HeroPool  = 15
 	HeroCount = 6
-	// HeroShuffleTop is how many of the best-ranked titles the daily shuffle
-	// draws from (and, per kind, what All leaves to the Movies and TV heroes).
+	// HeroShuffleTop is how many top-ranked titles the daily shuffle draws from.
+	// On All it is also what each kind leaves to the Movies and TV heroes.
 	HeroShuffleTop = 10
-	// heroTasteBoost is what a full taste match adds to a candidate's rank
-	// score (1 for the first candidate down to 0 for the last).
+	// heroTasteBoost is the most a full taste match adds to a rank score; a
+	// small push so position in the source row still decides most orders.
 	heroTasteBoost = 0.35
+	// LeanShare is the share of the household's Library and asks a genre needs
+	// before the hero shows it despite heroQuiet.
+	LeanShare = 0.10
 )
 
-// heroQuiet are the genres the hero leaves out unless the household leans
-// on them.
+// heroQuiet are the genres the hero leaves out unless the household leans on them.
 var heroQuiet = []string{"Animation", "Kids", "Family", "Documentary", "Reality"}
 
-// LeanShare is the share of the household's Library and asks a genre needs
-// before the hero shows it despite heroQuiet.
-const LeanShare = 0.10
-
-// HeroExcluded says whether the hero leaves the title out for its genres:
-// one of heroQuiet the household does not lean on (leans: genres at
-// LeanShare or more).
+// HeroExcluded reports whether the hero skips a title for its genres: one of
+// heroQuiet that the household does not lean on.
 func HeroExcluded(genres, leans []string) bool {
 	for _, g := range genres {
 		for _, q := range heroQuiet {
@@ -42,9 +39,8 @@ func HeroExcluded(genres, leans []string) bool {
 	return false
 }
 
-// HeroCandidates are up to n titles not in the Library from Trending, then
-// Trending on streaming, with known genres and without the ones
-// HeroExcluded leaves out.
+// HeroCandidates returns up to n titles not in the Library, from Trending then
+// Trending on streaming, that have known genres and pass HeroExcluded.
 func HeroCandidates(head []Row, leans []string, n int) []Item {
 	var out []Item
 	seen := map[string]bool{}
@@ -68,7 +64,7 @@ func HeroCandidates(head []Row, leans []string, n int) []Item {
 	return out
 }
 
-// HeroTaste is the share of the household's taste genres the title has, 0-1.
+// HeroTaste returns the share of the household's taste genres the title has, 0 to 1.
 func HeroTaste(it Item, taste []string) float64 {
 	if len(taste) == 0 {
 		return 0
@@ -82,8 +78,8 @@ func HeroTaste(it Item, taste []string) float64 {
 	return float64(n) / float64(len(taste))
 }
 
-// HeroRank orders candidates by their place in the source rows plus a small
-// taste boost; ties keep the source order.
+// HeroRank orders candidates by place in the source rows plus a small taste
+// boost. Ties keep the source order.
 func HeroRank(cands []Item, taste []string) []Item {
 	out := append([]Item(nil), cands...)
 	score := map[string]float64{}
@@ -99,7 +95,7 @@ func HeroRank(cands []Item, taste []string) []Item {
 }
 
 // HeroShuffle shuffles the first HeroShuffleTop titles with a seed from the
-// member and the day, so the hero changes daily and holds within a day.
+// member and the day, so the hero changes daily but holds within a day.
 func HeroShuffle(items []Item, member int64, date string) []Item {
 	out := append([]Item(nil), items...)
 	h := fnv.New64a()
@@ -112,11 +108,10 @@ func HeroShuffle(items []Item, member int64, date string) []Item {
 	return out
 }
 
-// PickHero picks HeroCount titles from ranked, ready candidates, shuffled
-// for the member and day (HeroShuffle). On All it leaves out each kind's
-// first HeroShuffleTop (what the Movies and TV shows heroes draw from) and
-// alternates a movie and a show; it falls back to the left-out ones only
-// when too few are left.
+// PickHero picks HeroCount titles from ranked candidates, shuffled per member
+// and day. On All it takes each kind's titles beyond the first HeroShuffleTop,
+// so the kind heroes keep their own, and alternates movie and show. It uses
+// the held-back titles only when too few are left.
 func PickHero(ranked []Item, all bool, member int64, date string) []Item {
 	if !all {
 		out := HeroShuffle(ranked, member, date)
@@ -153,6 +148,7 @@ func PickHero(ranked []Item, all bool, member int64, date string) []Item {
 	return out
 }
 
+// hasString reports whether list holds s.
 func hasString(list []string, s string) bool {
 	for _, v := range list {
 		if v == s {

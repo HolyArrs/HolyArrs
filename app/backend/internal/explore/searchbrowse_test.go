@@ -2,7 +2,7 @@ package explore
 
 import "testing"
 
-func TestBrowseTilesGenresMoodsAndKids(t *testing.T) {
+func TestBrowseTiles_GenresMoodsAndKids(t *testing.T) {
 	it := func(id, kind string, pop float64, g ...string) Item {
 		return Item{TMDBID: id, Kind: kind, Name: id, Backdrop: "/b" + id, Pop: pop, Genres: g}
 	}
@@ -36,18 +36,7 @@ func TestBrowseTilesGenresMoodsAndKids(t *testing.T) {
 	}
 }
 
-func sprint(s []string) string {
-	out := "["
-	for i, x := range s {
-		if i > 0 {
-			out += " "
-		}
-		out += x
-	}
-	return out + "]"
-}
-
-func TestBrowseTilesOneNameUnderAll(t *testing.T) {
+func TestBrowseTiles_OneNameUnderAll(t *testing.T) {
 	it := func(id, kind string, pop float64, g ...string) Item {
 		return Item{TMDBID: id, Kind: kind, Name: id, Backdrop: "/b" + id, Pop: pop, Genres: g}
 	}
@@ -60,7 +49,7 @@ func TestBrowseTilesOneNameUnderAll(t *testing.T) {
 	}
 }
 
-func TestBrowseTilesMergeShowCombinedUnderAll(t *testing.T) {
+func TestBrowseTiles_MergeShowCombinedUnderAll(t *testing.T) {
 	pg := browsePage(
 		browseItem("show", 1, 50, "Sci-Fi & Fantasy"), browseItem("show", 2, 40, "Sci-Fi & Fantasy"),
 		browseItem("movie", 3, 30, "Science Fiction"), browseItem("show", 4, 20, "War & Politics"))
@@ -72,4 +61,15 @@ func TestBrowseTilesMergeShowCombinedUnderAll(t *testing.T) {
 			t.Fatalf("merged tile = %+v", tl)
 		}
 	}
+}
+
+func sprint(s []string) string {
+	out := "["
+	for i, x := range s {
+		if i > 0 {
+			out += " "
+		}
+		out += x
+	}
+	return out + "]"
 }

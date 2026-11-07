@@ -6,14 +6,15 @@ import (
 	"time"
 )
 
-// Paced is a Source that lets one call through every Gap, shared by every
-// pool build on the server. It is the pool job's own limiter, apart from
-// the per-person Explore limit.
+// Paced is a Source that lets one call through per Gap, shared by every pool
+// build on the server. It is the pool job's own limit, apart from the
+// per-person Explore limit.
 type Paced struct {
 	Source Source
-	Gap    time.Duration // default 2 s
-	// Burst is how many calls may go at once after a quiet spell (default
-	// 1); the long-run rate stays one per Gap.
+	// Gap is the time between calls; zero or less means 2 seconds.
+	Gap time.Duration
+	// Burst is how many calls may go at once after a quiet spell, at least 1.
+	// The long-run rate stays one per Gap.
 	Burst int
 	mu    sync.Mutex
 	next  time.Time
@@ -27,6 +28,8 @@ func (p *Paced) List(ctx context.Context, q Request) ([]Item, error) {
 	if gap <= 0 {
 		gap = 2 * time.Second
 	}
+	// The slot is reserved under the lock so concurrent callers queue in order;
+	// the wait itself happens outside it.
 	p.mu.Lock()
 	now := time.Now()
 	burst := max(p.Burst, 1)

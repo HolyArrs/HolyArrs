@@ -2,9 +2,7 @@ package explore
 
 import "testing"
 
-// A too-dark backdrop loses its tile to the next popular title's, and is
-// used only when nothing brighter is left.
-func TestPickSkipsDarkBackdrop(t *testing.T) {
+func TestPickCategoryTiles_SkipsDarkBackdrop(t *testing.T) {
 	DarkBackdrop = func(b string) bool { return b == "dark.jpg" }
 	defer func() { DarkBackdrop = nil }()
 	items := []Item{{TMDBID: "1", Kind: "movie", Backdrop: "dark.jpg", Pop: 99}}

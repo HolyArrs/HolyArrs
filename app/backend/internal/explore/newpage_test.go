@@ -7,15 +7,7 @@ import (
 	"time"
 )
 
-func items(kind string, ids ...string) []Item {
-	var out []Item
-	for _, id := range ids {
-		out = append(out, Item{TMDBID: id, Kind: kind})
-	}
-	return out
-}
-
-func TestDedupeRowsFirstWinsAndMin(t *testing.T) {
+func TestDedupeRows_FirstWinsAndMin(t *testing.T) {
 	rows := DedupeRows([]Row{
 		{ID: "a", Items: items("movie", "1", "2", "3")},
 		{ID: "b", Items: items("movie", "1", "4", "5", "6")},
@@ -24,14 +16,13 @@ func TestDedupeRowsFirstWinsAndMin(t *testing.T) {
 	if len(rows) != 3 || len(rows[1].Items) != 3 || rows[1].Items[0].TMDBID != "4" || len(rows[2].Items) != 2 {
 		t.Fatalf("rows %+v", rows)
 	}
-	// A row under the minimum goes and does not claim its titles.
 	rows = DedupeRows([]Row{{ID: "a", Items: items("movie", "1")}, {ID: "b", Items: items("movie", "1", "2")}}, 2)
 	if len(rows) != 1 || rows[0].ID != "b" {
 		t.Fatalf("min %+v", rows)
 	}
 }
 
-func TestFreshnessWindows(t *testing.T) {
+func TestFreshness_Windows(t *testing.T) {
 	now := time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)
 	ago := func(d int) time.Time { return now.AddDate(0, 0, -d) }
 	cases := []struct {
@@ -54,7 +45,6 @@ func TestFreshnessWindows(t *testing.T) {
 	if Freshness(NewFact{NewUpcoming, ago(-3), 0}, now) != 1 {
 		t.Fatal("upcoming F is 1")
 	}
-	// τ: a 7-day-old service add is at 1/e; a 14-day-old release too.
 	if f := Freshness(NewFact{NewService, ago(7), 0}, now); f < 0.36 || f > 0.37 {
 		t.Fatalf("service τ %v", f)
 	}
@@ -63,9 +53,8 @@ func TestFreshnessWindows(t *testing.T) {
 	}
 }
 
-// The table test: freshness beats popularity. A 60-day-old title at full
-// popularity ranks below a 3-day-old one at P = 0.4.
-func TestNewScoreFreshnessFirst(t *testing.T) {
+// An old title at full popularity must rank below a recent one at modest popularity.
+func TestNewScore_FreshnessFirst(t *testing.T) {
 	now := time.Date(2026, 10, 21, 0, 0, 0, 0, time.UTC)
 	old := NewScore(Freshness(NewFact{NewSeries, now.AddDate(0, 0, -60), 0}, now), 1.0, 0)
 	fresh := NewScore(Freshness(NewFact{NewRelease, now.AddDate(0, 0, -3), 0}, now), 0.4, 0)
@@ -83,7 +72,7 @@ func TestNewScoreFreshnessFirst(t *testing.T) {
 	}
 }
 
-func TestPopPercentile(t *testing.T) {
+func TestPopPercentile_Ties(t *testing.T) {
 	p := PopPercentile([]Item{{TMDBID: "1", Kind: "movie", Pop: 10}, {TMDBID: "2", Kind: "movie", Pop: 50}, {TMDBID: "3", Kind: "movie", Pop: 30}, {TMDBID: "1", Kind: "movie", Pop: 5}})
 	if p["movie:2"] != 1 || p["movie:1"] != 0 || p["movie:3"] != 0.5 {
 		t.Fatalf("%v", p)
@@ -93,7 +82,7 @@ func TestPopPercentile(t *testing.T) {
 	}
 }
 
-func TestOrderNewRowsAndRankMerge(t *testing.T) {
+func TestOrderNewRows_AndRankMerge(t *testing.T) {
 	rows := OrderNewRows([]Row{
 		{Type: TypeNPWorld, Items: items("movie", "1")},
 		{Type: TypeNPTopShows, Items: items("show", "4")},
@@ -107,8 +96,6 @@ func TestOrderNewRowsAndRankMerge(t *testing.T) {
 		}
 		return 0.5
 	}, map[string]float64{TypeNPPicks: 0.4})
-	// The top rows keep their order (Top 10, everyone's watching, critics);
-	// then by score: picks 1 × 0.4 = 0.4 < world and services 0.5 × 1.
 	var got []string
 	for _, r := range rows {
 		got = append(got, r.Type)
@@ -128,10 +115,7 @@ func TestOrderNewRowsAndRankMerge(t *testing.T) {
 	}
 }
 
-// The Top 10 rows stop at 10 (their numbers say so), and what everyone is
-// watching (the same charts) keeps only the titles past them: a title shows
-// once on the page.
-func TestNewTopTenAndWatching(t *testing.T) {
+func TestDedupeRows_TopTenAndWatching(t *testing.T) {
 	var chart []string
 	for i := 1; i <= 15; i++ {
 		chart = append(chart, strconv.Itoa(i))
@@ -150,4 +134,12 @@ func TestNewTopTenAndWatching(t *testing.T) {
 	if want := []string{"show:11", "show:12", "show:13", "show:14", "show:15", "movie:90", "movie:91"}; !slices.Equal(got, want) {
 		t.Fatalf("watching %v", got)
 	}
+}
+
+func items(kind string, ids ...string) []Item {
+	var out []Item
+	for _, id := range ids {
+		out = append(out, Item{TMDBID: id, Kind: kind})
+	}
+	return out
 }

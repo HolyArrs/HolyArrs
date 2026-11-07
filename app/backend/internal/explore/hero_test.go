@@ -6,23 +6,7 @@ import (
 	"testing"
 )
 
-func heroItems(kind string, n int, genres ...string) []Item {
-	var out []Item
-	for i := 0; i < n; i++ {
-		out = append(out, Item{TMDBID: kind + strconv.Itoa(i), Kind: kind, Genres: genres})
-	}
-	return out
-}
-
-func keys(items []Item) []string {
-	var out []string
-	for _, it := range items {
-		out = append(out, it.Key())
-	}
-	return out
-}
-
-func TestHeroCandidatesSourcesOrderAndOwned(t *testing.T) {
+func TestHeroCandidates_SourcesOrderAndOwned(t *testing.T) {
 	trend := heroItems("movie", 3, "Drama")
 	trend[1].Owned = true
 	svc := []Item{trend[0], {TMDBID: "s1", Kind: "show", Genres: []string{"Crime"}}}
@@ -45,7 +29,7 @@ func TestHeroCandidatesSourcesOrderAndOwned(t *testing.T) {
 	}
 }
 
-func TestHeroExcludedUnlessHouseholdLeans(t *testing.T) {
+func TestHeroExcluded_UnlessHouseholdLeans(t *testing.T) {
 	for _, g := range []string{"Animation", "Kids", "Family", "Documentary", "Reality"} {
 		if !HeroExcluded([]string{"Comedy", g}, nil) {
 			t.Errorf("%s not excluded", g)
@@ -63,7 +47,7 @@ func TestHeroExcludedUnlessHouseholdLeans(t *testing.T) {
 	}
 }
 
-func TestHeroRankTasteBoost(t *testing.T) {
+func TestHeroRank_TasteBoost(t *testing.T) {
 	cands := heroItems("movie", 5, "Drama")
 	cands[1].Genres = []string{"Horror"}
 	if got := keys(HeroRank(cands, []string{"Horror"})); got[0] != "movie:movie1" {
@@ -72,7 +56,6 @@ func TestHeroRankTasteBoost(t *testing.T) {
 	if got := keys(HeroRank(cands, nil)); !reflect.DeepEqual(got, keys(cands)) {
 		t.Fatalf("no taste keeps order: %v", got)
 	}
-	// Small boost: a match far down does not jump the whole list.
 	long := heroItems("movie", 10, "Drama")
 	long[9].Genres = []string{"Horror"}
 	if got := HeroRank(long, []string{"Horror"}); got[0].TMDBID != "movie0" {
@@ -83,7 +66,7 @@ func TestHeroRankTasteBoost(t *testing.T) {
 	}
 }
 
-func TestHeroShuffleDaily(t *testing.T) {
+func TestHeroShuffle_Daily(t *testing.T) {
 	items := heroItems("movie", 15)
 	a := keys(HeroShuffle(items, 1, "2026-10-20"))
 	if !reflect.DeepEqual(a, keys(HeroShuffle(items, 1, "2026-10-20"))) {
@@ -100,7 +83,7 @@ func TestHeroShuffleDaily(t *testing.T) {
 	}
 }
 
-func TestPickHeroTabs(t *testing.T) {
+func TestPickHero_Tabs(t *testing.T) {
 	got := PickHero(heroItems("movie", 15), false, 1, "2026-10-20")
 	if len(got) != HeroCount {
 		t.Fatalf("got %d", len(got))
@@ -116,7 +99,7 @@ func TestPickHeroTabs(t *testing.T) {
 	}
 }
 
-func TestPickHeroAllDiffersFromTabs(t *testing.T) {
+func TestPickHero_AllDiffersFromTabs(t *testing.T) {
 	var ranked []Item
 	m, s := heroItems("movie", 16), heroItems("show", 16)
 	for i := range m {
@@ -145,4 +128,20 @@ func TestPickHeroAllDiffersFromTabs(t *testing.T) {
 	if n := len(PickHero(heroItems("movie", 3), true, 1, "d")); n != 3 {
 		t.Fatalf("fallback: got %d", n)
 	}
+}
+
+func heroItems(kind string, n int, genres ...string) []Item {
+	var out []Item
+	for i := 0; i < n; i++ {
+		out = append(out, Item{TMDBID: kind + strconv.Itoa(i), Kind: kind, Genres: genres})
+	}
+	return out
+}
+
+func keys(items []Item) []string {
+	var out []string
+	for _, it := range items {
+		out = append(out, it.Key())
+	}
+	return out
 }
