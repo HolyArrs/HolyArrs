@@ -649,6 +649,7 @@ func serve(c config) error {
 		musicUsed = sp.musicUsed.Load
 	}
 	openAlarms(alarms, alarmChecks{dataDir: c.DataDir, slimDate: slimDate, music: musicUsed, now: time.Now}, &options)
+	openDiskShare(c.DataDir, []string{c.DataDir, slimRoot(c, os.Getenv)}, &options)
 	if _, e = openDiscog(c, sp, direct, upstream, slim, &options); e != nil {
 		return e
 	}
