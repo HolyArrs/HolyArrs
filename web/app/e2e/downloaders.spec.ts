@@ -44,6 +44,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await expect(r).not.toContainText(sabKey);
 
 	// A wrong key.
+	await r.hover(); // row buttons show on hover
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key', { exact: true }).fill('not-the-key');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
@@ -51,11 +52,13 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await expect(r.getByTestId('downloader-state')).toHaveText('Sign-in refused');
 
 	// A category SABnzbd does not have.
+	await r.hover(); // row buttons show on hover
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key', { exact: true }).fill(sabKey);
 	await page.getByLabel('Category', { exact: true }).fill('holyarrs');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(r.getByTestId('downloader-test')).toContainText('category does not exist in SABnzbd');
+	await r.hover(); // row buttons show on hover
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Category', { exact: true }).fill('movies');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
@@ -187,6 +190,7 @@ test('tags are set on a Downloader and on a title, and shown where they are kept
 	try {
 		await page.goto('/settings/downloaders');
 		const sab = row('Lab SABnzbd');
+		await sab.hover(); // row buttons show on hover
 		await sab.getByRole('button', { name: 'Change' }).click();
 		const tags = page.getByTestId('dl-tags-input');
 		await tags.fill('Kids');

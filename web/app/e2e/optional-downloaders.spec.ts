@@ -126,6 +126,7 @@ async function addDownloader(page: Page, item: (typeof kinds)[number]) {
 
 async function editWithMaskedSecret(page: Page, item: (typeof kinds)[number], priority: number) {
 	const row = page.getByTestId('downloader').filter({ hasText: `UI ${item.label}` });
+	await row.hover(); // row buttons show on hover
 	await row.getByRole('button', { name: 'Change' }).click();
 	const secretInput = page.getByLabel(item.secretLabel, { exact: true });
 	const masked = await secretInput.inputValue();
