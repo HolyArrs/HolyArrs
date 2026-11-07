@@ -624,9 +624,7 @@ var Routes = map[string]Owner{
 // changing part) its owner. A test fails for a page file or a menu entry
 // missing here. The web app reads this table from GET /api/v1/parts.
 var Screens = map[string]Owner{
-	"/people":                        movies,
 	"/people/[id]":                   movies,
-	"/library/collections":           movies,
 	"/library/collections/[id]":      movies,
 	"/library/copies":                movies,
 	"/":                              Core,
