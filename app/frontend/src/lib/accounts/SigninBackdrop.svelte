@@ -16,19 +16,11 @@
 	import { to } from '#lib/core/paths.ts';
 	import {
 		REVEAL_HOLD_MS,
-		SEED_COLS,
 		THUMB_W,
-		WAVE_BAND,
-		WAVE_BLOCKS,
 		WAVE_DONE_MS,
-		WAVE_JITTER_MS,
-		WAVE_MS,
 		SIGNIN_GL_EVENT,
 		CYCLE_MS,
-		SWAP_BAND,
-		SWAP_BLOCK,
 		SWAP_DONE_MS,
-		SWAP_JITTER_MS,
 		SWAP_MS,
 		SWAP_ORIGINS,
 		interacting,
@@ -41,163 +33,17 @@
 		type ArtPick,
 		type ArtShot
 	} from './signin-art.ts';
-
-	const CACHE = 'holyarrs-signin-art';
-	const SEED = 'holyarrs-signin-seed'; // the style element app.html adds for the first frame
+	import { VERT, FRAG, SWAP_FRAG } from './signin-shaders.ts';
+	import { screen, ready, local, ownShots, readKept, writeCache, makeThumb, unseed, type Thumb } from './signin-kept.ts';
 
 	/** The first slide's mosaic sources: the 24 px frame-0 thumbnail when kept, and a small copy for detail until the full picture is in. */
 	type Seed = { t24: string | null; small: string };
 	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean; seed: Seed | null; origin: number };
-	type Thumb = { url: string; t24: string; t64: string; pos: string };
 	let layers = $state<Slide[]>([]);
 	let still = $state(false);
 	let n = 0;
 
-	function screen() {
-		return { vw: window.innerWidth, vh: window.innerHeight, dpr: window.devicePixelRatio || 1 };
-	}
-
-	async function ready(url: string): Promise<boolean> {
-		// CORS mode: the same cache entry as the reveal's WebGL copy. The
-		// pictures are same-origin, so this never needs a CORS header; should
-		// it fail anyway, a plain load still shows the photo (no reveal).
-		for (const cors of [true, false]) {
-			const img = new Image();
-			if (cors) img.crossOrigin = 'anonymous';
-			img.decoding = 'async';
-			img.src = url;
-			try {
-				await img.decode();
-				return true;
-			} catch {
-				/* try the plain load */
-			}
-		}
-		return false;
-	}
-
-	/** Same-origin pictures only (lists kept from before held TMDB addresses), under the app's base path. */
-	const local = (u: unknown) => typeof u === 'string' && u.startsWith('/') && !u.startsWith('//');
-	function ownShots(list: unknown, prefix: boolean): ArtShot[] {
-		if (!Array.isArray(list)) return [];
-		const at = (u: string) => (prefix ? to(u) : u);
-		return list
-			.filter((x: ArtShot) => local(x?.backdrop?.url))
-			.map((x: ArtShot) => ({
-				backdrop: { ...x.backdrop, url: at(x.backdrop.url) },
-				poster: x.poster && local(x.poster.url) ? { ...x.poster, url: at(x.poster.url) } : undefined,
-				logo: local(x.logo) ? at(x.logo) : ''
-			}));
-	}
-
-	function readKept(): { shots: ArtShot[]; first?: string; thumb: Thumb | null } {
-		try {
-			const v = JSON.parse(localStorage.getItem(CACHE) ?? 'null');
-			const t = v?.thumb;
-			const ok = t && typeof t.url === 'string' && /^data:image\/jpeg;base64,/.test(t.t64 ?? '');
-			return { shots: ownShots(v?.shots, false), first: v?.first, thumb: ok && local(t.url) ? t : null };
-		} catch {
-			return { shots: [], thumb: null };
-		}
-	}
-
 	let thumb: Thumb | null = null;
-	function writeCache(shots: ArtShot[], first: string) {
-		try {
-			localStorage.setItem(CACHE, JSON.stringify({ shots, first, thumb: thumb?.url === first ? thumb : null }));
-		} catch {
-			/* private window or full storage: the next visit fetches again */
-		}
-	}
-
-	// A tiny copy of the next visit's first picture: 24 and 64 px wide JPEGs
-	// (about 2 KB together). The picture is same-origin, so the canvas can be read back.
-	async function makeThumb(pick: ArtPick): Promise<Thumb | null> {
-		const img = new Image();
-		img.crossOrigin = 'anonymous';
-		img.src = sized(pick.url, pick.kind === 'poster' ? 342 : 300);
-		try {
-			await img.decode();
-			const at = (w: number) => {
-				const c = document.createElement('canvas');
-				c.width = w;
-				c.height = Math.max(1, Math.round((w * img.naturalHeight) / img.naturalWidth));
-				const g = c.getContext('2d');
-				if (!g) throw new Error('no 2d context');
-				g.imageSmoothingQuality = 'high';
-				g.drawImage(img, 0, 0, c.width, c.height);
-				return c.toDataURL('image/jpeg', 0.72);
-			};
-			return { url: pick.url, t24: at(24), t64: at(THUMB_W), pos: pick.position };
-		} catch {
-			return null;
-		}
-	}
-
-	function unseed() {
-		document.getElementById(SEED)?.remove();
-		document.documentElement.classList.remove('sa-seeded');
-	}
-
-	// The radial wave, in one fragment shader. Per pixel: its 36 px cell
-	// (jitter), its distance from the panel centre, so its level; level 0
-	// samples the 24-across frame-0 grid, levels 1-3 square screen blocks
-	// (mipmapped, so a block is the average of what it covers), level 4 is
-	// clear and the sharp <img> underneath shows. waveLevel in signinArt.ts is
-	// the same maths, unit tested.
-	const VERT = `#version 300 es
-in vec2 a;
-void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
-	const FRAG = `#version 300 es
-precision highp float;
-uniform sampler2D seedTex;
-uniform sampler2D detTex;
-uniform vec2 view;
-uniform vec2 seedSize;
-uniform vec2 detSize;
-uniform vec2 pos;
-uniform vec2 centre;
-uniform float maxD;
-uniform float dpr;
-uniform float t;
-out vec4 o;
-const float WAVE = ${WAVE_MS.toFixed(1)};
-const float BAND = ${WAVE_BAND.toFixed(3)};
-const float JIT = ${WAVE_JITTER_MS.toFixed(1)};
-const float COLS = ${SEED_COLS.toFixed(1)};
-vec2 coverOrigin(vec2 s, out float k) { k = max(view.x / s.x, view.y / s.y); return (view - s * k) * pos; }
-float hash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
-vec3 block(vec2 p, float b) {
-	vec2 c = (floor(p / b) + 0.5) * b;
-	float k; vec2 org = coverOrigin(detSize, k);
-	vec2 uv = (c - org) / (detSize * k);
-	return textureLod(detTex, uv, max(0.0, log2(b * dpr / (k * dpr)))).rgb;
-}
-void main() {
-	// One canvas pixel is dpr CSS px square (3): every block size is a whole number of them.
-	vec2 p = vec2(gl_FragCoord.x, ceil(view.y / dpr) - gl_FragCoord.y) * dpr;
-	vec2 cell = floor(p / ${WAVE_BLOCKS[0].toFixed(1)});
-	float j = (hash(cell) * 2.0 - 1.0) * JIT;
-	float f = distance((cell + 0.5) * ${WAVE_BLOCKS[0].toFixed(1)}, centre) / maxD;
-	float e = clamp((t + j) / WAVE, 0.0, 1.0);
-	float pr = (1.0 - pow(1.0 - e, 3.0)) * (1.0 + BAND);
-	float s = clamp((pr - f) / BAND, 0.0, 1.0);
-	if (s >= 1.0) { o = vec4(0.0); return; }
-	float lv = floor(s * 4.0);
-	vec3 col;
-	if (lv < 1.0) {
-		// The frame-0 grid: COLS blocks across the picture, cover-fit like app.html's background.
-		float k; vec2 org = coverOrigin(seedSize, k);
-		vec2 g = vec2(COLS, COLS * seedSize.y / seedSize.x);
-		vec2 uv = (floor((p - org) / (seedSize * k) * g) + 0.5) / g;
-		col = textureLod(seedTex, uv, max(0.0, log2(seedSize.x / COLS))).rgb;
-	} else {
-		// One sampling path for the three square sizes: a third of the code for the driver to compile (D3D compiles it on the GPU thread).
-		col = block(p, lv < 2.0 ? ${WAVE_BLOCKS[0].toFixed(1)} : lv < 3.0 ? ${WAVE_BLOCKS[1].toFixed(1)} : ${WAVE_BLOCKS[2].toFixed(1)});
-	}
-	o = vec4(col, 1.0);
-}`;
-
 	/** Shows the full-size first picture once it is decoded (a crossfade over the lighter one). */
 	function hires(img: HTMLImageElement) {
 		let gone = false;
@@ -425,42 +271,6 @@ void main() {
 		};
 	}
 
-	// Later changes: the same mosaic language, softer and quicker. The new
-	// picture dissolves in over the old one through large (56 px), low-contrast
-	// blocks, in a wave from one edge or corner, over about 1.2 s on a quartic
-	// ease-out. Each block fades in as its own average colour, then resolves to
-	// the sharp picture underneath it. The canvas sits in the new picture's
-	// Ken Burns box, so at the hand-over the <img> lands on the same pixels.
-	const SWAP_FRAG = `#version 300 es
-precision highp float;
-uniform sampler2D tex;
-uniform vec2 view;
-uniform vec2 texSize;
-uniform vec2 pos;
-uniform vec2 origin;
-uniform float maxD;
-uniform float pr;
-uniform float px;
-out vec4 o;
-const float B = ${SWAP_BLOCK.toFixed(1)};
-const float BAND = ${SWAP_BAND.toFixed(3)};
-float hash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
-void main() {
-	vec2 p = vec2(gl_FragCoord.x, view.y * px - gl_FragCoord.y) / px;
-	float k = max(view.x / texSize.x, view.y / texSize.y);
-	vec2 org = (view - texSize * k) * pos;
-	vec2 cell = floor(p / B);
-	float f = distance((cell + 0.5) * B, origin) / maxD + (hash(cell) * 2.0 - 1.0) * ${(SWAP_JITTER_MS / SWAP_MS).toFixed(3)};
-	float s = clamp((pr * (1.0 + BAND) - f) / BAND, 0.0, 1.0);
-	if (s <= 0.0) { o = vec4(0.0); return; }
-	vec2 c = (cell + 0.5) * B;
-	vec3 blk = textureLod(tex, (c - org) / (texSize * k), max(0.0, log2(B / k))).rgb;
-	vec3 sharp = texture(tex, (p - org) / (texSize * k)).rgb;
-	// Low contrast: each block is its average pulled towards the sharp pixel, then it clears into the sharp picture.
-	vec3 col = mix(mix(blk, sharp, 0.35), sharp, smoothstep(0.45, 1.0, s));
-	float a = smoothstep(0.0, 0.5, s);
-	o = vec4(col * a, a);
-}`;
 
 	function swap(node: HTMLElement, origin: number) {
 		const pic = node.querySelector<HTMLImageElement>('img.pic');
@@ -639,7 +449,7 @@ void main() {
 				}
 				// Next visit: start from the picture after this one, so the page turns over.
 				const after = list[(at + 1) % list.length];
-				writeCache(shots, after.pick.url);
+				writeCache(shots, after.pick.url, thumb);
 				// The next picture loads at full size well before its turn.
 				if (list.length > 1) {
 					setTimeout(() => {
@@ -652,7 +462,7 @@ void main() {
 						void makeThumb(after.pick).then((t) => {
 							if (!t || gone) return;
 							thumb = t;
-							writeCache(shots, after.pick.url);
+							writeCache(shots, after.pick.url, thumb);
 						});
 					}, 3200);
 				}
@@ -729,7 +539,7 @@ void main() {
 				if (!had) {
 					at = -1;
 					void advance();
-				} else writeCache(shots, playlist(shots, screen())[0]?.pick.url ?? '');
+				} else writeCache(shots, playlist(shots, screen())[0]?.pick.url ?? '', thumb);
 			})
 			.catch(() => {
 				/* no art: the page stays plain dark */
