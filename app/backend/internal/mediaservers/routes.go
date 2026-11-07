@@ -96,7 +96,7 @@ func (h *Handlers) remove(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	if err := Remove(r.Context(), h.Store, id); err != nil {
+	if err := Remove(r.Context(), h.Store, h.Vault, id); err != nil {
 		writeError(w, err)
 		return
 	}

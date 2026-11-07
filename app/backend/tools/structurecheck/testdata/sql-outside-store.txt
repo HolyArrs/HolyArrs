@@ -172,7 +172,6 @@ app/backend/internal/library/title_defaults.go
 app/backend/internal/library/versions.go
 app/backend/internal/lists/lists.go
 app/backend/internal/lists/sync.go
-app/backend/internal/mediaserver/mediaserver.go
 app/backend/internal/migrate/apply.go
 app/backend/internal/migrate/files.go
 app/backend/internal/musicsync/musicsync.go

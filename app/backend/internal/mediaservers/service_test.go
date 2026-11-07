@@ -400,7 +400,7 @@ func TestInputChecksAndTokenAgain(t *testing.T) {
 		MapPath(domain.MediaServer{PathFrom: "/data", PathTo: "/x"}, "/database/Heat") != "/database/Heat" {
 		t.Fatal("path map")
 	}
-	if err := Remove(ctx, w.s, m.ID); err != nil {
+	if err := Remove(ctx, w.s, w.v, m.ID); err != nil {
 		t.Fatal(err)
 	}
 	var n int
