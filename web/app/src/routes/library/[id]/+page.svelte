@@ -527,7 +527,7 @@
 <PageLoader loading={!title} label="Loading the title" onretry={() => load()}>
 {#if title}
 {#if shared(title)}
-	{#key title.id}<TitlePage kind={title.kind} tmdb={String(title.ids.tmdb)} libraryId={title.id} />{/key}
+	{#key title.id}<TitlePage kind={title.kind} tmdb={String(title.ids.tmdb)} libraryId={title.id} backHref={page.url.searchParams.has('returnTo') ? libraryBack : undefined} />{/key}
 {:else if title.kind === 'show'}
 	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}

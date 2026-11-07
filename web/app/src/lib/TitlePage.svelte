@@ -73,7 +73,7 @@
 	// Library: Add (people who manage the Library) or Ask (members). In the
 	// Library: the same page, with a Library tab and the More menu for the
 	// manager tools (files, Versions, copies, subtitles, releases, delete).
-	let { kind, tmdb, libraryId }: { kind: string; tmdb: string; libraryId?: number } = $props();
+	let { kind, tmdb, libraryId, backHref }: { kind: string; tmdb: string; libraryId?: number; backHref?: string } = $props();
 	let details = $state<TitleDetails | null>(null);
 	// Back from a person (or any page opened here) lands where the page was:
 	// rows below the hero load late, so the scroll is put back as they arrive.
@@ -1057,7 +1057,8 @@
 	});
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 	// The breadcrumb's parent for a page opened fresh: the title's section (Movies or TV shows).
-	const sectionCrumb = $derived(details?.kind === 'show' ? { label: 'TV shows', href: to('/library?kind=show') } : { label: 'Movies', href: to('/library?kind=movie') });
+	// From the Library grid: back to it with its filters (backHref); otherwise the kind's own list.
+	const sectionCrumb = $derived(details?.kind === 'show' ? { label: 'TV shows', href: backHref ?? to('/library?kind=show') } : { label: 'Movies', href: backHref ?? to('/library?kind=movie') });
 </script>
 
 <svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
