@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PosterWall from '#lib/ui/PosterWall.svelte';
 	// History: every step from the ask to the media server, newest first,
 	// with a search bar and one Filter. Routine work is left out.
 	import { onMount } from 'svelte';
@@ -25,9 +24,6 @@
 			.catch(() => {});
 	});
 </script>
-
-<!-- Same background as Settings: this Library's posters, blurred. -->
-<PosterWall />
 
 <svelte:head><title>History · HolyArrs</title></svelte:head>
 

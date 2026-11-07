@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
+	import { backdrop, setBackdrop, type Backdrop } from '#lib/backdrop.svelte.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -17,6 +18,11 @@
 	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
 
 	let themeChoice = $state<ThemeChoice>(theme.choice);
+	let backdropChoice = $state<Backdrop>(backdrop.value);
+	const backdrops: { value: Backdrop; label: string }[] = [
+		{ value: 'plain', label: 'Plain' },
+		{ value: 'posters', label: 'Poster wall' }
+	];
 	const themes: { value: ThemeChoice; label: string; icon: 'sun' | 'moon' | 'settings' }[] = [
 		{ value: 'light', label: 'Light', icon: 'sun' },
 		{ value: 'dark', label: 'Dark', icon: 'moon' },
@@ -86,6 +92,12 @@
 <SettingsCard id="theme-card" title="Theme" description="Saved in this browser" icon="appearance">
 	<div id="theme" tabindex="-1">
 		<SegmentedControl label="Theme" options={themes} bind:value={themeChoice} onchange={(v) => setTheme(v)} />
+	</div>
+</SettingsCard>
+
+<SettingsCard id="backdrop-card" title="Background" description="Behind every page. Saved in this browser" icon="appearance">
+	<div id="backdrop" tabindex="-1">
+		<SegmentedControl label="Background" options={backdrops} bind:value={backdropChoice} onchange={(v) => setBackdrop(v)} />
 	</div>
 </SettingsCard>
 

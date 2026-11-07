@@ -36,6 +36,8 @@
 	import { idlePages, installRowAhead } from '#lib/smart-preload.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';
 	import AppShell from '#lib/ui/AppShell.svelte';
+	import PosterWall from '#lib/ui/PosterWall.svelte';
+	import { backdrop } from '#lib/backdrop.svelte.ts';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import SidebarItem from '#lib/ui/SidebarItem.svelte';
@@ -505,6 +507,8 @@
 	<main id="main">{@render children()}</main>
 {:else}
 	<a class="skip" href="#main">Skip to content</a>
+	<!-- Background behind every page: plain by default, or this Library's posters (Settings > Appearance). Settings home draws its own. -->
+	{#if backdrop.value === 'posters' && path !== '/settings'}<PosterWall />{/if}
 	<AppShell {collapsed} {overlay} onscrim={() => closeOverlay()}>
 		{#snippet sidebar()}
 			<Sidebar

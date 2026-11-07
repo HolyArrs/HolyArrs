@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PosterWall from '#lib/ui/PosterWall.svelte';
 	import { libraryBrief } from '#lib/owned.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
@@ -550,9 +549,6 @@
 		};
 	});
 </script>
-
-<!-- Same background as Settings: this Library's posters, blurred. -->
-<PosterWall />
 
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 

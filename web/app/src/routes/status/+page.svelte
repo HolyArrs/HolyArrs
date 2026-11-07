@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PosterWall from '#lib/ui/PosterWall.svelte';
 	// Status: is every linked part working, and did every background job run?
 	// Reads only the existing health, schedules, lists, alerts and metadata
 	// routes.
@@ -194,9 +193,6 @@
 		};
 	});
 </script>
-
-<!-- Same background as Settings: this Library's posters, blurred. -->
-<PosterWall />
 
 <svelte:head><title>Status · HolyArrs</title></svelte:head>
 

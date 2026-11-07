@@ -12,6 +12,7 @@
 	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
 	import { homeArt, startArt } from '#lib/settings-home/art.svelte.ts';
 	import { wall } from '#lib/settings-home/pick.ts';
+	import { backdrop } from '#lib/backdrop.svelte.ts';
 	import { arrive, coverPage, push, settingsNav, swap } from '#lib/settings-home/zoom.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
@@ -171,7 +172,7 @@
 {/snippet}
 
 <!-- Background: this Library's posters, blurred and dimmed, still. -->
-{#if tiles.length && home}
+{#if tiles.length && home && backdrop.value === 'posters'}
 	<div class="sx-wall" aria-hidden="true" data-poster-wall>
 		<div class="tiles">{#each tiles as src, i (i)}<img {src} alt="" decoding="async" />{/each}</div>
 		<div class="veil"></div>
