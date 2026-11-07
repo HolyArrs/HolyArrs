@@ -9,8 +9,8 @@ import (
 	"net/url"
 )
 
-// fetchRelease uses the Source's network permission and no Downloader
-// authentication. Handing an arbitrary URL to an app would bypass this policy.
+// fetchRelease downloads a Release file for a client that cannot reach the Source. It takes web addresses only, with no sign-in part, and fetches through Client so the address rules apply to every redirect and connection. Error text is fixed so it never echoes the address, which may hold a key.
+// limit+1 is read so a file over the limit is told apart from one exactly at it.
 func fetchRelease(ctx context.Context, raw string, allowLocal bool, limit int64) ([]byte, error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Fragment != "" {
@@ -28,7 +28,7 @@ func fetchRelease(ctx context.Context, raw string, allowLocal bool, limit int64)
 			return nil, ctx.Err()
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
-			return nil, errLinkLocal // final: not fetched again on every retry (#152)
+			return nil, errLinkLocal
 		}
 		return nil, errors.New("the Release file could not be read from its Source")
 	}

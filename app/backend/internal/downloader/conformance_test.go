@@ -12,24 +12,21 @@ import (
 	"time"
 )
 
-// conformance is one adapter wired to its fake app for the shared suite
-// (design/system/downloader-contract.md). Every adapter, and the made-up
-// third engine, must pass TestDownloaderConformance.
+var ourStates = []string{StateQueued, StateDownloading, StatePaused, StateFinished, StateFailed}
+
 type conformance struct {
 	name    string
-	engine  Engine                   // signed in to a working fake app
-	badKey  Engine                   // the same app with a wrong key or password
-	at      func(base string) Engine // the adapter at another address
-	secret  string                   // a key or password that must never be in an error
-	release AddRequest               // a Release the app accepts
-	unknown string                   // a well-formed id the app does not have
-	appear  func()                   // the app now holds release, part fetched, with files
-	adds    func() int               // how many adds reached the app
-	states  func(word string)        // sets the app's own state word on release (nil: recorded words only)
-	words   map[string]string        // the app's state words and the state each must map to
+	engine  Engine
+	badKey  Engine
+	at      func(base string) Engine
+	secret  string
+	release AddRequest
+	unknown string
+	appear  func()
+	adds    func() int
+	states  func(word string)
+	words   map[string]string
 }
-
-var ourStates = []string{StateQueued, StateDownloading, StatePaused, StateFinished, StateFailed}
 
 func TestDownloaderConformance(t *testing.T) {
 	for _, h := range []func(*testing.T) conformance{qbitHarness, sabHarness, relayHarness, transmissionHarness, nzbgetHarness, delugeHarness} {
@@ -48,7 +45,6 @@ func runConformance(t *testing.T, c conformance) {
 		return err
 	}
 
-	// 1. Health: a version, a refused key is ErrAuth, anything else is not.
 	h, err := c.engine.Health(ctx)
 	if err != nil || h.Version == "" {
 		t.Fatalf("health: %+v %v", h, err)
@@ -62,12 +58,9 @@ func runConformance(t *testing.T, c conformance) {
 	if err := keep(func() error { _, err := c.at(gone).Health(ctx); return err }()); err == nil || errors.Is(err, ErrAuth) {
 		t.Errorf("unreachable app: want a plain error, got %v", err)
 	}
-	// An app that never answers: the adapter gives up with the caller's
-	// deadline (the contract's 20 s is the caller's, so the adapter must
-	// honour the context).
 	release := make(chan struct{})
 	hung := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.Copy(io.Discard, r.Body) // so the server sees the caller hang up
+		_, _ = io.Copy(io.Discard, r.Body)
 		select {
 		case <-r.Context().Done():
 		case <-release:
@@ -83,9 +76,6 @@ func runConformance(t *testing.T, c conformance) {
 		t.Errorf("hung app: %v after %v", err, time.Since(start))
 	}
 
-	// 2. Add gives an id at once; doing it twice is safe. A torrent with a
-	// known info hash is looked up by it first (contract section 4, as the
-	// manager does); otherwise Add itself must find the Release again.
 	send := func() (string, error) {
 		if c.release.InfoHash != "" {
 			if j, err := c.engine.Get(ctx, c.release.InfoHash); err == nil {
@@ -104,7 +94,6 @@ func runConformance(t *testing.T, c conformance) {
 		t.Errorf("second add: %q %v, %d adds reached the app (want the same id and 1)", again, err, c.adds())
 	}
 
-	// 3. List: one call, only the category, states and numbers in range.
 	jobs, err := c.engine.List(ctx, c.release.Category)
 	if err != nil {
 		t.Fatalf("list: %v", err)
@@ -130,7 +119,6 @@ func runConformance(t *testing.T, c conformance) {
 		}
 	}
 
-	// 4. Get: the Download, or ErrNotFound.
 	j, err := c.engine.Get(ctx, id)
 	if err != nil || j.ID != id {
 		t.Fatalf("get: %+v %v", j, err)
@@ -145,8 +133,6 @@ func runConformance(t *testing.T, c conformance) {
 		t.Errorf("get unknown: want ErrNotFound, got %v", err)
 	}
 
-	// 5. States: each of the app's words maps as the contract says; an
-	// unknown word is downloading.
 	if c.states != nil {
 		for word, want := range c.words {
 			c.states(word)
@@ -160,7 +146,6 @@ func runConformance(t *testing.T, c conformance) {
 		}
 	}
 
-	// 6. Remove: done, and removing what is gone is not worth stopping for.
 	if err := c.engine.Remove(ctx, id, true); err != nil {
 		t.Errorf("remove: %v", err)
 	}
@@ -168,7 +153,6 @@ func runConformance(t *testing.T, c conformance) {
 		t.Errorf("remove unknown: %v", err)
 	}
 
-	// 7. No error ever carries the key or password.
 	for _, err := range errs {
 		if c.secret != "" && strings.Contains(err.Error(), c.secret) {
 			t.Errorf("an error carries the secret: %v", err)
@@ -185,14 +169,12 @@ func checkJob(t *testing.T, j Job) {
 		t.Errorf("%s: progress %v speed %d time left %d size %d out of range", j.ID, j.Progress, j.Speed, j.ETA, j.Size)
 	}
 	if j.State == StateFinished && j.Progress < 1 && j.Progress != 0 {
-		// Finished means final; an app that keeps a part number for a
-		// finished one is read as finished anyway, but say so.
 		t.Logf("%s: finished at progress %v", j.ID, j.Progress)
 	}
 }
 
 func qbitHarness(t *testing.T) conformance {
-	const pw = "lab-test-key" // test-only
+	const pw = "lab-test-key"
 	f, u := startFake(t)
 	f.key = pw
 	return conformance{
@@ -229,7 +211,5 @@ func sabHarness(t *testing.T) conformance {
 		unknown: "00000000-0000-0000-0000-000000000000",
 		appear:  func() { f.mu.Lock(); f.queue = "queue-downloading.json"; f.mu.Unlock() },
 		adds:    func() int { f.mu.Lock(); defer f.mu.Unlock(); return len(f.added) },
-		// SABnzbd's words come from the recorded replies; the queue and
-		// finished-list words are checked in sabnzbd_test.go.
 	}
 }

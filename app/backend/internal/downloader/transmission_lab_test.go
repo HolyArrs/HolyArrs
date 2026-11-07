@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-// Explicit opt-in: this must point at a disposable, task-owned instance.
 func TestTransmissionDisposableApp(t *testing.T) {
 	base := os.Getenv("HOLYARRS_TRANSMISSION_LAB_URL")
 	if base == "" {

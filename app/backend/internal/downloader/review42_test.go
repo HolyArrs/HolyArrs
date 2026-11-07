@@ -10,9 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 4.2 review (b): a finished download (a pack whose files are being or
-// were placed) cannot be removed by hand, so its files are never deleted
-// from under the Library or an import.
 func TestRemoveRefusesAFinishedDownload(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
@@ -25,7 +22,6 @@ func TestRemoveRefusesAFinishedDownload(t *testing.T) {
 	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); !errors.Is(err, ErrNotActive) {
 		t.Fatalf("remove finished: %v", err)
 	}
-	// Mark failed while its episodes import is refused the same way.
 	if err := m.MarkFailed(context.Background(), id, luis, "luis"); !errors.Is(err, ErrNotActive) {
 		t.Fatalf("mark failed finished: %v", err)
 	}
@@ -34,9 +30,6 @@ func TestRemoveRefusesAFinishedDownload(t *testing.T) {
 	}
 }
 
-// 4.2 review (c): a download that finishes straight from stalled puts its
-// Slots back to downloading first, so the import finds them waiting
-// (before, they stayed stalled and the import had nothing to place).
 func TestFinishedFromStalledFreesTheSlots(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()

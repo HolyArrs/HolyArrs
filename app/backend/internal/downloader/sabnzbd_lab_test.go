@@ -23,14 +23,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// Runs inside the lab network, from a container that SABnzbd can reach:
-//
-//	HOLYARRS_LAB_SAB_KEY=<lab key> go test -tags lab -run Sabnzbd ./internal/downloader/
-//
-// Our own news server (fakenntp_test.go) serves a made-up file; SABnzbd is
-// pointed at it for the test only, and the server entry is removed again.
-// One NZB finishes, one NZB with parts that do not exist fails. With
-// HOLYARRS_RECORD=1 the replies are saved as testdata for the adapter tests.
+const (
+	labNext = "Lab.Usenet.Next.2024.1080p.WEB.H264-HOLYARRS"
+	labDead = "Lab.Usenet.Dead.2024.1080p.WEB.H264-HOLYARRS"
+)
+
 func TestLabSabnzbd(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_SAB_KEY")
 	if key == "" {
@@ -40,7 +37,6 @@ func TestLabSabnzbd(t *testing.T) {
 	if err != nil || len(ips) == 0 {
 		t.Fatalf("sabnzbd not on this network: %v", err)
 	}
-	// SABnzbd checks the Host name; an address passes.
 	base := "http://" + ips[0] + ":8080"
 	me := ownAddress(t)
 	nntp := startFakeNNTP(t, ":1119")
@@ -115,7 +111,6 @@ func TestLabSabnzbd(t *testing.T) {
 	}
 
 	cat := "movies"
-	// Leftovers of an earlier run would be found by name and taken as these.
 	if old, err := s.List(ctx, cat); err == nil {
 		for _, j := range old {
 			if j.Name == good || j.Name == bad {
@@ -130,7 +125,6 @@ func TestLabSabnzbd(t *testing.T) {
 			t.Fatalf("add %s: %v", name, err)
 		}
 		ids[name] = id
-		// The same name again is found, not added twice.
 		again, err := s.Add(ctx, AddRequest{URL: "http://" + me + ":18799" + path, Category: cat, Name: name})
 		if err != nil || again != id {
 			t.Fatalf("second add gave %q %v, want %q", again, err, id)
@@ -163,7 +157,6 @@ func TestLabSabnzbd(t *testing.T) {
 				if err := s.Remove(ctx, id, true); err != nil {
 					t.Fatalf("remove: %v", err)
 				}
-				// SABnzbd answers the delete before it has finished it: give it a moment.
 				gone := false
 				for i := 0; i < 20 && !gone; i++ {
 					_, err := s.Get(ctx, id)
@@ -202,14 +195,6 @@ func ownAddress(t *testing.T) string {
 	return ""
 }
 
-const (
-	labNext = "Lab.Usenet.Next.2024.1080p.WEB.H264-HOLYARRS"
-	labDead = "Lab.Usenet.Dead.2024.1080p.WEB.H264-HOLYARRS"
-)
-
-// labReplace is roadmap 4.0.3 on the lab: the chosen NZB is broken, SABnzbd
-// fails it, the manager turns it down and removes it, and the next Release
-// (sent by OnFailed, standing in for the search) finishes.
 func labReplace(t *testing.T, base, key, nzbBase string) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -226,13 +211,10 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	// With the lab downloads folder at /data/downloads here too (HOLYARRS_LAB_DISK=1),
-	// the finished job is cleared out afterwards and its folder checked on disk.
 	disk := os.Getenv("HOLYARRS_LAB_DISK") == "1"
 	dr := &domain.Downloader{Name: "Lab SABnzbd", Adapter: "sabnzbd", Protocol: "usenet", URL: base, Category: "movies", Priority: 1, AllowLocal: true, Writable: true, SecretRef: &ref,
 		ClearFinished: true, PathMap: []domain.PathMap{{Theirs: "/data/downloads", Ours: "/data/downloads"}}}
 	w.addDownloader(t, dr)
-	// Our news server and NZBs are on the lab network: the Source may reach it.
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE sources SET allow_local_network = 1 WHERE id = 1")
 		return err
@@ -302,7 +284,6 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 			if d.State != "failed" || st != "turned_down" {
 				t.Fatalf("dead download %s, release %s", d.State, st)
 			}
-			// SABnzbd finishes a delete a moment after it answers.
 			gone := false
 			for i := 0; i < 20 && !gone; i++ {
 				_, err := s.Get(ctx, deadID)
@@ -323,9 +304,6 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 	t.Fatalf("not replaced in time: dead %s, next %d", w.download(t, dead).State, next)
 }
 
-// labClearFinishedDisk is roadmap #53 on the lab: a finished SABnzbd job is
-// cleared out of SABnzbd and its job folder is gone from the shared disk,
-// whether SABnzbd names the job by its folder or by its one file.
 func labClearFinishedDisk(t *testing.T, m *Manager, s *Sabnzbd, d domain.Download) {
 	ctx := context.Background()
 	j, err := s.Get(ctx, d.ExternalID)

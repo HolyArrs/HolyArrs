@@ -11,8 +11,6 @@ import (
 	"testing"
 )
 
-// sabPaged is a fake SABnzbd with n queue jobs and m finished jobs, paged
-// the way SABnzbd pages (start, limit), and a history counter.
 type sabPaged struct {
 	mu        sync.Mutex
 	queue     int
@@ -21,7 +19,131 @@ type sabPaged struct {
 	calls     []string
 	retryID   string
 	retried   []string
-	unchanged bool // answer the counter fast path with "history": false
+	unchanged bool
+}
+
+func TestSabQueueReadsEveryPage(t *testing.T) {
+	f := &sabPaged{queue: 450}
+	s := NewSabnzbd(f.serve(t), sabKey, nil)
+	p, err := s.Queue(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Jobs) != 450 {
+		t.Fatalf("%d jobs", len(p.Jobs))
+	}
+	if n := len(f.calls); n != 3 {
+		t.Fatalf("%d calls: %v", n, f.calls)
+	}
+	if p.Head.Speed != 2048*1024 || p.Head.TimeLeft != 3600 || p.Head.FreeSpace != 4*1024*1024*1024 {
+		t.Fatalf("head %+v", p.Head)
+	}
+	if j := p.Jobs[1]; j.State != StatePaused || j.QueuePos != 2 || j.AddedAt != 1700000001 {
+		t.Fatalf("job %+v", j)
+	}
+	var total int64
+	for _, j := range p.Jobs {
+		total += j.Speed
+	}
+	if total > 2048*1024 || total < 2048*1024-450 {
+		t.Fatalf("shared speed sums to %d", total)
+	}
+}
+
+func TestSabHistoryPagesAndFastPath(t *testing.T) {
+	f := &sabPaged{history: 430, counter: 7}
+	s := NewSabnzbd(f.serve(t), sabKey, nil)
+	p, err := s.History(context.Background(), 0)
+	if err != nil || !p.Changed || p.Last != 7 || len(p.Jobs) != 430 {
+		t.Fatalf("%v changed=%v last=%d jobs=%d", err, p.Changed, p.Last, len(p.Jobs))
+	}
+	if p.Jobs[1].State != StateFailed || p.Jobs[0].State != StateFinished || p.Jobs[0].DoneAt != 1700001000 {
+		t.Fatalf("%+v %+v", p.Jobs[0], p.Jobs[1])
+	}
+	for _, unchanged := range []bool{false, true} {
+		f.unchanged = unchanged
+		f.calls = nil
+		p, err = s.History(context.Background(), 7)
+		if err != nil || p.Changed || len(p.Jobs) != 0 || p.Last != 7 || len(f.calls) != 1 {
+			t.Fatalf("unchanged=%v: %v %+v calls %v", unchanged, err, p, f.calls)
+		}
+	}
+	f.counter = 2
+	f.calls = nil
+	p, err = s.History(context.Background(), 7)
+	if err != nil || !p.Changed || p.Last != 2 || len(p.Jobs) != 430 {
+		t.Fatalf("reset: %v changed=%v last=%d jobs=%d", err, p.Changed, p.Last, len(p.Jobs))
+	}
+	if !strings.HasSuffix(f.calls[0], ":7") || strings.HasSuffix(f.calls[1], ":7") {
+		t.Fatalf("later pages must not carry the counter: %v", f.calls)
+	}
+}
+
+func TestSabRetryNewID(t *testing.T) {
+	f := &sabPaged{retryID: "SABnzbd_nzo_new"}
+	s := NewSabnzbd(f.serve(t), sabKey, nil)
+	id, err := s.Retry(context.Background(), "SABnzbd_nzo_old")
+	if err != nil || id != "SABnzbd_nzo_new" || f.retried[0] != "SABnzbd_nzo_old" {
+		t.Fatalf("%v %q %v", err, id, f.retried)
+	}
+	f.retryID = ""
+	if id, err = s.Retry(context.Background(), "SABnzbd_nzo_same"); err != nil || id != "SABnzbd_nzo_same" {
+		t.Fatalf("same id: %v %q", err, id)
+	}
+	if _, err = s.Retry(context.Background(), "a,b"); err != ErrNotFound {
+		t.Fatal("a list of ids must be refused")
+	}
+}
+
+func TestSabServerStats(t *testing.T) {
+	s := NewSabnzbd((&sabPaged{}).serve(t), sabKey, nil)
+	st, err := s.ServerStats(context.Background())
+	if err != nil || st.Total != 300 || st.Week != 100 || len(st.Servers) != 2 {
+		t.Fatalf("%v %+v", err, st)
+	}
+	if st.Servers[0].Name != "big.example" || st.Servers[1].ArticlesFound != 9 || st.Servers[1].ArticlesTried != 10 || st.Servers[0].ArticlesTried != 40 || st.Servers[0].ArticlesFound != 38 {
+		t.Fatalf("%+v", st.Servers)
+	}
+}
+
+func TestSabJobStagesRedacted(t *testing.T) {
+	s := NewSabnzbd((&sabPaged{counter: 1}).serve(t), sabKey, nil)
+	st, err := s.JobStages(context.Background(), "SABnzbd_nzo_x")
+	if err != nil || len(st) != 5 {
+		t.Fatalf("%v %+v", err, st)
+	}
+	want := []string{"source", "servers", "repair", "unpack", "script"}
+	for i, w := range want {
+		if st[i].Stage != w {
+			t.Fatalf("stage %d = %s", i, st[i].Stage)
+		}
+	}
+	if l := st[0].Lines[0]; strings.Contains(l, "SECRETKEY123") || strings.Contains(l, "apikey") {
+		t.Fatalf("source line not redacted: %q", l)
+	}
+	if l := st[3].Lines[0]; strings.Contains(l, "<") {
+		t.Fatalf("markup kept: %q", l)
+	}
+	if _, err := s.JobStages(context.Background(), ""); err != ErrNotFound {
+		t.Fatal("empty id")
+	}
+}
+
+func TestSabMoveTopAlreadyFirst(t *testing.T) {
+	s := NewSabnzbd((&sabPaged{queue: 1}).serve(t), sabKey, nil)
+	if err := s.MoveTop(context.Background(), "SABnzbd_nzo_q0"); err != nil {
+		t.Fatalf("only job: %v", err)
+	}
+	if err := s.MoveTop(context.Background(), "SABnzbd_nzo_gone"); err != ErrNotFound {
+		t.Fatalf("missing job: %v", err)
+	}
+}
+
+func TestCleanLineMasksPassword(t *testing.T) {
+	got := cleanLine(`[x] Trying unrar with password "hunter2"`)
+	if strings.Contains(got, "hunter2") || !strings.Contains(got, "Trying unrar with password") {
+		t.Fatalf("got %q", got)
+	}
 }
 
 func (f *sabPaged) serve(t *testing.T) string {
@@ -89,133 +211,4 @@ func (f *sabPaged) serve(t *testing.T) string {
 	}))
 	t.Cleanup(srv.Close)
 	return srv.URL
-}
-
-func TestSabQueueReadsEveryPage(t *testing.T) {
-	f := &sabPaged{queue: 450}
-	s := NewSabnzbd(f.serve(t), sabKey, nil)
-	p, err := s.Queue(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(p.Jobs) != 450 {
-		t.Fatalf("%d jobs", len(p.Jobs))
-	}
-	if n := len(f.calls); n != 3 {
-		t.Fatalf("%d calls: %v", n, f.calls)
-	}
-	if p.Head.Speed != 2048*1024 || p.Head.TimeLeft != 3600 || p.Head.FreeSpace != 4*1024*1024*1024 {
-		t.Fatalf("head %+v", p.Head)
-	}
-	if j := p.Jobs[1]; j.State != StatePaused || j.QueuePos != 2 || j.AddedAt != 1700000001 {
-		t.Fatalf("job %+v", j)
-	}
-	var total int64
-	for _, j := range p.Jobs {
-		total += j.Speed
-	}
-	if total > 2048*1024 || total < 2048*1024-450 {
-		t.Fatalf("shared speed sums to %d", total)
-	}
-}
-
-func TestSabHistoryPagesAndFastPath(t *testing.T) {
-	f := &sabPaged{history: 430, counter: 7}
-	s := NewSabnzbd(f.serve(t), sabKey, nil)
-	p, err := s.History(context.Background(), 0)
-	if err != nil || !p.Changed || p.Last != 7 || len(p.Jobs) != 430 {
-		t.Fatalf("%v changed=%v last=%d jobs=%d", err, p.Changed, p.Last, len(p.Jobs))
-	}
-	if p.Jobs[1].State != StateFailed || p.Jobs[0].State != StateFinished || p.Jobs[0].DoneAt != 1700001000 {
-		t.Fatalf("%+v %+v", p.Jobs[0], p.Jobs[1])
-	}
-	// Unchanged, both ways SABnzbd says it: one call, no rows.
-	for _, unchanged := range []bool{false, true} {
-		f.unchanged = unchanged
-		f.calls = nil
-		p, err = s.History(context.Background(), 7)
-		if err != nil || p.Changed || len(p.Jobs) != 0 || p.Last != 7 || len(f.calls) != 1 {
-			t.Fatalf("unchanged=%v: %v %+v calls %v", unchanged, err, p, f.calls)
-		}
-	}
-	// Restarted: the counter went down; the answer is the full list again.
-	f.counter = 2
-	f.calls = nil
-	p, err = s.History(context.Background(), 7)
-	if err != nil || !p.Changed || p.Last != 2 || len(p.Jobs) != 430 {
-		t.Fatalf("reset: %v changed=%v last=%d jobs=%d", err, p.Changed, p.Last, len(p.Jobs))
-	}
-	if !strings.HasSuffix(f.calls[0], ":7") || strings.HasSuffix(f.calls[1], ":7") {
-		t.Fatalf("later pages must not carry the counter: %v", f.calls)
-	}
-}
-
-func TestSabRetryNewID(t *testing.T) {
-	f := &sabPaged{retryID: "SABnzbd_nzo_new"}
-	s := NewSabnzbd(f.serve(t), sabKey, nil)
-	id, err := s.Retry(context.Background(), "SABnzbd_nzo_old")
-	if err != nil || id != "SABnzbd_nzo_new" || f.retried[0] != "SABnzbd_nzo_old" {
-		t.Fatalf("%v %q %v", err, id, f.retried)
-	}
-	f.retryID = ""
-	if id, err = s.Retry(context.Background(), "SABnzbd_nzo_same"); err != nil || id != "SABnzbd_nzo_same" {
-		t.Fatalf("same id: %v %q", err, id)
-	}
-	if _, err = s.Retry(context.Background(), "a,b"); err != ErrNotFound {
-		t.Fatal("a list of ids must be refused")
-	}
-}
-
-func TestSabServerStats(t *testing.T) {
-	s := NewSabnzbd((&sabPaged{}).serve(t), sabKey, nil)
-	st, err := s.ServerStats(context.Background())
-	if err != nil || st.Total != 300 || st.Week != 100 || len(st.Servers) != 2 {
-		t.Fatalf("%v %+v", err, st)
-	}
-	if st.Servers[0].Name != "big.example" || st.Servers[1].ArticlesFound != 9 || st.Servers[1].ArticlesTried != 10 || st.Servers[0].ArticlesTried != 40 || st.Servers[0].ArticlesFound != 38 {
-		t.Fatalf("%+v", st.Servers)
-	}
-}
-
-func TestSabJobStagesRedacted(t *testing.T) {
-	s := NewSabnzbd((&sabPaged{counter: 1}).serve(t), sabKey, nil)
-	st, err := s.JobStages(context.Background(), "SABnzbd_nzo_x")
-	if err != nil || len(st) != 5 {
-		t.Fatalf("%v %+v", err, st)
-	}
-	want := []string{"source", "servers", "repair", "unpack", "script"}
-	for i, w := range want {
-		if st[i].Stage != w {
-			t.Fatalf("stage %d = %s", i, st[i].Stage)
-		}
-	}
-	if l := st[0].Lines[0]; strings.Contains(l, "SECRETKEY123") || strings.Contains(l, "apikey") {
-		t.Fatalf("source line not redacted: %q", l)
-	}
-	if l := st[3].Lines[0]; strings.Contains(l, "<") {
-		t.Fatalf("markup kept: %q", l)
-	}
-	if _, err := s.JobStages(context.Background(), ""); err != ErrNotFound {
-		t.Fatal("empty id")
-	}
-}
-
-// SABnzbd answers position -1 both for the only job (already first) and for
-// a job it does not have; the queue tells them apart.
-func TestSabMoveTopAlreadyFirst(t *testing.T) {
-	s := NewSabnzbd((&sabPaged{queue: 1}).serve(t), sabKey, nil)
-	if err := s.MoveTop(context.Background(), "SABnzbd_nzo_q0"); err != nil {
-		t.Fatalf("only job: %v", err)
-	}
-	if err := s.MoveTop(context.Background(), "SABnzbd_nzo_gone"); err != ErrNotFound {
-		t.Fatalf("missing job: %v", err)
-	}
-}
-
-// Archive passwords in a stage line are masked; the line stays readable.
-func TestCleanLineMasksPassword(t *testing.T) {
-	got := cleanLine(`[x] Trying unrar with password "hunter2"`)
-	if strings.Contains(got, "hunter2") || !strings.Contains(got, "Trying unrar with password") {
-		t.Fatalf("got %q", got)
-	}
 }

@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-// Bulk actions: one call for many torrents of one client, as the client's
-// own screen does with a selection.
+// Bulk actions the Downloads screen can apply to many torrents at once.
 const (
 	BulkStart      = "start"
 	BulkPause      = "pause"
@@ -23,44 +22,22 @@ const (
 	BulkUnforce    = "unforce"
 )
 
-// BulkActions lists every action Bulk takes.
+// BulkActions lists every action Bulk accepts.
 var BulkActions = []string{BulkStart, BulkPause, BulkRecheck, BulkReannounce, BulkTop, BulkBottom, BulkUp, BulkDown, BulkForce, BulkUnforce}
 
-// TorrentBulk is the optional part of a torrent engine that acts on many of
-// its torrents in one call.
+// ErrQueueOff means the client does not queue, so moving in the queue has no meaning.
+var ErrQueueOff = errors.New("the Downloader has its queue turned off, so there is no order to change")
+
+// ErrBulkAction means the action name is not one of the Bulk constants.
+var ErrBulkAction = errors.New("unknown action")
+
+// TorrentBulk is the optional part of an engine that acts on many torrents in one call.
 type TorrentBulk interface {
 	Bulk(ctx context.Context, action string, hashes []string) error
 	RemoveMany(ctx context.Context, hashes []string, deleteFiles bool) error
 }
 
-// ErrQueueOff is a queue move while the client's queue is turned off.
-var ErrQueueOff = errors.New("the Downloader has its queue turned off, so there is no order to change")
-
-// ErrBulkAction is an action Bulk does not know.
-var ErrBulkAction = errors.New("unknown action")
-
-// hashList checks and joins info hashes into qBittorrent's pipe list; "all"
-// and other selectors never pass.
-func hashList(hashes []string) (string, error) {
-	if len(hashes) == 0 {
-		return "", ErrNotFound
-	}
-	seen := map[string]bool{}
-	out := make([]string, 0, len(hashes))
-	for _, h := range hashes {
-		h, err := qbitHash(h)
-		if err != nil {
-			return "", err
-		}
-		if !seen[h] {
-			seen[h] = true
-			out = append(out, h)
-		}
-	}
-	return strings.Join(out, "|"), nil
-}
-
-// Bulk runs one action on many torrents in one call.
+// Bulk applies one action to the listed torrents. qBittorrent answers 409 to a queue move when queueing is off.
 func (q *Qbittorrent) Bulk(ctx context.Context, action string, hashes []string) error {
 	hs, err := hashList(hashes)
 	if err != nil {
@@ -92,8 +69,37 @@ func (q *Qbittorrent) Bulk(ctx context.Context, action string, hashes []string) 
 	return err
 }
 
-// callCode is a form POST that hands back the status too, for answers that
-// differ only by it (409 on a queue move means the queue is off).
+// RemoveMany removes torrents from the client in one call.
+func (q *Qbittorrent) RemoveMany(ctx context.Context, hashes []string, deleteFiles bool) error {
+	hs, err := hashList(hashes)
+	if err != nil {
+		return err
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/delete", url.Values{"hashes": {hs}, "deleteFiles": {boolWord(deleteFiles)}})
+	return err
+}
+
+// hashList checks and de-duplicates hashes and joins them the way qBittorrent wants. An empty list is not found.
+func hashList(hashes []string) (string, error) {
+	if len(hashes) == 0 {
+		return "", ErrNotFound
+	}
+	seen := map[string]bool{}
+	out := make([]string, 0, len(hashes))
+	for _, h := range hashes {
+		h, err := qbitHash(h)
+		if err != nil {
+			return "", err
+		}
+		if !seen[h] {
+			seen[h] = true
+			out = append(out, h)
+		}
+	}
+	return strings.Join(out, "|"), nil
+}
+
+// callCode posts a form and returns the status code. A sign-in that expired is retried once; a refused API key is not, since signing in again cannot help.
 func (q *Qbittorrent) callCode(ctx context.Context, path string, f url.Values, okCodes ...int) (int, error) {
 	code, _, err := q.doRaw(ctx, http.MethodPost, path, f, "", nil, okCodes...)
 	if errors.Is(err, ErrAuth) && q.user != "" {
@@ -107,16 +113,7 @@ func (q *Qbittorrent) callCode(ctx context.Context, path string, f url.Values, o
 	return code, err
 }
 
-// RemoveMany removes many torrents, with or without their files.
-func (q *Qbittorrent) RemoveMany(ctx context.Context, hashes []string, deleteFiles bool) error {
-	hs, err := hashList(hashes)
-	if err != nil {
-		return err
-	}
-	_, err = q.call(ctx, http.MethodPost, "torrents/delete", url.Values{"hashes": {hs}, "deleteFiles": {boolWord(deleteFiles)}})
-	return err
-}
-
+// boolWord writes a bool the way qBittorrent forms expect.
 func boolWord(b bool) string {
 	if b {
 		return "true"

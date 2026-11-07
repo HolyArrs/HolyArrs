@@ -16,85 +16,55 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
-// TorrentUpload is one .torrent file a person dropped on the Add sheet.
+// ErrNothingToAdd means the batch had no links and no files.
+var ErrNothingToAdd = errors.New("add at least one link or .torrent file")
+
+// TorrentUpload is a .torrent file the user picked.
 type TorrentUpload struct {
 	Name string
 	Data []byte
 }
 
-// AddBatch is what a person adds by hand: links (magnet, http(s) .torrent
-// or a bare info hash) and uploaded files, into one category and folder.
+// AddBatch is what the user adds by hand from the Downloads screen.
 type AddBatch struct {
-	Links    []string
-	Files    []TorrentUpload
-	Category string
-	SavePath string
-	Paused   bool
-	// AllowLocal is the Downloader's local network setting: links and magnet
-	// addresses may point at this machine or the local network.
+	Links      []string
+	Files      []TorrentUpload
+	Category   string
+	SavePath   string
+	Paused     bool
 	AllowLocal bool
 }
 
-// AddOutcome says how a hand-made add went. Pending are http links the
-// client still fetches in the background: their outcome shows in the list.
+// AddOutcome counts what happened to each item of a batch. Bad names the items that could not be read; Dropped counts tracker addresses removed from magnets as unsafe.
 type AddOutcome struct {
-	Added      int `json:"added"`
-	Failed     int `json:"failed"`
-	Pending    int `json:"pending"`
-	Duplicates int `json:"duplicates"`
-	// Bad names the uploaded files and links that were not torrents.
-	Bad []string `json:"bad,omitempty"`
-	// Dropped counts magnet addresses left out because they point at this
-	// machine, the local network or a metadata service.
-	Dropped int `json:"dropped,omitempty"`
+	Added      int      `json:"added"`
+	Failed     int      `json:"failed"`
+	Pending    int      `json:"pending"`
+	Duplicates int      `json:"duplicates"`
+	Bad        []string `json:"bad,omitempty"`
+	Dropped    int      `json:"dropped,omitempty"`
 }
 
-// TorrentAdder is the optional part of a torrent engine that adds torrents a
-// person picked by hand. Nothing it adds becomes a HolyArrs download.
+// TorrentAdder is the optional part of an engine that takes manual adds.
 type TorrentAdder interface {
 	AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, error)
 }
 
-// ErrNothingToAdd is an add with no links and no files.
-var ErrNothingToAdd = errors.New("add at least one link or .torrent file")
-
-// linkHash reads the info hash of a magnet link or a bare hash; "" when the
-// link does not carry one (an http link to a .torrent file).
-func linkHash(link string) string {
-	l := strings.TrimSpace(link)
-	if source.ValidInfoHash(strings.ToLower(l)) {
-		return strings.ToLower(l)
-	}
-	if !strings.HasPrefix(strings.ToLower(l), "magnet:") {
-		return ""
-	}
-	u, err := url.Parse(l)
-	if err != nil {
-		return ""
-	}
-	for _, xt := range u.Query()["xt"] {
-		v, ok := strings.CutPrefix(strings.ToLower(xt), "urn:btih:")
-		if !ok {
-			continue
-		}
-		if source.ValidInfoHash(v) {
-			return v
-		}
-		if len(v) == 32 {
-			if b, err := base32.StdEncoding.DecodeString(strings.ToUpper(v)); err == nil {
-				return hex.EncodeToString(b)
-			}
-		}
-	}
-	return ""
+// SaveBase holds the client's default save folder and each category's own folder.
+type SaveBase struct {
+	Default    string
+	Categories map[string]string
 }
 
-// AddTorrents adds links and files in one torrents/add call. Torrents the
-// client already holds are counted as duplicates and not sent. qBittorrent
-// before 5.2 answers "Ok." or "Fails." for the whole call; 5.2 answers
-// counts, 409 when nothing was added and 415 for a file that is no torrent.
+// TorrentFolders is the optional part of an engine that tells where it saves.
+type TorrentFolders interface {
+	SaveBase(ctx context.Context) (SaveBase, error)
+}
+
+// AddTorrents sends a batch to qBittorrent. Items it already holds are skipped by info hash, so a repeat is a duplicate and not an error. Web links are fetched here and uploaded as files, so the client never contacts the Source itself.
 func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, error) {
 	var out AddOutcome
+	// Ids already in the client. If the list call fails the client still dedupes on its own.
 	have := map[string]bool{}
 	if all, err := q.info(ctx, url.Values{}); err == nil {
 		for _, j := range all {
@@ -110,7 +80,6 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 		}
 		low := strings.ToLower(l)
 		if strings.HasPrefix(low, "http://") || strings.HasPrefix(low, "https://") {
-			// HolyArrs fetches the file and uploads it; the client never gets the address.
 			data, err := fetchTorrentLink(ctx, l, b.AllowLocal)
 			if err != nil {
 				out.Bad = append(out.Bad, linkName(l))
@@ -130,6 +99,7 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 			l = clean
 			out.Dropped += n
 		}
+		// Dedupe inside the batch too.
 		if h := linkHash(l); h != "" {
 			if have[h] || seen[h] {
 				out.Duplicates++
@@ -163,6 +133,7 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 	}
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
+	// Old and new qBittorrent versions name the pause flag differently, so send both.
 	field := func(k, v string) { _ = mw.WriteField(k, v) }
 	if len(links) > 0 {
 		field("urls", strings.Join(links, "\n"))
@@ -174,8 +145,8 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 		field("savepath", b.SavePath)
 	}
 	if b.Paused {
-		field("stopped", "true") // 5.x
-		field("paused", "true")  // older servers
+		field("stopped", "true")
+		field("paused", "true")
 	}
 	for _, f := range files {
 		w, err := mw.CreateFormFile("torrents", safeFileName(f.Name))
@@ -185,20 +156,22 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 		_, _ = w.Write(f.Data)
 	}
 	_ = mw.Close()
+	// 409 and 415 are answers to read, not transport errors.
 	code, resp, err := q.callRaw(ctx, "torrents/add", mw.FormDataContentType(), body.Bytes(), http.StatusConflict, http.StatusUnsupportedMediaType)
 	if err != nil {
 		return out, err
 	}
 	text := strings.TrimSpace(string(resp))
 	switch {
+	// 409 means the client refused every item.
 	case code == http.StatusConflict:
 		out.Failed += n
 	case code == http.StatusUnsupportedMediaType:
 		return out, errors.New("qBittorrent could not read one of the .torrent files")
+	// Older clients answer in plain text; newer ones answer with counts.
 	case text == "Fails.":
 		out.Failed += n
 	case text == "Ok." || text == "":
-		// Before 5.2 there are no counts: http links are fetched later, the rest is in.
 		out.Added += len(links) + len(files)
 	default:
 		var c struct {
@@ -216,29 +189,7 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 	return out, nil
 }
 
-// safeFileName keeps an uploaded name to its last part, for the form only.
-func safeFileName(n string) string {
-	n = n[strings.LastIndexAny(n, `/\`)+1:]
-	if n == "" {
-		return "upload.torrent"
-	}
-	return n
-}
-
-// SaveBase is where a client puts torrents: its default folder and each
-// category's own folder ("" when the category follows the default).
-type SaveBase struct {
-	Default    string
-	Categories map[string]string
-}
-
-// TorrentFolders is the optional part of a torrent engine that says where
-// it saves, so a hand-picked folder can be kept inside it.
-type TorrentFolders interface {
-	SaveBase(ctx context.Context) (SaveBase, error)
-}
-
-// SaveBase reads the default save folder and the categories.
+// SaveBase reads the default and per-category save folders.
 func (q *Qbittorrent) SaveBase(ctx context.Context) (SaveBase, error) {
 	out := SaveBase{Categories: map[string]string{}}
 	b, err := q.call(ctx, http.MethodGet, "app/preferences", nil)
@@ -268,8 +219,46 @@ func (q *Qbittorrent) SaveBase(ctx context.Context) (SaveBase, error) {
 	return out, nil
 }
 
-// linkName is a fetched link's file name for messages: its host and last
-// path part, never its query (which may hold a key).
+// linkHash returns the lowercase hex info hash of a bare hash or magnet link, or empty. Base32 hashes are converted since some magnets use them.
+func linkHash(link string) string {
+	l := strings.TrimSpace(link)
+	if source.ValidInfoHash(strings.ToLower(l)) {
+		return strings.ToLower(l)
+	}
+	if !strings.HasPrefix(strings.ToLower(l), "magnet:") {
+		return ""
+	}
+	u, err := url.Parse(l)
+	if err != nil {
+		return ""
+	}
+	for _, xt := range u.Query()["xt"] {
+		v, ok := strings.CutPrefix(strings.ToLower(xt), "urn:btih:")
+		if !ok {
+			continue
+		}
+		if source.ValidInfoHash(v) {
+			return v
+		}
+		if len(v) == 32 {
+			if b, err := base32.StdEncoding.DecodeString(strings.ToUpper(v)); err == nil {
+				return hex.EncodeToString(b)
+			}
+		}
+	}
+	return ""
+}
+
+// safeFileName drops any folder part of an uploaded name so it cannot steer the client.
+func safeFileName(n string) string {
+	n = n[strings.LastIndexAny(n, `/\`)+1:]
+	if n == "" {
+		return "upload.torrent"
+	}
+	return n
+}
+
+// linkName gives a short label for a link without its query, which may hold a key.
 func linkName(l string) string {
 	u, err := url.Parse(l)
 	if err != nil {

@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// Runs inside the lab network: go test -tags lab ./internal/downloader/
-// It sends our own Dune test torrent to the lab qBittorrent, waits for it to
-// finish, then removes it and its files again.
 func TestLabQbittorrent(t *testing.T) {
 	base := os.Getenv("HOLYARRS_LAB_QBIT")
 	if base == "" {

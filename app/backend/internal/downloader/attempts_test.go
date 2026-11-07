@@ -33,22 +33,6 @@ func (e *attemptEngine) Get(context.Context, string) (Job, error) {
 	return Job{}, ErrNotFound
 }
 
-func journalWorld(t *testing.T) (*world, *Manager, domain.Downloader) {
-	t.Helper()
-	w, m := setup(t)
-	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE releases SET protocol = 'usenet', info_hash = NULL"); err != nil {
-			return err
-		}
-		_, err := tx.Exec("UPDATE downloaders SET adapter = 'nzbget', protocol = 'usenet'")
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return w, m, w.downloader(t, 1)
-}
-
 func TestNZBGetJournalSurvivesRestartAndPinsOriginal(t *testing.T) {
 	w, m, d := journalWorld(t)
 	ctx := context.Background()
@@ -167,7 +151,7 @@ func TestNZBGetJournalAbandonedPairAllowsDifferentRelease(t *testing.T) {
 	if _, err := (&source.Searcher{Store: w.s}).Choose(ctx, rel.ID, w.slotID, false, domain.System); err != nil {
 		t.Fatal("could not choose a different Release after abandonment", err)
 	}
-	// Repeating the old recovery action may not disturb the new choice.
+	// An old recovery action repeated later must not disturb the new choice.
 	if err := m.AbandonAttempt(ctx, d.ID, a.ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -535,7 +519,7 @@ func TestOptionalJournalDoesNotBindReusedIDs(t *testing.T) {
 				if _, err := tx.Exec("DELETE FROM slots WHERE id = ?", sl.ID); err != nil {
 					return err
 				}
-				// Explicitly recreate both ids, as SQLite can do without AUTOINCREMENT.
+				// Recreate both ids on purpose, as SQLite can do without AUTOINCREMENT.
 				sl.ChosenReleaseID = nil
 				if _, err := database.Insert(tx, "slots", &sl, domain.System); err != nil {
 					return err
@@ -627,7 +611,7 @@ func TestOptionalJournalConcurrentFinalizationReusesDownload(t *testing.T) {
 		if r.ReconcileOnly {
 			return r.AttemptMarker, nil
 		}
-		// The first request has been accepted; its response has not returned.
+		// The first request was accepted, but its response has not returned.
 		var err error
 		reconciledID, err = other.Grab(ctx, w.slotID, w.relID, domain.System)
 		if err != nil {
@@ -835,4 +819,20 @@ func TestOptionalJournalDifferentVersionsKeepSeparateIntents(t *testing.T) {
 	if err != nil || !second.created || second.marker == first.marker {
 		t.Fatal("Versions shared an intent", err)
 	}
+}
+
+func journalWorld(t *testing.T) (*world, *Manager, domain.Downloader) {
+	t.Helper()
+	w, m := setup(t)
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE releases SET protocol = 'usenet', info_hash = NULL"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE downloaders SET adapter = 'nzbget', protocol = 'usenet'")
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return w, m, w.downloader(t, 1)
 }

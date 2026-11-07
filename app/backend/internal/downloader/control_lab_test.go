@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// Runs against the lab qBittorrent with our own Dune test torrent from the
-// lab's fake indexer: HOLYARRS_LAB_QBIT=http://127.0.0.1:18708 go test -tags lab -run LabQbitControls ./internal/downloader/
+// Needs the lab qBittorrent and the Dune test torrent from the lab's fake
+// indexer. Run: HOLYARRS_LAB_QBIT=http://127.0.0.1:18708 go test -tags lab -run LabQbitControls ./internal/downloader/
 // It reads, pauses, resumes, rechecks, sets and clears a speed limit, then
 // removes the torrent and its files.
 func TestLabQbitControls(t *testing.T) {
@@ -96,8 +96,8 @@ func TestLabQbitControls(t *testing.T) {
 	t.Logf("status after: %+v", after)
 }
 
-// Runs against the lab SABnzbd (it has no Usenet server, so only the
-// whole-client controls are checked): HOLYARRS_LAB_SAB_KEY=... HOLYARRS_LAB_SAB=http://10.10.25.25:18707
+// Needs the lab SABnzbd. It has no Usenet server, so only the whole-client
+// controls are checked. Run: HOLYARRS_LAB_SAB_KEY=... HOLYARRS_LAB_SAB=http://10.10.25.25:18707
 // go test -tags lab -run LabSabControls ./internal/downloader/
 func TestLabSabControls(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_SAB_KEY")

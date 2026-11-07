@@ -21,26 +21,6 @@ const (
 
 var delugeLabPayload = []byte("HolyArrs disposable Deluge acceptance\n")
 
-func bencodeString(value []byte) []byte {
-	return append([]byte(fmt.Sprintf("%d:", len(value))), value...)
-}
-
-func delugeLabTorrent() []byte {
-	piece := sha1.Sum(delugeLabPayload)
-	info := []byte("d6:lengthi" + fmt.Sprint(len(delugeLabPayload)) + "e4:name")
-	info = append(info, bencodeString([]byte(delugeLabFile))...)
-	info = append(info, []byte("12:piece lengthi16384e6:pieces")...)
-	info = append(info, bencodeString(piece[:])...)
-	info = append(info, 'e')
-
-	torrent := []byte("d8:announce")
-	torrent = append(torrent, bencodeString([]byte("http://127.0.0.1:9/announce"))...)
-	torrent = append(torrent, []byte("4:info")...)
-	torrent = append(torrent, info...)
-	torrent = append(torrent, 'e')
-	return torrent
-}
-
 func TestLabDeluge(t *testing.T) {
 	base := os.Getenv("HOLYARRS_LAB_DELUGE")
 	password := os.Getenv("HOLYARRS_LAB_DELUGE_PASSWORD")
@@ -152,4 +132,24 @@ func TestLabDeluge(t *testing.T) {
 		t.Fatalf("Get after Remove = %v, want ErrNotFound", err)
 	}
 	t.Logf("Deluge %s accepted uploaded torrent %s; existed=%t; final_state=%s", health.Version, hash, existed, job.State)
+}
+
+func bencodeString(value []byte) []byte {
+	return append([]byte(fmt.Sprintf("%d:", len(value))), value...)
+}
+
+func delugeLabTorrent() []byte {
+	piece := sha1.Sum(delugeLabPayload)
+	info := []byte("d6:lengthi" + fmt.Sprint(len(delugeLabPayload)) + "e4:name")
+	info = append(info, bencodeString([]byte(delugeLabFile))...)
+	info = append(info, []byte("12:piece lengthi16384e6:pieces")...)
+	info = append(info, bencodeString(piece[:])...)
+	info = append(info, 'e')
+
+	torrent := []byte("d8:announce")
+	torrent = append(torrent, bencodeString([]byte("http://127.0.0.1:9/announce"))...)
+	torrent = append(torrent, []byte("4:info")...)
+	torrent = append(torrent, info...)
+	torrent = append(torrent, 'e')
+	return torrent
 }

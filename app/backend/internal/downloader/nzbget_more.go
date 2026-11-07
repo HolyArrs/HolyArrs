@@ -7,79 +7,27 @@ import (
 	"strings"
 )
 
-// The rest of NZBGet for the Downloads page: every queue and history item
-// (also the ones HolyArrs did not send), the client's speed and time left,
-// one job's steps, and Try again on a failed job.
-//
-// A job HolyArrs sent is known by its marker parameter. Any other job is
-// known as "nzbid-" plus NZBGet's own number, which the job keeps when it
-// moves from the queue to the history.
-
 const nzbgetOutside = "nzbid-"
 
-// nzbgetStatus is the part of status() the page uses.
+var stepWord = map[string]string{"SUCCESS": "done", "FAILURE": "failed", "REPAIR_POSSIBLE": "can be repaired, not run",
+	"MANUAL": "left for you to do", "SPACE": "stopped: the disk is full", "PASSWORD": "needs a password",
+	"SCAN_SKIPPED": "skipped", "SCAN_FAILURE": "the NZB could not be read"}
+
+var (
+	_ QueueReader     = (*NZBGet)(nil)
+	_ HistoryReader   = (*NZBGet)(nil)
+	_ Controller      = (*NZBGet)(nil)
+	_ Retrier         = (*NZBGet)(nil)
+	_ UsenetInspector = (*NZBGet)(nil)
+)
+
 type nzbgetStatus struct {
 	DownloadRate   int64  `json:"DownloadRate"`
 	DownloadRateLo uint64 `json:"DownloadRateLo"`
 	DownloadRateHi uint64 `json:"DownloadRateHi"`
 }
 
-func (s nzbgetStatus) rate() int64 {
-	if r := nzbgetSize(s.DownloadRateLo, s.DownloadRateHi); r > 0 {
-		return r
-	}
-	return max(s.DownloadRate, 0)
-}
-
-// anyID is the job's id: its HolyArrs marker, or nzbid-<number>.
-func (r nzbgetRow) anyID() string {
-	if id := nzbgetMarkerID(r.Parameters); id != "" {
-		return id
-	}
-	if r.NZBID <= 0 {
-		return ""
-	}
-	return nzbgetOutside + strconv.Itoa(r.NZBID)
-}
-
-func (r nzbgetRow) anyJob(history bool) Job {
-	j := r.job(history)
-	j.ID = r.anyID()
-	return j
-}
-
-// find is lookup for any id. An nzbid- id is a job HolyArrs did not send:
-// it is found by number whatever its category, and never when it carries
-// a HolyArrs marker (that job answers to its marker).
-func (n *NZBGet) find(ctx context.Context, id string) (nzbgetMatch, bool, error) {
-	num, ok := strings.CutPrefix(id, nzbgetOutside)
-	if !ok {
-		return n.lookup(ctx, id, n.Category)
-	}
-	want, err := strconv.Atoi(num)
-	if err != nil || want <= 0 {
-		return nzbgetMatch{}, false, nil
-	}
-	active, history, err := n.rows(ctx)
-	if err != nil {
-		return nzbgetMatch{}, false, err
-	}
-	for _, r := range active {
-		if r.NZBID == want && nzbgetMarkerID(r.Parameters) == "" {
-			return nzbgetMatch{row: r}, true, nil
-		}
-	}
-	for _, r := range history {
-		if r.NZBID == want && nzbgetMarkerID(r.Parameters) == "" {
-			return nzbgetMatch{row: r, history: true}, true, nil
-		}
-	}
-	return nzbgetMatch{}, false, nil
-}
-
-// Queue reads every active job with the client's speed and time left. One
-// overall rate is shared evenly by the jobs moving; a job's time left is
-// its bytes left at that share.
+// Queue returns the current queue snapshot.
 func (n *NZBGet) Queue(ctx context.Context) (QueuePage, error) {
 	var active []nzbgetRow
 	if err := n.rpc(ctx, "listgroups", []any{0}, &active); err != nil {
@@ -121,8 +69,7 @@ func (n *NZBGet) Queue(ctx context.Context) (QueuePage, error) {
 	return p, nil
 }
 
-// History reads the whole visible history. NZBGet has no change counter,
-// so every read is a full one (Changed, counter 0).
+// History returns finished jobs.
 func (n *NZBGet) History(ctx context.Context, _ int64) (HistoryPage, error) {
 	var history []nzbgetRow
 	if err := n.rpc(ctx, "history", []any{false}, &history); err != nil {
@@ -137,8 +84,7 @@ func (n *NZBGet) History(ctx context.Context, _ int64) (HistoryPage, error) {
 	return p, nil
 }
 
-// Status is the client as a whole: speed and time left. NZBGet's free
-// space and pause flag are not read (not in the adapter manual yet).
+// Status returns the client state.
 func (n *NZBGet) Status(ctx context.Context) (ClientStatus, error) {
 	q, err := n.Queue(ctx)
 	if err != nil {
@@ -147,12 +93,10 @@ func (n *NZBGet) Status(ctx context.Context) (ClientStatus, error) {
 	return ClientStatus{Speed: q.Head.Speed, TimeLeft: q.Head.TimeLeft}, nil
 }
 
-// Pause, resume and queue moves live in usenet_queue.go. The speed cap
-// is not offered yet (not in the adapter manual).
+// SetSpeedLimit is not supported by this client.
 func (n *NZBGet) SetSpeedLimit(context.Context, int64, int64) error { return ErrNotSupported }
 
-// Retry sends a failed history job back to the queue (HistoryRedownload).
-// The job keeps its number and marker, so its id stays the same.
+// Retry requeues a failed job and returns the new id.
 func (n *NZBGet) Retry(ctx context.Context, id string) (string, error) {
 	m, found, err := n.find(ctx, id)
 	if err != nil {
@@ -174,9 +118,7 @@ func (n *NZBGet) Retry(ctx context.Context, id string) (string, error) {
 	return id, nil
 }
 
-// JobStages is the job's steps from its own status fields: download,
-// verify and repair, unpack, move and script. NZBGet's per-job log is not
-// read (not in the adapter manual yet).
+// JobStages returns the processing stages of a job.
 func (n *NZBGet) JobStages(ctx context.Context, id string) ([]JobStage, error) {
 	m, found, err := n.find(ctx, id)
 	if err != nil {
@@ -188,8 +130,7 @@ func (n *NZBGet) JobStages(ctx context.Context, id string) ([]JobStage, error) {
 	return nzbgetStages(m.row, m.history), nil
 }
 
-// ServerStats: NZBGet's per-server counters are not in the adapter manual,
-// so none are given. The status read keeps this a real check of the client.
+// ServerStats returns usage numbers per news server.
 func (n *NZBGet) ServerStats(ctx context.Context) (ServerStats, error) {
 	var st nzbgetStatus
 	if err := n.rpc(ctx, "status", nil, &st); err != nil {
@@ -198,9 +139,54 @@ func (n *NZBGet) ServerStats(ctx context.Context) (ServerStats, error) {
 	return ServerStats{Servers: []ServerStat{}}, nil
 }
 
-var stepWord = map[string]string{"SUCCESS": "done", "FAILURE": "failed", "REPAIR_POSSIBLE": "can be repaired, not run",
-	"MANUAL": "left for you to do", "SPACE": "stopped: the disk is full", "PASSWORD": "needs a password",
-	"SCAN_SKIPPED": "skipped", "SCAN_FAILURE": "the NZB could not be read"}
+func (s nzbgetStatus) rate() int64 {
+	if r := nzbgetSize(s.DownloadRateLo, s.DownloadRateHi); r > 0 {
+		return r
+	}
+	return max(s.DownloadRate, 0)
+}
+
+func (r nzbgetRow) anyID() string {
+	if id := nzbgetMarkerID(r.Parameters); id != "" {
+		return id
+	}
+	if r.NZBID <= 0 {
+		return ""
+	}
+	return nzbgetOutside + strconv.Itoa(r.NZBID)
+}
+
+func (r nzbgetRow) anyJob(history bool) Job {
+	j := r.job(history)
+	j.ID = r.anyID()
+	return j
+}
+
+func (n *NZBGet) find(ctx context.Context, id string) (nzbgetMatch, bool, error) {
+	num, ok := strings.CutPrefix(id, nzbgetOutside)
+	if !ok {
+		return n.lookup(ctx, id, n.Category)
+	}
+	want, err := strconv.Atoi(num)
+	if err != nil || want <= 0 {
+		return nzbgetMatch{}, false, nil
+	}
+	active, history, err := n.rows(ctx)
+	if err != nil {
+		return nzbgetMatch{}, false, err
+	}
+	for _, r := range active {
+		if r.NZBID == want && nzbgetMarkerID(r.Parameters) == "" {
+			return nzbgetMatch{row: r}, true, nil
+		}
+	}
+	for _, r := range history {
+		if r.NZBID == want && nzbgetMarkerID(r.Parameters) == "" {
+			return nzbgetMatch{row: r, history: true}, true, nil
+		}
+	}
+	return nzbgetMatch{}, false, nil
+}
 
 func nzbgetStages(r nzbgetRow, history bool) []JobStage {
 	line := func(what, v string) []string {
@@ -268,8 +254,6 @@ func markWord(s string) string {
 	return s
 }
 
-// nzbgetReason is a history job's result in plain words, with NZBGet's
-// own status after it.
 func nzbgetReason(r nzbgetRow) string {
 	why := ""
 	switch {
@@ -314,11 +298,3 @@ func nzbgetReason(r nzbgetRow) string {
 	}
 	return why + " (" + r.Status + ")"
 }
-
-var (
-	_ QueueReader     = (*NZBGet)(nil)
-	_ HistoryReader   = (*NZBGet)(nil)
-	_ Controller      = (*NZBGet)(nil)
-	_ Retrier         = (*NZBGet)(nil)
-	_ UsenetInspector = (*NZBGet)(nil)
-)

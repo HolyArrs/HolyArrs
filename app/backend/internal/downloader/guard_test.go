@@ -17,7 +17,8 @@ type guardedStub struct {
 	err   error
 }
 
-func (s *guardedStub) Health(context.Context) (Health, error)          { s.calls++; return Health{}, s.err }
+func (s *guardedStub) Health(context.Context) (Health, error) { s.calls++; return Health{}, s.err }
+
 func (s *guardedStub) Add(context.Context, AddRequest) (string, error) { s.calls++; return "", s.err }
 
 func TestDownloaderGuardCountsLogicalCallsWithoutReplayingAdd(t *testing.T) {

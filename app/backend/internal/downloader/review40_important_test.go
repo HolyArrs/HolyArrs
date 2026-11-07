@@ -10,8 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// I1: an id that is not an info hash never reaches qBittorrent's selectors,
-// where "all" or "a|b" would pick other torrents.
 func TestQbitRefusesIdsThatAreNotInfoHashes(t *testing.T) {
 	f, u := startFake(t)
 	f.set(hash, map[string]any{"name": "other", "category": "holyarrs", "state": "downloading"})
@@ -33,7 +31,6 @@ func TestQbitRefusesIdsThatAreNotInfoHashes(t *testing.T) {
 	}
 }
 
-// I1: a Release whose hash is hostile is never looked up, adopted or deleted.
 func TestGrabWithAHostileHash(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -57,7 +54,6 @@ func TestGrabWithAHostileHash(t *testing.T) {
 	}
 }
 
-// I1: Grab never takes over a row another Slot is still following.
 func TestGrabNeverOverwritesAnActiveDownload(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -84,7 +80,6 @@ func TestGrabNeverOverwritesAnActiveDownload(t *testing.T) {
 	}
 }
 
-// I2: a sync snapshot read before Mark failed never writes over it.
 func TestStaleSyncNeverUndoesMarkFailed(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -102,7 +97,6 @@ func TestStaleSyncNeverUndoesMarkFailed(t *testing.T) {
 	}
 }
 
-// I3: the category or host of a Downloader with active Downloads stays put.
 func TestChangeRefusedWhileActive(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -121,8 +115,6 @@ func TestChangeRefusedWhileActive(t *testing.T) {
 	}
 }
 
-// I4: a SABnzbd job found by name whose id belongs to a failed Download is
-// never adopted again; a fresh one is added.
 func TestSabnzbdFailedJobNotAdoptedAgain(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -152,7 +144,6 @@ func TestSabnzbdFailedJobNotAdoptedAgain(t *testing.T) {
 		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", r.ID, w.slotID); err != nil {
 			return err
 		}
-		// The same job stalled earlier and was failed; its row remembers it.
 		old := &domain.Download{DownloaderID: did, ReleaseID: &relID, SlotIDs: []int64{w.slotID}, ExternalID: sabGood, State: "failed",
 			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
 		_, err := database.Insert(tx, "downloads", old, domain.System)

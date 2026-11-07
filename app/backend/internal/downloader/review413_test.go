@@ -6,20 +6,9 @@ import (
 	"testing"
 )
 
-func removalPending(t *testing.T, w *world, id int64) sql.NullBool {
-	t.Helper()
-	var p sql.NullBool
-	if err := w.s.Read().QueryRow("SELECT removal_pending FROM downloads WHERE id = ?", id).Scan(&p); err != nil {
-		t.Fatal(err)
-	}
-	return p
-}
-
-// 4.1.3 minor 7: when the Downloader cannot be reached at Remove, the
-// removal is recorded and done on a later sync, with the same file choice.
 func TestRemoveRetriesWhenTheDownloaderWasDown(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	w.fake.mu.Lock()
 	w.fake.refuse = true
@@ -48,4 +37,13 @@ func TestRemoveRetriesWhenTheDownloaderWasDown(t *testing.T) {
 	if len(w.fake.deleted) != 1 {
 		t.Fatalf("removed twice %v", w.fake.deleted)
 	}
+}
+
+func removalPending(t *testing.T, w *world, id int64) sql.NullBool {
+	t.Helper()
+	var p sql.NullBool
+	if err := w.s.Read().QueryRow("SELECT removal_pending FROM downloads WHERE id = ?", id).Scan(&p); err != nil {
+		t.Fatal(err)
+	}
+	return p
 }

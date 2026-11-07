@@ -1,5 +1,5 @@
-// Package downloader sends Releases to Downloaders and follows their
-// progress. Each download engine sits behind the Engine interface.
+// Package downloader sends Releases to download engines (torrent and Usenet clients) and reads back their progress.
+// Each client sits behind the Engine interface, so the rest of HolyArrs does not care which one runs a Download.
 package downloader
 
 import (
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Our Download states (model.md), as engines report them.
+// State values every engine maps its own states onto.
 const (
 	StateQueued      = "queued"
 	StateDownloading = "downloading"
@@ -17,7 +17,7 @@ const (
 	StateFailed      = "failed"
 )
 
-// Errors every engine uses.
+// Errors shared by all engines, so callers can test them with errors.Is.
 var (
 	ErrNotFound  = errors.New("download not found in the Downloader")
 	ErrAuth      = errors.New("the Downloader wants a sign-in")
@@ -25,80 +25,79 @@ var (
 	ErrUncertain = errors.New("the Downloader send outcome is unknown; inspect it before choosing another Release")
 )
 
-// AddRequest is one Release to send.
+// AddRequest is one Release to send to an engine.
 type AddRequest struct {
-	URL string // link to the torrent or nzb
-	// File, when set, is the torrent or nzb HolyArrs already fetched from
-	// URL; qBittorrent and SABnzbd get it instead of the address (#152).
-	File       []byte
-	Name       string // the Release name; Usenet jobs are found again by it
-	Category   string
-	SavePath   string
-	InfoHash   string // when known, it becomes the external id
-	AllowLocal bool   // the Source may fetch Release files on the local network
-	// OperationKey identifies the original grab across an uncertain response.
+	URL string
+	// File is the torrent or nzb already fetched from URL. qBittorrent and SABnzbd take it instead of the address.
+	File []byte
+	// Name is the Release name. Usenet jobs are found again by it.
+	Name     string
+	Category string
+	SavePath string
+	// InfoHash, when known, becomes the external id.
+	InfoHash string
+	// AllowLocal lets the Source fetch Release files on the local network.
+	AllowLocal bool
+	// OperationKey ties a retry to the original grab when the first answer was lost.
 	OperationKey string
-	// AttemptMarker is a durable, opaque identity claimed before sending.
-	// NZBGet stores it remotely; torrent clients reconcile by InfoHash.
-	// ReconcileOnly never sends another add or changes a category.
+	// AttemptMarker is a durable, opaque id claimed before sending. NZBGet stores it remotely; torrent clients match by InfoHash.
+	// ReconcileOnly means look for the earlier add and never send another or change a category.
 	AttemptMarker string
 	ReconcileOnly bool
-	// Skip are ids an engine must not take as this Release when it finds a
-	// job again by name: they belong to other Download rows.
+	// Skip holds ids that belong to other Download rows, so a by-name lookup never takes them for this Release.
 	Skip map[string]bool
 }
 
 // File is one file inside a download.
 type File struct {
-	Name     string  `json:"name"` // relative to the download's save path
-	Size     int64   `json:"size"`
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+	// Progress runs from 0 to 1.
+	// Speed is bytes per second and ETA is seconds, 0 when unknown.
 	Progress float64 `json:"progress"`
 }
 
 // Job is one download as the engine sees it.
 type Job struct {
-	ID          string // external id (info hash for torrents)
+	// ID is the external id (the info hash for torrents).
+	ID          string
 	Name        string
 	Category    string
 	SavePath    string
 	ContentPath string
 	Size        int64
-	Progress    float64 // 0 to 1
-	Speed       int64   // bytes per second
-	UpSpeed     int64   // upload bytes per second (torrents)
-	Seeds       int     // connected seeds (torrents)
-	Peers       int     // connected peers (torrents)
-	SeedsTotal  int     // seeds in the whole swarm (torrents)
-	PeersTotal  int     // peers in the whole swarm (torrents)
-	ETA         int64   // seconds, 0 when unknown
-	State       string  // one of the State constants
-	Detail      string  // the engine's own state word, for reasons
-	Files       []File
-	AddedAt     int64   // unix seconds the client took it; 0 when unknown
-	Ratio       float64 // share ratio (torrents)
-	// Torrent clients that report them: the torrent's own seeding rules
-	// (nil when not reported).
+	Progress    float64
+	Speed       int64
+	UpSpeed     int64
+	// Seeds and Peers count connections; the Total fields count the whole swarm. Torrents only.
+	Seeds      int
+	Peers      int
+	SeedsTotal int
+	PeersTotal int
+	ETA        int64
+	// State is one of the State constants. Detail keeps the engine's own state word for showing reasons.
+	State  string
+	Detail string
+	Files  []File
+	// AddedAt is unix seconds when the client took it, 0 when unknown.
+	AddedAt int64
+	Ratio   float64
+	// Limits are the torrent's own seeding rules, nil when the client does not report them.
 	Limits *ShareLimits
-	// DoneAt is unix seconds the torrent finished (0 not yet), QueuePos its
-	// place in the client's queue (0 not queued) and Tracker the host of
-	// the tracker it works with now ("" none).
+	// DoneAt is unix seconds when the torrent finished, 0 if not yet. QueuePos is its place in the client queue, 0 if not queued.
+	// Tracker is the host it works with now, empty if none.
 	DoneAt   int64
 	QueuePos int
 	Tracker  string
-	// TrackerProblem says the trackers are not all well: error, warning or
-	// announce (no tracker answered); "" when fine or not reported.
+	// TrackerProblem is error, warning or announce when trackers are unwell, empty when fine or not reported.
 	TrackerProblem string
-	// LimitDown and LimitUp are a torrent's own speed caps in bytes per
-	// second (0 none).
+	// LimitDown and LimitUp are the torrent's own speed caps in bytes per second, 0 for none.
 	LimitDown, LimitUp int64
-	// LastActivity and SeenComplete are unix seconds (0 unknown);
-	// SeedingTime and TimeActive are seconds; Uploaded is bytes.
+	// LastActivity and SeenComplete are unix seconds, 0 when unknown. SeedingTime and TimeActive are seconds; Uploaded is bytes.
 	LastActivity, SeenComplete, SeedingTime, TimeActive, Uploaded int64
-	// PostedAt is unix seconds the Usenet post was made, when the client
-	// reports it (0 unknown, and always for torrents).
+	// PostedAt is unix seconds when the Usenet post was made. 0 when unknown, and always 0 for torrents.
 	PostedAt int64
-	// Availability is how many full copies the swarm holds (torrents;
-	// nil when the client does not report it).
+	// Availability is how many full copies the swarm holds, nil when the client does not say.
 	Availability *float64
 }
 
@@ -106,22 +105,21 @@ type Job struct {
 type Health struct {
 	Version string
 	At      time.Time
-	Note    string // a caveat the connection test shows beside a pass
+	// Note is a caveat the connection test shows beside a pass.
+	Note string
 }
 
-// Engine is one download engine. A new engine (another torrent client, a
-// Usenet client) implements these five methods and nothing else.
+// Engine is one download engine. A new client implements these five methods and nothing else.
 type Engine interface {
 	Health(ctx context.Context) (Health, error)
 	Add(ctx context.Context, r AddRequest) (id string, err error)
 	List(ctx context.Context, category string) ([]Job, error)
-	Get(ctx context.Context, id string) (Job, error) // with Files
+	Get(ctx context.Context, id string) (Job, error)
 	Remove(ctx context.Context, id string, deleteFiles bool) error
 }
 
-// AllLister is the optional part of a torrent engine that lists every item
-// in the client, whatever its category, for the Downloads screen. It only
-// reads; nothing it returns becomes a HolyArrs download.
+// AllLister is the optional read-only part of a torrent engine that lists every item in the client, whatever its category, for the Downloads screen.
+// Nothing it returns becomes a HolyArrs download.
 type AllLister interface {
 	ListAll(ctx context.Context) ([]Job, error)
 }

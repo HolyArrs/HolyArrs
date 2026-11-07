@@ -9,13 +9,10 @@ import (
 	"strings"
 )
 
-// errTorrent is a .torrent that does not decode.
 var errTorrent = errors.New("the Source did not return a valid torrent file")
 
-// bval is one decoded bencode value: s for a string, i for an integer,
-// l for a list, d for a dictionary (keys in file order). raw is its bytes.
 type bval struct {
-	kind byte // 's', 'i', 'l', 'd'
+	kind byte
 	s    []byte
 	i    int64
 	l    []bval
@@ -91,18 +88,10 @@ func bstr(s []byte) []byte {
 	return append(strconv.AppendInt(nil, int64(len(s)), 10), append([]byte{':'}, s...)...)
 }
 
-// homeHost says whether a host named in a .torrent points at this machine
-// or a local network by itself: a literal local, link-local, CGNAT or ULA
-// address (in any number form), localhost, a .local name or a metadata
-// name. Other names are kept, as for magnet trackers: qBittorrent looks
-// them up itself, so they cannot be checked here in a way that lasts.
 func homeHost(host string) bool {
-	// A space, control byte or NUL is never in a real host, and libtorrent
-	// cuts a name at a NUL ("localhost\x00x" is localhost to it).
 	if strings.IndexFunc(host, func(r rune) bool { return r < 0x21 || r == 0x7f }) >= 0 {
 		return true
 	}
-	// Name lookups read the full-width and ideographic dots as dots.
 	host = strings.NewReplacer("。", ".", "．", ".", "｡", ".").Replace(host)
 	host = strings.TrimSuffix(strings.ToLower(strings.Trim(host, "[]")), ".")
 	if host == "" || metadataName(host) {
@@ -121,10 +110,6 @@ func homeURL(raw []byte) bool {
 	return err != nil || oddAuthority(string(raw)) || homeHost(u.Hostname())
 }
 
-// oddAuthority is a URL with '@', '?', '#' or a backslash between "//" and
-// the first "/". Go and libtorrent (qBittorrent, Deluge) read the host
-// differently there: "http://a.example:80?@192.168.1.1/" is a.example to
-// Go and 192.168.1.1 to libtorrent. No real tracker or web seed needs them.
 func oddAuthority(s string) bool {
 	i := strings.Index(s, "//")
 	if i < 0 {
@@ -137,11 +122,6 @@ func oddAuthority(s string) bool {
 	return strings.ContainsAny(a, "@?#\\")
 }
 
-// cleanTorrent drops the addresses outside the info dictionary that point
-// at home (#152): trackers (announce, announce-list), web seeds (url-list,
-// httpseeds) and DHT nodes. The info dictionary is copied byte for byte, so
-// the info hash stays the same. It says how many entries it left out; with
-// none it returns the file as it was.
 func cleanTorrent(b []byte) ([]byte, int, error) {
 	top, end, err := bdecode(b, 0, 0)
 	if err != nil || top.kind != 'd' || end != len(b) {
@@ -164,7 +144,7 @@ func cleanTorrent(b []byte) ([]byte, int, error) {
 					dropped++
 					continue
 				}
-				if it.kind == 'l' { // announce-list tiers
+				if it.kind == 'l' {
 					if t, ok := keepURLs(it); ok {
 						out = append(out, t)
 					}
@@ -213,7 +193,6 @@ func cleanTorrent(b []byte) ([]byte, int, error) {
 	return w.Bytes(), dropped, nil
 }
 
-// bencode writes a value back: an untouched one as its own bytes.
 func bencode(v bval) []byte {
 	if v.raw != nil {
 		return v.raw
@@ -238,9 +217,6 @@ func bencode(v bval) []byte {
 	return append(out, 'e')
 }
 
-// safeTorrent is the .torrent a Downloader gets for a Release from a Source
-// without local network access: cleanTorrent's file, checked to hash the
-// same as the one fetched.
 func safeTorrent(b []byte) ([]byte, error) {
 	h, err := torrentFileHash(b)
 	if err != nil {

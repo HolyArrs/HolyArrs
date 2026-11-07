@@ -29,24 +29,12 @@ var (
 	errNZBGetForeignMarker   = errors.New("the NZBGet job marker belongs to another category")
 )
 
-// NZBGet talks to the current JSON-RPC API. HolyArrs gives every job its
-// own parameter so an ambiguous add and later restarts can find the same
-// owned job without adopting another caller's download.
+// NZBGet is a Client for the NZBGet JSON-RPC API.
 type NZBGet struct {
 	base       string
 	user, pass string
 	http       *http.Client
-	// Category, when set by the manager, limits destructive lookup to the
-	// configured HolyArrs category.
-	Category string
-}
-
-// NewNZBGet makes an engine for the NZBGet control address.
-func NewNZBGet(base, user, pass string, h *http.Client) *NZBGet {
-	if h == nil {
-		h = &http.Client{Timeout: clientTimeout}
-	}
-	return &NZBGet{base: strings.TrimRight(base, "/"), user: user, pass: pass, http: h}
+	Category   string
 }
 
 type nzbgetRPCError struct {
@@ -60,65 +48,54 @@ type nzbParam struct {
 	Value string `json:"Value"`
 }
 
-func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) error {
-	in := struct {
-		Version string `json:"version"`
-		Method  string `json:"method"`
-		Params  []any  `json:"params"`
-		ID      int    `json:"id"`
-	}{Version: "1.1", Method: method, Params: params, ID: 1}
-	b, err := json.Marshal(in)
-	if err != nil {
-		return fmt.Errorf("nzbget %s: %w", method, err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, n.base+"/jsonrpc", bytes.NewReader(b))
-	if err != nil {
-		return fmt.Errorf("nzbget %s: bad address", method)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(n.user, n.pass)
-	resp, err := n.http.Do(req)
-	if err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		if errors.Is(err, outbound.ErrAddressRefused) {
-			return outbound.ErrAddressRefused
-		}
-		return errDownloaderUnavailable
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		return ErrAuth
-	}
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return adapterHTTPError{resp.StatusCode}
-	}
-	var answer struct {
-		Result json.RawMessage `json:"result"`
-		Error  *nzbgetRPCError `json:"error"`
-	}
-	if err := json.Unmarshal(body, &answer); err != nil {
-		return fmt.Errorf("nzbget %s: the address did not answer like NZBGet", method)
-	}
-	if answer.Error != nil {
-		if answer.Error.Code == http.StatusUnauthorized {
-			return ErrAuth
-		}
-		// The remote message is deliberately omitted: servers and proxies
-		// sometimes echo submitted credentials in diagnostic text.
-		return fmt.Errorf("nzbget %s: RPC error %d", method, answer.Error.Code)
-	}
-	if len(answer.Result) == 0 || string(answer.Result) == "null" {
-		return fmt.Errorf("nzbget %s: empty result", method)
-	}
-	if err := json.Unmarshal(answer.Result, out); err != nil {
-		return fmt.Errorf("nzbget %s: invalid result", method)
-	}
-	return nil
+type nzbgetRow struct {
+	NZBID           int        `json:"NZBID"`
+	NZBFilename     string     `json:"NZBFilename"`
+	NZBName         string     `json:"NZBName"`
+	Category        string     `json:"Category"`
+	DestDir         string     `json:"DestDir"`
+	FinalDir        string     `json:"FinalDir"`
+	FileSizeLo      uint64     `json:"FileSizeLo"`
+	FileSizeHi      uint64     `json:"FileSizeHi"`
+	RemainingSizeLo uint64     `json:"RemainingSizeLo"`
+	RemainingSizeHi uint64     `json:"RemainingSizeHi"`
+	Status          string     `json:"Status"`
+	ParStatus       string     `json:"ParStatus"`
+	ExParStatus     string     `json:"ExParStatus"`
+	UnpackStatus    string     `json:"UnpackStatus"`
+	MoveStatus      string     `json:"MoveStatus"`
+	ScriptStatus    string     `json:"ScriptStatus"`
+	DeleteStatus    string     `json:"DeleteStatus"`
+	URLStatus       string     `json:"UrlStatus"`
+	MarkStatus      string     `json:"MarkStatus"`
+	HistoryTime     int64      `json:"HistoryTime"`
+	MinPostTime     int64      `json:"MinPostTime"`
+	Parameters      []nzbParam `json:"Parameters"`
 }
 
+type nzbgetFile struct {
+	Filename        string `json:"Filename"`
+	FileSizeLo      uint64 `json:"FileSizeLo"`
+	FileSizeHi      uint64 `json:"FileSizeHi"`
+	RemainingSizeLo uint64 `json:"RemainingSizeLo"`
+	RemainingSizeHi uint64 `json:"RemainingSizeHi"`
+	Progress        int64  `json:"Progress"`
+}
+
+type nzbgetMatch struct {
+	row     nzbgetRow
+	history bool
+}
+
+// NewNZBGet returns a client for the NZBGet at base, using the given login and h.
+func NewNZBGet(base, user, pass string, h *http.Client) *NZBGet {
+	if h == nil {
+		h = &http.Client{Timeout: clientTimeout}
+	}
+	return &NZBGet{base: strings.TrimRight(base, "/"), user: user, pass: pass, http: h}
+}
+
+// Health reports whether NZBGet answers and accepts the login.
 func (n *NZBGet) Health(ctx context.Context) (Health, error) {
 	var version string
 	if err := n.rpc(ctx, "version", nil, &version); err != nil {
@@ -130,59 +107,7 @@ func (n *NZBGet) Health(ctx context.Context) (Health, error) {
 	return Health{Version: version, At: time.Now().UTC()}, nil
 }
 
-func nzbgetID(r AddRequest, attempt int) string {
-	if r.AttemptMarker != "" {
-		return r.AttemptMarker
-	}
-	key := r.OperationKey
-	if key == "" {
-		key = strings.ToLower(r.Name)
-	}
-	sum := sha256.Sum256([]byte(strings.ToLower(r.Category) + "\x00" + key + "\x00" + strconv.Itoa(attempt)))
-	return "nzbget-" + hex.EncodeToString(sum[:])
-}
-
-func validNZB(b []byte) bool {
-	d := xml.NewDecoder(bytes.NewReader(b))
-	d.Strict = true
-	depth, roots := 0, 0
-	for {
-		tok, err := d.Token()
-		if errors.Is(err, io.EOF) {
-			return roots == 1 && depth == 0
-		}
-		if err != nil {
-			return false
-		}
-		switch x := tok.(type) {
-		case xml.Directive:
-			// Most NZBs open with the NZB 1.1 DOCTYPE line, which is fine. A
-			// DOCTYPE with its own declarations ([...]) or any other directive is
-			// refused, so no entity declaration reaches this parser.
-			if dir := strings.TrimSpace(string(x)); !strings.HasPrefix(dir, "DOCTYPE ") || strings.ContainsAny(dir, "[]<>%") {
-				return false
-			}
-		case xml.StartElement:
-			if depth == 0 {
-				roots++
-				if roots != 1 || x.Name.Local != "nzb" {
-					return false
-				}
-			}
-			depth++
-		case xml.EndElement:
-			depth--
-			if depth < 0 {
-				return false
-			}
-		case xml.CharData:
-			if depth == 0 && strings.TrimSpace(string(x)) != "" {
-				return false
-			}
-		}
-	}
-}
-
+// Add queues an NZB and returns its job id.
 func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	if r.ReconcileOnly && r.AttemptMarker == "" {
 		return "", ErrUncertain
@@ -252,43 +177,200 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	return id, nil
 }
 
-type nzbgetRow struct {
-	NZBID           int        `json:"NZBID"`
-	NZBFilename     string     `json:"NZBFilename"`
-	NZBName         string     `json:"NZBName"`
-	Category        string     `json:"Category"`
-	DestDir         string     `json:"DestDir"`
-	FinalDir        string     `json:"FinalDir"`
-	FileSizeLo      uint64     `json:"FileSizeLo"`
-	FileSizeHi      uint64     `json:"FileSizeHi"`
-	RemainingSizeLo uint64     `json:"RemainingSizeLo"`
-	RemainingSizeHi uint64     `json:"RemainingSizeHi"`
-	Status          string     `json:"Status"`
-	ParStatus       string     `json:"ParStatus"`
-	ExParStatus     string     `json:"ExParStatus"`
-	UnpackStatus    string     `json:"UnpackStatus"`
-	MoveStatus      string     `json:"MoveStatus"`
-	ScriptStatus    string     `json:"ScriptStatus"`
-	DeleteStatus    string     `json:"DeleteStatus"`
-	URLStatus       string     `json:"UrlStatus"`
-	MarkStatus      string     `json:"MarkStatus"`
-	HistoryTime     int64      `json:"HistoryTime"`
-	MinPostTime     int64      `json:"MinPostTime"`
-	Parameters      []nzbParam `json:"Parameters"`
+// List returns the jobs in category.
+func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
+	active, history, err := n.rows(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ids := map[string]bool{}
+	for _, r := range active {
+		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
+			ids[id] = true
+		}
+	}
+	for _, r := range history {
+		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
+			ids[id] = true
+		}
+	}
+	out := make([]Job, 0, len(ids))
+	for id := range ids {
+		match, found, err := nzbgetFind(active, history, id, category)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			out = append(out, match.row.job(match.history))
+		}
+	}
+	n.shareSpeed(ctx, out)
+	return out, nil
 }
 
-type nzbgetFile struct {
-	Filename        string `json:"Filename"`
-	FileSizeLo      uint64 `json:"FileSizeLo"`
-	FileSizeHi      uint64 `json:"FileSizeHi"`
-	RemainingSizeLo uint64 `json:"RemainingSizeLo"`
-	RemainingSizeHi uint64 `json:"RemainingSizeHi"`
-	Progress        int64  `json:"Progress"`
+// Get returns the job with the given id.
+func (n *NZBGet) Get(ctx context.Context, id string) (Job, error) {
+	match, found, err := n.find(ctx, id)
+	if err != nil {
+		return Job{}, err
+	}
+	if !found {
+		return Job{}, ErrNotFound
+	}
+	r := match.row
+	if match.history {
+		return r.anyJob(true), nil
+	}
+	j := r.anyJob(false)
+	var fs []nzbgetFile
+	if err := n.rpc(ctx, "listfiles", []any{0, 0, r.NZBID}, &fs); err != nil {
+		return Job{}, err
+	}
+	for _, f := range fs {
+		size := nzbgetSize(f.FileSizeLo, f.FileSizeHi)
+		p := min(max(float64(f.Progress)/1000, 0), 1)
+		if size > 0 {
+			p = min(max(float64(size-nzbgetSize(f.RemainingSizeLo, f.RemainingSizeHi))/float64(size), 0), 1)
+		}
+		j.Files = append(j.Files, File{Name: nzbgetRelative(r.DestDir, f.Filename), Size: size, Progress: p})
+	}
+	return j, nil
 }
 
-type nzbgetMatch struct {
-	row     nzbgetRow
-	history bool
+// Remove deletes the job, and its files when deleteFiles is set.
+func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error {
+	match, found, err := n.find(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return ErrNotFound
+	}
+	command := "GroupFinalDelete"
+	if !deleteFiles {
+		command = "GroupParkDelete"
+	}
+	if match.history {
+		command = "HistoryFinalDelete"
+		if !deleteFiles {
+			command = "HistoryDelete"
+		}
+	}
+	var ok bool
+	if err := n.rpc(ctx, "editqueue", []any{command, "", []int{match.row.NZBID}}, &ok); err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("NZBGet refused to remove the job")
+	}
+	return nil
+}
+
+func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) error {
+	in := struct {
+		Version string `json:"version"`
+		Method  string `json:"method"`
+		Params  []any  `json:"params"`
+		ID      int    `json:"id"`
+	}{Version: "1.1", Method: method, Params: params, ID: 1}
+	b, err := json.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("nzbget %s: %w", method, err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, n.base+"/jsonrpc", bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("nzbget %s: bad address", method)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(n.user, n.pass)
+	resp, err := n.http.Do(req)
+	if err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if errors.Is(err, outbound.ErrAddressRefused) {
+			return outbound.ErrAddressRefused
+		}
+		return errDownloaderUnavailable
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return ErrAuth
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return adapterHTTPError{resp.StatusCode}
+	}
+	var answer struct {
+		Result json.RawMessage `json:"result"`
+		Error  *nzbgetRPCError `json:"error"`
+	}
+	if err := json.Unmarshal(body, &answer); err != nil {
+		return fmt.Errorf("nzbget %s: the address did not answer like NZBGet", method)
+	}
+	if answer.Error != nil {
+		if answer.Error.Code == http.StatusUnauthorized {
+			return ErrAuth
+		}
+		return fmt.Errorf("nzbget %s: RPC error %d", method, answer.Error.Code)
+	}
+	if len(answer.Result) == 0 || string(answer.Result) == "null" {
+		return fmt.Errorf("nzbget %s: empty result", method)
+	}
+	if err := json.Unmarshal(answer.Result, out); err != nil {
+		return fmt.Errorf("nzbget %s: invalid result", method)
+	}
+	return nil
+}
+
+func nzbgetID(r AddRequest, attempt int) string {
+	if r.AttemptMarker != "" {
+		return r.AttemptMarker
+	}
+	key := r.OperationKey
+	if key == "" {
+		key = strings.ToLower(r.Name)
+	}
+	sum := sha256.Sum256([]byte(strings.ToLower(r.Category) + "\x00" + key + "\x00" + strconv.Itoa(attempt)))
+	return "nzbget-" + hex.EncodeToString(sum[:])
+}
+
+func validNZB(b []byte) bool {
+	d := xml.NewDecoder(bytes.NewReader(b))
+	d.Strict = true
+	depth, roots := 0, 0
+	for {
+		tok, err := d.Token()
+		if errors.Is(err, io.EOF) {
+			return roots == 1 && depth == 0
+		}
+		if err != nil {
+			return false
+		}
+		switch x := tok.(type) {
+		case xml.Directive:
+			if dir := strings.TrimSpace(string(x)); !strings.HasPrefix(dir, "DOCTYPE ") || strings.ContainsAny(dir, "[]<>%") {
+				return false
+			}
+		case xml.StartElement:
+			if depth == 0 {
+				roots++
+				if roots != 1 || x.Name.Local != "nzb" {
+					return false
+				}
+			}
+			depth++
+		case xml.EndElement:
+			depth--
+			if depth < 0 {
+				return false
+			}
+		case xml.CharData:
+			if depth == 0 && strings.TrimSpace(string(x)) != "" {
+				return false
+			}
+		}
+	}
 }
 
 func nzbgetFind(active, history []nzbgetRow, id, category string) (nzbgetMatch, bool, error) {
@@ -362,8 +444,6 @@ func nzbgetPostProcess(s string) bool {
 }
 
 func nzbgetHistoryFailed(r nzbgetRow) bool {
-	// A full disk is not a bad release: keep the job so nothing is deleted
-	// or blocked; Detail carries the reason.
 	if r.Status == "WARNING/SPACE" || r.UnpackStatus == "SPACE" {
 		return false
 	}
@@ -408,7 +488,6 @@ func (r nzbgetRow) job(history bool) Job {
 		case nzbgetHistoryFailed(r):
 			j.State, j.Detail = StateFailed, nzbgetReason(r)
 		case r.Status == "WARNING/SPACE" || r.UnpackStatus == "SPACE":
-			// Out of the queue and stuck on disk space: waiting on the user.
 			j.State, j.Detail = StatePaused, nzbgetReason(r)
 		case strings.HasPrefix(r.Status, "SUCCESS/"):
 			j.State, j.ContentPath = StateFinished, r.FinalDir
@@ -444,38 +523,6 @@ func (n *NZBGet) lookup(ctx context.Context, id, category string) (nzbgetMatch, 
 	return nzbgetFind(active, history, id, category)
 }
 
-func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
-	active, history, err := n.rows(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ids := map[string]bool{}
-	for _, r := range active {
-		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
-			ids[id] = true
-		}
-	}
-	for _, r := range history {
-		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
-			ids[id] = true
-		}
-	}
-	out := make([]Job, 0, len(ids))
-	for id := range ids {
-		match, found, err := nzbgetFind(active, history, id, category)
-		if err != nil {
-			return nil, err
-		}
-		if found {
-			out = append(out, match.row.job(match.history))
-		}
-	}
-	n.shareSpeed(ctx, out)
-	return out, nil
-}
-
-// shareSpeed gives the jobs moving NZBGet's one overall rate, evenly, so the
-// total is the real one. Best effort: no reading leaves the speeds at zero.
 func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
 	moving := 0
 	for _, j := range jobs {
@@ -497,62 +544,4 @@ func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
 			jobs[i].Speed = st.DownloadRate / int64(moving)
 		}
 	}
-}
-
-func (n *NZBGet) Get(ctx context.Context, id string) (Job, error) {
-	match, found, err := n.find(ctx, id)
-	if err != nil {
-		return Job{}, err
-	}
-	if !found {
-		return Job{}, ErrNotFound
-	}
-	r := match.row
-	if match.history {
-		return r.anyJob(true), nil
-	}
-	j := r.anyJob(false)
-	var fs []nzbgetFile
-	if err := n.rpc(ctx, "listfiles", []any{0, 0, r.NZBID}, &fs); err != nil {
-		return Job{}, err
-	}
-	for _, f := range fs {
-		size := nzbgetSize(f.FileSizeLo, f.FileSizeHi)
-		p := min(max(float64(f.Progress)/1000, 0), 1)
-		if size > 0 {
-			p = min(max(float64(size-nzbgetSize(f.RemainingSizeLo, f.RemainingSizeHi))/float64(size), 0), 1)
-		}
-		j.Files = append(j.Files, File{Name: nzbgetRelative(r.DestDir, f.Filename), Size: size, Progress: p})
-	}
-	return j, nil
-}
-
-func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error {
-	match, found, err := n.find(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return ErrNotFound
-	}
-	// Keeping files uses park-delete; a plain GroupDelete can still clean
-	// the partial files off disk (DeleteCleanupDisk).
-	command := "GroupFinalDelete"
-	if !deleteFiles {
-		command = "GroupParkDelete"
-	}
-	if match.history {
-		command = "HistoryFinalDelete"
-		if !deleteFiles {
-			command = "HistoryDelete"
-		}
-	}
-	var ok bool
-	if err := n.rpc(ctx, "editqueue", []any{command, "", []int{match.row.NZBID}}, &ok); err != nil {
-		return err
-	}
-	if !ok {
-		return errors.New("NZBGet refused to remove the job")
-	}
-	return nil
 }

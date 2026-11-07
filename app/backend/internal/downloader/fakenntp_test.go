@@ -12,18 +12,39 @@ import (
 	"time"
 )
 
-// fakeNNTP is our own tiny news server for lab tests: it serves the parts
-// of one made-up file, yEnc encoded, and nothing else. It never talks to a
-// real Usenet server.
 type fakeNNTP struct {
 	ln       net.Listener
 	mu       sync.Mutex
-	articles map[string][]byte // message id -> encoded body lines
+	articles map[string][]byte
 	asked    int
-	delay    time.Duration // wait before each article, so a test can watch it move
+	delay    time.Duration
 }
 
-// yencPart encodes one part of a file the way news posts carry it.
+func TestYencPartRoundTrip(t *testing.T) {
+	data := make([]byte, 3000)
+	for i := range data {
+		data[i] = byte(i * 7)
+	}
+	enc := yencPart("x.bin", data, 1, 1, 1, len(data))
+	var out []byte
+	for _, line := range strings.Split(string(enc), "\r\n") {
+		if strings.HasPrefix(line, "=y") || line == "" {
+			continue
+		}
+		for i := 0; i < len(line); i++ {
+			c := line[i]
+			if c == '=' {
+				i++
+				c = line[i] - 64
+			}
+			out = append(out, c-42)
+		}
+	}
+	if !bytes.Equal(out, data) {
+		t.Fatalf("round trip lost bytes: %d vs %d", len(out), len(data))
+	}
+}
+
 func yencPart(name string, whole []byte, part, parts, begin, end int) []byte {
 	data := whole[begin-1 : end]
 	var b bytes.Buffer
@@ -52,8 +73,6 @@ func yencPart(name string, whole []byte, part, parts, begin, end int) []byte {
 	return b.Bytes()
 }
 
-// makeNZB splits data into parts, stores them on the server and returns
-// the NZB text.
 func (f *fakeNNTP) makeNZB(name string, data []byte, partSize int) string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -175,31 +194,5 @@ func (f *fakeNNTP) serve(c net.Conn) {
 		default:
 			say("500 unknown command")
 		}
-	}
-}
-
-// The encoder must round trip: decoding what it wrote gives the bytes back.
-func TestYencPartRoundTrip(t *testing.T) {
-	data := make([]byte, 3000)
-	for i := range data {
-		data[i] = byte(i * 7)
-	}
-	enc := yencPart("x.bin", data, 1, 1, 1, len(data))
-	var out []byte
-	for _, line := range strings.Split(string(enc), "\r\n") {
-		if strings.HasPrefix(line, "=y") || line == "" {
-			continue
-		}
-		for i := 0; i < len(line); i++ {
-			c := line[i]
-			if c == '=' {
-				i++
-				c = line[i] - 64
-			}
-			out = append(out, c-42)
-		}
-	}
-	if !bytes.Equal(out, data) {
-		t.Fatalf("round trip lost bytes: %d vs %d", len(out), len(data))
 	}
 }

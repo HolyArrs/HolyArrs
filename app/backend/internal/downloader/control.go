@@ -19,8 +19,31 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
-// ClientStatus is what a Downloader says about itself as a whole. Sizes
-// are bytes, speeds and limits bytes per second; 0 means none or unknown.
+// ErrFilePriority means a file priority is not 0, 1, 6 or 7.
+var ErrFilePriority = errors.New("file priority is 0 (skip), 1 (normal), 6 (high) or 7 (maximum)")
+
+// ErrNotSupported means the Downloader has no such control.
+var ErrNotSupported = errors.New("this Downloader does not offer that control")
+
+// ErrNoDownloader means the Downloader id is unknown or removed.
+var ErrNoDownloader = errors.New("no such Downloader")
+
+var qbitTrackerStatus = map[int]string{0: "disabled", 1: "not_contacted", 2: "working", 3: "working", 4: "not_working", 5: "error", 6: "unreachable"}
+
+// urlish matches address-shaped words in free text. Tracker messages can echo
+// the announce address with its passkey.
+var urlish = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
+
+// secretish matches passkey-shaped leftovers once addresses are gone: key=value
+// or key: value pairs that trackers use for a member key, and long hex path
+// parts.
+var (
+	secretPair = regexp.MustCompile(`(?i)\b(passkey|authkey|torrent_pass|api_?key|apikey|token|pid|uid|key)(\s*[=:]\s*)[^\s&;,"'<>]+`)
+	secretPath = regexp.MustCompile(`/[0-9a-fA-F]{24,}`)
+)
+
+// ClientStatus is what a Downloader reports about itself as a whole. Sizes are
+// bytes, speeds and limits are bytes per second; 0 means none or unknown.
 type ClientStatus struct {
 	Paused      bool  `json:"paused"`
 	Speed       int64 `json:"speed"`
@@ -34,11 +57,11 @@ type ClientStatus struct {
 	DayDown     int64 `json:"day_down"`
 	MonthDown   int64 `json:"month_down"`
 	FreeSpace   int64 `json:"free_space"`
-	// Torrent clients: connected, firewalled or disconnected ("" when not
-	// reported), and whether the slower second set of speed limits is on.
+	// Torrent clients only: connected, firewalled or disconnected ("" when not
+	// reported), and whether the slower alternative speed limits are on.
 	Connection string `json:"connection,omitempty"`
 	SlowMode   *bool  `json:"slow_mode,omitempty"`
-	// TimeLeft is a Usenet queue's own estimate in seconds (0 none).
+	// TimeLeft is a Usenet queue's own estimate in seconds (0 for none).
 	TimeLeft int64 `json:"time_left,omitempty"`
 }
 
@@ -50,11 +73,11 @@ type Tracker struct {
 	Message string `json:"message"`
 	Seeds   int    `json:"seeds"`
 	Peers   int    `json:"peers"`
-	// NextCheck is seconds until the next announce; 0 when unknown.
+	// NextCheck is seconds until the next announce, 0 when unknown.
 	NextCheck int64 `json:"next_check"`
-	// Fixed marks the client's own peer sources (DHT, PeX, LSD), which are
-	// not trackers and cannot be edited. Ref names a real tracker for edit
-	// and remove without showing its full address (which can hold a passkey).
+	// Fixed marks the client's own peer sources (DHT, PeX, LSD). They are not
+	// trackers and cannot be edited. Ref names a real tracker for edit and remove
+	// without exposing its full address, which can hold a passkey.
 	Fixed bool   `json:"fixed,omitempty"`
 	Ref   string `json:"ref,omitempty"`
 }
@@ -69,8 +92,8 @@ type Peer struct {
 	Country  string  `json:"country"`
 }
 
-// Controller is the optional part of an engine that steers downloads. An
-// engine without it keeps working; the controls just are not offered.
+// Controller is the optional part of an engine that steers downloads. An engine
+// without it still works; the controls are just not offered.
 type Controller interface {
 	PauseItem(ctx context.Context, id string) error
 	ResumeItem(ctx context.Context, id string) error
@@ -82,7 +105,7 @@ type Controller interface {
 	Status(ctx context.Context) (ClientStatus, error)
 }
 
-// TorrentController adds the torrent-only controls.
+// TorrentController adds the controls only torrents have.
 type TorrentController interface {
 	Recheck(ctx context.Context, id string) error
 	Reannounce(ctx context.Context, id string) error
@@ -90,7 +113,7 @@ type TorrentController interface {
 	Peers(ctx context.Context, id string) ([]Peer, error)
 }
 
-// TorrentDetail is what a torrent client says about one torrent. Sizes are
+// TorrentDetail is what a torrent client reports about one torrent. Sizes are
 // bytes, speeds bytes per second, ETA seconds (0 unknown).
 type TorrentDetail struct {
 	Size       int64      `json:"size"`
@@ -109,15 +132,15 @@ type TorrentDetail struct {
 	DoneAt     *time.Time `json:"done_at,omitempty"`
 	SavePath   string     `json:"save_path"`
 	Private    *bool      `json:"private,omitempty"`
-	// SeedingTime and TimeActive are seconds (0 unknown). LastSeen is the
-	// last time a full copy was seen; LastActivity the last piece moved.
+	// SeedingTime and TimeActive are seconds (0 unknown). LastSeen is when a full
+	// copy was last seen; LastActivity is when a piece last moved.
 	SeedingTime  int64      `json:"seeding_time,omitempty"`
 	TimeActive   int64      `json:"time_active,omitempty"`
 	LastSeen     *time.Time `json:"last_seen,omitempty"`
 	LastActivity *time.Time `json:"last_activity,omitempty"`
 }
 
-// TorrentFile is one file inside a torrent. Priority: 0 skip, 1 normal,
+// TorrentFile is one file inside a torrent. Priority is 0 skip, 1 normal,
 // 6 high, 7 maximum.
 type TorrentFile struct {
 	Index    int     `json:"index"`
@@ -127,27 +150,21 @@ type TorrentFile struct {
 	Priority int     `json:"priority"`
 }
 
-// TorrentInspector reads one torrent's detail and files and sets which
-// files to fetch.
+// TorrentInspector reads one torrent's detail and files, and sets which files
+// to fetch.
 type TorrentInspector interface {
 	Properties(ctx context.Context, id string) (TorrentDetail, error)
 	TorrentFiles(ctx context.Context, id string) ([]TorrentFile, error)
 	SetFilePriority(ctx context.Context, id string, indexes []int, priority int) error
 }
 
-// ErrFilePriority is a file priority that is not 0, 1, 6 or 7.
-var ErrFilePriority = errors.New("file priority is 0 (skip), 1 (normal), 6 (high) or 7 (maximum)")
-
-// Retrier tries a failed Usenet job again; the job id may change.
+// Retrier retries a failed Usenet job; the job id may change.
 type Retrier interface {
 	Retry(ctx context.Context, id string) (string, error)
 }
 
-// ErrNotSupported means the Downloader has no such control.
-var ErrNotSupported = errors.New("this Downloader does not offer that control")
-
-// ControlEngine returns a Downloader's engine without the guard, with the
-// guard's bookkeeping kept around the call.
+// ControlEngine returns a Downloader's engine without the guard, keeping the
+// guard's bookkeeping around the call.
 func (m *Manager) ControlEngine(ctx context.Context, d domain.Downloader, call func(Engine) error) error {
 	e, err := m.engine(ctx, d)
 	if err != nil {
@@ -159,8 +176,8 @@ func (m *Manager) ControlEngine(ctx context.Context, d domain.Downloader, call f
 	return call(e)
 }
 
-// Control runs an action on the Downloader holding a Download, with the
-// Download's id in that Downloader. A sync follows so the new state shows.
+// Control runs an action on the Downloader holding a Download, using the id the
+// Downloader knows it by. A sync follows so the new state shows.
 func (m *Manager) Control(ctx context.Context, downloadID int64, call func(e Engine, id string) error) error {
 	var d domain.Download
 	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
@@ -183,8 +200,8 @@ func (m *Manager) Control(ctx context.Context, downloadID int64, call func(e Eng
 	return err
 }
 
-// Inspect is Control for reading only: it also reaches a finished or
-// seeding torrent the client still holds (anything but cleaned up or gone).
+// Inspect is Control for reads only. It also reaches a finished or seeding
+// torrent the client still holds (any state but cleaned up or gone).
 func (m *Manager) Inspect(ctx context.Context, downloadID int64, call func(e Engine, id string) error) error {
 	var d domain.Download
 	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
@@ -203,18 +220,14 @@ func (m *Manager) Inspect(ctx context.Context, downloadID int64, call func(e Eng
 	return m.ControlEngine(ctx, dr, func(e Engine) error { return call(e, d.ExternalID) })
 }
 
-// Inspectable says the client may still hold a Download in this state.
+// Inspectable reports whether the client may still hold a Download in this state.
 func Inspectable(state string) bool {
 	return state != "cleaned" && state != "vanished" && state != ""
 }
 
-// ErrNoDownloader is a Downloader id that is unknown or removed.
-var ErrNoDownloader = errors.New("no such Downloader")
-
-// ControlItem runs a call on one item of a Downloader addressed by its own
-// id in the client (a torrent's info hash), whether HolyArrs sent it or
-// not. It never touches HolyArrs' download records; when write is true a
-// sync follows so the new state shows.
+// ControlItem runs a call on one item of a Downloader by the client's own id
+// (a torrent's info hash), whether or not HolyArrs sent it. It never touches
+// download records. When write is true a sync follows so the new state shows.
 func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash string, write bool, call func(e Engine, id string) error) error {
 	var dr domain.Downloader
 	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
@@ -228,7 +241,7 @@ func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash stri
 			return ErrNotFound
 		}
 	case "usenet":
-		// A Usenet job id goes out as the client wrote it.
+		// A Usenet job id goes out exactly as the client wrote it.
 		if h, err = UsenetID(hash); err != nil {
 			return ErrNotFound
 		}
@@ -242,9 +255,8 @@ func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash stri
 	return err
 }
 
-// UsenetID checks a Usenet job id from a request: letters, digits and
-// _ . - only, at most 100 characters (SABnzbd ids are SABnzbd_nzo_... or a
-// UUID).
+// UsenetID checks a Usenet job id from a request: letters, digits and _ . -
+// only, at most 100 characters. SABnzbd ids look like SABnzbd_nzo_... or a UUID.
 func UsenetID(id string) (string, error) {
 	if id == "" || len(id) > 100 {
 		return "", ErrNotFound
@@ -258,9 +270,9 @@ func UsenetID(id string) (string, error) {
 	return id, nil
 }
 
-// ControlTorrentClient runs a call on a torrent Downloader as a whole (an
-// add, or one action on many of its items). Like ControlItem it never
-// touches HolyArrs' download records; when write is true a sync follows.
+// ControlTorrentClient runs a call on a torrent Downloader as a whole, such as
+// an add or one action on many items. Like ControlItem it never touches download
+// records. When write is true a sync follows.
 func (m *Manager) ControlTorrentClient(ctx context.Context, downloaderID int64, write bool, call func(e Engine) error) error {
 	var dr domain.Downloader
 	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
@@ -283,38 +295,6 @@ func (m *Manager) Downloaders(ctx context.Context) ([]domain.Downloader, error) 
 		return nil, nil
 	}
 	return ds, err
-}
-
-// --- qBittorrent ---
-
-// qbitStartStop sends the 5.x action and falls back to the 4.x name.
-func (q *Qbittorrent) qbitStartStop(ctx context.Context, hashes string, start bool) error {
-	now, old := "torrents/stop", "torrents/pause"
-	if start {
-		now, old = "torrents/start", "torrents/resume"
-	}
-	_, err := q.call(ctx, http.MethodPost, now, url.Values{"hashes": {hashes}})
-	if errors.Is(err, ErrNotFound) {
-		_, err = q.call(ctx, http.MethodPost, old, url.Values{"hashes": {hashes}})
-	}
-	return err
-}
-
-func qbitHash(id string) (string, error) {
-	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
-		return "", errBadHash
-	}
-	return id, nil
-}
-
-func (q *Qbittorrent) onOne(ctx context.Context, path, id string) error {
-	h, err := qbitHash(id)
-	if err != nil {
-		return err
-	}
-	_, err = q.call(ctx, http.MethodPost, path, url.Values{"hashes": {h}})
-	return err
 }
 
 // PauseItem stops one torrent.
@@ -341,8 +321,8 @@ func (q *Qbittorrent) PauseAll(ctx context.Context) error { return q.qbitStartSt
 // ResumeAll starts every torrent.
 func (q *Qbittorrent) ResumeAll(ctx context.Context) error { return q.qbitStartStop(ctx, "all", true) }
 
-// MoveTop puts a torrent first in the queue; qBittorrent refuses it (409)
-// while its queue is off.
+// MoveTop puts a torrent first in the queue. qBittorrent answers 409 while its
+// queue is off.
 func (q *Qbittorrent) MoveTop(ctx context.Context, id string) error {
 	h, err := qbitHash(id)
 	if err != nil {
@@ -374,8 +354,8 @@ func (q *Qbittorrent) SetSpeedLimit(ctx context.Context, down, up int64) error {
 	return err
 }
 
-// Status reads the server state from a full delta answer: free space and
-// all-time totals are only there.
+// Status reads the server state from a full delta answer, the only place free
+// space and all-time totals appear.
 func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 	b, err := q.call(ctx, http.MethodGet, "sync/maindata", url.Values{"rid": {"0"}})
 	if err != nil {
@@ -395,8 +375,8 @@ func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 	return qbitStatus(md.Server, states), nil
 }
 
-// StatusFromMain is Status built from the background reader's merged
-// change feed, so the page needs no full read of its own.
+// StatusFromMain is Status built from the background reader's merged change
+// feed, so the page needs no full read of its own.
 func StatusFromMain(s *MainState) ClientStatus {
 	server, _ := json.Marshal(s.Server)
 	states := make([]string, 0, len(s.fields))
@@ -408,42 +388,8 @@ func StatusFromMain(s *MainState) ClientStatus {
 	return qbitStatus(server, states)
 }
 
-func qbitStatus(server []byte, states []string) ClientStatus {
-	var s struct {
-		AllTimeDL int64  `json:"alltime_dl"`
-		AllTimeUL int64  `json:"alltime_ul"`
-		DLData    int64  `json:"dl_info_data"`
-		ULData    int64  `json:"up_info_data"`
-		DLSpeed   int64  `json:"dl_info_speed"`
-		ULSpeed   int64  `json:"up_info_speed"`
-		DLLimit   int64  `json:"dl_rate_limit"`
-		ULLimit   int64  `json:"up_rate_limit"`
-		Free      int64  `json:"free_space_on_disk"`
-		Conn      string `json:"connection_status"`
-		Alt       *bool  `json:"use_alt_speed_limits"`
-	}
-	_ = json.Unmarshal(server, &s)
-	st := ClientStatus{Speed: s.DLSpeed, UpSpeed: s.ULSpeed, SpeedLimit: max(s.DLLimit, 0), UpLimit: max(s.ULLimit, 0),
-		SessionDown: s.DLData, SessionUp: s.ULData, AllTimeDown: s.AllTimeDL, AllTimeUp: s.AllTimeUL, FreeSpace: s.Free, SlowMode: s.Alt}
-	switch s.Conn {
-	case "connected", "firewalled", "disconnected":
-		st.Connection = s.Conn
-	}
-	// Paused as a whole when there are torrents and none of them runs.
-	st.Paused = len(states) > 0
-	for _, t := range states {
-		if !strings.HasPrefix(t, "stopped") && !strings.HasPrefix(t, "paused") {
-			st.Paused = false
-			break
-		}
-	}
-	return st
-}
-
-var qbitTrackerStatus = map[int]string{0: "disabled", 1: "not_contacted", 2: "working", 3: "working", 4: "not_working", 5: "error", 6: "unreachable"}
-
-// Trackers lists a torrent's trackers, then the three fixed rows for DHT,
-// peer exchange and local discovery.
+// Trackers lists a torrent's trackers, then three fixed rows for DHT, peer
+// exchange and local discovery.
 func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error) {
 	h, err := qbitHash(id)
 	if err != nil {
@@ -472,7 +418,7 @@ func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error
 			if name == "" {
 				continue
 			}
-			// The fixed rows' status 0 means the source is off; else it runs.
+			// Status 0 on a fixed row means the source is off; otherwise it is running.
 			st := "working"
 			if r.Status == 0 {
 				st = "disabled"
@@ -517,7 +463,7 @@ func (q *Qbittorrent) Peers(ctx context.Context, id string) ([]Peer, error) {
 		}
 		out = append(out, Peer{Address: addr, Client: p.Client, Progress: p.Progress, Speed: p.DLSpeed, UpSpeed: p.UPSpeed, Country: p.Country})
 	}
-	// A steady order, so the list does not reshuffle between reads.
+	// Sorted so the list does not reshuffle between reads.
 	sort.Slice(out, func(i, j int) bool { return out[i].Address < out[j].Address })
 	return out, nil
 }
@@ -574,8 +520,8 @@ func (q *Qbittorrent) Properties(ctx context.Context, id string) (TorrentDetail,
 		SeedingTime: max(p.SeedTime, 0), TimeActive: max(p.Elapsed, 0), LastSeen: when(p.LastSeen)}, nil
 }
 
-// TorrentFiles lists a torrent's files with their priority; empty before
-// the metadata arrives.
+// TorrentFiles lists a torrent's files with their priority; empty until the
+// metadata arrives.
 func (q *Qbittorrent) TorrentFiles(ctx context.Context, id string) ([]TorrentFile, error) {
 	h, err := qbitHash(id)
 	if err != nil {
@@ -617,16 +563,6 @@ func (q *Qbittorrent) SetFilePriority(ctx context.Context, id string, indexes []
 	return err
 }
 
-// --- SABnzbd ---
-
-func (s *Sabnzbd) queueAct(ctx context.Context, name, id string) error {
-	if id == "" || strings.Contains(id, ",") {
-		return ErrNotFound
-	}
-	_, err := s.call(ctx, "queue", url.Values{"name": {name}, "value": {id}}, true)
-	return err
-}
-
 // PauseItem pauses one job.
 func (s *Sabnzbd) PauseItem(ctx context.Context, id string) error {
 	return s.queueAct(ctx, "pause", id)
@@ -664,8 +600,8 @@ func (s *Sabnzbd) MoveTop(ctx context.Context, id string) error {
 		} `json:"result"`
 	}
 	if json.Unmarshal(b, &r) == nil && r.Result.Position != nil && *r.Result.Position < 0 {
-		// No move: SABnzbd answers the same for a job already first (the
-		// only one, say) as for one it does not have.
+		// Do not move: SABnzbd gives the same answer for a job already first (or the
+		// only one) as for a job it does not have.
 		qb, err := s.call(ctx, "queue", url.Values{"nzo_ids": {id}, "start": {"0"}, "limit": {"1"}}, true)
 		if err != nil {
 			return err
@@ -683,8 +619,8 @@ func (s *Sabnzbd) MoveTop(ctx context.Context, id string) error {
 	return nil
 }
 
-// SetSpeedLimit caps the download speed. The value goes out with a K so
-// SABnzbd reads it as a rate, never as a percent. Usenet has no upload.
+// SetSpeedLimit caps the download speed. The value carries a K so SABnzbd reads
+// it as a rate and not a percent. Usenet has no upload.
 func (s *Sabnzbd) SetSpeedLimit(ctx context.Context, down, _ int64) error {
 	v := "0"
 	if down > 0 {
@@ -721,7 +657,7 @@ func (s *Sabnzbd) Status(ctx context.Context) (ClientStatus, error) {
 	st := ClientStatus{Paused: qu.Queue.Paused, Speed: int64(num(qu.Queue.KBPerSec) * 1024), SpeedLimit: int64(num(qu.Queue.Limit)), FreeSpace: free, TimeLeft: clock(qu.Queue.TimeLeft)}
 	b, err = s.call(ctx, "server_stats", nil, true)
 	if err != nil {
-		return st, nil // the counters are extra; the header is enough
+		return st, nil // The counters are extra; the header is enough.
 	}
 	var ss struct {
 		Total int64 `json:"total"`
@@ -752,7 +688,81 @@ func (s *Sabnzbd) Retry(ctx context.Context, id string) (string, error) {
 	return id, nil
 }
 
-// trackerHost keeps only scheme and host of a tracker address, so passkeys
+// RedactURLs swaps every address in free text for its scheme and host, so a
+// passkey never leaves the client's answer.
+func RedactURLs(msg string) string { return redactURLs(msg) }
+
+// qbitStartStop sends the 5.x action and falls back to the 4.x name.
+func (q *Qbittorrent) qbitStartStop(ctx context.Context, hashes string, start bool) error {
+	now, old := "torrents/stop", "torrents/pause"
+	if start {
+		now, old = "torrents/start", "torrents/resume"
+	}
+	_, err := q.call(ctx, http.MethodPost, now, url.Values{"hashes": {hashes}})
+	if errors.Is(err, ErrNotFound) {
+		_, err = q.call(ctx, http.MethodPost, old, url.Values{"hashes": {hashes}})
+	}
+	return err
+}
+
+func qbitHash(id string) (string, error) {
+	id = strings.ToLower(id)
+	if !source.ValidInfoHash(id) {
+		return "", errBadHash
+	}
+	return id, nil
+}
+
+func (q *Qbittorrent) onOne(ctx context.Context, path, id string) error {
+	h, err := qbitHash(id)
+	if err != nil {
+		return err
+	}
+	_, err = q.call(ctx, http.MethodPost, path, url.Values{"hashes": {h}})
+	return err
+}
+
+func qbitStatus(server []byte, states []string) ClientStatus {
+	var s struct {
+		AllTimeDL int64  `json:"alltime_dl"`
+		AllTimeUL int64  `json:"alltime_ul"`
+		DLData    int64  `json:"dl_info_data"`
+		ULData    int64  `json:"up_info_data"`
+		DLSpeed   int64  `json:"dl_info_speed"`
+		ULSpeed   int64  `json:"up_info_speed"`
+		DLLimit   int64  `json:"dl_rate_limit"`
+		ULLimit   int64  `json:"up_rate_limit"`
+		Free      int64  `json:"free_space_on_disk"`
+		Conn      string `json:"connection_status"`
+		Alt       *bool  `json:"use_alt_speed_limits"`
+	}
+	_ = json.Unmarshal(server, &s)
+	st := ClientStatus{Speed: s.DLSpeed, UpSpeed: s.ULSpeed, SpeedLimit: max(s.DLLimit, 0), UpLimit: max(s.ULLimit, 0),
+		SessionDown: s.DLData, SessionUp: s.ULData, AllTimeDown: s.AllTimeDL, AllTimeUp: s.AllTimeUL, FreeSpace: s.Free, SlowMode: s.Alt}
+	switch s.Conn {
+	case "connected", "firewalled", "disconnected":
+		st.Connection = s.Conn
+	}
+	// Paused as a whole when there are torrents and none of them is running.
+	st.Paused = len(states) > 0
+	for _, t := range states {
+		if !strings.HasPrefix(t, "stopped") && !strings.HasPrefix(t, "paused") {
+			st.Paused = false
+			break
+		}
+	}
+	return st
+}
+
+func (s *Sabnzbd) queueAct(ctx context.Context, name, id string) error {
+	if id == "" || strings.Contains(id, ",") {
+		return ErrNotFound
+	}
+	_, err := s.call(ctx, "queue", url.Values{"name": {name}, "value": {id}}, true)
+	return err
+}
+
+// trackerHost keeps only the scheme and host of a tracker address, so passkeys
 // in the path, query or user part never leave HolyArrs. Entries like
 // "** [DHT] **" are not addresses and pass through.
 func trackerHost(raw string) string {
@@ -763,26 +773,10 @@ func trackerHost(raw string) string {
 	return u.Scheme + "://" + u.Host
 }
 
-// urlish finds address-shaped words in free text (tracker messages can echo
-// the announce address, passkey included).
-var urlish = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
-
-// secretish finds passkey-shaped fragments left once the addresses are
-// gone: key=value (or key: value) pairs trackers use for a member's key, and long hex path
-// parts.
-var (
-	secretPair = regexp.MustCompile(`(?i)\b(passkey|authkey|torrent_pass|api_?key|apikey|token|pid|uid|key)(\s*[=:]\s*)[^\s&;,"'<>]+`)
-	secretPath = regexp.MustCompile(`/[0-9a-fA-F]{24,}`)
-)
-
-// redactURLs swaps every address in a message for its trackerHost and
-// blanks passkey-shaped fragments written without a scheme.
+// redactURLs swaps every address in a message for its trackerHost and blanks
+// passkey-shaped fragments written without a scheme.
 func redactURLs(msg string) string {
 	msg = urlish.ReplaceAllStringFunc(msg, trackerHost)
 	msg = secretPair.ReplaceAllString(msg, "$1$2…")
 	return secretPath.ReplaceAllString(msg, "/…")
 }
-
-// RedactURLs swaps every address in free text for its scheme and host, so
-// a passkey never leaves the client's answer.
-func RedactURLs(msg string) string { return redactURLs(msg) }

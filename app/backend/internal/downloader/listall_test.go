@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// ListAll reads every torrent in one torrents/info call with no category,
-// so torrents HolyArrs did not send are listed too; List keeps its filter.
 func TestQbitListAllEveryCategory(t *testing.T) {
 	var queries []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

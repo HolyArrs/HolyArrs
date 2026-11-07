@@ -12,98 +12,23 @@ import (
 	"testing"
 )
 
-const sabKey = "0123456789abcdef0123456789abcdef" // test-only
-
-// fakeSab answers with the replies recorded from the lab SABnzbd 5.1.3
-// (testdata/sabnzbd, made by TestLabSabnzbd with HOLYARRS_RECORD=1).
-type fakeSab struct {
-	mu      sync.Mutex
-	queue   string // file name under testdata/sabnzbd, or "" for an empty queue
-	history string
-	calls   []string
-	deleted []string
-	added   []map[string]string
-	refuse  string // a 403 line to answer with
-	addFail bool
-}
-
-func recorded(t *testing.T, name string) string {
-	t.Helper()
-	b, err := os.ReadFile(filepath.Join("testdata", "sabnzbd", name))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
-}
-
-func startSab(t *testing.T, f *fakeSab) string {
-	t.Helper()
-	files := map[string]string{}
-	for _, n := range []string{"version.json", "get_cats.json", "queue-downloading.json", "history.json"} {
-		files[n] = recorded(t, n)
-	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f.mu.Lock()
-		defer f.mu.Unlock()
-		q := r.URL.Query()
-		mode := q.Get("mode")
-		f.calls = append(f.calls, mode+":"+q.Get("name"))
-		if r.URL.Path != "/api" {
-			http.NotFound(w, r)
-			return
-		}
-		if f.refuse != "" {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(f.refuse))
-			return
-		}
-		if mode != "version" && q.Get("apikey") != sabKey {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte("API Key Incorrect"))
-			return
-		}
-		switch {
-		case mode == "version":
-			_, _ = w.Write([]byte(files["version.json"]))
-		case mode == "get_cats":
-			_, _ = w.Write([]byte(files["get_cats.json"]))
-		case mode == "addurl":
-			if f.addFail {
-				_, _ = w.Write([]byte(`{"status": false, "error": "expects one parameter"}`))
-				return
-			}
-			f.added = append(f.added, map[string]string{"name": q.Get("name"), "cat": q.Get("cat"), "nzbname": q.Get("nzbname")})
-			_, _ = w.Write([]byte(`{"status": true, "nzo_ids": ["ed7d10cb-a608-4f83-92f0-f78e38f07a0e"]}`))
-		case (mode == "queue" || mode == "history") && q.Get("name") == "delete":
-			f.deleted = append(f.deleted, mode+":"+q.Get("value")+":"+q.Get("del_files"))
-			_, _ = w.Write([]byte(`{"status": true, "nzo_ids": ["` + q.Get("value") + `"]}`))
-		case (mode == "queue" || mode == "history") && q.Get("category") != "" && q.Get("category") != "movies":
-			// Every recorded job is in movies; another category is empty.
-			_, _ = w.Write([]byte(`{"queue": {"status": "Idle", "kbpersec": "0.00", "slots": []}, "history": {"slots": []}}`))
-		case mode == "queue":
-			if f.queue == "" {
-				_, _ = w.Write([]byte(`{"queue": {"status": "Idle", "kbpersec": "0.00", "slots": []}}`))
-				return
-			}
-			_, _ = w.Write([]byte(files[f.queue]))
-		case mode == "history":
-			if f.history == "" {
-				_, _ = w.Write([]byte(`{"history": {"slots": []}}`))
-				return
-			}
-			_, _ = w.Write([]byte(files[f.history]))
-		default:
-			_, _ = w.Write([]byte(`{"status": false, "error": "not implemented"}`))
-		}
-	}))
-	t.Cleanup(srv.Close)
-	return srv.URL
-}
+const sabKey = "0123456789abcdef0123456789abcdef"
 
 const (
 	sabGood = "ed7d10cb-a608-4f83-92f0-f78e38f07a0e"
 	sabBad  = "6d1eae1a-3a5b-44ed-af8c-8fcee4d43d6b"
 )
+
+type fakeSab struct {
+	mu      sync.Mutex
+	queue   string
+	history string
+	calls   []string
+	deleted []string
+	added   []map[string]string
+	refuse  string
+	addFail bool
+}
 
 func TestSabnzbdHealthChecksTheKey(t *testing.T) {
 	f := &fakeSab{}
@@ -169,13 +94,11 @@ func TestSabnzbdAddOnceByName(t *testing.T) {
 	if err != nil || id != sabGood || len(f.added) != 1 || f.added[0]["cat"] != "movies" || f.added[0]["nzbname"] == "" {
 		t.Fatalf("add %q %v %+v", id, err, f.added)
 	}
-	// Now SABnzbd has it: a second add finds it by name and adds nothing.
 	f.history = "history.json"
 	id, err = s.Add(ctx, AddRequest{URL: "http://lab/good.nzb", Category: "movies", Name: "lab.usenet.movie.2024.1080p.web.h264-holyarrs"})
 	if err != nil || id != sabGood || len(f.added) != 1 {
 		t.Fatalf("second add %q %v %d", id, err, len(f.added))
 	}
-	// A failed job with the same name is not reused.
 	if _, err := s.Add(ctx, AddRequest{URL: "http://lab/bad.nzb", Category: "movies", Name: "Lab.Usenet.Broken.2024.1080p.WEB.H264-HOLYARRS"}); err != nil || len(f.added) != 2 {
 		t.Fatalf("add after failure %v %d", err, len(f.added))
 	}
@@ -199,7 +122,6 @@ func TestSabnzbdRemoveFromBothLists(t *testing.T) {
 	}
 }
 
-// The key rides in the address, so no error may carry the address.
 func TestSabnzbdErrorsNeverCarryTheKey(t *testing.T) {
 	s := NewSabnzbd("http://127.0.0.1:1", sabKey, nil)
 	_, err := s.Health(context.Background())
@@ -243,4 +165,76 @@ func TestSabnzbdFailReasonPrefersStageLog(t *testing.T) {
 	if d := x.job().Detail; d != "Download failed - Not on your server(s)" {
 		t.Fatalf("own: %q", d)
 	}
+}
+
+func recorded(t *testing.T, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join("testdata", "sabnzbd", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+func startSab(t *testing.T, f *fakeSab) string {
+	t.Helper()
+	files := map[string]string{}
+	for _, n := range []string{"version.json", "get_cats.json", "queue-downloading.json", "history.json"} {
+		files[n] = recorded(t, n)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		q := r.URL.Query()
+		mode := q.Get("mode")
+		f.calls = append(f.calls, mode+":"+q.Get("name"))
+		if r.URL.Path != "/api" {
+			http.NotFound(w, r)
+			return
+		}
+		if f.refuse != "" {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(f.refuse))
+			return
+		}
+		if mode != "version" && q.Get("apikey") != sabKey {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("API Key Incorrect"))
+			return
+		}
+		switch {
+		case mode == "version":
+			_, _ = w.Write([]byte(files["version.json"]))
+		case mode == "get_cats":
+			_, _ = w.Write([]byte(files["get_cats.json"]))
+		case mode == "addurl":
+			if f.addFail {
+				_, _ = w.Write([]byte(`{"status": false, "error": "expects one parameter"}`))
+				return
+			}
+			f.added = append(f.added, map[string]string{"name": q.Get("name"), "cat": q.Get("cat"), "nzbname": q.Get("nzbname")})
+			_, _ = w.Write([]byte(`{"status": true, "nzo_ids": ["ed7d10cb-a608-4f83-92f0-f78e38f07a0e"]}`))
+		case (mode == "queue" || mode == "history") && q.Get("name") == "delete":
+			f.deleted = append(f.deleted, mode+":"+q.Get("value")+":"+q.Get("del_files"))
+			_, _ = w.Write([]byte(`{"status": true, "nzo_ids": ["` + q.Get("value") + `"]}`))
+		case (mode == "queue" || mode == "history") && q.Get("category") != "" && q.Get("category") != "movies":
+			_, _ = w.Write([]byte(`{"queue": {"status": "Idle", "kbpersec": "0.00", "slots": []}, "history": {"slots": []}}`))
+		case mode == "queue":
+			if f.queue == "" {
+				_, _ = w.Write([]byte(`{"queue": {"status": "Idle", "kbpersec": "0.00", "slots": []}}`))
+				return
+			}
+			_, _ = w.Write([]byte(files[f.queue]))
+		case mode == "history":
+			if f.history == "" {
+				_, _ = w.Write([]byte(`{"history": {"slots": []}}`))
+				return
+			}
+			_, _ = w.Write([]byte(files[f.history]))
+		default:
+			_, _ = w.Write([]byte(`{"status": false, "error": "not implemented"}`))
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL
 }

@@ -15,15 +15,6 @@ import (
 	"time"
 )
 
-// The Downloads page's SABnzbd reads and controls against the lab SABnzbd,
-// run like TestLabSabnzbd (inside the lab network, key by env var only):
-//
-//	HOLYARRS_LAB_SAB_KEY=<lab key> go test -tags lab -run SabnzbdParity ./internal/downloader/
-//
-// It makes a finished and a failed job with our own news server, then
-// reads the paged queue and finished list (and the counter fast path), the
-// server counters and the failed job's stage log, pauses, resumes, moves
-// and deletes a slow job, and retries the failed one.
 func TestLabSabnzbdParity(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_SAB_KEY")
 	if key == "" {
@@ -115,7 +106,6 @@ func TestLabSabnzbdParity(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	// The finished list in pages, then the counter fast path.
 	h, err := s.History(ctx, 0)
 	if err != nil || !h.Changed || h.Last == 0 {
 		t.Fatalf("history: %v changed=%v last=%d", err, h.Changed, h.Last)
@@ -133,7 +123,6 @@ func TestLabSabnzbdParity(t *testing.T) {
 	}
 	t.Logf("finished list: %d rows, counter %d; unchanged read answered no rows", len(h.Jobs), h.Last)
 
-	// Server counters and the failed job's steps.
 	st, err := s.ServerStats(ctx)
 	if err != nil {
 		t.Fatalf("server stats: %v", err)
@@ -152,7 +141,6 @@ func TestLabSabnzbdParity(t *testing.T) {
 	}
 	t.Logf("failed job stages: %+v", stages)
 
-	// A slow job: pause, resume, move to top, delete.
 	nntp.delay = 3 * time.Second
 	sid, err := s.Add(ctx, AddRequest{URL: "http://" + me + ":18799/slow.nzb", Category: cat, Name: slow})
 	if err != nil {
@@ -205,7 +193,6 @@ func TestLabSabnzbdParity(t *testing.T) {
 		t.Fatalf("slow job still there: %v", err)
 	}
 
-	// Retry the failed job: it goes back to the queue, perhaps as a new id.
 	nid, err := s.Retry(ctx, ids[bad])
 	if err != nil {
 		t.Fatalf("retry: %v", err)

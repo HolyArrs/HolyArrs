@@ -11,6 +11,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
+type requestRecorder struct {
+	Engine
+	request AddRequest
+}
+
 func TestConcurrentEngineCacheUsesOneSession(t *testing.T) {
 	const count = 8
 	entered, release := make(chan struct{}, count), make(chan struct{})
@@ -72,12 +77,8 @@ func TestEditedDownloaderRejectsOldConstructor(t *testing.T) {
 	}
 }
 
-type requestRecorder struct {
-	Engine
-	request AddRequest
-}
-
 func (e *requestRecorder) Get(context.Context, string) (Job, error) { return Job{}, ErrNotFound }
+
 func (e *requestRecorder) Add(_ context.Context, r AddRequest) (string, error) {
 	e.request = r
 	return "owned", nil
@@ -108,7 +109,6 @@ func TestOptionalGrabUsesSourcePolicyAndStableOperation(t *testing.T) {
 			if _, err := tx.Exec("UPDATE downloaders SET adapter = ? WHERE id = ?", d.Adapter, d.ID); err != nil {
 				return err
 			}
-			// This test asks for a fresh send to inspect each Source policy.
 			_, err := tx.Exec("UPDATE downloader_attempts SET state = 'resolved'")
 			return err
 		}); err != nil {

@@ -10,8 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// A season pack chosen for several Slots is one Download for all of them
-// (stage 3.2.2; import of each episode is stage 4.2).
 func TestGrabPackFillsEverySlot(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -51,7 +49,6 @@ func TestGrabPackFillsEverySlot(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := w.download(t, id)
-	// The Slot that is no longer chosen is left out.
 	if !slices.Equal(d.SlotIDs, []int64{w.slotID, others[0]}) || len(w.fake.added) != 1 {
 		t.Fatalf("download slots %v, added %d", d.SlotIDs, len(w.fake.added))
 	}
@@ -70,8 +67,6 @@ func TestGrabPackFillsEverySlot(t *testing.T) {
 	}
 }
 
-// A Slot listed in an old pick_slot_ids but chosen since for another
-// Release is not pulled into this Download (3.2 review, I2).
 func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -86,7 +81,6 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		// Another Release, chosen for the other Slot since.
 		var otherRel int64
 		if err := tx.QueryRow(`INSERT INTO releases (created_at, created_by, updated_at, updated_by, source_id, name, link_ref, protocol, size, state, verdict, matched_slot_ids, found_by)
 			SELECT created_at, created_by, updated_at, updated_by, source_id, name || '.other', link_ref || 'x', protocol, size, state, verdict, matched_slot_ids, found_by FROM releases WHERE id = ? RETURNING id`, w.relID).Scan(&otherRel); err != nil {
@@ -118,9 +112,6 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 	}
 }
 
-// 4.8.11 check: a Release chosen for Slots of two Versions (the feed check
-// judged it for HD and 4K) is never one Download for both: the Download
-// takes only the Slots of the grabbed Slot's Version.
 func TestGrabPackKeepsToOneVersion(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()

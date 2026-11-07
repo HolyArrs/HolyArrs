@@ -9,26 +9,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// A late share mount (late-mounts-3, late-mounts-8): the client loses
-// sight of the files, or lists nothing for a moment. HolyArrs waits
-// instead of failing the download, never deletes data for a client-caused
-// failure, and counts a download as vanished only after it is missing for
-// missedSyncs syncs in a row.
-
-// missedSyncs is how many syncs in a row a download must be missing from
-// its Downloader before it counts as vanished.
 const missedSyncs = 3
 
-// missWindow is a step of the test clock long enough that missedSyncs
-// syncs, one step apart, span the vanish grace: a download must be missing
-// for both a count of syncs and a stretch of time (late-mounts-8).
 const missWindow = 10 * time.Minute
 
-// waitingPrefix starts the reason of a download the client can't use the
-// files of (a share not mounted yet).
 const waitingPrefix = "the Downloader can't use the files"
 
-// failedEngine reports every item as failed by the client itself.
 type failedEngine struct{ Engine }
 
 func (f failedEngine) List(ctx context.Context, category string) ([]Job, error) {
@@ -45,14 +31,6 @@ func (f failedEngine) Get(ctx context.Context, id string) (Job, error) {
 	return j, err
 }
 
-// clientSaysFailed makes the Downloader report every item as failed.
-func clientSaysFailed(m *Manager) {
-	m.mu.Lock()
-	m.engines = nil
-	m.mu.Unlock()
-	m.Engine = func(d domain.Downloader) (Engine, error) { return failedEngine{NewQbittorrent(d.URL, nil)}, nil }
-}
-
 func TestClientErrorStatesBecomePaused(t *testing.T) {
 	for _, s := range []string{"error", "missingFiles", "unknown"} {
 		if got := qbitState(s); got != StatePaused {
@@ -64,8 +42,6 @@ func TestClientErrorStatesBecomePaused(t *testing.T) {
 			t.Errorf("Deluge Error (finished %v) -> %s, want paused", fin, got)
 		}
 	}
-	// Transmission error 3 is a local error (files gone): paused. Errors 1
-	// and 2 are tracker warnings and errors: the torrent keeps its state.
 	local := transmissionTorrent{Hash: hash, Status: 4, Progress: 0.4, Left: 10, Metadata: 1, Error: 3, ErrorString: "No data found! Ensure your drives are connected"}
 	if j := local.job("holyarrs"); j.State != StatePaused || !strings.Contains(j.Detail, "error 3") {
 		t.Errorf("Transmission local error -> %s (%s), want paused", j.State, j.Detail)
@@ -78,13 +54,9 @@ func TestClientErrorStatesBecomePaused(t *testing.T) {
 	}
 }
 
-// missingFiles (a share mounted late) waits as paused with a plain reason:
-// the Release is not turned down, nothing is searched again, nothing is
-// removed from the client, and it never stalls into failed. It picks up
-// again when the files come back.
 func TestMissingFilesWaitsAndKeepsData(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // a removal would reach the fake
+	letChange(t, m)
 	ctx := context.Background()
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"state": "missingFiles"})
@@ -104,7 +76,6 @@ func TestMissingFilesWaitsAndKeepsData(t *testing.T) {
 	if len(w.failedSlots) != 0 || len(w.fake.deleted) != 0 {
 		t.Fatalf("searched %v deleted %v", w.failedSlots, w.fake.deleted)
 	}
-	// Days pass with the share still missing: still waiting, never failed.
 	w.clock = w.clock.Add(30 * time.Hour)
 	_, _ = m.SyncOnce(ctx)
 	if d := w.download(t, id); d.State != "paused" {
@@ -113,7 +84,6 @@ func TestMissingFilesWaitsAndKeepsData(t *testing.T) {
 	if len(w.fake.deleted) != 0 || len(w.failedSlots) != 0 {
 		t.Fatalf("searched %v deleted %v", w.failedSlots, w.fake.deleted)
 	}
-	// The share is back.
 	w.fake.set(hash, map[string]any{"state": "downloading", "progress": 0.3})
 	_, _ = m.SyncOnce(ctx)
 	if d := w.download(t, id); d.State != "downloading" || d.StateReason != nil {
@@ -121,7 +91,6 @@ func TestMissingFilesWaitsAndKeepsData(t *testing.T) {
 	}
 }
 
-// qBittorrent "error" and Deluge-like errors take the same waiting path.
 func TestClientErrorWaitsLikeMissingFiles(t *testing.T) {
 	w, m := setup(t)
 	letChange(t, m)
@@ -137,8 +106,6 @@ func TestClientErrorWaitsLikeMissingFiles(t *testing.T) {
 	}
 }
 
-// A change of reason alone is saved: paused by a person, then the client
-// loses the files, is still "paused" but must now say why.
 func TestPausedReasonChangeIsSaved(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -156,8 +123,6 @@ func TestPausedReasonChangeIsSaved(t *testing.T) {
 	}
 }
 
-// Missing once or twice (an empty list while a share mounts, a client
-// restart) is not vanished; the third sync in a row is.
 func TestVanishedOnlyAfterThreeMissedSyncs(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -182,10 +147,6 @@ func TestVanishedOnlyAfterThreeMissedSyncs(t *testing.T) {
 	}
 }
 
-// Missed syncs come every few seconds while a download is active, so a
-// client that restarts or waits for its share lists nothing for a minute
-// or more: many quick misses are still not vanished. Only once it has
-// been missing for the grace time as well does it count as removed.
 func TestQuickMissesInsideGraceStayActive(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -210,7 +171,6 @@ func TestQuickMissesInsideGraceStayActive(t *testing.T) {
 	}
 }
 
-// Seen again in between starts the count over.
 func TestVanishCountStartsOverWhenSeenAgain(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -229,4 +189,11 @@ func TestVanishCountStartsOverWhenSeenAgain(t *testing.T) {
 	if d := w.download(t, id); d.State == "vanished" {
 		t.Fatal("the missed count did not start over when the download was seen again")
 	}
+}
+
+func clientSaysFailed(m *Manager) {
+	m.mu.Lock()
+	m.engines = nil
+	m.mu.Unlock()
+	m.Engine = func(d domain.Downloader) (Engine, error) { return failedEngine{NewQbittorrent(d.URL, nil)}, nil }
 }

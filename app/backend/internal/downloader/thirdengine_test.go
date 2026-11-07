@@ -15,26 +15,21 @@ import (
 	"testing"
 )
 
-// The third engine: a made-up Downloader ("relay") and its adapter, built
-// only from design/system/downloader-contract.md, so the contract is
-// checked against an app that is neither qBittorrent nor SABnzbd before a
-// real third Downloader is written. Its protocol has the awkward parts the
-// contract names for Transmission: one RPC address, a session handshake
-// (a 409 that carries the session id to send back), its own state words
-// plus an error field, a per-item speed and a file list in the item.
-
 const relaySessionHeader = "X-Relay-Session"
 
-// relayItem is one item in the fake app, in its own words.
+var errRelayNotFound = errors.New("no such item")
+
+var _ Engine = (*relayEngine)(nil)
+
 type relayItem struct {
 	ID       string      `json:"id"`
 	Name     string      `json:"name"`
 	Label    string      `json:"label"`
 	Dir      string      `json:"dir"`
 	Size     int64       `json:"size"`
-	Done     float64     `json:"done"` // 0 to 1
+	Done     float64     `json:"done"`
 	Rate     int64       `json:"rate"`
-	Left     int64       `json:"left"` // seconds, -1 unknown
+	Left     int64       `json:"left"`
 	Status   string      `json:"status"`
 	Error    string      `json:"error"`
 	Contents []relayFile `json:"contents"`
@@ -46,7 +41,6 @@ type relayFile struct {
 	Done  float64 `json:"done"`
 }
 
-// fakeRelay is the made-up app's server.
 type fakeRelay struct {
 	mu      sync.Mutex
 	user    string
@@ -57,8 +51,11 @@ type fakeRelay struct {
 	hang    bool
 }
 
-func newFakeRelay(user, pass string) *fakeRelay {
-	return &fakeRelay{user: user, pass: pass, session: "s-1", items: map[string]*relayItem{}}
+type relayEngine struct {
+	base, user, pass string
+	http             *http.Client
+	mu               sync.Mutex
+	session          string
 }
 
 func (f *fakeRelay) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -134,99 +131,6 @@ func (f *fakeRelay) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// relayEngine is the adapter: the five calls of the contract and nothing
-// else.
-type relayEngine struct {
-	base, user, pass string
-	http             *http.Client
-	mu               sync.Mutex
-	session          string
-}
-
-var errRelayNotFound = errors.New("no such item")
-
-func (e *relayEngine) rpc(ctx context.Context, method string, args map[string]any, out any) error {
-	body, _ := json.Marshal(map[string]any{"method": method, "args": args})
-	for try := 0; try < 2; try++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, e.base+"/rpc", bytes.NewReader(body))
-		if err != nil {
-			return err
-		}
-		req.SetBasicAuth(e.user, e.pass)
-		e.mu.Lock()
-		req.Header.Set(relaySessionHeader, e.session)
-		e.mu.Unlock()
-		resp, err := e.http.Do(req)
-		if err != nil {
-			// The address is safe to show, the password is not in it.
-			return fmt.Errorf("relay %s: %w", method, err)
-		}
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
-		resp.Body.Close()
-		switch {
-		case resp.StatusCode == http.StatusConflict && try == 0:
-			e.mu.Lock()
-			e.session = resp.Header.Get(relaySessionHeader)
-			e.mu.Unlock()
-			continue
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return ErrAuth
-		case resp.StatusCode != http.StatusOK:
-			return fmt.Errorf("relay %s: %s", method, resp.Status)
-		}
-		var env struct {
-			Result string          `json:"result"`
-			Value  json.RawMessage `json:"value"`
-		}
-		if err := json.Unmarshal(b, &env); err != nil {
-			return fmt.Errorf("relay %s: %w", method, err)
-		}
-		if env.Result == "no such item" {
-			return errRelayNotFound
-		}
-		if env.Result != "ok" {
-			return fmt.Errorf("relay %s: %s", method, env.Result)
-		}
-		if out != nil {
-			return json.Unmarshal(env.Value, out)
-		}
-		return nil
-	}
-	return fmt.Errorf("relay %s: the session handshake did not settle", method)
-}
-
-// relayState maps the app's words onto ours; an error with a message is
-// failed whatever the word, and an unknown word is downloading.
-func relayState(it relayItem) string {
-	if it.Error != "" {
-		return StateFailed
-	}
-	switch it.Status {
-	case "waiting", "checking":
-		return StateQueued
-	case "held":
-		return StatePaused
-	case "done", "sharing":
-		return StateFinished
-	}
-	return StateDownloading
-}
-
-func (it relayItem) job() Job {
-	j := Job{ID: it.ID, Name: it.Name, Category: it.Label, SavePath: it.Dir, Size: it.Size,
-		Progress: min(max(it.Done, 0), 1), Speed: max(it.Rate, 0), State: relayState(it), Detail: it.Status}
-	if it.Left > 0 {
-		j.ETA = it.Left
-	}
-	if it.Error != "" {
-		j.Detail = it.Error
-	}
-	for _, f := range it.Contents {
-		j.Files = append(j.Files, File{Name: f.Path, Size: f.Bytes, Progress: f.Done})
-	}
-	return j
-}
-
 func (e *relayEngine) Health(ctx context.Context) (Health, error) {
 	var v string
 	if err := e.rpc(ctx, "version", nil, &v); err != nil {
@@ -280,11 +184,91 @@ func (e *relayEngine) Remove(ctx context.Context, id string, deleteFiles bool) e
 	return err
 }
 
-var _ Engine = (*relayEngine)(nil)
+func newFakeRelay(user, pass string) *fakeRelay {
+	return &fakeRelay{user: user, pass: pass, session: "s-1", items: map[string]*relayItem{}}
+}
 
-// relayHarness wires the third engine into the shared suite.
+func (e *relayEngine) rpc(ctx context.Context, method string, args map[string]any, out any) error {
+	body, _ := json.Marshal(map[string]any{"method": method, "args": args})
+	for try := 0; try < 2; try++ {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, e.base+"/rpc", bytes.NewReader(body))
+		if err != nil {
+			return err
+		}
+		req.SetBasicAuth(e.user, e.pass)
+		e.mu.Lock()
+		req.Header.Set(relaySessionHeader, e.session)
+		e.mu.Unlock()
+		resp, err := e.http.Do(req)
+		if err != nil {
+			return fmt.Errorf("relay %s: %w", method, err)
+		}
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+		resp.Body.Close()
+		switch {
+		case resp.StatusCode == http.StatusConflict && try == 0:
+			e.mu.Lock()
+			e.session = resp.Header.Get(relaySessionHeader)
+			e.mu.Unlock()
+			continue
+		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
+			return ErrAuth
+		case resp.StatusCode != http.StatusOK:
+			return fmt.Errorf("relay %s: %s", method, resp.Status)
+		}
+		var env struct {
+			Result string          `json:"result"`
+			Value  json.RawMessage `json:"value"`
+		}
+		if err := json.Unmarshal(b, &env); err != nil {
+			return fmt.Errorf("relay %s: %w", method, err)
+		}
+		if env.Result == "no such item" {
+			return errRelayNotFound
+		}
+		if env.Result != "ok" {
+			return fmt.Errorf("relay %s: %s", method, env.Result)
+		}
+		if out != nil {
+			return json.Unmarshal(env.Value, out)
+		}
+		return nil
+	}
+	return fmt.Errorf("relay %s: the session handshake did not settle", method)
+}
+
+func relayState(it relayItem) string {
+	if it.Error != "" {
+		return StateFailed
+	}
+	switch it.Status {
+	case "waiting", "checking":
+		return StateQueued
+	case "held":
+		return StatePaused
+	case "done", "sharing":
+		return StateFinished
+	}
+	return StateDownloading
+}
+
+func (it relayItem) job() Job {
+	j := Job{ID: it.ID, Name: it.Name, Category: it.Label, SavePath: it.Dir, Size: it.Size,
+		Progress: min(max(it.Done, 0), 1), Speed: max(it.Rate, 0), State: relayState(it), Detail: it.Status}
+	if it.Left > 0 {
+		j.ETA = it.Left
+	}
+	if it.Error != "" {
+		j.Detail = it.Error
+	}
+	for _, f := range it.Contents {
+		j.Files = append(j.Files, File{Name: f.Path, Size: f.Bytes, Progress: f.Done})
+	}
+	return j
+}
+
 func relayHarness(t *testing.T) conformance {
-	const pass = "relay-test-pw" // test-only
+	const pass = "relay-test-pw"
 	f := newFakeRelay("holyarrs", pass)
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)

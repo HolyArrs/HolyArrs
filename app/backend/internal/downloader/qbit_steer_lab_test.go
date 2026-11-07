@@ -11,15 +11,6 @@ import (
 	"time"
 )
 
-// Runs against the lab qBittorrent (5.2.4) with its API key, through labctl
-// (which never prints the key):
-//
-//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabQbitSteer ./internal/downloader/
-//
-// It adds our own Dune test torrent from the lab's fake indexer, then sets
-// seeding rules, moves it inside the lab download folder, moves it in the
-// queue, force starts it, caps its speeds, adds and removes a tracker, sets
-// a file to maximum, flips slow mode both ways, and removes it with its files.
 func TestLabQbitSteer(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_QBIT_KEY")
 	if key == "" {
@@ -68,11 +59,8 @@ func TestLabQbitSteer(t *testing.T) {
 		return Job{}
 	}
 	ids := []string{id}
-	// The add answers before the torrent is in the list; actions on a hash
-	// the client does not hold yet are dropped without an error.
 	wait("listed the torrent", func() bool { return job().ID == id })
 
-	// Seeding rules, with the per-torrent action 5.2 takes.
 	if err := q.SetShareLimits(ctx, ids, ShareLimits{Ratio: 1.5, SeedingMinutes: 120, InactiveMinutes: 30, Action: "stop"}); err != nil {
 		t.Fatal(err)
 	}
@@ -81,13 +69,11 @@ func TestLabQbitSteer(t *testing.T) {
 		return l != nil && l.Ratio == 1.5 && l.SeedingMinutes == 120 && l.InactiveMinutes == 30 && l.Action == "stop"
 	})
 
-	// A new folder inside the lab download folder.
 	if err := q.SetLocation(ctx, ids, folder+"/moved"); err != nil {
 		t.Fatal(err)
 	}
 	wait("moved", func() bool { return strings.TrimRight(job().SavePath, "/") == folder+"/moved" })
 
-	// Queue moves (409 when the lab's queue is off) and force start.
 	for _, a := range []string{BulkBottom, BulkUp, BulkDown, BulkTop} {
 		if err := q.Bulk(ctx, a, ids); err != nil && !errors.Is(err, ErrQueueOff) {
 			t.Fatalf("%s: %v", a, err)
@@ -101,7 +87,6 @@ func TestLabQbitSteer(t *testing.T) {
 	wait("force started", func() bool { return strings.HasPrefix(job().Detail, "forced") || job().Detail == "uploading" })
 	t.Logf("after force: %s", job().Detail)
 
-	// Per-torrent speed caps.
 	if err := q.SetTorrentLimits(ctx, ids, 200*1024, 50*1024); err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +95,6 @@ func TestLabQbitSteer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// A tracker added, found by ref, and removed.
 	const tr = "udp://tracker.holyarrs-lab.invalid:6969/announce"
 	if err := q.AddTrackers(ctx, id, []string{tr}); err != nil {
 		t.Fatal(err)
@@ -155,7 +139,6 @@ func TestLabQbitSteer(t *testing.T) {
 		return true
 	})
 
-	// A file at maximum.
 	var files []TorrentFile
 	wait("listed its files", func() bool { files, err = q.TorrentFiles(ctx, id); return err == nil && len(files) > 0 })
 	if err := q.SetFilePriority(ctx, id, []int{files[0].Index}, 7); err != nil {
@@ -166,7 +149,6 @@ func TestLabQbitSteer(t *testing.T) {
 		return err == nil && len(fs) > 0 && fs[0].Priority == 7
 	})
 
-	// Slow mode on and back off; the connection state reads.
 	st, err := q.Status(ctx)
 	if err != nil || st.SlowMode == nil {
 		t.Fatalf("status %+v %v", st, err)

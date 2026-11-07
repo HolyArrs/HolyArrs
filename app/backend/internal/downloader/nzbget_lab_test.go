@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-// TestNZBGetLab is opt-in. The acceptance runner uses add, check and remove
-// in separate processes so it can restart the disposable app between them.
+const labNZBGetRel = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+
 func TestNZBGetLab(t *testing.T) {
 	base := os.Getenv("HOLYARRS_LAB_NZBGET_URL")
 	mode := os.Getenv("HOLYARRS_LAB_NZBGET_MODE")
@@ -113,13 +113,9 @@ func TestNZBGetLab(t *testing.T) {
 		fmt.Printf("LAB_NZBGET_HISTORY_STATE=%s DETAIL=%s\n", j.State, j.Detail)
 	case "remove":
 		id := os.Getenv("HOLYARRS_LAB_NZBGET_ID")
-		// Keeping files is a park-delete: the job leaves the queue for the finished
-		// list, then the files-too remove clears it from there as well.
 		if err := n.Remove(ctx, id, false); err != nil {
 			t.Fatalf("remove keeping files: %v", err)
 		}
-		// A finished job removed keeping its files is hidden from the list at once,
-		// so the files-too remove may find nothing left to do.
 		if err := n.Remove(ctx, id, true); err != nil && !errors.Is(err, ErrNotFound) {
 			t.Fatalf("remove: %v", err)
 		}
@@ -133,16 +129,9 @@ func TestNZBGetLab(t *testing.T) {
 	}
 }
 
-// labNZBGetClearFinished is roadmap #53 on the lab NZBGet: one real job
-// finishes from our own news server into the shared lab folder, then
-// ClearFinished takes it out of NZBGet and its job folder off the disk.
-// NZBGet is pointed at the news server and the folder for this run only;
-// its own settings are put back afterwards. Runs in NZBGet's network
-// namespace with the lab downloads folder at /data/downloads.
 func labNZBGetClearFinished(t *testing.T, n *NZBGet) {
 	ctx := context.Background()
 	var conf []struct{ Name, Value string }
-	// loadconfig is the settings file itself (config adds runtime values that must not be saved).
 	if err := n.rpc(ctx, "loadconfig", nil, &conf); err != nil || len(conf) == 0 {
 		t.Fatalf("read NZBGet settings: %v", err)
 	}
@@ -169,7 +158,6 @@ func labNZBGetClearFinished(t *testing.T, n *NZBGet) {
 			t.Fatalf("save NZBGet settings: %v %v", ok, err)
 		}
 		_ = n.rpc(ctx, "reload", nil, &ok)
-		// NZBGet restarts itself: wait until it answers again.
 		for i := 0; i < 60; i++ {
 			time.Sleep(time.Second)
 			if _, err := n.Health(ctx); err == nil {
@@ -236,6 +224,3 @@ func labNZBGetClearFinished(t *testing.T, n *NZBGet) {
 	}
 	fmt.Printf("LAB_CLEAR_FINISHED=gone %s\n", folder)
 }
-
-// labNZBGetRel is the Release name the test world's download carries.
-const labNZBGetRel = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"

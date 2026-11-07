@@ -11,15 +11,6 @@ import (
 	"time"
 )
 
-// The Downloads page's NZBGet reads and Try again against the lab NZBGet
-// (no news server, so jobs only wait):
-//
-//	python research\lab\labctl.py up --profile light nzbget
-//	HOLYARRS_LAB_NZBGET_URL=http://127.0.0.1:18712 go test -tags lab -run NZBGetParity ./internal/downloader/
-//
-// It adds a paused job without a HolyArrs marker, finds it in the queue as
-// nzbid-<n>, deletes it into the history, reads its steps, tries it again
-// and removes it for good. User and password come from env vars only.
 func TestLabNZBGetParity(t *testing.T) {
 	base := os.Getenv("HOLYARRS_LAB_NZBGET_URL")
 	if base == "" {

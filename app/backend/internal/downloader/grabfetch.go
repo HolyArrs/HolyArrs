@@ -12,33 +12,15 @@ import (
 	"time"
 )
 
-// errLinkLocal is a Release link that leads to this machine or the local
-// network, found when its address is dialled. It is final: the Release is
-// turned down once, not fetched again on every retry (each fetch can count
-// against the Source's grab limit).
 var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}
 
-// sabMaxNZB caps an NZB fetched for SABnzbd: a few hundred GB of release.
 var sabMaxNZB int64 = 128 << 20
 
-// grabAllow is the address rule for Release files HolyArrs fetches in place
-// of qBittorrent or SABnzbd. grabDial, when set (tests only), changes the
-// address dialled for a name, as a DNS answer would.
 var (
 	grabAllow = outbound.PublicOnly
 	grabDial  func(addr string) string
 )
 
-// fetchGrabLink fetches a Release link for a Downloader that would
-// otherwise fetch it itself, from inside the home network (#152). Every
-// address is checked as it is dialled, after DNS and on each redirect, so a
-// name or a redirect that leads home is refused. A redirect to a magnet
-// link returns that link instead of a file, as Sonarr does. rt, when set,
-// is the Source's own checked transport (through its proxy). localHost,
-// when set, is the host:port of a Source allowed on the local network (a
-// Jackett or Prowlarr at home): only that host and port may be a local
-// address, on the first request and on any redirect; every other one stays
-// public, and cloud metadata addresses are never reached.
 func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper, localHost string) (file []byte, magnet string, err error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
@@ -90,8 +72,6 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
 			if proxied {
-				// Through a proxy a refusal may be a name not looked up here
-				// or the proxy's own address: tried again, not turned down.
 				return nil, "", errors.New(errLinkLocal.msg)
 			}
 			return nil, "", errLinkLocal
@@ -103,8 +83,6 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 		return nil, loc, nil
 	}
 	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone {
-		// The file is not there: trying again changes nothing (a sign-in
-		// or rate answer may pass, so those are tried again).
 		return nil, "", releaseRefused{"the Source has no such Release file"}
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {

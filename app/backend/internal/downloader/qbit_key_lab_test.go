@@ -10,14 +10,6 @@ import (
 	"time"
 )
 
-// Runs against the lab qBittorrent (5.2.4) signed in with its API key only,
-// with our own Dune test torrent from the lab's fake indexer. The key comes
-// from labctl, which never prints it:
-//
-//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabQbitAPIKey ./internal/downloader/
-//
-// It adds the torrent, reads its detail, files, peers and trackers, sets a
-// file priority, pauses and resumes it, then removes it with its files.
 func TestLabQbitAPIKey(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_QBIT_KEY")
 	if key == "" {

@@ -22,8 +22,8 @@ var (
 	ErrAttemptStopped = errors.New("this send was abandoned; inspect the Downloader before choosing a different Release")
 )
 
-// Attempt is the public recovery record. Its opaque correlation marker, address
-// and credentials are never exposed by this view.
+// Attempt is the public view of a send record. It never shows the correlation
+// marker, the address or any credential.
 type Attempt struct {
 	ID           int64  `json:"id"`
 	DownloaderID int64  `json:"downloader_id"`
@@ -38,6 +38,115 @@ type sendAttempt struct {
 	Attempt
 	marker, category, expectedID string
 	created                      bool
+}
+
+// Attempts lists kept send outcomes, without secrets or raw remote errors.
+func (m *Manager) Attempts(ctx context.Context, downloaderID int64) ([]Attempt, error) {
+	var d domain.Downloader
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &d); err != nil {
+		return nil, err
+	}
+	rows, err := m.Store.Read().QueryContext(ctx, `SELECT id, downloader_id, release_id, slot_id, state, created_at, updated_at
+		FROM downloader_attempts WHERE downloader_id = ? AND (state = 'pending' OR id IN
+		(SELECT id FROM downloader_attempts WHERE downloader_id = ? AND state <> 'pending' ORDER BY id DESC LIMIT 100))
+		ORDER BY id DESC`, downloaderID, downloaderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Attempt{}
+	for rows.Next() {
+		var a Attempt
+		if err := rows.Scan(&a.ID, &a.DownloaderID, &a.ReleaseID, &a.SlotID, &a.State, &a.CreatedAt, &a.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// AbandonAttempt stops all later sends for this Release and Version and hands
+// its still-current chosen Slots back for a person to decide. It does not cancel
+// or remove the request already made on the Downloader, nor prove it is absent.
+func (m *Manager) AbandonAttempt(ctx context.Context, downloaderID, attemptID int64, by domain.Actor) error {
+	var moved []int64
+	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+		var state string
+		if err := tx.QueryRowContext(ctx, "SELECT state FROM downloader_attempts WHERE id = ? AND downloader_id = ?", attemptID, downloaderID).Scan(&state); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return database.ErrNotFound
+			}
+			return err
+		}
+		if state == "abandoned" {
+			return nil
+		}
+		if state != "pending" {
+			return ErrAttemptStopped
+		}
+		actor, err := json.Marshal(by)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, "UPDATE downloader_attempts SET state = 'abandoned', abandoned_by = ?, updated_at = ? WHERE id = ? AND state = 'pending'", string(actor), m.now().Format(time.RFC3339Nano), attemptID); err != nil {
+			return err
+		}
+		// Stored numeric ids are not identities. Only the original Release, Version
+		// and Slot snapshots may leave chosen, and only while still chosen for this
+		// Release. The transaction keeps this check and the recovery change atomic.
+		rows, err := tx.QueryContext(ctx, `SELECT s.id, s.created_at, s.version_id, a.release_id
+			FROM downloader_attempts a JOIN releases r ON r.id = a.release_id AND r.created_at = a.release_created_at
+			JOIN versions v ON v.id = a.version_id AND v.created_at = a.version_created_at
+			JOIN slots s ON s.version_id = v.id AND s.state = 'chosen' AND s.chosen_release_id = r.id
+			WHERE a.id = ? AND EXISTS (SELECT 1 FROM json_each(a.slot_snapshots) j
+			WHERE json_extract(j.value, '$.id') = s.id AND json_extract(j.value, '$.created_at') = s.created_at)`, attemptID)
+		if err != nil {
+			return err
+		}
+		type choice struct {
+			id, versionID, releaseID int64
+			created                  string
+		}
+		var choices []choice
+		for rows.Next() {
+			var c choice
+			if err := rows.Scan(&c.id, &c.created, &c.versionID, &c.releaseID); err != nil {
+				rows.Close()
+				return err
+			}
+			choices = append(choices, c)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return err
+		}
+		for _, c := range choices {
+			res, err := tx.ExecContext(ctx, `UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND created_at = ?
+				AND version_id = ? AND state = 'chosen' AND chosen_release_id = ?`, c.id, c.created, c.versionID, c.releaseID)
+			if err != nil {
+				return err
+			}
+			n, err := res.RowsAffected()
+			if err != nil {
+				return err
+			}
+			if n == 0 {
+				continue
+			}
+			if err := store.MoveSlotTx(tx, c.id, domain.SlotNeedsADecision, "send abandoned; inspect the Downloader before choosing another Release", by); err != nil {
+				return err
+			}
+			moved = append(moved, c.id)
+		}
+		return nil
+	})
+	if err == nil {
+		for _, id := range moved {
+			m.publish("slot", map[string]any{"id": id, "state": domain.SlotNeedsADecision})
+		}
+	}
+	return err
 }
 
 func unfinishedAttempt(ctx context.Context, q database.Querier, releaseID, slotID int64) (*sendAttempt, error) {
@@ -55,8 +164,8 @@ func unfinishedAttempt(ctx context.Context, q database.Querier, releaseID, slotI
 	return a, err
 }
 
-// claimAttempt serializes intent creation with settings changes. Only the
-// creator may append. Every later caller can only reconcile this same marker.
+// claimAttempt serializes creating an intent with settings changes. Only the
+// creator may append; any later caller can only reconcile the same marker.
 func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, releaseID, slotID int64) (*sendAttempt, error) {
 	var a *sendAttempt
 	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -84,8 +193,8 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 		if !journalAdapter(d.Adapter) {
 			return nil
 		}
-		// Another concurrent Grab may have committed while this caller was
-		// selecting a Downloader. Reuse its recorded identity without append.
+		// Another Grab may have committed while this caller was picking a Downloader.
+		// Reuse its recorded identity without appending.
 		var existing string
 		if err := tx.QueryRowContext(ctx, `SELECT external_id FROM downloads WHERE downloader_id = ? AND release_id = ?
 			AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)
@@ -124,8 +233,8 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 			Scan(&releaseCreated, &slotCreated, &hash, &link, &versionID, &versionCreated); err != nil {
 			return err
 		}
-		// A retained pack intent can outlive one of its covered Slots. A
-		// recreated numeric id may not adopt that intent or start a new send.
+		// A kept pack intent can outlive one of its Slots. A reused numeric id must
+		// not adopt that intent or start a new send.
 		var priorState string
 		if err := tx.QueryRowContext(ctx, `SELECT state FROM downloader_attempts WHERE release_id = ? AND release_created_at = ?
 			AND version_id = ? AND version_created_at = ? AND state IN ('pending', 'abandoned')`, releaseID, releaseCreated, versionID, versionCreated).Scan(&priorState); err == nil {
@@ -190,114 +299,4 @@ func pendingAttemptCount(tx *sql.Tx, downloaderID int64) (int, error) {
 	var n int
 	err := tx.QueryRow("SELECT count(*) FROM downloader_attempts WHERE downloader_id = ? AND state = 'pending'", downloaderID).Scan(&n)
 	return n, err
-}
-
-// Attempts lists retained send outcomes without secrets or raw remote errors.
-func (m *Manager) Attempts(ctx context.Context, downloaderID int64) ([]Attempt, error) {
-	var d domain.Downloader
-	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &d); err != nil {
-		return nil, err
-	}
-	rows, err := m.Store.Read().QueryContext(ctx, `SELECT id, downloader_id, release_id, slot_id, state, created_at, updated_at
-		FROM downloader_attempts WHERE downloader_id = ? AND (state = 'pending' OR id IN
-		(SELECT id FROM downloader_attempts WHERE downloader_id = ? AND state <> 'pending' ORDER BY id DESC LIMIT 100))
-		ORDER BY id DESC`, downloaderID, downloaderID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []Attempt{}
-	for rows.Next() {
-		var a Attempt
-		if err := rows.Scan(&a.ID, &a.DownloaderID, &a.ReleaseID, &a.SlotID, &a.State, &a.CreatedAt, &a.UpdatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
-}
-
-// AbandonAttempt stops all future sends of this Release/Version pair and
-// releases its still-current covered choices for a person's decision. It does
-// not cancel, remove, or prove absence of the original Downloader request.
-func (m *Manager) AbandonAttempt(ctx context.Context, downloaderID, attemptID int64, by domain.Actor) error {
-	var moved []int64
-	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
-		var state string
-		if err := tx.QueryRowContext(ctx, "SELECT state FROM downloader_attempts WHERE id = ? AND downloader_id = ?", attemptID, downloaderID).Scan(&state); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return database.ErrNotFound
-			}
-			return err
-		}
-		if state == "abandoned" {
-			return nil
-		}
-		if state != "pending" {
-			return ErrAttemptStopped
-		}
-		actor, err := json.Marshal(by)
-		if err != nil {
-			return err
-		}
-		if _, err = tx.ExecContext(ctx, "UPDATE downloader_attempts SET state = 'abandoned', abandoned_by = ?, updated_at = ? WHERE id = ? AND state = 'pending'", string(actor), m.now().Format(time.RFC3339Nano), attemptID); err != nil {
-			return err
-		}
-		// Retained numeric ids are not identities. Only the original Release,
-		// Version and covered Slot snapshots may leave chosen, and only while
-		// they are still chosen for this Release. The transaction makes this
-		// check and the recovery transition atomic with abandonment.
-		rows, err := tx.QueryContext(ctx, `SELECT s.id, s.created_at, s.version_id, a.release_id
-			FROM downloader_attempts a JOIN releases r ON r.id = a.release_id AND r.created_at = a.release_created_at
-			JOIN versions v ON v.id = a.version_id AND v.created_at = a.version_created_at
-			JOIN slots s ON s.version_id = v.id AND s.state = 'chosen' AND s.chosen_release_id = r.id
-			WHERE a.id = ? AND EXISTS (SELECT 1 FROM json_each(a.slot_snapshots) j
-			WHERE json_extract(j.value, '$.id') = s.id AND json_extract(j.value, '$.created_at') = s.created_at)`, attemptID)
-		if err != nil {
-			return err
-		}
-		type choice struct {
-			id, versionID, releaseID int64
-			created                  string
-		}
-		var choices []choice
-		for rows.Next() {
-			var c choice
-			if err := rows.Scan(&c.id, &c.created, &c.versionID, &c.releaseID); err != nil {
-				rows.Close()
-				return err
-			}
-			choices = append(choices, c)
-		}
-		err = rows.Err()
-		rows.Close()
-		if err != nil {
-			return err
-		}
-		for _, c := range choices {
-			res, err := tx.ExecContext(ctx, `UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND created_at = ?
-				AND version_id = ? AND state = 'chosen' AND chosen_release_id = ?`, c.id, c.created, c.versionID, c.releaseID)
-			if err != nil {
-				return err
-			}
-			n, err := res.RowsAffected()
-			if err != nil {
-				return err
-			}
-			if n == 0 {
-				continue
-			}
-			if err := store.MoveSlotTx(tx, c.id, domain.SlotNeedsADecision, "send abandoned; inspect the Downloader before choosing another Release", by); err != nil {
-				return err
-			}
-			moved = append(moved, c.id)
-		}
-		return nil
-	})
-	if err == nil {
-		for _, id := range moved {
-			m.publish("slot", map[string]any{"id": id, "state": domain.SlotNeedsADecision})
-		}
-	}
-	return err
 }

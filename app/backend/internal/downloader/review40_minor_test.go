@@ -15,8 +15,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// M5: link-local and cloud metadata addresses are refused even with the
-// local-network switch on.
 func TestMetadataRefusedEvenWithLocalNetwork(t *testing.T) {
 	for _, u := range []string{"http://169.254.169.254/latest", "http://[fe80::1]:80/", "http://metadata.google.internal/", "http://metadata/"} {
 		c := Client(u, true)
@@ -32,7 +30,6 @@ func TestMetadataRefusedEvenWithLocalNetwork(t *testing.T) {
 	}
 }
 
-// M5: a SABnzbd refusal never repeats the body it answered with.
 func TestSabnzbdRefusalSaysNoBody(t *testing.T) {
 	f := &fakeSab{refuse: "secret-looking line\nsecond line"}
 	_, err := NewSabnzbd(startSab(t, f), sabKey, nil).Health(context.Background())
@@ -41,7 +38,6 @@ func TestSabnzbdRefusalSaysNoBody(t *testing.T) {
 	}
 }
 
-// M6: a redirect to the same host on plain http is refused.
 func TestRedirectKeepsTheScheme(t *testing.T) {
 	c := Client("https://dl.example:8443", false)
 	from, _ := url.Parse("https://dl.example:8443/api")
@@ -55,7 +51,6 @@ func TestRedirectKeepsTheScheme(t *testing.T) {
 	}
 }
 
-// M7: hidden program files.
 func TestDangerousNamesHidden(t *testing.T) {
 	for _, n := range []string{"a/movie.exe.", "movie.exe ", "x.hta", "x.wsf", "x.wsh", "x.vbe", "x.jse", "x.msc", "x.cpl", "x.scf", "x.reg", "x.dll",
 		"x.sh", "x.AppImage", "movie‮vkm.exe", "movie‭.mkv", "a⁦b.mkv", "a⁩b.mkv"} {
@@ -68,7 +63,6 @@ func TestDangerousNamesHidden(t *testing.T) {
 	}
 }
 
-// M8: readFinished walks only under a path-map or save root, and not too deep.
 func TestReadFinishedOnlyUnderARoot(t *testing.T) {
 	dir := t.TempDir()
 	job := filepath.Join(dir, "Job")
@@ -90,7 +84,6 @@ func TestReadFinishedOnlyUnderARoot(t *testing.T) {
 	}
 }
 
-// M9: a Downloader that answered but turned the Release down does not rest.
 func TestRefusedReleaseDoesNotRestTheDownloader(t *testing.T) {
 	w, m := setup(t)
 	w.fake.addFails = true
@@ -102,7 +95,6 @@ func TestRefusedReleaseDoesNotRestTheDownloader(t *testing.T) {
 	}
 }
 
-// M11: waiting for a host honours the context.
 func TestSpaceHonoursTheContext(t *testing.T) {
 	_, m := setup(t)
 	done, err := m.space(context.Background(), "http://h:1")

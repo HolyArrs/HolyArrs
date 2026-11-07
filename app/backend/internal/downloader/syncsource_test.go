@@ -10,7 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// fakeSource is a background reader the test steers by hand.
 type fakeSource struct {
 	mu       sync.Mutex
 	on       bool
@@ -21,11 +20,14 @@ type fakeSource struct {
 	changed  chan struct{}
 }
 
-func newFakeSource() *fakeSource {
-	return &fakeSource{on: true, fallback: map[int64]bool{}, changed: make(chan struct{}, 1)}
+type callCounter struct {
+	Engine
+	mu                            sync.Mutex
+	lists, gets, removes, healths int
 }
 
 func (f *fakeSource) On() bool { f.mu.Lock(); defer f.mu.Unlock(); return f.on }
+
 func (f *fakeSource) View(int64) SyncView {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -38,18 +40,12 @@ func (f *fakeSource) View(int64) SyncView {
 	v.Items = items
 	return v
 }
-func (f *fakeSource) Fallback(id int64, on bool) { f.mu.Lock(); f.fallback[id] = on; f.mu.Unlock() }
-func (f *fakeSource) Kick(id int64)              { f.mu.Lock(); f.kicks = append(f.kicks, id); f.mu.Unlock() }
-func (f *fakeSource) Changed() <-chan struct{}   { return f.changed }
-func (f *fakeSource) set(v SyncView)             { f.mu.Lock(); f.view = v; f.mu.Unlock() }
-func (f *fakeSource) viewCount() int             { f.mu.Lock(); defer f.mu.Unlock(); return f.views }
 
-// callCounter counts every engine call the Manager makes.
-type callCounter struct {
-	Engine
-	mu                            sync.Mutex
-	lists, gets, removes, healths int
-}
+func (f *fakeSource) Fallback(id int64, on bool) { f.mu.Lock(); f.fallback[id] = on; f.mu.Unlock() }
+
+func (f *fakeSource) Kick(id int64) { f.mu.Lock(); f.kicks = append(f.kicks, id); f.mu.Unlock() }
+
+func (f *fakeSource) Changed() <-chan struct{} { return f.changed }
 
 func (c *callCounter) List(ctx context.Context, cat string) ([]Job, error) {
 	c.mu.Lock()
@@ -57,62 +53,31 @@ func (c *callCounter) List(ctx context.Context, cat string) ([]Job, error) {
 	c.mu.Unlock()
 	return c.Engine.List(ctx, cat)
 }
+
 func (c *callCounter) Get(ctx context.Context, id string) (Job, error) {
 	c.mu.Lock()
 	c.gets++
 	c.mu.Unlock()
 	return c.Engine.Get(ctx, id)
 }
+
 func (c *callCounter) Remove(ctx context.Context, id string, files bool) error {
 	c.mu.Lock()
 	c.removes++
 	c.mu.Unlock()
 	return c.Engine.Remove(ctx, id, files)
 }
+
 func (c *callCounter) Health(ctx context.Context) (Health, error) {
 	c.mu.Lock()
 	c.healths++
 	c.mu.Unlock()
 	return c.Engine.Health(ctx)
 }
-func (c *callCounter) counts() (int, int, int, int) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.lists, c.gets, c.removes, c.healths
-}
 
-// storeWorld is setup with a grab sent and the Manager reading a fakeSource.
-func storeWorld(t *testing.T) (*world, *Manager, *fakeSource, *callCounter, int64) {
-	t.Helper()
-	w, m := setup(t)
-	cc := &callCounter{}
-	m.Engine = func(d domain.Downloader) (Engine, error) {
-		e, err := (&Manager{}).EngineFor(context.Background(), d)
-		cc.Engine = e
-		return cc, err
-	}
-	id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
-	if err != nil {
-		t.Fatal(err)
-	}
-	src := newFakeSource()
-	m.Sync = src
-	return w, m, src, cc, id
-}
-
-func (w *world) advance(d time.Duration) {
-	w.mu.Lock()
-	w.clock = w.clock.Add(d)
-	w.mu.Unlock()
-}
-
-// A grab missing from snapshots no newer than its row stays unknown, past
-// the vanish grace; only a complete fresh snapshot read after it can
-// vanish it. The Manager never lists the client itself.
 func TestStoreUnknownBeforeNewerSnapshot(t *testing.T) {
 	w, m, src, cc, id := storeWorld(t)
 	ctx := context.Background()
-	// Rows carry wall-clock updated_at, as snapshot read times do.
 	before := time.Now().Add(-time.Hour)
 	src.set(SyncView{Items: map[string]Job{}, Complete: true, Fresh: true, ReadAt: before})
 	w.advance(10 * time.Minute)
@@ -137,7 +102,6 @@ func TestStoreUnknownBeforeNewerSnapshot(t *testing.T) {
 	}
 }
 
-// Stall timers advance on timer ticks while the snapshot stays the same.
 func TestStoreStallsWithUnchangedSnapshot(t *testing.T) {
 	w, m, src, cc, id := storeWorld(t)
 	ctx := context.Background()
@@ -162,8 +126,6 @@ func TestStoreStallsWithUnchangedSnapshot(t *testing.T) {
 	}
 }
 
-// Not yet fresh within its bound: unknown, no call. Degraded: the Manager
-// marks the fallback and lists the client itself, exactly as before.
 func TestStoreDegradedFallsBack(t *testing.T) {
 	w, m, src, cc, id := storeWorld(t)
 	ctx := context.Background()
@@ -201,7 +163,6 @@ func TestStoreDegradedFallsBack(t *testing.T) {
 	}
 }
 
-// A pending removal is retried with no snapshot change at all.
 func TestStoreRetriesRemovalsWithoutRevChange(t *testing.T) {
 	w, m, src, cc, id := storeWorld(t)
 	ctx := context.Background()
@@ -220,8 +181,6 @@ func TestStoreRetriesRemovalsWithoutRevChange(t *testing.T) {
 	}
 }
 
-// The loop wakes on a snapshot change, and CheckAll keeps its own clock
-// while the snapshot never changes.
 func TestRunWakesOnChangeAndKeepsHealthClock(t *testing.T) {
 	_, m, src, cc, _ := storeWorld(t)
 	m.Active, m.Idle, m.HealthEvery = time.Hour, time.Hour, time.Hour
@@ -245,8 +204,6 @@ func TestRunWakesOnChangeAndKeepsHealthClock(t *testing.T) {
 	<-done
 }
 
-// The snapshot is filtered to the Downloader's category when the read
-// covered everything, giving the same set as List(category).
 func TestSnapshotJobsCategory(t *testing.T) {
 	v := SyncView{Items: map[string]Job{"a": {ID: "a", Category: "holyarrs"}, "b": {ID: "b", Category: "other"}}}
 	if got := snapshotJobs(v, "holyarrs"); len(got) != 1 || got[0].ID != "a" {
@@ -258,7 +215,6 @@ func TestSnapshotJobsCategory(t *testing.T) {
 	}
 }
 
-// Grab kicks the reader for its Downloader.
 func TestGrabKicks(t *testing.T) {
 	w, m := setup(t)
 	f := newFakeSource()
@@ -269,6 +225,44 @@ func TestGrabKicks(t *testing.T) {
 	if len(f.kicks) != 1 || f.kicks[0] != 1 {
 		t.Fatalf("kicks %v, want [1]", f.kicks)
 	}
+}
+
+func newFakeSource() *fakeSource {
+	return &fakeSource{on: true, fallback: map[int64]bool{}, changed: make(chan struct{}, 1)}
+}
+
+func (f *fakeSource) set(v SyncView) { f.mu.Lock(); f.view = v; f.mu.Unlock() }
+
+func (f *fakeSource) viewCount() int { f.mu.Lock(); defer f.mu.Unlock(); return f.views }
+
+func (c *callCounter) counts() (int, int, int, int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.lists, c.gets, c.removes, c.healths
+}
+
+func storeWorld(t *testing.T) (*world, *Manager, *fakeSource, *callCounter, int64) {
+	t.Helper()
+	w, m := setup(t)
+	cc := &callCounter{}
+	m.Engine = func(d domain.Downloader) (Engine, error) {
+		e, err := (&Manager{}).EngineFor(context.Background(), d)
+		cc.Engine = e
+		return cc, err
+	}
+	id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := newFakeSource()
+	m.Sync = src
+	return w, m, src, cc, id
+}
+
+func (w *world) advance(d time.Duration) {
+	w.mu.Lock()
+	w.clock = w.clock.Add(d)
+	w.mu.Unlock()
 }
 
 func waitFor(t *testing.T, ok func() bool) {

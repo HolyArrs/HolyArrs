@@ -13,6 +13,8 @@ import (
 	"testing"
 )
 
+var _ Engine = (*NZBGet)(nil)
+
 type fakeNZBGet struct {
 	mu              sync.Mutex
 	user            string
@@ -136,53 +138,6 @@ func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "id": in.ID, "result": result})
 }
 
-func startNZBGet(t *testing.T) (*fakeNZBGet, string) {
-	t.Helper()
-	f := &fakeNZBGet{user: "holyarrs", pass: "nzbget-test-secret", files: map[int][]map[string]any{}}
-	s := httptest.NewServer(f)
-	t.Cleanup(s.Close)
-	return f, s.URL
-}
-
-func nzbSource(t *testing.T) string {
-	t.Helper()
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte("<?xml version=\"1.0\"?><nzb></nzb>"))
-	}))
-	t.Cleanup(s.Close)
-	return s.URL + "/owned.nzb"
-}
-
-func nzbgetHarness(t *testing.T) conformance {
-	f, base := startNZBGet(t)
-	url := nzbSource(t)
-	release := AddRequest{URL: url, Name: "Lab.Usenet.Movie.2026.1080p.WEB.H264-HOLYARRS", Category: "movies",
-		OperationKey: "download-1/release-1/slot-1", AllowLocal: true}
-	return conformance{
-		name:    "nzbget",
-		engine:  NewNZBGet(base, f.user, f.pass, nil),
-		badKey:  NewNZBGet(base, f.user, "wrong", nil),
-		at:      func(b string) Engine { return NewNZBGet(b, f.user, f.pass, nil) },
-		secret:  f.pass,
-		release: release,
-		unknown: "nzbget-0000000000000000000000000000000000000000000000000000000000000000",
-		appear: func() {
-			f.mu.Lock()
-			defer f.mu.Unlock()
-			g := f.groups[0]
-			g["Status"], g["RemainingSizeLo"] = "DOWNLOADING", 512
-			id := g["NZBID"].(int)
-			f.files[id] = []map[string]any{{"NZBID": id, "Filename": "/downloads/movies/movie.mkv", "FileSizeLo": 1024, "FileSizeHi": 0,
-				"RemainingSizeLo": 512, "RemainingSizeHi": 0, "Progress": 500}}
-		},
-		adds:   func() int { f.mu.Lock(); defer f.mu.Unlock(); return f.adds },
-		states: func(word string) { f.mu.Lock(); defer f.mu.Unlock(); f.groups[0]["Status"] = word },
-		words: map[string]string{"QUEUED": StateQueued, "PAUSED": StatePaused, "DOWNLOADING": StateDownloading,
-			"FETCHING": StateQueued, "PP_QUEUED": StateQueued, "UNPACKING": StateDownloading,
-			"PP_FINISHED": StateDownloading, "brand-new-word": StateDownloading},
-	}
-}
-
 func TestNZBGetConformance(t *testing.T) { runConformance(t, nzbgetHarness(t)) }
 
 func TestNZBGetAddUploadsBytesAndKeepsStableIdentity(t *testing.T) {
@@ -207,8 +162,6 @@ func TestNZBGetAddUploadsBytesAndKeepsStableIdentity(t *testing.T) {
 	if err != nil || !strings.Contains(string(b), "<nzb>") {
 		t.Fatalf("append content %q: %v", args[1], err)
 	}
-	// A fresh adapter instance resolves the same marker. The native id may
-	// change when the row moves into history.
 	got, err := NewNZBGet(base, f.user, f.pass, nil).Get(context.Background(), id)
 	if err != nil || got.ID != id {
 		t.Fatalf("restart get %+v: %v", got, err)
@@ -225,8 +178,6 @@ func TestNZBGetAddUploadsBytesAndKeepsStableIdentity(t *testing.T) {
 		t.Fatalf("history get %+v: %v", got, err)
 	}
 
-	// The explicit operation key remains stable when display-name casing changes,
-	// and Skip asks for a distinct attempt.
 	r.Name = "case.sensitive.name"
 	again, err := n.Add(context.Background(), r)
 	if err != nil || again != id || f.adds != 1 {
@@ -277,8 +228,6 @@ func TestNZBGetUncertainAppendOnlyReconcilesItsDurableMarker(t *testing.T) {
 	if _, err := n.Add(context.Background(), r); !errors.Is(err, ErrUncertain) || f.adds != 1 {
 		t.Fatalf("unknown append: %v adds=%d", err, f.adds)
 	}
-	// The manager restores this same marker after a process restart. An
-	// empty snapshot cannot prove that the original append was rejected.
 	n = NewNZBGet(base, f.user, f.pass, nil)
 	r.ReconcileOnly = true
 	for range 2 {
@@ -523,4 +472,49 @@ func TestNZBGetRPCErrorsAreAuthAndSecretSafe(t *testing.T) {
 	}
 }
 
-var _ Engine = (*NZBGet)(nil)
+func startNZBGet(t *testing.T) (*fakeNZBGet, string) {
+	t.Helper()
+	f := &fakeNZBGet{user: "holyarrs", pass: "nzbget-test-secret", files: map[int][]map[string]any{}}
+	s := httptest.NewServer(f)
+	t.Cleanup(s.Close)
+	return f, s.URL
+}
+
+func nzbSource(t *testing.T) string {
+	t.Helper()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<?xml version=\"1.0\"?><nzb></nzb>"))
+	}))
+	t.Cleanup(s.Close)
+	return s.URL + "/owned.nzb"
+}
+
+func nzbgetHarness(t *testing.T) conformance {
+	f, base := startNZBGet(t)
+	url := nzbSource(t)
+	release := AddRequest{URL: url, Name: "Lab.Usenet.Movie.2026.1080p.WEB.H264-HOLYARRS", Category: "movies",
+		OperationKey: "download-1/release-1/slot-1", AllowLocal: true}
+	return conformance{
+		name:    "nzbget",
+		engine:  NewNZBGet(base, f.user, f.pass, nil),
+		badKey:  NewNZBGet(base, f.user, "wrong", nil),
+		at:      func(b string) Engine { return NewNZBGet(b, f.user, f.pass, nil) },
+		secret:  f.pass,
+		release: release,
+		unknown: "nzbget-0000000000000000000000000000000000000000000000000000000000000000",
+		appear: func() {
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			g := f.groups[0]
+			g["Status"], g["RemainingSizeLo"] = "DOWNLOADING", 512
+			id := g["NZBID"].(int)
+			f.files[id] = []map[string]any{{"NZBID": id, "Filename": "/downloads/movies/movie.mkv", "FileSizeLo": 1024, "FileSizeHi": 0,
+				"RemainingSizeLo": 512, "RemainingSizeHi": 0, "Progress": 500}}
+		},
+		adds:   func() int { f.mu.Lock(); defer f.mu.Unlock(); return f.adds },
+		states: func(word string) { f.mu.Lock(); defer f.mu.Unlock(); f.groups[0]["Status"] = word },
+		words: map[string]string{"QUEUED": StateQueued, "PAUSED": StatePaused, "DOWNLOADING": StateDownloading,
+			"FETCHING": StateQueued, "PP_QUEUED": StateQueued, "UNPACKING": StateDownloading,
+			"PP_FINISHED": StateDownloading, "brand-new-word": StateDownloading},
+	}
+}

@@ -13,59 +13,31 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// removeSpy is an engine that records what was removed from it.
 type removeSpy struct {
 	removed []string
 	err     error
-	content string // the finished job's folder as the client reports it
+	content string
 }
 
-func (s *removeSpy) Health(context.Context) (Health, error)          { return Health{}, nil }
+func (s *removeSpy) Health(context.Context) (Health, error) { return Health{}, nil }
+
 func (s *removeSpy) Add(context.Context, AddRequest) (string, error) { return "id", nil }
-func (s *removeSpy) List(context.Context, string) ([]Job, error)     { return nil, nil }
+
+func (s *removeSpy) List(context.Context, string) ([]Job, error) { return nil, nil }
+
 func (s *removeSpy) Get(_ context.Context, id string) (Job, error) {
 	if s.content == "" {
 		return Job{}, ErrNotFound
 	}
 	return Job{ID: id, ContentPath: s.content}, nil
 }
+
 func (s *removeSpy) Remove(_ context.Context, id string, files bool) error {
 	if s.err != nil {
 		return s.err
 	}
 	s.removed = append(s.removed, id+"|"+map[bool]string{true: "files", false: "keep"}[files])
 	return nil
-}
-
-// usenetDownload makes the test Download a Usenet one in a Downloader that
-// may change things and clears finished jobs.
-func usenetDownload(t *testing.T) (*world, *Manager, int64, *removeSpy) {
-	t.Helper()
-	w, m := setup(t)
-	id := grabbed(t, w, m)
-	if err := execSQL(w, `UPDATE downloaders SET protocol = 'usenet', writable = 1, clear_finished = 1`); err != nil {
-		t.Fatal(err)
-	}
-	spy := &removeSpy{}
-	m.Engine = func(domain.Downloader) (Engine, error) { return spy, nil }
-	m.Forget(w.download(t, id).DownloaderID) // grabbing cached the qBittorrent fake
-	return w, m, id, spy
-}
-
-func execSQL(w *world, q string) error {
-	return w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(q)
-		return err
-	})
-}
-
-func countEvents(t *testing.T, w *world, kind string, id int64) int {
-	t.Helper()
-	var n int
-	if err := w.s.ReadEvents().QueryRow("SELECT count(*) FROM events WHERE kind = ? AND download_id = ?", kind, id).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	return n
 }
 
 func TestClearFinishedRemovesJobWithFiles(t *testing.T) {
@@ -92,11 +64,11 @@ func TestClearFinishedLeavesTorrentsAlone(t *testing.T) {
 
 func TestClearFinishedLeavesOutsideItemsAlone(t *testing.T) {
 	w, m, id, spy := usenetDownload(t)
-	m.ClearFinished(context.Background(), id+1000) // no Download row: a client-only item
+	m.ClearFinished(context.Background(), id+1000)
 	if err := execSQL(w, `UPDATE downloads SET release_id = NULL`); err != nil {
 		t.Fatal(err)
 	}
-	m.ClearFinished(context.Background(), id) // not sent by a Release of ours
+	m.ClearFinished(context.Background(), id)
 	if len(spy.removed) != 0 {
 		t.Fatalf("removed %v", spy.removed)
 	}
@@ -132,18 +104,14 @@ func TestClearFinishedSettingOffLeavesJobAlone(t *testing.T) {
 func TestClearFinishedClientErrorIsLoggedNotFatal(t *testing.T) {
 	w, m, id, spy := usenetDownload(t)
 	spy.err = errors.New("SABnzbd said no")
-	m.ClearFinished(context.Background(), id) // returns nothing: the Import stays done
+	m.ClearFinished(context.Background(), id)
 	if countEvents(t, w, "download_not_removed", id) != 1 || countEvents(t, w, "download_removed", id) != 0 {
 		t.Fatal("the failed removal is not in History")
 	}
 }
 
-// A finished job's folder that the client left behind is deleted from disk,
-// only inside a folder shared through the path map; the share itself and
-// anything outside it stay.
 func TestClearFinishedDeletesTheJobFolderOnDisk(t *testing.T) {
 	share := t.TempDir()
-	// SABnzbd names the folder after the job, with ".1" on a clash.
 	job := filepath.Join(share, "complete", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.1")
 	if err := os.MkdirAll(job, 0o755); err != nil {
 		t.Fatal(err)
@@ -169,8 +137,6 @@ func TestClearFinishedDeletesTheJobFolderOnDisk(t *testing.T) {
 	}
 }
 
-// SABnzbd 5 names a one-file job by its file (storage is the .mkv): the
-// job folder around it goes, and nothing beside that folder.
 func TestClearFinishedDeletesTheFoldersOfAJobNamedByItsFile(t *testing.T) {
 	share := t.TempDir()
 	movies := filepath.Join(share, "complete", "movies")
@@ -222,10 +188,6 @@ func TestClearFinishedNeverDeletesOutsideOrTheShareItself(t *testing.T) {
 	}
 }
 
-func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }
-
-// A client that names a category folder (or anything not named after this
-// Release) gets nothing deleted: other jobs may live there.
 func TestClearFinishedNeverDeletesAFolderNamedOtherwise(t *testing.T) {
 	share := t.TempDir()
 	cat := filepath.Join(share, "complete", "movies")
@@ -248,8 +210,6 @@ func TestClearFinishedNeverDeletesAFolderNamedOtherwise(t *testing.T) {
 	}
 }
 
-// A job folder reached through a linked parent folder that points outside
-// the share is never deleted.
 func TestClearFinishedNeverFollowsALinkedParentOutside(t *testing.T) {
 	share, outside := t.TempDir(), t.TempDir()
 	victim := filepath.Join(outside, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS")
@@ -270,3 +230,34 @@ func TestClearFinishedNeverFollowsALinkedParentOutside(t *testing.T) {
 		t.Fatalf("a folder outside the share was deleted through a link: %v", err)
 	}
 }
+
+func usenetDownload(t *testing.T) (*world, *Manager, int64, *removeSpy) {
+	t.Helper()
+	w, m := setup(t)
+	id := grabbed(t, w, m)
+	if err := execSQL(w, `UPDATE downloaders SET protocol = 'usenet', writable = 1, clear_finished = 1`); err != nil {
+		t.Fatal(err)
+	}
+	spy := &removeSpy{}
+	m.Engine = func(domain.Downloader) (Engine, error) { return spy, nil }
+	m.Forget(w.download(t, id).DownloaderID)
+	return w, m, id, spy
+}
+
+func execSQL(w *world, q string) error {
+	return w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(q)
+		return err
+	})
+}
+
+func countEvents(t *testing.T, w *world, kind string, id int64) int {
+	t.Helper()
+	var n int
+	if err := w.s.ReadEvents().QueryRow("SELECT count(*) FROM events WHERE kind = ? AND download_id = ?", kind, id).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }

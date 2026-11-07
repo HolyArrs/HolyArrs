@@ -20,6 +20,17 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
+var errTransmissionForeign = errors.New("the torrent belongs to another category")
+
+var transmissionNames = map[string]string{
+	"rpc-version": "rpc_version", "hashString": "hash_string", "downloadDir": "download_dir", "download-dir": "download_dir",
+	"totalSize": "total_size", "sizeWhenDone": "size_when_done", "percentDone": "percent_done", "leftUntilDone": "left_until_done",
+	"metadataPercentComplete": "metadata_percent_complete", "rateDownload": "rate_download", "rateUpload": "rate_upload", "peersSendingToUs": "peers_sending_to_us", "peersGettingFromUs": "peers_getting_from_us", "bytesCompleted": "bytes_completed",
+	"isFinished": "is_finished", "errorString": "error_string", "recheckProgress": "recheck_progress",
+	"torrent-added": "torrent_added", "torrent-duplicate": "torrent_duplicate", "delete-local-data": "delete_local_data",
+}
+
+// Transmission is a Client for the Transmission RPC API.
 type Transmission struct {
 	base, user, pass string
 	http             *http.Client
@@ -31,17 +42,32 @@ type Transmission struct {
 
 type transmissionRefusedError struct{ error }
 
-var errTransmissionForeign = errors.New("the torrent belongs to another category")
-
-func transmissionRefused(message string) error {
-	return transmissionRefusedError{errors.New(message)}
+type transmissionTorrent struct {
+	Hash        string   `json:"hash_string"`
+	Name        string   `json:"name"`
+	Labels      []string `json:"labels"`
+	Dir         string   `json:"download_dir"`
+	Size        int64    `json:"total_size"`
+	Progress    float64  `json:"percent_done"`
+	Left        int64    `json:"left_until_done"`
+	Metadata    float64  `json:"metadata_percent_complete"`
+	Recheck     float64  `json:"recheck_progress"`
+	Rate        int64    `json:"rate_download"`
+	UpRate      int64    `json:"rate_upload"`
+	SeedsNow    int      `json:"peers_sending_to_us"`
+	PeersNow    int      `json:"peers_getting_from_us"`
+	ETA         int64    `json:"eta"`
+	Status      int      `json:"status"`
+	Error       int      `json:"error"`
+	ErrorString string   `json:"error_string"`
+	Files       []struct {
+		Name   string `json:"name"`
+		Length int64  `json:"length"`
+		Done   int64  `json:"bytes_completed"`
+	} `json:"files"`
 }
 
-func transmissionDefinitelyRefused(err error) bool {
-	var refused transmissionRefusedError
-	return errors.Is(err, ErrAuth) || errors.As(err, &refused)
-}
-
+// NewTransmission returns a client for the Transmission at base, using the given login and h.
 func NewTransmission(base, user, pass string, h *http.Client) *Transmission {
 	if h == nil {
 		h = &http.Client{Timeout: clientTimeout}
@@ -56,12 +82,187 @@ func NewTransmission(base, user, pass string, h *http.Client) *Transmission {
 	return &Transmission{base: base, user: user, pass: pass, http: h}
 }
 
-var transmissionNames = map[string]string{
-	"rpc-version": "rpc_version", "hashString": "hash_string", "downloadDir": "download_dir", "download-dir": "download_dir",
-	"totalSize": "total_size", "sizeWhenDone": "size_when_done", "percentDone": "percent_done", "leftUntilDone": "left_until_done",
-	"metadataPercentComplete": "metadata_percent_complete", "rateDownload": "rate_download", "rateUpload": "rate_upload", "peersSendingToUs": "peers_sending_to_us", "peersGettingFromUs": "peers_getting_from_us", "bytesCompleted": "bytes_completed",
-	"isFinished": "is_finished", "errorString": "error_string", "recheckProgress": "recheck_progress",
-	"torrent-added": "torrent_added", "torrent-duplicate": "torrent_duplicate", "delete-local-data": "delete_local_data",
+// Health reports whether Transmission answers and accepts the login.
+func (tr *Transmission) Health(ctx context.Context) (Health, error) {
+	var v struct {
+		Version string `json:"version"`
+	}
+	if err := tr.call(ctx, "session-get", nil, &v); err != nil {
+		return Health{}, err
+	}
+	major, _, _ := strings.Cut(v.Version, ".")
+	n, _ := strconv.Atoi(major)
+	if n < 4 {
+		return Health{}, errors.New("Transmission 4 or newer is needed for category labels")
+	}
+	return Health{Version: v.Version, At: time.Now().UTC()}, nil
+}
+
+// List returns the torrents in category.
+func (tr *Transmission) List(ctx context.Context, category string) ([]Job, error) {
+	ts, err := tr.torrents(ctx, "", false)
+	if err != nil {
+		return nil, err
+	}
+	out := []Job{}
+	for _, t := range ts {
+		if slices.Contains(t.Labels, category) {
+			out = append(out, t.job(category))
+		}
+	}
+	return out, nil
+}
+
+// Get returns the torrent with the given id.
+func (tr *Transmission) Get(ctx context.Context, id string) (Job, error) {
+	return tr.get(ctx, id, tr.category)
+}
+
+// Add queues a torrent and returns its hash.
+func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
+	if r.Category == "" {
+		return "", ErrCategory
+	}
+	id := strings.ToLower(r.InfoHash)
+	if id != "" && !source.ValidInfoHash(id) {
+		return "", errBadHash
+	}
+	if r.ReconcileOnly {
+		if id == "" || r.Skip[id] {
+			return "", ErrUncertain
+		}
+		job, err := tr.get(ctx, id, r.Category)
+		if err != nil || job.Category != r.Category || r.Skip[job.ID] {
+			return "", errors.Join(ErrUncertain, err)
+		}
+		return job.ID, nil
+	}
+	if r.Skip[id] {
+		return "", errors.New("the torrent belongs to another download")
+	}
+	if id != "" {
+		j, err := tr.get(ctx, id, r.Category)
+		if err == nil {
+			if j.Category != r.Category {
+				return "", errors.New("the torrent already belongs to another category")
+			}
+			return id, nil
+		}
+		if !errors.Is(err, ErrNotFound) {
+			return "", err
+		}
+	}
+	a := map[string]any{"labels": []string{r.Category}, "paused": false}
+	if r.SavePath != "" {
+		a["download-dir"] = r.SavePath
+	}
+	u, err := url.Parse(r.URL)
+	if err != nil {
+		return "", errors.New("invalid torrent address")
+	}
+	if u.Scheme == "magnet" {
+		if id == "" || !strings.Contains(strings.ToLower(u.Query().Get("xt")), id) {
+			return "", errors.New("the magnet needs its matching info hash")
+		}
+		a["filename"] = r.URL
+	} else {
+		b, err := fetchRelease(ctx, r.URL, r.AllowLocal, 8<<20)
+		if err != nil {
+			return "", err
+		}
+		if !r.AllowLocal {
+			if b, err = safeTorrent(b); err != nil {
+				return "", err
+			}
+		}
+		h, err := torrentFileHash(b)
+		if err != nil {
+			return "", err
+		}
+		if id != "" && id != h {
+			return "", errors.New("the torrent file does not match its info hash")
+		}
+		id = h
+		if r.Skip[id] {
+			return "", errors.New("the torrent belongs to another download")
+		}
+		a["metainfo"] = base64.StdEncoding.EncodeToString(b)
+	}
+	var out struct {
+		Added *struct {
+			Hash string `json:"hash_string"`
+		} `json:"torrent_added"`
+		Duplicate *struct {
+			Hash string `json:"hash_string"`
+		} `json:"torrent_duplicate"`
+	}
+	if err := tr.call(ctx, "torrent-add", a, &out); err != nil {
+		if transmissionDefinitelyRefused(err) {
+			return "", err
+		}
+		var getErr error
+		if ctx.Err() == nil && id != "" {
+			if j, e := tr.get(ctx, id, r.Category); e == nil && !r.Skip[j.ID] {
+				return j.ID, nil
+			} else {
+				getErr = e
+			}
+		}
+		return "", errors.Join(ErrUncertain, err, getErr)
+	}
+	if (out.Added == nil) == (out.Duplicate == nil) {
+		return "", errors.Join(ErrUncertain, errors.New("transmission gave no unambiguous torrent identity"))
+	}
+	got := ""
+	duplicate := false
+	if out.Added != nil {
+		got = out.Added.Hash
+	} else {
+		got = out.Duplicate.Hash
+		duplicate = true
+	}
+	if !source.ValidInfoHash(got) {
+		return "", errors.Join(ErrUncertain, errors.New("transmission returned an invalid torrent identity"))
+	}
+	if duplicate {
+		if _, err := tr.get(ctx, got, r.Category); err != nil {
+			if errors.Is(err, errTransmissionForeign) {
+				return "", err
+			}
+			return "", errors.Join(ErrUncertain, err)
+		}
+	}
+	if id != "" && !strings.EqualFold(got, id) {
+		return "", errors.Join(ErrUncertain, errors.New("transmission returned another torrent identity"))
+	}
+	got = strings.ToLower(got)
+	if r.Skip[got] {
+		return "", errors.Join(ErrUncertain, errors.New("the torrent belongs to another download"))
+	}
+	return got, nil
+}
+
+// Remove deletes the torrent, and its data when deleteFiles is set.
+func (tr *Transmission) Remove(ctx context.Context, id string, deleteFiles bool) error {
+	id = strings.ToLower(id)
+	if !source.ValidInfoHash(id) {
+		return errBadHash
+	}
+	if tr.category != "" {
+		if _, err := tr.Get(ctx, id); err != nil {
+			return err
+		}
+	}
+	return tr.call(ctx, "torrent-remove", map[string]any{"ids": []string{id}, "delete-local-data": deleteFiles}, nil)
+}
+
+func transmissionRefused(message string) error {
+	return transmissionRefusedError{errors.New(message)}
+}
+
+func transmissionDefinitelyRefused(err error) bool {
+	var refused transmissionRefusedError
+	return errors.Is(err, ErrAuth) || errors.As(err, &refused)
 }
 
 func transmissionModern(v any) any {
@@ -221,46 +422,6 @@ func (tr *Transmission) call(ctx context.Context, method string, args map[string
 	return errors.New("transmission could not refresh its session")
 }
 
-func (tr *Transmission) Health(ctx context.Context) (Health, error) {
-	var v struct {
-		Version string `json:"version"`
-	}
-	if err := tr.call(ctx, "session-get", nil, &v); err != nil {
-		return Health{}, err
-	}
-	major, _, _ := strings.Cut(v.Version, ".")
-	n, _ := strconv.Atoi(major)
-	if n < 4 {
-		return Health{}, errors.New("Transmission 4 or newer is needed for category labels")
-	}
-	return Health{Version: v.Version, At: time.Now().UTC()}, nil
-}
-
-type transmissionTorrent struct {
-	Hash        string   `json:"hash_string"`
-	Name        string   `json:"name"`
-	Labels      []string `json:"labels"`
-	Dir         string   `json:"download_dir"`
-	Size        int64    `json:"total_size"`
-	Progress    float64  `json:"percent_done"`
-	Left        int64    `json:"left_until_done"`
-	Metadata    float64  `json:"metadata_percent_complete"`
-	Recheck     float64  `json:"recheck_progress"`
-	Rate        int64    `json:"rate_download"`
-	UpRate      int64    `json:"rate_upload"`
-	SeedsNow    int      `json:"peers_sending_to_us"`
-	PeersNow    int      `json:"peers_getting_from_us"`
-	ETA         int64    `json:"eta"`
-	Status      int      `json:"status"`
-	Error       int      `json:"error"`
-	ErrorString string   `json:"error_string"`
-	Files       []struct {
-		Name   string `json:"name"`
-		Length int64  `json:"length"`
-		Done   int64  `json:"bytes_completed"`
-	} `json:"files"`
-}
-
 func (tr *Transmission) torrents(ctx context.Context, id string, files bool) ([]transmissionTorrent, error) {
 	fields := []string{"hashString", "name", "labels", "downloadDir", "totalSize", "percentDone", "leftUntilDone", "metadataPercentComplete", "recheckProgress", "rateDownload", "rateUpload", "peersSendingToUs", "peersGettingFromUs", "eta", "status", "error", "errorString"}
 	if files {
@@ -285,9 +446,6 @@ func (t transmissionTorrent) job(category string) Job {
 	case 1, 2, 3:
 		state = StateQueued
 	}
-	// Error 3 is a local error (files gone, often a share mounted late):
-	// wait as paused. Errors 1 and 2 are tracker warnings and errors and
-	// keep the torrent's own state.
 	if t.Error == 3 {
 		state = StatePaused
 	} else if (t.Status == 0 || t.Status == 5 || t.Status == 6) && t.Progress >= 1 && t.Left == 0 && t.Metadata >= 1 && !(t.Recheck > 0 && t.Recheck < 1) && t.Dir != "" {
@@ -319,24 +477,6 @@ func (t transmissionTorrent) job(category string) Job {
 	return j
 }
 
-func (tr *Transmission) List(ctx context.Context, category string) ([]Job, error) {
-	ts, err := tr.torrents(ctx, "", false)
-	if err != nil {
-		return nil, err
-	}
-	out := []Job{}
-	for _, t := range ts {
-		if slices.Contains(t.Labels, category) {
-			out = append(out, t.job(category))
-		}
-	}
-	return out, nil
-}
-
-func (tr *Transmission) Get(ctx context.Context, id string) (Job, error) {
-	return tr.get(ctx, id, tr.category)
-}
-
 func (tr *Transmission) get(ctx context.Context, id, category string) (Job, error) {
 	id = strings.ToLower(id)
 	if !source.ValidInfoHash(id) {
@@ -359,141 +499,4 @@ func (tr *Transmission) get(ctx context.Context, id, category string) (Job, erro
 		}
 	}
 	return Job{}, ErrNotFound
-}
-
-func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
-	if r.Category == "" {
-		return "", ErrCategory
-	}
-	id := strings.ToLower(r.InfoHash)
-	if id != "" && !source.ValidInfoHash(id) {
-		return "", errBadHash
-	}
-	if r.ReconcileOnly {
-		if id == "" || r.Skip[id] {
-			return "", ErrUncertain
-		}
-		job, err := tr.get(ctx, id, r.Category)
-		if err != nil || job.Category != r.Category || r.Skip[job.ID] {
-			return "", errors.Join(ErrUncertain, err)
-		}
-		return job.ID, nil
-	}
-	if r.Skip[id] {
-		return "", errors.New("the torrent belongs to another download")
-	}
-	if id != "" {
-		j, err := tr.get(ctx, id, r.Category)
-		if err == nil {
-			if j.Category != r.Category {
-				return "", errors.New("the torrent already belongs to another category")
-			}
-			return id, nil
-		}
-		if !errors.Is(err, ErrNotFound) {
-			return "", err
-		}
-	}
-	a := map[string]any{"labels": []string{r.Category}, "paused": false}
-	if r.SavePath != "" {
-		a["download-dir"] = r.SavePath
-	}
-	u, err := url.Parse(r.URL)
-	if err != nil {
-		return "", errors.New("invalid torrent address")
-	}
-	if u.Scheme == "magnet" {
-		if id == "" || !strings.Contains(strings.ToLower(u.Query().Get("xt")), id) {
-			return "", errors.New("the magnet needs its matching info hash")
-		}
-		a["filename"] = r.URL
-	} else {
-		b, err := fetchRelease(ctx, r.URL, r.AllowLocal, 8<<20)
-		if err != nil {
-			return "", err
-		}
-		if !r.AllowLocal {
-			// Home trackers, web seeds and DHT nodes left out (#152).
-			if b, err = safeTorrent(b); err != nil {
-				return "", err
-			}
-		}
-		h, err := torrentFileHash(b)
-		if err != nil {
-			return "", err
-		}
-		if id != "" && id != h {
-			return "", errors.New("the torrent file does not match its info hash")
-		}
-		id = h
-		if r.Skip[id] {
-			return "", errors.New("the torrent belongs to another download")
-		}
-		a["metainfo"] = base64.StdEncoding.EncodeToString(b)
-	}
-	var out struct {
-		Added *struct {
-			Hash string `json:"hash_string"`
-		} `json:"torrent_added"`
-		Duplicate *struct {
-			Hash string `json:"hash_string"`
-		} `json:"torrent_duplicate"`
-	}
-	if err := tr.call(ctx, "torrent-add", a, &out); err != nil {
-		if transmissionDefinitelyRefused(err) {
-			return "", err
-		}
-		var getErr error
-		if ctx.Err() == nil && id != "" {
-			if j, e := tr.get(ctx, id, r.Category); e == nil && !r.Skip[j.ID] {
-				return j.ID, nil
-			} else {
-				getErr = e
-			}
-		}
-		return "", errors.Join(ErrUncertain, err, getErr)
-	}
-	if (out.Added == nil) == (out.Duplicate == nil) {
-		return "", errors.Join(ErrUncertain, errors.New("transmission gave no unambiguous torrent identity"))
-	}
-	got := ""
-	duplicate := false
-	if out.Added != nil {
-		got = out.Added.Hash
-	} else {
-		got = out.Duplicate.Hash
-		duplicate = true
-	}
-	if !source.ValidInfoHash(got) {
-		return "", errors.Join(ErrUncertain, errors.New("transmission returned an invalid torrent identity"))
-	}
-	if duplicate {
-		if _, err := tr.get(ctx, got, r.Category); err != nil {
-			if errors.Is(err, errTransmissionForeign) {
-				return "", err
-			}
-			return "", errors.Join(ErrUncertain, err)
-		}
-	}
-	if id != "" && !strings.EqualFold(got, id) {
-		return "", errors.Join(ErrUncertain, errors.New("transmission returned another torrent identity"))
-	}
-	got = strings.ToLower(got)
-	if r.Skip[got] {
-		return "", errors.Join(ErrUncertain, errors.New("the torrent belongs to another download"))
-	}
-	return got, nil
-}
-
-func (tr *Transmission) Remove(ctx context.Context, id string, deleteFiles bool) error {
-	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
-		return errBadHash
-	}
-	if tr.category != "" {
-		if _, err := tr.Get(ctx, id); err != nil {
-			return err
-		}
-	}
-	return tr.call(ctx, "torrent-remove", map[string]any{"ids": []string{id}, "delete-local-data": deleteFiles}, nil)
 }

@@ -42,236 +42,6 @@ type fakeDeluge struct {
 	emptyAddResult  bool
 }
 
-func startDeluge(t *testing.T, f *fakeDeluge) string {
-	t.Helper()
-	if f.password == "" {
-		f.password = "<deluge-test-password>"
-	}
-	if f.labels == nil {
-		f.labels = map[string]bool{"movies": true}
-	}
-	if f.torrents == nil {
-		f.torrents = make(map[string]map[string]any)
-	}
-	s := httptest.NewServer(http.HandlerFunc(f.serveHTTP))
-	t.Cleanup(s.Close)
-	return s.URL
-}
-
-func (f *fakeDeluge) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost || r.URL.Path != "/json" {
-		http.NotFound(w, r)
-		return
-	}
-	var q delugeRPCRequest
-	if err := json.NewDecoder(r.Body).Decode(&q); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	f.mu.Lock()
-	f.calls = append(f.calls, q)
-	f.mu.Unlock()
-
-	if q.Method == "auth.login" {
-		f.mu.Lock()
-		f.logins++
-		wait := f.loginWait
-		f.mu.Unlock()
-		if wait != nil {
-			select {
-			case <-r.Context().Done():
-				return
-			case <-wait:
-			}
-		}
-		pass, _ := q.Params[0].(string)
-		ok := pass == f.password
-		if ok {
-			f.mu.Lock()
-			f.session = "session-" + time.Now().UTC().Format("150405.000000000")
-			session := f.session
-			f.mu.Unlock()
-			http.SetCookie(w, &http.Cookie{Name: "_session_id", Value: session, Path: "/", HttpOnly: true})
-		}
-		writeDelugeRPC(w, q.ID, ok, nil)
-		return
-	}
-
-	cookie, _ := r.Cookie("_session_id")
-	f.mu.Lock()
-	authed := cookie != nil && cookie.Value != "" && cookie.Value == f.session
-	f.mu.Unlock()
-	if !authed {
-		writeDelugeRPC(w, q.ID, nil, map[string]any{"code": 1, "message": "Not authenticated", "traceback": ""})
-		return
-	}
-
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	switch q.Method {
-	case "web.connected":
-		writeDelugeRPC(w, q.ID, f.connected, nil)
-	case "daemon.get_version":
-		writeDelugeRPC(w, q.ID, "2.2.0", nil)
-	case "label.get_labels":
-		if f.labels == nil {
-			writeDelugeRPC(w, q.ID, nil, map[string]any{"code": 3, "message": "Unknown method", "traceback": ""})
-			return
-		}
-		labels := make([]string, 0, len(f.labels))
-		for label := range f.labels {
-			labels = append(labels, label)
-		}
-		writeDelugeRPC(w, q.ID, labels, nil)
-	case "label.add":
-		label, _ := q.Params[0].(string)
-		f.labels[label] = true
-		writeDelugeRPC(w, q.ID, nil, nil)
-	case "label.set_torrent":
-		hash, _ := q.Params[0].(string)
-		label, _ := q.Params[1].(string)
-		if torrent := f.torrents[hash]; torrent != nil && !f.ignoreLabel {
-			torrent["label"] = label
-		}
-		writeDelugeRPC(w, q.ID, nil, nil)
-	case "core.add_torrent_magnet":
-		f.added++
-		hash := f.addHash
-		if hash == "" {
-			hash = delugeHash
-		}
-		if f.torrents[hash] == nil && !f.omitAddMutation {
-			f.torrents[hash] = fakeDelugeTorrent("Downloading", 0)
-			f.torrents[hash]["label"] = f.addLabel
-		}
-		if f.malformedAdd {
-			_, _ = w.Write([]byte("{"))
-			return
-		}
-		if f.emptyAddResult {
-			hash = ""
-		}
-		writeDelugeRPC(w, q.ID, hash, nil)
-	case "core.add_torrent_file":
-		f.added++
-		hash := f.addHash
-		if hash == "" {
-			hash = delugeHash
-		}
-		if f.torrents[hash] == nil && !f.omitAddMutation {
-			f.torrents[hash] = fakeDelugeTorrent("Downloading", 0)
-			f.torrents[hash]["label"] = f.addLabel
-		}
-		if f.malformedAdd {
-			_, _ = w.Write([]byte("{"))
-			return
-		}
-		if f.emptyAddResult {
-			hash = ""
-		}
-		writeDelugeRPC(w, q.ID, hash, nil)
-	case "core.get_torrents_status":
-		result := make(map[string]map[string]any)
-		for hash, torrent := range f.torrents {
-			result[hash] = cloneAnyMap(torrent)
-		}
-		writeDelugeRPC(w, q.ID, result, nil)
-	case "core.get_torrent_status":
-		hash, _ := q.Params[0].(string)
-		if torrent := f.torrents[hash]; torrent != nil {
-			writeDelugeRPC(w, q.ID, cloneAnyMap(torrent), nil)
-		} else {
-			writeDelugeRPC(w, q.ID, map[string]any{}, nil)
-		}
-	case "web.get_torrent_files":
-		hash, _ := q.Params[0].(string)
-		if torrent := f.torrents[hash]; torrent != nil {
-			writeDelugeRPC(w, q.ID, torrent["files"], nil)
-		} else {
-			writeDelugeRPC(w, q.ID, []any{}, nil)
-		}
-	case "core.remove_torrent":
-		hash, _ := q.Params[0].(string)
-		if _, ok := f.torrents[hash]; !ok {
-			writeDelugeRPC(w, q.ID, false, nil)
-			return
-		}
-		delete(f.torrents, hash)
-		f.removed = append(f.removed, hash)
-		writeDelugeRPC(w, q.ID, true, nil)
-	default:
-		writeDelugeRPC(w, q.ID, nil, map[string]any{"code": 2, "message": "Unknown method", "traceback": ""})
-	}
-}
-
-func writeDelugeRPC(w http.ResponseWriter, id int64, result, rpcErr any) {
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"id": id, "result": result, "error": rpcErr})
-}
-
-func cloneAnyMap(in map[string]any) map[string]any {
-	out := make(map[string]any, len(in))
-	for key, value := range in {
-		out[key] = value
-	}
-	return out
-}
-
-func fakeDelugeTorrent(state string, progress float64) map[string]any {
-	return map[string]any{
-		"name":                  "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS",
-		"label":                 "movies",
-		"save_path":             "/downloads",
-		"total_wanted":          float64(2 << 30),
-		"progress":              progress,
-		"download_payload_rate": float64(1 << 20),
-		"eta":                   float64(600),
-		"state":                 state,
-		"is_finished":           state == "Seeding",
-		"files": []any{map[string]any{
-			"path": "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS.mkv", "size": float64(2 << 30), "progress": progress,
-		}},
-	}
-}
-
-func delugeHarness(t *testing.T) conformance {
-	t.Helper()
-	f := &fakeDeluge{connected: true}
-	base := startDeluge(t, f)
-	const password = "<deluge-test-password>"
-	return conformance{
-		name:    "deluge",
-		engine:  NewDeluge(base, password, nil),
-		badKey:  NewDeluge(base, "wrong-password", nil),
-		at:      func(base string) Engine { return NewDeluge(base, password, nil) },
-		secret:  password,
-		release: AddRequest{URL: "magnet:?xt=urn:btih:" + delugeHash, Name: "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS", Category: "movies", SavePath: "/downloads", InfoHash: delugeHash},
-		unknown: "0000000000000000000000000000000000000000",
-		appear: func() {
-			f.mu.Lock()
-			f.torrents[delugeHash] = fakeDelugeTorrent("Downloading", 50)
-			f.mu.Unlock()
-		},
-		adds: func() int { f.mu.Lock(); defer f.mu.Unlock(); return f.added },
-		states: func(word string) {
-			f.mu.Lock()
-			f.torrents[delugeHash]["state"] = word
-			f.torrents[delugeHash]["is_finished"] = word == "Seeding"
-			if word == "Seeding" {
-				f.torrents[delugeHash]["progress"] = float64(100)
-			} else {
-				f.torrents[delugeHash]["progress"] = float64(50)
-			}
-			f.mu.Unlock()
-		},
-		words: map[string]string{
-			"Queued": StateQueued, "Checking": StateQueued, "Downloading": StateDownloading,
-			"Paused": StatePaused, "Seeding": StateFinished, "Error": StatePaused,
-			"brand-new-word": StateDownloading,
-		},
-	}
-}
-
 func TestDelugeConformance(t *testing.T) {
 	runConformance(t, delugeHarness(t))
 }
@@ -295,7 +65,7 @@ func TestDelugeRequiresLabelPlugin(t *testing.T) {
 	f := &fakeDeluge{connected: true, labels: nil}
 	base := startDeluge(t, f)
 	f.mu.Lock()
-	f.labels = nil // startDeluge supplies defaults only for ordinary fakes.
+	f.labels = nil
 	f.mu.Unlock()
 	if _, err := NewDeluge(base, f.password, nil).Health(context.Background()); err == nil || !strings.Contains(strings.ToLower(err.Error()), "label") {
 		t.Fatalf("health without Label plugin = %v, want a label error", err)
@@ -795,5 +565,235 @@ func TestDelugeFinishedQueuedOrPausedIsFinished(t *testing.T) {
 	}
 	if got := delugeState("Error", true); got != StatePaused {
 		t.Fatalf("error+finished = %s", got)
+	}
+}
+
+func startDeluge(t *testing.T, f *fakeDeluge) string {
+	t.Helper()
+	if f.password == "" {
+		f.password = "<deluge-test-password>"
+	}
+	if f.labels == nil {
+		f.labels = map[string]bool{"movies": true}
+	}
+	if f.torrents == nil {
+		f.torrents = make(map[string]map[string]any)
+	}
+	s := httptest.NewServer(http.HandlerFunc(f.serveHTTP))
+	t.Cleanup(s.Close)
+	return s.URL
+}
+
+func (f *fakeDeluge) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost || r.URL.Path != "/json" {
+		http.NotFound(w, r)
+		return
+	}
+	var q delugeRPCRequest
+	if err := json.NewDecoder(r.Body).Decode(&q); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	f.mu.Lock()
+	f.calls = append(f.calls, q)
+	f.mu.Unlock()
+
+	if q.Method == "auth.login" {
+		f.mu.Lock()
+		f.logins++
+		wait := f.loginWait
+		f.mu.Unlock()
+		if wait != nil {
+			select {
+			case <-r.Context().Done():
+				return
+			case <-wait:
+			}
+		}
+		pass, _ := q.Params[0].(string)
+		ok := pass == f.password
+		if ok {
+			f.mu.Lock()
+			f.session = "session-" + time.Now().UTC().Format("150405.000000000")
+			session := f.session
+			f.mu.Unlock()
+			http.SetCookie(w, &http.Cookie{Name: "_session_id", Value: session, Path: "/", HttpOnly: true})
+		}
+		writeDelugeRPC(w, q.ID, ok, nil)
+		return
+	}
+
+	cookie, _ := r.Cookie("_session_id")
+	f.mu.Lock()
+	authed := cookie != nil && cookie.Value != "" && cookie.Value == f.session
+	f.mu.Unlock()
+	if !authed {
+		writeDelugeRPC(w, q.ID, nil, map[string]any{"code": 1, "message": "Not authenticated", "traceback": ""})
+		return
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	switch q.Method {
+	case "web.connected":
+		writeDelugeRPC(w, q.ID, f.connected, nil)
+	case "daemon.get_version":
+		writeDelugeRPC(w, q.ID, "2.2.0", nil)
+	case "label.get_labels":
+		if f.labels == nil {
+			writeDelugeRPC(w, q.ID, nil, map[string]any{"code": 3, "message": "Unknown method", "traceback": ""})
+			return
+		}
+		labels := make([]string, 0, len(f.labels))
+		for label := range f.labels {
+			labels = append(labels, label)
+		}
+		writeDelugeRPC(w, q.ID, labels, nil)
+	case "label.add":
+		label, _ := q.Params[0].(string)
+		f.labels[label] = true
+		writeDelugeRPC(w, q.ID, nil, nil)
+	case "label.set_torrent":
+		hash, _ := q.Params[0].(string)
+		label, _ := q.Params[1].(string)
+		if torrent := f.torrents[hash]; torrent != nil && !f.ignoreLabel {
+			torrent["label"] = label
+		}
+		writeDelugeRPC(w, q.ID, nil, nil)
+	case "core.add_torrent_magnet":
+		f.added++
+		hash := f.addHash
+		if hash == "" {
+			hash = delugeHash
+		}
+		if f.torrents[hash] == nil && !f.omitAddMutation {
+			f.torrents[hash] = fakeDelugeTorrent("Downloading", 0)
+			f.torrents[hash]["label"] = f.addLabel
+		}
+		if f.malformedAdd {
+			_, _ = w.Write([]byte("{"))
+			return
+		}
+		if f.emptyAddResult {
+			hash = ""
+		}
+		writeDelugeRPC(w, q.ID, hash, nil)
+	case "core.add_torrent_file":
+		f.added++
+		hash := f.addHash
+		if hash == "" {
+			hash = delugeHash
+		}
+		if f.torrents[hash] == nil && !f.omitAddMutation {
+			f.torrents[hash] = fakeDelugeTorrent("Downloading", 0)
+			f.torrents[hash]["label"] = f.addLabel
+		}
+		if f.malformedAdd {
+			_, _ = w.Write([]byte("{"))
+			return
+		}
+		if f.emptyAddResult {
+			hash = ""
+		}
+		writeDelugeRPC(w, q.ID, hash, nil)
+	case "core.get_torrents_status":
+		result := make(map[string]map[string]any)
+		for hash, torrent := range f.torrents {
+			result[hash] = cloneAnyMap(torrent)
+		}
+		writeDelugeRPC(w, q.ID, result, nil)
+	case "core.get_torrent_status":
+		hash, _ := q.Params[0].(string)
+		if torrent := f.torrents[hash]; torrent != nil {
+			writeDelugeRPC(w, q.ID, cloneAnyMap(torrent), nil)
+		} else {
+			writeDelugeRPC(w, q.ID, map[string]any{}, nil)
+		}
+	case "web.get_torrent_files":
+		hash, _ := q.Params[0].(string)
+		if torrent := f.torrents[hash]; torrent != nil {
+			writeDelugeRPC(w, q.ID, torrent["files"], nil)
+		} else {
+			writeDelugeRPC(w, q.ID, []any{}, nil)
+		}
+	case "core.remove_torrent":
+		hash, _ := q.Params[0].(string)
+		if _, ok := f.torrents[hash]; !ok {
+			writeDelugeRPC(w, q.ID, false, nil)
+			return
+		}
+		delete(f.torrents, hash)
+		f.removed = append(f.removed, hash)
+		writeDelugeRPC(w, q.ID, true, nil)
+	default:
+		writeDelugeRPC(w, q.ID, nil, map[string]any{"code": 2, "message": "Unknown method", "traceback": ""})
+	}
+}
+
+func writeDelugeRPC(w http.ResponseWriter, id int64, result, rpcErr any) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"id": id, "result": result, "error": rpcErr})
+}
+
+func cloneAnyMap(in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for key, value := range in {
+		out[key] = value
+	}
+	return out
+}
+
+func fakeDelugeTorrent(state string, progress float64) map[string]any {
+	return map[string]any{
+		"name":                  "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS",
+		"label":                 "movies",
+		"save_path":             "/downloads",
+		"total_wanted":          float64(2 << 30),
+		"progress":              progress,
+		"download_payload_rate": float64(1 << 20),
+		"eta":                   float64(600),
+		"state":                 state,
+		"is_finished":           state == "Seeding",
+		"files": []any{map[string]any{
+			"path": "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS.mkv", "size": float64(2 << 30), "progress": progress,
+		}},
+	}
+}
+
+func delugeHarness(t *testing.T) conformance {
+	t.Helper()
+	f := &fakeDeluge{connected: true}
+	base := startDeluge(t, f)
+	const password = "<deluge-test-password>"
+	return conformance{
+		name:    "deluge",
+		engine:  NewDeluge(base, password, nil),
+		badKey:  NewDeluge(base, "wrong-password", nil),
+		at:      func(base string) Engine { return NewDeluge(base, password, nil) },
+		secret:  password,
+		release: AddRequest{URL: "magnet:?xt=urn:btih:" + delugeHash, Name: "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS", Category: "movies", SavePath: "/downloads", InfoHash: delugeHash},
+		unknown: "0000000000000000000000000000000000000000",
+		appear: func() {
+			f.mu.Lock()
+			f.torrents[delugeHash] = fakeDelugeTorrent("Downloading", 50)
+			f.mu.Unlock()
+		},
+		adds: func() int { f.mu.Lock(); defer f.mu.Unlock(); return f.added },
+		states: func(word string) {
+			f.mu.Lock()
+			f.torrents[delugeHash]["state"] = word
+			f.torrents[delugeHash]["is_finished"] = word == "Seeding"
+			if word == "Seeding" {
+				f.torrents[delugeHash]["progress"] = float64(100)
+			} else {
+				f.torrents[delugeHash]["progress"] = float64(50)
+			}
+			f.mu.Unlock()
+		},
+		words: map[string]string{
+			"Queued": StateQueued, "Checking": StateQueued, "Downloading": StateDownloading,
+			"Paused": StatePaused, "Seeding": StateFinished, "Error": StatePaused,
+			"brand-new-word": StateDownloading,
+		},
 	}
 }

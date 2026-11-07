@@ -13,11 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Runs against the lab qBittorrent with our own Dune test torrent, added in a
-// category HolyArrs does not use (as a person would add it by hand):
-// HOLYARRS_LAB_QBIT=http://127.0.0.1:18708 go test -tags lab -run LabQbitClientItem ./internal/downloader/
-// The torrent shows in ListAll, then is paused, resumed and removed by
-// Downloader id and info hash, and no download record is ever made.
 func TestLabQbitClientItem(t *testing.T) {
 	base := os.Getenv("HOLYARRS_LAB_QBIT")
 	if base == "" {

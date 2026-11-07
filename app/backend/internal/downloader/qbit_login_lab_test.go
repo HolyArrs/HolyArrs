@@ -8,15 +8,6 @@ import (
 	"testing"
 )
 
-// Signs in to the lab qBittorrent with its user name and password (the way
-// a qBittorrent older than 5.2 is reached). labctl passes them through the
-// environment and never prints them:
-//
-//	python research\lab\labctl.py qbt-login -- go test -tags lab -run LabQbitLogin ./internal/downloader/
-//
-// The lab skips sign-in for its own subnets, so the test signs in on
-// purpose, then reads with the session cookie. No wrong password is tried:
-// those count towards qBittorrent's ban.
 func TestLabQbitLogin(t *testing.T) {
 	user, pass := os.Getenv("HOLYARRS_LAB_QBIT_USER"), os.Getenv("HOLYARRS_LAB_QBIT_PASS")
 	if user == "" || pass == "" {

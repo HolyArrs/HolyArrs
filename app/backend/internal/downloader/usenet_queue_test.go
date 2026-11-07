@@ -12,49 +12,9 @@ import (
 	"testing"
 )
 
-// nzbEdits is an NZBGet that keeps every editqueue command with its param.
 type nzbEdits struct {
 	mu    sync.Mutex
 	calls []string
-}
-
-func nzbEditsRig(t *testing.T) (*nzbEdits, *NZBGet) {
-	t.Helper()
-	f := &nzbEdits{}
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var in struct {
-			Method string            `json:"method"`
-			Params []json.RawMessage `json:"params"`
-		}
-		_ = json.NewDecoder(r.Body).Decode(&in)
-		f.mu.Lock()
-		defer f.mu.Unlock()
-		var result any = true
-		switch in.Method {
-		case "listgroups":
-			result = []map[string]any{
-				{"NZBID": 11, "NZBName": "Outside.Job", "Category": "movies", "Status": "QUEUED"},
-				{"NZBID": 14, "NZBName": "Own.Movie", "Category": "movies", "Status": "QUEUED",
-					"Parameters": []map[string]any{{"Name": nzbgetMarker, "Value": ownMarker}}},
-			}
-		case "history":
-			result = []map[string]any{{"NZBID": 21, "NZBName": "Done", "Category": "movies", "Status": "SUCCESS/ALL"}}
-		case "editqueue":
-			var cmd, param string
-			var ids []int
-			_ = json.Unmarshal(in.Params[0], &cmd)
-			_ = json.Unmarshal(in.Params[1], &param)
-			_ = json.Unmarshal(in.Params[2], &ids)
-			f.calls = append(f.calls, fmt.Sprintf("%s:%s:%v", cmd, param, ids))
-		case "pausedownload", "resumedownload":
-			f.calls = append(f.calls, in.Method)
-		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "result": result})
-	}))
-	t.Cleanup(s.Close)
-	n := NewNZBGet(s.URL, "u", "p", nil)
-	n.Category = "movies"
-	return f, n
 }
 
 func TestNZBGetQueueControls(t *testing.T) {
@@ -111,8 +71,84 @@ func TestNZBGetReadOnlyQueue(t *testing.T) {
 	}
 }
 
-// sabOrder is a SABnzbd with three queued jobs that keeps switch and
-// priority calls.
+func TestSabQueueOrderAndPriority(t *testing.T) {
+	calls, s := sabOrderRig(t)
+	ctx := context.Background()
+	for _, c := range []struct{ id, where string }{
+		{"SABnzbd_nzo_q1", MoveUp}, {"SABnzbd_nzo_q1", MoveDown}, {"SABnzbd_nzo_q0", MoveBottom},
+		{"SABnzbd_nzo_q0", MoveUp}, {"SABnzbd_nzo_q2", MoveDown}, {"SABnzbd_nzo_q2", MoveBottom},
+	} {
+		if err := s.MoveItem(ctx, c.id, c.where); err != nil {
+			t.Fatalf("%s %s: %v", c.id, c.where, err)
+		}
+	}
+	for _, p := range []string{PriorityLow, PriorityNormal, PriorityHigh, PriorityForce} {
+		if err := s.SetPriority(ctx, "SABnzbd_nzo_q1", p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := "switch:SABnzbd_nzo_q1:0 switch:SABnzbd_nzo_q1:2 switch:SABnzbd_nzo_q0:2 priority:SABnzbd_nzo_q1:-1 priority:SABnzbd_nzo_q1:0 priority:SABnzbd_nzo_q1:1 priority:SABnzbd_nzo_q1:2"
+	if got := strings.Join(*calls, " "); got != want {
+		t.Fatalf("calls\n got %s\nwant %s", got, want)
+	}
+	if err := s.MoveItem(ctx, "SABnzbd_nzo_gone", MoveUp); !errors.Is(err, ErrNotFound) {
+		t.Fatal(err)
+	}
+	if err := s.SetPriority(ctx, "SABnzbd_nzo_q1", "urgent"); !errors.Is(err, ErrJobPriority) {
+		t.Fatal(err)
+	}
+	ro := readOnly(s).(UsenetQueue)
+	n := len(*calls)
+	if err := ro.MoveItem(ctx, "SABnzbd_nzo_q1", MoveUp); !errors.Is(err, ErrReadOnly) {
+		t.Fatal(err)
+	}
+	if err := ro.SetPriority(ctx, "SABnzbd_nzo_q1", PriorityHigh); !errors.Is(err, ErrReadOnly) {
+		t.Fatal(err)
+	}
+	if len(*calls) != n {
+		t.Fatal("read-only change reached SABnzbd")
+	}
+}
+
+func nzbEditsRig(t *testing.T) (*nzbEdits, *NZBGet) {
+	t.Helper()
+	f := &nzbEdits{}
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Method string            `json:"method"`
+			Params []json.RawMessage `json:"params"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&in)
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		var result any = true
+		switch in.Method {
+		case "listgroups":
+			result = []map[string]any{
+				{"NZBID": 11, "NZBName": "Outside.Job", "Category": "movies", "Status": "QUEUED"},
+				{"NZBID": 14, "NZBName": "Own.Movie", "Category": "movies", "Status": "QUEUED",
+					"Parameters": []map[string]any{{"Name": nzbgetMarker, "Value": ownMarker}}},
+			}
+		case "history":
+			result = []map[string]any{{"NZBID": 21, "NZBName": "Done", "Category": "movies", "Status": "SUCCESS/ALL"}}
+		case "editqueue":
+			var cmd, param string
+			var ids []int
+			_ = json.Unmarshal(in.Params[0], &cmd)
+			_ = json.Unmarshal(in.Params[1], &param)
+			_ = json.Unmarshal(in.Params[2], &ids)
+			f.calls = append(f.calls, fmt.Sprintf("%s:%s:%v", cmd, param, ids))
+		case "pausedownload", "resumedownload":
+			f.calls = append(f.calls, in.Method)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "result": result})
+	}))
+	t.Cleanup(s.Close)
+	n := NewNZBGet(s.URL, "u", "p", nil)
+	n.Category = "movies"
+	return f, n
+}
+
 func sabOrderRig(t *testing.T) (*[]string, *Sabnzbd) {
 	t.Helper()
 	var mu sync.Mutex
@@ -145,43 +181,4 @@ func sabOrderRig(t *testing.T) (*[]string, *Sabnzbd) {
 	}))
 	t.Cleanup(srv.Close)
 	return &calls, NewSabnzbd(srv.URL, sabKey, nil)
-}
-
-func TestSabQueueOrderAndPriority(t *testing.T) {
-	calls, s := sabOrderRig(t)
-	ctx := context.Background()
-	for _, c := range []struct{ id, where string }{
-		{"SABnzbd_nzo_q1", MoveUp}, {"SABnzbd_nzo_q1", MoveDown}, {"SABnzbd_nzo_q0", MoveBottom},
-		{"SABnzbd_nzo_q0", MoveUp}, {"SABnzbd_nzo_q2", MoveDown}, {"SABnzbd_nzo_q2", MoveBottom}, // already at the end: no call
-	} {
-		if err := s.MoveItem(ctx, c.id, c.where); err != nil {
-			t.Fatalf("%s %s: %v", c.id, c.where, err)
-		}
-	}
-	for _, p := range []string{PriorityLow, PriorityNormal, PriorityHigh, PriorityForce} {
-		if err := s.SetPriority(ctx, "SABnzbd_nzo_q1", p); err != nil {
-			t.Fatal(err)
-		}
-	}
-	want := "switch:SABnzbd_nzo_q1:0 switch:SABnzbd_nzo_q1:2 switch:SABnzbd_nzo_q0:2 priority:SABnzbd_nzo_q1:-1 priority:SABnzbd_nzo_q1:0 priority:SABnzbd_nzo_q1:1 priority:SABnzbd_nzo_q1:2"
-	if got := strings.Join(*calls, " "); got != want {
-		t.Fatalf("calls\n got %s\nwant %s", got, want)
-	}
-	if err := s.MoveItem(ctx, "SABnzbd_nzo_gone", MoveUp); !errors.Is(err, ErrNotFound) {
-		t.Fatal(err)
-	}
-	if err := s.SetPriority(ctx, "SABnzbd_nzo_q1", "urgent"); !errors.Is(err, ErrJobPriority) {
-		t.Fatal(err)
-	}
-	ro := readOnly(s).(UsenetQueue)
-	n := len(*calls)
-	if err := ro.MoveItem(ctx, "SABnzbd_nzo_q1", MoveUp); !errors.Is(err, ErrReadOnly) {
-		t.Fatal(err)
-	}
-	if err := ro.SetPriority(ctx, "SABnzbd_nzo_q1", PriorityHigh); !errors.Is(err, ErrReadOnly) {
-		t.Fatal(err)
-	}
-	if len(*calls) != n {
-		t.Fatal("read-only change reached SABnzbd")
-	}
 }

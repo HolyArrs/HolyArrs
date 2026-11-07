@@ -13,11 +13,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// ClearFinished takes a Usenet download out of SABnzbd or NZBGet, finished
-// job and files, once its Import fully succeeded (the caller says so). It
-// leaves alone torrents, downloads HolyArrs did not send, Downloaders that
-// are read only here, and Downloaders with "clear_finished" off. A client
-// that refuses is logged in History and the Import stays done.
+var jobSuffix = regexp.MustCompile(`\.\d{1,3}$`)
+
+// ClearFinished removes finished jobs from the Downloader that downloadID names.
 func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	var d domain.Download
 	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil || d.ReleaseID == nil || d.ExternalID == "" {
@@ -33,7 +31,6 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	e, err := m.engine(ctx, dr)
 	var folder string
 	if err == nil {
-		// Where the client put the finished job, read before it forgets it.
 		if j, gerr := e.Get(ctx, d.ExternalID); gerr == nil {
 			folder = j.ContentPath
 		}
@@ -43,9 +40,6 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 		m.event(ctx, &d, "download_not_removed", fmt.Sprintf("Could not clear the imported download from %s: %v", dr.Name, firstLine(err.Error())))
 		return
 	}
-	// SABnzbd and NZBGet drop a finished job from their list but may leave
-	// its output folder: HolyArrs removes it itself, only inside a folder
-	// the Downloader shares with it (its path map, or the save root).
 	var relName string
 	var rel domain.Release
 	if database.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
@@ -53,8 +47,6 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	}
 	said := "Cleared the imported download from " + dr.Name
 	if root, rel := m.finishedFolder(folder, relName, dr); rel != "" {
-		// Deleted through a handle on the shared folder: os.Root never follows a
-		// link or junction out of it, whatever the path's parts point at.
 		rerr := func() error {
 			rt, err := os.OpenRoot(root)
 			if err != nil {
@@ -72,20 +64,11 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	m.event(ctx, &d, "download_removed", said)
 }
 
-// finishedFolder says which shared folder holds the job's folder and the
-// folder's path inside it, when it may be deleted: named after this
-// download's Release (a client's ".1" suffix allowed), below (never equal
-// to) one of the Downloader's shared folders (a file's own folder when the
-// client names the job by its file) (path map or save root), there,
-// and a plain folder (not a link, junction or other special file). Anything
-// else, such as a category folder the client named instead, is left alone:
-// rel "" means leave the disk alone.
 func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) (root, rel string) {
 	if content == "" || relName == "" {
 		return "", ""
 	}
 	local := filepath.Clean(mapLocal(content, dr.PathMap))
-	// SABnzbd names a one-file job by its file: the job folder is its parent.
 	if fi, err := os.Lstat(local); err == nil && fi.Mode().IsRegular() {
 		local = filepath.Dir(local)
 	}
@@ -114,10 +97,6 @@ func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) 
 	return "", ""
 }
 
-var jobSuffix = regexp.MustCompile(`\.\d{1,3}$`)
-
-// sameJobName says whether a folder is named after the Release: equal
-// ignoring case, or with the ".1"-style suffix a client adds on a clash.
 func sameJobName(folder, relName string) bool {
 	return strings.EqualFold(folder, relName) || strings.EqualFold(jobSuffix.ReplaceAllString(folder, ""), relName)
 }

@@ -18,21 +18,40 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Back-off after a Downloader fails: 1 minute, doubling, at most 30.
-// clientTimeout bounds one call to a download client; a busy NAS client
-// (a recheck running) can take longer than 15 s to answer.
+// clientTimeout bounds one call to a client. A busy NAS client (for example
+// during a recheck) can take longer than 15 s to answer.
 const clientTimeout = 30 * time.Second
 
+// Back-off after a Downloader fails: 1 minute, doubling, at most 30.
 const (
 	backoffFirst = time.Minute
 	backoffMost  = 30 * time.Minute
 )
 
-// Client is the HTTP client for one Downloader: it never follows a redirect
-// to another host or scheme, and without allowLocal it refuses this machine
-// and the local network (checked on every address after DNS). Link-local
-// and other cloud metadata addresses (outbound.NotMetadata) and metadata names
-// are refused even with allowLocal.
+// Setting keys for the Downloader settings group.
+const (
+	SettingStallAfter      = "stalled_after_hours"
+	SettingActAfter        = "stalled_act_hours"
+	SettingSpacing         = "grab_spacing_seconds"
+	SettingRemoveFailed    = "remove_failed"
+	SettingFailDangerous   = "fail_dangerous"
+	SettingReplaceVanished = "replace_vanished"
+)
+
+// settings holds the Downloader settings (group links), read once per sync.
+type settings struct {
+	stallAfter, actAfter time.Duration
+	spacing              time.Duration
+	removeFailed         bool
+	failDangerous        bool
+	replaceVanished      bool
+}
+
+// Client returns the HTTP client for one Downloader. It never follows a redirect
+// to another host or scheme. Without allowLocal it refuses this machine and the
+// local network, checking every address after DNS. Link-local and cloud metadata
+// addresses (outbound.NotMetadata) and metadata names are refused even with
+// allowLocal.
 func Client(base string, allowLocal bool) *http.Client {
 	allow := outbound.NotMetadata
 	if !allowLocal {
@@ -61,7 +80,58 @@ func Client(base string, allowLocal bool) *http.Client {
 	}
 }
 
-// metadataName says whether h names a cloud metadata service.
+// Check asks one Downloader for its version and records the answer.
+func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error) {
+	e, err := m.engine(ctx, d)
+	if err != nil {
+		return Health{}, err
+	}
+	h, err := e.Health(ctx)
+	if err == nil {
+		raw := e
+		if guarded, ok := e.(*guardedEngine); ok {
+			raw = guarded.Engine
+		}
+		raw = unwrapReadOnly(raw)
+		if s, ok := raw.(*Sabnzbd); ok && d.Category != "" && d.Category != "*" {
+			if has, cerr := s.HasCategory(ctx, d.Category); cerr == nil && !has {
+				err = fmt.Errorf("%w (%s)", ErrNoCategory, d.Category)
+			}
+		}
+	}
+	if err != nil {
+		if !errors.Is(err, ErrNoCategory) {
+			m.downloaderFailed(ctx, d, err)
+		}
+		return h, err
+	}
+	m.downloaderOK(ctx, d)
+	if m.Sync != nil && !m.Sync.View(d.ID).Fresh {
+		m.Kick(d.ID) // The client answers again, so let the reader catch up now.
+	}
+	if d.CheckedAt == nil || m.now().Sub(*d.CheckedAt) > time.Minute {
+		_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
+			_, err := tx.Exec("UPDATE downloaders SET checked_at = ? WHERE id = ?", database.FormatTime(m.now()), d.ID)
+			return err
+		})
+	}
+	return h, nil
+}
+
+// CheckAll asks every Downloader that is not paused or removed, once.
+func (m *Manager) CheckAll(ctx context.Context) {
+	dls, err := database.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 AND state != 'disabled' ORDER BY id")
+	if err != nil {
+		return
+	}
+	for _, d := range dls {
+		cctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		_, _ = m.Check(cctx, d)
+		cancel()
+	}
+}
+
+// metadataName reports whether h names a cloud metadata service.
 func metadataName(h string) bool {
 	h = strings.TrimSuffix(strings.ToLower(h), ".")
 	switch h {
@@ -71,9 +141,9 @@ func metadataName(h string) bool {
 	return false
 }
 
-// order lists the Downloaders a Release may go to now: by priority, equal
-// priorities taking turns, without paused (disabled) and resting ones. It
-// also says why each skipped one was skipped.
+// order lists the Downloaders a Release may go to now: by priority, with equal
+// priorities taking turns, leaving out paused and resting ones. It also gives
+// the reason for each one skipped.
 func (m *Manager) order(all []domain.Downloader, now time.Time) ([]domain.Downloader, []string) {
 	var ok []domain.Downloader
 	var skipped []string
@@ -111,8 +181,8 @@ func (m *Manager) order(all []domain.Downloader, now time.Time) ([]domain.Downlo
 	return out, skipped
 }
 
-// space waits until the last send to the same host is at least the grab
-// spacing ago, and holds that host until the returned func is called.
+// space waits until the last send to the same host is at least the grab spacing
+// old, then holds that host until the returned func is called.
 func (m *Manager) space(ctx context.Context, base string) (func(), error) {
 	host := base
 	if u, err := url.Parse(base); err == nil && u.Host != "" {
@@ -166,8 +236,8 @@ func (m *Manager) sleep(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// downloaderFailed records a failed call: the state in plain words, the
-// error (never a key: adapters strip addresses) and a back-off.
+// downloaderFailed records a failed call: the state in plain words, the error
+// (never a key, since adapters strip addresses) and a back-off.
 func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cause error) {
 	state := "unreachable"
 	if errors.Is(cause, ErrAuth) {
@@ -182,7 +252,7 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 			return err
 		}
 		if cur == "disabled" {
-			state = cur // paused by a person stays paused
+			state = cur // A pause set by a person stays.
 		}
 		wait := backoffFirst << min(fails, 5)
 		if wait > backoffMost {
@@ -207,67 +277,6 @@ func (m *Manager) downloaderOK(ctx context.Context, d domain.Downloader) {
 		return err
 	})
 	m.publish("downloader", map[string]any{"id": d.ID, "state": "ok"})
-}
-
-// Check asks one Downloader for its version and records the answer.
-func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error) {
-	e, err := m.engine(ctx, d)
-	if err != nil {
-		return Health{}, err
-	}
-	h, err := e.Health(ctx)
-	if err == nil {
-		raw := e
-		if guarded, ok := e.(*guardedEngine); ok {
-			raw = guarded.Engine
-		}
-		raw = unwrapReadOnly(raw)
-		if s, ok := raw.(*Sabnzbd); ok && d.Category != "" && d.Category != "*" {
-			if has, cerr := s.HasCategory(ctx, d.Category); cerr == nil && !has {
-				err = fmt.Errorf("%w (%s)", ErrNoCategory, d.Category)
-			}
-		}
-	}
-	if err != nil {
-		if !errors.Is(err, ErrNoCategory) {
-			m.downloaderFailed(ctx, d, err)
-		}
-		return h, err
-	}
-	m.downloaderOK(ctx, d)
-	if m.Sync != nil && !m.Sync.View(d.ID).Fresh {
-		m.Kick(d.ID) // the client answers again: let the reader catch up now
-	}
-	if d.CheckedAt == nil || m.now().Sub(*d.CheckedAt) > time.Minute {
-		_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE downloaders SET checked_at = ? WHERE id = ?", database.FormatTime(m.now()), d.ID)
-			return err
-		})
-	}
-	return h, nil
-}
-
-// CheckAll is the status check: every Downloader that is not paused or
-// removed is asked once.
-func (m *Manager) CheckAll(ctx context.Context) {
-	dls, err := database.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 AND state != 'disabled' ORDER BY id")
-	if err != nil {
-		return
-	}
-	for _, d := range dls {
-		cctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-		_, _ = m.Check(cctx, d)
-		cancel()
-	}
-}
-
-// settings are the Downloader settings (group links), read once per sync.
-type settings struct {
-	stallAfter, actAfter time.Duration
-	spacing              time.Duration
-	removeFailed         bool
-	failDangerous        bool
-	replaceVanished      bool
 }
 
 func (m *Manager) settings(ctx context.Context) settings {
@@ -311,13 +320,3 @@ func (m *Manager) settings(ctx context.Context) settings {
 	}
 	return st
 }
-
-// The Downloader settings (settings group links).
-const (
-	SettingStallAfter      = "stalled_after_hours"
-	SettingActAfter        = "stalled_act_hours"
-	SettingSpacing         = "grab_spacing_seconds"
-	SettingRemoveFailed    = "remove_failed"
-	SettingFailDangerous   = "fail_dangerous"
-	SettingReplaceVanished = "replace_vanished"
-)

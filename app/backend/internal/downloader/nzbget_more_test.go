@@ -11,8 +11,8 @@ import (
 	"testing"
 )
 
-// nzbAll is an NZBGet with jobs HolyArrs did not send: a queue, a history
-// and a status, over JSON-RPC.
+const ownMarker = "nzbget-1111111111111111111111111111111111111111111111111111111111111111"
+
 type nzbAll struct {
 	mu      sync.Mutex
 	groups  []map[string]any
@@ -58,30 +58,6 @@ func (f *nzbAll) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "result": result})
 }
 
-const ownMarker = "nzbget-1111111111111111111111111111111111111111111111111111111111111111"
-
-func nzbAllRig(t *testing.T) (*nzbAll, *NZBGet) {
-	t.Helper()
-	f := &nzbAll{rate: 2 << 20,
-		groups: []map[string]any{
-			{"NZBID": 11, "NZBName": "Dune.Part.Two.2024.2160p", "Category": "movies", "DestDir": "/data/inter/Dune", "FileSizeLo": 1000 << 20, "RemainingSizeLo": 600 << 20, "Status": "DOWNLOADING"},
-			{"NZBID": 12, "NZBName": "Arcane.S01E01.1080p", "Category": "tv_shows", "FileSizeLo": 500 << 20, "RemainingSizeLo": 500 << 20, "Status": "PAUSED"},
-			{"NZBID": 13, "NZBName": "Lab.Lanterns.FLAC", "Category": "music", "FileSizeLo": 24 << 20, "RemainingSizeLo": 0, "Status": "REPAIRING", "ParStatus": "NONE"},
-			{"NZBID": 14, "NZBName": "Own.Movie", "Category": "movies", "FileSizeLo": 10, "RemainingSizeLo": 10, "Status": "QUEUED",
-				"Parameters": []map[string]any{{"Name": nzbgetMarker, "Value": ownMarker}}},
-		},
-		history: []map[string]any{
-			{"NZBID": 21, "NZBName": "Bad.One", "Category": "movies", "FileSizeLo": 100, "Status": "FAILURE/BAD", "MarkStatus": "BAD", "DeleteStatus": "MANUAL", "HistoryTime": 1700000000},
-			{"NZBID": 22, "NZBName": "Gone.One", "Category": "tv_shows", "FileSizeLo": 100, "Status": "DELETED/MANUAL", "DeleteStatus": "MANUAL"},
-			{"NZBID": 23, "NZBName": "Good.One", "Category": "music", "FileSizeLo": 100, "Status": "SUCCESS/UNPACK", "ParStatus": "SUCCESS", "UnpackStatus": "SUCCESS", "FinalDir": "/data/done/Good"},
-		}}
-	s := httptest.NewServer(f)
-	t.Cleanup(s.Close)
-	return f, NewNZBGet(s.URL, "u", "p", nil)
-}
-
-// Every queue and history job shows, also the ones HolyArrs did not send,
-// with states, sizes, speed, time left and a reason for failures.
 func TestNZBGetQueueAndHistoryListEveryJob(t *testing.T) {
 	_, n := nzbAllRig(t)
 	ctx := context.Background()
@@ -103,7 +79,6 @@ func TestNZBGetQueueAndHistoryListEveryJob(t *testing.T) {
 	if _, ok := by[ownMarker]; !ok {
 		t.Fatal("a HolyArrs job keeps its marker id")
 	}
-	// Time left: bytes left outside paused jobs at the overall rate.
 	if q.Head.Speed != 2<<20 || q.Head.TimeLeft != int64((600<<20)+10)/(2<<20) {
 		t.Fatalf("head %+v", q.Head)
 	}
@@ -126,8 +101,6 @@ func TestNZBGetQueueAndHistoryListEveryJob(t *testing.T) {
 	}
 }
 
-// An outside job is reached by its number, whatever its category; a job
-// with a HolyArrs marker is not reached that way.
 func TestNZBGetOutsideIDsGetRemoveRetry(t *testing.T) {
 	f, n := nzbAllRig(t)
 	n.Category = "movies"
@@ -167,9 +140,6 @@ func TestNZBGetOutsideIDsGetRemoveRetry(t *testing.T) {
 	}
 }
 
-func itoa(n int) string { b, _ := json.Marshal(n); return string(b) }
-
-// The Repair tab: the job's own status fields in plain words.
 func TestNZBGetJobStages(t *testing.T) {
 	f, n := nzbAllRig(t)
 	f.history = append(f.history, map[string]any{"NZBID": 24, "NZBName": "Broken", "Status": "FAILURE/UNPACK", "ParStatus": "SUCCESS", "UnpackStatus": "FAILURE", "MoveStatus": "NONE", "ScriptStatus": "FAILURE"})
@@ -197,7 +167,6 @@ func TestNZBGetJobStages(t *testing.T) {
 	}
 }
 
-// Read only: Try again and the queue controls never reach NZBGet; reads do.
 func TestNZBGetReadOnlyWrapper(t *testing.T) {
 	f, n := nzbAllRig(t)
 	ro := readOnly(n)
@@ -217,3 +186,25 @@ func TestNZBGetReadOnlyWrapper(t *testing.T) {
 		t.Fatalf("read %v", err)
 	}
 }
+
+func nzbAllRig(t *testing.T) (*nzbAll, *NZBGet) {
+	t.Helper()
+	f := &nzbAll{rate: 2 << 20,
+		groups: []map[string]any{
+			{"NZBID": 11, "NZBName": "Dune.Part.Two.2024.2160p", "Category": "movies", "DestDir": "/data/inter/Dune", "FileSizeLo": 1000 << 20, "RemainingSizeLo": 600 << 20, "Status": "DOWNLOADING"},
+			{"NZBID": 12, "NZBName": "Arcane.S01E01.1080p", "Category": "tv_shows", "FileSizeLo": 500 << 20, "RemainingSizeLo": 500 << 20, "Status": "PAUSED"},
+			{"NZBID": 13, "NZBName": "Lab.Lanterns.FLAC", "Category": "music", "FileSizeLo": 24 << 20, "RemainingSizeLo": 0, "Status": "REPAIRING", "ParStatus": "NONE"},
+			{"NZBID": 14, "NZBName": "Own.Movie", "Category": "movies", "FileSizeLo": 10, "RemainingSizeLo": 10, "Status": "QUEUED",
+				"Parameters": []map[string]any{{"Name": nzbgetMarker, "Value": ownMarker}}},
+		},
+		history: []map[string]any{
+			{"NZBID": 21, "NZBName": "Bad.One", "Category": "movies", "FileSizeLo": 100, "Status": "FAILURE/BAD", "MarkStatus": "BAD", "DeleteStatus": "MANUAL", "HistoryTime": 1700000000},
+			{"NZBID": 22, "NZBName": "Gone.One", "Category": "tv_shows", "FileSizeLo": 100, "Status": "DELETED/MANUAL", "DeleteStatus": "MANUAL"},
+			{"NZBID": 23, "NZBName": "Good.One", "Category": "music", "FileSizeLo": 100, "Status": "SUCCESS/UNPACK", "ParStatus": "SUCCESS", "UnpackStatus": "SUCCESS", "FinalDir": "/data/done/Good"},
+		}}
+	s := httptest.NewServer(f)
+	t.Cleanup(s.Close)
+	return f, NewNZBGet(s.URL, "u", "p", nil)
+}
+
+func itoa(n int) string { b, _ := json.Marshal(n); return string(b) }

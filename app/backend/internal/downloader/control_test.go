@@ -10,7 +10,17 @@ import (
 	"testing"
 )
 
-// recorder answers by path (qBittorrent) or by mode/name (SABnzbd) and
+const hashA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+// Both adapters offer the controls, and engines without them still compile.
+var (
+	_ Controller        = (*Qbittorrent)(nil)
+	_ TorrentController = (*Qbittorrent)(nil)
+	_ Controller        = (*Sabnzbd)(nil)
+	_ Retrier           = (*Sabnzbd)(nil)
+)
+
+// recorder answers by path (qBittorrent) or by mode and name (SABnzbd) and
 // keeps every call it saw as "path?form".
 type recorder struct {
 	mu      sync.Mutex
@@ -18,54 +28,6 @@ type recorder struct {
 	answers map[string]string // key -> body
 	codes   map[string]int    // key -> status
 }
-
-func (rc *recorder) start(t *testing.T, key func(*http.Request) string) string {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = r.ParseForm()
-		k := key(r)
-		form := r.Form
-		form.Del("apikey")
-		form.Del("output")
-		rc.mu.Lock()
-		rc.calls = append(rc.calls, k+"?"+form.Encode())
-		code, body := rc.codes[k], rc.answers[k]
-		rc.mu.Unlock()
-		if code != 0 {
-			w.WriteHeader(code)
-		}
-		_, _ = w.Write([]byte(body))
-	}))
-	t.Cleanup(srv.Close)
-	return srv.URL
-}
-
-func (rc *recorder) saw(t *testing.T, want ...string) {
-	t.Helper()
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-	if strings.Join(rc.calls, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("calls:\n%s\nwant:\n%s", strings.Join(rc.calls, "\n"), strings.Join(want, "\n"))
-	}
-}
-
-func qbitKey(r *http.Request) string { return strings.TrimPrefix(r.URL.Path, "/api/v2/") }
-func sabKeyOf(r *http.Request) string {
-	if n := r.Form.Get("name"); n != "" && (r.Form.Get("mode") == "queue" || r.Form.Get("mode") == "config") {
-		return r.Form.Get("mode") + "/" + n
-	}
-	return r.Form.Get("mode")
-}
-
-const hashA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
-// Both adapters offer the controls; engines without them still compile.
-var (
-	_ Controller        = (*Qbittorrent)(nil)
-	_ TorrentController = (*Qbittorrent)(nil)
-	_ Controller        = (*Sabnzbd)(nil)
-	_ Retrier           = (*Sabnzbd)(nil)
-)
 
 func TestQbitControlsSendTheRightActions(t *testing.T) {
 	rc := &recorder{}
@@ -264,4 +226,43 @@ func TestRedactURLs(t *testing.T) {
 			t.Errorf("redactURLs(%q) = %q, want %q", in, got, want)
 		}
 	}
+}
+
+func (rc *recorder) start(t *testing.T, key func(*http.Request) string) string {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		k := key(r)
+		form := r.Form
+		form.Del("apikey")
+		form.Del("output")
+		rc.mu.Lock()
+		rc.calls = append(rc.calls, k+"?"+form.Encode())
+		code, body := rc.codes[k], rc.answers[k]
+		rc.mu.Unlock()
+		if code != 0 {
+			w.WriteHeader(code)
+		}
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL
+}
+
+func (rc *recorder) saw(t *testing.T, want ...string) {
+	t.Helper()
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+	if strings.Join(rc.calls, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("calls:\n%s\nwant:\n%s", strings.Join(rc.calls, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+func qbitKey(r *http.Request) string { return strings.TrimPrefix(r.URL.Path, "/api/v2/") }
+
+func sabKeyOf(r *http.Request) string {
+	if n := r.Form.Get("name"); n != "" && (r.Form.Get("mode") == "queue" || r.Form.Get("mode") == "config") {
+		return r.Form.Get("mode") + "/" + n
+	}
+	return r.Form.Get("mode")
 }

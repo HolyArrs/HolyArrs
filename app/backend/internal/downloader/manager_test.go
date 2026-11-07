@@ -13,8 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 type world struct {
 	s       *database.Store
 	slotID  int64
@@ -24,7 +22,7 @@ type world struct {
 	mu      sync.Mutex
 	topics  []string
 	finshed []int64
-	// failedSlots are the Slots OnFailed was told about; slept the grab
+	// failedSlots are the Slots OnFailed was told about; slept holds the grab
 	// spacing waits.
 	failedSlots []int64
 	slept       []time.Duration
@@ -35,112 +33,6 @@ func (w *world) Publish(topic string, _ any) uint64 {
 	defer w.mu.Unlock()
 	w.topics = append(w.topics, topic)
 	return 0
-}
-
-func (w *world) now() time.Time {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	return w.clock
-}
-
-// setup makes a movie Slot in state chosen with its chosen Release, and a
-// qBittorrent Downloader pointing at a fake.
-func setup(t *testing.T) (*world, *Manager) {
-	t.Helper()
-	s, err := database.Open(t.TempDir(), database.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = s.Close() })
-	fake, u := startFake(t)
-	w := &world{s: s, fake: fake, clock: time.Date(2026, 10, 12, 10, 0, 0, 0, time.UTC)}
-	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		var pr int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
-			return err
-		}
-		lf := &domain.LibraryFolder{Path: "/data/media/movies", Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
-			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
-			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
-		for _, x := range []struct {
-			table string
-			v     any
-		}{{"library_folders", lf}, {"titles", ti}} {
-			if _, err := database.Insert(tx, x.table, x.v, domain.System); err != nil {
-				return err
-			}
-		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
-		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
-			return err
-		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true}
-		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
-			return err
-		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotChosen}
-		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
-			return err
-		}
-		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{},
-			AllowLocal: true} // the lab indexer is on the local network; qBittorrent fetches its links (#152)
-		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
-			return err
-		}
-		rel := &domain.Release{SourceID: src.ID, Name: "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/dune-part-two.torrent",
-			Protocol: "torrent", Size: 29588180, InfoHash: ptr(hash), Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{sl.ID},
-			Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rel.ID, sl.ID); err != nil {
-			return err
-		}
-		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: u, Category: "holyarrs", Priority: 1,
-			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
-			return err
-		}
-		w.slotID, w.relID = sl.ID, rel.ID
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	m := &Manager{Store: s, Live: w, SavePath: "/data/downloads/complete", StallAfter: 10 * time.Minute, ActAfter: 24 * time.Hour, Now: w.now,
-		OnFinished: func(_ context.Context, id int64) { w.mu.Lock(); w.finshed = append(w.finshed, id); w.mu.Unlock() },
-		OnFailed: func(_ context.Context, id int64) {
-			w.mu.Lock()
-			w.failedSlots = append(w.failedSlots, id)
-			w.mu.Unlock()
-		},
-		Sleep: func(_ context.Context, d time.Duration) error {
-			w.mu.Lock()
-			w.slept = append(w.slept, d)
-			w.clock = w.clock.Add(d)
-			w.mu.Unlock()
-			return nil
-		}}
-	return w, m
-}
-
-func (w *world) download(t *testing.T, id int64) domain.Download {
-	t.Helper()
-	var d domain.Download
-	if err := database.Get(context.Background(), w.s.Read(), "downloads", id, &d); err != nil {
-		t.Fatal(err)
-	}
-	return d
-}
-
-func (w *world) slot(t *testing.T) domain.Slot {
-	t.Helper()
-	var s domain.Slot
-	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &s); err != nil {
-		t.Fatal(err)
-	}
-	return s
 }
 
 func TestGrabAndSyncToFinished(t *testing.T) {
@@ -184,7 +76,6 @@ func TestGrabAndSyncToFinished(t *testing.T) {
 	if len(w.finshed) != 1 || w.finshed[0] != id {
 		t.Fatalf("OnFinished %v", w.finshed)
 	}
-	// A second sync does not fire it again.
 	if n, _ := m.SyncOnce(ctx); n != 0 || len(w.finshed) != 1 {
 		t.Fatalf("finished download still active (%d) or fired twice", n)
 	}
@@ -267,8 +158,8 @@ func TestNotVanishedRightAfterSending(t *testing.T) {
 	ctx := context.Background()
 	w.clock = time.Now().UTC()
 	id, _ := m.Grab(ctx, w.slotID, w.relID, domain.System)
-	// The Downloader fetches the torrent by URL in the background, so it is
-	// not listed yet.
+	// The Downloader fetches the torrent by URL in the background, so it is not
+	// listed yet.
 	if n, _ := m.SyncOnce(ctx); n != 1 {
 		t.Fatalf("active %d", n)
 	}
@@ -288,7 +179,8 @@ func TestNotVanishedRightAfterSending(t *testing.T) {
 func TestGrabRetryAfterKillDoesNotDuplicate(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
-	// State a kill between the two old writes left: Download exists, Slot still chosen.
+	// State a kill between the two old writes could leave: Download exists, Slot
+	// still chosen.
 	var dlID int64
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		dl := &domain.Download{DownloaderID: 1, ReleaseID: &w.relID, SlotIDs: []int64{w.slotID}, ExternalID: hash, State: "sent",
@@ -335,15 +227,6 @@ func TestGrabSkipsAddWhenDownloaderAlreadyHasTheHash(t *testing.T) {
 	}
 }
 
-func (w *world) countDownloads(t *testing.T) int {
-	t.Helper()
-	var n int
-	if err := w.s.Read().QueryRow("SELECT COUNT(*) FROM downloads").Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	return n
-}
-
 func TestGrabUsesTheLinkWithTheKeyPutBack(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -366,19 +249,6 @@ func TestGrabUsesTheLinkWithTheKeyPutBack(t *testing.T) {
 	w.fake.mu.Unlock()
 	if _, err := m.Grab(ctx, w.slotID, w.relID, domain.System); err == nil || len(w.fake.added) != 0 {
 		t.Fatalf("grab without its key: %v %+v", err, w.fake.added)
-	}
-}
-
-func addDeadDownloader(t *testing.T, w *world) {
-	t.Helper()
-	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		d := &domain.Downloader{Name: "Down qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:1", Category: "holyarrs",
-			Priority: 0, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := database.Insert(tx, "downloaders", d, domain.System)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -421,8 +291,8 @@ func TestGrabStopsAtFirstDownloaderWhenSettingOff(t *testing.T) {
 	}
 }
 
-// M5: choosing a Release again after its Import was rejected starts afresh;
-// the old finished Download is not taken as this one.
+// Choosing a Release again after its Import was rejected starts afresh. The old
+// finished Download is not taken as this one.
 func TestGrabDoesNotReuseRejectedDownload(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -449,5 +319,135 @@ func TestGrabDoesNotReuseRejectedDownload(t *testing.T) {
 	}
 	if w.slot(t).State != domain.SlotDownloading {
 		t.Fatal("slot not downloading")
+	}
+}
+
+func ptr[T any](v T) *T { return &v }
+
+func (w *world) now() time.Time {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.clock
+}
+
+// setup makes a movie Slot in state chosen with its chosen Release, and a
+// qBittorrent Downloader pointing at a fake.
+func setup(t *testing.T) (*world, *Manager) {
+	t.Helper()
+	s, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	fake, u := startFake(t)
+	w := &world{s: s, fake: fake, clock: time.Date(2026, 10, 12, 10, 0, 0, 0, time.UTC)}
+	err = s.Write(context.Background(), func(tx *sql.Tx) error {
+		var pr int64
+		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
+			return err
+		}
+		lf := &domain.LibraryFolder{Path: "/data/media/movies", Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
+			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
+			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
+		for _, x := range []struct {
+			table string
+			v     any
+		}{{"library_folders", lf}, {"titles", ti}} {
+			if _, err := database.Insert(tx, x.table, x.v, domain.System); err != nil {
+				return err
+			}
+		}
+		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
+			return err
+		}
+		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true}
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
+			return err
+		}
+		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotChosen}
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
+			return err
+		}
+		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{},
+			AllowLocal: true} // the lab indexer is on the local network, and qBittorrent fetches its links
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
+			return err
+		}
+		rel := &domain.Release{SourceID: src.ID, Name: "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/dune-part-two.torrent",
+			Protocol: "torrent", Size: 29588180, InfoHash: ptr(hash), Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{sl.ID},
+			Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
+			return err
+		}
+		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rel.ID, sl.ID); err != nil {
+			return err
+		}
+		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: u, Category: "holyarrs", Priority: 1,
+			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
+			return err
+		}
+		w.slotID, w.relID = sl.ID, rel.ID
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := &Manager{Store: s, Live: w, SavePath: "/data/downloads/complete", StallAfter: 10 * time.Minute, ActAfter: 24 * time.Hour, Now: w.now,
+		OnFinished: func(_ context.Context, id int64) { w.mu.Lock(); w.finshed = append(w.finshed, id); w.mu.Unlock() },
+		OnFailed: func(_ context.Context, id int64) {
+			w.mu.Lock()
+			w.failedSlots = append(w.failedSlots, id)
+			w.mu.Unlock()
+		},
+		Sleep: func(_ context.Context, d time.Duration) error {
+			w.mu.Lock()
+			w.slept = append(w.slept, d)
+			w.clock = w.clock.Add(d)
+			w.mu.Unlock()
+			return nil
+		}}
+	return w, m
+}
+
+func (w *world) download(t *testing.T, id int64) domain.Download {
+	t.Helper()
+	var d domain.Download
+	if err := database.Get(context.Background(), w.s.Read(), "downloads", id, &d); err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
+
+func (w *world) slot(t *testing.T) domain.Slot {
+	t.Helper()
+	var s domain.Slot
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &s); err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+func (w *world) countDownloads(t *testing.T) int {
+	t.Helper()
+	var n int
+	if err := w.s.Read().QueryRow("SELECT COUNT(*) FROM downloads").Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+func addDeadDownloader(t *testing.T, w *world) {
+	t.Helper()
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		d := &domain.Downloader{Name: "Down qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:1", Category: "holyarrs",
+			Priority: 0, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
+		_, err := database.Insert(tx, "downloaders", d, domain.System)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

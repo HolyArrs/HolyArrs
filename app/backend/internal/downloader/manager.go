@@ -28,6 +28,31 @@ import (
 // KindGrab is the Job kind that sends a chosen Release to a Downloader.
 const KindGrab = "grab"
 
+// vanishAfterMisses is how many syncs in a row a download must be missing from
+// its Downloader before it counts as vanished. An empty list while a share
+// mounts or the client restarts is not a removal.
+const vanishAfterMisses = 3
+
+// vanishMissingFor is how long a download must also have been missing. Syncs
+// come every few seconds during a download, and a client that restarts or waits
+// for a NAS share after boot can list nothing for minutes.
+const vanishMissingFor = 10 * time.Minute
+
+// activeStates are the Download states the sync follows.
+const activeStates = "'sent', 'queued', 'downloading', 'stalled', 'paused'"
+
+// clientSaysPrefix starts the reason of a failure the Downloader reports itself.
+// Such a failure never deletes the files.
+const clientSaysPrefix = "the Downloader says "
+
+// WaitingReason starts the reason of a download whose Downloader cannot use its
+// files, most often a share mounted late.
+const WaitingReason = "the Downloader can't use the files"
+
+// WaitingHint ends that reason. Mounting the share is not enough: qBittorrent,
+// Deluge and Transmission keep the error until the files are checked again.
+const WaitingHint = "is the share mounted? Once it is, recheck the download in the Downloader (or use Check again on the Downloads page)"
+
 // Publisher sends live events (live.Hub fits).
 type Publisher interface {
 	Publish(topic string, data any) uint64
@@ -39,34 +64,34 @@ type Manager struct {
 	Live     Publisher                                 // may be nil
 	Engine   func(d domain.Downloader) (Engine, error) // nil means the built-in adapters
 	SavePath string                                    // where the Downloader saves, as it sees it
-	// StallAfter and ActAfter override the settings stalled_after_hours
-	// and stalled_act_hours (tests); zero reads the settings.
+	// StallAfter and ActAfter override the settings stalled_after_hours and
+	// stalled_act_hours (tests); zero reads the settings.
 	StallAfter  time.Duration
 	ActAfter    time.Duration
-	VanishGrace time.Duration                                    // a sent Download may be unlisted this long; default 2m
+	VanishGrace time.Duration                                    // how long a sent Download may be unlisted; default 2m
 	Active      time.Duration                                    // poll interval with active Downloads; default 2s
 	Idle        time.Duration                                    // poll interval when idle; default 30s
 	HealthEvery time.Duration                                    // status check of every Downloader; default 1m
-	Now         func() time.Time                                 // for tests
-	Sleep       func(ctx context.Context, d time.Duration) error // for tests; nil waits for real
-	OnFinished  func(ctx context.Context, downloadID int64)      // start the Import
-	// OnFailed is told about each Slot whose Download failed and that should
-	// be searched again (the search then picks the next Release, or the
-	// Slot needs a decision).
+	Now         func() time.Time                                 // test clock
+	Sleep       func(ctx context.Context, d time.Duration) error // test sleep; nil waits for real
+	OnFinished  func(ctx context.Context, downloadID int64)      // starts the Import
+	// OnFailed is told about each Slot whose Download failed and should be
+	// searched again. The search then picks the next Release, or the Slot needs a
+	// decision.
 	OnFailed func(ctx context.Context, slotID int64)
-	// Link gives the link to send for a Release: its stored link with the
-	// Source's key put back from the vault. Nil sends the stored link.
+	// Link gives the link to send for a Release: its stored link with the Source's
+	// key put back from the vault. Nil sends the stored link.
 	Link func(ctx context.Context, rel domain.Release) (string, error)
-	// SourceTransport is how a Release file is fetched for a Source with a
-	// proxy: through the proxy, every address checked (#152). Nil refuses
-	// such a send to qBittorrent or SABnzbd.
+	// SourceTransport fetches a Release file for a Source with a proxy, going
+	// through the proxy with every address checked. Nil refuses such a send to
+	// qBittorrent or SABnzbd.
 	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
-	// Sync, when set and on (downloads.sync = on), is the background reader:
-	// SyncOnce reads its snapshots instead of listing clients, and falls
-	// back to its own guarded List only for a client the reader has not
-	// read freshly for too long.
+	// Sync, when set and on (downloads.sync = on), is the background reader.
+	// SyncOnce reads its snapshots instead of listing clients, and falls back to its
+	// own guarded List only for a client the reader has not read freshly for too
+	// long.
 	Sync SyncSource
 
 	mu               sync.Mutex
@@ -79,68 +104,30 @@ type Manager struct {
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
 }
 
-// missCount is how many syncs in a row a download was missing, the
-// snapshot time of the last one counted (a reused snapshot counts once),
-// and when the first one was counted.
+// missCount is how many syncs in a row a download was missing, the snapshot
+// time of the last one counted (a reused snapshot counts once), and when the
+// first was counted.
 type missCount struct {
 	n     int
 	at    time.Time
 	first time.Time
 }
 
-// vanishAfterMisses is how many syncs in a row a download must be missing
-// from its Downloader before it counts as vanished: an empty list while a
-// share mounts or the client restarts is not a removal (late-mounts-8).
-const vanishAfterMisses = 3
+// releaseRefused is a send this Release can never make on any Downloader, so
+// trying again changes nothing.
+type releaseRefused struct{ msg string }
 
-// vanishMissingFor is how long a download must also have been missing:
-// syncs come every few seconds while something downloads, and a client
-// that restarts, or waits for a NAS share after a boot, can list nothing
-// for minutes (late-mounts-8).
-const vanishMissingFor = 10 * time.Minute
+// grabFailed holds each Downloader's refusal of one grab, in the order tried.
+// It is final only when every refusal was the Release's own.
+type grabFailed []error
 
-// missedLongEnough counts one more missed sync for a download and reports
-// whether it has now been missing for vanishAfterMisses syncs in a row and
-// for vanishMissingFor; seen starts over.
-func (m *Manager) missedLongEnough(id int64, readAt time.Time) bool {
-	now := m.now()
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.missed == nil {
-		m.missed = map[int64]missCount{}
-	}
-	c := m.missed[id]
-	if readAt.IsZero() || !readAt.Equal(c.at) {
-		c.n++
-		c.at = readAt
-		if c.n == 1 {
-			c.first = now
-		}
-	}
-	m.missed[id] = c
-	return c.n >= vanishAfterMisses && now.Sub(c.first) >= vanishMissingFor
+// TagsError says no Downloader of the protocol takes the title's tags.
+type TagsError struct {
+	Protocol string
+	Title    []string
 }
 
-func (m *Manager) seen(id int64) {
-	m.mu.Lock()
-	delete(m.missed, id)
-	m.mu.Unlock()
-}
-
-func (m *Manager) now() time.Time {
-	if m.Now != nil {
-		return m.Now().UTC()
-	}
-	return time.Now().UTC()
-}
-
-func (m *Manager) publish(topic string, data any) {
-	if m.Live != nil {
-		m.Live.Publish(topic, data)
-	}
-}
-
-// Forget drops the cached engine of a Downloader, after an edit.
+// Forget drops the cached engine of a Downloader after an edit.
 func (m *Manager) Forget(id int64) {
 	m.mu.Lock()
 	delete(m.engines, id)
@@ -152,16 +139,16 @@ func (m *Manager) Forget(id int64) {
 	m.Kick(id) // read with the new settings now, not after a widened wait
 }
 
-// Generation is the Downloader's engine generation: it moves on every
-// Forget (an edit), so state kept per engine can tell it is stale.
+// Generation is the Downloader's engine generation. It moves on every Forget
+// (an edit), so state kept per engine can tell it is stale.
 func (m *Manager) Generation(id int64) uint64 {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.engineGeneration[id]
 }
 
-// Syncer gives the Downloader's guarded engine for background reads, with
-// the generation it belongs to. Every call on it goes through the guard.
+// Syncer gives the Downloader's guarded engine for background reads, with the
+// generation it belongs to. Every call on it goes through the guard.
 func (m *Manager) Syncer(ctx context.Context, d domain.Downloader) (Syncer, uint64, error) {
 	gen := m.Generation(d.ID)
 	e, err := m.engine(ctx, d)
@@ -175,57 +162,9 @@ func (m *Manager) Syncer(ctx context.Context, d domain.Downloader) (Syncer, uint
 	return s, gen, nil
 }
 
-func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, error) {
-	m.mu.Lock()
-	if e := m.engines[d.ID]; e != nil {
-		m.mu.Unlock()
-		return e, nil
-	}
-	generation := m.engineGeneration[d.ID]
-	m.mu.Unlock()
-	var e Engine
-	var err error
-	if m.Engine != nil {
-		e, err = m.Engine(d)
-	} else {
-		e, err = m.EngineFor(ctx, d)
-		if err == nil {
-			// Inside the guard: refused writes never reach outside or the client.
-			if ReadOnlyByEnv(d) {
-				e = readOnly(e)
-			} else if !d.Writable {
-				e = readOnlyAdds(e) // takes grabs, changes nothing already there
-			}
-			instance := fmt.Sprintf("%p", m)
-			if m.Store != nil {
-				instance = m.Store.Dir()
-			}
-			e = protectEngine(e, d, instance)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	m.mu.Lock()
-	if generation != m.engineGeneration[d.ID] {
-		m.mu.Unlock()
-		return nil, errors.New("the Downloader changed while connecting; try again")
-	}
-	if m.engines == nil {
-		m.engines = map[int64]Engine{}
-	}
-	if existing := m.engines[d.ID]; existing != nil {
-		m.mu.Unlock()
-		return existing, nil
-	}
-	m.engines[d.ID] = e
-	m.mu.Unlock()
-	return e, nil
-}
-
-// EngineFor builds the built-in adapter for a Downloader, with its secret
-// from the vault and a network policy that keeps it off the local network
-// unless the Downloader may reach it.
+// EngineFor builds the built-in adapter for a Downloader, with its secret from
+// the vault and a network policy that keeps it off the local network unless the
+// Downloader may reach it.
 func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, error) {
 	secret := ""
 	if d.SecretRef != nil {
@@ -271,25 +210,25 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 	id, err := m.Grab(ctx, r.Job.Subject.ID, int64(relID), domain.Actor{Kind: "job", ID: r.Job.ID})
 	var te *TagsError
 	if errors.As(err, &te) {
-		// No Downloader takes the title's tags: trying again changes nothing
-		// until a person changes tags, so the Slot waits on a decision.
-		// A Slot that moved on meanwhile refuses the change: nothing is left to do then.
+		// No Downloader takes the title's tags. Trying again changes nothing until a
+		// person changes tags, so the Slot waits on a decision. A Slot that moved on
+		// meanwhile refuses the change; nothing is left to do then.
 		_ = store.MoveSlot(ctx, m.Store, r.Job.Subject.ID, domain.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
 		r.SetResult(map[string]any{"not_sent": te.Error()})
 		return nil
 	}
 	var fe interface{ Final() bool }
 	if errors.As(err, &fe) && fe.Final() {
-		// The Release can never be sent: it is turned down and the Slot is
-		// searched again, instead of trying it five times and staying chosen.
+		// The Release can never be sent, so it is turned down and the Slot is searched
+		// again, instead of trying five times and staying chosen.
 		m.giveUp(ctx, r.Job.Subject.ID, int64(relID), err.Error(), true, domain.Actor{Kind: "job", ID: r.Job.ID})
 		r.SetResult(map[string]any{"not_sent": err.Error()})
 		return nil
 	}
 	if err != nil {
-		// The last try failed on the Downloader's side (it did not answer,
-		// or is resting): the Slot goes back to wanted so a later search can
-		// choose again. An unknown outcome stays for a person.
+		// The last try failed on the Downloader's side (no answer, or resting), so the
+		// Slot goes back to wanted and a later search can choose again. An unknown
+		// outcome stays for a person.
 		if r.Job.MaxAttempts > 0 && r.Job.Attempt >= r.Job.MaxAttempts && !errors.Is(err, ErrUncertain) && !errors.Is(err, ErrAttemptStopped) {
 			m.giveUp(ctx, r.Job.Subject.ID, int64(relID), err.Error(), false, domain.Actor{Kind: "job", ID: r.Job.ID})
 		}
@@ -299,16 +238,9 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-// releaseRefused is a send this Release can never make, on any Downloader:
-// trying it again changes nothing.
-type releaseRefused struct{ msg string }
-
 func (e releaseRefused) Error() string { return e.msg }
-func (releaseRefused) Final() bool     { return true }
 
-// grabFailed is each Downloader's refusal of one grab, in the order tried.
-// It is final only when every refusal was the Release's own.
-type grabFailed []error
+func (releaseRefused) Final() bool { return true }
 
 func (g grabFailed) Error() string {
 	s := make([]string, len(g))
@@ -328,42 +260,9 @@ func (g grabFailed) Final() bool {
 	return len(g) > 0
 }
 
-// giveUp frees a Slot whose grab ended without a send: back to wanted, so a
-// search can choose again. turnDown also turns the Release down (it can
-// never be sent) and searches the Slot again at once. A Slot that moved on
-// meanwhile is left as it is.
-func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason string, turnDown bool, by domain.Actor) {
-	freed := false
-	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.ExecContext(ctx, "UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND state = 'chosen' AND chosen_release_id = ?", slotID, releaseID)
-		if err != nil {
-			return err
-		}
-		if n, err := res.RowsAffected(); err != nil || n == 0 {
-			return err
-		}
-		if turnDown {
-			if _, err := tx.ExecContext(ctx, `UPDATE releases SET state = 'turned_down', hold_until = NULL,
-				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
-				"could not be sent: "+reason, database.FormatTime(m.now()), releaseID); err != nil {
-				return err
-			}
-		}
-		freed = true
-		return store.MoveSlotTx(tx, slotID, domain.SlotWanted, "not sent: "+reason, by)
-	})
-	if err != nil || !freed {
-		return
-	}
-	m.publish("slot", map[string]any{"id": slotID, "state": domain.SlotWanted, "reason": reason})
-	if turnDown && m.OnFailed != nil {
-		m.OnFailed(ctx, slotID)
-	}
-}
-
 // Grab sends a Release to a Downloader for its protocol (by priority, equal
-// ones in turn, resting ones skipped), records the Download and moves the
-// Slot to downloading.
+// ones in turn, resting ones skipped), records the Download and moves the Slot
+// to downloading.
 func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.Actor) (int64, error) {
 	db := m.Store.Read()
 	var rel domain.Release
@@ -374,8 +273,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if err := database.Get(ctx, db, "slots", slotID, &sl); err != nil {
 		return 0, fmt.Errorf("slot %d: %w", slotID, err)
 	}
-	// A stopped semantic pair remains terminal even after abandonment has
-	// returned its Slot to a state where a person can choose another Release.
+	// A stopped semantic pair stays terminal even after abandonment returns its
+	// Slot to a state where a person can choose another Release.
 	attempt, err := unfinishedAttempt(ctx, db, releaseID, slotID)
 	if err != nil {
 		return 0, err
@@ -405,12 +304,12 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		hash = strings.ToLower(*rel.InfoHash)
 	}
 	now := m.now()
-	// Unknown outcomes pin the original Downloader before ordering or backoff.
-	// An empty lookup after a restart never permits a failover append.
-	// A retry after a kill finds the Download the first try wrote, or the
-	// torrent already in the Downloader: it must not add a second one. A
-	// finished Download that already went through an Import is an old one
-	// (the same Release chosen again): it is sent again, not waited on.
+	// Unknown outcomes pin the original Downloader before ordering or back-off. An
+	// empty lookup after a restart never permits a failover append. A retry after a
+	// kill finds the Download the first try wrote, or the torrent already in the
+	// Downloader, and must not add a second. A finished Download that already went
+	// through an Import is an old one (the same Release chosen again), so it is sent
+	// again, not waited on.
 	var dl *domain.Download
 	if prior, err := database.Select[domain.Download](ctx, db, "downloads",
 		"release_id = ? AND state IN ("+activeStates+", 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)"+
@@ -436,9 +335,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			original.Category = attempt.category
 			dls = []domain.Downloader{original}
 		} else {
-			// Tags (#108), on a fresh pick only (a send already on record keeps
-			// its Downloader): the Downloaders sharing a tag with the title,
-			// else the untagged ones.
+			// Tags apply on a fresh pick only, since a send already on record keeps its
+			// Downloader: use the Downloaders sharing a tag with the title, else the
+			// untagged ones.
 			titleTags, err := slotTitleTags(ctx, db, sl.ItemID)
 			if err != nil {
 				return 0, err
@@ -455,9 +354,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			}
 			return 0, fmt.Errorf("no Downloader for %s", rel.Protocol)
 		}
-		// When one cannot take the Release the next of the same protocol is
-		// tried (setting try_next_downloader, default on), and the error
-		// says why each one failed.
+		// When one cannot take the Release, the next of the same protocol is tried
+		// (setting try_next_downloader, default on), and the error says why each one
+		// failed.
 		tryNext := true
 		var v string
 		if db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'what_to_pick' AND key = 'try_next_downloader'").Scan(&v) == nil && v == "false" {
@@ -484,13 +383,13 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			return 0, grabFailed(fails)
 		}
 	}
-	// The Download row and the Slot move are one write, so a kill cannot
-	// leave a Download with the Slot still chosen.
+	// The Download row and the Slot move are one write, so a kill cannot leave a
+	// Download with the Slot still chosen.
 	moved := []int64{slotID}
 	adopted := false
 	err = m.Store.Write(ctx, func(tx *sql.Tx) error {
-		// Another caller can reconcile an accepted send before its original
-		// caller returns. Adopt that committed pair instead of resetting it.
+		// Another caller can reconcile an accepted send before the original caller
+		// returns. Adopt that committed pair instead of resetting it.
 		if dl.ID == 0 {
 			prior, err := database.Select[domain.Download](ctx, tx, "downloads", `downloader_id = ? AND external_id = ? AND release_id = ?
 				AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)
@@ -511,8 +410,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				}
 			}
 		}
-		// Resolve the intent in this same transaction as the Download and Slot.
-		// If an owner abandoned it while the request was in flight, roll back.
+		// Resolve the intent in this same transaction as the Download and Slot. If an
+		// owner abandoned it while the request was in flight, roll back.
 		var intentID int64
 		if journalAdapter(d.Adapter) {
 			a, err := unfinishedAttempt(ctx, tx, rel.ID, slotID)
@@ -520,8 +419,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				return err
 			}
 			if a == nil && dl.ID == 0 {
-				// A changed Release or Version snapshot cannot adopt the
-				// response of the original send by reusing its numeric id.
+				// A changed Release or Version snapshot cannot adopt the response of the
+				// original send by reusing its numeric id.
 				return ErrUncertain
 			}
 			if a != nil {
@@ -545,12 +444,11 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			!current.CreatedAt.Equal(sl.CreatedAt) || current.VersionID != sl.VersionID {
 			return errors.New("the Slot changed while sending this Release")
 		}
-		// A season pack or multi-episode Release chosen for several Slots is
-		// one Download for all of them (the other Slots still chosen for
-		// this same Release: an old pick list can name a Slot chosen since
-		// for another one).
-		// Only Slots of the grabbed Slot's Version: one Download never fills
-		// two Versions (the feed check may choose one Release for both).
+		// A season pack or multi-episode Release chosen for several Slots is one
+		// Download for all of them. Only Slots still chosen for this same Release count,
+		// since an old pick list can name a Slot chosen since for another one. Only
+		// Slots of the grabbed Slot's Version count, so one Download never fills two
+		// Versions (the feed check may choose one Release for both).
 		if many := source.PickSlots(rel); len(many) > 1 && slices.Contains(many, slotID) {
 			var version int64
 			if err := tx.QueryRow("SELECT version_id FROM slots WHERE id = ?", slotID).Scan(&version); err != nil {
@@ -559,8 +457,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			for _, id := range many {
 				var st string
 				var chosenFor, versionOf sql.NullInt64
-				// A late response may only attach the identities covered by
-				// its intent, even when SQLite has reused a Slot's numeric id.
+				// A late response may only attach the identities its intent covered, even when
+				// SQLite has reused a Slot's numeric id.
 				if id == slotID || tx.QueryRow(`SELECT state, chosen_release_id, version_id FROM slots s WHERE id = ?
 					AND (? = 0 OR EXISTS (SELECT 1 FROM downloader_attempts a, json_each(a.slot_snapshots) j
 					WHERE a.id = ? AND json_extract(j.value, '$.id') = s.id AND json_extract(j.value, '$.created_at') = s.created_at))`, id, intentID, intentID).Scan(&st, &chosenFor, &versionOf) != nil ||
@@ -579,9 +477,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			}
 		}
 		if dl.ID == 0 {
-			// The Downloader may give back the id of an old Download that was
-			// not reused (its Import was rejected): that row starts afresh.
-			// A row another Slot is still following is never taken over.
+			// The Downloader may return the id of an old Download that was not reused (its
+			// Import was rejected), so that row starts afresh. A row another Slot still
+			// follows is never taken over.
 			var old int64
 			var oldState string
 			if tx.QueryRow("SELECT id, state FROM downloads WHERE downloader_id = ? AND external_id = ?", dl.DownloaderID, dl.ExternalID).Scan(&old, &oldState) == nil {
@@ -622,6 +520,303 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	return dl.ID, nil
 }
 
+// SyncOnce reads every active Download from its Downloader and records what
+// changed, after asking again for any removal a Downloader missed (see
+// retryRemovals). It returns how many Downloads are still active. With nothing
+// active and no removal pending it reads and writes nothing.
+func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
+	m.retryRemovals(ctx)
+	db := m.Store.Read()
+	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
+	if err != nil || len(dls) == 0 {
+		return 0, err
+	}
+	byDownloader := map[int64][]domain.Download{}
+	for _, d := range dls {
+		byDownloader[d.DownloaderID] = append(byDownloader[d.DownloaderID], d)
+	}
+	st := m.settings(ctx)
+	useStore := m.storeOn()
+	active := 0
+	var errs []error
+	for did, list := range byDownloader {
+		var dr domain.Downloader
+		if err := database.Get(ctx, db, "downloaders", did, &dr); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		e, err := m.engine(ctx, dr)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		var jobsIn []Job
+		// fromStore: this tick reads the reader's snapshot taken at readAt.
+		fromStore := false
+		var readAt time.Time
+		if useStore {
+			v := m.Sync.View(dr.ID)
+			switch {
+			case v.Fresh:
+				m.Sync.Fallback(dr.ID, false)
+				jobsIn, fromStore, readAt = snapshotJobs(v, dr.Category), true, v.ReadAt
+			case !v.Degraded:
+				// Not fresh yet but within its bound: every row is unknown this tick, with no
+				// state change and no stall timer change.
+				active += len(list)
+				continue
+			default:
+				m.Sync.Fallback(dr.ID, true)
+			}
+		}
+		if !fromStore {
+			jobsIn, err = e.List(ctx, dr.Category)
+			if err != nil {
+				m.downloaderFailed(ctx, dr, err)
+				errs = append(errs, err)
+				active += len(list)
+				continue
+			}
+			m.downloaderOK(ctx, dr)
+		}
+		have := map[string]Job{}
+		for _, j := range jobsIn {
+			have[j.ID] = j
+		}
+		for _, d := range list {
+			j, ok := have[d.ExternalID]
+			if fromStore && !ok && !readAt.After(d.UpdatedAt) {
+				// Missing from a snapshot no newer than the row means unknown, so a grab the
+				// client has not listed yet is never marked vanished.
+				active++
+				continue
+			}
+			if ok {
+				m.seen(d.ID)
+			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && !m.missedLongEnough(d.ID, readAt) {
+				// Missing for a short while is not vanished yet.
+				active++
+				continue
+			}
+			if ok && j.State == StateFinished {
+				if full, err := e.Get(ctx, d.ExternalID); err == nil {
+					j = full
+				}
+				if len(j.Files) == 0 {
+					j.SavePath, j.Files = readFinished(j, dr.PathMap, mapLocal(m.SavePath, dr.PathMap))
+				}
+			} else if ok && st.failDangerous && dr.Protocol == "torrent" && len(d.FilesSeen) == 0 && j.State != StateFailed {
+				// Read the file list once, as soon as the torrent has it, so a fake fails
+				// before it downloads.
+				if full, err := e.Get(ctx, d.ExternalID); err == nil && len(full.Files) > 0 {
+					j.Files = full.Files
+				}
+			}
+			if m.apply(ctx, dr, d, j, ok, st) {
+				active++
+			}
+		}
+	}
+	return active, errors.Join(errs...)
+}
+
+// Interval is how long to wait before the next sync.
+func (m *Manager) Interval(active int) time.Duration {
+	if active > 0 {
+		if m.Active > 0 {
+			return m.Active
+		}
+		return 2 * time.Second
+	}
+	if m.Idle > 0 {
+		return m.Idle
+	}
+	return 30 * time.Second
+}
+
+// Poke makes the sync loop run now.
+func (m *Manager) Poke() {
+	m.mu.Lock()
+	if m.wake == nil {
+		m.wake = make(chan struct{}, 1)
+	}
+	w := m.wake
+	m.mu.Unlock()
+	select {
+	case w <- struct{}{}:
+	default:
+	}
+}
+
+// Run syncs until ctx ends: every 2s while Downloads are active, 30s when idle,
+// and it checks every Downloader once a minute.
+func (m *Manager) Run(ctx context.Context) {
+	m.mu.Lock()
+	if m.wake == nil {
+		m.wake = make(chan struct{}, 1)
+	}
+	w := m.wake
+	m.mu.Unlock()
+	every := m.HealthEvery
+	if every <= 0 {
+		every = time.Minute
+	}
+	var changed <-chan struct{}
+	if m.Sync != nil {
+		changed = m.Sync.Changed()
+	}
+	var checked time.Time
+	for {
+		if time.Since(checked) >= every {
+			m.CheckAll(ctx)
+			checked = time.Now()
+		}
+		n, _ := m.SyncOnce(ctx)
+		t := time.NewTimer(min(m.Interval(n), every))
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-w:
+			t.Stop()
+		case <-changed:
+			// A snapshot moved: apply it now. The floor timer still runs the time-based
+			// checks when nothing moves.
+			t.Stop()
+		case <-t.C:
+		}
+	}
+}
+
+func (e *TagsError) Error() string {
+	if len(e.Title) == 0 {
+		return fmt.Sprintf("not sent: every %s Downloader has tags and this title has none of them; tag the title, or leave one Downloader without tags", e.Protocol)
+	}
+	return fmt.Sprintf("not sent: no %s Downloader has this title's tags (%s); add one of them to a Downloader, or take them off the title", e.Protocol, strings.Join(e.Title, ", "))
+}
+
+// missedLongEnough counts one more missed sync for a download and reports
+// whether it has been missing for vanishAfterMisses syncs in a row and for
+// vanishMissingFor. The count then starts over.
+func (m *Manager) missedLongEnough(id int64, readAt time.Time) bool {
+	now := m.now()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.missed == nil {
+		m.missed = map[int64]missCount{}
+	}
+	c := m.missed[id]
+	if readAt.IsZero() || !readAt.Equal(c.at) {
+		c.n++
+		c.at = readAt
+		if c.n == 1 {
+			c.first = now
+		}
+	}
+	m.missed[id] = c
+	return c.n >= vanishAfterMisses && now.Sub(c.first) >= vanishMissingFor
+}
+
+func (m *Manager) seen(id int64) {
+	m.mu.Lock()
+	delete(m.missed, id)
+	m.mu.Unlock()
+}
+
+func (m *Manager) now() time.Time {
+	if m.Now != nil {
+		return m.Now().UTC()
+	}
+	return time.Now().UTC()
+}
+
+func (m *Manager) publish(topic string, data any) {
+	if m.Live != nil {
+		m.Live.Publish(topic, data)
+	}
+}
+
+func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, error) {
+	m.mu.Lock()
+	if e := m.engines[d.ID]; e != nil {
+		m.mu.Unlock()
+		return e, nil
+	}
+	generation := m.engineGeneration[d.ID]
+	m.mu.Unlock()
+	var e Engine
+	var err error
+	if m.Engine != nil {
+		e, err = m.Engine(d)
+	} else {
+		e, err = m.EngineFor(ctx, d)
+		if err == nil {
+			// Inside the guard, so refused writes never reach outbound or the client.
+			if ReadOnlyByEnv(d) {
+				e = readOnly(e)
+			} else if !d.Writable {
+				e = readOnlyAdds(e) // takes grabs, changes nothing already there
+			}
+			instance := fmt.Sprintf("%p", m)
+			if m.Store != nil {
+				instance = m.Store.Dir()
+			}
+			e = protectEngine(e, d, instance)
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	m.mu.Lock()
+	if generation != m.engineGeneration[d.ID] {
+		m.mu.Unlock()
+		return nil, errors.New("the Downloader changed while connecting; try again")
+	}
+	if m.engines == nil {
+		m.engines = map[int64]Engine{}
+	}
+	if existing := m.engines[d.ID]; existing != nil {
+		m.mu.Unlock()
+		return existing, nil
+	}
+	m.engines[d.ID] = e
+	m.mu.Unlock()
+	return e, nil
+}
+
+// giveUp frees a Slot whose grab ended without a send: back to wanted, so a
+// search can choose again. turnDown also turns the Release down, since it can
+// never be sent, and searches the Slot again at once. A Slot that moved on
+// meanwhile is left as it is.
+func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason string, turnDown bool, by domain.Actor) {
+	freed := false
+	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, "UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND state = 'chosen' AND chosen_release_id = ?", slotID, releaseID)
+		if err != nil {
+			return err
+		}
+		if n, err := res.RowsAffected(); err != nil || n == 0 {
+			return err
+		}
+		if turnDown {
+			if _, err := tx.ExecContext(ctx, `UPDATE releases SET state = 'turned_down', hold_until = NULL,
+				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
+				"could not be sent: "+reason, database.FormatTime(m.now()), releaseID); err != nil {
+				return err
+			}
+		}
+		freed = true
+		return store.MoveSlotTx(tx, slotID, domain.SlotWanted, "not sent: "+reason, by)
+	})
+	if err != nil || !freed {
+		return
+	}
+	m.publish("slot", map[string]any{"id": slotID, "state": domain.SlotWanted, "reason": reason})
+	if turnDown && m.OnFailed != nil {
+		m.OnFailed(ctx, slotID)
+	}
+}
+
 // send hands a Release to one Downloader and returns its id there.
 func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string) (ext string, err error) {
 	a, err := m.claimAttempt(ctx, d, rel.ID, slotID)
@@ -641,8 +836,8 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 				err = errors.Join(ErrUncertain, err)
 				return
 			}
-			// A definite pre-append refusal may be retried. Failed cleanup is
-			// conservative: retain the intent and suppress failover.
+			// A definite refusal before the append may be retried. A failed cleanup is
+			// treated conservatively: keep the intent and suppress failover.
 			cleanupErr := m.Store.Write(ctx, func(tx *sql.Tx) error {
 				res, e := tx.ExecContext(ctx, "UPDATE downloader_attempts SET state = 'resolved', updated_at = ? WHERE id = ? AND state = 'pending'", m.now().Format(time.RFC3339Nano), a.ID)
 				if e != nil {
@@ -664,8 +859,8 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", fmt.Errorf("%s: %w", d.Name, err)
 	}
 	// A job found again by name is taken as this Release only when no other
-	// Download row holds its id: a failed or vanished one must not come back,
-	// and a row for another Release or Slot is not this one.
+	// Download row holds its id. A failed or vanished one must not come back, and a
+	// row for another Release or Slot is not this one.
 	skip := map[string]bool{}
 	rows, err := m.Store.Read().QueryContext(ctx, `SELECT external_id FROM downloads WHERE downloader_id = ? AND NOT (release_id IS ?
 		AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?))`, d.ID, rel.ID, slotID)
@@ -683,8 +878,8 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", err
 	}
 	if a != nil && !a.created {
-		// A recovery is only a lookup. It needs neither the original Source
-		// nor a send-spacing reservation, and may never fetch or append.
+		// A recovery is only a lookup. It needs neither the original Source nor a
+		// send-spacing reservation, and may never fetch or append.
 		ext, err = e.Add(ctx, AddRequest{Name: rel.Name, Category: a.category, Skip: skip, AttemptMarker: a.marker, InfoHash: a.expectedID, ReconcileOnly: true})
 		if err != nil {
 			if unreachable(err) {
@@ -728,15 +923,14 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if link, err = grabLinkAllowed(d.Adapter, link, allowLocal); err != nil {
 		return "", err
 	}
-	// qBittorrent and SABnzbd would fetch a link themselves, from inside the
-	// home network, where a name leading home is never checked (#152).
-	// Without local network access HolyArrs fetches the file and hands it
-	// over; a link that redirects to a magnet sends the magnet. A Source with
-	// a proxy is fetched through it, with the same checks.
-	// A qBittorrent Release with no info hash at all (an http link to a
-	// .torrent, as private sites through Jackett or Prowlarr give) is fetched
-	// the same way, even from a local Source: the hash comes from the file,
-	// so the download can be followed.
+	// qBittorrent and SABnzbd would fetch a link themselves from inside the home
+	// network, where a name leading home is never checked. Without local network
+	// access HolyArrs fetches the file and hands it over; a link that redirects to a
+	// magnet sends the magnet. A Source with a proxy is fetched through it, with the
+	// same checks. A qBittorrent Release with no info hash at all (an http link to a
+	// .torrent, as private sites through Jackett or Prowlarr give) is fetched the
+	// same way, even from a local Source: the hash comes from the file, so the
+	// download can be followed.
 	var file []byte
 	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
 	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash) && !strings.HasPrefix(link, "magnet:") {
@@ -772,10 +966,10 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if d.Adapter == "qbittorrent" && file != nil {
 		// Some trackers print a newline after the file; qBittorrent reads past it.
 		file = bytes.TrimRight(file, " \t\r\n")
-		// Trackers, web seeds and DHT nodes inside the file that point at
-		// home are left out; the info hash stays the same. A Source allowed
-		// on the local network keeps them (its file is fetched only to learn
-		// the hash, and a tracker at home is then the user's own).
+		// Trackers, web seeds and DHT nodes in the file that point at home are left
+		// out, and the info hash stays the same. A Source allowed on the local network
+		// keeps them: its file is fetched only to learn the hash, and a tracker at home
+		// is then the user's own.
 		if !allowLocal {
 			if file, err = safeTorrent(file); err != nil {
 				return "", errors.New("the Release file is not a torrent")
@@ -783,16 +977,16 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		}
 		h, err := torrentFileHash(file)
 		if err != nil {
-			// Often a one-off page (a limit or a check) instead of the file:
-			// tried again, not turned down.
+			// Often a one-off page (a limit or a check) instead of the file, so try again
+			// and do not turn the Release down.
 			return "", errors.New("the Release file is not a torrent")
 		}
 		if hash != "" && !strings.EqualFold(hash, h) {
 			return "", releaseRefused{"the torrent file does not match its info hash"}
 		}
 		if hash == "" {
-			// The hash came from the file, so the look for it in qBittorrent
-			// above did not run: an add of a torrent it has would fail.
+			// The hash came from the file, so the earlier look for it in qBittorrent did
+			// not run, and adding a torrent it already has would fail.
 			if j, err := e.Get(ctx, h); err == nil {
 				if skip[j.ID] {
 					return "", errors.New("the torrent belongs to another download or category")
@@ -805,9 +999,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		}
 		hash = h
 	}
-	// qBittorrent answers an add without an id: HolyArrs follows the torrent
-	// by its info hash, from the Release or its magnet link. Without one the
-	// torrent would download unseen, so it is not sent.
+	// qBittorrent answers an add without an id, so HolyArrs follows the torrent by
+	// its info hash, from the Release or its magnet link. Without one the torrent
+	// would download unseen, so it is not sent.
 	if d.Adapter == "qbittorrent" && hash == "" {
 		if hash = linkHash(link); hash == "" {
 			return "", releaseRefused{"the Release has no info hash, so " + d.Name + "'s download of it could not be followed"}
@@ -825,9 +1019,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	ext, err = e.Add(ctx, req)
 	done()
 	if err != nil {
-		// Only a Downloader that did not answer, or turned down the
-		// sign-in, rests; one that answered and refused this Release
-		// (a bad link, no category) stays ready for the next one.
+		// Only a Downloader that did not answer, or turned down the sign-in, rests. One
+		// that answered and refused this Release (a bad link, no category) stays ready
+		// for the next one.
 		if unreachable(err) {
 			m.downloaderFailed(ctx, d, err)
 		}
@@ -875,110 +1069,7 @@ func (m *Manager) event(ctx context.Context, d *domain.Download, kind, summary s
 	}
 }
 
-// activeStates are the Download states the sync follows.
-const activeStates = "'sent', 'queued', 'downloading', 'stalled', 'paused'"
-
-// SyncOnce reads every active Download from its Downloader and records what
-// changed, after asking again for any removal a Downloader missed (see
-// retryRemovals). It returns how many Downloads are still active. With nothing
-// active and no removal pending it reads nothing and writes nothing.
-func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
-	m.retryRemovals(ctx)
-	db := m.Store.Read()
-	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
-	if err != nil || len(dls) == 0 {
-		return 0, err
-	}
-	byDownloader := map[int64][]domain.Download{}
-	for _, d := range dls {
-		byDownloader[d.DownloaderID] = append(byDownloader[d.DownloaderID], d)
-	}
-	st := m.settings(ctx)
-	useStore := m.storeOn()
-	active := 0
-	var errs []error
-	for did, list := range byDownloader {
-		var dr domain.Downloader
-		if err := database.Get(ctx, db, "downloaders", did, &dr); err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		e, err := m.engine(ctx, dr)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		var jobsIn []Job
-		// fromStore: this tick reads the reader's snapshot taken at readAt.
-		fromStore := false
-		var readAt time.Time
-		if useStore {
-			v := m.Sync.View(dr.ID)
-			switch {
-			case v.Fresh:
-				m.Sync.Fallback(dr.ID, false)
-				jobsIn, fromStore, readAt = snapshotJobs(v, dr.Category), true, v.ReadAt
-			case !v.Degraded:
-				// Not fresh yet, but within its bound: every row is unknown
-				// this tick (no state change, no stall timer change).
-				active += len(list)
-				continue
-			default:
-				m.Sync.Fallback(dr.ID, true)
-			}
-		}
-		if !fromStore {
-			jobsIn, err = e.List(ctx, dr.Category)
-			if err != nil {
-				m.downloaderFailed(ctx, dr, err)
-				errs = append(errs, err)
-				active += len(list)
-				continue
-			}
-			m.downloaderOK(ctx, dr)
-		}
-		have := map[string]Job{}
-		for _, j := range jobsIn {
-			have[j.ID] = j
-		}
-		for _, d := range list {
-			j, ok := have[d.ExternalID]
-			if fromStore && !ok && !readAt.After(d.UpdatedAt) {
-				// Missing from a snapshot no newer than the row: unknown, so
-				// a grab the client has not listed yet is never vanished.
-				active++
-				continue
-			}
-			if ok {
-				m.seen(d.ID)
-			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && !m.missedLongEnough(d.ID, readAt) {
-				// Missing for a short while is not vanished yet (late-mounts-8).
-				active++
-				continue
-			}
-			if ok && j.State == StateFinished {
-				if full, err := e.Get(ctx, d.ExternalID); err == nil {
-					j = full
-				}
-				if len(j.Files) == 0 {
-					j.SavePath, j.Files = readFinished(j, dr.PathMap, mapLocal(m.SavePath, dr.PathMap))
-				}
-			} else if ok && st.failDangerous && dr.Protocol == "torrent" && len(d.FilesSeen) == 0 && j.State != StateFailed {
-				// The file list once, as soon as the torrent has it, so a
-				// fake fails before it downloads (4.3.5).
-				if full, err := e.Get(ctx, d.ExternalID); err == nil && len(full.Files) > 0 {
-					j.Files = full.Files
-				}
-			}
-			if m.apply(ctx, dr, d, j, ok, st) {
-				active++
-			}
-		}
-	}
-	return active, errors.Join(errs...)
-}
-
-// apply records one Download's new state; it reports whether it is still active.
+// apply records one Download's new state and reports whether it is still active.
 func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Download, j Job, found bool, st settings) bool {
 	now := m.now()
 	next := d
@@ -993,8 +1084,8 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		next.State = "vanished"
 		next.StateReason = strPtr("removed outside HolyArrs: the Downloader no longer has it")
 	case st.failDangerous && j.State != StateFailed && len(fakeFiles(j.Files, dr.Protocol)) > 0:
-		// Known as soon as the Downloader lists the files (4.3.5), so a fake
-		// is not downloaded to the end.
+		// Known as soon as the Downloader lists the files, so a fake is not downloaded
+		// to the end.
 		next.State = "failed"
 		failReason = fakeReason(j.Files, dr.Protocol)
 		next.StateReason = &failReason
@@ -1015,8 +1106,8 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		} else {
 			next.ETA = nil
 		}
-		// A higher mark restarts the stall timer, and so does moving again
-		// after waiting or being paused, which never count.
+		// A higher mark restarts the stall timer. So does moving again after waiting or
+		// being paused, which never count.
 		waited := d.State == "queued" || d.State == "paused"
 		if j.Progress > d.Progress || d.ProgressAt == nil || waited && j.State == StateDownloading {
 			last = now
@@ -1072,8 +1163,8 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		return false
 	}
 	if st.failDangerous && len(d.FilesSeen) == 0 && len(j.Files) > 0 {
-		// A web shortcut beside the media is common on public torrents:
-		// noted once, when the file list is first seen (4.3.5).
+		// A web shortcut beside the media is common on public torrents. Note it once,
+		// when the file list is first seen.
 		if sc := shortcuts(j.Files); len(sc) > 0 {
 			m.event(ctx, &next, "download_shortcut", "Web shortcut in the download, left alone: "+strings.Join(sc, ", "))
 		}
@@ -1083,9 +1174,9 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 	if !changed {
 		return isActive(next.State)
 	}
-	// The write holds only while the row is still in the state this
-	// snapshot read: Mark failed (or another path) may have moved it since,
-	// and a stale snapshot is dropped.
+	// The write holds only while the row is still in the state this snapshot read.
+	// Mark failed (or another path) may have moved it since, and a stale snapshot is
+	// dropped.
 	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		return database.UpdateWhere(tx, "downloads", &next, domain.System, "state = ?", d.State)
 	}); err != nil {
@@ -1120,8 +1211,8 @@ func (m *Manager) stateMoved(ctx context.Context, from string, d *domain.Downloa
 	case "stalled":
 		to = domain.SlotStalled
 	case "downloading", "finished":
-		// Back from stalled, or finished straight from stalled: the Slots
-		// wait for this download again, so the import finds them.
+		// Back from stalled, or finished straight from stalled: the Slots wait for this
+		// download again, so the import finds them.
 		if from == "stalled" {
 			to = domain.SlotDownloading
 		}
@@ -1146,8 +1237,8 @@ func isActive(state string) bool {
 	return false
 }
 
-// vanishGrace is how long a sent Download may be missing from its
-// Downloader before it counts as vanished.
+// vanishGrace is how long a sent Download may be missing from its Downloader
+// before it counts as vanished.
 func (m *Manager) vanishGrace() time.Duration {
 	if m.VanishGrace > 0 {
 		return m.VanishGrace
@@ -1155,79 +1246,11 @@ func (m *Manager) vanishGrace() time.Duration {
 	return 2 * time.Minute
 }
 
-// Interval is how long to wait before the next sync.
-func (m *Manager) Interval(active int) time.Duration {
-	if active > 0 {
-		if m.Active > 0 {
-			return m.Active
-		}
-		return 2 * time.Second
-	}
-	if m.Idle > 0 {
-		return m.Idle
-	}
-	return 30 * time.Second
-}
-
-// Poke makes the sync loop run now.
-func (m *Manager) Poke() {
-	m.mu.Lock()
-	if m.wake == nil {
-		m.wake = make(chan struct{}, 1)
-	}
-	w := m.wake
-	m.mu.Unlock()
-	select {
-	case w <- struct{}{}:
-	default:
-	}
-}
-
-// Run syncs until ctx ends: every 2s while Downloads are active, 30s when
-// idle, and checks every Downloader once a minute.
-func (m *Manager) Run(ctx context.Context) {
-	m.mu.Lock()
-	if m.wake == nil {
-		m.wake = make(chan struct{}, 1)
-	}
-	w := m.wake
-	m.mu.Unlock()
-	every := m.HealthEvery
-	if every <= 0 {
-		every = time.Minute
-	}
-	var changed <-chan struct{}
-	if m.Sync != nil {
-		changed = m.Sync.Changed()
-	}
-	var checked time.Time
-	for {
-		if time.Since(checked) >= every {
-			m.CheckAll(ctx)
-			checked = time.Now()
-		}
-		n, _ := m.SyncOnce(ctx)
-		t := time.NewTimer(min(m.Interval(n), every))
-		select {
-		case <-ctx.Done():
-			t.Stop()
-			return
-		case <-w:
-			t.Stop()
-		case <-changed:
-			// A snapshot moved: apply it now (the floor timer still runs the
-			// time-based checks when nothing moves).
-			t.Stop()
-		case <-t.C:
-		}
-	}
-}
-
 func strPtr(s string) *string { return &s }
 
-// unreachable says whether err means the Downloader did not answer (a
-// network error or timeout, an address the policy refused) or turned down
-// the sign-in.
+// unreachable reports whether err means the Downloader did not answer (a
+// network error, a timeout, or an address the policy refused) or turned down the
+// sign-in.
 func unreachable(err error) bool {
 	var ne net.Error
 	var status adapterHTTPError
@@ -1258,22 +1281,9 @@ func lastMoved(d domain.Download) time.Time {
 	return d.UpdatedAt
 }
 
-// clientSaysPrefix starts the reason of a failure the Downloader reports
-// itself; such a failure never deletes the files (late-mounts-3).
-const clientSaysPrefix = "the Downloader says "
-
-// WaitingReason starts the reason of a download whose Downloader can't use
-// its files, most often a share mounted late (late-mounts-3).
-const WaitingReason = "the Downloader can't use the files"
-
-// WaitingHint ends that reason: mounting the share is not enough, since
-// qBittorrent, Deluge and Transmission keep the error until the files are
-// checked again.
-const WaitingHint = "is the share mounted? Once it is, recheck the download in the Downloader (or use Check again on the Downloads page)"
-
-// cantUseFiles reports a paused job its client paused because it lost
-// sight of the files: qBittorrent error, missingFiles or unknown, Deluge
-// Error, Transmission local error 3.
+// cantUseFiles reports a paused job its client paused because it lost sight of
+// the files: qBittorrent error, missingFiles or unknown, Deluge Error,
+// Transmission local error 3.
 func cantUseFiles(j Job) bool {
 	if j.State != StatePaused {
 		return false
@@ -1298,7 +1308,7 @@ func jsonIDs(ids []int64) string {
 }
 
 // grabLinkAllowed applies the Source's network rule to a feed link before a
-// Downloader gets it: magnets are rebuilt by safeMagnet, and an address that
+// Downloader gets it. Magnets are rebuilt by safeMagnet, and an address that
 // qBittorrent or SABnzbd would fetch itself may not name a literal local,
 // link-local or metadata host unless the Source may reach the local network.
 func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
@@ -1310,19 +1320,6 @@ func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
 		return "", errors.New("the Release link points at a local or blocked address")
 	}
 	return link, nil
-}
-
-// TagsError says no Downloader of the protocol takes the title's tags.
-type TagsError struct {
-	Protocol string
-	Title    []string
-}
-
-func (e *TagsError) Error() string {
-	if len(e.Title) == 0 {
-		return fmt.Sprintf("not sent: every %s Downloader has tags and this title has none of them; tag the title, or leave one Downloader without tags", e.Protocol)
-	}
-	return fmt.Sprintf("not sent: no %s Downloader has this title's tags (%s); add one of them to a Downloader, or take them off the title", e.Protocol, strings.Join(e.Title, ", "))
 }
 
 // slotTitleTags reads the tags of the title a Slot's Item belongs to.

@@ -14,65 +14,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func (w *world) release(t *testing.T) domain.Release {
-	t.Helper()
-	var r domain.Release
-	if err := database.Get(context.Background(), w.s.Read(), "releases", w.relID, &r); err != nil {
-		t.Fatal(err)
-	}
-	return r
-}
-
-func (w *world) setting(t *testing.T, key, value string) {
-	t.Helper()
-	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE settings SET value = ? WHERE grp = 'links' AND key = ?", value, key)
-		return err
-	}); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// grabbed sends the Release and lets the fake report it downloading.
-func grabbed(t *testing.T, w *world, m *Manager) int64 {
-	t.Helper()
-	id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
-	if err != nil {
-		t.Fatal(err)
-	}
-	w.fake.set(hash, map[string]any{"name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "category": "holyarrs", "progress": 0.2, "state": "downloading"})
-	if _, err := m.SyncOnce(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	return id
-}
-
-// wantFailedPath checks the failure path ran: Download failed with reason,
-// Release turned down, removed with its files, Slot failed and searched.
-func wantFailedPath(t *testing.T, w *world, id int64, reason string, removed bool) {
-	t.Helper()
-	d := w.download(t, id)
-	if d.State != "failed" || d.StateReason == nil || !strings.Contains(*d.StateReason, reason) {
-		t.Fatalf("download %s %v, want failed with %q", d.State, d.StateReason, reason)
-	}
-	if r := w.release(t); r.State != "turned_down" || !strings.Contains(r.Verdict["turned_down_reason"].(string), reason) {
-		t.Fatalf("release %s %v", r.State, r.Verdict)
-	}
-	if sl := w.slot(t); sl.State != domain.SlotFailed {
-		t.Fatalf("slot %s", sl.State)
-	}
-	if len(w.failedSlots) != 1 || w.failedSlots[0] != w.slotID {
-		t.Fatalf("searched again: %v", w.failedSlots)
-	}
-	gone := len(w.fake.deleted) == 1 && w.fake.deleted[0] == hash+"|true"
-	if gone != removed {
-		t.Fatalf("removed from the Downloader: %v (deleted %v)", gone, w.fake.deleted)
-	}
-}
-
-// A Download the client itself reports as failed still turns the Release
-// down and searches again, but it is taken out of the client without its
-// files: a failure caused by the client never deletes data (late-mounts-3).
 func TestDownloaderFailureTurnsDownRemovesAndSearches(t *testing.T) {
 	w, m := setup(t)
 	clientSaysFailed(m)
@@ -84,7 +25,6 @@ func TestDownloaderFailureTurnsDownRemovesAndSearches(t *testing.T) {
 	if len(w.fake.deleted) != 1 || w.fake.deleted[0] != hash+"|false" {
 		t.Fatalf("a client-caused failure must leave the files: deleted %v", w.fake.deleted)
 	}
-	// A second sync does nothing more.
 	_, _ = m.SyncOnce(context.Background())
 	if len(w.failedSlots) != 1 {
 		t.Fatal("failed twice")
@@ -105,7 +45,7 @@ func TestFailedKeptInTheDownloaderWhenSettingOff(t *testing.T) {
 
 func TestDangerousFilesFailTheDownload(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 1.0, "state": "stalledUP"})
 	w.fake.files[hash] = []map[string]any{{"name": "Dune/Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.mkv.exe", "size": 100}, {"name": "Dune/readme.txt", "size": 1}}
@@ -130,7 +70,7 @@ func TestDangerousFilesAllowedWhenSettingOff(t *testing.T) {
 
 func TestMarkFailedByHand(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	if err := m.MarkFailed(context.Background(), id, domain.Actor{Kind: "user", ID: 1}, "luis"); err != nil {
 		t.Fatal(err)
@@ -148,7 +88,7 @@ func TestMarkFailedByHand(t *testing.T) {
 
 func TestMarkFailedWhileStalled(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	w.clock = w.clock.Add(11 * time.Minute)
 	_, _ = m.SyncOnce(context.Background())
@@ -161,11 +101,10 @@ func TestMarkFailedWhileStalled(t *testing.T) {
 	wantFailedPath(t, w, id, "marked failed", true)
 }
 
-// Fake clock: stalled after the stall time, acted on after the act time.
 func TestStalledThenActedOn(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m)                 // it removes an item already in the Downloader
-	m.StallAfter, m.ActAfter = 0, 0 // read the settings: 6 h and 24 h
+	letChange(t, m)
+	m.StallAfter, m.ActAfter = 0, 0
 	id := grabbed(t, w, m)
 	ctx := context.Background()
 	w.clock = w.clock.Add(5*time.Hour + 59*time.Minute)
@@ -178,7 +117,6 @@ func TestStalledThenActedOn(t *testing.T) {
 	if d := w.download(t, id); d.State != "stalled" || *d.StateReason != "no progress for 6 hours" {
 		t.Fatalf("want stalled after 6 hours, got %s %v", d.State, d.StateReason)
 	}
-	// A restart forgets nothing: the last progress time is stored.
 	m2 := &Manager{Store: w.s, Now: w.now, OnFailed: m.OnFailed, Sleep: m.Sleep}
 	w.clock = w.clock.Add(17*time.Hour + 59*time.Minute)
 	_, _ = m2.SyncOnce(ctx)
@@ -234,7 +172,6 @@ func TestTimeWaitingOrPausedNeverCounts(t *testing.T) {
 	_, _ = m.SyncOnce(ctx)
 	w.clock = w.clock.Add(48 * time.Hour)
 	_, _ = m.SyncOnce(ctx)
-	// Resumed: the paused days do not make it stalled at once.
 	w.fake.set(hash, map[string]any{"state": "downloading"})
 	_, _ = m.SyncOnce(ctx)
 	if d := w.download(t, id); d.State != "downloading" {
@@ -302,7 +239,6 @@ func TestReadFinishedFolderAndFile(t *testing.T) {
 	}
 	_ = os.WriteFile(filepath.Join(job, "movie.mkv"), make([]byte, 10), 0o644)
 	_ = os.WriteFile(filepath.Join(job, "Sub", "movie.srt"), make([]byte, 3), 0o644)
-	// The Downloader sees /dl/Job.Name; our path map points at dir.
 	pm := []domain.PathMap{{Theirs: "/dl", Ours: dir}}
 	save, files := readFinished(Job{ContentPath: "/dl/Job.Name"}, pm, "")
 	if save != "/dl" || len(files) != 2 || files[0].Name != "Job.Name/Sub/movie.srt" && files[1].Name != "Job.Name/Sub/movie.srt" {
@@ -312,17 +248,15 @@ func TestReadFinishedFolderAndFile(t *testing.T) {
 	if save != "/dl/Job.Name" || len(files) != 1 || files[0].Name != "movie.mkv" || files[0].Size != 10 {
 		t.Fatalf("file: %s %+v", save, files)
 	}
-	// Not readable here: a name with an extension is one file.
 	save, files = readFinished(Job{ContentPath: "/far/Away/x.mkv", Size: 7}, nil, "")
 	if save != "/far/Away" || len(files) != 1 || files[0].Size != 7 {
 		t.Fatalf("unreadable: %s %+v", save, files)
 	}
 }
 
-// Lying files: the importer rejected the Download; it leaves the Downloader.
 func TestDiscardAfterRejectedImport(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	if err := m.Discard(context.Background(), id); err != nil {
 		t.Fatal(err)
@@ -337,8 +271,59 @@ func TestDiscardAfterRejectedImport(t *testing.T) {
 	}
 }
 
-// letChange turns on "HolyArrs can change this Downloader" for the test
-// Downloader: with it off, HolyArrs sends grabs but removes nothing.
+func (w *world) release(t *testing.T) domain.Release {
+	t.Helper()
+	var r domain.Release
+	if err := database.Get(context.Background(), w.s.Read(), "releases", w.relID, &r); err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+
+func (w *world) setting(t *testing.T, key, value string) {
+	t.Helper()
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE settings SET value = ? WHERE grp = 'links' AND key = ?", value, key)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func grabbed(t *testing.T, w *world, m *Manager) int64 {
+	t.Helper()
+	id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.fake.set(hash, map[string]any{"name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "category": "holyarrs", "progress": 0.2, "state": "downloading"})
+	if _, err := m.SyncOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	return id
+}
+
+func wantFailedPath(t *testing.T, w *world, id int64, reason string, removed bool) {
+	t.Helper()
+	d := w.download(t, id)
+	if d.State != "failed" || d.StateReason == nil || !strings.Contains(*d.StateReason, reason) {
+		t.Fatalf("download %s %v, want failed with %q", d.State, d.StateReason, reason)
+	}
+	if r := w.release(t); r.State != "turned_down" || !strings.Contains(r.Verdict["turned_down_reason"].(string), reason) {
+		t.Fatalf("release %s %v", r.State, r.Verdict)
+	}
+	if sl := w.slot(t); sl.State != domain.SlotFailed {
+		t.Fatalf("slot %s", sl.State)
+	}
+	if len(w.failedSlots) != 1 || w.failedSlots[0] != w.slotID {
+		t.Fatalf("searched again: %v", w.failedSlots)
+	}
+	gone := len(w.fake.deleted) == 1 && w.fake.deleted[0] == hash+"|true"
+	if gone != removed {
+		t.Fatalf("removed from the Downloader: %v (deleted %v)", gone, w.fake.deleted)
+	}
+}
+
 func letChange(t *testing.T, m *Manager) {
 	t.Helper()
 	if err := m.Store.Write(context.Background(), func(tx *sql.Tx) error {

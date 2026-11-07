@@ -18,32 +18,6 @@ import (
 
 var grabPayload = []byte("d4:infod6:lengthi1e4:name7:lab.mkvee")
 
-// fakeDNS makes names lead where a test says, the way DNS answers would:
-// HolyArrs looks the name up and the address it gets is what is checked.
-// publicHere lets 127.0.0.1 stand for a public server; every other address
-// keeps the real rule.
-func fakeDNS(t *testing.T, names map[string]string, publicHere bool) {
-	t.Helper()
-	oldDial, oldAllow := grabDial, grabAllow
-	grabDial = func(addr string) string {
-		host, _, _ := net.SplitHostPort(addr)
-		if to, ok := names[host]; ok {
-			return to
-		}
-		return addr
-	}
-	if publicHere {
-		grabAllow = func(ip net.IP) bool { return ip.Equal(net.IPv4(127, 0, 0, 1)) || outbound.PublicOnly(ip) }
-	}
-	t.Cleanup(func() { grabDial, grabAllow = oldDial, oldAllow })
-}
-
-func hostPort(t *testing.T, s *httptest.Server) string {
-	t.Helper()
-	u, _ := url.Parse(s.URL)
-	return u.Host
-}
-
 func TestGrabFetchRefusesNamesThatLeadHome(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(grabPayload) }))
 	t.Cleanup(srv.Close)
@@ -103,24 +77,6 @@ func TestGrabFetchPublicNameAndMagnetRedirect(t *testing.T) {
 	}
 }
 
-// grabWorld is setup with a Source that may not reach the local network and
-// a Release link on a name.
-func grabWorld(t *testing.T, link string, infoHash *string) (*world, *Manager) {
-	t.Helper()
-	w, m := setup(t)
-	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE sources SET allow_local_network = 0"); err != nil {
-			return err
-		}
-		_, err := tx.Exec("UPDATE releases SET link_ref = ?, info_hash = ? WHERE id = ?", link, infoHash, w.relID)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return w, m
-}
-
 func TestGrabHandsQbittorrentTheFileNotTheAddress(t *testing.T) {
 	h, err := torrentFileHash(grabPayload)
 	if err != nil {
@@ -154,7 +110,7 @@ func TestGrabRefusesALinkThatLeadsHome(t *testing.T) {
 }
 
 func TestGrabLocalSourceStillHandsOverTheAddress(t *testing.T) {
-	w, m := setup(t) // the lab Source may reach the local network
+	w, m := setup(t)
 	if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -192,13 +148,6 @@ func TestSabnzbdAddUploadsTheFile(t *testing.T) {
 	}
 }
 
-func publicFileServer(t *testing.T, body []byte) {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(body) }))
-	t.Cleanup(srv.Close)
-	fakeDNS(t, map[string]string{"public.example": hostPort(t, srv)}, true)
-}
-
 func TestGrabProxySourceUsesItsOwnTransport(t *testing.T) {
 	publicFileServer(t, grabPayload)
 	w, m := grabWorld(t, "http://public.example/x.torrent", nil)
@@ -209,7 +158,6 @@ func TestGrabProxySourceUsesItsOwnTransport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Without a way through the proxy the send is refused, never handed over.
 	if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); err == nil || len(w.fake.added) != 0 {
 		t.Fatalf("err %v, added %+v: want a refusal and nothing sent", err, w.fake.added)
 	}
@@ -265,4 +213,49 @@ func TestGrabAdoptsATorrentQbittorrentAlreadyHas(t *testing.T) {
 	if d := w.download(t, id); d.ExternalID != h {
 		t.Fatalf("external id %q, want %q", d.ExternalID, h)
 	}
+}
+
+func fakeDNS(t *testing.T, names map[string]string, publicHere bool) {
+	t.Helper()
+	oldDial, oldAllow := grabDial, grabAllow
+	grabDial = func(addr string) string {
+		host, _, _ := net.SplitHostPort(addr)
+		if to, ok := names[host]; ok {
+			return to
+		}
+		return addr
+	}
+	if publicHere {
+		grabAllow = func(ip net.IP) bool { return ip.Equal(net.IPv4(127, 0, 0, 1)) || outbound.PublicOnly(ip) }
+	}
+	t.Cleanup(func() { grabDial, grabAllow = oldDial, oldAllow })
+}
+
+func hostPort(t *testing.T, s *httptest.Server) string {
+	t.Helper()
+	u, _ := url.Parse(s.URL)
+	return u.Host
+}
+
+func grabWorld(t *testing.T, link string, infoHash *string) (*world, *Manager) {
+	t.Helper()
+	w, m := setup(t)
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE sources SET allow_local_network = 0"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE releases SET link_ref = ?, info_hash = ? WHERE id = ?", link, infoHash, w.relID)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return w, m
+}
+
+func publicFileServer(t *testing.T, body []byte) {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(body) }))
+	t.Cleanup(srv.Close)
+	fakeDNS(t, map[string]string{"public.example": hostPort(t, srv)}, true)
 }

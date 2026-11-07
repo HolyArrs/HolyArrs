@@ -146,43 +146,6 @@ func (f *fakeTransmission) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newTransmissionHarness(t *testing.T, modern bool) (conformance, *fakeTransmission) {
-	t.Helper()
-	f := &fakeTransmission{token: "<owned-session>", modern: modern, items: map[string]map[string]any{}}
-	srv := httptest.NewServer(f)
-	t.Cleanup(srv.Close)
-	makeEngine := func(base, pass string) *Transmission { return NewTransmission(base, "task", pass, nil) }
-	c := conformance{name: "transmission", engine: makeEngine(srv.URL, "<transmission-test-password>"), badKey: makeEngine(srv.URL, "wrong"), at: func(base string) Engine { return makeEngine(base, "<transmission-test-password>") }, secret: "<transmission-test-password>",
-		release: AddRequest{URL: "magnet:?xt=urn:btih:" + hash, Name: "Owned fixture", Category: "holyarrs", SavePath: "/downloads", InfoHash: hash}, unknown: strings.Repeat("0", 40),
-		appear: func() {
-			f.mu.Lock()
-			defer f.mu.Unlock()
-			k := func(a, b string) string {
-				if modern {
-					return a
-				}
-				return b
-			}
-			f.items[hash]["files"] = []any{map[string]any{"name": "owned.bin", "length": 100, k("bytes_completed", "bytesCompleted"): 50}}
-		},
-		adds: func() int { f.mu.Lock(); defer f.mu.Unlock(); return f.adds },
-		states: func(word string) {
-			f.mu.Lock()
-			defer f.mu.Unlock()
-			s, _ := strconv.Atoi(word)
-			f.items[hash]["status"] = s
-			f.items[hash]["error"] = 0
-			if word == "error" {
-				f.items[hash]["error"] = 3
-			}
-		},
-		words: map[string]string{"0": StatePaused, "1": StateQueued, "2": StateQueued, "3": StateQueued, "4": StateDownloading, "99": StateDownloading, "error": StatePaused},
-	}
-	return c, f
-}
-
-func transmissionHarness(t *testing.T) conformance { c, _ := newTransmissionHarness(t, true); return c }
-
 func TestTransmissionConformance(t *testing.T) {
 	for _, modern := range []bool{false, true} {
 		t.Run(strconv.FormatBool(modern), func(t *testing.T) { c, _ := newTransmissionHarness(t, modern); runConformance(t, c) })
@@ -469,3 +432,40 @@ func TestTransmissionConcurrentRefresh(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func newTransmissionHarness(t *testing.T, modern bool) (conformance, *fakeTransmission) {
+	t.Helper()
+	f := &fakeTransmission{token: "<owned-session>", modern: modern, items: map[string]map[string]any{}}
+	srv := httptest.NewServer(f)
+	t.Cleanup(srv.Close)
+	makeEngine := func(base, pass string) *Transmission { return NewTransmission(base, "task", pass, nil) }
+	c := conformance{name: "transmission", engine: makeEngine(srv.URL, "<transmission-test-password>"), badKey: makeEngine(srv.URL, "wrong"), at: func(base string) Engine { return makeEngine(base, "<transmission-test-password>") }, secret: "<transmission-test-password>",
+		release: AddRequest{URL: "magnet:?xt=urn:btih:" + hash, Name: "Owned fixture", Category: "holyarrs", SavePath: "/downloads", InfoHash: hash}, unknown: strings.Repeat("0", 40),
+		appear: func() {
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			k := func(a, b string) string {
+				if modern {
+					return a
+				}
+				return b
+			}
+			f.items[hash]["files"] = []any{map[string]any{"name": "owned.bin", "length": 100, k("bytes_completed", "bytesCompleted"): 50}}
+		},
+		adds: func() int { f.mu.Lock(); defer f.mu.Unlock(); return f.adds },
+		states: func(word string) {
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			s, _ := strconv.Atoi(word)
+			f.items[hash]["status"] = s
+			f.items[hash]["error"] = 0
+			if word == "error" {
+				f.items[hash]["error"] = 3
+			}
+		},
+		words: map[string]string{"0": StatePaused, "1": StateQueued, "2": StateQueued, "3": StateQueued, "4": StateDownloading, "99": StateDownloading, "error": StatePaused},
+	}
+	return c, f
+}
+
+func transmissionHarness(t *testing.T) conformance { c, _ := newTransmissionHarness(t, true); return c }

@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-// Cache audit 2026-10-23 (other defaults): a busy download client (a NAS
-// during a recheck) gets 30 s, not 15.
 func TestDownloaderTimeout30s(t *testing.T) {
 	for name, got := range map[string]time.Duration{
 		"client":       Client("http://qbittorrent:8090", true).Timeout,

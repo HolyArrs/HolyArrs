@@ -12,11 +12,9 @@ import (
 
 var luis = domain.Actor{Kind: "user", ID: 1}
 
-// Remove with the defaults (Radarr's): out of the Downloader with its files,
-// the Release is not turned down, nothing is searched, the Slot is wanted.
 func TestRemoveKeepsTheReleaseByDefault(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); err != nil {
 		t.Fatal(err)
@@ -42,11 +40,9 @@ func TestRemoveKeepsTheReleaseByDefault(t *testing.T) {
 	}
 }
 
-// Turn down and search again: the Release is turned down and the Slot
-// searched; files kept in the Downloader when asked.
 func TestRemoveTurnDownAndSearchAgain(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: false, TurnDown: true, SearchAgain: true}, luis, "luis"); err != nil {
 		t.Fatal(err)
@@ -65,7 +61,6 @@ func TestRemoveTurnDownAndSearchAgain(t *testing.T) {
 	}
 }
 
-// Turn down without searching: the Slot rests (wanted).
 func TestRemoveTurnDownNoSearch(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
@@ -80,7 +75,6 @@ func TestRemoveTurnDownNoSearch(t *testing.T) {
 	}
 }
 
-// A Downloader that already lost it is fine; the row is still removed.
 func TestRemoveGoneFromTheDownloader(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
@@ -95,9 +89,6 @@ func TestRemoveGoneFromTheDownloader(t *testing.T) {
 	}
 }
 
-// 4.14 check (b): a finished download (an album imported track by track,
-// its Library copies hardlinked to its files) is not active: Remove and
-// Mark failed refuse it, so they never delete its files.
 func TestRemoveAndMarkFailedLeaveFinishedDownloads(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
@@ -118,8 +109,6 @@ func TestRemoveAndMarkFailedLeaveFinishedDownloads(t *testing.T) {
 	}
 }
 
-// With "HolyArrs can change this Downloader" off, a grab is still sent but a
-// Remove never reaches the client.
 func TestSwitchOffSendsButNeverRemoves(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)

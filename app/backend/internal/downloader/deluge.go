@@ -27,9 +27,12 @@ var (
 	errDelugeBadHash  = errors.New("not a torrent info hash")
 )
 
-// Deluge talks to the Deluge Web JSON endpoint. The Web UI must already be
-// attached to the intended daemon; the adapter never picks a daemon from the
-// Web UI's host list.
+var delugeStatusKeys = []string{
+	"name", "label", "save_path", "total_wanted", "progress",
+	"download_payload_rate", "upload_payload_rate", "num_seeds", "num_peers", "eta", "state", "is_finished",
+}
+
+// Deluge is a Client for the Deluge web JSON-RPC API.
 type Deluge struct {
 	Category string
 
@@ -43,7 +46,35 @@ type Deluge struct {
 	authGen   uint64
 }
 
-// NewDeluge makes an engine for a Deluge Web UI at base.
+type delugeRPCError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type delugeNullResultError struct{}
+
+type delugeRPCResponse struct {
+	ID     json.RawMessage `json:"id"`
+	Result json.RawMessage `json:"result"`
+	Error  json.RawMessage `json:"error"`
+}
+
+type delugeTorrent struct {
+	Name                string  `json:"name"`
+	Label               string  `json:"label"`
+	SavePath            string  `json:"save_path"`
+	TotalWanted         int64   `json:"total_wanted"`
+	Progress            float64 `json:"progress"`
+	DownloadPayloadRate int64   `json:"download_payload_rate"`
+	UploadPayloadRate   int64   `json:"upload_payload_rate"`
+	NumSeeds            int     `json:"num_seeds"`
+	NumPeers            int     `json:"num_peers"`
+	ETA                 int64   `json:"eta"`
+	State               string  `json:"state"`
+	Finished            bool    `json:"is_finished"`
+}
+
+// NewDeluge returns a client for the Deluge at base, using pass and h.
 func NewDeluge(base, pass string, h *http.Client) *Deluge {
 	if h == nil {
 		h = &http.Client{Timeout: clientTimeout}
@@ -55,33 +86,226 @@ func NewDeluge(base, pass string, h *http.Client) *Deluge {
 	return &Deluge{base: strings.TrimRight(base, "/"), pass: pass, http: &c, authGate: make(chan struct{}, 1)}
 }
 
-type delugeRPCError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+// Error implements error.
+func (delugeNullResultError) Error() string { return "Deluge returned no add result" }
+
+// Error implements error.
+func (e *delugeRPCError) Error() string {
+	return fmt.Sprintf("Deluge RPC error %d", e.Code)
 }
 
-type delugeNullResultError struct{}
+// Is matches errors by target kind.
+func (e *delugeRPCError) Is(target error) bool {
+	return target == ErrAuth && e.Code == 1
+}
 
-func (delugeNullResultError) Error() string { return "Deluge returned no add result" }
+// Health reports whether Deluge answers and accepts the password.
+func (d *Deluge) Health(ctx context.Context) (Health, error) {
+	if _, err := d.ready(ctx); err != nil {
+		return Health{}, err
+	}
+	var version string
+	if err := d.read(ctx, "daemon.get_version", []any{}, &version); err != nil {
+		return Health{}, err
+	}
+	return Health{Version: version, At: time.Now().UTC()}, nil
+}
+
+// Add queues a torrent and returns its hash.
+func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
+	if r.Category == "" {
+		return "", ErrCategory
+	}
+	expected := strings.ToLower(r.InfoHash)
+	if expected != "" && !source.ValidInfoHash(expected) {
+		return "", errDelugeBadHash
+	}
+	if r.ReconcileOnly {
+		if expected == "" || r.Skip[expected] {
+			return "", ErrUncertain
+		}
+		existing, err := d.Get(ctx, expected)
+		if err != nil || existing.Category != r.Category || r.Skip[existing.ID] {
+			return "", errors.Join(ErrUncertain, err)
+		}
+		return existing.ID, nil
+	}
+
+	var id string
+	var add func() error
+	if magnetHash, magnet := delugeMagnetHash(r.URL); magnet {
+		if expected != "" && expected != magnetHash {
+			return "", errors.New("the torrent address and expected info hash do not match")
+		}
+		expected = magnetHash
+		add = func() error { return d.write(ctx, "core.add_torrent_magnet", []any{r.URL, delugeOptions(r)}, &id) }
+	} else {
+		payload, fetchErr := fetchRelease(ctx, r.URL, r.AllowLocal, 8<<20)
+		if fetchErr != nil {
+			return "", fetchErr
+		}
+		if !r.AllowLocal {
+			if payload, fetchErr = safeTorrent(payload); fetchErr != nil {
+				return "", fetchErr
+			}
+		}
+		fileHash, hashErr := torrentFileHash(payload)
+		if hashErr != nil {
+			return "", hashErr
+		}
+		if expected != "" && expected != fileHash {
+			return "", errors.New("the torrent file and expected info hash do not match")
+		}
+		expected = fileHash
+		name := "release.torrent"
+		if u, parseErr := url.Parse(r.URL); parseErr == nil {
+			if base := path.Base(u.Path); base != "." && base != "/" && base != "" {
+				name = base
+			}
+		}
+		add = func() error {
+			return d.write(ctx, "core.add_torrent_file", []any{name, base64.StdEncoding.EncodeToString(payload), delugeOptions(r)}, &id)
+		}
+	}
+	if r.Skip[expected] {
+		return "", errors.New("the torrent belongs to another download")
+	}
+	labels, err := d.ready(ctx)
+	if err != nil {
+		return "", err
+	}
+	if existing, err := d.Get(ctx, expected); err == nil {
+		if r.Skip[existing.ID] {
+			return "", errors.New("the torrent belongs to another download")
+		}
+		if existing.Category != r.Category {
+			return "", fmt.Errorf("deluge torrent %s already belongs to another category", expected)
+		}
+		return existing.ID, nil
+	} else if !errors.Is(err, ErrNotFound) {
+		return "", err
+	}
+	if err := d.ensureLabel(ctx, labels, r.Category); err != nil {
+		return "", err
+	}
+	err = add()
+	if err != nil {
+		if delugeDefinitelyRefused(err) {
+			return "", err
+		}
+		existing, getErr := d.Get(ctx, expected)
+		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
+			return existing.ID, nil
+		}
+		return "", errors.Join(ErrUncertain, err, getErr)
+	}
+
+	id = strings.ToLower(id)
+	if !source.ValidInfoHash(id) {
+		existing, getErr := d.Get(ctx, expected)
+		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
+			return existing.ID, nil
+		}
+		return "", errors.Join(ErrUncertain, errors.New("Deluge did not return a torrent info hash"), getErr)
+	}
+	if expected != "" && id != expected {
+		return "", errors.Join(ErrUncertain, errors.New("Deluge returned a different torrent info hash"))
+	}
+	if r.Skip[id] {
+		return "", errors.Join(ErrUncertain, errors.New("the torrent belongs to another download"))
+	}
+	if err := d.setLabel(ctx, id, r.Category); err != nil {
+		return "", errors.Join(ErrUncertain, err)
+	}
+	return id, nil
+}
+
+// List returns the torrents in category.
+func (d *Deluge) List(ctx context.Context, category string) ([]Job, error) {
+	if _, err := d.ready(ctx); err != nil {
+		return nil, err
+	}
+	var torrents map[string]delugeTorrent
+	if err := d.read(ctx, "core.get_torrents_status", []any{map[string]any{}, delugeStatusKeys, false}, &torrents); err != nil {
+		return nil, err
+	}
+	jobs := make([]Job, 0, len(torrents))
+	for id, torrent := range torrents {
+		if category == "" || torrent.Label == category {
+			jobs = append(jobs, torrent.job(id))
+		}
+	}
+	return jobs, nil
+}
+
+// Get returns the torrent with the given id.
+func (d *Deluge) Get(ctx context.Context, id string) (Job, error) {
+	id = strings.ToLower(id)
+	if !source.ValidInfoHash(id) {
+		return Job{}, errDelugeBadHash
+	}
+	if _, err := d.ready(ctx); err != nil {
+		return Job{}, err
+	}
+	torrent, err := d.status(ctx, id)
+	if err != nil {
+		return Job{}, err
+	}
+	job := torrent.job(id)
+	job.Files, err = d.files(ctx, id)
+	if err != nil {
+		return Job{}, err
+	}
+	return job, nil
+}
+
+// Remove deletes the torrent, and its data when deleteFiles is set.
+func (d *Deluge) Remove(ctx context.Context, id string, deleteFiles bool) error {
+	id = strings.ToLower(id)
+	if !source.ValidInfoHash(id) {
+		return errDelugeBadHash
+	}
+	if _, err := d.ready(ctx); err != nil {
+		return err
+	}
+	if d.Category != "" {
+		job, err := d.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if job.Category != d.Category {
+			return errors.New("refusing to remove a torrent outside the configured category")
+		}
+	}
+	var removed bool
+	err := d.write(ctx, "core.remove_torrent", []any{id, deleteFiles}, &removed)
+	if err == nil {
+		if !removed {
+			return ErrNotFound
+		}
+		return nil
+	}
+	_, getErr := d.Get(ctx, id)
+	if errors.Is(getErr, ErrNotFound) {
+		return nil
+	}
+	if errors.Is(err, ErrAuth) && getErr == nil {
+		removed = false
+		if retryErr := d.write(ctx, "core.remove_torrent", []any{id, deleteFiles}, &removed); retryErr != nil {
+			return retryErr
+		}
+		if !removed {
+			return ErrNotFound
+		}
+		return nil
+	}
+	return err
+}
 
 func delugeDefinitelyRefused(err error) bool {
 	var rpcErr *delugeRPCError
 	var nullResult delugeNullResultError
 	return errors.Is(err, ErrAuth) || errors.As(err, &rpcErr) || errors.As(err, &nullResult)
-}
-
-func (e *delugeRPCError) Error() string {
-	return fmt.Sprintf("Deluge RPC error %d", e.Code)
-}
-
-func (e *delugeRPCError) Is(target error) bool {
-	return target == ErrAuth && e.Code == 1
-}
-
-type delugeRPCResponse struct {
-	ID     json.RawMessage `json:"id"`
-	Result json.RawMessage `json:"result"`
-	Error  json.RawMessage `json:"error"`
 }
 
 func (d *Deluge) generation() uint64 {
@@ -161,9 +385,6 @@ func (d *Deluge) rpcOnce(ctx context.Context, method string, params any, out any
 	return nil
 }
 
-// login refreshes one expired Web session. Waiting callers observe their own
-// context, and a caller skips a duplicate login when another refresh already
-// advanced the generation.
 func (d *Deluge) login(ctx context.Context, stale uint64) error {
 	select {
 	case d.authGate <- struct{}{}:
@@ -199,8 +420,6 @@ func (d *Deluge) read(ctx context.Context, method string, params any, out any) e
 	return d.rpcOnce(ctx, method, params, out)
 }
 
-// write performs a mutation once. The operation-specific caller reconciles
-// every failure before deciding whether one replay is safe.
 func (d *Deluge) write(ctx context.Context, method string, params any, out any) error {
 	return d.rpcOnce(ctx, method, params, out)
 }
@@ -218,18 +437,6 @@ func (d *Deluge) ready(ctx context.Context) ([]string, error) {
 		return nil, errors.Join(errDelugeLabel, err)
 	}
 	return labels, nil
-}
-
-// Health checks both halves of Deluge and verifies the required Label plugin.
-func (d *Deluge) Health(ctx context.Context) (Health, error) {
-	if _, err := d.ready(ctx); err != nil {
-		return Health{}, err
-	}
-	var version string
-	if err := d.read(ctx, "daemon.get_version", []any{}, &version); err != nil {
-		return Health{}, err
-	}
-	return Health{Version: version, At: time.Now().UTC()}, nil
 }
 
 func hasString(items []string, value string) bool {
@@ -310,137 +517,6 @@ func delugeOptions(r AddRequest) map[string]any {
 	return options
 }
 
-// Add validates magnets locally and uploads torrent-file bytes fetched through
-// HolyArrs' outgoing policy. Deluge never receives an arbitrary source URL.
-func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
-	if r.Category == "" {
-		return "", ErrCategory
-	}
-	expected := strings.ToLower(r.InfoHash)
-	if expected != "" && !source.ValidInfoHash(expected) {
-		return "", errDelugeBadHash
-	}
-	if r.ReconcileOnly {
-		if expected == "" || r.Skip[expected] {
-			return "", ErrUncertain
-		}
-		existing, err := d.Get(ctx, expected)
-		if err != nil || existing.Category != r.Category || r.Skip[existing.ID] {
-			return "", errors.Join(ErrUncertain, err)
-		}
-		return existing.ID, nil
-	}
-
-	var id string
-	var add func() error
-	if magnetHash, magnet := delugeMagnetHash(r.URL); magnet {
-		if expected != "" && expected != magnetHash {
-			return "", errors.New("the torrent address and expected info hash do not match")
-		}
-		expected = magnetHash
-		add = func() error { return d.write(ctx, "core.add_torrent_magnet", []any{r.URL, delugeOptions(r)}, &id) }
-	} else {
-		payload, fetchErr := fetchRelease(ctx, r.URL, r.AllowLocal, 8<<20)
-		if fetchErr != nil {
-			return "", fetchErr
-		}
-		if !r.AllowLocal {
-			// Home trackers, web seeds and DHT nodes left out (#152).
-			if payload, fetchErr = safeTorrent(payload); fetchErr != nil {
-				return "", fetchErr
-			}
-		}
-		fileHash, hashErr := torrentFileHash(payload)
-		if hashErr != nil {
-			return "", hashErr
-		}
-		if expected != "" && expected != fileHash {
-			return "", errors.New("the torrent file and expected info hash do not match")
-		}
-		expected = fileHash
-		name := "release.torrent"
-		if u, parseErr := url.Parse(r.URL); parseErr == nil {
-			if base := path.Base(u.Path); base != "." && base != "/" && base != "" {
-				name = base
-			}
-		}
-		add = func() error {
-			return d.write(ctx, "core.add_torrent_file", []any{name, base64.StdEncoding.EncodeToString(payload), delugeOptions(r)}, &id)
-		}
-	}
-	if r.Skip[expected] {
-		return "", errors.New("the torrent belongs to another download")
-	}
-	labels, err := d.ready(ctx)
-	if err != nil {
-		return "", err
-	}
-	if existing, err := d.Get(ctx, expected); err == nil {
-		if r.Skip[existing.ID] {
-			return "", errors.New("the torrent belongs to another download")
-		}
-		if existing.Category != r.Category {
-			return "", fmt.Errorf("deluge torrent %s already belongs to another category", expected)
-		}
-		return existing.ID, nil
-	} else if !errors.Is(err, ErrNotFound) {
-		return "", err
-	}
-	if err := d.ensureLabel(ctx, labels, r.Category); err != nil {
-		return "", err
-	}
-	err = add()
-	if err != nil {
-		if delugeDefinitelyRefused(err) {
-			return "", err
-		}
-		existing, getErr := d.Get(ctx, expected)
-		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
-			return existing.ID, nil
-		}
-		return "", errors.Join(ErrUncertain, err, getErr)
-	}
-
-	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
-		existing, getErr := d.Get(ctx, expected)
-		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
-			return existing.ID, nil
-		}
-		return "", errors.Join(ErrUncertain, errors.New("Deluge did not return a torrent info hash"), getErr)
-	}
-	if expected != "" && id != expected {
-		return "", errors.Join(ErrUncertain, errors.New("Deluge returned a different torrent info hash"))
-	}
-	if r.Skip[id] {
-		return "", errors.Join(ErrUncertain, errors.New("the torrent belongs to another download"))
-	}
-	if err := d.setLabel(ctx, id, r.Category); err != nil {
-		return "", errors.Join(ErrUncertain, err)
-	}
-	return id, nil
-}
-
-var delugeStatusKeys = []string{
-	"name", "label", "save_path", "total_wanted", "progress",
-	"download_payload_rate", "upload_payload_rate", "num_seeds", "num_peers", "eta", "state", "is_finished",
-}
-
-type delugeTorrent struct {
-	Name                string  `json:"name"`
-	Label               string  `json:"label"`
-	SavePath            string  `json:"save_path"`
-	TotalWanted         int64   `json:"total_wanted"`
-	Progress            float64 `json:"progress"`
-	DownloadPayloadRate int64   `json:"download_payload_rate"`
-	UploadPayloadRate   int64   `json:"upload_payload_rate"`
-	NumSeeds            int     `json:"num_seeds"`
-	NumPeers            int     `json:"num_peers"`
-	ETA                 int64   `json:"eta"`
-	State               string  `json:"state"`
-	Finished            bool    `json:"is_finished"`
-}
-
 func (t delugeTorrent) job(id string) Job {
 	progress := t.Progress / 100
 	if progress < 0 {
@@ -466,14 +542,11 @@ func (t delugeTorrent) job(id string) Job {
 func delugeState(state string, finished bool) string {
 	switch strings.ToLower(state) {
 	case "error":
-		// Files missing or unreadable: wait as paused (late-mounts-3).
 		return StatePaused
 	case "checking", "moving":
 		return StateQueued
 	}
 	if finished {
-		// A finished torrent Deluge has queued or paused (waiting for a
-		// seeding slot, or stopped at its ratio) is still complete.
 		return StateFinished
 	}
 	switch strings.ToLower(state) {
@@ -486,24 +559,6 @@ func delugeState(state string, finished bool) string {
 		return StateFinished
 	}
 	return StateDownloading
-}
-
-// List returns only torrents carrying the requested Label-plugin category.
-func (d *Deluge) List(ctx context.Context, category string) ([]Job, error) {
-	if _, err := d.ready(ctx); err != nil {
-		return nil, err
-	}
-	var torrents map[string]delugeTorrent
-	if err := d.read(ctx, "core.get_torrents_status", []any{map[string]any{}, delugeStatusKeys, false}, &torrents); err != nil {
-		return nil, err
-	}
-	jobs := make([]Job, 0, len(torrents))
-	for id, torrent := range torrents {
-		if category == "" || torrent.Label == category {
-			jobs = append(jobs, torrent.job(id))
-		}
-	}
-	return jobs, nil
 }
 
 func (d *Deluge) status(ctx context.Context, id string) (delugeTorrent, error) {
@@ -578,69 +633,4 @@ func (d *Deluge) files(ctx context.Context, id string) ([]File, error) {
 	var files []File
 	appendDelugeFiles(raw, &files)
 	return files, nil
-}
-
-// Get returns one torrent with its file list.
-func (d *Deluge) Get(ctx context.Context, id string) (Job, error) {
-	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
-		return Job{}, errDelugeBadHash
-	}
-	if _, err := d.ready(ctx); err != nil {
-		return Job{}, err
-	}
-	torrent, err := d.status(ctx, id)
-	if err != nil {
-		return Job{}, err
-	}
-	job := torrent.job(id)
-	job.Files, err = d.files(ctx, id)
-	if err != nil {
-		return Job{}, err
-	}
-	return job, nil
-}
-
-// Remove removes one exact torrent id and optionally its payload files.
-func (d *Deluge) Remove(ctx context.Context, id string, deleteFiles bool) error {
-	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
-		return errDelugeBadHash
-	}
-	if _, err := d.ready(ctx); err != nil {
-		return err
-	}
-	if d.Category != "" {
-		job, err := d.Get(ctx, id)
-		if err != nil {
-			return err
-		}
-		if job.Category != d.Category {
-			return errors.New("refusing to remove a torrent outside the configured category")
-		}
-	}
-	var removed bool
-	err := d.write(ctx, "core.remove_torrent", []any{id, deleteFiles}, &removed)
-	if err == nil {
-		if !removed {
-			return ErrNotFound
-		}
-		return nil
-	}
-	// A failed remove may have reached the daemon. Read before any replay.
-	_, getErr := d.Get(ctx, id)
-	if errors.Is(getErr, ErrNotFound) {
-		return nil
-	}
-	if errors.Is(err, ErrAuth) && getErr == nil {
-		removed = false
-		if retryErr := d.write(ctx, "core.remove_torrent", []any{id, deleteFiles}, &removed); retryErr != nil {
-			return retryErr
-		}
-		if !removed {
-			return ErrNotFound
-		}
-		return nil
-	}
-	return err
 }

@@ -7,8 +7,6 @@ import (
 
 const gb = int64(1) << 30
 
-// 4.3.5: bait and archive-only torrents are fakes; a real release with a
-// subtitle, an nfo or a usenet archive set is not.
 func TestFakeFiles(t *testing.T) {
 	cases := []struct {
 		files    []File
@@ -19,28 +17,19 @@ func TestFakeFiles(t *testing.T) {
 		{[]File{{Name: "Dune/Dune.zip"}, {Name: "Dune/password.txt"}}, "torrent", true},
 		{[]File{{Name: "Dune/Dune.rar"}, {Name: "Dune/Dune.r00"}}, "torrent", true},
 		{[]File{{Name: "Dune/Dune.rar"}, {Name: "Dune/Dune.r00"}}, "usenet", false},
-		// A scene RAR set (#54): the importer unpacks it, so it is not bait; a tiny Sample beside it changes nothing.
 		{[]File{{Name: "Dune/Dune.part1.rar", Size: gb}, {Name: "Dune/Dune.part2.rar", Size: gb}, {Name: "Dune/Dune.nfo", Size: 900}, {Name: "Dune/Sample/dune-sample.mkv", Size: 2 << 20}}, "torrent", false},
 		{[]File{{Name: "Dune/Dune.rar", Size: gb}, {Name: "Dune/Dune.r00", Size: gb}}, "torrent", false},
-		// A big RAR set with a web shortcut and no real video is still bait.
 		{[]File{{Name: "Dune/Dune.rar", Size: gb}, {Name: "Dune/Dune.r00", Size: gb}, {Name: "Dune/Get it.url"}}, "torrent", true},
-		// 7-Zip parts and a big zip are unpacked too; a small zip with no video stays bait.
 		{[]File{{Name: "Dune/Dune.7z.001", Size: gb}, {Name: "Dune/Dune.7z.002", Size: gb}}, "torrent", false},
 		{[]File{{Name: "Dune/Dune.zip", Size: gb}}, "torrent", false},
 		{[]File{{Name: "Dune/Dune.zip", Size: 5 << 20}}, "torrent", true},
-		// A RAR set still fails beside a program or a password note.
 		{[]File{{Name: "Dune/Dune.part1.rar", Size: gb}, {Name: "Dune/Dune.part2.rar", Size: gb}, {Name: "Dune/password.txt", Size: 20}}, "torrent", true},
-		// A web shortcut beside the media is ordinary on public torrents.
 		{[]File{{Name: "Dune/Dune.mkv", Size: gb}, {Name: "Dune/Downloaded from X.url"}}, "torrent", false},
 		{[]File{{Name: "Dune/Dune.mkv", Size: gb}, {Name: "Dune/Site.webloc"}}, "torrent", false},
-		// A shortcut alone, or beside an archive only, is the bait.
 		{[]File{{Name: "Dune/Get the full movie.url"}}, "torrent", true},
 		{[]File{{Name: "Dune/Dune.zip"}, {Name: "Dune/Get the full movie.url"}}, "torrent", true},
-		// A password note and a program fail even beside the media.
 		{[]File{{Name: "Dune/Dune.mkv", Size: gb}, {Name: "Dune/password.txt"}}, "torrent", true},
 		{[]File{{Name: "Dune/Dune.mkv", Size: gb}, {Name: "Dune/Codec.exe"}}, "torrent", true},
-		// Media kinds from the importer's lists: a DSD album with artwork,
-		// a DVD rip with covers, a Blu-ray stream, a disc image, lossless audio.
 		{[]File{{Name: "Album/01 Song.dsf", Size: 40 << 20}, {Name: "Album/02 Song.dff", Size: 40 << 20}, {Name: "Album/Artwork.zip"}}, "torrent", false},
 		{[]File{{Name: "Movie/VIDEO_TS/VTS_01_1.VOB", Size: gb}, {Name: "Movie/covers.rar"}}, "torrent", false},
 		{[]File{{Name: "Movie/BDMV/STREAM/00001.m2ts", Size: gb}, {Name: "Movie/extras.rar"}}, "torrent", false},
@@ -50,7 +39,6 @@ func TestFakeFiles(t *testing.T) {
 		{[]File{{Name: "Album/01.aiff", Size: 40 << 20}, {Name: "Album/02.wma", Size: 40 << 20}, {Name: "Album/03.mka", Size: 40 << 20}, {Name: "Album/scans.zip"}}, "torrent", false},
 		{[]File{{Name: "Album/01 Song.flac", Size: 40 << 20}, {Name: "Album/cover.zip"}}, "torrent", false},
 		{[]File{{Name: "Album/Album.lnk"}}, "torrent", true},
-		// Review: tiny or empty "media" beside archives or shortcuts is bait.
 		{[]File{{Name: "Movie/Movie.iso", Size: 0}, {Name: "Movie/covers.rar", Size: 5 << 20}}, "torrent", true},
 		{[]File{{Name: "Movie/VIDEO_TS/VTS_01_1.VOB", Size: 10 << 10}, {Name: "Movie/covers.rar", Size: 5 << 20}}, "torrent", true},
 		{[]File{{Name: "Movie/Movie.iso", Size: 5 * gb}, {Name: "Movie/covers.rar", Size: 5 << 20}}, "torrent", false},
@@ -64,11 +52,9 @@ func TestFakeFiles(t *testing.T) {
 	}
 }
 
-// 4.3.5: a fake is failed as soon as the Downloader lists its files, not
-// when it finishes; the Release is turned down and the Slot searched again.
 func TestFakeFilesFailWhileDownloading(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 0.1, "state": "downloading"})
 	w.fake.files[hash] = []map[string]any{{"name": "Dune/Dune.Part.Two.2024.1080p.zip", "size": 100}, {"name": "Dune/PASSWORD.txt", "size": 1}}
@@ -76,9 +62,6 @@ func TestFakeFilesFailWhileDownloading(t *testing.T) {
 	wantFailedPath(t, w, id, "fake files instead of the media: PASSWORD.txt, Dune.Part.Two.2024.1080p.zip", true)
 }
 
-// 4.3.5 review: an ordinary torrent with a web shortcut beside its video
-// keeps downloading and is only noted in an Event; one holding only a
-// shortcut fails.
 func TestShortcutBesideMediaIsNoted(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
@@ -102,7 +85,7 @@ func TestShortcutBesideMediaIsNoted(t *testing.T) {
 
 func TestShortcutOnlyFails(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 0.1, "state": "downloading"})
 	w.fake.files[hash] = []map[string]any{{"name": "Dune/Watch Dune online.url", "size": 100}}

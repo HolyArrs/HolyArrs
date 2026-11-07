@@ -14,11 +14,12 @@ type kickSync struct {
 	kicks []int64
 }
 
-func (k *kickSync) Kick(id int64)        { k.kicks = append(k.kicks, id) }
-func (k *kickSync) View(int64) SyncView  { return SyncView{Degraded: true} }
+func (k *kickSync) Kick(id int64) { k.kicks = append(k.kicks, id) }
+
+func (k *kickSync) View(int64) SyncView { return SyncView{Degraded: true} }
+
 func (k *kickSync) Fallback(int64, bool) {}
 
-// An edit (Forget) asks the reader for a read with the new settings now.
 func TestForgetKicksReader(t *testing.T) {
 	k := &kickSync{}
 	m := &Manager{Sync: k}
@@ -28,8 +29,6 @@ func TestForgetKicksReader(t *testing.T) {
 	}
 }
 
-// Big list answers fit under the raised cap; anything over a cap reports
-// "too large" instead of a parse error.
 func TestQbitAnswerSizeCap(t *testing.T) {
 	big := "[" + strings.Repeat(`{"hash":"x"},`, (9<<20)/13) + `{"hash":"y"}]`
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

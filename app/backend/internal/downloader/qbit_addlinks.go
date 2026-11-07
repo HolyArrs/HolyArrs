@@ -12,13 +12,20 @@ import (
 	"unicode"
 )
 
-// addFetchMax caps a .torrent file HolyArrs fetches for a hand-made add.
+// addFetchMax caps a fetched .torrent at 10 MiB. Real ones are tiny, so a bigger answer is not a torrent. It is a variable so tests can lower it.
 var addFetchMax int64 = 10 << 20
 
-// fetchTorrentLink fetches an http(s) .torrent link itself, through the
-// Downloader's own client policy (fetchRelease: every dialled address is
-// checked, redirects stay on the same host), so the client is never told
-// to fetch an address a person typed.
+// errMagnet is the one error for any bad magnet, so the reason does not leak what was wrong.
+var errMagnet = errors.New("the magnet link could not be read")
+
+// btihHex, btihB32 and btmh match the three info hash forms a magnet may carry: v1 hex, v1 base32 and v2 multihash.
+var btihHex = regexp.MustCompile(`^[0-9a-f]{40}$`)
+
+var btihB32 = regexp.MustCompile(`^[a-z2-7]{32}$`)
+
+var btmh = regexp.MustCompile(`^1220[0-9a-f]{64}$`)
+
+// fetchTorrentLink downloads a .torrent from a web link under the Source address rules and checks it parses.
 func fetchTorrentLink(ctx context.Context, link string, allowLocal bool) ([]byte, error) {
 	b, err := fetchRelease(ctx, link, allowLocal, addFetchMax)
 	if err != nil {
@@ -30,26 +37,9 @@ func fetchTorrentLink(ctx context.Context, link string, allowLocal bool) ([]byte
 	return b, nil
 }
 
-// errMagnet is a magnet link that does not parse strictly.
-var errMagnet = errors.New("the magnet link could not be read")
-
-var btihHex = regexp.MustCompile(`^[0-9a-f]{40}$`)
-var btihB32 = regexp.MustCompile(`^[a-z2-7]{32}$`)
-var btmh = regexp.MustCompile(`^1220[0-9a-f]{64}$`)
-
-// safeMagnet rebuilds a magnet link from an allowlist: xt (a BitTorrent
-// v1 or v2 hash), dn and tr; with local network access also ws, xs, as and
-// x.pe. Every pair is decoded strictly and the link is written anew, so
-// the original string never reaches the client. A pair that does not
-// decode, or holds a control character, refuses the whole link. It says
-// how many pairs it left out.
-//
-// Trackers are kept by host name, as for trackers inside an uploaded
-// .torrent file: qBittorrent announces to them itself, so a name cannot be
-// checked here in a way that survives rebinding. Without local network
-// access a tracker that is a literal local, link-local or metadata address,
-// localhost or a .local name, or that is not http, https or udp, is left
-// out. Nothing here looks names up.
+// safeMagnet rebuilds a magnet link from parts known to be safe and counts what it dropped.
+// Only the hash, display name and allowed trackers and peers survive. Unknown keys go, so the client never gets a stray address to contact. Local addresses pass only when the Source may use the local network.
+// Control characters in any part reject the link.
 func safeMagnet(link string, allowLocal bool) (string, int, error) {
 	if len(link) < 8 || !strings.EqualFold(link[:8], "magnet:?") {
 		return "", 0, errMagnet
@@ -78,6 +68,7 @@ func safeMagnet(link string, allowLocal bool) (string, int, error) {
 			} else {
 				return "", 0, errMagnet
 			}
+		// The display name is only a label and is kept as is.
 		case "dn":
 		case "tr":
 			if !trackerAllowed(v, allowLocal) {
@@ -101,7 +92,7 @@ func safeMagnet(link string, allowLocal bool) (string, int, error) {
 	parts := make([]string, len(keep))
 	for i, p := range keep {
 		if p.k == "xt" {
-			parts[i] = "xt=" + strings.ToLower(p.v) // checked above: letters, digits and colons only
+			parts[i] = "xt=" + strings.ToLower(p.v)
 			continue
 		}
 		parts[i] = p.k + "=" + url.QueryEscape(p.v)
@@ -109,7 +100,8 @@ func safeMagnet(link string, allowLocal bool) (string, int, error) {
 	return "magnet:?" + strings.Join(parts, "&"), dropped, nil
 }
 
-// trackerAllowed checks one magnet tracker without looking its name up.
+// trackerAllowed accepts http, https and udp trackers on public hosts. Cloud metadata addresses are never allowed.
+// User info and odd forms of an address are refused, since the client and this check could read them differently.
 func trackerAllowed(v string, allowLocal bool) bool {
 	u, err := url.Parse(v)
 	if err != nil || u.Hostname() == "" || u.User != nil || oddAuthority(v) {
@@ -141,9 +133,7 @@ func trackerAllowed(v string, allowLocal bool) bool {
 	return true
 }
 
-// oddHost is a host that is not a plain public name: a percent sign, labels
-// that are all digits or hex numbers (127.1, 2130706433, 0x7f.1, 017700000001,
-// which some resolvers read as addresses), or no alphabetic last label.
+// oddHost spots hosts that are numbers in disguise (hex, octal, short forms) or have no letter in the last label. Some resolvers turn those into private addresses.
 func oddHost(host string) bool {
 	if strings.Contains(host, "%") {
 		return true
@@ -170,7 +160,7 @@ func oddHost(host string) bool {
 	return true
 }
 
-// numberLabel is a label that reads as a decimal, octal or 0x hex number.
+// numberLabel reports whether a host label is a decimal or 0x hex number, or empty.
 func numberLabel(l string) bool {
 	if l == "" {
 		return true
@@ -191,8 +181,7 @@ func numberLabel(l string) bool {
 	return true
 }
 
-// peerAllowed checks a web seed, source or peer pair when local network
-// access is on: cloud metadata targets stay refused anyway.
+// peerAllowed checks web seed and peer hints. They are only kept when local use is on, and never when they point at metadata addresses or a malformed number.
 func peerAllowed(k, v string) bool {
 	var host string
 	if k == "x.pe" {
@@ -219,10 +208,7 @@ func peerAllowed(k, v string) bool {
 	return !numeric
 }
 
-// hostIP reads a host as an address the way inet_aton and resolvers do:
-// IPv6 (zone dropped) or one to four dotted parts in decimal, octal or 0x
-// hex. numeric says the host looks like a number form even when it fails
-// to parse (such a host is refused).
+// hostIP reads an address the way old C resolvers do, including short and hex forms such as 127.1 or 0x7f.0.0.1. numeric is true when the host is made of numbers even if it is not a valid address, so the caller can refuse it.
 func hostIP(host string) (ip net.IP, numeric bool) {
 	h := strings.Trim(host, "[]")
 	if i := strings.IndexByte(h, '%'); i >= 0 && strings.Contains(h, ":") {
@@ -259,6 +245,7 @@ func hostIP(host string) (ip net.IP, numeric bool) {
 			return nil, true
 		}
 	}
+	// The last part fills all the remaining bytes, so it has a bigger limit.
 	if vals[last] >= 1<<(8*(4-last)) {
 		return nil, true
 	}

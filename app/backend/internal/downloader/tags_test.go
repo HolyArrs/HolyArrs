@@ -12,19 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Tags (#108): a grab goes to the Downloaders sharing a tag with the title,
-// else to the untagged ones; with neither, the Slot waits on a decision.
-
-func tagTitle(t *testing.T, w *world, tags string) {
-	t.Helper()
-	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE titles SET tags = ?", tags)
-		return err
-	}); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestGrabGoesToTheDownloaderSharingTheTitlesTag(t *testing.T) {
 	w, m := setup(t)
 	lab := w.downloader(t, 1)
@@ -83,5 +70,15 @@ func TestGrabWithNoDownloaderForTheTagsWaitsOnADecision(t *testing.T) {
 	_ = w.s.Read().QueryRow("SELECT count(*) FROM downloads").Scan(&n)
 	if n != 0 || len(w.fake.added) != 0 {
 		t.Fatalf("something was sent: %d downloads", n)
+	}
+}
+
+func tagTitle(t *testing.T, w *world, tags string) {
+	t.Helper()
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE titles SET tags = ?", tags)
+		return err
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

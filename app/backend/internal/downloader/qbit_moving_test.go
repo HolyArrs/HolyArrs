@@ -2,10 +2,6 @@ package downloader
 
 import "testing"
 
-// With an incomplete-files folder, a complete torrent whose files are still
-// in that folder (not moved yet, or never: qBittorrent found them there
-// complete) is read there: its file names are relative to that folder, in
-// every content layout and after a rename.
 func TestQbitCompleteButStillInIncompleteFolder(t *testing.T) {
 	for _, c := range []struct {
 		name, save, download, content, want string
@@ -26,7 +22,6 @@ func TestQbitCompleteButStillInIncompleteFolder(t *testing.T) {
 			t.Errorf("%s: %s in %s, want finished in %s", c.name, j.State, j.SavePath, c.want)
 		}
 	}
-	// Still downloading: the save path as qBittorrent says.
 	dl := qbitTorrent{Hash: "AB", Name: "Dune.mkv", State: "downloading", Progress: 0.5, SavePath: "/data/inc/holyarrs", DownloadPath: "/data/inc", ContentPath: "/data/inc/Dune.mkv"}
 	if j := jobFromTorrent(dl); j.State != StateDownloading || j.SavePath != dl.SavePath {
 		t.Errorf("downloading: %s in %s", j.State, j.SavePath)

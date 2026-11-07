@@ -8,8 +8,6 @@ import (
 	"strconv"
 )
 
-// torrentFileHash hashes the original info dictionary, without decoding and
-// re-encoding it. The app still validates the torrent's transfer metadata.
 func torrentFileHash(b []byte) (string, error) {
 	bad := errors.New("the Source did not return a valid torrent file")
 	if len(b) < 2 || b[0] != 'd' {

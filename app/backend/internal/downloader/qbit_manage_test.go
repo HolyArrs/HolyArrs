@@ -13,84 +13,14 @@ import (
 	"testing"
 )
 
-// manageFake answers qBittorrent paths with fixed bodies and status codes
-// and keeps each call as "path?form" (multipart fields and file names too).
+const tinyTorrent = "d4:infod6:lengthi1e4:name1:a12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee"
+
 type manageFake struct {
 	mu      sync.Mutex
 	calls   []string
 	answers map[string]string
 	codes   map[string]int
 }
-
-func (f *manageFake) start(t *testing.T) string {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimPrefix(r.URL.Path, "/api/v2/")
-		var form string
-		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
-			_ = r.ParseMultipartForm(1 << 20)
-			parts := []string{}
-			for k, v := range r.MultipartForm.Value {
-				parts = append(parts, k+"="+strings.Join(v, ","))
-			}
-			for _, fh := range r.MultipartForm.File["torrents"] {
-				fd, _ := fh.Open()
-				b, _ := io.ReadAll(fd)
-				fd.Close()
-				parts = append(parts, "file="+fh.Filename+":"+string(b[:1]))
-			}
-			form = strings.Join(sorted(parts), "&")
-		} else {
-			_ = r.ParseForm()
-			form = r.Form.Encode()
-		}
-		f.mu.Lock()
-		f.calls = append(f.calls, path+"?"+form)
-		code, body := f.codes[path], f.answers[path]
-		f.mu.Unlock()
-		if code != 0 {
-			w.WriteHeader(code)
-		}
-		_, _ = w.Write([]byte(body))
-	}))
-	t.Cleanup(srv.Close)
-	return srv.URL
-}
-
-func (f *manageFake) last(path string) string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	for i := len(f.calls) - 1; i >= 0; i-- {
-		if strings.HasPrefix(f.calls[i], path+"?") {
-			return f.calls[i]
-		}
-	}
-	return ""
-}
-
-func (f *manageFake) count(path string) int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	n := 0
-	for _, c := range f.calls {
-		if strings.HasPrefix(c, path+"?") {
-			n++
-		}
-	}
-	return n
-}
-
-func sorted(s []string) []string {
-	for i := 1; i < len(s); i++ {
-		for j := i; j > 0 && s[j] < s[j-1]; j-- {
-			s[j], s[j-1] = s[j-1], s[j]
-		}
-	}
-	return s
-}
-
-// tinyTorrent is a minimal valid .torrent body (its info dictionary hashes).
-const tinyTorrent = "d4:infod6:lengthi1e4:name1:a12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee"
 
 func TestLinkHash(t *testing.T) {
 	for in, want := range map[string]string{
@@ -107,7 +37,6 @@ func TestLinkHash(t *testing.T) {
 	}
 }
 
-// qBittorrent before 5.2 answers the whole add with "Ok." or "Fails.".
 func TestQbitAddTorrentsOldServer(t *testing.T) {
 	f := &manageFake{answers: map[string]string{"torrents/info": `[]`, "torrents/add": "Ok."}}
 	q := NewQbittorrent(f.start(t), nil)
@@ -131,7 +60,6 @@ func TestQbitAddTorrentsOldServer(t *testing.T) {
 	}
 }
 
-// qBittorrent 5.2 answers counts, 409 when nothing was added, 415 for a bad file.
 func TestQbitAddTorrentsNewServer(t *testing.T) {
 	f := &manageFake{answers: map[string]string{"torrents/info": `[]`, "torrents/add": `{"success_count":1,"failure_count":1,"pending_count":1,"added_torrent_ids":["x"]}`}}
 	q := NewQbittorrentKey(f.start(t), "k", nil)
@@ -152,8 +80,6 @@ func TestQbitAddTorrentsNewServer(t *testing.T) {
 	}
 }
 
-// A torrent the client already holds, a repeat in the same add and a file
-// that is not a torrent never reach torrents/add.
 func TestQbitAddTorrentsDuplicatesAndBadFiles(t *testing.T) {
 	f := &manageFake{answers: map[string]string{"torrents/info": `[{"hash":"` + strings.ToUpper(hashA) + `","state":"uploading"}]`, "torrents/add": "Ok."}}
 	q := NewQbittorrent(f.start(t), nil)
@@ -218,8 +144,6 @@ func TestQbitBulkActions(t *testing.T) {
 	}
 }
 
-// http(s) .torrent links are fetched by HolyArrs under the Downloader's
-// policy and uploaded as files; the client never sees the address.
 func TestQbitAddFetchesLinksItself(t *testing.T) {
 	src := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -237,7 +161,6 @@ func TestQbitAddFetchesLinksItself(t *testing.T) {
 	f := &manageFake{answers: map[string]string{"torrents/info": `[]`, "torrents/add": "Ok."}}
 	q := NewQbittorrent(f.start(t), nil)
 	ctx := context.Background()
-	// With local network access the lab-local source is reachable.
 	out, err := q.AddTorrents(ctx, AddBatch{Links: []string{src.URL + "/a.torrent?key=secret"}, AllowLocal: true})
 	if err != nil || out.Added != 1 || !strings.Contains(f.last("torrents/add"), "file=a.torrent:d") || strings.Contains(f.last("torrents/add"), "urls=") {
 		t.Fatalf("fetched %+v %v %q", out, err, f.last("torrents/add"))
@@ -248,8 +171,6 @@ func TestQbitAddFetchesLinksItself(t *testing.T) {
 			t.Fatalf("%s: %+v %v", bad, out, err)
 		}
 	}
-	// Without it the dial itself is refused, whatever a name resolves to
-	// (a rebinding name ends at a refused address the same way).
 	before := f.count("torrents/add")
 	for _, l := range []string{src.URL + "/a.torrent", strings.Replace(src.URL, "127.0.0.1", "localhost", 1) + "/a.torrent"} {
 		out, err = q.AddTorrents(ctx, AddBatch{Links: []string{l}})
@@ -341,4 +262,71 @@ func TestOddMetadataLiteralsWithLocal(t *testing.T) {
 	if ip, _ := hostIP("127.1"); !ip.Equal(net.IPv4(127, 0, 0, 1)) {
 		t.Errorf("127.1 read as %v", ip)
 	}
+}
+
+func (f *manageFake) start(t *testing.T) string {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/api/v2/")
+		var form string
+		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
+			_ = r.ParseMultipartForm(1 << 20)
+			parts := []string{}
+			for k, v := range r.MultipartForm.Value {
+				parts = append(parts, k+"="+strings.Join(v, ","))
+			}
+			for _, fh := range r.MultipartForm.File["torrents"] {
+				fd, _ := fh.Open()
+				b, _ := io.ReadAll(fd)
+				fd.Close()
+				parts = append(parts, "file="+fh.Filename+":"+string(b[:1]))
+			}
+			form = strings.Join(sorted(parts), "&")
+		} else {
+			_ = r.ParseForm()
+			form = r.Form.Encode()
+		}
+		f.mu.Lock()
+		f.calls = append(f.calls, path+"?"+form)
+		code, body := f.codes[path], f.answers[path]
+		f.mu.Unlock()
+		if code != 0 {
+			w.WriteHeader(code)
+		}
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL
+}
+
+func (f *manageFake) last(path string) string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i := len(f.calls) - 1; i >= 0; i-- {
+		if strings.HasPrefix(f.calls[i], path+"?") {
+			return f.calls[i]
+		}
+	}
+	return ""
+}
+
+func (f *manageFake) count(path string) int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	n := 0
+	for _, c := range f.calls {
+		if strings.HasPrefix(c, path+"?") {
+			n++
+		}
+	}
+	return n
+}
+
+func sorted(s []string) []string {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
+	return s
 }

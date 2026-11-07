@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// A key or no-sign-in engine keeps qBittorrent's session cookie.
 func TestQbitKeepsSessionCookie(t *testing.T) {
 	var second string
 	n := 0

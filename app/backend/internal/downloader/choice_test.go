@@ -12,43 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func (w *world) addDownloader(t *testing.T, d *domain.Downloader) int64 {
-	t.Helper()
-	if d.PathMap == nil {
-		d.PathMap = []domain.PathMap{}
-	}
-	if d.AfterImport == "" {
-		d.AfterImport = "leave"
-	}
-	if d.State == "" {
-		d.State = "ok"
-	}
-	if d.Category == "" {
-		d.Category = "holyarrs"
-	}
-	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "downloaders", d, domain.System); return err }); err != nil {
-		t.Fatal(err)
-	}
-	return d.ID
-}
-
-func (w *world) downloader(t *testing.T, id int64) domain.Downloader {
-	t.Helper()
-	var d domain.Downloader
-	if err := database.Get(context.Background(), w.s.Read(), "downloaders", id, &d); err != nil {
-		t.Fatal(err)
-	}
-	return d
-}
-
-func names(ds []domain.Downloader) string {
-	var out []string
-	for _, d := range ds {
-		out = append(out, d.Name)
-	}
-	return strings.Join(out, ",")
-}
-
 func TestOrderByPriorityInTurnsWithoutPausedOrResting(t *testing.T) {
 	m := &Manager{}
 	now := time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)
@@ -67,7 +30,6 @@ func TestOrderByPriorityInTurnsWithoutPausedOrResting(t *testing.T) {
 	if len(skipped) != 2 || !strings.Contains(skipped[0], "paused") || !strings.Contains(skipped[1], "resting until 12:01 UTC") {
 		t.Fatalf("skipped %v", skipped)
 	}
-	// The back-off over, it is asked again.
 	back, _ := m.order(all, later.Add(time.Second))
 	if !strings.Contains(names(back), "resting") {
 		t.Fatalf("after the rest: %s", names(back))
@@ -84,7 +46,7 @@ func TestGrabSkipsARestingDownloader(t *testing.T) {
 	}
 	if d := w.downloader(t, dead); d.FailCount != 2 {
 		t.Fatalf("the resting Downloader was asked: %+v", d)
-	} // The sent Event names the movie, the Release, the Downloader and the folder.
+	}
 	es, _, _ := w.s.Events(context.Background(), database.EventFilter{Kinds: []string{"download_sent"}})
 	if len(es) != 1 || es[0].TitleID == nil || es[0].SlotID == nil || es[0].Data["release"] == nil || es[0].Data["downloader"] == nil {
 		t.Fatalf("sent events %+v", es)
@@ -118,7 +80,6 @@ func TestBackoffDoublesAndTheCheckEndsIt(t *testing.T) {
 			t.Fatalf("after failure %d: %+v", i+1, d)
 		}
 	}
-	// It comes back: the check ends the rest.
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE downloaders SET url = (SELECT url FROM downloaders WHERE name = 'Lab qBittorrent') WHERE id = ?", id)
 		return err
@@ -132,7 +93,6 @@ func TestBackoffDoublesAndTheCheckEndsIt(t *testing.T) {
 	if d := w.downloader(t, id); d.State != "ok" || d.FailCount != 0 || d.BackoffUntil != nil || d.LastError != "" || d.CheckedAt == nil {
 		t.Fatalf("after recovery %+v", d)
 	}
-	// A wrong sign-in is said apart from not answering.
 	w.fake.refuse = true
 	m.Forget(1)
 	if _, err := m.Check(ctx, w.downloader(t, 1)); !errors.Is(err, ErrAuth) || w.downloader(t, 1).State != "auth_failed" {
@@ -163,7 +123,6 @@ func TestSpacingPerHost(t *testing.T) {
 	if len(w.slept) != 1 || w.slept[0] != 2*time.Second {
 		t.Fatalf("waits %v: the second send to 10.0.0.5 should wait 2 s, the other host none", w.slept)
 	}
-	// The setting changes the gap; 0 turns it off.
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE settings SET value = '0' WHERE grp = 'links' AND key = ?", SettingSpacing)
 		return err
@@ -183,7 +142,6 @@ func TestGrabsToOneHostAreSpaced(t *testing.T) {
 	if _, err := m.Grab(ctx, w.slotID, w.relID, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	// A second Slot chooses another Release a moment later.
 	var slot2, rel2 int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var sl domain.Slot
@@ -229,7 +187,7 @@ func TestDownloaderOffTheLocalNetworkUnlessAllowed(t *testing.T) {
 	}
 }
 
-// SABnzbd end to end through the manager, on the recorded replies.
+// SABnzbd end to end through the manager, on recorded replies.
 func TestSabnzbdThroughTheManager(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -290,4 +248,41 @@ func TestSabnzbdThroughTheManager(t *testing.T) {
 	if len(w.finshed) != 1 || w.finshed[0] != id {
 		t.Fatalf("OnFinished %v", w.finshed)
 	}
+}
+
+func (w *world) addDownloader(t *testing.T, d *domain.Downloader) int64 {
+	t.Helper()
+	if d.PathMap == nil {
+		d.PathMap = []domain.PathMap{}
+	}
+	if d.AfterImport == "" {
+		d.AfterImport = "leave"
+	}
+	if d.State == "" {
+		d.State = "ok"
+	}
+	if d.Category == "" {
+		d.Category = "holyarrs"
+	}
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "downloaders", d, domain.System); return err }); err != nil {
+		t.Fatal(err)
+	}
+	return d.ID
+}
+
+func (w *world) downloader(t *testing.T, id int64) domain.Downloader {
+	t.Helper()
+	var d domain.Downloader
+	if err := database.Get(context.Background(), w.s.Read(), "downloaders", id, &d); err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
+
+func names(ds []domain.Downloader) string {
+	var out []string
+	for _, d := range ds {
+		out = append(out, d.Name)
+	}
+	return strings.Join(out, ",")
 }

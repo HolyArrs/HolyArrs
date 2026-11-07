@@ -12,47 +12,32 @@ import (
 	"testing"
 )
 
-// fakeQbit is a tiny stand-in for the qBittorrent Web API v2.
+const hash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
+
+var _ TorrentInspector = (*Qbittorrent)(nil)
+
+var (
+	_ Engine = (*Qbittorrent)(nil)
+	_ Engine = (*Sabnzbd)(nil)
+)
+
 type fakeQbit struct {
 	mu       sync.Mutex
-	torrents map[string]map[string]any // by hash
+	torrents map[string]map[string]any
 	files    map[string][]map[string]any
 	added    []map[string]string
 	cats     []string
 	deleted  []string
-	refuse   bool   // answer 403 like a client that wants a key
-	key      string // when set, every call needs Authorization: Bearer key
-	user     string // when set, a sign-in with user and pass is needed (cookie)
+	refuse   bool
+	key      string
+	user     string
 	pass     string
 	signIns  int
-	banned   bool // sign-in answers 403 like a banned address
-	old      bool // sign-in answers 200 Ok./Fails. like qBittorrent before API 2.14
-	prio     []string // every filePrio call as "hash|id|priority"
-	addFails bool     // answer Fails. to an add
-	selected []string // every hashes= and hash= value asked for
-}
-
-func newFake() *fakeQbit {
-	return &fakeQbit{torrents: map[string]map[string]any{}, files: map[string][]map[string]any{}}
-}
-
-func (f *fakeQbit) set(hash string, fields map[string]any) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	t := f.torrents[hash]
-	if t == nil {
-		t = map[string]any{"hash": hash}
-		f.torrents[hash] = t
-	}
-	for k, v := range fields {
-		t[k] = v
-	}
-}
-
-func (f *fakeQbit) drop(hash string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	delete(f.torrents, hash)
+	banned   bool
+	old      bool
+	prio     []string
+	addFails bool
+	selected []string
 }
 
 func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +74,6 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if f.key != "" {
-		// Bearer requests never reach the sign-in group, and a wrong key is 403.
 		if r.Header.Get("Authorization") != "Bearer "+f.key || strings.HasPrefix(r.URL.Path, "/api/v2/auth/") {
 			w.WriteHeader(http.StatusForbidden)
 			return
@@ -179,15 +163,6 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func startFake(t *testing.T) (*fakeQbit, string) {
-	f := newFake()
-	s := httptest.NewServer(f)
-	t.Cleanup(s.Close)
-	return f, s.URL
-}
-
-const hash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
-
 func TestQbitHealthAddGetList(t *testing.T) {
 	f, u := startFake(t)
 	q := NewQbittorrent(u, nil)
@@ -255,7 +230,7 @@ func TestQbitLoginWantedIsAuthError(t *testing.T) {
 
 func TestQbitSendsKeyAsBearer(t *testing.T) {
 	f, u := startFake(t)
-	f.key = "lab-test-key" // test-only
+	f.key = "lab-test-key"
 	ctx := context.Background()
 	q := NewQbittorrentKey(u, "lab-test-key", nil)
 	if _, err := q.Health(ctx); err != nil {
@@ -367,17 +342,39 @@ func TestQbitPropertiesFilesAndPriority(t *testing.T) {
 	}
 }
 
-var _ TorrentInspector = (*Qbittorrent)(nil)
-
-// A third engine only needs the Engine methods.
-var (
-	_ Engine = (*Qbittorrent)(nil)
-	_ Engine = (*Sabnzbd)(nil)
-)
-
 func TestQbitJobCarriesUploadSeedsAndPeers(t *testing.T) {
 	j := qbitTorrent{Hash: "ABC", DLSpeed: 900, UPSpeed: 300, NumSeeds: 12, NumLeechs: 4, State: "downloading"}.job()
 	if j.Speed != 900 || j.UpSpeed != 300 || j.Seeds != 12 || j.Peers != 4 {
 		t.Fatalf("%+v", j)
 	}
+}
+
+func newFake() *fakeQbit {
+	return &fakeQbit{torrents: map[string]map[string]any{}, files: map[string][]map[string]any{}}
+}
+
+func (f *fakeQbit) set(hash string, fields map[string]any) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	t := f.torrents[hash]
+	if t == nil {
+		t = map[string]any{"hash": hash}
+		f.torrents[hash] = t
+	}
+	for k, v := range fields {
+		t[k] = v
+	}
+}
+
+func (f *fakeQbit) drop(hash string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.torrents, hash)
+}
+
+func startFake(t *testing.T) (*fakeQbit, string) {
+	f := newFake()
+	s := httptest.NewServer(f)
+	t.Cleanup(s.Close)
+	return f, s.URL
 }

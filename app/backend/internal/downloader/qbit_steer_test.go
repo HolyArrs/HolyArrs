@@ -10,11 +10,7 @@ import (
 
 const steerA, steerB = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
-func steerFake(t *testing.T, api string) (*manageFake, *Qbittorrent) {
-	t.Helper()
-	f := &manageFake{answers: map[string]string{"app/webapiVersion": api}, codes: map[string]int{}}
-	return f, NewQbittorrent(f.start(t), nil)
-}
+const trackerRows = `[{"url":"** [DHT] **","tier":-1,"status":2},{"url":"** [PeX] **","tier":-1,"status":0},{"url":"https://t.example/abc123/announce","tier":0,"status":2},{"url":"udp://open.example:80","tier":1,"status":4}]`
 
 func TestShareLimits52SendsAction(t *testing.T) {
 	f, q := steerFake(t, "2.15.1")
@@ -153,8 +149,6 @@ func TestJobColumns(t *testing.T) {
 	}
 }
 
-const trackerRows = `[{"url":"** [DHT] **","tier":-1,"status":2},{"url":"** [PeX] **","tier":-1,"status":0},{"url":"https://t.example/abc123/announce","tier":0,"status":2},{"url":"udp://open.example:80","tier":1,"status":4}]`
-
 func TestTrackersFixedRowsAndRefs(t *testing.T) {
 	f, q := steerFake(t, "2.15.1")
 	f.answers["torrents/trackers"] = trackerRows
@@ -254,4 +248,10 @@ func TestMoveAndCap(t *testing.T) {
 	if j := (qbitTorrent{DLLimit: 500, UPLimit: -1}).job(); j.LimitDown != 500 || j.LimitUp != 0 {
 		t.Fatalf("%+v", j)
 	}
+}
+
+func steerFake(t *testing.T, api string) (*manageFake, *Qbittorrent) {
+	t.Helper()
+	f := &manageFake{answers: map[string]string{"app/webapiVersion": api}, codes: map[string]int{}}
+	return f, NewQbittorrent(f.start(t), nil)
 }

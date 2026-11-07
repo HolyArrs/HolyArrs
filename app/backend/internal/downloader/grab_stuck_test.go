@@ -15,32 +15,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// grabRun is the grab Job for the world's Slot at the given try of five.
-func grabRun(w *world, attempt int) *jobs.Run {
-	return &jobs.Run{Job: domain.Job{Subject: &domain.Subject{Type: "slot", ID: w.slotID}, Params: map[string]any{"release_id": float64(w.relID)}, Attempt: attempt, MaxAttempts: 5}}
-}
-
-func (w *world) exec(t *testing.T, q string, args ...any) {
-	t.Helper()
-	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(q, args...)
-		return err
-	}); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func (w *world) releaseState(t *testing.T) (state, reason string) {
-	t.Helper()
-	var r sql.NullString
-	if err := w.s.Read().QueryRow("SELECT state, json_extract(verdict, '$.turned_down_reason') FROM releases WHERE id = ?", w.relID).Scan(&state, &r); err != nil {
-		t.Fatal(err)
-	}
-	return state, r.String
-}
-
-// The same Release chosen again for a Slot whose earlier Download finished
-// and was imported is sent again, not left on "Waiting to import".
 func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
@@ -69,7 +43,6 @@ func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 	if s := w.slot(t); s.State != domain.SlotDownloading || s.ActiveDownloadID == nil || *s.ActiveDownloadID != id {
 		t.Fatalf("slot %s on %v", s.State, s.ActiveDownloadID)
 	}
-	// The client finishes it again: the import is started for it.
 	w.fake.set(hash, map[string]any{"name": "Dune", "state": "uploading", "progress": 1.0, "category": "holyarrs", "save_path": "/data/downloads/complete"})
 	if _, err := m.SyncOnce(ctx); err != nil {
 		t.Fatal(err)
@@ -79,9 +52,6 @@ func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 	}
 }
 
-// A torrent Release with no info hash whose link has no file behind it (the
-// #99 decoy: the Source answers 404) is never handed to qBittorrent: the
-// grab ends at once, the Release is turned down and the Slot is searched again.
 func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 	w, m := setup(t)
 	gone := httptest.NewServer(http.NotFoundHandler())
@@ -106,11 +76,6 @@ func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 	}
 }
 
-// A link to a .torrent file with no info hash from a Source at home (a
-// private site through a Jackett or Prowlarr on the local network, #47):
-// HolyArrs fetches the file, reads its hash and uploads it, and follows the
-// download by that hash. A Source that turns the key down for now (401) is
-// tried again, not turned down.
 func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 	tor := []byte("d8:announce14:http://t/a/ann4:infod6:lengthi3e4:name5:dune.12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee")
 	want, err := torrentFileHash(tor)
@@ -135,8 +100,6 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 		}
 	})
 	t.Run("home tracker kept", func(t *testing.T) {
-		// A Source allowed at home keeps a tracker at home in the file (the
-		// cleaning is for Sources that may not reach the local network).
 		home := []byte("d8:announce32:http://192.168.1.5:9000/announce4:infod6:lengthi3e4:name5:dune.12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee")
 		w, m := setup(t)
 		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { _, _ = rw.Write(home) }))
@@ -165,9 +128,6 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 	})
 }
 
-// A home Source may only be reached at home itself: its Release link to
-// another local address is never fetched, so a link from a site cannot make
-// HolyArrs call a device at home.
 func TestGrabHashlessLocalLinkOnlyTheSourceItself(t *testing.T) {
 	w, m := setup(t)
 	hit := 0
@@ -181,7 +141,6 @@ func TestGrabHashlessLocalLinkOnlyTheSourceItself(t *testing.T) {
 	if hit != 0 || len(w.fake.added) != 0 {
 		t.Fatalf("the device was called %d times, added %v", hit, w.fake.added)
 	}
-	// The Source's own host on another port is another service: refused too.
 	u, _ := url.Parse(dev.URL)
 	w.exec(t, "UPDATE sources SET url = ?", "http://"+u.Hostname()+":1/api")
 	if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); err == nil || hit != 0 {
@@ -189,7 +148,6 @@ func TestGrabHashlessLocalLinkOnlyTheSourceItself(t *testing.T) {
 	}
 }
 
-// A magnet link carries the info hash itself.
 func TestGrabMagnetWithoutInfoHash(t *testing.T) {
 	w, m := setup(t)
 	w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", "magnet:?xt=urn:btih:"+strings.ToUpper(hash)+"&dn=Dune")
@@ -202,9 +160,6 @@ func TestGrabMagnetWithoutInfoHash(t *testing.T) {
 	}
 }
 
-// A Downloader that does not answer keeps the Slot chosen while tries are
-// left; after the last one the Slot goes back to wanted and the Release
-// stays as it was (the Downloader, not the Release, was at fault).
 func TestGrabLastTryFreesTheSlot(t *testing.T) {
 	w, m := setup(t)
 	w.exec(t, "UPDATE downloaders SET url = 'http://127.0.0.1:1'")
@@ -227,4 +182,27 @@ func TestGrabLastTryFreesTheSlot(t *testing.T) {
 	if len(w.failedSlots) != 0 {
 		t.Fatalf("searched again at once: %v", w.failedSlots)
 	}
+}
+
+func grabRun(w *world, attempt int) *jobs.Run {
+	return &jobs.Run{Job: domain.Job{Subject: &domain.Subject{Type: "slot", ID: w.slotID}, Params: map[string]any{"release_id": float64(w.relID)}, Attempt: attempt, MaxAttempts: 5}}
+}
+
+func (w *world) exec(t *testing.T, q string, args ...any) {
+	t.Helper()
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(q, args...)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (w *world) releaseState(t *testing.T) (state, reason string) {
+	t.Helper()
+	var r sql.NullString
+	if err := w.s.Read().QueryRow("SELECT state, json_extract(verdict, '$.turned_down_reason') FROM releases WHERE id = ?", w.relID).Scan(&state, &r); err != nil {
+		t.Fatal(err)
+	}
+	return state, r.String
 }
