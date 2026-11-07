@@ -65,7 +65,14 @@
 	}
 
 	async function done(r: SignInResult) {
-		if (r.done) await goto(to('/'), { replace: true });
+		if (r.done) return void (await goto(to('/'), { replace: true }));
+		// The account has two-factor on: finish with the code on the sign-in page.
+		try {
+			sessionStorage.setItem('holyarrs-2fa-ticket', r.ticket);
+		} catch {
+			// no storage: the sign-in page asks for the name and password again
+		}
+		await goto(to('/login'), { replace: true });
 	}
 
 	async function submit(e: SubmitEvent) {

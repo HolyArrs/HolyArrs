@@ -18,7 +18,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { to } from './paths.ts';
-	import { setFollow } from './follow.ts';
+	import { detailPath } from './title-details.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from './trailer.ts';
 	import { profile, loadProfile, saveDisplayName } from './account/profile.svelte.ts';
@@ -55,15 +55,35 @@
 	// Where Alerts reach this person (email, Discord).
 	let emailReady = $state(true);
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
-	// Follow: the shows and artists I follow.
-	type Followed = { title_id: number; kind: string; name: string; year?: number };
+	// Follow: everything I follow. Library titles, movies and shows not in it yet
+	// (by TMDB id, named here), and albums. `unfollow` is the address that stops one.
+	type Followed = { title_id: number; kind: string; name: string; year?: number; tmdb_id?: string; mbid?: string; artist?: string; unfollow: string };
 	let follows = $state<Followed[]>([]);
+	let unfollowing = $state('');
+	const followKey = (f: Followed) => f.unfollow;
+	const followHref = (f: Followed) => (f.title_id ? `/library/${f.title_id}` : f.mbid ? `/music/album/${encodeURIComponent(f.mbid)}` : f.tmdb_id ? detailPath(f.kind === 'movie' ? 'movie' : 'show', f.tmdb_id) : '');
+	const followKind = (f: Followed) => ({ artist: 'Artist', album: 'Album', movie: 'Movie' })[f.kind] ?? 'Show';
+	function nameFollows(list: Followed[]) {
+		for (const f of list) {
+			if (f.name || !f.tmdb_id) continue;
+			void api.get<Record<string, unknown>>(`/metadata/${f.kind}/${encodeURIComponent(f.tmdb_id)}`).then((m) => {
+				const name = typeof m.name === 'string' ? m.name : typeof m.title === 'string' ? m.title : '';
+				const year = typeof m.year === 'number' && m.year > 0 ? m.year : undefined;
+				if (name) follows = follows.map((x) => (x.unfollow === f.unfollow ? { ...x, name, year } : x));
+			}, () => {});
+		}
+	}
 	async function unfollow(f: Followed) {
+		if (unfollowing) return;
+		unfollowing = f.unfollow;
 		try {
-			await setFollow(api, f.title_id, false);
-			follows = follows.filter((x) => x.title_id !== f.title_id);
+			await api.del(f.unfollow);
+			follows = follows.filter((x) => x.unfollow !== f.unfollow);
+			toasts.push(`Unfollowed ${f.name || followKind(f).toLowerCase()}`, 'ok');
 		} catch (err) {
 			toasts.push("Couldn't unfollow", 'fail', { body: message(err) });
+		} finally {
+			unfollowing = '';
 		}
 	}
 	// Reset my recommendations: Explore's category strip forgets what it learned from my opens.
@@ -137,7 +157,7 @@
 			.catch(() => {});
 		api
 			.get<{ follows: Followed[] }>('/my/follows')
-			.then((r) => (follows = r.follows))
+			.then((r) => (nameFollows((follows = r.follows))))
 			.catch(() => {});
 	});
 	async function saveTargets(e: SubmitEvent) {
@@ -763,11 +783,11 @@
 		<div class="ctl"><span class="chip">{follows.length ? follows.length : 'None'}</span></div>
 		{#if follows.length}
 			<ul class="follows below" data-testid="follows">
-				{#each follows as f (f.title_id)}
+				{#each follows as f (followKey(f))}
 					<li>
-						<a href={to(`/library/${f.title_id}`)}>{f.name}{#if f.year}&nbsp;({f.year}){/if}</a>
-						<span class="xs muted">{f.kind === 'artist' ? 'Artist' : 'Show'}</span>
-						<Button variant="secondary" onclick={() => unfollow(f)}>Unfollow</Button>
+						<a href={to(followHref(f))}>{f.name || 'Loading…'}{#if f.year}&nbsp;({f.year}){/if}{#if f.artist}<span class="muted">{` · ${f.artist}`}</span>{/if}</a>
+						<span class="xs muted">{followKind(f)}</span>
+						<Button variant="secondary" disabled={!!unfollowing} busy={unfollowing === f.unfollow} onclick={() => unfollow(f)}>Unfollow</Button>
 					</li>
 				{/each}
 			</ul>

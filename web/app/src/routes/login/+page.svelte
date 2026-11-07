@@ -209,6 +209,16 @@
 		if (!document.activeElement || document.activeElement === document.body) field.focus({ preventScroll: true });
 	});
 	onMount(() => {
+		// An invite join that needs a two-factor code hands its ticket over here (never in the address).
+		try {
+			const t = sessionStorage.getItem('holyarrs-2fa-ticket');
+			if (t) {
+				sessionStorage.removeItem('holyarrs-2fa-ticket');
+				ticket = t;
+			}
+		} catch {
+			// no storage: they sign in again
+		}
 		calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		recent = recentPeople();
 		const go = () => (glWait = false);
