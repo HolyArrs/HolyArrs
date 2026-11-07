@@ -6,15 +6,7 @@ import (
 	"time"
 )
 
-func day(s string) time.Time {
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
-func TestSeasonOrder(t *testing.T) {
+func TestSeasonOrder_ActiveSoonRest(t *testing.T) {
 	cases := []struct {
 		date, region string
 		want         []string
@@ -35,7 +27,7 @@ func TestSeasonOrder(t *testing.T) {
 	}
 }
 
-func TestSeasonActive(t *testing.T) {
+func TestSeasonActive_Windows(t *testing.T) {
 	if !SeasonActive("halloween", day("2026-10-24"), "us") || SeasonActive("christmas", day("2026-10-24"), "us") {
 		t.Fatal("Oct 24: Halloween on, Christmas off")
 	}
@@ -47,7 +39,7 @@ func TestSeasonActive(t *testing.T) {
 	}
 }
 
-func TestLunarTableKeepsTwoFutureYears(t *testing.T) {
+func TestLunarDates_CoverTwoFutureYears(t *testing.T) {
 	n := 0
 	for _, d := range lunarDates {
 		if d.After(time.Now()) {
@@ -57,4 +49,13 @@ func TestLunarTableKeepsTwoFutureYears(t *testing.T) {
 	if n < 2 {
 		t.Fatalf("lunar table has %d future dates; extend it", n)
 	}
+}
+
+// day parses a YYYY-MM-DD test date as UTC.
+func day(s string) time.Time {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }

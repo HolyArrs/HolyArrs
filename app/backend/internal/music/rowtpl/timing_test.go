@@ -6,9 +6,8 @@ import (
 	"time"
 )
 
-// TestPageCountsTiming reports how long counting every Browse page takes
-// on a real bundle (ROWTPL_BUNDLE); skipped without one.
-func TestPageCountsTiming(t *testing.T) {
+// TestPageCounts_Timing reports how long counting every Browse page takes on a real bundle (ROWTPL_BUNDLE). It skips without one.
+func TestPageCounts_Timing(t *testing.T) {
 	path := os.Getenv("ROWTPL_BUNDLE")
 	if path == "" {
 		t.Skip("set ROWTPL_BUNDLE")

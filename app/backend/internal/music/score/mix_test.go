@@ -22,33 +22,7 @@ type mixFixture struct {
 	} `json:"artists"`
 }
 
-// mixSet reads a fixture (testdata/explore_v7, weights pinned) as a taste
-// set, its S and its names.
-func mixSet(t *testing.T, name string) ([]MixArtist, func(a, b string) float64, map[string]string, []string) {
-	t.Helper()
-	raw, err := os.ReadFile("../../api/testdata/explore_v7/" + name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var fx mixFixture
-	if err := json.Unmarshal(raw, &fx); err != nil {
-		t.Fatal(err)
-	}
-	pair := map[[2]string]float64{}
-	names := map[string]string{}
-	var set []MixArtist
-	for _, a := range fx.Artists {
-		names[a.MBID] = a.Name
-		set = append(set, MixArtist{ID: a.MBID, A: a.A, Share: Shares(a.Genres)})
-		for _, s := range a.Similar {
-			k := [2]string{min(a.MBID, s.MBID), max(a.MBID, s.MBID)}
-			pair[k] = max(pair[k], s.S)
-		}
-	}
-	return set, func(x, y string) float64 { return pair[[2]string{min(x, y), max(x, y)}] }, names, fx.Expect
-}
-
-func TestMixesIndie(t *testing.T) {
+func TestClusters_IndieFixture(t *testing.T) {
 	set, S, names, want := mixSet(t, "household_indie.json")
 	mixes := Clusters(set, S)
 	var got []string
@@ -58,8 +32,6 @@ func TestMixesIndie(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("mixes %q, want %q", got, want)
 	}
-	// Same input, same mixes and seeds; seeds come from the top 6 and
-	// rotate by day.
 	again := Clusters(set, S)
 	if !reflect.DeepEqual(mixes, again) {
 		t.Fatal("clustering is not deterministic")
@@ -79,17 +51,15 @@ func TestMixesIndie(t *testing.T) {
 	}
 }
 
-func TestMixesTiny(t *testing.T) {
+func TestClusters_TinySet(t *testing.T) {
 	set, S, _, _ := mixSet(t, "household_tiny.json")
 	if m := Clusters(set, S); len(m) != 0 {
 		t.Fatalf("4 unrelated artists gave %d mixes", len(m))
 	}
 }
 
-func TestMixNoVotesJoinsNeighbour(t *testing.T) {
+func TestClusters_NoVotesJoinsNeighbour(t *testing.T) {
 	set, S, _, _ := mixSet(t, "household_indie.json")
-	// An artist with no genre votes joins its best S neighbour's mix
-	// (membership only).
 	bare := MixArtist{ID: "zz", A: 0.1}
 	near := set[0].ID
 	mixes := Clusters(append(set, bare), func(a, b string) float64 {
@@ -114,7 +84,7 @@ func TestMixNoVotesJoinsNeighbour(t *testing.T) {
 	}
 }
 
-func TestV7Formulas(t *testing.T) {
+func TestMixScores_ExactValues(t *testing.T) {
 	near := func(a, b float64) bool { return a-b < 1e-9 && b-a < 1e-9 }
 	if !near(ScoreMix(1, 0.5, 0.4, 0.2), 0.45+0.125+0.08+0.02) {
 		t.Fatal("mix score")
@@ -133,7 +103,7 @@ func TestV7Formulas(t *testing.T) {
 	}
 }
 
-func TestAnniversaryWindow(t *testing.T) {
+func TestAnniversary_Window(t *testing.T) {
 	day := func(s string) time.Time { d, _ := time.Parse("2006-01-02", s); return d.Add(12 * time.Hour) }
 	if n, _, ok := Anniversary("2001-10-30", day("2026-10-23")); !ok || n != 25 {
 		t.Fatalf("2001-10-30 on 2026-10-23: %d %v", n, ok)
@@ -145,6 +115,32 @@ func TestAnniversaryWindow(t *testing.T) {
 		t.Fatal("−7 days must count")
 	}
 	if _, _, ok := Anniversary("2001-10-15", day("2026-10-23")); ok {
-		t.Fatal("−8 days must not count") // 2026-10-15 is 8 days back
+		t.Fatal("−8 days must not count")
 	}
+}
+
+// mixSet reads a fixture as a taste set, its similarity function, the names
+// and the ids.
+func mixSet(t *testing.T, name string) ([]MixArtist, func(a, b string) float64, map[string]string, []string) {
+	t.Helper()
+	raw, err := os.ReadFile("../../api/testdata/explore_v7/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fx mixFixture
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatal(err)
+	}
+	pair := map[[2]string]float64{}
+	names := map[string]string{}
+	var set []MixArtist
+	for _, a := range fx.Artists {
+		names[a.MBID] = a.Name
+		set = append(set, MixArtist{ID: a.MBID, A: a.A, Share: Shares(a.Genres)})
+		for _, s := range a.Similar {
+			k := [2]string{min(a.MBID, s.MBID), max(a.MBID, s.MBID)}
+			pair[k] = max(pair[k], s.S)
+		}
+	}
+	return set, func(x, y string) float64 { return pair[[2]string{min(x, y), max(x, y)}] }, names, fx.Expect
 }

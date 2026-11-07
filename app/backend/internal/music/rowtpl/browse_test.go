@@ -7,27 +7,7 @@ import (
 	"time"
 )
 
-// browseBundle has every Browse key with a few albums each.
-func browseBundle() *Bundle {
-	b := &Bundle{Keys: map[string][]Member{}, Names: map[string]KeyInfo{}}
-	n := 0
-	for _, sec := range BrowseLayout {
-		for _, t := range sec.Tiles {
-			b.Names[t.Key] = KeyInfo{Name: t.Name, Kind: kindOf(t.Key)}
-			for k := 0; k < 5; k++ {
-				b.Items = append(b.Items, Item{ID: fmt.Sprintf("rg%d", n), Kind: "a", Title: "A", Artist: "B", ArtistID: "ar", Listens: int64(1000 - k)})
-				b.Keys[t.Key] = append(b.Keys[t.Key], Member{I: n, T: 900})
-				n++
-			}
-			// A shared top album: covers must still differ across tiles.
-			b.Keys[t.Key] = append([]Member{{I: 0, T: 1000}}, b.Keys[t.Key]...)
-		}
-	}
-	b.index()
-	return b
-}
-
-func TestBrowseSections(t *testing.T) {
+func TestBrowseSections_Layout(t *testing.T) {
 	secs := BrowseSections(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
 	want := map[string]int{"genres": 22, "moods": 12, "seasons": 12, "decades": 7, "activities": 8}
 	total := 0
@@ -60,7 +40,7 @@ func TestBrowseSections(t *testing.T) {
 	}
 }
 
-func TestBrowseTilesHaveNoNeighbourWithTheSameHue(t *testing.T) {
+func TestBrowseSections_NeighbourHuesDiffer(t *testing.T) {
 	for _, cols := range []int{2, 3, 4} {
 		for _, s := range BrowseSections(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil) {
 			hues := Hues(len(s.Tiles), cols)
@@ -76,7 +56,7 @@ func TestBrowseTilesHaveNoNeighbourWithTheSameHue(t *testing.T) {
 	}
 }
 
-func TestExploreBrowseTiles(t *testing.T) {
+func TestExploreTiles_MixKinds(t *testing.T) {
 	secs := BrowseSections(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
 	got := ExploreTiles(secs)
 	if len(got) != 18 {
@@ -97,7 +77,6 @@ func TestExploreBrowseTiles(t *testing.T) {
 	if kinds["genre"] != 8 || kinds["mood"] != 4 || kinds["season"] != 2 || kinds["decade"] != 2 || kinds["activity"] != 2 {
 		t.Fatalf("kinds = %v, want 8 genres, 4 moods, 2 seasons, 2 decades, 2 activities", kinds)
 	}
-	// The first two rows (up to 7 across) alternate kinds, genres leading.
 	for i, want := range []string{"genre", "genre", "mood", "genre", "season", "genre", "decade", "mood"} {
 		if kindOf(got[i].Key) != want {
 			t.Fatalf("tile %d is %s, want a %s", i, got[i].Key, want)
@@ -116,8 +95,8 @@ func TestExploreBrowseTiles(t *testing.T) {
 	}
 }
 
-func TestExploreTilesWithAShortBundle(t *testing.T) {
-	// Out-of-season seasons and thin pages leave fewer tiles: the mix skips what is missing.
+func TestExploreTiles_ShortBundle(t *testing.T) {
+	// Thin pages leave fewer tiles, so the mix skips the missing kinds.
 	secs := []BrowseSection{{ID: "genres", Tiles: []BrowseTile{{Key: "genre:pop", Covers: []string{"c"}}, {Key: "genre:rock", Covers: []string{"c"}}}}, {ID: "decades", Tiles: []BrowseTile{{Key: "decade:1980s", Covers: []string{"c"}}}}}
 	got := ExploreTiles(secs)
 	if len(got) != 3 || got[0].Key != "genre:pop" || got[1].Key != "genre:rock" || got[2].Key != "decade:1980s" {
@@ -128,23 +107,11 @@ func TestExploreTilesWithAShortBundle(t *testing.T) {
 	}
 }
 
-// itemOfCover answers the bundle item index behind a cover address.
-func itemOfCover(b *Bundle, cover string) int {
-	id := strings.TrimPrefix(cover, "/api/v1/music-trending/art/album/")
-	for i, it := range b.Items {
-		if it.ID == id {
-			return i
-		}
-	}
-	return -1
-}
-
-// The cover rule (Luis, 2026-10-27): a tile's covers come only from albums
-// whose picture is stored or known to load.
-func TestBrowseTilesTakeCoversOnlyFromAlbumsWithArt(t *testing.T) {
+// TestBrowseSectionsArt_CoversNeedArt checks that covers come only from albums whose picture is stored or known to load.
+func TestBrowseSectionsArt_CoversNeedArt(t *testing.T) {
 	b := browseBundle()
 	now := time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)
-	// Only the odd albums have art (the shared top album 0 has none).
+	// Only odd albums have art, so the shared top album 0 has none.
 	hasArt := func(i int) bool { return i%2 == 1 }
 	secs := BrowseSectionsArt(b, now, "us", nil, hasArt)
 	if len(secs) == 0 {
@@ -171,10 +138,10 @@ func TestBrowseTilesTakeCoversOnlyFromAlbumsWithArt(t *testing.T) {
 	}
 }
 
-func TestBrowseTileWithoutAnAlbumWithArtIsLeftOut(t *testing.T) {
+func TestBrowseSectionsArt_TileWithoutArtLeftOut(t *testing.T) {
 	b := browseBundle()
 	now := time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)
-	// Blues has nothing with art: its own five albums (and the shared one) have none.
+	// Blues has no album with art, its own or the shared one.
 	noArt := map[int]bool{0: true}
 	for _, m := range b.Keys["genre:blues"] {
 		noArt[m.I] = true
@@ -194,7 +161,7 @@ func TestBrowseTileWithoutAnAlbumWithArtIsLeftOut(t *testing.T) {
 	}
 }
 
-func TestBrowseSectionWithoutAnyArtIsLeftOut(t *testing.T) {
+func TestBrowseSectionsArt_SectionWithoutArtLeftOut(t *testing.T) {
 	b := browseBundle()
 	now := time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)
 	noArt := map[int]bool{0: true}
@@ -210,7 +177,7 @@ func TestBrowseSectionWithoutAnyArtIsLeftOut(t *testing.T) {
 	}
 }
 
-func TestBrowseWithoutACheckKeepsEveryTileWithAlbums(t *testing.T) {
+func TestBrowseSectionsArt_NoCheckKeepsAlbumTiles(t *testing.T) {
 	secs := BrowseSectionsArt(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil, nil)
 	n := 0
 	for _, s := range secs {
@@ -233,7 +200,7 @@ func TestBrowseWithoutACheckKeepsEveryTileWithAlbums(t *testing.T) {
 	}
 }
 
-func TestVisibleSectionsHideThinPagesAndOutOfSeason(t *testing.T) {
+func TestVisibleSections_ThinAndOutOfSeason(t *testing.T) {
 	secs := BrowseSections(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
 	counts := map[string]int{}
 	for _, s := range secs {
@@ -242,7 +209,7 @@ func TestVisibleSectionsHideThinPagesAndOutOfSeason(t *testing.T) {
 		}
 	}
 	counts["genre:blues"] = 10       // thin: hidden
-	counts["season:christmas"] = 30  // upcoming (Nov 15, within 45 days): shown
+	counts["season:christmas"] = 30  // starts within 45 days: shown
 	counts["season:valentines"] = 30 // far off: hidden
 	vis := VisibleSections(secs, counts, time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us")
 	shown := map[string]bool{}
@@ -258,7 +225,7 @@ func TestVisibleSectionsHideThinPagesAndOutOfSeason(t *testing.T) {
 	}
 }
 
-func TestPageCounts(t *testing.T) {
+func TestPageCounts_CountsRows(t *testing.T) {
 	b := fakeBundle()
 	got := PageCounts(b, time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil, []string{"genre:rock", "mood:chill", "genre:nope"})
 	if got["genre:rock"] < 12 || got["mood:chill"] == 0 || got["genre:nope"] != 0 {
@@ -266,7 +233,7 @@ func TestPageCounts(t *testing.T) {
 	}
 }
 
-func TestSimilarPages(t *testing.T) {
+func TestSimilar_SharedAlbums(t *testing.T) {
 	b := browseBundle()
 	secs := BrowseSections(b, time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
 	got := Similar(b, "genre:blues", secs, 4)
@@ -278,4 +245,34 @@ func TestSimilarPages(t *testing.T) {
 			t.Fatalf("similar tile %s", tl.Key)
 		}
 	}
+}
+
+// browseBundle builds a bundle with every Browse key holding a few albums.
+func browseBundle() *Bundle {
+	b := &Bundle{Keys: map[string][]Member{}, Names: map[string]KeyInfo{}}
+	n := 0
+	for _, sec := range BrowseLayout {
+		for _, t := range sec.Tiles {
+			b.Names[t.Key] = KeyInfo{Name: t.Name, Kind: kindOf(t.Key)}
+			for k := 0; k < 5; k++ {
+				b.Items = append(b.Items, Item{ID: fmt.Sprintf("rg%d", n), Kind: "a", Title: "A", Artist: "B", ArtistID: "ar", Listens: int64(1000 - k)})
+				b.Keys[t.Key] = append(b.Keys[t.Key], Member{I: n, T: 900})
+				n++
+			}
+			b.Keys[t.Key] = append([]Member{{I: 0, T: 1000}}, b.Keys[t.Key]...)
+		}
+	}
+	b.index()
+	return b
+}
+
+// itemOfCover answers the bundle item index behind a cover address.
+func itemOfCover(b *Bundle, cover string) int {
+	id := strings.TrimPrefix(cover, "/api/v1/music-trending/art/album/")
+	for i, it := range b.Items {
+		if it.ID == id {
+			return i
+		}
+	}
+	return -1
 }

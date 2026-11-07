@@ -13,7 +13,7 @@ var slotRe = regexp.MustCompile(`\{[a-z0-9]+\}`)
 
 var allowedSlots = map[string]bool{"{genre}": true, "{genre2}": true, "{substyle}": true, "{mood}": true, "{season}": true, "{decade}": true, "{name}": true, "{for}": true, "{activity}": true, "{basis}": true, "{year}": true, "{n}": true, "{country}": true, "{place}": true, "{neighbor}": true, "{area}": true, "{artist}": true, "{mix}": true, "{artists}": true, "{artist2}": true}
 
-func TestCatalogLint(t *testing.T) {
+func TestCatalog_Lint(t *testing.T) {
 	if len(Catalog) < 150 {
 		t.Fatalf("catalog has %d templates, want at least 150", len(Catalog))
 	}
@@ -62,7 +62,7 @@ func TestCatalogLint(t *testing.T) {
 	}
 }
 
-func TestCatalogTitlesFitWithLongestNames(t *testing.T) {
+func TestCatalog_TitlesFitLongestNames(t *testing.T) {
 	long := map[string]string{"{genre}": "Soul & funk", "{genre2}": "Soul & funk", "{substyle}": "Alternative hip-hop", "{mood}": "High-energy", "{season}": "Día de los Muertos",
 		"{decade}": "60s", "{name}": "Día de los Muertos", "{for}": "for a night in", "{activity}": "chill at home", "{year}": "2026", "{n}": "50",
 		"{country}": "Dominican Rep.", "{place}": "in Dominican Rep.", "{neighbor}": "in Dominican Rep.", "{area}": "Asia-Pacific"}
@@ -88,7 +88,7 @@ func TestCatalogTitlesFitWithLongestNames(t *testing.T) {
 	}
 }
 
-func TestCatalogCoversEveryPageKind(t *testing.T) {
+func TestCatalog_CoversEveryPageKind(t *testing.T) {
 	n := map[byte]int{}
 	for _, tp := range Catalog {
 		for i := 0; i < len(tp.Pages); i++ {
@@ -102,10 +102,8 @@ func TestCatalogCoversEveryPageKind(t *testing.T) {
 	}
 }
 
-// "If you like {genre}, try {genre2}" is gone: the catalog has no listener
-// overlap between a genre's artists and another genre's, so the row showed
-// albums far from the page (rock and pop on the jazz page).
-func TestNoGenreJumpRow(t *testing.T) {
+// TestCatalog_NoGenreJumpRow checks the "If you like {genre}, try {genre2}" row stays gone. The catalog has no listener overlap between genres, so it showed albums far from the page.
+func TestCatalog_NoGenreJumpRow(t *testing.T) {
 	for _, tp := range Catalog {
 		if strings.Contains(tp.Title, "try {genre2}") {
 			t.Fatalf("%s %q still in the catalog", tp.ID, tp.Title)

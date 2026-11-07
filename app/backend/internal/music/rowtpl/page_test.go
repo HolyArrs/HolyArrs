@@ -10,102 +10,7 @@ import (
 	"time"
 )
 
-// fakeBundle makes a catalog: 400 rock albums by 120 artists across five
-// decades, some charting, some tagged chill (own tag on even albums),
-// plus their artists.
-func fakeBundle() *Bundle {
-	b := &Bundle{Keys: map[string][]Member{}, Names: map[string]KeyInfo{
-		"genre:rock": {Name: "Rock", Kind: "genre"}, "mood:chill": {Name: "Chill", Kind: "mood"},
-		"decade:1990s": {Name: "90s", Kind: "decade"}, "decade:2000s": {Name: "00s", Kind: "decade"}, "decade:2010s": {Name: "10s", Kind: "decade"},
-		"decade:1980s": {Name: "80s", Kind: "decade"}, "decade:2020s": {Name: "20s", Kind: "decade"},
-		"sub:grunge": {Name: "Grunge", Kind: "sub", Parent: "genre:rock"},
-	}}
-	countries := []string{"us", "gb", "de", "br", "mx", "fr"}
-	for a := 0; a < 120; a++ {
-		for k := 0; k < 4; k++ {
-			n := a*4 + k
-			y := 1980 + (n*7)%46
-			it := Item{ID: fmt.Sprintf("rg%03d", n), Kind: "a", Title: fmt.Sprintf("Album %d", n), Artist: fmt.Sprintf("Artist %d", a), ArtistID: fmt.Sprintf("ar%03d", a),
-				Date: fmt.Sprintf("%d-03-01", y), Type: "Album", Listens: int64(1000000 / (n + 1)), Users: int64(10000/(n+1) + 1 + n%7), Debut: k == 0}
-			if n%5 == 0 {
-				it.C = map[string]int{}
-				for ci, c := range countries[:1+n%6] {
-					it.C[c] = 1 + (n+ci*13)%100
-				}
-				it.P = (101 - 1 - n%100) * 10
-				it.G = map[string]int{"us": 100 + n%300, "gb": 50 + n%200}
-			}
-			if n < 60 {
-				it.R[rWeek] = n + 1
-				it.R[rThisYear] = n + 2
-			}
-			if n%9 == 0 {
-				it.Date = time.Date(2026, 10, 1+n%20, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
-			}
-			b.Items = append(b.Items, it)
-			i := len(b.Items) - 1
-			b.Keys["genre:rock"] = append(b.Keys["genre:rock"], Member{I: i, T: 600 + n%400})
-			if n%2 == 0 {
-				b.Keys["mood:chill"] = append(b.Keys["mood:chill"], Member{I: i, T: 400, Own: n%4 == 0})
-			}
-			if n%3 == 0 {
-				b.Keys["sub:grunge"] = append(b.Keys["sub:grunge"], Member{I: i, T: 700})
-			}
-			dk := fmt.Sprintf("decade:%d0s", y/10)
-			b.Keys[dk] = append(b.Keys[dk], Member{I: i, T: 1000, Own: true})
-		}
-		b.Items = append(b.Items, Item{ID: fmt.Sprintf("ar%03d", a), Kind: "r", Title: fmt.Sprintf("Artist %d", a), Listens: int64(2000000 / (a + 1)), Users: int64(5000/(a+1) + 3)})
-		b.Keys["genre:rock"] = append(b.Keys["genre:rock"], Member{I: len(b.Items) - 1, T: 800})
-	}
-	b.index()
-	return b
-}
-
-func pageCtx(b *Bundle, kind, key string) *Ctx {
-	return &Ctx{B: b, Kind: kind, Key: key, Region: "us", Now: time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), Member: 1}
-}
-
-func checkRows(t *testing.T, c *Ctx, rows []Row) {
-	t.Helper()
-	seenAlbum := map[string]string{}
-	for _, r := range rows {
-		if len(r.Items) < RowMin {
-			t.Errorf("%s: %d items", r.ID, len(r.Items))
-		}
-		if len(r.Items) > 20 {
-			t.Errorf("%s: %d items, over 20", r.ID, len(r.Items))
-		}
-		if r.Reason == "" || strings.Contains(r.Reason, "{") || strings.Contains(r.Title, "{") {
-			t.Errorf("%s: unfilled text %q / %q", r.ID, r.Title, r.Reason)
-		}
-		if len([]rune(r.Title)) > 40 {
-			t.Errorf("%s: title over 40: %q", r.ID, r.Title)
-		}
-		per := map[string]int{}
-		for _, i := range r.Items {
-			it := c.it(i)
-			if it.Kind == "a" {
-				if o, dup := seenAlbum[it.ID]; dup {
-					t.Errorf("album %s in %s and %s", it.ID, o, r.ID)
-				}
-				seenAlbum[it.ID] = r.ID
-			}
-			per[c.artistOf(i)]++
-		}
-		if r.Shape != "round" && r.Template != "G13" {
-			if len(per) < MinArtists {
-				t.Errorf("%s: %d artists", r.ID, len(per))
-			}
-			for a, n := range per {
-				if n > 2 {
-					t.Errorf("%s: %d items by %s", r.ID, n, a)
-				}
-			}
-		}
-	}
-}
-
-func TestGenrePageRowsKeepTheRules(t *testing.T) {
+func TestBuild_GenrePageKeepsRules(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	rows := Build(c)
 	if len(rows) < 12 {
@@ -123,7 +28,7 @@ func TestGenrePageRowsKeepTheRules(t *testing.T) {
 	}
 }
 
-func TestSpotlightItemsStayOffTheRows(t *testing.T) {
+func TestSpotlight_ItemsStayOffRows(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	spot := Spotlight(c)
 	if len(spot) != SpotlightMax {
@@ -148,10 +53,10 @@ func TestSpotlightItemsStayOffTheRows(t *testing.T) {
 	}
 }
 
-func TestLibraryKeys(t *testing.T) {
+func TestLibraryKeys_GenresAndDecade(t *testing.T) {
 	b := fakeBundle()
 	l := &Lib{Artists: map[string]float64{"ar001": 1}, Albums: map[string]bool{}}
-	for _, i := range []int{0, 1} { // Artist 0's albums
+	for _, i := range []int{0, 1} {
 		l.Albums[b.Items[i].ID] = true
 	}
 	g, d := LibraryKeys(b, l)
@@ -163,7 +68,7 @@ func TestLibraryKeys(t *testing.T) {
 	}
 }
 
-func TestCandidatesForExplore(t *testing.T) {
+func TestCandidates_Explore(t *testing.T) {
 	c := pageCtx(fakeBundle(), "explore", "")
 	cands := Candidates(c)
 	if len(cands) == 0 {
@@ -179,7 +84,7 @@ func TestCandidatesForExplore(t *testing.T) {
 	}
 }
 
-func TestPageIsStableWithinADay(t *testing.T) {
+func TestBuild_StableWithinDay(t *testing.T) {
 	b := fakeBundle()
 	a := Build(pageCtx(b, "genre", "genre:rock"))
 	c2 := pageCtx(b, "genre", "genre:rock")
@@ -195,7 +100,7 @@ func TestPageIsStableWithinADay(t *testing.T) {
 	}
 }
 
-func TestBasisFollowsTheRowItems(t *testing.T) {
+func TestBasis_FollowsRowItems(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	var own, mixed []int
 	for _, m := range c.B.Keys["mood:chill"] {
@@ -216,7 +121,7 @@ func TestBasisFollowsTheRowItems(t *testing.T) {
 	}
 }
 
-func TestMoodAndDecadePagesKeepTheRules(t *testing.T) {
+func TestBuild_MoodAndDecadePagesKeepRules(t *testing.T) {
 	b := fakeBundle()
 	for _, k := range []string{"mood:chill", "decade:1990s"} {
 		c := pageCtx(b, kindOf(k), k)
@@ -228,9 +133,8 @@ func TestMoodAndDecadePagesKeepTheRules(t *testing.T) {
 	}
 }
 
-// TestDryRun builds every Browse page from a real bundle (ROWTPL_BUNDLE)
-// and writes the row counts (ROWTPL_REPORT). Skipped without a bundle.
-func TestDryRun(t *testing.T) {
+// TestBuild_DryRunRealBundle builds every Browse page from a real bundle (ROWTPL_BUNDLE) and writes the row counts (ROWTPL_REPORT). It skips without a bundle.
+func TestBuild_DryRunRealBundle(t *testing.T) {
 	path := os.Getenv("ROWTPL_BUNDLE")
 	if path == "" {
 		t.Skip("set ROWTPL_BUNDLE to a bundle.json")
@@ -244,9 +148,9 @@ func TestDryRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC()
-	// Optional live shelves (ROWTPL_SHELVES): the region's list blocks.
 	var blocks map[string][]string
 	neighbor := ""
+	// ROWTPL_SHELVES optionally gives the region's live list blocks.
 	if sp := os.Getenv("ROWTPL_SHELVES"); sp != "" {
 		var sh struct {
 			Neighbor string `json:"neighbor_region"`
@@ -308,7 +212,7 @@ func TestDryRun(t *testing.T) {
 	}
 }
 
-func TestAlbumsWithoutArtistIDStillCapPerArtist(t *testing.T) {
+func TestBuild_NoArtistIDStillCapsPerArtist(t *testing.T) {
 	b := fakeBundle()
 	for i := range b.Items {
 		if b.Items[i].Kind == "a" && i%3 == 0 {
@@ -320,7 +224,7 @@ func TestAlbumsWithoutArtistIDStillCapPerArtist(t *testing.T) {
 	checkRows(t, c, Build(c))
 }
 
-func TestTitleNames(t *testing.T) {
+func TestRender_TitleNames(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	if got := c.country("cm"); got != "Cameroon" {
 		t.Fatalf("cm = %q", got)
@@ -332,7 +236,7 @@ func TestTitleNames(t *testing.T) {
 	}
 }
 
-func TestAtMostOneSingleYearRowPerPage(t *testing.T) {
+func TestBuild_OneSingleYearRowPerPage(t *testing.T) {
 	for _, k := range []string{"genre:rock", "decade:1990s", "mood:chill"} {
 		c := pageCtx(fakeBundle(), kindOf(k), k)
 		n := 0
@@ -347,7 +251,7 @@ func TestAtMostOneSingleYearRowPerPage(t *testing.T) {
 	}
 }
 
-func TestCountryRowsPickNearOrBigMarkets(t *testing.T) {
+func TestBuild_CountryRowsPickNearOrBigMarkets(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	for _, v := range c.slotValues(Catalog[indexOf("D05")]) {
 		near := false
@@ -364,7 +268,7 @@ func TestCountryRowsPickNearOrBigMarkets(t *testing.T) {
 	}
 }
 
-func TestSeedsBelongToThePage(t *testing.T) {
+func TestBuild_SeedsBelongToPage(t *testing.T) {
 	b := fakeBundle()
 	c := pageCtx(b, "genre", "genre:rock")
 	c.Lib = &Lib{Artists: map[string]float64{"ar001": 1}, Seeds: []Seed{{ID: "ar001", Name: "In"}, {ID: "zz-outside", Name: "Out"}}}
@@ -376,7 +280,7 @@ func TestSeedsBelongToThePage(t *testing.T) {
 	}
 }
 
-func TestLookupAnswersCatalogItems(t *testing.T) {
+func TestBundleLookup_CatalogItems(t *testing.T) {
 	b := fakeBundle()
 	if it, ok := b.Lookup("album", "rg001"); !ok || it.Title != "Album 1" || it.Artist != "Artist 0" {
 		t.Fatalf("album %+v %v", it, ok)
@@ -392,9 +296,8 @@ func TestLookupAnswersCatalogItems(t *testing.T) {
 	}
 }
 
-// PageItems holds every item any member's page shows (with an empty
-// library): the Spotlight and every row, whatever the day's order.
-func TestPageItemsHoldEveryShownItem(t *testing.T) {
+// TestPageItems_HoldEveryShownItem checks that PageItems holds the Spotlight and every row item of any member's page, whatever the day's order.
+func TestPageItems_HoldEveryShownItem(t *testing.T) {
 	b := fakeBundle()
 	for _, key := range []string{"genre:rock", "mood:chill", "decade:1990s"} {
 		c := pageCtx(b, kindOf(key), key)
@@ -421,10 +324,8 @@ func TestPageItemsHoldEveryShownItem(t *testing.T) {
 	}
 }
 
-// Items with a stored picture come first in every row (initials only at
-// the tail), a row needs MinPictured of them, and the Spotlight takes only
-// pictured items. Pages stay full.
-func TestRowsPutStoredPicturesFirst(t *testing.T) {
+// TestBuild_StoredPicturesFirst checks that pictured items come first in every row, a row needs MinPictured of them, the Spotlight takes only pictured items and pages stay full.
+func TestBuild_StoredPicturesFirst(t *testing.T) {
 	b := fakeBundle()
 	c := pageCtx(b, "genre", "genre:rock")
 	all := len(Build(c))
@@ -453,5 +354,100 @@ func TestRowsPutStoredPicturesFirst(t *testing.T) {
 	c.HasArt = func(int) bool { return false }
 	if n := len(Build(c)); n != 0 {
 		t.Fatalf("no pictures at all: %d rows", n)
+	}
+}
+
+// fakeBundle builds 400 rock albums by 120 artists across five decades. Some chart and some are tagged chill, with the own tag on even albums. Their artists are included.
+func fakeBundle() *Bundle {
+	b := &Bundle{Keys: map[string][]Member{}, Names: map[string]KeyInfo{
+		"genre:rock": {Name: "Rock", Kind: "genre"}, "mood:chill": {Name: "Chill", Kind: "mood"},
+		"decade:1990s": {Name: "90s", Kind: "decade"}, "decade:2000s": {Name: "00s", Kind: "decade"}, "decade:2010s": {Name: "10s", Kind: "decade"},
+		"decade:1980s": {Name: "80s", Kind: "decade"}, "decade:2020s": {Name: "20s", Kind: "decade"},
+		"sub:grunge": {Name: "Grunge", Kind: "sub", Parent: "genre:rock"},
+	}}
+	countries := []string{"us", "gb", "de", "br", "mx", "fr"}
+	for a := 0; a < 120; a++ {
+		for k := 0; k < 4; k++ {
+			n := a*4 + k
+			y := 1980 + (n*7)%46
+			it := Item{ID: fmt.Sprintf("rg%03d", n), Kind: "a", Title: fmt.Sprintf("Album %d", n), Artist: fmt.Sprintf("Artist %d", a), ArtistID: fmt.Sprintf("ar%03d", a),
+				Date: fmt.Sprintf("%d-03-01", y), Type: "Album", Listens: int64(1000000 / (n + 1)), Users: int64(10000/(n+1) + 1 + n%7), Debut: k == 0}
+			if n%5 == 0 {
+				it.C = map[string]int{}
+				for ci, c := range countries[:1+n%6] {
+					it.C[c] = 1 + (n+ci*13)%100
+				}
+				it.P = (101 - 1 - n%100) * 10
+				it.G = map[string]int{"us": 100 + n%300, "gb": 50 + n%200}
+			}
+			if n < 60 {
+				it.R[rWeek] = n + 1
+				it.R[rThisYear] = n + 2
+			}
+			if n%9 == 0 {
+				it.Date = time.Date(2026, 10, 1+n%20, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+			}
+			b.Items = append(b.Items, it)
+			i := len(b.Items) - 1
+			b.Keys["genre:rock"] = append(b.Keys["genre:rock"], Member{I: i, T: 600 + n%400})
+			if n%2 == 0 {
+				b.Keys["mood:chill"] = append(b.Keys["mood:chill"], Member{I: i, T: 400, Own: n%4 == 0})
+			}
+			if n%3 == 0 {
+				b.Keys["sub:grunge"] = append(b.Keys["sub:grunge"], Member{I: i, T: 700})
+			}
+			dk := fmt.Sprintf("decade:%d0s", y/10)
+			b.Keys[dk] = append(b.Keys[dk], Member{I: i, T: 1000, Own: true})
+		}
+		b.Items = append(b.Items, Item{ID: fmt.Sprintf("ar%03d", a), Kind: "r", Title: fmt.Sprintf("Artist %d", a), Listens: int64(2000000 / (a + 1)), Users: int64(5000/(a+1) + 3)})
+		b.Keys["genre:rock"] = append(b.Keys["genre:rock"], Member{I: len(b.Items) - 1, T: 800})
+	}
+	b.index()
+	return b
+}
+
+// pageCtx makes a build context on a fixed day.
+func pageCtx(b *Bundle, kind, key string) *Ctx {
+	return &Ctx{B: b, Kind: kind, Key: key, Region: "us", Now: time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), Member: 1}
+}
+
+// checkRows fails when rows break the page rules: size, filled text, title length, repeated albums and the per-artist caps.
+func checkRows(t *testing.T, c *Ctx, rows []Row) {
+	t.Helper()
+	seenAlbum := map[string]string{}
+	for _, r := range rows {
+		if len(r.Items) < RowMin {
+			t.Errorf("%s: %d items", r.ID, len(r.Items))
+		}
+		if len(r.Items) > 20 {
+			t.Errorf("%s: %d items, over 20", r.ID, len(r.Items))
+		}
+		if r.Reason == "" || strings.Contains(r.Reason, "{") || strings.Contains(r.Title, "{") {
+			t.Errorf("%s: unfilled text %q / %q", r.ID, r.Title, r.Reason)
+		}
+		if len([]rune(r.Title)) > 40 {
+			t.Errorf("%s: title over 40: %q", r.ID, r.Title)
+		}
+		per := map[string]int{}
+		for _, i := range r.Items {
+			it := c.it(i)
+			if it.Kind == "a" {
+				if o, dup := seenAlbum[it.ID]; dup {
+					t.Errorf("album %s in %s and %s", it.ID, o, r.ID)
+				}
+				seenAlbum[it.ID] = r.ID
+			}
+			per[c.artistOf(i)]++
+		}
+		if r.Shape != "round" && r.Template != "G13" {
+			if len(per) < MinArtists {
+				t.Errorf("%s: %d artists", r.ID, len(per))
+			}
+			for a, n := range per {
+				if n > 2 {
+					t.Errorf("%s: %d items by %s", r.ID, n, a)
+				}
+			}
+		}
 	}
 }

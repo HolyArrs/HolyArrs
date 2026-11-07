@@ -6,26 +6,22 @@ import (
 	"time"
 )
 
-// The v7 row plan (flag music_rows_v7, plan 2026-10-23 §4): one member's
-// rows for the day are ordered once (the plan), then filled lazily, a batch
-// at a time, in plan order with one shared seen set, so dedup is exact
-// across batches and a reload replays the same rows.
-
 const (
 	// PlanMax is the most rows a plan holds.
 	PlanMax = 30
-	// PlanBatch is the rows one page fills.
+	// PlanBatch is how many rows one page fills.
 	PlanBatch = 6
-	// PlanVersions is the plan versions kept per member and view.
+	// PlanVersions is how many plan versions are kept per member and view.
 	PlanVersions = 2
-	// PartialTTL is how long a plan that lost a source is kept.
+	// PartialTTL is how long a plan built while a source was down stays usable.
 	PartialTTL = 10 * time.Minute
-	// planOffset is the slots before the plan's first row (the Spotlight).
+	// planOffset is the number of slots before the plan's first row, taken by
+	// the Spotlight.
 	planOffset = 1
 )
 
-// Plan is one member's row plan for one day and view. Served rows never
-// change; unserved slots are re-ranked after each batch.
+// Plan is one member's row plan for one day and view. Rows already served
+// never change, and the unserved slots are re-ranked after each batch.
 type Plan struct {
 	mu      sync.Mutex
 	Version int
@@ -33,7 +29,7 @@ type Plan struct {
 	Date    string
 	Partial bool
 	Built   time.Time
-	// Meta is the caller's data for the plan (cards, names).
+	// Meta is the caller's own data for the plan.
 	Meta    any
 	maxOf   map[string]int
 	rows    map[string]Row
@@ -45,12 +41,34 @@ type Plan struct {
 	planned int
 }
 
-// NewPlan orders the candidate rows: head rows first (in the order given,
-// when present), then the rest greedily by R under the variety rules: no
-// two adjacent rows of one family, no family over its maximum (maxOf, 1
-// when absent), at most 2 chart rows in any 6 consecutive slots, and a
-// discovery row at every 4th slot from 8 when one remains. seen may hold
-// keys already placed (the Spotlight). The rest become reserves.
+// Loader fills a cold row's items when its slot is reached.
+type Loader func(Row) Row
+
+// PlanKey names one member's plan for one UTC day and view.
+type PlanKey struct {
+	Member int64
+	Date   string
+	View   string
+}
+
+// PlanStore keeps plans, at most PlanVersions per key, until 04:00 UTC the
+// next day. It is separate from Days so that a library change marks plans
+// stale for the next first-page load without dropping a plan that an open
+// page is still paging.
+type PlanStore struct {
+	mu    sync.Mutex
+	m     map[PlanKey][]*Plan
+	last  map[PlanKey]int
+	stale map[PlanKey]bool
+}
+
+// NewPlan orders the candidate rows. Head rows come first in the order
+// given, then the rest greedily by strength under the variety rules: no two
+// adjacent rows of one family, no family over its maximum (maxOf, 1 when
+// absent), at most 2 chart rows in any 6 consecutive slots, and a discovery
+// row at every 4th slot from the 8th when one remains. seen may hold keys
+// already placed, such as the Spotlight. Rows that do not fit become
+// reserves.
 func NewPlan(rows []Row, head []string, maxOf map[string]int, member int64, date string, seen map[string]bool) *Plan {
 	p := &Plan{Member: member, Date: date, maxOf: maxOf, rows: map[string]Row{}, seen: map[string]bool{}, seeds: map[string]bool{}}
 	for k, v := range seen {
@@ -82,8 +100,140 @@ func NewPlan(rows []Row, head []string, maxOf map[string]int, member int64, date
 	return p
 }
 
-// rOf is a row's R over its items not yet placed; a row with no items yet
-// (cold: filled when its slot is reached) is prior · 0.5.
+// Page returns batch k (zero-based), filling it on first ask, and whether
+// more rows follow.
+func (p *Plan) Page(k int, load Loader) ([]Row, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	end := (k + 1) * PlanBatch
+	if len(p.served) < end && len(p.slots) > 0 {
+		p.fill(end-len(p.served), load)
+	}
+	from := min(k*PlanBatch, len(p.served))
+	to := min(end, len(p.served))
+	return append([]Row{}, p.served[from:to]...), len(p.served) > to || len(p.slots) > 0
+}
+
+// All fills and returns every row, for households with few rows.
+func (p *Plan) All(load Loader) []Row {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for len(p.slots) > 0 {
+		p.fill(PlanMax, load)
+	}
+	return append([]Row{}, p.served...)
+}
+
+// Total returns the plan's row count when it was made. It stays steady for
+// the day even if a slot closes later.
+func (p *Plan) Total() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.planned
+}
+
+// Planned returns the ids of the served rows followed by the unserved
+// slots, in order. It is meant for tests.
+func (p *Plan) Planned() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return append(p.servedIDs(), p.slots...)
+}
+
+// Current returns the newest live plan for k, unless it is stale.
+func (s *PlanStore) Current(k PlanKey, now time.Time) (*Plan, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sweep(now)
+	l := s.m[k]
+	if len(l) == 0 || s.stale[k] {
+		return nil, false
+	}
+	p := l[len(l)-1]
+	if !s.live(p, now) {
+		return nil, false
+	}
+	return p, true
+}
+
+// Get returns one pinned version while it is kept and live.
+func (s *PlanStore) Get(k PlanKey, version int, now time.Time) (*Plan, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sweep(now)
+	for _, p := range s.m[k] {
+		if p.Version == version {
+			return p, s.live(p, now)
+		}
+	}
+	return nil, false
+}
+
+// Put keeps p as the newest version for k and evicts the oldest past
+// PlanVersions.
+func (s *PlanStore) Put(k PlanKey, p *Plan, now time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.m == nil {
+		s.m, s.last, s.stale = map[PlanKey][]*Plan{}, map[PlanKey]int{}, map[PlanKey]bool{}
+	}
+	s.sweep(now)
+	s.last[k]++
+	p.Version = s.last[k]
+	p.Built = now
+	l := append(s.m[k], p)
+	if len(l) > PlanVersions {
+		l = l[len(l)-PlanVersions:]
+	}
+	s.m[k] = l
+	delete(s.stale, k)
+}
+
+// MarkStale marks one member's plans stale, or everyone's when member is
+// negative.
+func (s *PlanStore) MarkStale(member int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for k := range s.m {
+		if member < 0 || k.Member == member {
+			s.stale[k] = true
+		}
+	}
+}
+
+// MarkStaleKey marks the plans for one key stale.
+func (s *PlanStore) MarkStaleKey(k PlanKey) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.stale == nil {
+		return
+	}
+	if _, ok := s.m[k]; ok {
+		s.stale[k] = true
+	}
+}
+
+// Newest returns the member's newest kept plan for view on any kept day,
+// even a stale or expired one. It is the last good plan, served while a new
+// one is built.
+func (s *PlanStore) Newest(member int64, view string, now time.Time) (*Plan, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sweep(now)
+	var best *Plan
+	bestDate := ""
+	for k, l := range s.m {
+		if k.Member != member || k.View != view || len(l) == 0 || k.Date < bestDate {
+			continue
+		}
+		best, bestDate = l[len(l)-1], k.Date
+	}
+	return best, best != nil
+}
+
+// rOf returns a row's strength over its items not yet placed. A cold row
+// with no items yet is guessed at half its prior, and is filled when its
+// slot is reached.
 func (p *Plan) rOf(r Row) float64 {
 	if len(r.Items) == 0 {
 		return r.Prior * 0.5
@@ -105,10 +255,13 @@ func (p *Plan) rOf(r Row) float64 {
 	return Strength(s, r.Prior)
 }
 
+// taken reports whether the item is already placed, by key, release group
+// or fold key.
 func (p *Plan) taken(it Item) bool {
 	return p.seen[it.Key] || it.Album != "" && p.seen["rg:"+it.Album] || it.FoldKey != "" && p.seen["fold:"+it.FoldKey]
 }
 
+// sortPool orders row ids by strength, then by a daily hash.
 func (p *Plan) sortPool(pool []string) {
 	r := map[string]float64{}
 	for _, id := range pool {
@@ -122,6 +275,7 @@ func (p *Plan) sortPool(pool []string) {
 	})
 }
 
+// maxFor returns the most rows a family may have in the plan.
 func (p *Plan) maxFor(fam string) int {
 	if m, ok := p.maxOf[fam]; ok {
 		return m
@@ -129,6 +283,7 @@ func (p *Plan) maxFor(fam string) int {
 	return 1
 }
 
+// count returns how many rows in order belong to the family.
 func (p *Plan) count(order []string, fam string) int {
 	n := 0
 	for _, x := range order {
@@ -155,6 +310,7 @@ func (p *Plan) fits(order []string, id string) bool {
 	if len(order) > 0 && p.rows[order[len(order)-1]].family() == fam {
 		return false
 	}
+	// Chart rows are capped at 2 in any 6 consecutive slots.
 	if r.chartLike() {
 		c := 0
 		for _, x := range order[max(0, len(order)-5):] {
@@ -169,13 +325,15 @@ func (p *Plan) fits(order []string, id string) bool {
 	return true
 }
 
-// greedy places pool rows (already in R order) after placed, up to PlanMax.
+// greedy places pool rows, already in strength order, after placed, up to
+// PlanMax. It returns the new slots and the rows left over.
 func (p *Plan) greedy(placed, pool []string) (slots, rest []string) {
 	order := append([]string{}, placed...)
 	pool = append([]string{}, pool...)
 	for len(order) < PlanMax {
 		slot := len(order) + 1 + planOffset
 		pick := -1
+		// Discovery rule: a discovery row at every 4th slot from the 8th.
 		if slot >= 8 && slot%4 == 0 {
 			for i, id := range pool {
 				if p.rows[id].Disc && p.fits(order, id) {
@@ -184,8 +342,8 @@ func (p *Plan) greedy(placed, pool []string) (slots, rest []string) {
 				}
 			}
 		}
+		// Shape rule: a round or wide row in every 8 slots when one fits.
 		if pick < 0 && len(order) >= 7 && !p.anyShaped(order[len(order)-7:]) {
-			// Shape rule: a circle or wide row in every 8 slots when one fits.
 			for i, id := range pool {
 				if p.rows[id].shaped() && p.fits(order, id) && p.rOf(p.rows[id]) > 0 {
 					pick = i
@@ -211,7 +369,7 @@ func (p *Plan) greedy(placed, pool []string) (slots, rest []string) {
 	return slots, pool
 }
 
-// anyShaped reports whether any of the rows is a circle or wide row.
+// anyShaped reports whether any of the rows is a round or wide row.
 func (p *Plan) anyShaped(ids []string) bool {
 	for _, id := range ids {
 		if p.rows[id].shaped() {
@@ -221,7 +379,7 @@ func (p *Plan) anyShaped(ids []string) bool {
 	return false
 }
 
-// take fills one row against the shared seen and seed sets; it commits only
+// take fills one row against the shared seen and seed sets. It commits only
 // when the row passes its gate.
 func (p *Plan) take(r Row) (Row, bool) {
 	if r.Seed != "" && p.seeds[r.Seed] {
@@ -263,6 +421,7 @@ func (p *Plan) take(r Row) (Row, bool) {
 	return r, true
 }
 
+// servedIDs returns the ids of the rows served so far.
 func (p *Plan) servedIDs() []string {
 	ids := make([]string, len(p.served))
 	for i, r := range p.served {
@@ -271,9 +430,7 @@ func (p *Plan) servedIDs() []string {
 	return ids
 }
 
-// load fills a cold row's items when its slot is reached.
-type Loader func(Row) Row
-
+// get returns the row, loading a cold one on first use.
 func (p *Plan) get(id string, load Loader) Row {
 	r := p.rows[id]
 	if len(r.Items) == 0 && load != nil {
@@ -284,8 +441,8 @@ func (p *Plan) get(id string, load Loader) Row {
 }
 
 // fill serves up to n more rows in plan order. A row that fails its gate
-// after dedup gives its slot to the first reserve that fits; with none the
-// slot closes and later rows move up. Unserved rows are re-ranked after.
+// after dedup gives its slot to the first reserve that fits. With none, the
+// slot closes and later rows move up.
 func (p *Plan) fill(n int, load Loader) {
 	done := 0
 	for done < n && len(p.slots) > 0 {
@@ -308,82 +465,28 @@ func (p *Plan) fill(n int, load Loader) {
 				break
 			}
 		}
-		// A failed slot changes what follows: re-rank the rest so the next
-		// rows still keep the variety rules.
+		// A failed slot changes what follows, so re-rank to keep the variety
+		// rules.
 		p.rerank()
 	}
 	p.rerank()
 }
 
-// rerank re-orders the unserved rows (slots and reserves) by their R over
-// what is still unplaced, under the same rules; served rows stay.
+// rerank re-orders the unserved rows by their strength over what is still
+// unplaced, under the same rules. Served rows stay.
 func (p *Plan) rerank() {
 	pool := append(append([]string{}, p.slots...), p.reserve...)
 	p.sortPool(pool)
 	p.slots, p.reserve = p.greedy(p.servedIDs(), pool)
 }
 
-// Page answers batch k (0-based): its rows, filled on first ask, and
-// whether more rows follow.
-func (p *Plan) Page(k int, load Loader) ([]Row, bool) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	end := (k + 1) * PlanBatch
-	if len(p.served) < end && len(p.slots) > 0 {
-		p.fill(end-len(p.served), load)
-	}
-	from := min(k*PlanBatch, len(p.served))
-	to := min(end, len(p.served))
-	return append([]Row{}, p.served[from:to]...), len(p.served) > to || len(p.slots) > 0
-}
-
-// All fills and answers every row (households with few rows: one answer).
-func (p *Plan) All(load Loader) []Row {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	for len(p.slots) > 0 {
-		p.fill(PlanMax, load)
-	}
-	return append([]Row{}, p.served...)
-}
-
-// Total is the plan's row count when it was made (stable for the day; a
-// slot that closes later does not change it).
-func (p *Plan) Total() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.planned
-}
-
-// Planned answers the unserved slots' row ids in order (tests).
-func (p *Plan) Planned() []string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return append(p.servedIDs(), p.slots...)
-}
-
-// PlanKey is one member's plan key: day (UTC) and view (region).
-type PlanKey struct {
-	Member int64
-	Date   string
-	View   string
-}
-
-// PlanStore keeps the plans, at most PlanVersions per key, until 04:00 UTC
-// the next day. It is separate from Days: a library change marks plans
-// stale (the next page-1 load builds a new version) and never drops one an
-// open page is paging.
-type PlanStore struct {
-	mu    sync.Mutex
-	m     map[PlanKey][]*Plan
-	last  map[PlanKey]int
-	stale map[PlanKey]bool
-}
-
+// live reports whether a plan is usable: complete, or partial and recent.
 func (s *PlanStore) live(p *Plan, now time.Time) bool {
 	return !p.Partial || now.Sub(p.Built) < PartialTTL
 }
 
+// sweep drops plans for days that are over, keeping each until 04:00 UTC
+// the next day so late pages still work.
 func (s *PlanStore) sweep(now time.Time) {
 	for k := range s.m {
 		d, err := time.Parse("2006-01-02", k.Date)
@@ -393,94 +496,4 @@ func (s *PlanStore) sweep(now time.Time) {
 			delete(s.stale, k)
 		}
 	}
-}
-
-// Current answers the newest live plan, unless it is stale.
-func (s *PlanStore) Current(k PlanKey, now time.Time) (*Plan, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.sweep(now)
-	l := s.m[k]
-	if len(l) == 0 || s.stale[k] {
-		return nil, false
-	}
-	p := l[len(l)-1]
-	if !s.live(p, now) {
-		return nil, false
-	}
-	return p, true
-}
-
-// Get answers one pinned version while it is kept and live.
-func (s *PlanStore) Get(k PlanKey, version int, now time.Time) (*Plan, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.sweep(now)
-	for _, p := range s.m[k] {
-		if p.Version == version {
-			return p, s.live(p, now)
-		}
-	}
-	return nil, false
-}
-
-// Put keeps p as the key's newest version, evicting the oldest past
-// PlanVersions.
-func (s *PlanStore) Put(k PlanKey, p *Plan, now time.Time) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.m == nil {
-		s.m, s.last, s.stale = map[PlanKey][]*Plan{}, map[PlanKey]int{}, map[PlanKey]bool{}
-	}
-	s.sweep(now)
-	s.last[k]++
-	p.Version = s.last[k]
-	p.Built = now
-	l := append(s.m[k], p)
-	if len(l) > PlanVersions {
-		l = l[len(l)-PlanVersions:]
-	}
-	s.m[k] = l
-	delete(s.stale, k)
-}
-
-// MarkStale marks one member's plans stale (member < 0: everyone's).
-func (s *PlanStore) MarkStale(member int64) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for k := range s.m {
-		if member < 0 || k.Member == member {
-			s.stale[k] = true
-		}
-	}
-}
-
-// MarkStaleKey marks one key's plans stale.
-func (s *PlanStore) MarkStaleKey(k PlanKey) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.stale == nil {
-		return
-	}
-	if _, ok := s.m[k]; ok {
-		s.stale[k] = true
-	}
-}
-
-// Newest answers the member's newest kept plan for view, of any kept day,
-// stale or past PartialTTL included: the last good plan, served while a new
-// one is built behind.
-func (s *PlanStore) Newest(member int64, view string, now time.Time) (*Plan, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.sweep(now)
-	var best *Plan
-	bestDate := ""
-	for k, l := range s.m {
-		if k.Member != member || k.View != view || len(l) == 0 || k.Date < bestDate {
-			continue
-		}
-		best, bestDate = l[len(l)-1], k.Date
-	}
-	return best, best != nil
 }

@@ -5,11 +5,25 @@ import (
 	"time"
 )
 
-// Candidates is layer 1: raw candidate lists by source key, each with its
-// own time to live (charts 6 h, library lists 5 min).
+// Candidates caches raw candidate lists by source key, each with its own
+// time to live.
 type Candidates struct {
 	mu sync.Mutex
 	m  map[string]candEntry
+}
+
+// DayKey names one member's order for one UTC day and view.
+type DayKey struct {
+	Member int64
+	Date   string
+	View   string
+}
+
+// Days caches the row and item order per member per day. Asks and
+// approvals never touch it, so the order stays steady through a day.
+type Days struct {
+	mu sync.Mutex
+	m  map[DayKey]any
 }
 
 type candEntry struct {
@@ -17,7 +31,7 @@ type candEntry struct {
 	exp time.Time
 }
 
-// Get answers a live entry.
+// Get returns the entry for key if it has not expired.
 func (c *Candidates) Get(key string, now time.Time) (any, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -28,18 +42,19 @@ func (c *Candidates) Get(key string, now time.Time) (any, bool) {
 	return e.v, true
 }
 
-// Put keeps v for ttl.
+// Put stores v under key for ttl.
 func (c *Candidates) Put(key string, v any, ttl time.Duration, now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	// A hard cap keeps the map from growing without bound.
 	if c.m == nil || len(c.m) > 20000 {
 		c.m = map[string]candEntry{}
 	}
 	c.m[key] = candEntry{v, now.Add(ttl)}
 }
 
-// Forget drops the entries whose key starts with prefix (a library change
-// drops only library-derived lists).
+// Forget drops the entries whose key starts with prefix, so a library
+// change drops only the lists built from the library.
 func (c *Candidates) Forget(prefix string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -50,24 +65,7 @@ func (c *Candidates) Forget(prefix string) {
 	}
 }
 
-// DayKey is layer 2's key: one member, one calendar day (UTC), plus the
-// view (genre filter and region).
-type DayKey struct {
-	Member int64
-	Date   string
-	View   string
-}
-
-// Days is layer 2: the row and item order per member per day. It is
-// dropped on a date change, by Invalidate (a follow, a cold-start unlock)
-// or by Clear (a music title added or removed); asks and approvals never
-// touch it.
-type Days struct {
-	mu sync.Mutex
-	m  map[DayKey]any
-}
-
-// Get answers the member's order for the day.
+// Get returns the stored order for k.
 func (d *Days) Get(k DayKey) (any, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -75,7 +73,7 @@ func (d *Days) Get(k DayKey) (any, bool) {
 	return v, ok
 }
 
-// Put keeps the order, dropping other days.
+// Put stores the order for k and drops every other day.
 func (d *Days) Put(k DayKey, v any) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -90,7 +88,7 @@ func (d *Days) Put(k DayKey, v any) {
 	d.m[k] = v
 }
 
-// Invalidate drops one member's orders (every view).
+// Invalidate drops one member's orders in every view.
 func (d *Days) Invalidate(member int64) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -101,12 +99,13 @@ func (d *Days) Invalidate(member int64) {
 	}
 }
 
-// Clear drops every member's orders (a Library change is the household's).
+// Clear drops every member's orders, for changes that affect the whole
+// household.
 func (d *Days) Clear() {
 	d.mu.Lock()
 	d.m = nil
 	d.mu.Unlock()
 }
 
-// Day is the calendar day (UTC) of now.
+// Day returns the UTC calendar day of now as YYYY-MM-DD.
 func Day(now time.Time) string { return now.UTC().Format("2006-01-02") }

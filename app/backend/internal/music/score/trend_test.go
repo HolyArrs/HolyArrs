@@ -6,19 +6,19 @@ import (
 	"time"
 )
 
-func TestRankGain(t *testing.T) {
+func TestRankGain_Clamps(t *testing.T) {
 	for _, c := range []struct {
 		ago, today, l int
 		want          float64
 	}{
-		{10, 4, 20, 0.3},   // up 6 of 20
-		{4, 10, 20, 0},     // fell: clamp to 0
-		{5, 5, 20, 0},      // steady
-		{0, 1, 20, 1},      // new entry at 1: (21 − 1)/20 clamps to 1
-		{0, 11, 20, 0.5},   // new entry at 11: (21 − 11)/20
-		{-1, 20, 20, 0.05}, // no rank then counts as L + 1
-		{3, 1, 0, 0},       // L 0: zero guard
-		{3, 0, 10, 0},      // no rank today
+		{10, 4, 20, 0.3},
+		{4, 10, 20, 0},
+		{5, 5, 20, 0},
+		{0, 1, 20, 1},
+		{0, 11, 20, 0.5},
+		{-1, 20, 20, 0.05},
+		{3, 1, 0, 0},
+		{3, 0, 10, 0},
 	} {
 		if got := RankGain(c.ago, c.today, c.l); math.Abs(got-c.want) > 1e-9 {
 			t.Errorf("RankGain(%d, %d, %d) = %v, want %v", c.ago, c.today, c.l, got, c.want)
@@ -26,7 +26,7 @@ func TestRankGain(t *testing.T) {
 	}
 }
 
-func TestRanksReady(t *testing.T) {
+func TestRanksReady_Chart(t *testing.T) {
 	if RanksReady(nil) {
 		t.Fatal("an empty chart has no ΔR")
 	}
@@ -38,7 +38,7 @@ func TestRanksReady(t *testing.T) {
 	}
 }
 
-func TestPhase6Formulas(t *testing.T) {
+func TestTrendScores_ExactValues(t *testing.T) {
 	near := func(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
 	if !near(ScoreTrending(0.5, 1), 0.7) {
 		t.Fatal("trending")
@@ -54,7 +54,7 @@ func TestPhase6Formulas(t *testing.T) {
 	}
 }
 
-func TestNewArtist(t *testing.T) {
+func TestNewArtist_Window(t *testing.T) {
 	now := time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
 	if !NewArtist([]string{"2025-01-01", "2024-03-01"}, now) {
 		t.Fatal("first release 2024 is within 3 years")

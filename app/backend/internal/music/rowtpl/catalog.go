@@ -5,269 +5,25 @@ import (
 	"strconv"
 )
 
-// Tpl is one row template. Pages holds the page letters it runs on
-// (E Explore, N New & Popular, G genre, M mood, S season, D decade,
-// A activity). Slot names the value the template expands over (one row
-// per value, at most Cap); Cross maps a page letter to the key kind a
-// "cross" slot takes on that page. Need names data the row needs: "ls"
-// (list blocks), "lib" (a library), "seed" (library seeds), "season"
-// (the page season is on), "v7" or "cal" (rows the Explore builder
-// supplies). Src, Sort and Filter say in words what Fill does.
-type Tpl struct {
-	ID, Fam           string
-	Disc              bool
-	Prior             float64
-	Pages             string
-	Title             string
-	Vars              []string
-	Reason            string
-	Src, Sort, Filter string
-	Ref               string
-	Shape             string
-	Slot              string
-	Cap               int
-	Cross             map[byte]string
-	Chart             bool
-	Keep              bool // chart rows keep had items (with the Have chip)
-	Need              string
-	Only              map[string]bool // page keys the row is limited to
-	NotWith           map[string]bool // cross values the row never takes
-	Fill              func(c *Ctx, v string) L
-}
-
-func t(id, fam string, prior float64, pages, title, reason, src, sort, filter, ref string) Tpl {
-	return Tpl{ID: id, Fam: fam, Prior: prior, Pages: pages, Title: title, Reason: reason, Src: src, Sort: sort, Filter: filter, Ref: ref, Cap: 1}
-}
-
-func (x Tpl) fill(f func(c *Ctx, v string) L) Tpl { x.Fill = f; return x }
-func (x Tpl) slot(s string, cap int) Tpl          { x.Slot, x.Cap = s, cap; return x }
-func (x Tpl) cross(m map[byte]string, cap int) Tpl {
-	x.Slot, x.Cross, x.Cap = "cross", m, cap
-	return x
-}
-func (x Tpl) round() Tpl           { x.Shape = "round"; return x }
-func (x Tpl) wide() Tpl            { x.Shape = "wide"; return x }
-func (x Tpl) chart() Tpl           { x.Chart, x.Keep = true, true; return x }
-func (x Tpl) disc() Tpl            { x.Disc = true; return x }
-func (x Tpl) need(n string) Tpl    { x.Need = n; return x }
-func (x Tpl) vars(v ...string) Tpl { x.Vars = v; return x }
-func (x Tpl) notWith(keys ...string) Tpl {
-	x.NotWith = map[string]bool{}
-	for _, k := range keys {
-		x.NotWith[k] = true
-	}
-	return x
-}
-
-func (x Tpl) only(keys ...string) Tpl {
-	x.Only = map[string]bool{}
-	for _, k := range keys {
-		x.Only[k] = true
-	}
-	return x
-}
-
-// familyMax caps rows per family on one page (personal: 10 on Explore).
+// familyMax caps rows per family on one page. The personal family gets 10 on Explore.
 var familyMax = map[string]int{"yr": 1, "ch": 5, "co": 3, "po": 3, "nw": 5, "cl": 5, "de": 3, "su": 4, "cr": 6, "se": 3, "ar": 4, "vi": 1, "di": 3, "pe": 6}
 
-// ---- fill helpers ----
-
-func pool(c *Ctx) L {
-	l := c.key(c.Key)
-	if kindOf(c.Key) == "genre" {
-		// A genre page keeps items whose main genre it is (or nearly): an
-		// album tagged k-pop first and rap second stays on the K-pop page.
-		l = c.where(l, func(i int) bool { return c.t(i, c.Key) >= 0.9*c.mainGenreT(i) })
-	}
-	return l
-}
-func palb(c *Ctx) L           { return c.albums(pool(c)) }
-func part(c *Ctx) L           { return c.artists(pool(c)) }
-func kalb(c *Ctx, k string) L { return c.albums(c.key(k)) }
-
-func (c *Ctx) newer(l L, days float64) L {
-	return c.where(l, func(i int) bool { d, ok := c.days(i); return ok && d >= 0 && d <= days })
-}
-
-func (c *Ctx) older(l L, years float64) L {
-	return c.where(l, func(i int) bool { return c.age(i) >= years })
-}
-
-func (c *Ctx) ageIn(l L, lo, hi float64) L {
-	return c.where(l, func(i int) bool { a := c.age(i); return a >= lo && a < hi })
-}
-
-func (c *Ctx) inYear(l L, y int) L { return c.where(l, func(i int) bool { return c.year(i) == y }) }
-
-func (c *Ctx) ranked(l L, r int) L {
-	return c.where(l, func(i int) bool { return c.it(i).R[r] > 0 })
-}
-
-func (c *Ctx) onAnyChart(l L) L { return c.where(l, func(i int) bool { return len(c.it(i).C) > 0 }) }
-
-func (c *Ctx) typ(l L, ty string) L {
-	return c.where(l, func(i int) bool { return c.it(i).Type == ty })
-}
-
-func (c *Ctx) debuts(l L) L { return c.where(l, func(i int) bool { return c.it(i).Debut }) }
-
-func (c *Ctx) byLP(l L) L { return c.by(l, c.lp) }
-
-func (c *Ctx) byLPT(l L, k string) L {
-	return c.by(l, func(i int) float64 { return c.lp(i) * (0.5 + 0.5*c.t(i, k)) })
-}
-
-func (c *Ctx) byP(l L) L { return c.by(l, c.p) }
-
-// cw ranks items on the many-country score (CW), best first.
-func (c *Ctx) cw(l L) L {
-	l = c.where(l, func(i int) bool { return c.it(i).CW > 0 })
-	return c.by(l, func(i int) float64 { return 1 / float64(c.it(i).CW) })
-}
-
-// gain is an item's 7-day rank gain on one country's chart.
-func (c *Ctx) gain(i int, country string) float64 {
-	return float64(c.it(i).G[country]) / 1000
-}
-
-// areaScore sums an item's chart popularity over an area's countries.
-func (c *Ctx) areaScore(i int, area string) float64 {
-	s := 0.0
-	for _, cc := range areas[area] {
-		s += c.pc(i, cc)
-	}
-	return s
-}
-
-func (c *Ctx) numberOnes(i int) int {
-	n := 0
-	for _, r := range c.it(i).C {
-		if r == 1 {
-			n++
-		}
-	}
-	return n
-}
-
-// blockIn answers a list block's items, kept to l's members when l is
-// not nil.
-func (c *Ctx) blockIn(name string, l L) L {
-	b := c.block(name)
-	if l == nil {
-		return b
-	}
-	in := map[int]bool{}
-	for _, i := range l {
-		in[i] = true
-	}
-	return c.where(b, func(i int) bool { return in[i] })
-}
-
-// union keeps the order of a, then the items of b not in a.
-func union(a, b L) L {
-	in := map[int]bool{}
-	out := append(L{}, a...)
-	for _, i := range a {
-		in[i] = true
-	}
-	for _, i := range b {
-		if !in[i] {
-			in[i] = true
-			out = append(out, i)
-		}
-	}
-	return out
-}
-
-// libArtist reports an artist the member has.
-func (c *Ctx) libArtist(i int) bool {
-	if c.Lib == nil {
-		return false
-	}
-	_, ok := c.Lib.Artists[c.artistOf(i)]
-	return ok
-}
-
-func (c *Ctx) simArtist(i int) float64 {
-	if c.Lib == nil {
-		return 0
-	}
-	return c.Lib.Sim[c.artistOf(i)]
-}
-
-// topArtistShare keeps albums whose artist is in the top frac of l's
-// artists by listens.
-func (c *Ctx) topArtists(l L, frac float64) L {
-	sum := map[string]int64{}
-	for _, i := range l {
-		sum[c.artistOf(i)] += c.it(i).Listens
-	}
-	var v []int64
-	for _, s := range sum {
-		v = append(v, s)
-	}
-	if len(v) == 0 {
-		return nil
-	}
-	sortInt64(v)
-	cut := v[int(float64(len(v)-1)*(1-frac))]
-	return c.where(l, func(i int) bool { return sum[c.artistOf(i)] >= cut && cut > 0 })
-}
-
-// artistYears answers, per artist, the release years of its bundle albums.
-func (c *Ctx) artistYears() map[string][]int {
-	out := map[string][]int{}
-	for i, it := range c.B.Items {
-		if it.Kind == "a" {
-			if y := c.year(i); y > 0 {
-				out[it.ArtistID] = append(out[it.ArtistID], y)
-			}
-		}
-	}
-	return out
-}
-
-// artistTopYear answers, per artist, the year of its most-listened album.
-func (c *Ctx) artistTopYear() map[string]int {
-	best := map[string]int64{}
-	out := map[string]int{}
-	for i, it := range c.B.Items {
-		if it.Kind == "a" && it.Listens > best[it.ArtistID] {
-			best[it.ArtistID] = it.Listens
-			out[it.ArtistID] = c.year(i)
-		}
-	}
-	return out
-}
-
-func sortInt64(v []int64) {
-	for i := 1; i < len(v); i++ {
-		for j := i; j > 0 && v[j] < v[j-1]; j-- {
-			v[j], v[j-1] = v[j-1], v[j]
-		}
-	}
-}
-
-func atoi(s string) int { n, _ := strconv.Atoi(s); return n }
-
-// genreTile maps genre keys to their list tile keys.
+// genreTile maps page keys to the name of their list tile block.
 var genreTile = map[string]string{"genre:pop": "pop", "genre:latin": "latin", "genre:rock": "rock", "genre:country": "country", "genre:dance": "dance", "genre:rnb": "rnb", "genre:indie": "indie", "genre:kpop": "kpop", "genre:metal": "metal", "genre:jazz": "jazz", "genre:alternative": "alternative", "genre:folk": "folk", "genre:soul-funk": "soul", "genre:classical": "classical", "genre:punk": "punk", "genre:blues": "blues", "genre:afro": "afro",
 	"mood:chill": "chill", "mood:party": "party", "mood:workout": "workout", "mood:love": "love", "mood:focus": "focus", "mood:sleep": "sleep", "mood:sad": "feelings", "activity:studying": "focus", "activity:gym": "workout", "activity:running": "workout", "decade": "decades"}
 
-func tileBlock(key string) string {
-	if t, ok := genreTile[key]; ok {
-		return "tile:" + t
-	}
-	return ""
-}
-
+// energyActs groups the activity and mood keys that are high energy.
 var energyActs = []string{"activity:gym", "activity:running", "activity:driving", "mood:party"}
+
+// instrActs groups the activity keys that suit instrumental music.
 var instrActs = []string{"activity:studying", "activity:cooking", "activity:gaming"}
+
+// scoreActs groups the activity keys that suit film and game scores.
 var scoreActs = []string{"activity:gaming", "activity:driving", "activity:studying"}
 
-// Catalog is every row template (plan 2026-10-24-music-row-templates §8).
+// Catalog is every row template. A row runs on a page when its Pages letter matches, its Need is met and it has a Fill.
 var Catalog = []Tpl{
-	// ---- A. World charts ----
+	// World charts.
 	t("A01", "ch", 0.9, "EN", "Top {place}", "The most-played songs {place} today, as their albums and artists", "list top_now, else the region chart", "rank", "Have chip kept", "D").chart().
 		fill(func(c *Ctx, _ string) L { return union(c.block("top_now"), c.charting(c.albums(c.all()), c.region())) }),
 	t("A02", "ch", 0.8, "EN", "Top worldwide", "Charting across 82 countries today", "list top_world, else the many-country score", "rank", "Have chip kept", "D").chart().
@@ -342,7 +98,7 @@ var Catalog = []Tpl{
 	t("A21", "vi", 0.5, "EN", "Music videos people watch", "Artists charting {place} this week, with their music videos", "list video_artists", "rank", "video known", "W").wide().need("ls").
 		fill(func(c *Ctx, _ string) L { return c.block("video_artists") }),
 
-	// ---- B. New and coming ----
+	// New and coming.
 	t("B01", "nw", 0.9, "EN", "Out this Friday", "New albums and EPs out in the last two weeks", "list new_friday and new releases", "0.5 F14 + 0.3 popularity + 0.2 library", "14 days", "Fr").
 		fill(func(c *Ctx, _ string) L {
 			l := c.newer(c.albums(c.all()), 14)
@@ -398,7 +154,7 @@ var Catalog = []Tpl{
 			return c.by(c.topArtists(c.newer(c.albums(c.all()), 45), 0.1), func(i int) float64 { return c.f(i, 30) })
 		}),
 
-	// ---- C. Explore and New & Popular extras (C01–C12 come from the Explore builder) ----
+	// Explore and New and Popular extras.
 	t("C01", "pe", 1.0, "E", "{mix}", "From {artists} in your Library", "mix clusters of library artists", "mix score", "members charting or on a tile", "D").need("v7"),
 	t("C02", "pe", 0.9, "E", "Because you have {artist}", "Artists close to {artist}: their best-known album", "similar artists of a seed, charting", "0.5 S + 0.3 popularity + 0.2 F30", "not had", "D").need("v7"),
 	t("C03", "pe", 0.8, "E", "Popular near your taste", "Popular now and close to {artist}, {artist2}", "charting albums near the library", "0.5 popularity + 0.5 library", "not had", "D").need("v7"),
@@ -437,7 +193,7 @@ var Catalog = []Tpl{
 			return c.by(c.newer(kalb(c, v), 30), func(i int) float64 { return c.f(i, 30) + 0.2*c.p(i) })
 		}),
 
-	// ---- D. Genre page: charts ----
+	// Genre page: charts.
 	t("D01", "ch", 0.9, "G", "Top {genre} {place}", "Today's chart {place}, {genre} only", "the region chart and list top_now, in the genre", "rank", "Have chip kept", "D").chart().
 		fill(func(c *Ctx, _ string) L { return union(c.blockIn("top_now", pool(c)), c.charting(palb(c), c.region())) }),
 	t("D02", "ch", 0.7, "G", "Top {genre} worldwide", "Charting across 82 countries today, {genre} only", "the many-country score and list top_world, in the genre", "rank", "hidden when the region is global", "D").chart().
@@ -496,7 +252,7 @@ var Catalog = []Tpl{
 	t("D15", "pe", 0.7, "G", "Your {genre} on the charts", "Albums by your artists on today's {genre} chart", "library artists' charting albums in the genre", "popularity", "Have chip kept", "D").need("lib").chart().
 		fill(func(c *Ctx, _ string) L { return c.byP(c.where(c.onAnyChart(palb(c)), c.libArtist)) }),
 
-	// ---- E. Genre page: new ----
+	// Genre page: new.
 	t("E01", "nw", 0.9, "GN", "New {genre} this week", "{genre} albums and EPs out in the last 7 days", "the genre's new albums", "F14, then popularity", "7 days", "D").slot("genre", 1).
 		fill(func(c *Ctx, v string) L {
 			return c.by(c.newer(kalb(c, v), 7), func(i int) float64 { return c.f(i, 14) + 0.3*c.p(i) })
@@ -561,7 +317,7 @@ var Catalog = []Tpl{
 			return c.by(l, func(i int) float64 { return c.f(i, 60) })
 		}),
 
-	// ---- F. Genre page: long-time favourites ----
+	// Genre page: long-time favourites.
 	t("F01", "cl", 0.8, "G", "{genre} all-time greats", "The {genre} albums with the most listeners", "the genre's albums", "listens × fit", "", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLPT(palb(c), c.Key) }),
 	t("F02", "cl", 0.6, "G", "{genre} albums people keep playing", "Out 2 years or more and still played a lot this year", "listen ranks this year, in the genre", "year rank", "2 years or older", "W").
@@ -598,7 +354,7 @@ var Catalog = []Tpl{
 	t("F14", "yr", 0.4, "G", "{genre} in {year}", "The {genre} albums from {year} with the most listeners", "the genre's albums from one year", "listens", "", "W").slot("year", 2).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 
-	// ---- G. Genre page: styles, crossovers, people ----
+	// Genre page: styles, crossovers, people.
 	t("G01", "su", 0.6, "G", "{substyle} at its best", "The {substyle} albums with the most listeners", "the substyle's albums", "listens × fit", "", "W").slot("sub", 3).
 		fill(func(c *Ctx, v string) L { return c.byLPT(kalb(c, v), v) }),
 	t("G02", "su", 0.6, "G", "{substyle} right now", "{substyle} played most last week or charting today", "the substyle's charting or week-ranked albums", "0.6 week rank + 0.4 popularity", "", "W").slot("sub", 2).
@@ -656,7 +412,7 @@ var Catalog = []Tpl{
 			}))
 		}),
 
-	// ---- H. Mood page ----
+	// Mood page.
 	t("H01", "ch", 0.9, "M", "{mood} right now", "Popular now and {basis}", "the mood's charting or week-ranked albums", "0.5 fit + 0.5 popularity", "", "D").
 		fill(rightNow),
 	t("H02", "ch", 0.8, "ME", "{mood} picks", "Albums and artists from this week's {mood} lists", "list tile", "rank", "key has a tile", "W").slot("mood", 2).need("ls").
@@ -702,7 +458,7 @@ var Catalog = []Tpl{
 			return c.by(c.notHad(c.where(palb(c), func(i int) bool { return c.simArtist(i) > 0 })), func(i int) float64 { return 0.5*c.simArtist(i) + 0.5*c.t(i, c.Key) })
 		}),
 
-	// ---- I. Season page ----
+	// Season page.
 	t("I01", "po", 0.8, "S", "{season} favourites", "Played most last week, {basis}", "the season's week-ranked albums in season, else long-loved ones", "week rank or listens", "", "Sn").
 		fill(func(c *Ctx, _ string) L {
 			if c.seasonOn() {
@@ -744,7 +500,7 @@ var Catalog = []Tpl{
 	t("I12", "vi", 0.4, "S", "{season} music videos", "Artists {basis}, with their music videos", "list video_artists in the season", "rank", "season on", "Sn").wide().need("ls").
 		fill(func(c *Ctx, _ string) L { return c.blockIn("video_artists", pool(c)) }),
 
-	// ---- J. Decade page ----
+	// Decade page.
 	t("J01", "cl", 0.9, "D", "{decade} all-time greats", "The {decade} albums with the most listeners", "the decade's albums", "listens", "", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(palb(c)) }),
 	t("J02", "cr", 0.7, "D", "{decade} {genre} greats", "The {decade} {genre} albums with the most listeners", "the decade's albums in a genre", "listens", "", "W").cross(map[byte]string{'D': "genre"}, 6).
@@ -796,7 +552,7 @@ var Catalog = []Tpl{
 			}))
 		}),
 
-	// ---- K. Activity page ----
+	// Activity page.
 	t("K01", "ch", 0.9, "A", "Popular now {for}", "Popular now, in styles that suit {activity}", "the activity's charting or week-ranked albums", "0.5 fit + 0.5 popularity", "", "D").
 		fill(rightNow),
 	t("K02", "cl", 0.7, "A", "All-time greats {for}", "Albums with the most listeners, in styles that suit {activity}", "the activity's albums", "listens × fit", "", "W").
@@ -826,13 +582,12 @@ var Catalog = []Tpl{
 			return c.by(c.charting(palb(c), c.region()), func(i int) float64 { return c.p(i) * (0.5 + 0.5*c.t(i, c.Key)) })
 		}),
 
-	// ---- L. Shared library row ----
+	// Shared library row.
 	t("L01", "pe", 0.6, "MSDA", "{name} from your Library", "Albums you have, {basis}", "library albums in the page key", "affinity × fit", "", "L").need("lib").
 		fill(func(c *Ctx, _ string) L {
 			return c.by(c.where(palb(c), func(i int) bool { return c.Lib != nil && c.Lib.Albums[c.it(i).ID] }), func(i int) float64 { return c.l(i) * (0.5 + 0.5*c.t(i, c.Key)) })
 		}).keep(),
 
-	// ---- M, S, V, J16–J19. More mood, season, activity and decade rows (Phase 0 dry run) ----
 	t("M01", "po", 0.6, "M", "{mood} most played last week", "Albums listeners played most last week, {basis}", "listen ranks, last week, in the mood", "week rank", "", "W").
 		fill(weekPlayed),
 	t("M02", "cl", 0.5, "M", "Modern {mood} classics", "Long-loved albums from the last 5 to 15 years, {basis}", "the mood's albums 5 to 15 years old", "listens", "5 to 15 years old", "W").
@@ -894,6 +649,290 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.by(c.ranked(palb(c), rThisYear), c.yp) }),
 }
 
+// Tpl is one row template. Pages holds the page letters it runs on: E Explore, N New and Popular, G genre, M mood, S season, D decade, A activity. Slot names the value the template expands over, one row per value and at most Cap. Cross maps a page letter to the key kind a "cross" slot takes on that page. Need names data the row needs: "ls" for list blocks, "lib" for a library, "seed" for library seeds, "season" for a page season that is on, and "v7" or "cal" for rows the Explore builder supplies. Src, Sort and Filter say in words what Fill does.
+type Tpl struct {
+	ID, Fam           string
+	Disc              bool
+	Prior             float64
+	Pages             string
+	Title             string
+	Vars              []string
+	Reason            string
+	Src, Sort, Filter string
+	Ref               string
+	Shape             string
+	Slot              string
+	Cap               int
+	Cross             map[byte]string
+	Chart             bool
+	// Keep lets a chart row keep items the member has, shown with the Have chip.
+	Keep bool
+	Need string
+	// Only limits the row to these page keys.
+	Only map[string]bool
+	// NotWith lists cross values the row never takes.
+	NotWith map[string]bool
+	Fill    func(c *Ctx, v string) L
+}
+
+// t builds a template with one row and no slot.
+func t(id, fam string, prior float64, pages, title, reason, src, sort, filter, ref string) Tpl {
+	return Tpl{ID: id, Fam: fam, Prior: prior, Pages: pages, Title: title, Reason: reason, Src: src, Sort: sort, Filter: filter, Ref: ref, Cap: 1}
+}
+
+// fill sets how the template picks its items.
+func (x Tpl) fill(f func(c *Ctx, v string) L) Tpl { x.Fill = f; return x }
+
+// slot makes the template expand over a slot, one row per value up to cap.
+func (x Tpl) slot(s string, cap int) Tpl { x.Slot, x.Cap = s, cap; return x }
+
+// cross makes the template expand over keys of another kind, by page letter.
+func (x Tpl) cross(m map[byte]string, cap int) Tpl {
+	x.Slot, x.Cross, x.Cap = "cross", m, cap
+	return x
+}
+
+// round gives the template round covers, for artists.
+func (x Tpl) round() Tpl { x.Shape = "round"; return x }
+
+// wide gives the template wide covers.
+func (x Tpl) wide() Tpl { x.Shape = "wide"; return x }
+
+// chart marks a chart row. It keeps items the member has, shown with the Have chip.
+func (x Tpl) chart() Tpl { x.Chart, x.Keep = true, true; return x }
+
+// disc marks a discovery row.
+func (x Tpl) disc() Tpl { x.Disc = true; return x }
+
+// need names the data the row needs.
+func (x Tpl) need(n string) Tpl { x.Need = n; return x }
+
+// vars adds alternate title wordings.
+func (x Tpl) vars(v ...string) Tpl { x.Vars = v; return x }
+
+// notWith lists cross values the row never takes.
+func (x Tpl) notWith(keys ...string) Tpl {
+	x.NotWith = map[string]bool{}
+	for _, k := range keys {
+		x.NotWith[k] = true
+	}
+	return x
+}
+
+// only limits the row to some page keys.
+func (x Tpl) only(keys ...string) Tpl {
+	x.Only = map[string]bool{}
+	for _, k := range keys {
+		x.Only[k] = true
+	}
+	return x
+}
+
+// pool answers the page key's items. A genre page keeps only items whose main genre it is, or nearly, so an album tagged k-pop first and rap second stays on the K-pop page.
+func pool(c *Ctx) L {
+	l := c.key(c.Key)
+	if kindOf(c.Key) == "genre" {
+		l = c.where(l, func(i int) bool { return c.t(i, c.Key) >= 0.9*c.mainGenreT(i) })
+	}
+	return l
+}
+
+// palb answers the page pool's albums.
+func palb(c *Ctx) L { return c.albums(pool(c)) }
+
+// part answers the page pool's artists.
+func part(c *Ctx) L { return c.artists(pool(c)) }
+
+// kalb answers the albums of one key.
+func kalb(c *Ctx, k string) L { return c.albums(c.key(k)) }
+
+// newer keeps items released within the last days.
+func (c *Ctx) newer(l L, days float64) L {
+	return c.where(l, func(i int) bool { d, ok := c.days(i); return ok && d >= 0 && d <= days })
+}
+
+// older keeps items at least years old.
+func (c *Ctx) older(l L, years float64) L {
+	return c.where(l, func(i int) bool { return c.age(i) >= years })
+}
+
+// ageIn keeps items from lo up to but not including hi years old.
+func (c *Ctx) ageIn(l L, lo, hi float64) L {
+	return c.where(l, func(i int) bool { a := c.age(i); return a >= lo && a < hi })
+}
+
+// inYear keeps items released in year y.
+func (c *Ctx) inYear(l L, y int) L { return c.where(l, func(i int) bool { return c.year(i) == y }) }
+
+// ranked keeps items with a listen rank in range r.
+func (c *Ctx) ranked(l L, r int) L {
+	return c.where(l, func(i int) bool { return c.it(i).R[r] > 0 })
+}
+
+// onAnyChart keeps items on at least one country's chart.
+func (c *Ctx) onAnyChart(l L) L { return c.where(l, func(i int) bool { return len(c.it(i).C) > 0 }) }
+
+// typ keeps items of one release type, such as EP or Soundtrack.
+func (c *Ctx) typ(l L, ty string) L {
+	return c.where(l, func(i int) bool { return c.it(i).Type == ty })
+}
+
+// debuts keeps albums flagged as an artist's first.
+func (c *Ctx) debuts(l L) L { return c.where(l, func(i int) bool { return c.it(i).Debut }) }
+
+// byLP sorts by listens.
+func (c *Ctx) byLP(l L) L { return c.by(l, c.lp) }
+
+// byLPT sorts by listens, weighted by fit to key k.
+func (c *Ctx) byLPT(l L, k string) L {
+	return c.by(l, func(i int) float64 { return c.lp(i) * (0.5 + 0.5*c.t(i, k)) })
+}
+
+// byP sorts by chart popularity.
+func (c *Ctx) byP(l L) L { return c.by(l, c.p) }
+
+// cw ranks items on the many-country score, best first.
+func (c *Ctx) cw(l L) L {
+	l = c.where(l, func(i int) bool { return c.it(i).CW > 0 })
+	return c.by(l, func(i int) float64 { return 1 / float64(c.it(i).CW) })
+}
+
+// gain is an item's 7-day rank gain on one country's chart.
+func (c *Ctx) gain(i int, country string) float64 {
+	return float64(c.it(i).G[country]) / 1000
+}
+
+// areaScore sums an item's chart popularity over an area's countries.
+func (c *Ctx) areaScore(i int, area string) float64 {
+	s := 0.0
+	for _, cc := range areas[area] {
+		s += c.pc(i, cc)
+	}
+	return s
+}
+
+// numberOnes counts the charts where the item is number one.
+func (c *Ctx) numberOnes(i int) int {
+	n := 0
+	for _, r := range c.it(i).C {
+		if r == 1 {
+			n++
+		}
+	}
+	return n
+}
+
+// blockIn answers a list block's items, kept to the members of l when l is not nil.
+func (c *Ctx) blockIn(name string, l L) L {
+	b := c.block(name)
+	if l == nil {
+		return b
+	}
+	in := map[int]bool{}
+	for _, i := range l {
+		in[i] = true
+	}
+	return c.where(b, func(i int) bool { return in[i] })
+}
+
+// union keeps the order of a, then adds the items of b not in a.
+func union(a, b L) L {
+	in := map[int]bool{}
+	out := append(L{}, a...)
+	for _, i := range a {
+		in[i] = true
+	}
+	for _, i := range b {
+		if !in[i] {
+			in[i] = true
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+// libArtist reports an artist the member has.
+func (c *Ctx) libArtist(i int) bool {
+	if c.Lib == nil {
+		return false
+	}
+	_, ok := c.Lib.Artists[c.artistOf(i)]
+	return ok
+}
+
+// simArtist is the item's artist similarity to the library.
+func (c *Ctx) simArtist(i int) float64 {
+	if c.Lib == nil {
+		return 0
+	}
+	return c.Lib.Sim[c.artistOf(i)]
+}
+
+// topArtists keeps albums whose artist is in the top frac of l's artists by listens.
+func (c *Ctx) topArtists(l L, frac float64) L {
+	sum := map[string]int64{}
+	for _, i := range l {
+		sum[c.artistOf(i)] += c.it(i).Listens
+	}
+	var v []int64
+	for _, s := range sum {
+		v = append(v, s)
+	}
+	if len(v) == 0 {
+		return nil
+	}
+	sortInt64(v)
+	cut := v[int(float64(len(v)-1)*(1-frac))]
+	return c.where(l, func(i int) bool { return sum[c.artistOf(i)] >= cut && cut > 0 })
+}
+
+// artistYears answers, per artist, the release years of its bundle albums.
+func (c *Ctx) artistYears() map[string][]int {
+	out := map[string][]int{}
+	for i, it := range c.B.Items {
+		if it.Kind == "a" {
+			if y := c.year(i); y > 0 {
+				out[it.ArtistID] = append(out[it.ArtistID], y)
+			}
+		}
+	}
+	return out
+}
+
+// artistTopYear answers, per artist, the year of its most-listened album.
+func (c *Ctx) artistTopYear() map[string]int {
+	best := map[string]int64{}
+	out := map[string]int{}
+	for i, it := range c.B.Items {
+		if it.Kind == "a" && it.Listens > best[it.ArtistID] {
+			best[it.ArtistID] = it.Listens
+			out[it.ArtistID] = c.year(i)
+		}
+	}
+	return out
+}
+
+// sortInt64 sorts in place. It is an insertion sort because the lists are short.
+func sortInt64(v []int64) {
+	for i := 1; i < len(v); i++ {
+		for j := i; j > 0 && v[j] < v[j-1]; j-- {
+			v[j], v[j-1] = v[j-1], v[j]
+		}
+	}
+}
+
+// atoi reads a number and answers 0 when it is not one.
+func atoi(s string) int { n, _ := strconv.Atoi(s); return n }
+
+// tileBlock answers the list block name for a page key, or empty if it has none.
+func tileBlock(key string) string {
+	if t, ok := genreTile[key]; ok {
+		return "tile:" + t
+	}
+	return ""
+}
+
+// keep lets the row keep items the member already has.
 func (x Tpl) keep() Tpl { x.Keep = true; return x }
 
 // crossFill answers the page key's albums that are also in the slot key.
@@ -909,13 +948,15 @@ func rightNow(c *Ctx, _ string) L {
 	})
 }
 
-// gems answers the page key's mid-listened albums with loyal listeners.
+// gems answers the page key's mid-listened albums that have loyal listeners.
 func gems(c *Ctx, _ string) L {
 	return c.by(c.notHad(c.loyal(c.pct(palb(c), 0.4, 0.8))), func(i int) float64 { return 0.5*c.t(i, c.Key) + 0.5*c.n(i) })
 }
 
+// union2 is union as a method, for template chains.
 func (c *Ctx) union2(a, b L) L { return union(a, b) }
 
+// seasonOn reports whether the page is a season page and that season is on.
 func (c *Ctx) seasonOn() bool {
 	if len(c.Key) < 8 || c.Key[:7] != "season:" {
 		return false
@@ -923,6 +964,7 @@ func (c *Ctx) seasonOn() bool {
 	return SeasonActive(c.Key[7:], c.Now, c.region())
 }
 
+// decadeRange answers the first and last year of the page's decade, or zeros off a decade page.
 func (c *Ctx) decadeRange() (int, int) {
 	if len(c.Key) >= 11 {
 		y := atoi(c.Key[7:11])
@@ -931,6 +973,7 @@ func (c *Ctx) decadeRange() (int, int) {
 	return 0, 0
 }
 
+// seedSim answers a library seed's artist similarities.
 func (c *Ctx) seedSim(id string) map[string]float64 {
 	if c.Lib != nil {
 		for _, s := range c.Lib.Seeds {
@@ -942,7 +985,7 @@ func (c *Ctx) seedSim(id string) map[string]float64 {
 	return nil
 }
 
-// artistsOfAlbums answers the artist items of albums' artists.
+// artistsOfAlbums answers the artist items of albums' artists, once each.
 func (c *Ctx) artistsOfAlbums(l L) L {
 	var out L
 	seen := map[string]bool{}
@@ -956,14 +999,18 @@ func (c *Ctx) artistsOfAlbums(l L) L {
 	return out
 }
 
+// weekPlayed answers the page's albums ranked this week.
 func weekPlayed(c *Ctx, _ string) L { return c.by(c.ranked(palb(c), rWeek), c.wp) }
 
+// modern answers the page's albums 5 to 15 years old, by listens.
 func modern(c *Ctx, _ string) L { return c.byLP(c.ageIn(palb(c), 5, 15)) }
 
+// rising answers artists ranked this week but not this year.
 func rising(c *Ctx, _ string) L {
 	return c.by(c.where(c.ranked(part(c), rWeek), func(i int) bool { return c.it(i).R[rThisYear] == 0 }), c.wp)
 }
 
+// acrossArea answers the page's albums that chart in an area, best first.
 func acrossArea(c *Ctx, v string) L {
 	l := c.where(palb(c), func(i int) bool { return c.areaScore(i, v) > 0 })
 	return c.by(l, func(i int) float64 { return c.areaScore(i, v) })

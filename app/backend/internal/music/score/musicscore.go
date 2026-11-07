@@ -1,6 +1,6 @@
-// Package musicscore holds the Music rows' signals, the shared dedup, the
-// row gate and order, and the three cache layers (plan 2026-10-22 §2).
-// Everything here is pure: callers pass the data and the clock.
+// Package musicscore scores the Music rows: the signals, the shared dedup,
+// the row gate and order, and the three cache layers. It is pure, so
+// callers pass in the data and the clock.
 package musicscore
 
 import (
@@ -11,8 +11,16 @@ import (
 	"time"
 )
 
-// Lnorm is log10(1+x)/log10(1+max) over a candidate pool; an empty pool
-// or a max of 0 gives 0.
+// Acts holds one member's and the household's deliberate acts for an artist.
+type Acts struct {
+	Follows, Asked           bool
+	OtherFollows, OtherAsked bool
+	HaveAny                  bool
+	AlbumsHad                int
+}
+
+// Lnorm returns log10(1+x)/log10(1+max), capped at 1. It returns 0 when
+// the pool is empty or max is 0.
 func Lnorm(x, max int64) float64 {
 	if max <= 0 || x <= 0 {
 		return 0
@@ -20,8 +28,8 @@ func Lnorm(x, max int64) float64 {
 	return math.Min(1, math.Log10(1+float64(x))/math.Log10(1+float64(max)))
 }
 
-// Popularity is P for a charted item: 1 − (rank − 1)/L, L the length of
-// the chart the item came from. Rank or L under 1 gives 0.
+// Popularity returns 1 - (rank-1)/length for an item on a chart of that
+// length. It returns 0 for a rank or length under 1.
 func Popularity(rank, length int) float64 {
 	if length < 1 || rank < 1 || rank > length {
 		return 0
@@ -29,11 +37,12 @@ func Popularity(rank, length int) float64 {
 	return 1 - float64(rank-1)/float64(length)
 }
 
-// Uncharted is P for an item on no chart: min(0.3, 0.3·Lnorm).
+// Uncharted returns the popularity of an item on no chart, capped at 0.3
+// so it never beats a charted one.
 func Uncharted(lnorm float64) float64 { return math.Min(0.3, 0.3*lnorm) }
 
-// Freshness is F_t = exp(−d/t), d whole days since the release (0 for a
-// future date). An unknown or bad date gives 0.
+// Freshness returns exp(-days/t) for the whole days since the release,
+// counting a future date as day 0. A missing or bad date gives 0.
 func Freshness(date string, t float64, now time.Time) float64 {
 	if len(date) < 10 || t <= 0 {
 		return 0
@@ -49,16 +58,9 @@ func Freshness(date string, t float64, now time.Time) float64 {
 	return math.Exp(-days / t)
 }
 
-// Acts are one member's and the household's deliberate acts for an artist.
-type Acts struct {
-	Follows, Asked           bool // the member
-	OtherFollows, OtherAsked bool // any other household member
-	HaveAny                  bool // the household has any album by the artist
-	AlbumsHad                int
-}
-
-// Affinity is A = min(raw, 6)/6, raw = 3·f_m + 2·k_m + 1.5·f_o + 1·k_o +
-// 1·h + 0.5·log2(1+n_had).
+// Affinity returns min(raw, 6)/6, where raw adds 3 for a member follow, 2
+// for an ask, 1.5 and 1 for the same acts by others, 1 for owning any
+// album and 0.5*log2(1+albums owned).
 func Affinity(x Acts) float64 {
 	b := func(v bool) float64 {
 		if v {
@@ -70,8 +72,8 @@ func Affinity(x Acts) float64 {
 	return math.Min(raw, 6) / 6
 }
 
-// OwnOnly reports whether the member has any own act (f_m or k_m) on any
-// artist; without one the household terms carry A (cold A).
+// OwnOnly reports whether the member has any own follow or ask. Without
+// one, the household acts carry the affinity.
 func OwnOnly(all []Acts) bool {
 	for _, x := range all {
 		if x.Follows || x.Asked {
@@ -81,10 +83,10 @@ func OwnOnly(all []Acts) bool {
 	return false
 }
 
-// GenreAffinity is G per genre: w(g) = Σ A(a)·share(a,g) over artists with
-// tags, kept when at least 2 artists contribute, top 12, divided by the
-// max. A max of 0 (or no tags at all) gives every G = 0 (an empty map).
-// shares maps artist → genre → vote share; aff maps artist → A.
+// GenreAffinity returns each genre's weight, the sum of artist affinity
+// times vote share. A genre needs at least 2 contributing artists, only
+// the top 12 stay, and weights are divided by the largest. aff maps artist
+// to affinity and shares maps artist to genre to vote share.
 func GenreAffinity(aff map[string]float64, shares map[string]map[string]float64) map[string]float64 {
 	w := map[string]float64{}
 	n := map[string]int{}
@@ -128,7 +130,7 @@ func GenreAffinity(aff map[string]float64, shares map[string]map[string]float64)
 	return out
 }
 
-// Norm divides each value by the list's max; a max of 0 gives all 0.
+// Norm divides each value by the largest. A largest of 0 gives all zeros.
 func Norm(v []float64) []float64 {
 	m := 0.0
 	for _, x := range v {
@@ -144,7 +146,8 @@ func Norm(v []float64) []float64 {
 	return out
 }
 
-// Tie is the day's tie-break: hash(member, date, id), the same all day.
+// Tie returns a hash of member, date and id, so a tie breaks the same way
+// all day.
 func Tie(member int64, date, id string) uint64 {
 	h := fnv.New64a()
 	var b [8]byte

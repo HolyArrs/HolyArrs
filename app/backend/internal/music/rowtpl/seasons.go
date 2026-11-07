@@ -5,25 +5,69 @@ import (
 	"time"
 )
 
-// Season is one celebration or season with its window in a year.
-type Season struct {
-	Key   string
-	Start time.Time
-	End   time.Time // inclusive day
-}
-
-// south are the regions whose seasons are flipped.
+// south lists the regions where the seasons are flipped.
 var south = map[string]bool{"au": true, "nz": true, "za": true, "ar": true, "br": true, "cl": true, "uy": true, "py": true, "bo": true, "pe": true}
 
-// lunarDates are Lunar New Year days (the table must keep 2 future years).
+// lunarDates are the Lunar New Year days. They cannot be computed here, so the table must always cover the next two years.
 var lunarDates = []time.Time{
 	date(2026, 2, 17), date(2027, 2, 6), date(2028, 1, 26), date(2029, 2, 13), date(2030, 2, 3),
 	date(2031, 1, 23), date(2032, 2, 11), date(2033, 1, 31), date(2034, 2, 19), date(2035, 2, 8),
 }
 
+// SeasonKeys are the seasons in Browse order, before date ordering.
+var SeasonKeys = []string{"halloween", "christmas", "new-year", "valentines", "summer", "dia-de-muertos", "lunar-new-year", "pride", "thanksgiving", "back-to-school", "fall", "spring"}
+
+// Season is one celebration or season with its window in a year.
+type Season struct {
+	Key   string
+	Start time.Time
+	End   time.Time
+}
+
+// SeasonActive reports whether the season is on at t in the region.
+func SeasonActive(key string, t time.Time, region string) bool {
+	_, on := window(key, t, region)
+	return on
+}
+
+// SeasonOrder answers the seasons for Browse: active ones, ending soonest first, then those starting within 45 days, then the rest by next start.
+func SeasonOrder(t time.Time, region string) []Season {
+	type x struct {
+		s     Season
+		group int
+	}
+	d := dayOf(t)
+	var l []x
+	for _, k := range SeasonKeys {
+		w, on := window(k, t, region)
+		g := 2
+		if on {
+			g = 0
+		} else if w.Start.Sub(d) <= 45*24*time.Hour {
+			g = 1
+		}
+		l = append(l, x{w, g})
+	}
+	sort.SliceStable(l, func(i, j int) bool {
+		if l[i].group != l[j].group {
+			return l[i].group < l[j].group
+		}
+		if l[i].group == 0 {
+			return l[i].s.End.Before(l[j].s.End)
+		}
+		return l[i].s.Start.Before(l[j].s.Start)
+	})
+	out := make([]Season, len(l))
+	for i, v := range l {
+		out[i] = v.s
+	}
+	return out
+}
+
+// date makes a midnight UTC day.
 func date(y int, m time.Month, d int) time.Time { return time.Date(y, m, d, 0, 0, 0, 0, time.UTC) }
 
-// nthWeekday is the n-th weekday of a month.
+// nthWeekday is the n-th given weekday of a month.
 func nthWeekday(y int, m time.Month, wd time.Weekday, n int) time.Time {
 	t := date(y, m, 1)
 	for t.Weekday() != wd {
@@ -32,11 +76,7 @@ func nthWeekday(y int, m time.Month, wd time.Weekday, n int) time.Time {
 	return t.AddDate(0, 0, 7*(n-1))
 }
 
-// SeasonKeys are the 12 seasons in Browse order (before date ordering).
-var SeasonKeys = []string{"halloween", "christmas", "new-year", "valentines", "summer", "dia-de-muertos", "lunar-new-year", "pride", "thanksgiving", "back-to-school", "fall", "spring"}
-
-// windowsIn answers a season's windows that touch year y (a window can
-// start the year before, like New Year).
+// windowsIn answers a season's windows that touch year y. A window can start the year before, like New Year.
 func windowsIn(key string, y int, region string) []Season {
 	s := south[region]
 	w := func(sm time.Month, sd int, em time.Month, ed int, yy int) Season {
@@ -103,9 +143,10 @@ func windowsIn(key string, y int, region string) []Season {
 	return out
 }
 
+// dayOf cuts a time down to its UTC day.
 func dayOf(t time.Time) time.Time { return date(t.Year(), t.Month(), t.Day()) }
 
-// window answers the season's active window on day t, or the next one.
+// window answers the season's window active on day t, or else the next one to start.
 func window(key string, t time.Time, region string) (Season, bool) {
 	d := dayOf(t)
 	var next Season
@@ -121,45 +162,4 @@ func window(key string, t time.Time, region string) (Season, bool) {
 		}
 	}
 	return next, false
-}
-
-// SeasonActive reports whether the season is on at t in the region.
-func SeasonActive(key string, t time.Time, region string) bool {
-	_, on := window(key, t, region)
-	return on
-}
-
-// SeasonOrder answers the seasons for Browse: active ones (ending soonest
-// first), then those starting within 45 days, then the rest by next start.
-func SeasonOrder(t time.Time, region string) []Season {
-	type x struct {
-		s     Season
-		group int
-	}
-	d := dayOf(t)
-	var l []x
-	for _, k := range SeasonKeys {
-		w, on := window(k, t, region)
-		g := 2
-		if on {
-			g = 0
-		} else if w.Start.Sub(d) <= 45*24*time.Hour {
-			g = 1
-		}
-		l = append(l, x{w, g})
-	}
-	sort.SliceStable(l, func(i, j int) bool {
-		if l[i].group != l[j].group {
-			return l[i].group < l[j].group
-		}
-		if l[i].group == 0 {
-			return l[i].s.End.Before(l[j].s.End)
-		}
-		return l[i].s.Start.Before(l[j].s.Start)
-	})
-	out := make([]Season, len(l))
-	for i, v := range l {
-		out[i] = v.s
-	}
-	return out
 }

@@ -7,30 +7,27 @@ import (
 	"time"
 )
 
-// Taste clusters ("mixes", plan 2026-10-23 §2): library artists grouped by
-// genre votes and similarity, deterministic, from deliberate acts only.
-
 const (
-	// MixMax is the most mixes per member (Luis, 2026-10-23: up to 6).
+	// MixMax is the most mixes per member.
 	MixMax = 6
-	// MixTaste is the taste set's size (top artists by A).
+	// MixTaste is how many top artists by affinity form the taste set.
 	MixTaste = 60
-	// mixMerge is the least average-linkage weight two clusters merge at.
+	// mixMerge is the lowest average link weight at which two clusters merge.
 	mixMerge = 0.45
 	// mixMinArtists is the fewest artists a mix keeps.
 	mixMinArtists = 3
 )
 
-// MixArtist is one taste-set artist: A and its genre share vector (empty
-// when the artist has no genre votes).
+// MixArtist is one taste-set artist with its affinity and genre share
+// vector, which is empty when the artist has no genre votes.
 type MixArtist struct {
 	ID    string
 	A     float64
 	Share map[string]float64
 }
 
-// Mix is one cluster: members by A (highest first), the A-weighted genre
-// centroid, the naming genres (empty: named after Lead) and ΣA.
+// Mix is one cluster of artists with its weighted genre centroid, naming
+// genres (empty means it is named after Lead) and total affinity.
 type Mix struct {
 	Members  []string
 	Centroid map[string]float64
@@ -39,7 +36,7 @@ type Mix struct {
 	Weight   float64
 }
 
-// Cos is the cosine of two genre share vectors; a zero vector is 0.
+// Cos returns the cosine of two genre share vectors, or 0 if either is empty.
 func Cos(u, v map[string]float64) float64 {
 	var dot, nu, nv float64
 	for k, x := range u {
@@ -55,12 +52,11 @@ func Cos(u, v map[string]float64) float64 {
 	return clamp01(dot / math.Sqrt(nu*nv))
 }
 
-func clamp01(x float64) float64 { return math.Max(0, math.Min(1, x)) }
-
-// Clusters groups the taste set (§2 steps 2–5). S answers the symmetric
-// similarity of two artists (0 when unknown). Artists without genre votes
-// join the cluster of their best S neighbour afterwards (membership only).
-func Clusters(set []MixArtist, S func(a, b string) float64) []Mix {
+// Clusters groups the taste set into mixes. sim returns the symmetric
+// similarity of two artists, or 0 when unknown. Artists without genre votes
+// join the cluster of their most similar neighbour after grouping, so they
+// never shape it.
+func Clusters(set []MixArtist, sim func(a, b string) float64) []Mix {
 	set = append([]MixArtist{}, set...)
 	sort.SliceStable(set, func(i, j int) bool {
 		if set[i].A != set[j].A {
@@ -86,11 +82,12 @@ func Clusters(set []MixArtist, S func(a, b string) float64) []Mix {
 		w[i] = make([]float64, n)
 		for j := range w[i] {
 			if i != j {
-				w[i][j] = 0.6*Cos(by[voted[i]].Share, by[voted[j]].Share) + 0.4*clamp01(S(voted[i], voted[j]))
+				// Genre votes count a bit more than the similarity feed.
+				w[i][j] = 0.6*Cos(by[voted[i]].Share, by[voted[j]].Share) + 0.4*clamp01(sim(voted[i], voted[j]))
 			}
 		}
 	}
-	// Greedy average-linkage agglomeration; ties by the clusters' first key.
+	// Greedy average-linkage merging; ties go to the lowest cluster index.
 	cl := make([][]int, n)
 	for i := range cl {
 		cl[i] = []int{i}
@@ -108,6 +105,7 @@ func Clusters(set []MixArtist, S func(a, b string) float64) []Mix {
 		bi, bj, best := -1, -1, mixMerge
 		for i := 0; i < len(cl); i++ {
 			for j := i + 1; j < len(cl); j++ {
+				// The small margin keeps float noise from breaking ties.
 				if l := link(cl[i], cl[j]); l > best+1e-12 || bi < 0 && l >= best-1e-12 {
 					bi, bj, best = i, j, l
 				}
@@ -128,7 +126,7 @@ func Clusters(set []MixArtist, S func(a, b string) float64) []Mix {
 		}
 		mixes = append(mixes, m)
 	}
-	// Artists with no votes join their best S neighbour's cluster.
+	// Unvoted artists only add members, they do not move a cluster.
 	for _, id := range bare {
 		bi, best := -1, 0.0
 		for i, m := range mixes {
@@ -136,7 +134,7 @@ func Clusters(set []MixArtist, S func(a, b string) float64) []Mix {
 				if len(by[x].Share) == 0 {
 					continue
 				}
-				if s := S(id, x); s > best {
+				if s := sim(id, x); s > best {
 					bi, best = i, s
 				}
 			}
@@ -173,6 +171,90 @@ func Clusters(set []MixArtist, S func(a, b string) float64) []Mix {
 	return merged[:min(MixMax, len(merged))]
 }
 
+// MixTitle names a mix after its genres, or "{lead} and more" when no genre
+// is strong enough to name it.
+func MixTitle(m Mix, leadName string) string {
+	if len(m.Genres) == 0 {
+		return leadName + " and more"
+	}
+	parts := make([]string, len(m.Genres))
+	for i, g := range m.Genres {
+		parts[i] = GenreName(g)
+	}
+	return strings.Join(parts, " & ") + " mix"
+}
+
+// MixSeeds picks 3 seeds for the day from the mix's top 6 members by
+// affinity. The pick is rotated by a daily hash so it changes each day but
+// not within one.
+func MixSeeds(m Mix, member int64, date string) []string {
+	top := append([]string{}, m.Members[:min(6, len(m.Members))]...)
+	sort.SliceStable(top, func(i, j int) bool {
+		return Tie(member, date, m.Lead+top[i]) < Tie(member, date, m.Lead+top[j])
+	})
+	return top[:min(3, len(top))]
+}
+
+// ScoreMix scores a mix item as 0.45*normS + 0.25*cos + 0.2*p + 0.1*f60.
+func ScoreMix(normS, cos, p, f60 float64) float64 {
+	return 0.45*normS + 0.25*cos + 0.2*p + 0.1*f60
+}
+
+// MixKeeps reports whether an item clears the quality bar: score at least
+// 0.35 and either a close similar artist or a close genre match.
+func MixKeeps(score, sMax, cos float64) bool {
+	return score >= 0.35 && (sMax >= 0.3 || cos >= 0.5)
+}
+
+// ScoreDeepCut scores a deep cut as 0.5*a + 0.3*rankFrac + 0.2*cover.
+func ScoreDeepCut(a, rankFrac, cover float64) float64 { return 0.5*a + 0.3*rankFrac + 0.2*cover }
+
+// DeepRankFrac returns (r-1)/max(1, n-1) for the 1-based listeners rank r.
+func DeepRankFrac(r, n int) float64 { return clamp01(float64(r-1) / math.Max(1, float64(n-1))) }
+
+// ScoreAnniversary scores an anniversary as 0.5*a + 0.3*lnorm + 0.2*round.
+func ScoreAnniversary(a, lnorm, round float64) float64 { return 0.5*a + 0.3*lnorm + 0.2*round }
+
+// ScoreTogether scores a played-together item as 0.5*rel + 0.3*p + 0.2*aSeed.
+func ScoreTogether(rel, p, aSeed float64) float64 { return 0.5*rel + 0.3*p + 0.2*aSeed }
+
+// Rel weighs a MusicBrainz artist link: 1 for members and founders, 0.8 for
+// collaborations, and 0 for any other type since it says nothing of taste.
+func Rel(linkType string) float64 {
+	switch linkType {
+	case "member of band", "founder":
+		return 1
+	case "collaboration":
+		return 0.8
+	}
+	return 0
+}
+
+// Anniversary reports the 10th, 20th, 25th or 30th anniversary of a release
+// date when it falls within 7 days back to 30 days ahead of now (UTC). It
+// returns the years and the anniversary day.
+func Anniversary(date string, now time.Time) (int, time.Time, bool) {
+	if len(date) < 10 {
+		return 0, time.Time{}, false
+	}
+	d, err := time.Parse("2006-01-02", date[:10])
+	if err != nil {
+		return 0, time.Time{}, false
+	}
+	today := now.UTC().Truncate(24 * time.Hour)
+	for _, n := range []int{10, 20, 25, 30} {
+		on := d.AddDate(n, 0, 0)
+		days := int(on.Sub(today).Hours() / 24)
+		if days >= -7 && days <= 30 {
+			return n, on, true
+		}
+	}
+	return 0, time.Time{}, false
+}
+
+func clamp01(x float64) float64 { return math.Max(0, math.Min(1, x)) }
+
+// sortMixes orders mixes by weight, then by first member for a stable result.
 func sortMixes(l []Mix) {
 	sort.SliceStable(l, func(i, j int) bool {
 		if l[i].Weight != l[j].Weight {
@@ -182,8 +264,8 @@ func sortMixes(l []Mix) {
 	})
 }
 
-// finishMix orders members by A, and works out the centroid, name genres
-// and weight.
+// finishMix orders members by affinity, then works out the centroid, the
+// naming genres and the weight.
 func finishMix(m Mix, by map[string]MixArtist) Mix {
 	sort.SliceStable(m.Members, func(i, j int) bool {
 		a, b := by[m.Members[i]], by[m.Members[j]]
@@ -228,89 +310,10 @@ func finishMix(m Mix, by map[string]MixArtist) Mix {
 	return m
 }
 
-// mixName is the mix's name key (genres, else its lead).
+// mixName returns the key two mixes share when they would get one name.
 func mixName(m Mix) string {
 	if len(m.Genres) > 0 {
 		return strings.Join(m.Genres, "&")
 	}
 	return "lead:" + m.Lead
-}
-
-// MixTitle names a mix: "Dream pop & shoegaze mix", or "{lead} and more"
-// when no genre holds 40% of its weight.
-func MixTitle(m Mix, leadName string) string {
-	if len(m.Genres) == 0 {
-		return leadName + " and more"
-	}
-	parts := make([]string, len(m.Genres))
-	for i, g := range m.Genres {
-		parts[i] = GenreName(g)
-	}
-	return strings.Join(parts, " & ") + " mix"
-}
-
-// MixSeeds picks the mix's 3 seeds of the day: its top 6 members by A,
-// rotated by Tie(member, date, lead + id).
-func MixSeeds(m Mix, member int64, date string) []string {
-	top := append([]string{}, m.Members[:min(6, len(m.Members))]...)
-	sort.SliceStable(top, func(i, j int) bool {
-		return Tie(member, date, m.Lead+top[i]) < Tie(member, date, m.Lead+top[j])
-	})
-	return top[:min(3, len(top))]
-}
-
-// ScoreMix is a mix item's score: 0.45·norm(ΣS) + 0.25·cos + 0.2·P + 0.1·F60.
-func ScoreMix(normS, cos, p, f60 float64) float64 {
-	return 0.45*normS + 0.25*cos + 0.2*p + 0.1*f60
-}
-
-// MixKeeps is the item quality bar: score ≥ 0.35 and (S_max ≥ 0.3 or cos ≥ 0.5).
-func MixKeeps(score, sMax, cos float64) bool {
-	return score >= 0.35 && (sMax >= 0.3 || cos >= 0.5)
-}
-
-// ScoreDeepCut is 0.5·A + 0.3·rankFrac + 0.2·[cover].
-func ScoreDeepCut(a, rankFrac, cover float64) float64 { return 0.5*a + 0.3*rankFrac + 0.2*cover }
-
-// DeepRankFrac is (r − 1) / max(1, n − 1), r the 1-based listeners rank.
-func DeepRankFrac(r, n int) float64 { return clamp01(float64(r-1) / math.Max(1, float64(n-1))) }
-
-// ScoreAnniversary is 0.5·A + 0.3·Lnorm + 0.2·[round 10/20].
-func ScoreAnniversary(a, lnorm, round float64) float64 { return 0.5*a + 0.3*lnorm + 0.2*round }
-
-// ScoreTogether is 0.5·rel + 0.3·P + 0.2·A_seed.
-func ScoreTogether(rel, p, aSeed float64) float64 { return 0.5*rel + 0.3*p + 0.2*aSeed }
-
-// Rel weighs a MusicBrainz artist link: members and founders 1.0,
-// collaborations 0.8; every other type is not taste (0).
-func Rel(linkType string) float64 {
-	switch linkType {
-	case "member of band", "founder":
-		return 1
-	case "collaboration":
-		return 0.8
-	}
-	return 0
-}
-
-// Anniversary reports whether a first-release date has its 10th, 20th,
-// 25th or 30th anniversary within −7..+30 days of now (UTC days): the
-// years and the day.
-func Anniversary(date string, now time.Time) (int, time.Time, bool) {
-	if len(date) < 10 {
-		return 0, time.Time{}, false
-	}
-	d, err := time.Parse("2006-01-02", date[:10])
-	if err != nil {
-		return 0, time.Time{}, false
-	}
-	today := now.UTC().Truncate(24 * time.Hour)
-	for _, n := range []int{10, 20, 25, 30} {
-		on := d.AddDate(n, 0, 0)
-		days := int(on.Sub(today).Hours() / 24)
-		if days >= -7 && days <= 30 {
-			return n, on, true
-		}
-	}
-	return 0, time.Time{}, false
 }

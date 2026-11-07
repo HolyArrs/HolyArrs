@@ -1,5 +1,6 @@
-// Package music holds HolyArrs's Music module: what it needs from the rest
-// of the program (Deps) and, in subpackages, its pure parts (score).
+// Package music holds the Music module. Deps lists what the module needs
+// from the rest of the program, and the subpackages hold its parts: score
+// for ranking and row plans, rowtpl for the row template engine.
 package music
 
 import (
@@ -8,82 +9,57 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Deps are the metadata server calls and flags the Music module reads. A
-// nil call leaves its rows or pictures out.
+// Deps holds the metadata server calls and feature flags the Music module
+// reads. A nil call means that data is left out of the page.
 type Deps struct {
-	// MusicTrending reads a music trending list from the metadata server;
-	// nil hides the rows.
+	// MusicTrending reads a trending list from the metadata server. Nil hides those rows.
 	MusicTrending func(ctx context.Context, kind, region string) (metadata.MusicTrend, error)
-	// MusicNew reads a new music window (tracks, week, recent, upcoming)
-	// from the metadata server; nil leaves New & Popular → Music to
-	// MusicBrainz alone.
+	// MusicNew reads a new-music window (tracks, week, recent, upcoming). Nil leaves New & Popular to MusicBrainz alone.
 	MusicNew func(ctx context.Context, window string) (metadata.MusicNew, error)
-	// MusicSimilar reads similar artists from the metadata server; nil has
-	// no Because you have or Fans of rows.
+	// MusicSimilar reads similar artists. Nil removes the rows built on them.
 	MusicSimilar func(ctx context.Context, mbid string) ([]metadata.SimilarArtist, error)
-	// MusicCharts and MusicGenres read the metadata server's region charts
-	// (with P and F) and genre tiles for the music_rows_v2 rows; nil leaves
-	// those rows out.
+	// MusicCharts reads region charts for the rows flagged by MusicRowsV2. Nil leaves those rows out.
 	MusicCharts func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error)
+	// MusicGenres reads the genre tiles for the same rows. Nil leaves them out.
 	MusicGenres func(ctx context.Context, region string) (metadata.MusicGenres, error)
-	// MusicGenreTile reads a genre tile's grey picture (Phase 2); nil
-	// keeps every tile a flat hue.
+	// MusicGenreTile reads the grey picture of a genre tile. Nil keeps every tile a flat color.
 	MusicGenreTile func(ctx context.Context, slug, version string) ([]byte, error)
-	// MusicRowsV2 is flag music_rows_v2: Explore → Music from the
-	// 2026-10-22 plan's rows; off keeps the old row builder.
+	// MusicRowsV2 turns on the chart-based Explore rows. Off keeps the old row builder.
 	MusicRowsV2 bool
-	// MusicRowsV3 is flag music_rows_v3 (Phase 3): the v2 rows with their
-	// scores, plus the similarity, genre and guest rows; off keeps the
-	// Phase 1 rows. It needs MusicRowsV2.
+	// MusicRowsV3 adds scores plus the similarity, genre and guest rows to the V2 rows. It needs MusicRowsV2.
 	MusicRowsV3 bool
-	// MusicRowsV6 is flag music_rows_v6 (Phase 6): Fresh & Trending → Music
-	// from the region charts (Spotlight, Fresh songs, Out this week, Top
-	// albums, Climbing, Coming soon) and the Rising row on Explore → Music
-	// (with MusicRowsV3). Off keeps both as they were.
+	// MusicRowsV6 builds Fresh & Trending from the region charts and adds the Rising row. Off keeps both as before.
 	MusicRowsV6 bool
-	// MusicRowsV7 is flag music_rows_v7 (plan 2026-10-23): Explore → Music
-	// as a daily row plan of up to 30 rows, served 6 at a time with a cursor,
-	// plus mixes, Because you have, Deep cuts, Turning N and Together with
-	// (with MusicRowsV3). Off keeps the v3/v6 page.
+	// MusicRowsV7 serves Explore as a daily plan of up to 30 rows, 6 at a time with a cursor, with mixes and artist rows. Off keeps the older page.
 	MusicRowsV7 bool
-	// MusicListsV1 is flag music_lists_v1 (plan 2026-10-24): world-list
-	// rows (charts turned into albums and artists) on Explore → Music and
-	// New & Popular → Music, from MusicShelves. Off keeps today's pages.
+	// MusicListsV1 turns on world-list rows on Explore and New & Popular, built from MusicShelves. Off keeps the older pages.
 	MusicListsV1 bool
-	// MusicShelves reads the metadata server's world-list shelves for a
-	// region; nil leaves the list rows out.
+	// MusicShelves reads the world-list shelves for a region. Nil leaves the list rows out.
 	MusicShelves func(ctx context.Context, region string) (metadata.MusicShelves, error)
-	// MusicPools reads the metadata server's music catalog bundle (the row
-	// templates' data; conditional on etag); nil keeps today's list rows.
+	// MusicPools reads the music catalog bundle that feeds the row templates, conditional on its etag. Nil keeps the older list rows.
 	MusicPools func(ctx context.Context, etag string) ([]byte, string, error)
-	// MusicRowsTplOff is flag music_rows_tpl_off: the kill switch that keeps
-	// today's music_lists_v1 pages instead of the row template engine.
+	// MusicRowsTplOff is a kill switch that keeps the older list pages instead of the row template engine.
 	MusicRowsTplOff bool
-	// MusicListeners, MusicSimilarSet and MusicArtistData read the metadata
-	// server's batch artist data for the scored rows; nil leaves P at the
-	// charts and the similarity rows out.
-	MusicListeners  func(ctx context.Context, ids []string) (map[string]int64, error)
+	// MusicListeners reads listener counts per artist for scoring. Nil leaves the chart numbers as they are.
+	MusicListeners func(ctx context.Context, ids []string) (map[string]int64, error)
+	// MusicSimilarSet reads similar artists for many seeds at once. Nil drops the similarity rows.
 	MusicSimilarSet func(ctx context.Context, seeds []string) (map[string][]metadata.MusicSimilarScore, error)
+	// MusicArtistData reads batch artist data for the scored rows. Nil drops those rows.
 	MusicArtistData func(ctx context.Context, ids []string) ([]metadata.MusicArtistData, error)
-	// MusicSuggest reads the metadata server's suggest index (charted
-	// artists, albums and songs); nil leaves the dropdown to the Library
-	// and TMDB.
+	// MusicSuggest reads the suggest index of charted artists, albums and songs. Nil leaves the dropdown to the Library and TMDB.
 	MusicSuggest func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error)
-	// MusicTopSongs, MusicRising and MusicDiscography read an artist's top
-	// songs, the day's rising artists and the discography a store knows when
-	// MusicBrainz has none; nil leaves today's top songs and hides the rest.
-	MusicTopSongs    func(ctx context.Context, mbid string) (metadata.MusicTopSongs, error)
-	MusicRising      func(ctx context.Context) (metadata.MusicRising, error)
+	// MusicTopSongs reads the top songs of an artist. Nil keeps the default top songs.
+	MusicTopSongs func(ctx context.Context, mbid string) (metadata.MusicTopSongs, error)
+	// MusicRising reads the artists rising today. Nil hides the row.
+	MusicRising func(ctx context.Context) (metadata.MusicRising, error)
+	// MusicDiscography reads a discography from a store when MusicBrainz has none. Nil hides it.
 	MusicDiscography func(ctx context.Context, mbid string) (metadata.MusicDiscography, error)
-	// MusicDeezer, MusicDeezerAlbum and MusicArtistBio read the metadata
-	// server's kept Deezer marks (explicit, label, top songs) and an
-	// artist's Wikipedia bio; installs never ask Deezer or Wikipedia
-	// themselves. nil falls back to Library.ArtistImages, a developer
-	// stand-in only (off by default).
-	MusicDeezer      func(ctx context.Context, mbid string) (metadata.DeezerProfile, error)
+	// MusicDeezer reads kept Deezer marks (explicit, label, top songs) from the metadata server, so installs never call Deezer. Nil falls back to Library.ArtistImages, a developer stand-in that is off by default.
+	MusicDeezer func(ctx context.Context, mbid string) (metadata.DeezerProfile, error)
+	// MusicDeezerAlbum reads kept Deezer info for one album. Nil leaves it out.
 	MusicDeezerAlbum func(ctx context.Context, id int64) (metadata.DeezerAlbumInfo, error)
-	MusicArtistBio   func(ctx context.Context, mbid string) (*metadata.WikiSummary, error)
-	// MusicPictures reads the stored picture records (version, size, main
-	// colour) of a row's artists and albums in one call; nil answers none.
+	// MusicArtistBio reads an artist bio from the metadata server, so installs never call Wikipedia. Nil leaves the bio out.
+	MusicArtistBio func(ctx context.Context, mbid string) (*metadata.WikiSummary, error)
+	// MusicPictures reads stored picture records (version, size, main color) for a row's artists and albums in one call. Nil answers none.
 	MusicPictures func(ctx context.Context, artists, albums []string) (metadata.MusicPictures, error)
 }

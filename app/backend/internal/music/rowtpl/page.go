@@ -9,31 +9,25 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// Row is one filled page row.
-type Row struct {
-	ID       string // template id, plus ":" and the slot value
-	Template string
-	Title    string
-	Reason   string
-	Shape    string
-	Family   string
-	Chart    bool
-	Keep     bool
-	Items    []int // bundle indices, row order
-}
-
 // RowMin is the fewest items any template row shows with.
 const RowMin = 8
 
-// MinArtists is the fewest artists an album row needs.
+// MinArtists is the fewest different artists an album row needs.
 const MinArtists = 5
 
 // rawMax caps a candidate row's raw items before dedup.
 const rawMax = 60
 
+// SpotlightMax is how many albums the Spotlight shows at most. With fewer than SpotlightMin the page has none.
+const (
+	SpotlightMax = 10
+	SpotlightMin = 3
+)
+
+// pageLetter maps a page kind to the letter templates use to name the pages they run on.
 var pageLetter = map[string]byte{"genre": 'G', "mood": 'M', "season": 'S', "decade": 'D', "activity": 'A', "explore": 'E', "new": 'N'}
 
-// heads are the head templates per page kind, in order.
+// heads are the head templates per page letter, in order. They fill the Spotlight and lead the page.
 var heads = map[byte][]string{
 	'G': {"D01", "E01"},
 	'M': {"H01"},
@@ -44,10 +38,10 @@ var heads = map[byte][]string{
 	'E': {"B06", "A01"},
 }
 
-// shortName is a key's name in titles.
+// shortName is a key's short name in titles, where the catalog name is too long.
 var shortName = map[string]string{"decade:2000s": "2000s", "decade:2010s": "2010s", "decade:2020s": "2020s", "genre:dance": "Dance", "genre:folk": "Folk", "genre:reggae": "Reggae", "genre:christian": "Christian", "genre:kids": "Kids", "genre:soundtracks": "Soundtrack"}
 
-// forOf is an activity's "for …" phrase.
+// forOf is an activity's "for ..." phrase.
 var forOf = map[string]string{"activity:driving": "for driving", "activity:cooking": "for cooking", "activity:gaming": "for gaming", "activity:studying": "for studying", "activity:gym": "for the gym", "activity:running": "for running", "activity:home": "for a night in", "activity:party": "for a party"}
 
 // areas are fixed country groups.
@@ -60,13 +54,337 @@ var areas = map[string][]string{
 	"asia-pacific":  {"jp", "kr", "in", "id", "ph", "my", "sg", "th", "vn", "tw", "hk", "au", "nz", "pk"},
 }
 
+// areaName is an area's name as titles write it.
 var areaName = map[string]string{"north-america": "North America", "latin-america": "Latin America", "europe": "Europe", "africa": "Africa", "middle-east": "the Middle East", "asia-pacific": "Asia-Pacific"}
 
 // bigMarkets are the largest music markets, in order.
 var bigMarkets = []string{"us", "gb", "de", "jp", "fr", "br", "kr", "ca", "au", "mx", "it", "es", "nl", "se", "in"}
 
+// areaOrder is the order areas are offered in.
 var areaOrder = []string{"north-america", "latin-america", "europe", "africa", "middle-east", "asia-pacific"}
 
+// countryNames name the chart countries for titles.
+var countryNames = map[string]string{
+	"us": "the US", "gb": "the UK", "ca": "Canada", "au": "Australia", "nz": "New Zealand", "ie": "Ireland", "de": "Germany", "fr": "France", "es": "Spain", "it": "Italy",
+	"nl": "the Netherlands", "be": "Belgium", "at": "Austria", "ch": "Switzerland", "se": "Sweden", "no": "Norway", "dk": "Denmark", "fi": "Finland", "pt": "Portugal", "pl": "Poland",
+	"cz": "Czechia", "sk": "Slovakia", "hu": "Hungary", "ro": "Romania", "bg": "Bulgaria", "gr": "Greece", "hr": "Croatia", "si": "Slovenia", "rs": "Serbia", "ua": "Ukraine",
+	"lt": "Lithuania", "lv": "Latvia", "ee": "Estonia", "ru": "Russia", "cy": "Cyprus", "tr": "Turkey", "il": "Israel", "ae": "the UAE", "sa": "Saudi Arabia", "jo": "Jordan",
+	"lb": "Lebanon", "eg": "Egypt", "ma": "Morocco", "dz": "Algeria", "tn": "Tunisia", "ng": "Nigeria", "ke": "Kenya", "za": "South Africa", "ci": "Ivory Coast", "sn": "Senegal",
+	"cm": "Cameroon", "gh": "Ghana", "mx": "Mexico", "br": "Brazil", "ar": "Argentina", "co": "Colombia", "cl": "Chile", "pe": "Peru", "ec": "Ecuador", "ve": "Venezuela",
+	"do": "the Dominican Republic", "gt": "Guatemala", "cr": "Costa Rica", "pa": "Panama", "py": "Paraguay", "uy": "Uruguay", "bo": "Bolivia", "hn": "Honduras", "sv": "El Salvador",
+	"ni": "Nicaragua", "jm": "Jamaica", "jp": "Japan", "kr": "South Korea", "in": "India", "id": "Indonesia", "ph": "the Philippines", "my": "Malaysia", "sg": "Singapore",
+	"th": "Thailand", "vn": "Vietnam", "tw": "Taiwan", "hk": "Hong Kong", "pk": "Pakistan", "kz": "Kazakhstan", "lu": "Luxembourg", "is": "Iceland",
+}
+
+// commonSeasons are season names written in lower case in mid-title.
+var commonSeasons = map[string]bool{"season:fall": true, "season:spring": true, "season:summer": true, "season:back-to-school": true}
+
+// Row is one filled page row. Items are bundle indices in row order.
+type Row struct {
+	// ID is the template id, plus ":" and the slot value.
+	ID       string
+	Template string
+	Title    string
+	Reason   string
+	Shape    string
+	Family   string
+	Chart    bool
+	Keep     bool
+	Items    []int
+}
+
+// Cand is one candidate row before the plan orders and dedups it: its raw items, best first, with their scores.
+type Cand struct {
+	ID, Template  string
+	Title, Reason string
+	Shape, Family string
+	Chart, Disc   bool
+	Keep          bool
+	Prior         float64
+	Items         []int
+	Scores        []float64
+}
+
+// LibraryKeys answers the library's genre keys, strongest first, by the affinity of its artists and the albums it has. It also answers the decade key the library has most albums in.
+func LibraryKeys(b *Bundle, l *Lib) ([]string, string) {
+	w := map[string]float64{}
+	dec := map[string]int{}
+	for id, a := range l.Artists {
+		if i, ok := b.artistIx[id]; ok {
+			for k, m := range b.byKey {
+				if kindOf(k) == "genre" {
+					if x, in := m[i]; in {
+						w[k] += a * float64(x.T) / 1000
+					}
+				}
+			}
+		}
+	}
+	for id := range l.Albums {
+		i, ok := b.albumIx[id]
+		if !ok {
+			continue
+		}
+		for k, m := range b.byKey {
+			if _, in := m[i]; in {
+				switch kindOf(k) {
+				case "genre":
+					w[k] += 0.5
+				case "decade":
+					dec[k]++
+				}
+			}
+		}
+	}
+	var g []string
+	for k := range w {
+		g = append(g, k)
+	}
+	sort.Slice(g, func(i, j int) bool {
+		if w[g[i]] != w[g[j]] {
+			return w[g[i]] > w[g[j]]
+		}
+		return g[i] < g[j]
+	})
+	best, d := 0, ""
+	for k, n := range dec {
+		if n > best || n == best && k < d {
+			best, d = n, k
+		}
+	}
+	return g, d
+}
+
+// Spotlight answers the page's hero albums: up to SpotlightMax albums by different artists, not had, taken from the head templates in order. The most-listened albums come last as a fallback. They are marked seen, so no row repeats them.
+func Spotlight(c *Ctx) []int {
+	letter := pageLetter[c.Kind]
+	type src struct {
+		tp Tpl
+		v  string
+	}
+	var srcs []src
+	for _, h := range heads[letter] {
+		tp := Catalog[indexOf(h)]
+		if !c.applies(tp) {
+			continue
+		}
+		for _, v := range c.slotValues(tp) {
+			srcs = append(srcs, src{tp, v})
+		}
+	}
+	// Last resort: the most-listened albums of the page, or of the whole catalog.
+	srcs = append(srcs, src{Tpl{Fill: func(c *Ctx, _ string) L {
+		if c.Key == "" {
+			return c.byLP(c.albums(c.all()))
+		}
+		return c.byLP(palb(c))
+	}}, ""})
+	var out []int
+	artists := map[string]bool{}
+	for _, sv := range srcs {
+		for _, i := range c.pictured(c.notHad(c.albums(sv.tp.Fill(c, sv.v)))) {
+			if len(out) == SpotlightMax {
+				break
+			}
+			if a := c.artistOf(i); !artists[a] {
+				artists[a] = true
+				out = append(out, i)
+			}
+		}
+		if len(out) == SpotlightMax {
+			break
+		}
+	}
+	if len(out) < SpotlightMin {
+		return nil
+	}
+	if c.Seen == nil {
+		c.Seen = map[string]bool{}
+	}
+	for _, i := range out {
+		it := c.it(i)
+		c.Seen["a:"+it.ID] = true
+		c.Seen["rg:"+it.ID] = true
+		c.Seen["fold:"+foldKey(it)] = true
+	}
+	return out
+}
+
+// Candidates answers every template row that applies to the page with at least RowMin raw items. Builders that run their own plan, like Explore's, use it.
+func Candidates(c *Ctx) []Cand {
+	var out []Cand
+	for _, tp := range Catalog {
+		if !c.applies(tp) {
+			continue
+		}
+		for _, v := range c.slotValues(tp) {
+			l := tp.Fill(c, v)
+			if !tp.Keep {
+				l = c.notHad(l)
+			}
+			l, pictured := c.picturedFirst(l)
+			if !pictured {
+				continue
+			}
+			if len(l) > rawMax {
+				l = l[:rawMax]
+			}
+			if len(l) < RowMin {
+				continue
+			}
+			id := tp.ID
+			if v != "" {
+				id += ":" + v
+			}
+			cd := Cand{ID: id, Template: tp.ID, Shape: shapeOr(tp.Shape), Family: tp.Fam, Chart: tp.Chart, Disc: tp.Disc, Keep: tp.Keep, Prior: tp.Prior, Items: l}
+			for _, i := range l {
+				cd.Scores = append(cd.Scores, c.itemScore(i, tp, v))
+			}
+			cd.Title, cd.Reason = c.render(tp, v, l[:min(20, len(l))], id)
+			out = append(out, cd)
+		}
+	}
+	return out
+}
+
+// PageItems answers every item the page can show to anyone with an empty library, best first. Each member's rows are drawn from these lists, whatever the day's order and dedup.
+func PageItems(c *Ctx) []int {
+	seen := map[int]bool{}
+	var out []int
+	add := func(l []int) {
+		for _, i := range l {
+			if !seen[i] {
+				seen[i] = true
+				out = append(out, i)
+			}
+		}
+	}
+	x := *c
+	x.Seen = nil
+	add(Spotlight(&x))
+	for _, tp := range Catalog {
+		if !c.applies(tp) {
+			continue
+		}
+		for _, v := range c.slotVals(tp, true) {
+			l := tp.Fill(c, v)
+			if !tp.Keep {
+				l = c.notHad(l)
+			}
+			if len(l) < RowMin {
+				continue
+			}
+			add(l[:min(rawMax, len(l))])
+		}
+	}
+	return out
+}
+
+// Build fills the page: every template that applies, expanded over its slot values, then ordered and deduped by the row plan. It gives at most 30 rows, each with at least RowMin items and two per artist, and at least five artists for album rows.
+func Build(c *Ctx) []Row {
+	letter := pageLetter[c.Kind]
+	type meta struct {
+		tp Tpl
+		v  string
+	}
+	metas := map[string]meta{}
+	var rows []musicscore.Row
+	withLib := !c.Lib.empty()
+	for _, tp := range Catalog {
+		if !c.applies(tp) {
+			continue
+		}
+		for _, v := range c.slotValues(tp) {
+			l := tp.Fill(c, v)
+			if !tp.Keep {
+				l = c.notHad(l)
+			}
+			l, pictured := c.picturedFirst(l)
+			if !pictured {
+				continue
+			}
+			if len(l) > rawMax {
+				l = l[:rawMax]
+			}
+			if len(l) < RowMin {
+				continue
+			}
+			id := tp.ID
+			if v != "" {
+				id += ":" + v
+			}
+			r := musicscore.Row{ID: id, Family: tp.Fam, Disc: tp.Disc, Prior: musicscore.PriorMixed, ChartSet: true, Chart: tp.Chart, Shape: tp.Shape, Min: RowMin}
+			if tp.Shape != "round" && !(tp.ID == "G13") {
+				r.MinArtists = MinArtists
+			}
+			r.ArtistRow = tp.ID == "G13" || tp.ID == "C13"
+			for _, i := range l {
+				it := c.it(i)
+				x := musicscore.Item{Key: it.Kind + ":" + it.ID, Artist: c.artistOf(i), Score: c.itemScore(i, tp, v)}
+				if it.Kind == "a" {
+					x.Album, x.FoldKey = it.ID, foldKey(it)
+				}
+				r.Items = append(r.Items, x)
+			}
+			prior, jit := tp.Prior, 0.95+0.1*float64(hash(strconv.FormatInt(c.Member, 10), c.Day(), id)%1000)/1000
+			wPr := 0.15
+			if !withLib {
+				wPr = 0.15 / 0.80
+			}
+			r.ScoreFn = func(unseen []musicscore.Item) float64 {
+				s := make([]float64, len(unseen))
+				for k, it := range unseen {
+					s[k] = it.Score
+				}
+				sort.Sort(sort.Reverse(sort.Float64Slice(s)))
+				n := min(8, len(s))
+				sum := 0.0
+				for _, x := range s[:n] {
+					sum += x
+				}
+				return (sum/float64(max(n, 1)) + wPr*prior) * jit
+			}
+			rows = append(rows, r)
+			metas[id] = meta{tp, v}
+		}
+	}
+	var head []string
+	for _, h := range heads[letter] {
+		for _, r := range rows {
+			if metas[r.ID].tp.ID == h {
+				head = append(head, r.ID)
+				break
+			}
+		}
+	}
+	maxOf := map[string]int{}
+	for k, v := range familyMax {
+		maxOf[k] = v
+	}
+	if letter == 'E' {
+		maxOf["pe"] = 10
+	}
+	plan := musicscore.NewPlan(rows, head, maxOf, c.Member, c.Day(), c.Seen)
+	served := plan.All(nil)
+	var out []Row
+	for _, r := range served {
+		m := metas[r.ID]
+		var items []int
+		for _, it := range r.Items {
+			k, id, _ := strings.Cut(it.Key, ":")
+			if k == "r" {
+				items = append(items, c.B.artistIx[id])
+			} else {
+				items = append(items, c.B.albumIx[id])
+			}
+		}
+		title, reason := c.render(m.tp, m.v, items, r.ID)
+		out = append(out, Row{ID: r.ID, Template: m.tp.ID, Title: title, Reason: reason, Shape: shapeOr(m.tp.Shape), Family: m.tp.Fam, Chart: m.tp.Chart, Keep: m.tp.Keep, Items: items})
+	}
+	return out
+}
+
+// areaOf answers the area a country belongs to, or North America for an unknown one.
 func areaOf(country string) string {
 	for _, a := range areaOrder {
 		for _, c := range areas[a] {
@@ -78,6 +396,7 @@ func areaOf(country string) string {
 	return "north-america"
 }
 
+// name is a key's name for titles.
 func (c *Ctx) name(key string) string {
 	if n, ok := shortName[key]; ok {
 		return n
@@ -88,6 +407,7 @@ func (c *Ctx) name(key string) string {
 	return key
 }
 
+// kindOf is the part of a key before the colon.
 func kindOf(key string) string { k, _, _ := strings.Cut(key, ":"); return k }
 
 // keysOf answers the bundle keys of one kind, in a stable order.
@@ -134,12 +454,10 @@ func (c *Ctx) enough(vals []string, f func(v string) L) []string {
 	return out
 }
 
-// slotValues answers the values a template expands over on this page, in
-// the week's rotation, at most Cap.
+// slotValues answers the values a template expands over on this page, in the week's rotation, at most Cap.
 func (c *Ctx) slotValues(tp Tpl) []string { return c.slotVals(tp, false) }
 
-// slotVals answers a template's slot values; all answers every value any
-// member may get (no weekly rotation, no cap).
+// slotVals answers a template's slot values. With all set it answers every value any member may get, with no weekly rotation and no cap.
 func (c *Ctx) slotVals(tp Tpl, all bool) []string {
 	letter := pageLetter[c.Kind]
 	var vals []string
@@ -193,8 +511,7 @@ func (c *Ctx) slotVals(tp Tpl, all bool) []string {
 			vals = append(vals, x.k)
 		}
 	case "country":
-		// Countries near the viewer first, then the big markets; never an
-		// obscure chart first.
+		// Countries near the viewer come first, then the big markets, so an obscure chart never leads.
 		r := c.region()
 		count := map[string]int{}
 		src := palb(c)
@@ -334,6 +651,7 @@ func (c *Ctx) slotVals(tp Tpl, all bool) []string {
 	return vals[:min(tp.Cap, len(vals))]
 }
 
+// rotate moves the start of v by h, so each member and week sees a different first value.
 func rotate(v []string, h uint64) []string {
 	if len(v) == 0 {
 		return v
@@ -342,6 +660,7 @@ func rotate(v []string, h uint64) []string {
 	return append(append([]string{}, v[k:]...), v[:k]...)
 }
 
+// without answers v with every x removed.
 func without(v []string, x string) []string {
 	var out []string
 	for _, s := range v {
@@ -375,7 +694,7 @@ func (c *Ctx) applies(tp Tpl) bool {
 	return true
 }
 
-// itemScore is one item's share of the row score for a family.
+// itemScore is one item's share of the row score for a family. Without a library its weight is spread over the other terms.
 func (c *Ctx) itemScore(i int, tp Tpl, v string) float64 {
 	var pm float64
 	switch tp.Fam {
@@ -404,128 +723,12 @@ func (c *Ctx) itemScore(i int, tp Tpl, v string) float64 {
 	return 0.30*pm + 0.20*f + 0.20*c.l(i) + 0.15*c.n(i)
 }
 
+// foldKey is an album's title and artist in lower case, so reissues dedupe as one.
 func foldKey(it *Item) string {
 	return strings.ToLower(strings.TrimSpace(it.Title)) + "|" + strings.ToLower(strings.TrimSpace(it.Artist))
 }
 
-// LibraryKeys answers the library's genre keys (strongest first, by the
-// affinity of its artists and the albums it has) and the decade key it has
-// most albums in.
-func LibraryKeys(b *Bundle, l *Lib) ([]string, string) {
-	w := map[string]float64{}
-	dec := map[string]int{}
-	for id, a := range l.Artists {
-		if i, ok := b.artistIx[id]; ok {
-			for k, m := range b.byKey {
-				if kindOf(k) == "genre" {
-					if x, in := m[i]; in {
-						w[k] += a * float64(x.T) / 1000
-					}
-				}
-			}
-		}
-	}
-	for id := range l.Albums {
-		i, ok := b.albumIx[id]
-		if !ok {
-			continue
-		}
-		for k, m := range b.byKey {
-			if _, in := m[i]; in {
-				switch kindOf(k) {
-				case "genre":
-					w[k] += 0.5
-				case "decade":
-					dec[k]++
-				}
-			}
-		}
-	}
-	var g []string
-	for k := range w {
-		g = append(g, k)
-	}
-	sort.Slice(g, func(i, j int) bool {
-		if w[g[i]] != w[g[j]] {
-			return w[g[i]] > w[g[j]]
-		}
-		return g[i] < g[j]
-	})
-	best, d := 0, ""
-	for k, n := range dec {
-		if n > best || n == best && k < d {
-			best, d = n, k
-		}
-	}
-	return g, d
-}
-
-// SpotlightMax is how many albums the Spotlight shows at most; with fewer
-// than SpotlightMin the page has none.
-const (
-	SpotlightMax = 10
-	SpotlightMin = 3
-)
-
-// Spotlight answers the page's hero albums: up to SpotlightMax albums by
-// different artists, not had, from the head templates in order (the
-// most-listened albums last). They are marked seen, so no row repeats
-// them.
-func Spotlight(c *Ctx) []int {
-	letter := pageLetter[c.Kind]
-	type src struct {
-		tp Tpl
-		v  string
-	}
-	var srcs []src
-	for _, h := range heads[letter] {
-		tp := Catalog[indexOf(h)]
-		if !c.applies(tp) {
-			continue
-		}
-		for _, v := range c.slotValues(tp) {
-			srcs = append(srcs, src{tp, v})
-		}
-	}
-	// Last resort: the page's (or the catalog's) most-listened albums.
-	srcs = append(srcs, src{Tpl{Fill: func(c *Ctx, _ string) L {
-		if c.Key == "" {
-			return c.byLP(c.albums(c.all()))
-		}
-		return c.byLP(palb(c))
-	}}, ""})
-	var out []int
-	artists := map[string]bool{}
-	for _, sv := range srcs {
-		for _, i := range c.pictured(c.notHad(c.albums(sv.tp.Fill(c, sv.v)))) {
-			if len(out) == SpotlightMax {
-				break
-			}
-			if a := c.artistOf(i); !artists[a] {
-				artists[a] = true
-				out = append(out, i)
-			}
-		}
-		if len(out) == SpotlightMax {
-			break
-		}
-	}
-	if len(out) < SpotlightMin {
-		return nil
-	}
-	if c.Seen == nil {
-		c.Seen = map[string]bool{}
-	}
-	for _, i := range out {
-		it := c.it(i)
-		c.Seen["a:"+it.ID] = true
-		c.Seen["rg:"+it.ID] = true
-		c.Seen["fold:"+foldKey(it)] = true
-	}
-	return out
-}
-
-// indexOf answers a template's place in the catalog.
+// indexOf answers a template's place in the catalog, or -1.
 func indexOf(id string) int {
 	for i, tp := range Catalog {
 		if tp.ID == id {
@@ -535,200 +738,7 @@ func indexOf(id string) int {
 	return -1
 }
 
-// Cand is one candidate row before the plan orders and dedups it: its
-// raw items (best first) with their scores, and its text rendered on them.
-type Cand struct {
-	ID, Template  string
-	Title, Reason string
-	Shape, Family string
-	Chart, Disc   bool
-	Keep          bool
-	Prior         float64
-	Items         []int
-	Scores        []float64
-}
-
-// Candidates answers every template row that applies to the page with at
-// least RowMin raw items (for builders that run their own plan, like
-// Explore's).
-func Candidates(c *Ctx) []Cand {
-	var out []Cand
-	for _, tp := range Catalog {
-		if !c.applies(tp) {
-			continue
-		}
-		for _, v := range c.slotValues(tp) {
-			l := tp.Fill(c, v)
-			if !tp.Keep {
-				l = c.notHad(l)
-			}
-			l, pictured := c.picturedFirst(l)
-			if !pictured {
-				continue
-			}
-			if len(l) > rawMax {
-				l = l[:rawMax]
-			}
-			if len(l) < RowMin {
-				continue
-			}
-			id := tp.ID
-			if v != "" {
-				id += ":" + v
-			}
-			cd := Cand{ID: id, Template: tp.ID, Shape: shapeOr(tp.Shape), Family: tp.Fam, Chart: tp.Chart, Disc: tp.Disc, Keep: tp.Keep, Prior: tp.Prior, Items: l}
-			for _, i := range l {
-				cd.Scores = append(cd.Scores, c.itemScore(i, tp, v))
-			}
-			cd.Title, cd.Reason = c.render(tp, v, l[:min(20, len(l))], id)
-			out = append(out, cd)
-		}
-	}
-	return out
-}
-
-// PageItems answers every item the page can show to anyone with an empty
-// library, best first: the Spotlight's sources and the whole candidate
-// list of every row that may fill (each member's rows are drawn from these
-// lists, whatever the day's order and dedup).
-func PageItems(c *Ctx) []int {
-	seen := map[int]bool{}
-	var out []int
-	add := func(l []int) {
-		for _, i := range l {
-			if !seen[i] {
-				seen[i] = true
-				out = append(out, i)
-			}
-		}
-	}
-	x := *c
-	x.Seen = nil
-	add(Spotlight(&x))
-	for _, tp := range Catalog {
-		if !c.applies(tp) {
-			continue
-		}
-		for _, v := range c.slotVals(tp, true) {
-			l := tp.Fill(c, v)
-			if !tp.Keep {
-				l = c.notHad(l)
-			}
-			if len(l) < RowMin {
-				continue
-			}
-			add(l[:min(rawMax, len(l))])
-		}
-	}
-	return out
-}
-
-// Build fills the page: every template that applies, expanded over its
-// slot values, ordered and deduped by the v7 row plan; at most 30 rows,
-// each with at least RowMin items, 2 per artist and 5 artists (album rows).
-func Build(c *Ctx) []Row {
-	letter := pageLetter[c.Kind]
-	type meta struct {
-		tp Tpl
-		v  string
-	}
-	metas := map[string]meta{}
-	var rows []musicscore.Row
-	withLib := !c.Lib.empty()
-	for _, tp := range Catalog {
-		if !c.applies(tp) {
-			continue
-		}
-		for _, v := range c.slotValues(tp) {
-			l := tp.Fill(c, v)
-			if !tp.Keep {
-				l = c.notHad(l)
-			}
-			l, pictured := c.picturedFirst(l)
-			if !pictured {
-				continue
-			}
-			if len(l) > rawMax {
-				l = l[:rawMax]
-			}
-			if len(l) < RowMin {
-				continue
-			}
-			id := tp.ID
-			if v != "" {
-				id += ":" + v
-			}
-			r := musicscore.Row{ID: id, Family: tp.Fam, Disc: tp.Disc, Prior: musicscore.PriorMixed, ChartSet: true, Chart: tp.Chart, Shape: tp.Shape, Min: RowMin}
-			if tp.Shape != "round" && !(tp.ID == "G13") {
-				r.MinArtists = MinArtists
-			}
-			r.ArtistRow = tp.ID == "G13" || tp.ID == "C13"
-			for _, i := range l {
-				it := c.it(i)
-				x := musicscore.Item{Key: it.Kind + ":" + it.ID, Artist: c.artistOf(i), Score: c.itemScore(i, tp, v)}
-				if it.Kind == "a" {
-					x.Album, x.FoldKey = it.ID, foldKey(it)
-				}
-				r.Items = append(r.Items, x)
-			}
-			prior, jit := tp.Prior, 0.95+0.1*float64(hash(strconv.FormatInt(c.Member, 10), c.Day(), id)%1000)/1000
-			wPr := 0.15
-			if !withLib {
-				wPr = 0.15 / 0.80
-			}
-			r.ScoreFn = func(unseen []musicscore.Item) float64 {
-				s := make([]float64, len(unseen))
-				for k, it := range unseen {
-					s[k] = it.Score
-				}
-				sort.Sort(sort.Reverse(sort.Float64Slice(s)))
-				n := min(8, len(s))
-				sum := 0.0
-				for _, x := range s[:n] {
-					sum += x
-				}
-				return (sum/float64(max(n, 1)) + wPr*prior) * jit
-			}
-			rows = append(rows, r)
-			metas[id] = meta{tp, v}
-		}
-	}
-	var head []string
-	for _, h := range heads[letter] {
-		for _, r := range rows {
-			if metas[r.ID].tp.ID == h {
-				head = append(head, r.ID)
-				break
-			}
-		}
-	}
-	maxOf := map[string]int{}
-	for k, v := range familyMax {
-		maxOf[k] = v
-	}
-	if letter == 'E' {
-		maxOf["pe"] = 10
-	}
-	plan := musicscore.NewPlan(rows, head, maxOf, c.Member, c.Day(), c.Seen)
-	served := plan.All(nil)
-	var out []Row
-	for _, r := range served {
-		m := metas[r.ID]
-		var items []int
-		for _, it := range r.Items {
-			k, id, _ := strings.Cut(it.Key, ":")
-			if k == "r" {
-				items = append(items, c.B.artistIx[id])
-			} else {
-				items = append(items, c.B.albumIx[id])
-			}
-		}
-		title, reason := c.render(m.tp, m.v, items, r.ID)
-		out = append(out, Row{ID: r.ID, Template: m.tp.ID, Title: title, Reason: reason, Shape: shapeOr(m.tp.Shape), Family: m.tp.Fam, Chart: m.tp.Chart, Keep: m.tp.Keep, Items: items})
-	}
-	return out
-}
-
+// shapeOr gives square when a template names no shape.
 func shapeOr(s string) string {
 	if s == "" {
 		return "square"
@@ -736,8 +746,7 @@ func shapeOr(s string) string {
 	return s
 }
 
-// render fills a template's title (the first wording that fits 40
-// characters, rotated by member and day) and reason for a filled row.
+// render fills a template's title and reason for a filled row. The title is the first wording that fits 40 characters, rotated by member and day.
 func (c *Ctx) render(tp Tpl, v string, items []int, rowID string) (string, string) {
 	vars := map[string]string{}
 	set := func(key string) {
@@ -824,8 +833,7 @@ func (c *Ctx) render(tp Tpl, v string, items []int, rowID string) (string, strin
 	return title, fill(tp.Reason)
 }
 
-// basis says how a row's items fit its claim key: "tagged … by listeners"
-// only when every item carries the key's own tag (or title word).
+// basis says how a row's items fit its claim key. It says "tagged ... by listeners" only when every item carries the key's own tag.
 func (c *Ctx) basis(claim string, items []int) string {
 	if claim == "" || kindOf(claim) == "genre" || kindOf(claim) == "decade" {
 		return "in styles that suit " + strings.ToLower(c.name(claim))
@@ -848,6 +856,7 @@ func (c *Ctx) basis(claim string, items []int) string {
 	return "in styles that suit " + n
 }
 
+// capFirst upper-cases a leading ASCII letter.
 func capFirst(s string) string {
 	if s == "" {
 		return s
@@ -859,6 +868,7 @@ func capFirst(s string) string {
 	return string(r)
 }
 
+// country answers a country's name for titles. The API's own table comes first.
 func (c *Ctx) country(code string) string {
 	if c.CountryName != nil {
 		if n := c.CountryName(code); n != "" {
@@ -871,22 +881,7 @@ func (c *Ctx) country(code string) string {
 	return strings.ToUpper(code)
 }
 
-// countryNames name the chart countries for titles (the API's own table
-// comes first).
-var countryNames = map[string]string{
-	"us": "the US", "gb": "the UK", "ca": "Canada", "au": "Australia", "nz": "New Zealand", "ie": "Ireland", "de": "Germany", "fr": "France", "es": "Spain", "it": "Italy",
-	"nl": "the Netherlands", "be": "Belgium", "at": "Austria", "ch": "Switzerland", "se": "Sweden", "no": "Norway", "dk": "Denmark", "fi": "Finland", "pt": "Portugal", "pl": "Poland",
-	"cz": "Czechia", "sk": "Slovakia", "hu": "Hungary", "ro": "Romania", "bg": "Bulgaria", "gr": "Greece", "hr": "Croatia", "si": "Slovenia", "rs": "Serbia", "ua": "Ukraine",
-	"lt": "Lithuania", "lv": "Latvia", "ee": "Estonia", "ru": "Russia", "cy": "Cyprus", "tr": "Turkey", "il": "Israel", "ae": "the UAE", "sa": "Saudi Arabia", "jo": "Jordan",
-	"lb": "Lebanon", "eg": "Egypt", "ma": "Morocco", "dz": "Algeria", "tn": "Tunisia", "ng": "Nigeria", "ke": "Kenya", "za": "South Africa", "ci": "Ivory Coast", "sn": "Senegal",
-	"cm": "Cameroon", "gh": "Ghana", "mx": "Mexico", "br": "Brazil", "ar": "Argentina", "co": "Colombia", "cl": "Chile", "pe": "Peru", "ec": "Ecuador", "ve": "Venezuela",
-	"do": "the Dominican Republic", "gt": "Guatemala", "cr": "Costa Rica", "pa": "Panama", "py": "Paraguay", "uy": "Uruguay", "bo": "Bolivia", "hn": "Honduras", "sv": "El Salvador",
-	"ni": "Nicaragua", "jm": "Jamaica", "jp": "Japan", "kr": "South Korea", "in": "India", "id": "Indonesia", "ph": "the Philippines", "my": "Malaysia", "sg": "Singapore",
-	"th": "Thailand", "vn": "Vietnam", "tw": "Taiwan", "hk": "Hong Kong", "pk": "Pakistan", "kz": "Kazakhstan", "lu": "Luxembourg", "is": "Iceland",
-}
-
-// lowerName writes a mood or style name for the middle of a title
-// ("chill", "cloud rap"); names with inner capitals stay ("K-R&B").
+// lowerName writes a mood or style name for the middle of a title. Names with inner capitals stay as they are, like K-R&B.
 func lowerName(n string) string {
 	r := []rune(n)
 	if len(r) > 1 && strings.ToLower(string(r[1:])) == string(r[1:]) {
@@ -895,9 +890,7 @@ func lowerName(n string) string {
 	return n
 }
 
-// commonSeasons are season names written in lower case mid-title.
-var commonSeasons = map[string]bool{"season:fall": true, "season:spring": true, "season:summer": true, "season:back-to-school": true}
-
+// place answers "worldwide" or "in <country>" for a region code.
 func (c *Ctx) place(code string) string {
 	if code == "" || code == "global" {
 		return "worldwide"
@@ -906,6 +899,7 @@ func (c *Ctx) place(code string) string {
 	return "in " + n
 }
 
+// seedName answers a library seed artist's name, or empty if unknown.
 func (c *Ctx) seedName(id string) string {
 	if c.Lib != nil {
 		for _, s := range c.Lib.Seeds {

@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-// Exact values for each Phase 3 formula on fixed inputs (plan §6 Phase 3).
-func TestPhase3Formulas(t *testing.T) {
+func TestRowFormulas_ExactValues(t *testing.T) {
 	for _, c := range []struct {
 		name      string
 		got, want float64
@@ -47,34 +46,19 @@ func TestPhase3Formulas(t *testing.T) {
 	}
 }
 
-func sc(key string, score, a, g float64, genre string) Scored {
-	return Scored{Item: Item{Key: key, Score: score}, A: a, GItem: g, Genre: genre}
-}
-
-func keys(l []Scored) []string {
-	var out []string
-	for _, x := range l {
-		out = append(out, x.Key)
-	}
-	return out
-}
-
-func TestRankAndDiversify(t *testing.T) {
+func TestRankAndDiversify_Order(t *testing.T) {
 	l := []Scored{sc("a", 0.9, 1, 0, "rock"), sc("b", 0.85, 1, 0, "rock"), sc("c", 0.8, 1, 0, "pop"), sc("d", 0.7, 1, 0, "")}
 	Rank(l, 1, "2026-10-22")
 	if !reflect.DeepEqual(keys(l), []string{"a", "b", "c", "d"}) {
 		t.Fatal(keys(l))
 	}
-	// b pays 0.15 after a: 0.70 < c's 0.80, so c moves up.
 	if got := keys(Diversify(l)); !reflect.DeepEqual(got, []string{"a", "c", "b", "d"}) {
 		t.Fatalf("diversify %v", got)
 	}
-	// Items without a genre are never penalised.
 	n := []Scored{sc("x", 0.9, 1, 0, ""), sc("y", 0.89, 1, 0, ""), sc("z", 0.8, 1, 0, "pop")}
 	if got := keys(Diversify(n)); !reflect.DeepEqual(got, []string{"x", "y", "z"}) {
 		t.Fatalf("no genre %v", got)
 	}
-	// Equal scores: the day's tie hash decides, the same all day.
 	e1 := []Scored{sc("p", 0.5, 0, 0, ""), sc("q", 0.5, 0, 0, ""), sc("r", 0.5, 0, 0, "")}
 	e2 := []Scored{sc("r", 0.5, 0, 0, ""), sc("p", 0.5, 0, 0, ""), sc("q", 0.5, 0, 0, "")}
 	Rank(e1, 7, "2026-10-22")
@@ -84,27 +68,16 @@ func TestRankAndDiversify(t *testing.T) {
 	}
 }
 
-func row(n int) []Scored {
-	var l []Scored
-	for i := 0; i < n; i++ {
-		l = append(l, sc(string(rune('a'+i)), 1-float64(i)/20, 0.5, 0.1, ""))
-	}
-	return l
-}
-
-func TestExplorationSlot(t *testing.T) {
-	// No A=0 ∧ G≥0.3 candidate: the order equals the non-slot order.
+func TestExplore_Slot(t *testing.T) {
 	base := row(10)
 	if !reflect.DeepEqual(keys(Explore(base)), keys(base)) {
 		t.Fatal("no candidate must keep the order")
 	}
-	// A = 0 but G under 0.3 is no candidate either.
 	l := row(10)
 	l[7].A, l[7].GItem = 0, 0.29
 	if !reflect.DeepEqual(keys(Explore(l)), keys(l)) {
 		t.Fatal("G 0.29 is not enough")
 	}
-	// The best candidate goes to position 4.
 	l = row(10)
 	l[6].A, l[6].GItem = 0, 0.3
 	l[8].A, l[8].GItem = 0, 0.9
@@ -112,13 +85,11 @@ func TestExplorationSlot(t *testing.T) {
 	if got[3] != "g" || len(got) != 10 || got[4] != "d" || got[7] != "h" {
 		t.Fatalf("slot %v", got)
 	}
-	// A candidate already in the first four places: no move.
 	l = row(10)
 	l[1].A, l[1].GItem = 0, 0.5
 	if !reflect.DeepEqual(keys(Explore(l)), keys(l)) {
 		t.Fatal("candidate at place 2 must stay")
 	}
-	// Rows under 9 items get no slot.
 	s := row(8)
 	s[7].A, s[7].GItem = 0, 1
 	if !reflect.DeepEqual(keys(Explore(s)), keys(s)) {
@@ -126,12 +97,7 @@ func TestExplorationSlot(t *testing.T) {
 	}
 }
 
-func mustDay(s string) time.Time {
-	d, _ := time.Parse("2006-01-02", s)
-	return d
-}
-
-func TestEmptyAndNonASCIIGenres(t *testing.T) {
+func TestGenreName_EmptyAndNonASCII(t *testing.T) {
 	sh := Shares(map[string]int{"": 5, " ": 2, "électro": 3})
 	if _, ok := sh[""]; ok || !near(sh["électro"], 0.3) {
 		t.Fatalf("shares %v", sh)
@@ -148,4 +114,33 @@ func TestEmptyAndNonASCIIGenres(t *testing.T) {
 	if bad := string([]byte{0xff, 'a'}); Label(bad) != bad {
 		t.Error("invalid UTF-8 must stay as it is")
 	}
+}
+
+// sc builds a scored item.
+func sc(key string, score, a, g float64, genre string) Scored {
+	return Scored{Item: Item{Key: key, Score: score}, A: a, GItem: g, Genre: genre}
+}
+
+// keys returns the item keys in order.
+func keys(l []Scored) []string {
+	var out []string
+	for _, x := range l {
+		out = append(out, x.Key)
+	}
+	return out
+}
+
+// row builds n scored items.
+func row(n int) []Scored {
+	var l []Scored
+	for i := 0; i < n; i++ {
+		l = append(l, sc(string(rune('a'+i)), 1-float64(i)/20, 0.5, 0.1, ""))
+	}
+	return l
+}
+
+// mustDay parses a YYYY-MM-DD day or panics.
+func mustDay(s string) time.Time {
+	d, _ := time.Parse("2006-01-02", s)
+	return d
 }

@@ -2,7 +2,7 @@ package musicscore
 
 import "testing"
 
-func TestGenreName(t *testing.T) {
+func TestGenreName_Variants(t *testing.T) {
 	for in, want := range map[string]string{
 		"alternativerock":  "Alternative Rock",
 		"alternative rock": "Alternative Rock",

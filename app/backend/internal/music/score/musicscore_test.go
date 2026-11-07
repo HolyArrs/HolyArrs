@@ -6,9 +6,7 @@ import (
 	"time"
 )
 
-func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
-
-func TestLnorm(t *testing.T) {
+func TestLnorm_Bounds(t *testing.T) {
 	if Lnorm(100, 0) != 0 || Lnorm(0, 0) != 0 {
 		t.Fatal("Lmax 0 or empty pool must give 0")
 	}
@@ -17,16 +15,14 @@ func TestLnorm(t *testing.T) {
 	}
 }
 
-func TestGenreAffinityNoTags(t *testing.T) {
+func TestGenreAffinity_NoTags(t *testing.T) {
 	if g := GenreAffinity(map[string]float64{"a": 1}, nil); len(g) != 0 {
 		t.Fatal("no tags: every G is 0")
 	}
-	// One contributing artist per genre: dropped (≥ 2 needed).
 	g := GenreAffinity(map[string]float64{"a": 1, "b": 0.5}, map[string]map[string]float64{"a": {"rock": 1}, "b": {"pop": 1}})
 	if len(g) != 0 {
 		t.Fatal(g)
 	}
-	// A = 0 everywhere: max 0 → all 0.
 	if g := GenreAffinity(map[string]float64{}, map[string]map[string]float64{"a": {"rock": 1}, "b": {"rock": 1}}); len(g) != 0 {
 		t.Fatal(g)
 	}
@@ -36,7 +32,7 @@ func TestGenreAffinityNoTags(t *testing.T) {
 	}
 }
 
-func TestFreshness(t *testing.T) {
+func TestFreshness_Decay(t *testing.T) {
 	now := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
 	if Freshness("", 14, now) != 0 || Freshness("unknown!!!", 14, now) != 0 {
 		t.Fatal("unknown date → 0")
@@ -46,7 +42,7 @@ func TestFreshness(t *testing.T) {
 	}
 }
 
-func TestFormulas(t *testing.T) {
+func TestFormulas_ExactValues(t *testing.T) {
 	if !near(Affinity(Acts{Follows: true, Asked: true, HaveAny: true, AlbumsHad: 3}), 1) {
 		t.Fatal("A caps at 1")
 	}
@@ -64,16 +60,7 @@ func TestFormulas(t *testing.T) {
 	}
 }
 
-func items(prefix string, n int) []Item {
-	var out []Item
-	for i := 0; i < n; i++ {
-		k := prefix + string(rune('a'+i))
-		out = append(out, Item{Key: k, Album: "rg-" + k, Artist: "artist-" + k, Score: 1})
-	}
-	return out
-}
-
-func TestGate(t *testing.T) {
+func TestRowGate_Minimum(t *testing.T) {
 	r := Row{ID: "x"}
 	if r.Passes(5) || !r.Passes(6) {
 		t.Fatal("gate 6")
@@ -87,7 +74,7 @@ func TestGate(t *testing.T) {
 	}
 }
 
-func TestStrengthOneItem(t *testing.T) {
+func TestStrength_OneItem(t *testing.T) {
 	if !near(Strength([]float64{0.5}, PriorPersonal), 0.6) {
 		t.Fatal("R with n = 1")
 	}
@@ -96,7 +83,7 @@ func TestStrengthOneItem(t *testing.T) {
 	}
 }
 
-func TestDedupSharedAlbumGoesToEarlierRow(t *testing.T) {
+func TestDedup_SharedAlbumGoesToEarlierRow(t *testing.T) {
 	shared := Item{Key: "album:7", Album: "rg-shared", Artist: "z", Score: 1}
 	row6 := Row{ID: "missing", Prior: PriorPersonal, Items: append(items("m", 6), shared)}
 	row7 := Row{ID: "top_albums", Prior: PriorChart, Items: append([]Item{{Key: "chart:1", Album: "rg-shared", Artist: "z", Score: 1}}, items("t", 6)...)}
@@ -119,7 +106,6 @@ func TestDedupSharedAlbumGoesToEarlierRow(t *testing.T) {
 	if count != 1 {
 		t.Fatal(count)
 	}
-	// Edition folding.
 	a := Row{ID: "a", Items: append(items("x", 6), Item{Key: "k1", FoldKey: "album|artist"})}
 	b := Row{ID: "b", Items: append(items("y", 6), Item{Key: "k2", FoldKey: "album|artist"})}
 	out = Dedup([]Row{a, b}, nil)
@@ -128,10 +114,7 @@ func TestDedupSharedAlbumGoesToEarlierRow(t *testing.T) {
 	}
 }
 
-func TestDroppedRowDoesNotChangeLaterRows(t *testing.T) {
-	// The first row falls under its gate; its items are not given back,
-	// so the third row is the same whether or not the first row existed
-	// with those items.
+func TestDedup_DroppedRowDoesNotChangeLaterRows(t *testing.T) {
 	short := Row{ID: "short", Anchor: true, Items: append(items("s", 3), Item{Key: "p", Album: "rg-p", Artist: "q"})}
 	mid := Row{ID: "mid", Anchor: true, Items: items("m", 6)}
 	late := Row{ID: "late", Anchor: true, Items: append([]Item{{Key: "p2", Album: "rg-p", Artist: "q"}}, items("l", 6)...)}
@@ -142,7 +125,6 @@ func TestDroppedRowDoesNotChangeLaterRows(t *testing.T) {
 	if len(with[1].Items) != 6 || with[1].Items[0].Key != "la" {
 		t.Fatal("the dropped row's album stays taken", with[1].Items)
 	}
-	// The same fill without the short row: the late row keeps its own order.
 	without := Dedup(Order([]Row{mid, late}, 1, "d"), map[string]bool{"rg:rg-p": true})
 	for i := range without[1].Items {
 		if without[1].Items[i].Key != with[1].Items[i].Key {
@@ -151,7 +133,7 @@ func TestDroppedRowDoesNotChangeLaterRows(t *testing.T) {
 	}
 }
 
-func TestPerArtistAndSeeds(t *testing.T) {
+func TestDedup_PerArtistAndSeeds(t *testing.T) {
 	var it []Item
 	for i := 0; i < 8; i++ {
 		it = append(it, Item{Key: string(rune('a' + i)), Artist: "one"})
@@ -168,7 +150,7 @@ func TestPerArtistAndSeeds(t *testing.T) {
 	}
 }
 
-func TestOrderTies(t *testing.T) {
+func TestOrder_Ties(t *testing.T) {
 	a := Row{ID: "a", Items: []Item{{Score: 1}}}
 	b := Row{ID: "b", Items: []Item{{Score: 1}}}
 	x := Order([]Row{a, b}, 7, "2026-10-22")
@@ -178,7 +160,7 @@ func TestOrderTies(t *testing.T) {
 	}
 }
 
-func TestDaysCache(t *testing.T) {
+func TestDays_Cache(t *testing.T) {
 	var d Days
 	k := DayKey{1, "2026-10-22", ""}
 	d.Put(k, "order")
@@ -204,4 +186,17 @@ func TestDaysCache(t *testing.T) {
 	if _, ok := c.Get("chart:x", now.Add(2*time.Hour)); ok {
 		t.Fatal("ttl")
 	}
+}
+
+// near reports whether two floats match within a tiny tolerance.
+func near(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
+
+// items builds n items with the given key prefix.
+func items(prefix string, n int) []Item {
+	var out []Item
+	for i := 0; i < n; i++ {
+		k := prefix + string(rune('a'+i))
+		out = append(out, Item{Key: k, Album: "rg-" + k, Artist: "artist-" + k, Score: 1})
+	}
+	return out
 }

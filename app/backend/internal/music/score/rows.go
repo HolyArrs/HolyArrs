@@ -4,21 +4,23 @@ import (
 	"sort"
 )
 
-// Row priors (§2.3).
 const (
+	// PriorPersonal weighs rows built from the member's own taste.
 	PriorPersonal = 1.2
-	PriorMixed    = 1.0
-	PriorChart    = 0.9
+	// PriorMixed weighs rows built from taste and charts together.
+	PriorMixed = 1.0
+	// PriorChart weighs rows built from charts alone.
+	PriorChart = 0.9
 	// RowMax caps a filled row.
 	RowMax = 20
-	// PerArtist is the most items one artist has in a row (artist-centred
-	// rows are exempt).
+	// PerArtist is the most items one artist has in a row. Artist rows are
+	// exempt.
 	PerArtist = 2
 )
 
-// Item is one candidate. Album is the release group MBID (empty for
-// artists and songs), FoldKey the fullAlbumKey (title + artist) that folds
-// editions, Artist the primary artist's key.
+// Item is one candidate. Album is the release group id (empty for artists
+// and songs). FoldKey is the title and artist key that folds editions of
+// one album together. Artist is the primary artist's key.
 type Item struct {
 	Key     string
 	Album   string
@@ -27,55 +29,35 @@ type Item struct {
 	Score   float64
 }
 
-// Row is one row's raw candidates (layer 1), already in the row's own
-// order (its sort key).
+// Row is one row's raw candidates, already in the row's own order.
 type Row struct {
 	ID     string
 	Anchor bool
 	Prior  float64
-	// Min is the gate: the fewest items the row shows (default 6).
+	// Min is the fewest items the row shows. Zero means the default of 6.
 	Min int
 	// ArtistRow exempts the row from the per-artist cap.
 	ArtistRow bool
-	// Seed is the artist a seeded row is about (at most one row each).
+	// Seed is the artist a seeded row is about. Only one row per seed stays.
 	Seed  string
 	Items []Item
-	// Family groups rows for the v7 plan's variety rules (music_rows_v7);
-	// empty means the row's ID. Disc marks a discovery row.
+	// Family groups rows for the variety rules. Empty means the row's ID.
+	// Disc marks a discovery row.
 	Family string
 	Disc   bool
-	// Template rows (music_lists_v1 row templates): ChartSet makes Chart
-	// alone decide the "2 chart rows in any 6 slots" rule (else the
-	// Prior == PriorChart test applies); Shape "round" or "wide" counts for
-	// the shape rule; ScoreFn, when set, scores the row over its items not
-	// yet placed; MinArtists is the fewest artists a filled row needs.
-	ChartSet   bool
-	Chart      bool
-	Shape      string
-	ScoreFn    func(unseen []Item) float64 `json:"-"`
+	// ChartSet makes Chart alone decide whether this is a chart row. When
+	// false, a Prior equal to PriorChart decides.
+	ChartSet bool
+	Chart    bool
+	// Shape is "round" or "wide" for rows that count toward the shape rule.
+	Shape string
+	// ScoreFn, when set, scores the row over its items not yet placed.
+	ScoreFn func(unseen []Item) float64 `json:"-"`
+	// MinArtists is the fewest artists a filled row needs.
 	MinArtists int
 }
 
-// chartLike reports whether the row counts as a chart row for variety.
-func (r Row) chartLike() bool {
-	if r.ChartSet {
-		return r.Chart
-	}
-	return r.Prior == PriorChart
-}
-
-// shaped reports a circle or wide row.
-func (r Row) shaped() bool { return r.Shape == "round" || r.Shape == "wide" }
-
-// family is the row's family, its ID when none is set.
-func (r Row) family() string {
-	if r.Family != "" {
-		return r.Family
-	}
-	return r.ID
-}
-
-// Gate is the fewest items a row needs; 0 means the default 6.
+// Gate returns the fewest items the row needs, 6 unless Min is set.
 func (r Row) Gate() int {
 	if r.Min > 0 {
 		return r.Min
@@ -86,8 +68,8 @@ func (r Row) Gate() int {
 // Passes reports whether n items pass the row's gate.
 func (r Row) Passes(n int) bool { return n >= r.Gate() }
 
-// Strength is R = mean of the top min(6, n) item scores × prior; an empty
-// row is 0.
+// Strength returns the mean of the top 6 scores times prior, or 0 for an
+// empty row.
 func Strength(scores []float64, prior float64) float64 {
 	if len(scores) == 0 {
 		return 0
@@ -102,16 +84,8 @@ func Strength(scores []float64, prior float64) float64 {
 	return sum / float64(n) * prior
 }
 
-func (r Row) strength() float64 {
-	s := make([]float64, len(r.Items))
-	for i, it := range r.Items {
-		s[i] = it.Score
-	}
-	return Strength(s, r.Prior)
-}
-
-// Order fixes the row order from raw candidates (step 2): anchors first in
-// the order given, then the rest by R, ties by Tie(member, date, row id).
+// Order fixes the row order from raw candidates: anchors first in the order
+// given, then the rest by strength, with ties broken by a daily hash.
 func Order(rows []Row, member int64, date string) []Row {
 	var anchors, rest []Row
 	for _, r := range rows {
@@ -131,11 +105,11 @@ func Order(rows []Row, member int64, date string) []Row {
 	return append(anchors, rest...)
 }
 
-// Dedup fills rows in the fixed order (step 3) with one shared seen set
-// over release-group MBIDs, fold keys and item keys, a per-row artist cap
-// and one row per seed artist; then drops rows under their gate without
-// giving their items back (step 4). seen may hold keys already placed
-// (the hero). rows must already be in Order.
+// Dedup fills rows in order with one shared seen set over release groups,
+// fold keys and item keys, so no item shows twice. It also applies the
+// per-artist cap and keeps one row per seed, then drops rows under their
+// gate without giving their items back. seen may already hold placed keys,
+// such as the hero. rows must already be in Order.
 func Dedup(rows []Row, seen map[string]bool) []Row {
 	if seen == nil {
 		seen = map[string]bool{}
@@ -177,4 +151,32 @@ func Dedup(rows []Row, seen map[string]bool) []Row {
 		}
 	}
 	return out
+}
+
+// chartLike reports whether the row counts as a chart row for variety.
+func (r Row) chartLike() bool {
+	if r.ChartSet {
+		return r.Chart
+	}
+	return r.Prior == PriorChart
+}
+
+// shaped reports whether the row is a round or wide row.
+func (r Row) shaped() bool { return r.Shape == "round" || r.Shape == "wide" }
+
+// family returns the row's family, or its ID when none is set.
+func (r Row) family() string {
+	if r.Family != "" {
+		return r.Family
+	}
+	return r.ID
+}
+
+// strength returns the row's strength from its item scores.
+func (r Row) strength() float64 {
+	s := make([]float64, len(r.Items))
+	for i, it := range r.Items {
+		s[i] = it.Score
+	}
+	return Strength(s, r.Prior)
 }

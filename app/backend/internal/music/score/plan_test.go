@@ -7,38 +7,9 @@ import (
 	"time"
 )
 
-// planRows makes n rows per family with 8 items each; disc families are
-// discovery rows. Scores fall with the row number so R orders them.
-func planRows(fams map[string]int, disc map[string]bool) []Row {
-	var out []Row
-	names := []string{}
-	for f := range fams {
-		names = append(names, f)
-	}
-	// fixed order for reproducible inputs
-	for i := 0; i < len(names); i++ {
-		for j := i + 1; j < len(names); j++ {
-			if names[j] < names[i] {
-				names[i], names[j] = names[j], names[i]
-			}
-		}
-	}
-	for fi, f := range names {
-		for n := 0; n < fams[f]; n++ {
-			id := fmt.Sprintf("%s:%d", f, n)
-			r := Row{ID: id, Family: f, Disc: disc[f], Prior: PriorMixed}
-			for k := 0; k < 8; k++ {
-				r.Items = append(r.Items, Item{Key: id + fmt.Sprint(k), Artist: fmt.Sprintf("%s-a%d", id, k), Score: 0.9 - 0.01*float64(fi+n)})
-			}
-			out = append(out, r)
-		}
-	}
-	return out
-}
-
 var planMax = map[string]int{"mix": 6, "because": 4, "shelf": 3, "a": 1, "b": 1, "c": 1, "d": 2, "e": 2, "f": 2, "g": 2, "h": 2}
 
-func TestPlanVarietyAndCadence(t *testing.T) {
+func TestPlan_VarietyAndCadence(t *testing.T) {
 	rows := planRows(map[string]int{"mix": 6, "because": 4, "shelf": 3, "a": 1, "b": 1, "c": 1, "d": 2, "e": 2, "f": 2, "g": 2, "h": 2}, map[string]bool{"mix": true})
 	p := NewPlan(rows, nil, planMax, 1, "2026-10-23", nil)
 	got := p.All(nil)
@@ -63,13 +34,13 @@ func TestPlanVarietyAndCadence(t *testing.T) {
 	}
 }
 
-func TestPlanChartWindow(t *testing.T) {
+func TestPlan_ChartWindow(t *testing.T) {
 	rows := planRows(map[string]int{"a": 1, "b": 1, "c": 1, "d": 2, "e": 2, "f": 2}, nil)
 	for i := range rows {
 		if rows[i].Family == "d" || rows[i].Family == "e" || rows[i].Family == "f" {
 			rows[i].Prior = PriorChart
 			for k := range rows[i].Items {
-				rows[i].Items[k].Score = 2 // chart rows would win every slot
+				rows[i].Items[k].Score = 2
 			}
 		}
 	}
@@ -87,9 +58,8 @@ func TestPlanChartWindow(t *testing.T) {
 	}
 }
 
-func TestPlanStableAndDedupAcrossBatches(t *testing.T) {
+func TestPlan_StableAndDedupAcrossBatches(t *testing.T) {
 	rows := planRows(map[string]int{"mix": 6, "because": 4, "shelf": 3, "a": 1, "b": 1, "c": 1, "d": 2, "e": 2, "f": 2}, map[string]bool{"mix": true})
-	// batch 3 rows share albums with batch 1 rows.
 	for i := range rows {
 		rows[i].Items[0].Album = "shared"
 	}
@@ -127,9 +97,8 @@ func TestPlanStableAndDedupAcrossBatches(t *testing.T) {
 	}
 }
 
-func TestPlanReserveAndRerank(t *testing.T) {
+func TestPlan_ReserveAndRerank(t *testing.T) {
 	rows := planRows(map[string]int{"a": 1, "b": 1, "c": 1, "d": 2, "e": 2, "f": 2, "g": 2, "h": 2}, nil)
-	// b:0's items are all a:0's: it fails its gate after dedup.
 	for i := range rows {
 		if rows[i].ID == "b:0" {
 			for k := range rows[i].Items {
@@ -156,9 +125,8 @@ func TestPlanReserveAndRerank(t *testing.T) {
 	}
 }
 
-func TestPlanRerankUnserved(t *testing.T) {
+func TestPlan_RerankUnserved(t *testing.T) {
 	rows := planRows(map[string]int{"a": 1, "b": 1, "c": 1, "d": 2, "e": 2, "f": 2, "g": 2, "h": 2}, nil)
-	// h:0 shares most items with a:0 (served first): its R drops after batch 1.
 	for i := range rows {
 		if rows[i].ID == "h:0" {
 			for k := 0; k < 6; k++ {
@@ -189,7 +157,7 @@ func TestPlanRerankUnserved(t *testing.T) {
 	}
 }
 
-func TestPlanStoreVersions(t *testing.T) {
+func TestPlanStore_Versions(t *testing.T) {
 	var s PlanStore
 	now := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 	k := PlanKey{Member: 1, Date: "2026-10-23", View: "global"}
@@ -222,9 +190,9 @@ func TestPlanStoreVersions(t *testing.T) {
 	}
 }
 
-func TestPlanSeedOnceAndMixGate(t *testing.T) {
+func TestPlan_SeedOnceAndMixGate(t *testing.T) {
 	rows := planRows(map[string]int{"a": 1, "b": 1, "c": 1}, nil)
-	rows[0].Seed, rows[1].Seed = "x", "x" // two rows want one seed
+	rows[0].Seed, rows[1].Seed = "x", "x"
 	mix := Row{ID: "mix:1", Family: "mix", Prior: PriorPersonal, Min: 8}
 	for k := 0; k < 7; k++ {
 		mix.Items = append(mix.Items, Item{Key: fmt.Sprint("m", k), Artist: fmt.Sprint("ma", k), Score: 0.99})
@@ -244,9 +212,8 @@ func TestPlanSeedOnceAndMixGate(t *testing.T) {
 	}
 }
 
-func TestPlanStoreNewestServesStaleAndOld(t *testing.T) {
+func TestPlanStore_NewestServesStaleAndOld(t *testing.T) {
 	var s PlanStore
-	// 02:00: yesterday's plans are kept until 04:00.
 	now := time.Date(2026, 10, 28, 2, 0, 0, 0, time.UTC)
 	y := PlanKey{Member: 3, Date: "2026-10-27", View: "US"}
 	p := &Plan{}
@@ -272,4 +239,32 @@ func TestPlanStoreNewestServesStaleAndOld(t *testing.T) {
 	if _, ok := s.Newest(4, "US", now); ok {
 		t.Fatal("another member's plan served")
 	}
+}
+
+// planRows makes n rows per family with 8 items each. Families in disc are
+// discovery rows. Scores fall with the row number so strength orders them.
+func planRows(fams map[string]int, disc map[string]bool) []Row {
+	var out []Row
+	names := []string{}
+	for f := range fams {
+		names = append(names, f)
+	}
+	for i := 0; i < len(names); i++ {
+		for j := i + 1; j < len(names); j++ {
+			if names[j] < names[i] {
+				names[i], names[j] = names[j], names[i]
+			}
+		}
+	}
+	for fi, f := range names {
+		for n := 0; n < fams[f]; n++ {
+			id := fmt.Sprintf("%s:%d", f, n)
+			r := Row{ID: id, Family: f, Disc: disc[f], Prior: PriorMixed}
+			for k := 0; k < 8; k++ {
+				r.Items = append(r.Items, Item{Key: id + fmt.Sprint(k), Artist: fmt.Sprintf("%s-a%d", id, k), Score: 0.9 - 0.01*float64(fi+n)})
+			}
+			out = append(out, r)
+		}
+	}
+	return out
 }
