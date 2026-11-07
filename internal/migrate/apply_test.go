@@ -662,3 +662,47 @@ func TestFinishedMoveForgetsKeptKeys(t *testing.T) {
 		t.Fatalf("%d vault rows kept after the move", n)
 	}
 }
+
+// A move with failed items (say the metadata server was down) keeps the
+// old apps' keys so "move again" needs no retyping; a clean move forgets them.
+func TestMoveWithFailuresKeepsKeys(t *testing.T) {
+	l := newMoveLab(t)
+	ctx := context.Background()
+	err := l.st.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("INSERT INTO secrets (id, created_at, created_by, updated_at, updated_by, kind, value) VALUES (9100, '', '', '', '', 'move_credential', 'sealed')"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("INSERT INTO move_credentials (kind, secret_id, created_at, created_by) VALUES ('sonarr', 9100, '', '')")
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mv := l.move(t, Choices{})
+	// Pretend the move had failed items: the keys must stay.
+	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("INSERT INTO secrets (id, created_at, created_by, updated_at, updated_by, kind, value) VALUES (9101, '', '', '', '', 'move_credential', 'sealed')"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("INSERT INTO move_credentials (kind, secret_id, created_at, created_by) VALUES ('radarr', 9101, '', '')")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	failed := &Report{Counts: map[string]int{ResFailed: 20}}
+	if err := l.mv.setState(ctx, mv.ID, "done", failed); err != nil {
+		t.Fatal(err)
+	}
+	if n := l.count(t, "SELECT count(*) FROM move_credentials"); n != 1 {
+		t.Fatalf("keys after a move with failures: %d, want 1", n)
+	}
+	if !strings.Contains(strings.Join(next(failed), " "), "keys are kept") {
+		t.Fatalf("next steps don't say the keys are kept: %v", next(failed))
+	}
+	if err := l.mv.setState(ctx, mv.ID, "done", &Report{Counts: map[string]int{}}); err != nil {
+		t.Fatal(err)
+	}
+	if n := l.count(t, "SELECT count(*) FROM move_credentials"); n != 0 {
+		t.Fatalf("keys after a clean move: %d", n)
+	}
+}
