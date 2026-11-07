@@ -1549,6 +1549,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role={id === 'swarm' ? 'group' : 'button'} aria-label={headName(id, so)} tabindex={id === vis[0] ? 0 : -1} onpointerdown={(e) => headDown(e, id)} onclick={(e) => { if (e.detail === 0) sortBy(id); }} onkeydown={(e) => headKey(e, id)} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl"><span class="sr">Downloader</span><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl"><span class="sr">Poster</span><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl"><span class="sr">Type</span><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
@@ -2147,8 +2148,6 @@
 	.big :global(.poster) { border-radius: 6px; }
 	.post { transition: opacity var(--dur-fast) var(--ease-out); }
 	.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 16px; margin: 0; font: var(--t-footnote); }
-	.kv dt { color: var(--text-muted); }
-	.kv dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 	.dp { margin-top: 10px; }
 	.cd { display: block; }
 	.xh { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -2562,7 +2561,6 @@
 		.pb .big { display: none; }
 		.pb .tblw { max-height: 40dvh; }
 		.pact { flex-wrap: wrap; }
-		.pend:has(.quiet) { border-left: 0; padding-left: 0; }
 	}
 	/* Info cards share the Files table's depth: raised surface, tinted title band, full-width hairline rows, zebra. */
 	.quiet0 { margin: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }

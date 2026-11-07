@@ -63,6 +63,7 @@
 	}: {
 		embedded?: { query: string; ondone?: () => void; onstep?: (s: Step) => void };
 	} = $props();
+	// svelte-ignore state_referenced_locally
 	const stepKey = embedded ? 'mstep' : 'step';
 
 	// What the page knows.

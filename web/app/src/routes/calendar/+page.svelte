@@ -1092,7 +1092,6 @@
 
 	.muted { color: var(--text-muted); }
 	.field { display: flex; flex-direction: column; gap: 6px; }
-	.field label { font: var(--t-subhead); color: var(--text-muted); }
 	.hint { color: var(--text-muted); font: var(--t-footnote); }
 	.acts { display: flex; flex-wrap: wrap; gap: 8px; }
 	@media (max-width: 640px) {

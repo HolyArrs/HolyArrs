@@ -107,7 +107,6 @@
 	.cap { grid-column: 1 / -1; min-width: 0; }
 	.when { grid-column: 1 / -1; padding-top: 6px; }
 	p.txt { margin: 0; grid-column: 1 / -1; font: var(--t-callout); }
-	p.txt.hint { color: var(--text-muted); }
 	.cards { display: grid; gap: 10px; }
 	.box { margin: 0; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.card1 { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
@@ -116,6 +115,5 @@
 	.quiet { flex: none; border: 0; padding: 4px 0; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; text-decoration: none; }
 	.quiet:hover { color: var(--text); }
 	.quiet:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
-	.foot { margin: 12px 2px 0; color: var(--text-muted); font: var(--t-footnote); }
 	@media (pointer: coarse) { .quiet { min-height: 44px; padding: 0 8px; margin: 0 -8px; display: inline-flex; align-items: center; } }
 </style>

@@ -230,7 +230,6 @@
 	.settings-content :global(:is([class*='path'], [class*='key'], [class*='url'], [class*='addr'], .hint)) { font-family: var(--font-ui) !important; font-variant-numeric: tabular-nums; letter-spacing: normal; }
 	/* ---------- the wall: this Library's posters, blurred, dimmed, still ---------- */
 	.sx-wall { position: fixed; inset: 0 0 0 var(--space, 0px); z-index: -1; overflow: hidden; pointer-events: none; transition: opacity 500ms var(--ease-out); }
-	.sx-wall.dim { opacity: 0.55; }
 	.sx-wall .tiles { position: absolute; inset: -60px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; transform: rotate(-8deg) scale(1.15); filter: blur(22px) saturate(1.15); }
 	.sx-wall img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; display: block; }
 	.sx-wall .veil { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 58%, transparent), color-mix(in srgb, var(--bg) 70%, transparent)), radial-gradient(130% 90% at 50% 10%, transparent, color-mix(in srgb, var(--bg) 70%, transparent)); }

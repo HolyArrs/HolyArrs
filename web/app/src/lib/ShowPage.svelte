@@ -689,11 +689,7 @@
 </dialog>
 
 <style>
-	.path { overflow-wrap: anywhere; }
-	.season-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 0 6px; }
-	.season-keep { margin: 0 0 14px; }
 	.tp-progress { color: var(--text-muted); }
-	.season-line { margin: 0 0 12px; }
 	.episodes { display: flex; flex-direction: column; gap: 12px; }
 	.ep-why { margin: 2px 0 0; }
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }

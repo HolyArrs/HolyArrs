@@ -541,10 +541,6 @@
 		border-top: 1px solid var(--line);
 	}
 	@media (max-width: 600px) {
-		.tp-msg b {
-			display: block;
-			margin-bottom: var(--s-1);
-		}
 		.pick > :global(.ui-btn), .look > :global(.ui-btn), .end > :global(.ui-btn) { width: 100%; }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
 
