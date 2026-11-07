@@ -22,7 +22,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { MusicTileGrid, appPicture, artistHref, fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData, albumWords } from '#lib/music/index.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
-	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -37,7 +37,7 @@
 	import type { PersonSummary } from '#lib/ui/people.ts';
 	import { refreshInbox, AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { createLatestOnly } from '#lib/history.ts';
+	import { createLatestOnly } from '#lib/downloads/history.ts';
 	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';
 	import { detailPath } from '#lib/metadata/index.ts';
 	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';

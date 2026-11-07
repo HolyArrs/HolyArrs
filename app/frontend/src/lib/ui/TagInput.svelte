@@ -5,7 +5,7 @@
 	// off. The tags already in use are offered as suggestions.
 	import { onMount } from 'svelte';
 	import Chip from './Chip.svelte';
-	import { addTags, tagsInUse } from '../tags.ts';
+	import { addTags, tagsInUse } from './tags.ts';
 
 	let {
 		id,

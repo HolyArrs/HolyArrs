@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kindOf, rowPath } from '../downloaders.ts';
+import { kindOf, rowPath } from './downloaders.ts';
 import { type DownloadRow } from '../core/types.ts';
 import { counts, stageOf, statusWord, TABS } from './status-tabs.ts';
 import { historyStatus } from './sections.ts';

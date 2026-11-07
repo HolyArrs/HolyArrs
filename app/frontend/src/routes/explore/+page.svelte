@@ -24,7 +24,7 @@
 	import type { LookupShow } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';

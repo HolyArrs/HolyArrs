@@ -13,7 +13,7 @@
 		metadataDownShown,
 		metadataOutage,
 		watchMetadata
-	} from '#lib/metadata-health.svelte.ts';
+	} from '#lib/metadata/health.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
 	// Notifications drop in at the top right under the top bar (top, full width on

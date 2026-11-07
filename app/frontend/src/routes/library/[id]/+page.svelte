@@ -12,13 +12,13 @@
 	import EmptyState from '#lib/ui/TitleEmpty.svelte';
 	import { secondVersion, slotNotes, chooseWarnings, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, type RemovePlan, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
 	import { decided, ReportSheet } from '#lib/requests/index.ts';
-	import { downloadTone, percent, timeLeft } from '#lib/downloaders.ts';
-	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
+	import { downloadTone, percent, timeLeft } from '#lib/downloads/downloaders.ts';
+	import SubtitlePanel from '#lib/subtitles/SubtitlePanel.svelte';
 	import { ShowPage } from '#lib/shows/index.ts';
 	import { ArtistPage } from '#lib/music/index.ts';
 	import { TitlePage } from '#lib/discover/index.ts';
 	import { goto } from '$app/navigation';
-	import { groupLabel, kindTone } from '#lib/history.ts';
+	import { groupLabel, kindTone } from '#lib/downloads/history.ts';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import { plainReason } from '#lib/core/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';

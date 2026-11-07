@@ -6,9 +6,9 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { ReleaseSheet, DeleteSheet, splitSteps, type RenameStep, RenamePreview } from '#lib/mediafiles/index.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import CompactRow from '#lib/history-looks/CompactRow.svelte';
-	import { isRoutine } from '#lib/history-looks/dirs.ts';
-	import { groupDownloads } from '#lib/history.ts';
+	import CompactRow from '#lib/downloads/HistoryLine.svelte';
+	import { isRoutine } from '#lib/downloads/history-search.ts';
+	import { groupDownloads } from '#lib/downloads/history.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';

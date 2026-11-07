@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Sheet from '../ui/Sheet.svelte';
-	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Button from '../ui/Button.svelte';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';

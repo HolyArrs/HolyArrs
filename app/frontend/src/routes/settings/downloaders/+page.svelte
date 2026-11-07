@@ -2,7 +2,7 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import TagInput from '#lib/ui/TagInput.svelte';
-	import { forgetTags } from '#lib/tags.ts';
+	import { forgetTags } from '#lib/ui/tags.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -29,7 +29,7 @@
 		type DownloaderHealth,
 		type DownloaderSettings,
 		type DownloaderView
-	} from '#lib/downloaders.ts';
+	} from '#lib/downloads/downloaders.ts';
 
 	let list = $state<DownloaderView[]>([]);
 	let loaded = $state(false);

@@ -8,9 +8,9 @@
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { ago } from '../core/format.ts';
-	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from '../downloaders.ts';
+	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from './downloaders.ts';
 	import { type Decision } from '../core/types.ts';
-	import { refreshDecisions } from '../decisions.svelte.ts';
+	import { refreshDecisions } from './decisions.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { plainReason } from '../core/plain.ts';
 	import { editionDecisionBody } from '../mediafiles/index.ts';

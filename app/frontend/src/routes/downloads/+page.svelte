@@ -8,13 +8,13 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice } from '#lib/downloads/downloaders.ts';
 	import { type Decision, type DownloadRow } from '#lib/core/types.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
-	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dlstore.ts';
+	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dl-store.ts';
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
-	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
+	import { decisions, refreshDecisions } from '#lib/downloads/decisions.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';

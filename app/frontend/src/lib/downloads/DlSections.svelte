@@ -27,9 +27,9 @@
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
-	import { overlayScroll } from '../ui/overlayScroll.ts';
+	import { overlayScroll } from './overlay-scroll.ts';
 	import { dlScope } from '../core/search-field.svelte.ts';
-	import { dlTop } from '../dl-top.svelte.ts';
+	import { dlTop } from './dl-top.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { fileTree } from './filetree.ts';
 	import { api, message, ApiError } from '../core/api.ts';
@@ -40,17 +40,17 @@
 	// Each client's own app icon (design/assets/clients, licenses in its README).
 	const CLIENT_ICONS = new Set(['qbittorrent', 'transmission', 'deluge', 'sabnzbd', 'nzbget']);
 	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
-	import { kindWords } from '../downloaders.ts';
+	import { kindWords } from './downloaders.ts';
 	import { reducedMotion } from '../core/motion.ts';
 	import { DUR, easeIn, easeOut, sheetIn, sheetOut } from '../core/transitions.ts';
-	import { kindOf, manyWords, rowName, rowPath } from '../downloaders.ts';
+	import { kindOf, manyWords, rowName, rowPath } from './downloaders.ts';
 	import { type Decision, type DownloadRow } from '../core/types.ts';
 	import type { TitleView } from '../core/types.ts';
 	import type { ImportRecord } from './types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, shortReason, stageOf, statusHint, statusWord, stepLine, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
-	import { poster, who } from './shared.ts';
+	import { poster, who } from './row-art.ts';
 	import { byTracker, countLabel, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
 	import { problem } from './problem.ts';

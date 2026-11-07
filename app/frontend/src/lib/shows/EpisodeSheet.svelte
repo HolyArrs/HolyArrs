@@ -7,12 +7,12 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
 	import { qualityBadges } from '#lib/mediafiles/index.ts';
-	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
-	import CompactRow from '#lib/history-looks/CompactRow.svelte';
+	import SubtitlePanel from '#lib/subtitles/SubtitlePanel.svelte';
+	import CompactRow from '#lib/downloads/HistoryLine.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import type { TitleSubtitles } from '#lib/subtitles.ts';
-	import { isRoutine } from '#lib/history-looks/dirs.ts';
-	import { groupDownloads } from '#lib/history.ts';
+	import type { TitleSubtitles } from '#lib/subtitles/api.ts';
+	import { isRoutine } from '#lib/downloads/history-search.ts';
+	import { groupDownloads } from '#lib/downloads/history.ts';
 	import type { EventRecord, TitleView } from '#lib/core/types.ts';
 
 	// One episode, from the Library tab: its picture and story, where it stands,

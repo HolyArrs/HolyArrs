@@ -34,7 +34,7 @@
 		usedWords,
 		type RulesKind,
 		type SizeFields
-	} from '#lib/pick-rules.ts';
+	} from '#lib/downloads/pick-rules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';

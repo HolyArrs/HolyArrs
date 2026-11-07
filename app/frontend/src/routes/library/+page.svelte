@@ -26,7 +26,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import DlFind from '#lib/downloads/DlFind.svelte';
 	import { searchShortcut } from '#lib/downloads/keys.ts';
-	import { dlTop } from '#lib/dl-top.svelte.ts';
+	import { dlTop } from '#lib/downloads/dl-top.svelte.ts';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';

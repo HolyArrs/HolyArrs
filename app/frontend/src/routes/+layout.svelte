@@ -21,8 +21,8 @@
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/requests/index.ts';
-	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
-	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
+	import { decisions, refreshDecisions } from '#lib/downloads/decisions.svelte.ts';
+	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/downloads/active.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { needsAttention } from '#lib/settings-status.ts';
@@ -46,7 +46,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from './(frame)/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
-	import { dlTop } from '#lib/dl-top.svelte.ts';
+	import { dlTop } from '#lib/downloads/dl-top.svelte.ts';
 	import {
 		buildNav,
 		currentHref,

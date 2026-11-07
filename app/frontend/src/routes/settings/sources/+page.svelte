@@ -2,7 +2,7 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import TagInput from '#lib/ui/TagInput.svelte';
-	import { forgetTags } from '#lib/tags.ts';
+	import { forgetTags } from '#lib/ui/tags.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -17,10 +17,10 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { testCount } from '#lib/core/test-tag.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
-	import SourceCheck from '#lib/ui/SourceCheck.svelte';
+	import { healthTone, healthWord, pausedUntil } from '#lib/sources/health.ts';
+	import SourceCheck from '#lib/sources/SourceCheck.svelte';
 	import ConnectBridge from './ConnectBridge.svelte';
-	import { emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources.ts';
+	import { emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources/api.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 
 	let sources = $state<SourceView[]>([]);

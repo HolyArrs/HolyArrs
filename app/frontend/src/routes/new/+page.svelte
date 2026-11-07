@@ -20,7 +20,7 @@
 	import type { LookupShow } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import MetadataNotice from '#lib/metadata/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import { MusicNewTab } from '#lib/music/index.ts';
 	import PosterCard from '#lib/ui/PosterCard.svelte';

@@ -14,9 +14,9 @@ const MAX_CORE_FILES = 40;
 const ROUTE_TEST_FOLDERS = ['routes/(home)/', 'routes/(frame)/', 'routes/settings/(home)/'];
 
 const PENDING_FILE = join(SRC, 'lib/core/structure-pending.json');
-const pending: Record<'names' | 'flat' | 'routeTests' | 'edges' | 'pageEdges', string[]> = existsSync(PENDING_FILE)
+const pending: Record<'names' | 'flat' | 'routeTests' | 'edges' | 'pageEdges' | 'noIndex', string[]> = existsSync(PENDING_FILE)
 	? JSON.parse(readFileSync(PENDING_FILE, 'utf8'))
-	: { names: [], flat: [], routeTests: [], edges: [], pageEdges: [] };
+	: { names: [], flat: [], routeTests: [], edges: [], pageEdges: [], noIndex: [] };
 
 const graph = buildGraph();
 const all = listFiles();
@@ -59,7 +59,9 @@ for (const f of all.filter((x) => x.startsWith('routes/') && isCode(x))) {
 	}
 }
 
-const found = { names, flat, routeTests, edges, pageEdges };
+const noIndex = Object.keys(LAYER).filter((m) => lib.some((f) => f.startsWith('lib/' + m + '/')) && !lib.includes('lib/' + m + '/index.ts'));
+
+const found = { names, flat, routeTests, edges, pageEdges, noIndex };
 
 if (process.env.UPDATE_PENDING) {
 	writeFileSync(PENDING_FILE, JSON.stringify(Object.fromEntries(Object.entries(found).map(([k, v]) => [k, [...v].sort()])), null, '\t') + '\n');
@@ -107,10 +109,9 @@ describe('where files live', () => {
 	});
 
 	it('has an index.ts in every module folder', () => {
-		for (const m of Object.keys(LAYER)) {
-			const files = lib.filter((f) => f.startsWith(`lib/${m}/`));
-			if (files.length) expect(files, `lib/${m}`).toContain(`lib/${m}/index.ts`);
-		}
+		const r = same('noIndex');
+		expect(r.newBreaks).toEqual([]);
+		expect(r.stale).toEqual([]);
 	});
 });
 
