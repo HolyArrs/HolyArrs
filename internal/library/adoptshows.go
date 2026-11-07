@@ -102,7 +102,7 @@ func mapEpisodeFiles(vids []AdoptVideo, sh metadata.Show, order string) []AdoptE
 	for i, e := range sh.Episodes {
 		refs[i] = judge.EpisodeRef{ItemID: int64(i + 1), Season: e.Season, Episode: e.Number, Absolute: e.Absolute, AirDay: e.AirDay}
 	}
-	lib := []judge.TitleRef{{Name: sh.Name, Year: sh.Year, Kind: "show"}}
+	lib := []judge.TitleRef{{Name: sh.Name, Aliases: sh.OtherNames, Year: sh.Year, Kind: "show"}}
 	taken := map[[2]int]bool{}
 	out := make([]AdoptEpisodeFile, 0, len(vids))
 	for _, v := range vids { // biggest first
@@ -423,7 +423,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf domain.LibraryFold
 	if err != nil {
 		return 0, err
 	}
-	sh := metadata.Show{Name: t.Name}
+	sh := metadata.Show{Name: t.Name, OtherNames: t.Aliases}
 	if t.Year != nil {
 		sh.Year = *t.Year
 	}

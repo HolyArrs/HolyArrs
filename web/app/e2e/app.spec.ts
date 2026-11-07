@@ -180,7 +180,7 @@ test('settings pages render their forms', async () => {
 test('the first-run Library folder keeps its health', async () => {
 	await page.goto('/settings/library-folders');
 	await expect(page.locator('#main').getByText('Movies', { exact: true })).toBeVisible();
-	await expect(page.locator('#main .chip').first()).not.toHaveText('');
+	await expect(page.locator('#main .folder .st span').first()).not.toHaveText(''); // the health word next to the status dot
 });
 
 test('make and revoke an API key', async () => {

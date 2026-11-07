@@ -323,7 +323,7 @@
 	.settings-content :global(section.ui-settings > header) { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; padding: 0 6px 8px; border: 0; }
 	.settings-content :global(section.ui-settings > header > div) { display: contents; }
 	.settings-content :global(section.ui-settings > header h2) { color: var(--text-muted); font: 600 13px/1.2 var(--font-ui); letter-spacing: 0.02em; }
-	.settings-content :global(section.ui-settings > header p) { margin: 0; color: var(--text-faint, var(--text-muted)); font: 400 12px/1.2 var(--font-ui); }
+	.settings-content :global(section.ui-settings > header p) { margin: 0; color: var(--text-muted); font: 400 12px/1.2 var(--font-ui); }
 	/* The sheet. */
 	.settings-content :global(:is(section.ui-settings > .body, ul.card, div.card)) {
 		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
