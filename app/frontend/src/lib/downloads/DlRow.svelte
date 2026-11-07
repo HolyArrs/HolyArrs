@@ -345,4 +345,5 @@
 	@media (pointer: coarse) {
 		.bin:disabled { pointer-events: none; }
 	}
+	.dline :global(.num) { text-align: right; font-variant-numeric: tabular-nums; }
 </style>

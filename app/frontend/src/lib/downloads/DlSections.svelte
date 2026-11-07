@@ -7,60 +7,48 @@
 	// holds which columns exist and the saved layout). ▾ opens a row's details in place; the bin removes it
 	// (through the page's Remove dialog).
 	import { tick, untrack } from 'svelte';
-	import { mergeDetail } from './detail-merge.ts';
 	import { page } from '$app/state';
-	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, ratioText, shortAge, sortRows, swarmNum, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
+	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
 	import { goto, replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../ui/Poster.svelte';
 	import Icon from '../ui/Icon.svelte';
-	import Chip from '../ui/Chip.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
-	import TopMenu from './TopMenu.svelte';
 	import { to } from '../core/paths.ts';
 	import DlBar from './DlBar.svelte';
-	import DecisionPanel from './DecisionPanel.svelte';
 	import DlStatus from './DlStatus.svelte';
-	import DlTabsView from './DlTabsView.svelte';
 	import DlMorePop from './DlMorePop.svelte';
 	import { createColumns } from './columns-grid.svelte.ts';
 	import DlColumnPicker from './DlColumnPicker.svelte';
 	import DlRow from './DlRow.svelte';
+	import DlPane from './DlPane.svelte';
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
-	import { CONN_HINT, CONN_WORD, tabsOf, type PaneTab } from './pane-facts.ts';
+	import { tabsOf, type PaneTab } from './pane-facts.ts';
 	import GhostEmpty from './GhostEmpty.svelte';
 	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
-	import Popover from '../ui/Popover.svelte';
-	import { tip } from './tip.ts';
 	import { overlayScroll } from './overlay-scroll.ts';
 	import { dlScope } from '../core/search-field.svelte.ts';
 	import { dlTop } from './dl-top.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { fileTree } from './filetree.ts';
-	import { api, message, ApiError } from '../core/api.ts';
-	import Confirm from '../ui/Confirm.svelte';
-	import { ago, dateTime, duration, percent } from '../core/format.ts';
+	import { api, message } from '../core/api.ts';
+	import { duration } from '../core/format.ts';
 	import { session } from '../core/session.svelte.ts';
-	import { healthLine, quietPeers, logDays, badKind, clientMark, swarmLine, swarmTotal } from './panel-words.ts';
-	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
-	import { kindWords } from './downloaders.ts';
+	import { size as bytes, categoryWords, protocolOf, type KindKey } from './size.ts';
 	import { reducedMotion } from '../core/motion.ts';
-	import { DUR, easeIn, easeOut, sheetIn, sheetOut } from '../core/transitions.ts';
-	import { kindOf, manyWords, rowName, rowPath } from './downloaders.ts';
+	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
+	import { kindOf, rowName } from './downloaders.ts';
 	import { type Decision, type DownloadRow } from '../core/types.ts';
 	import type { TitleView } from '../core/types.ts';
 	import type { ImportRecord } from './types.ts';
-	import { ALL, counts, emptyOf, pick, showOf, shortReason, stageOf, statusHint, statusWord, stepLine, subCounts, tabsFor } from './status-tabs.ts';
-	import { statusDetail } from './imports.ts';
-	import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
+	import { ALL, counts, emptyOf, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { controllable, pausable, retryable } from './usenet.ts';
 	import { poster, who } from './row-art.ts';
-	import { byTracker, countLabel, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
-	import { longPress, phoneTitle, subLine } from './phone.ts';
+	import { byTracker, countLabel, pickRange, problemWords, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { problem } from './problem.ts';
-	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
+	import { historyTotals, inHistory, matches, moving, totals } from './sections.ts';
 
 	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
 	let {
@@ -152,7 +140,6 @@
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
-	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 
 	const dls = new Downloaders(() => watch);
 	const tabNow = (r: DownloadRow): PaneTab => {
@@ -371,31 +358,11 @@
 		{ action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
 		{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
 	];
-	// The detail pane under the list: its height is kept in this browser.
-	const PANE_KEY = 'holyarrs.downloads.pane';
-	let paneH = $state(260);
-	// The pane takes the height its content needs (capped so the list keeps rows); a drag on the
-	// divider sets a height by hand, a double-click goes back to fitting.
-	let paneFit = $state(true);
 	let paneOpen = $state(true);
-	let grabY: number | null = null;
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
 	const pane = new PaneDetail({ openId: () => openId, openTab: () => openTab, paneOpen: () => paneOpen, rows: () => everyRow, watch: () => watch });
-	try {
-		const v = typeof localStorage === 'undefined' ? null : Number(localStorage.getItem(PANE_KEY));
-		if (v && Number.isFinite(v)) paneH = Math.max(120, Math.min(900, Math.round(v)));
-		else if (typeof innerHeight !== 'undefined') paneH = Math.max(150, Math.round(innerHeight * 0.3));
-	} catch {
-		/* private window: the default height */
-	}
-	function savePane() {
-		try {
-			localStorage.setItem(PANE_KEY, String(Math.round(paneH)));
-		} catch {
-			/* private window: the height lasts for this visit */
-		}
-	}
 	let colEl = $state<HTMLElement>();
+	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
@@ -412,51 +379,6 @@
 		{ key: 'pause', icon: 'pause' as const, label: countLabel('Pause', pauseT.rows.length), hint: pauseT.why ? `Pause (${pauseT.why})` : countLabel('Pause', pauseT.rows.length), disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }] },
 		{ key: 'remove', icon: 'trash' as const, label: countLabel('Remove', removeT.rows.length), hint: removeT.why ? `Remove (${removeT.why})` : countLabel('Remove', removeT.rows.length), disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
 	]);
-	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
-	function dragDown(e: PointerEvent) {
-		if (e.button !== 0 || !paneOpen) return;
-		e.preventDefault();
-		const el = e.currentTarget as HTMLElement;
-		el.setPointerCapture(e.pointerId);
-		const y0 = e.clientY;
-		const pane = el.parentElement?.querySelector<HTMLElement>('.dpane');
-		const h0 = paneFit && pane ? pane.offsetHeight : paneH;
-		paneFit = false;
-		paneH = h0;
-		const mv = (m: PointerEvent) => (paneH = Math.max(120, Math.min(maxPane(), Math.round(h0 + (y0 - m.clientY)))));
-		const up = () => {
-			el.removeEventListener('pointermove', mv);
-			el.removeEventListener('pointerup', up);
-			el.removeEventListener('pointercancel', up);
-			savePane();
-		};
-		el.addEventListener('pointermove', mv);
-		el.addEventListener('pointerup', up);
-		el.addEventListener('pointercancel', up);
-	}
-	function dividerKey(e: KeyboardEvent) {
-		if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-		e.preventDefault();
-		e.stopPropagation();
-		const pane = (e.currentTarget as HTMLElement).parentElement?.querySelector<HTMLElement>('.dpane');
-		const h0 = paneFit && pane ? pane.offsetHeight : paneH;
-		paneFit = false;
-		paneH = Math.max(120, Math.min(maxPane(), h0 + (e.key === 'ArrowUp' ? 24 : -24)));
-		savePane();
-	}
-	// The underline under the picked panel tab: measured once per change, moved with transform only.
-	function ink(node: HTMLElement, _key: string) {
-		const set = () => {
-			const a = node.querySelector<HTMLElement>('[aria-selected="true"]');
-			if (!a) return;
-			node.style.setProperty('--ix', `${a.offsetLeft}px`);
-			node.style.setProperty('--iw', String(a.offsetWidth));
-		};
-		set();
-		const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(set);
-		ro?.observe(node);
-		return { update: () => requestAnimationFrame(set), destroy: () => ro?.disconnect() };
-	}
 	/** Up and Down move the selected row; the pane follows. Escape clears it. */
 	/** The row that has the focus (or holds it inside), if any. */
 	const focusedRow = () => {
@@ -599,16 +521,6 @@
 		if ((wasPhone && !p) || watch) untrack(() => (selecting = false));
 		wasPhone = p;
 	});
-	// The pane's tabs work like the status tabs: one Tab stop, Left and Right (Home, End) switch.
-	function paneTabKey(e: KeyboardEvent, r: DownloadRow) {
-		const tabs = [...(e.currentTarget as HTMLElement).parentElement!.querySelectorAll<HTMLElement>('[role="tab"]')];
-		const i = tabs.indexOf(e.currentTarget as HTMLElement);
-		const j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -2;
-		if (j === -2 || !tabs[j]) return;
-		e.preventDefault();
-		tabs[j].click();
-		tick().then(() => tabs[j].focus());
-	}
 	// A click anywhere on a row opens or closes its details, as the ▾ does;
 	// not on the bin, a link, a control, or while selecting text.
 	function rowClick(e: MouseEvent, id: number) {
@@ -669,28 +581,7 @@
 	</div>
 {/snippet}
 
-{#snippet btns(r: DownloadRow)}
-	{@const more = watch ? [] : paneMenu(r)}
-	<div class="xbt" data-testid="dl-actions">
-		{#if !watch}
-			{#if retryable(r) && mayEdit(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
-			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
-			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
-		{/if}
-		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
-		{#if more.length}<span class="more" data-testid="dl-more"><Menu label="More actions" items={more} width={220} /></span>{/if}
-	</div>
-{/snippet}
 
-{#snippet tabStrip(r: DownloadRow)}
-	{@const tab = tabNow(r)}
-	<div class="xtabs" role="tablist" aria-label="Details" use:ink={`${r.id}:${tab}:${paneOpen}`}>
-		{#each tabsOf(r) as t (t)}
-			<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} aria-controls="dlv-{r.id}" id="dlt-{r.id}-{t}" tabindex={tab === t ? 0 : -1} onclick={() => { xtabOn[r.id] = t; paneOpen = true; }} onkeydown={(e) => paneTabKey(e, r)} data-testid="dl-tab-{t.toLowerCase().replaceAll(' ', '-')}">{t}</button>
-		{/each}
-		<i class="ink" class:gone={!paneOpen} aria-hidden="true"></i>
-	</div>
-{/snippet}
 
 {#snippet pills()}
 	{#each tally as c (c.key)}
@@ -712,33 +603,6 @@
 	{/each}
 {/snippet}
 
-{#snippet panel(r: DownloadRow)}
-	{@const ds = decisionsOf(r)}
-	{@const sizeWord = r.size ? bytes(r.size) : 'Not reported yet'}
-	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
-		<div class="phd">
-			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
-			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></span></p>
-			{@render tabStrip(r)}
-			{#if paneOpen}
-			<div class="pact" data-testid="dl-pane-actions">
-				{#if r.replaced}<a class="tdl" href={to('/library/turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
-				{@render btns(r)}
-			</div>
-			{/if}
-			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? 'Collapse details' : 'Expand details'} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
-		</div>
-		{#if paneOpen}
-		<div class="pb" data-testid="dl-panel" data-card="d">
-			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
-			<div class="xb">
-				{#key tabNow(r)}<div class="tview" role="tabpanel" id="dlv-{r.id}" aria-labelledby="dlt-{r.id}-{tabNow(r)}"><DlTabsView {r} tab={tabNow(r)} {pane} {importOf} {watch} {mayEdit} /></div>{/key}
-				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
-			</div>
-		</div>
-		{/if}
-	</section>
-{/snippet}
 
 <svelte:window onpointerdown={cols.outside} onkeydown={listKey} />
 
@@ -799,11 +663,7 @@
 {/if}
 </div>
 {#if openRow}
-	<div class="sheet" in:sheetIn out:sheetOut data-testid="dl-sheet">
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? (paneFit ? 0 : paneH) : 0} tabindex="0" class:fixed={!paneOpen} title="Drag to cols.resize · double-click to fit the content" onpointerdown={dragDown} ondblclick={() => (paneFit = true)} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
-	{@render panel(openRow)}
-	</div>
+	<DlPane r={openRow} bind:paneOpen bind:openId tab={tabNow(openRow)} ontab={(id, t) => (xtabOn[id] = t)} {pane} {importOf} {titles} {titlesReady} {watch} {busy} {decisionsOf} {ondone} {onact} {onretry} {onremove} {mayEdit} {paneMenu} {maxPane} />
 {/if}
 </div>
 </div>
@@ -829,19 +689,7 @@
 	}
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.k { color: var(--text-muted); font: var(--t-footnote); }
 	.strip b { font-weight: 600; }
-	.sp { gap: 8px; }
-	.up { color: var(--info-text); }
-	.tops { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0 16px; }
-	.types { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 12px; border-radius: var(--r-btn); background: var(--surface-2); }
-	.ty { min-height: 28px; padding: 0 10px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
-	.ty.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
-	.ty:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
-	.cw.zero { opacity: 0.72; }
-	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
-	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
 	/* One column grid for every row of both sections. */
 	.dlgrid { --gap: 6px; min-width: 0; }
 	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
@@ -862,15 +710,7 @@
 		.psel { animation: none; }
 	}
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: max(44px, calc(var(--pi, 26px) * 1.5 + 6px)); }
-	.bin:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
-	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
-	.post.square { height: var(--pi, 26px); --poster-ratio: 1; }
-	.post :global(.poster) { border-radius: 3px; }
-	.br { position: relative; overflow: hidden; text-overflow: ellipsis; }
-	.bw { font-weight: 500; }
-	.hcell { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 24px; padding: 0 8px; }
-	.hsz { flex: none; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
 	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */
 	@media (min-width: 641px) {
 		.dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; }
@@ -901,32 +741,7 @@
 	.ch.fixed::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
-	.bin { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
-	.bin:hover:not(:disabled) { color: var(--fail-text); background: var(--surface-3); }
-	.bin:disabled { opacity: 0.35; cursor: not-allowed; }
-	/* The panel starts at the Title column: ▾ + poster + two gaps. */
-	/* Details: the grown poster under the ▾ and poster columns, the facts to its right. */
-	.xb { min-width: 0; }
-	.big { width: 72px; height: 108px; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); --poster-ratio: 2 / 3; }
-	.big.square { height: 72px; --poster-ratio: 1; }
-	.big :global(.poster) { border-radius: 6px; }
-	.post { transition: opacity var(--dur-fast) var(--ease-out); }
-	.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 16px; margin: 0; font: var(--t-footnote); }
-	.dp { margin-top: 10px; }
-	.cd { display: block; }
-	.xh { display: flex; align-items: center; gap: 10px; min-width: 0; }
-	.thumb { flex: none; width: 32px; height: 48px; overflow: hidden; border-radius: 4px; --poster-ratio: 2 / 3; }
-	.thumb.square { height: 32px; --poster-ratio: 1; }
-	.thumb :global(.poster) { border-radius: 4px; }
-	.xt { display: grid; gap: 2px; margin: 0; min-width: 0; font: var(--t-footnote); }
-	.xt b { font-weight: 600; overflow-wrap: anywhere; }
-	.xt span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.xtabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; width: max-content; max-width: 100%; border-radius: var(--r-btn); background: var(--surface-2); }
-	.xtab { min-height: 28px; padding: 0 12px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
-	.xtab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
-	.xtab:focus-visible, .xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.fl { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font: var(--t-footnote); min-width: 0; }
-	.fs { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; overflow: clip; }
 	.body { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -935,48 +750,14 @@
 	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); background: none; }
 	.col { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
-	.dv { flex: none; position: relative; height: 9px; border-top: 1px solid var(--line); cursor: row-resize; touch-action: none; }
-	.dv.fixed { cursor: default; }
-	.dv i { position: absolute; left: 50%; top: 3px; width: 38px; height: 3px; margin-left: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0.6; }
-	.dv:hover i, .dv:focus-visible i { opacity: 1; }
-	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* The divider and the pane rise and fold away together (sheetIn / sheetOut). */
-	.sheet { flex: none; display: flex; flex-direction: column; min-height: 0; }
-	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
-	.dpane.shut { height: auto; }
-	.phd { flex: none; }
 	.trchip { flex: none; align-self: center; min-height: 24px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--fail) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail-text); font: var(--t-caption); font-weight: 600; cursor: pointer; white-space: nowrap; }
 	.trchip.on, .trchip:hover { background: color-mix(in srgb, var(--fail) 22%, transparent); }
 	.trchip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.grab { display: none; }
-	.phd { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); min-width: 0; }
-	.dpane.shut .phd { border-bottom: 0; }
-	.pt { flex: 0 1 380px; min-width: 0; margin: 0; }
-	.pt b { font: 600 16px / 1.3 var(--font-ui); }
-	.pt span { font: var(--t-callout); }
-	.pt b, .pt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.phd .xtabs { margin: 0; background: none; padding: 0; }
-	.pcl { margin-left: auto; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
-	.pcl :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
-	.dpane.shut .pcl :global(svg) { transform: rotate(180deg); }
-	.pcl:hover { background: var(--surface-3); color: var(--text); }
-	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pb { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px var(--dl-gutter); overflow: auto; }
-	.pb .big { width: 112px; height: 168px; border-radius: var(--r-card, 10px); }
-	.pb .big :global(.poster) { border-radius: var(--r-card, 10px); }
-	.pb .big.square { height: 112px; }
-	.pb .kv { gap: 3px 14px; font: var(--t-callout); }
-	.pb .xtab { min-height: 28px; padding: 0 10px; font: var(--t-callout); font-weight: 500; }
-	.pb .dep { margin-top: 8px; padding: 6px 10px; }
-	.pb .xbt { margin-top: 6px; }
-	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
-	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
 	.dline :global(.num) { text-align: right; font-variant-numeric: tabular-nums; }
 	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
 	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
 	.psearch { display: none; }
 	.grip:active::after { background: var(--accent); width: 2px; }
-	.dv:active i { opacity: 1; }
 	.psb, .psx { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text); cursor: pointer; }
 	.psb:hover, .psx:hover { background: var(--surface-3); }
 	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -1015,66 +796,15 @@
 	@media (prefers-reduced-motion: reduce) {
 		.pw, .tab, .stab, .subwrap { transition: none; }
 	}
-	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
-	.story { border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); }
-	.src { margin-top: 8px; }
-	.st-working { color: var(--ok-text); }
-	.st-updating { color: var(--info-text); }
-	.st-error { color: var(--fail-text); }
-	.more { min-width: 36px; padding: 0 10px; }
-	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
-	.lim { display: inline-flex; align-items: center; gap: 8px; }
-	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xbn:hover:not(:disabled) { background: var(--surface-3); }
 	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
-	.xa { margin: 8px 0 0; }
-	.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 10px; }
-	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-	.tot { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	/* Polish pass: one radius scale (--r-sm 6, --r-btn 10, --r-card 12, --r-panel 16, pill),
 	   one depth scale (--shadow-card, --shadow-lift, --shadow-modal), a 4/8 spacing grid. */
 	.app { --r-poster: 4px; }
-	.post, .post :global(.poster), .thumb, .thumb :global(.poster), .big, .big :global(.poster) { border-radius: var(--r-poster); }
-	.big { box-shadow: var(--shadow-card); }
 	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
-	.pcl, .bin { border-radius: var(--r-sm); }
-	.dep { border-radius: var(--r-card); box-shadow: var(--shadow-card); }
-	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
-	.dv { height: 12px; border-top: 1px solid var(--line); }
-	.dv i { top: 4px; width: 36px; margin-left: -18px; border-radius: var(--r-pill); transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
-	.dv:not(.fixed):hover i, .dv:focus-visible i { transform: scaleX(1.5); opacity: 1; }
-	.dv:not(.fixed):active i { transform: scaleX(1.8) scaleY(1.3); background: var(--text-muted); }
-	/* Panel header: title, underline tabs with a sliding ink, collapse. */
-	.phd { position: relative; min-height: 48px; padding: 0 var(--dl-gutter); gap: 0 16px; }
-	.phd .xtabs { position: relative; align-self: stretch; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-	.phd .xtabs::-webkit-scrollbar { display: none; }
-	.phd .xtab { min-height: 48px; height: 100%; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; font: var(--t-callout); font-weight: 500; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
-	.phd .xtab:hover { color: var(--text); }
-	.phd .xtab.on { background: none; box-shadow: none; color: var(--text); }
-	.phd .xtab:focus-visible { box-shadow: inset var(--focus-ring); border-radius: var(--r-sm); }
-	.ink { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left; transform: translateX(var(--ix, 0)) scaleX(var(--iw, 0)); transition: transform var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
-	.ink.gone { opacity: 0; }
-	/* Panel body: tab content crossfades in; the footer holds every action. */
-	.pb { padding: 12px var(--dl-gutter); gap: 16px; animation: fadein var(--dur) var(--ease-out); }
-	.tview { animation: tabin var(--dur) var(--ease-out); }
 	@keyframes tabin { from { opacity: 0; transform: translateY(4px); } }
 	@keyframes fadein { from { opacity: 0; } }
-	/* Actions sit in the panel header, right side, next to the chevron. */
-	.pact { position: relative; flex: none; margin-left: auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
-	.phd .pcl { margin-left: 0; }
-	.pact .xbt { margin: 0; gap: 6px; flex-wrap: nowrap; }
-	.pact .xbn { min-height: 32px; padding: 0 10px; border-radius: var(--r-btn); font: var(--t-subhead); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
-	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
-	.pact .more { display: inline-flex; }
-	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
-	.tdl:hover { color: var(--text); }
-	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	a.xbn { display: inline-flex; align-items: center; text-decoration: none; }
-	@media (prefers-reduced-motion: reduce) {
-		.pb, .tview { animation: none; }
-		.ink, .dv i, .pact .xbn { transition: none; }
-	}
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
 		.dlgrid { --gap: 8px; --pi: 26px !important; }
@@ -1125,60 +855,20 @@
 		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
-		.post { grid-area: post; align-self: start; justify-self: center; }
-		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
-		.big { width: 56px; height: 84px; }
-		.big.square { height: 56px; }
-		.fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
 	.strip { gap: 4px 14px; }
 	}
 	@media (max-width: 640px) {
 		.psearch { display: flex; flex: none; align-items: center; gap: 2px; }
-		.dv { display: none; }
-		.dpane { background: var(--surface-1); }
-		.dpane { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom)); z-index: 40; height: min(64dvh, 520px) !important; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.32); }
-		.dpane.shut { height: auto !important; }
-		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
-		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
-		.pb .big.square { height: 56px; }
-		.pt { flex-basis: 100%; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
-		.gen { grid-template-columns: minmax(0, 1fr); }
-	}
-	/* Phones: title, tabs, then the actions on their own row, never over the sheet. */
-	@media (max-width: 640px) {
-		.phd .pt { order: 0; }
-		.phd .xtabs { order: 1; }
-		.phd .pcl { order: 2; margin-left: auto; }
-		.pact { order: 3; flex: 1 0 100%; margin-left: 0; flex-wrap: wrap; padding-bottom: 4px; }
-		.pact .xbt { flex-wrap: wrap; }
 	}
 	/* Phones: a bottom sheet at about 60% that leaves at least three rows of the list in view. */
-	@media (max-width: 640px) {
-		.dpane { height: min(60dvh, calc(100dvh - var(--tabbar, 56px) - env(safe-area-inset-bottom) - 340px), 520px) !important; }
-		.grab { display: grid; place-items: center; order: -1; flex: 1 0 100%; height: 44px; margin: -13px 0; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
-		.grab i { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); }
-		.dpane.shut .grab { display: none; }
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.bin, .cw, .post { transition: none; }
-	}
-	@media (max-width: 640px) {
-		.dpane { border-radius: var(--r-panel) var(--r-panel) 0 0; box-shadow: var(--shadow-modal); }
-		.pb { grid-template-columns: minmax(0, 1fr); }
-		.pb .big { display: none; }
-		.pact { flex-wrap: wrap; }
-	}
-	.pt span { font-variant-numeric: tabular-nums; }
 	/* The main list in the same family: raised surface, tinted header band, zebra rows, a lift on hover. */
 	@media (min-width: 641px) {
 		.tin { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: clip; }
 		.tin .chead { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
 		.listbox :global(.tin .chead) { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); }
 	}
-	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
-	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
 	/* Swarm: one line, two marks and a ratio pill, on the same three tracks as the header's facet words so each number sits under its word; a four-digit count or a 99.0 ratio still fits the fixed width. */
 	.facets { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
 	/* The header's three facets: the picked one is bold and carries the sort line. */
@@ -1186,35 +876,18 @@
 	.fc.on { color: var(--text); font-weight: 600; }
 	.fc:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
 	.fc .sbar { right: 0; bottom: -7px; }
-	@media (min-width: 1800px) {
-		.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; }
-		.pb .big { width: 200px; height: 300px; }
-		.pb .big.square { height: 200px; }
-	}
-	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
-	.pb .big :global(.poster) { border-radius: var(--r-card); }
-	.pb .big.square { height: 160px; }
-	@media (max-width: 767px) {
-		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
-		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
-		.pb .big.square { height: 56px; }
-	}
-	@media (max-width: 640px) {
-		.pb { grid-template-columns: minmax(0, 1fr); }
-		.pb .big { display: none; }
-	}
 	/* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
 	/* Chrome drops the ::-webkit rules below (and draws its own bar with arrows) once scrollbar-width/-color are set, so those are Firefox only. */
 	@supports not selector(::-webkit-scrollbar) {
-		.tw, .pb { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
-		.tw:hover, .pb:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
+		.tw { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
+		.tw:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
 	}
-	.tw::-webkit-scrollbar, .pb::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+	.tw::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
 	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
-	.tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
-	.tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner { background: transparent; }
-	.tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-	.tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-corner { background: transparent; }
+	.tw::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+	.tw::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
 	/* Desktop: the table is a card set in like the toolbar above it (14px from the side menu). */
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
@@ -1223,7 +896,6 @@
 		/* The list, the divider and the pane are one slab of the table's surface; only its four outer corners are rounded. */
 	.col { overflow: clip; border-radius: var(--r-card); }
 		.col > .listbox { background: var(--surface-2); border-radius: var(--r-card) var(--r-card) 0 0; }
-		.dv { background: var(--surface-2); }
 		/* The table's own frame drew a second line inside the card: the rows' lines are enough. */
 	.col .tin { border-color: transparent; box-shadow: none; }
 		/* The header and row checkboxes sit centred in the same 28px lane. */
@@ -1232,58 +904,14 @@
 		/* The poster column starts under the checkbox lane's divider: centre its icon and posters between that line and the next. */
 	.ch[data-col='poster'] .lbl { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
-	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
-	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
-	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
-	.hdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-	.hdot.paused { background: var(--text-muted); }
-	.hdot.held { background: var(--wait); }
-	.hdot.bad { background: var(--fail); }
-	.hdot.queued { background: var(--info); }
-	.pt { gap: 3px; padding: 8px 0; }
-	.pt b { font: 600 17px / 1.25 var(--font-ui); letter-spacing: -0.01em; }
-	.phd .xtabs { align-self: center; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
-	.phd .xtab { min-height: 28px; height: auto; padding: 0 12px; border-radius: 999px; color: var(--text-muted); transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
-	.phd .xtab:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
-	.phd .xtab.on, .phd .xtab.on:hover { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); }
-	.phd .xtab:focus-visible { border-radius: 999px; box-shadow: var(--focus-ring); }
-	.phd .ink { display: none; }
-	.pb .big { width: 120px; height: 180px; border: 1px solid var(--line); box-shadow: none; }
-	.pb .big.square { height: 120px; }
+	.tw::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	@media (min-width: 641px) {
 		/* The pane is part of the table's slab: same surface, same edges, no frame of its own; the divider's hairline and grip are the seam. */
-	.dpane { margin: 0; border-radius: 0; background: var(--surface-2); overflow: hidden; }
-		.dpane .phd { padding: 8px var(--dl-gutter); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
-		.pb { padding: 12px var(--dl-gutter) 16px; background: transparent; }
-		/* The title takes the room it needs (up to 42% of the header) and the tabs centre in what is left. */
-	.dpane .pt { flex: 0 1 auto; min-width: 0; max-width: 42%; }
-		.dpane .phd .xtabs { margin-inline: auto; }
-	}
-	/* Narrower desktops: the title fills the first row beside the actions, so the tabs wrap to a second row of their own. Never three rows. */
-	@media (min-width: 641px) and (max-width: 1240px) {
-		.dpane .pt { max-width: none; flex: 1 1 200px; }
-		.dpane .phd .xtabs { order: 2; flex: 0 1 auto; margin: 0 auto 6px 0; }
-		.dpane .pact, .dpane .pcl { order: 1; flex: none; }
-	}
-	@media (min-width: 1800px) {
-		.pb .big { width: 140px; height: 210px; }
-		.pb .big.square { height: 140px; }
-	}
-	@media (max-width: 767px) {
-		.pb .big { width: 56px; height: 84px; }
-		.pb .big.square { height: 56px; }
-	}
-	@media (max-width: 640px) {
-		.pb .big { display: none; }
-		.phd .xtabs { max-width: 100%; }
-		.phd .xtab { padding: 0 12px; }
 	}
 	/* Phones: every control a thumb can hit is at least 32px tall. */
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
-		.pcl { width: 32px; height: 32px; }
 		.trchip, .qrv, .xbn { min-height: 32px; }
-		.phd .xtab { min-height: 32px; }
 	}
 	/* Touch phones: every control a finger hits gets a 44px target; the
 	   hit area grows with an invisible ::after, so nothing moves and desktop is unchanged. */
@@ -1300,7 +928,4 @@
 		.psx::after { content: ''; position: absolute; inset: -6px -6px -6px 0; }
 	}
 	/* A disabled bin is only a stand-in: a tap on it goes to the row underneath. */
-	@media (pointer: coarse) {
-		.bin:disabled { pointer-events: none; }
-	}
 </style>
