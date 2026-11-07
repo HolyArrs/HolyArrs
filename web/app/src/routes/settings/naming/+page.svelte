@@ -427,11 +427,10 @@
 		max-width: 160px;
 	}
 	.example {
-		margin: var(--s-2) 0 var(--s-4);
-		padding: var(--s-3);
-		border-left: 3px solid var(--ok);
-		background: var(--surface-2);
-		border-radius: var(--r-sm);
+		margin: 12px 0 14px;
+		padding: 12px 14px;
+		background: color-mix(in srgb, var(--text) 4%, transparent);
+		border-radius: 12px;
 	}
 	.path {
 		overflow-wrap: anywhere;

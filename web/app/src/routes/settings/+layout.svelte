@@ -345,6 +345,27 @@
 	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }
 	/* A table inside a sheet uses the sheet's surface; no second box. */
 	.settings-content :global(section.ui-settings > .body > .ui-table) { margin: 4px -18px; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; }
+	/* Groups of choices inside a sheet: the group name is a small sub-heading, never cut by a border. */
+	.settings-content :global(section.ui-settings fieldset) { border: 0; margin: 0; padding: 0; min-width: 0; }
+	.settings-content :global(section.ui-settings fieldset > legend) { float: left; width: 100%; padding: 16px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+	.settings-content :global(section.ui-settings fieldset > legend :is(b, strong)) { font-weight: 600; color: var(--text-muted); }
+	.settings-content :global(section.ui-settings fieldset > legend + *) { clear: both; }
+	.settings-content :global(section.ui-settings label:not(.switch) > input[type='checkbox']) { width: 18px; height: 18px; accent-color: var(--accent); }
+	/* A section with only Advanced: Advanced becomes its sheet, so the heading never floats alone. */
+	.settings-content :global(section.ui-settings:not(:has(> .body)) > .advanced) { margin: 0; padding: 0 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
+	.settings-content :global(section.ui-settings:not(:has(> .body)) > .advanced > summary) { min-height: 52px; color: var(--text); font: 600 15px/1.3 var(--font-ui); }
+	.settings-content :global(section.ui-settings:not(:has(> .body)) > .advanced > .adv-body) { border: 0; background: none; padding: 0 0 12px; }
+	/* Small show-more lists inside a sheet look like Advanced: a quiet line with a chevron. */
+	.settings-content :global(section.ui-settings > .body details:not(.advanced) > summary) { display: flex; align-items: center; gap: 6px; min-height: 40px; list-style: none; cursor: pointer; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
+	.settings-content :global(section.ui-settings > .body details:not(.advanced) > summary::-webkit-details-marker) { display: none; }
+	.settings-content :global(section.ui-settings > .body details:not(.advanced) > summary::before) { content: ''; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); margin: 0 4px 0 2px; transition: transform var(--dur-fast) var(--ease-out); }
+	.settings-content :global(section.ui-settings > .body details[open]:not(.advanced) > summary::before) { transform: rotate(45deg); }
+	/* Hand-built boxes: their own title reads like every section heading (small, grey), with the rows under a hairline. */
+	.settings-content :global(:is(section.card, div.card) > :is(h2, .h2):first-child),
+	.settings-content :global(:is(section.card, div.card) > .card-head:first-child :is(h2, .h2)) { color: var(--text-muted); font: 600 13px/1.2 var(--font-ui) !important; letter-spacing: 0.02em; }
+	.settings-content :global(:is(section.card, div.card) > :is(h2, .h2, .card-head):first-child) { padding: 14px 0 12px; margin: 0; box-shadow: inset 0 -1px 0 var(--line); }
+	/* Status words in Settings: a dot and a word, no pill (as on Library folders). */
+	.settings-content :global(.chip) { background: none !important; box-shadow: none !important; padding-inline: 0 !important; font: 500 12px/1 var(--font-ui); color: var(--text-muted); }
 	/* Advanced and footer sit under the sheet, quiet. */
 	.settings-content :global(section.ui-settings > .advanced) { margin: 6px 6px 0; border: 0; }
 	.settings-content :global(section.ui-settings > .advanced > summary) { padding-inline: 0; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
