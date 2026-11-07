@@ -59,6 +59,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 var version = "0.0.0-skeleton"
@@ -746,7 +747,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// that finds nothing to do.
 	var watchlists atomic.Pointer[asks.Watchlists]
 	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
-		if !startup.FeatureOn(startup.PlexWatchlists) {
+		if !startup.FeatureOn(features.PlexWatchlists) {
 			r.SetResult(map[string]any{"skipped": "held back"})
 			return nil
 		}
@@ -757,7 +758,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return nil
 	})
 	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
-		if !startup.FeatureOn(startup.PlexWatchlists) {
+		if !startup.FeatureOn(features.PlexWatchlists) {
 			return false, nil, nil
 		}
 		if w := watchlists.Load(); w != nil {
@@ -770,7 +771,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	subs.Register(q)
 	if !c.SafeMode {
 		s.OnEvent(func(e domain.Event) {
-			if pc.On(parts.Subtitles) && startup.FeatureOn(startup.SubtitleSites) {
+			if pc.On(parts.Subtitles) && startup.FeatureOn(features.SubtitleSites) {
 				subs.OnEvent(e)
 			}
 		})

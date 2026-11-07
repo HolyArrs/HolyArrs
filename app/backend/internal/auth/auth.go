@@ -30,6 +30,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Names on the wire.
@@ -574,7 +575,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.providerRoutes(m)
 	a.plexMineRoutes(m)
 	a.ssoRoutes(m)
-	if startup.FeatureOn(startup.AIApps) {
+	if startup.FeatureOn(features.AIApps) {
 		a.aiOAuthRoutes(m)
 	}
 }

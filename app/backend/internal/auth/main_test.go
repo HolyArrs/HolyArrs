@@ -14,7 +14,7 @@ import (
 // never served to a test request.
 func TestMain(m *testing.M) {
 	// Held-back features are tested switched on (internal/feature).
-	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures, ","))
+	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))
 
 	os.Exit(webserver.CheckRouteHits(m.Run(), "."))
 }

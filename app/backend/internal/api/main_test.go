@@ -15,7 +15,7 @@ import (
 // never served to a test request.
 func TestMain(m *testing.M) {
 	// Held-back features are tested switched on (internal/feature).
-	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures, ","))
+	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))
 	wrapMux = webserver.RecordRouteHits
 	// The music cover preload runs only in the tests that ask for it.
 	musicPreloadOn = false

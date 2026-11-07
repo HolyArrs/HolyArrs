@@ -20,6 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Sign-in through an outside account: Plex (a PIN that the person confirms
@@ -66,7 +67,7 @@ type WayView struct {
 
 func (a *Auth) way(ctx context.Context, p string) WayView {
 	v := WayView{
-		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || startup.FeatureOn(startup.EmbySignIn)),
+		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || startup.FeatureOn(features.EmbySignIn)),
 		URL:      a.signInSetting(ctx, p+"_url"),
 		ServerID: a.signInSetting(ctx, p+"_server_id"),
 		Join:     a.signInSetting(ctx, p+"_join"),

@@ -48,6 +48,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Server is what the API needs.
@@ -453,7 +454,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/strip", a.exploreStrip)
 	m.HandleFunc("POST /api/v1/explore/strip/counts", a.exploreStripCounts)
 	m.HandleFunc("DELETE /api/v1/explore/strip/counts", a.exploreStripReset)
-	if startup.FeatureOn(startup.RowTitleStats) {
+	if startup.FeatureOn(features.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	}
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
@@ -467,7 +468,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
 	if a.s.Secrets != nil {
-		if startup.FeatureOn(startup.TraktLists) {
+		if startup.FeatureOn(features.TraktLists) {
 			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
 			m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
@@ -477,7 +478,7 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
-	if startup.FeatureOn(startup.PlexWatchlists) {
+	if startup.FeatureOn(features.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}
 	a.reportRoutes(m)
@@ -494,7 +495,7 @@ func (a *API) Handler() http.Handler {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
-	if startup.FeatureOn(startup.AIApps) {
+	if startup.FeatureOn(features.AIApps) {
 		a.mcpRoutes(m)
 	}
 	a.oldAppRoutes(m)

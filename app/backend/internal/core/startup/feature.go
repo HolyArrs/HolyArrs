@@ -5,24 +5,25 @@ import (
 	"strings"
 )
 
-// The held-back features, by switch name.
-const (
-	AIApps            = "ai_apps"             // AI connector, AI keys, AI app guides
-	PlexWatchlists    = "plex_watchlists"     // Plex watchlists become requests
-	RowTitleStats     = "row_title_stats"     // Explore row titles statistics (owner table)
-	TraktLists        = "trakt_lists"         // Trakt key, Trakt lists, VIP token
-	AlertChannelsMore = "alert_channels_more" // alert channels not yet proven end to end
-	SubtitleSites     = "subtitle_sites"      // Subtitle sites and subtitle searching
-	EmbySignIn        = "emby_signin"         // Sign in with Emby
-	GoBack            = "go_back"             // Go back to the previous version steps
-)
+var heldFeatures []string
 
-// HeldFeatures lists every held-back feature, in a fixed order.
-var HeldFeatures = []string{AIApps, PlexWatchlists, RowTitleStats, TraktLists, AlertChannelsMore, SubtitleSites, EmbySignIn, GoBack}
+// RegisterFeature adds a held-back feature to the list. A held-back feature
+// is off unless its name is listed in HOLYARRS_FLAGS. Registering a name
+// twice keeps one copy.
+func RegisterFeature(name string) {
+	for _, n := range heldFeatures {
+		if n == name {
+			return
+		}
+	}
+	heldFeatures = append(heldFeatures, name)
+}
 
-// ProvenAlertKinds are the alert channel kinds that stay on when
-// AlertChannelsMore is off.
-var ProvenAlertKinds = map[string]bool{"discord": true, "email": true}
+// HeldFeatures lists the registered held-back features in the order they
+// were registered.
+func HeldFeatures() []string {
+	return append([]string(nil), heldFeatures...)
+}
 
 // FeatureOn reports whether a feature switch is listed in HOLYARRS_FLAGS.
 func FeatureOn(name string) bool {
@@ -38,7 +39,7 @@ func FeatureOn(name string) bool {
 // The web app gets the list with the signed-in person's details.
 func FeaturesOff() []string {
 	out := []string{}
-	for _, n := range HeldFeatures {
+	for _, n := range heldFeatures {
 		if !FeatureOn(n) {
 			out = append(out, n)
 		}

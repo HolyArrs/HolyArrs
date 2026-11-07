@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Input is what a person sets on an Alert. URL, Password, Secret, BotToken
@@ -63,7 +64,7 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 			return ErrKind
 		}
 		// Channels not yet proven end to end are held back (feature switch).
-		if !startup.ProvenAlertKinds[in.Kind] && !startup.FeatureOn(startup.AlertChannelsMore) {
+		if !features.ProvenAlertKinds[in.Kind] && !startup.FeatureOn(features.AlertChannelsMore) {
 			return ErrKind
 		}
 		a.Kind = in.Kind
