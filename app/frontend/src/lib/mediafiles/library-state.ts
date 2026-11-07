@@ -1,3 +1,5 @@
+// Works out the one state a Library title shows: its label, tone, icon and sort rank.
+
 import type { TitleView } from '../core/types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { IconName } from '../ui/Icon.svelte';
@@ -15,19 +17,18 @@ export interface LibState {
 	label: string;
 	tone: LibTone;
 	icon: IconName;
-
 	pill: StatusKind;
-
 	percent?: number;
-
 	rank: number;
 }
 
+// Most urgent first; rank is the position here.
 const order: LibStateKey[] = [
 	'failed', 'needs_decision', 'stalled', 'missing_file', 'missing', 'better_wanted', 'paused', 'downloading', 'queued',
 	'approved', 'waiting_approval', 'not_out_yet', 'not_kept', 'specials_only', 'declined', 'in_library', 'up_to_date', 'ended'
 ];
 
+// Tone, icon and pill for each state.
 const look: Record<LibStateKey, [LibTone, IconName, StatusKind]> = {
 	failed: ['fail', 'alert', 'failed'],
 	needs_decision: ['fail', 'alert', 'failed'],
@@ -49,13 +50,26 @@ const look: Record<LibStateKey, [LibTone, IconName, StatusKind]> = {
 	ended: ['ok', 'owned', 'in_library']
 };
 
+// Shows and artists count their children; movies read their own slots.
+export function libraryState(t: TitleView, now = Date.now()): LibState | null {
+	if (t.kind === 'show' || t.kind === 'artist') return groupState(t, now);
+	return movieState(t, now);
+}
+
+// Anything ranked at or above Better copy needs attention.
+export function isProblem(s: LibState | null): boolean {
+	return !!s && s.rank <= order.indexOf('better_wanted');
+}
+
 function make(key: LibStateKey, label: string, percent?: number): LibState {
 	const [tone, icon, pill] = look[key];
 	return { key, label, tone, icon, pill, rank: order.indexOf(key), ...(percent !== undefined ? { percent } : {}) };
 }
 
+// Clamps progress to 0 to 100 percent.
 const pct = (p: number | undefined) => Math.round(Math.min(Math.max(p ?? 0, 0), 1) * 100);
 
+// Picks the strongest request on this title: approved, then asked, then turned down.
 function askOf(t: TitleView): 'asked' | 'approved' | 'turned_down' | null {
 	const states = (t.asks ?? []).filter((a) => a.title_id === undefined || a.title_id === t.id).map((a) => a.state);
 	if (states.includes('approved')) return 'approved';
@@ -64,6 +78,7 @@ function askOf(t: TitleView): 'asked' | 'approved' | 'turned_down' | null {
 	return null;
 }
 
+// Maps a request answer to a state when nothing is owned yet.
 function askState(ask: ReturnType<typeof askOf>): LibState | null {
 	if (ask === 'approved') return make('approved', 'Searching');
 	if (ask === 'asked') return make('waiting_approval', 'Waiting');
@@ -71,6 +86,7 @@ function askState(ask: ReturnType<typeof askOf>): LibState | null {
 	return null;
 }
 
+// Checks in order of urgency, so a failure beats a download beats owned.
 function movieState(t: TitleView, now: number): LibState {
 	const slots = t.slots ?? [];
 	const st = (s: string) => slots.some((x) => x.state === s);
@@ -101,6 +117,7 @@ function movieState(t: TitleView, now: number): LibState {
 	return make('missing', 'Missing');
 }
 
+// Same idea as movieState, using the show or artist counts.
 function groupState(t: TitleView, now: number): LibState | null {
 	const show = t.kind === 'show';
 	const s = show ? t.show : t.artist;
@@ -130,13 +147,4 @@ function groupState(t: TitleView, now: number): LibState | null {
 	}
 	if (show && t.show?.status === 'ended') return make('ended', 'Complete · ended');
 	return make('up_to_date', 'Complete');
-}
-
-export function libraryState(t: TitleView, now = Date.now()): LibState | null {
-	if (t.kind === 'show' || t.kind === 'artist') return groupState(t, now);
-	return movieState(t, now);
-}
-
-export function isProblem(s: LibState | null): boolean {
-	return !!s && s.rank <= order.indexOf('better_wanted');
 }

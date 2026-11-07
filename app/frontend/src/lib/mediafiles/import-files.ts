@@ -1,3 +1,4 @@
+// Types and rules for importing files by hand into the Library.
 
 export interface ByHandGuess {
 	title_id?: number;
@@ -54,6 +55,7 @@ export interface Pick {
 
 export type Mode = 'copy' | 'move';
 
+// Starts from the scanner guess; no guess means no pick.
 export function startPick(f: ByHandFile): Pick | null {
 	const g = f.guess;
 	if (!g.title_id || !g.title_name) return null;
@@ -81,6 +83,7 @@ export function pickLine(p: Pick | null): string {
 	return `${name} · ${episodeCode(p.season, p.episode) || 'pick the episode'}`;
 }
 
+// Returns why a file cannot be imported, or empty when it can.
 export function blocker(f: ByHandFile, p: Pick | null): string {
 	if (f.kind !== 'video') return f.note || 'Music is not imported by hand yet.';
 	if (f.in_library) return 'Already a file in the Library.';
@@ -90,10 +93,12 @@ export function blocker(f: ByHandFile, p: Pick | null): string {
 	return '';
 }
 
+// Only confident guesses start ticked.
 export function startTicked(f: ByHandFile, p: Pick | null): boolean {
 	return !blocker(f, p) && !f.note && f.guess.confidence >= 0.7;
 }
 
+// Builds the import request from ticked files that have a valid pick.
 export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>, mode: Mode) {
 	const out: { path: string; title_id: number; version_id?: number; season?: number; episode?: number; mode: Mode }[] = [];
 	for (const f of files) {
@@ -110,6 +115,7 @@ export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>
 	return out;
 }
 
+// Plain words for what happened to one file.
 export function resultLine(r: ByHandResult): string {
 	if (r.outcome === 'placed') {
 		const how = r.placed_by === 'move' ? 'Moved' : r.placed_by === 'copy' ? 'Copied' : r.placed_by === 'hardlink' ? 'Linked (no extra space)' : 'Recorded';

@@ -1,3 +1,4 @@
+// Types and helpers for naming, adopting and removing files in the Library.
 
 export interface RenameStep {
 	file_id: number;
@@ -7,12 +8,11 @@ export interface RenameStep {
 	from: string;
 	to?: string;
 	skip?: string;
-
 	album_id?: number;
-
 	subtitles?: { from: string; to?: string; skip?: string }[];
 }
 
+// A background job as the server reports it.
 export interface JobView {
 	ID: number;
 	State: 'queued' | 'running' | 'done' | 'failed' | 'cancelled';
@@ -22,8 +22,8 @@ export interface JobView {
 	Error?: { code: string; message: string } | null;
 }
 
+// One possible title for a folder.
 export interface AdoptMatch {
-
 	id?: string;
 	tmdb_id: string;
 	name: string;
@@ -44,21 +44,17 @@ export interface AdoptCandidate {
 	status: AdoptStatus;
 	why: string;
 	title_id?: number;
-
 	files?: AdoptEpisodeFile[];
 	episodes?: number;
 	unknown?: number;
-
 	albums?: AdoptAlbum[];
 	tracks?: number;
-
 	cut?: boolean;
 }
 
 export interface AdoptTrackFile {
 	path: string;
 	size: number;
-
 	track?: string;
 	why?: string;
 }
@@ -67,14 +63,12 @@ export interface AdoptAlbum {
 	folder: string;
 	parsed_name: string;
 	parsed_year?: number;
-
 	match?: AdoptMatch;
 	pressing?: string;
 	tracks?: number;
 	files: AdoptTrackFile[];
 	matched: number;
 	unknown: number;
-
 	cut?: boolean;
 	status: 'matched' | 'unsure' | 'unmatched' | 'not_included';
 	why: string;
@@ -89,17 +83,14 @@ export interface AdoptEpisodeFile {
 
 export interface AdoptPlan {
 	kind?: 'movie' | 'show' | 'music';
-
 	warning?: string;
 	library_folder_id: number;
 	path: string;
 	folders: AdoptCandidate[];
 	counts: Record<string, number>;
-
 	limit: number;
 	more: boolean;
 	next?: string;
-
 	partial?: boolean;
 }
 
@@ -124,7 +115,6 @@ export interface RemoveFile {
 export interface RemovePlan {
 	title_id: number;
 	name: string;
-
 	scope?: 'title' | 'season' | 'episodes' | 'album' | 'tracks';
 	season?: number;
 	episodes?: string[];
@@ -145,9 +135,7 @@ export interface NamingSettings {
 	colon: string;
 	illegal: string;
 	rename_on_import: boolean;
-
 	adopt_scan_limit: number;
-
 	music_adopt_scan_limit?: number;
 	show_folder_pattern?: string;
 	season_folders?: boolean;
@@ -156,11 +144,8 @@ export interface NamingSettings {
 	episode_pattern?: string;
 	daily_pattern?: string;
 	anime_pattern?: string;
-
 	multi_episode_style?: string;
-
 	air_date_style?: string;
-
 	absolute_digits?: number;
 	artist_folder_pattern?: string;
 	album_folder_pattern?: string;
@@ -168,7 +153,6 @@ export interface NamingSettings {
 	multi_disc_track_pattern?: string;
 	disc_folders?: boolean;
 	disc_folder_pattern?: string;
-
 	music_read_tags?: boolean;
 }
 
@@ -178,48 +162,6 @@ export interface MusicExamples {
 	track?: string;
 	multi_disc?: string;
 	various?: string;
-}
-
-export const musicWords = ['artist', 'artist_sort', 'album', 'album_type', 'disc', 'track', 'track_title', 'track_artist', 'format'];
-
-export function musicExampleRows(ex: MusicExamples | undefined): [string, string][] {
-	if (!ex) return [];
-	const order: [keyof MusicExamples, string][] = [
-		['track', 'A track'],
-		['multi_disc', 'A track of a two-disc album'],
-		['various', 'A track of a various-artists album']
-	];
-	return order.filter(([k]) => !!ex[k]).map(([k, label]) => [label, ex[k] as string]);
-}
-
-export function albumSteps(steps: RenameStep[], albumId: number | undefined): RenameStep[] {
-	return albumId === undefined ? steps : steps.filter((s) => s.album_id === albumId);
-}
-
-export function musicFolderLine(c: Pick<AdoptCandidate, 'tracks' | 'unknown' | 'albums'>): string {
-	const t = c.tracks ?? 0;
-	const a = (c.albums ?? []).filter((x) => !!x.match).length;
-	const left = c.unknown ?? 0;
-	const parts = [`${t} track${t === 1 ? '' : 's'} in ${a} album${a === 1 ? '' : 's'}`];
-	if (left) parts.push(`${left} file${left === 1 ? '' : 's'} left alone`);
-	return parts.join('; ');
-}
-
-export function albumFolderLine(a: AdoptAlbum): string {
-	const n = a.cut ? a.matched + a.unknown : a.files.length;
-	if (!a.match) return `No album fits; ${n} file${n === 1 ? '' : 's'} left alone`;
-	const name = `${a.match.name}${a.match.year ? ` (${a.match.year})` : ''} · ${score(a.match.score)}`;
-	if (!a.pressing) return `${name} · ${a.why}`;
-	return `${name} · ${a.matched} of ${n} file${n === 1 ? '' : 's'} hold a track of ${a.pressing}`;
-}
-
-export function cutFilesLine(a: AdoptAlbum): string {
-	const more = a.matched + a.unknown - a.files.length;
-	return a.cut && more > 0 ? `and ${more} more file${more === 1 ? '' : 's'}, not listed` : '';
-}
-
-export function trackFileLine(f: AdoptTrackFile): string {
-	return f.track ? f.track : `Left alone: ${f.why ?? 'no track'}`;
 }
 
 export interface EpisodeExamples {
@@ -240,25 +182,23 @@ export interface NamingView {
 	example_music?: MusicExamples;
 }
 
-export const showWords = ['season', 'season_padded', 'episode', 'episode_title', 'air_date', 'absolute'];
-
-export function episodeExampleRows(ex: EpisodeExamples | undefined): [string, string][] {
-	if (!ex) return [];
-	const order: [keyof EpisodeExamples, string][] = [
-		['episode', 'One episode'],
-		['multi', 'A file holding two episodes'],
-		['special', 'A special (season 0)'],
-		['daily', 'A show ordered by air day'],
-		['anime', 'A show ordered by running number']
-	];
-	return order.filter(([k]) => !!ex[k]).map(([k, label]) => [label, ex[k] as string]);
-}
-
 export interface FileRules {
 	holding_days: number;
 	min_free_mb: number;
 	skip_free_space_check: boolean;
 }
+
+export interface DeleteScope {
+	season?: number;
+	episodeIds?: number[];
+	albumId?: number;
+	trackIds?: number[];
+	label?: string;
+}
+
+export const musicWords = ['artist', 'artist_sort', 'album', 'album_type', 'disc', 'track', 'track_title', 'track_artist', 'format'];
+
+export const showWords = ['season', 'season_padded', 'episode', 'episode_title', 'air_date', 'absolute'];
 
 export const colonChoices: [string, string][] = [
 	['smart', 'Smart: a colon and space become " - ", any other colon "-"'],
@@ -286,6 +226,72 @@ export const illegalChoices: [string, string][] = [
 	['remove', 'Drop them']
 ];
 
+// Display order of adopt groups, with a line explaining each.
+export const groupOrder: [AdoptStatus, string, string][] = [
+	['matched', 'Matched', 'HolyArrs is sure which movie these are.'],
+	['unsure', 'Unsure', 'A likely movie, but check it. Pick the right one or look it up.'],
+	['unmatched', 'Not matched', 'No movie found from the folder name. Look each one up to add it.'],
+	['in_library', 'Already in the Library', 'Left as they are.'],
+	['never_add', 'On the Never-add list', 'Left as they are.'],
+	['no_video', 'No video file', 'Nothing to adopt in these folders.']
+];
+
+// Skips examples the server did not send.
+export function musicExampleRows(ex: MusicExamples | undefined): [string, string][] {
+	if (!ex) return [];
+	const order: [keyof MusicExamples, string][] = [
+		['track', 'A track'],
+		['multi_disc', 'A track of a two-disc album'],
+		['various', 'A track of a various-artists album']
+	];
+	return order.filter(([k]) => !!ex[k]).map(([k, label]) => [label, ex[k] as string]);
+}
+
+export function albumSteps(steps: RenameStep[], albumId: number | undefined): RenameStep[] {
+	return albumId === undefined ? steps : steps.filter((s) => s.album_id === albumId);
+}
+
+export function musicFolderLine(c: Pick<AdoptCandidate, 'tracks' | 'unknown' | 'albums'>): string {
+	const t = c.tracks ?? 0;
+	const a = (c.albums ?? []).filter((x) => !!x.match).length;
+	const left = c.unknown ?? 0;
+	const parts = [`${t} track${t === 1 ? '' : 's'} in ${a} album${a === 1 ? '' : 's'}`];
+	if (left) parts.push(`${left} file${left === 1 ? '' : 's'} left alone`);
+	return parts.join('; ');
+}
+
+// Says how well the album matches and how many files hold its tracks.
+export function albumFolderLine(a: AdoptAlbum): string {
+	const n = a.cut ? a.matched + a.unknown : a.files.length;
+	if (!a.match) return `No album fits; ${n} file${n === 1 ? '' : 's'} left alone`;
+	const name = `${a.match.name}${a.match.year ? ` (${a.match.year})` : ''} · ${score(a.match.score)}`;
+	if (!a.pressing) return `${name} · ${a.why}`;
+	return `${name} · ${a.matched} of ${n} file${n === 1 ? '' : 's'} hold a track of ${a.pressing}`;
+}
+
+// The server lists only some files; this says how many are hidden.
+export function cutFilesLine(a: AdoptAlbum): string {
+	const more = a.matched + a.unknown - a.files.length;
+	return a.cut && more > 0 ? `and ${more} more file${more === 1 ? '' : 's'}, not listed` : '';
+}
+
+export function trackFileLine(f: AdoptTrackFile): string {
+	return f.track ? f.track : `Left alone: ${f.why ?? 'no track'}`;
+}
+
+export function episodeExampleRows(ex: EpisodeExamples | undefined): [string, string][] {
+	if (!ex) return [];
+	const order: [keyof EpisodeExamples, string][] = [
+		['episode', 'One episode'],
+		['multi', 'A file holding two episodes'],
+		['special', 'A special (season 0)'],
+		['daily', 'A show ordered by air day'],
+		['anime', 'A show ordered by running number']
+	];
+	return order.filter(([k]) => !!ex[k]).map(([k, label]) => [label, ex[k] as string]);
+}
+
+// Separates real renames from skipped files and ones already named right.
 export function splitSteps(steps: RenameStep[]): { change: RenameStep[]; skipped: RenameStep[]; same: number } {
 	const change: RenameStep[] = [];
 	const skipped: RenameStep[] = [];
@@ -298,6 +304,7 @@ export function splitSteps(steps: RenameStep[]): { change: RenameStep[]; skipped
 	return { change, skipped, same };
 }
 
+// Drops the shared folder so only the name that changed is shown.
 export function renamePair(s: Pick<RenameStep, 'from' | 'to'>): [string, string] {
 	const to = s.to ?? '';
 	const dir = (p: string) => p.slice(0, Math.max(0, p.lastIndexOf('/'), p.lastIndexOf('\\')));
@@ -309,15 +316,7 @@ export function fileName(p: string): string {
 	return i < 0 ? p : p.slice(i + 1);
 }
 
-export const groupOrder: [AdoptStatus, string, string][] = [
-	['matched', 'Matched', 'HolyArrs is sure which movie these are.'],
-	['unsure', 'Unsure', 'A likely movie, but check it. Pick the right one or look it up.'],
-	['unmatched', 'Not matched', 'No movie found from the folder name. Look each one up to add it.'],
-	['in_library', 'Already in the Library', 'Left as they are.'],
-	['never_add', 'On the Never-add list', 'Left as they are.'],
-	['no_video', 'No video file', 'Nothing to adopt in these folders.']
-];
-
+// Swaps the word movie for the shelf kind and drops empty groups.
 export function groupPlan(
 	folders: AdoptCandidate[],
 	word = 'movie'
@@ -340,6 +339,7 @@ export function matchKey(m: AdoptMatch): string {
 	return m.id || m.tmdb_id;
 }
 
+// Only sure matches start picked.
 export function startPicks(folders: AdoptCandidate[]): Record<string, string> {
 	const out: Record<string, string> = {};
 	for (const f of folders) if (f.status === 'matched' && f.match) out[f.folder] = matchKey(f.match);
@@ -355,6 +355,7 @@ export function choices(
 		.map(([folder, id]) => (kind === 'movie' ? { folder, tmdb_id: id } : { folder, id }));
 }
 
+// Prefers the show source id, then the usual id types.
 export function showIdOf(s: { source: string; ids: Record<string, string> }): string {
 	for (const k of [s.source, 'tmdb', 'tvdb', 'tvmaze', 'imdb']) if (s.ids[k]) return `${k}:${s.ids[k]}`;
 	return '';
@@ -373,10 +374,12 @@ export function showFolderLine(c: Pick<AdoptCandidate, 'episodes' | 'unknown' | 
 	return parts.join('; ');
 }
 
+// Turns a 0 to 1 score into a percent.
 export function score(s: number): string {
 	return `${Math.round(Math.max(0, Math.min(1, s)) * 100)}%`;
 }
 
+// Lists, in plain words, what a delete will do.
 export function deleteSummary(p: RemovePlan, kind: 'movie' | 'show' | 'artist' = 'movie'): string[] {
 	const out: string[] = [];
 	const s = (n: number) => (n === 1 ? '' : 's');
@@ -434,15 +437,7 @@ export async function followJob(
 	}
 }
 
-export interface DeleteScope {
-	season?: number;
-	episodeIds?: number[];
-	albumId?: number;
-	trackIds?: number[];
-
-	label?: string;
-}
-
+// Picks the narrowest scope given; a whole title also carries the never-add choice.
 export function deleteBody(scope: DeleteScope, files: boolean, never: boolean, apply: boolean): Record<string, unknown> {
 	const b: Record<string, unknown> = { delete_files: files, apply };
 	if (scope.albumId !== undefined) b.album_id = scope.albumId;
@@ -453,6 +448,7 @@ export function deleteBody(scope: DeleteScope, files: boolean, never: boolean, a
 	return b;
 }
 
+// True when no season, episode, album or track limits the delete.
 export function wholeScope(s: DeleteScope): boolean {
 	return s.season === undefined && !s.episodeIds?.length && s.albumId === undefined && !s.trackIds?.length;
 }

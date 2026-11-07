@@ -1,3 +1,5 @@
+// Public surface of the mediafiles module.
+
 export type * from './types.ts';
 export { activeCount } from './table.ts';
 export { airDateChoices } from './organise.ts';
