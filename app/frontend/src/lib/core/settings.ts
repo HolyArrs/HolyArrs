@@ -1,3 +1,4 @@
+// Settings page map, who may open each section, and small text helpers.
 import { message } from './api.ts';
 import type { IconName } from '../ui/Icon.svelte';
 
@@ -26,27 +27,10 @@ export interface Group {
 
 type Can = (p: 'settings' | 'users' | 'manage_library') => boolean;
 
-// Set by the session so this module can ask about held features without importing it.
+// Set by the session, so this module can ask about held features without importing it.
 let heldNow: (feature: string) => boolean = () => false;
-export function setHeld(fn: (feature: string) => boolean): void {
-	heldNow = fn;
-}
-export function isHeld(feature: string | undefined): boolean {
-	return !!feature && heldNow(feature);
-}
 
-export function mayOpen(s: Section, can: Can): boolean {
-	if (isHeld(s.feature)) return false;
-	if (s.need === 'self') return true;
-	if (s.need === 'users') return can('users');
-	if (s.need === 'library') return can('settings') || can('manage_library');
-	return can('settings');
-}
-
-export function visible(all: Section[], can: Can): Section[] {
-	return all.filter((s) => mayOpen(s, can));
-}
-
+// Order here is the order shown on the settings page.
 export const groups: Group[] = [
 	{ id: 'library', label: 'Library', icon: 'library', line: 'Where titles live', about: 'Folders, parts, defaults, subtitles, file names and moving in.' },
 	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, quality, search and schedules.' },
@@ -92,6 +76,27 @@ export const sections: Section[] = [
 	{ href: '/settings/account', group: 'account', tint: 'gray', label: 'My account', icon: 'user', about: 'Password, two-factor, devices', need: 'self' }
 ];
 
+// Each section may be hidden by a held feature; this is how the session says which.
+export function setHeld(fn: (feature: string) => boolean): void {
+	heldNow = fn;
+}
+export function isHeld(feature: string | undefined): boolean {
+	return !!feature && heldNow(feature);
+}
+
+// Rule: held feature hides it, then the section's own need picks the permission.
+export function mayOpen(s: Section, can: Can): boolean {
+	if (isHeld(s.feature)) return false;
+	if (s.need === 'self') return true;
+	if (s.need === 'users') return can('users');
+	if (s.need === 'library') return can('settings') || can('manage_library');
+	return can('settings');
+}
+
+export function visible(all: Section[], can: Can): Section[] {
+	return all.filter((s) => mayOpen(s, can));
+}
+
 export function sectionFor(all: Section[], path: string): Section | undefined {
 	return all.find((s) => s.href === path || path.startsWith(s.href + '/'));
 }
@@ -113,6 +118,7 @@ export function filterSections(all: Section[], query: string): Section[] {
 	});
 }
 
+// Turns any error into a short sentence with a capital and an end mark.
 export function plainMessage(e: unknown): string {
 	const t = message(e).trim();
 	if (!t) return 'Something went wrong.';

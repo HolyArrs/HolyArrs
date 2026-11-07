@@ -1,20 +1,28 @@
+// Picture preloading for the app's own images: slow-link guard, small queue, idle and next-row warming.
 import { proxied } from '#lib/core/tmdb-image.ts';
-
-export const DWELL_MS = 150;
-export const MAX_AT_ONCE = 4;
-export const NEXT_ROW_PICTURES = 8;
 
 interface NetInfo {
 	effectiveType?: string;
 	saveData?: boolean;
 }
 
+// Pointer must rest this long before a hover counts.
+export const DWELL_MS = 150;
+// A few at a time, so warming never competes with the page itself.
+export const MAX_AT_ONCE = 4;
+export const NEXT_ROW_PICTURES = 8;
+const limiter = createLimiter();
+const pictures = new Set<string>();
+const idleDone = new Set<string>();
+
+// Skip warming on data saver or slow links.
 export function fastEnough(conn: NetInfo | undefined | null = typeof navigator === 'undefined' ? null : (navigator as Navigator & { connection?: NetInfo }).connection): boolean {
 	if (!conn) return true;
 	if (conn.saveData) return false;
 	return !conn.effectiveType || conn.effectiveType === '4g';
 }
 
+// Only same-origin paths are safe to warm; data and blob urls need no fetch.
 export function ownAddress(url: string | null | undefined, origin: string = typeof location === 'undefined' ? '' : location.origin): boolean {
 	if (!url || url.startsWith('data:') || url.startsWith('blob:')) return false;
 	if (url.startsWith('/') && !url.startsWith('//')) return true;
@@ -25,6 +33,7 @@ export function ownAddress(url: string | null | undefined, origin: string = type
 	}
 }
 
+// Runs at most max tasks at once; the rest wait in order.
 export function createLimiter(max = MAX_AT_ONCE) {
 	let running = 0;
 	const queue: (() => void)[] = [];
@@ -51,25 +60,14 @@ export function createLimiter(max = MAX_AT_ONCE) {
 	};
 }
 
-const limiter = createLimiter();
-const pictures = new Set<string>();
-
+// A failed picture is forgotten so a later try can run again.
 export function preloadPicture(src: string | null | undefined, load: (src: string) => Promise<void> = imageLoad): Promise<void> {
 	if (!src || pictures.has(src) || !ownAddress(src) || !fastEnough()) return Promise.resolve();
 	pictures.add(src);
 	return limiter.run(() => load(src)).catch(() => void pictures.delete(src));
 }
 
-function imageLoad(src: string): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.decoding = 'async';
-		img.onload = () => resolve();
-		img.onerror = () => reject(new Error('picture'));
-		img.src = proxied(src);
-	});
-}
-
+// First usable picture in an answer, trying the biggest art first.
 export function mainPicture(answer: unknown): string | null {
 	if (!answer || typeof answer !== 'object') return null;
 	const a = answer as Record<string, unknown>;
@@ -92,6 +90,7 @@ export function rowPictures(row: Element, n = NEXT_ROW_PICTURES): string[] {
 	return out;
 }
 
+// Warms the pictures of the next row once the current one scrolls into view.
 export function installRowAhead(root: ParentNode = document): () => void {
 	if (typeof IntersectionObserver === 'undefined') return () => {};
 	const seen = new WeakSet<Element>();
@@ -118,6 +117,7 @@ export function installRowAhead(root: ParentNode = document): () => void {
 	};
 }
 
+// Falls back to a timer where idle callbacks do not exist.
 export function whenIdle(fn: () => void, timeout = 2000): () => void {
 	const g = globalThis as typeof globalThis & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
 	if (g.requestIdleCallback) {
@@ -138,4 +138,14 @@ export function idlePages(paths: string[], preload: (path: string) => Promise<un
 		}
 	});
 }
-const idleDone = new Set<string>();
+
+// Goes through the proxied address so it fills the same cache the page uses.
+function imageLoad(src: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.decoding = 'async';
+		img.onload = () => resolve();
+		img.onerror = () => reject(new Error('picture'));
+		img.src = proxied(src);
+	});
+}

@@ -1,4 +1,5 @@
 
+// Short pop-up messages plus a kept history for the alerts panel.
 export type ToastTone = 'ok' | 'fail' | 'info' | 'warn';
 export interface Toast {
 	id: number;
@@ -23,6 +24,7 @@ export interface PastAlert {
 	fresh: boolean;
 }
 
+// At most two on screen, six waiting behind them, fifty kept in the panel.
 const SHOW = 2;
 const WAIT = 6;
 const KEEP = 50;
@@ -31,12 +33,14 @@ export function createToasts(ms = 6000) {
 	const list = $state<Toast[]>([]);
 	const past = $state<PastAlert[]>([]);
 	const counts = $state({ waiting: 0 });
+	// Count of toasts pushed out of view, shown with the waiting ones.
 	let bumped = 0;
 	const recount = () => (counts.waiting = waiting.length + bumped);
 	const waiting: (Toast & { life: number })[] = [];
 	const timers = new Map<number, { t?: ReturnType<typeof setTimeout>; left: number; at: number }>();
 	let next = 1;
 
+	// Failures stay longer, scaled by length so the text can be read.
 	const life = (tone: ToastTone, text: string, own?: number) =>
 		own ?? (tone === 'fail' ? Math.max(8000, 3000 + text.length * 60) : ms);
 
@@ -51,6 +55,7 @@ export function createToasts(ms = 6000) {
 		arm(t.id, left);
 	}
 
+	// Closing one lets the next waiting toast take its place.
 	function dismiss(id: number) {
 		const timer = timers.get(id);
 		if (timer?.t) clearTimeout(timer.t);
@@ -79,6 +84,7 @@ export function createToasts(ms = 6000) {
 	function push(text: string, tone: ToastTone = 'info', opts: { action?: ToastAction; ms?: number; body?: string } = {}): number {
 		const left = life(tone, text + (opts.body ?? ''), opts.ms);
 		const alike = (t: { text: string; body?: string; tone: ToastTone; action?: ToastAction }) => t.text === text && t.body === opts.body && t.tone === tone && !t.action && !opts.action;
+		// Repeats of a toast on screen only bump its count and restart its timer.
 		const same = list.find(alike);
 		if (same) {
 			same.seen++;
@@ -95,6 +101,7 @@ export function createToasts(ms = 6000) {
 		const t: Toast = { id: next++, text, body: opts.body, tone, action: opts.action, seen: 0 };
 		remember(t, left);
 		if (list.length >= SHOW) {
+			// When full, drop the oldest plain one; toasts with an action are kept.
 			const old = list.find((x) => !x.action);
 			if (old) {
 				const timer = timers.get(old.id);
@@ -116,6 +123,7 @@ export function createToasts(ms = 6000) {
 		return t.id;
 	}
 
+	// Hovering holds the timer, but never leaves less than a moment to react.
 	function pause(id: number) {
 		const timer = timers.get(id);
 		if (!timer?.t) return;
@@ -141,6 +149,7 @@ export function createToasts(ms = 6000) {
 	function forgetAll() {
 		past.length = 0;
 	}
+	// An action can run once, and only before it expires.
 	function runPast(id: number) {
 		const p = past.find((x) => x.id === id);
 		if (!p?.action || (p.until && Date.now() > p.until)) return;
@@ -149,6 +158,7 @@ export function createToasts(ms = 6000) {
 		dismiss(id);
 		act.run();
 	}
+	// History only: the entry is stored but nothing pops up.
 	function record(text: string, tone: ToastTone = 'info', opts: { body?: string } = {}): number {
 		const t: Toast = { id: next++, text, body: opts.body, tone, seen: 0 };
 		remember(t, 0);

@@ -1,4 +1,7 @@
+// Timing rules that decide when a loading page shows skeleton, orbit and reassurance.
+export type LoadStage = 'quiet' | 'skeleton' | 'orbit' | 'reassure';
 
+// Wait a beat before showing anything, so quick loads never flash.
 export const SHOW_AFTER_MS = 150;
 export const MIN_SHOW_MS = 100;
 export const FADE_MS = 200;
@@ -7,8 +10,6 @@ export const REASSURE_AFTER_MS = 10_000;
 export const BOOT_STATUS_MS = 3_000;
 export const BOOT_RELOAD_MS = 10_000;
 
-export type LoadStage = 'quiet' | 'skeleton' | 'orbit' | 'reassure';
-
 export function loadStage(elapsed: number): LoadStage {
 	if (elapsed >= REASSURE_AFTER_MS) return 'reassure';
 	if (elapsed >= ORBIT_AFTER_MS) return 'orbit';
@@ -16,11 +17,13 @@ export function loadStage(elapsed: number): LoadStage {
 	return 'quiet';
 }
 
+// Once shown, keep it up a minimum time so it does not blink away.
 export function holdFor(elapsed: number, cached = false): number {
 	if (cached || elapsed < SHOW_AFTER_MS) return 0;
 	return Math.max(0, SHOW_AFTER_MS + MIN_SHOW_MS - elapsed);
 }
 
+// Timers still to fire for stages the load has not reached yet.
 export function stageTimers(elapsed: number): { at: number; stage: LoadStage }[] {
 	return (
 		[
@@ -38,6 +41,7 @@ export function buildingStatus(attempt: number, what = 'this page'): string {
 	return `Building ${what}… try ${attempt}`;
 }
 
+// Start-up wording escalates; after the long wait it offers a reload.
 export function bootLine(elapsed: number): { text: string; reload: boolean } {
 	if (elapsed >= BOOT_RELOAD_MS) return { text: 'This is taking longer than usual. The server may still be starting.', reload: true };
 	if (elapsed >= BOOT_STATUS_MS) return { text: 'Starting HolyArrs…', reload: false };
