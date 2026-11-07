@@ -27,7 +27,7 @@ async function axe(p: Page, where: string) {
 
 // Tidal Atlas on its Library tab (seasons, Versions and History live there).
 async function openShow(p: Page) {
-	await p.goto('/library');
+	await p.goto('/library?kind=show');
 	await (await inLibrary(p, 'Tidal Atlas')).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText('Tidal Atlas');
 	await openLibraryTab(p);

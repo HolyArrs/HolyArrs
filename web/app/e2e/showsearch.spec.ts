@@ -28,7 +28,7 @@ const release = (scope: Locator, part: string) => scope.getByTestId('release').f
 const verdict = (row: Locator) => row.locator('.rs-verdict');
 
 async function openShow(p: Page, name: string) {
-	await p.goto('/library');
+	await p.goto('/library?kind=show');
 	await (await inLibrary(p, name)).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText(name);
 }

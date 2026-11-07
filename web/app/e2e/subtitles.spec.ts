@@ -96,7 +96,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await page.getByRole('button', { name: 'Add a Subtitle site' }).click();
 	await page.getByRole('radio', { name: /^Lab subtitle site \(/ }).check();
 	await page.getByRole('textbox', { name: 'Address' }).fill(siteURL);
-	await page.getByText('Limits').click();
+	await page.getByText('Limits', { exact: true }).click();
 	await page.getByLabel('Wait between calls (ms)').fill('10');
 	await page.getByLabel('Calls per window, at most').fill('5000');
 	await page.getByLabel(/Reach the local network/).check();

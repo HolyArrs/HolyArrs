@@ -126,7 +126,7 @@ test('a member turns on two-factor sign-in and needs a code to sign in', async (
 	await expect(ana.getByText('Backup codes.')).toBeVisible();
 	backup = (await ana.locator('ul.codes li').allTextContents()).map((s) => s.trim());
 	expect(backup).toHaveLength(10);
-	await ana.getByRole('button', { name: 'Done' }).click();
+	await ana.getByRole('button', { name: 'Close', exact: true }).click();
 	await expect(ana.locator('.chip.ok', { hasText: 'On' })).toBeVisible();
 
 	await signOut(ana);
