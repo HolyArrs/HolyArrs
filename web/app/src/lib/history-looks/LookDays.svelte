@@ -416,7 +416,7 @@
 	.split { display: grid; grid-template-columns: minmax(0, 1fr) var(--pane); column-gap: var(--gap); align-items: start; transition: grid-template-columns var(--dur-base) var(--ease-out), column-gap var(--dur-base) var(--ease-out); }
 
 	.days { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-inline: -12px; padding: 10px 12px 8px; background: var(--bg); transition: top var(--bar-glide); }
+	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-inline: -12px; padding: 10px 12px 8px; background: color-mix(in srgb, var(--bg) 55%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-radius: 12px; transition: top var(--bar-glide); }
 	/* The pinned header's background reaches 12px past the list each side (text unmoved), so the list's outline and shadow never peek out beside it. */
 	.dh::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-strong); box-shadow: 0 6px 16px 2px light-dark(rgb(20 24 40 / .10), rgb(0 0 0 / .55)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
 	.dh:global(.stuck)::after { opacity: 1; }
