@@ -12,15 +12,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 4.8.11: a show with an HD and a 4K Version in the same Library folder.
-// The HD pack fills only HD Slots, the 4K pack only 4K Slots; each copy is
-// placed in its own Version's folder and neither replaces the other.
 func TestShowVersionsImportSideBySide(t *testing.T) {
 	w := showSetup(t, []int{1, 2}, ep(1), ep(2))
 	ctx := context.Background()
 	im := &Importer{Store: w.s}
 
-	// The 4K Version: its own Slots, its folder name carries the label.
 	const uhdPack = "Copper.Valley.S01.2160p.WEB.H265-HOLYARRS"
 	uhdDir := t.TempDir()
 	uhdSlots := map[int]int64{}
@@ -82,7 +78,6 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 	if imp, err := im.Import(ctx, w.dlID, false, domain.System); err != nil || imp.State != "done" {
 		t.Fatalf("HD import %+v %v", imp, err)
 	}
-	// The HD pack left every 4K Slot alone.
 	for n, id := range uhdSlots {
 		var sl domain.Slot
 		_ = database.Get(ctx, w.s.Read(), "slots", id, &sl)

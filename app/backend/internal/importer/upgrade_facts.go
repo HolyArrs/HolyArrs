@@ -9,8 +9,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// upgradeFacts adds the old and new quality ("1080p WEB-DL") and release
-// names to a file_replaced Event's data, for those the files kept.
 func (im *Importer) upgradeFacts(ctx context.Context, data map[string]any, oldID, newID int64) {
 	for prefix, id := range map[string]int64{"old_": oldID, "new_": newID} {
 		var f domain.File
@@ -26,14 +24,13 @@ func (im *Importer) upgradeFacts(ctx context.Context, data map[string]any, oldID
 	}
 }
 
-// qualityText is a short quality label: resolution, source and HDR.
 func qualityText(q domain.Quality) string {
 	var parts []string
 	if q.Resolution > 0 {
 		parts = append(parts, strconv.Itoa(q.Resolution)+"p")
 	}
 	if q.Source != "" {
-		parts = append(parts, strings.ToUpper(strings.ReplaceAll(q.Source, "_", "-"))) // web_dl: WEB-DL
+		parts = append(parts, strings.ToUpper(strings.ReplaceAll(q.Source, "_", "-")))
 	}
 	for _, h := range q.HDR {
 		parts = append(parts, strings.ToUpper(h))

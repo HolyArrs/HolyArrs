@@ -10,8 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// With episode import off a show's download is left alone: the movie
-// import would place it as one movie file.
 func TestEpisodeDownloadWaitsForEpisodeImport(t *testing.T) {
 	defer func(old bool) { canImportEpisodes = old }(canImportEpisodes)
 	canImportEpisodes = false
@@ -37,8 +35,6 @@ func TestEpisodeDownloadWaitsForEpisodeImport(t *testing.T) {
 	}
 }
 
-// A finished show Download whose Slots still wait is queued for import
-// again, but only once the importer places episodes (3.2 review, M4).
 func TestStrandedShowDownloadsRequeued(t *testing.T) {
 	w := setup(t)
 	ctx := context.Background()
@@ -60,7 +56,6 @@ func TestStrandedShowDownloadsRequeued(t *testing.T) {
 	if n, err := im.RequeueStranded(ctx, enqueue); err != nil || n != 1 || len(queued) != 1 || queued[0] != w.dlID {
 		t.Fatalf("with episode import: %d %v %v", n, err, queued)
 	}
-	// A Slot that moved on is not stranded.
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE slots SET state = 'wanted'")
 		return err

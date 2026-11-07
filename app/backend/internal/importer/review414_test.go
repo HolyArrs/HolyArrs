@@ -14,10 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 4.14 review minor 4: every part of a track's path stays under the name
-// length file systems allow, cut on a character boundary, the extension kept.
 func TestTrackFileCutsLongNames(t *testing.T) {
-	long := strings.Repeat("é", 200) // 400 bytes
+	long := strings.Repeat("é", 200)
 	at := AlbumTarget{ArtistFolder: "A", Album: long, Year: 2020}
 	p := at.trackFile(Track{Disc: 1, Number: 1, Name: long}, ".FLAC", 1, "")
 	parts := strings.Split(p, "/")
@@ -37,7 +35,6 @@ func TestTrackFileCutsLongNames(t *testing.T) {
 	}
 }
 
-// 4.14 review minor 5: an album name that cleans to nothing gets a name.
 func TestTrackFileUnknownAlbum(t *testing.T) {
 	for _, name := range []string{"..", "...", "", " . "} {
 		at := AlbumTarget{ArtistFolder: "A", Album: name, Year: 2020}
@@ -51,9 +48,6 @@ func TestTrackFileUnknownAlbum(t *testing.T) {
 	}
 }
 
-// 4.14 review minor 7: in a flat download of an album of two discs, a file
-// with no number whose name two tracks share needs a decision; it is never
-// given to the first of them.
 func TestPlanTracksSameNameOnTwoDiscsNeedsADecision(t *testing.T) {
 	at := AlbumTarget{LibraryPath: "/lib", ArtistFolder: "A", Album: "B", Tracks: []Track{
 		{ItemID: 1, Disc: 1, Number: 1, Name: "Intro", SlotID: 11, Wanted: true},
@@ -72,8 +66,6 @@ func TestPlanTracksSameNameOnTwoDiscsNeedsADecision(t *testing.T) {
 	}
 }
 
-// 4.14 review minor 8: tracks that belong to no album are refused, never
-// imported as one album with every other loose track.
 func TestAlbumImportRefusesTrackWithoutAlbum(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
 	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -95,9 +87,6 @@ func TestAlbumImportRefusesTrackWithoutAlbum(t *testing.T) {
 	}
 }
 
-// 4.14 check (a): an import that keeps failing before it writes its import
-// row is queued again by the stranded sweep with a growing wait, not on
-// every pass.
 func TestStrandedSweepBacksOffAfterFailedImports(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac")
 	im := &Importer{Store: w.s}
@@ -126,7 +115,7 @@ func TestStrandedSweepBacksOffAfterFailedImports(t *testing.T) {
 	if sweep() != 0 {
 		t.Fatal("queued again a minute after a failure")
 	}
-	failed(15 * time.Minute) // older failure; the newest counts for the wait
+	failed(15 * time.Minute)
 	if sweep() != 0 {
 		t.Fatal("queued again right after the second failure")
 	}
@@ -147,9 +136,6 @@ func TestStrandedSweepBacksOffAfterFailedImports(t *testing.T) {
 	}
 }
 
-// 4.14 check (d): a better copy of a track replaces the old one per track,
-// and a run cut off after the old copy stepped aside, after placing, or
-// after the late hold resumes: the new track in place, the old one held.
 func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 	for _, stage := range []string{"held", "placed", "held_late"} {
 		t.Run(stage, func(t *testing.T) {
@@ -157,7 +143,7 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 			ctx := context.Background()
 			rp := "Lab Band/First Light (2020)/01 - Dawn.mp3"
 			if stage == "held" {
-				rp = "Lab Band/First Light (2020)/01 - Dawn.flac" // at the very path the new copy takes
+				rp = "Lab Band/First Light (2020)/01 - Dawn.flac"
 			}
 			write(t, filepath.Join(w.lib, filepath.FromSlash(rp)), 100)
 			var oldID int64
@@ -223,9 +209,6 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 	}
 }
 
-// 4.14 check (b): removing a finished album download with its files (the
-// Downloader deletes its folder, as Remove with delete files or a failed
-// import's Discard does) leaves the hardlinked Library copies whole.
 func TestHardlinkedAlbumSurvivesDeletedDownload(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)

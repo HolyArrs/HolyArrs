@@ -8,7 +8,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// A file_replaced Event keeps the old and new quality and release names.
 func TestFileReplacedKeepsOldAndNewQuality(t *testing.T) {
 	w, _, _ := upgradeWorld(t, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
 		"Dune.Part.Two.2024.720p.HDTV.x264-OTHER")

@@ -28,7 +28,6 @@ func TestFactsOfStoresHeaderFacts(t *testing.T) {
 	if !reflect.DeepEqual(f["subtitle_languages"], []string{"en", "fr"}) {
 		t.Errorf("subtitles %#v", f["subtitle_languages"])
 	}
-	// A file whose headers say nothing keeps only the old keys and an empty list.
 	bare := factsOf(mediainfo.Info{Status: "unsupported"})
 	for _, k := range HeaderFactKeys {
 		if _, ok := bare[k]; ok {
@@ -48,20 +47,20 @@ func TestSampleByLength(t *testing.T) {
 		secs, minutes int
 		want          bool
 	}{
-		{0, 120, false},  // length unknown: the name check alone decides
-		{10, 0, true},    // very short is always a sample
-		{60, 0, false},   // runtime unknown: not judged by length
-		{60, 2, false},   // a short clip may be short
-		{60, 8, true},    // under 90 seconds for an 8-minute episode
-		{120, 8, false},  //
-		{240, 22, true},  // under 5 minutes for a 22-minute episode
-		{400, 22, false}, //
-		{300, 120, true}, // a 5-minute file for a 2-hour movie
+		{0, 120, false},
+		{10, 0, true},
+		{60, 0, false},
+		{60, 2, false},
+		{60, 8, true},
+		{120, 8, false},
+		{240, 22, true},
+		{400, 22, false},
+		{300, 120, true},
 		{90 * 60, 120, false},
 	} {
 		facts := map[string]any{}
 		if c.secs > 0 {
-			facts["runtime_seconds"] = float64(c.secs) // as read back from the database
+			facts["runtime_seconds"] = float64(c.secs)
 		}
 		if got := sampleByLength(facts, c.minutes); got != c.want {
 			t.Errorf("%ds for %d min = %v, want %v", c.secs, c.minutes, got, c.want)
@@ -69,9 +68,6 @@ func TestSampleByLength(t *testing.T) {
 	}
 }
 
-// With the size floors off the runtime-based length floor is off too (a
-// 4-minute special listed at 45 minutes is placed); under 15 seconds is
-// still a sample.
 func TestLengthFloorFollowsSizeFloors(t *testing.T) {
 	special := map[string]any{"runtime_seconds": 240}
 	if !sampleByLength(special, fakeRules{floors: true}.lengthMinutes(45)) {
@@ -88,25 +84,18 @@ func TestLengthFloorFollowsSizeFloors(t *testing.T) {
 func TestLieOfUsesRealPictureSize(t *testing.T) {
 	rules := domain.PickRulesBody{}
 	name := "Harbor.of.Glass.2018.1080p.BluRay.x264-GRP"
-	// A 720p picture under a 1080p name is caught.
 	if why := lieOf(name, name, false, "", rules, map[string]any{"width": 1280, "height": 720}); !strings.Contains(why, "file is 720p, name said 1080p") {
 		t.Fatalf("720p named 1080p: %q", why)
 	}
-	// Without a Release name the file's own name is the claim.
 	if why := lieOf(name, "", false, "", rules, map[string]any{"width": 1280, "height": 536}); why == "" {
 		t.Fatal("720p named 1080p, no Release name")
 	}
-	// A cropped widescreen 1080p is 1080p.
 	if why := lieOf(name, name, false, "", rules, map[string]any{"width": 1920, "height": 800}); why != "" {
 		t.Fatal(why)
 	}
-	// The real size beats a lower file name: a 1080p file named 720p
-	// under a 1080p Release is fine.
 	if why := lieOf("Harbor.of.Glass.2018.720p.BluRay", name, false, "", rules, map[string]any{"width": 1920, "height": 1080}); why != "" {
 		t.Fatal(why)
 	}
-	// A cropped anamorphic PAL DVD (720x436 pixels, 1018 wide on screen)
-	// named 576p is 576p.
 	dvd := "Harbor.of.Glass.2018.576p.DVDRip.x264-GRP"
 	if why := lieOf(dvd, dvd, false, "", rules, map[string]any{"width": 720, "height": 436, "display_width": 1018}); why != "" {
 		t.Fatal(why)
@@ -114,7 +103,6 @@ func TestLieOfUsesRealPictureSize(t *testing.T) {
 	if f := factsOf(mediainfo.Info{Width: 720, Height: 436, DisplayWidth: 1018}); f["display_width"] != 1018 || f["resolution"] != "576p" {
 		t.Errorf("anamorphic facts %#v", f)
 	}
-	// Unknown size keeps the name check.
 	if why := lieOf("Harbor.of.Glass.2018.720p.BluRay", name, false, "", rules, nil); !strings.Contains(why, "file is 720p, name said 1080p") {
 		t.Fatalf("name check lost: %q", why)
 	}

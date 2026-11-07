@@ -122,7 +122,7 @@ func TestExecuteNeverTouchesFilesItDidNotPlace(t *testing.T) {
 	write(t, filepath.Join(dl, relName+".mkv"), 1000)
 	cands, _ := Scan(dl)
 	steps := Plan(cands, target(lib))
-	write(t, steps[0].TargetPath, 7) // someone else's file
+	write(t, steps[0].TargetPath, 7)
 	res := Execute(steps, Ops{})
 	if res[0].Outcome != "refused" {
 		t.Fatalf("result %+v", res)
@@ -145,8 +145,6 @@ func TestExecuteRefusedStepsDoNothing(t *testing.T) {
 	}
 }
 
-// --- through the store ---
-
 type world struct {
 	s                 *database.Store
 	slotID, dlID, vID int64
@@ -162,7 +160,6 @@ func setup(t *testing.T) world {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	// Test files are tiny stand-ins: the size floors are tested on their own.
 	setFake(t, s, "import_size_floors", "false")
 	w := world{s: s, dl: t.TempDir(), lib: t.TempDir()}
 	write(t, filepath.Join(w.dl, relName+".mkv"), 2048)
@@ -254,7 +251,6 @@ func TestImportPlacesAndRecords(t *testing.T) {
 	if d.State != "finished" && d.State != "seeding" {
 		t.Fatalf("download %s", d.State)
 	}
-	// The import Event names the movie, the slot and where each file went.
 	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{"import_done"}})
 	if len(es) != 1 || es[0].TitleID == nil || es[0].SlotID == nil || es[0].Data["from"] == nil {
 		t.Fatalf("import events %+v", es)
@@ -262,7 +258,6 @@ func TestImportPlacesAndRecords(t *testing.T) {
 	if ps, _ := es[0].Data["paths"].([]any); len(ps) != 1 || !strings.Contains(ps[0].(map[string]any)["to"].(string), "Dune - Part Two (2024)") {
 		t.Fatalf("import event paths %+v", es[0].Data)
 	}
-	// A second import of the same Download refuses: the slot is no longer downloading.
 	if _, err := im.Import(ctx, w.dlID, false, domain.System); err == nil {
 		t.Fatal("second import should fail")
 	}

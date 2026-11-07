@@ -9,9 +9,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
 )
 
-// An unpack stopped by its size limit says which limit stopped it: the
-// disk's free space (whyNoSpace) or the size cap (whyTooBig).
-
 func importOnDisk(t *testing.T, free int64, files map[string][]byte) (*domain.Import, world, map[string]string) {
 	t.Helper()
 	fakeDisk(t, free)
@@ -48,7 +45,6 @@ func TestRARPastFreeSpaceSaysNoSpace(t *testing.T) {
 	old := extractCompressed
 	t.Cleanup(func() { extractCompressed = old })
 	extractCompressed = func(context.Context, string, string, int64) error { return unrar.ErrTooBig }
-	// Room for the set, but less than its size plus the unpack margin.
 	imp, w, before := importOnDisk(t, MinFreeSpace+2<<20, rar5Parts(t))
 	refusedClearly(t, w, imp, whyNoSpace, before)
 }

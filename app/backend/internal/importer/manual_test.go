@@ -26,8 +26,6 @@ func TestCleanByHandPath(t *testing.T) {
 	}
 }
 
-// Loose episodes in a folder: the scan guesses each, the import places
-// them by the naming settings, copied or moved, and fills their Slots.
 func TestByHandShow(t *testing.T) {
 	w := showSetup(t, []int{2})
 	ctx := context.Background()
@@ -112,21 +110,18 @@ func TestByHandShow(t *testing.T) {
 	if len(imps) != 2 || imps[0].State != "done" {
 		t.Fatalf("imports %+v", imps)
 	}
-	// A new scan knows the moved file's copy is gone and the slot is filled.
 	sc, _ = im.ScanByHand(ctx, loose)
 	for _, f := range sc.Files {
 		if filepath.Base(f.Path) == ep(1) && !f.Guess.HasFile {
 			t.Fatalf("rescan %+v", f)
 		}
 	}
-	// Files already in the Library are named as such.
 	sc, _ = im.ScanByHand(ctx, w.lib)
 	if len(sc.Files) != 2 || !sc.Files[0].InLibrary {
 		t.Fatalf("library scan %+v", sc)
 	}
 }
 
-// A loose movie file goes into the movie's folder under its new name.
 func TestByHandMovie(t *testing.T) {
 	w := setup(t)
 	ctx := context.Background()
@@ -158,8 +153,6 @@ func TestByHandMovie(t *testing.T) {
 	}
 }
 
-// A failed path check answers one fixed message, not the OS reason, so it
-// does not tell "missing" from "permission denied".
 func TestCleanByHandPathHidesOSError(t *testing.T) {
 	dir := t.TempDir()
 	_, err := CleanByHandPath(filepath.Join(dir, "missing"), ByHandPlaces{Extra: []string{dir}})
@@ -168,8 +161,6 @@ func TestCleanByHandPathHidesOSError(t *testing.T) {
 	}
 }
 
-// Outside the places a path that is there and one that is not get the same
-// answer, so the refusal does not tell which server paths exist.
 func TestCleanByHandPathSameAnswerOutside(t *testing.T) {
 	base := t.TempDir()
 	place, there := filepath.Join(base, "place"), filepath.Join(base, "there")
@@ -187,8 +178,6 @@ func TestCleanByHandPathSameAnswerOutside(t *testing.T) {
 	}
 }
 
-// A UNC or device path is refused before anything touches it, so the
-// server never opens an SMB session to a host named in a request.
 func TestCleanByHandPathRefusesUNC(t *testing.T) {
 	if filepath.VolumeName(`\\host\share\x`) == "" {
 		t.Skip("UNC paths only exist on Windows")
@@ -206,7 +195,6 @@ func TestCleanByHandPathRefusesUNC(t *testing.T) {
 	}
 }
 
-// A scan stops once its request is gone.
 func TestScanByHandStopsOnCancel(t *testing.T) {
 	w := showSetup(t, []int{2})
 	loose := t.TempDir()
@@ -219,8 +207,6 @@ func TestScanByHandStopsOnCancel(t *testing.T) {
 	}
 }
 
-// goneCtx reports its request as gone without closing Done, so the
-// database reads before the walk still run.
 type goneCtx struct{ context.Context }
 
 func (goneCtx) Err() error { return context.Canceled }

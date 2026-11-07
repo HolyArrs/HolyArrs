@@ -177,7 +177,6 @@ func TestCopyFallsBackWhenLinkUnsupported(t *testing.T) {
 	if e, _ := os.ReadDir(filepath.Dir(dst)); len(e) != 1 {
 		t.Fatalf("temp file left behind: %v", e)
 	}
-	// An existing target is never overwritten, even without hardlinks.
 	dst2 := filepath.Join(dir, "out", "dst2.mkv")
 	write(t, dst2, 7)
 	if err := copyFile(src, dst2); err == nil {
@@ -255,9 +254,6 @@ func TestImportRemovesStalePartFromTargetFolder(t *testing.T) {
 	}
 }
 
-// #50: a Windows Downloader's folder (qBittorrent on the Windows host,
-// HolyArrs in Docker) is found through the mapping whatever its case and
-// separators, and the file is imported.
 func TestImportThroughWindowsMapping(t *testing.T) {
 	w := setup(t)
 	parent, base := filepath.Dir(w.dl), filepath.Base(w.dl)
@@ -270,8 +266,6 @@ func TestImportThroughWindowsMapping(t *testing.T) {
 	}
 }
 
-// #50: a folder with a ".." part is never read, mapped or not: the import
-// refuses it and places nothing.
 func TestImportRefusesDotDotFolder(t *testing.T) {
 	w := setup(t)
 	mapExec(t, w.s, "UPDATE downloads SET save_path = ?", filepath.Join(w.dl, "x")+string(filepath.Separator)+".."+string(filepath.Separator)+filepath.Base(w.dl))

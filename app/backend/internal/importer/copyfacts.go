@@ -15,15 +15,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 )
 
-// EditionFileName emits Plex's documented edition tag. Other server mappings
-// are described in docs/movie-editions.md; the tag is not scan evidence.
+// EditionFileName adds the edition to a file name.
 func EditionFileName(name, edition string) string {
 	if edition == "" {
 		return name
 	}
 	ext := filepath.Ext(name)
 	base := strings.TrimSuffix(name, ext)
-	// A previous rename may already have emitted this exact tag.
 	tag := " {edition-" + edition + "}"
 	if strings.Contains(base, "{edition-") {
 		if start := strings.Index(base, "{edition-"); start >= 0 {
@@ -35,8 +33,7 @@ func EditionFileName(name, edition string) string {
 	return base + tag + strings.ToLower(ext)
 }
 
-// InspectFacts keeps inspected container facts separate from filename quality.
-// Errors expose a status, never a path or a raw parser error to a client.
+// InspectFacts reads the media facts of a file.
 func InspectFacts(file string) map[string]any {
 	i, err := mediainfo.Inspect(file)
 	if err != nil {
@@ -56,18 +53,13 @@ func InspectFacts(file string) map[string]any {
 	return facts
 }
 
-// FactsVersion marks facts read by the full header reader (picture size,
-// length, channels, subtitles...). Files whose facts are older are read
-// again by the Library rescan, a few at a time.
+// FactsVersion is bumped when the stored fact keys change, so old facts get read again.
 const FactsVersion = 2
 
-// HeaderFactKeys are the facts factsOf may leave out; a fresh read
-// replaces them all.
+// HeaderFactKeys lists the fact keys that come from the file header.
 var HeaderFactKeys = []string{"resolution", "width", "height", "display_width", "runtime_seconds", "audio_channels", "audio_codec",
 	"hdr", "bit_depth", "frame_rate", "bitrate"}
 
-// factsOf turns header facts into the stored map. A fact the headers did
-// not give is left out rather than stored as zero.
 func factsOf(i mediainfo.Info) map[string]any {
 	facts := map[string]any{"inspection_status": i.Status, "container": i.Container, "video_codec": i.VideoCodec,
 		"audio_languages": i.AudioLanguages, "audio_tracks": i.AudioTracks, "audio_unknown": i.AudioUnknown,
@@ -112,7 +104,6 @@ func factsOf(i mediainfo.Info) map[string]any {
 	return facts
 }
 
-// channelWords names a channel count the way people say it: 6 is "5.1".
 func channelWords(n int) string {
 	switch n {
 	case 6:
@@ -125,8 +116,6 @@ func channelWords(n int) string {
 	return strconv.Itoa(n) + ".0"
 }
 
-// factInt reads a whole number from stored facts, which hold int when
-// fresh and float64 or json.Number once read back from the database.
 func factInt(facts map[string]any, key string) int {
 	switch n := facts[key].(type) {
 	case int:
@@ -142,12 +131,12 @@ func factInt(facts map[string]any, key string) int {
 	return 0
 }
 
-// NeedsFacts says whether stored facts predate the full header reader.
+// NeedsFacts reports whether facts are missing or out of date.
 func NeedsFacts(facts map[string]any) bool {
 	return factInt(facts, "facts_version") < FactsVersion
 }
 
-// EditionKey compares explicit edition labels without punctuation differences.
+// EditionKey returns a comparable key for the edition in a name.
 func EditionKey(name string) string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
@@ -157,8 +146,7 @@ func EditionKey(name string) string {
 	}, name)
 }
 
-// ParsedEdition returns one unambiguous edition stated by the name. Empty is
-// unknown or ambiguous; callers that accept a correction require confirmation.
+// ParsedEdition returns the edition found in a release name.
 func ParsedEdition(name string) string {
 	editions := releasename.Parse(name, releasename.Hints{}).Edition
 	if len(editions) != 1 {
@@ -167,8 +155,7 @@ func ParsedEdition(name string) string {
 	return editions[0]
 }
 
-// AudioMeets requires each chosen language to be present in inspected tracks.
-// Extra unlabelled tracks stay visible but cannot supply a missing language.
+// AudioMeets reports whether the audio facts satisfy the wanted languages.
 func AudioMeets(facts map[string]any, wanted []string) bool {
 	if len(wanted) == 0 {
 		return true
@@ -236,7 +223,7 @@ func copyRefusal(v domain.Version, fileName, releaseName, confirmed string, fact
 	return ""
 }
 
-// InspectedLanguages returns actual track languages, never filename hints.
+// InspectedLanguages lists the audio languages found in the facts.
 func InspectedLanguages(facts map[string]any) []string {
 	out := []string{}
 	switch langs := facts["audio_languages"].(type) {

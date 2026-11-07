@@ -25,7 +25,6 @@ func TestCleanImportFolders(t *testing.T) {
 	if want := []string{"/data/imports", `D:\Imports`}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("got %q, want %q", got, want)
 	}
-	// The whole disk, also written as "/." or "C:\.", would undo the limit.
 	for _, bad := range []string{"relative", "C:", "/data/../etc", `D:\a\..\b`, `\\host\share`, "//host/share", "/x\x00",
 		"/", "///", "/.", "/data/./x", `C:\`, "c:/", `C:\.`} {
 		if _, err := CleanImportFolders([]string{bad}); !errors.Is(err, ErrImportFolder) {
@@ -44,9 +43,6 @@ func TestCleanImportFolders(t *testing.T) {
 	}
 }
 
-// A path given by hand must be inside a Library folder, a Downloader's
-// folder or an extra import folder; a sibling with the same start, or
-// anything else, is refused.
 func TestByHandPlacesHolds(t *testing.T) {
 	w := setup(t)
 	ctx := context.Background()
@@ -92,7 +88,6 @@ func TestByHandPlacesHolds(t *testing.T) {
 			t.Errorf("refusal %q does not name %s", msg, p)
 		}
 	}
-	// A path map of a removed Downloader is no longer a place.
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE downloaders SET removed = 1")
 		return err
@@ -104,7 +99,6 @@ func TestByHandPlacesHolds(t *testing.T) {
 	}
 }
 
-// A link inside a place that leads out of it does not open the outside.
 func TestByHandPlacesSymlink(t *testing.T) {
 	place, outside := t.TempDir(), t.TempDir()
 	if err := os.Symlink(outside, filepath.Join(place, "link")); err != nil {
@@ -120,8 +114,6 @@ func TestByHandPlacesSymlink(t *testing.T) {
 	}
 }
 
-// A Windows junction inside a place leads out of it too: Go does not follow
-// it, so a path through it is refused, while a plain folder still works.
 func TestByHandPlacesJunction(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("junctions only exist on Windows")
@@ -145,8 +137,6 @@ func TestByHandPlacesJunction(t *testing.T) {
 	}
 }
 
-// Scanning, copying and moving a file outside every place are refused,
-// and the file outside stays where it is.
 func TestByHandRefusesOutside(t *testing.T) {
 	w := setup(t)
 	ctx := context.Background()
@@ -197,7 +187,6 @@ func TestByHandRefusesOutside(t *testing.T) {
 	if sl.FileID != nil {
 		t.Fatalf("slot filled %+v", sl)
 	}
-	// Inside the extra folder the same file goes in.
 	in := filepath.Join(place, filepath.Base(src))
 	if err := os.Rename(src, in); err != nil {
 		t.Fatal(err)
@@ -211,8 +200,6 @@ func TestByHandRefusesOutside(t *testing.T) {
 	}
 }
 
-// A Downloader folder or Library folder set to a whole disk never makes the
-// whole disk a place to import from by hand.
 func TestByHandPlacesIgnoreWholeDisk(t *testing.T) {
 	for p, want := range map[string]bool{"/": true, `C:\`: true, "C:/": true, "c:": true, "/data": false, `C:\Downloads`: false, "": true,
 		"/data/..": true, "/.": true, `C:\x\..`: true, "C:/x/../": true, "/data/../media": false} {
@@ -243,7 +230,6 @@ func TestByHandPlacesIgnoreWholeDisk(t *testing.T) {
 	}
 }
 
-// A link or junction to a whole disk is a whole disk too.
 func TestWholeDiskThroughALink(t *testing.T) {
 	root := filepath.VolumeName(t.TempDir()) + string(filepath.Separator)
 	link := filepath.Join(t.TempDir(), "disk")

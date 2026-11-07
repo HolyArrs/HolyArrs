@@ -12,7 +12,6 @@ import (
 	"testing"
 )
 
-// umaskCases: the umask of the process and the modes media and folders get.
 var umaskCases = []struct {
 	umask     int
 	file, dir fs.FileMode
@@ -50,7 +49,6 @@ func TestMediaModesFollowTheUmask(t *testing.T) {
 				t.Fatalf("copy is %04o, want %04o", got, c.file)
 			}
 
-			// A disk that cannot hardlink: the copy is written straight to dst.
 			linkHook = func(string, string) error { return &os.LinkError{Op: "link", Err: syscall.EXDEV} }
 			t.Cleanup(func() { linkHook = nil })
 			direct := filepath.Join(root, "direct.mkv")
@@ -74,7 +72,6 @@ func TestMediaModesFollowTheUmask(t *testing.T) {
 				t.Fatalf("temp file is %04o, want %04o", got, c.file)
 			}
 
-			// A replaced file held aside makes its new folders.
 			to := filepath.Join(root, "Holding", "2026-11-04", "src.mkv")
 			if err := moveFile(src, to); err != nil {
 				t.Fatal(err)

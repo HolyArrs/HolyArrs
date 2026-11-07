@@ -1,9 +1,5 @@
 package importer
 
-// The places a path given by hand may be in: the Library folders, the
-// folders the Downloaders save into (as HolyArrs sees them) and the extra
-// import folders the owner adds in Settings. Anything else is refused.
-
 import (
 	"context"
 	"database/sql"
@@ -21,18 +17,15 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// MaxImportFolders is the most extra import folders one may add.
+// MaxImportFolders caps how many extra import folders can be saved.
 const MaxImportFolders = 32
 
 const importFoldersGroup, importFoldersKey = "where_files_go", "import_folders"
 
-// ErrImportFolder says an extra import folder is not a usable path.
+// ErrImportFolder is returned when an extra import folder is not a usable full path.
 var ErrImportFolder = fmt.Errorf("each extra import folder is a full path, such as /data/imports or D:\\Imports (not / or a whole drive), with no . or .. parts (%d at most)", MaxImportFolders)
 
-// CleanImportFolders checks a list of extra import folders: trimmed, full
-// paths in Linux or Windows form, no . or .. parts, not / or a bare drive,
-// no network share paths, at most MaxImportFolders. Blank lines and
-// repeats are dropped.
+// CleanImportFolders validates and normalizes a list of extra import folders.
 func CleanImportFolders(in []string) ([]string, error) {
 	out := []string{}
 	seen := map[string]bool{}
@@ -50,14 +43,13 @@ func CleanImportFolders(in []string) ([]string, error) {
 				return nil, ErrImportFolder
 			}
 		}
-		// The whole disk would undo the limit: "/" and "C:\" are refused.
 		if len(parts) == 0 || (p[0] != '/' && len(parts) == 1) {
 			return nil, ErrImportFolder
 		}
 		p = strings.TrimRight(p, `/\`)
 		key := p
 		if p[0] != '/' {
-			key = strings.ToLower(strings.ReplaceAll(p, "/", `\`)) // drive paths ignore case
+			key = strings.ToLower(strings.ReplaceAll(p, "/", `\`))
 		}
 		if seen[key] {
 			continue
@@ -71,7 +63,6 @@ func CleanImportFolders(in []string) ([]string, error) {
 	return out, nil
 }
 
-// absAnyOS says p is a full path on Linux (/x) or Windows (C:\x, C:/x).
 func absAnyOS(p string) bool {
 	if strings.HasPrefix(p, "/") {
 		return true
@@ -83,7 +74,7 @@ func absAnyOS(p string) bool {
 	return c >= 'a' && c <= 'z' && p[1] == ':' && (p[2] == '\\' || p[2] == '/')
 }
 
-// ReadImportFolders reads the extra import folders; a broken value is none.
+// ReadImportFolders loads the saved extra import folders.
 func ReadImportFolders(ctx context.Context, db database.Lister) ([]string, error) {
 	rows, err := db.QueryContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", importFoldersGroup, importFoldersKey)
 	if err != nil {
@@ -106,8 +97,7 @@ func ReadImportFolders(ctx context.Context, db database.Lister) ([]string, error
 	return out, rows.Err()
 }
 
-// SaveImportFolders stores a checked list of extra import folders and
-// returns it as stored.
+// SaveImportFolders validates and stores the extra import folders.
 func SaveImportFolders(ctx context.Context, s *database.Store, in []string, by domain.Actor) ([]string, error) {
 	list, err := CleanImportFolders(in)
 	if err != nil {
@@ -124,14 +114,13 @@ func SaveImportFolders(ctx context.Context, s *database.Store, in []string, by d
 	return list, err
 }
 
-// ByHandPlaces are the folders a path given by hand may be inside.
+// ByHandPlaces holds the folders a by-hand import may read from.
 type ByHandPlaces struct {
 	Library     []string `json:"library_folders"`
 	Downloaders []string `json:"downloader_folders"`
 	Extra       []string `json:"extra_folders"`
 }
 
-// all lists every place once.
 func (ps ByHandPlaces) all() []string {
 	var out []string
 	seen := map[string]bool{}
@@ -146,12 +135,10 @@ func (ps ByHandPlaces) all() []string {
 	return out
 }
 
-// within returns the place (as written or with its links followed) that p
-// is or is inside, comparing p as written; "" when there is none.
 func (ps ByHandPlaces) within(p string) string {
 	for _, root := range ps.all() {
 		if !filepath.IsAbs(root) || strings.HasPrefix(filepath.VolumeName(root), `\\`) {
-			continue // a path for another OS, or a share: never stat it
+			continue
 		}
 		roots := []string{filepath.Clean(root)}
 		if real, err := filepath.EvalSymlinks(roots[0]); err == nil {
@@ -166,20 +153,15 @@ func (ps ByHandPlaces) within(p string) string {
 	return ""
 }
 
-// Holds says p (a cleaned absolute path) is one of the places or inside
-// one, as written and, when it is there, once its links are followed, so a
-// link inside a place cannot lead out of it.
+// Holds reports whether p sits inside one of the allowed places.
 func (ps ByHandPlaces) Holds(p string) bool {
 	root := ps.within(p)
 	if root == "" {
 		return false
 	}
 	if _, err := os.Lstat(p); err != nil {
-		return true // not there: nothing to follow, and nothing to read
+		return true
 	}
-	// A Windows junction is not followed (EvalSymlinks keeps it or fails
-	// below it), so a step below the place that is one is refused; when the
-	// links cannot be followed at all, any link step is refused too.
 	bad := fs.ModeIrregular
 	if real, err := filepath.EvalSymlinks(p); err != nil {
 		bad |= fs.ModeSymlink
@@ -195,12 +177,13 @@ func (ps ByHandPlaces) Holds(p string) bool {
 	return true
 }
 
-// PlaceError is the plain answer for a path outside every place.
+// PlaceError is a refusal that carries a message meant for the user.
 type PlaceError struct{ msg string }
 
+// Error returns the message.
 func (e *PlaceError) Error() string { return e.msg }
 
-// Refusal names the places a path given by hand may be in.
+// Refusal returns an error that names the allowed places, or nil when none apply.
 func (ps ByHandPlaces) Refusal() error {
 	all := ps.all()
 	if len(all) == 0 {
@@ -209,7 +192,6 @@ func (ps ByHandPlaces) Refusal() error {
 	return &PlaceError{"import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: " + strings.Join(all, ", ")}
 }
 
-// samePath compares two cleaned paths, ignoring case on Windows.
 func samePath(a, b string) bool {
 	if runtime.GOOS == "windows" {
 		return strings.EqualFold(a, b)
@@ -217,9 +199,6 @@ func samePath(a, b string) bool {
 	return a == b
 }
 
-// byHandPlaces reads the places: Library folders, the save path and the
-// HolyArrs side of every path map of each Downloader still set up, and
-// the extras.
 func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folders []domain.LibraryFolder) (ByHandPlaces, error) {
 	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}}
 	for _, lf := range folders {
@@ -248,7 +227,7 @@ func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folder
 	return ps, err
 }
 
-// ByHandPlaces reads the places a path given by hand may be in.
+// ByHandPlaces returns the places a by-hand import may read from.
 func (im *Importer) ByHandPlaces(ctx context.Context) (ByHandPlaces, error) {
 	db := im.Store.Read()
 	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
@@ -258,21 +237,15 @@ func (im *Importer) ByHandPlaces(ctx context.Context) (ByHandPlaces, error) {
 	return im.byHandPlaces(ctx, db, folders)
 }
 
-// wholeDisk says p is a disk's root ("/", "C:\"). A Library folder or a
-// Downloader's folder set to one never counts as a place to import from by
-// hand, or it would open the whole disk again.
 func wholeDisk(p string) bool {
 	p = strings.TrimSpace(p)
 	if p == "" {
 		return true
 	}
-	// "/data/.." and "C:\x\.." are a root too, on any system.
 	c := path.Clean(strings.ReplaceAll(p, `\`, "/"))
 	if c == "/" || c == "." || (len(c) == 2 && c[1] == ':') || (len(c) == 3 && c[1] == ':' && c[2] == '/') {
 		return true
 	}
-	// So is a link that leads to one (Go cannot always follow a Windows
-	// junction, so its target is read as well).
 	isRoot := func(r string) bool {
 		r = filepath.Clean(r)
 		return strings.Trim(r[len(filepath.VolumeName(r)):], `/\`) == ""

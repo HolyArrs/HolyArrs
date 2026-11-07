@@ -1,7 +1,3 @@
-// Package importer places finished downloads into the library: it plans
-// which file goes where, then hardlinks (or copies when it must) each one.
-// It never moves or deletes a source file and never overwrites a file it
-// did not place.
 package importer
 
 import (
@@ -35,16 +31,16 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// KindImport is the Job kind that imports one finished Download.
+// KindImport is the job kind of an import.
 const KindImport = "import_download"
 
-// Candidate is one file found in a download.
+// Candidate is a media file found in a download.
 type Candidate struct {
 	Path string
 	Size int64
 }
 
-// Target is where a Slot's file belongs.
+// Target describes the movie a download is placed into.
 type Target struct {
 	LibraryPath string
 	FolderName  string
@@ -53,14 +49,10 @@ type Target struct {
 	Year        int
 	SlotIDs     []int64
 	Edition     string
-	// IDs are the Title's outside ids (tmdb, imdb) for the file pattern.
-	IDs map[string]string
-	// Naming names the file; nil uses the defaults.
-	Naming *naming.Settings
+	IDs         map[string]string
+	Naming      *naming.Settings
 }
 
-// fileName names one imported file by the naming settings (the same
-// function a rename uses).
 func (t Target) fileName(p releasename.Result, source string) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
@@ -79,20 +71,15 @@ func (t Target) fileName(p releasename.Result, source string) string {
 	return EditionFileName(name, t.Edition)
 }
 
-// videoExt are the file kinds a movie or episode import places.
 var videoExt = map[string]bool{".mkv": true, ".mp4": true, ".avi": true, ".m4v": true, ".ts": true, ".m2ts": true, ".wmv": true,
 	".mov": true, ".webm": true, ".mpg": true, ".mpeg": true}
 
-// discExt are disc images and disc parts: real media an import does not
-// place by itself (a disc rip is left for a person), but never a fake.
 var discExt = map[string]bool{".iso": true, ".img": true, ".vob": true, ".ifo": true, ".bdmv": true, ".mts": true}
 
-// IsVideo says a file extension (with the dot) is one a movie or episode import places.
+// IsVideo reports whether ext is a known video extension.
 func IsVideo(ext string) bool { return videoExt[strings.ToLower(ext)] }
 
-// IsMedia says a file extension (with the dot) is a video, a track or a
-// disc image: the importer's own lists, also used by the Downloader's
-// fake check (4.3.5).
+// IsMedia reports whether ext is a video or audio extension.
 func IsMedia(ext string) bool {
 	ext = strings.ToLower(ext)
 	return videoExt[ext] || audioExt[ext] || discExt[ext]
@@ -104,17 +91,17 @@ var programExt = map[string]bool{".exe": true, ".scr": true, ".bat": true, ".cmd
 
 func safeName(s string) string { return naming.Clean(s) }
 
-// FolderName renders the default folder pattern, "{title} ({year})".
+// FolderName builds the library folder name for a title and year.
 func FolderName(title string, year int) string {
 	return naming.Folder(naming.Defaults(), naming.Facts{Title: title, Year: year})
 }
 
-// FileName renders the default file pattern, "{title} ({year}) {quality}".
+// FileName builds the library file name for a title, year, step and extension.
 func FileName(title string, year int, step, ext string) string {
 	return naming.File(naming.Defaults(), naming.Facts{Title: title, Year: year, Step: step, Ext: ext})
 }
 
-// Scan lists the files under root (or root itself when it is a file).
+// Scan lists the media files under root.
 func Scan(root string) ([]Candidate, error) {
 	var out []Candidate
 	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
@@ -143,7 +130,6 @@ func isSample(path string, p releasename.Result) bool {
 			return true
 		}
 	}
-	// "sample" must be a word of its own, so a group like SAMPLER passes.
 	base := strings.ToLower(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
 	for _, w := range strings.FieldsFunc(base, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
 		if w == "sample" {
@@ -153,13 +139,6 @@ func isSample(path string, p releasename.Result) bool {
 	return false
 }
 
-// sampleByLength says whether a video is a sample by how long it plays,
-// read from its headers (facts). A file under 15 seconds is always a
-// sample. Otherwise, when the expected runtime (minutes) is known, the file
-// must play at least a set least length: 15 seconds for a clip of up to 3
-// minutes, 90 seconds up to 10 minutes, 5 minutes up to half an hour and
-// 10 minutes for anything longer. An unknown length is never a sample here;
-// the name check (isSample) still applies.
 func sampleByLength(facts map[string]any, minutes int) bool {
 	secs := factInt(facts, "runtime_seconds")
 	if secs <= 0 {
@@ -183,7 +162,6 @@ func sampleByLength(facts map[string]any, minutes int) bool {
 	return secs < least
 }
 
-// lengthWords says a play length in plain words: "40 seconds", "3 minutes".
 func lengthWords(secs int) string {
 	if secs < 120 {
 		return strconv.Itoa(secs) + " seconds"
@@ -203,11 +181,10 @@ func confidence(c releasename.Conf) float64 {
 	return 0
 }
 
-// MinConfidence is the least confidence an automatic import accepts.
+// MinConfidence is the lowest match score accepted without a human check.
 const MinConfidence = 0.7
 
-// Plan decides what to do with each file. Methods: hardlink (copy is the
-// fallback at run time), refuse (unsafe or unmatched), skip (not a video).
+// Plan turns candidate files into copy steps for a movie.
 func Plan(cands []Candidate, t Target) []domain.PlanStep {
 	ref := judge.TitleRef{ID: t.TitleID, Name: t.TitleName, Year: t.Year}
 	var steps []domain.PlanStep
@@ -217,7 +194,6 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
 		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size})
 		if p.Title.Value == "" {
-			// The file name alone may lack the title; try its folder.
 			p = releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size})
 		}
 		switch {
@@ -230,8 +206,6 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 		default:
 			m := judge.MatchTitle(p, []judge.TitleRef{ref})
 			if m.Title == nil && p.Year.Value == 0 {
-				// A plain file name such as movie-1080p.mkv: its folder (the
-				// Release name) says which Title it is.
 				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
 					if fm := judge.MatchTitle(fp, []judge.TitleRef{ref}); fm.Title != nil {
 						m = fm
@@ -255,7 +229,6 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 		}
 		steps = append(steps, s)
 	}
-	// One movie Slot takes one main file: keep the biggest.
 	if len(mains) > 1 {
 		best := mains[0]
 		for _, i := range mains[1:] {
@@ -282,19 +255,14 @@ func sizeOf(cands []Candidate, path string) int64 {
 	return 0
 }
 
-// Ops are the file operations Execute uses; tests replace Link to simulate
-// a cross-device move.
+// Ops holds the file operations an import runs, so tests can swap them.
 type Ops struct {
 	Link func(oldname, newname string) error
 	Copy func(src, dst string) error
 }
 
-// activeParts holds the temp files a running copy owns; the sweep leaves them.
 var activeParts sync.Map
 
-// sweepStaleParts removes .holyarrs-*.part files in dir left by a copy that
-// was killed. Only that exact name pattern is touched, and never a file a
-// running copy owns.
 func sweepStaleParts(dir string) {
 	ents, err := os.ReadDir(dir)
 	if err != nil {
@@ -313,25 +281,19 @@ func sweepStaleParts(dir string) {
 	}
 }
 
-// MinFreeSpace is the least free space a copy must leave on the disk.
+// MinFreeSpace is the default free space, in bytes, an import needs.
 const MinFreeSpace = 100 << 20
 
-// freeSpaceOf is FreeSpace; tests replace it.
 var freeSpaceOf = FreeSpace
 
-// CheckSpace refuses a copy of size bytes into dir when the disk would be
-// left with less than MinFreeSpace. Unknown free space never blocks.
+// CheckSpace fails when dir cannot hold size more bytes plus the default margin.
 func CheckSpace(dir string, size int64) error { return CheckSpaceMin(dir, size, MinFreeSpace/mib) }
 
-// CopyNoReplace copies src to dst through a .holyarrs-*.part temp file
-// next to dst and never replaces a file already at dst.
+// CopyNoReplace copies src to dst and never overwrites an existing dst.
 func CopyNoReplace(src, dst string) error { return copyFile(src, dst) }
 
-// beforeFinish lets tests make a file appear just before a copy finishes.
 var beforeFinish func()
 
-// copyFile copies src to a random temp name next to dst, then links it into
-// place, which fails rather than overwrite a file that appeared meanwhile.
 func copyFile(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
@@ -345,7 +307,7 @@ func copyFile(src, dst string) (err error) {
 	tmp := out.Name()
 	activeParts.Store(tmp, true)
 	defer activeParts.Delete(tmp)
-	defer os.Remove(tmp) // after the link, dst keeps the data
+	defer os.Remove(tmp)
 	if _, err = io.Copy(out, in); err != nil {
 		_ = out.Close()
 		return err
@@ -379,10 +341,7 @@ func copyFile(src, dst string) (err error) {
 	return nil
 }
 
-// CreateTemp makes a new empty file named prefix, a random number and
-// suffix in dir. It asks for mode 0666 where os.CreateTemp always uses 0600,
-// so the process umask decides who may read media HolyArrs writes (022 gives
-// 0644, 002 gives 0664), the same as for the folders it makes with 0777.
+// CreateTemp makes a new temporary file in dir.
 func CreateTemp(dir, prefix, suffix string) (*os.File, error) {
 	for range 10000 {
 		name := filepath.Join(dir, prefix+strconv.FormatUint(uint64(rand.Uint32()), 10)+suffix)
@@ -394,11 +353,8 @@ func CreateTemp(dir, prefix, suffix string) (*os.File, error) {
 	return nil, &fs.PathError{Op: "createtemp", Path: filepath.Join(dir, prefix+"*"+suffix), Err: fs.ErrExist}
 }
 
-// linkHook lets tests replace the final link of copyFile.
 var linkHook func(oldname, newname string) error
 
-// copyDirect writes src straight to dst for filesystems that cannot hardlink.
-// It never overwrites (O_EXCL) and removes a partial dst on any error.
 func copyDirect(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
@@ -424,8 +380,7 @@ func copyDirect(src, dst string) (err error) {
 	return out.Close()
 }
 
-// SameContent reports whether a and b both have size bytes and the same
-// first and last MiB: a cheap check that a target is the copy we made.
+// SameContent reports whether two files hold the same bytes.
 func SameContent(a, b string, size int64) bool { return sameContent(a, b, size) }
 
 func sameContent(a, b string, size int64) bool {
@@ -458,12 +413,9 @@ func sameContent(a, b string, size int64) bool {
 	return x != nil && bytes.Equal(x, y)
 }
 
-// Execute runs a plan. Each step gets one result; only hardlink steps touch
-// the disk, and never over an existing file.
+// Execute runs the steps with ops and returns one result per step.
 func Execute(steps []domain.PlanStep, ops Ops) []domain.PlaceResult { return execute(steps, ops, nil) }
 
-// execute is Execute; resumable names the source files an earlier, cut-off
-// run recorded as placing, whose finished target may be taken as ours.
 func execute(steps []domain.PlanStep, ops Ops, resumable map[string]time.Time) []domain.PlaceResult {
 	if ops.Link == nil {
 		ops.Link = os.Link
@@ -500,7 +452,6 @@ func place(s domain.PlanStep, ops Ops, resumeFrom time.Time) domain.PlaceResult 
 		return r
 	}
 	if tfi, err := os.Lstat(s.TargetPath); err == nil {
-		// A run cut off after placing left this target: finish it.
 		if os.SameFile(sfi, tfi) {
 			r.Outcome, r.PlacedBy = "placed", "hardlink"
 			return r
@@ -538,18 +489,15 @@ func place(s domain.PlanStep, ops Ops, resumeFrom time.Time) domain.PlaceResult 
 	return r
 }
 
-// under reports whether p stays inside root (no "..", not root itself).
 func under(root, p string) bool {
 	rel, err := filepath.Rel(root, p)
 	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
 }
 
-// insideReal reports whether p stays inside root's real path once the
-// symlinks in the part of p that exists are followed (root itself counts).
 func insideReal(root, p string) bool {
 	realRoot, err := filepath.EvalSymlinks(root)
 	if err != nil {
-		return true // no Library folder yet: nothing in it can lead out
+		return true
 	}
 	for q := p; ; {
 		if real, err := filepath.EvalSymlinks(q); err == nil {
@@ -563,9 +511,6 @@ func insideReal(root, p string) bool {
 	}
 }
 
-// candidates turns the file names a Downloader reported into paths under
-// root. A name that is absolute, holds "..", or resolves (through a
-// symlink) outside root becomes a refused step instead.
 func candidates(root string, files []domain.SeenFile) ([]Candidate, []domain.PlanStep) {
 	var cands []Candidate
 	var bad []domain.PlanStep
@@ -583,7 +528,6 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []domain.Pla
 			ok = under(root, cand)
 		}
 		if ok && rootErr == nil {
-			// A missing file is caught later; one that exists must really be inside.
 			if real, err := filepath.EvalSymlinks(cand); err == nil && !under(realRoot, real) {
 				ok = false
 			}
@@ -598,36 +542,26 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []domain.Pla
 	return cands, bad
 }
 
-// Publisher sends live events (live.Hub fits).
+// Publisher announces import events.
 type Publisher interface {
 	Publish(topic string, data any) uint64
 }
 
-// Importer imports finished Downloads through the store.
+// Importer places finished downloads into the library.
 type Importer struct {
-	Store *database.Store
-	Live  Publisher // may be nil
-	Ops   Ops
-	// SavePath is where completed downloads are, as HolyArrs sees it
-	// (--save-path); it is a place files may be imported by hand from.
-	SavePath string
-	// OnRejected is told when an Import is rejected and its Release turned
-	// down, so the Slot can be searched again.
-	OnRejected func(ctx context.Context, slotID int64)
-	// OnImported is told when an Import is done (every file placed), so the
-	// finished job can be cleared out of its Downloader.
-	OnImported func(ctx context.Context, downloadID int64)
-	// OnLowSpace is told when an import is refused because the disk would
-	// be left too full: the hook for the health checks.
-	OnLowSpace func(ctx context.Context, dir string, free, need int64)
-	// NoSizeFloors turns the least sizes at import off whatever the
-	// settings say: the demo's placeholder files are a few KB.
+	Store        *database.Store
+	Live         Publisher
+	Ops          Ops
+	SavePath     string
+	OnRejected   func(ctx context.Context, slotID int64)
+	OnImported   func(ctx context.Context, downloadID int64)
+	OnLowSpace   func(ctx context.Context, dir string, free, need int64)
 	NoSizeFloors bool
 
-	runs sync.Map // download ID -> *sync.Mutex: one run of a pack at a time
+	runs sync.Map
 
 	spaceMu sync.Mutex
-	booked  map[string]int64 // disk -> bytes imports running now are about to copy
+	booked  map[string]int64
 }
 
 func (im *Importer) publish(topic string, data any) {
@@ -636,26 +570,17 @@ func (im *Importer) publish(topic string, data any) {
 	}
 }
 
-// ErrEpisodeImport says a show's download waits for episode import (only
-// while canImportEpisodes is off).
+// ErrEpisodeImport is returned when placing episodes is turned off.
 var ErrEpisodeImport = errors.New("placing episodes is turned off; the download stays in the Downloader")
 
-// ErrAlbumImport says an artist's download waits for album import (only
-// while canImportAlbums is off).
+// ErrAlbumImport is returned when placing albums is turned off.
 var ErrAlbumImport = errors.New("placing albums is turned off; the download stays in the Downloader")
 
-// canImportAlbums says the importer places album downloads (one file per
-// track) and the stranded sweep includes them; on since stage 4.14.
 var canImportAlbums = true
 
-// canImportEpisodes says the importer places show downloads (one file per
-// episode, a season pack into many Slots); on since stage 4.2.
 var canImportEpisodes = true
 
-// RequeueStranded queues the import again for finished show Downloads whose
-// Slots still wait in downloading (they finished before episode import
-// existed, or their import Job was lost). It does nothing until the
-// importer places episodes. It returns how many it queued.
+// RequeueStranded queues again the downloads whose import never finished.
 func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx context.Context, downloadID int64)) (int, error) {
 	if !canImportEpisodes {
 		return 0, nil
@@ -694,10 +619,6 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 	return n, nil
 }
 
-// importBackoff says a Download's import Jobs failed lately: one that
-// fails before it writes its import (a broken album, an unreadable
-// folder) is tried again after 10 minutes, then 20, 40 and so on, at
-// most a day after its last failure, not on every pass of the sweep.
 func (im *Importer) importBackoff(ctx context.Context, downloadID int64) (bool, error) {
 	var failed int
 	var last sql.NullString
@@ -710,6 +631,7 @@ func (im *Importer) importBackoff(ctx context.Context, downloadID int64) (bool, 
 	if err != nil {
 		return false, nil
 	}
+	// The wait doubles per failure from ten minutes and stops at one day.
 	wait := 24 * time.Hour
 	if failed <= 8 {
 		wait = min(wait, 10*time.Minute<<(failed-1))
@@ -717,7 +639,7 @@ func (im *Importer) importBackoff(ctx context.Context, downloadID int64) (bool, 
 	return time.Since(end) < wait, nil
 }
 
-// HandleJob runs an import_download Job (subject: the Download).
+// HandleJob runs an import job.
 func (im *Importer) HandleJob(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "download" {
 		return errors.New("import needs a download subject")
@@ -740,9 +662,7 @@ func mapPath(p string, maps []domain.PathMap) string {
 	return out
 }
 
-// Import plans a finished Download and, unless dryRun, places its files,
-// records File rows (origin imported) and moves the Slot. A dry run writes
-// nothing anywhere and returns the plan.
+// Import places one download into the library, or only plans it when dryRun is set.
 func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, by domain.Actor) (*domain.Import, error) {
 	unlock := im.Store.LockFiles()
 	defer unlock()
@@ -780,15 +700,12 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		if !canImportAlbums {
 			return nil, ErrAlbumImport
 		}
-		// One file per track, one album into many track Slots: the same
-		// run as a season pack (per-download lock, resume, settle per Slot).
 		return im.importShow(ctx, d, dr, dryRun, by)
 	}
 	if kind == "show" {
 		if !canImportEpisodes {
 			return nil, ErrEpisodeImport
 		}
-		// One file per episode, a season pack into many Slots.
 		return im.importShow(ctx, d, dr, dryRun, by)
 	}
 	if !dryRun && sl.State != domain.SlotDownloading && sl.State != domain.SlotImporting {
@@ -813,11 +730,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if ti.Year != nil {
 		year = *ti.Year
 	}
-	// Only the files the Download reported: nothing else in the folder is ours.
 	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
 	if !rootOK {
-		// A folder with a ".." part could lead anywhere: nothing in it is read.
 		cands, bad = nil, []domain.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
 	folder := safeName(ver.FolderName)
@@ -832,7 +747,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err != nil {
 		return nil, err
 	}
-	// A download that holds only archives (RAR, 7-Zip, zip, tar) is unpacked next to it first.
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)
@@ -860,8 +774,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		im.lowSpace(ctx, lowSpace, sl.ID, ti.ID, d.ID, by)
 	}
 	if up.lie != "" && !hasMain(plan) {
-		// The name lied, or the copy is lower than the one in place: nothing
-		// is placed and the Release is turned down (pick-rules.md 4.3).
 		slotTo, err := im.reject(ctx, imp, sl, d, up.lie, by, up.old != nil, ver.KeepUpToDate && it.KeepUpToDate)
 		if err != nil {
 			return imp, err
@@ -879,13 +791,12 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 		return imp, nil
 	}
-	// A run cut off after placing left an import in placing: reuse it.
 	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
 	resumable := map[string]time.Time{}
-	recorded := "" // where an earlier, cut-off run moved the old copy
+	recorded := ""
 	if len(prior) == 1 {
 		imp.Meta = prior[0].Meta
 		for _, r := range prior[0].Result {
@@ -897,7 +808,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 		}
 	}
-	// Record every step about to touch the disk before linking.
 	for _, st := range plan {
 		r := domain.PlaceResult{SourceFile: st.SourceFile, Outcome: "pending", PlacedBy: "none"}
 		if st.Method == "hardlink" {
@@ -933,10 +843,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			sweepStaleParts(filepath.Dir(st.TargetPath))
 		}
 	}
-	// A better copy with the same file name: the old File steps aside
-	// first and comes back if the new one cannot be placed.
-	// Where it goes is recorded on the Import before anything moves, so a
-	// run after a crash knows the copy at the old path is no longer the old one.
 	heldEarly, sameIdx, oldAbs := "", -1, ""
 	if up.old != nil {
 		oldAbs = filepath.Join(lf.Path, filepath.FromSlash(up.old.RelativePath))
@@ -992,12 +898,8 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 				imp.Result[sameIdx].HeldAside = ""
 			}
 		case placedAny && heldEarly == "" && sameIdx < 0:
-			// Never move a path a placed step wrote (sameIdx >= 0 means the
-			// new copy now sits at the old path, or the old file was gone).
-			// Where the old copy goes is recorded before it moves, as above.
 			to, err := recorded, error(nil)
 			if _, lerr := os.Lstat(oldAbs); lerr != nil {
-				// A cut-off run already moved it, or it is gone.
 				if _, rerr := os.Lstat(recorded); recorded == "" || rerr != nil {
 					to = ""
 				}
@@ -1069,8 +971,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	newName := ""
 	now := time.Now().UTC()
 	err = im.Store.Write(ctx, func(tx *sql.Tx) error {
-		// The replaced File is marked first; when it moved to the holding
-		// folder its row follows it, which frees its path for the new one.
 		if up.old != nil && placedSome(imp.Result) {
 			relPath := up.old.RelativePath
 			if replacedTo != "" {
@@ -1078,8 +978,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 					relPath = filepath.ToSlash(rp)
 				}
 			} else if sameIdx >= 0 {
-				// The old file was gone and the new one took its path: the
-				// old row lets go of the path.
 				relPath += "#replaced-" + strconv.FormatInt(up.old.ID, 10)
 			}
 			if _, err := tx.Exec("UPDATE files SET state = 'replaced', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
@@ -1150,7 +1048,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		if err := store.MoveSlotTx(tx, sl.ID, slotTo, reason, by); err != nil {
 			return err
 		}
-		// Below good enough and kept up to date: keep looking for a better copy.
 		if slotTo == domain.SlotInLibrary && !ge && ver.KeepUpToDate && it.KeepUpToDate {
 			slotTo = domain.SlotBetterWanted
 			return store.MoveSlotTx(tx, sl.ID, slotTo, reason+"; below good enough, so a better copy is sought", by)
@@ -1166,7 +1063,6 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		summary += " by " + how
 	}
 	if placed == 0 && imp.State == "failed" {
-		// Nothing placed: History says why, as the Slot does.
 		summary = "Import failed: " + reason
 	}
 	slotID, dlID, titleID := sl.ID, d.ID, ti.ID
@@ -1191,22 +1087,14 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	return imp, nil
 }
 
-// guardPlan refuses steps whose target would leave the Library folder, whose
-// full path is too long for the platform, or whose file would leave the
-// disk below its free-space floor; it returns the last free-space refusal.
-// The floor counts every copy the plan makes on a disk, so a pack cannot
-// fill it file by file; a hardlink on the same disk reserves nothing.
 func guardPlan(plan []domain.PlanStep, lib string, cands []Candidate, rules FileRules) *SpaceError {
 	low, _ := guardPlanWith(plan, lib, cands, rules, nil)
 	return low
 }
 
-// guardPlanWith is guardPlan counting base (disk -> bytes other imports
-// running now are about to copy) as taken; it returns what this plan's
-// copies take per disk.
 func guardPlanWith(plan []domain.PlanStep, lib string, cands []Candidate, rules FileRules, base map[string]int64) (*SpaceError, map[string]int64) {
 	var lowSpace *SpaceError
-	reserved := map[string]int64{} // disk -> bytes this plan's copies take
+	reserved := map[string]int64{}
 	mine := map[string]int64{}
 	for k, n := range base {
 		reserved[k] = n
@@ -1222,8 +1110,6 @@ func guardPlanWith(plan []domain.PlanStep, lib string, cands []Candidate, rules 
 				plan[i].Why = append([]string{why}, plan[i].Why...)
 			}
 		}
-		// The disk must keep its free-space floor after the file lands,
-		// checked for every import as Radarr does (pick-rules.md has none).
 		if plan[i].Method == "hardlink" && !rules.SkipFreeSpaceCheck {
 			dir := existingDir(filepath.Dir(plan[i].TargetPath))
 			key := diskID(dir)
@@ -1246,9 +1132,6 @@ func guardPlanWith(plan []domain.PlanStep, lib string, cands []Candidate, rules 
 	return lowSpace, mine
 }
 
-// guard checks a plan's free space counting the copies other imports
-// running now (another Version's, another pack's) are about to make, and
-// books this plan's copies until release is called.
 func (im *Importer) guard(plan []domain.PlanStep, lib string, cands []Candidate, rules FileRules) (*SpaceError, func()) {
 	im.spaceMu.Lock()
 	defer im.spaceMu.Unlock()
@@ -1270,18 +1153,14 @@ func (im *Importer) guard(plan []domain.PlanStep, lib string, cands []Candidate,
 	}
 }
 
-// sameDiskOf is sameDisk; tests replace it.
 var sameDiskOf = sameDisk
 
-// sameDisk says whether src and dir are on one known disk, so a hardlink
-// works and takes no space.
 func sameDisk(src, dir string) bool {
 	a, b := diskID(src), diskID(dir)
 	return a != "" && a == b
 }
 
-// MaxPathLen is the longest full path an import or a rename may make:
-// Windows tools stop at 260 characters, other systems at 4096 bytes.
+// MaxPathLen is the longest path the system allows.
 var MaxPathLen = func() int {
 	if runtime.GOOS == "windows" {
 		return 259
@@ -1289,7 +1168,7 @@ var MaxPathLen = func() int {
 	return 4095
 }()
 
-// PathTooLong gives the reason p is too long for the platform, or "".
+// PathTooLong returns a message when p is longer than MaxPathLen, or an empty string.
 func PathTooLong(p string) string {
 	if len(p) > MaxPathLen {
 		return fmt.Sprintf("the new path would be too long (%d characters, the limit here is %d)", len(p), MaxPathLen)
@@ -1297,7 +1176,6 @@ func PathTooLong(p string) string {
 	return ""
 }
 
-// planPaths lists where each planned file goes, for the import Event.
 func planPaths(plan []domain.PlanStep) []map[string]string {
 	out := []map[string]string{}
 	for _, st := range plan {
@@ -1315,7 +1193,6 @@ func placedSome(rs []domain.PlaceResult) bool {
 	return false
 }
 
-// hasMain says whether a plan still places a file.
 func hasMain(plan []domain.PlanStep) bool {
 	for _, st := range plan {
 		if st.Method == "hardlink" {
@@ -1325,7 +1202,6 @@ func hasMain(plan []domain.PlanStep) bool {
 	return false
 }
 
-// lowSpace records a refusal for lack of free space and tells the health hook.
 func (im *Importer) lowSpace(ctx context.Context, se *SpaceError, slotID, titleID, dlID int64, by domain.Actor) {
 	e := &domain.Event{Actor: by, Kind: domain.EventFreeSpaceLow, TitleID: &titleID, SlotID: &slotID, DownloadID: &dlID, Summary: "Import refused: " + se.Error(),
 		Data: map[string]any{"folder": se.Dir, "free": se.Free, "need": se.Need, "keep": se.Keep}, GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}

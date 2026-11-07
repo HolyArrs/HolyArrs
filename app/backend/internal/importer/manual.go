@@ -1,10 +1,5 @@
 package importer
 
-// Import files by hand (roadmap #33): a person points at a folder, sees
-// the videos in it with a best guess of what each one is, fixes the
-// match and imports the chosen files into their Slots, copied (a
-// hardlink on the same disk) or moved, named by the naming settings.
-
 import (
 	"context"
 	"database/sql"
@@ -25,11 +20,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
-// ByHandMax is the most files one scan by hand lists.
+// ByHandMax caps how many files one by-hand scan returns.
 const ByHandMax = 2000
 
-// ByHandGuess is what a file most likely is: a Title, and for a show the
-// episode, with the Slot of the main Version it would fill.
+// ByHandGuess is the match the server guesses for a by-hand file.
 type ByHandGuess struct {
 	TitleID    int64   `json:"title_id,omitempty"`
 	TitleName  string  `json:"title_name,omitempty"`
@@ -39,32 +33,31 @@ type ByHandGuess struct {
 	Season     *int    `json:"season,omitempty"`
 	Episode    *int    `json:"episode,omitempty"`
 	SlotID     int64   `json:"slot_id,omitempty"`
-	HasFile    bool    `json:"has_file,omitempty"` // the Slot already holds a File
+	HasFile    bool    `json:"has_file,omitempty"`
 	Confidence float64 `json:"confidence"`
 	Detail     string  `json:"detail,omitempty"`
 }
 
-// ByHandFile is one file a scan by hand found.
+// ByHandFile is one file found by a by-hand scan.
 type ByHandFile struct {
 	Path      string      `json:"path"`
-	Name      string      `json:"name"` // relative to the scanned folder
+	Name      string      `json:"name"`
 	Size      int64       `json:"size"`
-	Kind      string      `json:"kind"` // video, audio
+	Kind      string      `json:"kind"`
 	Quality   string      `json:"quality,omitempty"`
 	Guess     ByHandGuess `json:"guess"`
-	Note      string      `json:"note,omitempty"` // why it cannot be imported as it is
+	Note      string      `json:"note,omitempty"`
 	InLibrary bool        `json:"in_library,omitempty"`
 }
 
-// ByHandScan is the answer of a scan by hand.
+// ByHandScan is the result of scanning a path by hand.
 type ByHandScan struct {
 	Path  string       `json:"path"`
 	Files []ByHandFile `json:"files"`
-	More  bool         `json:"more"` // the folder holds more than ByHandMax files
+	More  bool         `json:"more"`
 }
 
-// ByHandItem is one file to import: its Slot, or the Title with (for a
-// show) the season and episode, and optionally the Version.
+// ByHandItem is one file the user chose to import by hand.
 type ByHandItem struct {
 	Path      string `json:"path"`
 	SlotID    int64  `json:"slot_id"`
@@ -72,13 +65,13 @@ type ByHandItem struct {
 	VersionID int64  `json:"version_id"`
 	Season    *int   `json:"season"`
 	Episode   *int   `json:"episode"`
-	Mode      string `json:"mode"` // copy (the default) or move
+	Mode      string `json:"mode"`
 }
 
-// ByHandResult is what happened to one file.
+// ByHandResult is the outcome of importing one by-hand item.
 type ByHandResult struct {
 	Path     string `json:"path"`
-	Outcome  string `json:"outcome"` // placed, refused, failed
+	Outcome  string `json:"outcome"`
 	PlacedBy string `json:"placed_by,omitempty"`
 	Target   string `json:"target,omitempty"`
 	TitleID  int64  `json:"title_id,omitempty"`
@@ -87,22 +80,17 @@ type ByHandResult struct {
 	Error    string `json:"error,omitempty"`
 }
 
-// ErrByHandPath says a path given by hand is not one to read from.
+// ErrByHandPath is returned when a by-hand path is not usable.
 var ErrByHandPath = errors.New("give the full path of a folder or file the server can read")
 
 var byHandStat = os.Stat
 
-// CleanByHandPath checks a path typed by hand: absolute, no ".." parts,
-// inside the places and there. It returns the cleaned path, or
-// ErrByHandPath or a *PlaceError.
+// CleanByHandPath validates a by-hand path against the allowed places.
 func CleanByHandPath(p string, places ByHandPlaces) (string, error) {
 	p = strings.TrimSpace(p)
 	if p == "" || strings.ContainsRune(p, 0) || !filepath.IsAbs(p) {
 		return "", ErrByHandPath
 	}
-	// A Windows UNC or device path (\\host\share, \\?\, \\.\) would make
-	// the stat below open an SMB session and send the service account's
-	// credentials; a mapped drive letter still works.
 	if strings.HasPrefix(filepath.VolumeName(p), `\\`) {
 		return "", ErrByHandPath
 	}
@@ -112,12 +100,11 @@ func CleanByHandPath(p string, places ByHandPlaces) (string, error) {
 		}
 	}
 	p = filepath.Clean(p)
-	// Outside the places the answer is the same whether p is there or not.
 	if places.within(p) == "" {
 		return "", places.Refusal()
 	}
 	if _, err := byHandStat(p); err != nil {
-		return "", ErrByHandPath // the OS reason would tell which server paths exist
+		return "", ErrByHandPath
 	}
 	if !places.Holds(p) {
 		return "", places.Refusal()
@@ -125,7 +112,6 @@ func CleanByHandPath(p string, places ByHandPlaces) (string, error) {
 	return p, nil
 }
 
-// libraryFile says p is a present File HolyArrs already holds.
 func libraryFile(ctx context.Context, db *sql.DB, folders []domain.LibraryFolder, p string) bool {
 	for _, lf := range folders {
 		if !under(lf.Path, p) {
@@ -144,13 +130,12 @@ func libraryFile(ctx context.Context, db *sql.DB, folders []domain.LibraryFolder
 	return false
 }
 
-// byHandTitle is a Title with what a guess needs of it, read once a scan.
 type byHandTitle struct {
 	t     domain.Title
-	main  int64                 // its main Version
-	slots map[int64]domain.Slot // item -> Slot in the main Version
+	main  int64
+	slots map[int64]domain.Slot
 	refs  []judge.EpisodeRef
-	movie int64 // a movie's Item
+	movie int64
 }
 
 func (im *Importer) byHandTitle(ctx context.Context, db *sql.DB, cache map[int64]*byHandTitle, id int64) (*byHandTitle, error) {
@@ -201,9 +186,7 @@ func episodeRef(it domain.Item) judge.EpisodeRef {
 	return r
 }
 
-// ScanByHand lists the videos and tracks under root (a folder or one
-// file) with a guess of the movie or episode each one is. It reads only,
-// and only inside the places; a bad root is ErrByHandPath or a *PlaceError.
+// ScanByHand lists the importable files under root.
 func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, error) {
 	out := ByHandScan{Path: root, Files: []ByHandFile{}}
 	db := im.Store.Read()
@@ -234,13 +217,13 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 	cache := map[int64]*byHandTitle{}
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if cerr := ctx.Err(); cerr != nil {
-			return cerr // the caller left; stop walking
+			return cerr
 		}
 		if err != nil {
 			if p == root {
 				return err
 			}
-			return nil // an unreadable sub-folder is left out
+			return nil
 		}
 		if d.IsDir() || d.Type()&fs.ModeSymlink != 0 {
 			return nil
@@ -296,7 +279,6 @@ func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64
 	}
 	m := judge.MatchTitle(p, refs)
 	if m.Title == nil {
-		// A plain file name such as S01E02.mkv: its folder may say which.
 		if fp := releasename.Parse(filepath.Base(filepath.Dir(f.Path)), releasename.Hints{Size: f.Size}); fp.Title.Value != "" {
 			if fm := judge.MatchTitle(fp, refs); fm.Title != nil {
 				m = fm
@@ -335,9 +317,7 @@ func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64
 	return nil
 }
 
-// ImportByHand places each chosen file into its Slot and records it, one
-// file at a time; a file that cannot go is refused with the reason and
-// the others still go.
+// ImportByHand imports the chosen items and returns one result each.
 func (im *Importer) ImportByHand(ctx context.Context, items []ByHandItem, by domain.Actor) ([]ByHandResult, error) {
 	unlock := im.Store.LockFiles()
 	defer unlock()
@@ -365,7 +345,6 @@ func (im *Importer) ImportByHand(ctx context.Context, items []ByHandItem, by dom
 	return out, nil
 }
 
-// byHandSlot finds the Slot an item names.
 func byHandSlot(ctx context.Context, db *sql.DB, it ByHandItem) (int64, string) {
 	if it.SlotID > 0 {
 		return it.SlotID, ""
@@ -411,7 +390,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	}
 	src, err := CleanByHandPath(it.Path, places)
 	if err != nil {
-		return refuse(err.Error()) // nothing outside the places is copied, moved or removed
+		return refuse(err.Error())
 	}
 	r.Path = src
 	sfi, err := os.Lstat(src)
@@ -499,7 +478,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 		return refuse(long)
 	}
 	r.Target = target
-	placedBy := "none" // a loose file already where it belongs is only recorded
+	placedBy := "none"
 	if filepath.Clean(target) != src {
 		ops := im.Ops
 		if ops.Link == nil {
@@ -524,7 +503,6 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	}
 	r.Outcome, r.PlacedBy = "placed", placedBy
 	if err := im.recordByHand(ctx, &r, src, target, lf, ver, item, ti, sl, p, by); err != nil {
-		// The original is still there: take back the new copy.
 		if placedBy == "hardlink" || placedBy == "copy" {
 			_ = os.Remove(target)
 		}
@@ -533,9 +511,6 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	return r, nil
 }
 
-// recordByHand writes the placed file as a File of the Slot, moves the
-// Slot to in_library (or better_wanted when it is below good enough and
-// kept up to date), and records the Import and its Event.
 func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, target string, lf domain.LibraryFolder, ver domain.Version, item domain.Item,
 	ti domain.Title, sl domain.Slot, p releasename.Result, by domain.Actor) error {
 	rel, err := filepath.Rel(lf.Path, target)
@@ -580,8 +555,6 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 			return err
 		}
 		r.FileID = id
-		// Like an adopted file, the Slot takes its new state straight away:
-		// no Download stands between (those Slots were refused above).
 		if _, err := tx.Exec(`UPDATE slots SET file_id = ?, good_enough = ?, state = ?, last_reason = ?, held_release_id = NULL, active_download_id = NULL,
 			updated_at = ?, updated_by = ? WHERE id = ?`, id, ge, string(state), why, database.FormatTime(time.Now()), actorText(by), sl.ID); err != nil {
 			return err

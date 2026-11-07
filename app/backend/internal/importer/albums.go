@@ -20,56 +20,43 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
-// Track is one track of the chosen Pressing as an album import sees it.
+// Track is one audio file of an album with its tag facts.
 type Track struct {
 	ItemID int64
 	Disc   int
 	Number int
 	Name   string
-	SlotID int64 // its Slot in the Version being filled; 0: none
-	// Wanted says this download fills the track: its Slot is one of the
-	// Download's and still waits for it.
+	SlotID int64
 	Wanted bool
 }
 
-// AlbumTarget is where an album download's files belong.
+// AlbumTarget describes the album a download is placed into.
 type AlbumTarget struct {
 	LibraryPath  string
-	ArtistFolder string // the artist folder (the Version's folder)
+	ArtistFolder string
 	Album        string
-	Year         int // the album's release year; 0: unknown
+	Year         int
 	Tracks       []Track
-	// Facts for the naming patterns: the artist, the album kind and the
-	// chosen Pressing's disambiguation (deluxe).
-	Artist    string
-	AlbumType string
-	Edition   string
-	// Naming is the naming settings (nil: the defaults). KeepNames keeps
-	// each file's own name in the album folder (rename on import off).
-	Naming    *naming.Settings
-	KeepNames bool
-	// Tags reads a file's tags; nil reads none. Tags are read only when a
-	// file's name does not settle which track it is.
-	Tags func(path string) (tags.Tags, error)
+	Artist       string
+	AlbumType    string
+	Edition      string
+	Naming       *naming.Settings
+	KeepNames    bool
+	Tags         func(path string) (tags.Tags, error)
 }
 
-// audioExt are the file kinds an album import places.
 var audioExt = map[string]bool{".flac": true, ".mp3": true, ".m4a": true, ".aac": true, ".ogg": true, ".opus": true, ".wav": true,
 	".wv": true, ".ape": true, ".aiff": true, ".aif": true, ".alac": true, ".dsf": true, ".dff": true, ".wma": true, ".mka": true, ".tak": true}
 
-// IsAudio says a file extension (with the dot) is one an album import places.
+// IsAudio reports whether ext is a known audio extension.
 func IsAudio(ext string) bool { return audioExt[strings.ToLower(ext)] }
 
 var (
-	// A disc folder: CD1, CD 2, Disc 1, Disk-2.
 	discDir = regexp.MustCompile(`(?i)^(?:cd|disc|disk)\s*[-_.]?\s*(\d{1,2})\b`)
-	// A leading number: "01 - Title", "1-01 Title", "1.01 Title", "101 Title".
 	leadNum = regexp.MustCompile(`^\s*(?:(\d{1,2})[-.](\d{1,3})|(\d{1,3}))(?:[\s._)\]-]|$)`)
-	// A number between dashes: "Artist - Album - 03 - Title".
-	midNum = regexp.MustCompile(`\s-\s(\d{1,3})\s*[-.]\s`)
+	midNum  = regexp.MustCompile(`\s-\s(\d{1,3})\s*[-.]\s`)
 )
 
-// fold makes a name comparable: lower case, letters and digits only.
 func fold(s string) string {
 	var b strings.Builder
 	for _, r := range strings.ToLower(s) {
@@ -80,10 +67,6 @@ func fold(s string) string {
 	return b.String()
 }
 
-// trackFile names where a track goes, relative to the Library folder, by
-// the music naming patterns (Artist/Album (Year)/NN - Title.ext by default;
-// D-NN - Title.ext on an album of more than one disc). A rename uses the
-// same naming.TrackPath, so a rename preview is what an import names.
 func (t AlbumTarget) trackFile(tr Track, ext string, discs int, src string) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
@@ -101,12 +84,9 @@ func (t AlbumTarget) trackFile(tr Track, ext string, discs int, src string) stri
 	return naming.TrackPath(ns, t.ArtistFolder, f)
 }
 
-// maxNameBytes is the longest folder or file name an album import makes:
-// under the 255 bytes most file systems allow, with room to spare.
+// maxNameBytes keeps a file name under the 255 byte limit of common filesystems, with room for a suffix.
 const maxNameBytes = 240
 
-// cutName shortens s to at most n bytes on a character boundary, without
-// a trailing space or dot.
 func cutName(s string, n int) string {
 	if len(s) <= n {
 		return s
@@ -117,7 +97,6 @@ func cutName(s string, n int) string {
 	return strings.TrimRight(s[:n], ". ")
 }
 
-// discOf reads a disc number from the folders above a file (CD1, Disc 2).
 func discOf(p string) int {
 	dirs := strings.Split(filepath.ToSlash(filepath.Dir(p)), "/")
 	for i := len(dirs) - 1; i >= 0; i-- {
@@ -129,8 +108,6 @@ func discOf(p string) int {
 	return 0
 }
 
-// numberOf reads the disc and track numbers from a file name; 0 when the
-// name gives none.
 func numberOf(base string, discs int) (disc, num int) {
 	if m := leadNum.FindStringSubmatch(base); m != nil {
 		if m[1] != "" {
@@ -150,13 +127,7 @@ func numberOf(base string, discs int) (disc, num int) {
 	return 0, num
 }
 
-// PlanTracks decides what to do with each file of an album download. Each
-// audio file is matched to a track of the chosen Pressing by its number
-// (with the disc from a CD1/Disc 2 folder, a 1-01 name or a 101 name) and,
-// when the name has no number, by the track's name in the file name. File
-// tags and lengths are not read. Files of tracks the download does not
-// fill, tracks not on the Pressing (bonus tracks) and other files are left
-// alone (skip) and reported; a track takes one file, the biggest.
+// PlanTracks turns candidate files into copy steps for an album.
 func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 	discs := 1
 	for _, tr := range t.Tracks {
@@ -170,9 +141,6 @@ func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 		}
 		return nil
 	}
-	// byName finds the track whose name is in the file name. When more
-	// than one track has that name (the same title on two discs of a flat
-	// download) it returns none and the tracks it could be.
 	byName := func(base string, disc int) (*Track, []*Track) {
 		var hit *Track
 		var same []*Track
@@ -187,7 +155,7 @@ func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 				continue
 			}
 			if hit != nil && len(fold(hit.Name)) >= len(n) {
-				continue // the longer name wins ("Song" inside "Song Two")
+				continue
 			}
 			hit, same = &t.Tracks[i], []*Track{&t.Tracks[i]}
 		}
@@ -233,14 +201,12 @@ func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 				}
 			}
 			if tr == nil && t.Tags != nil {
-				// The name does not settle it: the file's own tags may.
 				if hit, how := t.byTags(c.Path, base, disc, discs, same, find, why == "" && num == 0 && len(same) == 0); hit != nil {
 					tr, same, why = hit, nil, how
 				}
 			}
 			switch {
 			case len(same) > 1:
-				// Each of those tracks waits for a decision.
 				labels := []string{}
 				for _, o := range same {
 					labels = append(labels, trackLabel(o.Disc, o.Number, discs))
@@ -266,8 +232,6 @@ func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 		}
 		steps = append(steps, s)
 	}
-	// One track takes one file: the biggest wins (a FLAC and an MP3 of the
-	// same track side by side).
 	order := []int{}
 	for i := range steps {
 		if steps[i].Method == "hardlink" {
@@ -290,10 +254,6 @@ func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 	return steps
 }
 
-// byTags reads a file's tags and finds the track they give. The tag title,
-// when there is one, must be the track's name; with no tag title the track
-// must be one the name could be (same), have its name in the file name, or
-// the name must give nothing at all (bare).
 func (t AlbumTarget) byTags(p, base string, disc, discs int, same []*Track, find func(int, int) *Track, bare bool) (*Track, string) {
 	tg, err := t.Tags(p)
 	if err != nil || tg.Track == 0 {
@@ -305,8 +265,6 @@ func (t AlbumTarget) byTags(p, base string, disc, discs int, same []*Track, find
 	}
 	hit := find(d, tg.Track)
 	if hit == nil && d == 0 {
-		// No disc in the tags on an album of several discs: the number must
-		// belong to one track only.
 		for i := range t.Tracks {
 			if t.Tracks[i].Number == tg.Track {
 				if hit != nil {
@@ -333,8 +291,6 @@ func (t AlbumTarget) byTags(p, base string, disc, discs int, same []*Track, find
 	return hit, "the file's tags give " + trackLabel(hit.Disc, hit.Number, discs)
 }
 
-// trackLabel names a track: "track 03", or "disc 2 track 03" on an album
-// of more than one disc.
 func trackLabel(disc, num, discs int) string {
 	if discs > 1 {
 		return fmt.Sprintf("disc %d track %02d", disc, num)
@@ -342,8 +298,6 @@ func trackLabel(disc, num, discs int) string {
 	return fmt.Sprintf("track %02d", num)
 }
 
-// wholeAlbumSpace refuses every placing step of an album when one of them
-// does not fit: an album is placed whole or waits for space.
 func wholeAlbumSpace(plan []domain.PlanStep, low *SpaceError) {
 	if low == nil {
 		return
@@ -356,9 +310,7 @@ func wholeAlbumSpace(plan []domain.PlanStep, low *SpaceError) {
 	}
 }
 
-// AlbumFacts are the naming facts of an album: its name, kind, year and
-// edition (the chosen Pressing's disambiguation, else the album's), and
-// how many discs its tracks span. An import and a rename both use them.
+// AlbumFacts loads the naming facts and track count for one album part.
 func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID int64) (naming.TrackFacts, int, error) {
 	f := naming.TrackFacts{Artist: artist}
 	var p domain.Part
@@ -383,8 +335,6 @@ func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID 
 	return f, max(1, int(discs.Int64)), nil
 }
 
-// albumTarget gathers an album download's target: the artist folder, the
-// album and its tracks (the items given, which are the chosen Pressing's).
 func albumTarget(ctx context.Context, db database.Querier, lf domain.LibraryFolder, ver domain.Version, ti domain.Title, items []domain.Item,
 	slotOf map[int64]int64, slots map[int64]*showSlot, dryRun bool, ns naming.Settings) (AlbumTarget, error) {
 	at := AlbumTarget{LibraryPath: lf.Path, ArtistFolder: safeName(ver.FolderName), Artist: ti.Name, Naming: &ns, KeepNames: !ns.RenameOnImport}

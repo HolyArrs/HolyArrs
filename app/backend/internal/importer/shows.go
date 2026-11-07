@@ -25,30 +25,26 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// Episode is one episode of a show as an episode import sees it.
+// Episode is one known episode of a show.
 type Episode struct {
 	Ref    judge.EpisodeRef
-	Name   string // the episode name, "" when unknown
-	SlotID int64  // its Slot in the Version being filled; 0: none
-	// Wanted says this download fills the episode: its Slot is one of the
-	// Download's and still waits for it.
+	Name   string
+	SlotID int64
 	Wanted bool
 }
 
-// ShowTarget is where a show download's files belong.
+// ShowTarget describes the show a download is placed into.
 type ShowTarget struct {
 	LibraryPath string
-	FolderName  string // the show folder (the Version's folder)
+	FolderName  string
 	Show        judge.TitleRef
 	IDs         map[string]string
-	Order       string // aired, daily, absolute
+	Order       string
 	Episodes    []Episode
-	ReleaseName string // the Release's name, the last word on the show
+	ReleaseName string
 	Naming      *naming.Settings
 }
 
-// episodePath is where a file holding eps goes, relative to the Library
-// folder, by the naming settings (the same function a rename uses).
 func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
@@ -63,7 +59,7 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	return naming.EpisodePath(ns, t.FolderName, f)
 }
 
-// EpisodeFactsFor builds the naming facts of a file holding eps.
+// EpisodeFactsFor builds the naming facts for one episode file.
 func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p releasename.Result, release, ext string, eps []Episode) naming.EpisodeFacts {
 	f := naming.EpisodeFacts{Facts: naming.FactsFrom(show, year, ids, p, release, ext), Order: order}
 	for i, e := range eps {
@@ -85,11 +81,7 @@ func labels(eps []Episode) string {
 	return strings.Join(out, ", ")
 }
 
-// PlanEpisodes decides what to do with each file of a show download: each
-// video is matched to episodes by its name (S01E02, a multi-episode name,
-// an air day or a running number) and placed for the episodes this
-// download fills. Files of episodes it does not fill, and files that name
-// no episode, are left alone (skip) and reported.
+// PlanEpisodes turns candidate files into copy steps for a show.
 func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 	t.Show.Kind = "show"
 	lib := []judge.TitleRef{t.Show}
@@ -118,8 +110,6 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 		default:
 			m := judge.MatchTitle(p, lib)
 			if m.Title == nil && strings.TrimSpace(p.Title.Value) == "" {
-				// A bare name such as S01E02.mkv: its folder or the Release
-				// name says which show it is.
 				for _, alt := range []string{filepath.Base(filepath.Dir(c.Path)), t.ReleaseName} {
 					if alt == "" {
 						continue
@@ -165,8 +155,6 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 		}
 		steps = append(steps, s)
 	}
-	// One episode takes one file: the biggest wins, and a file sharing an
-	// episode with a bigger one is left alone.
 	order := make([]int, 0, len(steps))
 	for i := range steps {
 		if steps[i].Method == "hardlink" {
@@ -194,15 +182,13 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 	return steps
 }
 
-// heldFrom finds where a cut-off run moved an old file: one of the paths
-// it recorded that ends with the file's relative path and is still there.
 func heldFrom(recorded []string, rel string) string {
 	want := "/" + strings.TrimPrefix(filepath.ToSlash(rel), "/")
 	for _, r := range recorded {
 		s := filepath.ToSlash(r)
 		if i := strings.LastIndex(s, "."); i > 0 && strings.HasSuffix(s[:i], want) {
 			if _, err := strconv.Atoi(s[i+1:]); err == nil {
-				s = s[:i] // holdPath's ".N" for a taken name
+				s = s[:i]
 			}
 		}
 		if strings.HasSuffix(s, want) {
@@ -214,28 +200,21 @@ func heldFrom(recorded []string, rel string) string {
 	return ""
 }
 
-// showSlot is one Slot of a show Download with what the import did to it.
 type showSlot struct {
 	sl      domain.Slot
 	it      domain.Item
-	live    bool   // waits for this download (downloading or importing)
-	step    int    // the plan step filling it; -1: none
-	lie     string // its file lied: the Release is turned down for it
-	outcome string // placed, lied, missing, stuck
+	live    bool
+	step    int
+	lie     string
+	outcome string
 	to      domain.SlotState
 	reason  string
 }
 
-// showImportEntered lets tests see a run of a pack begin.
 var showImportEntered func(id int64)
 
-// importShow imports a finished show Download: every episode file goes to
-// its episode's Slot, a pack fills many, and each Slot is settled on its
-// own (placed, turned down and looked for again, or Needs a decision).
 func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain.Downloader, dryRun bool, by domain.Actor) (*domain.Import, error) {
 	if !dryRun {
-		// Two runs of one pack never overlap, whatever queued them; the
-		// second reads the Download again once the first is done.
 		mu, _ := im.runs.LoadOrStore(d.ID, &sync.Mutex{})
 		mu.(*sync.Mutex).Lock()
 		defer mu.(*sync.Mutex).Unlock()
@@ -299,8 +278,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	itemWhere := "title_id = ? AND kind = 'episode' AND dropped_at IS NULL"
 	args := []any{ti.ID}
 	if music {
-		// The tracks of the album this download fills: the chosen Pressing's.
-		// A track of no album would gather every other loose track.
 		part := slots[d.SlotIDs[0]].it.PartID
 		if part == nil {
 			return nil, fmt.Errorf("download %d: its first track belongs to no album; an album import needs one", d.ID)
@@ -362,10 +339,8 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
 	if !rootOK {
-		// A folder with a ".." part could lead anywhere: nothing in it is read.
 		cands, bad = nil, []domain.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
-	// A download that holds only archives (RAR, 7-Zip, zip, tar) is unpacked next to it first.
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)
@@ -389,8 +364,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		wholeAlbumSpace(plan, lowSpace)
 	}
 
-	// The copies in place: each step compares its file with them and, when
-	// it is no lower, replaces those it wholly covers.
 	filled := map[int64]bool{}
 	for _, st := range plan {
 		if st.Method == "hardlink" {
@@ -399,7 +372,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 	}
-	olds := map[int][]domain.File{} // step -> the Files in place for its Slots
+	olds := map[int][]domain.File{}
 	inspected := map[string]map[string]any{}
 	fakes := im.refuseFakes(ctx, db)
 	var claimed int64
@@ -435,7 +408,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			copyWhy = copyRefusal(ver, filepath.Base(plan[i].SourceFile), relName, "", facts)
 		}
 		if copyWhy != "" {
-			// A copy choice needs review; it does not turn down the Release.
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
 			plan[i].Why = append(plan[i].Why, copyWhy)
 			delete(olds, i)
@@ -446,7 +418,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if ss := slots[id]; ss != nil && ss.it.Runtime != nil && minutes >= 0 {
 				minutes += *ss.it.Runtime
 			} else {
-				minutes = -1 // one length unknown: the floor for an unknown length
+				minutes = -1
 			}
 		}
 		if !music && sampleByLength(inspected[plan[i].SourceFile], fakes.lengthMinutes(max(minutes, 0))) {
@@ -457,7 +429,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 		why, err := fakes.fakeFileOf(plan[i].SourceFile, music, max(minutes, 0), relName)
 		if err != nil {
-			// Not the Release's fault: these Slots wait for a person.
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
 			plan[i].Why = append(plan[i].Why, unreadable(err))
 			continue
@@ -496,7 +467,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			plan[i].ReplacesFileID = &id
 		}
 	}
-	// Only steps still allowed to place cover an old multi-episode file.
 	filled = map[int64]bool{}
 	for _, st := range plan {
 		if st.Method == "hardlink" {
@@ -522,13 +492,12 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		im.lowSpace(ctx, lowSpace, firstSlot, ti.ID, d.ID, by)
 	}
 
-	// A run cut off after placing left an import in placing: reuse it.
 	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
 	resumable := map[string]time.Time{}
-	recorded := []string{} // where an earlier, cut-off run moved old copies
+	recorded := []string{}
 	if len(prior) == 1 {
 		imp.Meta = prior[0].Meta
 		for _, r := range prior[0].Result {
@@ -577,9 +546,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			sweepStaleParts(filepath.Dir(st.TargetPath))
 		}
 	}
-	// whole says an old File is wholly covered by the files this import
-	// places, so it is replaced (moved to the holding folder); one that
-	// also holds other episodes stays and lets go of the covered ones.
 	whole := func(f domain.File) bool {
 		for _, id := range f.SlotIDs {
 			if !filled[id] {
@@ -592,8 +558,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	save := func() error {
 		return im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
 	}
-	// An old File at the very path the new one takes steps aside first,
-	// recorded before it moves, and comes back if the new one fails.
 	heldFirst := map[int]string{}
 	for i, fs := range olds {
 		for _, f := range fs {
@@ -635,7 +599,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			return imp, err
 		}
 	}
-	// replacedTo is where each replaced File went ("" when it was gone).
 	replacedTo := map[int64]string{}
 	for i, fs := range olds {
 		placed := imp.Result[i].Outcome == "placed"
@@ -685,7 +648,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 
-	// Settle every Slot of the download on its own.
 	matched := false
 	for _, st := range plan {
 		matched = matched || len(st.TargetSlotIDs) > 0
@@ -703,8 +665,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			ss.outcome = "stuck"
 			ss.reason = "the file could not be placed: " + imp.Result[ss.step].Error
 		case matched:
-			// The download held other episodes but not this one, or only a
-			// file that could not be used for it.
 			ss.outcome, ss.reason = "missing", "the download did not hold "+refLabel(ss.it)
 			for i, st := range plan {
 				if slices.Contains(st.TargetSlotIDs, ss.sl.ID) {
@@ -737,11 +697,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	var lookAgain []int64
-	newFiles := map[int64]int64{} // old File -> the File that replaced it
+	newFiles := map[int64]int64{}
 	now := time.Now().UTC()
 	err = im.Store.Write(ctx, func(tx *sql.Tx) error {
-		// Replaced Files are marked first; one moved to the holding folder
-		// takes its new path along, which frees the old one.
 		for i, fs := range olds {
 			if imp.Result[i].Outcome != "placed" {
 				continue
@@ -790,8 +748,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			p := releasename.Parse(filepath.Base(step.SourceFile), releasename.Hints{Show: !music})
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			if music && relName != "" {
-				// A track's file name says nothing of its quality: the
-				// Release name does (FLAC, 320, V0).
 				name = relName
 			}
 			f := &domain.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
@@ -854,8 +810,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			hasFile := ss.sl.FileID != nil
 			switch ss.outcome {
 			case "lied", "missing":
-				// The Release is turned down for this episode only, and the
-				// episode looks again.
 				downFor = append(downFor, id)
 				if _, err := tx.Exec("UPDATE slots SET active_download_id = NULL WHERE id = ?", id); err != nil {
 					return err
@@ -939,7 +893,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		summary += " (" + strings.Join(placedLabels, ", ") + ")"
 	}
 	if placed == 0 && imp.State == "failed" {
-		// Nothing placed: History says why, as the Slots do.
 		why := unpackWhy
 		for _, id := range d.SlotIDs {
 			if why == "" && slots[id].reason != "" {
@@ -990,7 +943,6 @@ func anyStuck(slots map[int64]*showSlot) bool {
 	return false
 }
 
-// refLabel names an episode the way people write it: S01E02.
 func refLabel(it domain.Item) string {
 	if it.Kind == "track" {
 		d, n := 1, 0
@@ -1012,8 +964,6 @@ func refLabel(it domain.Item) string {
 	return fmt.Sprintf("S%02dE%02d", s, e)
 }
 
-// fileName is the name a File's copy is known by: its release name, else
-// its file name.
 func fileName(f domain.File) string {
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		return *f.ReleaseName
@@ -1029,9 +979,6 @@ func jsonIDs(ids []int64) string {
 	return "[" + strings.Join(parts, ",") + "]"
 }
 
-// turnDownForTx turns a Release down for some episodes only: the Release
-// stays on the Turned down list with them and is still judged for the
-// others (the same record a turn down by hand for one episode writes).
 func turnDownForTx(tx *sql.Tx, releaseID int64, slotIDs []int64, by domain.Actor) error {
 	var cur sql.NullString
 	if err := tx.QueryRow("SELECT json_extract(verdict, '$.turned_down_slot_ids') FROM releases WHERE id = ?", releaseID).Scan(&cur); err != nil {

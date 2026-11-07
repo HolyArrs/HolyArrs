@@ -20,16 +20,13 @@ import (
 
 const albumRel = "Lab Band - First Light (2020) [FLAC]"
 
-// albumWorld is an artist with one album of three tracks (or two discs of
-// two when discs is 2) in one Version, and a finished Download filling
-// every track.
 type albumWorld struct {
 	s      *database.Store
 	dl     string
 	lib    string
 	dlID   int64
 	relID  int64
-	slots  []int64 // in track order
+	slots  []int64
 	tracks []int64
 }
 
@@ -40,7 +37,6 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	// Test files are tiny stand-ins: the size floors are tested on their own.
 	setFake(t, s, "import_size_floors", "false")
 	w := albumWorld{s: s, dl: t.TempDir(), lib: t.TempDir()}
 	var seen []domain.SeenFile
@@ -132,9 +128,6 @@ func (w albumWorld) state(t *testing.T, i int) domain.SlotState {
 
 func exists(p string) bool { _, err := os.Stat(p); return err == nil }
 
-// A whole album: every track is placed as Artist/Album (Year)/NN - Title,
-// the cover, log and cue are left alone, and every track Slot is in the
-// library.
 func TestAlbumImportPlacesEveryTrack(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac", "cover.jpg", "album.log", "album.cue")
 	im := &Importer{Store: w.s}
@@ -165,9 +158,6 @@ func TestAlbumImportPlacesEveryTrack(t *testing.T) {
 	}
 }
 
-// A partial album settles per track: the tracks it holds are placed; the
-// missing one turns the Release down for that track only and is looked for
-// again.
 func TestPartialAlbumSettlesPerTrack(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "03 - Night Train.flac")
 	var again []int64
@@ -192,8 +182,6 @@ func TestPartialAlbumSettlesPerTrack(t *testing.T) {
 	}
 }
 
-// Two discs in CD1 and CD2 folders with the same track numbers go to their
-// own tracks and are named D-NN.
 func TestAlbumImportMultiDisc(t *testing.T) {
 	w := albumSetup(t, 2, "CD1/01 - Dawn.flac", "CD1/02 - Glass River.flac", "CD2/01 - Night Train.flac", "CD2/02 - Last Call.flac")
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
@@ -205,10 +193,9 @@ func TestAlbumImportMultiDisc(t *testing.T) {
 	}
 }
 
-// An album that does not fit whole waits: nothing is placed.
 func TestAlbumImportNeedsSpaceForWholeAlbum(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
-	fakeDisk(t, 100*mb+2*2048+1) // room for two of the three tracks
+	fakeDisk(t, 100*mb+2*2048+1)
 	sameDiskOf = func(string, string) bool { return false }
 	defer func() { sameDiskOf = sameDisk }()
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
@@ -225,7 +212,6 @@ func TestAlbumImportNeedsSpaceForWholeAlbum(t *testing.T) {
 	}
 }
 
-// A run cut off after placing resumes and finishes the album.
 func TestAlbumImportResumesAfterCrash(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
 	im := &Importer{Store: w.s}
@@ -250,7 +236,6 @@ func TestAlbumImportResumesAfterCrash(t *testing.T) {
 	}
 }
 
-// The stranded sweep queues finished album downloads whose tracks wait.
 func TestStrandedAlbumDownloadsAreQueued(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac")
 	var queued []int64
@@ -299,8 +284,6 @@ func TestPlanTracksMatching(t *testing.T) {
 	}
 }
 
-// haveTracks puts a copy of every track in the Library as files named
-// after ext, from a Release called listing, each Slot looking for better.
 func (w albumWorld) haveTracks(t *testing.T, ext, listing string) {
 	t.Helper()
 	names := []string{"Dawn", "Glass River", "Night Train"}
@@ -327,8 +310,6 @@ func (w albumWorld) haveTracks(t *testing.T, ext, listing string) {
 	}
 }
 
-// #43: an MP3 album never replaces the FLAC copies in place at import, even
-// when its Release was taken by hand (with force) and says MP3 320.
 func TestAlbumImportKeepsLosslessOverLossy(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.mp3", "02 - Glass River.mp3", "03 - Night Train.mp3")
 	w.haveTracks(t, "flac", albumRel)
@@ -361,7 +342,6 @@ func TestAlbumImportKeepsLosslessOverLossy(t *testing.T) {
 	}
 }
 
-// The other way is an upgrade: FLAC over MP3 copies is imported.
 func TestAlbumImportLosslessOverLossy(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
 	w.haveTracks(t, "mp3", "Lab Band - First Light (2020) [MP3 320]")
@@ -371,16 +351,13 @@ func TestAlbumImportLosslessOverLossy(t *testing.T) {
 	}
 }
 
-// #43: a .m4a file may be AAC or ALAC; its Release name says which. AAC
-// over FLAC is refused, ALAC over FLAC is not.
 func TestAlbumImportM4AByReleaseName(t *testing.T) {
 	for _, c := range []struct {
 		listing string
-		header  string // "" leaves the file unreadable
+		header  string
 		refused bool
 	}{
 		{"Lab Band - First Light (2020) [AAC 256 iTunes]", "", true},
-		// Over a lossless copy the codec counts, not the name.
 		{"Lab Band - First Light (2020) [ALAC]", "", true},
 		{"Lab Band - First Light (2020) [ALAC]", "alac", false},
 	} {
@@ -417,8 +394,6 @@ func TestAlbumImportM4AByReleaseName(t *testing.T) {
 	}
 }
 
-// m4aHeader is a minimal .m4a whose one audio track holds codec (an MP4
-// sample entry: "alac" or "mp4a").
 func m4aHeader(codec string) []byte {
 	box := func(kind string, payload []byte) []byte {
 		b := make([]byte, 8+len(payload))
@@ -437,9 +412,6 @@ func m4aHeader(codec string) []byte {
 	return append(box("ftyp", []byte("M4A \x00\x00\x00\x00M4A ")), box("moov", box("trak", box("mdia", mdia)))...)
 }
 
-// #43: an adopted ALAC library (.m4a files stored as "[M4A]") is lossless by
-// its codec: an MP3 album never replaces it at import. A new AAC .m4a whose
-// Release name gives no format is lossy by its codec and never replaces FLAC.
 func TestAlbumImportReadsM4ACodec(t *testing.T) {
 	t.Run("mp3 over adopted alac", func(t *testing.T) {
 		w := albumSetup(t, 1, "01 - Dawn.mp3", "02 - Glass River.mp3", "03 - Night Train.mp3")
@@ -490,8 +462,6 @@ func lossyRefused(imp *domain.Import) int {
 	return n
 }
 
-// #43: an .m4a whose format cannot be read never replaces a lossless copy
-// unless its Release says lossless.
 func TestAlbumImportUnreadableM4AOverFLAC(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.m4a", "02 - Glass River.m4a", "03 - Night Train.m4a")
 	w.haveTracks(t, "flac", albumRel)
@@ -502,9 +472,6 @@ func TestAlbumImportUnreadableM4AOverFLAC(t *testing.T) {
 	}
 }
 
-// #43: a copy in place whose format cannot be read (an .m4a stored as
-// [M4A] or with no format word) counts as lossless: an MP3 album does not
-// replace it.
 func TestAlbumImportKeepsUnreadableM4ACopy(t *testing.T) {
 	for _, stored := range []string{"Lab Band - First Light (2020) [M4A]", "Lab Band - First Light (2020)"} {
 		w := albumSetup(t, 1, "01 - Dawn.mp3", "02 - Glass River.mp3", "03 - Night Train.mp3")

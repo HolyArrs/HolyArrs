@@ -10,7 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// fakeDisk makes every Library folder report free bytes.
 func fakeDisk(t *testing.T, free int64) {
 	freeSpaceOf = func(string) int64 { return free }
 	t.Cleanup(func() { freeSpaceOf = FreeSpace })
@@ -18,9 +17,6 @@ func fakeDisk(t *testing.T, free int64) {
 
 const mb = 1 << 20
 
-// 5.1.8: an import that would leave under 100 MB free is refused before
-// anything is written, even when it would be a hardlink (Radarr checks the
-// same way), with a plain reason, an Event and the health hook.
 func TestImportRefusedWhenUnder100MBWouldBeLeft(t *testing.T) {
 	for _, c := range []struct {
 		name    string
@@ -62,7 +58,6 @@ func TestImportRefusedWhenUnder100MBWouldBeLeft(t *testing.T) {
 				}
 				return
 			}
-			// The dry run shows the same refusal the real run makes.
 			if dry.Plan[0].Method != "refuse" || !strings.HasPrefix(dry.Plan[0].Why[0], "not enough free space") {
 				t.Fatalf("dry plan %+v", dry.Plan)
 			}
@@ -121,9 +116,6 @@ func TestCheckSpaceSaysWhyInMegabytes(t *testing.T) {
 	}
 }
 
-// 4.8.11 check: the HD and the 4K copy imported at the same time share the
-// disk's free space: the second plan counts the first one's copies until
-// the first is done.
 func TestGuardBooksSpaceAcrossImports(t *testing.T) {
 	lib, dl := t.TempDir(), t.TempDir()
 	fakeDisk(t, 100*mb+3*mb)

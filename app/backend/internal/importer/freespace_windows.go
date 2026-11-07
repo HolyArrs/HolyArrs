@@ -11,7 +11,7 @@ import (
 
 var getDiskFreeSpaceEx = syscall.NewLazyDLL("kernel32.dll").NewProc("GetDiskFreeSpaceExW")
 
-// FreeSpace returns the bytes free to this user at path, or -1.
+// FreeSpace returns the bytes free for normal users at path, or -1 when unknown.
 func FreeSpace(path string) int64 {
 	p, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
@@ -26,7 +26,7 @@ func FreeSpace(path string) int64 {
 	return int64(avail)
 }
 
-// DiskSize returns the size of the disk holding path, or -1.
+// DiskSize returns the total bytes of the disk holding path, or -1 when unknown.
 func DiskSize(path string) int64 {
 	p, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
@@ -41,7 +41,6 @@ func DiskSize(path string) int64 {
 	return int64(total)
 }
 
-// diskID names the volume holding path, or "" when unknown.
 func diskID(path string) string {
 	if abs, err := filepath.Abs(path); err == nil {
 		return strings.ToLower(filepath.VolumeName(abs))

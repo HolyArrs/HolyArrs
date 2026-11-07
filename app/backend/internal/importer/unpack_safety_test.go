@@ -8,10 +8,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// asLink marks the one file in a rar4 volume as made on Unix with a
-// symlink mode (the header CRC is not checked by the reader).
 func asLink(v []byte) []byte {
-	const fileHdr = 7 + 13 // signature + main header
+	const fileHdr = 7 + 13
 	v[fileHdr+15] = 3
 	binary.LittleEndian.PutUint32(v[fileHdr+28:], 0xA1FF)
 	return v
@@ -41,7 +39,6 @@ func TestSizeOverTheCapIsRefused(t *testing.T) {
 
 func TestLinkInASetKeepsItAwayFromTheTool(t *testing.T) {
 	fakeDisk(t, 10<<30)
-	// A compressed set that holds a link.
 	imp, w := importPacked(t, map[string][]byte{"Rel/" + relName + ".rar": asLink(rar4("link.mkv", []byte("x"), 5000, false, false, true, false))})
 	if imp.State != "failed" || lastWhy(imp) != whySafely {
 		t.Fatalf("%s %+v", imp.State, imp.Plan)

@@ -14,7 +14,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 4.1.3 minor 5: Windows device names get a suffix so the path can be made.
 func TestSafeNameSuffixesWindowsDeviceNames(t *testing.T) {
 	for in, want := range map[string]string{
 		"CON": "CON_", "con": "con_", "Nul.txt": "Nul_.txt", "COM1": "COM1_", "lpt9.mkv": "lpt9_.mkv", "aux ": "aux_",
@@ -29,8 +28,6 @@ func TestSafeNameSuffixesWindowsDeviceNames(t *testing.T) {
 	}
 }
 
-// 4.1.3 minor 4: a copy that would leave the disk below the free-space floor
-// is refused, and the Slot shows why on Needs a decision.
 func TestImportRefusesCopyWithoutFreeSpace(t *testing.T) {
 	w := setup(t)
 	freeSpaceOf = func(string) int64 { return 10 }
@@ -88,8 +85,6 @@ func symlinkOrSkip(t *testing.T, oldname, newname string) {
 	}
 }
 
-// 4.1.3 minor 6: a movie folder that is a symlink out of the Library folder
-// is never written through.
 func TestImportRefusesTargetFolderLinkedOutside(t *testing.T) {
 	w := setup(t)
 	outside := t.TempDir()
@@ -115,9 +110,6 @@ func TestHoldPathRefusesHoldingFolderLinkedOutside(t *testing.T) {
 	}
 }
 
-// 4.1.3 minor 3: with a different file name, where the old copy goes is
-// recorded before it moves, so a crash right after the move still leaves
-// the old File row pointing at it.
 func TestReplaceWithNewNameSurvivesCrashAfterHold(t *testing.T) {
 	w, _, oldID := upgradeWorld(t, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
 		"Dune.Part.Two.2024.720p.HDTV.x264-OTHER")

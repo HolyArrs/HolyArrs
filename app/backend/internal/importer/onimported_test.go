@@ -7,8 +7,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// A done Import tells OnImported once; a dry run, a rejected Import and a
-// second refused run do not.
 func TestOnImportedOnlyAfterDone(t *testing.T) {
 	ctx := context.Background()
 	var told []int64
@@ -26,7 +24,6 @@ func TestOnImportedOnlyAfterDone(t *testing.T) {
 		t.Fatalf("done import told %v", told)
 	}
 
-	// A rejected Import (the file lied about its quality) leaves the job alone.
 	told = nil
 	lw, _, _ := upgradeWorld(t, "Dune.Part.Two.2024.720p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "")
 	im = &Importer{Store: lw.s, OnRejected: func(context.Context, int64) {}, OnImported: hook}

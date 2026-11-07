@@ -18,8 +18,6 @@ import (
 
 const packName = "Copper.Valley.S01.1080p.WEB.H264-HOLYARRS"
 
-// showWorld is a show with four episodes of season 1 in one Version, and a
-// finished Download filling the episodes in dlEps.
 type showWorld struct {
 	s      *database.Store
 	dl     string
@@ -27,7 +25,7 @@ type showWorld struct {
 	vID    int64
 	dlID   int64
 	relID  int64
-	slots  map[int]int64 // episode -> Slot
+	slots  map[int]int64
 	folder string
 }
 
@@ -35,8 +33,6 @@ func ep(n int) string {
 	return "Copper.Valley.S01E0" + string(rune('0'+n)) + ".1080p.WEB.H264-HOLYARRS.mkv"
 }
 
-// showSetup writes the files named in files (relative to the pack folder)
-// and a Download for the episodes in dlEps.
 func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
@@ -44,7 +40,6 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	// Test files are tiny stand-ins: the size floors are tested on their own.
 	setFake(t, s, "import_size_floors", "false")
 	w := showWorld{s: s, dl: t.TempDir(), lib: t.TempDir(), slots: map[int]int64{}, folder: "Copper Valley (2025)"}
 	var seen []domain.SeenFile
@@ -153,8 +148,6 @@ func (w showWorld) release(t *testing.T) domain.Release {
 	return r
 }
 
-// 4.2.1: a season pack of three episodes fills all three Slots with one
-// download, each file hardlinked into its season folder by show naming.
 func TestSeasonPackFillsEveryEpisode(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3), "Copper.Valley.S01.nfo")
 	im := &Importer{Store: w.s}
@@ -193,15 +186,11 @@ func TestSeasonPackFillsEveryEpisode(t *testing.T) {
 	if r := w.release(t); r.State == "turned_down" {
 		t.Fatalf("a good pack was turned down: %+v", r.Verdict)
 	}
-	// The import is not repeated: the Slots moved on.
 	if _, err := im.Import(ctx, w.dlID, false, domain.System); err == nil {
 		t.Fatal("a second import of a settled pack ran")
 	}
 }
 
-// 4.2.1: a partial pack places what it holds; an episode it was meant to
-// fill but does not hold looks again (the Release is turned down for it
-// only); files of other episodes and files with no episode are left alone.
 func TestPartialPackSettlesEachEpisode(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(4), "Extras/behind the scenes.mkv", "readme.txt")
 	var again []int64
@@ -248,7 +237,6 @@ func TestPartialPackSettlesEachEpisode(t *testing.T) {
 	}
 }
 
-// 4.2.1: one multi-episode file fills two Slots with one File.
 func TestMultiEpisodeFile(t *testing.T) {
 	w := showSetup(t, []int{1, 2}, "Copper.Valley.S01E01E02.1080p.WEB.H264-HOLYARRS.mkv")
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
@@ -265,8 +253,6 @@ func TestMultiEpisodeFile(t *testing.T) {
 	}
 }
 
-// 4.2.1: nothing matched: every Slot needs a decision and nothing is
-// turned down.
 func TestShowImportNothingMatched(t *testing.T) {
 	w := showSetup(t, []int{1}, "video.mkv")
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
@@ -281,8 +267,6 @@ func TestShowImportNothingMatched(t *testing.T) {
 	}
 }
 
-// 4.2.1: a file lower than its pack's name is refused for its episode; the
-// Release is turned down for that episode only, the rest are placed.
 func TestPackFileLowerThanItsName(t *testing.T) {
 	w := showSetup(t, []int{1, 2}, ep(1), "Copper.Valley.S01E02.720p.WEB.H264-HOLYARRS.mkv")
 	var again []int64
@@ -299,8 +283,6 @@ func TestPackFileLowerThanItsName(t *testing.T) {
 	}
 }
 
-// 4.2.1: a better copy of one episode replaces the old one, which goes to
-// the holding folder.
 func TestEpisodeBetterCopyReplacesOld(t *testing.T) {
 	w := showSetup(t, []int{1}, ep(1))
 	ctx := context.Background()
@@ -340,8 +322,6 @@ func TestEpisodeBetterCopyReplacesOld(t *testing.T) {
 	}
 }
 
-// 4.2.1: an import cut off after placing finishes on the next run without
-// placing twice or refusing its own files.
 func TestShowImportResumesAfterCrash(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3))
 	ctx := context.Background()
@@ -372,8 +352,6 @@ func TestShowImportResumesAfterCrash(t *testing.T) {
 	}
 }
 
-// 4.2.1: too little free space: nothing is placed and the episodes need a
-// decision.
 func TestShowImportFreeSpace(t *testing.T) {
 	w := showSetup(t, []int{1, 2}, ep(1), ep(2))
 	fakeDisk(t, 5*mb)
@@ -390,8 +368,6 @@ func TestShowImportFreeSpace(t *testing.T) {
 	}
 }
 
-// 4.2.1 note (3.2 review M4): a pack that finished before episode import
-// existed is queued again and imported.
 func TestStrandedPackImported(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3))
 	ctx := context.Background()
@@ -415,7 +391,6 @@ func TestStrandedPackImported(t *testing.T) {
 	}
 }
 
-// Daily and running-number names find their episodes.
 func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 	lib, dl := t.TempDir(), t.TempDir()
 	day := filepath.Join(dl, "Night.Talk.2026.03.14.Guests.1080p.WEB.H264-HOLYARRS.mkv")
@@ -437,7 +412,6 @@ func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 		filepath.Base(steps[0].TargetPath) != "Blade Song - S05E12 - 112 - 1080p WEB.mkv" {
 		t.Fatalf("absolute %+v", steps)
 	}
-	// A file of another show is refused, not placed.
 	dl3 := t.TempDir()
 	write(t, filepath.Join(dl3, "Other.Show.S01E01.1080p.WEB.H264-X.mkv"), 10)
 	cands, _ = Scan(dl3)
@@ -446,7 +420,6 @@ func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 	if steps = PlanEpisodes(cands, tg); steps[0].Method != "refuse" {
 		t.Fatalf("other show %+v", steps)
 	}
-	// A bare S01E01.mkv in a pack folder takes the show from its folder.
 	dl4 := t.TempDir()
 	write(t, filepath.Join(dl4, packName, "S01E01.mkv"), 10)
 	cands, _ = Scan(dl4)
@@ -455,8 +428,6 @@ func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 	}
 }
 
-// 4.2 review important 1: the free-space floor counts every copy of the
-// pack, not each file alone: with room for two files the third is refused.
 func TestShowImportFreeSpacePerPack(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3))
 	fakeDisk(t, 2*2048+100*mb)
@@ -479,7 +450,6 @@ func TestShowImportFreeSpacePerPack(t *testing.T) {
 	if placed != 2 {
 		t.Fatalf("placed %d, want 2", placed)
 	}
-	// Hardlinks on the same disk use no space, so all three fit.
 	w2 := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3))
 	sameDiskOf = func(string, string) bool { return true }
 	if _, err := (&Importer{Store: w2.s}).Import(context.Background(), w2.dlID, false, domain.System); err != nil {
@@ -492,8 +462,6 @@ func TestShowImportFreeSpacePerPack(t *testing.T) {
 	}
 }
 
-// 4.2 review minor 2: a target path longer than the platform allows is
-// refused with the reason rename gives.
 func TestShowImportPathTooLong(t *testing.T) {
 	w := showSetup(t, []int{1}, ep(1))
 	old := MaxPathLen
@@ -508,7 +476,6 @@ func TestShowImportPathTooLong(t *testing.T) {
 	}
 }
 
-// 4.2 review minor 3: two runs of one pack never overlap.
 func TestShowImportRunsOneAtATime(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3))
 	im := &Importer{Store: w.s}
@@ -544,10 +511,6 @@ func TestShowImportRunsOneAtATime(t *testing.T) {
 	}
 }
 
-// 4.2 review (b): the Downloader deleting its own files after a pack was
-// hardlinked leaves the Library copies whole, and an episode the pack did
-// not hold lets go of the download, so a discard for it never removes the
-// pack.
 func TestShowImportLibrarySurvivesDownloaderDelete(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2))
 	if _, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
@@ -575,17 +538,14 @@ func TestShowImportLibrarySurvivesDownloaderDelete(t *testing.T) {
 	}
 }
 
-// 4.2 review (d): the 10-minute sweep over a Download whose import is
-// already queued queues it again; both runs together place each episode
-// once, and the sweep then leaves the pack alone.
 func TestStrandedSweepNeverDoubleImports(t *testing.T) {
 	w := showSetup(t, []int{1, 2, 3}, ep(1), ep(2), ep(3))
 	ctx := context.Background()
 	im := &Importer{Store: w.s}
 	var queued []int64
 	add := func(_ context.Context, id int64) { queued = append(queued, id) }
-	_, _ = im.RequeueStranded(ctx, add) // the first sweep
-	_, _ = im.RequeueStranded(ctx, add) // the next, before the import ran
+	_, _ = im.RequeueStranded(ctx, add)
+	_, _ = im.RequeueStranded(ctx, add)
 	if len(queued) != 2 {
 		t.Fatalf("queued %v", queued)
 	}

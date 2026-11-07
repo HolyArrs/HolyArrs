@@ -34,9 +34,6 @@ func releaseState(t *testing.T, s *database.Store, id int64) (string, string) {
 	return r.State, why
 }
 
-// 4.3.5, movies: an empty video is a fake; the import is rejected and the
-// Release turned down, so the next Release is taken. With the setting off
-// it is placed.
 func TestImportRefusesEmptyMovieFile(t *testing.T) {
 	for _, on := range []bool{true, false} {
 		w, relID, _ := upgradeWorld(t, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "")
@@ -62,9 +59,6 @@ func TestImportRefusesEmptyMovieFile(t *testing.T) {
 	}
 }
 
-// 4.3.5, shows: a .wmv under a 1080p Release name, and an episode file
-// under the least size the setting asks for, are refused for their
-// episodes and the Release turned down for them.
 func TestImportRefusesFakeEpisodes(t *testing.T) {
 	wmv := strings.Replace(ep(1), ".mkv", ".wmv", 1)
 	w := showSetup(t, []int{1, 2}, wmv, ep(2))
@@ -93,7 +87,6 @@ func TestImportRefusesFakeEpisodes(t *testing.T) {
 	}
 }
 
-// 4.3.5, music: an empty track is refused for its track; the others are placed.
 func TestImportRefusesEmptyTrack(t *testing.T) {
 	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
 	if err := os.WriteFile(filepath.Join(w.dl, albumRel, "02 - Glass River.flac"), nil, 0o644); err != nil {
@@ -112,8 +105,6 @@ func TestImportRefusesEmptyTrack(t *testing.T) {
 	}
 }
 
-// floorWorld is a movie import of a file of size bytes, with the size
-// floors on, the movie's runtime and the size its Release was judged at.
 func floorWorld(t *testing.T, size, claimed int64, minutes int, extra ...string) (world, int64) {
 	t.Helper()
 	w, relID, _ := upgradeWorld(t, relName, relName, "")
@@ -142,9 +133,6 @@ func floorWorld(t *testing.T, size, claimed int64, minutes int, extra ...string)
 	return w, relID
 }
 
-// 4.3.5 review: the judge's fixed floors apply at import even with the
-// least-size settings at 0: a 3 MB file for a 166-minute movie is a fake.
-// The settings raise or lower the floor; import_size_floors turns it off.
 func TestImportSizeFloors(t *testing.T) {
 	cases := []struct {
 		name, key, value string
@@ -172,15 +160,12 @@ func TestImportSizeFloors(t *testing.T) {
 			t.Fatalf("%s: release %s %q", c.name, state, why)
 		}
 	}
-	// Unknown length: 20 MB.
 	w, _ := floorWorld(t, 3<<20, 0, 0)
 	if imp, _ := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System); imp.State == "done" {
 		t.Fatal("a 3 MB video of unknown length was placed")
 	}
 }
 
-// 4.3.5 review: a Release judged at 4 GB that holds a 3 MB video is a fake,
-// even when the file passes the floor.
 func TestImportRefusesClaimMismatch(t *testing.T) {
 	w, relID := floorWorld(t, 3<<20, 4<<30, 166)
 	setFake(t, w.s, "import_min_video_mb", "1")
@@ -194,7 +179,6 @@ func TestImportRefusesClaimMismatch(t *testing.T) {
 	}
 }
 
-// 4.3.5 review: a web shortcut beside a good video does not stop the import.
 func TestImportWithShortcutBeside(t *testing.T) {
 	fakeDisk(t, 1<<40)
 	w, _ := floorWorld(t, 200<<20, 210<<20, 166, "Downloaded from X.url")
@@ -204,8 +188,6 @@ func TestImportWithShortcutBeside(t *testing.T) {
 	}
 }
 
-// 4.3.5 review: a file that cannot be read is not called a fake: the
-// Release is not turned down and the Slot waits for a person.
 func TestImportUnreadableFileIsNotFake(t *testing.T) {
 	w, relID := floorWorld(t, 3<<20, 0, 166)
 	if err := os.Remove(filepath.Join(w.dl, relName+".mkv")); err != nil {

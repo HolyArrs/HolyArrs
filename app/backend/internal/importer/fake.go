@@ -14,31 +14,18 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
-// fakeRules are the import-time fake checks (4.3.5). With
-// refuse_tiny_releases on, an empty file is always a fake. With
-// import_size_floors on (the default), a file under the judge's fixed
-// floors (1 MB a minute of runtime, 20 MB for a video of unknown length,
-// 512 KB a track) is a fake, and so is a download whose media files
-// together hold far less than the size its Release was judged at.
-// import_min_video_mb and import_min_track_kb, when above 0, replace the
-// fixed floor for a video or a track (to raise or lower it).
 type fakeRules struct {
-	on       bool  // refuse_tiny_releases
-	floors   bool  // import_size_floors
-	minVideo int64 // replaces the per-minute video floor when > 0
-	minTrack int64 // replaces the track floor when > 0
+	on       bool
+	floors   bool
+	minVideo int64
+	minTrack int64
 }
 
-// claimedShare: media holding less than this share of the judged size is a fake.
+// claimedShare is the divisor for the smallest size a file may have compared with what its name claims.
 const claimedShare = 10
 
-// oldContainer are video containers no modern HD Release comes in; a file
-// in one under a Release name that says 720p or more is a known fake.
 var oldContainer = map[string]bool{".wmv": true, ".asf": true}
 
-// refuseFakes reads the settings: refuse_tiny_releases and
-// import_size_floors (on unless "false"), import_min_video_mb and
-// import_min_track_kb.
 func (im *Importer) refuseFakes(ctx context.Context, db *sql.DB) fakeRules {
 	get := func(k string) string {
 		var v string
@@ -55,9 +42,6 @@ func (im *Importer) refuseFakes(ctx context.Context, db *sql.DB) fakeRules {
 	return r
 }
 
-// lengthMinutes is the expected runtime the sample length check may use:
-// none when the size floors are off (the user's runtimes may be wrong), so
-// only the under-15-seconds rule is left.
 func (fr fakeRules) lengthMinutes(minutes int) int {
 	if !fr.floors {
 		return 0
@@ -65,15 +49,10 @@ func (fr fakeRules) lengthMinutes(minutes int) int {
 	return minutes
 }
 
-// fakeFileOf says why a file to be placed is a fake: far too small for a
-// video of minutes length (0: unknown) or a track, or a video in an old
-// container under an HD Release name. "" means it may be placed. A file
-// that cannot be read returns the error: that is never the Release's fault.
 func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName string) (string, error) {
 	if !fr.on {
 		return "", nil
 	}
-	// The file on disk, not the size the Downloader listed.
 	fi, err := os.Stat(path)
 	if err != nil {
 		return "", err
@@ -111,10 +90,6 @@ func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName str
 	return "", nil
 }
 
-// claimMismatch says why a download is a fake when its video and audio
-// files (as the Downloader listed them) hold far less than the size its
-// Release was judged at: a Release said to be 4 GB that holds a 3 MB
-// video. "" means the sizes agree well enough or are not known.
 func (fr fakeRules) claimMismatch(claimed int64, seen []domain.SeenFile) string {
 	if !fr.on || !fr.floors || claimed <= 0 || len(seen) == 0 {
 		return ""
@@ -131,8 +106,6 @@ func (fr fakeRules) claimMismatch(claimed int64, seen []domain.SeenFile) string 
 	return fmt.Sprintf("the Release said %s but holds %s of video or audio; likely a fake", sizeText(claimed), sizeText(held))
 }
 
-// unreadable is the plan reason for a file whose size could not be read:
-// the import waits for a person, the Release is not blamed.
 func unreadable(err error) string {
 	why := "could not read the file to check it"
 	if os.IsNotExist(err) {

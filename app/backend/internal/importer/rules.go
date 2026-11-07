@@ -14,28 +14,22 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// FileRules are the settings for where files go that are not naming: how
-// long removed and replaced files stay in the holding folder, and the free
-// space an import must leave on the disk.
+// FileRules are the user settings for holding replaced files and free space.
 type FileRules struct {
-	// HoldingDays is how long files stay in the holding folder; 0 keeps them.
-	HoldingDays int `json:"holding_days"`
-	// MinFreeMB is the free space an import must leave (100 at least).
-	MinFreeMB int `json:"min_free_mb"`
-	// SkipFreeSpaceCheck turns the check at import off.
+	HoldingDays        int  `json:"holding_days"`
+	MinFreeMB          int  `json:"min_free_mb"`
 	SkipFreeSpaceCheck bool `json:"skip_free_space_check"`
 }
 
-// Errors from saving FileRules.
 var (
 	ErrMinFree     = errors.New("min_free_mb must be between 100 and 1048576")
 	ErrHoldingDays = errors.New("holding_days must be between 0 (keep) and 3650")
 )
 
-// DefaultFileRules mirror Radarr: 7 days, 100 MB, check on.
+// DefaultFileRules returns the rules used before the user changes them.
 func DefaultFileRules() FileRules { return FileRules{HoldingDays: 7, MinFreeMB: 100} }
 
-// Validate says what is wrong with r.
+// Validate reports whether the rules are in range.
 func (r FileRules) Validate() error {
 	if r.MinFreeMB < 100 || r.MinFreeMB > 1<<20 {
 		return ErrMinFree
@@ -46,7 +40,7 @@ func (r FileRules) Validate() error {
 	return nil
 }
 
-// ReadFileRules reads the rules; unset or broken values keep their default.
+// ReadFileRules loads the saved rules, or the defaults.
 func ReadFileRules(ctx context.Context, db database.Lister) (FileRules, error) {
 	r := DefaultFileRules()
 	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'where_files_go' AND key IN ('holding_days', 'min_free_mb', 'skip_free_space_check')")
@@ -76,7 +70,7 @@ func ReadFileRules(ctx context.Context, db database.Lister) (FileRules, error) {
 	return r, rows.Err()
 }
 
-// SaveFileRules stores valid rules.
+// SaveFileRules validates and stores the rules.
 func SaveFileRules(ctx context.Context, s *database.Store, r FileRules, by domain.Actor) error {
 	if err := r.Validate(); err != nil {
 		return err
@@ -95,12 +89,13 @@ func SaveFileRules(ctx context.Context, s *database.Store, r FileRules, by domai
 	})
 }
 
-// SpaceError is a refusal for lack of free space.
+// SpaceError is returned when a disk lacks room for an import.
 type SpaceError struct {
 	Dir              string
 	Need, Keep, Free int64
 }
 
+// Error returns a message with the free and needed space.
 func (e *SpaceError) Error() string {
 	return fmt.Sprintf("not enough free space in %s: this file needs %d MB and %d MB must stay free, only %d MB are free",
 		e.Dir, (e.Need+mib-1)/mib, e.Keep/mib, e.Free/mib)
@@ -108,13 +103,11 @@ func (e *SpaceError) Error() string {
 
 const mib = 1 << 20
 
-// CheckSpaceMin refuses writing size bytes into dir when the disk would be
-// left with less than minMB megabytes. Unknown free space never blocks.
+// CheckSpaceMin fails when dir cannot hold size more bytes plus minMB.
 func CheckSpaceMin(dir string, size int64, minMB int) error {
 	return checkSpaceReserved(existingDir(dir), size, 0, minMB)
 }
 
-// existingDir is dir or its nearest folder that exists.
 func existingDir(dir string) string {
 	for p := dir; ; {
 		if _, err := os.Stat(p); err == nil {
@@ -128,8 +121,6 @@ func existingDir(dir string) string {
 	}
 }
 
-// checkSpaceReserved is CheckSpaceMin for a disk that already gives
-// reserved bytes to earlier files of the same plan.
 func checkSpaceReserved(dir string, size, reserved int64, minMB int) error {
 	keep := int64(minMB) * mib
 	free := freeSpaceOf(dir)

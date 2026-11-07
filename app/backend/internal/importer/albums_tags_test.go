@@ -8,15 +8,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
-// 4.15.1: tags settle only what a name leaves open; a name that settles a
-// track is never second-guessed by tags, and tags whose title names
-// another track are not used.
 func TestPlanTracksTagsOnlyWhenNamesAreAmbiguous(t *testing.T) {
 	read := map[string]tags.Tags{
-		"/dl/track.flac":     {Track: 2, Title: "Dawn"},           // no number or name in the file name
-		"/dl/Intro (a).flac": {Disc: 2, Track: 1, Title: "Intro"}, // two tracks named Intro
-		"/dl/03 - Noon.flac": {Track: 3},                          // its name settles it
-		"/dl/misc.flac":      {Track: 3, Title: "Something else"}, // tag title is not the track's
+		"/dl/track.flac":     {Track: 2, Title: "Dawn"},
+		"/dl/Intro (a).flac": {Disc: 2, Track: 1, Title: "Intro"},
+		"/dl/03 - Noon.flac": {Track: 3},
+		"/dl/misc.flac":      {Track: 3, Title: "Something else"},
 		"/dl/untagged.flac":  {},
 	}
 	var asked []string
@@ -54,8 +51,6 @@ func TestPlanTracksTagsOnlyWhenNamesAreAmbiguous(t *testing.T) {
 	if _, ok := got["/dl/untagged.flac"]; ok {
 		t.Fatal("an untagged file was placed")
 	}
-	// "03 - Noon" on an album of two discs is Noon by its name; its tags
-	// (track 3) are never read.
 	if ids := got["/dl/03 - Noon.flac"]; len(ids) != 1 || ids[0] != 13 {
 		t.Fatalf("named file: %+v", steps)
 	}
@@ -66,7 +61,6 @@ func TestPlanTracksTagsOnlyWhenNamesAreAmbiguous(t *testing.T) {
 	}
 }
 
-// With no tag reader the plan is the file-name plan of 4.14.
 func TestPlanTracksNoTagReader(t *testing.T) {
 	at := AlbumTarget{LibraryPath: "/lib", ArtistFolder: "A", Album: "B", Naming: func() *naming.Settings { s := naming.Defaults(); return &s }(),
 		Tracks: []Track{{ItemID: 1, Disc: 1, Number: 1, Name: "Intro", SlotID: 11, Wanted: true}}}
@@ -76,8 +70,6 @@ func TestPlanTracksNoTagReader(t *testing.T) {
 	}
 }
 
-// Rename on import off keeps each track's own file name inside the
-// pattern's album folder.
 func TestTrackFileKeepNames(t *testing.T) {
 	at := AlbumTarget{ArtistFolder: "A", Album: "B", Year: 2001, KeepNames: true}
 	if p := at.trackFile(Track{Disc: 1, Number: 2, Name: "Song"}, ".MP3", 1, "/dl/02_song_final.MP3"); p != "A/B (2001)/02_song_final.mp3" {

@@ -2,11 +2,10 @@
 
 package importer
 
-// FreeSpace is unknown (-1) here; HolyArrs runs on Linux and Windows.
+// FreeSpace returns the bytes free for normal users at path, or -1 when unknown.
 func FreeSpace(string) int64 { return -1 }
 
-// DiskSize is unknown (-1) here.
+// DiskSize returns the total bytes of the disk holding path, or -1 when unknown.
 func DiskSize(string) int64 { return -1 }
 
-// diskID is unknown ("") here.
 func diskID(string) string { return "" }

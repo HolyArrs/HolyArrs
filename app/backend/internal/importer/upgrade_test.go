@@ -13,9 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// upgradeWorld is setup with the downloaded file renamed to file, the
-// Download's Release named rel, Keep up to date on, and (when old is set) a
-// File already in place under that release name.
 func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 	t.Helper()
 	w := setup(t)
@@ -76,8 +73,6 @@ func slotOf(t *testing.T, w world) domain.Slot {
 	return sl
 }
 
-// pick-rules.md 4.3: a file that is lower than its Release name said is
-// rejected and the Release turned down, so it is never picked again.
 func TestImportRejectsLyingFile(t *testing.T) {
 	w, relID, _ := upgradeWorld(t, "Dune.Part.Two.2024.720p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "")
 	var again []int64
@@ -168,8 +163,6 @@ func TestImportNeverDowngrades(t *testing.T) {
 	}
 }
 
-// A fixed copy of the same step has the same file name: the old one steps
-// aside first.
 func TestProperWithTheSameFileName(t *testing.T) {
 	w, _, oldID := upgradeWorld(t, "Dune.Part.Two.2024.1080p.WEB.H264.PROPER-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264.PROPER-HOLYARRS",
 		"Dune - Part Two (2024) 1080p WEB")
@@ -189,8 +182,6 @@ func TestProperWithTheSameFileName(t *testing.T) {
 	}
 }
 
-// C1: the old File's row is present but its file is gone, and the better copy
-// has the same file name. The new copy must stay in place.
 func TestSameNameWhenOldFileIsGone(t *testing.T) {
 	w, _, oldID := upgradeWorld(t, "Dune.Part.Two.2024.1080p.WEB.H264.PROPER-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264.PROPER-HOLYARRS",
 		"Dune - Part Two (2024) 1080p WEB")
@@ -216,9 +207,6 @@ func TestSameNameWhenOldFileIsGone(t *testing.T) {
 	}
 }
 
-// C1: a crash after the old copy stepped aside (or after the new one was
-// placed) and before the database write; the run after restart must keep
-// the new copy in place and the old row must follow the held copy.
 func TestReplaceSurvivesCrash(t *testing.T) {
 	for _, stage := range []string{"held", "placed"} {
 		t.Run(stage, func(t *testing.T) {
@@ -261,8 +249,6 @@ func TestReplaceSurvivesCrash(t *testing.T) {
 	}
 }
 
-// M7, M8: two holds in one second never overwrite; a path leaving the
-// Library folder is refused; a rename that fails falls back to copy and remove.
 func TestHoldAsideNamesAndSafety(t *testing.T) {
 	lib := t.TempDir()
 	now := time.Now()
@@ -301,8 +287,6 @@ func TestHoldAsideNamesAndSafety(t *testing.T) {
 	}
 }
 
-// I3: a lying file is rejected, but the Slot still has its File in place,
-// so it goes back to looking for a better copy, not to rejected.
 func TestLyingFileKeepsSlotWithItsFile(t *testing.T) {
 	w, _, oldID := upgradeWorld(t, "Dune.Part.Two.2024.720p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
 		"Dune.Part.Two.2024.720p.HDTV.x264-OTHER")
@@ -315,9 +299,6 @@ func TestLyingFileKeepsSlotWithItsFile(t *testing.T) {
 	}
 }
 
-// Open question: a file named with less detail than its Release (here
-// movie-1080p.mkv in a Remux Release's folder) is only compared when its
-// name parses with confidence, so a real upgrade is not refused.
 func TestPlainFileNameInsideRemuxRelease(t *testing.T) {
 	const rel = "Dune.Part.Two.2024.1080p.BluRay.REMUX.AVC.DTS-HD.MA.5.1-GROUP"
 	w, _, _ := upgradeWorld(t, "x", rel, "Dune.Part.Two.2024.1080p.BluRay.x264-GROUP")

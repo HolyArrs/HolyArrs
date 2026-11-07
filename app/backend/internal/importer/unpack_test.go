@@ -16,7 +16,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// rar4 builds a tiny RAR 4 volume holding one stored file part.
 func rar4(name string, data []byte, total int, splitBefore, splitAfter, compressed, more bool) []byte {
 	block := func(typ byte, flags uint16, body []byte) []byte {
 		b := make([]byte, 7, 7+len(body))
@@ -55,7 +54,6 @@ func rar4(name string, data []byte, total int, splitBefore, splitAfter, compress
 	return append(out, block(0x7B, end, nil)...)
 }
 
-// packedWorld is a movie world whose download holds only the given files.
 func packedWorld(t *testing.T, files map[string][]byte) world {
 	t.Helper()
 	w := setup(t)
@@ -151,8 +149,6 @@ func TestPackedMultiVolumeIsUnpackedAndImported(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
-// A scene set: RAR volumes, an .nfo and a Sample folder with a short clip.
-// The clip is not the movie, so the set is still unpacked and imported.
 func TestPackedSetWithSampleIsUnpacked(t *testing.T) {
 	fakeDisk(t, 10<<30)
 	w := packedWorld(t, map[string][]byte{
@@ -176,9 +172,6 @@ func TestPackedSetWithSampleIsUnpacked(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
-// A real compressed scene set (RAR 5 in four volumes, from WinRAR, see
-// internal/unrar/testdata) with an .nfo and a Sample clip is unpacked by the
-// built-in decoder, with no unrar or 7z on the system, and imported.
 func TestCompressedRAR5SceneSetIsImportedWithoutATool(t *testing.T) {
 	fakeDisk(t, 10<<30)
 	files := map[string][]byte{
@@ -217,8 +210,6 @@ func TestPackedDryRunWritesNothing(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
-// A compressed set the built-in decoder cannot read, with no system tool
-// either, fails with a plain reason and leaves the download alone.
 func TestCompressedPackNobodyCanReadGivesPlainReason(t *testing.T) {
 	fakeDisk(t, 10<<30)
 	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", []byte("packed"), 5000, false, false, true, false)})
@@ -272,9 +263,6 @@ func TestPackedNeedsFreeSpace(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
-// A compressed RAR 4 (2.9) archive from the rarfile project goes through
-// the import's unpack step with no unrar or 7z on the system: the built-in
-// decoder writes both files next to the download.
 func TestCompressedRAR4IsUnpackedWithoutATool(t *testing.T) {
 	fakeDisk(t, 10<<30)
 	b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rarfile", "rar3-solid.rar"))
