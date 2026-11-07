@@ -1,3 +1,4 @@
+<!-- Modal dialog that adapts to a centered box, bottom sheet, drawer or side panel. -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
@@ -31,8 +32,10 @@
 
 	const id = $props.id();
 	let closing = $state(false);
+	// Fallback timer so the dialog closes even if the exit animation never ends.
 	let shutTimer: ReturnType<typeof setTimeout> | undefined;
 
+	// Keeps the native dialog in step with `open`, including a reopen mid-close.
 	$effect(() => {
 		if (!dialog) return;
 		if (open && closing) {
@@ -46,6 +49,7 @@
 		}
 	});
 
+	// Plays the exit animation first, unless motion is reduced.
 	function shut() {
 		if (!dialog?.open) return;
 		if (reducedMotion()) return finish();
@@ -64,10 +68,12 @@
 		if (open) open = false;
 		onclose?.();
 	}
+	// Escape closes through `open` so the exit animation runs.
 	function cancel(e: Event) {
 		e.preventDefault();
 		open = false;
 	}
+	// A click on the dialog box itself means the backdrop was hit.
 	function backdrop(e: MouseEvent) {
 		if (e.target === dialog) open = false;
 	}
@@ -119,6 +125,7 @@
 	.ui-sheet[open]::backdrop { animation: fade-in var(--dur-fast) var(--ease-out) both; }
 	.ui-sheet.closing { animation: sheet-out var(--dur-fast) var(--ease-in) both; }
 	.ui-sheet.closing::backdrop { animation: fade-out var(--dur-fast) var(--ease-out) both; }
+	/* Phones turn most placements into bottom sheets with a grab handle. */
 	.at-top, .at-full { margin-top: min(12vh, 120px); }
 	@keyframes sheet-in { from { opacity: 0; transform: scale(.96); } }
 	@keyframes sheet-out { to { opacity: 0; transform: scale(.97); } }

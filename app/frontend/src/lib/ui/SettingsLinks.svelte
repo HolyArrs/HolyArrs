@@ -1,3 +1,4 @@
+<!-- Boxed list of links to related settings pages, with optional status chips. -->
 <script lang="ts">
 	import Icon from './Icon.svelte';
 	import { to } from '../core/paths.ts';
@@ -25,5 +26,6 @@
 	.copy { flex: 1; min-width: 0; }
 	.copy b { display: block; font: var(--t-headline); font-size: 15px; }
 	.note { display: block; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; overflow-wrap: anywhere; }
+	/* Chevron keeps its size and reads as secondary. */
 	a > :global(.icon) { flex: none; color: var(--text-muted); }
 </style>

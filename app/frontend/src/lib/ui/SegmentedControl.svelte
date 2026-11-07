@@ -1,3 +1,4 @@
+<!-- Radio group shown as a pill with a sliding thumb. -->
 <script lang="ts" generics="T extends string">
 	import Icon, { type IconName } from './Icon.svelte';
 
@@ -18,18 +19,20 @@
 		announce?: (label: string) => string;
 		onchange?: (v: T) => void;
 	} = $props();
-	let said = $state('');
 
-	const found = $derived(options.findIndex((o) => o.value === value));
-	const index = $derived(Math.max(0, found));
+	let said = $state('');
 	let buttons: HTMLButtonElement[] = $state([]);
 
+	// -1 means the value matches no option; the thumb hides then.
+	const found = $derived(options.findIndex((o) => o.value === value));
+	const index = $derived(Math.max(0, found));
 	function pick(v: T) {
 		if (v === value) return;
 		value = v;
 		onchange?.(v);
 		if (announce) said = announce(options.find((o) => o.value === v)?.label ?? '');
 	}
+	// Arrow keys wrap around; Home and End jump to the ends.
 	function key(e: KeyboardEvent, i: number) {
 		const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
 		const to = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : step ? (i + step + options.length) % options.length : -1;
@@ -62,6 +65,7 @@
 	.sm button { min-height: 28px; padding: 0 10px; font-size: 13px; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { button { min-height: 40px; } }
+	/* Larger invisible hit area for touch. */
 	@media (max-width: 767px) and (pointer: coarse) {
 		button { position: relative; }
 		button::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: var(--seg-hit, 44px); transform: translateY(-50%); }

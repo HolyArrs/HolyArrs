@@ -1,8 +1,10 @@
+<!-- Small colored square holding a settings icon. -->
 <script lang="ts">
 	import Icon, { type IconName } from './Icon.svelte';
 	import type { Tint } from '../core/settings.ts';
 
 	let { icon, tint = 'gray', size = 'md' }: { icon: IconName; tint?: Tint; size?: 'xs' | 'sm' | 'md' | 'lg' } = $props();
+	// Icon scales with the tile so the padding looks even.
 	const px = $derived(size === 'xs' ? 12 : size === 'sm' ? 14 : size === 'lg' ? 19 : 16);
 </script>
 
@@ -24,6 +26,7 @@
 	.tile.xs { width: 20px; height: 20px; border-radius: 5px; }
 	.tile.sm { width: 24px; height: 24px; border-radius: 6px; }
 	.tile.lg { width: 34px; height: 34px; border-radius: 9px; }
+	/* Tint colors set the tile base; the gradient lightens the top. */
 	.gray { --tile: #8e8e93; }
 	.graphite { --tile: #5f6168; }
 	.blue { --tile: #0a7aff; }

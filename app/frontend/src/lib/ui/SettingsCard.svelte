@@ -1,8 +1,11 @@
+<!-- Titled settings panel with optional collapsible Advanced section. -->
 <script lang="ts" module>
+	// Storage key prefix for the open state of each Advanced section.
 	const PREFIX = 'holyarrs.settings.advanced.';
 	export function advancedKey(person: string, card: string): string {
 		return `${PREFIX}${person || 'someone'}.${card}`;
 	}
+	// Storage can be blocked, so fail to closed.
 	function readOpen(key: string): boolean {
 		try {
 			return localStorage.getItem(key) === '1';
@@ -15,6 +18,7 @@
 			if (open) localStorage.setItem(key, '1');
 			else localStorage.removeItem(key);
 		} catch {
+			// Remembering the state is optional.
 		}
 	}
 </script>
@@ -46,8 +50,12 @@
 		footer?: Snippet;
 	} = $props();
 	const uid = $props.id();
-	const storeKey = $derived(advancedKey(session.s.name, advancedId ?? id ?? title));
+
 	let open = $state(false);
+
+	// Per person, so each user keeps their own choice.
+	const storeKey = $derived(advancedKey(session.s.name, advancedId ?? id ?? title));
+
 	$effect(() => {
 		open = readOpen(storeKey);
 	});
@@ -79,6 +87,7 @@
 	.ui-settings { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
 	.ui-settings:focus { outline: none; }
 	.ui-settings:focus-visible { box-shadow: var(--focus-ring); }
+	/* Red ring marks destructive cards. */
 	.danger { box-shadow: 0 0 0 1.5px var(--fail); }
 	.danger h2 { color: var(--fail-text); }
 	.danger .ic { background: rgb(215 0 21 / 10%); color: var(--fail-text); }

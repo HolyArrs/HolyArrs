@@ -1,3 +1,4 @@
+<!-- Sticky bar shown when a form has unsaved changes, with a guard before leaving. -->
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
 	import Button from './Button.svelte';
@@ -14,10 +15,12 @@
 
 	let asking = $state(false);
 	let target = $state<URL | null>(null);
+	// Plain flag so our own goto is not blocked by the guard below.
 	let leaving = false;
 
 	beforeNavigate((nav) => {
 		if (!dirty || leaving || saving) return;
+		// Closing the tab cannot be paused, so ask the browser to stop it.
 		if (nav.type === 'leave') {
 			nav.cancel();
 			return;
@@ -80,6 +83,7 @@
 	i { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.acts { display: flex; gap: 8px; margin-left: auto; }
 	@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+	/* Sit above the mobile tab bar. */
 	@media (max-width: 767px) {
 		.savebar { bottom: calc(var(--tabbar, 60px) + env(safe-area-inset-bottom, 0px) + 8px); }
 		.acts :global(.ui-btn) { min-height: 44px; }

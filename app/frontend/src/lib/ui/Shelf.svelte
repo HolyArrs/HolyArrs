@@ -1,3 +1,4 @@
+<!-- Titled horizontal row of cards with paging arrows and lazy mounting. -->
 <script lang="ts" generics="T = unknown">
 	import { untrack, type Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
@@ -46,22 +47,37 @@
 	} = $props();
 
 	const id = $props.id();
+
 	let near = $state(false);
-	setShelfNear(() => near);
 	let scroller = $state<HTMLElement>();
 	let atStart = $state(true);
 	let atEnd = $state(false);
+	// Deferred shelves start as a skeleton until near the viewport or idle.
 	let mounted = $state(untrack(() => !defer));
-	$effect(() => {
-		if (!defer) mounted = true;
-	});
+	// Cards render in growing chunks to keep the first paint light.
 	let limit = $state(ROW_FIRST);
-	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
-	const more = $derived(!!items && items.length > limit);
-
 	let probe = $state<HTMLElement>();
 	let per = $state(0);
 	let few = $state(false);
+
+	setShelfNear(() => near);
+
+	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
+	const more = $derived(!!items && items.length > limit);
+
+	$effect(() => {
+		if (!defer) mounted = true;
+	});
+	$effect(() => {
+		if (!scroller) return;
+		void shown.length;
+		measure();
+		const ro = new ResizeObserver(measure);
+		ro.observe(scroller);
+		return () => ro.disconnect();
+	});
+
+	// For whole-page shelves: count how many cards fit so pages align to card edges.
 	function fit() {
 		if (!whole || !scroller || !probe) return;
 		const gap = parseFloat(getComputedStyle(scroller).columnGap) || 0;
@@ -76,6 +92,7 @@
 		atEnd = !more && scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
 		if (items) limit = nextLimit(limit, items.length, scroller);
 	}
+	// Mounts the row when it nears the screen, or when the browser is idle.
 	function soon(node: Element) {
 		if (mounted) return {};
 		if (typeof IntersectionObserver === 'undefined' || mountNow(node.getBoundingClientRect().top, innerHeight)) {
@@ -92,14 +109,7 @@
 		const stop = whenIdle(go);
 		return { destroy: () => { io.disconnect(); stop(); } };
 	}
-	$effect(() => {
-		if (!scroller) return;
-		void shown.length;
-		measure();
-		const ro = new ResizeObserver(measure);
-		ro.observe(scroller);
-		return () => ro.disconnect();
-	});
+	// Whole shelves page by exact rows; others scroll a bit less than a screen.
 	function page(dir: 1 | -1) {
 		if (!scroller) return;
 		const step = whole ? scroller.clientWidth + (parseFloat(getComputedStyle(scroller).columnGap) || 0) : scroller.clientWidth * 0.9;
@@ -133,6 +143,7 @@
 
 <style>
 	.ui-shelf { min-width: 0; }
+	/* Hide the shelf when every card has removed itself. */
 	.ui-shelf:has(.row > :global(.gone)):not(:has(.row > :global(:not(.gone)))) { display: none; }
 	header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	header.bare { align-items: center; }
@@ -153,6 +164,7 @@
 		margin-inline: calc(var(--gutter) * -1); padding: 6px var(--gutter) 14px; scrollbar-width: none; border-radius: var(--r-card);
 	}
 	.row::-webkit-scrollbar { display: none; }
+	/* Skeleton sized like real cards so the page does not jump. */
 	.sk { --w: var(--item); --art: calc(var(--w) * 1.5); --text-h: 52.5px; height: calc(var(--art) + var(--text-h)); margin: 6px 0 14px; overflow: hidden;
 		background: repeating-linear-gradient(90deg, var(--surface-2) 0 var(--w), transparent var(--w) calc(var(--w) + var(--shelf-gap))) 0 0 / 100% var(--art) no-repeat; }
 	.sk.one { --text-h: 35px; }
