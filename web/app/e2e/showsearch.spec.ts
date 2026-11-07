@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openFromSearch, openSeasonNamed, episodeAction, episodeState } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openFromSearch, openSeasonNamed, episodeAction, episodeState, inLibrary } from './helpers.ts';
 
 // Searching shows (3.2.2 to 3.2.5) against the fake Torznab Source in
 // fakes.mjs: a show search answers per episode (a 1080p and a 720p web
@@ -29,7 +29,7 @@ const verdict = (row: Locator) => row.locator('.rs-verdict');
 
 async function openShow(p: Page, name: string) {
 	await p.goto('/library');
-	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: name }).click();
+	await (await inLibrary(p, name)).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText(name);
 }
 

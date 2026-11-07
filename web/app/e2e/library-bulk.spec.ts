@@ -2,7 +2,7 @@ import { expect, test, type APIResponse, type Locator, type Page } from '@playwr
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn, inLibrary } from './helpers.ts';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
@@ -105,9 +105,9 @@ async function giveFile(call: Call, item: Record<string, unknown>): Promise<stri
 
 /** selectTitles opens the whole Library newest first, turns on Select and ticks each title; it returns the select bar. */
 async function selectTitles(page: Page, titles: Picked[]): Promise<Locator> {
-	await page.goto('/library?sort=added');
+	await page.goto('/library?kind=movie&sort=added');
 	await page.getByTestId('library-select').click();
-	for (const t of titles) await page.locator(`[data-testid="library-pick"][aria-label="Select ${t.name}"]`).click();
+	for (const t of titles) await (await inLibrary(page, '', `[data-testid="library-pick"][aria-label="Select ${t.name}"]`)).click();
 	const bar = page.getByTestId('select-bar');
 	await expect(bar).toContainText(`${titles.length} selected`);
 	return bar;

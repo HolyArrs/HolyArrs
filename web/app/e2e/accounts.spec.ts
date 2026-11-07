@@ -97,8 +97,10 @@ test('a member sees Home, the Library, Search, Requests and My account only', as
 	await ana.getByRole('button', { name: 'Account and appearance' }).click();
 	await expect(ana.getByRole('menuitem', { name: 'Account', exact: true })).toBeVisible();
 	await ana.keyboard.press('Escape');
-	// Manager pages send a member to their own Home.
-	for (const p of ['/settings', '/settings/backups', '/downloads/history', '/']) {
+	// Manager pages send a member to their own Home; a Settings page they may not open says so in place.
+	await ana.goto('/settings/backups');
+	await expect(ana.locator('#settings-blocked')).toContainText("You can't change this");
+	for (const p of ['/settings', '/downloads/history', '/']) {
 		await ana.goto(p);
 		await expect(ana).toHaveURL(/\/$/);
 	}
