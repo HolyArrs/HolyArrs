@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // NAS system folders hold thumbnails, deleted files and snapshots. The

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // qBittorrent signs in with an API key or with a user name and password;

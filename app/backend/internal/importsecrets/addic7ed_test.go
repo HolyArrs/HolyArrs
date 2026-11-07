@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
 // The addic7ed entry makes an Addic7ed site with the account in the vault;

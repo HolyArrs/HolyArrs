@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/explore"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/supervisor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // passPool is a stored pool: Trending (the hero's source) and two more

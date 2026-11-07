@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/importer"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/naming"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // organiseRoutes are the Organise routes (stage 5.1): naming and rename,

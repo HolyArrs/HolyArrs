@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Sign-ins (good and bad), sign-outs and API keys made or deleted land in

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 func raw(t *testing.T, p Patch) json.RawMessage {

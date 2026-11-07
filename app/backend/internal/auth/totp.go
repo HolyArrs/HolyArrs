@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/qr"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/qr"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Two-factor sign-in: time-based six-digit codes (RFC 6238, SHA-1, 30 s)

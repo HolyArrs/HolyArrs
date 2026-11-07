@@ -24,12 +24,12 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/jobs"
-	"github.com/CoderLuii/holyarrs/internal/judge"
-	"github.com/CoderLuii/holyarrs/internal/naming"
-	"github.com/CoderLuii/holyarrs/internal/parse"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindImport is the Job kind that imports one finished Download.

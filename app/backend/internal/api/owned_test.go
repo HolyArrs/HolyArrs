@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // route: GET /api/v1/titles/owned

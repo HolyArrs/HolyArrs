@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Log, cue, playlist, cover and text files are not counted as tracks.

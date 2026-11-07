@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/CoderLuii/holyarrs/internal/backup"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const restoreUsage = "usage:\n" +

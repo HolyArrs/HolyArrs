@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/importsecrets"
-	"github.com/CoderLuii/holyarrs/internal/migrate"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 )
 
 // readTimeout bounds one whole read of an old app.

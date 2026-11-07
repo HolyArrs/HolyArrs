@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // newFamily is a session's public id: random, never the cookie or its hash.

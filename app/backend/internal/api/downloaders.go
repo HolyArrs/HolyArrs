@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/CoderLuii/holyarrs/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,12 +12,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
-	"github.com/CoderLuii/holyarrs/internal/source"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (a *API) downloaderRoutes(m *http.ServeMux) {

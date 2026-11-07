@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/health"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/source"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/supervisor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // statusItem is one thing in Settings that needs attention. Group is one of

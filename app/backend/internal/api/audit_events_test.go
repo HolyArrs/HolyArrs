@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // Audit Events are left out of History, its count and its kind filters for

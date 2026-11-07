@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites/fakesite"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
 // subtitleMovie adds a movie with one File on disk; it returns the title,

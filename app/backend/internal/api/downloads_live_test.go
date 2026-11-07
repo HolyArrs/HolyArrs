@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/dlsync"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/live"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
 )
 
 // dlStreams opens /live streams on the API's hub as a manager (uid 0) or

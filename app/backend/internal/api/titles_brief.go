@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // titleBrief is one entry of GET /api/v1/titles?brief=1: only what Downloads,

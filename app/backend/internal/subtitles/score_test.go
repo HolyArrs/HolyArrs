@@ -3,7 +3,7 @@ package subtitles
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
 // The scoring test set of design/domain/subtitles.md, section 9.

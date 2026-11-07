@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // SyncView is one client as the background reader (package dlsync) last

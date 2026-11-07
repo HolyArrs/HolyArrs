@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
-	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // The row template engine (music_lists_v1, plan 2026-10-24-music-row-

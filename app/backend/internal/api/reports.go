@@ -6,12 +6,12 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/CoderLuii/holyarrs/internal/asks"
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/ratings"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Reports (#95): anyone signed in reports a problem with a title in the

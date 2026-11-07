@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // Roadmap #59: a 4K ask is its own ask, approved apart from the plain one,

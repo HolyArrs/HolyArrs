@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // toServer sends every request to srv, whatever host it names.

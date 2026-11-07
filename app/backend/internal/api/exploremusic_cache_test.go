@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestMusicAnswerCache(t *testing.T) {

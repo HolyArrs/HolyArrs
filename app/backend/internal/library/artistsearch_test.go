@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // slowSearch is MusicBrainz whose name search answers after d.

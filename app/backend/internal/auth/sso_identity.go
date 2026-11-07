@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var errIdentityLinked = errors.New("this identity is already linked to another account")

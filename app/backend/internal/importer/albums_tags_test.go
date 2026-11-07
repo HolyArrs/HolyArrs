@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/naming"
-	"github.com/CoderLuii/holyarrs/internal/tags"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
 // 4.15.1: tags settle only what a name leaves open; a name that settles a

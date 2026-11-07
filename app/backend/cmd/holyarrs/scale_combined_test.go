@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const combinedPinnedFeed = `<?xml version="1.0"?><rss version="2.0"><channel>

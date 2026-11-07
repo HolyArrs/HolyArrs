@@ -3,13 +3,13 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 func animeTMDB(t *testing.T) metadata.Provider {

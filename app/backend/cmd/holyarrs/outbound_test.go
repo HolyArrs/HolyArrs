@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // outsideHosts are the sources only the metadata server may call: an

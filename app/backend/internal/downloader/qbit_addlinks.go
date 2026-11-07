@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // addFetchMax caps a .torrent file HolyArrs fetches for a hand-made add.

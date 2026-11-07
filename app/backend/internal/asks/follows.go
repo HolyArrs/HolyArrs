@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/alerts"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ErrNotFollowable says the title is not a movie, a show or an artist in

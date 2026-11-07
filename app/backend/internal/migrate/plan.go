@@ -15,8 +15,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 )
 
 // A Plan says what a move would bring over from one or more Snapshots:

@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/ratings"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // TitleExtras is the optional extra artwork (the metadata server's stored

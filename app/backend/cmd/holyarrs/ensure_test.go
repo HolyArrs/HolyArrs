@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // A movie folder that is not a full path (Git Bash's "C:/Program Files/Git/..."

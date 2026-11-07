@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // TestMoveCancelledThenStoppedStaysStopped: a person cancels a move, and

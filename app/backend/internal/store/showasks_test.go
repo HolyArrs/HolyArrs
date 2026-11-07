@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // TestShowAsksMigrationKeepsAsks writes movie asks, the people who asked

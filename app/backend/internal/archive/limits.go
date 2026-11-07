@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/CoderLuii/holyarrs/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
 	"github.com/bodgit/sevenzip"
 	"github.com/stangelandcl/ppmd"
 	"github.com/ulikunitz/xz/lzma"

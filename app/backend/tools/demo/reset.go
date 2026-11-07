@@ -12,9 +12,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // reset removes what seed added, through the app's own delete paths: the

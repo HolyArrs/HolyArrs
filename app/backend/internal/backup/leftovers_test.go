@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func put(t *testing.T, p, body string) {

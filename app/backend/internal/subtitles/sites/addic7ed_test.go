@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites/fakesite"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
 func a7Fake() *fakesite.Addic7ed {

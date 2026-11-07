@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 )
 
 func (a *API) followRoutes(m *http.ServeMux) {

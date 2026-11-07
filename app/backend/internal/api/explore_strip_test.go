@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 )
 
 // route: GET /api/v1/explore/strip

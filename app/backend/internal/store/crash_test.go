@@ -17,8 +17,8 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/backup"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The crash-loop test is the closest local stand-in for pulling the power:

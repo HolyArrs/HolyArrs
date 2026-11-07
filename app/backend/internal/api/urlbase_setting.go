@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // The URL base saved from Settings; HOLYARRS_URL_BASE or -url-base win

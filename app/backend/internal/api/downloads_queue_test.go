@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // route: POST /api/v1/downloaders/{id}/items/{hash}/up

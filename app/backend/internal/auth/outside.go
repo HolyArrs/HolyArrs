@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"crypto/subtle"
 	"database/sql"
@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Sign-in through an outside account: Plex (a PIN that the person confirms

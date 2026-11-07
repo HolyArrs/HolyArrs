@@ -2,18 +2,18 @@ package api
 
 import (
 	"context"
-	"github.com/CoderLuii/holyarrs/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/supervisor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // musicOffControl is a parts Control with Music turned off.

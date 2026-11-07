@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // MaxSnapshot is the largest Snapshot kept (its JSON, in bytes).

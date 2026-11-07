@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 )
 
 // newMusicAskRig is the ask rig with a music Library folder and the fake

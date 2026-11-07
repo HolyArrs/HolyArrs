@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/CoderLuii/holyarrs/internal/api"
-	"github.com/CoderLuii/holyarrs/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // startTrailers feeds the trailers health check from HolyArrs's own

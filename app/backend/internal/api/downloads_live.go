@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/dlsync"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Push updates for the Downloads page (setting downloads.sync = on): the

@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // TestArtistImagesSource: the direct artist profile source is off by

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Connect Jackett or Prowlarr (#96), through the API, against fakes on this machine.

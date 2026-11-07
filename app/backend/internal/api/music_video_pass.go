@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Artists' music videos on the trailer pass's schedule (#191): the artist

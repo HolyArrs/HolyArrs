@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The torrent log: what happened to a torrent, for the panel's Log tab.

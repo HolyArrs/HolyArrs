@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // titleFacts holds every Title's size, last activity and Versions, read in

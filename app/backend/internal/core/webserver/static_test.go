@@ -1,7 +1,7 @@
-package web
+package webserver
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"

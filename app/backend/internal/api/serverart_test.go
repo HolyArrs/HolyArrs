@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // route: GET /api/v1/artwork/img/{kind}/{id}/{file}

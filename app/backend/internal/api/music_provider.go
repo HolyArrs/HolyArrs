@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // MusicProvider is what the shared handlers (live search, New & Popular)

@@ -3,7 +3,7 @@ package library
 import (
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // Release gate choices for a movie.

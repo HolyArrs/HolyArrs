@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // ArtistVideoItem is one of an artist's official music videos in the

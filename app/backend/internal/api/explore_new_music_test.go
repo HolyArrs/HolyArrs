@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 var musicNewNow = time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)

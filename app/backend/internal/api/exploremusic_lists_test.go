@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeShelves answers every region with the same blocks: 30 items each,

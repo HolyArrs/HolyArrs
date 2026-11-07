@@ -1,6 +1,6 @@
 package api
 
-import "github.com/CoderLuii/holyarrs/internal/library"
+import "github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
 // calendarTitles reads the titles filter of the calendar: all (the
 // default), movies, shows or music.

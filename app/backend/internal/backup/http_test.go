@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // route: POST /api/v1/backups

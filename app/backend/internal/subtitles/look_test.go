@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 )
 
 // New default languages list what every File misses without asking any

@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/applog"
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/health"
-	"github.com/CoderLuii/holyarrs/internal/importer"
-	"github.com/CoderLuii/holyarrs/internal/runas"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // maxLogDownload caps the log download (the newest whole lines).

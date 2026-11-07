@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 func writeFile(t *testing.T, p, body string) {

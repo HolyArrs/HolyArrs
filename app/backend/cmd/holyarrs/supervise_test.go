@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/jobs"
-	"github.com/CoderLuii/holyarrs/internal/supervisor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // startApp runs the whole app in a temp config folder and returns its

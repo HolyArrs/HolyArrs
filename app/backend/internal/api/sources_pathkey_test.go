@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // A feed with its passkey in the path (TorrentLeech style) is shown masked,

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"time"
 	"database/sql"
 	"context"

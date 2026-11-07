@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
 // TestLiveSubs does one real search per no-account site. Run by hand only.

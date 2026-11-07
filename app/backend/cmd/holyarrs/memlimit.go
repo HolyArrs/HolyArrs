@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/CoderLuii/holyarrs/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
 )
 
 // defaultMemoryTarget is the Go memory target when GOMEMLIMIT is not set,

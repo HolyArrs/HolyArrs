@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/explore"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // exploreRowView is one row of the head or tail, with the Library joined.

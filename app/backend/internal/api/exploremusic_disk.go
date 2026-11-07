@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Explore → Music on disk (music_rows_v7): layer 1 (artist data, listeners,

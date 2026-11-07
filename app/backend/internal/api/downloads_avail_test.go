@@ -3,8 +3,8 @@ package api
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // A downloading torrent carries the swarm's full copies; a finished one or

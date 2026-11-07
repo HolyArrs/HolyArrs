@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // fakeClient is a qBittorrent that records every action it is sent.

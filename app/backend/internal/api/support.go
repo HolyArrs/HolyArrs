@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/applog"
-	"github.com/CoderLuii/holyarrs/internal/doctor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 )
 
 // Extra masks for the support bundle, on top of the log's own masking:

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func addMovieCopy(t *testing.T, s *Store, name, codec, inspection string, protected bool) (domain.Title, domain.Version, domain.File, domain.Slot) {

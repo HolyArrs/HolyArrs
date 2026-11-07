@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"net/http"
@@ -9,7 +9,7 @@ import (
 	"time"
 	_ "time/tzdata" // viewers' time zones, on hosts without a zone database
 
-	"github.com/CoderLuii/holyarrs/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 )
 
 // exploreMoment is the viewer's local time: the tz query value or the

@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/jobs"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/music"
-	"github.com/CoderLuii/holyarrs/internal/outside"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // slowArtists holds Artist and Pressings until release closes, counting

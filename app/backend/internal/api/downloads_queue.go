@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Usenet queue order and priority for one client item. Top stays on the

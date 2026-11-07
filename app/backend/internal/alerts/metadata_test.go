@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // 5.1.7 minor 6: with the local network allowed, link-local and cloud

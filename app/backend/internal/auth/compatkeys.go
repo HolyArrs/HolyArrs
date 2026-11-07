@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The old-app API (decision 0008): /sonarr/ and /radarr/ answer apps such

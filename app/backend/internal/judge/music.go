@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // hintsFor reads stored names as music when the Pick rules judge music.

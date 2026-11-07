@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
 // risingGenres is how many of the member's top G genres Rising reads.

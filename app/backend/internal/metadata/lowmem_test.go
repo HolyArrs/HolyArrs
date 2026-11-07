@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
 )
 
 // Low-memory mode keeps at most 150 TMDB answers in memory (the Disk copy

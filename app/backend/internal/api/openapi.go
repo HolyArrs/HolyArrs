@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // openapiJSON describes every /api/v1 route. It is generated from the code

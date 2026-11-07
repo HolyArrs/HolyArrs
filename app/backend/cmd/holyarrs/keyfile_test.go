@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // The key messages point at the docs for moving to a new machine, and an

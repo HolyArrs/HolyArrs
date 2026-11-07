@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 var (

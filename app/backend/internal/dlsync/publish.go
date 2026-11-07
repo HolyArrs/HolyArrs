@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Push updates (topic "dl" on /live). Each client's store rev is its

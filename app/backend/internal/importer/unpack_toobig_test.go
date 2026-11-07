@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/archive"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
 )
 
 // An unpack stopped by its size limit says which limit stopped it: the

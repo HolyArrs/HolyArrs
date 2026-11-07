@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Cache audit 2026-10-23, finding 7: a genre tile without a content version

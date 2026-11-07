@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // A done Import tells OnImported once; a dry run, a rejected Import and a

@@ -3,16 +3,16 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/CoderLuii/holyarrs/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // route: GET /api/v1/music/artists/{mbid}

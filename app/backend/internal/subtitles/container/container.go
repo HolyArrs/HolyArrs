@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/mediainfo"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 )
 
 // Track is one subtitle track inside a video.

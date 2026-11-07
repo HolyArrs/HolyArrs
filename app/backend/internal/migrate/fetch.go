@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Limits bound one read.

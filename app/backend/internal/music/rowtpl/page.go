@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
 // Row is one filled page row.

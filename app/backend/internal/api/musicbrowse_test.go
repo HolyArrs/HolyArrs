@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
 // tplRig is a music_lists_v1 rig whose metadata server answers the catalog

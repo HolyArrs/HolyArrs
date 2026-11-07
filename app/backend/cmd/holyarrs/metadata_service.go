@@ -12,11 +12,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
-	"github.com/CoderLuii/holyarrs/internal/source"
-	"github.com/CoderLuii/holyarrs/web"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // installationSetting is where the install's own metadata server credential
@@ -75,7 +75,7 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 	stand := strings.TrimRight(os.Getenv("HOLYARRS_TMDB_URL"), "/")
 	if stand != "" {
 		h.Images = stand + "/images"
-		web.ImageHosts += " " + stand
+		webserver.ImageHosts += " " + stand
 	}
 	switch key, file := strings.TrimSpace(os.Getenv(metadata.EnvTMDBKey)), os.Getenv(metadata.EnvTokenFile); {
 	case key != "":

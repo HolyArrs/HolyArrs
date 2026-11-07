@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // When the built-in reader cannot unpack a download (#54, no 7z in the

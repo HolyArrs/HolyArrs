@@ -4,7 +4,7 @@
 package auth
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -26,10 +26,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/web"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Names on the wire.
@@ -376,7 +376,7 @@ func public(r *http.Request) bool {
 		return true
 	}
 	// The web app's own files hold no data; the sign-in page needs them.
-	return (r.Method == http.MethodGet || r.Method == http.MethodHead) && web.IsAsset(r.URL.Path)
+	return (r.Method == http.MethodGet || r.Method == http.MethodHead) && webserver.IsAsset(r.URL.Path)
 }
 
 func unsafeMethod(m string) bool {
@@ -553,7 +553,7 @@ func (a *Auth) owner(ctx context.Context) (int64, string, bool) {
 
 // Routes adds the sign-in routes and the sign-in page.
 func (a *Auth) Routes(m *http.ServeMux) {
-	m.HandleFunc("GET /login", web.Page)
+	m.HandleFunc("GET /login", webserver.Page)
 	m.HandleFunc("GET /api/v1/auth/state", a.state)
 	m.HandleFunc("POST /api/v1/auth/setup", a.setup)
 	m.HandleFunc("POST /api/v1/auth/login", a.login)

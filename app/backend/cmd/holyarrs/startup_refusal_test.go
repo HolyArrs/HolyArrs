@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const secretDir = "/srv/private-config-dir"

@@ -3,13 +3,13 @@
 package api
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/CoderLuii/holyarrs/internal/dlsync"
-	"github.com/CoderLuii/holyarrs/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"log"
 	"net/http"
 	"net/url"
@@ -19,30 +19,30 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/alerts"
-	"github.com/CoderLuii/holyarrs/internal/applog"
-	"github.com/CoderLuii/holyarrs/internal/asks"
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/bridge"
-	"github.com/CoderLuii/holyarrs/internal/backup"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/health"
-	"github.com/CoderLuii/holyarrs/internal/jobs"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/lists"
-	"github.com/CoderLuii/holyarrs/internal/live"
-	"github.com/CoderLuii/holyarrs/internal/mediaserver"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/migrate"
-	"github.com/CoderLuii/holyarrs/internal/musicsync"
-	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
-	"github.com/CoderLuii/holyarrs/internal/source"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/subtitles"
-	"github.com/CoderLuii/holyarrs/internal/supervisor"
-	"github.com/CoderLuii/holyarrs/web"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Server is what the API needs.
@@ -493,7 +493,7 @@ func (a *API) Handler() http.Handler {
 		a.mcpRoutes(m)
 	}
 	a.oldAppRoutes(m)
-	m.Handle("GET /", web.Handler())
+	m.Handle("GET /", webserver.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
 	}
@@ -518,7 +518,7 @@ func secure(h http.Handler) http.Handler {
 		// Pages an outside site opens lose their handle on HolyArrs; popups
 		// HolyArrs opens itself (Plex sign-in) keep theirs.
 		hd.Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
-		hd.Set("Content-Security-Policy", web.CSP(nil))
+		hd.Set("Content-Security-Policy", webserver.CSP(nil))
 		h.ServeHTTP(w, r)
 	})
 }

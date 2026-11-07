@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // queryer is what the event page reads with (*sql.DB fits; tests count calls).

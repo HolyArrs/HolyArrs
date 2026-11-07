@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // risingCache keeps the day's rising artists row for an hour, as the

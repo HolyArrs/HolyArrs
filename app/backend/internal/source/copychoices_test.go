@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/judge"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func protectSlotCopy(t *testing.T, f fixture, slotID, versionID int64) int64 {

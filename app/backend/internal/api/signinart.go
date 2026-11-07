@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/web"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // The sign-in page's art: one wide picture at a time behind the card. The
@@ -166,7 +166,7 @@ func (a *API) signinArtRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/public/signin-art", a.signinArt)
 	// A literal pattern (= signinPicPath + "{size}/{file}"): the route tests read it from the source.
 	m.HandleFunc("GET /api/v1/public/signin-pic/t/p/{size}/{file}", a.signinPic)
-	web.SetLoginSeed(func(r *http.Request) []byte { return a.signinSeedJSON(r.Context()) })
+	webserver.SetLoginSeed(func(r *http.Request) []byte { return a.signinSeedJSON(r.Context()) })
 	// Warm the cache in the background so the first visitor sees art.
 	go func() {
 		for _, wait := range []time.Duration{3 * time.Second, 30 * time.Second, 2 * time.Minute} {

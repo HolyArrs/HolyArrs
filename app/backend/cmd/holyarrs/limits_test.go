@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 )
 
 func TestLargeBodyGets413(t *testing.T) {

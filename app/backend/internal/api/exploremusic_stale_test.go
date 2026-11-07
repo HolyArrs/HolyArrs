@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
 // A Library change marks the plan stale; the next visit is answered at once

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // IsLocal is LocalAddress; tests swap it.

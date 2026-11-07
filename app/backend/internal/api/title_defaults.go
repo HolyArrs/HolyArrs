@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // decodeKeys is decode that also answers which top-level keys the body

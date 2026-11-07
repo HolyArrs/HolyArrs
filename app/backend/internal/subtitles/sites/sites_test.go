@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites/fakesite"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
 func recorded(t *testing.T, routes map[string]string) *httptest.Server {

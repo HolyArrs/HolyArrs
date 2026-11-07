@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/lists"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // ListView is an Outside list as the API shows it.

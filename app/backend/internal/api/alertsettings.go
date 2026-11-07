@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 )
 
 // getAlertSettings answers the Alert settings that are not one Alert's own

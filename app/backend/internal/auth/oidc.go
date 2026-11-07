@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )

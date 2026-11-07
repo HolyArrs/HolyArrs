@@ -16,8 +16,8 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/backup"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // mainWith is this build's main migrations plus extra ones (name: SQL).

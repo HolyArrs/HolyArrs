@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Cache audit 2026-10-23, finding 4: the metadata server's grey stand-in is

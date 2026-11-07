@@ -12,9 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
 // Explore → Music, flag music_rows_v2 (plan 2026-10-22, Phase 1): eight

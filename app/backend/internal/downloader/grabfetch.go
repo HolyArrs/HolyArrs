@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // errLinkLocal is a Release link that leads to this machine or the local

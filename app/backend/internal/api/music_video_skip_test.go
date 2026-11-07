@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 func TestWithoutVideosSkipsPlayed(t *testing.T) {

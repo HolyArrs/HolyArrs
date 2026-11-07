@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/fsplain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
 
 	_ "modernc.org/sqlite" // pure Go SQLite driver
 )

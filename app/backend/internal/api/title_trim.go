@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // trimForViewer leaves out what only people who manage the Library need:

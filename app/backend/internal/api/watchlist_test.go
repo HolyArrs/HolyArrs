@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 )
 
 // route: GET /api/v1/my/plex-watchlist

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // The words and formats the manuals give for the old apps' answers.

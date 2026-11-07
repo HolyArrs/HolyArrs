@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // The Downloader client with the local network allowed still refuses every

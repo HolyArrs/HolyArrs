@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/importsecrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
 )
 
 // Plain http carries the owner key and the whole file, so it goes only to

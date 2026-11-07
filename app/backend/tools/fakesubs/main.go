@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites/fakesite"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
 func main() {

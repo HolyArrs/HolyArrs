@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // route: GET /api/v1/media-servers

@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // Music pictures come only from our metadata server (Luis, 2026-10-24):

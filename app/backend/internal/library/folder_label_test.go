@@ -3,7 +3,7 @@ package library
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestFreeLabel(t *testing.T) {

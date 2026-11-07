@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // SABnzbd's reads: the whole queue every poll (it changes all the time),

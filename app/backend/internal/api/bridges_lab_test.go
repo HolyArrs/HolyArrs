@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/bridge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 )
 
 // Connect Jackett or Prowlarr (#96) against the lab's own Jackett and

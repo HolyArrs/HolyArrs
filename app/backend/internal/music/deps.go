@@ -5,7 +5,7 @@ package music
 import (
 	"context"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Deps are the metadata server calls and flags the Music module reads. A

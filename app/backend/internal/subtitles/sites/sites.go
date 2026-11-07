@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/outside"
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Query is what a search asks a site for.

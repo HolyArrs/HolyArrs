@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/live"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // An ask's Event names who asked, who decided and the decline note, so on

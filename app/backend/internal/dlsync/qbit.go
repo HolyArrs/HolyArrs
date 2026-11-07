@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 type cursorKey struct {

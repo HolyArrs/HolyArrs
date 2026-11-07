@@ -3,7 +3,7 @@ package api
 import (
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
 // UseYouTube points the trailer reader at base, a stand-in YouTube for the

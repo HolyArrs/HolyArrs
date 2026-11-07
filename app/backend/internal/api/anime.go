@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/ratings"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // animeView is a title page's anime answer: whether the title is anime,

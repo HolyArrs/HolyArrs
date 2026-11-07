@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // A site's bot check (#106): Cloudflare or DDoS-Guard in front of a Source

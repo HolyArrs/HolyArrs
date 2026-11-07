@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // maxAliases caps the other names kept on one Title.

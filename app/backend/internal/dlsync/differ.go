@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Changes is what moved between two reads of one client.

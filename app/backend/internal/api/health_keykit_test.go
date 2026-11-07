@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 )
 
 // Only the owner can download the key kit, so only the owner is told to;

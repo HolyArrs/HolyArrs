@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // With episode import off a show's download is left alone: the movie

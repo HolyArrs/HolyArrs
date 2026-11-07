@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 )
 
 // fakeRadarr answers the few Radarr calls the read makes (written from the

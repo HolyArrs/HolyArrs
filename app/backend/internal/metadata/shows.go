@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/lowmem"
-	"github.com/CoderLuii/holyarrs/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Errors from show lookups.

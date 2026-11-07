@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 func TestOutsideBreakerSuppressesOneSourceAndLeavesAnotherRunning(t *testing.T) {

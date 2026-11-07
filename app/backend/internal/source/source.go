@@ -22,7 +22,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/CoderLuii/holyarrs/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Error kinds match the Source pause reasons in model.md section 2.9.

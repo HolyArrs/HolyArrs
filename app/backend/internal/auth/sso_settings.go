@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // Single sign-on (OpenID Connect) set up from Settings, and unlinking

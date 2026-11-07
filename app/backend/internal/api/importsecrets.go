@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/importsecrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
 )
 
 // importSecretsRoutes: the owner's secrets file, sent by `holyarrs

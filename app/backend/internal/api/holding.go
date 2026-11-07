@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // holdingRoutes list the deleted files still in the holding folders and

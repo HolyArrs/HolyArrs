@@ -17,14 +17,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/importer"
-	"github.com/CoderLuii/holyarrs/internal/jobs"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/naming"
-	"github.com/CoderLuii/holyarrs/internal/parse"
-	"github.com/CoderLuii/holyarrs/internal/ratings"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Job kinds for an existing library.

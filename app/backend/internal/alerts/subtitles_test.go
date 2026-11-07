@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestSubtitleMoments(t *testing.T) {

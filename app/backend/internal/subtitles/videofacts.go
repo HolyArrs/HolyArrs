@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/container"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/container"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
 // videoStamp is what the last look saw of a video: its size, modified time

@@ -14,11 +14,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/container"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/subtext"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/container"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // Event kinds for subtitle moments.

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 // An unchanged file with facts from before the full header reader is read

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // errTorrent is a .torrent that does not decode.

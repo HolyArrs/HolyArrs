@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 )
 
 // A stand-in YouTube is http or https; plain http only on this machine.

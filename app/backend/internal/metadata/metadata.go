@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // ErrNotFound is returned when no movie has the id.

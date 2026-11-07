@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 // manualImportRoutes are Import files by hand (roadmap #33): scan a folder

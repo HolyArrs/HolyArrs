@@ -1,16 +1,16 @@
 package api
 
 import (
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/subtitles"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/subtext"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // subtitleRoutes are the subtitle routes (stage 4.16).

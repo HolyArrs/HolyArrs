@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // itemRemovedEvent writes the download_removed Event for an item taken out

@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/CoderLuii/holyarrs/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 const trendGroup = "21159e3f-172e-43f6-aa7d-8e06a81fea49"

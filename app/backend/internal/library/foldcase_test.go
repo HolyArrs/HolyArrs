@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // 5.2 review: folder names are compared case-insensitively only where the

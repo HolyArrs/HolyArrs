@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // route: POST /api/v1/auth/setup/plex/start

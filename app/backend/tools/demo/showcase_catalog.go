@@ -1,6 +1,6 @@
 package main
 
-import "github.com/CoderLuii/holyarrs/internal/parse"
+import "github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 
 // The showcase catalog: real, well-known titles by their TMDB and
 // MusicBrainz ids (so art loads), each with the Library state it shows.

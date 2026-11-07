@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/runas"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // status answers the server test. Seerr reads urlBase (and uses it as the

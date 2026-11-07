@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/CoderLuii/holyarrs/internal/fsplain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
 )
 
 // Start applies FILE__, UMASK and PUID/PGID. Started as root it fixes the

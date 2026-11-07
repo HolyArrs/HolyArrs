@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/CoderLuii/holyarrs/internal/updatelist"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
 )
 
 // Update list settings in the this_app group.

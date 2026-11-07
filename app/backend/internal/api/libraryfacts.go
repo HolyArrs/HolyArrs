@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // titleSize sums the size of every file kept for a title, across all its

@@ -1,12 +1,11 @@
-// Package web holds the built web app (web/app, built into web/dist) and
-// serves it: real files as they are, every other page address as index.html
-// so app links work on reload.
-package web
+// Package webserver serves the built web app (app/frontend, built into
+// app/frontend/dist): real files as they are, every other page address as
+// index.html so app links work on reload.
+package webserver
 
 import (
 	"bytes"
 	"crypto/sha256"
-	"embed"
 	"encoding/base64"
 	"io/fs"
 	"mime"
@@ -17,15 +16,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/compress"
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/compress"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/frontend"
 )
 
-//go:embed all:dist
-var files embed.FS
-
 // Files is the built app, rooted at its folder.
-var Files, _ = fs.Sub(files, "dist")
+var Files = frontend.Files
 
 // IsAsset reports whether p names a static file of the app that anyone may
 // load before signing in (scripts, styles, fonts, the logo).

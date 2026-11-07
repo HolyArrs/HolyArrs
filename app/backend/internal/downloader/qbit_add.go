@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // TorrentUpload is one .torrent file a person dropped on the Add sheet.

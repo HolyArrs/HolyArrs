@@ -8,8 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/updatelist"
-	"github.com/CoderLuii/holyarrs/internal/updatelist/signtest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist/signtest"
 )
 
 // listServer serves a signed update list at /manifest.json.

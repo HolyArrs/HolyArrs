@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // options are the flags every command shares, plus seed's own.

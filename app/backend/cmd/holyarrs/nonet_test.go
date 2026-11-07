@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"os"
 	"testing"
 )

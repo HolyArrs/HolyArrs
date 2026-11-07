@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // FreshCeiling is the longest a read counts as fresh, whatever the cadence.

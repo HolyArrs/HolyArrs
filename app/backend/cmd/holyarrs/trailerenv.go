@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 )
 
 // Stand-ins for the trailer reader, for the browser tests. Unset, nothing

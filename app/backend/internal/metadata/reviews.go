@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Review is one written review or comment on a title, as plain text.

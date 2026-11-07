@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // TestMain fails a full run of this package when a route it registers was

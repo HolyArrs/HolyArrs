@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/adaptertest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/adaptertest"
 )
 
 func TestMetadataAdapterConformance(t *testing.T) {

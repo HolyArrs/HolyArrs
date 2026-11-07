@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // syncMovieCollectionTx records confirmed TMDB movie-series membership. Search

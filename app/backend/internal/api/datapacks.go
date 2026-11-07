@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/datapack"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 )
 
 // dataPackRoutes is wired into Handler by the shared route-registration patch.

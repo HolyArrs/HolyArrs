@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 )
 
 // downSource fails while down is set, and always for Ref "gone" (a

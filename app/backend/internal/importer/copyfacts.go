@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/mediainfo"
-	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // EditionFileName emits Plex's documented edition tag. Other server mappings

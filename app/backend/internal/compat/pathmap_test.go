@@ -3,7 +3,7 @@ package compat
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // #50: the queue's outputPath (read by Unpackerr) maps a Windows

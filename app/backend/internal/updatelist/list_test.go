@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/updatelist"
-	"github.com/CoderLuii/holyarrs/internal/updatelist/signtest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist/signtest"
 )
 
 var now = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)

@@ -14,10 +14,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/archive"
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/parse"
-	"github.com/CoderLuii/holyarrs/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
 )
 
 // Plain reasons shown on the Slot and in the import plan.

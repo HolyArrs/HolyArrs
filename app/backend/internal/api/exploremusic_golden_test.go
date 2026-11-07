@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/CoderLuii/holyarrs/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // coldTrend is the cold-start chart fixture (as TestExploreMusicColdStart).

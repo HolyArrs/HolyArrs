@@ -3,7 +3,7 @@ package judge
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // A release named with a local name of a non-anime movie or show finds its

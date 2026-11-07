@@ -18,7 +18,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/CoderLuii/holyarrs/internal/fsplain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
 )
 
 // Marker is set in the environment of the process started after the switch,

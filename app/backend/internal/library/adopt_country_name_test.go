@@ -3,7 +3,7 @@ package library
 import (
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Sonarr names files after its own series title, such as "The Office (US)",

@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/urlbase"
-	"github.com/CoderLuii/holyarrs/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
 // The artist page hero plays one of the artist's official music videos,

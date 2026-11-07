@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 )
 
 func (f *recordingTMDB) count(part string) int {

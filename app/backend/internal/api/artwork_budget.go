@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 )
 
 // artworkMissesPerMinute caps the pictures one person can make the server

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // risingRig is the v3 household rig with music_rows_v6 on; ranks adds a

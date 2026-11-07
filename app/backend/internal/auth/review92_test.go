@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // Backup files hold the whole database, password hashes included: only the

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites/fakesite"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
 // route: POST /api/v1/subtitle-sites/{id}/test

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 func TestGapOfPassesQueueWordsThrough(t *testing.T) {

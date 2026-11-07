@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // Test-only Plex sign-ins: each fake PIN hands out the one the test chose.

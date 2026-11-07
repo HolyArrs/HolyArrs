@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // MoveSlot moves a Slot to a new state, refusing moves that model.md

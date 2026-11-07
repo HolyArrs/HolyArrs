@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/parse"
-	"github.com/CoderLuii/holyarrs/internal/subtitles/sites"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
 // Video is what a candidate is scored against.

@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/doctor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 )
 
 // doctorCmd runs "holyarrs doctor [-config dir] [-save-path dir] [-json]":

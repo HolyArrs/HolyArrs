@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // signInAIApp runs the sign-in an AI app does (MCP authorization): learn

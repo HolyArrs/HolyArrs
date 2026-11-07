@@ -14,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
-	"github.com/CoderLuii/holyarrs/internal/routehits"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 const keyKitPath = "/api/v1/system/key-kit"

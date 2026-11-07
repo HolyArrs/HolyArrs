@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 func TestStoredEpisodeListsOfAShowAsk(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Qbittorrent talks to the qBittorrent Web API v2. It signs in one of two

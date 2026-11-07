@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // Own traits (#97): a name test finds any word or pattern in the Release

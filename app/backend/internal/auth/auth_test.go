@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
-	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type fixture struct {

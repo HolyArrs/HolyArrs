@@ -4,11 +4,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/CoderLuii/holyarrs/internal/feature"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/routehits"
-	"github.com/CoderLuii/holyarrs/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
 // TestMain fails a full run of this package when a route it registers was
