@@ -27,6 +27,7 @@ test('the Downloaders Test button reaches the preserved lab qBittorrent with its
 	await expect(downloader).toContainText('may reach the local network');
 	await expect(downloader).not.toContainText('password');
 
+	await downloader.hover(); // row buttons show on hover
 	await downloader.getByRole('button', { name: 'Test', exact: true }).click();
 	await expect(downloader.getByTestId('downloader-version')).toHaveText('qBittorrent v5.2.4');
 	await expect(downloader.getByTestId('downloader-state')).toHaveText('Working');
