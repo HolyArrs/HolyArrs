@@ -154,7 +154,7 @@
 					<dt>Single sign-on</dt><dd>{view.on ? 'On' : 'Off'}</dd>
 					{#if view.on}
 						<dt>Issuer</dt><dd class="mono">{view.issuer}</dd>
-						<dt>Client id</dt><dd class="mono">{view.client_id}</dd>
+						<dt>Client ID</dt><dd class="mono">{view.client_id}</dd>
 						<dt>Callback</dt><dd class="mono">{view.redirect_url}</dd>
 						<dt>New people</dt><dd>{view.allow_join ? 'May join' : 'Only people already linked'}</dd>
 					{/if}
@@ -175,7 +175,7 @@
 						</div>
 					</Field>
 					{#if tested}<div class="testline" data-testid="sso-tested"><TestTag ok={tested.ok} text={tested.text} app="OpenID Connect" />{#if !tested.ok}<span class="small bad-text">{tested.text}</span>{/if}</div>{/if}
-					<Field id="sso-client" label="Client id">
+					<Field id="sso-client" label="Client ID">
 						<input id="sso-client" class="input mono" bind:value={clientId} maxlength="1000" spellcheck="false" autocomplete="off" />
 					</Field>
 					<Field
@@ -209,7 +209,7 @@
 							Saving a new issuer or client id removes the {view.links} linked sign-in{view.links === 1 ? '' : 's'} made through the old one and signs out everyone who used single sign-on. They link again from My account.
 						</p>
 					{/if}
-					{#if plainHttp}<p class="small muted">This page is not on https://, so the secret travels unencrypted to HolyArrs. Use your https address when you can.</p>{/if}
+					{#if plainHttp}<p class="small muted">Not on https://, so the secret is sent unencrypted. Use your https address.</p>{/if}
 					<Field id="sso-password" label="Your HolyArrs password" hint="Needed for every change here.">
 						<input id="sso-password" class="input" type="password" bind:value={proof} autocomplete="current-password" required />
 					</Field>

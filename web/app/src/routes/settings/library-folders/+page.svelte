@@ -88,7 +88,7 @@
 		e.preventDefault();
 		formError = '';
 		if (!path.trim()) {
-			formError = 'Type the folder path, as HolyArrs sees it (inside the container if you use Docker).';
+			formError = 'The path inside the container, if you use Docker.';
 			return;
 		}
 		saving = true;

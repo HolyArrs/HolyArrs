@@ -479,7 +479,7 @@
 	</SettingsCard>
 
 	<SettingsCard id="ai-keys" title="Linked AI apps">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Each app that signs in or uses a key shows here. Revoke it to disconnect the app.</p>
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Apps that sign in or use a key show here.</p>
 		{#if keysNote}
 			<p class="notice warn">{keysNote}</p>
 		{:else}

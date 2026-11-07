@@ -228,7 +228,7 @@
 											<div class="ed-row">
 												<div class="ed-copy">
 													<b>Automatic rescan</b>
-													<span class="hint">{s.enabled ? 'On. Library folders are listed again on this timer.' : 'Off. Files added, changed or removed by hand are found only when you press Run now on this row.'}</span>
+													<span class="hint">{s.enabled ? 'On. Library folders are listed again on this timer.' : 'Off. Changes made by hand are found only with Run now.'}</span>
 												</div>
 												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic rescan' : 'Turn on automatic rescan'}</Button>
 											</div>
