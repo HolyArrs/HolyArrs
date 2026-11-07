@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // The artist page hero plays one of the artist's official music videos,
@@ -123,7 +122,7 @@ func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
 	if a.s.Store == nil {
 		return
 	}
-	lc := store.LookupCache{Store: a.s.Store}
+	lc := metadata.LookupCache{Store: a.s.Store}
 	if len(e.list) == 0 {
 		// Kept until the pass would ask again (a restart does not re-ask
 		// every artist with no videos at once).
@@ -145,7 +144,7 @@ func (a *API) keptVideos(ctx context.Context, mbid string) (artistVideoList, boo
 	e, ok := c.m[mbid]
 	c.mu.Unlock()
 	if !ok && a.s.Store != nil {
-		if b, found, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
+		if b, found, _ := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
 			var sv storedVideos
 			if json.Unmarshal(b, &sv) == nil && !sv.At.IsZero() {
 				e, ok = artistVideoList{at: sv.At, list: sv.Videos}, true
@@ -494,7 +493,7 @@ func (a *API) keepMusicVideo(ctx context.Context, ckey string, s TrailerStream, 
 	a.trailers.put(ckey, e)
 	if a.s.Store != nil {
 		if b, err := json.Marshal(s); err == nil {
-			_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
+			_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
 		}
 	}
 	return e

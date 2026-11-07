@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Explore → Music on disk (music_rows_v7): layer 1 (artist data, listeners,
@@ -165,7 +164,7 @@ func (a *API) saveMusicV7Snap(ctx context.Context, member int64, region, date st
 	if err != nil {
 		return
 	}
-	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, musicSnapKey(member, region), b, now, now.Add(musicV7SnapKeep))
+	_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, musicSnapKey(member, region), b, now, now.Add(musicV7SnapKeep))
 }
 
 // musicStalePrefix marks kept plans stale (a follow, a Library or list
@@ -180,7 +179,7 @@ func (a *API) loadMusicV7Snap(ctx context.Context, member int64, region, date st
 	if a.s.Store == nil {
 		return nil, false, false
 	}
-	lc := store.LookupCache{Store: a.s.Store}
+	lc := metadata.LookupCache{Store: a.s.Store}
 	b, ok, err := lc.Get(ctx, musicSnapKey(member, region), now)
 	if err != nil || !ok {
 		return nil, false, false
@@ -278,5 +277,5 @@ func (a *API) forgetMusicV7Snaps(member int64) {
 	if a.musicv2.now != nil {
 		now = a.musicv2.now().UTC()
 	}
-	_ = store.LookupCache{Store: a.s.Store}.Put(context.Background(), musicStalePrefix+who, []byte(now.Format(time.RFC3339Nano)), now, now.Add(musicV7SnapKeep))
+	_ = metadata.LookupCache{Store: a.s.Store}.Put(context.Background(), musicStalePrefix+who, []byte(now.Format(time.RFC3339Nano)), now, now.Add(musicV7SnapKeep))
 }

@@ -27,8 +27,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
 // KindCheck is the Job kind that runs the checks (scheduled every 5 minutes).
@@ -383,23 +383,23 @@ type Trailers struct {
 	Failed   int
 	LastGood time.Time // the last lookup that found addresses (zero: none yet)
 	// LastReason is the reason of the last failure Failed counts
-	// (youtube.Reason), "" when none.
+	// (metadata.TrailerReason), "" when none.
 	LastReason string
 }
 
 // readerTrouble says a failure in plain words: YouTube's door, or videos
 // that played before no longer being found.
 func readerTrouble(reason string) string {
-	switch youtube.Reason(reason) {
-	case youtube.Unavailable, youtube.Unplayable:
+	switch metadata.TrailerReason(reason) {
+	case metadata.TrailerUnavailable, metadata.TrailerUnplayable:
 		return "Trailers are not being found; a HolyArrs update may be needed"
-	case youtube.BotCheck:
+	case metadata.TrailerBotCheck:
 		return "YouTube asks to confirm you're not a bot"
-	case youtube.NoAddress:
+	case metadata.TrailerNoAddress:
 		return "YouTube changed how its videos are reached; a HolyArrs update will fix it"
-	case youtube.Refused:
+	case metadata.TrailerRefused:
 		return "YouTube turned the lookups away"
-	case youtube.Network:
+	case metadata.TrailerNetwork:
 		return "YouTube could not be reached"
 	}
 	return "Trailer lookups are failing"
@@ -430,7 +430,7 @@ func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
 		// Below the limit, a trailer that will not play (removed, blocked)
 		// is nothing to report: that happens all the time. YouTube turning
 		// the reader away is named at once.
-		video := youtube.Reason(t.LastReason).VideoReason()
+		video := metadata.TrailerReason(t.LastReason).VideoReason()
 		if t.Failed >= TrailerFailLimit || !video {
 			r.Message = readerTrouble(t.LastReason) + " (" + in + ")"
 		}

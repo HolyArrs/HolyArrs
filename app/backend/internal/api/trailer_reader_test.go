@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"testing"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // A trailer YouTube will not play here (age) is marked bad for 7 days and
@@ -44,7 +44,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	if why, bad := b.trailerBad(ctx, "ageGated001", now); !bad || why != youtube.AgeRestricted {
 		t.Fatalf("not kept across a restart: %q %v", why, bad)
 	}
-	lc := store.LookupCache{Store: st}
+	lc := metadata.LookupCache{Store: st}
 	if _, ok, _ := lc.Get(ctx, "trailerbad|test|ageGated001", now.Add(6*24*time.Hour)); !ok {
 		t.Fatal("gone before 7 days")
 	}
@@ -233,7 +233,7 @@ func TestTrailerUpkeepSurvivesARestart(t *testing.T) {
 	if s := b.TrailerReader(); s.Videos != health.TrailerFailLimit {
 		t.Fatalf("carried on: %+v", s)
 	}
-	lc := store.LookupCache{Store: st}
+	lc := metadata.LookupCache{Store: st}
 	gone := func() bool {
 		_, ok, _ := lc.Get(ctx, trailerUpkeepKey, time.Now())
 		return !ok

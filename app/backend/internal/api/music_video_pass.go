@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Artists' music videos on the trailer pass's schedule (#191): the artist
@@ -64,7 +63,7 @@ func (a *API) loadArtistAsks(ctx context.Context) {
 	if a.s.Store == nil {
 		return
 	}
-	b, found, _ := store.LookupCache{Store: a.s.Store}.Get(ctx, artistAskedDisk, time.Now())
+	b, found, _ := metadata.LookupCache{Store: a.s.Store}.Get(ctx, artistAskedDisk, time.Now())
 	var kept []storedArtistAsk
 	if !found || json.Unmarshal(b, &kept) != nil {
 		return
@@ -93,7 +92,7 @@ func (a *API) saveArtistAsks(ctx context.Context) {
 	t.mu.Unlock()
 	if b, err := json.Marshal(kept); err == nil {
 		now := time.Now()
-		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, artistAskedDisk, b, now, now.Add(artistAskedKeep))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, artistAskedDisk, b, now, now.Add(artistAskedKeep))
 	}
 }
 

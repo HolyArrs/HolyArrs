@@ -92,7 +92,7 @@ func TestDirectSourcesOffByDefault(t *testing.T) {
 	if directSources() || artistImages() != nil {
 		t.Fatal("direct Deezer client on by default")
 	}
-	h, err := newHostedMetadata(nil)
+	h, err := metadata.NewHosted(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,8 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // writeTaggedJSON writes v with an ETag (a hash of the body) and, unless
@@ -115,7 +115,7 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
-		if !on(it.Kind) || !ratings.Allows(max, strings.Replace(it.Kind, "album", "artist", 1), rating) {
+		if !on(it.Kind) || !metadata.RatingAllows(max, strings.Replace(it.Kind, "album", "artist", 1), rating) {
 			continue
 		}
 		if it.Kind == "artist" || it.Kind == "album" {

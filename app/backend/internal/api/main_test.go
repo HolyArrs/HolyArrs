@@ -8,7 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // TestMain fails a full run of this package when a route it registers was

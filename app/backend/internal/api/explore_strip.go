@@ -19,7 +19,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The Explore category strip, picked on the server for each member from the
@@ -346,7 +345,7 @@ func (a *API) stripTaste(ctx context.Context, member int64, kid bool, now time.T
 	if err != nil {
 		return explore.StripTaste{}
 	}
-	cache := store.LookupCache{Store: a.s.Store}
+	cache := metadata.LookupCache{Store: a.s.Store}
 	titles := make([]explore.TasteTitle, 0, len(refs))
 	var missing []tasteRef
 	for _, ref := range refs {
@@ -388,7 +387,7 @@ func (a *API) fetchStripKeywords(member int64, refs []tasteRef) {
 		if !ok {
 			return
 		}
-		cache := store.LookupCache{Store: a.s.Store}
+		cache := metadata.LookupCache{Store: a.s.Store}
 		got := 0
 		for _, ref := range refs {
 			select {

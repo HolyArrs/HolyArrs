@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // animeView is a title page's anime answer: whether the title is anime,
@@ -66,7 +65,7 @@ func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 			}
 			rating = e.details.Rating
 		}
-		if rating == "" || !ratings.Allows(max, kind, rating) {
+		if rating == "" || !metadata.RatingAllows(max, kind, rating) {
 			fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}

@@ -17,7 +17,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ArtistAddOptions are the choices made when adding an artist. Empty values
@@ -148,7 +147,7 @@ func (s *Service) searchArtistsKept(ctx context.Context, p metadata.ArtistProvid
 	key := artistSearchPrefix + strings.Join(strings.Fields(strings.ToLower(term)), " ")
 	now := s.now()
 	if s.Store != nil {
-		if b, ok, err := (store.LookupCache{Store: s.Store}).Get(ctx, key, now); err == nil && ok {
+		if b, ok, err := (metadata.LookupCache{Store: s.Store}).Get(ctx, key, now); err == nil && ok {
 			var k keptSearch
 			if json.Unmarshal(b, &k) == nil && k.Artists != nil {
 				if now.Sub(k.At) >= artistSearchFresh {
@@ -196,7 +195,7 @@ func (s *Service) artistSearch(ctx context.Context, p metadata.ArtistProvider, k
 		if f.err == nil && f.out != nil && s.Store != nil {
 			now := s.now()
 			if b, err := json.Marshal(keptSearch{At: now, Artists: f.out}); err == nil {
-				_ = store.LookupCache{Store: s.Store}.Put(bg, key, b, now, now.Add(artistSearchKeep))
+				_ = metadata.LookupCache{Store: s.Store}.Put(bg, key, b, now, now.Add(artistSearchKeep))
 			}
 		}
 		artistSearches.Lock()

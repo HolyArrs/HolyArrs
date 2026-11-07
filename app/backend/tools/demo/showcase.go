@@ -209,7 +209,7 @@ func showcaseProviders(ctx context.Context, w *world) (providers, error) {
 			return time.Duration(d.CacheHours) * time.Hour
 		},
 		UserAgent: metadata.UserAgentFor("showcase-seed"),
-		Cache:     store.LookupCache{Store: w.s},
+		Cache:     metadata.LookupCache{Store: w.s},
 	}
 	return providers{Movies: tmdb, Shows: metadata.ShowSources{"tmdb": tmdb, "tvmaze": &metadata.TVMaze{}}, Artists: svc.Artists(mb)}, nil
 }

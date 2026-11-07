@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // The Trakt VIP access token is kept encrypted next to the Trakt client id.
@@ -160,7 +159,7 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 		if !inLibrary {
 			rating = de.details.Rating
 		}
-		if !ratings.Allows(max, kind, rating) {
+		if !metadata.RatingAllows(max, kind, rating) {
 			fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}

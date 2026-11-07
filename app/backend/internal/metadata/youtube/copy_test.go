@@ -16,7 +16,7 @@ func TestMetadataServerCopyIsTheSame(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		there, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "services", "metadata", "internal", "youtube", name))
+		there, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "services", "metadata", "internal", "youtube", name))
 		if err != nil {
 			t.Fatal(err)
 		}

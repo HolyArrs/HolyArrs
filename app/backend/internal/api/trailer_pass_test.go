@@ -20,7 +20,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // passPool is a stored pool: Trending (the hero's source) and two more
@@ -444,7 +443,7 @@ func TestTrailerPassRenewsNearlyExpired(t *testing.T) {
 	keep := func(id string, exp time.Time) {
 		s := TrailerStream{Type: "mp4", URL: "https://rr1---sn-abc.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(exp.Unix(), 10), ExpiresAt: exp, Key: "trailerKey1"}
 		b, _ := json.Marshal(s)
-		if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, exp.Add(-trailerEarly)); err != nil {
+		if err := (metadata.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, exp.Add(-trailerEarly)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -503,7 +502,7 @@ func TestTrailerPassRenewsFirst(t *testing.T) {
 	for _, id := range []string{"305", "203"} {
 		s := TrailerStream{Type: "mp4", URL: "https://rr1---sn-abc.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(soon.Unix(), 10), ExpiresAt: soon, Key: "trailerKey1"}
 		b, _ := json.Marshal(s)
-		if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, soon.Add(-trailerEarly)); err != nil {
+		if err := (metadata.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, soon.Add(-trailerEarly)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -580,7 +579,7 @@ func TestTrailerPassOrder(t *testing.T) {
 		exp := now.Add(trailerEarly + left)
 		s := TrailerStream{Type: "mp4", URL: "https://rr1---sn-abc.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(exp.Unix(), 10), ExpiresAt: exp, Key: "trailerKey1"}
 		b, _ := json.Marshal(s)
-		if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, exp.Add(-trailerEarly)); err != nil {
+		if err := (metadata.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, exp.Add(-trailerEarly)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -610,7 +609,7 @@ func TestTrailerPassRenewalFailureCounts(t *testing.T) {
 	exp := now.Add(trailerEarly + time.Minute)
 	s := TrailerStream{Type: "mp4", URL: "https://rr1---sn-abc.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(exp.Unix(), 10), ExpiresAt: exp, Key: "trailerKey1"}
 	b, _ := json.Marshal(s)
-	if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|movie|305|en", b, now, exp.Add(-trailerEarly)); err != nil {
+	if err := (metadata.LookupCache{Store: st}).Put(ctx, "trailer|movie|305|en", b, now, exp.Add(-trailerEarly)); err != nil {
 		t.Fatal(err)
 	}
 	if n := a.trailerPass(ctx, 1); n != 1 {

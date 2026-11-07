@@ -1,4 +1,4 @@
-package main
+package metadata
 
 import (
 	"context"
@@ -6,15 +6,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -24,14 +22,14 @@ import (
 // is kept (encrypted). It is never shown, logged or exported.
 const installationGroup, installationKey = "links", "metadata_service_installation_token"
 
-// hostedMetadata is the metadata server every install uses (metadata.ServiceURL):
+// Hosted is the metadata server every install uses (ServiceURL):
 // TMDB reads go through its /v1/tmdb with this install's credential, music
 // lookups through its schema-1 API. A person's own TMDB key
 // (HOLYARRS_TMDB_KEY, or the lab's HOLYARRS_TMDB_TOKEN_FILE) sends TMDB reads
 // straight to TMDB instead. There is no fallback from the server to TMDB.
-type hostedMetadata struct {
-	Service    *metadata.Service
-	Health     *metadata.Health
+type Hosted struct {
+	Service    *Service
+	Health     *Health
 	TMDBBase   string
 	TMDBAccess func(context.Context) (string, error)
 	Images     string
@@ -41,12 +39,12 @@ type hostedMetadata struct {
 	// artwork cache for the server's picture addresses.
 	Transport http.RoundTripper
 	// Gate is that transport; it carries "Count this install".
-	Gate *metadata.Gate
+	Gate *Gate
 	// Disk keeps TMDB answers across restarts (lookup_cache).
-	Disk metadata.Cache
+	Disk Cache
 }
 
-func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
+func NewHosted(v *secrets.Vault) (*Hosted, error) {
 	local := false
 	if raw := os.Getenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL"); raw != "" {
 		var err error
@@ -57,20 +55,20 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 	}
 	allow := outbound.PublicOnly
 	if local {
-		allow = metadataServiceLocal
+		allow = outbound.MetadataServiceLocal
 	}
 	d := outbound.PolicyDialer(allow)
 	// One pooled HTTP/2 transport for every call to the server: text
 	// answers here, and the server's pictures through the artwork client.
-	tr := &metadata.Gate{Next: metadata.NewServerTransport(d.DialContext)}
+	tr := &Gate{Next: NewServerTransport(d.DialContext)}
 	cl := &http.Client{Transport: tr, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	h := &hostedMetadata{HTTP: cl, Transport: tr, Gate: tr}
+	h := &Hosted{HTTP: cl, Transport: tr, Gate: tr}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })
-	service, err := metadata.NewService(metadata.ServiceOptions{URL: metadata.ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
+	service, err := NewService(ServiceOptions{URL: ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
 	if err != nil {
 		return nil, err
 	}
-	h.Service, h.Health = service, &metadata.Health{Service: service}
+	h.Service, h.Health = service, &Health{Service: service}
 	// HOLYARRS_TMDB_URL points at a stand-in TMDB (browser tests); it
 	// serves pictures too.
 	stand := strings.TrimRight(os.Getenv("HOLYARRS_TMDB_URL"), "/")
@@ -78,15 +76,15 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 		h.Images = stand + "/images"
 		webserver.ImageHosts += " " + stand
 	}
-	switch key, file := strings.TrimSpace(os.Getenv(metadata.EnvTMDBKey)), os.Getenv(metadata.EnvTokenFile); {
+	switch key, file := strings.TrimSpace(os.Getenv(EnvTMDBKey)), os.Getenv(EnvTokenFile); {
 	case key != "":
 		h.OwnKey, h.TMDBBase = true, stand
 		h.TMDBAccess = func(context.Context) (string, error) { return key, nil }
 	case file != "":
 		h.OwnKey, h.TMDBBase = true, stand
-		h.TMDBAccess = metadata.TokenFile(file)
+		h.TMDBAccess = TokenFile(file)
 	default:
-		h.TMDBBase, h.TMDBAccess = service.Base()+metadata.TMDBPath, access
+		h.TMDBBase, h.TMDBAccess = service.Base()+TMDBPath, access
 	}
 	if h.OwnKey {
 		log.Printf("metadata: TMDB directly with the key from the environment")
@@ -97,8 +95,8 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 }
 
 // TMDB is a TMDB client for movies, shows, Explore, people and ratings.
-func (h *hostedMetadata) TMDB() *metadata.TMDB {
-	t := &metadata.TMDB{Access: h.TMDBAccess, BaseURL: h.TMDBBase, Images: h.Images, Disk: h.Disk}
+func (h *Hosted) TMDB() *TMDB {
+	t := &TMDB{Access: h.TMDBAccess, BaseURL: h.TMDBBase, Images: h.Images, Disk: h.Disk}
 	if !h.OwnKey {
 		t.HTTP = h.HTTP
 	}
@@ -115,12 +113,12 @@ func installationAccess(v *secrets.Vault, register func(context.Context) (string
 		return func(context.Context) (string, error) {
 			f, err := os.Open(path)
 			if err != nil {
-				return "", metadata.ErrServiceAccess
+				return "", ErrServiceAccess
 			}
 			defer f.Close()
 			b, err := io.ReadAll(io.LimitReader(f, 4097))
 			if err != nil || len(b) > 4096 {
-				return "", metadata.ErrServiceAccess
+				return "", ErrServiceAccess
 			}
 			return strings.TrimSpace(string(b)), nil
 		}
@@ -128,7 +126,7 @@ func installationAccess(v *secrets.Vault, register func(context.Context) (string
 	var mu sync.Mutex
 	return func(ctx context.Context) (string, error) {
 		if v == nil {
-			return "", metadata.ErrServiceAccess
+			return "", ErrServiceAccess
 		}
 		if tok, err := v.Setting(ctx, installationGroup, installationKey); err != nil || tok != "" {
 			return tok, err
@@ -142,12 +140,10 @@ func installationAccess(v *secrets.Vault, register func(context.Context) (string
 		if err != nil {
 			return "", err
 		}
-		if err := v.SetSetting(ctx, installationGroup, installationKey, tok, domain.System); err != nil {
+		if err := v.SetSetting(ctx, installationGroup, installationKey, tok, database.System); err != nil {
 			return "", err
 		}
 		log.Printf("metadata: this install registered with the metadata server")
 		return tok, nil
 	}
 }
-
-func metadataServiceLocal(ip net.IP) bool { return outbound.MetadataServiceLocal(ip) }

@@ -1,4 +1,4 @@
-package ratings
+package metadata
 
 import "testing"
 
@@ -50,7 +50,7 @@ func TestAllows(t *testing.T) {
 		{"PG", "episode", "G", false},
 	}
 	for _, c := range cases {
-		if got := Allows(c.max, c.kind, c.rating); got != c.want {
+		if got := RatingAllows(c.max, c.kind, c.rating); got != c.want {
 			t.Errorf("Allows(%q, %q, %q) = %v, want %v", c.max, c.kind, c.rating, got, c.want)
 		}
 	}
@@ -58,12 +58,12 @@ func TestAllows(t *testing.T) {
 
 func TestValid(t *testing.T) {
 	for _, ok := range []string{"", "G", "PG", "PG-13", "R", "NC-17", "TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA", "pg-13", " tv-ma "} {
-		if !Valid(ok) {
+		if !ValidRating(ok) {
 			t.Errorf("Valid(%q) = false, want true", ok)
 		}
 	}
 	for _, bad := range []string{"X", "NR", "PG13", "TV-PG-13", "12A"} {
-		if Valid(bad) {
+		if ValidRating(bad) {
 			t.Errorf("Valid(%q) = true, want false", bad)
 		}
 	}
@@ -71,7 +71,7 @@ func TestValid(t *testing.T) {
 
 func TestNorm(t *testing.T) {
 	for in, want := range map[string]string{"": "", " pg-13 ": "PG-13", "tv-ma": "TV-MA", "G": "G"} {
-		if got := Norm(in); got != want {
+		if got := NormRating(in); got != want {
 			t.Errorf("Norm(%q) = %q, want %q", in, got, want)
 		}
 	}
@@ -79,27 +79,27 @@ func TestNorm(t *testing.T) {
 
 func TestValidCountry(t *testing.T) {
 	for _, ok := range []string{"US", "us ", " us"} {
-		if !ValidCountry(ok) {
-			t.Errorf("ValidCountry(%q) = false, want true", ok)
+		if !ValidRatingCountry(ok) {
+			t.Errorf("ValidRatingCountry(%q) = false, want true", ok)
 		}
 	}
 	for _, bad := range []string{"GB", "", "USA", "DE"} {
-		if ValidCountry(bad) {
-			t.Errorf("ValidCountry(%q) = true, want false", bad)
+		if ValidRatingCountry(bad) {
+			t.Errorf("ValidRatingCountry(%q) = true, want false", bad)
 		}
 	}
 }
 
 func TestUp(t *testing.T) {
 	for in, want := range map[string]string{"PG": "up to PG", "tv-14": "up to TV-14", "": "any rating"} {
-		if got := Up(in); got != want {
+		if got := RatingUp(in); got != want {
 			t.Errorf("Up(%q) = %q, want %q", in, got, want)
 		}
 	}
 }
 
 func TestChoices(t *testing.T) {
-	if got := Choices(); got != "G, PG, PG-13, R, NC-17, TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA" {
-		t.Errorf("Choices() = %q", got)
+	if got := RatingChoices(); got != "G, PG, PG-13, R, NC-17, TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA" {
+		t.Errorf("RatingChoices() = %q", got)
 	}
 }

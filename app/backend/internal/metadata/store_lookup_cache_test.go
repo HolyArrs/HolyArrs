@@ -1,4 +1,4 @@
-package store
+package metadata
 
 import (
 	"context"
@@ -40,4 +40,15 @@ func TestLookupCacheExpiry(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT count(*) FROM lookup_cache").Scan(&n); err != nil || n != 1 {
 		t.Fatalf("expired rows left: %d %v", n, err)
 	}
+}
+
+func openTest(t *testing.T, opts database.Options) (*database.Store, string) {
+	t.Helper()
+	dir := t.TempDir()
+	s, err := database.Open(dir, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	return s, dir
 }

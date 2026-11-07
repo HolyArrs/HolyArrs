@@ -26,7 +26,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // manifestKey is the setting (group this_app) where seed records what it
@@ -214,7 +213,7 @@ func realProviders(s *database.Store) (providers, error) {
 			return time.Duration(d.CacheHours) * time.Hour
 		},
 		UserAgent: metadata.UserAgentFor("demo-seed"),
-		Cache:     store.LookupCache{Store: s},
+		Cache:     metadata.LookupCache{Store: s},
 	}
 	return providers{Movies: tmdb, Shows: metadata.ShowSources{"tmdb": tmdb, "tvmaze": &metadata.TVMaze{}}, Artists: mb}, nil
 }
