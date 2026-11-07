@@ -8,8 +8,6 @@ import (
 	"testing"
 )
 
-// RAR 4 sets from the rarfile project (testdata/rarfile/README.md); sizes and
-// CRCs from its own listings (the .exp files beside them).
 type rar4File struct {
 	name string
 	size int64
@@ -36,8 +34,8 @@ func checkRar4(t *testing.T, dest string, want []rar4File) {
 	}
 }
 
-// A stored RAR 4 set over .rar, .r00 and .r01: the built-in reader takes it.
-func TestRAR4OldNamingSetIsReadAndUnpacked(t *testing.T) {
+// TestExtract_RAR4OldNamingSet reads a stored RAR 4 set named .rar, .r00, .r01.
+func TestExtract_RAR4OldNamingSet(t *testing.T) {
 	es, err := List(rar4Path("rar3-old.rar"))
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +48,6 @@ func TestRAR4OldNamingSetIsReadAndUnpacked(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkRar4(t, dest, rar4Old)
-	// The decoder reads the same set too.
 	dest2 := t.TempDir()
 	if err := ExtractCompressed(context.Background(), rar4Path("rar3-old.rar"), dest2, 1<<20); err != nil {
 		t.Fatal(err)
@@ -58,9 +55,8 @@ func TestRAR4OldNamingSetIsReadAndUnpacked(t *testing.T) {
 	checkRar4(t, dest2, rar4Old)
 }
 
-// A compressed, solid RAR 4 (2.9) archive: listed as compressed, refused by
-// the stored-set reader, unpacked by the built-in decoder.
-func TestRAR4CompressedSolidArchiveIsDecoded(t *testing.T) {
+// TestExtractCompressed_RAR4Solid decodes a compressed solid RAR 4 set.
+func TestExtractCompressed_RAR4Solid(t *testing.T) {
 	es, err := List(rar4Path("rar3-solid.rar"))
 	if err != nil {
 		t.Fatal(err)

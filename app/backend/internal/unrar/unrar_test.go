@@ -10,19 +10,16 @@ import (
 	"testing"
 )
 
-// The writers below build tiny RAR files by hand, from the published layout
-// of the two formats, so the tests need no fixtures.
-
 type spec struct {
 	name                    string
 	data                    []byte
 	splitBefore, splitAfter bool
 	compressed, encrypted   bool
-	total                   int // unpacked size in the header (0 = len(data))
+	total                   int
 	crc                     uint32
-	unix                    uint32 // Unix mode in the attributes (0 = Windows host)
-	rawName                 []byte // RAR 4 only: the full name field, for the Unicode form
-	extraType               uint64 // RAR 5 only: an extra record of this type
+	unix                    uint32
+	rawName                 []byte
+	extraType               uint64
 }
 
 func (f spec) sum() uint32 {
@@ -69,7 +66,7 @@ func rar4Volume(more bool, files ...spec) []byte {
 		body := make([]byte, 25+len(nameField))
 		binary.LittleEndian.PutUint32(body[0:], uint32(len(f.data)))
 		binary.LittleEndian.PutUint32(body[4:], uint32(total))
-		body[8] = 2 // Windows
+		body[8] = 2
 		if f.unix != 0 {
 			body[8] = 3
 			binary.LittleEndian.PutUint32(body[21:], f.unix)
@@ -127,7 +124,7 @@ func rar5Block(typ uint64, flags uint64, fields []byte, extra []byte, dataSize i
 
 func rar5Volume(more bool, files ...spec) []byte {
 	out := append([]byte{}, sigRar5...)
-	main := vint(0x1) // volume flag
+	main := vint(0x1)
 	out = append(out, rar5Block(1, 0, main, nil, 0)...)
 	for _, f := range files {
 		var fl uint64
@@ -142,7 +139,7 @@ func rar5Volume(more bool, files ...spec) []byte {
 			total = len(f.data)
 		}
 		var fields []byte
-		fields = append(fields, vint(4)...) // file flags: CRC32 present
+		fields = append(fields, vint(4)...)
 		fields = append(fields, vint(uint64(total))...)
 		attr, host := uint64(0x20), uint64(0)
 		if f.unix != 0 {
@@ -160,7 +157,7 @@ func rar5Volume(more bool, files ...spec) []byte {
 		fields = append(fields, f.name...)
 		var extra []byte
 		if f.encrypted {
-			extra = append(vint(1), vint(1)...) // record: size 1, type 1 (encryption)
+			extra = append(vint(1), vint(1)...)
 		}
 		if f.extraType != 0 {
 			extra = append(vint(1), vint(f.extraType)...)
@@ -184,13 +181,14 @@ func put(t *testing.T, dir, name string, b []byte) string {
 	return p
 }
 
-var movie = bytes.Repeat([]byte("moviebytes-"), 500) // 5500 bytes
+var movie = bytes.Repeat([]byte("moviebytes-"), 500)
 
 func formats() map[string]func(bool, ...spec) []byte {
 	return map[string]func(bool, ...spec) []byte{"rar4": rar4Volume, "rar5": rar5Volume}
 }
 
-func TestSingleVolume(t *testing.T) {
+// TestExtract_SingleVolume unpacks one stored volume.
+func TestExtract_SingleVolume(t *testing.T) {
 	for name, vol := range formats() {
 		t.Run(name, func(t *testing.T) {
 			dir, dest := t.TempDir(), t.TempDir()
@@ -210,7 +208,8 @@ func TestSingleVolume(t *testing.T) {
 	}
 }
 
-func TestMultiVolume(t *testing.T) {
+// TestExtract_MultiVolume unpacks a stored set split over volumes.
+func TestExtract_MultiVolume(t *testing.T) {
 	a, b, c := movie[:2000], movie[2000:4000], movie[4000:]
 	for _, c1 := range []struct {
 		style string
@@ -238,7 +237,8 @@ func TestMultiVolume(t *testing.T) {
 	}
 }
 
-func TestMissingVolumeAndCutShort(t *testing.T) {
+// TestExtract_MissingOrCutShort reports a missing or cut volume.
+func TestExtract_MissingOrCutShort(t *testing.T) {
 	for name, vol := range formats() {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()
@@ -259,7 +259,8 @@ func TestMissingVolumeAndCutShort(t *testing.T) {
 	}
 }
 
-func TestUnsafePathsRefusedAndNothingWritten(t *testing.T) {
+// TestExtract_UnsafePaths refuses unsafe paths and writes nothing.
+func TestExtract_UnsafePaths(t *testing.T) {
 	for name, vol := range formats() {
 		for _, bad := range []string{"../evil.mkv", "a/../../evil.mkv", "/etc/evil.mkv", `..\evil.mkv`, `C:\evil.mkv`} {
 			t.Run(name+"/"+bad, func(t *testing.T) {
@@ -280,7 +281,8 @@ func TestUnsafePathsRefusedAndNothingWritten(t *testing.T) {
 	}
 }
 
-func TestCompressedAndEncryptedAreReported(t *testing.T) {
+// TestList_CompressedAndEncrypted reports compressed and encrypted entries.
+func TestList_CompressedAndEncrypted(t *testing.T) {
 	for name, vol := range formats() {
 		t.Run(name, func(t *testing.T) {
 			dir, dest := t.TempDir(), t.TempDir()
@@ -303,7 +305,8 @@ func TestCompressedAndEncryptedAreReported(t *testing.T) {
 	}
 }
 
-func TestVolumeNames(t *testing.T) {
+// TestNextVolume_Names checks the volume name patterns.
+func TestNextVolume_Names(t *testing.T) {
 	for in, want := range map[string]string{
 		"a/rel.rar": "a/rel.r00", "rel.r00": "rel.r01", "rel.r99": "rel.s00", "REL.RAR": "REL.R00",
 		"rel.part01.rar": "rel.part02.rar", "rel.part9.rar": "rel.part10.rar", "rel.part099.rar": "rel.part100.rar", "x.mkv": "",

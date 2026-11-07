@@ -1,13 +1,8 @@
-// Package unrar reads RAR files that use "store" (no compression), in both
-// the RAR 4 and RAR 5 layouts, including sets split over many volumes. That
-// is the common way releases are packed. Compressed sets are listed here
-// and unpacked by ExtractCompressed (the rardecode decoder); encrypted sets
-// are reported and never unpacked.
-//
-// It reads untrusted files: sizes are bounded, every header is checked
-// against the volume's length, entry paths that are absolute or climb out
-// of the target folder are refused, and reading stops at the first header
-// that does not make sense. It only ever reads the volumes it is given.
+// Package unrar lists and unpacks RAR sets. It reads stored (uncompressed)
+// RAR 4 and RAR 5 files, including sets split over many volumes, and hands
+// compressed sets to ExtractCompressed. Encrypted sets are reported and never
+// unpacked. The files are untrusted, so sizes are capped, every header is
+// checked against the volume length, and unsafe entry paths are refused.
 package unrar
 
 import (
@@ -26,23 +21,7 @@ import (
 	"unicode/utf16"
 )
 
-var (
-	// ErrCompressed says an entry uses RAR compression, which this package does not unpack.
-	ErrCompressed = errors.New("the RAR files use compression")
-	// ErrEncrypted says an entry or a header is password protected.
-	ErrEncrypted = errors.New("the archive files are password protected")
-	// ErrUnsafePath says an entry would land outside the target folder.
-	ErrUnsafePath = errors.New("an archive entry has an unsafe path")
-	// ErrCorrupt says the set is damaged, cut short or has a volume missing.
-	ErrCorrupt = errors.New("the archive files are damaged or incomplete")
-	// ErrUnrecognised says the set holds a link, a special file or a block
-	// this package does not understand; nothing from it is unpacked.
-	ErrUnrecognised = errors.New("the archive files hold something that is not understood")
-	// ErrOldFormat says the file is a RAR from before RAR 1.5 (signature
-	// "RE~^"), which neither this package nor the decoder reads.
-	ErrOldFormat = errors.New("the RAR files use the RAR format from before RAR 1.5")
-)
-
+// Limits that keep a hostile set from using unbounded time or memory.
 const (
 	maxVolumes   = 2000
 	maxEntries   = 100000
@@ -51,36 +30,149 @@ const (
 	maxDataBytes = int64(1) << 50
 )
 
-// Entry is one file in a set. Directories and links are not listed.
-type Entry struct {
-	Name       string // cleaned, with "/" between folders
-	Size       int64  // bytes once unpacked
-	Compressed bool
-	Encrypted  bool
-	Link       bool // a symbolic or hard link: never unpacked
-}
-
-// maxServiceData caps what one service block (a comment, quick-open data or a
-// stored stream) may carry; the reader never writes these, but a system tool might.
+// maxServiceData caps a service block (comment, quick open data, stream). Real
+// writers keep these small, so a big one may hide data and is refused.
 const maxServiceData = 1 << 20
 
-func corrupt(format string, a ...any) error {
-	return fmt.Errorf("%w: %s", ErrCorrupt, fmt.Sprintf(format, a...))
-}
+var (
+	// ErrCompressed means an entry uses RAR compression.
+	ErrCompressed = errors.New("the RAR files use compression")
+	// ErrEncrypted means an entry or a header is password protected.
+	ErrEncrypted = errors.New("the archive files are password protected")
+	// ErrUnsafePath means an entry would land outside the target folder.
+	ErrUnsafePath = errors.New("an archive entry has an unsafe path")
+	// ErrCorrupt means the set is damaged, cut short or missing a volume.
+	ErrCorrupt = errors.New("the archive files are damaged or incomplete")
+	// ErrUnrecognised means the set holds a link, special file or block this
+	// package does not understand.
+	ErrUnrecognised = errors.New("the archive files hold something that is not understood")
+	// ErrOldFormat means the file is a RAR from before RAR 1.5 (signature "RE~^").
+	ErrOldFormat = errors.New("the RAR files use the RAR format from before RAR 1.5")
+)
 
 var (
+	// partStyle matches name.partNN.rar and oldStyle matches name.r00 style names.
 	partStyle = regexp.MustCompile(`(?i)^(.*\.part)(\d{1,6})(\.rar)$`)
 	oldStyle  = regexp.MustCompile(`(?i)^(.*\.)([a-z])(\d\d)$`)
 )
 
-// IsVolume says a file name looks like one volume of a RAR set (.rar or .r00).
+var (
+	// sigRar4 and sigRar5 are the signatures that start a volume.
+	sigRar4 = []byte("Rar!\x1a\x07\x00")
+	sigRar5 = []byte("Rar!\x1a\x07\x01\x00")
+)
+
+// Entry is one file in a set. Folders and links are not listed.
+type Entry struct {
+	Name       string // cleaned path with "/" between folders
+	Size       int64  // bytes once unpacked
+	Compressed bool
+	Encrypted  bool
+	Link       bool // never unpacked
+}
+
+// part is one file header plus where its data sits in its volume.
+type part struct {
+	name                    string
+	dir, link               bool
+	packed, unpacked        int64
+	dataOff                 int64
+	splitBefore, splitAfter bool
+	compressed, encrypted   bool
+	crc                     uint32
+	hasCRC                  bool
+}
+
+// current tracks the file being read while its parts arrive volume by volume.
+type current struct {
+	e        Entry
+	declared int64
+	skip     bool
+	split    bool
+	out      *os.File
+	whole    hash.Hash32
+}
+
+// reader5 reads the variable-length numbers and fixed fields of a RAR 5 header.
+type reader5 struct {
+	b   []byte
+	bad bool
+}
+
+// vint reads one variable-length number. Reading past the end sets bad.
+func (r *reader5) vint() uint64 {
+	var v uint64
+	for i := 0; i < 10; i++ {
+		if len(r.b) == 0 {
+			r.bad = true
+			return 0
+		}
+		c := r.b[0]
+		r.b = r.b[1:]
+		v |= uint64(c&0x7F) << (7 * i)
+		if c&0x80 == 0 {
+			return v
+		}
+	}
+	r.bad = true
+	return 0
+}
+
+// skip drops n bytes. Reading past the end sets bad.
+func (r *reader5) skip(n uint64) {
+	if n > uint64(len(r.b)) {
+		r.bad = true
+		r.b = nil
+		return
+	}
+	r.b = r.b[n:]
+}
+
+// take returns the next n bytes. Reading past the end sets bad.
+func (r *reader5) take(n uint64) []byte {
+	if n > uint64(len(r.b)) {
+		r.bad = true
+		r.b = nil
+		return nil
+	}
+	out := r.b[:n]
+	r.b = r.b[n:]
+	return out
+}
+
+// List reads the headers of the set that starts at first and returns its files.
+// It writes nothing.
+func List(first string) ([]Entry, error) { return run(first, "") }
+
+// Extract unpacks the set that starts at first into dest, which must be an
+// existing folder of its own. Links, encrypted and compressed sets are refused
+// before anything is written.
+func Extract(first, dest string) ([]Entry, error) {
+	entries, err := run(first, "")
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entries {
+		if e.Link {
+			return nil, ErrUnrecognised
+		}
+		if e.Encrypted {
+			return nil, ErrEncrypted
+		}
+		if e.Compressed {
+			return nil, ErrCompressed
+		}
+	}
+	return run(first, dest)
+}
+
+// IsVolume reports whether name looks like one volume of a RAR set.
 func IsVolume(name string) bool {
 	base := filepath.Base(name)
 	return strings.EqualFold(filepath.Ext(base), ".rar") || oldStyle.MatchString(base)
 }
 
-// IsFirstVolume says a file name is the first volume of a set: name.rar, or
-// name.part1.rar (any zero padding).
+// IsFirstVolume reports whether name is the first volume of a set.
 func IsFirstVolume(name string) bool {
 	base := filepath.Base(name)
 	if m := partStyle.FindStringSubmatch(base); m != nil {
@@ -90,8 +182,8 @@ func IsFirstVolume(name string) bool {
 	return strings.EqualFold(filepath.Ext(base), ".rar")
 }
 
-// NextVolume gives the path of the volume after path ("" when the name does
-// not follow a known pattern).
+// NextVolume returns the path of the volume after path, or "" when the name
+// follows no known pattern.
 func NextVolume(path string) string {
 	dir, base := filepath.Split(path)
 	if m := partStyle.FindStringSubmatch(base); m != nil {
@@ -121,53 +213,38 @@ func NextVolume(path string) string {
 	return ""
 }
 
-// List reads the headers of the set that starts at first (its first volume)
-// and gives the files in it. It writes nothing.
-func List(first string) ([]Entry, error) { return run(first, "") }
+// CleanName turns a stored name into a safe relative path, or refuses it. The
+// other archive readers share it so every format applies the same rule.
+func CleanName(raw string) (string, error) { return cleanName(raw) }
 
-// Extract unpacks the set that starts at first into dest (which must be a
-// folder of its own that exists). A compressed or encrypted set is refused
-// before anything is written.
-func Extract(first, dest string) ([]Entry, error) {
-	entries, err := run(first, "")
-	if err != nil {
-		return nil, err
+// cleanName rejects empty, absolute, drive, NUL, overlong and ".." names.
+// Backslashes count as separators because RAR writers on Windows use them.
+func cleanName(raw string) (string, error) {
+	if raw == "" || strings.ContainsRune(raw, 0) || len(raw) > maxNameLen {
+		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
 	}
-	for _, e := range entries {
-		if e.Link {
-			return nil, ErrUnrecognised
-		}
-		if e.Encrypted {
-			return nil, ErrEncrypted
-		}
-		if e.Compressed {
-			return nil, ErrCompressed
+	n := strings.ReplaceAll(raw, `\`, "/")
+	if strings.HasPrefix(n, "/") || (len(n) >= 2 && n[1] == ':') || (runtime.GOOS == "windows" && strings.Contains(n, ":")) {
+		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
+	}
+	var parts []string
+	for _, p := range strings.Split(n, "/") {
+		switch p {
+		case "..":
+			return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
+		case "", ".":
+		default:
+			parts = append(parts, p)
 		}
 	}
-	return run(first, dest)
+	if len(parts) == 0 {
+		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
+	}
+	return strings.Join(parts, "/"), nil
 }
 
-// part is one file header with the data that follows it in its volume.
-type part struct {
-	name                    string
-	dir, link               bool
-	packed, unpacked        int64
-	dataOff                 int64
-	splitBefore, splitAfter bool
-	compressed, encrypted   bool
-	crc                     uint32
-	hasCRC                  bool
-}
-
-type current struct {
-	e        Entry
-	declared int64
-	skip     bool // a folder or link: its data is passed over
-	split    bool // continues in the next volume
-	out      *os.File
-	whole    hash.Hash32 // CRC of the data written so far
-}
-
+// run walks every volume of the set. With a dest it also writes the files, and
+// it checks each file against the CRC in its header.
 func run(first, dest string) (entries []Entry, err error) {
 	var cur *current
 	defer func() {
@@ -212,12 +289,11 @@ func run(first, dest string) (entries []Entry, err error) {
 				cur.e.Size += p.packed
 			}
 			if cur.out != nil {
+				// Some writers put the CRC of the last part alone, so either sum may match.
 				partSum := crc32.NewIEEE()
 				if _, err := io.Copy(io.MultiWriter(cur.out, cur.whole, partSum), io.NewSectionReader(vol, p.dataOff, p.packed)); err != nil {
 					return corrupt("a volume is cut short")
 				}
-				// The last part's header holds the file's CRC32 (some writers
-				// hold the CRC of that part's own data): either must match.
 				if !p.splitAfter && p.hasCRC && p.crc != cur.whole.Sum32() && p.crc != partSum.Sum32() {
 					return corrupt("%s fails its checksum", name)
 				}
@@ -273,42 +349,13 @@ func run(first, dest string) (entries []Entry, err error) {
 	return entries, nil
 }
 
-// cleanName turns a stored name into a safe relative path with "/" between
-// folders, or refuses it.
-// CleanName is cleanName for the other archive readers (internal/archive).
-func CleanName(raw string) (string, error) { return cleanName(raw) }
-
-func cleanName(raw string) (string, error) {
-	if raw == "" || strings.ContainsRune(raw, 0) || len(raw) > maxNameLen {
-		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
-	}
-	n := strings.ReplaceAll(raw, `\`, "/")
-	if strings.HasPrefix(n, "/") || (len(n) >= 2 && n[1] == ':') || (runtime.GOOS == "windows" && strings.Contains(n, ":")) {
-		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
-	}
-	var parts []string
-	for _, p := range strings.Split(n, "/") {
-		switch p {
-		case "..":
-			return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
-		case "", ".":
-		default:
-			parts = append(parts, p)
-		}
-	}
-	if len(parts) == 0 {
-		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)
-	}
-	return strings.Join(parts, "/"), nil
+// corrupt wraps ErrCorrupt with a detail.
+func corrupt(format string, a ...any) error {
+	return fmt.Errorf("%w: %s", ErrCorrupt, fmt.Sprintf(format, a...))
 }
 
-var (
-	sigRar4 = []byte("Rar!\x1a\x07\x00")
-	sigRar5 = []byte("Rar!\x1a\x07\x01\x00")
-)
-
-// walkVolume reads the blocks of one volume, calling visit for each file
-// part. It reports whether another volume follows.
+// walkVolume checks the signature, reads one volume and reports whether
+// another volume follows.
 func walkVolume(f *os.File, visit func(part, *os.File) error) (more bool, err error) {
 	fi, err := f.Stat()
 	if err != nil {
@@ -330,6 +377,7 @@ func walkVolume(f *os.File, visit func(part, *os.File) error) (more bool, err er
 	return false, corrupt("%s is not a RAR file", filepath.Base(f.Name()))
 }
 
+// walk4 reads the blocks of a RAR 4 volume and calls visit for each file part.
 func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool, error) {
 	lastSplit := false
 	for pos+7 <= size {
@@ -355,16 +403,17 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 			add = int64(binary.LittleEndian.Uint32(buf[7:11]))
 		}
 		switch typ {
-		case 0x72, 0x75, 0x76, 0x77, 0x78, 0x79: // marker, comment, av, old sub, recovery, sign: passed over
-		case 0x7A: // service block (comment, stream): small ones are passed over; a big one may hide data a tool would write
+		// marker, comment, av, old sub, recovery and sign blocks carry nothing we use
+		case 0x72, 0x75, 0x76, 0x77, 0x78, 0x79:
+		case 0x7A:
 			if add > maxServiceData {
 				return false, ErrUnrecognised
 			}
-		case 0x73: // main header
+		case 0x73:
 			if flags&0x0080 != 0 {
 				return false, ErrEncrypted
 			}
-		case 0x74: // file header
+		case 0x74:
 			if hsize < 32 {
 				return false, corrupt("a file header is too short")
 			}
@@ -396,7 +445,8 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 			}
 			attr := binary.LittleEndian.Uint32(buf[28:32])
 			p.dir = flags&0xE0 == 0xE0
-			link, err := unixKind(buf[15] == 3, attr, &p.dir) // host 3 is Unix
+			// Host byte 3 means the writer was Unix, so attr holds a Unix mode.
+			link, err := unixKind(buf[15] == 3, attr, &p.dir)
 			if err != nil {
 				return false, err
 			}
@@ -413,7 +463,8 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 			if err := visit(p, f); err != nil {
 				return false, err
 			}
-		case 0x7B: // end of archive
+		// the end block says whether the set goes on in another volume
+		case 0x7B:
 			return flags&0x0001 != 0 || lastSplit, nil
 		default:
 			return false, ErrUnrecognised
@@ -426,8 +477,124 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 	return lastSplit, nil
 }
 
-// unixKind reads the file type from a Unix mode: a link is flagged, a folder
-// sets *dir, and anything but a plain file, folder or link is refused.
+// walk5 reads the blocks of a RAR 5 volume and calls visit for each file part.
+func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool, error) {
+	lastSplit := false
+	for pos+6 <= size {
+		var head [14]byte
+		n, _ := f.ReadAt(head[:], pos)
+		sizeField := reader5{b: head[4:n]}
+		hsize := sizeField.vint()
+		sizeLen := int64(n-4) - int64(len(sizeField.b))
+		if sizeField.bad || hsize == 0 || hsize > maxHeader {
+			return false, corrupt("a header has a bad size")
+		}
+		end := pos + 4 + sizeLen + int64(hsize)
+		if end > size {
+			return false, corrupt("a header is cut short")
+		}
+		body := make([]byte, sizeLen+int64(hsize))
+		if _, err := f.ReadAt(body, pos+4); err != nil {
+			return false, corrupt("a header cannot be read")
+		}
+		if crc32.ChecksumIEEE(body) != binary.LittleEndian.Uint32(head[:4]) {
+			return false, corrupt("a header fails its check")
+		}
+		r := reader5{b: body[sizeLen:]}
+		typ, flags := r.vint(), r.vint()
+		var extraSize, dataSize uint64
+		if flags&0x1 != 0 {
+			extraSize = r.vint()
+		}
+		if flags&0x2 != 0 {
+			dataSize = r.vint()
+		}
+		if r.bad || extraSize > uint64(len(r.b)) || dataSize > uint64(maxDataBytes) {
+			return false, corrupt("a header does not add up")
+		}
+		extra := r.b[uint64(len(r.b))-extraSize:]
+		r.b = r.b[:uint64(len(r.b))-extraSize]
+		switch typ {
+		// everything after an encryption header is encrypted
+		case 4:
+			return false, ErrEncrypted
+		case 2:
+			fileFlags := r.vint()
+			unpacked := r.vint()
+			attr := r.vint()
+			if fileFlags&0x2 != 0 {
+				r.skip(4)
+			}
+			var crc uint32
+			if fileFlags&0x4 != 0 {
+				if c := r.take(4); len(c) == 4 {
+					crc = binary.LittleEndian.Uint32(c)
+				}
+			}
+			comp := r.vint()
+			host := r.vint()
+			nameLen := r.vint()
+			if nameLen > maxNameLen {
+				return false, corrupt("a file name is too long")
+			}
+			name := r.take(nameLen)
+			if r.bad || unpacked > uint64(maxDataBytes) {
+				return false, corrupt("a file header does not add up")
+			}
+			p := part{name: string(name), dir: fileFlags&0x1 != 0, packed: int64(dataSize), unpacked: int64(unpacked),
+				dataOff: end, splitBefore: flags&0x8 != 0, splitAfter: flags&0x10 != 0, compressed: (comp>>7)&7 != 0,
+				crc: crc, hasCRC: fileFlags&0x4 != 0}
+			// Host 1 means Unix.
+			link, err := unixKind(host == 1, uint32(attr), &p.dir)
+			if err != nil {
+				return false, err
+			}
+			p.link = link
+			x := reader5{b: extra}
+			for len(x.b) > 0 && !x.bad {
+				recSize := x.vint()
+				rec := reader5{b: x.take(recSize)}
+				switch rec.vint() {
+				case 0x01:
+					p.encrypted = true
+				case 0x05:
+					p.link = true
+				case 0x02, 0x03, 0x04, 0x06, 0x07:
+				default:
+					return false, ErrUnrecognised
+				}
+			}
+			if x.bad {
+				return false, corrupt("a file header does not add up")
+			}
+			if p.dataOff+p.packed > size {
+				return false, corrupt("a volume is cut short")
+			}
+			lastSplit = p.splitAfter
+			if err := visit(p, f); err != nil {
+				return false, err
+			}
+		case 5:
+			endFlags := r.vint()
+			return endFlags&0x1 != 0 || lastSplit, nil
+		case 1:
+		case 3:
+			if dataSize > maxServiceData {
+				return false, ErrUnrecognised
+			}
+		default:
+			return false, ErrUnrecognised
+		}
+		pos = end + int64(dataSize)
+		if pos > size {
+			return false, corrupt("a volume is cut short")
+		}
+	}
+	return lastSplit, nil
+}
+
+// unixKind reads the file type from a Unix mode. Only plain files, folders and
+// links are allowed; a device, pipe or socket is refused.
 func unixKind(unix bool, attr uint32, dir *bool) (link bool, err error) {
 	if !unix {
 		return false, nil
@@ -444,11 +611,10 @@ func unixKind(unix bool, attr uint32, dir *bool) (link bool, err error) {
 	return false, ErrUnrecognised
 }
 
-// plainAndUnicode takes a RAR 4 name stored as plain bytes plus an encoded
-// Unicode form. A tool reads the Unicode one and this package the plain
-// one, so when they disagree the set is refused. A plain name with
-// non-ASCII bytes is in some code page and cannot be compared, so then the
-// Unicode form is used, provided it is a safe path.
+// plainAndUnicode picks the name of a RAR 4 entry stored twice. Tools read the
+// Unicode form and this package the plain one, so an ASCII name must match
+// both or the set is refused. A non-ASCII plain name is in an unknown code
+// page, so the Unicode form is used if it is a safe path.
 func plainAndUnicode(plain, enc []byte) (string, error) {
 	uni, ok := decodeUnicodeName(plain, enc)
 	if !ok {
@@ -470,9 +636,9 @@ func plainAndUnicode(plain, enc []byte) (string, error) {
 	return uni, nil
 }
 
-// decodeUnicodeName expands the RAR 4 name encoding: a high byte, then
-// groups of four 2-bit commands (a plain byte, a byte with the high byte,
-// a 16-bit unit, or a run copied from the plain name, maybe shifted).
+// decodeUnicodeName expands the RAR 4 name encoding: a high byte, then groups
+// of four 2-bit commands that add a byte, a byte with the high byte, a 16-bit
+// unit, or a run copied from the plain name.
 func decodeUnicodeName(plain, enc []byte) (string, bool) {
 	if len(enc) == 0 {
 		return "", false
@@ -536,6 +702,7 @@ func decodeUnicodeName(plain, enc []byte) (string, bool) {
 	return string(utf16.Decode(out)), true
 }
 
+// indexByte returns the first index of c in b, or -1.
 func indexByte(b []byte, c byte) int {
 	for i, x := range b {
 		if x == c {
@@ -543,161 +710,4 @@ func indexByte(b []byte, c byte) int {
 		}
 	}
 	return -1
-}
-
-// reader5 reads the variable-length numbers and fixed fields of a RAR 5 header.
-type reader5 struct {
-	b   []byte
-	bad bool
-}
-
-func (r *reader5) vint() uint64 {
-	var v uint64
-	for i := 0; i < 10; i++ {
-		if len(r.b) == 0 {
-			r.bad = true
-			return 0
-		}
-		c := r.b[0]
-		r.b = r.b[1:]
-		v |= uint64(c&0x7F) << (7 * i)
-		if c&0x80 == 0 {
-			return v
-		}
-	}
-	r.bad = true
-	return 0
-}
-
-func (r *reader5) skip(n uint64) {
-	if n > uint64(len(r.b)) {
-		r.bad = true
-		r.b = nil
-		return
-	}
-	r.b = r.b[n:]
-}
-
-func (r *reader5) take(n uint64) []byte {
-	if n > uint64(len(r.b)) {
-		r.bad = true
-		r.b = nil
-		return nil
-	}
-	out := r.b[:n]
-	r.b = r.b[n:]
-	return out
-}
-
-func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool, error) {
-	lastSplit := false
-	for pos+6 <= size {
-		var head [14]byte
-		n, _ := f.ReadAt(head[:], pos)
-		sizeField := reader5{b: head[4:n]}
-		hsize := sizeField.vint()
-		sizeLen := int64(n-4) - int64(len(sizeField.b))
-		if sizeField.bad || hsize == 0 || hsize > maxHeader {
-			return false, corrupt("a header has a bad size")
-		}
-		end := pos + 4 + sizeLen + int64(hsize)
-		if end > size {
-			return false, corrupt("a header is cut short")
-		}
-		body := make([]byte, sizeLen+int64(hsize))
-		if _, err := f.ReadAt(body, pos+4); err != nil {
-			return false, corrupt("a header cannot be read")
-		}
-		if crc32.ChecksumIEEE(body) != binary.LittleEndian.Uint32(head[:4]) {
-			return false, corrupt("a header fails its check")
-		}
-		r := reader5{b: body[sizeLen:]}
-		typ, flags := r.vint(), r.vint()
-		var extraSize, dataSize uint64
-		if flags&0x1 != 0 {
-			extraSize = r.vint()
-		}
-		if flags&0x2 != 0 {
-			dataSize = r.vint()
-		}
-		if r.bad || extraSize > uint64(len(r.b)) || dataSize > uint64(maxDataBytes) {
-			return false, corrupt("a header does not add up")
-		}
-		extra := r.b[uint64(len(r.b))-extraSize:]
-		r.b = r.b[:uint64(len(r.b))-extraSize]
-		switch typ {
-		case 4: // encryption header: everything after it is encrypted
-			return false, ErrEncrypted
-		case 2: // file
-			fileFlags := r.vint()
-			unpacked := r.vint()
-			attr := r.vint()
-			if fileFlags&0x2 != 0 {
-				r.skip(4)
-			}
-			var crc uint32
-			if fileFlags&0x4 != 0 {
-				if c := r.take(4); len(c) == 4 {
-					crc = binary.LittleEndian.Uint32(c)
-				}
-			}
-			comp := r.vint()
-			host := r.vint()
-			nameLen := r.vint()
-			if nameLen > maxNameLen {
-				return false, corrupt("a file name is too long")
-			}
-			name := r.take(nameLen)
-			if r.bad || unpacked > uint64(maxDataBytes) {
-				return false, corrupt("a file header does not add up")
-			}
-			p := part{name: string(name), dir: fileFlags&0x1 != 0, packed: int64(dataSize), unpacked: int64(unpacked),
-				dataOff: end, splitBefore: flags&0x8 != 0, splitAfter: flags&0x10 != 0, compressed: (comp>>7)&7 != 0,
-				crc: crc, hasCRC: fileFlags&0x4 != 0}
-			link, err := unixKind(host == 1, uint32(attr), &p.dir) // host 1 is Unix
-			if err != nil {
-				return false, err
-			}
-			p.link = link
-			x := reader5{b: extra}
-			for len(x.b) > 0 && !x.bad {
-				recSize := x.vint()
-				rec := reader5{b: x.take(recSize)}
-				switch rec.vint() {
-				case 0x01:
-					p.encrypted = true
-				case 0x05:
-					p.link = true // a link, not a file
-				case 0x02, 0x03, 0x04, 0x06, 0x07: // hash, time, version, owner, service data
-				default:
-					return false, ErrUnrecognised
-				}
-			}
-			if x.bad {
-				return false, corrupt("a file header does not add up")
-			}
-			if p.dataOff+p.packed > size {
-				return false, corrupt("a volume is cut short")
-			}
-			lastSplit = p.splitAfter
-			if err := visit(p, f); err != nil {
-				return false, err
-			}
-		case 5: // end of archive
-			endFlags := r.vint()
-			return endFlags&0x1 != 0 || lastSplit, nil
-		case 1: // main header: passed over
-		case 3: // service header (comment, quick open, stream): small ones are passed over; a big one may hide data a tool would write
-			if dataSize > maxServiceData {
-				return false, ErrUnrecognised
-			}
-		default:
-			return false, ErrUnrecognised
-		}
-		pos = end + int64(dataSize)
-		if pos > size {
-			return false, corrupt("a volume is cut short")
-		}
-	}
-	return lastSplit, nil
 }

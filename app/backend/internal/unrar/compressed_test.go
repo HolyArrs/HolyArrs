@@ -10,8 +10,6 @@ import (
 	"testing"
 )
 
-// testdata/rar5-compressed: one 720,000-byte file (half noise, half text),
-// packed by WinRAR 7.20 with "rar a -ma5 -m3 -v64k" into four volumes.
 const (
 	rar5Name = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.mkv"
 	rar5Sum  = "5adbec0ebd8cf98c55cdd2df2428fa562e63de8312dc7fdb46e01e8504cfc34b"
@@ -22,7 +20,8 @@ func rar5First() string {
 	return filepath.Join("testdata", "rar5-compressed", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.part01.rar")
 }
 
-func TestListSeesACompressedMultiVolumeRAR5Set(t *testing.T) {
+// TestList_CompressedMultiVolumeRAR5 lists a compressed RAR 5 set.
+func TestList_CompressedMultiVolumeRAR5(t *testing.T) {
 	es, err := List(rar5First())
 	if err != nil {
 		t.Fatal(err)
@@ -35,7 +34,8 @@ func TestListSeesACompressedMultiVolumeRAR5Set(t *testing.T) {
 	}
 }
 
-func TestExtractCompressedUnpacksAMultiVolumeRAR5Set(t *testing.T) {
+// TestExtractCompressed_MultiVolumeRAR5 unpacks a compressed RAR 5 set over four volumes.
+func TestExtractCompressed_MultiVolumeRAR5(t *testing.T) {
 	dest := t.TempDir()
 	if err := ExtractCompressed(context.Background(), rar5First(), dest, rar5Size); err != nil {
 		t.Fatal(err)
@@ -49,13 +49,15 @@ func TestExtractCompressedUnpacksAMultiVolumeRAR5Set(t *testing.T) {
 	}
 }
 
-func TestExtractCompressedStopsPastTheLimit(t *testing.T) {
+// TestExtractCompressed_PastTheLimit stops once the limit is passed.
+func TestExtractCompressed_PastTheLimit(t *testing.T) {
 	if err := ExtractCompressed(context.Background(), rar5First(), t.TempDir(), rar5Size-1); !errors.Is(err, ErrTooBig) {
 		t.Fatalf("got %v, want ErrTooBig", err)
 	}
 }
 
-func TestExtractCompressedNeverOverwrites(t *testing.T) {
+// TestExtractCompressed_ExistingFile never overwrites an existing file.
+func TestExtractCompressed_ExistingFile(t *testing.T) {
 	dest := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dest, rar5Name), []byte("mine"), 0o644); err != nil {
 		t.Fatal(err)
@@ -68,7 +70,8 @@ func TestExtractCompressedNeverOverwrites(t *testing.T) {
 	}
 }
 
-func TestExtractCompressedSaysAMissingVolumeIsDamaged(t *testing.T) {
+// TestExtractCompressed_MissingVolume reports a missing volume as damage.
+func TestExtractCompressed_MissingVolume(t *testing.T) {
 	dir := t.TempDir()
 	for _, n := range []string{"part01", "part02", "part04"} {
 		b, err := os.ReadFile(filepath.Join("testdata", "rar5-compressed", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS."+n+".rar"))
@@ -84,7 +87,8 @@ func TestExtractCompressedSaysAMissingVolumeIsDamaged(t *testing.T) {
 	}
 }
 
-func TestExtractCompressedSaysAChangedByteIsDamaged(t *testing.T) {
+// TestExtractCompressed_ChangedByte reports a changed byte as damage.
+func TestExtractCompressed_ChangedByte(t *testing.T) {
 	dir := t.TempDir()
 	for i, n := range []string{"part01", "part02", "part03", "part04"} {
 		b, err := os.ReadFile(filepath.Join("testdata", "rar5-compressed", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS."+n+".rar"))
@@ -92,7 +96,7 @@ func TestExtractCompressedSaysAChangedByteIsDamaged(t *testing.T) {
 			t.Fatal(err)
 		}
 		if i == 1 {
-			b[len(b)/2] ^= 0xff // inside the packed data
+			b[len(b)/2] ^= 0xff
 		}
 		if err := os.WriteFile(filepath.Join(dir, "set."+n+".rar"), b, 0o644); err != nil {
 			t.Fatal(err)
@@ -103,7 +107,8 @@ func TestExtractCompressedSaysAChangedByteIsDamaged(t *testing.T) {
 	}
 }
 
-func TestExtractCompressedStopsWhenTheTimeIsUp(t *testing.T) {
+// TestExtractCompressed_ContextEnded stops when the context has ended.
+func TestExtractCompressed_ContextEnded(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if err := ExtractCompressed(ctx, rar5First(), t.TempDir(), rar5Size); !errors.Is(err, context.Canceled) {

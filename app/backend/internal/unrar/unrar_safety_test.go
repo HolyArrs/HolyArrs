@@ -9,7 +9,8 @@ import (
 	"testing"
 )
 
-func TestWrongDataChecksumIsDamaged(t *testing.T) {
+// TestExtract_WrongChecksum reports a wrong data checksum as damage.
+func TestExtract_WrongChecksum(t *testing.T) {
 	for name, vol := range formats() {
 		t.Run(name, func(t *testing.T) {
 			dir, dest := t.TempDir(), t.TempDir()
@@ -20,7 +21,6 @@ func TestWrongDataChecksumIsDamaged(t *testing.T) {
 			if _, err := Extract(first, dest); !errors.Is(err, ErrCorrupt) {
 				t.Fatalf("got %v", err)
 			}
-			// A flipped byte in the data, with the header untouched.
 			good := vol(false, spec{name: "movie.mkv", data: movie})
 			good[bytes.Index(good, movie[:20])+3] ^= 0xFF
 			bad := put(t, dir, "flip.rar", good)
@@ -31,7 +31,8 @@ func TestWrongDataChecksumIsDamaged(t *testing.T) {
 	}
 }
 
-func TestLinksAndSpecialFilesAreNotUnpacked(t *testing.T) {
+// TestExtract_LinksAndSpecialFiles refuses links and special files.
+func TestExtract_LinksAndSpecialFiles(t *testing.T) {
 	for name, vol := range formats() {
 		t.Run(name, func(t *testing.T) {
 			dir, dest := t.TempDir(), t.TempDir()
@@ -54,7 +55,8 @@ func TestLinksAndSpecialFilesAreNotUnpacked(t *testing.T) {
 	}
 }
 
-func TestUnknownBlocksAreNotUnderstood(t *testing.T) {
+// TestList_UnknownBlock refuses blocks it does not know.
+func TestList_UnknownBlock(t *testing.T) {
 	dir := t.TempDir()
 	v4 := rar4Volume(false, spec{name: "a.mkv", data: movie})
 	v4 = append(append(append([]byte{}, v4[:7]...), rar4Block(0x7F, 0, []byte{1, 2})...), v4[7:]...)
@@ -72,9 +74,6 @@ func TestUnknownBlocksAreNotUnderstood(t *testing.T) {
 	}
 }
 
-// unicodeName builds a RAR 4 name field: the plain bytes, a NUL, the high
-// byte (0), then every character as a "plain byte" command, four per flag
-// byte.
 func unicodeName(plain, uni string) []byte {
 	out := append([]byte(plain), 0, 0)
 	for i := 0; i < len(uni); i += 4 {
@@ -84,20 +83,18 @@ func unicodeName(plain, uni string) []byte {
 	return out
 }
 
-func TestRar4PlainAndUnicodeNamesMustAgree(t *testing.T) {
+// TestList_RAR4NamesDisagree refuses a RAR 4 entry whose two name forms differ.
+func TestList_RAR4NamesDisagree(t *testing.T) {
 	dir := t.TempDir()
 	ok := put(t, dir, "ok.rar", rar4Volume(false, spec{name: "movie.mkv", data: movie, rawName: unicodeName("movie.mkv", "movie.mkv")}))
 	es, err := List(ok)
 	if err != nil || len(es) != 1 || es[0].Name != "movie.mkv" {
 		t.Fatalf("%+v %v", es, err)
 	}
-	// Both forms are plain ASCII but differ: a tool and this package would
-	// disagree about the file name.
 	differ := put(t, dir, "differ.rar", rar4Volume(false, spec{name: "x", data: movie, rawName: unicodeName("abcd.mkv", "abce.mkv")}))
 	if _, err := List(differ); !errors.Is(err, ErrUnrecognised) {
 		t.Fatalf("differing names: %v", err)
 	}
-	// A harmless plain name, an escaping Unicode one.
 	evil := put(t, dir, "evil.rar", rar4Volume(false, spec{name: "x", data: movie, rawName: unicodeName("..x/movie", "../movie")}))
 	if _, err := List(evil); err == nil {
 		t.Fatal("escaping name accepted")
@@ -107,10 +104,8 @@ func TestRar4PlainAndUnicodeNamesMustAgree(t *testing.T) {
 	}
 }
 
-// A service block (comment, stream) may carry a little data, which is passed
-// over; one carrying more than maxServiceData could hide what a system tool
-// would write, so the set is not understood.
-func TestBigServiceBlocksAreNotUnderstood(t *testing.T) {
+// TestList_BigServiceBlock refuses a service block over the size cap.
+func TestList_BigServiceBlock(t *testing.T) {
 	dir := t.TempDir()
 	sub4 := func(n int) []byte {
 		body := make([]byte, 4, 4+8)
@@ -128,7 +123,9 @@ func TestBigServiceBlocksAreNotUnderstood(t *testing.T) {
 		t.Fatalf("rar4 big stream: %v", err)
 	}
 	v5 := rar5Volume(false, spec{name: "a.mkv", data: movie})
-	sub5 := func(n int) []byte { return append(rar5Block(3, 0, []byte{0, 0, 0, 3, 'S', 'T', 'M'}, nil, n), make([]byte, n)...) }
+	sub5 := func(n int) []byte {
+		return append(rar5Block(3, 0, []byte{0, 0, 0, 3, 'S', 'T', 'M'}, nil, n), make([]byte, n)...)
+	}
 	small5 := append(append(append([]byte{}, v5[:8]...), sub5(64)...), v5[8:]...)
 	if _, err := List(put(t, dir, "c.rar", small5)); err != nil {
 		t.Fatalf("rar5 small service: %v", err)

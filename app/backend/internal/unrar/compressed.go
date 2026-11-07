@@ -12,23 +12,26 @@ import (
 	"github.com/nwaples/rardecode/v2"
 )
 
-// ErrTooBig says a set wrote more than the caller allowed; what was written
+// ErrTooBig means a set wrote more than the caller allowed. What was written
 // is left for the caller to remove.
 var ErrTooBig = errors.New("the archive files unpack to more than was allowed")
 
-// maxDictionary caps the decode window a set may ask for (RAR 5 allows up to
-// 4 GB); WinRAR's usual 32 MB and the larger sizes scene groups use fit well
-// inside it, and a bigger ask is refused instead of taking the memory.
+// maxDictionary caps the decode window a set may ask for. RAR 5 allows up to
+// 4 GB, and this size fits every common writer without risking the memory.
 const maxDictionary = 256 << 20
 
-// ExtractCompressed unpacks a compressed set (RAR 4 or RAR 5, one volume or
-// many) into dest with the built-in decoder. dest must be an existing folder
-// of its own. Names pass the same checks as Extract, links and special files
-// are refused, every file is written through a handle on dest (so no path,
-// link or junction leads outside it), existing files are never overwritten,
-// and it stops once more than limit bytes were written or ctx ends (a set
-// can make the decoder work long while writing little). Checksums are
-// checked as each file ends.
+// ctxReader stops a read once ctx ends.
+type ctxReader struct {
+	ctx context.Context
+	r   io.Reader
+}
+
+// ExtractCompressed unpacks a compressed RAR 4 or RAR 5 set into dest, which
+// must be an existing folder of its own. Names pass the same checks as
+// Extract, links and special files are refused, and files are written through
+// a handle on dest so no path, link or junction can leave it. Existing files
+// are never overwritten. It stops after limit bytes or when ctx ends, since a
+// set can keep the decoder busy while writing little.
 func ExtractCompressed(ctx context.Context, first, dest string, limit int64) error {
 	rc, err := rardecode.OpenReader(first, rardecode.MaxDictionarySize(maxDictionary))
 	if err != nil {
@@ -80,7 +83,7 @@ func ExtractCompressed(ctx context.Context, first, dest string, limit int64) err
 		if err != nil {
 			return err
 		}
-		// One byte past what is left shows a set that writes too much.
+		// One extra byte past the limit shows a set that writes too much.
 		c, cerr := io.Copy(f, io.LimitReader(ctxReader{ctx, &rc.Reader}, limit-written+1))
 		ferr := f.Close()
 		written += c
@@ -99,7 +102,7 @@ func ExtractCompressed(ctx context.Context, first, dest string, limit int64) err
 	}
 }
 
-// decodeErr turns the decoder's errors into this package's kinds.
+// decodeErr maps the decoder errors onto this package errors.
 func decodeErr(err error) error {
 	switch {
 	case errors.Is(err, rardecode.ErrArchiveEncrypted), errors.Is(err, rardecode.ErrArchivedFileEncrypted), errors.Is(err, rardecode.ErrBadPassword):
@@ -110,12 +113,7 @@ func decodeErr(err error) error {
 	return fmt.Errorf("%w: %v", ErrCorrupt, err)
 }
 
-// ctxReader stops a read once ctx ends.
-type ctxReader struct {
-	ctx context.Context
-	r   io.Reader
-}
-
+// Read reads from the wrapped reader unless ctx has ended.
 func (c ctxReader) Read(p []byte) (int, error) {
 	if err := c.ctx.Err(); err != nil {
 		return 0, err

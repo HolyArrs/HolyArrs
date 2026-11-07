@@ -12,7 +12,8 @@ import (
 	"testing"
 )
 
-func TestUnpackedModesFollowTheUmask(t *testing.T) {
+// TestExtract_ModesFollowUmask checks unpacked files follow the umask.
+func TestExtract_ModesFollowUmask(t *testing.T) {
 	for _, c := range []struct {
 		umask     int
 		file, dir fs.FileMode
@@ -31,7 +32,6 @@ func TestUnpackedModesFollowTheUmask(t *testing.T) {
 				}
 			}
 
-			// A stored set, read by the plain reader.
 			dest := t.TempDir()
 			first := put(t, t.TempDir(), "rel.rar", rar5Volume(false, spec{name: "Rel/movie.mkv", data: movie}))
 			if _, err := Extract(first, dest); err != nil {
@@ -40,7 +40,6 @@ func TestUnpackedModesFollowTheUmask(t *testing.T) {
 			check(filepath.Join(dest, "Rel", "movie.mkv"), c.file)
 			check(filepath.Join(dest, "Rel"), c.dir)
 
-			// A compressed set.
 			dest = t.TempDir()
 			if err := ExtractCompressed(context.Background(), rar5First(), dest, rar5Size); err != nil {
 				t.Fatal(err)
