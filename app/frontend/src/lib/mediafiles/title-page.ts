@@ -1,5 +1,13 @@
+// Title page helpers: breadcrumb, quality badges, similar titles and slot status.
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { SlotView, TitleView } from '../core/types.ts';
+
+type FileLike = { Quality?: Record<string, unknown> | null; MediaInfo?: Record<string, unknown> | null } | null | undefined;
+type Similar = Pick<TitleView, 'id' | 'kind' | 'name' | 'year' | 'original_language'> & { genres?: string[]; people?: string[] };
+
+const text = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : '');
+
+export const artName = (id: number) => `title-art-${id}`;
 
 export function crumbFor(kind: string): { label: string; path: string } {
 	if (kind === 'show') return { label: 'TV shows', path: '/library?kind=show' };
@@ -7,10 +15,7 @@ export function crumbFor(kind: string): { label: string; path: string } {
 	return { label: 'Movies', path: '/library?kind=movie' };
 }
 
-type FileLike = { Quality?: Record<string, unknown> | null; MediaInfo?: Record<string, unknown> | null } | null | undefined;
-
-const text = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : '');
-
+// Badges come from file quality and media info; 4K hides HD, and Dolby Vision is not also counted as HDR.
 export function qualityBadges(files: FileLike[]): string[] {
 	const out = new Set<string>();
 	for (const f of files) {
@@ -33,8 +38,7 @@ export function qualityBadges(files: FileLike[]): string[] {
 	return list.includes('4K') ? list.filter((b) => b !== 'HD') : list;
 }
 
-type Similar = Pick<TitleView, 'id' | 'kind' | 'name' | 'year' | 'original_language'> & { genres?: string[]; people?: string[] };
-
+// Scores shared genres (3), shared people (2), same language (1) and a year within 5 (1).
 export function similarTitles<T extends Similar>(current: Similar, all: T[], limit = 12): T[] {
 	const g = new Set(current.genres ?? []);
 	const p = new Set(current.people ?? []);
@@ -52,8 +56,7 @@ export function similarTitles<T extends Similar>(current: Similar, all: T[], lim
 	return scored.slice(0, limit).map((s) => s.t);
 }
 
-export const artName = (id: number) => `title-art-${id}`;
-
+// Folds the many slot states into the few the status pill can show.
 export function slotKind(state: string | undefined): StatusKind {
 	switch (state) {
 		case 'in_library':

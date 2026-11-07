@@ -1,5 +1,23 @@
+// Plain-words labels, warnings and paging for the Releases list and search status lines.
 import type { Reason, ReleaseView } from '../core/types.ts';
 import type { SearchView } from '../core/types.ts';
+
+export interface Pager {
+	from: number;
+	to: number;
+	prev: number | null;
+	next: number | null;
+}
+
+export interface ReleaseScope {
+	// Heading shown for what is being searched.
+	label: string;
+	// Search text sent to the sources.
+	query: string;
+	// Set when the search is for one slot only.
+	slotId?: number;
+	slotState?: string;
+}
 
 const outcomeWords: Record<string, string> = {
 	chosen: 'Chosen',
@@ -9,6 +27,7 @@ const outcomeWords: Record<string, string> = {
 	turned_down: 'Turned down'
 };
 
+// A real state beats the judged outcome; an outcome alone is only what "would" happen.
 export function verdict(r: Pick<ReleaseView, 'state' | 'outcome'>): string {
 	if (r.state === 'turned_down') return outcomeWords.turned_down;
 	if (r.state === 'chosen') return outcomeWords.chosen;
@@ -26,6 +45,7 @@ export function verdictTone(r: Pick<ReleaseView, 'state' | 'outcome'>): 'red' | 
 	return 'idle';
 }
 
+// Only reasons that changed the result are worth showing up front.
 export function keyReasons(reasons: Reason[]): Reason[] {
 	return reasons.filter((x) => x.effect === 'fail' || x.effect === 'rank' || x.effect === 'hold' || x.effect === 'warn');
 }
@@ -43,6 +63,7 @@ export function facts(r: ReleaseView, size: (n: number) => string): string {
 		.join(' · ');
 }
 
+// Tells the user what choosing this release overrides, worded for a movie, show or album.
 export function chooseWarnings(r: ReleaseView, slotState?: string, show = false, music = false): string[] {
 	const out: string[] = [];
 	if (r.needs_force) {
@@ -72,13 +93,7 @@ export function listedName(r: Pick<ReleaseView, 'title_name' | 'episode' | 'turn
 	return [r.title_name, ep].filter(Boolean).join(' ');
 }
 
-export interface Pager {
-	from: number;
-	to: number;
-	prev: number | null;
-	next: number | null;
-}
-
+// Shows "from to total" bounds, clamping an offset that ran past the end.
 export function pager(total: number, limit: number, offset: number): Pager {
 	if (total <= 0) return { from: 0, to: 0, prev: null, next: null };
 	const from = Math.min(offset, total - 1) + 1;
@@ -86,6 +101,7 @@ export function pager(total: number, limit: number, offset: number): Pager {
 	return { from, to, prev: offset > 0 ? Math.max(0, offset - limit) : null, next: to < total ? offset + limit : null };
 }
 
+// One readable line per search: what it looks for, where it is, and how it ended.
 export function searchLine(s: SearchView): string {
 	if (s.kind === 'feed_check') return s.state === 'done' ? 'Feeds checked' : 'Checking the feeds of every Source';
 	if (s.kind === 'search_missing')
@@ -121,16 +137,7 @@ export function searchLine(s: SearchView): string {
 	}
 }
 
+// 0 turns feed checks off; otherwise 10 to 120 minutes.
 export function feedMinutesOk(n: number): boolean {
 	return Number.isInteger(n) && (n === 0 || (n >= 10 && n <= 120));
-}
-
-export interface ReleaseScope {
-
-	label: string;
-
-	query: string;
-
-	slotId?: number;
-	slotState?: string;
 }

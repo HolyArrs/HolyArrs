@@ -1,8 +1,24 @@
+// Starting choices for a new title: built-in defaults, saved defaults and what is on offer.
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import type { TitleDefaults } from './types.ts';
 
 export type TitleKind = 'movie' | 'show';
 
+export interface StartChoices {
+	folderId: number;
+	rulesId: number;
+	keep: boolean;
+	searchOnAdd: boolean;
+}
+
+export interface DefaultsLoader {
+	// Loads once and reuses the answer; a failed load is not kept.
+	load(): Promise<TitleDefaults | null>;
+	// Drops the kept answer so the next load asks again.
+	forget(): void;
+}
+
+// Id 0 means nothing picked yet; startChoices fills it from what exists.
 export const builtInDefaults: Readonly<TitleDefaults> = Object.freeze({
 	movie: Object.freeze({ library_folder_id: 0, pick_rules_id: 0, keep_up_to_date: true, search_on_add: true }),
 	show: Object.freeze({ library_folder_id: 0, pick_rules_id: 0, keep_up_to_date: true, search_on_add: false })
@@ -14,23 +30,18 @@ export const gateChoices: [string, string, string][] = [
 	['released', 'Once it is out on digital or disc', 'Look from the first digital or disc date.']
 ];
 
+const offered = (id: number | null | undefined, list: { id: number }[]) => !!id && list.some((x) => x.id === id);
+
 export function foldersFor(folders: LibraryFolder[], kind: TitleKind): LibraryFolder[] {
 	return folders.filter((f) => f.kind === kind);
 }
 
+// Rules with no kinds apply to everything.
 export function rulesFor(rules: PickRulesView[], kind: TitleKind): PickRulesView[] {
 	return rules.filter((r) => !r.kinds.length || r.kinds.includes(kind));
 }
 
-export interface StartChoices {
-	folderId: number;
-	rulesId: number;
-	keep: boolean;
-	searchOnAdd: boolean;
-}
-
-const offered = (id: number | null | undefined, list: { id: number }[]) => !!id && list.some((x) => x.id === id);
-
+// A saved default only counts while it is still on offer; otherwise use a healthy folder and that folder's own rules.
 export function startChoices(defaults: TitleDefaults | null | undefined, folders: LibraryFolder[], rules: PickRulesView[], kind: TitleKind): StartChoices {
 	const d = defaults?.[kind] ?? builtInDefaults[kind];
 	const fs = foldersFor(folders, kind);
@@ -41,13 +52,7 @@ export function startChoices(defaults: TitleDefaults | null | undefined, folders
 	return { folderId, rulesId, keep: d.keep_up_to_date, searchOnAdd: d.search_on_add };
 }
 
-export interface DefaultsLoader {
-
-	load(): Promise<TitleDefaults | null>;
-
-	forget(): void;
-}
-
+// Keeps the promise itself so many callers share one request.
 export function defaultsLoader(get: (path: string) => Promise<TitleDefaults>): DefaultsLoader {
 	let kept: Promise<TitleDefaults | null> | null = null;
 	return {
@@ -67,6 +72,7 @@ export function defaultsLoader(get: (path: string) => Promise<TitleDefaults>): D
 	};
 }
 
+// Names of the fields whose value differs from the loaded copy.
 export function changedParts<T extends object>(loaded: T, now: T): (keyof T & string)[] {
 	const was = loaded as Record<string, unknown>;
 	const is = now as Record<string, unknown>;
