@@ -96,7 +96,7 @@ func addTitle(t *testing.T, w *world, base, libName, kind, name, folder, rel str
 	return titleID, slotID
 }
 
-// #77: a show episode import, a music album import, a show rename and an
+// A show episode import, a music album import, a show rename and an
 // episode delete each send Plex one scan of the right library, only the
 // changed folder, under the server's own path.
 func TestPlexShowsAndMusicPartialScan(t *testing.T) {

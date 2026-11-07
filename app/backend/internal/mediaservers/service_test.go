@@ -387,7 +387,7 @@ func TestInputChecksAndTokenAgain(t *testing.T) {
 	if _, err := Change(ctx, w.s, w.v, m.ID, Input{Name: "Plex", URL: "http://10.0.0.9:32400", Token: "tk-5678"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	// 5.1.7 minor 7: the scheme counts too; a token never moves to plain
+	// The scheme counts too; a token never moves to plain
 	// http without being typed again.
 	if _, err := Change(ctx, w.s, w.v, m.ID, Input{Name: "Plex", URL: "https://10.0.0.9:32400", Token: "tk-5678"}, domain.System); err != nil {
 		t.Fatal(err)

@@ -1,7 +1,3 @@
-// Package mediaservers tells Plex, Jellyfin and Emby to look at a movie,
-// show or album folder again after HolyArrs imported, renamed or deleted files there, so
-// the change shows up without waiting for the server's own scan. It only
-// pushes: nothing is read back. Tokens live in the encrypted vault.
 package mediaservers
 
 import (

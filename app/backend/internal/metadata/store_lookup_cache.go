@@ -10,7 +10,7 @@ import (
 )
 
 // LookupCache keeps provider answers in the lookup_cache table with an
-// expiry (model.md 2.19). It is not the person's data: rows may go at any
+// expiry. It is not the person's data: rows may go at any
 // time. It satisfies metadata.Cache.
 type LookupCache struct{ Store *database.Store }
 

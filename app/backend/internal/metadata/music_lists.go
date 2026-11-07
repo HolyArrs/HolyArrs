@@ -29,13 +29,13 @@ type MusicShelfItem struct {
 // new_entries, new_friday, big_new_albums, singles_artists, long_runners,
 // number_ones, comebacks, neighbor).
 type MusicShelves struct {
-	Region   string                      `json:"region"`
-	Chart    string                      `json:"chart_region"`
-	Neighbor string                      `json:"neighbor_region"`
+	Region   string `json:"region"`
+	Chart    string `json:"chart_region"`
+	Neighbor string `json:"neighbor_region"`
 	// Season is the paid season the "tile:season" block holds.
-	Season string `json:"season"`
-	AsOf     string                      `json:"as_of"`
-	Blocks   map[string][]MusicShelfItem `json:"blocks"`
+	Season string                      `json:"season"`
+	AsOf   string                      `json:"as_of"`
+	Blocks map[string][]MusicShelfItem `json:"blocks"`
 }
 
 // MusicShelves reads one region's world-list shelves ("global" or an ISO

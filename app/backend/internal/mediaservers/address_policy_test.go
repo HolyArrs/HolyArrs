@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// 5.1.7 minor 6: with the local network allowed, link-local and cloud
+// With the local network allowed, link-local and cloud
 // metadata addresses are still refused.
 func TestMetadataRefusedEvenWithLocalNetwork(t *testing.T) {
 	c := client(domain.MediaServer{AllowLocal: true})
