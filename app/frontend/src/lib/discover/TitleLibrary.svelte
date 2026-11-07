@@ -607,6 +607,7 @@
 {/if}
 
 <style>
+	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
 	.lib-more { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); margin-top: clamp(28px, 4vw, 44px); min-width: 0; }
 	/* Linked names read as text until hovered. */
 	/* The ratings on their own row, then the details in one even grid: columns line up at every width. */
