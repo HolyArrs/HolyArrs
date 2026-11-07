@@ -126,7 +126,7 @@ test('Anime: a Release named by running number 13 is matched to S02E01, picked, 
 	// Pick it: the fake qBittorrent gets exactly that Release.
 	await row(want).getByRole('button', { name: 'Pick', exact: true }).click();
 	await expect(sheet).toBeHidden();
-	await expect(page.getByRole('status')).toContainText(`Sent ${want}`);
+	await expect(page.getByRole('status')).toContainText("Sent to Downloader");
 	const hash = animeReleaseHash(want);
 	await expect.poll(async () => ((await (await fetch(`${qbit}/state`)).json()) as { added: string[] }).added, { timeout: 20_000 }).toContain(hash);
 

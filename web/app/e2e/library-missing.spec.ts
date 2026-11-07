@@ -145,7 +145,7 @@ test('Search all missing searches each missing movie, then each episode, at the 
 			if (r.method() === 'POST' && r.url().endsWith('/api/v1/search/missing')) posts++;
 		});
 		/** searchAll presses Search all missing, checks the confirm's count, cancels once, then searches. */
-		const searchAll = async (label: string, said: string): Promise<number> => {
+		const searchAll = async (label: string, said: RegExp): Promise<number> => {
 			const button = page.getByTestId('search-all-missing');
 			await expect(button).toHaveText(label);
 			const n = Number((await page.getByText(/^\d+ of \d+ (movies?|TV shows?|artists?)$/).textContent())?.split(' ')[0]);
@@ -171,7 +171,7 @@ test('Search all missing searches each missing movie, then each episode, at the 
 
 		// Movies only: the button names them, and only the two movies are searched.
 		await page.goto('/library?show=missing&kind=movie');
-		const movieJob = (await (await call('GET', `/jobs/${await searchAll('Search all missing movies', 'Searching for every missing movie.')}`)).json()) as Job;
+		const movieJob = (await (await call('GET', `/jobs/${await searchAll('Search all missing movies', /^Searching for \d+ missing titles?$/)}`)).json()) as Job;
 		expect(movieJob.Params).toMatchObject({ which: 'missing', kind: 'movie' });
 		expect(movieJob.Result?.slots ?? 0).toBeGreaterThanOrEqual(2);
 		expect(movieJob.Result?.seasons ?? 0).toBe(0);
@@ -184,7 +184,7 @@ test('Search all missing searches each missing movie, then each episode, at the 
 
 		// Shows only: the show's episodes are searched, the movies are not searched again.
 		await page.goto('/library?show=missing&kind=show');
-		const jobId = await searchAll('Search all missing shows', 'Searching for every missing episode.');
+		const jobId = await searchAll('Search all missing shows', /^Searching for \d+ missing titles?$/);
 
 		// The bulk job finishes having queued at least this test's searches:
 		// season 1 as one season search and S02E01 on its own.

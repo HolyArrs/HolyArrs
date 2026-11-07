@@ -58,18 +58,18 @@ test('Choose a release on the album page: verdicts, a Release turned down, the F
 	await axe(page, 'album releases');
 
 	await low.getByRole('button', { name: /^Turn down/ }).click();
-	const td = page.getByRole('dialog');
+	const td = page.getByRole('dialog', { name: 'Turn down this Release?' });
 	await expect(td).toContainText('never picks it again for these tracks');
 	await td.getByLabel('Why (optional)').fill('too small');
 	await td.getByRole('button', { name: 'Turn down' }).click();
 	await expect(low.getByTestId('verdict')).toHaveText('Turned down');
 
 	await flac.getByRole('button', { name: /^Choose/ }).click();
-	const ch = page.getByRole('dialog');
+	const ch = page.getByRole('dialog', { name: /^Choose (this Release|it anyway)\?$/ });
 	await expect(ch).toContainText('For Tin Lanterns – Harbour Songs.');
 	await expect(ch.getByTestId('choose-warnings')).toContainText('One download fills 4 tracks of Harbour Songs.');
 	await ch.getByRole('button', { name: 'Choose', exact: true }).click();
-	await expect(page.getByRole('status')).toContainText('for 4 tracks');
+	await expect(page.getByRole('status')).toContainText('For 4 tracks');
 	await expect(page.getByTestId('track-state')).toHaveText(Array(4).fill(/Chosen|Downloading/), { timeout: 20_000 });
 });
 

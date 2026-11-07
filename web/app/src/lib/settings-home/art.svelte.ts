@@ -40,7 +40,7 @@ function save(member: number | undefined, k: Kept) {
 export function small(url: string): string {
 	const via = proxied(url);
 	if (via !== url) return via;
-	if (/^\/api\/v1\/artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)$/.test(url)) return to(`${url}?size=250`);
+	if (/^\/api\/v1\/artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)$/.test(url)) return to(`${url}?size=500`);
 	return url.startsWith('/') ? to(url) : url;
 }
 
@@ -52,7 +52,7 @@ let started = 0;
 export function startArt(member: number | undefined, mayUsers: boolean, self: Person) {
 	if (homeArt.member !== member) Object.assign(homeArt, load(member), { member });
 	const mine = ++started;
-	const withSelf = (list: Person[]) => (list.some((p) => p.name === self.name) ? list : [self, ...list]).slice(0, 4);
+	const withSelf = (list: Person[]) => (list.some((p) => p.name === self.name) ? list : [self, ...list]).slice(0, 12);
 	if (!homeArt.people.length && self.name) homeArt.people = [self];
 	void libraryBrief()
 		.then((titles) => {

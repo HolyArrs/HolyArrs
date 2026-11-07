@@ -19,18 +19,19 @@
 
 	const d = (svg: string) => / d="([^"]+)"/.exec(svg)?.[1] ?? '';
 	const LOGOS = [
-		{ k: 'plex', color: '#EBAF00', path: d(plex), x: '17%', y: '26%' },
-		{ k: 'jellyfin', color: '#00A4DC', path: d(jellyfin), x: '83%', y: '26%' },
-		{ k: 'emby', color: '#52B54B', path: d(emby), x: '17%', y: '84%' },
-		{ k: 'discord', color: '#5865F2', path: d(discord), x: '83%', y: '84%' }
+		{ k: 'plex', color: '#EBAF00', path: d(plex), x: '20%', y: '26%' },
+		{ k: 'jellyfin', color: '#00A4DC', path: d(jellyfin), x: '80%', y: '26%' },
+		{ k: 'emby', color: '#52B54B', path: d(emby), x: '20%', y: '74%' },
+		{ k: 'discord', color: '#5865F2', path: d(discord), x: '80%', y: '74%' }
 	];
 	const TINTS = ['linear-gradient(160deg,#6b7d88,#3d4a52)', 'linear-gradient(160deg,#82709a,#4f4462)', 'linear-gradient(160deg,#94795a,#5f4b36)', 'linear-gradient(160deg,#5f7b97,#384d62)'];
 
-	const fan = $derived(posters.length >= 5);
-	const front = $derived(fan ? [posters[4 % posters.length], posters[1], posters[0], posters[2], posters[3]] : []);
-	const back = $derived(fan ? [5, 6, 7, 8, 9].map((i) => posters[i % posters.length]) : []);
+	// Library: a tidy shelf of whole posters (a row on wide cards, a 3 by 2
+	// wall on tall ones). Six slots, repeated when the Library is small.
+	const shelfP = $derived(posters.length >= 3 ? [0, 1, 2, 3, 4, 5].map((i) => posters[i % posters.length]) : []);
 	const rel = $derived(posters.length >= 3 ? [posters[(posters.length > 7 ? 7 : 2) % posters.length], posters[(posters.length > 3 ? 3 : 1) % posters.length], posters[(posters.length > 4 ? 4 : 0) % posters.length]] : []);
 	const crowd = $derived(people.length >= 2 ? people.slice(0, 4) : []);
+	const more = $derived(people.length - crowd.length);
 
 	// Line art (view 2) pieces.
 	const poster = (x: number, y: number, w: number, h: number, ac = false) =>
@@ -49,9 +50,8 @@
 
 <span class="sx-art" data-g={group} aria-hidden="true">
 	{#if group === 'library'}
-		{#if fan}
-			<span class="fan back">{#each back as src, i (i)}<img {src} alt="" decoding="async" />{/each}</span>
-			<span class="fan">{#each front as src, i (i)}<img {src} alt="" decoding="async" />{/each}</span>
+		{#if shelfP.length}
+			<span class="shelf">{#each shelfP as src, i (i)}<img {src} alt="" decoding="async" />{/each}</span>
 		{:else}
 			<svg class="la w" viewBox="0 0 320 200" preserveAspectRatio="xMidYMax slice">{@html libLine}</svg>
 			<svg class="la t" viewBox="40 -150 240 350" preserveAspectRatio="xMidYMax slice">{@html libTall}</svg>
@@ -68,19 +68,20 @@
 		{/if}
 	{:else if group === 'users'}
 		{#if crowd.length}
-			<span class="ppl" style="--n: {crowd.length}">
+			<span class="ppl">
 				{#each crowd as p, i (p.name + i)}
-					<span class="p" style="--k: {i - (crowd.length - 1) / 2}; --u: {[14, 0, 8, 20][i]}; background: {TINTS[i % 4]}; z-index: {[1, 2, 3, 1][i]}" class:me={i === 1 || crowd.length === 1}>
-						{#if p.avatar}<img src={coverFor(p.avatar, 96).src} alt="" decoding="async" />{:else}{initials(p.name)}{/if}
+					<span class="p" style="background: {TINTS[i % 4]}; z-index: {10 - i}" class:me={i === 0}>
+						{#if p.avatar}<img src={coverFor(p.avatar, 160).src} alt="" decoding="async" />{:else}{initials(p.name)}{/if}
 					</span>
 				{/each}
+				{#if more > 0}<span class="p more">+{more}</span>{/if}
 			</span>
 		{:else}
 			<svg class="la" viewBox="0 0 320 200" preserveAspectRatio="xMidYMax slice">{@html pplLine}</svg>
 		{/if}
 	{:else if group === 'connections'}
 		<span class="apps">
-			<svg class="cab" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50 56 C40 40 26 30 17 26M50 56 C60 40 74 30 83 26M50 56 C38 66 26 74 17 80M50 56 C62 66 74 74 83 80" /></svg>
+			<svg class="cab" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50 50 C40 38 28 30 20 26M50 50 C60 38 72 30 80 26M50 50 C40 62 28 70 20 74M50 50 C60 62 72 70 80 74" /></svg>
 			{#each LOGOS as l (l.k)}
 				<span class="tile" style="--x: {l.x}; --y: {l.y}"><svg viewBox="0 0 24 24"><path fill={l.color} d={l.path} /></svg></span>
 			{/each}
@@ -117,19 +118,19 @@
 	.sx-art img { display: block; }
 	svg { display: block; width: 100%; height: 100%; }
 
-	/* Library: a fan of this Library's posters (a second row on tall cards). */
-	.fan { --h: min(92cqh, 84cqw); }
-	.fan.back { display: none; }
-	@container (orientation: portrait) { .fan.back { display: block; translate: 0 -46cqh; scale: 0.86; opacity: 0.5; } }
-	.fan img { position: absolute; height: var(--h); aspect-ratio: 2 / 3; object-fit: cover; border-radius: clamp(6px, 2.4cqh, 12px); bottom: -12cqh; left: calc(50% - var(--h) / 3 + var(--k) * 21cqw); transform: rotate(calc(var(--k) * 7deg)) translateY(calc(var(--d) * 1cqh)); transform-origin: 50% 160%; box-shadow: 0 1.5cqh 5cqh var(--art-shadow); border: 1px solid var(--tile-line); background: var(--surface-2); }
-	.fan img:nth-child(1) { --k: -2; --d: 6; z-index: 1; }
-	.fan img:nth-child(2) { --k: -1; --d: 2; z-index: 2; }
-	.fan img:nth-child(3) { --k: 0; --d: 0; z-index: 3; }
-	.fan img:nth-child(4) { --k: 1; --d: 2; z-index: 2; }
-	.fan img:nth-child(5) { --k: 2; --d: 6; z-index: 1; }
+	/* Library: whole posters on a shelf, nothing cut. Each poster's width is the
+	   smaller of what the row and the height allow, so the set always fits. */
+	.shelf { --g: clamp(6px, 2.4cqw, 14px); inset: 4cqh 6cqw 7cqh; display: flex; flex-wrap: wrap; align-content: flex-end; justify-content: center; gap: var(--g); --w: min(calc((88cqw - 4 * var(--g)) / 5), calc(89cqh * 2 / 3)); }
+	.shelf img { width: var(--w); aspect-ratio: 2 / 3; object-fit: cover; border-radius: clamp(6px, calc(var(--w) * 0.06), 10px); box-shadow: 0 6px 18px var(--art-shadow); outline: 1px solid var(--tile-line); outline-offset: -1px; background: var(--surface-2); }
+	.shelf img:nth-child(6) { display: none; }
+	@container (orientation: portrait) {
+		.shelf { --w: min(calc((88cqw - 2 * var(--g)) / 3), calc((89cqh - var(--g)) / 2 * 2 / 3)); }
+		.shelf { align-content: center; }
+		.shelf img:nth-child(6) { display: block; }
+	}
 
 	/* Downloads: three releases coming down, the front one moving. */
-	.rel .r { position: absolute; left: calc(var(--k) * -5cqw + 14cqw); right: -8cqw; height: 27cqh; top: calc(var(--k) * 31cqh + 4cqh); display: flex; align-items: center; gap: 5cqh; padding: 0 5cqh 0 0; background: var(--tile); border: 1px solid var(--tile-line); border-radius: 3.5cqh; box-shadow: 0 1cqh 4cqh var(--art-shadow); overflow: hidden; }
+	.rel .r { position: absolute; left: calc((2 - var(--k)) * 4cqw + 6cqw); right: 6cqw; height: 26cqh; top: calc(var(--k) * 30cqh + 6cqh); display: flex; align-items: center; gap: 5cqh; padding: 0 5cqh 0 0; background: var(--tile); border: 1px solid var(--tile-line); border-radius: 3.5cqh; box-shadow: 0 1cqh 4cqh var(--art-shadow); overflow: hidden; }
 	.rel .r:nth-child(1) { --k: 0; opacity: 0.7; }
 	.rel .r:nth-child(2) { --k: 1; opacity: 0.88; }
 	.rel .r:nth-child(3) { --k: 2; }
@@ -144,19 +145,22 @@
 	@keyframes sweep { to { transform: translateX(100%); } }
 
 	/* People: the people on this install. */
-	.ppl .p { position: absolute; width: min(56cqh, 36cqw); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; overflow: hidden; color: #fff; font: 600 min(20cqh, 13cqw) / 1 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; border: max(2px, 1cqh) solid var(--occl); box-shadow: 0 1.5cqh 5cqh var(--art-shadow); left: calc(50% - min(28cqh, 18cqw) + var(--k) * 23cqw); bottom: calc(-14cqh + var(--u) * 1cqh); }
+	.ppl { display: flex; align-items: center; justify-content: center; padding: 0 6cqw 6cqh; --s: min(46cqh, 19cqw, 76px); }
+	.ppl .p { flex: none; width: var(--s); aspect-ratio: 1; margin-left: calc(var(--s) * -0.18); border-radius: 50%; display: grid; place-items: center; overflow: hidden; color: #fff; font: 600 calc(var(--s) * 0.36) / 1 var(--font-display, var(--font-ui)); letter-spacing: 0.01em; border: 3px solid var(--occl); box-shadow: 0 4px 14px var(--art-shadow); position: relative; }
+	.ppl .p:first-child { margin-left: 0; }
 	.ppl .p img { width: 100%; height: 100%; object-fit: cover; }
-	.ppl .p.me { outline: 2px solid var(--accent); outline-offset: 3px; }
+	.ppl .p.me { box-shadow: 0 0 0 2px var(--accent), 0 4px 14px var(--art-shadow); }
+	.ppl .p.more { background: var(--surface-2); color: var(--text); font-size: calc(var(--s) * 0.3); z-index: 0; }
 
 	/* Linked apps: the apps it talks to, wired to HolyArrs. */
 	.apps .cab path { fill: none; stroke: var(--line-strong, var(--line)); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-dasharray: 4 5; }
-	.apps .tile { position: absolute; width: min(40cqh, 25cqw); aspect-ratio: 1; border-radius: 24%; background: var(--tile); border: 1px solid var(--tile-line); box-shadow: 0 1.2cqh 4cqh var(--art-shadow); display: grid; place-items: center; left: calc(var(--x) - min(20cqh, 12.5cqw)); top: calc(var(--y) - min(20cqh, 12.5cqw)); }
+	.apps .tile { position: absolute; width: min(30cqh, 21cqw); aspect-ratio: 1; border-radius: 24%; background: var(--tile); border: 1px solid var(--tile-line); box-shadow: 0 1.2cqh 4cqh var(--art-shadow); display: grid; place-items: center; left: calc(var(--x) - min(15cqh, 10.5cqw)); top: calc(var(--y) - min(15cqh, 10.5cqw)); }
 	.apps .tile svg { width: 56%; height: 56%; }
-	.apps .hub { width: min(48cqh, 30cqw); left: calc(50% - min(24cqh, 15cqw)); top: calc(56% - min(24cqh, 15cqw)); z-index: 2; background: #1c1d21; border-color: rgb(255 255 255 / 0.12); }
+	.apps .hub { width: min(38cqh, 26cqw); left: calc(50% - min(19cqh, 13cqw)); top: calc(50% - min(19cqh, 13cqw)); z-index: 2; background: #1c1d21; border-color: rgb(255 255 255 / 0.12); }
 	.apps .hub img { width: 62%; height: 62%; }
 
 	/* Server: a rack with a slow heartbeat. */
-	.srv .u { position: absolute; left: 8cqw; right: 8cqw; height: 22cqh; top: calc(var(--k) * 25cqh + 26cqh); background: linear-gradient(180deg, var(--tile), color-mix(in srgb, var(--tile) 80%, var(--text) 8%)); border: 1px solid var(--tile-line); border-radius: 3cqh; box-shadow: 0 1cqh 4cqh var(--art-shadow); display: flex; align-items: center; gap: 3cqw; padding: 0 4cqw; }
+	.srv .u { position: absolute; left: 8cqw; right: 8cqw; height: 18cqh; top: calc(var(--k) * 23cqh + 30cqh); background: linear-gradient(180deg, var(--tile), color-mix(in srgb, var(--tile) 80%, var(--text) 8%)); border: 1px solid var(--tile-line); border-radius: 3cqh; box-shadow: 0 1cqh 4cqh var(--art-shadow); display: flex; align-items: center; gap: 3cqw; padding: 0 4cqw; }
 	.srv .vent { flex: 1; height: 44%; background: repeating-linear-gradient(90deg, var(--line-strong, var(--line)) 0 2px, transparent 2px 7px); border-radius: 2px; opacity: 0.8; }
 	.srv .bay { width: 14cqw; height: 44%; border-radius: 1.5cqh; background: var(--line); border: 1px solid var(--tile-line); }
 	.srv .led { width: max(5px, 2.4cqh); aspect-ratio: 1; border-radius: 50%; background: var(--text-muted); }

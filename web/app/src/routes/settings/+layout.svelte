@@ -12,7 +12,7 @@
 	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
 	import { homeArt, startArt } from '#lib/settings-home/art.svelte.ts';
 	import { wall } from '#lib/settings-home/pick.ts';
-	import { arrive, push, settingsNav, swap } from '#lib/settings-home/zoom.ts';
+	import { arrive, coverPage, push, settingsNav, swap } from '#lib/settings-home/zoom.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
@@ -59,6 +59,8 @@
 		if (b === '/settings' && fromSec) {
 			settingsNav.move = 'back';
 			settingsNav.group = fromSec.group;
+			// A blank sheet covers the page first, so the home mounts unseen and the sheet shrinks into its card.
+			return coverPage(fromSec.group);
 		} else if (a === '/settings' && toSec) {
 			settingsNav.move = 'open';
 			settingsNav.group = toSec.group;

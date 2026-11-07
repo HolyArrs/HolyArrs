@@ -6,7 +6,7 @@
 	import { to } from '#lib/paths.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, preloadData } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import { grouped, groups as allGroups, sections as all, visible } from '#lib/settings.ts';
@@ -21,7 +21,7 @@
 	import GroupArt from '#lib/settings-home/GroupArt.svelte';
 	import { homeArt } from '#lib/settings-home/art.svelte.ts';
 	import { settingsFind } from '#lib/settings-home/find.svelte.ts';
-	import { push, settingsNav, zoomBack, zoomOpen, clearFlight } from '#lib/settings-home/zoom.ts';
+	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from '#lib/settings-home/zoom.ts';
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections).filter((g) => g.group.id !== 'account'));
@@ -48,14 +48,39 @@
 
 	let home = $state<HTMLElement>();
 
+	// The next page is fetched as soon as the pointer or focus reaches a card,
+	// so by the time the zoom lands it is ready to mount under the sheet.
+	const loads = new Map<string, Promise<unknown>>();
+	function warm(href: string): Promise<unknown> {
+		let p = loads.get(href);
+		if (!p) {
+			p = preloadData(href).catch(() => null);
+			loads.set(href, p);
+		}
+		return p;
+	}
+
 	function openGroup(e: MouseEvent, id: string, href: string) {
 		if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 		settingsNav.move = 'open';
 		settingsNav.group = id;
-		if (zoomOpen(e.currentTarget as HTMLElement, id)) {
+		const landed = zoomOpen(e.currentTarget as HTMLElement, id);
+		if (!landed) return;
+		e.preventDefault();
+		const ready = warm(href);
+		// Load the page only once the sheet fills the screen: it mounts unseen, then the sheet clears.
+		void landed.then(async (ok) => {
+			if (!ok) return;
+			await ready;
+			await goto(href);
+		});
+	}
+
+	// Escape while a card is still growing turns it back.
+	function key(e: KeyboardEvent) {
+		if (e.key === 'Escape' && cancelOpen()) {
+			settingsNav.move = null;
 			e.preventDefault();
-			// Let the zoom reach the compositor before the next page starts to load.
-			requestAnimationFrame(() => void goto(href));
 		}
 	}
 
@@ -75,10 +100,11 @@
 </script>
 
 <svelte:head><title>Settings · HolyArrs</title></svelte:head>
+<svelte:window onkeydown={key} />
 
 <div class="sx-home" bind:this={home}>
 	<div class="sx-head">
-		<PageHeader title="Settings" />
+		<h1 class="sr-only">Settings</h1>
 		<div class="find">
 			<Icon name="search" size={17} />
 			<label class="sr-only" for="settings-find">Search settings</label>
@@ -112,7 +138,7 @@
 			{#each groups as { group, items } (group.id)}
 				{@const gs = answer ? groupState(answer, items.map((i) => i.href)) : null}
 				{@const href = to(items[0].href)}
-				<a class="sx-card" {href} data-group={group.id} data-testid="settings-group" aria-describedby="line-{group.id}" onclick={(e) => openGroup(e, group.id, href)}>
+				<a class="sx-card" {href} data-group={group.id} data-testid="settings-group" aria-describedby="line-{group.id}" onclick={(e) => openGroup(e, group.id, href)} onpointerenter={() => warm(href)} onpointerdown={() => warm(href)} onfocus={() => warm(href)}>
 					<span class="sx-face">
 						<span class="lift" aria-hidden="true"></span>
 						<span class="words">
@@ -129,7 +155,10 @@
 </div>
 
 <style>
-	.sx-home { display: flex; flex-direction: column; min-height: calc(100dvh - var(--topbar) - 48px); }
+	/* Desktop: a compact landing, at most 640px tall and 1180px wide, centred.
+	   On short windows it shrinks to fit (main's 24px top and 64px bottom
+	   padding taken out), so it never scrolls. */
+	.sx-home { display: flex; flex-direction: column; width: 100%; max-width: 1180px; margin-inline: auto; height: min(640px, calc(100dvh - var(--topbar) - 88px)); min-height: 420px; }
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
 	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
 	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
@@ -140,7 +169,7 @@
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 
 	/* ---------- Bento: Library tall on the left, four around it ---------- */
-	.bento { flex: 1; display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(220px, 1fr) minmax(220px, 1fr); gap: 16px; min-height: 460px; }
+	.bento { flex: 1; display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(150px, 1fr) minmax(150px, 1fr); gap: 14px; min-height: 0; }
 	.sx-card { position: relative; display: block; min-width: 0; border-radius: var(--r-panel); color: var(--text); text-decoration: none; -webkit-tap-highlight-color: transparent; }
 	.sx-card[data-group='library'] { grid-row: span 2; }
 	.sx-card:focus-visible { outline: none; }
@@ -171,12 +200,13 @@
 
 	/* Tablet: Library across the top, two by two under it. */
 	@media (min-width: 768px) and (max-width: 1100px) {
+		.sx-home { height: auto; }
 		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 260px repeat(2, 220px); min-height: 0; flex: none; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
 	}
 	/* Phone: two columns, Library wide on top. */
 	@media (max-width: 767px) {
-		.sx-home { min-height: 0; }
+		.sx-home { min-height: 0; height: auto; }
 		.lede { margin: -10px 0 16px; }
 		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
@@ -186,9 +216,8 @@
 		.pp { font-size: 13px; }
 		.chip { top: 14px; right: 14px; }
 	}
-	/* An odd count (a part turned off): the last card takes the row. */
+	/* Four groups (a part turned off or not allowed): the last card takes the row, so no cell sits empty. */
 	.bento[data-count='4'] .sx-card:last-child { grid-column: span 2; }
-	@media (min-width: 1101px) { .bento[data-count='4'] .sx-card:last-child { grid-column: auto; } }
 
 	@media (prefers-reduced-motion: reduce) {
 		.sx-face, .lift, .art-hold :global(.sx-art) { transition: none; }
@@ -209,6 +238,6 @@
 
 	/* The zoom's moving pieces live on the page body (zoom.ts). */
 	:global(.sx-ghost), :global(.sx-flyart) { position: fixed; z-index: 25; pointer-events: none; transform-origin: 0 0; will-change: transform, opacity; }
-	:global(.sx-ghost) { border-radius: 0; background: color-mix(in srgb, var(--surface-1) 94%, var(--bg)); box-shadow: 0 0 0 1px var(--line), 0 12px 28px rgb(0 0 0 / 0.18); }
+	:global(.sx-ghost) { border-radius: 0; background: linear-gradient(color-mix(in srgb, var(--surface-1) 80%, transparent), color-mix(in srgb, var(--surface-1) 80%, transparent)), var(--bg); backface-visibility: hidden; contain: strict; box-shadow: 0 0 0 1px var(--line), 0 12px 28px rgb(0 0 0 / 0.18); }
 	:global(.sx-flyart) { overflow: hidden; border-radius: var(--r-panel); }
 </style>
