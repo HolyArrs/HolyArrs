@@ -1,0 +1,89 @@
+{
+  "release": {
+    "ID": 1,
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "CreatedBy": {
+      "kind": "system"
+    },
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedBy": {
+      "kind": "system"
+    },
+    "SourceID": 1,
+    "Name": "Dune.Part.Two.2024.1080p.WEB-GRP",
+    "LinkRef": "http://idx.example/dl/1",
+    "Protocol": "torrent",
+    "Size": 123456789,
+    "PublishedAt": "2026-10-01T12:00:00Z",
+    "Seeders": 40,
+    "Peers": 3,
+    "InfoHash": "0123456789abcdef0123456789abcdef01234567",
+    "Flags": [
+      "freeleech"
+    ],
+    "Parsed": {
+      "title": "Dune Part Two",
+      "year": 2024
+    },
+    "MatchedSlotIDs": [
+      1,
+      2
+    ],
+    "Verdict": {
+      "outcome": "passed"
+    },
+    "FoundBy": "auto_search",
+    "JobID": null,
+    "State": "held",
+    "HoldUntil": "2026-10-01T12:00:00Z"
+  },
+  "source": {
+    "ID": 1,
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "CreatedBy": {
+      "kind": "system"
+    },
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedBy": {
+      "kind": "system"
+    },
+    "Name": "Lab",
+    "Protocol": "torrent",
+    "Format": "torznab",
+    "URL": "http://idx.example/api",
+    "SecretRef": null,
+    "UseFor": {
+      "feed": true,
+      "auto_search": true,
+      "hand_search": true
+    },
+    "Kinds": [
+      "movie",
+      "tv"
+    ],
+    "Categories": {
+      "movie": [
+        2000
+      ],
+      "tv": [
+        5000
+      ]
+    },
+    "MinSeeders": 5,
+    "Limits": {},
+    "ProxyID": null,
+    "Priority": 10,
+    "State": "enabled",
+    "PauseReason": null,
+    "PausedUntil": null,
+    "Extra": {
+      "k": "v"
+    },
+    "AllowLocal": true,
+    "ProxyURL": "",
+    "ProxySecretRef": null,
+    "ProxyAllowLocal": false,
+    "PathSecretRef": null,
+    "Tags": null
+  }
+}
