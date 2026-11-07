@@ -1,9 +1,10 @@
 <script lang="ts">
+	// Sheet that shows what deleting a show or artist (or part of it) will do, then applies it.
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import { deleteBody, deleteSummary, wholeScope, type DeleteScope, type RemovePlan } from './organise.ts';
 	import { api, ApiError, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { deleteBody, deleteSummary, wholeScope, type DeleteScope, type RemovePlan } from './organise.ts';
 
 	let {
 		titleId,
@@ -19,15 +20,13 @@
 	let plan = $state<RemovePlan | null>(null);
 	let error = $state('');
 	let busy = $state(false);
+	// Counts plan requests so a slow older answer cannot replace a newer one.
 	let ask = 0;
 
+	// Whole means no season or album is picked, so the switches cover the entire title.
 	const whole = $derived(wholeScope(scope));
 	const what = $derived(whole ? name : kind === 'artist' ? `${name} – ${scope.label ?? ''}` : `${name} ${scope.label ?? ''}`.trim());
 	const parts = $derived(kind === 'artist' ? 'a track you keep' : 'an episode you keep');
-
-	function body(apply: boolean): Record<string, unknown> {
-		return deleteBody(scope, files, never, apply);
-	}
 
 	function flip(which: 'files' | 'never') {
 		if (which === 'files') files = !files;
@@ -35,6 +34,7 @@
 		void planIt();
 	}
 
+	// Asks the server for a dry run so the summary matches the switches.
 	async function planIt() {
 		const mine = ++ask;
 		error = '';
@@ -46,7 +46,7 @@
 		}
 	}
 
-
+	// Called by the parent to start with a fresh scope and a first plan.
 	export function open(s: DeleteScope = {}) {
 		scope = s;
 		files = false;
@@ -67,10 +67,15 @@
 			ondone(p);
 		} catch (e) {
 			error = message(e);
+			// A refused delete returns the current plan, so show it.
 			if (e instanceof ApiError && e.body.plan) plan = e.body.plan as RemovePlan;
 		} finally {
 			busy = false;
 		}
+	}
+
+	function body(apply: boolean): Record<string, unknown> {
+		return deleteBody(scope, files, never, apply);
 	}
 </script>
 

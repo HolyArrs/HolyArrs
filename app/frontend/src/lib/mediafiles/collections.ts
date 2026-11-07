@@ -1,3 +1,5 @@
+// Types and request helpers for reviewing and removing a movie collection.
+
 export interface MovieCollection {
 	id: number;
 	source_id: string;
@@ -61,10 +63,12 @@ export function collectionStart(): CollectionChoice {
 	return { delete_files: false, never_add: false, acknowledge_protection: false };
 }
 
+// Ids are sorted so the same selection always makes the same body and review token.
 export function collectionBody(titleIds: number[], choice: CollectionChoice, reviewToken = '') {
 	return { title_ids: [...titleIds].sort((a, b) => a - b), ...choice, ...(reviewToken ? { review_token: reviewToken } : {}) };
 }
 
+// One plain sentence per title for the result list.
 export function collectionResultLine(r: CollectionRemoveResult): string {
 	if (r.status === 'removed') return `${r.name} was removed from the Library.`;
 	if (r.status === 'skipped') return `${r.name} stayed in the Library: ${r.error ?? 'it was skipped'}.`;

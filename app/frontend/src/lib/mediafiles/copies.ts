@@ -1,3 +1,5 @@
+// Types, filters and display helpers for the library copies list.
+
 export const copyCodecs = ['all', 'unknown', 'h264', 'hevc', 'av1', 'vp9', 'mpeg2', 'xvid', 'vc1'] as const;
 export const copySorts = ['title', 'codec', 'added'] as const;
 export type CopyCodec = (typeof copyCodecs)[number];
@@ -59,6 +61,12 @@ export interface CopyFilters {
 	offset: number;
 }
 
+// Server page size is capped at 100.
+const maxPageSize = 100;
+
+const languageNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'language' }) : null;
+
+// A copy is one file in one version, so both ids make the key.
 export function copyKey(copy: CopySelection): string {
 	return `${copy.file_id}:${copy.version_id}`;
 }
@@ -73,13 +81,12 @@ export function copiesQuery(filters: CopyFilters): string {
 	if (filters.q.trim()) params.set('q', filters.q.trim());
 	if (filters.codec !== 'all') params.set('codec', filters.codec);
 	params.set('sort', filters.sort);
-	params.set('limit', String(Math.min(100, Math.max(1, filters.limit))));
+	params.set('limit', String(Math.min(maxPageSize, Math.max(1, filters.limit))));
 	params.set('offset', String(Math.max(0, filters.offset)));
 	return `/library/copies?${params.toString()}`;
 }
 
-const languageNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'language' }) : null;
-
+// Falls back to the raw code when the code is not a valid language tag.
 export function languageName(code: string): string {
 	try {
 		return languageNames?.of(code) ?? code;
@@ -88,6 +95,7 @@ export function languageName(code: string): string {
 	}
 }
 
+// Unlisted codecs show in upper case.
 export function codecLabel(codec: string): string {
 	const labels: Record<string, string> = { unknown: 'Unknown', h264: 'H.264', hevc: 'HEVC', av1: 'AV1', vp9: 'VP9', mpeg2: 'MPEG-2', xvid: 'Xvid', vc1: 'VC-1' };
 	return labels[codec] ?? codec.toUpperCase();

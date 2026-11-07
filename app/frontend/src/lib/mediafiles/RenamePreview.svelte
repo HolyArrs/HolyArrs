@@ -1,33 +1,38 @@
 <script lang="ts">
+	// Preview of file renames for a title or the whole library, with an apply step.
 	import Poster from '#lib/ui/Poster.svelte';
+	import Button from '../ui/Button.svelte';
+	import ProgressBar from '../ui/ProgressBar.svelte';
+	import Skeleton from '../ui/Skeleton.svelte';
 	import { titleArt } from './title-art.ts';
+	import { albumSteps, fileName, followJob, renamePair, splitSteps, type JobView, type RenameStep } from './organise.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { live } from '../core/live.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { albumSteps, fileName, followJob, renamePair, splitSteps, type JobView, type RenameStep } from './organise.ts';
-	import Button from '../ui/Button.svelte';
-	import ProgressBar from '../ui/ProgressBar.svelte';
-	import Skeleton from '../ui/Skeleton.svelte';
 
 	let { titleId, albumId, season, onDone, page = false, changeCount = $bindable(0) }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void; page?: boolean; changeCount?: number } = $props();
-	let art = $state<Map<number, string>>(new Map());
-	$effect(() => {
-		if (page) void titleArt().then((m) => (art = m));
-	});
 
+	let art = $state<Map<number, string>>(new Map());
 	let steps = $state<RenameStep[]>([]);
 	let planHash = $state('');
 	let loaded = $state(false);
 	let error = $state('');
 	let job = $state<JobView | null>(null);
 	let applying = $state(false);
+
 	const parts = $derived(splitSteps(steps));
+	// No title id means the preview covers every title, so rows show the title name.
 	const many = $derived(titleId === undefined);
+
+	$effect(() => {
+		if (page) void titleArt().then((m) => (art = m));
+	});
 	$effect(() => {
 		if (page) changeCount = parts.change.length;
 	});
 
+	// Fetches the plan; the season filter reads the S01E02 part of the old name.
 	async function load() {
 		try {
 			const p = await api.get<{ steps: RenameStep[]; plan_hash: string }>(titleId === undefined ? '/rename' : `/titles/${titleId}/rename`);
@@ -41,11 +46,13 @@
 	}
 	onMount(load);
 
+	// The plan hash lets the server refuse if files changed since the preview.
 	async function apply() {
 		applying = true;
 		error = '';
 		job = null;
 		try {
+			// A single title sends only the files shown; a library rename sends the whole plan.
 			const body = many ? { plan_hash: planHash } : { plan_hash: planHash, file_ids: parts.change.map((s) => s.file_id) };
 			const r = await api.post<{ job_id: number }>(many ? '/rename' : `/titles/${titleId}/rename`, body);
 			const end = await followJob(

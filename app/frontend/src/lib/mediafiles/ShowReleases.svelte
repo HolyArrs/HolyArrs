@@ -1,11 +1,12 @@
 <script lang="ts">
+	// Releases found for an episode, season or album, with pick and turn down actions.
 	import Button from '#lib/ui/Button.svelte';
+	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from './releases.ts';
+	import type { ReleaseScope as Scope } from './releases.ts';
 	import { api, ApiError, message } from '../core/api.ts';
 	import { bytes } from '../core/format.ts';
 	import { live } from '../core/live.svelte.ts';
-	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from './releases.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import type { ReleaseScope as Scope } from './releases.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '../core/types.ts';
 
 	let {
@@ -18,16 +19,54 @@
 		onchange
 	}: { titleId: number; scope: Scope; jobs?: number[]; music?: boolean; bare?: boolean; onclose: () => void; onchange: () => void } = $props();
 
-	const noun = $derived(music ? 'tracks' : 'episodes');
+	// Rows per page.
+	const limit = 25;
 
 	let releases = $state<ReleaseView[]>([]);
 	let total = $state(0);
 	let offset = $state(0);
-	const limit = 25;
 	let running = $state<number[]>([]);
 	let loaded = $state(false);
+	let chooseDialog: HTMLDialogElement | undefined = $state();
+	let turnDialog: HTMLDialogElement | undefined = $state();
+	let target = $state<ReleaseView | null>(null);
+	let forceReasons = $state<string[]>([]);
+	let chooseError = $state('');
+	let choosing = $state(false);
+	let turnReason = $state('');
+
+	const noun = $derived(music ? 'tracks' : 'episodes');
 	const pages = $derived(pager(total, limit, offset));
 
+	// Picking from a season or album view fills several slots at once.
+	const fillsMany = $derived(!!target && !scope.slotId && (target.slot_ids?.length ?? 0) > 1);
+	const warnings = $derived(target ? chooseWarnings(target, scope.slotState, true, music) : []);
+	const needsForce = $derived(!!target && (target.needs_force || forceReasons.length > 0));
+	// Reading scope.query makes a new scope restart from page one.
+	$effect(() => {
+		void scope.query;
+		offset = 0;
+		running = [...jobs];
+		void load();
+	});
+
+	$effect(() => {
+		const offs = [
+			live.on('releases', () => load()),
+			live.on('job', (d) => {
+				// Reload once a watched job leaves the running and queued states.
+				const j = d as { id?: number; state?: string };
+				if (j?.id && running.includes(j.id) && j.state !== 'running' && j.state !== 'queued') {
+					running = running.filter((x) => x !== j.id);
+					void load();
+				}
+			}),
+			live.on('resync', () => load())
+		];
+		return () => offs.forEach((off) => off());
+	});
+
+	// Running ids are trimmed to the ones the server still lists.
 	async function load() {
 		try {
 			const p = await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope.query}&limit=${limit}&offset=${offset}`);
@@ -42,45 +81,12 @@
 		}
 	}
 
-	$effect(() => {
-		void scope.query;
-		offset = 0;
-		running = [...jobs];
-		void load();
-	});
-
-	$effect(() => {
-		const offs = [
-			live.on('releases', () => load()),
-			live.on('job', (d) => {
-				const j = d as { id?: number; state?: string };
-				if (j?.id && running.includes(j.id) && j.state !== 'running' && j.state !== 'queued') {
-					running = running.filter((x) => x !== j.id);
-					void load();
-				}
-			}),
-			live.on('resync', () => load())
-		];
-		return () => offs.forEach((off) => off());
-	});
-
 	function go(off: number | null) {
 		if (off === null) return;
 		offset = off;
 		void load();
 	}
 
-	let chooseDialog: HTMLDialogElement | undefined = $state();
-	let turnDialog: HTMLDialogElement | undefined = $state();
-	let target = $state<ReleaseView | null>(null);
-	let forceReasons = $state<string[]>([]);
-	let chooseError = $state('');
-	let choosing = $state(false);
-	let turnReason = $state('');
-
-	const fillsMany = $derived(!!target && !scope.slotId && (target.slot_ids?.length ?? 0) > 1);
-	const warnings = $derived(target ? chooseWarnings(target, scope.slotState, true, music) : []);
-	const needsForce = $derived(!!target && (target.needs_force || forceReasons.length > 0));
 
 	function askChoose(r: ReleaseView) {
 		target = r;
@@ -103,6 +109,7 @@
 			onchange();
 			await load();
 		} catch (e) {
+			// The server asks for a forced pick when the release did not pass.
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
 				forceReasons = (e.body.reasons as string[] | undefined) ?? ['it did not pass'];
 			} else {

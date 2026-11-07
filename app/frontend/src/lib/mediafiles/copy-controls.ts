@@ -1,8 +1,11 @@
+// Helpers for reading copy details and building edition and audio criteria text.
+
 import type { CopyFile, VersionView } from '../core/types.ts';
 
 export type CopyControlFile = Pick<CopyFile, 'ID' | 'VersionID' | 'RelativePath' | 'Protected' | 'MediaInfo' | 'State'>;
 export type CopyControlVersion = Pick<VersionView, 'edition' | 'audio_languages'>;
 
+// Media info is untyped JSON, so keep only clean, unique lower case codes.
 export function inspectedAudio(file: CopyControlFile): string[] {
 	const raw = file.MediaInfo?.audio_languages;
 	if (!Array.isArray(raw)) return [];
@@ -28,6 +31,7 @@ export function versionCriteria(version: CopyControlVersion): [string, string] {
 	return [edition ? `Edition: ${edition}` : 'Any edition', audio.length ? `Required audio: ${audio.join(', ')}` : 'Any audio language'];
 }
 
+// Confirm and retry tell the server to apply the edition and search again.
 export function editionDecisionBody(edition: string): { edition: string; confirm: true; retry: true } {
 	return { edition: edition.trim(), confirm: true, retry: true };
 }

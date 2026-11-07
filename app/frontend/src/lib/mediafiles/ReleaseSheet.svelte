@@ -1,10 +1,11 @@
 <script lang="ts">
+	// Sheet that lists the releases found for a title and lets the user pick or reject one.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { keyReasons, verdict, verdictTone } from './releases.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { bytes } from '#lib/core/format.ts';
-	import { keyReasons, verdict, verdictTone } from './releases.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
 	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
@@ -16,14 +17,35 @@
 	let busyId = $state(0);
 	let confirmId = $state(0);
 	let filter = $state<'good' | 'all'>('good');
+	// Time of the last search start, so an empty list is not read as done too early.
 	let startedAt = 0;
+
+	// Chosen first, then passed, then best rank. Good view hides failed and turned down ones.
+	const sorted = $derived(
+		[...releases]
+			.filter((r) => filter === 'all' || (r.passed && r.state !== 'turned_down'))
+			.sort((a, b) => Number(b.outcome === 'chosen') - Number(a.outcome === 'chosen') || Number(b.passed) - Number(a.passed) || (a.rank || 999) - (b.rank || 999) || b.points - a.points)
+	);
+	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
+
+	$effect(() => {
+		if (open) void load();
+	});
+	// Poll while a search runs so results show as they arrive.
+	$effect(() => {
+		if (!open || !running.length) return;
+		const t = setInterval(load, 3000);
+		return () => clearInterval(t);
+	});
 
 	async function load() {
 		loading = true;
 		try {
+			// Demo data only shows in dev builds.
 			const p = import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope ? scope.query + '&' : ''}limit=60&offset=0`);
 			releases = p.releases;
 			total = p.total;
+			// Keep our own job ids for a minute: the server may not list them yet.
 			const mine = Date.now() - startedAt < 60_000 && !p.releases.length ? running : [];
 			running = [...new Set([...(p.running_job_ids ?? []), ...mine])];
 		} catch (e) {
@@ -41,16 +63,8 @@
 			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		}
 	}
-	$effect(() => {
-		if (open) void load();
-	});
-	$effect(() => {
-		if (!open || !running.length) return;
-		const t = setInterval(load, 3000);
-		return () => clearInterval(t);
-	});
-
 	async function choose(r: ReleaseView) {
+		// A forced pick needs a second click to confirm.
 		if (r.needs_force && confirmId !== r.id) return void (confirmId = r.id);
 		busyId = r.id;
 		try {
@@ -59,6 +73,7 @@
 			open = false;
 			onchosen?.();
 		} catch (e) {
+			// The server can demand force even when the row did not say so.
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
 				r.needs_force = true;
 				confirmId = r.id;
@@ -80,6 +95,7 @@
 		}
 	}
 
+	// Sample releases for the dev demo view.
 	function demoPage(t: string): ReleasePage {
 		const n = t.replace(/[^A-Za-z0-9]+/g, '.');
 		const day = 864e5;
@@ -98,11 +114,13 @@
 		return { releases, total: releases.length, limit: 60, offset: 0, running_job_ids: [] };
 	}
 
+	// Rough age words for a release row.
 	function age(iso: string): string {
 		const d = Math.max(0, (Date.now() - Date.parse(iso)) / 864e5);
 		return d < 1 ? 'today' : d < 60 ? `${Math.round(d)} days` : d < 365 ? `${Math.round(d / 30)} months` : `${Math.round(d / 365)} yrs`;
 	}
 
+	// Pull the quality tags out of a release name.
 	function tags(n: string): string[] {
 		const s = n.toLowerCase();
 		const out: string[] = [];
@@ -118,12 +136,7 @@
 		if (/atmos/.test(s)) out.push('Atmos');
 		return out;
 	}
-	const sorted = $derived(
-		[...releases]
-			.filter((r) => filter === 'all' || (r.passed && r.state !== 'turned_down'))
-			.sort((a, b) => Number(b.outcome === 'chosen') - Number(a.outcome === 'chosen') || Number(b.passed) - Number(a.passed) || (a.rank || 999) - (b.rank || 999) || b.points - a.points)
-	);
-	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
+	// Lower weight shows first, so blockers come before ranking notes.
 	const weight: Record<string, number> = { fail: 0, hold: 1, rank: 2, warn: 3 };
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>

@@ -1,4 +1,6 @@
 
+// Types and wording for files held after a delete, before they are removed for good.
+
 export interface HeldFile {
 	id: number;
 	path: string;
@@ -19,6 +21,7 @@ export interface RestoreResult {
 	result: string;
 }
 
+// Null means the held file has no expiry.
 export function daysLeft(expires: string | undefined, now = Date.now()): number | null {
 	if (!expires) return null;
 	const t = Date.parse(expires);
@@ -33,6 +36,7 @@ export function daysLeftWords(expires: string | undefined, now = Date.now()): st
 	return d === 1 ? '1 day left' : `${d} days left`;
 }
 
+// Held paths use forward slashes.
 export function fileName(path: string): string {
 	return path.slice(path.lastIndexOf('/') + 1);
 }
