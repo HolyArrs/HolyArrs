@@ -5,20 +5,25 @@
 // Desktop and tablet: a card zooms into the page (a shared element
 // transition: the card's surface grows to fill the content column while the
 // other cards step back), and Back zooms the page into its card again.
-// Phones: a native push (the page slides in from the right, Settings slides
-// a little left under it) and the same move backwards on Back.
+// Phones: a fade with a slight settle, never past the screen edge.
+//
+// Only transform and opacity animate, so the compositor runs every frame;
+// the next page is fetched before it is needed and mounts under an opaque
+// sheet only once the zoom has landed, so loading never shows or stutters.
 
 export const EASE = 'cubic-bezier(.22, 1, .36, 1)';
 export const MS = {
 	/** Card surface growing into the page, and shrinking back. */
-	zoom: 460,
-	zoomBack: 400,
+	zoom: 420,
+	zoomBack: 380,
+	/** The page fading into a blank sheet before Back shrinks it. */
+	cover: 120,
 	/** The other cards stepping back or forward. */
 	recede: 280,
 	/** The card's picture fading while it travels. */
 	artFade: 200,
 	/** Page coming up under the grown card, and the grown card clearing. */
-	reveal: 240,
+	reveal: 220,
 	/** Phone push and pop. */
 	push: 380,
 	pop: 320,
@@ -63,3 +68,9 @@ export function phone(): boolean {
 
 /** Direction of the last move in Settings, read by the page that mounts next. */
 export type Move = 'open' | 'back' | 'swap' | null;
+
+/** radiusFor keeps the sheet's corners close to the card's at the start and soft, not huge, at full size. */
+export function radiusFor(card: Box, sheet: Box, cardRadius = 16): number {
+	const s = sheet.width > 0 ? Math.min(1, card.width / sheet.width) : 1;
+	return Math.round(cardRadius / Math.sqrt(Math.max(s, 0.05)));
+}

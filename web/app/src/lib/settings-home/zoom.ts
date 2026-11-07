@@ -2,20 +2,22 @@
 // move, Back mid-way or a second click turns the current one around or
 // clears it, so nothing is ever left half-drawn. Transform and opacity only.
 
-import { EASE, MS, flip, phone, reduced, shift, type Box, type Move } from './motion.ts';
+import { EASE, MS, flip, phone, radiusFor, reduced, shift, type Box, type Move } from './motion.ts';
 
 /** What the next Settings screen should play, set before it mounts. */
 export const settingsNav: { move: Move; group: string | null } = { move: null, group: null };
 
 interface Flight {
 	group: string;
-	dir: 'open' | 'back';
+	dir: 'open' | 'back' | 'cover';
 	ghost: HTMLElement;
 	art: HTMLElement | null;
 	anims: Animation[];
 	grown: boolean;
 	arrived: boolean;
 	hidden: HTMLElement | null;
+	/** Resolves once the sheet fills the page (open) or covers it (Back). */
+	landed: Promise<boolean>;
 }
 
 let flight: Flight | null = null;
@@ -77,51 +79,99 @@ function others(card: HTMLElement): HTMLElement[] {
 	return [...document.querySelectorAll<HTMLElement>('.sx-card .sx-face, .sx-head, .sx-attention')].filter((el) => !card.contains(el));
 }
 
-/** zoomOpen grows the card into the page. Returns false where it does not zoom (phones, less motion). */
-export function zoomOpen(card: HTMLElement, group: string): boolean {
+const done = (a: Animation) => a.finished.then(() => true, () => false);
+
+function sheet(b: Box, radius: number): HTMLElement {
+	const el = make('sx-ghost', b);
+	el.style.borderRadius = `${radius}px`;
+	return el;
+}
+
+/**
+ * zoomOpen grows the card into an opaque sheet the size of the page and
+ * resolves true once it has landed, so the caller can then load the page
+ * under it. Resolves false if the flight was turned around or replaced.
+ * Returns null where it does not zoom (phones, less motion).
+ */
+export function zoomOpen(card: HTMLElement, group: string): Promise<boolean> | null {
 	clearFlight();
-	if (reduced() || phone()) return false;
+	if (reduced() || phone()) return null;
 	const face = (card.querySelector('.sx-face') as HTMLElement | null) ?? card;
 	const from = boxOf(face);
 	const to = stage();
-	const ghost = make('sx-ghost', to);
+	const ghost = sheet(to, radiusFor(from, to));
 	const art = artClone(card, from);
-	const g = ghost.animate([{ transform: flip(from, to), borderRadius: '16px' }, { transform: 'none', borderRadius: '0px' }], { duration: MS.zoom, easing: EASE, fill: 'both' });
+	// Transform and opacity only: the compositor plays every frame even while the main thread is busy.
+	const g = ghost.animate([{ transform: flip(from, to) }, { transform: 'none' }], { duration: MS.zoom, easing: EASE, fill: 'both' });
 	const anims: Animation[] = [g];
-	if (art) anims.push(art.animate([{ transform: 'none', opacity: 1 }, { transform: shift(to, from), opacity: 0 }], { duration: MS.zoom, easing: EASE, fill: 'both' }));
+	if (art) anims.push(art.animate([{ transform: 'none', opacity: 1 }, { transform: shift(to, from), opacity: 0, offset: 0.55 }, { transform: shift(to, from), opacity: 0 }], { duration: MS.zoom, easing: EASE, fill: 'both' }));
 	for (const el of others(card)) anims.push(el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: MS.recede, easing: EASE, fill: 'both' }));
 	face.style.visibility = 'hidden';
-	const f: Flight = { group, dir: 'open', ghost, art, anims, grown: false, arrived: false, hidden: face };
-	flight = f;
-	g.finished.then(() => {
-		if (flight !== f) return;
+	const f: Flight = { group, dir: 'open', ghost, art, anims, grown: false, arrived: false, hidden: face, landed: Promise.resolve(false) };
+	f.landed = done(g).then((ok) => {
+		if (!ok || flight !== f || f.dir !== 'open') return false;
 		f.grown = true;
-		if (f.arrived) settle(f);
-	}, () => {});
+		f.art?.remove();
+		f.art = null;
+		return true;
+	});
+	flight = f;
+	return f.landed;
+}
+
+/**
+ * cancelOpen turns a zoom that has not landed back into its card (Escape,
+ * or a second click elsewhere). Returns true if there was one to turn.
+ */
+export function cancelOpen(): boolean {
+	const f = flight;
+	if (!f || f.dir !== 'open' || f.grown) return false;
+	f.dir = 'back';
+	for (const a of f.anims) a.reverse();
+	void done(f.anims[0]).then(() => {
+		if (flight === f) clearFlight();
+	});
 	return true;
 }
 
-/** arrive is called by the page once it is on screen: the grown card clears to show it. */
+/** arrive is called by the page once it is on screen: the sheet clears to show it. */
 export function arrive() {
 	const f = flight;
 	if (!f || f.dir !== 'open') return;
 	f.arrived = true;
 	f.hidden = null; // that card is gone with the Settings home
-	if (f.grown) settle(f);
+	// Wait for the page's first paint, so the fade never shares a frame with mounting.
+	requestAnimationFrame(() => requestAnimationFrame(() => settle(f)));
 }
 
 function settle(f: Flight) {
+	if (flight !== f) return;
 	const fade = f.ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MS.reveal, easing: EASE, fill: 'both' });
 	f.anims.push(fade);
-	fade.finished.then(() => {
+	void done(fade).then(() => {
 		if (flight === f) clearFlight();
-	}, () => {});
+	});
 }
 
 /**
- * zoomBack shrinks the page into its card on the Settings home. Mid-flight
- * (Back during the open) it turns the running zoom around from where it is.
+ * coverPage fades a blank sheet over the open page before Back swaps it
+ * for the Settings home, so the home mounts unseen and the sheet then
+ * shrinks into its card. Resolves when covered (at once where it does not zoom).
  */
+export function coverPage(group: string): Promise<void> {
+	clearFlight();
+	if (reduced() || phone()) return Promise.resolve();
+	const b = stage();
+	const ghost = sheet(b, 0);
+	const c = ghost.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MS.cover, easing: EASE, fill: 'both' });
+	const f: Flight = { group, dir: 'cover', ghost, art: null, anims: [c], grown: true, arrived: true, hidden: null, landed: Promise.resolve(false) };
+	flight = f;
+	f.landed = done(c);
+	// Never hold the page change longer than the fade, even in a background tab.
+	return Promise.race([f.landed, new Promise<boolean>((r) => setTimeout(() => r(true), MS.cover + 60))]).then(() => {});
+}
+
+/** zoomBack shrinks the page's sheet into its card on the Settings home. */
 export function zoomBack(card: HTMLElement, group: string): void {
 	const face = (card.querySelector('.sx-face') as HTMLElement | null) ?? card;
 	const rest = others(card);
@@ -129,37 +179,32 @@ export function zoomBack(card: HTMLElement, group: string): void {
 		clearFlight();
 		return;
 	}
-	const intro = rest.map((el) => el.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: MS.recede + 120, easing: EASE, fill: 'backwards' }));
-	const running = flight && flight.dir === 'open' && flight.group === group && !flight.grown ? flight : null;
-	if (running) {
-		// Turn the same flight around: the ghost shrinks back from where it is now.
-		for (const a of running.anims.slice(running.art ? 2 : 1)) a.cancel();
-		running.anims = running.anims.slice(0, running.art ? 2 : 1);
-		running.dir = 'back';
-		running.hidden = face;
-		face.style.visibility = 'hidden';
-		for (const a of running.anims) a.reverse();
-		running.anims.push(...intro);
-		running.anims[0].finished.then(() => {
-			if (flight === running) clearFlight();
-		}, () => {});
-		return;
-	}
-	clearFlight();
+	const cover = flight && flight.dir === 'cover' && flight.group === group ? flight : null;
 	const to = boxOf(face);
 	const from = stage();
-	const ghost = make('sx-ghost', from);
-	const art = artClone(card, to);
-	const g = ghost.animate([{ transform: 'none', borderRadius: '0px' }, { transform: flip(to, from), borderRadius: '16px' }], { duration: MS.zoomBack, easing: EASE, fill: 'both' });
+	let ghost: HTMLElement;
+	if (cover) {
+		for (const a of cover.anims) a.cancel();
+		ghost = cover.ghost;
+		ghost.style.opacity = '1';
+		place(ghost, from);
+		flight = null;
+	} else {
+		clearFlight();
+		ghost = sheet(from, 0);
+	}
+	ghost.style.borderRadius = `${radiusFor(to, from)}px`;
+	const intro = rest.map((el) => el.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: MS.recede + 120, delay: 60, easing: EASE, fill: 'backwards' }));
+	const g = ghost.animate([{ transform: 'none', opacity: 1 }, { transform: flip(to, from), opacity: 1, offset: 0.85 }, { transform: flip(to, from), opacity: 0 }], { duration: MS.zoomBack, easing: EASE, fill: 'both' });
+	// The sheet lands on the card and fades, uncovering the real card under it.
+	const art = null;
 	const anims: Animation[] = [g];
-	if (art) anims.push(art.animate([{ transform: shift(from, to), opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: MS.zoomBack, easing: EASE, fill: 'both' }));
 	anims.push(...intro);
-	face.style.visibility = 'hidden';
-	const f: Flight = { group, dir: 'back', ghost, art, anims, grown: true, arrived: true, hidden: face };
+	const f: Flight = { group, dir: 'back', ghost, art, anims, grown: true, arrived: true, hidden: null, landed: Promise.resolve(true) };
 	flight = f;
-	g.finished.then(() => {
+	void done(g).then(() => {
 		if (flight === f) clearFlight();
-	}, () => {});
+	});
 }
 
 /** push brings a screen in on a phone: a fade with a slight settle (never past the screen edge). */
