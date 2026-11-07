@@ -88,6 +88,12 @@
 			offs.forEach((off) => off());
 		};
 	});
+	/** shortPath keeps the last two parts of a folder path (the full path is in the tooltip); other words stay as they are. */
+	function shortPath(t: string): string {
+		if (!/[\\/]/.test(t)) return t;
+		const parts = t.split(/[\\/]/).filter(Boolean);
+		return parts.length > 2 ? '…/' + parts.slice(-2).join('/') : t;
+	}
 </script>
 
 <svelte:head><title>Health checks · HolyArrs</title></svelte:head>
@@ -138,7 +144,7 @@
 					<li data-testid="health-check" data-state={c.state}>
 						<span class="chip {c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
 						<span class="grow small">
-							<b>{checkName(c.kind, c.subject).label}</b>{#if checkName(c.kind, c.subject).subject}{' '}{checkName(c.kind, c.subject).subject}{/if}
+							<b>{checkName(c.kind, c.subject).label}</b>{#if checkName(c.kind, c.subject).subject}{' '}<span class="subj" title={checkName(c.kind, c.subject).subject}>{shortPath(checkName(c.kind, c.subject).subject)}</span>{/if}
 							{#if c.message}<br /><span class="muted">{c.message}</span>{/if}
 						</span>
 						<time class="mono xs muted" datetime={c.since} title="Since">{ago(c.since)}</time>
