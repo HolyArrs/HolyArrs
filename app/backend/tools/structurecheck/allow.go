@@ -46,7 +46,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/auth/outside.go":                   true,
 	"app/backend/internal/judge/judge.go":                    true,
 	"app/frontend/src/lib/approvals/ApprovalsDesktop.svelte": true,
-	"app/backend/internal/metadata/musicbrainz.go":           true,
 	"app/backend/internal/api/explore_new_music.go":          true,
 	"app/backend/internal/parts/table.go":                    true,
 	"app/frontend/src/routes/library/+page.svelte":           true,
