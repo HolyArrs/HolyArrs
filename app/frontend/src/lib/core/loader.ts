@@ -1,23 +1,41 @@
+// Full-page loader, sign-in handoff and reconnect veil driven from one DOM node.
 
+export interface Rect { left: number; top: number; width: number; height: number }
+
+// How long the full loader stays up, and the wait before the thin nav bar shows.
 export const HOLD_MS = 2200;
 export const NAV_DELAY_MS = 300;
 export const SETUP_HOLD_MS = 1800;
 
+// Remembers the last user so a different one gets a welcome line.
 const LAST_USER = 'holyarrs-last-user';
 
+// Sign-in handoff timings; RING is the loader ring size the glide starts from.
 export const GLIDE_MS = 560;
 export const VEIL_MS = 560;
 export const SIGNIN_HOLD_MS = 520;
 export const ARRIVE_MS = 420;
 const RING = 104;
 
-export interface Rect { left: number; top: number; width: number; height: number }
+// Loader state lives at module level because one loader node serves the whole page.
+const el = () => (typeof document === 'undefined' ? null : document.getElementById('hl'));
+let shownAt = 0;
+let hold = pageHold();
+let reconnecting = false;
+let full = !el()?.hidden;
+let timer: ReturnType<typeof setTimeout> | undefined;
+let navTimer: ReturnType<typeof setTimeout> | undefined;
 
+let handoffWait: Promise<void> | null = null;
+let settle: () => void = () => {};
+
+// Offset and scale that put the loader ring over the sign-in avatar before it glides to centre.
 export function handoffFrom(from: Rect, vw: number, vh: number, ring = RING): { x: number; y: number; s: number } {
 	const s = Math.max(0.2, Math.min(1, from.height / ring));
 	return { x: from.left + from.width / 2 - vw / 2, y: from.top + from.height / 2 - vh / 2, s };
 }
 
+// Total handoff time; reduced motion gets a short fixed one.
 export function handoffTotal(readyMs: number, reduced = false): number {
 	if (reduced) return 400;
 	return Math.max(VEIL_MS, readyMs) + SIGNIN_HOLD_MS + ARRIVE_MS;
@@ -27,45 +45,18 @@ export function isUserSwitch(last: string | null, name: string): boolean {
 	return !!last && !!name && last !== name;
 }
 
+// Time left to keep the loader up so it never flashes by.
 export function remaining(shownAt: number, now: number, hold = HOLD_MS): number {
 	return Math.max(0, shownAt + hold - now);
 }
 
+// Only a reload replays the full loader, and never on the login page.
 export function bootHold(navType: string | undefined, path: string): number {
 	if (/\/login\/?$/.test(path)) return 0;
 	return navType === 'reload' ? HOLD_MS : 0;
 }
 
-function pageHold(): number {
-	if (typeof performance === 'undefined' || typeof location === 'undefined') return HOLD_MS;
-	const nav = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
-	return bootHold(nav?.type, location.pathname);
-}
-
-const el = () => (typeof document === 'undefined' ? null : document.getElementById('hl'));
-let shownAt = 0;
-let hold = pageHold();
-let reconnecting = false;
-let full = !el()?.hidden;
-let timer: ReturnType<typeof setTimeout> | undefined;
-let navTimer: ReturnType<typeof setTimeout> | undefined;
-
-function leave(node: HTMLElement): void {
-	const handoff = node.classList.contains('handoff');
-	node.classList.add('out');
-	if (handoff) arrive();
-	timer = setTimeout(() => {
-		node.hidden = true;
-		node.classList.remove('out', 'nav', 'handoff', 'veil');
-		say('');
-		full = false;
-		settle();
-	}, 280);
-}
-
-let handoffWait: Promise<void> | null = null;
-let settle: () => void = () => {};
-
+// Resolves once the handoff has fully left the screen.
 export function afterHandoff(): Promise<void> {
 	return handoffWait ?? Promise.resolve();
 }
@@ -91,18 +82,7 @@ export function playLoader(line = '', holdMs = HOLD_MS): void {
 	shownAt = performance.now();
 }
 
-function say(text: string): void {
-	const t = typeof document === 'undefined' ? null : document.getElementById('hlt');
-	if (t) t.textContent = text;
-}
-
-function arrive(): void {
-	const root = document.documentElement;
-	if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-	root.classList.add('hl-arrive');
-	setTimeout(() => root.classList.remove('hl-arrive'), ARRIVE_MS + 80);
-}
-
+// Starts the sign-in handoff and keeps the page waiting until it finishes.
 export function playHandoff(from: Rect | null, name: string): void {
 	const node = el();
 	if (!node) return;
@@ -139,17 +119,6 @@ export function playHandoff(from: Rect | null, name: string): void {
 	}));
 }
 
-function rememberUser(name: string): string | null {
-	let last: string | null = null;
-	try {
-		last = localStorage.getItem(LAST_USER);
-		localStorage.setItem(LAST_USER, name);
-	} catch {
-		/* private window */
-	}
-	return last;
-}
-
 export function playSignIn(name: string, holdMs = HOLD_MS): void {
 	const last = rememberUser(name);
 	playLoader(isUserSwitch(last, name) ? `Welcome, ${name}` : '', holdMs);
@@ -175,10 +144,12 @@ export function hideReconnecting(): void {
 	if (node && !node.hidden) leave(node);
 }
 
+// Retry wait that doubles each try up to 15 seconds.
 export function backoff(n: number): number {
 	return Math.min(15000, 1000 * 2 ** n);
 }
 
+// Shows the nav bar only if the page stays busy past the delay, so quick moves show nothing.
 export function navStarted(): void {
 	clearTimeout(navTimer);
 	if (full) return;
@@ -198,4 +169,50 @@ export function navEnded(): void {
 	if (!node || full || node.hidden) return;
 	clearTimeout(timer);
 	leave(node);
+}
+
+// Hold is zero on first loads so only reloads replay the full loader.
+function pageHold(): number {
+	if (typeof performance === 'undefined' || typeof location === 'undefined') return HOLD_MS;
+	const nav = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
+	return bootHold(nav?.type, location.pathname);
+}
+
+// The 280 ms matches the fade-out in the loader styles.
+function leave(node: HTMLElement): void {
+	const handoff = node.classList.contains('handoff');
+	node.classList.add('out');
+	if (handoff) arrive();
+	timer = setTimeout(() => {
+		node.hidden = true;
+		node.classList.remove('out', 'nav', 'handoff', 'veil');
+		say('');
+		full = false;
+		settle();
+	}, 280);
+}
+
+function say(text: string): void {
+	const t = typeof document === 'undefined' ? null : document.getElementById('hlt');
+	if (t) t.textContent = text;
+}
+
+// Adds a brief class so the page eases in after a handoff.
+function arrive(): void {
+	const root = document.documentElement;
+	if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+	root.classList.add('hl-arrive');
+	setTimeout(() => root.classList.remove('hl-arrive'), ARRIVE_MS + 80);
+}
+
+// Storage can be blocked in private windows, so failures are ignored.
+function rememberUser(name: string): string | null {
+	let last: string | null = null;
+	try {
+		last = localStorage.getItem(LAST_USER);
+		localStorage.setItem(LAST_USER, name);
+	} catch {
+		/* private window */
+	}
+	return last;
 }

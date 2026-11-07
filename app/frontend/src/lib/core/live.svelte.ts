@@ -1,3 +1,5 @@
+// Server event stream with reconnect, resync and one stream shared across tabs.
+
 import { to } from './paths.ts';
 import { api } from './api.ts';
 import { backoff } from './loader.ts';
@@ -33,12 +35,14 @@ type Relay =
 // Only one tab holds this lock and owns the stream; the others get events relayed.
 const LOCK = 'holyarrs-live';
 
+// Builds a stream; the factory and shared parts can be swapped so tests can fake them.
 export function createLive(factory: SourceFactory = (u) => new EventSource(u) as unknown as SourceLike, shared?: Shared) {
 	const status = $state<{ state: LiveState; last: number; leader: boolean }>({ state: 'off', last: 0, leader: false });
 	const listeners = new Map<string, Set<Listener>>();
 	let src: SourceLike | null = null;
 	let lastId = '';
 
+	// A new boot id in the event id means the server restarted, so cached data is stale.
 	function seen(id: string) {
 		if (!id) return;
 		const boot = id.slice(0, id.lastIndexOf('-'));
@@ -50,6 +54,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		}
 	}
 
+	// A resync reaches every topic listener except the catch-all, which gets every event after.
 	function emit(topic: string, data: unknown) {
 		const run = (set: Set<Listener> | undefined) => set?.forEach((fn) => fn(data, topic));
 		if (topic === 'resync') {
@@ -80,6 +85,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	let missed = false;
 	let hideTimer: ReturnType<typeof setTimeout> | undefined;
 	let watching = false;
+	// A tab hidden for 10 seconds drops its stream and reopens when shown again.
 	function visibility() {
 		clearTimeout(hideTimer);
 		if (document.hidden) {
@@ -192,6 +198,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			postInterest(m.view);
 		}
 	}
+	// Wins the lock to own the stream; losing tabs wait and take over when the leader closes.
 	function lead() {
 		if (!shared || release || abort) return;
 		const ctl = (abort = new AbortController());
@@ -222,7 +229,9 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		abort = null;
 		release?.();
 	}
+	// Tells the server which view is open so it can send matching events.
 	const sentAt = new Map<string, number>();
+	// At most one interest post per view every 10 seconds.
 	function postInterest(view: string) {
 		const now = Date.now();
 		if (now - (sentAt.get(view) ?? -Infinity) < 10_000) return;
@@ -257,11 +266,14 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	return { status, start, stop, on, dispatch, interest };
 }
 
+// The one app-wide stream.
+export const live = createLive(undefined, sharedParts());
+
+// Close the stream when the module is replaced in dev.
+if (import.meta.hot) import.meta.hot.dispose(() => live.stop());
+
+// Cross-tab sharing needs the locks and broadcast APIs; without them each tab opens its own stream.
 function sharedParts(): Shared | undefined {
 	if (typeof navigator === 'undefined' || !navigator.locks || typeof BroadcastChannel === 'undefined') return undefined;
 	return { locks: navigator.locks as unknown as LocksLike, channel: () => new BroadcastChannel(LOCK) as unknown as ChannelLike };
 }
-
-export const live = createLive(undefined, sharedParts());
-
-if (import.meta.hot) import.meta.hot.dispose(() => live.stop());

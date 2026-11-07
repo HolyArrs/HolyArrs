@@ -1,3 +1,13 @@
+// Display helpers that turn raw numbers, dates and states into short text.
+
+export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
+
+// Which tone each backend state shows as; unlisted states read as idle.
+const okStates = ['in_library', 'finished', 'done', 'chosen', 'placed', 'enabled', 'ok'];
+const failStates = ['failed', 'stalled', 'vanished', 'refused', 'rejected', 'needs_a_decision', 'partly_done', 'missing',
+	'read_only', 'unreachable', 'auth_failed', 'disabled'];
+const waitStates = ['searching', 'downloading', 'importing', 'queued', 'sent', 'held', 'placing', 'running', 'paused',
+	'no_hardlink', 'wanted', 'not_out_yet', 'better_wanted', 'unknown'];
 
 export function bytes(n: number | null | undefined): string {
 	if (!n || n < 0) return '0 B';
@@ -26,6 +36,7 @@ export function percent(p: number | null | undefined): number {
 	return Math.min(100, Math.round(p * 1000) / 10);
 }
 
+// Date-only values are pinned to UTC so they do not slip a day in other zones.
 export function date(s: string | null | undefined): string {
 	if (!s) return '';
 	const d = new Date(s);
@@ -41,6 +52,7 @@ export function dateTime(s: string | null | undefined): string {
 	return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+// Under 45 seconds reads as now so counts do not flicker.
 export function ago(s: string | null | undefined, now = Date.now()): string {
 	if (!s) return '';
 	const t = new Date(s).getTime();
@@ -52,18 +64,12 @@ export function ago(s: string | null | undefined, now = Date.now()): string {
 	return `${Math.round(sec / 86400)} d ago`;
 }
 
+// Spelled out for screen readers and wide layouts.
 export function agoLong(s: string | null | undefined, now = Date.now()): string {
 	return ago(s, now).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
 }
 
-export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
-
-const okStates = ['in_library', 'finished', 'done', 'chosen', 'placed', 'enabled', 'ok'];
-const failStates = ['failed', 'stalled', 'vanished', 'refused', 'rejected', 'needs_a_decision', 'partly_done', 'missing',
-	'read_only', 'unreachable', 'auth_failed', 'disabled'];
-const waitStates = ['searching', 'downloading', 'importing', 'queued', 'sent', 'held', 'placing', 'running', 'paused',
-	'no_hardlink', 'wanted', 'not_out_yet', 'better_wanted', 'unknown'];
-
+// Maps a state to ok, wait, fail or idle for colour.
 export function tone(state: string | null | undefined): Tone {
 	if (!state) return 'idle';
 	if (okStates.includes(state)) return 'ok';

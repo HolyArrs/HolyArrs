@@ -1,6 +1,9 @@
+// Shared unread, waiting and report counts for the inbox badge.
+
 import { api } from './api.ts';
 import type { AppMessage } from './types.ts';
 
+// Reactive so every badge updates from one place.
 export const inbox = $state<{ unread: number; waiting: number; reports: number; messages: AppMessage[] }>({ unread: 0, waiting: 0, reports: 0, messages: [] });
 
 export async function refreshInbox(): Promise<void> {
@@ -11,6 +14,6 @@ export async function refreshInbox(): Promise<void> {
 		inbox.waiting = r.waiting ?? 0;
 		inbox.reports = r.reports_open ?? 0;
 	} catch {
-		// Keep the last counts.
+		// A failed refresh keeps the last counts so the badge does not flash to zero.
 	}
 }

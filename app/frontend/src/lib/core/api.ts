@@ -1,3 +1,4 @@
+// Fetch client with request sharing, early boot asks, csrf and sign-out handling.
 import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
 
@@ -25,33 +26,14 @@ type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 type Follower<T> = { res?: (v: T) => void; rej?: (e: unknown) => void; signal?: AbortSignal; stop?: () => void };
 
-function settle<T>(f: Follower<T>, ok: boolean, v: unknown) {
-	const { res, rej, signal, stop } = f;
-	f.res = f.rej = f.signal = f.stop = undefined;
-	if (signal && stop) signal.removeEventListener('abort', stop);
-	if (ok) res?.(v as T);
-	else rej?.(v);
+export interface EarlyAsks {
+	at: number;
+	asks: Record<string, Promise<Response>>;
 }
 
-function follow<T>(shared: Promise<unknown>, signal?: AbortSignal): Promise<T> {
-	const f: Follower<T> = {};
-	const out = new Promise<T>((res, rej) => {
-		f.res = res;
-		f.rej = rej;
-	});
-	shared.then(
-		(v) => settle(f, true, v === undefined ? v : structuredClone(v)),
-		(e) => settle(f, false, e)
-	);
-	if (signal) {
-		f.signal = signal;
-		f.stop = () => settle(f, false, f.signal?.reason ?? new DOMException('Aborted', 'AbortError'));
-		signal.addEventListener('abort', f.stop, { once: true });
-	}
-	return out;
-}
+export type Client = ReturnType<typeof createClient>;
 
-// A 401 on these routes is an answer, not an expired session, so it must not trigger a sign-out.
+// A 401 on these routes is an answer, not an expired session, so it must not sign the user out.
 const quiet401 = [
 	'/auth/login',
 	'/auth/state',
@@ -67,9 +49,17 @@ const quiet401 = [
 	'/auth/reauth'
 ];
 
+// Shortest and longest time a finished GET is shared with later callers.
 export const KEEP_MOMENT = 1500;
 export const KEEP_MAX = 60_000;
 
+// Boot asks older than this are stale and are ignored.
+export const EARLY_MAX = 30_000;
+
+// The page starts these fetches before the app loads, so the first view has no wait.
+const bootAsks = () => (globalThis as { __holyarrsEarly?: EarlyAsks }).__holyarrsEarly;
+
+// Cache-Control tells how long a reply may be reused; no-store means never.
 export function keepFor(cacheControl: string | null): number {
 	const cc = (cacheControl ?? '').toLowerCase();
 	if (/no-store|no-cache/.test(cc)) return 0;
@@ -78,6 +68,7 @@ export function keepFor(cacheControl: string | null): number {
 	return Math.min(KEEP_MAX, Math.max(KEEP_MOMENT, Number(m[1]) * 1000));
 }
 
+// Partial or pending replies are still being built, so they must not be kept.
 export function isFilling(v: unknown): boolean {
 	if (!v || typeof v !== 'object') return false;
 	const o = v as { partial?: unknown; pending?: unknown };
@@ -88,15 +79,7 @@ export function isIncomplete(v: unknown): boolean {
 	return !!v && typeof v === 'object' && (v as { incomplete?: unknown }).incomplete === true;
 }
 
-export interface EarlyAsks {
-	at: number;
-	asks: Record<string, Promise<Response>>;
-}
-
-export const EARLY_MAX = 30_000;
-
-const bootAsks = () => (globalThis as { __holyarrsEarly?: EarlyAsks }).__holyarrsEarly;
-
+// One shared client per page; same-path GETs in flight or fresh are answered from one request.
 export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: () => EarlyAsks | undefined = bootAsks) {
 	let csrf = '';
 	let signedOut: (() => void) | null = null;
@@ -230,8 +213,6 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 	};
 }
 
-export type Client = ReturnType<typeof createClient>;
-
 export const api = createClient();
 
 export function message(e: unknown): string {
@@ -239,3 +220,31 @@ export function message(e: unknown): string {
 	if (e instanceof Error) return e.message;
 	return 'Something went wrong.';
 }
+
+// Each caller gets its own copy so one cannot change what another reads, and its own abort.
+function follow<T>(shared: Promise<unknown>, signal?: AbortSignal): Promise<T> {
+	const f: Follower<T> = {};
+	const out = new Promise<T>((res, rej) => {
+		f.res = res;
+		f.rej = rej;
+	});
+	shared.then(
+		(v) => settle(f, true, v === undefined ? v : structuredClone(v)),
+		(e) => settle(f, false, e)
+	);
+	if (signal) {
+		f.signal = signal;
+		f.stop = () => settle(f, false, f.signal?.reason ?? new DOMException('Aborted', 'AbortError'));
+		signal.addEventListener('abort', f.stop, { once: true });
+	}
+	return out;
+}
+
+function settle<T>(f: Follower<T>, ok: boolean, v: unknown) {
+	const { res, rej, signal, stop } = f;
+	f.res = f.rej = f.signal = f.stop = undefined;
+	if (signal && stop) signal.removeEventListener('abort', stop);
+	if (ok) res?.(v as T);
+	else rej?.(v);
+}
+

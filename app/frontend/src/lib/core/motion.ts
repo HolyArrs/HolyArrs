@@ -1,8 +1,49 @@
+// Motion helpers: press and reveal actions, view transitions and card zoom maths.
 
 import type { Action } from 'svelte/action';
 
 type MediaWindow = { matchMedia?: (q: string) => { matches: boolean } };
 
+export type PressKind = 'button' | 'round' | 'card' | 'row';
+
+type TransitionDoc = { startViewTransition?: (cb: () => Promise<void> | void) => unknown };
+
+type PageChange = { complete: Promise<void>; from?: { url: URL } | null; to?: { url: URL } | null };
+
+export interface Box {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+}
+
+export type Move = 'open' | 'back' | 'swap' | null;
+
+// Any of these ends a press, so the pressed look never sticks.
+const releaseEvents = ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'] as const;
+
+// Theater open and close timings in ms, and the shared ease curve.
+export const THEATER_GROW_MS = 420;
+export const THEATER_SHRINK_MS = 380;
+export const THEATER_CHROME_MS = 150;
+export const THEATER_FADE_MS = 200;
+export const THEATER_EASE = 'cubic-bezier(.22, 1, .36, 1)';
+
+// Shared ease and durations in ms for sheet and page moves.
+export const EASE = 'cubic-bezier(.22, 1, .36, 1)';
+export const MS = {
+	zoom: 420,
+	zoomBack: 380,
+	cover: 120,
+	recede: 280,
+	artFade: 200,
+	reveal: 220,
+	push: 380,
+	pop: 320,
+	swap: 200
+} as const;
+
+// Reads the reduced-motion setting, safe where no window exists.
 export function reducedMotion(win: MediaWindow | undefined = typeof window === 'undefined' ? undefined : window): boolean {
 	try {
 		return !!win?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -11,20 +52,18 @@ export function reducedMotion(win: MediaWindow | undefined = typeof window === '
 	}
 }
 
+// Caps the stagger so long lists do not trail for seconds.
 export function staggerDelay(index: number, step = 30, max = 8, reduce = false): number {
 	if (reduce || !Number.isFinite(index) || index <= 0) return 0;
 	return Math.min(Math.floor(index), max - 1) * step;
 }
-
-export type PressKind = 'button' | 'round' | 'card' | 'row';
 
 export function pressScale(kind: PressKind, reduce = false): number {
 	if (reduce) return 1;
 	return { button: 0.97, round: 0.92, card: 0.98, row: 0.98 }[kind];
 }
 
-const releaseEvents = ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'] as const;
-
+// Sets a pressed flag the styles use to scale the element.
 export const press: Action<HTMLElement, PressKind | undefined> = (node, kind) => {
 	let current: PressKind = kind ?? 'button';
 	node.dataset.press = '';
@@ -59,6 +98,7 @@ export const press: Action<HTMLElement, PressKind | undefined> = (node, kind) =>
 	};
 };
 
+// Fades items in when they scroll into view; the timer clears the helper styles after the transition.
 export const reveal: Action<HTMLElement, { index?: number } | number | undefined> = (node, param) => {
 	const index = typeof param === 'number' ? param : (param?.index ?? 0);
 	if (reducedMotion() || typeof IntersectionObserver === 'undefined') return {};
@@ -87,6 +127,7 @@ export const reveal: Action<HTMLElement, { index?: number } | number | undefined
 	};
 };
 
+// View transition names cannot start with a digit or hold odd characters.
 export function safeTransitionName(name: string): string {
 	const clean = name.replace(/[^a-zA-Z0-9_-]/g, '-');
 	return /^[a-zA-Z_]/.test(clean) ? clean : `vt-${clean}`;
@@ -101,18 +142,11 @@ export const viewTransitionName: Action<HTMLElement, string | undefined | null> 
 	return { update: set, destroy: () => set(null) };
 };
 
-type TransitionDoc = { startViewTransition?: (cb: () => Promise<void> | void) => unknown };
-
-function defaultDoc(): TransitionDoc | undefined {
-	return typeof document === 'undefined' ? undefined : (document as unknown as TransitionDoc);
-}
-
 export function canViewTransition(doc: TransitionDoc | undefined = defaultDoc(), reduce = reducedMotion()): boolean {
 	return !reduce && typeof doc?.startViewTransition === 'function';
 }
 
-type PageChange = { complete: Promise<void>; from?: { url: URL } | null; to?: { url: URL } | null };
-
+// Skips same-page and settings tab moves, where a page-wide transition would feel wrong.
 export function navigateWithTransition(navigation: PageChange, doc: TransitionDoc | undefined = defaultDoc()): Promise<void> | undefined {
 	if (!canViewTransition(doc)) return;
 	if (navigation.from && navigation.to && navigation.from.url.pathname === navigation.to.url.pathname) return;
@@ -127,19 +161,7 @@ export function navigateWithTransition(navigation: PageChange, doc: TransitionDo
 	});
 }
 
-export const THEATER_GROW_MS = 420;
-export const THEATER_SHRINK_MS = 380;
-export const THEATER_CHROME_MS = 150;
-export const THEATER_FADE_MS = 200;
-export const THEATER_EASE = 'cubic-bezier(.22, 1, .36, 1)';
-
-export interface Box {
-	left: number;
-	top: number;
-	width: number;
-	height: number;
-}
-
+// Largest box of the given aspect that fits the screen; bad ratios fall back to 16:9.
 export function containBox(aspect: number, vw: number, vh: number): Box {
 	const a = aspect > 0 && Number.isFinite(aspect) ? aspect : 16 / 9;
 	const width = Math.min(vw, vh * a);
@@ -147,11 +169,7 @@ export function containBox(aspect: number, vw: number, vh: number): Box {
 	return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
 }
 
-function round(n: number, places = 2): number {
-	const f = 10 ** places;
-	return Math.round(n * f) / f;
-}
-
+// Solves the curve by bisection so frames can match the CSS ease.
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t: number) => number {
 	const at = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
 	return (t) => {
@@ -170,6 +188,7 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t:
 }
 export const theaterEase = cubicBezier(0.22, 1, 0.36, 1);
 
+// Frames for growing a card to full screen; outer scales the frame, inner cancels the stretch so the picture keeps its shape.
 export function flipFrames(from: Box, aspect: number, vw: number, vh: number, shrink = false, steps = 24, ease = theaterEase): { outer: string[]; inner: string[] } {
 	const c = containBox(aspect, vw, vh);
 	const s0 = Math.max(from.width / c.width, from.height / c.height);
@@ -194,19 +213,7 @@ export function flipFrames(from: Box, aspect: number, vw: number, vh: number, sh
 	return { outer, inner };
 }
 
-export const EASE = 'cubic-bezier(.22, 1, .36, 1)';
-export const MS = {
-	zoom: 420,
-	zoomBack: 380,
-	cover: 120,
-	recede: 280,
-	artFade: 200,
-	reveal: 220,
-	push: 380,
-	pop: 320,
-	swap: 200
-} as const;
-
+// Transform that makes the target box look like the source box.
 export function flip(from: Box, to: Box): string {
 	const sx = to.width > 0 ? from.width / to.width : 1;
 	const sy = to.height > 0 ? from.height / to.height : 1;
@@ -223,13 +230,23 @@ export function reduced(): boolean {
 	return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+// Under 768 px counts as a phone.
 export function phone(): boolean {
 	return typeof innerWidth === 'number' && innerWidth < 768;
 }
 
-export type Move = 'open' | 'back' | 'swap' | null;
-
+// Keeps the corner radius looking the same while the sheet scales from card size.
 export function radiusFor(card: Box, sheet: Box, cardRadius = 16): number {
 	const s = sheet.width > 0 ? Math.min(1, card.width / sheet.width) : 1;
 	return Math.round(cardRadius / Math.sqrt(Math.max(s, 0.05)));
+}
+
+function defaultDoc(): TransitionDoc | undefined {
+	return typeof document === 'undefined' ? undefined : (document as unknown as TransitionDoc);
+}
+
+// Rounding keeps generated transform strings short.
+function round(n: number, places = 2): number {
+	const f = 10 ** places;
+	return Math.round(n * f) / f;
 }
