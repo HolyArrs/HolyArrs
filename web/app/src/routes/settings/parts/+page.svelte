@@ -222,7 +222,7 @@
 	<div data-testid="control-links">
 		<SettingsCard id="links-card" title="Linked apps" description="Test or reconnect one without touching the rest">
 			{#if split.links.length === 0}
-				<p class="small muted">No Linked apps</p>
+				<p class="small muted">No linked apps yet</p>
 			{:else}
 				<ul class="rows list">
 					{#each split.links as l (l.key)}

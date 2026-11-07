@@ -158,7 +158,7 @@
 					<input type="checkbox" bind:checked={keep} />
 					<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks after the albums picked above.</span></span>
 				</label>
-				<p class="hint note" data-testid="music-search-note">HolyArrs looks for the albums you keep up to date once their tracks are filled in, one Release per album.</p>
+				<p class="hint note" data-testid="music-search-note">Albums you keep up to date are searched once their tracks are in.</p>
 			{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />

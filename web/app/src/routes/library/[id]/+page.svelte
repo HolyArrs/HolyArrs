@@ -696,7 +696,7 @@
 					</p>
 					{#if releases.length === 0}
 						{#if !running.length}
-							<p class="small muted">No search yet. Choose a release shows every Release HolyArrs finds, with why each one would be chosen or not, so you can pick one yourself.</p>
+							<p class="small muted">No search yet. Search to see every release and why it would be picked or not.</p>
 							<Button class="tp-start tp-btn" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
 						{/if}
 					{:else}
@@ -766,7 +766,7 @@
 						{#if historyTotal > 0}<Button class="tp-btn" variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
 					{/snippet}
 					{#if history.length === 0}
-						<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
+						<p class="small muted">Nothing yet.</p>
 					{:else}
 						<ol class="rows hist">
 							{#each history as e (e.ID)}
@@ -811,7 +811,7 @@
 		<form onsubmit={turnDown}>
 			<h2 id="turn-title" class="h2">Turn down this Release?</h2>
 			<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
-			<p class="small muted">HolyArrs never picks it again for this movie. You can take it off the Turned down list later.</p>
+			<p class="small muted">It won’t be picked again for this movie. You can undo this later.</p>
 			<div class="field" style="margin-top: var(--s-4)">
 				<label for="turn-reason">Why (optional)</label>
 				<input id="turn-reason" class="input" bind:value={turnReason} maxlength="500" />
@@ -862,7 +862,7 @@
 <dialog bind:this={renameDialog} aria-labelledby="rename-title" class="modal wide" onclose={() => (renameOpen = false)}>
 	{#if title && renameOpen}
 		<h2 id="rename-title" class="h2">Rename the files of {title.name}</h2>
-		<p class="small muted">The names now and the names they get from the naming pattern. Nothing changes until you press Rename.</p>
+		<p class="small muted">Nothing changes until you press Rename.</p>
 		<RenamePreview titleId={id} onDone={() => load('title')} />
 		<div class="row modal-actions">
 			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
@@ -873,7 +873,7 @@
 <dialog bind:this={deleteDialog} aria-labelledby="delete-title" class="modal wide">
 	{#if title}
 		<h2 id="delete-title" class="h2">Delete {title.name}?</h2>
-		<p class="small muted">Read what will happen below before you press Delete. Nothing has changed yet.</p>
+		<p class="small muted">Nothing has changed yet.</p>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={delFiles} onchange={planDelete} />
 			<span
@@ -923,7 +923,7 @@
 	{#if title}
 		<form onsubmit={addVersion}>
 			<h2 id="version-title" class="h2">Add a Version of {title.name}</h2>
-			<p class="small muted">Another copy to keep next to the others, for example 4K, with its own Pick rules and folder.</p>
+			<p class="small muted">Another copy, like 4K, with its own Pick rules and folder.</p>
 			<div class="field" style="margin-top: var(--s-5)">
 				<label for="v-label">Version name</label>
 				<input id="v-label" class="input" bind:value={vLabel} maxlength="40" required />
@@ -936,12 +936,12 @@
             <div class="field">
                 <label for="v-audio">Required audio languages</label>
                 <input id="v-audio" class="input" bind:value={vAudio} placeholder="For example, en, ja" />
-                <span class="hint">Every language must be present in inspected audio tracks. Subtitles are separate.</span>
+                <span class="hint">Audio must have every language. Subtitles don’t count.</span>
             </div>
             <div class="field">
                 <label for="v-existing-folder">Existing movie folder (optional)</label>
                 <input id="v-existing-folder" class="input" bind:value={vFolderName} maxlength="200" />
-                <span class="hint">Use one folder name inside the chosen Library folder when adopting an existing copy. Leave empty for a new folder.</span>
+                <span class="hint">To use a copy you have, name its folder. Leave empty for a new one.</span>
             </div>
             <div class="field">
                 <label for="v-rules">Pick rules for this Version</label>
@@ -958,7 +958,7 @@
 			{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
 			<div class="row modal-actions">
 				<Button variant="plain" onclick={() => versionDialog?.close()}>Cancel</Button>
-				<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>Add Version</Button>
+				<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>Add version</Button>
 			</div>
 		</form>
 	{/if}

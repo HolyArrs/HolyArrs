@@ -154,7 +154,7 @@
 			<div class="rs-empty">
 				<Icon name="grid" size={28} />
 				<p><b>No search yet</b></p>
-				<p class="muted">Search your sources to see every release, with why each one would be picked or not.</p>
+				<p class="muted">Search to see every release and why it would be picked or not.</p>
 				<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />Search now</button>
 			</div>
 		{:else}

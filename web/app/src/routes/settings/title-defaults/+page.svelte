@@ -102,7 +102,7 @@
 {:else if !form}
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
-	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these defaults. Changing them takes the settings permission.</p>{/if}
+	{#if !mayEdit}<p class="hint" data-testid="read-only">Changing these needs the settings permission.</p>{/if}
 	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movies and TV defaults">
 	<fieldset class="all" disabled={!mayEdit}>
 	<legend class="sr-only">{mayEdit ? 'Movies and TV defaults' : 'Movies and TV defaults, read only'}</legend>

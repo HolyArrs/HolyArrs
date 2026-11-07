@@ -101,7 +101,7 @@ export function pager(total: number, limit: number, offset: number): Pager {
 export function searchLine(s: SearchView): string {
 	if (s.kind === 'feed_check') return s.state === 'done' ? 'Feeds checked' : 'Checking the feeds of every Source';
 	if (s.kind === 'search_missing')
-		return s.state === 'done' ? 'Queued searches for movies, episodes and albums still looking' : 'Searching for every movie, episode and album still looking';
+		return s.state === 'done' ? 'Searches queued for everything missing' : 'Searching for every movie, episode and album still looking';
 	const name = s.title_name
 		? s.album
 			? `${s.title_name} – ${s.album}`

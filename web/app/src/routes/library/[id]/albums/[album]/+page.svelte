@@ -287,7 +287,7 @@
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
 				<ol class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
 			{:else if !tracks?.length}
-				<p class="small muted">{album.included ? NO_SONGS_LINE : 'This album is left out by the album kinds, so its tracks are not listed.'}</p>
+				<p class="small muted">{album.included ? NO_SONGS_LINE : 'Left out by album kinds, so no tracks are listed.'}</p>
 			{:else}
 				<ol class="tracks">
 					{#each tracks as t (t.id)}
@@ -331,7 +331,7 @@
 				<h3 class="alb-h">Settings</h3>
 				<div class="alb-rows">
 					<button type="button" class="alb-row" role="switch" aria-checked={album.keep_up_to_date} disabled={busy === 'keep' || !album.included} onclick={() => setKeep(!album!.keep_up_to_date)}>
-						<span><b>Keep up to date</b><small>{album.included ? 'Grab missing tracks and better copies' : 'Left out by the artist’s Releases'}</small></span>
+						<span><b>Keep up to date</b><small>{album.included ? 'Gets missing tracks and better copies' : 'Left out by the artist’s Releases'}</small></span>
 						<span class="alb-switch" class:on={album.keep_up_to_date} aria-hidden="true"></span>
 					</button>
 					{#if pressings.length > 1 && current}

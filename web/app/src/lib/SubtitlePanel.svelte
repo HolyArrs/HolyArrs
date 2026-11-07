@@ -370,7 +370,7 @@
 									{/if}
 									{#if turning === s.ID}
 										<form class="inline" onsubmit={turnDown} aria-label="Turn down">
-											<p class="small">This subtitle goes to the holding folder and is never chosen again for this file. HolyArrs then looks for another one.</p>
+											<p class="small">It won’t be picked again for this file. Another one is searched for.</p>
 											<div class="field">
 												<label for="{idp}-why-{s.ID}">Why (optional)</label>
 												<input id="{idp}-why-{s.ID}" class="input" maxlength="200" bind:value={reason} placeholder="Wrong film, out of sync…" />

@@ -125,7 +125,7 @@
 							<b>Download tracking</b> {c.name}
 							<br /><span class="muted"
 								>{c.health === 'degraded'
-									? 'The background reader is down; HolyArrs reads this Downloader itself until it is back.'
+									? 'Background reader is down. Reading this Downloader directly for now.'
 									: 'The last read is too old; a new one is on its way.'}</span
 							>
 						</span>

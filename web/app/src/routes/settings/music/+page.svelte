@@ -37,7 +37,7 @@
 			: !settings.secondary_types.length
 				? 'Tick at least one Extra kind (under Advanced) to save.'
 				: !settings.release_statuses.length
-					? 'Tick at least one kind under Pressings that count (under Advanced) to save.'
+					? 'Tick at least one kind under Advanced › Pressings that count.'
 					: ''
 	);
 

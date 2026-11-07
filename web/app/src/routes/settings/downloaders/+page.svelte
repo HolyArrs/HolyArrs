@@ -379,7 +379,7 @@
 			</label>
 			<label class="checkline" class:off={writableLocked}>
 				<input type="checkbox" bind:checked={form.writable} disabled={writableLocked} data-testid="dl-form-writable" />
-				<span><b>HolyArrs can change this Downloader</b><br /><span class="hint">{writableLocked ? 'Locked to read only by this server’s settings (HOLYARRS_READONLY_DOWNLOADERS).' : 'On: pause, resume, remove, moves and priority go to it. Off: HolyArrs still sends new downloads but never changes or removes what is in it.'}</span></span>
+				<span><b>HolyArrs can change this Downloader</b><br /><span class="hint">{writableLocked ? 'Locked to read only by this server’s settings (HOLYARRS_READONLY_DOWNLOADERS).' : 'Off: new downloads still go to it, but nothing in it is changed or removed.'}</span></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">

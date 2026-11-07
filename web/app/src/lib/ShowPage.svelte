@@ -642,7 +642,7 @@
 <dialog bind:this={renameDialog} aria-labelledby="rename-show-title" class="modal wide" onclose={() => (renameOpen = false)}>
 	{#if renameOpen}
 		<h2 id="rename-show-title" class="h2">Rename the files of {title.name}</h2>
-		<p class="small muted">The names now and the names they get from the show, season and episode patterns. Nothing changes until you press Rename.</p>
+		<p class="small muted">Nothing changes until you press Rename.</p>
 		<RenamePreview titleId={title.id} onDone={() => void reload()} />
 		<div class="row modal-actions">
 			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
@@ -678,7 +678,7 @@
 			<select id="e-source" class="input" bind:value={eSource}>
 				{#each detailsSources as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
-			<span class="hint">Switching finds the show in the other source; episodes and their files stay.</span>
+			<span class="hint">Episodes and files stay.</span>
 		</div>
 		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 		<div class="row modal-actions">

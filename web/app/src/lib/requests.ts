@@ -132,7 +132,7 @@ export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): RequestsView {
 /** The Requests tabs. Failed is an approved ask that never reached the Library. */
 export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
 export const askTabs: { tab: AskTab; label: string }[] = [
-	{ tab: 'waiting', label: 'Pending' },
+	{ tab: 'waiting', label: 'Waiting' },
 	{ tab: 'approved', label: 'Approved' },
 	{ tab: 'declined', label: 'Declined' },
 	{ tab: 'done', label: 'Ready' },
@@ -167,7 +167,7 @@ export function firstTab(asks: Pick<Ask, 'state' | 'title_id'>[]): AskTab {
  */
 export type ApproverTab = 'pending' | 'processing' | 'done';
 export const approverTabs: { tab: ApproverTab; label: string }[] = [
-	{ tab: 'pending', label: 'Pending' },
+	{ tab: 'pending', label: 'Waiting' },
 	{ tab: 'processing', label: 'Processing' },
 	{ tab: 'done', label: 'Done' }
 ];

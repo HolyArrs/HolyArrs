@@ -176,7 +176,7 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await page.getByRole('button', { name: 'Add a version', exact: true }).click();
 	const vd = page.getByRole('dialog');
 	await vd.getByLabel('Version name').fill('Small');
-	await vd.getByRole('button', { name: 'Add Version' }).click();
+	await vd.getByRole('button', { name: 'Add version' }).click();
 	await expect(versions).toHaveCount(3);
 	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Version actions for Small' }).click();

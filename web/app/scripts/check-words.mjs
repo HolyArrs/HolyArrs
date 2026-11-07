@@ -5,7 +5,7 @@ import { join, extname } from 'node:path';
 
 const banned = [
 	'Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 'Root Folder', 'Download Client',
-	'Interactive Search', 'Manual Import', 'Grabbed', 'Connections', 'Discover', 'Collections', 'Series'
+	'Interactive Search', 'Manual Import', 'Grabbed', 'Connections', 'Discover', 'Series'
 ];
 const roots = ['src', '../dist'];
 const exts = new Set(['.svelte', '.ts', '.js', '.html', '.css']);

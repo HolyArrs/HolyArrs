@@ -58,7 +58,7 @@
 	);
 	const said: Record<Standing, string> = {
 		loading: '…',
-		off: 'The update check is off, so HolyArrs never asks whether a newer version is out.',
+		off: 'Update check is off.',
 		behind: 'A newer release is out. Updating keeps your data and settings: they live in the config folder, not in the program.',
 		problem: 'The last check did not work.',
 		none: 'No HolyArrs release is published yet.',

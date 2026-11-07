@@ -56,7 +56,7 @@ test('the owner finds a show and adds it with only the latest season kept', asyn
 	// A show opens its title page; Add lives there.
 	const dialog = await addFromSearch(own, 'harbour', 'Harbour Lights', 'show');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Shows');
-	await expect(dialog.getByTestId('no-show-search')).toContainText('use Search now on the show page');
+	await expect(dialog.getByTestId('no-show-search')).toContainText('Tick Search when added to start now');
 	await expect(dialog.getByRole('checkbox', { name: /Search now/ })).toHaveCount(0);
 	// Search when added starts off for shows while no Movies and TV default says otherwise.
 	await expect(dialog.getByRole('checkbox', { name: /^Search when added/ })).not.toBeChecked();

@@ -268,7 +268,7 @@
 		if (session.can('settings')) api
 				.get<DownloaderSettings>('/settings/downloaders')
 				.then((s) => (settings = s))
-				.catch(() => note('settings', 'Your remove defaults could not be loaded; Remove asks with the usual choices.'));
+				.catch(() => note('settings', 'Remove defaults didn’t load. Remove asks each time.'));
 		if (session.can('manage_library'))
 			api
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
@@ -277,7 +277,7 @@
 					torrentClients = r.downloaders.filter((d) => d.protocol === 'torrent' && d.kind === 'qbittorrent' && d.writable).map((d) => ({ id: d.id, name: d.name, category: d.category }));
 					torrent = torrentClients.length > 0;
 				})
-				.catch(() => note('downloaders', 'The Downloader list could not be loaded; adding torrents by hand is off for now.'));
+				.catch(() => note('downloaders', 'Downloaders didn’t load. Adding torrents is off for now.'));
 		if (!watch) void refreshDecisions();
 		// Library and download news on /live is for managers; a watcher receives only dl patches (push mode).
 		const offs = watch ? [] : ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
@@ -562,7 +562,7 @@
 	{#if watch}
 	<EmptyState icon="download" title="Nothing on its way" text="When something you asked for starts downloading, you can watch it here." />
 	{:else}
-	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
+	<EmptyState icon="download" title="No downloads yet" text="Downloads show up here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 	{/if}
 	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a>{#if torrentClients.length}<button type="button" class="addlk" onclick={() => (addOpen = true)} data-testid="dl-add-empty">Add a torrent</button>{/if}</p>{/if}
 	</div>
