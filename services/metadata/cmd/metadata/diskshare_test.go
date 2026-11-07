@@ -37,6 +37,22 @@ func TestDiskShareBlock(t *testing.T) {
 	}
 }
 
+// A failed count keeps the last good one and its time.
+func TestDiskShareKeepsLastOnError(t *testing.T) {
+	at := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	d := &diskShare{dirs: []string{"a", "b"}, now: func() time.Time { return at.Add(time.Hour) }, bytes: 99, at: at,
+		count: func(dir string) (int64, error) {
+			if dir == "b" {
+				return 0, os.ErrNotExist
+			}
+			return 5, nil
+		}}
+	d.recount()
+	if b, when := d.own(); b != 99 || !when.Equal(at) {
+		t.Fatalf("kept %d at %v", b, when)
+	}
+}
+
 // A count is not started again while one runs or before it is stale.
 func TestDiskShareCountsRarely(t *testing.T) {
 	var clock atomic.Int64

@@ -41,15 +41,25 @@ func (d *diskShare) own() (int64, time.Time) {
 	return d.bytes, d.at
 }
 
+// recount keeps the last count when a folder fails (a slim swap mid-walk
+// would otherwise move ~28 GB to "other" as if freshly counted); the next
+// ask tries again.
 func (d *diskShare) recount() {
 	var n int64
+	ok := true
 	for _, dir := range d.dirs {
-		if b, err := d.count(dir); err == nil {
-			n += b
+		b, err := d.count(dir)
+		if err != nil {
+			ok = false
+			break
 		}
+		n += b
 	}
 	d.mu.Lock()
-	d.bytes, d.at, d.running = n, d.now(), false
+	if ok {
+		d.bytes, d.at = n, d.now()
+	}
+	d.running = false
 	d.mu.Unlock()
 }
 
