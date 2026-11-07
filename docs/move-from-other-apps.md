@@ -90,8 +90,13 @@ and move again: nothing is added twice.
   Bazarr's other profiles and sites HolyArrs does not have yet, and
   notification kinds other than Discord, webhook and email. Each one is on
   the **not moved** list with its reason. Not read at all: auto-tag rules
-  (they only add tags) and Seerr's request tags; the person who asked does
-  come over.
+  (they only add tags), Seerr's request tags, and the old apps' history
+  (grabs, imports and failures stay in Sonarr and Radarr); the person who
+  asked does come over.
+
+  If any item fails (for example while the metadata server is down), the
+  old apps' keys are kept so you can move again without retyping them; they
+  are forgotten after a move with nothing failed.
 
 ## Needs your input afterwards
 

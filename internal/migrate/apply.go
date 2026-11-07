@@ -394,7 +394,7 @@ func next(rep *Report) []string {
 		out = append(out, "Some people need a choice: pick Same person or Leave out for each, then try and move again.")
 	}
 	if rep.Counts[ResFailed] > 0 {
-		out = append(out, "Some items failed; their reason is on their line. Fix it and move again.")
+		out = append(out, "Some items failed; their reason is on their line. Fix it and move again: the old apps' keys are kept until a move finishes with nothing failed.")
 	}
 	if len(rep.NotMoved) > 0 {
 		out = append(out, "Look over the not-moved list: those settings have no HolyArrs match and stay in the old apps.")
@@ -1893,9 +1893,12 @@ func (m *Mover) setState(ctx context.Context, id int64, state string, rep *Repor
 		if _, err := tx.Exec("UPDATE moves SET state = ?, report = ?, finished_at = ? WHERE id = ?", state, string(b), store.FormatTime(m.now()), id); err != nil {
 			return err
 		}
-		if state == "done" {
+		if state == "done" && (rep == nil || rep.Counts[ResFailed] == 0) {
 			// A finished move forgets every old-app key kept for "Read
 			// again" (importsecrets' move credentials and their vault rows).
+			// While any item failed (say the metadata server was down) the
+			// keys stay, so "move again" needs no retyping; the next clean
+			// move forgets them.
 			if _, err := tx.Exec("DELETE FROM secrets WHERE id IN (SELECT secret_id FROM move_credentials)"); err != nil {
 				return err
 			}
