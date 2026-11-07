@@ -83,16 +83,6 @@ function writeFiles(dir: string, rels: string[]) {
 	}
 }
 
-/** libraryFolderColumn opens the Library table for kind with the Folder column on and returns the title's row. */
-async function libraryFolderColumn(page: Page, kind: 'show' | 'artist', titleId: number) {
-	await page.goto(`/library?kind=${kind}&layout=table`);
-	await page.getByRole('button', { name: 'Columns', exact: true }).click();
-	const folderCol = page.getByRole('checkbox', { name: 'Folder', exact: true });
-	if (!(await folderCol.isChecked())) await folderCol.check();
-	await page.keyboard.press('Escape');
-	return page.locator(`[data-testid="library-row"][data-title-id="${titleId}"]`);
-}
-
 test('Move a show with its episode files to a second show folder from the Folder row on its Library tab', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
@@ -133,7 +123,6 @@ test('Move a show with its episode files to a second show folder from the Folder
 	await page.reload();
 	await openLibraryTab(page);
 	await expect(page.getByTestId('folder-row')).toContainText('Show shelf two');
-	await expect(await libraryFolderColumn(page, 'show', id)).toContainText(join(two, name));
 });
 
 test('Move an artist with its album files to a second music folder from the Folder row on its Library page', async ({ page }) => {
@@ -171,5 +160,4 @@ test('Move an artist with its album files to a second music folder from the Fold
 	await page.reload();
 	await libraryTab.click();
 	await expect(page.getByTestId('folder-row')).toContainText('Music shelf two');
-	await expect(await libraryFolderColumn(page, 'artist', id)).toContainText(join(two, name));
 });

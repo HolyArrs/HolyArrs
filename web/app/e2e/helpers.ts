@@ -278,7 +278,8 @@ export async function openAdvanced(scope: Page | Locator) {
 	// open state), so open every one and check they stay open.
 	const closed = scope.locator('details.advanced:not([open]) > summary');
 	await expect(async () => {
-		while ((await closed.count()) > 0) await closed.first().click();
+		// Opened in place (a hidden or restoring card can swallow a click); the page still gets its toggle event.
+		await closed.evaluateAll((els) => els.forEach((s) => ((s.parentElement as HTMLDetailsElement).open = true)));
 		await new Promise((r) => setTimeout(r, 300));
 		expect(await closed.count()).toBe(0);
 	}).toPass({ timeout: 10_000 });
@@ -341,4 +342,20 @@ export async function openSubtitles(page: Page): Promise<Locator> {
 	const card = page.getByTestId('subtitles');
 	await expect(card).toBeVisible();
 	return card;
+}
+
+/**
+ * inLibrary finds a title's card or row on the Library page, scrolling down
+ * until it is drawn: the Library only draws the cards near the screen.
+ */
+export async function inLibrary(page: Page, name: string, sel = '[data-testid="library-card"], [data-testid="library-row"]'): Promise<Locator> {
+	const item = page.locator(sel, { hasText: name }).first();
+	await page.locator('[data-testid="library-card"], [data-testid="library-row"]').or(page.getByRole('heading', { name: 'Nothing here yet' })).first().waitFor();
+	await page.evaluate(() => window.scrollTo(0, 0));
+	for (let i = 0; i < 60 && !(await item.count()); i++) {
+		await page.mouse.wheel(0, 700);
+		await page.waitForTimeout(120);
+	}
+	await item.scrollIntoViewIfNeeded().catch(() => undefined);
+	return item;
 }

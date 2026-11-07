@@ -2,7 +2,7 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn, inLibrary } from './helpers.ts';
 import { traktKey } from './fakes.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
@@ -135,9 +135,9 @@ test('a TMDB show list adds its shows with the first season kept, skips the Neve
 	// Search when added: once its folder is scanned, season 1 is looked for at the Source.
 	await expect.poll(async () => searchesFor(call, ferry?.id), { timeout: 30_000 }).toBeGreaterThan(0);
 
-	await page.goto('/library');
+	await page.goto('/library?kind=show');
 	const item = (name: string) => page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: name });
-	await expect(item('Bellwether Ferry').first()).toBeVisible();
+	await expect(await inLibrary(page, 'Bellwether Ferry')).toBeVisible();
 	await expect(item('Cinder Lane')).toHaveCount(0);
 });
 

@@ -2,7 +2,7 @@ import { expect, test, type APIResponse, type Locator, type Page } from '@playwr
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn, inLibrary } from './helpers.ts';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
@@ -105,36 +105,38 @@ async function giveFile(call: Call, item: Record<string, unknown>): Promise<stri
 
 /** selectTitles opens the whole Library newest first, turns on Select and ticks each title; it returns the select bar. */
 async function selectTitles(page: Page, titles: Picked[]): Promise<Locator> {
-	await page.goto('/library?sort=added');
+	await page.goto('/library?kind=movie&sort=added');
 	await page.getByTestId('library-select').click();
-	for (const t of titles) await page.locator(`[data-testid="library-pick"][aria-label="Select ${t.name}"]`).click();
+	for (const t of titles) await (await inLibrary(page, '', `[data-testid="library-pick"][aria-label="Select ${t.name}"]`)).click();
 	const bar = page.getByTestId('select-bar');
 	await expect(bar).toContainText(`${titles.length} selected`);
 	return bar;
 }
 
-test('Keep up to date and Stop keeping: two ticked movies and a show change together', async ({ page }) => {
+test('Keep up to date and Stop keeping: two ticked movies change together', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
-	const titles = await freshSet(call, false);
+	const all = await freshSet(call, false);
+	// The Library shows one kind at a time, so the two movies are ticked together; the show stays as it was.
+	const titles = all.slice(0, 2);
 	for (const t of titles) expect((await titleOf(call, t.id)).keep_up_to_date, t.name).toBe(false);
 
 	const bar = await selectTitles(page, titles);
 	await bar.getByRole('button', { name: 'Keep up to date', exact: true }).click();
-	await expect(page.getByText('3 titles kept up to date.')).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: '2 titles kept up to date' })).toBeVisible();
 	for (const t of titles) expect((await titleOf(call, t.id)).keep_up_to_date, t.name).toBe(true);
 
 	// The ticks stay, so the same three can be switched back at once.
-	await expect(bar).toContainText('3 selected');
+	await expect(bar).toContainText('2 selected');
 	await bar.getByRole('button', { name: 'Stop keeping', exact: true }).click();
-	await expect(page.getByText('3 titles no longer kept up to date.')).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: '2 titles not kept up to date' })).toBeVisible();
 	for (const t of titles) expect((await titleOf(call, t.id)).keep_up_to_date, t.name).toBe(false);
 });
 
-test('Pick rules: two ticked movies and a show all move to the chosen rules', async ({ page }) => {
+test('Pick rules: two ticked movies move to the chosen rules', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
-	const titles = await freshSet(call, false);
+	const titles = (await freshSet(call, false)).slice(0, 2);
 	// Rules of our own for movies and shows, copied from the ones the first movie got.
 	const name = 'Bulk Shelf Rules';
 	const { pick_rules } = (await (await call('GET', '/pick-rules')).json()) as { pick_rules: { id: number; name: string }[] };
@@ -155,7 +157,7 @@ test('Pick rules: two ticked movies and a show all move to the chosen rules', as
 	await expect(menu.getByRole('menuitem', { name: 'Standard', exact: true })).toBeVisible();
 	await expect(menu.getByRole('menuitem', { name: 'Any music', exact: true })).toHaveCount(0);
 	await menu.getByRole('menuitem', { name, exact: true }).click();
-	await expect(page.getByText(`3 titles now use ${name}.`)).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: `2 titles set to ${name}` })).toBeVisible();
 	for (const t of titles) {
 		const now = await titleOf(call, t.id);
 		expect(now.pick_rules_id, t.name).toBe(ruleId);
@@ -163,10 +165,10 @@ test('Pick rules: two ticked movies and a show all move to the chosen rules', as
 	}
 });
 
-test('Search now: a search starts for each ticked movie and the show, and History shows what it found', async ({ page }) => {
+test('Search now: a search starts for each ticked movie, and History shows what it found', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
-	const titles = await freshSet(call, true);
+	const titles = (await freshSet(call, true)).slice(0, 2);
 	const searchKinds = 'search_done,search_failed,release_chosen,release_held';
 	for (const t of titles) {
 		const { events } = (await (await call('GET', `/events?title=${t.id}&kind=${searchKinds}`)).json()) as { events: unknown[] };
@@ -175,7 +177,7 @@ test('Search now: a search starts for each ticked movie and the show, and Histor
 
 	const bar = await selectTitles(page, titles);
 	await bar.getByRole('button', { name: 'Search now', exact: true }).click();
-	await expect(page.getByText('3 titles being looked for now.')).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: '2 titles being searched for' })).toBeVisible();
 
 	// Each title got a search by hand that asked the Sources and found Releases.
 	type Search = { title_id?: number; by_hand: boolean; state: string; found: number; outcome?: string };
@@ -195,7 +197,7 @@ test('Search now: a search starts for each ticked movie and the show, and Histor
 	}
 });
 
-test('Remove: two ticked movies and a show leave the Library and their files stay on disk', async ({ page }) => {
+test('Remove: two ticked movies leave the Library and their files stay on disk', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const titles = await freshSet(call, false);
@@ -207,25 +209,28 @@ test('Remove: two ticked movies and a show leave the Library and their files sta
 	const episode = looseFile(`bulk-${show.tmdb}`, 'Sorrel.Junction.S01E01.1080p.WEB-DL.H264-LAB.mkv');
 	files.push(await giveFile(call, { path: episode, title_id: titles[2].id, season: 1, episode: 1 }));
 
-	const bar = await selectTitles(page, titles);
+	// The Library shows one kind at a time: the two movies are removed together, the show stays.
+	const gone = titles.slice(0, 2);
+	const bar = await selectTitles(page, gone);
 	await bar.getByTestId('select-delete').click();
-	const dialog = page.getByRole('dialog', { name: 'Remove 3 titles?' });
-	await expect(dialog).toContainText('All 3 leave the Library. Files stay on disk.');
+	const dialog = page.getByRole('dialog', { name: 'Remove 2 titles?' });
+	await expect(dialog).toContainText('All 2 leave the Library. Files stay on disk.');
 	// Nothing changes until the remove is confirmed.
 	for (const t of titles) await titleOf(call, t.id);
 	await dialog.getByTestId('bulk-delete-confirm').click();
-	await expect(page.getByText('3 titles removed, files kept on disk.')).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: '2 titles removed' })).toContainText('Files stay on disk');
 	await expect(dialog).toBeHidden();
 	await expect(bar).toBeHidden();
 
 	// The titles are gone from the Library and the page; every file is still where it was.
 	const { titles: left } = (await (await call('GET', '/titles')).json()) as { titles: { id: number }[] };
-	expect(left.filter((t) => titles.some((x) => x.id === t.id))).toEqual([]);
-	for (const t of titles) await expect(page.locator(`[data-testid="library-row"]`).filter({ hasText: t.name })).toHaveCount(0);
+	expect(left.filter((t) => gone.some((x) => x.id === t.id))).toEqual([]);
+	expect(left.some((t) => t.id === titles[2].id), 'the show stays').toBe(true);
+	for (const t of gone) await expect(page.locator(`[data-testid="library-row"]`).filter({ hasText: t.name })).toHaveCount(0);
 	for (const f of files) expect(existsSync(f), f).toBe(true);
 	// Nothing went to the holding folder either.
 	const { files: held } = (await (await call('GET', '/holding')).json()) as { files: { title_id: number }[] };
-	expect(held.filter((h) => titles.some((t) => t.id === h.title_id))).toEqual([]);
+	expect(held.filter((h) => gone.some((t) => t.id === h.title_id))).toEqual([]);
 
 	// Clean up the kept files so the next run starts with empty folders.
 	for (const f of files) rmSync(dirname(f), { recursive: true, force: true });

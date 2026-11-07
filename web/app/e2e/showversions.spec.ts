@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Browser, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch, openLibraryTab } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch, openLibraryTab, inLibrary } from './helpers.ts';
 
 // Several Versions per show (4.8.11): Tidal Atlas is added with a second
 // 4K Version from the add dialog; the show page lists both Versions and
@@ -27,8 +27,8 @@ async function axe(p: Page, where: string) {
 
 // Tidal Atlas on its Library tab (seasons, Versions and History live there).
 async function openShow(p: Page) {
-	await p.goto('/library');
-	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Tidal Atlas' }).click();
+	await p.goto('/library?kind=show');
+	await (await inLibrary(p, 'Tidal Atlas')).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText('Tidal Atlas');
 	await openLibraryTab(p);
 }

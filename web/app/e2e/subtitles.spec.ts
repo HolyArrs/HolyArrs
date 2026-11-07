@@ -96,7 +96,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await page.getByRole('button', { name: 'Add a Subtitle site' }).click();
 	await page.getByRole('radio', { name: /^Lab subtitle site \(/ }).check();
 	await page.getByRole('textbox', { name: 'Address' }).fill(siteURL);
-	await page.getByText('Limits').click();
+	await page.getByText('Limits', { exact: true }).click();
 	await page.getByLabel('Wait between calls (ms)').fill('10');
 	await page.getByLabel('Calls per window, at most').fill('5000');
 	await page.getByLabel(/Reach the local network/).check();
@@ -131,7 +131,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 
 test('Missing subtitles: every movie missing Spanish, by show too, and Search all with its progress', async () => {
 	await adopt(moviesDir, 'Quill Atlas', 'Adopt 1 movie', '1 movie is now in the Library');
-	await adopt('Shows: ', 'Fennel Clock', 'Adopt 1 show', '1 show is now in the Library');
+	await adopt(showsDir, 'Fennel Clock', 'Adopt 1 show', '1 show is now in the Library');
 	await page.goto('/library');
 	await libraryTool(page, 'Missing subtitles');
 	await expect(page.getByRole('heading', { level: 1, name: 'Missing subtitles' })).toBeVisible();
@@ -230,7 +230,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 });
 
 test('Show page: the show follows the default languages', async () => {
-	await page.goto('/library');
+	await page.goto('/library?kind=show');
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
 	const showCard = await openSubtitles(page);
 	await expect(showCard.getByTestId('subtitle-wish')).toContainText('English · Spanish · the default languages');

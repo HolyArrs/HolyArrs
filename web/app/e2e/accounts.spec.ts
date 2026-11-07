@@ -97,8 +97,10 @@ test('a member sees Home, the Library, Search, Requests and My account only', as
 	await ana.getByRole('button', { name: 'Account and appearance' }).click();
 	await expect(ana.getByRole('menuitem', { name: 'Account', exact: true })).toBeVisible();
 	await ana.keyboard.press('Escape');
-	// Manager pages send a member to their own Home.
-	for (const p of ['/settings', '/settings/backups', '/downloads/history', '/']) {
+	// Manager pages send a member to their own Home; a Settings page they may not open says so in place.
+	await ana.goto('/settings/backups');
+	await expect(ana.locator('#settings-blocked')).toContainText("You can't change this");
+	for (const p of ['/settings', '/downloads/history', '/']) {
 		await ana.goto(p);
 		await expect(ana).toHaveURL(/\/$/);
 	}
@@ -124,7 +126,7 @@ test('a member turns on two-factor sign-in and needs a code to sign in', async (
 	await expect(ana.getByText('Backup codes.')).toBeVisible();
 	backup = (await ana.locator('ul.codes li').allTextContents()).map((s) => s.trim());
 	expect(backup).toHaveLength(10);
-	await ana.getByRole('button', { name: 'Done' }).click();
+	await ana.getByRole('button', { name: 'Close', exact: true }).click();
 	await expect(ana.locator('.chip.ok', { hasText: 'On' })).toBeVisible();
 
 	await signOut(ana);
@@ -171,7 +173,7 @@ test('the owner sets a forgotten password, and ana switches account on a shared 
 	const dlg = own.getByRole('dialog', { name: 'New password for ana' });
 	await dlg.getByLabel('New password').fill(newPw);
 	await dlg.getByRole('button', { name: 'Set password' }).click();
-	await expect(own.getByText('New password set for ana.')).toBeVisible();
+	await expect(own.getByRole('status').filter({ hasText: 'Password set for ana' })).toBeVisible();
 	await ana.goto('/library');
 	await expect(ana).toHaveURL(/\/login/);
 	// ana signed in here before: the page opens on her own step, password only.

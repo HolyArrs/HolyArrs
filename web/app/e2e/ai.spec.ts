@@ -195,6 +195,7 @@ test('on a plain-http home address apps use an AI key, and cloud apps need https
 	await expect(guide).toContainText(`"Authorization": "Bearer ${k}"`);
 	await expect(guide.getByRole('button', { name: 'Make a key for Cursor' })).toHaveCount(0);
 	await expect(p.getByTestId('ai-prompt')).toContainText(`Use this AI key: ${k}. Only add`);
+	await expect(p.getByText('Contains your key. Paste only into your own agent.')).toBeVisible();
 	expect([...new URL(p.url()).searchParams.keys()]).toEqual(['app']);
 	expect(p.url()).not.toContain(k);
 
