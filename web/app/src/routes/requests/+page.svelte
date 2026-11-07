@@ -5,6 +5,7 @@
 	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
+	import { goto } from '$app/navigation';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
@@ -109,7 +110,7 @@
 				toasts.push(m ? `${name} already ${m[1].toLowerCase()}` : `${name} already answered`, 'info', m ? { body: `By ${m[2]}` } : {});
 				return;
 			}
-			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}`, 'fail', { body: message(err) });
+			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}`, 'fail', { body: message(err), action: { label: 'Requests', run: () => void goto(to(`/requests?ask=${id}`)) } });
 		} finally {
 			delete pending[id];
 		}
@@ -742,7 +743,7 @@
 					<div class="top">
 						<div class="ban-cap">
 							{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}
-							<h2 class="ban-t">{#if a.title_id}<a href={to(`/library/${a.title_id}`)}>{a.name}</a>{:else}{a.name}{/if}</h2>
+							<h2 class="ban-t"><a href={to(askHref(a))}>{a.name}</a></h2>
 							<span class="ban-f">{#if a.kind === 'show'}<span data-testid="ask-kind">TV show</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">Music</span>{:else}Movie{/if}{#if a.year}{' · '}{a.year}{/if}</span>
 						</div>
 					</div>

@@ -5,7 +5,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
+	import { api, ApiError, message } from '#lib/api.ts';
 	import { session, type SignInResult } from '#lib/session.svelte.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import { alreadyLinked, inviteTiles, type Way } from '#lib/signinArt.ts';
@@ -27,6 +27,18 @@
 	// The outside account already has a user: the invite stays unused.
 	let linked = $state(false);
 	let busy = $state(false);
+	// Opened while signed in: say who, and let them go home or sign out to join.
+	let leavingAccount = $state(false);
+	const signedInAs = $derived(session.s.state === 'signed_in' && !leavingAccount ? session.s.name : '');
+	async function signOutAndJoin() {
+		leavingAccount = true;
+		try {
+			await session.logout();
+		} catch (e) {
+			leavingAccount = false;
+			error = message(e);
+		}
+	}
 	// 'password' is a new name and password; Jellyfin or Emby open their own form.
 	let via = $state<'password' | 'jellyfin' | 'emby'>('password');
 	let plexWaiting = $state(false);
@@ -38,7 +50,8 @@
 		try {
 			invite = await api.get<{ role: string; max_rating?: string }>(`/auth/invites/${encodeURIComponent(linkPart)}`);
 		} catch (e) {
-			gone = message(e);
+			// A gone link (404/410) asks for a new one; anything else is worth a retry.
+			gone = e instanceof ApiError && (e.status === 404 || e.status === 410) ? 'gone' : message(e) || "Couldn't open this invite. Try again.";
 		}
 	});
 	onDestroy(() => clearInterval(plexTimer));
@@ -106,15 +119,17 @@
 		pw = '';
 	}
 
+	let win: Window | null = null;
 	function cancelPlex() {
 		clearInterval(plexTimer);
+		win?.close();
 		plexWaiting = false;
 	}
 
 	// The sign-in page's PIN steps, bound to this invite.
 	async function plex() {
 		// Open the window while the click still counts, then point it at Plex.
-		const win = window.open('', 'plex-sign-in', 'width=600,height=720');
+		win = window.open('', 'plex-sign-in', 'width=600,height=720');
 		try {
 			const p = await session.invitePlexStart(linkPart);
 			if (win) {
@@ -183,8 +198,13 @@
 		{:else}
 			<h1 class="title">Join HolyArrs</h1>
 			{#if gone}
-				<p class="form-error" role="alert">This invite is used up or has ended. Ask for a new one.</p>
+				<p class="form-error" role="alert">{gone === 'gone' ? 'This invite is used up or has ended. Ask for a new one.' : gone}</p>
 				<p class="back"><a href={to(`/login`)}>Go to sign in</a></p>
+			{:else if signedInAs}
+				<p class="lead" data-testid="invite-signed-in">You're signed in as {signedInAs}. Sign out to join with this invite.</p>
+				{#if error}<p class="form-error" role="alert">{error}</p>{/if}
+				<Button variant="primary" size="lg" full href={to('/')}>Go home</Button>
+				<button class="link" type="button" onclick={signOutAndJoin}>Sign out and join</button>
 			{:else if !invite}
 				<div class="sk"></div>
 			{:else if via !== 'password'}

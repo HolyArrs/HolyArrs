@@ -16,6 +16,7 @@
 	let busy = $state(false);
 	$effect(() => {
 		const t = target;
+		on = false; // a reused button never shows the last title's state
 		if (t) api.get<{ following: boolean }>(followPath(t)).then((r) => (on = r.following), () => {});
 	});
 

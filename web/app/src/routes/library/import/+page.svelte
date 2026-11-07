@@ -35,6 +35,7 @@
 		type AdoptResult,
 		type JobView
 	} from '#lib/organise.ts';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { LibraryFolder, LookupArtist, LookupMovie, LookupShow } from '#lib/types.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
@@ -54,6 +55,8 @@
 	// Follow what is brought in: it goes on my calendar (ticked by default).
 	let followAll = $state(true);
 	let results = $state<AdoptResult[] | null>(null);
+	// A large folder scanned in parts: where the next scan starts, kept after adopting.
+	let restFrom = $state('');
 
 	let lookFor = $state<string | null>(null);
 	let term = $state('');
@@ -73,18 +76,21 @@
 		return k === 'show' || k === 'music' ? k : 'movie';
 	}
 
-	onMount(async () => {
+	let foldersFailed = $state(false);
+	async function loadFolders() {
+		foldersFailed = false;
 		try {
 			folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders.filter(
 				(f) => f.kind === 'movie' || f.kind === 'show' || f.kind === 'music'
 			);
 			folderId = folders[0]?.id ?? 0;
-		} catch (e) {
-			error = message(e);
+		} catch {
+			foldersFailed = true;
 		} finally {
 			loaded = true;
 		}
-	});
+	}
+	onMount(loadFolders);
 
 	function follow(id: number) {
 		return followJob(
@@ -106,6 +112,7 @@
 		error = '';
 		plan = null;
 		results = null;
+		restFrom = '';
 		try {
 			const r = await api.post<{ job_id: number }>(`/library-folders/${folderId}/scan`, after ? { after } : undefined);
 			const end = await follow(r.job_id);
@@ -193,6 +200,7 @@
 			results = (end.Result?.results as AdoptResult[]) ?? [];
 			const n = results.filter((x) => x.title_id).length;
 			toasts.push(n === 1 ? `1 ${word} adopted` : `${n} ${word}s adopted`, n ? 'ok' : 'info', { body: 'No file was moved' });
+			restFrom = plan?.more ? (plan.next ?? '') : '';
 			plan = null;
 		} catch (e) {
 			error = message(e);
@@ -212,7 +220,9 @@
 </p>
 
 <PageLoader loading={!loaded} label="Loading folders">
-{#if !folders.length}
+{#if foldersFailed}
+	<LoadError hasData={false} message="Could not load your Library folders." onretry={loadFolders} />
+{:else if !folders.length}
 	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder that holds your movies, shows or music first." action={session.can('settings') ? { label: 'Library folders', href: to('/settings/library-folders') } : undefined} />
 {:else}
 	<section class="tp-sheet tp-pad" aria-labelledby="h-pick">
@@ -235,6 +245,7 @@
 			</div>
 		{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
+		<p class="xs muted">Files that don't match a title? <a href={to('/library/import-files')}>Import files by hand</a></p>
 	</section>
 
 	{#if results}
@@ -260,7 +271,7 @@
 					</li>
 				{/each}
 			</ul>
-			<div class="row end"><Button href={to('/library')}>Go to the Library</Button></div>
+			<div class="row end">{#if restFrom}<Button onclick={() => scan(restFrom)} disabled={scanning || adopting}>Scan the rest</Button>{/if}<Button href={to('/library')}>Go to the Library</Button></div>
 		</section>
 	{/if}
 

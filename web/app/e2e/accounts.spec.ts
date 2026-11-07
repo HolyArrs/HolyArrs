@@ -42,6 +42,14 @@ test('the owner invites a member with a one-time link', async ({ browser }) => {
 	const link = (await own.locator('.fresh code').textContent())!.trim();
 	expect(link).toContain('/invite/');
 
+	// Opened while signed in: it says who, and offers Home instead of a second account.
+	const mine = await own.context().newPage();
+	await mine.goto(new URL(link).pathname);
+	await expect(mine.getByTestId('invite-signed-in')).toContainText("You're signed in as");
+	await expect(mine.getByRole('link', { name: 'Go home' })).toBeVisible();
+	await expect(mine.getByRole('button', { name: 'Sign out and join' })).toBeVisible();
+	await mine.close();
+
 	ana = await fresh(browser);
 	await ana.goto(new URL(link).pathname);
 	await expect(ana.getByRole('heading', { name: 'Join HolyArrs' })).toBeVisible();

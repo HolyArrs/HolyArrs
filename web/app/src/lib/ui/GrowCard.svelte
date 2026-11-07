@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount, type Snippet } from 'svelte';
-	import { api } from '../api.ts';
+	import { api, message } from '../api.ts';
+	import { toasts } from '../toasts.svelte.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import IconButton from './IconButton.svelte';
@@ -104,8 +105,8 @@
 		followBusy = true;
 		try {
 			following = await setFollow(api, t, !following);
-		} catch {
-			/* the bell stays as it was */
+		} catch (err) {
+			toasts.push(`Couldn't update follow`, 'fail', { body: message(err) });
 		} finally {
 			followBusy = false;
 		}

@@ -2,6 +2,8 @@
 	import { api, message, ApiError } from './api.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
+	import { goto } from '$app/navigation';
+	import { to } from './paths.ts';
 	import { refreshInbox } from './requests.svelte.ts';
 	import { loadDetails } from './title-details.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from './explore.ts';
@@ -86,6 +88,12 @@
 			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', c.kind === 'movie' ? { id: `tmdb:${tmdb}`, follow: true } : { kind: 'show', id: `tmdb:${tmdb}`, seasons: [], follow: true });
 			asked(r, c.name);
 		} catch (err) {
+			if (err instanceof ApiError && err.status === 409 && typeof err.body.title_id === 'number') {
+				refused(err.body);
+				const id = err.body.title_id;
+				toasts.push(`${c.name} is already in your Library`, 'info', { action: { label: 'Open', run: () => void goto(to(`/library/${id}`)) } });
+				return;
+			}
 			if (err instanceof ApiError && err.status === 409) refused(err.body);
 			toasts.push("Couldn't send request", 'fail', { body: message(err) });
 		} finally {

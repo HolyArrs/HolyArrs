@@ -73,7 +73,7 @@
 	// Library: Add (people who manage the Library) or Ask (members). In the
 	// Library: the same page, with a Library tab and the More menu for the
 	// manager tools (files, Versions, copies, subtitles, releases, delete).
-	let { kind, tmdb, libraryId }: { kind: string; tmdb: string; libraryId?: number } = $props();
+	let { kind, tmdb, libraryId, backHref }: { kind: string; tmdb: string; libraryId?: number; backHref?: string } = $props();
 	let details = $state<TitleDetails | null>(null);
 	// Back from a person (or any page opened here) lands where the page was:
 	// rows below the hero load late, so the scroll is put back as they arrive.
@@ -1057,7 +1057,8 @@
 	});
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 	// The breadcrumb's parent for a page opened fresh: the title's section (Movies or TV shows).
-	const sectionCrumb = $derived(details?.kind === 'show' ? { label: 'TV shows', href: to('/library?kind=show') } : { label: 'Movies', href: to('/library?kind=movie') });
+	// From the Library grid: back to it with its filters (backHref); otherwise the kind's own list.
+	const sectionCrumb = $derived(details?.kind === 'show' ? { label: 'TV shows', href: backHref ?? to('/library?kind=show') } : { label: 'Movies', href: backHref ?? to('/library?kind=movie') });
 </script>
 
 <svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
@@ -1641,8 +1642,8 @@
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
 {/if}
 {#if mayAsk}
-	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />
-	<AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={(_s, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />
+	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => { if (typeof body.title_id === 'number') { toasts.push(`${details?.name ?? kindWord} is already in your Library`, 'info'); void goto(to(`/library/${body.title_id}`)); } }} />
+	<AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={(_s, body) => { if (typeof body.title_id === 'number') { toasts.push(`${details?.name ?? kindWord} is already in your Library`, 'info'); void goto(to(`/library/${body.title_id}`)); } }} />
 {/if}
 
 <style>
