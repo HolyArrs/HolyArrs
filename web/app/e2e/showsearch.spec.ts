@@ -146,7 +146,7 @@ test('Settings > Search has the season pack choices', async () => {
 	await expect(page.getByLabel('A season pack is taken when')).toHaveValue('all');
 	await page.getByLabel('Season pack or single episodes').selectOption('always');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('status')).toContainText('Search settings saved');
+	await expect(page.getByRole('status').filter({ hasText: 'Search settings saved' })).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Season pack or single episodes')).toHaveValue('always');
 	await page.getByLabel('Season pack or single episodes').selectOption('rank');

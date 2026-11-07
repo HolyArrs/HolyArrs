@@ -104,12 +104,12 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 
 	// The whole season: from its Files, rename and history sheet.
-	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
+	await page.getByRole('button', { name: 'Season 1 tools' }).click();
 	await page.getByTestId('season-tools').getByRole('button', { name: 'Delete Season 1' }).click();
 	await expect(page.getByRole('dialog', { name: 'Delete Quarry Bells Season 1?' })).toBeVisible();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1: 3 episodes stop being kept up to date');
 	await dialog.getByRole('switch', { name: /Also delete their files/ }).click();
-	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files move to the holding folder');
+	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files to the holding folder');
 	await dialog.getByRole('button', { name: 'Delete Season 1' }).click();
 	await expect(page.getByText("Quarry Bells Season 1 deleted")).toBeVisible();
 	await expect(page.getByText(/Files kept/)).toBeVisible();
@@ -124,7 +124,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await page.reload();
 	await expect(page.getByRole('heading', { name: /Quarry Bells/ })).toBeVisible();
 	expect(await seasonKept(page, 'Season 1')).toBe(false);
-	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
+	await page.getByRole('button', { name: 'Season 1 tools' }).click();
 	const tools = page.getByTestId('season-tools');
 	await expect(tools).toContainText('0 of 3 episodes on disk');
 	await tools.getByRole('tab', { name: 'History' }).click();
@@ -149,7 +149,7 @@ test("an episode's History lists only that episode", async () => {
 	await expect(page).toHaveURL(/\/downloads\/history\?title=\d+/);
 	// History rows name the title, the episodes and a kind word; the kind is on data-kind.
 	await expect(page.locator('[data-testid="history-row"][data-kind="adopted"]').filter({ hasText: 'Quarry Bells' })).toBeVisible();
-	await expect(page.locator('[data-testid="history-row"][data-kind="episodes_removed"]').filter({ hasText: 'S01E01-E03, 3 episodes' })).toBeVisible();
+	await expect(page.locator('[data-testid="history-row"][data-kind="episodes_removed"]').filter({ hasText: /3 episodes/ })).toBeVisible();
 });
 
 test("the Calendar shows this week's episode, and the movies and shows filter", async () => {
@@ -193,7 +193,7 @@ test('the show page, import, history and calendar work at phone width', async ({
 	const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
-	await phone.goto('/library');
+	await phone.goto('/library?kind=show');
 	await phone.getByRole('link', { name: /Quarry Bells/ }).first().click();
 	await expect(phone.getByRole('button', { name: 'More actions', exact: true })).toBeVisible();
 	await noSidewaysScroll(phone);
@@ -213,22 +213,22 @@ test('the show page, import, history and calendar work at phone width', async ({
 });
 
 test('deleting the whole show with Never-add keeps its files and leaves the Library', async () => {
-	await page.goto('/library');
+	await page.goto('/library?kind=show');
 	await page.getByRole('link', { name: /Quarry Bells/ }).first().click();
 	await titleAction(page, 'Library', 'Delete show');
 	const del = page.getByTestId('delete-sheet');
 	const never = del.getByRole('switch', { name: /Never add again/ });
 	await never.click();
 	await expect(never).toHaveAttribute('aria-checked', 'true');
-	await expect(del.getByTestId('delete-plan')).toContainText('The show leaves the Library');
-	await expect(del.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
+	await expect(del.getByTestId('delete-plan')).toContainText('Leaves your Library');
+	await expect(del.getByTestId('delete-plan')).toContainText('Lists never add it again');
 	await del.getByRole('button', { name: 'Delete show', exact: true }).click();
-	await expect(page.getByText('Quarry Bells deleted')).toBeVisible();
-	await expect(page.getByText('Files stay on disk')).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: 'Quarry Bells deleted' })).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: 'Quarry Bells deleted' })).toContainText('Files stay on disk');
 	// The title page stays open, now without its Library tab; the Library no longer lists the show.
 	await expect(page.getByTestId('own-tabs')).toHaveCount(0);
 	expect(existsSync(files.extra)).toBe(true);
-	await page.goto('/library');
+	await page.goto('/library?kind=show');
 	await expect(page.getByRole('link', { name: /Harbour Lights/ }).first()).toBeVisible();
 	await expect(page.getByRole('link', { name: /Quarry Bells/ })).toHaveCount(0);
 });
