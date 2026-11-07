@@ -88,7 +88,7 @@
 		</span>
 	{:else if group === 'system'}
 		<span class="srv">
-			<svg class="pulse" viewBox="0 0 400 60" preserveAspectRatio="none"><path class="base" d="M0 34H400" /><path d="M0 34H120l10-20 12 38 10-30 8 12H260l8-10 8 10H400" /></svg>
+			<svg class="pulse" viewBox="0 0 400 60" preserveAspectRatio="none"><path class="base" d="M0 34H120l10-20 12 38 10-30 8 12H260l8-10 8 10H400" /><path d="M0 34H120l10-20 12 38 10-30 8 12H260l8-10 8 10H400" /></svg>
 			{#each [0, 1, 2] as k (k)}<span class="u" style="--k: {k}"><span class="led"></span><span class="bay"></span><span class="vent"></span><span class="bay"></span></span>{/each}
 		</span>
 	{/if}

@@ -179,8 +179,10 @@
 	   the hover never flickers); the face inside it lifts. */
 	.sx-face {
 		position: absolute; inset: 0; display: block; overflow: hidden; padding: 24px; border-radius: inherit;
-		background: color-mix(in srgb, var(--surface-1) 80%, transparent);
-		box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.08), 0 0 0 1px var(--line);
+		/* Status-plate glass: see-through, frosted, with a lit top edge. */
+		background: color-mix(in srgb, var(--surface-1) 52%, transparent);
+		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent), 0 20px 50px -30px rgb(0 0 0 / 0.5);
 		transition: transform var(--dur-slow) var(--ease-out);
 		will-change: transform;
 	}
