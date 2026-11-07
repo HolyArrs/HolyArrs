@@ -102,6 +102,8 @@
 	.ui-topbar.away { transform: translateY(-100%); pointer-events: none; }
 	/* Over a page hero the bar is see-through (no glass, no line); the glass fades in once the hero has scrolled by. */
 	.ui-topbar { transition: transform var(--bar-glide), background-color var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out); }
+	/* Over the poster wall the bar is lighter glass, so the wall shows through like the page. */
+	:global(html:has([data-poster-wall])) .ui-topbar { background-color: color-mix(in srgb, var(--bg) 40%, transparent); border-bottom-color: color-mix(in srgb, var(--text) 8%, transparent); }
 	:global(html.over-hero) .ui-topbar { background-color: transparent; border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }

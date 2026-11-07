@@ -426,13 +426,14 @@
 	}
 	.clock { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
 	/* Why HolyArrs: a small retro panel in the site's look; the note opens in its own window. */
-	.why-row { --coal: #191d20; --cream: #f3efe5; --red: #cf3025; --pixel: 'Silkscreen', var(--font-mono, ui-monospace), monospace;
-		position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; background: radial-gradient(120% 140% at 0% 0%, #2a3035, var(--coal) 70%); border: 2px solid rgb(243 239 229 / 22%); border-radius: var(--r-panel, 16px); }
-	.why-row::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgb(0 0 0 / 20%) 0 1px, transparent 1px 3px); }
+	/* Colours mirror the website: dark = the site's dark hero, light = its paper-and-ink theme. */
+	.why-row { --coal: light-dark(#f4f1ea, #171717); --panel: light-dark(#fbfaf6, #242424); --cream: light-dark(#05080d, #f3f0e9); --muted: light-dark(#4a4f58, #b6bec3); --red: light-dark(#b4271e, #e2443a); --hard: light-dark(#05080d, #080a0c); --scan: light-dark(rgb(5 8 13 / 5%), rgb(0 0 0 / 20%)); --pixel: 'Silkscreen', var(--font-mono, ui-monospace), monospace;
+		position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; background: var(--coal); border: 2px solid var(--cream); box-shadow: 5px 5px 0 var(--hard); border-radius: 0; }
+	.why-row::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, var(--scan) 0 1px, transparent 1px 3px); }
 	.why-row > * { position: relative; }
 	.why-row h2 { margin: 0; padding: 3px 0; font: 400 14px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--cream); }
-	.why-row small { display: block; margin-top: 6px; color: #b6bec3; font-size: 13px; }
-	.why-btn { all: unset; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; background: var(--cream); color: var(--coal); border: 2px solid var(--coal); box-shadow: 4px 4px 0 var(--red); font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; transition: transform 120ms ease, box-shadow 120ms ease; }
+	.why-row small { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
+	.why-btn { all: unset; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; background: var(--panel); color: var(--cream); border: 2px solid var(--cream); box-shadow: 4px 4px 0 var(--red); font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; transition: transform 120ms ease, box-shadow 120ms ease; }
 	.why-btn .px { color: var(--red); letter-spacing: 0; }
 	.why-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--red); }
 	.why-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--red); }

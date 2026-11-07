@@ -172,7 +172,7 @@
 
 <!-- Background: this Library's posters, blurred and dimmed, still. -->
 {#if tiles.length && home}
-	<div class="sx-wall" aria-hidden="true">
+	<div class="sx-wall" aria-hidden="true" data-poster-wall>
 		<div class="tiles">{#each tiles as src, i (i)}<img {src} alt="" decoding="async" />{/each}</div>
 		<div class="veil"></div>
 	</div>

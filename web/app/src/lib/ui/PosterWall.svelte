@@ -13,7 +13,7 @@
 </script>
 
 {#if tiles.length}
-	<div class="pw" aria-hidden="true">
+	<div class="pw" aria-hidden="true" data-poster-wall>
 		<div class="tiles">{#each tiles as src, i (i)}<img {src} alt="" decoding="async" />{/each}</div>
 		<div class="veil"></div>
 	</div>
