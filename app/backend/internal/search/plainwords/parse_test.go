@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestParse(t *testing.T) {
+func TestParse_Described(t *testing.T) {
 	for _, c := range []struct {
 		in       string
 		plain    bool
@@ -59,7 +59,7 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestParseOddInput(t *testing.T) {
+func TestParse_OddInput(t *testing.T) {
 	long := strings.Repeat("space movie with the robot ", 40)
 	q := Parse(long)
 	if len([]rune(q.Text)) > maxRunes || q.Kind != "movie" {

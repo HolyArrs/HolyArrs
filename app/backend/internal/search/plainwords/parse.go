@@ -1,6 +1,6 @@
-// Package plainwords reads a search typed in plain words, like "that space
-// movie with the robot from 2014", into a name and filters. It never fails:
-// words it does not know stay in the name or the extra words.
+// Package plainwords turns a search typed in plain words, like "that space
+// movie with the robot from 2014", into a name plus filters. It never fails:
+// words it does not know stay in the name.
 package plainwords
 
 import (
@@ -9,25 +9,8 @@ import (
 	"unicode"
 )
 
-// Query is what a plain-words search was understood as.
-type Query struct {
-	// Text is the search as typed (trimmed, cut to a sane length).
-	Text string `json:"text"`
-	// Plain is true when nothing was understood: the whole text is a name.
-	Plain bool `json:"plain"`
-	// Name is what is left to match titles by name ("" when only filters).
-	Name string `json:"name"`
-	// Kind is movie, show or music, "" for any.
-	Kind     string   `json:"kind,omitempty"`
-	YearFrom int      `json:"year_from,omitempty"`
-	YearTo   int      `json:"year_to,omitempty"`
-	Genres   []string `json:"genres"`
-	People   []string `json:"people"`
-	// Words are things the title is about ("robot"), matched against the
-	// overview.
-	Words []string `json:"words"`
-}
-
+// Limits that keep a long or odd input cheap to read. The year range is
+// the span a real title can have.
 const (
 	maxRunes  = 300
 	maxTokens = 40
@@ -54,14 +37,14 @@ var genres = map[string]string{
 	"war": "War", "western": "Western", "westerns": "Western", "cowboy": "Western",
 }
 
-// kinds maps plain words to a kind.
+// kinds maps plain words to a kind of title.
 var kinds = map[string]string{
 	"movie": "movie", "movies": "movie", "film": "movie", "films": "movie",
 	"show": "show", "shows": "show", "series": "show", "tv": "show", "sitcom": "show",
 	"music": "music", "album": "music", "albums": "music", "band": "music", "artist": "music", "song": "music", "songs": "music",
 }
 
-// keywords are things a title is about, never a name on their own.
+// keywords are things a title is about. They never count as a name.
 var keywords = map[string]bool{
 	"robot": true, "robots": true, "alien": true, "aliens": true, "dinosaur": true, "dinosaurs": true,
 	"zombie": true, "zombies": true, "vampire": true, "vampires": true, "shark": true, "sharks": true,
@@ -71,7 +54,7 @@ var keywords = map[string]bool{
 	"heist": true, "witch": true, "witches": true, "monster": true, "monsters": true, "ai": true,
 }
 
-// filler words carry no meaning in a described search.
+// filler holds words that add no meaning to a described search.
 var filler = map[string]bool{
 	"a": true, "an": true, "the": true, "that": true, "this": true, "some": true, "one": true, "any": true,
 	"i": true, "me": true, "my": true, "want": true, "find": true, "looking": true, "look": true, "for": true,
@@ -81,12 +64,31 @@ var filler = map[string]bool{
 	"to": true, "from": true, "in": true, "on": true, "at": true, "around": true, "please": true, "thing": true, "has": true, "had": true, "called": true, "named": true,
 }
 
+// decadeWords maps spelled-out decades to their first year.
 var decadeWords = map[string]int{
 	"twenties": 1920, "thirties": 1930, "forties": 1940, "fifties": 1950, "sixties": 1960,
 	"seventies": 1970, "eighties": 1980, "nineties": 1990,
 }
 
-// Parse reads text. It never fails and never panics.
+// Query is what a plain-words search was understood as.
+type Query struct {
+	// Text is the search as typed, trimmed and cut to a safe length.
+	Text string `json:"text"`
+	// Plain is true when nothing was understood and the whole text is a name.
+	Plain bool `json:"plain"`
+	// Name is what is left to match by title. It is empty when only filters remain.
+	Name string `json:"name"`
+	// Kind is movie, show or music. Empty means any.
+	Kind     string   `json:"kind,omitempty"`
+	YearFrom int      `json:"year_from,omitempty"`
+	YearTo   int      `json:"year_to,omitempty"`
+	Genres   []string `json:"genres"`
+	People   []string `json:"people"`
+	// Words are things the title is about, like "robot", matched in the overview.
+	Words []string `json:"words"`
+}
+
+// Parse reads text into a Query. It never fails and never panics.
 func Parse(text string) Query {
 	text = strings.TrimSpace(text)
 	if r := []rune(text); len(r) > maxRunes {
@@ -97,8 +99,9 @@ func Parse(text string) Query {
 	if len(raw) > maxTokens {
 		raw = raw[:maxTokens]
 	}
+	// A single word like "2012" or "Alien" is a title, not a description.
 	if len(raw) < 2 && !allGenres(raw) {
-		return q // one word ("2012", "Se7en", "Alien") is a name
+		return q
 	}
 	low := make([]string, len(raw))
 	for i, t := range raw {
@@ -175,7 +178,8 @@ func Parse(text string) Query {
 	return q
 }
 
-// with files the words after "with", "starring" or "about".
+// with files the words that follow "with", "starring", "featuring" or "about"
+// as a person, a genre or an overview word.
 func (q *Query) with(lead string, got, gotLow []string) {
 	if len(got) == 0 {
 		return
@@ -203,6 +207,7 @@ func (q *Query) with(lead string, got, gotLow []string) {
 	}
 }
 
+// addGenre adds g once.
 func (q *Query) addGenre(g string) {
 	for _, x := range q.Genres {
 		if x == g {
@@ -212,6 +217,7 @@ func (q *Query) addGenre(g string) {
 	q.Genres = append(q.Genres, g)
 }
 
+// addWord adds w once.
 func (q *Query) addWord(w string) {
 	for _, x := range q.Words {
 		if x == w {
@@ -221,9 +227,8 @@ func (q *Query) addWord(w string) {
 	q.Words = append(q.Words, w)
 }
 
-// described says the text describes a title rather than naming it: it has
-// a kind word, a year phrase, a decade, "with"/"starring"/"about", or is
-// only genre words ("scary comedy").
+// described reports whether the text describes a title instead of naming it.
+// Only some cues count, so a plain title that holds a common word stays a name.
 func described(low []string) bool {
 	if allGenres(low) {
 		return true
@@ -247,6 +252,7 @@ func described(low []string) bool {
 	return false
 }
 
+// allGenres reports whether every word is a genre word, like "scary comedy".
 func allGenres(low []string) bool {
 	if len(low) == 0 {
 		return false
@@ -259,13 +265,13 @@ func allGenres(low []string) bool {
 	return true
 }
 
-// stop ends a "with ..." run.
+// stop reports whether w ends the run of words after "with".
 func stop(w string) bool {
 	return kinds[w] != "" || decade(w) > 0 || year(w) > 0 || w == "with" || w == "from" || w == "in" ||
 		w == "after" || w == "before" || w == "since" || w == "and" || w == "on" || w == "at" || w == "starring" || w == "about" || w == "where" || w == "who"
 }
 
-// year reads a plain four-digit year in range, 0 otherwise.
+// year reads a four-digit year in range, or 0.
 func year(w string) int {
 	if len(w) != 4 {
 		return 0
@@ -277,7 +283,8 @@ func year(w string) int {
 	return n
 }
 
-// decade reads "90s", "1990s", "90's" or "nineties" as its first year.
+// decade reads "90s", "1990s", "90's" or "nineties" as its first year, or 0.
+// Two-digit decades from 30 up are 1900s, the rest 2000s.
 func decade(w string) int {
 	if y, ok := decadeWords[w]; ok {
 		return y
@@ -304,7 +311,8 @@ func decade(w string) int {
 	return 0
 }
 
-// tokens splits text into words; letters, digits, "-" and "'" stay inside.
+// tokens splits s into words. Letters, digits, marks, "-" and "'" stay inside
+// a word.
 func tokens(s string) []string {
 	return strings.FieldsFunc(s, func(c rune) bool {
 		return !unicode.IsLetter(c) && !unicode.IsNumber(c) && !unicode.IsMark(c) && c != '-' && c != '\''
