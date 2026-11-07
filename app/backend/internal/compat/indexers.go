@@ -22,13 +22,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
-// Prowlarr's app sync (roadmap #85 phase 2; decision 0008 and its
-// 2026-11-03 amendment). Prowlarr writes one Newznab or Torznab indexer
-// per indexer of its own into each app, pointing at itself, and keeps
-// them up to date: it reads the templates (schema), tests, adds, reads
-// back, rewrites when a value it manages differs, and deletes. Each one
-// it writes becomes a HolyArrs Source of this side's kind. Field names and
-// the call order come from the Prowlarr, Sonarr and Radarr manuals.
+// Prowlarr's app sync. Prowlarr writes one Newznab or Torznab indexer per
+// indexer of its own into each app, pointing at itself, and keeps them up
+// to date: it reads the templates (schema), tests, adds, reads back,
+// rewrites when a value it manages differs, and deletes. Each one it
+// writes becomes a Source of this side's kind.
 //
 // Such a Source may reach the local network (Prowlarr is usually on it),
 // and it arrives paused, as a new one does after any move of its address,

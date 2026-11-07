@@ -35,7 +35,7 @@ func golden(t *testing.T, name, got string) {
 
 // The templates Prowlarr reads before it writes: Newznab and Torznab with
 // the fields it fills and the ones it carries over, per side.
-func TestOldAppIndexerSchema(t *testing.T) {
+func TestIndexerSchema_Templates(t *testing.T) {
 	for _, side := range []string{"sonarr", "radarr"} {
 		h := &handler{side: side}
 		rec := httptest.NewRecorder()
@@ -107,7 +107,7 @@ func managed(m map[string]any) map[string]any {
 
 // What Prowlarr wrote reads back the same, its key masked, so it does
 // not write again; a value changed in HolyArrs reads back changed.
-func TestOldAppIndexerReadsBackEqual(t *testing.T) {
+func TestIndexerReadBack_EqualAfterWrite(t *testing.T) {
 	for _, c := range []struct{ side, format string }{{"sonarr", "torznab"}, {"sonarr", "newznab"}, {"radarr", "torznab"}, {"radarr", "newznab"}} {
 		h := &handler{side: c.side}
 		sent := prowlarrBody(h, c.format, map[string]any{"minimumSeeders": 3.0, "seedCriteria.seedRatio": 1.5, "seedCriteria.seedTime": 60.0,
@@ -154,7 +154,7 @@ func mapsEqual(a, b map[string]any) bool {
 }
 
 // Bodies HolyArrs cannot keep as a Source get a 400 with what is wrong.
-func TestOldAppIndexerRefused(t *testing.T) {
+func TestIndexerWrite_BadBodyRefused(t *testing.T) {
 	h := &handler{side: "sonarr"}
 	for name, change := range map[string]func(m map[string]any){
 		"another kind":   func(m map[string]any) { m["implementation"] = "HDBits" },

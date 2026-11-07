@@ -69,7 +69,7 @@ type season struct {
 	Statistics   *seasonCounts `json:"statistics,omitempty"`
 }
 
-// seasonCounts are one season's numbers, as the Sonarr manual defines
+// seasonCounts are one season's numbers, as the old apps define
 // them: total counts every episode; count those kept up to date that have
 // aired, plus every one with a file; files those with a file in the main
 // Version. Seerr calls a season available when files reaches total.

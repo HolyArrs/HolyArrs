@@ -9,7 +9,7 @@ import (
 
 // Cover names are read loosely; only the two poster sizes Bazarr asks for
 // make a smaller copy.
-func TestOldAppCoverName(t *testing.T) {
+func TestCoverName_LooseNames(t *testing.T) {
 	for file, want := range map[string]struct {
 		kind string
 		px   int
@@ -24,7 +24,7 @@ func TestOldAppCoverName(t *testing.T) {
 // outputPath is the download's own folder or file as HolyArrs sees it,
 // never the save folder other downloads share, unless nothing else is
 // known.
-func TestOldAppOutputPath(t *testing.T) {
+func TestOutputPath_DownloadFolder(t *testing.T) {
 	maps := []domain.PathMap{{Theirs: "/downloads/", Ours: "/data/downloads"}}
 	seen := func(names ...string) []domain.SeenFile {
 		var out []domain.SeenFile
@@ -58,7 +58,7 @@ func TestOldAppOutputPath(t *testing.T) {
 // A file carries what Bazarr reads: languages by name, the quality name it
 // splits on the dash, and the codecs (the parsed one first, then the one
 // read from the file).
-func TestOldAppFileShape(t *testing.T) {
+func TestFileShape_BazarrFields(t *testing.T) {
 	scene := "Lab.Show.S01E01.1080p.WEB-DL.H264-LAB"
 	f := domain.File{RelativePath: "Lab Show/Season 01/e1.mkv", Size: 5 << 20, AddedAt: time.Now(), ReleaseName: &scene,
 		Quality: domain.Quality{Resolution: 1080, Source: "web_dl", Audio: "AAC"}, Languages: []string{"en", "zz", "de"},

@@ -8,8 +8,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// The words and formats the manuals give for the old apps' answers.
-func TestFormats(t *testing.T) {
+// The words and formats the old apps use in their answers.
+func TestFormats_ManualWords(t *testing.T) {
 	for sec, want := range map[int64]string{0: "00:00:00", 125: "00:02:05", 3600*23 + 59: "23:00:59", 86400 + 3723: "1.01:02:03", -5: "00:00:00"} {
 		if got := timeSpan(sec); got != want {
 			t.Errorf("timeSpan(%d) = %q, want %q", sec, got, want)
@@ -28,7 +28,7 @@ func TestFormats(t *testing.T) {
 }
 
 // Anime shows go by absolute numbers, daily ones by air date, and back.
-func TestShowTypes(t *testing.T) {
+func TestShowTypes_RoundTrip(t *testing.T) {
 	for typ, order := range map[string]string{"anime": library.OrderAbsolute, "Daily": library.OrderDaily, "standard": library.OrderAired, "": library.OrderAired} {
 		if got := episodeOrder(typ); got != order {
 			t.Errorf("episodeOrder(%q) = %q, want %q", typ, got, order)
@@ -46,7 +46,7 @@ func TestShowTypes(t *testing.T) {
 }
 
 // The minimum availability stages map to Release gates and back.
-func TestStages(t *testing.T) {
+func TestStages_RoundTrip(t *testing.T) {
 	for stage, gate := range map[string]string{"announced": library.GateAnnounced, "tba": library.GateAnnounced, "inCinemas": library.GateInCinemas,
 		"INCINEMAS": library.GateInCinemas, "released": library.GateReleased, "": ""} {
 		if got := gateOf(stage); got != gate {

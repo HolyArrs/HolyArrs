@@ -1,21 +1,15 @@
-// Package compat is the old-app API (roadmap #85, decision 0008): a thin
-// adapter that answers apps such as Seerr and Overseerr the way Sonarr
-// (under /sonarr/) and Radarr (under /radarr/) would, so they can add
-// shows and movies to HolyArrs and see them become available. Bazarr
-// (subtitles), Unpackerr (unpacking) and Homepage's Sonarr widget read
-// the same answers.
-//
+// Package compat answers apps such as Seerr, Overseerr, Bazarr, Unpackerr
+// and Homepage the way Sonarr (under /sonarr/) and Radarr (under /radarr/)
+// would, so they can add shows and movies and see them become available.
 // Prowlarr writes its indexers in as Sources (indexers.go).
 //
-// It keeps no data of its own beyond a small tag table: every answer is
-// read from the Library and every change goes through the same library,
-// search and Job code the app uses. The field names those apps expect
-// stay inside this package. Field names, values and behaviour come from
-// the research manuals (the "For a compatible server" sections of the
-// Sonarr, Radarr and Seerr manuals).
+// The package keeps no data of its own beyond a small tag table. Every
+// answer is read from the Library, and every change goes through the same
+// library, search and Job code the app uses. The field names those apps
+// expect stay inside this package.
 //
 // Sign-in, the key, permissions and parts are checked before a request
-// gets here (auth.Middleware, auth.Gate and the part gate).
+// gets here.
 package compat
 
 import (
@@ -38,16 +32,15 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// The versions reported. The manuals set the floor: Seerr and Bazarr need
-// a major version of 4 or more (Seerr then skips the language profiles),
-// and Prowlarr at least 4.0.4 on the Radarr side.
+// Reported versions. Seerr and Bazarr need a major version of 4 or more
+// (Seerr then skips the language profiles). Prowlarr needs at least 4.0.4
+// on the Radarr side.
 const (
 	SonarrVersion = "4.0.99.0"
 	RadarrVersion = "5.0.99.0"
 )
 
-// AppName is what the status answer calls the app. No client reads it
-// (Seerr manual C11), so HolyArrs gives its own name.
+// AppName is the name the status answer gives the app. No client reads it.
 const AppName = "HolyArrs"
 
 // bodyMax caps a request body: a show sent back with all its seasons and
@@ -197,6 +190,7 @@ func actor(r *http.Request) domain.Actor { return auth.Actor(r.Context()) }
 // utc is a time written the old apps' way: UTC, whole seconds, a Z.
 type utc time.Time
 
+// MarshalJSON writes the time in UTC with whole seconds and a Z.
 func (t utc) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + time.Time(t).UTC().Format("2006-01-02T15:04:05Z") + `"`), nil
 }
