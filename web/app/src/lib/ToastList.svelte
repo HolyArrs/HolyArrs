@@ -3,6 +3,7 @@
 	import { notifyIn, notifyOut } from './ui/transitions.ts';
 	import { alertsPanel, toasts } from './toasts.svelte';
 	import AlertsPanel from './AlertsPanel.svelte';
+	import { forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './ui/Toast.svelte';
 	import {
 		METADATA_BACK,
@@ -60,6 +61,7 @@
 	$effect(() => {
 		if (session.s.state === 'signed_out') {
 			toasts.forgetAll();
+			forgetFeeds();
 			alertsPanel.open = false;
 		}
 	});

@@ -28,6 +28,10 @@ export function decisionPins(): PinnedAlert[] {
 	}));
 }
 
+// Messages already handled this visit; kept across restarts of the feeds (permissions
+// load after sign-in and start them again), so nothing lands in the list twice.
+const known = new Set<number>();
+
 const TOLD = 'holyarrs.bell.told';
 function readTold(): Set<number> {
 	try {
@@ -53,7 +57,6 @@ export function startBellFeeds(canManage: boolean): () => void {
 
 	// Request updates pop up once each, wherever you are, and stay in the list. Ones this
 	// browser already showed (kept in local storage) only go into the list after a reload.
-	const known = new Set<number>();
 	const told = readTold();
 	const stopInbox = $effect.root(() => {
 		$effect(() => {
@@ -100,4 +103,9 @@ export function startBellFeeds(canManage: boolean): () => void {
 		stops.forEach((s) => s());
 		feedPins.update = null;
 	};
+}
+
+/** forgetFeeds is for sign-out: the next person starts with nothing handled. */
+export function forgetFeeds(): void {
+	known.clear();
 }
