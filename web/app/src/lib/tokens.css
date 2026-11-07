@@ -6,7 +6,8 @@
 :root {
   --font-display: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Display', ui-sans-serif, system-ui, sans-serif;
   --font-ui: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
-  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+  /* Luis 2026-11-06: no monospace face anywhere; code, paths and log lines use the app font. */
+  --font-mono: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
   --font-features: 'ss01' 0, 'cv11' 0;
   --tracking-body: -0.006em;
 

@@ -1,7 +1,6 @@
 /* HolyArrs app styles. Every value comes from tokens.css; this file holds
    layout and shared parts only. */
 @import '@fontsource-variable/geist/wght.css';
-@import '@fontsource-variable/geist-mono/wght.css';
 @import './lib/tokens.css';
 
 :root {

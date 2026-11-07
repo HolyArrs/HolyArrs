@@ -136,6 +136,6 @@
 	.lines li { display: grid; grid-template-columns: 84px 128px minmax(0, 1fr); align-items: baseline; column-gap: 12px; padding: 9px 0; }
 	.lines li + li { box-shadow: inset 0 1px 0 var(--line); }
 	.lines li > time { font-family: var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.text { font-family: var(--font-mono); font-size: 12.5px; font-weight: 400; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; color: var(--text); background: none; padding: 0; }
+	.text { font-family: var(--font-ui); font-size: 13.5px; font-weight: 400; font-variant-numeric: tabular-nums; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; color: var(--text); background: none; padding: 0; }
 	@media (max-width: 600px) { .lines li { grid-template-columns: auto 1fr; row-gap: 4px; } .text { grid-column: 1 / -1; } }
 </style>
