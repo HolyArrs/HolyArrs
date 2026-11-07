@@ -490,7 +490,7 @@
 	/* The heading reads like every section heading: small and grey, its note beside it. */
 	.sites-head > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; padding: 0 6px; }
 	.sites-head .h2 { color: var(--text-muted); font: 600 13px/1.2 var(--font-ui); letter-spacing: 0.02em; }
-	.sites-head p { margin: 0; color: var(--text-faint, var(--text-muted)); font: 400 12px/1.2 var(--font-ui); }
+	.sites-head p { margin: 0; color: var(--text-muted); font: 400 12px/1.2 var(--font-ui); }
 	.sites-head {
 		display: flex;
 		justify-content: space-between;

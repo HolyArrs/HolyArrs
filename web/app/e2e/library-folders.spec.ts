@@ -44,7 +44,7 @@ async function addFolderInSettings(page: Page, call: Call, path: string, kind: '
 	await page.getByLabel('Folder path').fill(path);
 	await page.getByLabel(/^Name/).fill(label);
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.getByRole('listitem').filter({ hasText: path }).getByTestId('folder-kind')).toHaveText(kind === 'show' ? 'For shows' : 'For music');
+	await expect(page.getByRole('listitem').filter({ has: page.locator('.name', { hasText: label }) }).getByTestId('folder-kind')).toHaveText(kind === 'show' ? 'For shows' : 'For music');
 	const f = (await folders(call)).find((x) => x.path === path);
 	expect(f?.kind).toBe(kind);
 	return f?.id ?? 0;

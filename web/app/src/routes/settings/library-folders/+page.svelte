@@ -284,7 +284,6 @@
 		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45);
 		overflow: hidden;
 	}
-	@media (hover: hover) { .fl .acts { opacity: 0.55; transition: opacity var(--dur-fast) var(--ease-out); } .fl .folder:hover .acts, .fl .folder:focus-within .acts { opacity: 1; } }
 
 	/* Grouped: Movies, Shows and Music each get their own sheet, one line per folder. */
 	.fl .folder { padding: 14px 16px 14px 18px; min-height: 72px; }

@@ -14,7 +14,7 @@ const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 // the fake TMDB list 104 and the fake Trakt list lab/tv-picks in fakes.mjs.
 // Each list keeps its own season choice; Never-add shows are skipped; a list
 // with Search when added looks for the new show's episodes. The lists use
-// the 4K Pick rules, so the fake Source's Releases are all turned away and
+// the 4K Quality rules, so the fake Source's Releases are all turned away and
 // nothing downloads. Everything made here (lists, shows, the Never-add
 // entry, a show folder it had to make) is taken away in afterAll through the
 // API, so a failed test leaves nothing behind for the specs after it.
@@ -102,7 +102,7 @@ async function addList(name: string, kind: 'tmdb_list' | 'trakt_list', ref: stri
 	// Show lists offer show folders and the season choices; movie lists do not.
 	await expect(form.getByLabel('Seasons to keep up to date')).toBeVisible();
 	await form.getByLabel('Which list').fill(ref);
-	await form.getByLabel('Pick rules').selectOption({ label: '4K' });
+	await form.getByLabel('Quality').selectOption({ label: '4K' });
 	await form.getByLabel('Seasons to keep up to date').selectOption(seasons);
 	if (searchOnAdd) await form.getByRole('checkbox', { name: /^Search when added/ }).check();
 	await form.getByRole('button', { name: 'Save', exact: true }).click();

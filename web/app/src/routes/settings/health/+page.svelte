@@ -203,7 +203,7 @@
 	.checks > li > .grow { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
 	.checks > li > .grow :global(.muted) { font-size: 13px; }
 	.checks > li > time { text-align: right; font-variant-numeric: tabular-nums; }
-	.sub { color: var(--text-faint, var(--text-muted)); font-weight: 400; letter-spacing: 0; }
+	.sub { color: var(--text-muted); font-weight: 400; letter-spacing: 0; }
 	.two {
 		display: grid;
 		grid-template-columns: 1fr 1fr;

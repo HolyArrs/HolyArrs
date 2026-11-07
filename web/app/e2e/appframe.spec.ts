@@ -64,7 +64,9 @@ test('This app shows where things are kept, and the log', async () => {
 	const store = page.getByTestId('storage');
 	await expect(store.getByTestId('storage-path').filter({ hasText: 'Main database' })).toContainText('holyarrs.db');
 	await expect(store.getByTestId('storage-media').first()).toContainText('Library folder');
-	await page.getByTestId('settings-links').getByRole('link', { name: /^Logs/ }).click();
+	await page.goto('/settings');
+	await page.getByRole('link', { name: /^Server/ }).click();
+	await page.getByRole('link', { name: /^Logs/ }).click();
 	await expect(page.getByRole('heading', { name: 'Logs', level: 1 })).toBeVisible();
 	const dl = page.getByRole('link', { name: 'Download', exact: true });
 	await expect(dl).toHaveAttribute('href', /\/api\/v1\/logs\/download$/);
@@ -134,7 +136,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	await page.getByLabel('Check for a newer HolyArrs').uncheck();
 	await saved();
 	await page.goto('/status?tab=updates');
-	await expect(page.getByTestId('status-updates')).toContainText('The update check is off');
+	await expect(page.getByTestId('status-updates')).toContainText('Update check is off');
 	await expect(page.getByTestId('status-updates').getByRole('button', { name: /^Check (now|again)$/ })).toHaveCount(0);
 	await page.goto('/settings/health');
 	await page.getByLabel('Check for a newer HolyArrs').check();
