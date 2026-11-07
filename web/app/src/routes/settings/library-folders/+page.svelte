@@ -17,7 +17,7 @@
 	import type { LibraryFolder } from '#lib/types.ts';
 	import { page } from '$app/state';
 
-	// Five looks for the folder list while Luis picks one (?view=1-5).
+	// Grouped list (Luis's pick); five ways to mark a folder while he picks one (?view=1-5).
 	const view = $derived(['1', '2', '3', '4', '5'].includes(page.url.searchParams.get('view') ?? '') ? page.url.searchParams.get('view')! : '1');
 	const kindWord = (k: string) => (k === 'show' ? 'Shows' : k === 'music' ? 'Music' : 'Movies');
 	const kindIcon = (k: string) => (k === 'show' ? 'tv' : k === 'music' ? 'music' : 'film') as 'tv' | 'music' | 'film';
@@ -193,7 +193,7 @@
 {:else if folders.length}
 	{#snippet row(f: LibraryFolder)}
 		<li class="folder k-{f.kind || 'movie'}" title="{f.path}{f.health_checked_at ? ` · checked ${dateTime(f.health_checked_at)}` : ''}">
-			<span class="ic"><Icon name={kindIcon(f.kind)} size={18} /></span>
+			<span class="ic">{#if view === '2' || view === '3' || view === '5'}<Icon name="folder" size={view === '2' ? 20 : 17} />{/if}</span>
 			<div class="grow">
 				{#if editing === f.id}
 					<form class="ed" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
@@ -217,19 +217,14 @@
 			</div>
 		</li>
 	{/snippet}
-	{#if view === '3'}
-		<div class="fl-groups">
-			{#each byKind as g (g.k)}
-				<section class="fl-group">
-					<h3><Icon name={kindIcon(g.k)} size={15} />{kindWord(g.k)}<span class="cnt">{g.items.length}</span></h3>
-					<ul class="fl" data-view="3">{#each g.items as f (f.id)}{@render row(f)}{/each}</ul>
-				</section>
-			{/each}
-		</div>
-	{:else}
-		{#if view === '4'}<div class="fl-head" aria-hidden="true"><span></span><span>Name</span><span>Free</span><span>Status</span><span></span></div>{/if}
-		<ul class="fl" data-view={view}>{#each folders as f (f.id)}{@render row(f)}{/each}</ul>
-	{/if}
+	<div class="fl-groups" data-icons={view}>
+		{#each byKind as g (g.k)}
+			<section class="fl-group">
+				<h3><Icon name={kindIcon(g.k)} size={15} />{kindWord(g.k)}<span class="cnt">{g.items.length}</span></h3>
+				<ul class="fl" data-view="3">{#each g.items as f (f.id)}{@render row(f)}{/each}</ul>
+			</section>
+		{/each}
+	</div>
 {/if}
 
 {#if extraLoaded}
@@ -284,7 +279,7 @@
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
 	/* Glass sheet shared by the looks that use one. */
-	.fl, .fl-group > .fl {
+	.fl {
 		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
 		background: color-mix(in srgb, var(--surface-1) 60%, transparent);
 		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
@@ -293,64 +288,40 @@
 	}
 	@media (hover: hover) { .fl .acts { opacity: 0.55; transition: opacity var(--dur-fast) var(--ease-out); } .fl .folder:hover .acts, .fl .folder:focus-within .acts { opacity: 1; } }
 
-	/* 1 Calm rows: one sheet, one line per folder, status as a word with a dot. */
-	.fl[data-view='1'] .folder, .fl[data-view='3'] .folder { padding: 14px 16px 14px 18px; min-height: 72px; }
-	.fl[data-view='1'] .folder + .folder, .fl[data-view='3'] .folder + .folder { box-shadow: inset 0 1px 0 var(--line); }
-	.fl[data-view='1'] .folder:hover, .fl[data-view='3'] .folder:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
-
-	/* 2 Cards: a tile per folder, the free space large. */
-	.fl[data-view='2'] { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; border: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible; }
-	.fl[data-view='2'] .folder {
-		grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic . acts' 'grow grow grow' 'free free st'; row-gap: 14px; padding: 16px 16px 18px;
-		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
-		background: linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 75%, transparent), color-mix(in srgb, var(--surface-1) 55%, transparent));
-		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 18px 40px -28px rgb(0 0 0 / 0.5);
-		transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out);
-	}
-	.fl[data-view='2'] .folder:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 24px 50px -26px rgb(0 0 0 / 0.55); }
-	.fl[data-view='2'] .ic { grid-area: ic; } .fl[data-view='2'] .grow { grid-area: grow; } .fl[data-view='2'] .acts { grid-area: acts; align-self: start; margin: -6px -6px 0 0; }
-	.fl[data-view='2'] .free { grid-area: free; justify-content: flex-start; } .fl[data-view='2'] .free b { font: 700 30px/1 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; }
-	.fl[data-view='2'] .st { grid-area: st; align-self: end; }
-	.fl[data-view='2'] .top { flex-direction: column; align-items: flex-start; gap: 2px; }
-
-	/* 3 Grouped: Movies, Shows and Music each get their own sheet. */
+	/* Grouped: Movies, Shows and Music each get their own sheet, one line per folder. */
+	.fl .folder { padding: 14px 16px 14px 18px; min-height: 72px; }
+	.fl .folder + .folder { box-shadow: inset 0 1px 0 var(--line); }
+	.fl .folder:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
 	.fl-groups { display: flex; flex-direction: column; gap: 18px; }
 	.fl-group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 6px; color: var(--text-muted); font: 600 13px/1 var(--font-ui); letter-spacing: 0.02em; }
 	.fl-group h3 .cnt { padding: 3px 8px; border-radius: var(--r-pill); background: var(--surface-2); font-size: 11px; font-variant-numeric: tabular-nums; }
-	.fl[data-view='3'] .kind { display: none; }
-
-	/* 4 Table: columns you can scan down. */
-	.fl-head, .fl[data-view='4'] .folder { grid-template-columns: 32px minmax(0, 1fr) 100px 100px 156px; }
-	.fl-head { display: grid; column-gap: 16px; padding: 0 16px 8px 18px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
-	.fl-head span:nth-child(3) { text-align: right; }
-	.fl[data-view='4'] .acts { justify-content: flex-end; }
-	.fl[data-view='4'] .folder { padding: 10px 16px 10px 18px; min-height: 60px; }
-	.fl[data-view='4'] .folder:nth-child(even) { background: color-mix(in srgb, var(--text) 2.5%, transparent); }
-	.fl[data-view='4'] .ic { width: 32px; height: 32px; border-radius: 9px; }
-	.fl[data-view='4'] .top { gap: 10px; }
-	.fl[data-view='4'] .where { margin-top: 1px; font-size: 12px; }
-
-	/* 5 Compact: two columns of slim rows, for many folders. */
-	.fl[data-view='5'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-	.fl[data-view='5'] .folder { grid-template-columns: 30px minmax(0, 1fr) auto auto; padding: 10px 12px 10px 14px; min-height: 56px; column-gap: 12px; box-shadow: inset 0 -1px 0 var(--line), inset -1px 0 0 var(--line); }
-	.fl[data-view='5'] .ic { width: 30px; height: 30px; border-radius: 8px; }
-	.fl[data-view='5'] .ic :global(svg) { width: 15px; height: 15px; }
-	.fl[data-view='5'] .st span, .fl[data-view='5'] .kind { display: none; }
-	.fl[data-view='5'] .free b { font-size: 13px; }
-	.fl[data-view='5'] .acts { display: none; }
-	.fl[data-view='5'] .folder:hover .acts, .fl[data-view='5'] .folder:focus-within .acts { display: flex; position: absolute; right: 8px; padding-left: 12px; background: linear-gradient(90deg, transparent, var(--surface-1) 18px); }
+	.kind { display: none; }
 
 	@media (max-width: 760px) {
-		.folder, .fl[data-view='4'] .folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic free acts'; row-gap: 6px; }
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic free acts'; row-gap: 6px; }
 		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: end; }
 		.folder .free { grid-area: free; justify-content: flex-start; } .folder .acts { grid-area: acts; justify-self: end; opacity: 1 !important; }
-		.fl-head { display: none; }
-		.fl[data-view='5'] { grid-template-columns: 1fr; }
-		.fl[data-view='5'] .folder { grid-template-columns: 30px minmax(0, 1fr) auto auto; grid-template-areas: none; }
-		.fl[data-view='5'] .folder > * { grid-area: auto; }
-		.fl[data-view='2'] .folder { grid-template-areas: 'ic . acts' 'grow grow grow' 'free free st'; }
 		.folder .kind { display: none; }
 		.folder .name { white-space: normal; }
+	}
+
+	/* Folder marks (?view): 1 none · 2 line icon · 3 glass tile · 4 kind stripe · 5 ring */
+	[data-icons] .fl .folder { grid-template-columns: 40px minmax(0, 1fr) auto auto auto; }
+	[data-icons] .ic, [data-icons] .k-show .ic, [data-icons] .k-music .ic { background: none; box-shadow: none; color: var(--text-muted); border-radius: 0; }
+	[data-icons='1'] .fl .folder { grid-template-columns: 0 minmax(0, 1fr) auto auto auto; column-gap: 0 16px; }
+	[data-icons='1'] .ic { width: 0; height: 0; overflow: hidden; }
+	[data-icons='1'] .fl .folder { column-gap: 16px; } [data-icons='1'] .grow { margin-left: -16px; }
+	[data-icons='2'] .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
+	[data-icons='2'] :is(.ic, .k-show .ic, .k-music .ic) { width: 24px; height: 24px; color: color-mix(in srgb, var(--text) 55%, transparent); }
+	[data-icons='3'] :is(.ic, .k-show .ic, .k-music .ic) { width: 38px; height: 38px; border-radius: 11px; color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--text) 9%, transparent); }
+	[data-icons='4'] .fl .folder { grid-template-columns: 4px minmax(0, 1fr) auto auto auto; }
+	[data-icons='4'] :is(.ic, .k-show .ic, .k-music .ic) { width: 4px; height: 32px; border-radius: 2px; background: #3b82f6; }
+	[data-icons='4'] .fl .k-show .ic { background: #8b5cf6; } [data-icons='4'] .fl .k-music .ic { background: #ec4899; }
+	[data-icons='5'] :is(.ic, .k-show .ic, .k-music .ic) { width: 38px; height: 38px; border-radius: 50%; color: var(--text-muted); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 16%, transparent); }
+	@media (max-width: 760px) {
+		[data-icons] .fl .folder { grid-template-columns: 40px minmax(0, 1fr) auto; }
+		[data-icons='1'] .fl .folder { grid-template-columns: 0 minmax(0, 1fr) auto; }
+		[data-icons='2'] .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; }
+		[data-icons='4'] .fl .folder { grid-template-columns: 4px minmax(0, 1fr) auto; }
 	}
 </style>
