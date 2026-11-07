@@ -189,10 +189,7 @@
 		<SettingsCard id="where-files-go" title="Where files go">
 			<Field id="holding-days" label="Keep deleted files for (days)">
 				<input id="holding-days" class="input narrow" type="number" min="0" max="3650" bind:value={fr.holding_days} />
-				<span class="hint"
-					>A deleted or replaced file first goes to the holding folder in its Library folder (.holyarrs-replaced). After this many days it is removed for good. 0
-					keeps them until you empty it yourself.</span
-				>
+				<span class="hint" title="Deleted and replaced files wait in .holyarrs-replaced inside their Library folder, then are removed for good.">Deleted files wait in .holyarrs-replaced first; 0 keeps them</span>
 			</Field>
 			{#snippet advanced()}
 			<Field id="scan-limit" label="Folders read per library scan" hint="Bigger Libraries scan in parts">
@@ -330,10 +327,7 @@
 			<SettingsCard id="music-names" title="Music names">
 				<Field id="artist-folder-pattern" label="Artist folder pattern">
 					<input id="artist-folder-pattern" class="input mono" bind:value={ns.artist_folder_pattern} autocomplete="off" spellcheck="false" />
-					<span class="hint"
-						>For artists added from now on. {'{'}artist_sort{'}'} moves a leading The to the end (Beatles, The). Folders of artists you already have keep their
-						names.</span
-					>
+					<span class="hint" title="Folders of artists you already have keep their names.">New artists only; {'{'}artist_sort{'}'} gives Beatles, The</span>
 				</Field>
 				<Field id="album-folder-pattern" label="Album folder pattern">
 					<input id="album-folder-pattern" class="input mono" bind:value={ns.album_folder_pattern} autocomplete="off" spellcheck="false" />
@@ -410,9 +404,10 @@
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 
-	<SettingsCard id="holding-card" title="Holding folder" description="Old Held files are cleared daily">
-		<div class="row" style="margin-top: var(--s-4)">
-			<Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Clear now</Button>
+	<SettingsCard id="holding-card" title="Holding folder">
+		<div class="srow">
+			<div class="txt"><span class="label">Clear old Held files</span><span class="hint">Runs by itself every day</span></div>
+			<div class="ctl"><Button type="button" size="sm" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Clear now</Button></div>
 		</div>
 	</SettingsCard>
 	<SaveBar {dirty} form="naming-form" saving={busy} disabled={!!exampleError} ondiscard={discard} />

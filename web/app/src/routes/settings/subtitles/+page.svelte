@@ -204,10 +204,10 @@
 	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label="Default languages">
 		<SettingsCard id="lang-card" title="Default languages" description="For titles without their own. Empty means no subtitles.">
 			<WishEditor bind:wants={settings.languages} {langs} id="def" />
-			<p class="xs muted hint-block">
+			{#if settings.languages.length}<p class="xs muted hint-block">
 				<b>Hearing-impaired:</b> Normal also counts a hearing-impaired subtitle as there; Hearing-impaired only waits for one with sound descriptions; Either takes any.
 				<b>Forced only</b> means only the lines for foreign speech or signs.
-			</p>
+			</p>{/if}
 	
 			{#snippet advanced()}
 				<div class="two">
@@ -554,4 +554,8 @@
 			flex-direction: column;
 		}
 	}
+	/* No languages yet: the note and Add a language share one row. */
+	:global(#lang-card > .body:has(> .wants > li.small)) { flex-direction: row !important; align-items: center; justify-content: space-between; min-height: 64px; }
+	:global(#lang-card > .body:has(> .wants > li.small) > *) { margin: 0 !important; box-shadow: none !important; padding-block: 12px !important; }
+	:global(#lang-card > .body:has(> .wants > li.small) > .add) { padding-left: 0 !important; }
 </style>

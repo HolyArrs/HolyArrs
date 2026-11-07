@@ -392,6 +392,9 @@
 	.settings-content :global(section.ui-settings:has(> .body) > .advanced[open]) { margin: 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-top: 0; border-radius: 0 0 20px 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: 0 24px 50px -32px rgb(0 0 0 / 0.45); }
 	.settings-content :global(section.ui-settings:has(> .body) > .advanced[open] > summary) { padding-inline: 18px; box-shadow: inset 0 1px 0 var(--line); }
 	.settings-content :global(section.ui-settings:has(> .body) > .advanced[open] > .adv-body) { border: 0; border-radius: 0; background: none; padding: 0 18px 8px; }
+	/* Show-more lists line up with the row labels. */
+	.settings-content :global(section.ui-settings > .body details:not(.advanced) > summary) { margin-left: -2px; }
+	.settings-content :global(section.ui-settings > .body > .field details:not(.advanced)), .settings-content :global(section.ui-settings > .body > details:not(.advanced)) { padding-left: 18px; margin-left: 0; }
 	/* Room under the last row so the save bar never covers it. */
 	.settings-content:has(:global([data-testid='savebar'])) { padding-bottom: 96px; }
 	@media (max-width: 767px) {
