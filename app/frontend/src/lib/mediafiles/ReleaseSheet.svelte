@@ -7,9 +7,6 @@
 	import { keyReasons, verdict, verdictTone } from './releases.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
-	// Pick a release, as a centered window on the title page: the releases the last
-	// search found, best first, with the reason each would or would not be picked.
-	// scope narrows it to one season or episode: its query for the list and its body for a search.
 	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
 
 	let releases = $state<ReleaseView[]>([]);
@@ -27,7 +24,6 @@
 			const p = import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope ? scope.query + '&' : ''}limit=60&offset=0`);
 			releases = p.releases;
 			total = p.total;
-			// Keep a search we just started as running until it shows releases or a minute passes.
 			const mine = Date.now() - startedAt < 60_000 && !p.releases.length ? running : [];
 			running = [...new Set([...(p.running_job_ids ?? []), ...mine])];
 		} catch (e) {
@@ -45,7 +41,6 @@
 			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		}
 	}
-	// Opening loads the list; while a search runs, check again every few seconds.
 	$effect(() => {
 		if (open) void load();
 	});
@@ -85,7 +80,6 @@
 		}
 	}
 
-	// Dev preview only (?releases=demo): a realistic list, since the preview has no sources to search.
 	function demoPage(t: string): ReleasePage {
 		const n = t.replace(/[^A-Za-z0-9]+/g, '.');
 		const day = 864e5;
@@ -104,13 +98,11 @@
 		return { releases, total: releases.length, limit: 60, offset: 0, running_job_ids: [] };
 	}
 
-	// How old a release is, in the largest unit that fits.
 	function age(iso: string): string {
 		const d = Math.max(0, (Date.now() - Date.parse(iso)) / 864e5);
 		return d < 1 ? 'today' : d < 60 ? `${Math.round(d)} days` : d < 365 ? `${Math.round(d / 30)} months` : `${Math.round(d / 365)} yrs`;
 	}
 
-	// Quality words read from the release name, shown as badges.
 	function tags(n: string): string[] {
 		const s = n.toLowerCase();
 		const out: string[] = [];
@@ -132,7 +124,6 @@
 			.sort((a, b) => Number(b.outcome === 'chosen') - Number(a.outcome === 'chosen') || Number(b.passed) - Number(a.passed) || (a.rank || 999) - (b.rank || 999) || b.points - a.points)
 	);
 	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
-	// The reason that decided it first (refused, waiting, lost), then a warning; two lines at most.
 	const weight: Record<string, number> = { fail: 0, hold: 1, rank: 2, warn: 3 };
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>

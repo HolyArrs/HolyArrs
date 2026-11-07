@@ -1,6 +1,3 @@
-// The Library's banner table: which columns each library offers, how they
-// sort, the member's saved column layout, the Filter menu's counts and the
-// saved filters. Kept apart from the page so it can be tested.
 import type { TitleView } from '../core/types.ts';
 import { matches, type Filter } from './library.ts';
 import { libraryState } from './library-state.ts';
@@ -14,20 +11,15 @@ export type ColumnId =
 export interface Column {
 	id: ColumnId;
 	label: string;
-	/** Width in the grid template, e.g. "120px" or "minmax(140px, 1fr)". */
+
 	width: string;
-	/** Numbers and dates line up on the right. */
+
 	numeric?: boolean;
 	on: boolean;
 }
 
 const col = (id: ColumnId, label: string, width: string, on: boolean, numeric = false): Column => ({ id, label, width, on, numeric });
 
-/**
- * columnsFor is each library's columns in their starting order, with the
- * ones shown at first switched on (releases/library-columns-20261021).
- * Status always comes first after the banner.
- */
 export function columnsFor(kind: LibKind): Column[] {
 	if (kind === 'show')
 		return [
@@ -85,18 +77,12 @@ export function columnsFor(kind: LibKind): Column[] {
 	];
 }
 
-/** Saved layout: the columns in order, each on or off. */
 export type ColumnLayout = { id: ColumnId; on: boolean }[];
 
 export function columnsKey(member: number | undefined, kind: LibKind): string {
 	return `holyarrs.library-columns.${member ?? 'me'}.${kind}`;
 }
 
-/**
- * applyLayout puts a saved layout over a library's columns: saved order and
- * on/off first; a column added since goes in at its starting place (so
- * Status lands first), with its starting choice. Unknown ids are dropped.
- */
 export function applyLayout(kind: LibKind, saved: ColumnLayout | null | undefined): Column[] {
 	const base = columnsFor(kind);
 	if (!Array.isArray(saved)) return base;
@@ -126,11 +112,9 @@ export function saveColumns(member: number | undefined, kind: LibKind, cols: Col
 	try {
 		store?.setItem(columnsKey(member, kind), JSON.stringify(cols.map((c) => ({ id: c.id, on: c.on }))));
 	} catch {
-		// Private windows may refuse; the starting layout still works.
 	}
 }
 
-/** moveColumn moves one column from one place to another (drag or the arrow keys). */
 export function moveColumn(cols: Column[], from: number, to: number): Column[] {
 	if (from === to || from < 0 || from >= cols.length) return cols;
 	const next = [...cols];
@@ -138,8 +122,6 @@ export function moveColumn(cols: Column[], from: number, to: number): Column[] {
 	next.splice(Math.max(0, Math.min(next.length, to)), 0, c);
 	return next;
 }
-
-// ── Sorting ─────────────────────────────────────────────────────────────
 
 export type SortKey = 'status' | 'name' | 'year' | 'added' | 'size' | 'next' | 'last' | 'progress' | 'release' | 'runtime' | 'network' | 'rules';
 export type SortDir = 'asc' | 'desc';
@@ -149,12 +131,10 @@ export const sortLabels: Record<SortKey, string> = {
 	progress: 'Progress', release: 'Out', runtime: 'Runtime', network: 'Network', rules: 'Quality'
 };
 
-/** sortLabel names a sort; Music's "next" is its next release, not an episode. */
 export function sortLabel(k: SortKey, kind: LibKind | 'all'): string {
 	return k === 'next' && kind === 'artist' ? 'Next release' : sortLabels[k];
 }
 
-/** sortsFor lists the sorts a library offers. */
 export function sortsFor(kind: LibKind | 'all'): SortKey[] {
 	if (kind === 'show') return ['status', 'name', 'next', 'last', 'progress', 'added', 'year', 'size', 'network', 'rules'];
 	if (kind === 'artist') return ['status', 'name', 'progress', 'added', 'size', 'next'];
@@ -162,21 +142,18 @@ export function sortsFor(kind: LibKind | 'all'): SortKey[] {
 	return ['name', 'year', 'added', 'size'];
 }
 
-/** The column each sort belongs to, so a column header can sort. */
 export const columnSort: Partial<Record<ColumnId, SortKey>> = {
 	status: 'status',
 	year: 'year', added: 'added', size: 'size', next: 'next', last: 'last', episodes: 'progress', tracks: 'progress',
 	release: 'release', runtime: 'runtime', network: 'network', rules: 'rules', latest: 'next'
 };
 
-/** sortName drops a leading "The", "A" or "An" so "The Office" files under O. */
 export function sortName(name: string): string {
 	return name.trim().replace(/^(the|a|an)\s+/i, '').toLocaleLowerCase();
 }
 
 const time = (s?: string) => (s ? Date.parse(s) || 0 : 0);
 
-/** have and total: aired episodes in the Library, or tracks. */
 export function progressOf(t: TitleView): { have: number; total: number } {
 	if (t.kind === 'show' && t.show) return { have: t.show.in_library, total: Math.max(0, t.show.episodes - t.show.not_out_yet) };
 	if (t.kind === 'artist' && t.artist) return { have: t.artist.in_library, total: Math.max(0, t.artist.tracks - t.artist.not_out_yet) };
@@ -192,11 +169,6 @@ function nextDate(t: TitleView): string | undefined {
 	return t.kind === 'show' ? t.show?.next_air_date : t.kind === 'artist' ? t.artist?.next_release : undefined;
 }
 
-/**
- * sortValue is what a sort compares. Missing dates and numbers sort last in
- * both directions (see sortTitles), so "Next episode" keeps shows with no
- * date at the bottom.
- */
 function sortValue(t: TitleView, key: SortKey): number | string | null {
 	switch (key) {
 		case 'status': return libraryState(t)?.rank ?? null;
@@ -217,7 +189,6 @@ function sortValue(t: TitleView, key: SortKey): number | string | null {
 	}
 }
 
-/** sortTitles sorts a copy; ties fall back to the name, and blanks sit last either way. */
 export function sortTitles(ts: TitleView[], key: SortKey, dir: SortDir = 'asc'): TitleView[] {
 	const sign = dir === 'asc' ? 1 : -1;
 	return ts
@@ -231,31 +202,26 @@ export function sortTitles(ts: TitleView[], key: SortKey, dir: SortDir = 'asc'):
 		.map((x) => x.t);
 }
 
-/** The sort each key starts with when picked: newest first for dates and sizes, soonest first for what is coming. */
 export function startDir(key: SortKey): SortDir {
 	return key === 'status' || key === 'name' || key === 'next' || key === 'network' || key === 'rules' || key === 'progress' ? 'asc' : 'desc';
 }
 
-/** defaultSort is each library's starting sort: newest added for movies and music, soonest next episode for TV. */
 export function defaultSort(kind: LibKind | 'all'): { key: SortKey; dir: SortDir } {
 	return kind === 'show' ? { key: 'next', dir: 'asc' } : kind === 'all' ? { key: 'name', dir: 'asc' } : { key: 'added', dir: 'desc' };
 }
 
-// ── Filters ─────────────────────────────────────────────────────────────
-
-/** Kept is the "Keep up to date" filter: on, off or either. */
 export type Kept = 'any' | 'on' | 'off';
 
 export interface FilterState {
 	status: Filter;
 	kept: Kept;
-	/** 'anyone', 'me' or a person's id. */
+
 	asker: string;
-	/** A movie series id, or 0 for every title. */
+
 	series: number;
-	/** A video codec (h264, hevc…) movies' main files must have, or '' for any. */
+
 	codec: string;
-	/** Only titles with subtitles still wanted. */
+
 	subs: boolean;
 }
 
@@ -265,7 +231,7 @@ export interface FilterContext {
 	askers: (t: TitleView) => number[];
 	me?: number;
 	seriesOf: (t: TitleView) => number | undefined;
-	/** Whether the title has subtitles still wanted. */
+
 	subsMissing?: (t: TitleView) => boolean;
 }
 
@@ -291,11 +257,6 @@ export interface FilterCounts {
 	subs: number;
 }
 
-/**
- * filterCounts says how many titles each Filter menu choice would show, given
- * the other choices already made (so the counts never promise rows that the
- * other filters then hide).
- */
 export function filterCounts(ts: TitleView[], f: FilterState, ctx: FilterContext): FilterCounts {
 	const out: FilterCounts = {
 		status: { all: 0, missing: 0, not_out_yet: 0, better: 0, have: 0 },
@@ -327,7 +288,6 @@ export function activeCount(f: FilterState): number {
 	return Number(f.status !== 'all') + Number(f.kept !== 'any') + Number(f.asker !== 'anyone') + Number(!!f.series) + Number(!!f.codec) + Number(!!f.subs);
 }
 
-/** Saved filters: a name and the choices, kept per member and library. */
 export interface SavedFilter {
 	name: string;
 	filter: FilterState;
@@ -350,15 +310,9 @@ export function saveSaved(member: number | undefined, kind: string, list: SavedF
 	try {
 		store?.setItem(savedKey(member, kind), JSON.stringify(list.slice(0, 20)));
 	} catch {
-		// Not remembered in a private window.
 	}
 }
 
-/**
- * tableMinWidth is the narrowest a table row may get: the smallest width of
- * every column (px, or a minmax's floor) plus the gaps and the end padding.
- * Every row uses it, so all rows share one width and the columns line up.
- */
 export function tableMinWidth(widths: string[], gap = 16, pad = 20): number {
 	const sum = widths.reduce((n, w) => n + (Number(/(\d+(?:\.\d+)?)px/.exec(w)?.[1]) || 0), 0);
 	return Math.ceil(sum + gap * Math.max(0, widths.length - 1) + pad);

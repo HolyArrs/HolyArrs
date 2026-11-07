@@ -1,5 +1,3 @@
-// Words for Releases, their verdicts and searches, shared by the Movie
-// page, the Held and Turned down lists and Home.
 import type { Reason, ReleaseView } from '../core/types.ts';
 import type { SearchView } from '../core/types.ts';
 
@@ -11,18 +9,15 @@ const outcomeWords: Record<string, string> = {
 	turned_down: 'Turned down'
 };
 
-/** verdict names what happened to a Release, in the words of the screens. */
 export function verdict(r: Pick<ReleaseView, 'state' | 'outcome'>): string {
 	if (r.state === 'turned_down') return outcomeWords.turned_down;
 	if (r.state === 'chosen') return outcomeWords.chosen;
 	if (r.state === 'held') return outcomeWords.held;
-	// A Choose a release search only judges: its best one was not sent.
 	if (r.outcome === 'chosen') return 'Would be chosen';
 	if (r.outcome === 'held') return 'Would be held';
 	return outcomeWords[r.outcome] ?? outcomeWords[r.state] ?? 'Judged';
 }
 
-/** verdictTone colours the verdict chip. */
 export function verdictTone(r: Pick<ReleaseView, 'state' | 'outcome'>): 'red' | 'ok' | 'wait' | 'fail' | 'idle' {
 	if (r.state === 'chosen') return 'red';
 	if (r.state === 'turned_down' || r.outcome === 'refused') return 'fail';
@@ -31,12 +26,10 @@ export function verdictTone(r: Pick<ReleaseView, 'state' | 'outcome'>): 'red' | 
 	return 'idle';
 }
 
-/** keyReasons are the lines that decided the verdict: why it failed, lost or waits. */
 export function keyReasons(reasons: Reason[]): Reason[] {
 	return reasons.filter((x) => x.effect === 'fail' || x.effect === 'rank' || x.effect === 'hold' || x.effect === 'warn');
 }
 
-/** facts is the short line under a Release name. */
 export function facts(r: ReleaseView, size: (n: number) => string): string {
 	return [
 		r.source_name,
@@ -50,8 +43,6 @@ export function facts(r: ReleaseView, size: (n: number) => string): string {
 		.join(' · ');
 }
 
-/** chooseWarnings says, before choosing, what the person should know. show
- * says the Release is for a show's episodes. */
 export function chooseWarnings(r: ReleaseView, slotState?: string, show = false, music = false): string[] {
 	const out: string[] = [];
 	if (r.needs_force) {
@@ -75,8 +66,6 @@ export function chooseWarnings(r: ReleaseView, slotState?: string, show = false,
 	return out;
 }
 
-/** listedName names what a listed Release is for: "Copper Valley S01E02",
- * or the movie's name. */
 export function listedName(r: Pick<ReleaseView, 'title_name' | 'episode' | 'turned_down_for' | 'state' | 'album'>): string {
 	if (r.album) return [r.title_name, r.album].filter(Boolean).join(' – ');
 	const ep = r.state === 'turned_down' && r.turned_down_for ? r.turned_down_for : r.episode;
@@ -90,7 +79,6 @@ export interface Pager {
 	next: number | null;
 }
 
-/** pager works out the "1 to 25 of 60" line and the offsets of the pages around it. */
 export function pager(total: number, limit: number, offset: number): Pager {
 	if (total <= 0) return { from: 0, to: 0, prev: null, next: null };
 	const from = Math.min(offset, total - 1) + 1;
@@ -98,7 +86,6 @@ export function pager(total: number, limit: number, offset: number): Pager {
 	return { from, to, prev: offset > 0 ? Math.max(0, offset - limit) : null, next: to < total ? offset + limit : null };
 }
 
-/** searchLine says what a search is doing or found, for Home. */
 export function searchLine(s: SearchView): string {
 	if (s.kind === 'feed_check') return s.state === 'done' ? 'Feeds checked' : 'Checking the feeds of every Source';
 	if (s.kind === 'search_missing')
@@ -134,18 +121,16 @@ export function searchLine(s: SearchView): string {
 	}
 }
 
-/** feedMinutesOk says whether HolyArrs takes this feed check interval: 0 (off) or 10 to 120. */
 export function feedMinutesOk(n: number): boolean {
 	return Number.isInteger(n) && (n === 0 || (n >= 10 && n <= 120));
 }
 
-/** ReleaseScope is what a Choose a release list on the show page is for. */
 export interface ReleaseScope {
-	/** "S01E02" or "Season 1". */
+
 	label: string;
-	/** Query for GET /titles/{id}/releases: "item_id=5" or "season=1". */
+
 	query: string;
-	/** The episode's Slot (main Version) for an episode; none for a season. */
+
 	slotId?: number;
 	slotState?: string;
 }

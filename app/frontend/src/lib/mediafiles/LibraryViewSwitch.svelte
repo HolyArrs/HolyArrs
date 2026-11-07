@@ -1,9 +1,6 @@
 <script lang="ts" generics="T extends string">
 	import Icon, { type IconName } from '../ui/Icon.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
-	// The Library's view switch: the picked view shows its icon and name, the
-	// others only their icon. The picked view also carries the art-size menu
-	// (a small chevron inside its segment), so view and size are one control.
 	let {
 		options,
 		value,
@@ -15,10 +12,10 @@
 		options: { value: T; label: string; icon: IconName }[];
 		value: T;
 		onchange: (v: T) => void;
-		/** The size menu for the picked view; none hides the chevron. */
+
 		sizeItems?: MenuItem[] | null;
 		sizeLabel?: string;
-		/** Icons only (phones), the picked one still marked. */
+
 		compact?: boolean;
 	} = $props();
 	let buttons: HTMLButtonElement[] = $state([]);
@@ -55,7 +52,7 @@
 	.on button { color: var(--text); font-weight: 600; padding-right: 4px; }
 	.seg:not(:has(.size)) button { padding-right: 12px; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* The name slides open on the picked view and shut on the others. */
+
 	.lbl { display: inline-block; max-width: 0; margin-left: 0; overflow: hidden; opacity: 0; transition: max-width var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out), margin var(--dur) var(--ease-out); }
 	.on .lbl { max-width: 96px; margin-left: 6px; opacity: 1; }
 	.compact .on .lbl { max-width: 0; margin-left: 0; opacity: 0; }

@@ -3,8 +3,6 @@
 	import Icon from '../ui/Icon.svelte';
 	import { moveColumn, type Column } from './table.ts';
 
-	// Show or hide the Library table's columns and put them in order: drag
-	// a row, or focus its handle and press the up and down arrows.
 	let { columns, onchange, onreset }: { columns: Column[]; onchange: (c: Column[]) => void; onreset: () => void } = $props();
 
 	let dragFrom = $state<number | null>(null);

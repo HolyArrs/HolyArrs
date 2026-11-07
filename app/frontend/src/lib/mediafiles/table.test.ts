@@ -23,13 +23,11 @@ describe('column layout', () => {
 		const back = loadColumns(7, 'show', store);
 		expect(back.map((c) => c.id)).toEqual(cols.map((c) => c.id));
 		expect(back.find((c) => c.id === 'network')?.on).toBe(false);
-		// Another member, or another library, starts fresh.
 		expect(loadColumns(8, 'show', store)).toEqual(columnsFor('show'));
 		expect(loadColumns(7, 'movie', store)).toEqual(columnsFor('movie'));
 	});
 	it('drops unknown columns and keeps ones added since', () => {
 		const got = applyLayout('artist', [{ id: 'size', on: false }, { id: 'nope' as never, on: true }]);
-		// A column added since goes in at its starting place: Status stays first.
 		expect(got[0]).toMatchObject({ id: 'status', on: true });
 		expect(got.find((c) => c.id === 'size')).toMatchObject({ on: false });
 		expect(got.map((c) => c.id).sort()).toEqual(columnsFor('artist').map((c) => c.id).sort());
@@ -91,7 +89,6 @@ describe('filter counts', () => {
 		const f = { ...noFilter, kept: 'on' as const };
 		const c = filterCounts(ts, f, ctx);
 		expect(c.status.missing).toBe(1);
-		// The kept counts themselves ignore the kept choice, so switching stays honest.
 		expect(c.kept).toEqual({ any: 4, on: 3, off: 1 });
 		expect(ts.filter((t) => passes(t, { ...f, asker: 'me' }, ctx)).map((t) => t.id)).toEqual([3]);
 		expect(ts.filter((t) => passes(t, { ...noFilter, series: 40 }, ctx)).map((t) => t.id)).toEqual([4]);
@@ -103,7 +100,6 @@ describe('filter counts', () => {
 		expect(films.filter((t) => passes(t, { ...noFilter, codec: 'hevc' }, sub)).map((t) => t.id)).toEqual([10]);
 		expect(films.filter((t) => passes(t, { ...noFilter, subs: true }, sub)).map((t) => t.id)).toEqual([11]);
 		const c = filterCounts(films, { ...noFilter, subs: true }, sub);
-		// Codec counts follow the subtitles choice; the subtitles count ignores its own choice.
 		expect(Object.fromEntries(c.codecs)).toEqual({ h264: 1 });
 		expect(c.subs).toBe(1);
 	});

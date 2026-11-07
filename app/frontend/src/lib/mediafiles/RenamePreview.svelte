@@ -1,10 +1,6 @@
 <script lang="ts">
 	import Poster from '#lib/ui/Poster.svelte';
 	import { titleArt } from './title-art.ts';
-	// The rename preview for one title (titleId), one album of an artist
-	// (albumId too) or the whole Library: the old and new names, files that
-	// are skipped and why, and Apply. The preview and the rename use the same
-	// planner, so this is what happens.
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { live } from '../core/live.svelte.ts';
@@ -14,18 +10,13 @@
 	import ProgressBar from '../ui/ProgressBar.svelte';
 	import Skeleton from '../ui/Skeleton.svelte';
 
-	// season narrows a show's preview to that season's files (read from the SxxEyy in their names).
-	// page: the Library's Rename files screen (its own look and shorter words); changeCount reports how many files get a new name there.
 	let { titleId, albumId, season, onDone, page = false, changeCount = $bindable(0) }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void; page?: boolean; changeCount?: number } = $props();
-	// Posters for the rows, from one brief read of the Library.
 	let art = $state<Map<number, string>>(new Map());
 	$effect(() => {
 		if (page) void titleArt().then((m) => (art = m));
 	});
 
 	let steps = $state<RenameStep[]>([]);
-	// The hash of what this preview shows: the rename does only that, and
-	// fails (preview again) when the plan changed since.
 	let planHash = $state('');
 	let loaded = $state(false);
 	let error = $state('');
@@ -253,7 +244,7 @@
 	.skipped {
 		margin-top: var(--s-3);
 	}
-	/* Rename files screen (page). */
+
 	.rename :global(.tp-rows.steps) { margin: 0; }
 	.rename :global(.tp-rows.steps > li) { display: flex; flex-direction: column; gap: 4px; }
 	.name { font: 600 14px/1.3 var(--font-ui); overflow-wrap: anywhere; }

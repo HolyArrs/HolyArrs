@@ -1,6 +1,3 @@
-// One Library state per title: the Status column, the table and poster
-// badges, and the "problems first" sort all read it, so the words never
-// disagree between views.
 import type { TitleView } from '../core/types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { IconName } from '../ui/Icon.svelte';
@@ -18,11 +15,11 @@ export interface LibState {
 	label: string;
 	tone: LibTone;
 	icon: IconName;
-	/** The pill kind a StatusPill shows (its dot colour and art glyph). */
+
 	pill: StatusKind;
-	/** Whole percent for a progress bar, when something is downloading. */
+
 	percent?: number;
-	/** Lower is more urgent: the Status sort puts problems first. */
+
 	rank: number;
 }
 
@@ -59,7 +56,6 @@ function make(key: LibStateKey, label: string, percent?: number): LibState {
 
 const pct = (p: number | undefined) => Math.round(Math.min(Math.max(p ?? 0, 0), 1) * 100);
 
-/** The ask that tells the most: approved over waiting over declined. */
 function askOf(t: TitleView): 'asked' | 'approved' | 'turned_down' | null {
 	const states = (t.asks ?? []).filter((a) => a.title_id === undefined || a.title_id === t.id).map((a) => a.state);
 	if (states.includes('approved')) return 'approved';
@@ -136,13 +132,11 @@ function groupState(t: TitleView, now: number): LibState | null {
 	return make('up_to_date', 'Complete');
 }
 
-/** libraryState is the one state a Library title shows, in the Status column, on its badge and on its poster. */
 export function libraryState(t: TitleView, now = Date.now()): LibState | null {
 	if (t.kind === 'show' || t.kind === 'artist') return groupState(t, now);
 	return movieState(t, now);
 }
 
-/** isProblem: the states an admin should look at first. */
 export function isProblem(s: LibState | null): boolean {
 	return !!s && s.rank <= order.indexOf('better_wanted');
 }

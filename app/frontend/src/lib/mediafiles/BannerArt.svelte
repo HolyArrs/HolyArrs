@@ -1,10 +1,9 @@
 <script lang="ts" module>
 	import { api } from '../core/api.ts';
 
-	// One answer per title for the whole visit; at most four asks at a time
-	// so a fast scroll through a big Library never floods the server.
 	const known = new Map<string, Promise<string>>();
 	const waiting: (() => void)[] = [];
+	// At most four art requests at once so a fast scroll does not flood the server.
 	let running = 0;
 	function slot(): Promise<void> {
 		if (running < 4) {
@@ -37,23 +36,17 @@
 	import type { TitleView } from '../core/types.ts';
 	import { bannerAspect, bannerSrc } from '../ui/library-art.ts';
 
-	// The wide banner at the start of a Library row: fanart's banner when it
-	// has one, else the backdrop cropped wide with the title's logo (or name)
-	// over it. Asked for only when the row comes near the screen.
 	let { title, eager = false, width = 0 }: { title: TitleView; eager?: boolean; width?: number } = $props();
 
 	let host = $state<HTMLElement | null>(null);
 	let near = $state(false);
 	let banner = $state<string | null>(null);
-	// Which picture finished loading; a new src shows the shimmer again.
 	let loadedSrc = $state('');
 	let broken = $state(false);
 
 	const extrasKind = $derived(title.kind === 'artist' ? 'artist' : title.kind === 'show' ? 'show' : 'movie');
 	const extrasId = $derived(title.kind === 'artist' ? (title.artist?.mbid ?? '') : (title.ids?.tmdb ?? ''));
 	const fallback = $derived(title.backdrop || title.artwork[0] || '');
-	// Sized for the cell's css width at the screen's pixel ratio, so the art
-	// stays sharp on wide and dense screens alike.
 	let cw = $state(0);
 	const shown = $derived(width || cw);
 	const src = $derived(bannerSrc(banner && !broken ? banner : fallback, shown));
@@ -112,7 +105,7 @@
 	.banner { position: relative; display: block; width: 100%; aspect-ratio: var(--banner-ratio, 1000 / 185); overflow: hidden; border-radius: var(--banner-r, 6px); background: var(--surface-2); isolation: isolate; }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: 0; transition: opacity var(--dur) var(--ease-out), filter var(--dur-fast, 160ms) var(--ease-out); }
 	.ready img { opacity: 1; }
-	/* Music: artist art is a square photo; the taller shape, cropped just below the top third, keeps the face and shoulders in view. */
+
 	.music img:not(.logo) { object-position: center 35%; }
 	.veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(0 0 0 / 72%) 0%, rgb(0 0 0 / 35%) 55%, rgb(0 0 0 / 10%) 100%); }
 	.logo { inset: 14% auto 14% 5%; width: auto; max-width: 48%; height: 72%; object-fit: contain; object-position: left center; filter: drop-shadow(0 1px 6px rgb(0 0 0 / 60%)); }

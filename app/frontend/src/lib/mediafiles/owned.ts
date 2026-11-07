@@ -1,47 +1,28 @@
-// One shared read of what the Library holds, for owned marks.
-// Explore and New use the light /titles/owned answer (one entry per title:
-// kind, ids, Library id, state) when the server has it; an older server
-// (404) falls back to the full /titles list. The full list is shared too:
-// kept 60 s across pages, forgotten on any change (api.ts).
 
 import { api, ApiError, type Client } from '../core/api.ts';
 import type { AskState, SlotView, TitleView } from '../core/types.ts';
 
-/** One Library title in the light answer. */
 export interface OwnedItem {
 	kind: 'movie' | 'show' | 'artist' | 'album' | string;
 	id: number;
 	tmdb?: string | number;
 	mbid?: string;
-	/** available | partial | downloading | requested | approved | declined | missing */
+
 	state?: string;
 	percent?: number;
 	genres?: string[];
 }
 
-/** How long the shared Library reads are kept between pages (any change forgets them sooner). */
 export const LIBRARY_KEEP = 60_000;
 
-/** libraryTitles is the full Library list, one request shared by every page that needs it. */
 export async function libraryTitles(client: Client = api): Promise<TitleView[]> {
 	return (await client.warm<{ titles?: TitleView[] }>('/titles', LIBRARY_KEEP)).titles ?? [];
 }
 
-/**
- * libraryBrief is the Library list with only what Downloads, History and the
- * Calendar read: id, kind, name, artwork, a movie's three dates and its slot
- * states (about 28 KB instead of 386 KB on the showcase Library). An older
- * server ignores ?brief and sends the full list, which has the same fields.
- */
 export async function libraryBrief(client: Client = api): Promise<TitleView[]> {
 	return (await client.warm<{ titles?: TitleView[] }>('/titles?brief=1', LIBRARY_KEEP)).titles ?? [];
 }
 
-/**
- * stubTitle turns a light entry into the few TitleView fields the owned
- * marks read (ids, slots, asks), so ownedIndex / ownedMark / matchOwned
- * answer exactly as they would for the full title.
- */
 export function stubTitle(it: OwnedItem): TitleView {
 	const slot = (state: string, extra: Partial<SlotView> = {}) => ({ state, ...extra }) as unknown as SlotView;
 	const ask = (state: AskState) => [{ state }] as unknown as TitleView['asks'];
@@ -87,7 +68,6 @@ export function stubTitle(it: OwnedItem): TitleView {
 	} as unknown as TitleView;
 }
 
-/** ownedLibrary is what Explore and New match cards against; light says the light answer was used. */
 export async function ownedLibrary(client: Client = api): Promise<{ titles: TitleView[]; light: boolean }> {
 	try {
 		const r = await client.warm<{ items?: OwnedItem[] }>('/titles/owned', LIBRARY_KEEP);

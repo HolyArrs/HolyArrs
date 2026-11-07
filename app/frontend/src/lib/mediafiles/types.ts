@@ -1,4 +1,4 @@
-/** KindDefaults is what a new movie or show gets; 0 means the first folder and the folder's own Pick rules. */
+
 export interface KindDefaults {
 	library_folder_id: number;
 	pick_rules_id: number;
@@ -6,7 +6,6 @@ export interface KindDefaults {
 	search_on_add: boolean;
 }
 
-/** TitleDefaults are the Movies and TV defaults (GET /settings/title-defaults). */
 export interface TitleDefaults {
 	movie: KindDefaults;
 	show: KindDefaults;

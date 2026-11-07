@@ -1,8 +1,6 @@
-// Pure helpers for the title page hero and the Similar shelf.
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { SlotView, TitleView } from '../core/types.ts';
 
-/** Where a title kind lives, for the hero breadcrumb. */
 export function crumbFor(kind: string): { label: string; path: string } {
 	if (kind === 'show') return { label: 'TV shows', path: '/library?kind=show' };
 	if (kind === 'artist') return { label: 'Music', path: '/library?kind=artist' };
@@ -13,7 +11,6 @@ type FileLike = { Quality?: Record<string, unknown> | null; MediaInfo?: Record<s
 
 const text = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : '');
 
-/** Quality badges from the kept files: 4K, HDR, Dolby Vision, Atmos, CC. Only what the file data says. */
 export function qualityBadges(files: FileLike[]): string[] {
 	const out = new Set<string>();
 	for (const f of files) {
@@ -38,12 +35,6 @@ export function qualityBadges(files: FileLike[]): string[] {
 
 type Similar = Pick<TitleView, 'id' | 'kind' | 'name' | 'year' | 'original_language'> & { genres?: string[]; people?: string[] };
 
-/**
- * Titles in the library that are like this one: same kind first, scored by
- * shared genres (3 each) and shared people (2 each) when the data has them,
- * then same original language (1) and a year within 5 (1). Ties keep the
- * newest first. Titles with no score are left out.
- */
 export function similarTitles<T extends Similar>(current: Similar, all: T[], limit = 12): T[] {
 	const g = new Set(current.genres ?? []);
 	const p = new Set(current.people ?? []);
@@ -61,10 +52,8 @@ export function similarTitles<T extends Similar>(current: Similar, all: T[], lim
 	return scored.slice(0, limit).map((s) => s.t);
 }
 
-/** The view-transition-name shared by a poster and this title's hero art. */
 export const artName = (id: number) => `title-art-${id}`;
 
-/** The status kind for a slot or episode state word. */
 export function slotKind(state: string | undefined): StatusKind {
 	switch (state) {
 		case 'in_library':

@@ -1,6 +1,4 @@
 <script lang="ts" module>
-	// One observer for every Library poster: posters that enter the screen in the
-	// same frame rise in together, 30 ms apart, once each.
 	let io: IntersectionObserver | undefined;
 	const pending = new Map<Element, () => void>();
 	function watch(node: Element, show: () => void): () => void {
@@ -35,9 +33,6 @@
 	import { tiltFor, type BarTone, type PosterDetail } from './poster.ts';
 	import type { LibState } from './library-state.ts';
 
-	// The Library's own poster: the art, one caption line, and a health line on
-	// the art's foot. A corner badge and words only when the title needs a look.
-	// Hover or keyboard focus lifts it and slides a glass panel over the lower third.
 	let {
 		title,
 		year,
@@ -65,13 +60,13 @@
 		kind?: 'movie' | 'show' | 'artist';
 		vtName?: string;
 		status: LibState | null;
-		/** The state earns a badge and words at rest. */
+
 		attention?: boolean;
 		bar: { tone: BarTone; fill: number };
 		detail?: PosterDetail;
-		/** The "Everything" line: pick rules and quality, or the next airing. */
+
 		extra?: string;
-		/** Hover panel lines, in order: quality and rules, added, asked by. */
+
 		facts?: string[];
 		kept: boolean;
 		canManage?: boolean;
@@ -98,9 +93,6 @@
 		return watch(root, () => (shown = true));
 	});
 
-	// Tilt toward the pointer: fine pointers only, never for keyboard focus or
-	// reduced motion. One write per frame, straight to the style (no re-render).
-	// Touch screens never show the hover panel, so its buttons stay out of the page.
 	let touch = $state(false);
 	onMount(() => void (touch = matchMedia('(hover: none)').matches));
 
@@ -162,7 +154,7 @@
 	.lp { --rx: 0deg; --ry: 0deg; position: relative; min-width: 0; display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(12px); }
 	.lp.shown { opacity: 1; transform: none; transition: opacity var(--dur) var(--ease-out) var(--rise-delay, 0ms), transform var(--dur) var(--ease-out) var(--rise-delay, 0ms); }
 
-	/* Music is square art (artist photos); movies and shows keep the 2:3 poster. */
+
 	.lp.square { --poster-ratio: 1 / 1; }
 	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
 	.art { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; background: var(--surface-2); color: var(--text); }
@@ -170,7 +162,7 @@
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) var(--ease-out); }
 	img.in { opacity: 1; }
 
-	/* Corner badge: only when the title needs a look. */
+
 	.badge { position: absolute; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 3px; height: 22px; min-width: 22px; padding: 0 6px; box-sizing: border-box; justify-content: center; border-radius: 99px; font-weight: 600; font-size: 11px; line-height: 1; font-family: var(--font-text, inherit); font-variant-numeric: tabular-nums; color: #fff; background: rgb(20 20 22 / 72%); -webkit-backdrop-filter: blur(8px) saturate(160%); backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }
 	.badge.fail { color: var(--fail-on-art); }
 	.badge.busy { color: var(--info-on-art); }
@@ -178,7 +170,7 @@
 	.badge.idle { color: rgb(255 255 255 / 82%); }
 	.badge b { color: #fff; font-weight: 600; }
 
-	/* Health line on every poster's foot (scaled, never resized). */
+
 	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgb(0 0 0 / 38%); }
 	.line i { position: absolute; inset: 0; transform-origin: left; background: var(--ok-on-art); transition: transform var(--dur) var(--ease-out); }
 	.line.busy i { background: var(--info-on-art); }
@@ -187,13 +179,12 @@
 	.line.fail i { background: var(--fail-on-art); }
 	.line.idle i { background: rgb(255 255 255 / 55%); }
 
-	/* Frosted panel over the lower third, Apple TV style: a strong blur under a near-solid tint, so the text never sits on raw picture
-	   and reads at 4.5:1 or better over white and busy posters alike. Only the panel fades; the text never moves. */
+
 	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-in); }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); } }
 	:global([data-theme='dark']) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); }
-	/* The panel's text and buttons follow the poster's width (container query units), so every line fits on the smallest posters. */
-	/* One clear line (the state, with its colour as a dot), then quiet facts. */
+
+
 	.g-state { display: flex; align-items: center; gap: 5px; margin: 0; font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1.3; font-family: var(--font-text, inherit); color: var(--gp-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.g-state::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 99px; background: var(--ok-text); }
 	.g-state.busy::before { background: var(--info-text); }
@@ -201,7 +192,7 @@
 	.g-state.fail::before { background: var(--fail-text); }
 	.g-state.idle::before { background: var(--gp-fg2); }
 	.g-fact { margin: 0; font-weight: 400; font-size: clamp(9.5px, 6.8cqi, 11px); line-height: 1.35; font-family: var(--font-text, inherit); color: var(--gp-fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	/* A small square card has less height for the panel: the state and two facts, then the buttons. */
+
 	@container (max-width: 200px) { .lp.square .g-fact:nth-child(n + 4) { display: none; } }
 	.g-acts { display: flex; align-items: center; gap: clamp(4px, 3.6cqi, 6px); margin-top: clamp(4px, 3.6cqi, 6px); min-width: 0; }
 	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: var(--gp-fg); background: var(--gp-btn); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
@@ -217,11 +208,11 @@
 		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity var(--dur) var(--ease-out); }
 		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	}
-	/* Keyboard focus shows the panel with no tilt. */
+
 	.frame:focus-within:not(:hover) { --rx: 0deg !important; --ry: 0deg !important; }
 	.badge { transition: opacity var(--dur-fast) var(--ease-out); }
 
-	/* Select mode: posters step back a little; the page's check springs in. */
+
 	.lp.selecting .frame { --s: 0.95; }
 	.lp.selecting .glass { display: none; }
 	.lp.selected .frame { --s: 0.92; }

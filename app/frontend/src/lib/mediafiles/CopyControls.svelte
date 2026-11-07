@@ -148,7 +148,6 @@
 	onMount(() => void load());
 </script>
 
-<!-- Copies: one rounded group per Version, rows like the Settings group beside it (file, edition, protect, add). -->
 <section class="cc" aria-labelledby="copy-controls-title" data-testid="copy-controls">
 	<h2 id="copy-controls-title" class="cc-h">Copies</h2>
 	{#if !loaded}
@@ -198,7 +197,7 @@
 
 <Sheet bind:open={addOpen} title="Keep this copy and add another Version">
 	<form id="keep-add-form" class="sheet-form" onsubmit={keepAndAdd}>
-		
+
 		<div class="field"><label for="copy-new-label">Version name</label><input id="copy-new-label" class="input" bind:value={addLabel} maxlength="40" required /></div>
 		<div class="field"><label for="copy-new-rules">Pick rules</label><select id="copy-new-rules" class="input" bind:value={addRules}>{#each rules as rule (rule.id)}<option value={rule.id}>{rule.name}</option>{/each}</select></div>
 		<div class="field"><label for="copy-new-folder">Library folder</label><select id="copy-new-folder" class="input" bind:value={addFolder}>{#each folders as folder (folder.id)}<option value={folder.id}>{folder.label || folder.path} ({folder.path})</option>{/each}</select></div>
@@ -218,7 +217,7 @@
 		<p class="small muted">The file must already be inside the <span class="mono">{shortFolder(adoptVersion?.folder_path)}</span> folder of the Version. HolyArrs checks its actual audio and edition, then records it without moving or rewriting it.</p>
 		{#if session.can('manage_library')}<details class="small muted"><summary>Details</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
 		<div class="field"><label for="adopt-path">Path relative to the Library folder</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
-		
+
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
 	{#snippet footer()}
@@ -230,7 +229,7 @@
 <style>
 	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
-	/* The Settings group's look (TitlePage .lib-rows): a heading, then rounded groups of rows. */
+
 	.cc { min-width: 0; }
 	.cc-h { margin: 0 0 12px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.cc-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }

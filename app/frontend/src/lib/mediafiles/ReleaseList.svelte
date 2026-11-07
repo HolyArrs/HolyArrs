@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { to } from '../core/paths.ts';
-	// The Held and Turned down lists: paged, remove one or clear all.
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
@@ -17,7 +16,6 @@
 	import { plainReason } from '#lib/core/plain.ts';
 	import type { ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
-	// from: the Library's lists (Held and Turned down side by side) or the Downloads page's Turned down list (Undo).
 	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();
 	const held = $derived(list === 'held');
 	const dl = $derived(from === 'downloads');
@@ -49,7 +47,6 @@
 		}
 	}
 
-	// Posters for the rows, from one brief read of the Library.
 	let art = $state<Map<number, string>>(new Map());
 	onMount(() => {
 		void load();
@@ -169,7 +166,7 @@
 	.rel-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 4px; }
 	.grow { min-width: 0; flex: 1; }
 	.for { font: var(--t-headline); color: var(--text); }
-	/* On touch phones the title link's box is 44px tall (inline padding moves nothing). */
+
 	@media (max-width: 767px) and (pointer: coarse) { .for { display: inline-block; padding-block: 12px; } }
 	.rel-name { margin-top: 2px; color: var(--text-muted); font: var(--t-callout); overflow-wrap: anywhere; }
 	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }

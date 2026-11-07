@@ -1,10 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	// Delete a show, a season or one episode (5.2.3), or an artist, an album
-	// or some tracks (4.15.4). The plan below is what the delete does: it is
-	// asked again whenever a choice changes, and the delete carries out that
-	// same plan.
 	import { api, ApiError, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { deleteBody, deleteSummary, wholeScope, type DeleteScope, type RemovePlan } from './organise.ts';
@@ -50,7 +46,7 @@
 		}
 	}
 
-	/** open shows the dialog for a scope (nothing: the whole title). */
+
 	export function open(s: DeleteScope = {}) {
 		scope = s;
 		files = false;
@@ -78,7 +74,6 @@
 	}
 </script>
 
-<!-- The same window as the title's Delete: switch rows, what will happen, then Delete. -->
 <Sheet bind:open={isOpen} title={`Delete ${what}?`} size="md">
 	<div class="sd" data-testid="show-delete">
 		<div class="sd-rows">

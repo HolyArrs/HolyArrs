@@ -79,7 +79,7 @@ export function copiesQuery(filters: CopyFilters): string {
 }
 
 const languageNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'language' }) : null;
-/** languageName turns a language code (en, spa) into its English name; an unknown code stays as it is. */
+
 export function languageName(code: string): string {
 	try {
 		return languageNames?.of(code) ?? code;

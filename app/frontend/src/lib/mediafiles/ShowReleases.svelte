@@ -1,8 +1,5 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
-	// Choose a release for an episode or a season of a show: every Release
-	// the newest search found, with its verdict and plain reasons; choose one
-	// (a season pack fills every episode it holds) or turn it down.
 	import { api, ApiError, message } from '../core/api.ts';
 	import { bytes } from '../core/format.ts';
 	import { live } from '../core/live.svelte.ts';
@@ -20,7 +17,7 @@
 		onclose,
 		onchange
 	}: { titleId: number; scope: Scope; jobs?: number[]; music?: boolean; bare?: boolean; onclose: () => void; onchange: () => void } = $props();
-	/** Music lists are for an album: one Release fills its tracks. */
+
 	const noun = $derived(music ? 'tracks' : 'episodes');
 
 	let releases = $state<ReleaseView[]>([]);
@@ -73,7 +70,6 @@
 		void load();
 	}
 
-	// Choose and turn down.
 	let chooseDialog: HTMLDialogElement | undefined = $state();
 	let turnDialog: HTMLDialogElement | undefined = $state();
 	let target = $state<ReleaseView | null>(null);
@@ -81,7 +77,7 @@
 	let chooseError = $state('');
 	let choosing = $state(false);
 	let turnReason = $state('');
-	/** A season pack in a season list fills every episode; elsewhere one episode is chosen. */
+
 	const fillsMany = $derived(!!target && !scope.slotId && (target.slot_ids?.length ?? 0) > 1);
 	const warnings = $derived(target ? chooseWarnings(target, scope.slotState, true, music) : []);
 	const needsForce = $derived(!!target && (target.needs_force || forceReasons.length > 0));

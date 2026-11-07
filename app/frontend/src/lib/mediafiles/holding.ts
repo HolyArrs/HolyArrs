@@ -1,5 +1,3 @@
-// Recently deleted: files waiting in a holding folder until the daily
-// clean-up empties them.
 
 export interface HeldFile {
 	id: number;
@@ -21,7 +19,6 @@ export interface RestoreResult {
 	result: string;
 }
 
-/** Whole days until expires (rounded up); null when kept until emptied by hand. */
 export function daysLeft(expires: string | undefined, now = Date.now()): number | null {
 	if (!expires) return null;
 	const t = Date.parse(expires);
@@ -29,7 +26,6 @@ export function daysLeft(expires: string | undefined, now = Date.now()): number 
 	return Math.max(0, Math.ceil((t - now) / 86_400_000));
 }
 
-/** Plain words for daysLeft. */
 export function daysLeftWords(expires: string | undefined, now = Date.now()): string {
 	const d = daysLeft(expires, now);
 	if (d === null) return 'Kept until you empty it';
@@ -37,7 +33,6 @@ export function daysLeftWords(expires: string | undefined, now = Date.now()): st
 	return d === 1 ? '1 day left' : `${d} days left`;
 }
 
-/** The file name at the end of a path. */
 export function fileName(path: string): string {
 	return path.slice(path.lastIndexOf('/') + 1);
 }

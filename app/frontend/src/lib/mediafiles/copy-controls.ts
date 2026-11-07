@@ -3,7 +3,6 @@ import type { CopyFile, VersionView } from '../core/types.ts';
 export type CopyControlFile = Pick<CopyFile, 'ID' | 'VersionID' | 'RelativePath' | 'Protected' | 'MediaInfo' | 'State'>;
 export type CopyControlVersion = Pick<VersionView, 'edition' | 'audio_languages'>;
 
-/** inspectedAudio reports only audio found by media inspection. */
 export function inspectedAudio(file: CopyControlFile): string[] {
 	const raw = file.MediaInfo?.audio_languages;
 	if (!Array.isArray(raw)) return [];
@@ -19,12 +18,10 @@ export function copyEdition(file: CopyControlFile): string {
 	return typeof value === 'string' ? value : '';
 }
 
-/** languageList turns the comma-separated Version criterion into stable codes. */
 export function languageList(value: string): string[] {
 	return [...new Set(value.split(',').map((part) => part.trim().toLowerCase()).filter(Boolean))];
 }
 
-/** versionCriteria describes what a Version asks for, separately from file facts. */
 export function versionCriteria(version: CopyControlVersion): [string, string] {
 	const edition = version.edition?.trim();
 	const audio = version.audio_languages?.filter(Boolean) ?? [];
