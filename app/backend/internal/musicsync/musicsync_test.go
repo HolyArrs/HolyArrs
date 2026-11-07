@@ -29,7 +29,7 @@ func pkgJSON(i int, version int64, rank int) json.RawMessage {
 
 type fakeSource struct {
 	mu    sync.Mutex
-	pkgs  []json.RawMessage // by version (index+1)
+	pkgs  []json.RawMessage
 	wants []string
 	asked []int64
 }
@@ -65,7 +65,7 @@ func openStore(t *testing.T) *database.Store {
 	return s
 }
 
-func TestSyncCopiesPackagesAndPictures(t *testing.T) {
+func TestSyncOnce_CopiesPackagesAndPictures(t *testing.T) {
 	picGap = 0
 	st := openStore(t)
 	src := &fakeSource{}
@@ -87,7 +87,6 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	if !s.Covers(artistID(3)) || !s.HasAlbum(albumID(4)) {
 		t.Fatal("index misses copied packages")
 	}
-	// Photo 500 for all, 1200 only for ranks up to 200 (artists 1 and 2), one cover each.
 	if len(pics) != 5+2+5 || !pics["artist/"+artistID(1)+"/1200?p1"] || pics["artist/"+artistID(3)+"/1200?p3"] || !pics["album/"+albumID(5)+"/500?c5"] {
 		t.Fatalf("pictures %v", pics)
 	}
@@ -109,13 +108,10 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	if st1.Packages != 5 || st1.Albums != 5 || st1.Cursor != 5 || st1.Bytes <= 0 {
 		t.Fatalf("stats %+v", st1)
 	}
-
-	// The cursor is kept: a second copy asks only from 5 and finds nothing.
 	src.asked = nil
 	if n, err := s.SyncOnce(context.Background()); err != nil || n != 0 || src.asked[0] != 5 {
 		t.Fatalf("second copy changed %d asked %v err %v", n, src.asked, err)
 	}
-	// A changed package replaces the old one (and the decoded copy).
 	src.pkgs = append(src.pkgs, json.RawMessage(string(pkgJSON(2, 6, 2))))
 	if n, _ := s.SyncOnce(context.Background()); n != 1 {
 		t.Fatalf("changed %d", n)
@@ -123,8 +119,6 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	if c, _ := s.AlbumCover(albumID(2)); c == nil || c.V != "c6" {
 		t.Fatalf("cover after change %+v", c)
 	}
-
-	// A fresh process reads the index from disk.
 	s2 := &Sync{Store: st, Source: src}
 	if err := s2.Load(context.Background()); err != nil {
 		t.Fatal(err)
@@ -135,8 +129,6 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	if p, ok := s2.ArtistPictures(artistID(1)); !ok || p.Photo == nil || p.Photo.V != "p1" {
 		t.Fatalf("pictures read back %+v", p)
 	}
-	// Albums are read from disk by key, not kept in memory: a fresh process
-	// answers them, counts them, and knows an unlisted one is not there.
 	if c, ok := s2.AlbumCover(albumID(2)); !ok || c == nil || c.V != "c6" {
 		t.Fatalf("cover read back %+v", c)
 	}
@@ -145,9 +137,8 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	}
 }
 
-// Low-memory mode copies every 3 hours instead of every 30 minutes; a set
-// schedule always wins.
-func TestScheduleLowMemory(t *testing.T) {
+// Low-memory mode copies every 3 hours, and a set schedule always wins.
+func TestSchedule_LowMemory(t *testing.T) {
 	t.Cleanup(func() { startup.SetLowMemory(false) })
 	if got := (&Sync{}).schedule(); got != DefaultEvery {
 		t.Fatalf("off: %v", got)
@@ -161,20 +152,20 @@ func TestScheduleLowMemory(t *testing.T) {
 	}
 }
 
-func TestSyncWantsOnlyUncoveredAfterWholeCopy(t *testing.T) {
+func TestUncovered_WantsOnlyAfterWholeCopy(t *testing.T) {
 	st := openStore(t)
 	src := &fakeSource{pkgs: []json.RawMessage{pkgJSON(1, 1, 1)}}
 	s := &Sync{Store: st, Source: src}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.startWants(ctx)
-	s.Uncovered(artistID(9)) // not copied yet: not wanted
+	s.Uncovered(artistID(9))
 	if _, err := s.SyncOnce(ctx); err != nil {
 		t.Fatal(err)
 	}
-	s.Uncovered(artistID(1)) // covered
+	s.Uncovered(artistID(1))
 	s.Uncovered(artistID(9))
-	s.Uncovered(artistID(9)) // once only
+	s.Uncovered(artistID(9))
 	s.Uncovered("not-an-id")
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
@@ -194,7 +185,7 @@ func TestSyncWantsOnlyUncoveredAfterWholeCopy(t *testing.T) {
 	}
 }
 
-func TestSyncSkipsInvalidPackages(t *testing.T) {
+func TestSyncOnce_SkipsInvalidPackages(t *testing.T) {
 	st := openStore(t)
 	src := &fakeSource{pkgs: []json.RawMessage{json.RawMessage(`{"schema_version":2,"mbid":"x"}`), pkgJSON(2, 2, 1)}}
 	s := &Sync{Store: st, Source: src}
@@ -203,7 +194,7 @@ func TestSyncSkipsInvalidPackages(t *testing.T) {
 	}
 }
 
-// emptyPkgJSON is a package whose release groups are not built yet.
+// emptyPkgJSON builds a package whose release groups are not built yet.
 func emptyPkgJSON(i int, version int64) json.RawMessage {
 	id := artistID(i)
 	return json.RawMessage(fmt.Sprintf(`{"schema_version":1,"mbid":"%s","version":%d,"hash":"e%d","rank":1,"complete":false,"missing":["release_groups"],
@@ -211,7 +202,7 @@ func emptyPkgJSON(i int, version int64) json.RawMessage {
 "pictures":{},"release_group_count":0,"release_groups_complete":false,"kinds":{},"release_groups":[],"albums":{}}`, id, version, version, id, i, id, i))
 }
 
-func TestSyncEmptyPackageIsNoAnswerAndIsWanted(t *testing.T) {
+func TestLocalArtist_EmptyPackageIsNoAnswerAndWanted(t *testing.T) {
 	st := openStore(t)
 	src := &fakeSource{pkgs: []json.RawMessage{pkgJSON(1, 1, 1), emptyPkgJSON(2, 2)}}
 	s := &Sync{Store: st, Source: src}

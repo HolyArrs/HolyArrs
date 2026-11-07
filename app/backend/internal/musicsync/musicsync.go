@@ -1,9 +1,8 @@
-// Package musicsync copies the metadata server's artist packages to this
-// install's disk on a fixed schedule, with their pictures, so no music page
-// ever waits on the server: an artist or album a package covers answers
-// from local rows. The copy sends no credential and nothing about the
-// install; only an artist a page asked for that no package covers is named
-// to the server (package-want), so it gets covered.
+// Package musicsync keeps a local copy of the metadata server's artist
+// packages and their pictures, refreshed on a fixed schedule. Music pages
+// answer from this copy instead of waiting on the server. The copy sends no
+// credentials and nothing about the install. Only an artist that a page asked
+// for and no package covers is named to the server, so it gets built.
 package musicsync
 
 import (
@@ -24,44 +23,79 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
+const (
+	// DefaultEvery is how often the copy runs.
+	DefaultEvery = 30 * time.Minute
+	// LowMemoryEvery is the slower schedule in low-memory mode: fewer runs, each
+	// catching up on more packages.
+	LowMemoryEvery = 3 * time.Hour
+
+	// pageLimit is the most packages the server returns in one page.
+	pageLimit = 200
+	// pageGap spaces pages out so the server is not hammered.
+	pageGap = time.Second
+	// bigRank is the lowest-ranked artist that still gets the 1200 photo.
+	bigRank = 200
+	// picWorkers is how many pictures download at once.
+	picWorkers = 4
+	// wantAgain is how long an artist is left alone after it was asked for.
+	wantAgain = 6 * time.Hour
+	// wantQueue is how many asks can wait for the sender.
+	wantQueue = 256
+	// cacheMax is how many decoded packages stay in memory.
+	cacheMax = 64
+	// maxPackageBytes caps a package after unzipping, so a bad body cannot
+	// fill memory.
+	maxPackageBytes = 64 << 20
+)
+
+// picGap spaces one worker's pictures out. Tests set it to zero.
+var picGap = 50 * time.Millisecond
+
+var _ metadata.LocalMusic = (*Sync)(nil)
+
+// Sync is the local package store and the job that fills it.
+type Sync struct {
+	Store    *database.Store
+	Source   Source
+	Pictures Pictures
+	// Every is the schedule. Zero means the default for the current mode.
+	Every time.Duration
+	// OnSynced runs after each copy that changed packages.
+	OnSynced func(ctx context.Context)
+
+	mu sync.RWMutex
+	// artists is every covered artist, in memory because each artist check
+	// reads it. Albums stay in music_package_albums and are read by key, which
+	// keeps about 110 MB out of memory.
+	artists map[string]artistEntry
+	albums  int
+	loaded  bool
+	// synced is true once a whole copy reached the server's latest. Only then
+	// is a missing artist really not covered.
+	synced bool
+	stats  Stats
+
+	cacheMu sync.Mutex
+	cache   map[string]*metadata.MusicPackage
+	order   []string
+
+	wantMu sync.Mutex
+	wanted map[string]time.Time
+	wants  chan string
+}
+
 // Source is the metadata server's package list.
 type Source interface {
 	MusicPackages(ctx context.Context, since int64, limit int) (metadata.PackagePage, error)
 	WantMusicPackage(ctx context.Context, mbid string) error
 }
 
-// Pictures stores one picture (kind artist or album, size 500 or 1200, at
-// version v) in the local picture store; false when it could not.
+// Pictures stores one picture in the local picture store and reports whether
+// it worked. Kind is artist or album, size is 500 or 1200, v is the version.
 type Pictures func(ctx context.Context, kind, mbid, size, v string) bool
 
-const (
-	// DefaultEvery is the fixed schedule of the copy.
-	DefaultEvery = 30 * time.Minute
-	// pageLimit is the packages asked per page (the server's most).
-	pageLimit = 200
-	// pageGap is the wait between two pages.
-	pageGap = time.Second
-	// bigRank: artists ranked up to this get their 1200 photo too.
-	bigRank = 200
-	// picWorkers bound the picture downloads at once.
-	picWorkers = 4
-	// wantAgain is how long one artist is not wanted again.
-	wantAgain = 6 * time.Hour
-	// wantQueue bounds the wants waiting.
-	wantQueue = 256
-	// cacheMax is how many decoded packages are kept in memory.
-	cacheMax = 64
-)
-
-// picGap is the wait between one worker's pictures (tests shorten it).
-var picGap = 50 * time.Millisecond
-
-type artistEntry struct {
-	rank int
-	pics metadata.ArtistPictures
-}
-
-// Stats describe the local copy.
+// Stats describes the local copy.
 type Stats struct {
 	Packages  int           `json:"packages"`
 	Albums    int           `json:"albums"`
@@ -74,37 +108,12 @@ type Stats struct {
 	PicMissed int           `json:"pic_missed"`
 }
 
-// Sync is the local package store and its copy job.
-type Sync struct {
-	Store    *database.Store
-	Source   Source
-	Pictures Pictures
-	// Every is the schedule (DefaultEvery when 0).
-	Every time.Duration
-	// OnSynced runs after each copy that changed packages (Explore prewarm).
-	OnSynced func(ctx context.Context)
-
-	mu sync.RWMutex
-	// artists is the covered artists, kept in memory (about 20k, read on
-	// every artist check). Albums are not: their half a million rows stay in
-	// music_package_albums and are read by key (album), which keeps about
-	// 110 MB out of memory.
-	artists map[string]artistEntry
-	albums  int // how many albums are listed (for Stats)
-	loaded  bool
-	// synced is true once a whole copy reached the server's latest: only
-	// then is an artist missing here really not covered.
-	synced bool
-	stats  Stats
-
-	cacheMu sync.Mutex
-	cache   map[string]*metadata.MusicPackage
-	order   []string
-
-	wantMu sync.Mutex
-	wanted map[string]time.Time
-	wants  chan string
+type artistEntry struct {
+	rank int
+	pics metadata.ArtistPictures
 }
+
+type picJob struct{ kind, mbid, size, v string }
 
 // Load reads the artist index and picture records from disk.
 func (s *Sync) Load(ctx context.Context) error {
@@ -137,7 +146,7 @@ func (s *Sync) Load(ctx context.Context) error {
 	_ = db.QueryRowContext(ctx, "SELECT coalesce(sum(length(body)), 0) FROM music_packages").Scan(&size)
 	s.mu.Lock()
 	s.artists, s.albums, s.loaded = arts, albs, true
-	// A copy made before (cursor past 0) answers coverage until this one ends.
+	// An earlier copy (cursor past 0) answers coverage until this one ends.
 	s.synced = s.synced || cursor > 0
 	s.stats.Packages, s.stats.Albums, s.stats.Bytes, s.stats.Cursor = len(arts), albs, size, cursor
 	if t, err := time.Parse(database.TimeLayout, at); err == nil {
@@ -147,29 +156,14 @@ func (s *Sync) Load(ctx context.Context) error {
 	return nil
 }
 
-// Stats answers the copy's state.
+// Stats returns the state of the copy.
 func (s *Sync) Stats() Stats {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.stats
 }
 
-// LowMemoryEvery is the copy's schedule in low-memory mode (#131): fewer
-// copies, each catching up on more packages.
-const LowMemoryEvery = 3 * time.Hour
-
-// schedule is Every, else DefaultEvery (LowMemoryEvery in low-memory mode).
-func (s *Sync) schedule() time.Duration {
-	switch {
-	case s.Every > 0:
-		return s.Every
-	case startup.LowMemoryOn():
-		return LowMemoryEvery
-	}
-	return DefaultEvery
-}
-
-// Run loads the index, copies at once and then on the schedule, until ctx ends.
+// Run loads the index, copies at once, then copies on the schedule until ctx ends.
 func (s *Sync) Run(ctx context.Context) {
 	_ = s.Load(ctx)
 	s.startWants(ctx)
@@ -189,7 +183,7 @@ func (s *Sync) Run(ctx context.Context) {
 }
 
 // SyncOnce copies every package changed since the stored cursor, then
-// stores the changed packages' pictures. It answers how many changed.
+// stores the pictures of the changed packages. It returns how many changed.
 func (s *Sync) SyncOnce(ctx context.Context) (int, error) {
 	start := time.Now()
 	s.mu.RLock()
@@ -202,8 +196,8 @@ func (s *Sync) SyncOnce(ctx context.Context) (int, error) {
 	}
 	var cursor int64
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT cursor FROM music_package_sync WHERE id = 1").Scan(&cursor)
-	// Only the picture jobs of changed packages are kept until the copy ends,
-	// not the packages (a first copy held every decoded package at once).
+	// Keep only the picture jobs until the copy ends, not the decoded packages:
+	// a first copy would otherwise hold every package at once.
 	var jobs []picJob
 	changed := 0
 	for {
@@ -237,6 +231,138 @@ func (s *Sync) SyncOnce(ctx context.Context) (int, error) {
 	return changed, nil
 }
 
+// Package reads one artist's package from disk. Decoded packages stay in a
+// small cache.
+func (s *Sync) Package(ctx context.Context, mbid string) (*metadata.MusicPackage, bool) {
+	mbid = strings.ToLower(mbid)
+	s.cacheMu.Lock()
+	if p, ok := s.cache[mbid]; ok {
+		s.cacheMu.Unlock()
+		return p, true
+	}
+	s.cacheMu.Unlock()
+	var body []byte
+	if s.Store.Read().QueryRowContext(ctx, "SELECT body FROM music_packages WHERE mbid = ?", mbid).Scan(&body) != nil {
+		return nil, false
+	}
+	raw, err := unpack(body)
+	if err != nil {
+		return nil, false
+	}
+	p := &metadata.MusicPackage{}
+	if json.Unmarshal(raw, p) != nil || !p.Valid() {
+		return nil, false
+	}
+	s.cacheMu.Lock()
+	if s.cache == nil {
+		s.cache = map[string]*metadata.MusicPackage{}
+	}
+	if _, ok := s.cache[mbid]; !ok {
+		s.order = append(s.order, mbid)
+		if len(s.order) > cacheMax {
+			delete(s.cache, s.order[0])
+			s.order = s.order[1:]
+		}
+	}
+	s.cache[mbid] = p
+	s.cacheMu.Unlock()
+	return p, true
+}
+
+// Covers reports whether a package covers the artist.
+func (s *Sync) Covers(mbid string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.artists[strings.ToLower(mbid)]
+	return ok
+}
+
+// HasAlbum reports whether a package lists the release group.
+func (s *Sync) HasAlbum(rg string) bool {
+	_, _, ok := s.album(context.Background(), rg)
+	return ok
+}
+
+// ArtistPictures returns a covered artist's picture records.
+func (s *Sync) ArtistPictures(mbid string) (metadata.ArtistPictures, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	e, ok := s.artists[strings.ToLower(mbid)]
+	return e.pics, ok
+}
+
+// AlbumCover returns a listed album's cover record. The record is nil when
+// none is stored.
+func (s *Sync) AlbumCover(rg string) (*metadata.PictureRecord, bool) {
+	_, cover, ok := s.album(context.Background(), rg)
+	return cover, ok
+}
+
+// LocalArtist returns the artist from its package. It implements metadata.LocalMusic.
+func (s *Sync) LocalArtist(ctx context.Context, mbid string) (metadata.Artist, bool) {
+	if !s.Covers(mbid) {
+		return metadata.Artist{}, false
+	}
+	p, ok := s.Package(ctx, mbid)
+	if !ok {
+		return metadata.Artist{}, false
+	}
+	a, err := p.PackageArtist()
+	if err != nil {
+		return metadata.Artist{}, false
+	}
+	// A package with no release groups built yet is no answer. The page uses
+	// the live path and the server is asked to finish the package.
+	if len(a.Albums) == 0 && (!p.ReleaseGroupsComplete || slices.Contains(p.Missing, "release_groups")) {
+		s.want(mbid)
+		return metadata.Artist{}, false
+	}
+	return a, true
+}
+
+// LocalPressings returns the pressings of a release group from its package.
+// It implements metadata.LocalMusic.
+func (s *Sync) LocalPressings(ctx context.Context, rg string) ([]metadata.Pressing, bool, error) {
+	artist, _, ok := s.album(ctx, rg)
+	if !ok {
+		return nil, false, nil
+	}
+	p, ok := s.Package(ctx, artist)
+	if !ok {
+		return nil, false, nil
+	}
+	return p.Pressings(rg)
+}
+
+// LocalAlbumArtist returns the artist that owns the release group. It
+// implements metadata.LocalMusic.
+func (s *Sync) LocalAlbumArtist(ctx context.Context, rg string) (string, bool) {
+	artist, _, ok := s.album(ctx, rg)
+	return artist, ok
+}
+
+// Uncovered asks the server to build the artist's package when no package
+// covers it. It implements metadata.LocalMusic.
+func (s *Sync) Uncovered(mbid string) {
+	mbid = strings.ToLower(mbid)
+	if !metadata.ValidMBID(mbid) || s.Covers(mbid) {
+		return
+	}
+	s.want(mbid)
+}
+
+// schedule returns Every, else the default for the current mode.
+func (s *Sync) schedule() time.Duration {
+	switch {
+	case s.Every > 0:
+		return s.Every
+	case startup.LowMemoryOn():
+		return LowMemoryEvery
+	}
+	return DefaultEvery
+}
+
+// finish records the result of a copy run in the stats.
 func (s *Sync) finish(start time.Time, cursor int64, changed int, whole bool) {
 	var size int64
 	_ = s.Store.Read().QueryRow("SELECT coalesce(sum(length(body)), 0) FROM music_packages").Scan(&size)
@@ -249,8 +375,8 @@ func (s *Sync) finish(start time.Time, cursor int64, changed int, whole bool) {
 	s.stats.LastSync, s.stats.Took, s.stats.Changed = time.Now().UTC(), time.Since(start), changed
 }
 
-// storePage writes one page's valid packages and the cursor in one write,
-// and answers how many it stored and their picture jobs.
+// storePage writes one page's valid packages and the cursor in one write.
+// It returns how many packages it stored and their picture jobs.
 func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) (int, []picJob, error) {
 	type row struct {
 		p    *metadata.MusicPackage
@@ -258,7 +384,8 @@ func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) (int, [
 		pics []byte
 	}
 	var rows []row
-	z, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed) // one writer for the page
+	// One writer serves the whole page.
+	z, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed)
 	for _, raw := range page.Packages {
 		p := &metadata.MusicPackage{}
 		if json.Unmarshal(raw, p) != nil || !p.Valid() {
@@ -321,11 +448,12 @@ func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) (int, [
 	return len(rows), jobs, nil
 }
 
+// artistPictures picks the artist picture records out of a package.
 func artistPictures(p *metadata.MusicPackage) metadata.ArtistPictures {
 	return metadata.ArtistPictures{Photo: p.Pictures["photo"], Wide: p.Pictures["wide"], Logo: p.Pictures["logo"]}
 }
 
-// pack gzips raw with z (reset for each package).
+// pack gzips raw with z, which is reset for each package.
 func pack(z *gzip.Writer, raw []byte) ([]byte, error) {
 	var b bytes.Buffer
 	z.Reset(&b)
@@ -338,19 +466,18 @@ func pack(z *gzip.Writer, raw []byte) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// unpack unzips a stored package body.
 func unpack(body []byte) ([]byte, error) {
 	z, err := gzip.NewReader(bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 	defer z.Close()
-	return io.ReadAll(io.LimitReader(z, 64<<20))
+	return io.ReadAll(io.LimitReader(z, maxPackageBytes))
 }
 
-type picJob struct{ kind, mbid, size, v string }
-
-// picJobs are a package's artist photos (500, and 1200 for the top ranked)
-// and album covers (500) to store.
+// picJobs lists the pictures to store for a package: the 500 photo, the 1200
+// photo for top-ranked artists, and the 500 album covers.
 func picJobs(p *metadata.MusicPackage) []picJob {
 	var jobs []picJob
 	if ph := p.Pictures["photo"]; ph != nil && metadata.ValidPictureVersion(ph.V) {
@@ -367,8 +494,7 @@ func picJobs(p *metadata.MusicPackage) []picJob {
 	return jobs
 }
 
-// storePictures stores the changed packages' pictures through Pictures, a
-// few at a time.
+// storePictures stores the pictures through Pictures, a few at a time.
 func (s *Sync) storePictures(ctx context.Context, jobs []picJob) {
 	if s.Pictures == nil || len(jobs) == 0 {
 		return
@@ -377,7 +503,8 @@ func (s *Sync) storePictures(ctx context.Context, jobs []picJob) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	ok, missed := 0, 0
-	for range min(startup.LowMemoryPick(picWorkers, 2), len(jobs)) { // low-memory mode: fewer at once
+	// Low-memory mode runs fewer workers.
+	for range min(startup.LowMemoryPick(picWorkers, 2), len(jobs)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -409,53 +536,8 @@ feed:
 	s.mu.Unlock()
 }
 
-// Package reads one artist's package from disk (kept decoded a while).
-func (s *Sync) Package(ctx context.Context, mbid string) (*metadata.MusicPackage, bool) {
-	mbid = strings.ToLower(mbid)
-	s.cacheMu.Lock()
-	if p, ok := s.cache[mbid]; ok {
-		s.cacheMu.Unlock()
-		return p, true
-	}
-	s.cacheMu.Unlock()
-	var body []byte
-	if s.Store.Read().QueryRowContext(ctx, "SELECT body FROM music_packages WHERE mbid = ?", mbid).Scan(&body) != nil {
-		return nil, false
-	}
-	raw, err := unpack(body)
-	if err != nil {
-		return nil, false
-	}
-	p := &metadata.MusicPackage{}
-	if json.Unmarshal(raw, p) != nil || !p.Valid() {
-		return nil, false
-	}
-	s.cacheMu.Lock()
-	if s.cache == nil {
-		s.cache = map[string]*metadata.MusicPackage{}
-	}
-	if _, ok := s.cache[mbid]; !ok {
-		s.order = append(s.order, mbid)
-		if len(s.order) > cacheMax {
-			delete(s.cache, s.order[0])
-			s.order = s.order[1:]
-		}
-	}
-	s.cache[mbid] = p
-	s.cacheMu.Unlock()
-	return p, true
-}
-
-// Covers says a package covers the artist.
-func (s *Sync) Covers(mbid string) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	_, ok := s.artists[strings.ToLower(mbid)]
-	return ok
-}
-
-// album reads one listed album (its artist and cover) by key. A read error
-// counts as not listed, like a miss, so callers fall back to the live path.
+// album reads one listed album by key. A read error counts as not listed, so
+// callers fall back to the live path.
 func (s *Sync) album(ctx context.Context, rg string) (artist string, cover *metadata.PictureRecord, ok bool) {
 	var raw string
 	if err := s.Store.Read().QueryRowContext(ctx, "SELECT artist, cover FROM music_package_albums WHERE rg = ?", strings.ToLower(rg)).Scan(&artist, &raw); err != nil {
@@ -470,87 +552,15 @@ func (s *Sync) album(ctx context.Context, rg string) (artist string, cover *meta
 	return artist, cover, true
 }
 
-// albumCount is how many albums the packages list.
+// albumCount returns how many albums the packages list.
 func (s *Sync) albumCount(ctx context.Context) int {
 	var n int
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM music_package_albums").Scan(&n)
 	return n
 }
 
-// HasAlbum says a package lists the release group.
-func (s *Sync) HasAlbum(rg string) bool {
-	_, _, ok := s.album(context.Background(), rg)
-	return ok
-}
-
-// ArtistPictures answers a covered artist's picture records.
-func (s *Sync) ArtistPictures(mbid string) (metadata.ArtistPictures, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	e, ok := s.artists[strings.ToLower(mbid)]
-	return e.pics, ok
-}
-
-// AlbumCover answers a listed album's cover record (nil when none stored).
-func (s *Sync) AlbumCover(rg string) (*metadata.PictureRecord, bool) {
-	_, cover, ok := s.album(context.Background(), rg)
-	return cover, ok
-}
-
-// LocalArtist answers metadata.LocalMusic.
-func (s *Sync) LocalArtist(ctx context.Context, mbid string) (metadata.Artist, bool) {
-	if !s.Covers(mbid) {
-		return metadata.Artist{}, false
-	}
-	p, ok := s.Package(ctx, mbid)
-	if !ok {
-		return metadata.Artist{}, false
-	}
-	a, err := p.PackageArtist()
-	if err != nil {
-		return metadata.Artist{}, false
-	}
-	// A package whose release groups are not built yet (none listed and
-	// not marked whole) is no answer: the page asks the live path and the
-	// server is asked to finish the package.
-	if len(a.Albums) == 0 && (!p.ReleaseGroupsComplete || slices.Contains(p.Missing, "release_groups")) {
-		s.want(mbid)
-		return metadata.Artist{}, false
-	}
-	return a, true
-}
-
-// LocalPressings answers metadata.LocalMusic.
-func (s *Sync) LocalPressings(ctx context.Context, rg string) ([]metadata.Pressing, bool, error) {
-	artist, _, ok := s.album(ctx, rg)
-	if !ok {
-		return nil, false, nil
-	}
-	p, ok := s.Package(ctx, artist)
-	if !ok {
-		return nil, false, nil
-	}
-	return p.Pressings(rg)
-}
-
-// LocalAlbumArtist answers metadata.LocalMusic.
-func (s *Sync) LocalAlbumArtist(ctx context.Context, rg string) (string, bool) {
-	artist, _, ok := s.album(ctx, rg)
-	return artist, ok
-}
-
-// Uncovered answers metadata.LocalMusic: once the copy is whole, an artist
-// no package covers is wanted at the server (at most every wantAgain).
-func (s *Sync) Uncovered(mbid string) {
-	mbid = strings.ToLower(mbid)
-	if !metadata.ValidMBID(mbid) || s.Covers(mbid) {
-		return
-	}
-	s.want(mbid)
-}
-
-// want asks the server (once the copy is whole, at most every wantAgain)
-// to build or finish the artist's package.
+// want asks the server to build or finish the artist's package. It does
+// nothing until the copy is whole, and asks at most once per wantAgain.
 func (s *Sync) want(mbid string) {
 	mbid = strings.ToLower(mbid)
 	s.mu.RLock()
@@ -577,7 +587,7 @@ func (s *Sync) want(mbid string) {
 	}
 }
 
-// startWants starts the one worker that sends package-wants.
+// startWants starts the one worker that sends the asks to the server.
 func (s *Sync) startWants(ctx context.Context) {
 	s.wantMu.Lock()
 	if s.wants != nil {
@@ -595,7 +605,7 @@ func (s *Sync) startWants(ctx context.Context) {
 			case id := <-ch:
 				err := s.Source.WantMusicPackage(ctx, id)
 				if errors.Is(err, metadata.ErrServiceBusy) {
-					// The server is busy: forget the ask so a later page asks again.
+					// Forget the ask so a later page asks again, and back off.
 					s.wantMu.Lock()
 					delete(s.wanted, id)
 					s.wantMu.Unlock()
@@ -612,5 +622,3 @@ func (s *Sync) startWants(ctx context.Context) {
 		}
 	}()
 }
-
-var _ metadata.LocalMusic = (*Sync)(nil)
