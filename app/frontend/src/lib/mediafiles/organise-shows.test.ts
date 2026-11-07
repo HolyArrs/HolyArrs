@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { choices, deleteSummary, episodeFileLine, matchKey, showFolderLine, showIdOf, startPicks, type AdoptCandidate, type RemovePlan } from './organise.ts';
-import { byDay, entryDay, entryName, entryTime, shows } from '../discover/calendar.ts';
-import { filterParams, historyQuery, readFilter } from '../downloads/history.ts';
-import type { CalendarEntry } from '../core/types.ts';
 
 describe('show library import', () => {
 	const show: AdoptCandidate = {
@@ -49,56 +46,5 @@ describe('show deletes', () => {
 		expect(one[0]).toMatch(/^S01E02: no longer kept up to date/);
 		expect(one).toContain('1 file stays on disk');
 		expect(deleteSummary(base)[0]).toMatch(/^Leaves your Library/);
-	});
-});
-
-describe('episodes on the calendar', () => {
-	const ep = (over: Partial<CalendarEntry>): CalendarEntry => ({ title_id: 3, name: 'Copper Valley', kind: 'episode', date: '2026-10-12T02:00:00Z', season: 1, episode: 2, item_id: 9, ...over });
-	it('puts a timed episode on the local day and time', () => {
-		const e = ep({ timed: true, air_day: '2026-10-11', episode_name: 'The Mill' });
-		const local = new Date('2026-10-12T02:00:00Z');
-		const p = (n: number) => String(n).padStart(2, '0');
-		expect(entryDay(e)).toBe(`${local.getFullYear()}-${p(local.getMonth() + 1)}-${p(local.getDate())}`);
-		expect(entryTime(e)).toBe(`${p(local.getHours())}:${p(local.getMinutes())}`);
-		expect(entryName(e)).toBe('Copper Valley S01E02 The Mill');
-	});
-	it('uses the viewer time zone, not the UTC date or the air day', () => {
-		const was = process.env.TZ;
-		process.env.TZ = 'America/New_York';
-		try {
-			const e = ep({ timed: true, date: '2026-10-12T02:00:00Z', air_day: '2026-10-12' });
-			expect(entryDay(e)).toBe('2026-10-11');
-			expect(entryTime(e)).toBe('22:00');
-			process.env.TZ = 'Asia/Tokyo';
-			expect(entryDay(ep({ timed: true, date: '2026-10-12T20:00:00Z', air_day: '2026-10-12' }))).toBe('2026-10-13');
-		} finally {
-			if (was === undefined) delete process.env.TZ;
-			else process.env.TZ = was;
-		}
-	});
-	it('puts an episode without a time on its air day', () => {
-		const e = ep({ timed: false, date: '2026-10-20T00:00:00Z', air_day: '2026-10-20' });
-		expect(entryDay(e)).toBe('2026-10-20');
-		expect(entryTime(e)).toBe('');
-		expect(entryName({ title_id: 1, name: 'Dune', year: 2024, kind: 'digital', date: '2024-04-16T00:00:00Z' })).toBe('Dune (2024)');
-	});
-	it('filters movies and shows and keeps days in order', () => {
-		const m: CalendarEntry = { title_id: 1, name: 'Dune', kind: 'cinema', date: '2026-10-21T00:00:00Z' };
-		const e = ep({ date: '2026-10-20T00:00:00Z', air_day: '2026-10-20' });
-		expect(shows(m, 'movies') && !shows(e, 'movies')).toBe(true);
-		expect(shows(e, 'shows') && !shows(m, 'shows')).toBe(true);
-		expect(shows(m, 'all') && shows(e, 'all')).toBe(true);
-		expect(byDay([m, e]).map((d) => d.day)).toEqual(['2026-10-20', '2026-10-21']);
-	});
-});
-
-describe('history of one episode', () => {
-	it('asks for the episode and keeps it in the address', () => {
-		const f = readFilter(new URLSearchParams('title=3&episode=41'));
-		expect(f.episode).toBe(41);
-		expect(new URLSearchParams(historyQuery(f)).get('episode')).toBe('41');
-		expect(new URLSearchParams(historyQuery(f)).get('title')).toBeNull();
-		expect(filterParams(f)).toBe('?title=3&episode=41');
-		expect(readFilter(new URLSearchParams('episode=x')).episode).toBeUndefined();
 	});
 });

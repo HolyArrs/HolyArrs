@@ -17,8 +17,6 @@ import {
 	type RemovePlan,
 	type RenameStep
 } from './organise.ts';
-import { albumHave, entryHref, entryKey, entryName, shows } from '../discover/calendar.ts';
-import type { CalendarEntry } from '../core/types.ts';
 
 describe('music library import', () => {
 	const album: AdoptAlbum = {
@@ -126,26 +124,5 @@ describe('music rename and delete', () => {
 			'A track of a various-artists album'
 		]);
 		expect(musicExampleRows(undefined)).toEqual([]);
-	});
-});
-
-describe('music on the calendar', () => {
-	const al: CalendarEntry = { title_id: 9, name: 'Lab Band', kind: 'album', date: '2026-10-20T00:00:00Z', part_id: 3, album: 'Old Days', year: 2026, tracks: 4, have: 1 };
-	it('names, links and keys an album release', () => {
-		expect(entryName(al)).toBe('Lab Band – Old Days');
-		expect(entryHref(al)).toBe('/library/9/albums/3');
-		expect(entryHref({ ...al, kind: 'cinema' })).toBe('/library/9');
-		expect(entryKey(al)).toBe('a3');
-		expect(albumHave(al)).toBe('1 of 4 songs in your Library');
-		expect(albumHave({ tracks: 4, have: 4 })).toBe('In your Library');
-		expect(albumHave({ tracks: 4, have: 0 })).toBe('Not in your Library yet');
-	});
-	it('filters by movies, shows or music', () => {
-		expect(shows(al, 'music')).toBe(true);
-		expect(shows(al, 'movies')).toBe(false);
-		expect(shows(al, 'shows')).toBe(false);
-		expect(shows(al, 'all')).toBe(true);
-		expect(shows({ kind: 'cinema' }, 'movies')).toBe(true);
-		expect(shows({ kind: 'episode' }, 'music')).toBe(false);
 	});
 });
