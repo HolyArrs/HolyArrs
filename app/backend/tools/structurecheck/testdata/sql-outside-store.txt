@@ -32,7 +32,6 @@ app/backend/internal/api/exploremusic_disk.go
 app/backend/internal/api/exploremusic_more.go
 app/backend/internal/api/exploremusic_v2.go
 app/backend/internal/api/exploremusic_v7.go
-app/backend/internal/api/extras.go
 app/backend/internal/api/fresh.go
 app/backend/internal/api/health.go
 app/backend/internal/api/home.go

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -266,12 +265,7 @@ func capKept(ctx context.Context, a *API, key string) {
 	if !ok {
 		return
 	}
-	like := prefix + "|%"
-	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`DELETE FROM lookup_cache WHERE key IN (SELECT key FROM lookup_cache WHERE key LIKE ?
-			ORDER BY fetched_at DESC LIMIT -1 OFFSET ?)`, like, keptPerPrefix)
-		return err
-	})
+	_ = metadata.LookupCache{Store: a.s.Store}.TrimPrefix(ctx, prefix+"|", keptPerPrefix)
 }
 
 // loadKept reads an answer keepOnDisk stored, as a memory entry.
