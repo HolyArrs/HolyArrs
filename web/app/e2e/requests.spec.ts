@@ -630,7 +630,7 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await dot.goto('/requests');
 	await dot.getByRole('button', { name: /^(Manage|More)/ }).click();
 	await dot.getByRole('link', { name: /^Recent alerts/ }).click();
-	await expect(dot.getByRole('dialog', { name: 'Recent alerts' }).getByText('Cobalt Orrery is in the Library')).toBeVisible();
+	await expect(dot.getByRole('dialog', { name: 'Recent alerts' }).getByRole('listitem').filter({ hasText: 'Cobalt Orrery is in the Library' })).toBeVisible();
 	await dot.keyboard.press('Escape');
 	// The follow moved onto the Library title.
 	await openFromSearch(dot, 'cobalt', 'Cobalt Orrery');
