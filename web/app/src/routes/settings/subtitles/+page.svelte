@@ -482,21 +482,21 @@
 		margin-top: var(--s-2);
 	}
 	.sites-sec {
-		margin-top: var(--s-6, 32px);
+		margin-top: 0;
 	}
-	/* The section heading matches the card titles above it. */
-	.sites-head .h2 {
-		font: var(--t-headline);
-		font-size: 15px;
-		font-weight: 600;
-	}
+	/* The heading reads like every section heading: small and grey, its note beside it. */
+	.sites-head > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; padding: 0 6px; }
+	.sites-head .h2 { color: var(--text-muted); font: 600 13px/1.2 var(--font-ui); letter-spacing: 0.02em; }
+	.sites-head p { margin: 0; color: var(--text-faint, var(--text-muted)); font: 400 12px/1.2 var(--font-ui); }
 	.sites-head {
 		display: flex;
 		justify-content: space-between;
-		align-items: flex-start;
+		align-items: flex-end;
 		gap: var(--s-3);
-		margin-bottom: var(--s-3);
+		margin-bottom: 8px;
 	}
+	/* No sites yet: the empty note sits in the same glass sheet as every other section. */
+	.sites-sec > :global(.ui-empty) { width: auto; max-width: none; margin: 0; padding: 22px 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
 	.group {
 		border: 0;
 		padding: 0;
