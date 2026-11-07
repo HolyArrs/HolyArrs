@@ -3,9 +3,6 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
-	// The Versions of a movie on the title page's Library tab: every wanted
-	// copy (for example HD and 4K) with its edition, audio and Pick rules;
-	// managers add and remove them here.
 	import { api, message } from '../core/api.ts';
 	import { bytes, date, tone, words } from '../core/format.ts';
 	import { secondVersion } from '../mediafiles/index.ts';
@@ -16,8 +13,6 @@
 
 	let dialog: HTMLDialogElement | undefined = $state();
 	let all = $state(false);
-	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
-	const slotOf = (v: VersionView) => title.slots.find((s) => s.version_id === v.id);
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
 	let vLabel = $state('4K');
@@ -28,9 +23,10 @@
 	let vFolder = $state(0);
 	let vError = $state('');
 	let vBusy = $state(false);
+
+	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 
-	/** Opens the add-a-Version form (also from the More menu). */
 	export async function openAdd() {
 		vError = '';
 		try {
@@ -47,7 +43,7 @@
 		} catch (e) {
 			vError = message(e);
 		}
-		// Open once the choices are filled in, so typing is never overwritten.
+		// Show the dialog only after the defaults are set, so they can't overwrite typing.
 		dialog?.showModal();
 	}
 
@@ -67,7 +63,6 @@
 		}
 	}
 
-	/** Removes a Version (the title page's File cards call it). */
 	export async function remove(v: VersionView) {
 		if (!confirm(`Stop keeping the ${v.label} Version of this movie? Files on disk are not touched.`)) return;
 		try {
@@ -77,6 +72,8 @@
 			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
 		}
 	}
+
+	const slotOf = (v: VersionView) => title.slots.find((s) => s.version_id === v.id);
 </script>
 
 {#if list}
