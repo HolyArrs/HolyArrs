@@ -1029,7 +1029,7 @@
 	.todo + .todo { border-top: 0; }
 	@media (hover: hover) { .todo a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 4%, transparent); } }
 	/* First run, "no card": content sits straight on the dimmed, blurred picture. */
-	.dim { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: rgb(10 10 12 / 0.55); -webkit-backdrop-filter: blur(28px) saturate(1.2); backdrop-filter: blur(28px) saturate(1.2); }
+	.dim { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(55% 60% at 50% 38%, rgb(0 0 0 / 0.38), transparent 80%), rgb(10 10 12 / 0.28); -webkit-backdrop-filter: blur(14px) saturate(1.25); backdrop-filter: blur(14px) saturate(1.25); }
 	.welcome.over-art { width: min(440px, calc(100% - 32px)); color: #fff; --focus-ring: 0 0 0 2px rgb(10 10 12 / 0.9), 0 0 0 4px #fff; }
 	.welcome.over-art:has([data-testid='welcome-move']) { width: min(600px, calc(100% - 32px)); }
 	.sheet.glass, .sheet.glass.light { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
