@@ -1,0 +1,20 @@
+[
+  {
+    "cutoff": {
+      "id": "number",
+      "name": "string"
+    },
+    "id": "number",
+    "languages": [
+      {
+        "allowed": "bool",
+        "language": {
+          "id": "number",
+          "name": "string"
+        }
+      }
+    ],
+    "name": "string",
+    "upgradeAllowed": "bool"
+  }
+]
