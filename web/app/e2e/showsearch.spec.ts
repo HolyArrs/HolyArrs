@@ -105,7 +105,7 @@ test('Choose a release for a season: the season pack fills both episodes with on
 
 	await pack.getByRole('button', { name: 'Pick', exact: true }).click();
 	await expect(panel).toBeHidden();
-	await expect(page.getByRole('status')).toContainText('Sent Moss.Parade.S01.1080p');
+	await expect(page.getByRole('status')).toContainText('Sent to Downloader');
 	// Both episodes go to the one download.
 	await stateAfterReload(page, 'Season 1', 'S01E01', /Chosen|Downloading/);
 	await expect(await episodeState(page, 'S01E02')).toHaveText(/Chosen|Downloading/);

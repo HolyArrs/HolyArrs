@@ -173,7 +173,7 @@ test('the owner sets a forgotten password, and ana switches account on a shared 
 	const dlg = own.getByRole('dialog', { name: 'New password for ana' });
 	await dlg.getByLabel('New password').fill(newPw);
 	await dlg.getByRole('button', { name: 'Set password' }).click();
-	await expect(own.getByText('New password set for ana.')).toBeVisible();
+	await expect(own.getByRole('status').filter({ hasText: 'Password set for ana' })).toBeVisible();
 	await ana.goto('/library');
 	await expect(ana).toHaveURL(/\/login/);
 	// ana signed in here before: the page opens on her own step, password only.
