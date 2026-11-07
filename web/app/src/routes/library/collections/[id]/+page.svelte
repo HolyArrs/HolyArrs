@@ -60,7 +60,7 @@
 
 <svelte:head><title>{detail?.name ?? 'Movie collection'} · HolyArrs</title></svelte:head>
 <div class="page">
-<PageHeader title={detail?.name ?? 'Collection'} subtitle={detail ? 'Also removes it from other collections.' : undefined} back={{ href: to('/library/collections'), label: 'Collections' }} />
+<PageHeader title={detail?.name ?? 'Collection'} subtitle={detail ? 'Also removes it from other collections.' : undefined} back={{ href: to('/library/collections'), label: 'Collection' }} />
 
 {#if error && !detail}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={retry} {busy} />

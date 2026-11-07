@@ -1446,7 +1446,7 @@
 				</div>
 			{/if}
 			{#if (kind === 'movie' || kind === 'all') && series.length}
-				<h3 class="sf-h">Collections</h3>
+				<h3 class="sf-h">Collection</h3>
 				<div class="sf-well">
 					{@render sfRow('Every movie', !filter.series, () => setFilter({ series: 0 }))}
 					{#each series.toSorted((x, y) => x.name.localeCompare(y.name)) as sr (sr.id)}
