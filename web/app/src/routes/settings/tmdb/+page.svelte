@@ -62,7 +62,7 @@
 {/if}
 
 <style>
-	.sent { margin: 0; padding: 0 !important; list-style: none; box-shadow: none !important; }
+	.sent { margin: 0; padding-block: 0 !important; list-style: none; box-shadow: none !important; }
 	.sent > li { padding: 13px 0; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; }
 	.sent > li + li { box-shadow: inset 0 1px 0 var(--line); }
 	.sent b { color: var(--text); font-weight: 600; }

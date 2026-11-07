@@ -169,10 +169,10 @@
 <style>
 	.app-error { margin: 8px 0 0; color: var(--fail-text, var(--fail)); font: var(--t-subhead); overflow-wrap: anywhere; }
 	/* Group names inside the sheet: room above, no divider lines through or under them. */
-	.grp { margin: 0; padding: 22px 0 2px !important; box-shadow: none !important; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; }
+	.grp { margin: 0; padding-top: 22px !important; padding-bottom: 2px !important; box-shadow: none !important; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; }
 	.grp:first-child { padding-top: 16px !important; }
 	/* One row height and one divider for every switch row. */
-	.picks { display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0 !important; list-style: none; box-shadow: none !important; }
+	.picks { display: flex; flex-direction: column; gap: 0; margin: 0; padding-block: 0 !important; list-style: none; box-shadow: none !important; }
 	.picks > li { padding: 6px 0; }
 	.picks > li + li { box-shadow: inset 0 1px 0 var(--line); }
 	.motion-line { margin: 0; padding-block: 14px; color: var(--text-muted); font: var(--t-subhead); }

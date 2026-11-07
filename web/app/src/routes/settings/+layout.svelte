@@ -331,16 +331,19 @@
 		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
 		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45);
 	}
-	.settings-content :global(section.ui-settings > .body) { padding: 4px 18px; }
+	/* Rows run edge to edge like the Library folders rows: the sheet has no side padding, each row has 18px. */
+	.settings-content :global(section.ui-settings > .body) { padding: 0; gap: 0 !important; }
+	.settings-content :global(section.ui-settings > .body > :not(form, .ui-table)), .settings-content :global(section.ui-settings > .body > form > *) { padding-inline: 18px; }
+	.settings-content :global(section.ui-settings > .body > form) { padding: 0; }
 	.settings-content :global(:is(ul.card, div.card)) { padding: 4px 18px; }
 	.settings-content :global(section.ui-settings.danger > .body) { border-color: color-mix(in srgb, var(--fail) 40%, transparent); }
 	/* Rows inside a sheet: room to breathe, a hairline between. */
-	.settings-content :global(section.ui-settings > .body > :is(.srow, .field, ul > li, .row, form:not(.ask) > .srow, form:not(.ask) > .field)) { padding-block: 14px; }
+	.settings-content :global(section.ui-settings > .body > :is(.srow, .field, ul > li, .row)), .settings-content :global(section.ui-settings > .body > form:not(.ask) > :is(.srow, .field)) { padding-block: 14px; min-height: 64px; box-sizing: border-box; }
 	.settings-content :global(section.ui-settings > .body > * + *), .settings-content :global(section.ui-settings > .body > form:not(.ask) > * + *) { box-shadow: inset 0 1px 0 var(--line); margin-top: 0 !important; }
 	.settings-content :global(section.ui-settings > .body > :first-child:last-child:not(.srow, .field)) { padding-block: 14px; }
 	.settings-content :global(section.ui-settings > .body > :is(ul, ol, p, .row)) { padding-block: 12px; }
 	/* One label style for every row: switch, text box or dropdown. */
-	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend), .adv-body > .field > :is(label:first-child, .label, legend))) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
+	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend), .adv-body > .field > :is(label:first-child, .label, legend), .body :not(.ask, .row-fields) > .field > label:first-child)) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
 	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }
 	/* A table inside a sheet uses the sheet's surface; no second box. */
 	.settings-content :global(section.ui-settings > .body > .ui-table) { margin: 4px -18px; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; }
@@ -349,7 +352,7 @@
 	.settings-content :global(section.ui-settings fieldset > legend) { float: left; width: 100%; padding: 16px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 	.settings-content :global(section.ui-settings fieldset > legend :is(b, strong)) { font-weight: 600; color: var(--text-muted); }
 	.settings-content :global(section.ui-settings fieldset > legend + *) { clear: both; }
-	.settings-content :global(section.ui-settings label:not(.switch) > input[type='checkbox']) { width: 18px; height: 18px; accent-color: var(--accent); }
+	.settings-content :global(section.ui-settings fieldset label:not(.switch, .checkline) > input[type='checkbox']) { width: 18px; height: 18px; accent-color: var(--accent); }
 	/* A section with only Advanced: Advanced becomes its sheet, so the heading never floats alone. */
 	.settings-content :global(section.ui-settings:not(:has(> .body)) > .advanced) { margin: 0; padding: 0 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
 	.settings-content :global(section.ui-settings:not(:has(> .body)) > .advanced > summary) { min-height: 52px; color: var(--text); font: 600 15px/1.3 var(--font-ui); }
@@ -365,6 +368,15 @@
 	.settings-content :global(:is(section.card, div.card) > :is(h2, .h2, .card-head):first-child) { padding: 14px 0 12px; margin: 0; box-shadow: inset 0 -1px 0 var(--line); }
 	/* Status words in Settings: a dot and a word, no pill (as on Library folders). */
 	.settings-content :global(.chip) { background: none !important; box-shadow: none !important; padding-inline: 0 !important; font: 500 12px/1 var(--font-ui); color: var(--text-muted); }
+	/* One field style everywhere in Settings: soft fill, thin edge, 12px corners, 40px tall. */
+	.settings-content :global(:is(input.input:not([type='checkbox'], [type='radio']), select.input, textarea.input)) { min-height: 40px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); background: color-mix(in srgb, var(--text) 5%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04); font: 400 14.5px/1.3 var(--font-ui); color: var(--text); }
+	.settings-content :global(:is(input.input, select.input, textarea.input):focus-visible) { outline: none; border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: var(--focus-ring); }
+	.settings-content :global(textarea.input) { padding-top: 10px; }
+	/* A row with a tall text box keeps its label at the top, beside the box. */
+	.settings-content :global(:is(.field, .srow):has(textarea)) { align-items: start !important; }
+	.settings-content :global(:is(.field, .srow):has(textarea) > :is(label, .txt)) { padding-top: 10px; }
+	/* Row words, the same sizes as the Library folders rows. */
+	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 13px/1.35 var(--font-ui) !important; color: var(--text-muted); }
 	/* Advanced and footer sit under the sheet, quiet. */
 	.settings-content :global(section.ui-settings > .advanced) { margin: 6px 6px 0; border: 0; }
 	.settings-content :global(section.ui-settings > .advanced > summary) { padding-inline: 0; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
@@ -372,6 +384,7 @@
 	.settings-content :global(section.ui-settings > footer) { padding: 10px 6px 0; border: 0; background: none; }
 	@media (max-width: 767px) {
 		.settings-content :global(:is(section.ui-settings > .body, ul.card, div.card)) { border-radius: 16px; }
-		.settings-content :global(section.ui-settings > .body), .settings-content :global(:is(ul.card, div.card)) { padding: 2px 14px; }
+		.settings-content :global(:is(ul.card, div.card)) { padding: 2px 14px; }
+		.settings-content :global(section.ui-settings > .body > :not(form, .ui-table)), .settings-content :global(section.ui-settings > .body > form > *) { padding-inline: 14px; }
 	}
 </style>
