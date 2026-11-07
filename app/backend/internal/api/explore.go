@@ -16,11 +16,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The Explore engine's server side: the background pool job (its own
@@ -123,20 +123,20 @@ func (a *API) StartExplore(ctx context.Context) {
 	a.applyArtworkCap(ctx) // the picture cache size from Settings
 	a.s.Store.OnEvent(a.exploreOnEvent)
 	a.s.Store.OnEvent(a.musicOnEvent)
-	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
+	go jobs.Guard("explore", func() { a.exploreLoop(ctx) })
 	// The warmers fetch ahead of anyone: they carry X-Fetch: ahead, keep to
 	// the slower pace, wait out the server's hold and have their own
 	// breaker, so a restart's warm-up never makes a person's page fail.
 	warm := metadata.Ahead(ctx)
-	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
-	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
+	go jobs.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
+	go jobs.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
 	startBackdropDark(ctx)
 	a.startMusicSync(ctx)
-	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
+	go jobs.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
 	if a.musicTplOn() {
 		// The music catalog bundle is read once at start, so the first music
 		// page does not wait for its download.
-		go supervisor.Guard("music-bundle-warm", func() {
+		go jobs.Guard("music-bundle-warm", func() {
 			// Then every engine page's covers are stored ahead (musicpreload.go):
 			// the household's own region joins when its pages are first asked.
 			a.tplPreload(a.musicBundle(ctx, time.Now().UTC()), "us")
@@ -266,7 +266,7 @@ func (a *API) runDue(ctx context.Context) {
 			<-slots
 			return
 		}
-		go supervisor.Guard("explore-build", func() {
+		go jobs.Guard("explore-build", func() {
 			defer func() {
 				e.mu.Lock()
 				delete(e.building, k)

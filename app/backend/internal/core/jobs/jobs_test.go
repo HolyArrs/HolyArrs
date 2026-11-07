@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-var me = domain.Actor{Kind: "user", ID: 1}
+var me = database.Actor{Kind: "user", ID: 1}
 
 func newStore(t *testing.T, dir string) *database.Store {
 	t.Helper()
@@ -28,16 +27,16 @@ func fastOpts() Options {
 	return Options{Workers: 2, BaseBackoff: 5 * time.Millisecond, PollInterval: 5 * time.Millisecond}
 }
 
-func getJob(t *testing.T, s *database.Store, id int64) domain.Job {
+func getJob(t *testing.T, s *database.Store, id int64) Job {
 	t.Helper()
-	var j domain.Job
+	var j Job
 	if err := database.Get(context.Background(), s.Read(), "jobs", id, &j); err != nil {
 		t.Fatal(err)
 	}
 	return j
 }
 
-func waitState(t *testing.T, s *database.Store, id int64, want string) domain.Job {
+func waitState(t *testing.T, s *database.Store, id int64, want string) Job {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
@@ -56,11 +55,11 @@ func TestDedupe(t *testing.T) {
 	defer s.Close()
 	q := New(s, fastOpts())
 	ctx := context.Background()
-	a, created, err := q.Enqueue(ctx, "search_slot", &domain.Subject{Type: "slot", ID: 1}, nil, "search_slot:1", me)
+	a, created, err := q.Enqueue(ctx, "search_slot", &database.Subject{Type: "slot", ID: 1}, nil, "search_slot:1", me)
 	if err != nil || !created {
 		t.Fatalf("first enqueue: %v %v", created, err)
 	}
-	b, created, err := q.Enqueue(ctx, "search_slot", &domain.Subject{Type: "slot", ID: 1}, nil, "search_slot:1", me)
+	b, created, err := q.Enqueue(ctx, "search_slot", &database.Subject{Type: "slot", ID: 1}, nil, "search_slot:1", me)
 	if err != nil || created || b != a {
 		t.Fatalf("second enqueue should return job %d unchanged, got %d %v %v", a, b, created, err)
 	}
@@ -224,7 +223,7 @@ func TestProgressAndResult(t *testing.T) {
 	defer s.Close()
 	q := New(s, fastOpts())
 	seen := make(chan float64, 10)
-	q.opt.OnChange = func(j domain.Job) {
+	q.opt.OnChange = func(j Job) {
 		if j.State == "running" && j.Progress > 0 {
 			seen <- j.Progress
 		}

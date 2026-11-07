@@ -9,9 +9,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // siteReason says why a subtitle site waits, by pause reason.
@@ -28,11 +28,11 @@ var siteReason = map[string]string{
 // subtitle site and media server, in the five state names. Paused by a
 // person is off; waiting to try again is retrying; a refused sign-in or a
 // broken answer is failed; one never checked yet is starting.
-func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
+func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 	db := e.Store.Read()
-	var out []supervisor.Status
-	add := func(kind string, id int64, name string, st supervisor.State, reason string) {
-		out = append(out, supervisor.Status{Key: "link:" + kind + ":" + strconv.FormatInt(id, 10), Kind: kind, Name: name, State: st, Reason: reason})
+	var out []jobs.Status
+	add := func(kind string, id int64, name string, st jobs.State, reason string) {
+		out = append(out, jobs.Status{Key: "link:" + kind + ":" + strconv.FormatInt(id, 10), Kind: kind, Name: name, State: st, Reason: reason})
 	}
 	ss, err := database.Select[domain.Source](ctx, db, "sources", "1=1 ORDER BY id")
 	if err != nil {
@@ -42,15 +42,15 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 		h := source.HealthOf(s)
 		switch {
 		case h.State == source.StateDisabled:
-			add("source", s.ID, s.Name, supervisor.Off, h.Text)
+			add("source", s.ID, s.Name, jobs.Off, h.Text)
 		case h.State == source.StateAuthFailed:
-			add("source", s.ID, s.Name, supervisor.Failed, h.Text)
+			add("source", s.ID, s.Name, jobs.Failed, h.Text)
 		case s.PauseReason != nil && *s.PauseReason == source.KindBroken, s.PauseReason != nil && *s.PauseReason == source.KindBlocked:
-			add("source", s.ID, s.Name, supervisor.Failed, h.Text)
+			add("source", s.ID, s.Name, jobs.Failed, h.Text)
 		case h.State == source.StateUnreachable:
-			add("source", s.ID, s.Name, supervisor.Retrying, h.Text)
+			add("source", s.ID, s.Name, jobs.Retrying, h.Text)
 		default:
-			add("source", s.ID, s.Name, supervisor.Running, "")
+			add("source", s.ID, s.Name, jobs.Running, "")
 		}
 	}
 	ds, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY id")
@@ -62,13 +62,13 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 		// paths, raw answers) stays in the log, where it was written.
 		switch d.State {
 		case "disabled":
-			add("downloader", d.ID, d.Name, supervisor.Off, "Paused by you.")
+			add("downloader", d.ID, d.Name, jobs.Off, "Paused by you.")
 		case "unreachable":
-			add("downloader", d.ID, d.Name, supervisor.Retrying, "It does not answer; HolyArrs tries again on its own. The log has the details.")
+			add("downloader", d.ID, d.Name, jobs.Retrying, "It does not answer; HolyArrs tries again on its own. The log has the details.")
 		case "auth_failed":
-			add("downloader", d.ID, d.Name, supervisor.Failed, "It turned down the sign-in. Check its user name and password or key; the log has the details.")
+			add("downloader", d.ID, d.Name, jobs.Failed, "It turned down the sign-in. Check its user name and password or key; the log has the details.")
 		default:
-			add("downloader", d.ID, d.Name, supervisor.Running, "")
+			add("downloader", d.ID, d.Name, jobs.Running, "")
 		}
 	}
 	rows, err := db.QueryContext(ctx, "SELECT id, name, state, pause_reason FROM subtitle_sites ORDER BY priority, id")
@@ -85,17 +85,17 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 		}
 		switch {
 		case state == "disabled":
-			add("subtitle_site", id, name, supervisor.Off, "Paused by you.")
+			add("subtitle_site", id, name, jobs.Off, "Paused by you.")
 		case state == "paused" && (reason.String == "login_refused" || reason.String == "blocked" || reason.String == "unreadable"):
-			add("subtitle_site", id, name, supervisor.Failed, siteReason[reason.String])
+			add("subtitle_site", id, name, jobs.Failed, siteReason[reason.String])
 		case state == "paused":
 			text := siteReason[reason.String]
 			if text == "" {
 				text = siteReason["down"]
 			}
-			add("subtitle_site", id, name, supervisor.Retrying, text)
+			add("subtitle_site", id, name, jobs.Retrying, text)
 		default:
-			add("subtitle_site", id, name, supervisor.Running, "")
+			add("subtitle_site", id, name, jobs.Running, "")
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -108,13 +108,13 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 	for _, m := range ms {
 		switch {
 		case !m.Enabled:
-			add("media_server", m.ID, m.Name, supervisor.Off, "Turned off.")
+			add("media_server", m.ID, m.Name, jobs.Off, "Turned off.")
 		case strings.TrimSpace(m.LastError) != "":
-			add("media_server", m.ID, m.Name, supervisor.Failed, "The last refresh failed. The log has the details.")
+			add("media_server", m.ID, m.Name, jobs.Failed, "The last refresh failed. The log has the details.")
 		case m.LastOKAt == nil:
-			add("media_server", m.ID, m.Name, supervisor.Starting, "Not told about a change yet.")
+			add("media_server", m.ID, m.Name, jobs.Starting, "Not told about a change yet.")
 		default:
-			add("media_server", m.ID, m.Name, supervisor.Running, "")
+			add("media_server", m.ID, m.Name, jobs.Running, "")
 		}
 	}
 	outsideStates := e.Outside
@@ -127,7 +127,7 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 	seen := map[string]int{}
 	for _, s := range outsideStates() {
 		seen[s.Kind]++
-		add("outside_call", 0, outsideName(s.Kind), supervisor.Retrying, s.Reason)
+		add("outside_call", 0, outsideName(s.Kind), jobs.Retrying, s.Reason)
 		out[len(out)-1].Key = "outside:" + s.Kind + ":" + strconv.Itoa(seen[s.Kind])
 	}
 	return out, nil

@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Wide title cards show their title on the art (docs/design-review/apple/
@@ -249,7 +249,7 @@ func (a *API) queueCardItems(ctx context.Context, all []explore.Item) {
 	}
 	c.mu.Unlock()
 	if start {
-		go supervisor.Guard("explore-card-art", func() { a.drainCardArt(context.WithoutCancel(ctx)) })
+		go jobs.Guard("explore-card-art", func() { a.drainCardArt(context.WithoutCancel(ctx)) })
 	}
 }
 

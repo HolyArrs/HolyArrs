@@ -19,12 +19,12 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The scale checks are intentionally opt-in: each one creates a large fresh
@@ -498,7 +498,7 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	}
 }
 
-func startScaleApp(t *testing.T, c config, o runOpts) (*supervisor.Registry, string) {
+func startScaleApp(t *testing.T, c config, o runOpts) (*jobs.Registry, string) {
 	t.Helper()
 	addr := strings.TrimSpace(os.Getenv(envScaleBrowserAddr))
 	if addr == "" {
@@ -509,11 +509,11 @@ func startScaleApp(t *testing.T, c config, o runOpts) (*supervisor.Registry, str
 	}
 	c.Addr = addr
 	type up struct {
-		reg  *supervisor.Registry
+		reg  *jobs.Registry
 		addr string
 	}
 	ready := make(chan up, 1)
-	o.ready = func(reg *supervisor.Registry, actual string) { ready <- up{reg: reg, addr: actual} }
+	o.ready = func(reg *jobs.Registry, actual string) { ready <- up{reg: reg, addr: actual} }
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, c, o) }()
@@ -860,7 +860,7 @@ func databaseBytes(t *testing.T, dir string) int64 {
 	return total
 }
 
-func waitForScaleQuiet(t *testing.T, s *database.Store, reg *supervisor.Registry, limit time.Duration) {
+func waitForScaleQuiet(t *testing.T, s *database.Store, reg *jobs.Registry, limit time.Duration) {
 	t.Helper()
 	deadline := time.Now().Add(limit)
 	writes, bytes := s.WriteCount(), procWriteBytes(t)
@@ -888,11 +888,11 @@ func waitForScaleQuiet(t *testing.T, s *database.Store, reg *supervisor.Registry
 	t.Fatalf("application did not become write-idle within %v; schedules passed: %t; live jobs: %+v", limit, scaleSchedulerPassed(reg), live)
 }
 
-func scaleSchedulerPassed(reg *supervisor.Registry) bool {
+func scaleSchedulerPassed(reg *jobs.Registry) bool {
 	if reg == nil {
 		return false
 	}
-	status, ok := reg.Get(supervisor.StageKey("schedules"))
+	status, ok := reg.Get(jobs.StageKey("schedules"))
 	return ok && status.LastPass != nil
 }
 

@@ -2,10 +2,9 @@ package subtitles
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 )
 
 // New default languages list what every File misses without asking any

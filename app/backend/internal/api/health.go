@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // healthRoutes are the health check routes (5.1.13).
@@ -82,7 +82,7 @@ func (a *API) runHealthChecks(w http.ResponseWriter, r *http.Request) {
 // healthStates answers the state of every stage (from the supervisor's
 // Registry) and every linked app, and whether the app runs in safe mode.
 func (a *API) healthStates(w http.ResponseWriter, r *http.Request) {
-	var states []supervisor.Status
+	var states []jobs.Status
 	if a.s.States != nil {
 		states = a.s.States.List()
 	}
@@ -96,7 +96,7 @@ func (a *API) healthStates(w http.ResponseWriter, r *http.Request) {
 	}
 	states = append(states, links...)
 	if states == nil {
-		states = []supervisor.Status{}
+		states = []jobs.Status{}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"safe_mode": a.s.SafeMode, "states": states})
 }

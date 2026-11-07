@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Handler does the work of one Job kind. Returning an error retries the Job
@@ -35,7 +33,7 @@ type Options struct {
 	MaxBackoff   time.Duration // default 1h
 	PollInterval time.Duration // default 1s; a read, never a write
 	// OnChange is told about every state or progress change (for the live stream).
-	OnChange func(domain.Job)
+	OnChange func(Job)
 }
 
 // Gate holds Jobs back while the part they belong to is off (see
@@ -45,7 +43,7 @@ type Gate interface {
 	// it always did.
 	Active() bool
 	// Held reports whether a queued Job of kind about subject must wait.
-	Held(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) bool
+	Held(ctx context.Context, db database.Querier, kind string, subject *database.Subject) bool
 	// KindOff reports whether a scheduled kind is not to be queued now.
 	KindOff(kind string) bool
 }
@@ -75,7 +73,7 @@ type Queue struct {
 	prepared              map[int64]preparedJob
 	live                  map[int64]context.CancelFunc
 	// running are the Jobs a worker of this Queue runs now.
-	running map[int64]domain.Job
+	running map[int64]Job
 	gate    Gate
 	wake    chan struct{}
 	stop    context.CancelFunc
@@ -99,7 +97,7 @@ func New(s *database.Store, opt Options) *Queue {
 	if opt.PollInterval <= 0 {
 		opt.PollInterval = time.Second
 	}
-	return &Queue{s: s, opt: opt, hand: map[string]Handler{}, probe: map[string]ScheduleProbe{}, scheduleNoop: map[string]scheduleNoop{}, scheduleProbeInFlight: map[string]bool{}, prepared: map[int64]preparedJob{}, live: map[int64]context.CancelFunc{}, running: map[int64]domain.Job{}, wake: make(chan struct{}, 1)}
+	return &Queue{s: s, opt: opt, hand: map[string]Handler{}, probe: map[string]ScheduleProbe{}, scheduleNoop: map[string]scheduleNoop{}, scheduleProbeInFlight: map[string]bool{}, prepared: map[int64]preparedJob{}, live: map[int64]context.CancelFunc{}, running: map[int64]Job{}, wake: make(chan struct{}, 1)}
 }
 
 // Handle registers the handler for a Job kind.
@@ -140,10 +138,10 @@ func (q *Queue) activeGate() Gate {
 }
 
 // Running returns the Jobs this Queue's workers run now.
-func (q *Queue) Running() []domain.Job {
+func (q *Queue) Running() []Job {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	out := make([]domain.Job, 0, len(q.running))
+	out := make([]Job, 0, len(q.running))
 	for _, j := range q.running {
 		out = append(out, j)
 	}
@@ -152,25 +150,25 @@ func (q *Queue) Running() []domain.Job {
 
 // Enqueue adds a Job. With a dedupe key, an existing queued or running Job
 // with that key is returned instead (created is false).
-func (q *Queue) Enqueue(ctx context.Context, kind string, subject *domain.Subject, params map[string]any, dedupeKey string, by domain.Actor) (id int64, created bool, err error) {
+func (q *Queue) Enqueue(ctx context.Context, kind string, subject *database.Subject, params map[string]any, dedupeKey string, by database.Actor) (id int64, created bool, err error) {
 	return q.EnqueueAt(ctx, kind, subject, params, dedupeKey, by, time.Time{})
 }
 
 // EnqueueAt is Enqueue for a Job that may not start before runAfter (zero
 // means now). The time is part of the one insert, so no worker can claim
 // the Job before it is set.
-func (q *Queue) EnqueueAt(ctx context.Context, kind string, subject *domain.Subject, params map[string]any, dedupeKey string, by domain.Actor, runAfter time.Time) (id int64, created bool, err error) {
+func (q *Queue) EnqueueAt(ctx context.Context, kind string, subject *database.Subject, params map[string]any, dedupeKey string, by database.Actor, runAfter time.Time) (id int64, created bool, err error) {
 	return q.enqueueAt(ctx, kind, subject, params, dedupeKey, by, runAfter, nil)
 }
 
-func (q *Queue) enqueueAt(ctx context.Context, kind string, subject *domain.Subject, params map[string]any, dedupeKey string, by domain.Actor, runAfter time.Time, prepared any) (id int64, created bool, err error) {
+func (q *Queue) enqueueAt(ctx context.Context, kind string, subject *database.Subject, params map[string]any, dedupeKey string, by database.Actor, runAfter time.Time, prepared any) (id int64, created bool, err error) {
 	if params == nil {
 		params = map[string]any{}
 	}
 	if runAfter.IsZero() {
 		runAfter = time.Now()
 	}
-	j := &domain.Job{Kind: kind, Subject: subject, Params: params, Priority: "normal", State: "queued",
+	j := &Job{Kind: kind, Subject: subject, Params: params, Priority: "normal", State: "queued",
 		MaxAttempts: q.opt.MaxAttempts, RunAfter: runAfter.UTC(), AskedBy: by}
 	if dedupeKey != "" {
 		j.DedupeKey = &dedupeKey
@@ -267,7 +265,7 @@ func (q *Queue) work(ctx context.Context, pool Pool) {
 			more := false
 			// A crash outside a Handler (which has its own recover) is
 			// caught here, so the worker keeps going.
-			supervisor.Guard(stage, func() {
+			Guard(stage, func() {
 				j, ok, err := q.claim(ctx, pool)
 				if err != nil || !ok {
 					return
@@ -288,8 +286,8 @@ func (q *Queue) work(ctx context.Context, pool Pool) {
 	}
 }
 
-func (q *Queue) claim(ctx context.Context, pool Pool) (domain.Job, bool, error) {
-	var j domain.Job
+func (q *Queue) claim(ctx context.Context, pool Pool) (Job, bool, error) {
+	var j Job
 	found := false
 	kinds, args := poolFilter(pool)
 	if g := q.activeGate(); g != nil {
@@ -346,8 +344,8 @@ var errGateOn = errors.New("a part was turned off; claim through the gate")
 // read pool (leaving out in SQL the kinds held whatever their subject),
 // skips those the gate holds, page after page, and claims the first other
 // one only if it is still queued and still not held.
-func (q *Queue) claimGated(ctx context.Context, g Gate, kinds string, args []any) (domain.Job, bool, error) {
-	var j domain.Job
+func (q *Queue) claimGated(ctx context.Context, g Gate, kinds string, args []any) (Job, bool, error) {
+	var j Job
 	q.clearPreparedHeld(g)
 	if ok, has := g.(OffKinds); has {
 		if off := ok.OffKinds(); len(off) > 0 {
@@ -375,7 +373,7 @@ func (q *Queue) claimGated(ctx context.Context, g Gate, kinds string, args []any
 type gatedCand struct {
 	id      int64
 	kind    string
-	subject *domain.Subject
+	subject *database.Subject
 }
 
 // gatedPage reads one page of queued Jobs and returns the first the gate
@@ -398,7 +396,7 @@ func (q *Queue) gatedPage(ctx context.Context, g Gate, kinds string, args []any,
 			return nil, false, err
 		}
 		if subj.Valid && subj.String != "" && subj.String != "null" {
-			c.subject = &domain.Subject{}
+			c.subject = &database.Subject{}
 			if json.Unmarshal([]byte(subj.String), c.subject) != nil {
 				c.subject = nil
 			}
@@ -420,8 +418,8 @@ func (q *Queue) gatedPage(ctx context.Context, g Gate, kinds string, args []any,
 
 // claimHeldCheck claims c if it is still queued and, checked again inside
 // the write, still not held (a part may have been turned off meanwhile).
-func (q *Queue) claimHeldCheck(ctx context.Context, g Gate, c gatedCand) (domain.Job, bool, error) {
-	var j domain.Job
+func (q *Queue) claimHeldCheck(ctx context.Context, g Gate, c gatedCand) (Job, bool, error) {
+	var j Job
 	id := c.id
 	found := false
 	err := q.s.Write(ctx, func(tx *sql.Tx) error {
@@ -447,7 +445,7 @@ func (q *Queue) claimHeldCheck(ctx context.Context, g Gate, c gatedCand) (domain
 
 // Run is one attempt at a Job, handed to its Handler.
 type Run struct {
-	Job      domain.Job
+	Job      Job
 	q        *Queue
 	result   map[string]any
 	prepared any
@@ -521,7 +519,7 @@ func (r *Run) SaveResult(ctx context.Context, v map[string]any) error {
 
 type errCode interface{ Code() string }
 
-func (q *Queue) run(ctx context.Context, j domain.Job) {
+func (q *Queue) run(ctx context.Context, j Job) {
 	q.mu.Lock()
 	h := q.hand[j.Kind]
 	entry := q.prepared[j.ID]
@@ -578,7 +576,7 @@ func (q *Queue) backoff(attempt int) time.Duration {
 	return min(d, q.opt.MaxBackoff)
 }
 
-func (q *Queue) finish(j domain.Job, result map[string]any, runErr error, code string, cancelled bool) {
+func (q *Queue) finish(j Job, result map[string]any, runErr error, code string, cancelled bool) {
 	q.clearPrepared(j.ID)
 	now := time.Now().UTC()
 	ctx := context.Background()
@@ -597,7 +595,7 @@ func (q *Queue) finish(j domain.Job, result map[string]any, runErr error, code s
 				string(res), ts, ts, j.ID)
 			return err
 		}
-		e, _ := json.Marshal(domain.JobError{Code: code, Message: runErr.Error()})
+		e, _ := json.Marshal(JobError{Code: code, Message: runErr.Error()})
 		var fe interface{ Final() bool }
 		final := errors.As(runErr, &fe) && fe.Final()
 		if j.Attempt < j.MaxAttempts && code != "no_handler" && !final {
@@ -608,7 +606,7 @@ func (q *Queue) finish(j domain.Job, result map[string]any, runErr error, code s
 		_, err := tx.Exec("UPDATE jobs SET state = 'failed', error = ?, ended_at = ?, updated_at = ? WHERE id = ?", string(e), ts, ts, j.ID)
 		return err
 	})
-	var fresh domain.Job
+	var fresh Job
 	if database.Get(ctx, q.s.Read(), "jobs", j.ID, &fresh) == nil {
 		q.notify(fresh)
 	}
@@ -667,7 +665,7 @@ func (q *Queue) clearPreparedHeld(g Gate) {
 	}
 }
 
-func (q *Queue) notify(j domain.Job) {
+func (q *Queue) notify(j Job) {
 	if q.opt.OnChange != nil {
 		q.opt.OnChange(j)
 	}

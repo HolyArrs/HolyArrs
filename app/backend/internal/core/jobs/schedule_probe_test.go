@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func dueSchedule(t *testing.T, s *database.Store, kind string, every int64, now time.Time) domain.Schedule {
+func dueSchedule(t *testing.T, s *database.Store, kind string, every int64, now time.Time) Schedule {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE schedules SET enabled = (kind = ?), every_seconds = ?, next_run = ?, updated_at = ?", kind, every, database.FormatTime(now), database.FormatTime(now.Add(-time.Hour)))
@@ -21,7 +20,7 @@ func dueSchedule(t *testing.T, s *database.Store, kind string, every int64, now 
 	if err != nil {
 		t.Fatal(err)
 	}
-	scs, err := database.Select[domain.Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
+	scs, err := database.Select[Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
 	if err != nil || len(scs) != 1 {
 		t.Fatal(err)
 	}
@@ -45,7 +44,7 @@ func TestScheduleProbeNoWorkUsesMemoryOnlyUntilNextProbe(t *testing.T) {
 	q := New(s, Options{})
 	var calls atomic.Int32
 	var changes atomic.Int32
-	q.opt.OnChange = func(domain.Job) { changes.Add(1) }
+	q.opt.OnChange = func(Job) { changes.Add(1) }
 	q.ProbeSchedule(sc.Kind, func(context.Context, time.Time) (bool, any, error) {
 		calls.Add(1)
 		return false, nil, nil
@@ -121,7 +120,7 @@ func TestScheduleProbeWatermarkInvalidatesOnEditAndRestart(t *testing.T) {
 type scheduleOffGate struct{ kind string }
 
 func (g scheduleOffGate) Active() bool { return true }
-func (g scheduleOffGate) Held(context.Context, database.Querier, string, *domain.Subject) bool {
+func (g scheduleOffGate) Held(context.Context, database.Querier, string, *database.Subject) bool {
 	return false
 }
 func (g scheduleOffGate) KindOff(kind string) bool { return kind == g.kind }
@@ -132,7 +131,7 @@ type scheduleToggleGate struct {
 }
 
 func (g *scheduleToggleGate) Active() bool { return true }
-func (g *scheduleToggleGate) Held(_ context.Context, _ database.Querier, kind string, _ *domain.Subject) bool {
+func (g *scheduleToggleGate) Held(_ context.Context, _ database.Querier, kind string, _ *database.Subject) bool {
 	return kind == g.kind && g.off.Load()
 }
 func (g *scheduleToggleGate) KindOff(kind string) bool { return kind == g.kind && g.off.Load() }
@@ -184,7 +183,7 @@ func TestScheduleProbeErrorAndRunNowUseDurableJobs(t *testing.T) {
 		t.Fatal("Run now called the schedule probe")
 		return false, nil, nil
 	})
-	if _, created, err := q.Enqueue(context.Background(), other.Kind, nil, map[string]any{"by_hand": true}, "run-now:"+other.Kind, domain.System); err != nil || !created {
+	if _, created, err := q.Enqueue(context.Background(), other.Kind, nil, map[string]any{"by_hand": true}, "run-now:"+other.Kind, database.System); err != nil || !created {
 		t.Fatalf("run now: created=%v err=%v", created, err)
 	}
 	if jobCount(t, s, other.Kind) != 1 {
@@ -325,12 +324,12 @@ func TestCancelledSchedulePassDoesNotWaitForStuckProbeOrStartAnother(t *testing.
 func TestScheduleProbeDiscardsResultAfterScheduleChanges(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
-		change func(*testing.T, *database.Store, domain.Schedule, time.Time)
-		check  func(*testing.T, *database.Store, domain.Schedule, time.Time)
+		change func(*testing.T, *database.Store, Schedule, time.Time)
+		check  func(*testing.T, *database.Store, Schedule, time.Time)
 	}{
 		{
 			name: "disabled",
-			change: func(t *testing.T, s *database.Store, sc domain.Schedule, now time.Time) {
+			change: func(t *testing.T, s *database.Store, sc Schedule, now time.Time) {
 				t.Helper()
 				if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 					_, err := tx.Exec("UPDATE schedules SET enabled = 0, updated_at = ? WHERE id = ?", database.FormatTime(now.Add(time.Second)), sc.ID)
@@ -339,7 +338,7 @@ func TestScheduleProbeDiscardsResultAfterScheduleChanges(t *testing.T) {
 					t.Fatal(err)
 				}
 			},
-			check: func(t *testing.T, s *database.Store, sc domain.Schedule, _ time.Time) {
+			check: func(t *testing.T, s *database.Store, sc Schedule, _ time.Time) {
 				t.Helper()
 				var enabled bool
 				if err := s.Read().QueryRow("SELECT enabled FROM schedules WHERE id = ?", sc.ID).Scan(&enabled); err != nil || enabled {
@@ -349,7 +348,7 @@ func TestScheduleProbeDiscardsResultAfterScheduleChanges(t *testing.T) {
 		},
 		{
 			name: "interval edited",
-			change: func(t *testing.T, s *database.Store, sc domain.Schedule, now time.Time) {
+			change: func(t *testing.T, s *database.Store, sc Schedule, now time.Time) {
 				t.Helper()
 				if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 					_, err := tx.Exec("UPDATE schedules SET every_seconds = 1800, next_run = ?, updated_at = ? WHERE id = ?",
@@ -359,7 +358,7 @@ func TestScheduleProbeDiscardsResultAfterScheduleChanges(t *testing.T) {
 					t.Fatal(err)
 				}
 			},
-			check: func(t *testing.T, s *database.Store, sc domain.Schedule, now time.Time) {
+			check: func(t *testing.T, s *database.Store, sc Schedule, now time.Time) {
 				t.Helper()
 				var every int64
 				var next string
@@ -439,9 +438,9 @@ func TestScheduleProbeDiscardsResultWhenPartTurnsOff(t *testing.T) {
 	}
 }
 
-func dueScheduleRecord(t *testing.T, s *database.Store, kind string) domain.Schedule {
+func dueScheduleRecord(t *testing.T, s *database.Store, kind string) Schedule {
 	t.Helper()
-	scs, err := database.Select[domain.Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
+	scs, err := database.Select[Schedule](context.Background(), s.Read(), "schedules", "kind = ?", kind)
 	if err != nil || len(scs) != 1 {
 		t.Fatalf("schedule %s: %v %v", kind, scs, err)
 	}
@@ -620,7 +619,7 @@ func TestScheduleProbePreparedValueDiscardedOnDedupeAndCancel(t *testing.T) {
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 	sc := dueSchedule(t, s, "feed_check", 900, now)
 	q := New(s, Options{})
-	id, created, err := q.Enqueue(context.Background(), sc.Kind, nil, nil, "schedule:"+sc.Kind, domain.System)
+	id, created, err := q.Enqueue(context.Background(), sc.Kind, nil, nil, "schedule:"+sc.Kind, database.System)
 	if err != nil || !created {
 		t.Fatalf("seed job: created=%v err=%v", created, err)
 	}
@@ -667,7 +666,7 @@ func TestQueuedOrRunningScheduledJobSkipsProbeAndWrites(t *testing.T) {
 			now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 			sc := dueSchedule(t, s, "feed_check", 900, now)
 			q := New(s, Options{})
-			id, created, err := q.Enqueue(context.Background(), sc.Kind, nil, nil, "schedule:"+sc.Kind, domain.System)
+			id, created, err := q.Enqueue(context.Background(), sc.Kind, nil, nil, "schedule:"+sc.Kind, database.System)
 			if err != nil || !created {
 				t.Fatalf("seed job: created=%v err=%v", created, err)
 			}

@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // passPool is a stored pool: Trending (the hero's source) and two more
@@ -416,7 +416,7 @@ func TestTrailerPassSkips(t *testing.T) {
 	}
 	do(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":true}`, 200)
 
-	pc := &parts.Control{Store: st, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+	pc := &parts.Control{Store: st, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 	if err := pc.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}

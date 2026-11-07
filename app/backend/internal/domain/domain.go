@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // The row envelope lives in core/database; these names stay for callers
@@ -15,6 +16,10 @@ type (
 	Meta    = database.Meta
 	Subject = database.Subject
 	Event   = database.Event
+
+	Job      = jobs.Job
+	JobError = jobs.JobError
+	Schedule = jobs.Schedule
 )
 
 // System is the actor for changes HolyArrs makes on its own.
@@ -466,43 +471,6 @@ type File struct {
 	Role         string         `db:"role"` // main, subtitle, artwork, info, lyrics
 	ParentFileID *int64         `db:"parent_file_id"`
 	State        string         `db:"state"` // present, missing, gone, replaced
-}
-
-// JobError says why a Job failed.
-type JobError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-// Job is background work stored in the database.
-type Job struct {
-	Meta
-	Kind         string         `db:"kind"`
-	Subject      *Subject       `db:"subject,json"`
-	Params       map[string]any `db:"params,json"`
-	Priority     string         `db:"priority"` // now, normal, idle
-	State        string         `db:"state"`    // queued, running, done, failed, cancelled
-	Progress     float64        `db:"progress"`
-	ProgressNote *string        `db:"progress_note"`
-	Attempt      int            `db:"attempt"`
-	MaxAttempts  int            `db:"max_attempts"`
-	RunAfter     time.Time      `db:"run_after"`
-	StartedAt    *time.Time     `db:"started_at"`
-	EndedAt      *time.Time     `db:"ended_at"`
-	Result       map[string]any `db:"result,json"`
-	Error        *JobError      `db:"error,json"`
-	AskedBy      Actor          `db:"asked_by,json"`
-	DedupeKey    *string        `db:"dedupe_key"`
-}
-
-// Schedule runs a Job kind on a timer.
-type Schedule struct {
-	Meta
-	Kind         string     `db:"kind"`
-	EverySeconds int64      `db:"every_seconds"`
-	LastRun      *time.Time `db:"last_run"`
-	NextRun      *time.Time `db:"next_run"`
-	Enabled      bool       `db:"enabled"`
 }
 
 // User is a person who signs in: the one owner, admins and members.

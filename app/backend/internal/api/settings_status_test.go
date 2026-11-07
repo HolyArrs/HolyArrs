@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 var statusNow = time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
@@ -66,7 +66,7 @@ func TestSettingsStatusRules(t *testing.T) {
 	})
 	t.Run("the metadata server down, an old backup and a failed media server", func(t *testing.T) {
 		a := settingsStatus(statusInput{MetadataUp: boolp(false), NewestBackup: timep("2026-10-01T00:00:00Z"),
-			States: []supervisor.Status{{Key: "media_server:1", Kind: "media_server", Name: "Jelly", State: supervisor.Failed}}, Now: statusNow})
+			States: []jobs.Status{{Key: "media_server:1", Kind: "media_server", Name: "Jelly", State: jobs.Failed}}, Now: statusNow})
 		if got := pages(a); !slices.Equal(got, []string{"/settings/backups", "/settings/media-servers", "/settings/tmdb"}) {
 			t.Fatalf("pages %v", got)
 		}
@@ -109,8 +109,8 @@ func TestSettingsStatusRules(t *testing.T) {
 	t.Run("severities", func(t *testing.T) {
 		a := settingsStatus(statusInput{
 			Checks: []domain.HealthCheck{check("disk_space", "Movies", "warning", "low on space"), check("backups", "", "error", "")},
-			States: []supervisor.Status{{Key: "stage:search", Kind: "stage", Name: "search", State: supervisor.Running, Stuck: true},
-				{Key: "subtitle_site:2", Kind: "subtitle_site", Name: "Subs", State: supervisor.Failed}},
+			States: []jobs.Status{{Key: "stage:search", Kind: "stage", Name: "search", State: jobs.Running, Stuck: true},
+				{Key: "subtitle_site:2", Kind: "subtitle_site", Name: "Subs", State: jobs.Failed}},
 			Sources:     []namedState{{"Ind", "auth_failed"}},
 			UpdateNewer: boolp(true), Now: statusNow})
 		want := []statusItem{

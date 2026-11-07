@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // musicOffControl is a parts Control with Music turned off.
 func musicOffControl(t *testing.T, s *database.Store) *parts.Control {
 	t.Helper()
-	pc := &parts.Control{Store: s, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+	pc := &parts.Control{Store: s, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 	if err := pc.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}

@@ -26,10 +26,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Changes a folder can have.
@@ -389,7 +389,7 @@ func (l *Linker) queue(ctx context.Context, folder, change, kind string) {
 		l.wg.Add(1)
 		l.timer = time.AfterFunc(d, func() {
 			defer l.wg.Done()
-			supervisor.Guard("media_servers", func() { l.Flush(context.WithoutCancel(ctx)) })
+			jobs.Guard("media_servers", func() { l.Flush(context.WithoutCancel(ctx)) })
 		})
 	}
 }
@@ -410,7 +410,7 @@ func (l *Linker) Stop() {
 		defer l.wg.Done()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		supervisor.Guard("media_servers", func() { l.Flush(ctx) })
+		jobs.Guard("media_servers", func() { l.Flush(ctx) })
 	}()
 }
 

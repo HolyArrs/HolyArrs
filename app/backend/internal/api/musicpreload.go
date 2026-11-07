@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Music cover preload (Luis, 2026-10-24: everything the UI will show is
@@ -139,7 +139,7 @@ func (a *API) tplPreload(b *rowtpl.Bundle, region string) {
 	}
 	if len(p.queue) > 0 && !p.running {
 		p.running, p.st.Running = true, true
-		go supervisor.Guard("music-cover-preload", a.runPreload)
+		go jobs.Guard("music-cover-preload", a.runPreload)
 	}
 }
 
@@ -427,7 +427,7 @@ func (a *API) retryPreload(ver string) {
 	p.st.Failed -= len(todo)
 	p.running, p.st.Running = true, true
 	p.mu.Unlock()
-	go supervisor.Guard("music-cover-preload-retry", func() {
+	go jobs.Guard("music-cover-preload-retry", func() {
 		a.preloadWarm(ver, todo)
 		a.runPreload() // closes the run (and schedules the next retry)
 	})

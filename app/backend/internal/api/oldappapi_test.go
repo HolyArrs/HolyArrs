@@ -19,12 +19,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // oldAppFix is a signed-in app with a show and a movie Library folder,
@@ -109,7 +110,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	q := jobs.New(s, jobs.Options{})
-	pc := &parts.Control{Store: s, Reg: supervisor.NewRegistry(), Jobs: q, Drain: time.Second, Logf: func(string, ...any) {}}
+	pc := &parts.Control{Store: s, Reg: jobs.NewRegistry(), Jobs: q, Drain: time.Second, Logf: func(string, ...any) {}}
 	if err := pc.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}

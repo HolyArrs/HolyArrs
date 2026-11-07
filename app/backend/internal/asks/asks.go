@@ -22,10 +22,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Window is how far back the weekly limit looks (a rolling week).
@@ -1194,7 +1194,7 @@ func (s *Service) send(ctx context.Context, m alerts.Message) {
 		if previous != nil {
 			<-previous
 		}
-		supervisor.Guard("alerts", func() {
+		jobs.Guard("alerts", func() {
 			sc, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Minute)
 			defer cancel()
 			_ = s.Alerts.Send(sc, m) // failures are recorded on the Alert and as Events

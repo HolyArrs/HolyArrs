@@ -20,17 +20,18 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 type ctlFix struct {
 	srv     *httptest.Server
 	s       *database.Store
 	pc      *parts.Control
-	reg     *supervisor.Registry
+	reg     *jobs.Registry
 	api     *API
 	runs    atomic.Int64 // passes of the test loops
 	mu      sync.Mutex
@@ -60,7 +61,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	f := &ctlFix{s: s, reg: supervisor.NewRegistry()}
+	f := &ctlFix{s: s, reg: jobs.NewRegistry()}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond})
 	f.pc = &parts.Control{Store: s, Reg: f.reg, Jobs: q, Drain: time.Second, SafeMode: safe, Logf: func(string, ...any) {}}
 	if err := f.pc.Load(context.Background()); err != nil {
@@ -68,7 +69,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 	}
 	q.SetGate(f.pc)
 	for _, name := range []string{"gates", "backups"} {
-		f.pc.Add(supervisor.Loop{Name: name, Label: name, Every: 20 * time.Millisecond, Run: func(context.Context) error { f.runs.Add(1); return nil }}, name == "gates")
+		f.pc.Add(jobs.Loop{Name: name, Label: name, Every: 20 * time.Millisecond, Run: func(context.Context) error { f.runs.Add(1); return nil }}, name == "gates")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(func() { cancel(); q.Stop(); f.reg.Wait() })
@@ -244,10 +245,10 @@ func TestStageControls(t *testing.T) {
 	f := newCtl(t, false)
 	u := f.srv.URL + "/api/v1/stages/"
 	var out struct {
-		State supervisor.Status `json:"state"`
+		State jobs.Status `json:"state"`
 	}
 	decodeJSON(t, do(t, "POST", u+"backups/pause", "", 200), &out)
-	if out.State.State != supervisor.Off || out.State.Reason != "Paused by The owner." {
+	if out.State.State != jobs.Off || out.State.Reason != "Paused by The owner." {
 		t.Fatalf("paused: %+v", out.State)
 	}
 	do(t, "POST", u+"backups/resume", "", 200)
@@ -337,16 +338,16 @@ func TestHealthStatesListParts(t *testing.T) {
 	f := newCtl(t, false)
 	confirmTwice(t, f.srv.URL+"/api/v1/parts/music/off", 200)
 	var got struct {
-		States []supervisor.Status `json:"states"`
+		States []jobs.Status `json:"states"`
 	}
 	decodeJSON(t, do(t, "GET", f.srv.URL+"/api/v1/health/states", "", 200), &got)
-	seen := map[string]supervisor.State{}
+	seen := map[string]jobs.State{}
 	for _, s := range got.States {
 		if s.Kind == "part" {
 			seen[s.Key] = s.State
 		}
 	}
-	if len(seen) != 5 || seen["part:music"] != supervisor.Off || seen["part:movies"] != supervisor.Running {
+	if len(seen) != 5 || seen["part:music"] != jobs.Off || seen["part:movies"] != jobs.Running {
 		t.Fatalf("parts in health states: %v", seen)
 	}
 }

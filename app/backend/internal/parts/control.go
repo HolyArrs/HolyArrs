@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Errors a control answers with; their text is shown to people.
@@ -53,7 +53,7 @@ const DefaultDrain = 2 * time.Minute
 // Jobs of a part that is off wait in the queue.
 type Control struct {
 	Store *database.Store
-	Reg   *supervisor.Registry
+	Reg   *jobs.Registry
 	// SafeMode forces every part off (not saved) and refuses switches.
 	SafeMode bool
 	// Jobs is the queue, for waiting on running Jobs during a restart.
@@ -74,7 +74,7 @@ type Control struct {
 
 // entry is one stage this Control starts and stops.
 type entry struct {
-	l        supervisor.Loop
+	l        jobs.Loop
 	owner    Owner
 	optional bool // not started in safe mode
 	cancel   context.CancelFunc
@@ -136,7 +136,7 @@ func (c *Control) flag() { c.active.Store(len(c.off) > 0 || len(c.hold) > 0) }
 
 // Add registers a background loop of owner (from Loops) for Start. An
 // optional loop is not started in safe mode.
-func (c *Control) Add(l supervisor.Loop, optional bool) {
+func (c *Control) Add(l jobs.Loop, optional bool) {
 	owner, ok := Loops[l.Name]
 	if !ok {
 		owner = Core
@@ -181,9 +181,9 @@ func (c *Control) onLocked(p Part) bool {
 // startLocked starts e unless it runs, is paused, or its part is off; a
 // loop whose last run has not returned is never started twice.
 func (c *Control) startLocked(e *entry) error {
-	key := supervisor.StageKey(e.l.Name)
+	key := jobs.StageKey(e.l.Name)
 	if e.optional && c.SafeMode {
-		c.Reg.Set(key, "stage", e.l.Label, supervisor.Off, notStarted)
+		c.Reg.Set(key, "stage", e.l.Label, jobs.Off, notStarted)
 		return ErrSafeMode
 	}
 	if e.cancel != nil {
@@ -197,11 +197,11 @@ func (c *Control) startLocked(e *entry) error {
 		}
 	}
 	if e.paused != "" {
-		c.Reg.Set(key, "stage", e.l.Label, supervisor.Off, e.paused)
+		c.Reg.Set(key, "stage", e.l.Label, jobs.Off, e.paused)
 		return nil
 	}
 	if !c.ownerOnLocked(e.owner) {
-		c.Reg.Set(key, "stage", e.l.Label, supervisor.Off, offReason(e.owner))
+		c.Reg.Set(key, "stage", e.l.Label, jobs.Off, offReason(e.owner))
 		return nil
 	}
 	if c.ctx == nil {
@@ -235,11 +235,11 @@ func (c *Control) stop(e *entry, why string, wait time.Duration) bool {
 	defer t.Stop()
 	select {
 	case <-done:
-		c.Reg.Set(supervisor.StageKey(e.l.Name), "stage", e.l.Label, supervisor.Off, why)
+		c.Reg.Set(jobs.StageKey(e.l.Name), "stage", e.l.Label, jobs.Off, why)
 		return true
 	case <-t.C:
-		c.Reg.Update(supervisor.StageKey(e.l.Name), func(s *supervisor.Status) {
-			s.State, s.Stuck = supervisor.Failed, true
+		c.Reg.Update(jobs.StageKey(e.l.Name), func(s *jobs.Status) {
+			s.State, s.Stuck = jobs.Failed, true
 			s.Reason = "Asked to stop, but its pass has not returned (stuck). It is not started again until it does; a whole-app restart clears it."
 		})
 		return false
@@ -593,7 +593,7 @@ func (c *Control) RestartStage(name string) error {
 // Statuses are the parts' states for the health page: off with the reason,
 // starting while a restart waits, else the worst state of the part's
 // loops (failed, retrying), else running.
-func (c *Control) Statuses() []supervisor.Status {
+func (c *Control) Statuses() []jobs.Status {
 	c.mu.Lock()
 	c.init()
 	type row struct {
@@ -613,26 +613,26 @@ func (c *Control) Statuses() []supervisor.Status {
 		rows = append(rows, r)
 	}
 	c.mu.Unlock()
-	out := make([]supervisor.Status, 0, len(rows))
+	out := make([]jobs.Status, 0, len(rows))
 	for _, r := range rows {
-		st := supervisor.Status{Key: "part:" + string(r.p), Kind: "part", Name: r.p.Label(), State: supervisor.Running}
+		st := jobs.Status{Key: "part:" + string(r.p), Kind: "part", Name: r.p.Label(), State: jobs.Running}
 		switch {
 		case r.off != "":
-			st.State, st.Reason = supervisor.Off, r.off
+			st.State, st.Reason = jobs.Off, r.off
 		case r.hold:
-			st.State, st.Reason = supervisor.Starting, "Restarting: waiting for its running Jobs to finish."
+			st.State, st.Reason = jobs.Starting, "Restarting: waiting for its running Jobs to finish."
 		default:
 			for _, name := range r.stages {
-				s, ok := c.Reg.Get(supervisor.StageKey(name))
+				s, ok := c.Reg.Get(jobs.StageKey(name))
 				if !ok {
 					continue
 				}
-				if s.State == supervisor.Failed || (s.State == supervisor.Retrying && st.State != supervisor.Failed) ||
-					(s.State == supervisor.Starting && st.State == supervisor.Running) {
+				if s.State == jobs.Failed || (s.State == jobs.Retrying && st.State != jobs.Failed) ||
+					(s.State == jobs.Starting && st.State == jobs.Running) {
 					st.State, st.Reason, st.Since = s.State, s.Name+": "+s.Reason, s.Since
 				}
 			}
-			if st.State == supervisor.Starting {
+			if st.State == jobs.Starting {
 				st.Reason = ""
 			}
 		}

@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 type discoverTMDB struct {
@@ -123,7 +123,7 @@ func discoverRig(t *testing.T, p metadata.Provider, off ...parts.Part) (*httptes
 	}
 	var pc *parts.Control
 	if len(off) > 0 {
-		pc = &parts.Control{Store: s, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+		pc = &parts.Control{Store: s, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 		if err := pc.Load(context.Background()); err != nil {
 			t.Fatal(err)
 		}

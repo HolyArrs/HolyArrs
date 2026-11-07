@@ -3,7 +3,7 @@
 // growing, capped delay. A pass that ignores its deadline is shown stuck and
 // never started a second time. The Registry also keeps the state of every
 // linked app, so the health page reads one list.
-package supervisor
+package jobs
 
 import (
 	"context"

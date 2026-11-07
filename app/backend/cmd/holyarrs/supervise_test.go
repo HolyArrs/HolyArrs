@@ -10,24 +10,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // startApp runs the whole app in a temp config folder and returns its
 // Registry and address; the app stops when the test ends.
-func startApp(t *testing.T, c config, o runOpts) (*supervisor.Registry, string) {
+func startApp(t *testing.T, c config, o runOpts) (*jobs.Registry, string) {
 	t.Helper()
 	if c.ConfigDir == "" {
 		c.ConfigDir = t.TempDir()
 	}
 	c.Addr = "127.0.0.1:0"
 	type up struct {
-		reg  *supervisor.Registry
+		reg  *jobs.Registry
 		addr string
 	}
 	ready := make(chan up, 1)
-	o.ready = func(reg *supervisor.Registry, addr string) { ready <- up{reg, addr} }
+	o.ready = func(reg *jobs.Registry, addr string) { ready <- up{reg, addr} }
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, c, o) }()
@@ -59,19 +58,19 @@ var supervisedLoops = []string{"backups", "downloads", "schedules", "stranded_im
 // A crash injected into each loop leaves the program running and the stage
 // failed, then retrying, then running again.
 func TestCrashInEveryLoopIsContained(t *testing.T) {
-	reg := supervisor.NewRegistry()
+	reg := jobs.NewRegistry()
 	reg.BaseDelay, reg.MaxDelay = 50*time.Millisecond, 200*time.Millisecond
 	reg.Logf = func(string, ...any) {}
 	var mu sync.Mutex
-	seen := map[string][]supervisor.State{}
-	reg.OnChange = func(s supervisor.Status) {
+	seen := map[string][]jobs.State{}
+	reg.OnChange = func(s jobs.Status) {
 		mu.Lock()
 		seen[s.Key] = append(seen[s.Key], s.State)
 		mu.Unlock()
 	}
 	started := map[string]bool{}
 	var startedMu sync.Mutex
-	wrap := func(l supervisor.Loop) supervisor.Loop {
+	wrap := func(l jobs.Loop) jobs.Loop {
 		startedMu.Lock()
 		started[l.Name] = true
 		startedMu.Unlock()
@@ -87,11 +86,11 @@ func TestCrashInEveryLoopIsContained(t *testing.T) {
 	}
 	reg, addr := startApp(t, config{}, runOpts{reg: reg, wrap: wrap})
 	for _, name := range supervisedLoops {
-		key := supervisor.StageKey(name)
+		key := jobs.StageKey(name)
 		deadline := time.Now().Add(20 * time.Second)
 		for {
 			st, _ := reg.Get(key)
-			if st.Restarts >= 1 && st.State == supervisor.Running {
+			if st.Restarts >= 1 && st.State == jobs.Running {
 				break
 			}
 			if time.Now().After(deadline) {
@@ -102,7 +101,7 @@ func TestCrashInEveryLoopIsContained(t *testing.T) {
 		mu.Lock()
 		got := seen[key]
 		mu.Unlock()
-		if !hasInOrder(got, supervisor.Failed, supervisor.Retrying, supervisor.Running) {
+		if !hasInOrder(got, jobs.Failed, jobs.Retrying, jobs.Running) {
 			t.Fatalf("%s states %v: want failed, then retrying, then running", name, got)
 		}
 	}
@@ -123,7 +122,7 @@ func TestCrashInEveryLoopIsContained(t *testing.T) {
 	resp.Body.Close()
 }
 
-func hasInOrder(got []supervisor.State, want ...supervisor.State) bool {
+func hasInOrder(got []jobs.State, want ...jobs.State) bool {
 	i := 0
 	for _, s := range got {
 		if i < len(want) && s == want[i] {
@@ -154,16 +153,16 @@ func TestSafeModeStartsOnlyTheCore(t *testing.T) {
 	reg, addr := startApp(t, config{SafeMode: true}, runOpts{})
 	base := "http://" + addr
 	for _, name := range []string{"schedules", "downloads", "stranded_imports", "gates", "wishlist", "jobs_io", "jobs_heavy", "media_servers"} {
-		st, _ := reg.Get(supervisor.StageKey(name))
-		if st.State != supervisor.Off || !strings.Contains(st.Reason, "Safe mode") {
+		st, _ := reg.Get(jobs.StageKey(name))
+		if st.State != jobs.Off || !strings.Contains(st.Reason, "Safe mode") {
 			t.Errorf("%s: %+v", name, st)
 		}
 	}
 	for _, name := range []string{"backups", "sessions", "jobs_core"} {
 		deadline := time.Now().Add(10 * time.Second)
 		for {
-			st, _ := reg.Get(supervisor.StageKey(name))
-			if st.State == supervisor.Running {
+			st, _ := reg.Get(jobs.StageKey(name))
+			if st.State == jobs.Running {
 				break
 			}
 			if time.Now().After(deadline) {

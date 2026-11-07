@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // MomentOf says which Library moment an Event is, or "" when Alerts do not
@@ -142,7 +142,7 @@ func (s *Sender) Watch(base context.Context) {
 		s.wg.Add(1)
 		go func() {
 			defer s.wg.Done()
-			supervisor.Guard("alerts", func() {
+			jobs.Guard("alerts", func() {
 				ctx, cancel := context.WithTimeout(base, 10*time.Minute)
 				defer cancel()
 				for _, m := range s.MessagesFor(ctx, e) {

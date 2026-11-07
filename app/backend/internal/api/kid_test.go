@@ -18,7 +18,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -26,7 +26,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // kidEntry is one title the fake TMDB knows: id, name and US rating ("" for
@@ -234,7 +235,7 @@ func newKidRig(t *testing.T, off ...parts.Part) *kidRig {
 	lib := &library.Service{Store: st, Queue: q, Metadata: prov, Live: hub, Shows: metadata.ShowSources{"tmdb": prov}}
 	var pc *parts.Control
 	if len(off) > 0 {
-		pc = &parts.Control{Store: st, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+		pc = &parts.Control{Store: st, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 		if err := pc.Load(ctx); err != nil {
 			t.Fatal(err)
 		}

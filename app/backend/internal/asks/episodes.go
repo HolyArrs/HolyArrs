@@ -10,8 +10,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // EpisodeBatch is how long new episodes of one show are gathered before
@@ -28,7 +28,7 @@ func (s *Service) WatchEpisodes() {
 		s.sending.Add(1)
 		go func() {
 			defer s.sending.Done()
-			supervisor.Guard("new_episodes", func() {
+			jobs.Guard("new_episodes", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
 				if err := s.noteEpisodes(ctx, e); err != nil {

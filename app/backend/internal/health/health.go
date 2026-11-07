@@ -21,12 +21,12 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
@@ -158,7 +158,7 @@ func (e *Engine) LowSpace(ctx context.Context, dir string, free, need int64) {
 	go func() {
 		defer e.wg.Done()
 		// An error here waits for the next scheduled run.
-		supervisor.Guard("health", func() { _, _ = e.Run(context.WithoutCancel(ctx)) })
+		jobs.Guard("health", func() { _, _ = e.Run(context.WithoutCancel(ctx)) })
 	}()
 }
 

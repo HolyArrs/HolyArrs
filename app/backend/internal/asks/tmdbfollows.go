@@ -11,9 +11,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // ErrBadTMDBID says a TMDB id is not a positive number.
@@ -336,7 +336,7 @@ func (s *Service) WatchTMDBFollows() {
 		s.sending.Add(1)
 		go func() {
 			defer s.sending.Done()
-			supervisor.Guard("tmdb_follows", func() {
+			jobs.Guard("tmdb_follows", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
 				if _, err := s.LandTMDBFollows(ctx, id); err != nil {

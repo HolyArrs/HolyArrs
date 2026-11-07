@@ -28,7 +28,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
@@ -45,7 +45,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // Server is what the API needs.
@@ -141,7 +142,7 @@ type Server struct {
 	// Subtitles runs subtitle work; New makes one when nil.
 	Subtitles *subtitles.Service
 	// States holds the state of every supervised stage (may be nil).
-	States *supervisor.Registry
+	States *jobs.Registry
 	// SafeMode says the app started with only the core.
 	SafeMode bool
 	// Parts switches the five parts and the stages (nil: every part on,

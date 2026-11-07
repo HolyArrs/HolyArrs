@@ -38,7 +38,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
@@ -52,9 +52,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -289,11 +289,11 @@ const safeNextFile = "safe-mode-next"
 // runOpts are test hooks for serve.
 type runOpts struct {
 	// wrap changes each supervised loop before it starts (tests inject crashes).
-	wrap func(supervisor.Loop) supervisor.Loop
+	wrap func(jobs.Loop) jobs.Loop
 	// reg replaces the Registry (tests set short restart delays).
-	reg *supervisor.Registry
+	reg *jobs.Registry
 	// ready is told the Registry and the address once the server listens.
-	ready func(reg *supervisor.Registry, addr string)
+	ready func(reg *jobs.Registry, addr string)
 	// kinds is told every Job kind with a Handler.
 	kinds func([]string)
 	// parts is told the parts Control once it is made.
@@ -313,10 +313,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer stop()
 	reg := o.reg
 	if reg == nil {
-		reg = supervisor.NewRegistry()
+		reg = jobs.NewRegistry()
 	}
-	supervisor.SetDefault(reg)
-	database.SetEventGuard(supervisor.Guard)
+	jobs.SetDefault(reg)
+	database.SetEventGuard(jobs.Guard)
 	const notStarted = "Safe mode: not started. Restart without safe mode to turn it on."
 	if err := os.MkdirAll(c.ConfigDir, 0o750); err != nil {
 		return err
@@ -344,13 +344,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// optional), and stops and starts it when a part or the stage is
 	// switched.
 	pc := &parts.Control{Reg: reg, SafeMode: c.SafeMode}
-	loop := func(l supervisor.Loop) {
+	loop := func(l jobs.Loop) {
 		if o.wrap != nil {
 			l = o.wrap(l)
 		}
 		pc.Add(l, false)
 	}
-	optional := func(l supervisor.Loop) {
+	optional := func(l jobs.Loop) {
 		if o.wrap != nil {
 			l = o.wrap(l)
 		}
@@ -523,7 +523,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := refreshLogSecrets(ctx); err != nil {
 		return fmt.Errorf("log masking: %w", err)
 	}
-	loop(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
+	loop(jobs.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
 	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
 		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != "", Stop: ctx}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
@@ -532,7 +532,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := bm.AfterStart(ctx); err != nil {
 		return err
 	}
-	loop(supervisor.Loop{Name: "backups", Label: "Backups", Every: 10 * time.Minute, Deadline: 2 * time.Hour, Run: bm.Pass})
+	loop(jobs.Loop{Name: "backups", Label: "Backups", Every: 10 * time.Minute, Deadline: 2 * time.Hour, Run: bm.Pass})
 	if err := ensure(ctx, s, c); err != nil {
 		return fmt.Errorf("setup: %w", err)
 	}
@@ -791,22 +791,22 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer q.Stop()
 	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers"} {
 		if pools[p] == 0 {
-			reg.Set(supervisor.StageKey("jobs_"+string(p)), "stage", label, supervisor.Off, notStarted)
+			reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Off, notStarted)
 			continue
 		}
-		reg.Set(supervisor.StageKey("jobs_"+string(p)), "stage", label, supervisor.Running, "")
+		reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Running, "")
 	}
-	optional(supervisor.Loop{Name: "downloads", Label: "Download sync", Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "downloads", Label: "Download sync", Run: func(ctx context.Context) error {
 		// The reader lives and dies with this loop: it stops after dm.Run
 		// returns (or panics), then flushes with its own deadline.
 		dls.Around(ctx, dm.Run)
 		return nil
 	}})
-	optional(supervisor.Loop{Name: "schedules", Label: "Schedules", Every: time.Minute, Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "schedules", Label: "Schedules", Every: time.Minute, Run: func(ctx context.Context) error {
 		_, err := q.RunSchedules(ctx, time.Now().UTC())
 		return err
 	}})
-	optional(supervisor.Loop{Name: "stranded_imports", Label: "Stranded imports", Every: 10 * time.Minute, Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "stranded_imports", Label: "Stranded imports", Every: 10 * time.Minute, Run: func(ctx context.Context) error {
 		n, err := im.RequeueStranded(ctx, func(ctx context.Context, id int64) {
 			enqueue(ctx, importer.KindImport, domain.Subject{Type: "download", ID: id}, nil, fmt.Sprintf("import:%d", id))
 		})
@@ -815,7 +815,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return err
 	}})
-	optional(supervisor.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
+	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
 
 	sso, err := auth.SSOFromEnv(c.URLBase)
 	if err != nil {
@@ -823,7 +823,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
-	loop(supervisor.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
+	loop(jobs.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool
 	restart := func() {
 		time.Sleep(500 * time.Millisecond) // let the answer reach the page
@@ -864,7 +864,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer sender.Wait()
 	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(wish)
-	optional(supervisor.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		if _, err := wish.CheckReady(ctx); err != nil {
 			return err
 		}
@@ -882,13 +882,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	go wish.BackfillParts(context.Background())
 	wish.WatchEpisodes()
 	wish.WatchTMDBFollows()
-	reg.Set(supervisor.StageKey("alerts"), "stage", "Alerts", supervisor.Running, "")
+	reg.Set(jobs.StageKey("alerts"), "stage", "Alerts", jobs.Running, "")
 	if c.SafeMode {
-		reg.Set(supervisor.StageKey("media_servers"), "stage", "Media-server refresh", supervisor.Off, notStarted)
+		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Off, notStarted)
 	} else {
-		reg.Set(supervisor.StageKey("media_servers"), "stage", "Media-server refresh", supervisor.Running, "")
+		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Running, "")
 	}
-	reg.Set(supervisor.StageKey("events"), "stage", "Event hooks", supervisor.Running, "")
+	reg.Set(jobs.StageKey("events"), "stage", "Event hooks", jobs.Running, "")
 	defer wish.Wait()
 	// Deezer marks and artist bios come from the metadata server; only the
 	// direct stand-in (a Deezer stand-in in tests, or
@@ -927,7 +927,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	startTrailers(a, he)
 	// Health starts once every check is wired (the trailers check comes
 	// from the API), so its first run sees them all.
-	reg.Set(supervisor.StageKey("health"), "stage", "Health checks", supervisor.Running, "")
+	reg.Set(jobs.StageKey("health"), "stage", "Health checks", jobs.Running, "")
 	reg.GoGuard("health", func() {
 		if _, err := he.Run(ctx); err != nil && ctx.Err() == nil {
 			log.Printf("health: %v", err)

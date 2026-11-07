@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func TestUpdateScheduleTurnsOffAndCancelsOnlyQueuedScheduledWork(t *testing.T) {
@@ -15,21 +15,21 @@ func TestUpdateScheduleTurnsOffAndCancelsOnlyQueuedScheduledWork(t *testing.T) {
 	q := New(s, Options{})
 	ctx := context.Background()
 	future := time.Now().Add(time.Hour)
-	scheduled, _, err := q.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"scheduled": true}, "schedule:refresh_titles", domain.System, future)
+	scheduled, _, err := q.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"scheduled": true}, "schedule:refresh_titles", database.System, future)
 	if err != nil {
 		t.Fatal(err)
 	}
-	manual, _, err := q.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"by_hand": true}, "refresh_titles:by_hand", domain.System, future)
+	manual, _, err := q.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"by_hand": true}, "refresh_titles:by_hand", database.System, future)
 	if err != nil {
 		t.Fatal(err)
 	}
-	other, _, err := q.EnqueueAt(ctx, "refresh_shows", nil, map[string]any{"scheduled": true}, "schedule:refresh_shows", domain.System, future)
+	other, _, err := q.EnqueueAt(ctx, "refresh_shows", nil, map[string]any{"scheduled": true}, "schedule:refresh_shows", database.System, future)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	off := false
-	if err := q.UpdateSchedule(ctx, "refresh_titles", nil, &off, domain.System, time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)); err != nil {
+	if err := q.UpdateSchedule(ctx, "refresh_titles", nil, &off, database.System, time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
 	if got := dueScheduleRecord(t, s, "refresh_titles"); got.Enabled {
@@ -53,7 +53,7 @@ func TestUpdateSchedulePersistsOffAndReenablesExactlyOneFuturePass(t *testing.T)
 	ctx := context.Background()
 	at := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 	off := false
-	if err := q.UpdateSchedule(ctx, "refresh_titles", nil, &off, domain.System, at); err != nil {
+	if err := q.UpdateSchedule(ctx, "refresh_titles", nil, &off, database.System, at); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Close(); err != nil {
@@ -67,7 +67,7 @@ func TestUpdateSchedulePersistsOffAndReenablesExactlyOneFuturePass(t *testing.T)
 
 	q = New(reopened, Options{})
 	on := true
-	if err := q.UpdateSchedule(ctx, "refresh_titles", nil, &on, domain.System, at); err != nil {
+	if err := q.UpdateSchedule(ctx, "refresh_titles", nil, &on, database.System, at); err != nil {
 		t.Fatal(err)
 	}
 	got := dueScheduleRecord(t, reopened, "refresh_titles")
@@ -87,7 +87,7 @@ func TestUpdateScheduleIntervalOnlyClientStillWorks(t *testing.T) {
 	q := New(s, Options{})
 	at := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 	every := int64(2 * time.Hour / time.Second)
-	if err := q.UpdateSchedule(context.Background(), "refresh_titles", &every, nil, domain.System, at); err != nil {
+	if err := q.UpdateSchedule(context.Background(), "refresh_titles", &every, nil, database.System, at); err != nil {
 		t.Fatal(err)
 	}
 	got := dueScheduleRecord(t, s, "refresh_titles")
@@ -101,7 +101,7 @@ func TestUpdateScheduleMissingKind(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	q := New(s, Options{})
 	off := false
-	if err := q.UpdateSchedule(context.Background(), "missing", nil, &off, domain.System, time.Now()); err != sql.ErrNoRows {
+	if err := q.UpdateSchedule(context.Background(), "missing", nil, &off, database.System, time.Now()); err != sql.ErrNoRows {
 		t.Fatalf("error %v, want sql.ErrNoRows", err)
 	}
 }

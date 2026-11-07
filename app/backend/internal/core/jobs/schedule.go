@@ -9,16 +9,15 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // UpdateSchedule changes a schedule and, when turning it off, cancels its
 // queued scheduled work in the same write. Jobs explicitly started by hand
 // are left alone. Re-enabling plans one future pass from now.
-func (q *Queue) UpdateSchedule(ctx context.Context, kind string, every *int64, enabled *bool, by domain.Actor, now time.Time) error {
-	var cancelled []domain.Job
+func (q *Queue) UpdateSchedule(ctx context.Context, kind string, every *int64, enabled *bool, by database.Actor, now time.Time) error {
+	var cancelled []Job
 	err := q.s.Write(ctx, func(tx *sql.Tx) error {
-		scs, err := database.Select[domain.Schedule](ctx, tx, "schedules", "kind = ?", kind)
+		scs, err := database.Select[Schedule](ctx, tx, "schedules", "kind = ?", kind)
 		if err != nil {
 			return err
 		}
@@ -46,7 +45,7 @@ func (q *Queue) UpdateSchedule(ctx context.Context, kind string, every *int64, e
 		if !disabling {
 			return nil
 		}
-		queued, err := database.Select[domain.Job](ctx, tx, "jobs", "kind = ? AND state = 'queued'", kind)
+		queued, err := database.Select[Job](ctx, tx, "jobs", "kind = ? AND state = 'queued'", kind)
 		if err != nil {
 			return err
 		}
@@ -82,7 +81,7 @@ type scheduleNoop struct {
 	next        time.Time
 }
 
-func scheduleFingerprint(sc domain.Schedule) string {
+func scheduleFingerprint(sc Schedule) string {
 	next := ""
 	if sc.NextRun != nil {
 		next = sc.NextRun.UTC().Format(time.RFC3339Nano)
@@ -90,7 +89,7 @@ func scheduleFingerprint(sc domain.Schedule) string {
 	return sc.UpdatedAt.UTC().Format(time.RFC3339Nano) + "|" + strconv.FormatInt(sc.EverySeconds, 10) + "|" + next
 }
 
-func (q *Queue) scheduleProbe(sc domain.Schedule, now time.Time) (ScheduleProbe, bool) {
+func (q *Queue) scheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	probe := q.probe[sc.Kind]
@@ -101,7 +100,7 @@ func (q *Queue) scheduleProbe(sc domain.Schedule, now time.Time) (ScheduleProbe,
 	return probe, q.scheduleProbeInFlight[sc.Kind] || ok && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next)
 }
 
-func (q *Queue) beginScheduleProbe(sc domain.Schedule, now time.Time) (ScheduleProbe, bool) {
+func (q *Queue) beginScheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	probe := q.probe[sc.Kind]
@@ -119,7 +118,7 @@ func (q *Queue) endScheduleProbe(kind string) {
 	q.mu.Unlock()
 }
 
-func (q *Queue) markScheduleNoop(sc domain.Schedule, now time.Time) {
+func (q *Queue) markScheduleNoop(sc Schedule, now time.Time) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.scheduleNoop[sc.Kind] = scheduleNoop{
@@ -137,7 +136,7 @@ func (q *Queue) clearScheduleNoop(kind string) {
 // EffectiveScheduleNext returns the next visible pass for a schedule. A
 // process-local no-work result overlays the persisted due time without
 // changing the schedule's durable history.
-func (q *Queue) EffectiveScheduleNext(sc domain.Schedule) *time.Time {
+func (q *Queue) EffectiveScheduleNext(sc Schedule) *time.Time {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if mark, ok := q.scheduleNoop[sc.Kind]; ok && mark.fingerprint == scheduleFingerprint(sc) {
@@ -152,13 +151,13 @@ func (q *Queue) EffectiveScheduleNext(sc domain.Schedule) *time.Time {
 }
 
 type scheduleProbeResult struct {
-	schedule domain.Schedule
+	schedule Schedule
 	needed   bool
 	prepared any
 	err      error
 }
 
-func scheduleDueUnchanged(sc, before domain.Schedule, now time.Time) bool {
+func scheduleDueUnchanged(sc, before Schedule, now time.Time) bool {
 	return sc.Enabled && scheduleFingerprint(sc) == scheduleFingerprint(before) && (sc.NextRun == nil || !sc.NextRun.After(now))
 }
 
@@ -173,15 +172,15 @@ func (q *Queue) scheduledJobLive(ctx context.Context, kind string) (bool, error)
 	return live > 0, err
 }
 
-func (q *Queue) currentSchedule(ctx context.Context, before domain.Schedule, now time.Time) (domain.Schedule, bool, error) {
-	var current domain.Schedule
+func (q *Queue) currentSchedule(ctx context.Context, before Schedule, now time.Time) (Schedule, bool, error) {
+	var current Schedule
 	if err := database.Get(ctx, q.s.Read(), "schedules", before.ID, &current); err != nil {
 		return current, false, err
 	}
 	return current, scheduleDueUnchanged(current, before, now) && !q.schedulePartOff(current.Kind), nil
 }
 
-func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now time.Time, prepared any) (accepted bool, err error) {
+func (q *Queue) enqueueSchedule(ctx context.Context, before Schedule, now time.Time, prepared any) (accepted bool, err error) {
 	var live int
 	dedupeKey := "schedule:" + before.Kind
 	if err := q.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", dedupeKey).Scan(&live); err != nil {
@@ -192,9 +191,9 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 	}
 	var id int64
 	var created bool
-	var job *domain.Job
+	var job *Job
 	err = q.s.Write(ctx, func(tx *sql.Tx) error {
-		var current domain.Schedule
+		var current Schedule
 		if err := database.Get(ctx, tx, "schedules", before.ID, &current); err != nil {
 			return err
 		}
@@ -205,8 +204,8 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 		if current.LastRun != nil {
 			params["last_start"] = current.LastRun.UTC().Format(time.RFC3339Nano)
 		}
-		job = &domain.Job{Kind: current.Kind, Params: params, Priority: "normal", State: "queued",
-			MaxAttempts: q.opt.MaxAttempts, RunAfter: time.Now().UTC(), AskedBy: domain.System}
+		job = &Job{Kind: current.Kind, Params: params, Priority: "normal", State: "queued",
+			MaxAttempts: q.opt.MaxAttempts, RunAfter: time.Now().UTC(), AskedBy: database.System}
 		dedupeKey := "schedule:" + current.Kind
 		job.DedupeKey = &dedupeKey
 		scanErr := tx.QueryRow("SELECT id FROM jobs WHERE dedupe_key = ? AND state IN ('queued', 'running')", dedupeKey).Scan(&id)
@@ -214,7 +213,7 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 		case scanErr == nil:
 			return nil
 		case errors.Is(scanErr, sql.ErrNoRows):
-			id, err = database.Insert(tx, "jobs", job, domain.System)
+			id, err = database.Insert(tx, "jobs", job, database.System)
 			if err != nil {
 				return err
 			}
@@ -246,7 +245,7 @@ func (q *Queue) enqueueSchedule(ctx context.Context, before domain.Schedule, now
 }
 
 type scheduleProbeWork struct {
-	schedule domain.Schedule
+	schedule Schedule
 	probe    ScheduleProbe
 }
 
@@ -264,7 +263,7 @@ func safeScheduleProbe(ctx context.Context, probe ScheduleProbe, now time.Time) 
 // Job gets the previous start as "last_start". It reads first and writes
 // only when something is due. A kind whose part is off is left due. It returns the kinds it queued.
 func (q *Queue) RunSchedules(ctx context.Context, now time.Time) ([]string, error) {
-	due, err := database.Select[domain.Schedule](ctx, q.s.Read(), "schedules",
+	due, err := database.Select[Schedule](ctx, q.s.Read(), "schedules",
 		"enabled = 1 AND (next_run IS NULL OR next_run <= ?) ORDER BY id", database.FormatTime(now))
 	if err != nil || len(due) == 0 {
 		return nil, err

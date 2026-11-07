@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // scheduleInfo says what a scheduled Job kind does in plain words and how
@@ -137,7 +137,7 @@ func (a *API) scheduleView(ctx context.Context, db *sql.DB, sc domain.Schedule) 
 
 // LoopView is one supervised background loop on the Schedules page.
 type LoopView struct {
-	supervisor.Status
+	jobs.Status
 	Part string `json:"part"`
 }
 

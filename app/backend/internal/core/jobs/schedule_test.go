@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestRunSchedules(t *testing.T) {
@@ -46,7 +45,7 @@ func TestRunSchedules(t *testing.T) {
 	if len(kinds) != 2 {
 		t.Fatalf("next day %v", kinds)
 	}
-	js, _ := database.Select[domain.Job](ctx, s.Read(), "jobs", "kind = 'refresh_titles' AND state = 'queued'")
+	js, _ := database.Select[Job](ctx, s.Read(), "jobs", "kind = 'refresh_titles' AND state = 'queued'")
 	if len(js) != 1 || js[0].Params["last_start"] != now.Format(time.RFC3339Nano) || js[0].Params["scheduled"] != true {
 		t.Fatalf("jobs %+v", js)
 	}

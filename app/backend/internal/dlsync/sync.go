@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Manager is what the reader needs from downloader.Manager.
@@ -207,7 +207,7 @@ func (s *Sync) Around(loopCtx context.Context, run func(context.Context)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			supervisor.Guard("dlsync publisher", func() { s.Pub.Run(syncCtx) })
+			jobs.Guard("dlsync publisher", func() { s.Pub.Run(syncCtx) })
 		}()
 	}
 	defer func() {
@@ -330,7 +330,7 @@ func (s *Sync) ensurePollers(ctx context.Context, wg *sync.WaitGroup) {
 func (s *Sync) supervise(ctx context.Context, id int64, kick chan struct{}) {
 	for crashes := 0; ctx.Err() == nil; crashes++ {
 		clean := false
-		supervisor.Guard("dlsync poller", func() {
+		jobs.Guard("dlsync poller", func() {
 			s.poll(ctx, id, kick)
 			clean = true
 		})

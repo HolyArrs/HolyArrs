@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
@@ -80,13 +80,13 @@ func TestScaleLiveJobsBlocksOnlyQueuedAndRunning(t *testing.T) {
 }
 
 func TestScaleQuietWaitsForFirstSchedulePass(t *testing.T) {
-	reg := supervisor.NewRegistry()
-	reg.Set(supervisor.StageKey("schedules"), "stage", "Schedules", supervisor.Running, "")
+	reg := jobs.NewRegistry()
+	reg.Set(jobs.StageKey("schedules"), "stage", "Schedules", jobs.Running, "")
 	if scaleSchedulerPassed(reg) {
 		t.Fatal("scheduler without a completed pass was treated as quiet")
 	}
 	now := time.Now().UTC()
-	reg.Update(supervisor.StageKey("schedules"), func(status *supervisor.Status) { status.LastPass = &now })
+	reg.Update(jobs.StageKey("schedules"), func(status *jobs.Status) { status.LastPass = &now })
 	if !scaleSchedulerPassed(reg) {
 		t.Fatal("completed first schedule pass did not unblock quiet detection")
 	}

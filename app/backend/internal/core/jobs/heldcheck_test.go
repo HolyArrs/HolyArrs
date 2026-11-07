@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // flipGate holds nothing when read on the read pool but holds every Job
@@ -15,7 +14,7 @@ import (
 type flipGate struct{}
 
 func (flipGate) Active() bool { return true }
-func (flipGate) Held(_ context.Context, db database.Querier, _ string, _ *domain.Subject) bool {
+func (flipGate) Held(_ context.Context, db database.Querier, _ string, _ *database.Subject) bool {
 	_, inWrite := db.(*sql.Tx)
 	return inWrite
 }
@@ -26,7 +25,7 @@ func TestGatedClaimChecksHeldInsideTheWrite(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	q := New(s, Options{Workers: 1})
 	q.SetGate(flipGate{})
-	id, _, err := q.Enqueue(context.Background(), "x", nil, nil, "k", domain.System)
+	id, _, err := q.Enqueue(context.Background(), "x", nil, nil, "k", database.System)
 	if err != nil {
 		t.Fatal(err)
 	}
