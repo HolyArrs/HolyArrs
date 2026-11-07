@@ -17,7 +17,7 @@
 	import RunsTimeline from './RunsTimeline.svelte';
 	import Updates from './Updates.svelte';
 	import WhyNote from './WhyNote.svelte';
-	import type { HealthCheck, UpdateInfo } from '../types.ts';
+	import type { Health, HealthCheck, UpdateInfo } from '../types.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {
@@ -122,8 +122,11 @@
 		updFailed = false;
 		api.get<Update>('/app/update').then((u) => (upd = u), () => (updFailed = !upd));
 	}
+	// The live server numbers (writes, live tabs, URL base) come from /health.
+	let srv = $state<Health | null>(null);
 	function loadAbout() {
 		aboutFailed = false;
+		api.get<Health>('/health').then((h) => (srv = h), () => {});
 		api.get<About>('/app/about').then(
 			(a) => {
 				about = a;
@@ -298,6 +301,11 @@
 					<dt>Config folder</dt><dd><code>{about.config_dir}</code></dd>
 					<dt>Start folder</dt><dd><code>{about.start_dir}</code></dd>
 					<dt>Uptime</dt><dd><time class="clock" datetime={about.started_at} title="Started {dateTime(about.started_at)}">{uptime(about.uptime_s + Math.max(0, now - aboutAt) / 1000)}</time></dd>
+				{/if}
+				{#if srv}
+					<dt>Database writes</dt><dd>{srv.writes} (95% wait under {srv.write_wait_p95_ms} ms)</dd>
+					<dt>URL base</dt><dd data-testid="url-base">{srv.url_base || 'None (served at /)'}</dd>
+					<dt>Live update tabs</dt><dd>{srv.live_clients}</dd>
 				{/if}
 			</dl>
 		</section>

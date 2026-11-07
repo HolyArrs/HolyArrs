@@ -21,8 +21,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/appearance', 'signin-art', 'Show Library art on the sign-in page', 'sign-in login page background posters art'),
 	e('/settings/appearance', 'row-titles-card', 'Explore row titles', 'explore rows titles names layers taste'),
 	e('/settings/appearance', 'ratings', 'Ratings', 'ratings scores imdb rotten tomatoes critics audience metacritic letterboxd trakt tmdb'),
-	e('/settings/this-app', 'h-about-card', 'Version', 'about holyarrs build database schema uptime url base'),
-	e('/settings/this-app', 'update-card', 'Updates', 'update new version release check for updates'),
 	e('/settings/this-app', 'storage-card', 'Storage', 'paths config folder disk free space where things are stored', true),
 	e('/settings/this-app', 'count-install', 'Count this install', 'install count country privacy metadata server', true),
 	e('/settings/this-app', 'picture-storage', 'Picture storage', 'picture cache artwork posters covers gb', true),

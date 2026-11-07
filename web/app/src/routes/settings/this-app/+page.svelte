@@ -6,7 +6,6 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
-	import SettingsLinks from '#lib/ui/SettingsLinks.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
@@ -16,9 +15,7 @@
 	import { ago, bytes, dateTime, duration, words } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { problems, splitStates, stateWord } from '#lib/health.ts';
-	import type { Health, HealthChecks, HealthStates, UpdateInfo } from '#lib/types.ts';
-	import { IMAGE, goBackBackup, imageTag, releaseLink, updateWords, type BackupRow } from '#lib/update.ts';
+	import type { Health } from '#lib/types.ts';
 
 	// App-wide settings kept here: picture storage, the install count and
 	// History keep times. Autoplay trailers and the sign-in art live on
@@ -90,48 +87,12 @@
 		}
 	}
 	let health = $state<Health | null>(null);
-	let checks = $state<HealthChecks | null>(null);
-	let states = $state<HealthStates | null>(null);
-	const split = $derived(splitStates(states?.states));
-	const bad = $derived(problems(checks?.checks));
 	interface PathInfo {
 		name: string;
 		path: string;
 		bytes?: number;
 		free_bytes: number;
 		kind?: string;
-	}
-	let update = $state<UpdateInfo | null>(null);
-	let checking = $state(false);
-	async function checkUpdate() {
-		checking = true;
-		try {
-			update = await api.post<UpdateInfo>('/app/update/check');
-		} catch (e) {
-			toasts.push("Couldn't check for updates", 'fail', { body: message(e) });
-		} finally {
-			checking = false;
-		}
-	}
-	// Going back: the pre-update backup taken for the update to this
-	// version (people who may change settings; the list is theirs).
-	let goBack = $state<BackupRow | null>(null);
-	async function loadGoBack() {
-		if (!session.can('settings') || !health) return;
-		try {
-			const r = await api.get<{ backups: BackupRow[] }>('/backups');
-			goBack = goBackBackup(r.backups, health.version);
-		} catch {
-			goBack = null;
-		}
-	}
-	async function copy(text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-			toasts.push('Text copied', 'ok');
-		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
-		}
 	}
 	let storage = $state<{ app: PathInfo[]; library_folders: PathInfo[]; save_path: string } | null>(null);
 	let storageNeedsProof = $state(false);
@@ -157,14 +118,8 @@
 
 	async function load() {
 		try {
-			[health, checks, states] = await Promise.all([
-				api.get<Health>('/health'),
-				api.get<HealthChecks>('/health/checks'),
-				api.get<HealthStates>('/health/states')
-			]);
+			health = await api.get<Health>('/health');
 			await loadStorage();
-			update = await api.get<UpdateInfo>('/app/update');
-			await loadGoBack();
 			error = '';
 		} catch (e) {
 			error = message(e);
@@ -226,65 +181,6 @@
 	<SkSettings rows={3} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
-	<section class="card" id="h-about-card" aria-labelledby="h-about">
-		<div class="card-head">
-			<h2 id="h-about" class="h2">HolyArrs</h2>
-			<span class="chip {health.ok ? 'ok' : 'fail'}">{health.ok ? 'Healthy' : 'Database not answering'}</span>
-		</div>
-		<dl class="facts">
-			<dt>Version</dt>
-			<dd>{health.version}</dd>
-			<dt>Database schema</dt>
-			<dd>{health.schema}</dd>
-			<dt>Running for</dt>
-			<dd>{duration(health.uptime_s)}</dd>
-			<dt>Database writes</dt>
-			<dd>{health.writes} (95% wait under {health.write_wait_p95_ms} ms)</dd>
-			<dt>URL base</dt>
-			<dd data-testid="url-base">{health.url_base || 'None (served at /)'} <span class="xs muted">· set with {'HOLYARRS_URL_BASE'} or -url-base</span></dd>
-			<dt>Live update tabs</dt>
-			<dd>{health.live_clients} · this tab: {words(live.status.state)}</dd>
-		</dl>
-	</section>
-
-	{#if update}
-		<section class="card" id="update-card" tabindex="-1" aria-labelledby="h-update" data-testid="update">
-			<div class="card-head">
-				<h2 id="h-update" class="h2">Updates</h2>
-				{#if update.newer}<span class="chip wait">New version</span>{/if}
-			</div>
-			<p class="small" class:notice={update.newer} data-testid="update-words">{updateWords(update)}</p>
-			{#if update.newer && releaseLink(update.link)}
-				<p class="small"><a href={releaseLink(update.link)} rel="noopener noreferrer" target="_blank">What is new in {update.latest}</a></p>
-			{:else if update.newer}
-				<p class="small" data-testid="update-version">Version {update.latest}</p>
-			{/if}
-			<p class="xs muted">Never updates itself. Pull the new image when ready.</p>
-			{#if goBack?.from_version}
-				{@const tag = imageTag(goBack.from_version)}
-				<div class="go-back" data-testid="go-back">
-					<h3 class="h3">Go back to {goBack.from_version}</h3>
-					<p class="small">HolyArrs kept a copy of its data from just before the update to {goBack.to_version} ({dateTime(goBack.created_at)}). To go back:</p>
-					<ol class="small">
-						<li>
-							Change the image back to
-							<span class="cmd"><code data-testid="go-back-image">{IMAGE}:{tag}</code><Button variant="plain" size="sm" type="button" onclick={() => copy(`${IMAGE}:${tag}`)} aria-label="Copy the image name">Copy</Button></span>
-							If you pull from another registry, keep its name and change only the tag to <code>{tag}</code>.
-						</li>
-						<li>Start the container again with that image (with Compose: <code>docker compose up -d</code>).</li>
-						<li>{goBack.from_version} sees that its data is newer and shows a page instead. There, type the one-time code from <code>docker logs &lt;container&gt;</code> and press <b>Put back the data from before the update</b>. HolyArrs then starts on that data.</li>
-					</ol>
-					<p class="xs muted">Later changes move to backups/before-restore-&lt;time&gt;. From the command line: <code>docker exec &lt;container&gt; /holyarrs restore --pre-update</code>, then <code>docker restart &lt;container&gt;</code>.</p>
-				</div>
-			{/if}
-			{#if update.on && session.can('settings')}
-				<div class="row" style="margin-top: var(--s-3)">
-					<Button type="button" onclick={checkUpdate} disabled={checking} aria-busy={checking}>Check for updates now</Button>
-				</div>
-			{/if}
-		</section>
-	{/if}
-
 	{#if uiLoaded}
 		<section class="card" id="history-keep-card" aria-labelledby="h-history-keep" data-testid="history-keep-setting">
 			<div class="card-head"><h2 id="h-history-keep" class="h2">History</h2></div>
@@ -433,24 +329,6 @@
 		.checks li > :global(.chip) {
 			align-self: flex-start;
 		}
-	}
-	.go-back {
-		margin-top: var(--s-4);
-		padding-top: var(--s-3);
-		border-top: 1px solid var(--line);
-	}
-	.go-back ol {
-		margin: var(--s-2) 0;
-		padding-left: 1.4em;
-		display: grid;
-		gap: var(--s-2);
-	}
-	.go-back .cmd {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--s-2);
-		flex-wrap: wrap;
-		max-width: 100%;
 	}
 	code {
 		font-family: var(--font-mono);

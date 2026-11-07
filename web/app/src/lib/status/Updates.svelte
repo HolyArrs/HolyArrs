@@ -11,6 +11,7 @@
 	import type { HealthCheck, UpdateInfo } from '../types.ts';
 	import Button from '../ui/Button.svelte';
 	import Releases from './Releases.svelte';
+	import GoBack from './GoBack.svelte';
 
 	type Update = UpdateInfo & { notes?: string };
 	let {
@@ -99,6 +100,8 @@
 		<ul class="notes">{#each notes as line (line)}<li>{line}</li>{/each}</ul>
 	</section>
 {/if}
+
+<GoBack version={real?.version} {canAct} />
 
 <Releases {upd} />
 
