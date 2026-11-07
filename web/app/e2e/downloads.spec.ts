@@ -114,8 +114,8 @@ test('Needs a decision says why and offers every choice in the row\'s details; s
 	await expect(card.getByRole('button', { name: 'Search again' })).toBeVisible();
 	await card.getByRole('button', { name: /^More/ }).click();
 	for (const name of ['Add to Turned down', 'Stop looking']) await expect(page.getByRole('menuitem', { name })).toBeVisible();
-	await expect(page.getByRole('menuitem', { name: 'Choose a release by hand' })).toHaveAttribute('href', /\/library\/\d+#h-rel$/);
-	await expect(page.getByRole('menuitem', { name: 'Add another Version' })).toHaveAttribute('href', /\/library\/\d+#h-versions$/);
+	await expect(page.getByRole('menuitem', { name: 'Choose a release by hand' })).toHaveAttribute('href', /\/library\/\d+\?tab=library&pick=1#h-rel$/);
+	await expect(page.getByRole('menuitem', { name: 'Add another Version' })).toHaveAttribute('href', /\/library\/\d+\?tab=library#h-versions$/);
 	await page.keyboard.press('Escape');
 
 	// Search again: nothing new passes, so it comes back here.

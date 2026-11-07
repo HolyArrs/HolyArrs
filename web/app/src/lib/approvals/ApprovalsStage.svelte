@@ -21,6 +21,7 @@
 	import AskParts from './AskParts.svelte';
 	import { agoLong, dateTime } from '../format.ts';
 	import { to } from '../paths.ts';
+	import { session } from '../session.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
 	import { lifecycle, upcoming, type Life, type LifeFacts } from './lifecycle.ts';
@@ -111,6 +112,8 @@
 		return lifecycle(a, out ? { ...part, upcoming: shortDate(out) } : live.upcoming !== undefined ? { ...part, upcoming: live.upcoming } : part);
 	});
 	const failed = $derived(status && askTab(picked) === 'failed');
+	// An approved ask with a download in play links to its row on Downloads.
+	const dlId = $derived(status && picked.state === 'approved' && picked.title_id && session.can('manage_library') ? ctx.live(picked).downloadId : undefined);
 	// A declined ask had nothing approved: its list is what was asked for.
 	const listName = $derived(picked.state === 'turned_down' ? 'What was asked' : 'What was approved');
 	const sentence = $derived.by(() => {
@@ -322,6 +325,7 @@
 					<div class="says">
 						<p class="huge tone-{life.tone}">{life.label}</p>
 						<p class="sent">{sentence}{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
+						{#if dlId}<a class="tl-link" href={to(`/downloads?open=${dlId}`)} data-testid="ask-download">See download<Icon name="chevronRight" size={16} /></a>{/if}
 					</div>
 					{#if picked.kind !== 'movie' && !choosing}
 						<button type="button" class="act glass peek" data-opens-sheet onclick={() => void choose()}><Icon name="chevronUp" size={18} />{listName}</button>

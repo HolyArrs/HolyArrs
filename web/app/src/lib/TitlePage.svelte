@@ -112,10 +112,16 @@
 			const events = api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=30`).catch(() => ({ events: [] }));
 			owned = await api.get<TitleView>(`/titles/${id}`);
 			ownedEvents = (await events).events ?? [];
+			ownedFailed = false;
 		} catch {
-			owned = null;
+			// A failed live refresh keeps what is shown; a first load says so, with Retry.
+			if (owned?.id !== id) {
+				owned = null;
+				ownedFailed = true;
+			}
 		}
 	}
+	let ownedFailed = $state(false);
 	let ownTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && ['episodes', 'library'].includes(new URLSearchParams(location.search).get('tab') ?? '') ? 'library' : 'overview');
 	// Keep the open tab in the address, so reload and Back land on the same tab.
 	function setTab(v: typeof ownTab) {
@@ -141,13 +147,16 @@
 	let epLoading = $state(false);
 	// Seasons start closed; each one you open loads its episodes (with files) once.
 	const openSeasons = new SvelteSet<number>();
+	const seasonFailed = new SvelteSet<number>();
 	let seasonEps = $state<Record<number, SheetEpisode[]>>({});
 	async function loadSeason(id: number, n: number) {
 		try {
 			const r = await api.get<{ episodes: SheetEpisode[] }>(`/titles/${id}/episodes?season=${n}&files=1`);
 			seasonEps = { ...seasonEps, [n]: r.episodes ?? [] };
+			seasonFailed.delete(n);
 		} catch {
-			seasonEps = { ...seasonEps, [n]: [] };
+			// Left unset, so opening it again (or Retry) asks once more.
+			seasonFailed.add(n);
 		}
 	}
 	function toggleSeason(id: number, n: number) {
@@ -1275,6 +1284,7 @@
 									</div>
 									{#if isOpen}
 										<div class="lib-eps">
+											{#if seasonFailed.has(se.number) && !seasonEps[se.number]}<p class="form-error" role="alert">Couldn't load this season. <button type="button" class="lib-link" onclick={() => loadSeason(o.id, se.number)}>Retry</button></p>{/if}
 											{#each seasonEps[se.number] ?? [] as e (e.id)}
 												{@const st = e.slots[0]}
 												{@const tone = epTone(st?.state ?? '')}
@@ -1435,6 +1445,9 @@
 				{@render libPane()}
 			{/if}
 		{/snippet}
+		{#if !owned && ownedFailed && libraryId}
+			<LoadError hasData={false} message="Could not load this title's Library details." onretry={() => libraryId && void loadOwned(libraryId)} />
+		{/if}
 		{#if owned}
 			<!-- Underline tabs under the hero: Overview and Library. -->
 			{@render ownTabBar()}

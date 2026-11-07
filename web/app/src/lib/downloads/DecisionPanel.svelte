@@ -68,8 +68,8 @@
 	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
 		const out: MenuItem[] = [];
 		if (fix !== 'search') out.push({ label: 'Search again', onselect: () => act(d, 'search', false, key) });
-		if (fix !== 'hand') out.push({ label: 'Choose a release by hand', href: to(`/library/${d.title_id}#h-rel`) });
-		if (!manyWords(d.kind)) out.push({ label: d.versions > 1 ? 'Try another Version' : 'Add another Version', href: to(`/library/${d.title_id}#h-versions`) });
+		if (fix !== 'hand') out.push({ label: 'Choose a release by hand', href: to(`/library/${d.title_id}?tab=library&pick=1#h-rel`) });
+		if (!manyWords(d.kind)) out.push({ label: d.versions > 1 ? 'Try another Version' : 'Add another Version', href: to(`/library/${d.title_id}?tab=library#h-versions`) });
 		if (d.release_id) out.push({ label: 'Add to Turned down', onselect: () => act(d, 'turn_down', false, key) });
 		out.push({ label: 'Stop looking', destructive: true, onselect: () => act(d, 'stop', false, key) });
 		out.push({ kind: 'separator' }, { label: 'Open title', href: to(`/library/${d.title_id}`) });
@@ -146,7 +146,7 @@
 				{#if fix === 'edition'}
 					<Button size="sm" variant="primary" aria-expanded={!!editOpen[key]} aria-controls="ed-form-{key}" onclick={() => (editOpen[key] = !editOpen[key])} data-testid="decision-fix">Set edition</Button>
 				{:else if fix === 'hand'}
-					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}#h-rel`)} data-testid="decision-fix">Choose a release by hand</Button>
+					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library&pick=1#h-rel`)} data-testid="decision-fix">Choose a release by hand</Button>
 				{:else}
 					<Button size="sm" variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">Search again</Button>
 				{/if}
