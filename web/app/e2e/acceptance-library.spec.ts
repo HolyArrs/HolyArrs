@@ -96,7 +96,7 @@ test('music adoption and rename stay on one fixture and prove the exact disk res
 	// Rename files is in the album's More menu.
 	await page.getByRole('button', { name: 'More actions' }).first().click();
 	await page.getByRole('menuitem', { name: 'Rename files' }).click();
-	const dialog = page.getByRole('dialog', { name: 'Rename the files of Low Orbit' });
+	const dialog = page.getByRole('dialog', { name: 'Rename files' }).filter({ hasText: 'Low Orbit' });
 	const steps = dialog.getByTestId('rename-step');
 	await expect(steps).toHaveCount(2);
 	await expect(steps.nth(0)).toContainText('Copper Wren/Low Orbit (2018)/01 - Song 1.1.mp3');

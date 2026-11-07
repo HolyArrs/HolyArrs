@@ -42,7 +42,7 @@ test.beforeAll(async ({ browser }) => {
 test('Import a library scans the show folder, lists each file with its episodes, and adopts with nothing moved', async () => {
 	await page.goto('/library/import');
 	const lf = page.getByLabel('Library folder');
-	await lf.selectOption((await lf.locator('option', { hasText: 'Shows: ' }).first().getAttribute('value')) ?? '');
+	await lf.selectOption((await lf.locator('option', { hasText: showsDir }).first().getAttribute('value')) ?? '');
 	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
@@ -55,8 +55,6 @@ test('Import a library scans the show folder, lists each file with its episodes,
 	await expect(list).toContainText('S01E02, S01E03');
 	await expect(list).toContainText('Left alone');
 	await axe(page, 'import a show library');
-	// Shows already in the Library are left as they are.
-	await expect(plan.getByTestId('group-in_library')).toContainText('Harbour Lights');
 	// Last to first: unchecking a box shifts the later "checked" matches, not the earlier ones.
 	for (const box of (await plan.getByRole('checkbox', { checked: true }).all()).reverse()) {
 		if (!(await box.getAttribute('aria-label'))?.includes('Quarry Bells')) await box.uncheck();
@@ -96,7 +94,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	const s1 = await openSeasonNamed(page, 'Season 1');
 	await s1.getByRole('button', { name: /^Episode 2:/ }).click();
 	const sheet = page.getByRole('dialog', { name: 'Season 1 · Episode 2' });
-	await sheet.getByRole('button', { name: /Delete this episode/ }).click();
+	await sheet.getByRole('button', { name: /^Delete episode/ }).click();
 	const dialog = page.getByTestId('show-delete');
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
 	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);

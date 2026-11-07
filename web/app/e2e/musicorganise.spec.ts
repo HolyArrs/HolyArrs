@@ -40,7 +40,7 @@ async function artistSetting(p: Page, name: RegExp) {
 }
 
 async function openAlbum(p: Page, artist: string, album: string) {
-	await p.goto('/library');
+	await p.goto('/library?kind=artist');
 	await p.getByRole('link', { name: new RegExp(artist) }).first().click();
 	await p.getByRole('link', { name: album, exact: true }).first().click();
 	await expect(p.getByRole('heading', { level: 1, name: album })).toBeVisible();
@@ -86,14 +86,14 @@ test('Settings > Naming has music patterns with a live example', async () => {
 test('Rename files on the album page renames its tracks into the new album folder', async () => {
 	await openAlbum(page, 'Tin Lanterns', 'Harbour Songs');
 	await titleAction(page, 'More actions', 'Rename files');
-	const dialog = page.getByRole('dialog', { name: 'Rename the files of Harbour Songs' });
+	const dialog = page.getByRole('dialog', { name: 'Rename files' }).filter({ hasText: 'Harbour Songs' });
 	await expect(dialog.getByTestId('rename-step')).toHaveCount(3);
 	await expect(dialog.getByTestId('rename-step').first()).toContainText('Tin Lanterns/2019 - Harbour Songs/01 - Song 1.1.flac');
 	await axe(page, 'album rename preview');
 	await dialog.getByRole('button', { name: 'Rename 3 files' }).click();
 	await expect(page.getByText('3 files renamed')).toBeVisible({ timeout: 30_000 });
-	await expect(dialog.getByTestId('rename-none')).toBeVisible();
-	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+	// The window closes by itself once the rename is done.
+	await expect(dialog).toBeHidden();
 	const folder = join(musicDir, 'Tin Lanterns', '2019 - Harbour Songs');
 	expect(readdirSync(folder).sort()).toEqual(['01 - Song 1.1.flac', '02 - Song 1.2.flac', '03 - Song 1.3.flac']);
 	// The artist's Library tab has the whole artist's rename: nothing left.
@@ -186,9 +186,9 @@ test('the album page, import and delete work at phone width', async ({ browser }
 	await axe(phone, 'delete an album on a phone');
 	await phone.getByTestId('show-delete').getByRole('button', { name: 'Cancel' }).click();
 	await titleAction(phone, 'More actions', 'Rename files');
-	await expect(phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' })).toBeVisible();
+	await expect(phone.getByRole('dialog', { name: 'Rename files' }).filter({ hasText: 'Low Orbit' })).toBeVisible();
 	await noSidewaysScroll(phone);
-	await phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' }).getByRole('button', { name: 'Close', exact: true }).click();
+	await phone.getByRole('dialog', { name: 'Rename files' }).filter({ hasText: 'Low Orbit' }).getByRole('button', { name: 'Close', exact: true }).click();
 	for (const path of ['/library/import', '/settings/naming', '/calendar?titles=music']) {
 		await phone.goto(path);
 		await expect(phone.getByRole('heading', { level: 1 })).toBeVisible();
