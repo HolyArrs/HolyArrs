@@ -17,7 +17,7 @@ import {
 	type RemovePlan,
 	type RenameStep
 } from './organise.ts';
-import { albumHave, entryHref, entryKey, entryName, shows } from '../calendar.ts';
+import { albumHave, entryHref, entryKey, entryName, shows } from '../discover/calendar.ts';
 import type { CalendarEntry } from '../core/types.ts';
 
 describe('music library import', () => {

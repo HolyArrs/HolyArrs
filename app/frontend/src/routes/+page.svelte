@@ -9,7 +9,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
 	import { proxied, sized } from '#lib/core/tmdb-image.ts';
-	import { askArtist, askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
+	import { askArtist, askDetails, wantDetails, inbox } from '#lib/requests/index.ts';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { decisions } from '#lib/decisions.svelte.ts';
@@ -33,7 +33,6 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { inbox } from '#lib/requests.svelte.ts';
 
 	// Home is "my stuff": the server sends the row order per person (GET /home);
 	// every row hides when it has nothing.

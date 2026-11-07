@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../core/api.ts', () => ({ api: { get: vi.fn() } }));
 const { createMusicPrefetch, IN_FLIGHT, musicPrefetchURLs, pagePrefetchURLs, PER_MINUTE, VIEW_CARDS } = await import('./music-prefetch.ts');
-const { loadDetails } = await import('../title-details.ts');
+const { loadDetails } = await import('../metadata/title-details.ts');
 
 const A = 'f9133869-f87c-459c-9aa7-2f176cda7e06';
 const B = '9fff2f8a-21e6-47de-a2b8-7f449929d43f';

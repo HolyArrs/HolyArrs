@@ -34,7 +34,7 @@ describe('missLine', () => {
 
 describe('players use the shared line', () => {
 	const theater = readFileSync(new URL('../../../routes/(frame)/Theater.svelte', import.meta.url), 'utf8');
-	const trailers = readFileSync(new URL('../../TitleTrailers.svelte', import.meta.url), 'utf8');
+	const trailers = readFileSync(new URL('../../discover/TitleTrailers.svelte', import.meta.url), 'utf8');
 	it('the full-screen player shows missLine with the reason that rides on the embed', () => {
 		expect(theater).toContain("import { missLine } from '#lib/core/trailer/trailer-miss.ts';");
 		expect(theater).toContain('<p>{missLine(why, word)}</p>');

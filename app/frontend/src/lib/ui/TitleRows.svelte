@@ -1,12 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { api } from '../core/api.ts';
-	import { to } from '../core/paths.ts';
+	import { detailPath, to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
-	import { detailPath } from '../title-details.ts';
-	import { discoverCard, followsByTmdb, ownedMark, serviceRegion, type ExploreCard, type ProviderItem } from '../explore.ts';
-	import { defaultRegion } from './region.ts';
+		import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from './title-cards.ts';
+		import { defaultRegion, serviceRegion } from './region.ts';
 	import { audienceOf } from './title-status.ts';
 	import type { FilmographyPage } from './people.ts';
 	import type { Ask } from '../core/types.ts';
@@ -14,7 +13,7 @@
 	import WideCard from './WideCard.svelte';
 	import Sheet from './Sheet.svelte';
 	import TitleReviews from './TitleReviews.svelte';
-	import QuickAsk from '../QuickAsk.svelte';
+	import { QuickAsk } from '../requests/index.ts';
 	import IconButton from './IconButton.svelte';
 
 	// The requester rows of a movie or show page, read from the details

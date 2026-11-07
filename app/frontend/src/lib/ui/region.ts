@@ -8,3 +8,8 @@ export function defaultRegion(langs: readonly string[] = typeof navigator === 'u
 	}
 	return 'global';
 }
+
+/** serviceRegion: the person's country, else US. */
+export function serviceRegion(r: string): string {
+	return /^[A-Z]{2}$/.test(r) ? r : 'US';
+}

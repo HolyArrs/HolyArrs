@@ -34,8 +34,7 @@
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import type { AlbumSummary, EventPage, EventRecord, TitleView } from '#lib/core/types.ts';
 	import type { PressingView, TrackView } from '#lib/music/index.ts';
-	import ReportSheet from '#lib/reports/ReportSheet.svelte';
-	import { hasFile } from '#lib/reports.ts';
+	import { ReportSheet, hasFile } from '#lib/requests/index.ts';
 
 	const titleId = $derived(Number(page.params.id));
 	const albumId = $derived(Number(page.params.album));

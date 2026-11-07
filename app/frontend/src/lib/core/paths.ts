@@ -24,3 +24,8 @@ export function appPath(pathname: string): string {
 	if (pathname === base) return '/';
 	return pathname.startsWith(base + '/') ? pathname.slice(base.length) : pathname;
 }
+
+/** detailPath is the address of a title page that is not in the Library yet. */
+export function detailPath(kind: 'movie' | 'show', tmdb: string): string {
+	return `/title/${kind}/${encodeURIComponent(tmdb)}`;
+}

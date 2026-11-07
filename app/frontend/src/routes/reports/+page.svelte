@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ReportsList from '#lib/reports/ReportsList.svelte';
+	import { ReportsList } from '#lib/requests/index.ts';
 
 	// Reports (#36): the owner and admins see and answer every report;
 	// everyone else sees the ones they made. The list carries its own

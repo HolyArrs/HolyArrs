@@ -37,10 +37,8 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { pictureFor, pictureOf } from '#lib/core/pictures.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
-	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
+	import { AskArtistDialog, AddArtistDialog, refreshInbox } from '#lib/requests/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { albumYear } from './labels.ts';
 	import { releaseWords } from './music-trending.ts';

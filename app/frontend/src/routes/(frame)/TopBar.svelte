@@ -1,10 +1,8 @@
 <script lang="ts">
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import SearchField from '#lib/ui/SearchField.svelte';
-	import { topBar } from '#lib/scroll-bar.svelte.ts';
+	import { SearchField, topBar, cameFrom, pageLabel, type CameFrom } from '#lib/discover/index.ts';
 	import { topCrumbs } from '#lib/core/top-crumbs.svelte.ts';
 	import { afterNavigate } from '$app/navigation';
-	import { cameFrom, pageLabel, type CameFrom } from '#lib/came-from.svelte.ts';
 
 	// The 56px translucent bar above the content (tablet and desktop):
 	// sidebar toggle when collapsed, back/forward on detail pages, the one

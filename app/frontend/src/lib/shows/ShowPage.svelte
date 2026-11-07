@@ -35,7 +35,7 @@
 	import '../ui/title-page.css';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { decided } from '../requests.ts';
+	import { decided, AskShowDialog } from '../requests/index.ts';
 	import { groupDownloads } from '../history.ts';
 	import CompactRow from '../history-looks/CompactRow.svelte';
 	import { isRoutine } from '../history-looks/dirs.ts';
@@ -58,8 +58,7 @@
 		showProgress,
 	} from './labels.ts';
 	import type { Ask, EpisodeView, EventPage, EventRecord, PickRulesView, TitleView } from '../core/types.ts';
-	import type { LookupShow } from './types.ts';
-	import AskShowDialog from '../AskShowDialog.svelte';
+	import type { LookupShow } from '../core/types.ts';
 
 	let {
 		title,

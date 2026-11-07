@@ -14,7 +14,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/lists.ts';
+	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/requests/index.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 	import type { NeverAddEntry, OutsideList } from '#lib/requests/index.ts';
 

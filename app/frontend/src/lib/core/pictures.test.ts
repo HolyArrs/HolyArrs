@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { forgetPictures, pictureFor, pictureKey, pictureOf, ratioOf, registerPictures, versioned, withVersion } from './pictures.ts';
 import { createClient } from './api.ts';
-import { heroPictures } from '../hero-prefetch.ts';
+import { heroPictures } from '../discover/hero-prefetch.ts';
 
 const al = '21159e3f-172e-43f6-aa7d-8e06a81fea49';
 const ar = 'a74b1b7f-71a5-4011-9441-d0b5e4122711';

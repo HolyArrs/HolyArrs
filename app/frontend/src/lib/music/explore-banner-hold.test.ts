@@ -21,7 +21,7 @@ describe('Explore Music banner place', () => {
 	});
 
 	it('placeholder picks are as tall as the captionless covers', () => {
-		const gb = readFileSync(join(__dirname, '..', 'ui', 'GenreBanner.svelte'), 'utf8');
+		const gb = readFileSync(join(__dirname, '..', 'discover', 'GenreBanner.svelte'), 'utf8');
 		expect(gb).toMatch(/\.l2 \.picks :global\(\.sk-line\) \{ display: none; \}/);
 	});
 

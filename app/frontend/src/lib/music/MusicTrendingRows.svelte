@@ -3,8 +3,8 @@
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { refreshInbox } from '../requests.svelte.ts';
-	import type { OwnedIndex } from '../explore.ts';
+	import { refreshInbox, AddArtistDialog, AskArtistDialog } from '../requests/index.ts';
+	import type { OwnedIndex } from '../ui/title-cards.ts';
 	import { defaultRegion } from '../ui/region.ts';
 	import { coverFor } from './music-pages.ts';
 	import { heroArtists, heroLine } from './page-hero.ts';
@@ -23,8 +23,6 @@
 	import PosterCard from '../ui/PosterCard.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import EmptyState from '../ui/EmptyState.svelte';
-	import AddArtistDialog from '../AddArtistDialog.svelte';
-	import AskArtistDialog from '../AskArtistDialog.svelte';
 	import { stableRows } from '../ui/row-window.ts';
 
 	// Explore → Music. The server builds every row (personal first, then the

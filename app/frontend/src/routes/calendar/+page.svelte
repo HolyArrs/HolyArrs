@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
+	import { rebaseBar, ComingSoon, MiniMonth, FollowWho, CalBanner, CalListRows, rowWords, DEFAULT_LOOK, type CaptionLook, byDay, entryKey, readMonthHidden, saveMonthHidden, shiftMonth, shows, entryHref, weekStart, addDays, entryDay, rangeChunks, titlesFromAddress, monthRange, itemDot, oneMovieDate, movieFacts, followsOk, withFollow, readFollows, saveFollows, startFollows, type Follows, type MovieFacts, ymd, readView, saveView, startView, type CalendarView, type TitlesShown } from '#lib/discover/index.ts';
 	import { libraryBrief, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -21,44 +21,7 @@
 	import Badge from '#lib/ui/Badge.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
-	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
-	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
-	import FollowWho from '#lib/calendar/FollowWho.svelte';
-	import CalBanner from '#lib/calendar/CalBanner.svelte';
-	import CalListRows from '#lib/calendar/CalListRows.svelte';
-	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { setFollow } from '#lib/ui/follow.ts';
-	import {
-		byDay,
-		entryKey,
-		readMonthHidden,
-		saveMonthHidden,
-		shiftMonth,
-		shows,
-		entryHref,
-		weekStart,
-		addDays,
-		entryDay,
-		rangeChunks,
-		titlesFromAddress,
-		monthRange,
-		itemDot,
-		oneMovieDate,
-		movieFacts,
-		followsOk,
-		withFollow,
-		readFollows,
-		saveFollows,
-		startFollows,
-		type Follows,
-		type MovieFacts,
-		ymd,
-		readView,
-		saveView,
-		startView,
-		type CalendarView,
-		type TitlesShown
-	} from '#lib/calendar.ts';
 	import type { CalendarEntry, TitleView } from '#lib/core/types.ts';
 
 	const now = new Date();

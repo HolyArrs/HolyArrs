@@ -14,7 +14,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { askMoments, libraryMoments, momentWords } from '#lib/requests.ts';
+	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
 	import type { AlertView, Moment } from '#lib/core/types.ts';
 	import { switchKind } from './kind.ts';
 

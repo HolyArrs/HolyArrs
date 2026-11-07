@@ -12,10 +12,8 @@
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
-	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
+	import { AskArtistDialog, AddArtistDialog, refreshInbox } from '#lib/requests/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { albumYear, GapNotice, gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView, albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack, paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';

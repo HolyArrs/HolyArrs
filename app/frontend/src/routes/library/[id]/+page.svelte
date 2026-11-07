@@ -11,12 +11,12 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import EmptyState from '#lib/ui/TitleEmpty.svelte';
 	import { secondVersion, slotNotes, chooseWarnings, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, type RemovePlan, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
-	import { decided } from '#lib/requests.ts';
+	import { decided, ReportSheet } from '#lib/requests/index.ts';
 	import { downloadTone, percent, timeLeft } from '#lib/downloaders.ts';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 	import { ShowPage } from '#lib/shows/index.ts';
 	import { ArtistPage } from '#lib/music/index.ts';
-	import TitlePage from '#lib/TitlePage.svelte';
+	import { TitlePage } from '#lib/discover/index.ts';
 	import { goto } from '$app/navigation';
 	import { groupLabel, kindTone } from '#lib/history.ts';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
@@ -38,7 +38,6 @@
 	import { audienceOf, factsOf, titleStatus } from '#lib/ui/title-status.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import ReportSheet from '#lib/reports/ReportSheet.svelte';
 	import '#lib/ui/title-page.css';
 	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 
@@ -51,7 +50,7 @@
 		return target && (target === library || target.startsWith(`${library}?`)) ? target : own;
 	});
 	let title = $state<TitleView | null>(null);
-	// A movie or show with a TMDB id opens the one title page (lib/TitlePage.svelte), the same page
+	// A movie or show with a TMDB id opens the one title page (lib/discover/TitlePage.svelte), the same page
 	// New & Popular, Explore and search open; its Library tab and More menu hold the manager tools.
 	// The page below stays only for titles without a TMDB id.
 	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;

@@ -1,0 +1,10 @@
+export { detailPath } from './title-details.ts';
+export { fourKOffer } from './title-details.ts';
+export { fromMetadata } from './title-details.ts';
+export { installHeroPrefetch } from './title-details.ts';
+export { isDetailKind } from './title-details.ts';
+export { loadDetails } from './title-details.ts';
+export { remember } from './title-details.ts';
+export { remembered } from './title-details.ts';
+export type { DetailKind } from './title-details.ts';
+export type { TitleDetails } from './title-details.ts';

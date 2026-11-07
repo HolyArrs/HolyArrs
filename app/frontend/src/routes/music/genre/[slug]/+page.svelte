@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { api } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { ownedIndex } from '#lib/explore.ts';
+	import { ownedIndex } from '#lib/ui/title-cards.ts';
 	import { MusicTrendingRows } from '#lib/music/index.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 

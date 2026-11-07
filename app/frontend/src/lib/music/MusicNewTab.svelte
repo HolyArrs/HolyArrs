@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { refreshInbox } from '../requests.svelte.ts';
+	import { refreshInbox, AddArtistDialog, AskArtistDialog } from '../requests/index.ts';
 	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music-trending.ts';
 	import { coverFor } from './music-pages.ts';
 	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
@@ -22,8 +22,6 @@
 	import PosterCard from '../ui/PosterCard.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import EmptyState from '../ui/EmptyState.svelte';
-	import AddArtistDialog from '../AddArtistDialog.svelte';
-	import AskArtistDialog from '../AskArtistDialog.svelte';
 
 	let { manage, mayAsk, folders, rules }: { manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[] } = $props();
 

@@ -18,7 +18,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { to } from './core/paths.ts';
-	import { detailPath } from './title-details.ts';
+	import { detailPath } from './metadata/index.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from './core/trailer/trailer.ts';
 	import { profile, loadProfile, saveDisplayName } from './account/profile.svelte.ts';

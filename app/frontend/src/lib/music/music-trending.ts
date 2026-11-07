@@ -4,7 +4,7 @@ import { versioned } from '../core/pictures.ts';
 import { api, ApiError, type Client } from '../core/api.ts';
 import type { Fresh } from '../ui/fresh.ts';
 import { to } from '../core/paths.ts';
-import type { ExploreCard } from '../explore.ts';
+import type { ExploreCard } from '../ui/title-cards.ts';
 import type { CalendarEntry } from '../core/types.ts';
 
 export type MusicTrendKind = 'artist' | 'album';

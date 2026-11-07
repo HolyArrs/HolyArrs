@@ -20,17 +20,16 @@
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
-	import { inbox, refreshInbox } from '#lib/requests.svelte.ts';
+	import { inbox, refreshInbox } from '#lib/requests/index.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { needsAttention } from '#lib/settings-status.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
-	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
+	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
-	import { installHeroPrefetch } from '#lib/title-details.ts';
-	import { installHeroAhead } from '#lib/hero-prefetch.ts';
+	import { installHeroPrefetch } from '#lib/metadata/index.ts';
 	import { idlePages, installRowAhead } from '#lib/core/smart-preload.ts';
 	import { preloadHero } from '#lib/core/tmdb-image.ts';
 	import AppShell from './(frame)/AppShell.svelte';
@@ -48,8 +47,6 @@
 	import { trackInputModality } from './(frame)/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
 	import { dlTop } from '#lib/dl-top.svelte.ts';
-	import { checkHero, installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
-	import { arrived, leaving } from '#lib/came-from.svelte.ts';
 	import {
 		buildNav,
 		currentHref,

@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { createClient, EARLY_MAX, type EarlyAsks } from './api.ts';
-import { headPath, readServices, serviceRegion } from '../explore.ts';
+import { headPath } from '../discover/explore-server.ts';
+import { readServices, serviceRegion } from '../discover/explore-services.ts';
 import { fetchMusicExplore } from '../music/music-trending.ts';
 import { musicPrefetchURLs } from '../music/music-prefetch.ts';
-import { firstPageURL } from '../person-prefetch.ts';
-import { loadDetails } from '../title-details.ts';
+import { firstPageURL } from '../discover/person-prefetch.ts';
+import { loadDetails } from '../metadata/title-details.ts';
 
 // app.html's boot-request script, run as the browser would, with a stand-in page.
 const html = readFileSync(new URL('../../app.html', import.meta.url), 'utf8');

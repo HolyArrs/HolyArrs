@@ -16,7 +16,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sessions from '#lib/Sessions.svelte';
 	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
-	import { kindAsks } from '#lib/requests.ts';
+	import { kindAsks } from '#lib/requests/index.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { kidLabel, ratingChoices } from '#lib/kid.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';

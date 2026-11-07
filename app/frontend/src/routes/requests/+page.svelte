@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { proxied } from '#lib/core/tmdb-image.ts';
-	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
+	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, inbox, markRead, refreshInbox, listReports, liveByTitle, liveFacts, stepFacts, type TitleLive, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/core/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -20,24 +20,16 @@
 	import { loadProfile, profile } from '#lib/account/profile.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/core/plain.ts';
-	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/requests.ts';
 	import { partsNow } from '#lib/mediafiles/index.ts';
-	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
-	import { listReports } from '#lib/reports.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 	import type { AskLimit } from '#lib/requests/index.ts';
 	import type { SearchView } from '#lib/core/types.ts';
 	import type { DownloadRow } from '#lib/core/types.ts';
-	import { liveByTitle, liveFacts, stepFacts, type TitleLive } from '#lib/approvals/live.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { albumWords } from '#lib/music/index.ts';
 	import { titleStatus } from '#lib/ui/title-status.ts';
-	import { askHref, type ApprovalsCtx, type DecideOptions, type Member } from '#lib/approvals/approvals.ts';
-	import { artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
-	import { askedByOne, askers } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
 	import { watchlistLine } from '#lib/account/watchlist.ts';
-	import ApprovalsDesktop from '#lib/approvals/ApprovalsDesktop.svelte';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -256,7 +248,7 @@
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
 			tab = approver ? 'waiting' : firstTab(asks);
 			// ?ask=<id> (History's "Go to Requests"): a member's cards open on that ask, ringed and scrolled to.
-			// Approvers get its window from the Cards (lib/approvals/ApprovalsDesktop.svelte).
+			// Approvers get its window from the Cards (lib/requests/RequestsBoard.svelte).
 			const want = Number(new URLSearchParams(location.search).get('ask')) || 0;
 			const a = !approver && want ? asks.find((x) => x.id === want) : undefined;
 			if (!a) return;
@@ -572,7 +564,7 @@
 		return rules.filter((r) => !r.kinds.length || r.kinds.includes(k));
 	};
 	const people = $derived(askers(asks));
-	const ctx: ApprovalsCtx = {
+	const ctx: BoardCtx = {
 		get shown() { return shown; },
 		live: (a) => {
 			if (a.problem) return { phase: 'failed', reason: a.problem };
@@ -808,7 +800,7 @@
 					/>
 				{:else}
 					<!-- Approvers: Cards (every width) or the Stage (wide screens); design-notes/approvals-stage.md. -->
-					<ApprovalsDesktop {ctx} />
+					<RequestsBoard {ctx} />
 				{/if}
 			</PageLoader>
 		{/if}
@@ -924,7 +916,7 @@
 	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
 	.rp-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) and (pointer: coarse) { .rp-link { min-height: 44px; } }
-	/* People who cannot approve: the approvers' card language (lib/approvals/ApprovalsDesktop.svelte) around their own lines. */
+	/* People who cannot approve: the approvers' card language (lib/requests/RequestsBoard.svelte) around their own lines. */
 	.ap-top.mem { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
 	.ask-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 	.tb { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); white-space: nowrap; text-decoration: none; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }

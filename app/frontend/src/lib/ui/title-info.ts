@@ -1,6 +1,6 @@
 // The details a title page reads from GET /metadata/{kind}/{tmdb}: people,
 // where to stream, similar titles and the collection, tolerating missing fields.
-import type { ProviderItem } from '../explore.ts';
+import type { ProviderItem } from './title-cards.ts';
 
 export type InfoKind = 'movie' | 'show';
 

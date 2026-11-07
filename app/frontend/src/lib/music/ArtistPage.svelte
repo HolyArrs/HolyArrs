@@ -13,8 +13,7 @@
 	import { session } from '../core/session.svelte.ts';
 	import { audienceStatus } from '../ui/title-status.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { decided } from '../requests.ts';
-	import AskArtistDialog from '../AskArtistDialog.svelte';
+	import { decided, AskArtistDialog } from '../requests/index.ts';
 	import { albumWords, artistProgress } from './labels.ts';
 	import type { Ask, TitleView } from '../core/types.ts';
 	import type { LookupArtist } from './types.ts';

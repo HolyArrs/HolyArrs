@@ -1,5 +1,5 @@
 <script lang="ts">
-	import StatusIcon, { type StatusKey } from '../approvals/StatusIcon.svelte';
+	import StatusIcon, { type StatusKey } from './StatusIcon.svelte';
 
 	// A step capsule: a tinted pill whose fill shows how far a step is, with
 	// an icon, a word and a detail. The look is the Requests capsule's.

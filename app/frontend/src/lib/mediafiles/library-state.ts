@@ -4,7 +4,7 @@
 import type { TitleView } from '../core/types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { IconName } from '../ui/Icon.svelte';
-import { quality } from '../explore.ts';
+import { quality } from '../ui/title-cards.ts';
 import { date } from '../core/format.ts';
 
 export type LibStateKey =

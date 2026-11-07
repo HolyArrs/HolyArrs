@@ -1,7 +1,7 @@
 <script module lang="ts">
 	// Back to Search reuses what was on screen: the answers kept when Search was
 	// left, for that history entry and address only (a fresh visit loads anew).
-	import { historyIndex } from '#lib/came-from.svelte.ts';
+	import { historyIndex, SearchField, BrowseTile, MusicBrowseSections, MosaicReveal, ENTER_DELAY, ENTER_SWEEP, passAt, browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTileData as Tile, type CategoryView, type MoodView, byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson, live, addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope, genrePath, type GenreAnswer, describes, found, plainPath, understood, type PlainAnswer } from '#lib/discover/index.ts';
 	let kept: { key: string; data: unknown } | null = null;
 	function entryKey(): string {
 		if (typeof history === 'undefined') return '';
@@ -14,18 +14,13 @@
 	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
-	import SearchField from '#lib/ui/SearchField.svelte';
 	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { session } from '#lib/core/session.svelte.ts';
-	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import { MusicTileGrid, appPicture, artistHref, fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData, albumWords } from '#lib/music/index.ts';
-	import MusicBrowseSections from '#lib/ui/MusicBrowseSections.svelte';
-	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
-	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -38,22 +33,15 @@
 	import { plainReason } from '#lib/core/plain.ts';
 	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
-	import type { LookupShow } from '#lib/shows/index.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
 	import type { PersonSummary } from '#lib/ui/people.ts';
-	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
-	import { refreshInbox } from '#lib/requests.svelte.ts';
-	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
-	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
-	import QuickAsk from '#lib/QuickAsk.svelte';
+	import { refreshInbox, AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { createLatestOnly } from '#lib/history.ts';
-	import { live } from '#lib/live-search.ts';
-	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';
 	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';
-	import { detailPath } from '#lib/title-details.ts';
-	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
+	import { detailPath } from '#lib/metadata/index.ts';
+	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import { describes, found, plainPath, understood, type PlainAnswer } from '#lib/plain-search.ts';
 
 	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;
 	// on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope

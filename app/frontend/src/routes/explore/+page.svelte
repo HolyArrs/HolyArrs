@@ -6,81 +6,31 @@
 <script lang="ts">
 	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
-	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
+	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, genrePath, genresFor, parseGenre, type GenreAnswer, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, pickerServices, readServices, serviceRegion, SERVICES_KEY, SERVICES_SHOWN, type WatchService, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, GENRES, leaveOut, newHref, newServicesPath, type NewServicesAnswer, browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTileData as BrowseTile, fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer, whyShown } from '#lib/discover/index.ts';
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
-	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
+	import { detailPath, loadDetails, remember } from '#lib/metadata/index.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/requests.svelte.ts';
-	import {
-		cardAction,
-		followsByTmdb,
-		cardTmdb,
-		discoverCard,
-		headPath,
-		liveCard,
-		matchOwned,
-		ownedIndex,
-		ownedMark,
-		ownedTitle,
-		markTransitions,
-		cardIdentity,
-		dedupeTop,
-		filterRows,
-		parseType,
-		pickerServices,
-		readServices,
-		serverRow,
-		serviceRegion,
-		SERVICES_KEY,
-		SERVICES_SHOWN,
-		tailPath,
-		typeHref,
-		genrePath,
-		genresFor,
-		parseGenre,
-		enoughCards,
-		genreRowPath,
-		genreCardHref,
-		genreRowAfter,
-		GENRE_ROW_MAX,
-		ROW_MIN,
-		type GenreRowCard,
-		type GenreAnswer,
-		type ExploreType,
-		type ExploreCard,
-		type ExploreRow,
-		type HeadAnswer,
-		type TailAnswer,
-		type WatchService
-	} from '#lib/explore.ts';
+	import { refreshInbox, QuickAsk } from '#lib/requests/index.ts';
+	import { cardAction, followsByTmdb, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
 	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
-	import type { LookupShow, ShowSettings } from '#lib/shows/index.ts';
+	import type { ShowSettings } from '#lib/shows/index.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
-	import QuickAsk from '#lib/QuickAsk.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
-	import TopServicesRow from '#lib/TopServicesRow.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
-	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
-	import GenreBanner from '#lib/ui/GenreBanner.svelte';
-	import { GENRES } from '#lib/explore.ts';
-	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
-	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
 	import { fitTile } from '#lib/core/tmdb-image.ts';
-	import { fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer } from '#lib/category-strip.ts';
-	import { whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { SkCard, SkRail } from '#lib/ui/sk/index.ts';

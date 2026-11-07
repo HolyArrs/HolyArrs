@@ -34,10 +34,10 @@
 	import { peopleNames, plainReason } from '#lib/core/plain.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { audienceOf, audienceStatus } from '#lib/ui/title-status.ts';
-	import { quality } from '#lib/explore.ts';
+	import { quality } from '#lib/ui/title-cards.ts';
 	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
 	import type { MovieCollection, CollectionDetail } from '#lib/mediafiles/index.ts';
-	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
+	import { ownedMark, type ExploreCard } from '#lib/ui/title-cards.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 
