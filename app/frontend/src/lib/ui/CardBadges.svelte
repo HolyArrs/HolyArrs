@@ -4,12 +4,15 @@
 </script>
 
 <script lang="ts">
+	// Corner marks for a card: ownership state and a freshness tag.
 	import Icon from './Icon.svelte';
 	import { freshLabel, type Fresh } from './fresh.ts';
 
 	let { fresh = null, owned = null, size = 'md' }: { fresh?: Fresh | null; owned?: CardOwned | null; size?: 'sm' | 'md' } = $props();
 
+	// Download percent parsed from the label; NaN means unknown.
 	const pct = $derived(owned?.state === 'downloading' ? Number(/(\d+)%/.exec(owned.label)?.[1] ?? NaN) : NaN);
+	// Ring radius and length in the 24px viewbox, for the progress arc.
 	const R = 9;
 	const C = 2 * Math.PI * R;
 </script>
@@ -41,6 +44,7 @@
 {/if}
 
 <style>
+	/* Marks are drawn over the card art and must not catch clicks. */
 	.mark, .fresh { position: absolute; z-index: 2; pointer-events: none; }
 	.mark {
 		right: 8px; top: 8px;
@@ -72,6 +76,7 @@
 	.sm.mark :global(svg) { width: 12px; height: 12px; }
 	.sm.mark.downloading :global(svg) { width: 17px; height: 17px; }
 	.sm.fresh { height: 16px; font-size: 10px; padding: 0 5px; }
+	/* Colors are dropped in forced colors, so add an outline. */
 	@media (forced-colors: active) {
 		.mark, .fresh { border: 1px solid CanvasText; }
 	}

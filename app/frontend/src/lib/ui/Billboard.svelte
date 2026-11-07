@@ -1,13 +1,14 @@
 <script lang="ts">
+	// Hero banner: art, optional trailer that autoplays when in view, and a quiet text mode.
 	import { onMount, type Snippet } from 'svelte';
 	import HeroMotion from './HeroMotion.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
+	import { heroQuiet, wordsShown, type HeroPhase } from './hero-quiet.ts';
 	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
 	import { dwell, HERO_DELAY, type Video } from '../core/trailer/trailer.ts';
 	import { fromHandoff, openTheater, resumedPlaying, takeBack, theater, type TheaterHandoff } from '../core/trailer/theater.svelte.ts';
 	import { THEATER_CHROME_MS, THEATER_SHRINK_MS } from '../core/motion.ts';
-	import { heroQuiet, wordsShown, type HeroPhase } from './hero-quiet.ts';
 
 	let {
 		label,
@@ -60,27 +61,25 @@
 	let playing = $state(false);
 	let finished = $state(false);
 	let autoPlayed = $state(false);
-
 	let phase = $state<HeroPhase>('still');
-	const words = heroQuiet((p) => (phase = p));
-	const quiet = $derived(!wordsShown(phase));
-	$effect(() => () => words.dispose());
 	let painted = $state(false);
 	let artLoaded = $state(false);
 	let artFailed = $state(false);
-	const artReady = $derived(artLoaded || !!art || !pictures.length);
-	const trailer = $derived(!!kind && !!tmdb && painted && artReady);
-	const wait = dwell(HERO_DELAY, () => (armed = true));
-
-	function expand(o: TheaterHandoff) {
-		if (!kind || !tmdb) return;
-		playing = false;
-		openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hero', returnTo: box?.querySelector<HTMLElement>('.actions a[href], .actions button') ?? null });
-	}
-
 	let resumeAt = $state(0);
 	let resumeRun = $state(0);
+	// Plain flag: only read by heroPlaying, never drives markup.
 	let resuming = false;
+
+	const words = heroQuiet((p) => (phase = p));
+	const wait = dwell(HERO_DELAY, () => (armed = true));
+
+	const quiet = $derived(!wordsShown(phase));
+	const artReady = $derived(artLoaded || !!art || !pictures.length);
+	const trailer = $derived(!!kind && !!tmdb && painted && artReady);
+
+	$effect(() => () => words.dispose());
+
+	// Coming back from the theater: resume the trailer where it left off, adding the time the exit animation took.
 	$effect(() => {
 		if (!theater.back) return;
 		const b = takeBack(kind, tmdb);
@@ -91,16 +90,8 @@
 		wait.cancel();
 		armed = true;
 	});
-	function heroPlaying() {
-		playing = true;
-		autoPlayed = true;
-		words.send('play');
-		if (resuming) {
-			resuming = false;
-			resumedPlaying();
-		}
-	}
 
+	// A new title starts from a clean state.
 	$effect(() => {
 		void kind;
 		void tmdb;
@@ -112,6 +103,7 @@
 		words.send('reset');
 	});
 
+	// Arm the trailer only while it is visible, settled and not already done.
 	$effect(() => {
 		if (finished && inView) return;
 		if (once && autoPlayed && inView && armed) return;
@@ -125,6 +117,7 @@
 		return () => wait.cancel();
 	});
 
+	// Load trailer sources once armed; abort if the title changes first.
 	$effect(() => {
 		if (!armed || !kind || !tmdb) {
 			sources = [];
@@ -149,6 +142,7 @@
 		artFailed = false;
 	});
 
+	// Two frames wait so the first paint is done before a trailer can start. 0.6 means mostly on screen.
 	onMount(() => {
 		requestAnimationFrame(() => requestAnimationFrame(() => (painted = true)));
 		const io = new IntersectionObserver(([e]) => (inView = e.isIntersecting && e.intersectionRatio >= 0.6), { threshold: [0, 0.6, 1] });
@@ -160,6 +154,22 @@
 			document.removeEventListener('visibilitychange', vis);
 		};
 	});
+
+	function expand(o: TheaterHandoff) {
+		if (!kind || !tmdb) return;
+		playing = false;
+		openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hero', returnTo: box?.querySelector<HTMLElement>('.actions a[href], .actions button') ?? null });
+	}
+
+	function heroPlaying() {
+		playing = true;
+		autoPlayed = true;
+		words.send('play');
+		if (resuming) {
+			resuming = false;
+			resumedPlaying();
+		}
+	}
 </script>
 
 <section class="ui-billboard" class:quiet class:reveal bind:this={box} data-hero aria-label={label} data-testid={testid}>
@@ -203,6 +213,7 @@
 		background: var(--hero-ink); color: var(--on-art, #fff);
 	}
 	.art { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: radial-gradient(110% 90% at 80% 20%, #2a2c33 0%, transparent 60%), linear-gradient(160deg, #1d1f25 0%, #0b0b0c 75%); }
+	/* Layered dark gradients keep light text readable on any art. */
 	.shade {
 		position: absolute; inset: 0; pointer-events: none;
 		background:
@@ -214,6 +225,7 @@
 	}
 	.shade.playing { opacity: .85; }
 	.ui-billboard:has(:global(.ctl [data-act])) :global([data-off-while-playing]) { display: none; }
+	/* Leave room for the top strip above the heading. */
 	.ui-billboard:has(> .top) { padding-top: 60px; }
 	.ui-billboard:has(> .top) .heading :global(.bb-logo img) { max-height: min(var(--title-h), calc(100% - 8px)); }
 	.top :global(:is(a, span, p, button, li)) { text-shadow: 0 1px 3px rgb(0 0 0 / 80%), 0 0 12px rgb(0 0 0 / 50%); }
@@ -221,6 +233,7 @@
 	.content { position: relative; width: clamp(320px, max(40%, min(500px, 60%)), 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	.fold { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows var(--dur-hero) var(--ease-in-out), opacity var(--dur-slow) var(--ease-in-out); }
 	.fold-in { min-height: 0; overflow: hidden; }
+	/* Quiet mode folds the extra text away until hover or focus. */
 	.quiet .fold { grid-template-rows: minmax(0, 0fr); opacity: 0; pointer-events: none; }
 	.quiet.reveal:hover .fold, .quiet.reveal:focus-within .fold { grid-template-rows: minmax(0, 1fr); opacity: 1; pointer-events: auto; }
 	.content { --title-h: clamp(80px, 10vw, 140px); min-height: 0; }
@@ -243,6 +256,7 @@
 	.actions :global(.ui-actmenu .ui-pop > .trigger) { height: var(--hero-btn); min-width: var(--hero-btn); font-size: clamp(16px, 1vw, 22px); }
 	.actions :global(.ui-actmenu.round .ui-pop > .trigger) { width: var(--hero-btn); }
 	.actions :global(.ui-ibtn) { width: var(--hero-btn); height: var(--hero-btn); }
+	/* Shade sits above the trailer, controls above the shade. */
 	.ui-billboard :global(.ui-trailer + .shade) { z-index: 1; }
 	.ui-billboard :global(.ctl) { z-index: 4; }
 	@media (max-width: 767px) {

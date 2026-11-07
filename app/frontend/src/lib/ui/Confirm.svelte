@@ -1,19 +1,23 @@
 <script lang="ts">
+	// Asks for the password again before a sensitive action, else shows the content.
 	import type { Snippet } from 'svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import { needsConfirm, type Sensitive } from './sensitive.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { needsConfirm, type Sensitive } from './sensitive.ts';
 
 	let { action, onCancel, children }: { action: Sensitive; onCancel?: () => void; children: Snippet } = $props();
 	const id = $props.id();
+
 	let typed = $state('');
 	let code = $state('');
 	let error = $state('');
 	let busy = $state(false);
+
 	const need = $derived(needsConfirm(action, { localRecent: session.s.localRecent, via: session.s.via, hasPassword: session.s.hasPassword, mustTwoFactor: session.s.mustTwoFactor }));
 
+	// Secrets are cleared whether or not it worked.
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		error = '';
@@ -57,5 +61,6 @@
 
 <style>
 	.confirm { display: flex; flex-direction: column; gap: 10px; width: min(100%, 420px); }
+	/* Tighter than the shared row gap. */
 	.acts { gap: 8px; }
 </style>

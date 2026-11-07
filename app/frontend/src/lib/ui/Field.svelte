@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Label, input slot, hint and error text, linked by the input id.
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -20,6 +21,7 @@
 </div>
 
 <style>
+	/* Required star and error text share the failure color. Other field styles are global. */
 	.req { color: var(--fail-text); }
 	.field-error { color: var(--fail-text); font: var(--t-footnote); }
 </style>

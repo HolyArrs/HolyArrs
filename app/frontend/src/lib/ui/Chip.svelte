@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Pill toggle with optional count, note and remove button.
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
 
@@ -40,5 +41,6 @@
 	.rm { display: grid; place-items: center; width: 28px; height: 28px; margin-right: 2px; border-radius: 50%; color: inherit; opacity: .75; }
 	.rm:hover { opacity: 1; background: rgb(127 127 127 / 18%); }
 	.main:focus-visible, .rm:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Bigger touch targets on touch screens. */
 	@media (pointer: coarse) { .main { min-height: 44px; } .rm { width: 40px; height: 40px; } }
 </style>
