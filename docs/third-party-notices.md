@@ -1,6 +1,6 @@
 # Third-party notices
 
-Every open-source part HolyArrs ships, with its licence texts. Written by `scripts/notices.py` from what the program links and what the built app holds; CI checks it stays complete.
+Every open-source part HolyArrs ships, with its licence texts. Written by `deploy/release/notices.py` from what the program links and what the built app holds; CI checks it stays complete.
 
 ## Go modules (the holyarrs program)
 
