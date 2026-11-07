@@ -1,12 +1,6 @@
-// What needs attention in Settings. The server works it out
-// (GET /settings/status); this file turns its answer into page and group
-// states for the Settings home and sidebar.
 export type Severity = 'info' | 'warning' | 'error';
 
-/** ServerStatus is the answer of GET /api/v1/settings/status. */
 export interface ServerStatus {
-	// group is the server's own grouping; the app sums pages by their href,
-	// so the menu can be regrouped without the server knowing.
 	items: { group: string; page: string; text: string; severity: Severity }[];
 	unset: Partial<Record<string, string[]>>;
 	known: string[];
@@ -25,12 +19,11 @@ export type GroupState = 'ok' | 'attention' | 'unset' | 'unknown';
 export interface StatusAnswer {
 	items: Attention[];
 	unset: Partial<Record<string, string[]>>;
-	/** Pages whose status is known: true when they are fine. */
 	known: Set<string>;
 	metadataUp: boolean;
 }
 
-/** fromServer turns the status route's answer into a StatusAnswer; null is "nothing known". */
+// null means nothing is known.
 export function fromServer(a: ServerStatus | null): StatusAnswer {
 	return {
 		items: (a?.items ?? []).map((i) => ({ group: i.group, href: i.page, text: i.text, severity: i.severity })),
@@ -40,7 +33,7 @@ export function fromServer(a: ServerStatus | null): StatusAnswer {
 	};
 }
 
-/** groupState sums up the pages of one group: something to fix, not set up, all set, or not known. */
+// Pages are summed by href, so the menu can be regrouped without the server.
 export function groupState(a: StatusAnswer, hrefs: string[]): { state: GroupState; count: number } {
 	const mine = new Set(hrefs);
 	const count = a.items.filter((i) => mine.has(i.href)).length;
@@ -50,7 +43,6 @@ export function groupState(a: StatusAnswer, hrefs: string[]): { state: GroupStat
 	return { state: 'unknown', count: 0 };
 }
 
-/** pageState sums up one page the same way. */
 export function pageState(a: StatusAnswer, href: string): { state: GroupState; count: number } {
 	const count = a.items.filter((i) => i.href === href).length;
 	if (count) return { state: 'attention', count };
@@ -59,7 +51,6 @@ export function pageState(a: StatusAnswer, href: string): { state: GroupState; c
 	return { state: 'unknown', count: 0 };
 }
 
-/** stateWords says a status in plain words. */
 export function stateWords(s: { state: GroupState; count: number }): string {
 	if (s.state === 'attention') return s.count === 1 ? '1 needs attention' : `${s.count} need attention`;
 	if (s.state === 'unset') return 'Not set up';
@@ -67,7 +58,6 @@ export function stateWords(s: { state: GroupState; count: number }): string {
 	return '';
 }
 
-/** needsAttention says whether anything in Settings needs a fix (the side menu's flag). */
 export function needsAttention(a: StatusAnswer | null): boolean {
 	return !!a && a.items.length > 0;
 }

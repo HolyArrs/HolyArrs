@@ -1,6 +1,4 @@
 <script lang="ts">
-	// The filled alert symbol: shape and colour carry the tone (check circle, warning
-	// triangle, info circle, amber "!" circle). Used by the toast pill and Recent alerts.
 	let { tone = 'info', size = 30 }: { tone?: 'ok' | 'fail' | 'info' | 'warn'; size?: number } = $props();
 </script>
 

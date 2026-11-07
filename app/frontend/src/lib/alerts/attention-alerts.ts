@@ -1,5 +1,3 @@
-// Settings health warnings (GET /settings/status) as pinned rows in Recent alerts:
-// the same title + second line pattern as every alert, plus a button to the page.
 import type { Attention } from './settings-status.ts';
 
 export interface PinnedAlert {
@@ -8,17 +6,10 @@ export interface PinnedAlert {
 	body?: string;
 	tone: 'fail' | 'warn' | 'info';
 	href: string;
-	/** The page's name for the button, such as "Backups". */
 	label: string;
 }
 
-const upper = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-
-/**
- * pinned turns status items into rows. The server writes "Page: Title: next step";
- * the page prefix is dropped (the button already names it), the rest splits into a
- * title and a second line.
- */
+// Server text looks like "Page: Title: next step". The page prefix is dropped because the button names it.
 export function pinned(items: Attention[], pages: { href: string; label: string }[]): PinnedAlert[] {
 	return items.map((i) => {
 		const label = pages.find((p) => p.href === i.href)?.label ?? 'Settings';
@@ -31,3 +22,5 @@ export function pinned(items: Attention[], pages: { href: string; label: string 
 		return { key: `${i.href}|${i.text}`, title, body, tone, href: i.href, label };
 	});
 }
+
+const upper = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);

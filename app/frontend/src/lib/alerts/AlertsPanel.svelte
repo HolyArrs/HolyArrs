@@ -10,12 +10,20 @@
 	import { session } from '../core/session.svelte.ts';
 	import { to } from '../core/paths.ts';
 
-	// before and after are pinned rows from other parts of the app: a new version first, downloads waiting for a decision last.
 	let { before = [], after = [] }: { before?: PinnedAlert[]; after?: PinnedAlert[] } = $props();
 
-	// Recent alerts: the last 50 alerts on this device, newest first. Desktop: a glass
-	// panel beside the side menu's bell. Phone: a sheet from the bottom.
 	let phone = $state(false);
+	let left = $state(272);
+	let now = $state(Date.now());
+	let box = $state<HTMLElement>();
+	let wasOpen = false;
+
+	const fixes = $derived([
+		...before,
+		...(session.can('settings') ? pinned(settingsNow.answer?.items ?? [], sections) : []),
+		...after
+	]);
+
 	onMount(() => {
 		const mq = matchMedia('(max-width: 767px)');
 		const set = () => (phone = mq.matches);
@@ -24,23 +32,12 @@
 		return () => mq.removeEventListener('change', set);
 	});
 
-	// Settings health warnings stay pinned on top until they are fixed (no × on them).
-	const fixes = $derived([
-		...before,
-		...(session.can('settings') ? pinned(settingsNow.answer?.items ?? [], sections) : []),
-		...after
-	]);
-
-	// Opening shows everything waiting and clears the count (once per opening: alerts
-	// that arrive while it is open keep their "new" ring).
+	// untrack: alerts that arrive while open must keep their "new" ring.
 	$effect(() => {
 		if (alertsPanel.open) untrack(() => toasts.seeAll());
 	});
 
-	// Desktop panel: it sits just right of the side menu (open or folded), takes focus
-	// when it opens and gives it back to the bell when it closes.
-	let left = $state(272);
-	let wasOpen = false;
+	// Place the panel beside the side menu, then move focus in on open and back to the bell on close.
 	$effect(() => {
 		const open = alertsPanel.open && !phone;
 		if (open && !wasOpen) {
@@ -53,24 +50,13 @@
 		wasOpen = open;
 	});
 
-	// Times like "now", "2m", "1h"; refreshed while open.
-	let now = $state(Date.now());
 	$effect(() => {
 		if (!alertsPanel.open) return;
 		now = Date.now();
 		const t = setInterval(() => (now = Date.now()), 30_000);
 		return () => clearInterval(t);
 	});
-	function when(at: number) {
-		const s = Math.max(0, Math.round((now - at) / 1000));
-		if (s < 45) return 'now';
-		if (s < 3600) return `${Math.round(s / 60)}m`;
-		if (s < 86400) return `${Math.round(s / 3600)}h`;
-		return `${Math.round(s / 86400)}d`;
-	}
-	const live = (p: { action?: unknown; until?: number }) => !!p.action && (!p.until || now <= p.until);
 
-	let box = $state<HTMLElement>();
 	function close() {
 		alertsPanel.open = false;
 	}
@@ -83,6 +69,14 @@
 		e.stopPropagation();
 		close();
 	}
+	function when(at: number) {
+		const s = Math.max(0, Math.round((now - at) / 1000));
+		if (s < 45) return 'now';
+		if (s < 3600) return `${Math.round(s / 60)}m`;
+		if (s < 86400) return `${Math.round(s / 3600)}h`;
+		return `${Math.round(s / 86400)}d`;
+	}
+	const live = (p: { action?: unknown; until?: number }) => !!p.action && (!p.until || now <= p.until);
 </script>
 
 <svelte:window onpointerdown={alertsPanel.open && !phone ? outside : undefined} onkeydown={key} />
@@ -146,7 +140,6 @@
 {/if}
 
 <style>
-	/* Same dark glass as the alert pills. */
 	.panel:focus { outline: none; }
 	.panel {
 		position: fixed;
@@ -171,10 +164,8 @@
 	.clear { font: var(--t-footnote); font-weight: 600; color: rgb(245 245 247 / 62%); padding: 4px 8px; border-radius: 999px; }
 	.clear:hover { color: #f5f5f7; background: rgb(255 255 255 / 10%); }
 	.rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; overscroll-behavior: contain; }
-	/* Each alert is its own glass card, like the pills that drop in. */
 	.row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 5%)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 0 0 0.5px rgb(255 255 255 / 7%), 0 4px 14px rgb(0 0 0 / 22%); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
 	.row:hover { background: linear-gradient(180deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 8%)); }
-	/* New since you last looked: a thin blue ring, matching the blue dot. */
 	.row.fresh { box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 0 0 1px rgb(100 181 255 / 28%), 0 4px 14px rgb(0 0 0 / 22%); }
 	.tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 	.t { font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -192,15 +183,12 @@
 	.pins { flex: none; margin-bottom: 8px; }
 	a.act { text-decoration: none; }
 	.empty { padding: 20px 8px; text-align: center; color: rgb(245 245 247 / 55%); font: var(--t-subhead); }
-	/* Phone sheet: the app's own sheet, light or dark, so rows take the theme's colours. */
 	.sheet-body { display: flex; flex-direction: column; gap: 4px; }
 	.sheet-body .tools { display: flex; justify-content: flex-end; }
 	.sheet-body .sub, .sheet-body .clear, .sheet-body .b, .sheet-body time, .sheet-body .x, .sheet-body .empty { color: var(--text-muted); }
 	.sheet-body .act { color: var(--text); background: var(--surface-2); }
-	/* Phone sheet: the same separate cards, in the theme's own surface. */
 	.sheet-body .row, .sheet-body .row:hover { background: var(--surface-1); box-shadow: inset 0 0 0 0.5px var(--line), 0 2px 8px rgb(0 0 0 / 8%); }
 	.sheet-body .row.fresh { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #0071e3) 35%, transparent), 0 2px 8px rgb(0 0 0 / 8%); }
-	/* Touch: a bigger hit area around the same small ×, so the column keeps its shape. */
 	.x { position: relative; }
 	@media (pointer: coarse) { .x::after { content: ''; position: absolute; inset: -10px; } }
 </style>
