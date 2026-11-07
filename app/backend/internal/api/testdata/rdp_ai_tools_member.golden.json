@@ -1,0 +1,131 @@
+{
+  "tools": [
+    {
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "description": "Find movies and shows in plain words, like \"funny 90s movies\" or \"space movie from 2014\". Returns Library titles and titles that could be asked for.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "description": "What to look for, in plain words.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "search_titles",
+      "title": "Search titles"
+    },
+    {
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "description": "Check whether a movie, show or artist is in the Library, by name.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "all",
+              "movie",
+              "show",
+              "music"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "The name to look for.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "library_lookup",
+      "title": "Look in the Library"
+    },
+    {
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "description": "What comes out in the next days: movies and episodes of shows in the Library.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "description": "How many days ahead, 1 to 60 (default 14).",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "name": "calendar",
+      "title": "Calendar"
+    },
+    {
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "description": "What is downloading now and how far along it is. Read only.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "name": "downloads",
+      "title": "Downloads"
+    },
+    {
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "description": "The person's own requests and their state, and how many more they may ask for.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "name": "my_asks",
+      "title": "My requests"
+    },
+    {
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "description": "Ask for a movie or show by its TMDB id. The first call returns a summary and a confirm_token; call again with the token after the person agrees.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_token": {
+            "description": "Leave out on the first call. Send the confirm_token from the first answer after the person agreed.",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "movie",
+              "show"
+            ],
+            "type": "string"
+          },
+          "tmdb_id": {
+            "description": "The TMDB id, like 693134.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tmdb_id"
+        ],
+        "type": "object"
+      },
+      "name": "ask_for_title",
+      "title": "Ask for a title"
+    }
+  ]
+}
