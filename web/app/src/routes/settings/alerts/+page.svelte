@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { session } from '#lib/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -217,12 +218,12 @@
 				<Field id="al-kind" label="Kind">
 					<select id="al-kind" class="input" bind:value={() => form.kind, (k) => (form = switchKind(form, k))}>
 						<option value="discord">Discord</option>
-						<option value="telegram">Telegram</option>
-						<option value="ntfy">ntfy</option>
-						<option value="gotify">Gotify</option>
-						<option value="pushover">Pushover</option>
+						{#if !session.held('alert_channels_more')}<option value="telegram">Telegram</option>{/if}
+						{#if !session.held('alert_channels_more')}<option value="ntfy">ntfy</option>{/if}
+						{#if !session.held('alert_channels_more')}<option value="gotify">Gotify</option>{/if}
+						{#if !session.held('alert_channels_more')}<option value="pushover">Pushover</option>{/if}
 						<option value="email">Email</option>
-						<option value="webhook">Webhook (JSON)</option>
+						{#if !session.held('alert_channels_more')}<option value="webhook">Webhook (JSON)</option>{/if}
 					</select>
 				</Field>
 			{/if}

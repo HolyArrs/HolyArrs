@@ -2,6 +2,7 @@
 // two-factor, Plex, Jellyfin, Emby and sign-out steps.
 
 import { api as defaultClient, type Client } from './api';
+import { setHeld } from './settings.ts';
 
 export type SessionState = 'unknown' | 'signed_out' | 'needs_setup' | 'signed_in';
 export type Role = 'owner' | 'admin' | 'member';
@@ -32,6 +33,8 @@ export interface Me {
 	/** Age-rating limit ('' = none; set means a Kid account). */
 	max_rating?: string;
 	rating_country?: string;
+	/** Features held back from this release (switched off on the server). */
+	held?: string[];
 }
 
 /** A Jellyfin or Emby server found on the local network at first run. */
@@ -81,6 +84,7 @@ export function createSession(client: Client = defaultClient) {
 		setupWays: Way[];
 		/** The server started in safe mode: only the core runs. */
 		safeMode: boolean;
+		held: string[];
 		/** /config is not mapped to the host (first-run note). */
 		configUnmapped: boolean;
 		/** The shortest password the owner allows (a setting; 4 at least). */
@@ -104,6 +108,7 @@ export function createSession(client: Client = defaultClient) {
 		ways: ['password'],
 		setupWays: ['password'],
 		safeMode: false,
+		held: [],
 		configUnmapped: false,
 		minPassword: 8
 	});
@@ -161,6 +166,8 @@ export function createSession(client: Client = defaultClient) {
 		s.avatar = me.avatar ?? null;
 		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
+		s.held = me.held ?? [];
+		setHeld((f) => s.held.includes(f));
 		s.state = 'signed_in';
 	}
 
@@ -342,9 +349,15 @@ export function createSession(client: Client = defaultClient) {
 		return s.perms.includes(p);
 	}
 
+	/** held says whether a feature is held back from this release (off on the server). */
+	function held(name: string): boolean {
+		return s.held.includes(name);
+	}
+
 	client.onSignedOut(lost);
 
 	return {
+		held,
 		s,
 		load,
 		login,

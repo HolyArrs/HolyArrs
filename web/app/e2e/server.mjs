@@ -33,12 +33,14 @@ const subs = spawn(subsBin, ['-addr', `127.0.0.1:${subsPort}`], { cwd: tmp, stdi
 const stopFakes = startFakes();
 // Trailers come from the fake YouTube, and the trailer pass starts soon and
 // runs often, so a title noted by a page is looked up within seconds.
+// Features held back from the release (internal/feature) are switched on here so their specs keep running.
+const heldOn = 'ai_apps,plex_watchlists,row_title_stats,trakt_lists,alert_channels_more,subtitle_sites,emby_signin,go_back';
 const trailerEnv = { HOLYARRS_YOUTUBE_URL: youtubeURL(), HOLYARRS_TRAILER_PASS_FIRST: '2s', HOLYARRS_TRAILER_PASS_EVERY: '3s' };
 const plex = `http://127.0.0.1:${plexPort}`;
 const child = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${port}`], {
 	cwd: tmp,
 	stdio: 'inherit',
-	env: { ...process.env, HOLYARRS_PLEX_URL: plex, HOLYARRS_PLEX_APP_URL: `${plex}/app`, HOLYARRS_PLEX_DISCOVER_URL: `${plex}/discover`, ...metadataEnv, HOLYARRS_RELEASE_FEED: `http://127.0.0.1:${tmdbPort}/releases/latest`, HOLYARRS_TRAKT_URL: `http://127.0.0.1:${traktPort}`, HOLYARRS_TVMAZE_URL: `http://127.0.0.1:${tvmazePort}`, HOLYARRS_MUSICBRAINZ_URL: `http://127.0.0.1:${mbPort}`, HOLYARRS_DEEZER_URL: deezerURL, HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP: 'true', ...trailerEnv }
+	env: { ...process.env, HOLYARRS_PLEX_URL: plex, HOLYARRS_PLEX_APP_URL: `${plex}/app`, HOLYARRS_PLEX_DISCOVER_URL: `${plex}/discover`, ...metadataEnv, HOLYARRS_RELEASE_FEED: `http://127.0.0.1:${tmdbPort}/releases/latest`, HOLYARRS_TRAKT_URL: `http://127.0.0.1:${traktPort}`, HOLYARRS_TVMAZE_URL: `http://127.0.0.1:${tvmazePort}`, HOLYARRS_MUSICBRAINZ_URL: `http://127.0.0.1:${mbPort}`, HOLYARRS_DEEZER_URL: deezerURL, HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP: 'true', ...trailerEnv, HOLYARRS_FLAGS: [process.env.HOLYARRS_FLAGS, heldOn].filter(Boolean).join(',') }
 });
 const stop = () => {
 	child.kill();

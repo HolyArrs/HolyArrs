@@ -4,6 +4,7 @@
 package auth
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -573,7 +574,9 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.providerRoutes(m)
 	a.plexMineRoutes(m)
 	a.ssoRoutes(m)
-	a.aiOAuthRoutes(m)
+	if feature.On(feature.AIApps) {
+		a.aiOAuthRoutes(m)
+	}
 }
 
 func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
@@ -1380,7 +1383,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
 		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "setup_open": setupOpen, "has_password": hasPassword,
-		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
+		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "held": feature.Off(), "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
 // Cleanup drops ended sessions.

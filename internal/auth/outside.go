@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"crypto/subtle"
 	"database/sql"
@@ -65,7 +66,7 @@ type WayView struct {
 
 func (a *Auth) way(ctx context.Context, p string) WayView {
 	v := WayView{
-		On:       a.signInSetting(ctx, p+"_on") == "true",
+		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || feature.On(feature.EmbySignIn)),
 		URL:      a.signInSetting(ctx, p+"_url"),
 		ServerID: a.signInSetting(ctx, p+"_server_id"),
 		Join:     a.signInSetting(ctx, p+"_join"),

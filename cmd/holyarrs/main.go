@@ -2,6 +2,7 @@
 package main
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"bufio"
 	"context"
 	"database/sql"
@@ -739,6 +740,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// that finds nothing to do.
 	var watchlists atomic.Pointer[asks.Watchlists]
 	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
+		if !feature.On(feature.PlexWatchlists) {
+			r.SetResult(map[string]any{"skipped": "held back"})
+			return nil
+		}
 		if w := watchlists.Load(); w != nil {
 			return w.Run(ctx, r)
 		}
@@ -746,6 +751,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return nil
 	})
 	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
+		if !feature.On(feature.PlexWatchlists) {
+			return false, nil, nil
+		}
 		if w := watchlists.Load(); w != nil {
 			return w.Probe(ctx, now)
 		}
@@ -756,7 +764,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	subs.Register(q)
 	if !c.SafeMode {
 		s.OnEvent(func(e domain.Event) {
-			if pc.On(parts.Subtitles) {
+			if pc.On(parts.Subtitles) && feature.On(feature.SubtitleSites) {
 				subs.OnEvent(e)
 			}
 		})

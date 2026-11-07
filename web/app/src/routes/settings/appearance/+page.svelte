@@ -81,7 +81,7 @@
 	}
 	onMount(() => {
 		if (session.can('settings')) void loadApp();
-		if (session.s.role === 'owner') void loadTitleStats();
+		if (session.s.role === 'owner' && !session.held('row_title_stats')) void loadTitleStats();
 	});
 </script>
 

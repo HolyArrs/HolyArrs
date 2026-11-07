@@ -257,9 +257,9 @@
 <section class="card subs" aria-labelledby="{idp}-h" data-testid="subtitles">
 	<div class="card-head" class:bare>
 		<h2 id="{idp}-h" class="h2" class:sr-only={bare}>{label ? `Subtitles of ${label}` : 'Subtitles'}</h2>
-		<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
+		{#if !session.held('subtitle_sites')}<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
 			Look for subtitles
-		</Button>
+		</Button>{/if}
 	</div>
 	{#if error}
 		<p class="notice bad" role="alert">{error}</p>
@@ -325,8 +325,8 @@
 										</span>
 										{#if ours(s)}
 											<span class="row sub-actions">
-												<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label="Sync fix for {langName(s.language, langs)}" data-testid="subtitle-sync">Sync fix</Button>
-												<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label="Turn down {langName(s.language, langs)}" data-testid="subtitle-turn-down">Turn down</Button>
+												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label="Sync fix for {langName(s.language, langs)}" data-testid="subtitle-sync">Sync fix</Button>{/if}
+												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label="Turn down {langName(s.language, langs)}" data-testid="subtitle-turn-down">Turn down</Button>{/if}
 											</span>
 										{/if}
 									</div>
@@ -394,9 +394,9 @@
 						</ul>
 					{/if}
 					<div class="row file-actions">
-						<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
+						{#if !session.held('subtitle_sites')}<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
 							Choose a subtitle
-						</Button>
+						</Button>{/if}
 					</div>
 					{#if choosing === f.file_id}
 						<div class="choices" aria-live="polite" data-testid="subtitle-choices">

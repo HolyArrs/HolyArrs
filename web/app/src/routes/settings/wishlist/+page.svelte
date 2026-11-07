@@ -178,12 +178,12 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="plex-watchlists" title="Plex watchlists" description="Watchlisted titles become requests">
+		{#if !session.held('plex_watchlists')}<SettingsCard id="plex-watchlists" title="Plex watchlists" description="Watchlisted titles become requests">
 			<label class="checkline">
 				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
 				<span><b>Request from Plex watchlists</b><br /><span class="hint">Each person turns it on in My account. Their Limits apply.</span></span>
 			</label>
-		</SettingsCard>
+		</SettingsCard>{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 	<SaveBar {dirty} form="wishlist-form" saving={busy} ondiscard={() => (settings = JSON.parse(saved))} />

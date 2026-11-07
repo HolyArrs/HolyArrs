@@ -3,6 +3,11 @@
 // the element id the page gives that field or card, and the other words a
 // person might type for it.
 
+import { isHeld } from './settings.ts';
+
+/** Search entries for features held back from this release, by anchor. */
+const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'sites-card': 'subtitle_sites', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
+
 export interface SettingEntry {
 	label: string;
 	href: string;
@@ -209,7 +214,7 @@ export function searchSettings(query: string, allowed: (href: string) => boolean
 	if (!words.length) return [];
 	const scored: { entry: SettingEntry; score: number; at: number }[] = [];
 	index.forEach((entry, at) => {
-		if (!allowed(entry.href)) return;
+		if (!allowed(entry.href) || isHeld(heldAnchors[entry.anchor])) return;
 		const label = norm(entry.label);
 		const all = `${label} ${norm(entry.words ?? '')} ${norm(groupOf(entry.href))}`;
 		if (!words.every((w) => all.includes(w))) return;

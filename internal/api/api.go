@@ -3,6 +3,7 @@
 package api
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -447,7 +448,9 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/strip", a.exploreStrip)
 	m.HandleFunc("POST /api/v1/explore/strip/counts", a.exploreStripCounts)
 	m.HandleFunc("DELETE /api/v1/explore/strip/counts", a.exploreStripReset)
-	m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
+	if feature.On(feature.RowTitleStats) {
+		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
+	}
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
 	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
 	m.HandleFunc("GET /api/v1/explore/music/rising", a.risingToday)
@@ -459,15 +462,19 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
 	if a.s.Secrets != nil {
-		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
-		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
-		m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
-		m.HandleFunc("PUT /api/v1/settings/trakt-token", a.putTraktToken)
+		if feature.On(feature.TraktLists) {
+			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
+			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
+			m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
+			m.HandleFunc("PUT /api/v1/settings/trakt-token", a.putTraktToken)
+		}
 		m.HandleFunc("GET /api/v1/settings/tvdb-key", a.getTVDBKey)
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
-	a.watchlistRoutes(m)
+	if feature.On(feature.PlexWatchlists) {
+		a.watchlistRoutes(m)
+	}
 	a.reportRoutes(m)
 	a.askedByRoutes(m)
 	a.profileRoutes(m)
@@ -482,7 +489,9 @@ func (a *API) Handler() http.Handler {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
-	a.mcpRoutes(m)
+	if feature.On(feature.AIApps) {
+		a.mcpRoutes(m)
+	}
 	a.oldAppRoutes(m)
 	m.Handle("GET /", web.Handler())
 	if a.s.Backups != nil {

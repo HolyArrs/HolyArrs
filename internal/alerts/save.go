@@ -1,6 +1,7 @@
 package alerts
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"database/sql"
 	"errors"
@@ -59,6 +60,10 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 	}
 	if isNew {
 		if !slices.Contains([]string{"discord", "email", "webhook", "telegram", "ntfy", "gotify", "pushover"}, in.Kind) {
+			return ErrKind
+		}
+		// Channels not yet proven end to end are held back (feature switch).
+		if !feature.ProvenAlertKinds[in.Kind] && !feature.On(feature.AlertChannelsMore) {
 			return ErrKind
 		}
 		a.Kind = in.Kind

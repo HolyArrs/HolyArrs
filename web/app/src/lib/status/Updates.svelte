@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { session } from '#lib/session.svelte.ts';
 	// The Updates tab: where this HolyArrs stands against the newest release,
 	// what is new since it, how an update is done (HolyArrs never updates
 	// itself), the built-in trailer reader's state, and every release.
@@ -101,7 +102,7 @@
 	</section>
 {/if}
 
-<GoBack version={real?.version} {canAct} />
+{#if !session.held('go_back')}<GoBack version={real?.version} {canAct} />{/if}
 
 <Releases {upd} />
 

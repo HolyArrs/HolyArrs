@@ -395,7 +395,7 @@
 		</p>
 	</SettingsCard>
 
-	{#each ['plex', 'jellyfin', 'emby'] as const as w (w)}
+	{#each (['plex', 'jellyfin', 'emby'] as const).filter((x) => x !== 'emby' || !session.held('emby_signin')) as w (w)}
 		<SettingsCard id="{w}-card" title={`Sign in with ${wayWord[w]}`}>
 			<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 				{#if w === 'plex'}

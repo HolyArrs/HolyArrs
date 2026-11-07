@@ -775,7 +775,7 @@
 	</div>
 </SettingsCard>
 
-{#if showWatchlistCard(watch) && watch}
+{#if showWatchlistCard(watch) && watch && !session.held('plex_watchlists')}
 	<SettingsCard id="watchlist-me" title="Plex watchlist" description="Titles on your Plex watchlist become your requests" icon="requests">
 		{#if !watch.can_read}
 			<p class="hint" data-testid="watchlist-cannot-read">Link Plex under Security to read your watchlist</p>

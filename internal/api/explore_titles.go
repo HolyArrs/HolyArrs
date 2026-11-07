@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"database/sql"
 	"net/http"
@@ -85,7 +86,7 @@ func (a *API) exploreTitleCount(ctx context.Context, member int64, field string,
 			keep = append(keep, l)
 		}
 	}
-	if len(keep) == 0 {
+	if len(keep) == 0 || !feature.On(feature.RowTitleStats) {
 		return
 	}
 	day := explore.Day(a.exploreNow())

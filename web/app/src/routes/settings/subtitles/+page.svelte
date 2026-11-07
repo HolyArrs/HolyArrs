@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { session } from '#lib/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -236,6 +237,7 @@
 		</SettingsCard>
 		{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	</form>
+	{#if !session.held('subtitle_sites')}
 	<section class="sites-sec" id="sites-card" aria-labelledby="h-sites" tabindex="-1">
 		<div class="sites-head">
 			<div>
@@ -367,6 +369,7 @@
 			</ul>
 		{/if}
 	</section>
+	{/if}
 
 	<div class="sc-form sub-more">
 		<SettingsCard id="when-to-look" title="When to look" description="New files search at once, then on a timer">

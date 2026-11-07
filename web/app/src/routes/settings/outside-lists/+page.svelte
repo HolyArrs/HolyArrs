@@ -244,7 +244,7 @@
 			</Field>
 			<Field id="ol-kind" label="Kind">
 				<select id="ol-kind" class="input" bind:value={kind}>
-					{#each listKinds as [k, label] (k)}<option value={k}>{label}</option>{/each}
+					{#each listKinds.filter(([k]) => k !== 'trakt_list' || !session.held('trakt_lists')) as [k, label] (k)}<option value={k}>{label}</option>{/each}
 				</select>
 			</Field>
 			<Field id="ol-holds" label="Adds">
@@ -349,6 +349,7 @@
 		</ul>
 	{/if}
 
+	{#if !session.held('trakt_lists')}
 	<section class="card" id="trakt-card" aria-labelledby="h-trakt">
 		<div class="card-head">
 			<h2 id="h-trakt" class="h2">Trakt key</h2>
@@ -370,6 +371,7 @@
 			<Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>Save</Button>
 		</form>
 	</section>
+	{/if}
 
 	<SettingsCard id="never-card" title="Never-add list" description="Never added by lists or by hand until removed">
 		<form class="never-form" onsubmit={addNever}>

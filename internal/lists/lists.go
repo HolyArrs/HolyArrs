@@ -4,6 +4,7 @@
 package lists
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"database/sql"
 	"errors"
@@ -74,6 +75,9 @@ func NormalRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case KindTrakt:
+		if !feature.On(feature.TraktLists) {
+			return "", ErrKind
+		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {
 			return m[1] + "/" + m[2] + m[3], nil
 		}

@@ -15,6 +15,8 @@ export interface Section {
 	tint: Tint;
 	/** users: owner and admins; self: everyone; library: settings or manage_library (read only); otherwise the settings permission. */
 	need?: 'users' | 'self' | 'library';
+	/** A feature switch: the section is hidden while that feature is held back. */
+	feature?: string;
 }
 
 export interface Group {
@@ -28,8 +30,18 @@ export interface Group {
 
 type Can = (p: 'settings' | 'users' | 'manage_library') => boolean;
 
+/** Features held back from this release; the session fills it in after sign-in. */
+let heldNow: (feature: string) => boolean = () => false;
+export function setHeld(fn: (feature: string) => boolean): void {
+	heldNow = fn;
+}
+export function isHeld(feature: string | undefined): boolean {
+	return !!feature && heldNow(feature);
+}
+
 /** mayOpen says whether a person may open one section. */
 export function mayOpen(s: Section, can: Can): boolean {
+	if (isHeld(s.feature)) return false;
 	if (s.need === 'self') return true;
 	if (s.need === 'users') return can('users');
 	if (s.need === 'library') return can('settings') || can('manage_library');
@@ -50,7 +62,7 @@ export const groups: Group[] = [
 	{ id: 'library', label: 'Library', icon: 'library', line: 'Where titles live', about: 'Folders, parts, defaults, subtitles, file names and moving in.' },
 	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, quality, search and schedules.' },
 	{ id: 'users', label: 'People', icon: 'people', line: 'Who comes in', about: 'Users, sign-in, request rules and appearance.' },
-	{ id: 'connections', label: 'Linked apps', icon: 'tv', line: 'What it connects', about: 'Media servers, alerts, AI apps, the API and metadata.' },
+	{ id: 'connections', label: 'Linked apps', icon: 'tv', line: 'What it connects', about: 'Media servers, alerts, the API and metadata.' },
 	{ id: 'system', label: 'Server', icon: 'tools', line: 'Keeps it healthy', about: 'Health, backups, this app, logs and the danger zone.' },
 	{ id: 'account', label: 'My account', icon: 'user', line: 'Just you', about: 'Password, two-factor, devices.' }
 ];
@@ -78,7 +90,7 @@ export const sections: Section[] = [
 
 	{ href: '/settings/media-servers', group: 'connections', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Plex, Jellyfin and Emby' },
 	{ href: '/settings/alerts', group: 'connections', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, email and more' },
-	{ href: '/settings/ai', group: 'connections', tint: 'indigo', label: 'AI apps', icon: 'sparkle', about: 'Let AI assistants use HolyArrs' },
+	{ href: '/settings/ai', group: 'connections', tint: 'indigo', label: 'AI apps', icon: 'sparkle', about: 'Let AI assistants use HolyArrs', feature: 'ai_apps' },
 	{ href: '/settings/api', group: 'connections', tint: 'gray', label: 'API', icon: 'key', about: 'Keys and routes for other apps' },
 	{ href: '/settings/tmdb', group: 'connections', tint: 'purple', label: 'Metadata', icon: 'sparkle', about: 'Where posters and names come from' },
 

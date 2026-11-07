@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/CoderLuii/holyarrs/internal/feature"
 	"context"
 	"errors"
 	"net/http"
@@ -19,6 +20,9 @@ func (a *API) subtitleRoutes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/settings/subtitles", a.putSubtitleSettings)
 	m.HandleFunc("GET /api/v1/titles/{id}/subtitles", a.titleSubtitles)
 	m.HandleFunc("PUT /api/v1/titles/{id}/subtitle-wish", a.putSubtitleWish)
+	if !feature.On(feature.SubtitleSites) {
+		return
+	}
 	m.HandleFunc("POST /api/v1/subtitles/search", a.searchSubtitles)
 	m.HandleFunc("GET /api/v1/subtitles/missing", a.missingSubtitles)
 	m.HandleFunc("POST /api/v1/subtitles/missing/search", a.searchMissingSubtitles)
