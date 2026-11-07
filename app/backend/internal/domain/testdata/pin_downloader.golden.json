@@ -1,0 +1,43 @@
+{
+  "ID": 5,
+  "CreatedAt": "2026-03-04T05:06:07Z",
+  "CreatedBy": {
+    "kind": "user",
+    "id": 2
+  },
+  "UpdatedAt": "2026-03-04T05:06:07Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "Name": "Q",
+  "Adapter": "qbittorrent",
+  "Protocol": "torrent",
+  "URL": "http://q:8080",
+  "SecretRef": 9,
+  "Category": "holyarrs",
+  "Priority": 1,
+  "PathMap": [
+    {
+      "theirs": "/downloads",
+      "ours": "/data/downloads"
+    }
+  ],
+  "AfterImport": "leave",
+  "SeedGoal": {
+    "ratio": 1.5,
+    "minutes": 30
+  },
+  "State": "ok",
+  "Username": "admin",
+  "AllowLocal": true,
+  "BackoffUntil": "2026-03-04T05:06:07Z",
+  "FailCount": 2,
+  "LastError": "boom",
+  "CheckedAt": "2026-03-04T05:06:07Z",
+  "Removed": false,
+  "Writable": true,
+  "ClearFinished": true,
+  "Tags": [
+    "4k"
+  ]
+}
