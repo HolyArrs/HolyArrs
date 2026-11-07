@@ -1,3 +1,4 @@
+// Anime mapping types and helpers that turn them into labels.
 export type AnimeTitle = { anilist: number; romaji?: string; english?: string; native?: string };
 export type AnimeSeasonPart = { anilist?: number; offset: number; title?: AnimeTitle };
 export type AnimeSeason = {
@@ -11,8 +12,10 @@ export type AnimeSeason = {
 };
 export type AnimeView = { anime: boolean; mapped: boolean; alt_names: string[]; titles: AnimeTitle[]; seasons: AnimeSeason[] };
 
+// Path of the anime metadata for one show.
 export const animePath = (kind: string, tmdb: string) => `/metadata/${kind}/${encodeURIComponent(tmdb)}/anime`;
 
+// Joins the distinct names of a title, skipping repeats that differ only by case.
 export function titleLine(t: AnimeTitle | undefined): string {
 	if (!t) return '';
 	const seen = new Set<string>();
@@ -27,6 +30,7 @@ export function titleLine(t: AnimeTitle | undefined): string {
 	return out.join(' · ');
 }
 
+// Builds the small info line for a season: names, running numbers and later parts.
 export function seasonAnimeLine(view: AnimeView | null | undefined, season: number, episodes: number): string {
 	const s = view?.seasons.find((x) => x.number === season);
 	if (!s) return '';
@@ -44,7 +48,7 @@ export function seasonAnimeLine(view: AnimeView | null | undefined, season: numb
 	return bits.join(' · ');
 }
 
-// The cour is the last part that starts before the episode; the number counts from its offset.
+// A season can be split into cours; the episode is numbered from the last cour that started before it.
 export function animeEpisode(view: AnimeView | null | undefined, season: number, episode: number): { anilist?: number; episode: number; absolute?: number } {
 	const s = view?.seasons.find((x) => x.number === season);
 	if (!s) return { episode };

@@ -1,3 +1,4 @@
+// Public surface of the shows folder.
 export type * from './types.ts';
 export { default as EpisodeSheet } from './EpisodeSheet.svelte';
 export { default as SeasonFolds } from './SeasonFolds.svelte';

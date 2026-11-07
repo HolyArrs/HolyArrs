@@ -1,3 +1,4 @@
+// Labels, choices and status text for shows, seasons and episodes.
 import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
 import { date } from '../core/format.ts';
 import { episodeCode } from '../core/episodes.ts';
@@ -6,8 +7,10 @@ export { episodeCode };
 
 type SeasonLike = { number: number; aired?: number; episodes?: number; not_out_yet?: number; next_air_date?: string; year?: number };
 
+// Slot states where a manual search makes sense.
 const searchStates = ['wanted', 'better_wanted', 'failed', 'rejected', 'stalled', 'not_out_yet', 'held', 'needs_a_decision'];
 
+// Choices are [value, name, help text].
 export const seasonChoices: [string, string, string][] = [
 	['all', 'All seasons', 'Every episode of every season (specials stay off).'],
 	['future', 'Future seasons only', 'Nothing that is out already: only episodes airing from today on, and every season to come.'],
@@ -30,7 +33,7 @@ export function label(list: [string, string, ...string[]][], v: string | undefin
 	return list.find(([k]) => k === v)?.[1] ?? v ?? '';
 }
 
-// Matches the wording the server uses.
+// Matches the wording the server uses for the same list.
 export function seasonWords(seasons: number[] | undefined): string {
 	const s = seasons ?? [];
 	if (s.length === 0) return 'the whole show';
@@ -56,6 +59,7 @@ export function seasonLine(s: SeasonSummary): string {
 	return parts.join(' · ');
 }
 
+// Picks the badge for a show, most urgent need first.
 export function showState(s: ShowInfo | undefined): { state: string; label: string } {
 	if (!s) return { state: '', label: '' };
 	if (s.missing) return { state: 'wanted', label: `${s.missing} missing` };
@@ -75,6 +79,7 @@ export function mainSlot(e: EpisodeView) {
 	return e.slots[0];
 }
 
+// Explains why an episode is or is not kept, from the broadest switch to the narrowest.
 export function episodeWhy(e: EpisodeView, seasonKept: boolean, showKept: boolean): string {
 	const s = mainSlot(e);
 	if (s && (s.state === 'in_library' || s.state === 'better_wanted')) return s.reason ?? '';
@@ -82,7 +87,7 @@ export function episodeWhy(e: EpisodeView, seasonKept: boolean, showKept: boolea
 	if (!seasonKept) return 'Keep up to date is off for this season.';
 	if (!e.keep_up_to_date) return 'Keep up to date is off for this episode.';
 	if (s?.state === 'not_out_yet') return e.air_date ? `Counts as missing once it airs (${date(e.air_date)}).` : 'No air date yet.';
-	// Notes like "aired …" repeat the date already shown beside the episode.
+	// Notes like "aired ..." repeat the date already shown beside the episode.
 	if (s?.reason && !/^airs? |^aired /.test(s.reason)) return s.reason;
 	return '';
 }
@@ -96,6 +101,7 @@ export function seasonLooking(eps: EpisodeView[]): number {
 	return eps.filter((e) => ['wanted', 'better_wanted', 'failed', 'rejected', 'stalled'].includes(mainSlot(e)?.state ?? '')).length;
 }
 
+// Skips specials and seasons with nothing aired or coming.
 export function newestSeason(seasons: SeasonLike[]): number | undefined {
 	const regular = seasons.filter((s) => s.number > 0).sort((a, b) => b.number - a.number);
 	const live = regular.find((s) => (s.aired ?? s.episodes ?? 0) > 0 || (s.not_out_yet ?? 0) > 0 || !!s.next_air_date);
@@ -118,6 +124,7 @@ export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
 	return '';
 }
 
+// Total aired episodes across all seasons.
 function airedOf(s: ShowInfo): number {
 	return s.seasons.reduce((n, x) => n + x.aired, 0);
 }
