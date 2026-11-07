@@ -28,7 +28,7 @@ test('Settings home: five group cards; a card opens its group with a row of caps
 	await expect(page).toHaveURL(/\/settings\/downloaders$/);
 	await expect(page.getByTestId('settings-group-name')).toHaveText('Downloads');
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
-	await expect(nav.getByRole('link', { name: 'Pick rules' })).toBeVisible();
+	await expect(nav.getByRole('link', { name: 'Quality', exact: true })).toBeVisible();
 	await expect(nav.getByRole('link', { name: 'Library folders' })).toHaveCount(0);
 	await page.getByTestId('settings-back').click();
 	await expect(page).toHaveURL(/\/settings$/);
@@ -170,7 +170,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	// A folder and Pick rules of its own, Keep up to date and Search when added off.
 	const first = (await folder.locator('option').nth(1).getAttribute('value'))!;
 	await folder.selectOption(first);
-	await movies.getByLabel('Pick rules').selectOption({ label: '4K' });
+	await movies.getByLabel('Quality', { exact: true }).selectOption({ label: '4K' });
 	await movies.getByLabel('Keep up to date').uncheck();
 	await movies.getByLabel('Search when added').uncheck();
 	const bar = page.getByTestId('savebar');
@@ -179,7 +179,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await expect(bar).toHaveCount(0);
 	await page.reload();
 	await expect(movies.getByLabel('Library folder')).toHaveValue(first);
-	await expect(movies.getByLabel('Pick rules').locator('option:checked')).toHaveText('4K');
+	await expect(movies.getByLabel('Quality', { exact: true }).locator('option:checked')).toHaveText('4K');
 	await expect(movies.getByLabel('Keep up to date')).not.toBeChecked();
 	await expect(movies.getByLabel('Search when added')).not.toBeChecked();
 
@@ -208,7 +208,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	// Back to the built-in choices for the tests after this one.
 	await page.goto('/settings/title-defaults');
 	await movies.getByLabel('Library folder').selectOption('0');
-	await movies.getByLabel('Pick rules').selectOption('0');
+	await movies.getByLabel('Quality', { exact: true }).selectOption('0');
 	await movies.getByLabel('Keep up to date').check();
 	await movies.getByLabel('Search when added').check();
 	await bar.getByRole('button', { name: 'Save' }).click();

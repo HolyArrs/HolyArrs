@@ -146,7 +146,7 @@
 							<span class="pp" id="line-{group.id}">{group.line}</span>
 						</span>
 						{#if gs && (gs.state === 'attention' || gs.state === 'unset') && stateWords(gs)}<span class="chip {tone(gs.state)}" data-testid="group-status">{stateWords(gs)}</span>{/if}
-						<span class="art-hold"><GroupArt group={group.id} posters={homeArt.posters} people={homeArt.people} look={page.url.searchParams.get('look') ?? '1'} /></span>
+						<span class="art-hold"><GroupArt group={group.id} posters={homeArt.posters} people={homeArt.people} /></span>
 					</span>
 				</a>
 			{/each}
