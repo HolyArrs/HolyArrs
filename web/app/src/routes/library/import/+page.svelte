@@ -55,6 +55,8 @@
 	// Follow what is brought in: it goes on my calendar (ticked by default).
 	let followAll = $state(true);
 	let results = $state<AdoptResult[] | null>(null);
+	// A large folder scanned in parts: where the next scan starts, kept after adopting.
+	let restFrom = $state('');
 
 	let lookFor = $state<string | null>(null);
 	let term = $state('');
@@ -110,6 +112,7 @@
 		error = '';
 		plan = null;
 		results = null;
+		restFrom = '';
 		try {
 			const r = await api.post<{ job_id: number }>(`/library-folders/${folderId}/scan`, after ? { after } : undefined);
 			const end = await follow(r.job_id);
@@ -197,6 +200,7 @@
 			results = (end.Result?.results as AdoptResult[]) ?? [];
 			const n = results.filter((x) => x.title_id).length;
 			toasts.push(n === 1 ? `1 ${word} adopted` : `${n} ${word}s adopted`, n ? 'ok' : 'info', { body: 'No file was moved' });
+			restFrom = plan?.more ? (plan.next ?? '') : '';
 			plan = null;
 		} catch (e) {
 			error = message(e);
@@ -267,7 +271,7 @@
 					</li>
 				{/each}
 			</ul>
-			<div class="row end"><Button href={to('/library')}>Go to the Library</Button></div>
+			<div class="row end">{#if restFrom}<Button onclick={() => scan(restFrom)} disabled={scanning || adopting}>Scan the rest</Button>{/if}<Button href={to('/library')}>Go to the Library</Button></div>
 		</section>
 	{/if}
 
