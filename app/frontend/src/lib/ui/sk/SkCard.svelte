@@ -1,5 +1,5 @@
 <script lang="ts">
-	// A 2:3 poster card placeholder with the two text lines under it (the PosterCard size).
+	// Loading stand-in for a poster card, sized to match the real one.
 	let { text = true, round = false }: { text?: boolean; round?: boolean } = $props();
 </script>
 
@@ -10,6 +10,7 @@
 
 <style>
 	.sk-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	/* Poster ratio keeps the box the same height as the loaded card. */
 	.art { aspect-ratio: var(--poster-ratio); width: 100%; }
 	.round { aspect-ratio: 1; border-radius: 50%; }
 	.a { width: 80%; height: 13px; }

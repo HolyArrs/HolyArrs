@@ -1,5 +1,5 @@
 <script lang="ts">
-	// A 16:9 wide card placeholder (the WideCard size).
+	// Loading stand-in for a wide card, sized to match the real one.
 	let { text = false }: { text?: boolean } = $props();
 </script>
 
@@ -10,6 +10,7 @@
 
 <style>
 	.sk-wide { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	/* Wide ratio keeps the box the same height as the loaded card. */
 	.art { aspect-ratio: var(--wide-ratio); width: 100%; }
 	.a { width: 60%; height: 13px; }
 </style>
