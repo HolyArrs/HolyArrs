@@ -1,3 +1,5 @@
+// Which outside rating sources the user picked to show, kept in local storage.
+
 import type { OutsideScore } from './outside-ratings.ts';
 
 export type RatingSource = 'imdb' | 'rt_critics' | 'rt_audience' | 'metacritic' | 'letterboxd' | 'trakt' | 'tmdb';
@@ -15,18 +17,9 @@ export const RATING_SOURCES: { id: RatingSource; name: string; about: string }[]
 export const DEFAULT_RATINGS: RatingSource[] = ['imdb', 'rt_critics', 'rt_audience'];
 const ORDER = RATING_SOURCES.map((s) => s.id);
 const KEY = 'holyarrs.ratings';
+export const MAX_RATINGS = 3;
 
-function stored(): RatingSource[] {
-	try {
-		const raw = localStorage.getItem(KEY);
-		if (!raw) return DEFAULT_RATINGS;
-		const list = (JSON.parse(raw) as unknown[]).filter((x): x is RatingSource => ORDER.includes(x as RatingSource));
-		return list;
-	} catch {
-		return DEFAULT_RATINGS;
-	}
-}
-
+// Storage can throw (private mode), so every access is guarded.
 let saved = false;
 try {
 	saved = typeof window !== 'undefined' && localStorage.getItem(KEY) !== null;
@@ -34,8 +27,7 @@ try {
 }
 export const ratingPicks = $state<{ list: RatingSource[]; custom: boolean }>({ list: typeof window === 'undefined' ? DEFAULT_RATINGS : stored(), custom: saved });
 
-export const MAX_RATINGS = 3;
-
+// Stored in source order, and capped so cards stay readable.
 export function setRatingPick(id: RatingSource, on: boolean) {
 	if (on && !ratingPicks.list.includes(id) && ratingPicks.list.length >= MAX_RATINGS) return;
 	const next = ORDER.filter((s) => (s === id ? on : ratingPicks.list.includes(s)));
@@ -56,16 +48,17 @@ export function resetRatingPicks() {
 	}
 }
 
+// With fill, empty slots take other sources; if nothing matches, show the first one available.
 export function shownRatings(scores: OutsideScore[], tmdb: number | null | undefined, picks: RatingSource[], fill = false): { scores: OutsideScore[]; tmdb: number | undefined } {
 	if (!fill && picks.length === 0) return { scores: [], tmdb: undefined };
 	const out = scores.filter((s) => picks.includes(s.source as RatingSource));
 	let t = tmdb && picks.includes('tmdb') ? tmdb : undefined;
 	if (fill) {
 		for (const s of scores.filter((x) => !out.includes(x)).sort((a, b) => ORDER.indexOf(a.source as RatingSource) - ORDER.indexOf(b.source as RatingSource))) {
-			if (out.length >= 3) break;
+			if (out.length >= MAX_RATINGS) break;
 			out.push(s);
 		}
-		if (out.length < 3 && tmdb && !t) t = tmdb;
+		if (out.length < MAX_RATINGS && tmdb && !t) t = tmdb;
 	}
 	if (out.length || t) return { scores: out, tmdb: t };
 	for (const id of ORDER) {
@@ -74,4 +67,16 @@ export function shownRatings(scores: OutsideScore[], tmdb: number | null | undef
 		if (s) return { scores: [s], tmdb: undefined };
 	}
 	return { scores: [], tmdb: undefined };
+}
+
+// Falls back to the defaults when nothing valid is stored.
+function stored(): RatingSource[] {
+	try {
+		const raw = localStorage.getItem(KEY);
+		if (!raw) return DEFAULT_RATINGS;
+		const list = (JSON.parse(raw) as unknown[]).filter((x): x is RatingSource => ORDER.includes(x as RatingSource));
+		return list;
+	} catch {
+		return DEFAULT_RATINGS;
+	}
 }

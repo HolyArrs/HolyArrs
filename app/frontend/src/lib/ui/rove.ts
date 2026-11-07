@@ -1,14 +1,9 @@
+// Roving tab stop: one card in a row is tabbable and arrow keys move between cards.
 
+// Elements inside a card that can take focus.
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]';
 
-function stops(card: Element): HTMLElement[] {
-	return [...card.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => {
-		if (el.closest('[inert]')) return false;
-		if (!el.dataset.rove) el.dataset.rove = el.getAttribute('tabindex') === '-1' ? 'skip' : 'on';
-		return el.dataset.rove === 'on';
-	});
-}
-
+// Re-applies on DOM changes so cards added later join the row.
 export function rove(node: HTMLElement) {
 	let active = 0;
 	const cards = () => [...node.children].filter((c) => stops(c).length) as HTMLElement[];
@@ -59,4 +54,13 @@ export function rove(node: HTMLElement) {
 			node.removeEventListener('keydown', keydown);
 		}
 	};
+}
+
+// data-rove remembers each element's own tabindex choice, so a naturally skipped one stays skipped.
+function stops(card: Element): HTMLElement[] {
+	return [...card.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => {
+		if (el.closest('[inert]')) return false;
+		if (!el.dataset.rove) el.dataset.rove = el.getAttribute('tabindex') === '-1' ? 'skip' : 'on';
+		return el.dataset.rove === 'on';
+	});
 }

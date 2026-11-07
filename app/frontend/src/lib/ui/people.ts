@@ -1,3 +1,5 @@
+// Person page types and helpers for stats chips, decade groups and bulk add or ask.
+
 export type PersonRole = 'all' | 'actor' | 'director';
 
 export type PersonSummary = {
@@ -53,6 +55,9 @@ export type PersonStats = { first_year?: number; last_year?: number; active: boo
 
 export type FilmSort = 'oldest' | 'newest' | 'popular';
 
+export type ReviewedResult = { tmdb_id: string; ok: boolean; error?: string };
+
+// Short facts under the name; the dash range ends at 'now' while still active.
 export function personChips(s: PersonStats | undefined, library: number, asked: number): string[] {
 	if (!s) return [];
 	const out: string[] = [];
@@ -68,6 +73,7 @@ export function personChips(s: PersonStats | undefined, library: number, asked: 
 	return out;
 }
 
+// Groups keep first-seen order; undated films go to 'Coming soon'.
 export function byDecade(movies: PersonMovie[]): { label: string; movies: PersonMovie[] }[] {
 	const groups: { label: string; movies: PersonMovie[] }[] = [];
 	const at = new Map<string, number>();
@@ -83,8 +89,7 @@ export function byDecade(movies: PersonMovie[]): { label: string; movies: Person
 	return groups;
 }
 
-export type ReviewedResult = { tmdb_id: string; ok: boolean; error?: string };
-
+// Keeps only plain numeric ids (max 12 digits) and drops repeats before posting.
 export function normalizeSelection(ids: string[]): string[] {
 	const seen = new Set<string>();
 	const out: string[] = [];
@@ -97,15 +102,12 @@ export function normalizeSelection(ids: string[]): string[] {
 	return out;
 }
 
+// Only films not yet in the library, not blocked and not already asked.
 export function actionableSelection(movies: PersonMovie[]): string[] {
 	return normalizeSelection(movies.filter((movie) => !movie.title_id && !movie.never_add && !movie.ask).map((movie) => movie.ids.tmdb ?? ''));
 }
 
-function errorText(err: unknown): string {
-	if (err instanceof Error && err.message.trim()) return err.message;
-	return 'This movie could not be submitted.';
-}
-
+// Posts one at a time so one failure does not stop the rest.
 export async function runReviewed(
 	post: (path: string, body: Record<string, unknown>) => Promise<unknown>,
 	action: 'add' | 'ask',
@@ -121,4 +123,10 @@ export async function runReviewed(
 		}
 	}
 	return results;
+}
+
+// Fallback text so the user never sees an empty error.
+function errorText(err: unknown): string {
+	if (err instanceof Error && err.message.trim()) return err.message;
+	return 'This movie could not be submitted.';
 }
