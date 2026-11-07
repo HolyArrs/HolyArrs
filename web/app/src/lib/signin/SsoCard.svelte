@@ -188,7 +188,7 @@
 						<input type="checkbox" bind:checked={publicClient} />
 						Public client (no secret; the provider is set up for that)
 					</label>
-					<Field id="sso-callback" label="Callback address" hint="Register this exact address at the provider.">
+					<Field id="sso-callback" label="Callback address" hint="Register this exact address at the provider." style="display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px">
 						<div class="row">
 							<input id="sso-callback" class="input mono grow" value={callback} readonly />
 							<Button icon="copy" type="button" onclick={copyCallback}>Copy</Button>

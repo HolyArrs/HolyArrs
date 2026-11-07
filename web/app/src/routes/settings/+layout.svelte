@@ -377,6 +377,28 @@
 	.settings-content :global(:is(.field, .srow):has(textarea) > :is(label, .txt)) { padding-top: 10px; }
 	/* Row words, the same sizes as the Library folders rows. */
 	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 13px/1.35 var(--font-ui) !important; color: var(--text-muted); }
+	/* Stage 1 (spec): a field row's label lines up with its box, not with box + hint. */
+	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input)) { align-items: start !important; }
+	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input) > :is(.txt, label:first-child)) { padding-top: 10px; }
+	/* Long values (patterns, addresses, paths) get half the row so they are never cut off. */
+	@media (min-width: 761px) {
+		.settings-content :global(.field:not(.ask > *, .row-fields > *):is(:has(> input:is([type='text'], [type='url'], :not([type])):not(.narrow)), :has(> .row > input.input))) { grid-template-columns: minmax(0, 1fr) minmax(0, 50%) !important; }
+		.settings-content :global(section.ui-settings .srow:has(> .ctl > input:is([type='text'], [type='url'], :not([type])):not(.narrow)) > .ctl) { width: 50%; max-width: none; flex: 0 0 50%; }
+	}
+	/* Inner panels (examples, notes) sit inside the row padding with their own soft fill. */
+	.settings-content :global(section.ui-settings > .body > :is(.example, .notice, .preview)) { margin: 12px 18px; padding: 12px 14px; border-radius: 12px; box-shadow: none !important; }
+	/* Advanced, when open, continues the same sheet instead of starting a second box. */
+	.settings-content :global(section.ui-settings:has(> .advanced[open]) > .body) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 0; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+	.settings-content :global(section.ui-settings:has(> .body) > .advanced[open]) { margin: 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-top: 0; border-radius: 0 0 20px 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: 0 24px 50px -32px rgb(0 0 0 / 0.45); }
+	.settings-content :global(section.ui-settings:has(> .body) > .advanced[open] > summary) { padding-inline: 18px; box-shadow: inset 0 1px 0 var(--line); }
+	.settings-content :global(section.ui-settings:has(> .body) > .advanced[open] > .adv-body) { border: 0; border-radius: 0; background: none; padding: 0 18px 8px; }
+	/* Room under the last row so the save bar never covers it. */
+	.settings-content:has(:global([data-testid='savebar'])) { padding-bottom: 96px; }
+	@media (max-width: 767px) {
+		.settings-content :global(section.ui-settings:has(> .body) > .advanced[open]) { border-radius: 0 0 16px 16px; }
+		.settings-content :global(ul.fl) { border-radius: 16px !important; }
+	}
+	@media (pointer: coarse) { .settings-content :global(.ui-seg.sm button), .settings-content :global(.ui-seg button) { min-height: 40px !important; height: 40px !important; } }
 	/* Advanced and footer sit under the sheet, quiet. */
 	.settings-content :global(section.ui-settings > .advanced) { margin: 6px 6px 0; border: 0; }
 	.settings-content :global(section.ui-settings > .advanced > summary) { padding-inline: 0; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }

@@ -85,6 +85,10 @@ img {
 .mono {
 	font-family: var(--font-mono);
 }
+/* Browsers default code text to a monospace face; HolyArrs uses the app font everywhere. */
+code, kbd, pre, samp {
+	font-family: var(--font-mono);
+}
 .muted {
 	color: var(--text-muted);
 }
