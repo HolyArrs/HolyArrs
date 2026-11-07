@@ -60,6 +60,7 @@ test('an rss feed is read and its passkey stays hidden', async () => {
 
 test('the health page shows state, last answer and calls over time', async () => {
 	const row = page.getByTestId('source').filter({ hasText: 'Lab Torznab' });
+	await row.hover(); // the buttons show on hover (always on phones and on focus)
 	await row.getByRole('link', { name: 'Health' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Lab Torznab' })).toBeVisible();
 	await expect(page.getByTestId('health-state')).toHaveText('Working');
@@ -69,6 +70,7 @@ test('the health page shows state, last answer and calls over time', async () =>
 	await page.getByRole('link', { name: 'Sources' }).first().click();
 	const row2 = page.getByTestId('source').filter({ hasText: 'Lab feed' });
 	page.once('dialog', (d) => d.accept());
+	await row2.hover(); // buttons show on hover
 	await row2.getByRole('button', { name: 'Remove Lab feed' }).click();
 	await expect(page.getByTestId('source').filter({ hasText: 'Lab feed' })).toHaveCount(0);
 });
