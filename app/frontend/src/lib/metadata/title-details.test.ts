@@ -92,7 +92,6 @@ describe('title details', () => {
 	it('offers a separate 4K ask after my plain ask or on a movie in the Library without 4K', () => {
 		const mine = { id: 1, state: 'asked' as const, state_label: 'Asked', mine: true, people: 1 };
 		const theirs = { ...mine, mine: false };
-		// Not in the Library, nothing asked, or someone else asked: the Ask sheet's 4K box covers it.
 		expect(fourKOffer({ kind: 'movie' })).toBeNull();
 		expect(fourKOffer({ kind: 'movie', ask: theirs })).toBeNull();
 		expect(fourKOffer({ kind: 'movie', ask: mine })).toBe('ask');
@@ -101,7 +100,6 @@ describe('title details', () => {
 		expect(fourKOffer({ kind: 'movie', titleId: 7, ask4k: mine })).toBe('asked');
 		expect(fourKOffer({ kind: 'movie', titleId: 7, has4k: true })).toBeNull();
 		expect(fourKOffer({ kind: 'movie', titleId: 7, neverAdd: true })).toBeNull();
-		// Shows have no 4K ask.
 		expect(fourKOffer({ kind: 'show', titleId: 7, ask: mine })).toBeNull();
 	});
 });
