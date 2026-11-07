@@ -1,11 +1,9 @@
 <script lang="ts" module>
-	/** An old app's key kept for the Move tool (owner only): from the secrets file or a past read; never the key itself. */
 	export interface SavedKey {
 		kind: string;
 		address: string;
 		allow_local_network: boolean;
 	}
-	/** What a read answers. */
 	export interface ReadAnswer {
 		snapshot: import('./move.ts').Snapshot;
 		needs_reentry?: string[];
@@ -14,23 +12,17 @@
 </script>
 
 <script lang="ts">
+	import { getContext, tick } from 'svelte';
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
-	import StepCapsule from './StepCapsule.svelte';
 	import TestTag from '../ui/TestTag.svelte';
+	import StepCapsule from './StepCapsule.svelte';
+	import { apps, appName, placeholderFor, type AppKind } from './move.ts';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { reachWords } from '../downloads/index.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { getContext, tick } from 'svelte';
-	import { apps, appName, placeholderFor, type AppKind } from './move.ts';
-	// The first-run wizard hides the apps it already set up (Prowlarr, downloaders).
-	const hidden = getContext<AppKind[] | undefined>('move-hide-apps') ?? [];
-	const shown = apps.filter((a) => !hidden.includes(a.kind));
+	import { reachWords } from '../downloads/index.ts';
 
-	// Add an app, or read one again: check the connection, then read it.
-	// Closing the sheet does not stop a read; Stop reading does (the server
-	// stops too, as the request ends).
 	let {
 		open = $bindable(false),
 		start = 'radarr',
@@ -40,46 +32,42 @@
 		onread
 	}: {
 		open?: boolean;
-		/** The app the sheet opens on. */
 		start?: AppKind;
-		/** Reading an app again (the title says so). */
 		again?: boolean;
 		saved?: SavedKey[];
-		/** The app being read now, or ''. */
 		reading?: string;
 		onread: (r: ReadAnswer, kind: AppKind, usedSaved: boolean) => void;
 	} = $props();
 
 	let kind = $state<AppKind>('radarr');
-	// Reading from a backup file is held back; the server still supports it.
 	let way = $state<'api' | 'backup'>('api');
 	let address = $state('');
 	let key = $state('');
 	let username = $state('');
 	let signWord = $state('');
 	let backupPath = $state('');
-	// The owner types the address, and old apps live on the home network: always allowed.
 	let local = $state(true);
 	let useSaved = $state(true);
 	let error = $state('');
-	// The answer of Test, shown as a tag.
 	let probe = $state<{ ok: boolean; text: string } | null>(null);
-	// What each app was last read with, for Read again: kept in this page only, never stored.
-	const lastRead: Partial<Record<AppKind, { address: string; key: string; username: string; signWord: string }>> = {};
 	let checking = $state(false);
-	let ctrl: AbortController | null = null;
 	let form = $state<HTMLFormElement>();
+
+	const hidden = getContext<AppKind[] | undefined>('move-hide-apps') ?? [];
+	const shown = apps.filter((a) => !hidden.includes(a.kind));
+	const lastRead: Partial<Record<AppKind, { address: string; key: string; username: string; signWord: string }>> = {};
+	let ctrl: AbortController | null = null;
+	let wasOpen = false;
+	let startedAt = 0;
+	let stopped = false;
 
 	const qbit = $derived(kind === 'qbittorrent');
 	const savedKey = $derived(saved.find((x) => x.kind === kind));
 	const withSaved = $derived(way === 'api' && !!savedKey && useSaved);
-	// Read again with a kept key: just the address and the button, no switch.
 	const keptAgain = $derived(again && !!savedKey);
 	const busy = $derived(reading !== '');
 	const title = $derived(again ? `Edit ${appName(kind)}` : 'Add an app');
 
-	// Each open starts clean, on the app it was opened for.
-	let wasOpen = false;
 	$effect(() => {
 		if (open && !wasOpen) {
 			if (!busy) {
@@ -88,7 +76,6 @@
 				useSaved = true;
 				const last = again ? lastRead[start] : undefined;
 				address = again ? (saved.find((x) => x.kind === start)?.address ?? last?.address ?? '') : '';
-				// Add an app always starts empty; Read again refills what that app was read with.
 				key = last?.key ?? '';
 				username = last?.username ?? '';
 				signWord = last?.signWord ?? '';
@@ -97,7 +84,6 @@
 				error = '';
 				probe = null;
 			}
-			// Start on the App field, not the sheet's Close button (the address when the app is fixed).
 			setTimeout(() => document.getElementById(again || busy ? 'move-address' : 'move-app')?.focus(), 0);
 		}
 		wasOpen = open;
@@ -107,7 +93,6 @@
 		error = '';
 		probe = null;
 	}
-
 	function body(): Record<string, unknown> {
 		const b: Record<string, unknown> = { kind };
 		if (way === 'backup') {
@@ -118,7 +103,6 @@
 			b.use_saved_key = true;
 			return b;
 		}
-		// A bare host:port gets http:// in front, as people often type it that way.
 		const a = address.trim();
 		b.url = a && !/^[a-z][a-z0-9+.-]*:\/\//i.test(a) ? `http://${a}` : a;
 		b.allow_local_network = local;
@@ -129,12 +113,9 @@
 		if (key) b.key = key;
 		return b;
 	}
-
 	function quiet(err: unknown): boolean {
 		return (err instanceof ApiError && err.body.code === 'reauth') || (err instanceof DOMException && err.name === 'AbortError');
 	}
-
-	// Our own words instead of the browser's bubbles: the address is the one field people miss.
 	function missing(): boolean {
 		if (way === 'api' && !withSaved && !address.trim()) {
 			error = 'Add the address.';
@@ -143,7 +124,6 @@
 		}
 		return !!form && !form.reportValidity();
 	}
-
 	async function check() {
 		if (missing()) return;
 		checking = true;
@@ -165,7 +145,6 @@
 		await tick();
 		document.getElementById('move-address')?.focus();
 	}
-
 	async function read(e: SubmitEvent) {
 		e.preventDefault();
 		if (busy || missing()) return;
@@ -187,7 +166,6 @@
 			onread(r, k, usedSaved);
 		} catch (err) {
 			if (quiet(err)) {
-				// Stopped by the owner: say so, and keep what they typed.
 				if (stopped) {
 					keep = true;
 					if (open) error = 'Reading stopped.';
@@ -206,17 +184,9 @@
 		}
 		if (open && error) focusAddress();
 	}
-
-	/** stop ends the read: the request is aborted, so the server stops reading. */
-	let startedAt = 0;
-	let stopped = false;
 	export function stop(e?: MouseEvent) {
 		if (!ctrl) return;
-		// The abort ends the read before this click's default action runs, so the
-		// button is a submit again by then and would start a second read.
 		e?.preventDefault();
-		// A second Enter on the same button right after Read is not a stop
-		// (a key press gives a click with detail 0; a real click is 1 or more).
 		if (e && e.detail === 0 && Date.now() - startedAt < 1000) return;
 		stopped = true;
 		ctrl.abort();
@@ -289,13 +259,11 @@
 	{#snippet footer()}
 		<Button variant="secondary" onclick={() => (open = false)}>Cancel</Button>
 		<Button onclick={check} busy={checking} disabled={busy}>Test</Button>
-		<!-- One button that changes, so focus stays on it while reading. -->
 		<Button variant="primary" type={busy ? 'button' : 'submit'} form={busy ? undefined : 'move-read-form'} onclick={busy ? stop : undefined}>{busy ? 'Stop' : again ? 'Save' : `Add ${appName(kind)}`}</Button>
 	{/snippet}
 </Sheet>
 
 <style>
-	/* Its own row layout, so it looks the same outside Settings (the first-run wizard). */
 	.srow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 16px; min-height: 52px; padding: 7px 0; border-top: 1px solid var(--line); }
 	.srow:first-child { border-top: 0; }
 	.srow > .txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }

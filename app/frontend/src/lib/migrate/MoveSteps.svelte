@@ -2,8 +2,6 @@
 	import StepCapsule from './StepCapsule.svelte';
 	import { steps, stepIndex, type Step } from './move.ts';
 
-	// The four-step rail: done steps go back, the current one says how far it
-	// is, later ones wait. On phones only the current step shows its word.
 	let {
 		step,
 		busy = '',
@@ -12,10 +10,8 @@
 		onpick
 	}: {
 		step: Step;
-		/** A word for the current step while it works ("Updating…"). */
 		busy?: string;
 		fill?: number;
-		/** No going back (a move is running). */
 		locked?: boolean;
 		onpick: (s: Step) => void;
 	} = $props();
@@ -61,11 +57,9 @@
 	.cap-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.cap-btn:disabled :global(.st-cap),
 	.cap-btn:disabled .num { opacity: 0.7; }
-	/* The number shows only where the word does not fit (phones). */
 	.num { display: none; }
 	@media (max-width: 600px) {
 		.rail { grid-template-columns: var(--phone-cols); gap: 6px; }
-		/* One step more specific than StepCapsule's own height. */
 		.rail li :global(.st-cap) { --st-h: 44px; }
 		li:not(.now) :global(.st-cap) { padding: 0; }
 		li:not(.now) :global(.st-tx),

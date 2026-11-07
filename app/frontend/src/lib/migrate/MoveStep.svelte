@@ -1,16 +1,14 @@
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
-	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { to } from '../core/paths.ts';
 	import { needsGroups, plural, type Report } from './move.ts';
+	import { to } from '../core/paths.ts';
 
-	// What to know before moving, then the move itself with its
-	// progress. The page keeps following it if you leave and come back.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
+
 	let {
 		dry,
 		running = false,
@@ -34,7 +32,6 @@
 	const links = $derived(lines.some((l) => (l.group === 'sources' || l.group === 'downloaders') && made(l)));
 	const newPeople = $derived(lines.filter((l) => l.group === 'people' && made(l)).length);
 	const needs = $derived(needsGroups(dry?.needs_input ?? []).flatMap((g) => g.items.map((t, i) => ({ key: `${g.label}-${i}`, name: t, hint: g.label }))));
-	// "420 of 846 moved" says it all; the capsule word already says Moving.
 	const detail = $derived(note.replace(/\s+(moved|undone)\.?$/, ''));
 </script>
 

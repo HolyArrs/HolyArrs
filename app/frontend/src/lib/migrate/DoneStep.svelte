@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
-	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import ResultGroups from './ResultGroups.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
+	import { moveCounts, plural, running as isRunning, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
 	import { dateTime } from '../core/format.ts';
-	import { moveCounts, plural, running as isRunning, type Bucket, type Move } from './move.ts';
 
-	// Step 5: what the move did, what to do now, and the results per group.
-	// Also what "Open" shows for an earlier move.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
+
 	let {
 		move,
 		groups,
@@ -25,12 +23,10 @@
 	}: {
 		move: Move;
 		groups: Bucket[];
-		/** People who still need Same person or Leave out. */
 		openChoices?: number;
 		progress?: number;
 		note?: string;
 		lost?: boolean;
-		/** Go back to Choose with the same reads, to choose. */
 		onchoose: () => void;
 		onshow: ShowList;
 	} = $props();
@@ -42,7 +38,6 @@
 	const undoFailed = $derived(move.undo_state === 'failed' && !undone);
 	const lines = $derived(rep?.lines ?? []);
 	const detail = $derived(note.replace(/\s+(moved|undone)\.?$/, ''));
-	// An undo report, or a move that never started, says its own few lines.
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
 </script>
 

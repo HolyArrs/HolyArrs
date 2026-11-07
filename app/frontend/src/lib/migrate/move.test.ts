@@ -54,7 +54,6 @@ describe('move helpers', () => {
 	});
 
 	it('keys folder rows by old path and checks free rules row by row', () => {
-		// An empty row before a bad one: the error stays on the bad row (index 1).
 		expect(extraProblems([{ from: '', to: '' }, { from: '/a', to: '' }])).toEqual(['', 'Fill in both paths.']);
 		expect(folderProblem('/old/movies', '', '')).toBe('');
 		expect(folderProblem('/old/movies', '/data/movies', '')).toBe('');
@@ -156,7 +155,6 @@ describe('move helpers', () => {
 		const w = countWords('radarr', { titles: 812, indexers: 4, download_clients: 1, tags: 0, custom_formats: 0, mystery: 9 });
 		expect(w).toBe('812 titles, 4 Sources, 1 Downloader');
 		expect(w).not.toMatch(/_|0 |mystery/);
-		// The app's main count leads, then the largest; the rest are summed.
 		expect(countWords('seerr', { users: 2, requests: 40, tags: 3, notifications: 1, app_links: 2 })).toBe('2 people, 40 requests, 3 tags and 3 more');
 		expect(countWords('radarr', {})).toBe('');
 	});
@@ -184,14 +182,12 @@ describe('move helpers', () => {
 		expect(stepGate({ step: 'choose', picked: 1, planned: true, groupsOn: 0, groupsWithItems: 2 }).reason).toBe('Turn on at least one group.');
 		expect(stepGate({ step: 'choose', picked: 1, planned: true, groupsOn: 0, groupsWithItems: 0 }).ok).toBe(false);
 		expect(stepGate({ step: 'choose', picked: 1, planned: true, groupsOn: 1, groupsWithItems: 1 }).ok).toBe(true);
-		// A stale test never lets Continue or Move go.
 		expect(stepGate({ step: 'move', picked: 1, tried: true, stale: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, stale: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: false }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, trying: true }).reason).toBe('Updating…');
 		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 3 })).toEqual({ ok: true, reason: '3 still need a choice. They stay behind if you move now.' });
 		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 1 }).reason).toBe('1 still needs a choice. It stays behind if you move now.');
-		// A failed test run says so, with or without an older result.
 		expect(stepGate({ step: 'move', picked: 1, tried: false, failed: true })).toEqual({ ok: false, reason: 'The test run failed.' });
 		expect(stepGate({ step: 'move', picked: 1, tried: true, failed: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, safeMode: true }).ok).toBe(false);

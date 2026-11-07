@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
-	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../ui/Icon.svelte';
@@ -9,11 +7,11 @@
 	import LoadError from '../ui/LoadError.svelte';
 	import StatusPill, { type StatusKind } from '../ui/StatusPill.svelte';
 	import StepCapsule from './StepCapsule.svelte';
-	import { dateTime } from '../core/format.ts';
 	import { appName, bestStats, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from './move.ts';
+	import { dateTime } from '../core/format.ts';
 
-	// Step 1: the reads kept so far, each switched on or off for this move,
-	// and the earlier moves below.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
+
 	let {
 		snapshots,
 		picked,
@@ -30,7 +28,6 @@
 	}: {
 		snapshots: Snapshot[];
 		picked: number[];
-		/** Read id → the done move that used it. */
 		usedBy: Map<number, number>;
 		reading?: string;
 		moves: Move[];
@@ -47,12 +44,6 @@
 	const shownMoves = $derived(allMoves ? moves : moves.slice(0, 5));
 	const pills: Record<string, StatusKind> = { ok: 'in_library', info: 'downloading', wait: 'missing', fail: 'failed', idle: 'requested' };
 
-	// The row shows the app's most useful counts; when it was read sits in the tooltip.
-	function hint(s: Snapshot): string {
-		const used = usedBy.get(s.id);
-		return [used ? `Moved in Move ${used}` : '', bestStats(s.kind, s.counts) || countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
-	}
-	// One row per app: its newest read is the one used; older reads of it drop out.
 	const latest = $derived(snapshots.filter((s, i) => snapshots.findIndex((x) => x.kind === s.kind) === i));
 	$effect(() => {
 		for (const s of snapshots) {
@@ -60,6 +51,11 @@
 			if (use !== picked.includes(s.id)) onpick(s.id, use);
 		}
 	});
+
+	function hint(s: Snapshot): string {
+		const used = usedBy.get(s.id);
+		return [used ? `Moved in Move ${used}` : '', bestStats(s.kind, s.counts) || countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
+	}
 </script>
 
 {#snippet reads()}
@@ -100,7 +96,6 @@
 	{/if}
 {/snippet}
 
-<!-- In the wizard its own heading says what this is: just the reads. -->
 {#if countSteps}
 	<SettingsCard id="move-step" title="Step 1 of 4 · Read your apps">{@render reads()}</SettingsCard>
 {:else}
@@ -133,7 +128,6 @@
 {/if}
 
 <style>
-	/* Each read is one plain row, like the first-run downloader rows. */
 	.reads { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 	.read { padding: 14px 16px 10px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.ok-tag { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-mono); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
@@ -146,7 +140,6 @@
 	.quiet:hover:not(:disabled) { color: var(--text); }
 	.quiet.danger:hover { color: var(--fail-text, #ff6961); }
 	.quiet:disabled { opacity: 0.5; cursor: default; }
-	/* Phones: 44px to tap, the row stays the same height to look at. */
 	@media (max-width: 600px), (pointer: coarse) {
 		.acts { gap: 8px; padding-top: 0; margin-bottom: -8px; }
 		.quiet { min-height: 44px; padding: 0 8px; margin-left: -8px; }
@@ -157,12 +150,10 @@
 	#move-step:focus { outline: none; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.one { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	/* One left edge for every pill, whatever its word. */
 	.pill { display: flex; justify-content: flex-start; width: 168px; min-width: 0; }
 	.cap { display: block; width: 168px; }
 	@media (max-width: 600px) {
 		.cap { width: 120px; }
-		/* Phones: the pill and Open go under the move's name, so nothing is cut. */
 		.srow.earlier { grid-template-columns: minmax(0, 1fr); }
 		.earlier .ctl { justify-self: start; }
 	}

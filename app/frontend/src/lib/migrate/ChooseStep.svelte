@@ -1,24 +1,20 @@
 <script lang="ts" module>
-	// "Change what moves" stays open for the visit once someone opens it.
 	let keepOpen = false;
 </script>
 
 <script lang="ts">
 	import { getContext as moveContext } from 'svelte';
-	// The first-run wizard has its own step dots, so it drops the "Step n of 4" counter.
-	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 	import SettingsCard from '../ui/SettingsCard.svelte';
 	import Button from '../ui/Button.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import EmptyState from '../ui/EmptyState.svelte';
 	import Icon from '../ui/Icon.svelte';
-	import type { ShowList } from './ItemsSheet.svelte';
 	import Sheet from '../ui/Sheet.svelte';
+	import type { ShowList } from './ItemsSheet.svelte';
 	import { appName, folderProblem, groupLabels, OTHER, plural, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
-	// Step 2: a summary of what moves, then only what needs the person; the
-	// full list (groups, folders, path rules) sits behind "Change what moves".
-	// Every change plans again; the old rows stay (dimmed) while it does.
+	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
+
 	let {
 		plan,
 		planning = false,
@@ -40,15 +36,11 @@
 	}: {
 		plan: Plan | null;
 		planning?: boolean;
-		/** Library folders here. */
 		folders: { path: string; kind: string; label: string }[];
-		/** Old path → picked Library folder path, OTHER, or '' (unset). */
 		picks: Record<string, string>;
-		/** Old path → the typed path for OTHER. */
 		others: Record<string, string>;
 		extra: PathRule[];
 		extraErrors: string[];
-		/** Old path → the suggested Library folder. */
 		suggested: Record<string, string>;
 		skip: string[];
 		people: Record<string, PersonChoice>;
@@ -57,7 +49,6 @@
 		onextra: (rules: PathRule[]) => void;
 		ongroup: (name: string, on: boolean) => void;
 		onperson: (key: string, c: PersonChoice | null) => void;
-		/** A typed path is done (blur or Enter): plan again now. */
 		oncommit: () => void;
 		onshow: ShowList;
 	} = $props();
@@ -65,12 +56,18 @@
 	let open = $state(keepOpen);
 	let advOpen = $state(false);
 	let peopleOpen = $state(false);
-	function toggle() {
-		open = !open;
-		keepOpen = open;
-	}
+	const defaulted = new Set<string>();
+	let held = $state<string[]>([]);
+	let keysOpen = $state(false);
+	let nmOpen = $state(false);
+	let nmApp = $state<string | null>(null);
+	let keysOf = $state<'sources' | 'downloaders'>('sources');
 
-	// Old folders with no Library folder of that path here.
+	const big = ['titles', 'wishlist', 'people'];
+	const counted: Record<string, [string, string]> = { titles: ['title', 'titles'], wishlist: ['request', 'requests'], people: ['person', 'people'] };
+	const named: Record<string, string> = { folders: 'folders', pick_rules: 'pick rules', never_add: 'never-add list', outside_lists: 'outside lists', naming: 'naming', subtitles: 'subtitles', sources: 'sources', downloaders: 'downloaders', alerts: 'alerts', other: 'other settings' };
+	const clean = (n: string) => n.replace(/\s*\((Prowlarr|Jackett)\)$/i, '');
+
 	const kindOf = $derived(new Map((plan?.groups.find((g) => g.name === 'folders')?.items ?? []).map((it) => [it.folder?.old_path ?? '', it.folder?.kind ?? ''])));
 	const oldRows = $derived((plan?.old_paths ?? []).filter((p) => !folders.some((f) => f.path === p)));
 	const shown = $derived((plan?.groups ?? []).filter((g) => g.items.length > 0 || skip.includes(g.name)));
@@ -79,93 +76,18 @@
 	const peopleItems = $derived(plan?.groups.find((g) => g.name === 'people')?.items ?? []);
 	const peopleOn = $derived(peopleItems.length > 0 && !skip.includes('people'));
 	const asked = $derived(peopleItems.filter((it) => it.person?.was_owner || it.person?.was_admin));
-	// The one owner of the old app is almost always the person importing: on by
-	// default, once per person, so turning it off stays off.
-	const defaulted = new Set<string>();
-	$effect(() => {
-		const owners = asked.filter((it) => it.person?.was_owner);
-		if (owners.length !== 1) return;
-		const k = owners[0].key;
-		if (defaulted.has(k)) return;
-		defaulted.add(k);
-		if (people[k] === undefined) onperson(k, 'owner');
-	});
 	const pathRules = $derived(!!plan && oldRows.length === 0 && (extra.length > 0 || plan.not_moved.some((n) => n.group === 'titles')));
-
-	// A folder with nothing picked needs the person; once shown there it stays
-	// there (so a pick does not make the row jump away).
-	let held = $state<string[]>([]);
-	$effect(() => {
-		if (planning) return;
-		const add = oldRows.filter((p) => !picks[p] && !held.includes(p));
-		if (add.length > 0) held = [...held, ...add];
-	});
 	const needFolders = $derived(oldRows.filter((p) => held.includes(p) || !picks[p]));
-
-	// A problem in a closed list opens it, so its error shows.
-	$effect(() => {
-		if (oldRows.some((p) => !needFolders.includes(p) && folderProblem(p, picks[p] ?? '', others[p]) !== '')) open = true;
-		if (extraErrors.some((e) => e !== '')) {
-			open = true;
-			advOpen = true;
-		}
-	});
-
-	// The summary: the biggest things in bold, the rest named after "plus".
-	const big = ['titles', 'wishlist', 'people'];
-	const counted: Record<string, [string, string]> = { titles: ['title', 'titles'], wishlist: ['request', 'requests'], people: ['person', 'people'] };
-	const named: Record<string, string> = { folders: 'folders', pick_rules: 'pick rules', never_add: 'never-add list', outside_lists: 'outside lists', naming: 'naming', subtitles: 'subtitles', sources: 'sources', downloaders: 'downloaders', alerts: 'alerts', other: 'other settings' };
-	function andList(xs: string[]): string {
-		return xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
-	}
-	function countOf(g: PlanGroup): string {
-		const w = counted[g.name];
-		// Groups without their own count word read as "Naming: 3", never "3 Naming".
-		return w ? plural(g.items.length, w[0], w[1]) : `${g.label}: ${g.items.length}`;
-	}
 	const lead = $derived.by(() => {
 		const b = big.map((n) => on.find((g) => g.name === n)).filter((g): g is PlanGroup => !!g);
 		if (b.length > 0 || on.length === 0) return b;
 		return [on.reduce((a, g) => (g.items.length > a.items.length ? g : a))];
 	});
-	// The summary as tiles: the number big, its word under it.
 	const tiles = $derived(lead.map((g) => { const w = counted[g.name]; return { n: g.items.length, w: w ? (g.items.length === 1 ? w[0] : w[1]) : g.label }; }));
 	const restLine = $derived.by(() => {
 		const rest = on.filter((g) => !lead.includes(g)).map((g) => named[g.name] ?? g.label);
 		return rest.length ? `Also: ${andList(rest)}` : '';
 	});
-
-	// Things to type after the move (keys, passwords, links), people aside.
-
-	function choicesFor(p: string): { value: string; label: string }[] {
-		const k = kindOf.get(p);
-		const out = folders.filter((f) => !k || !f.kind || f.kind === k).map((f) => ({ value: f.path, label: f.path }));
-		const s = suggested[p];
-		if (s && !out.some((o) => o.value === s)) out.unshift({ value: s, label: s });
-		return out;
-	}
-
-	/** Where a group comes from, or what it needs (warn), or Left out. */
-	function groupNote(g: PlanGroup): { text: string; warn: boolean } {
-		if (skip.includes(g.name)) return { text: 'Left out', warn: false };
-		const n = g.items.length;
-		const needs = g.items.filter((it) => it.needs);
-		if (needs.length > 0 && g.name === 'people') return { text: 'Invite after the move', warn: true };
-		if (needs.length > 0) return { text: needs.every((it) => /key/i.test(it.needs ?? '')) ? 'Keys after the move' : 'Keys or passwords after the move', warn: true };
-		void n;
-		return { text: '', warn: false };
-	}
-
-	function itemRow(it: PlanItem) {
-		const hint = [it.why || it.detail, it.needs ? `Needs ${it.needs}` : ''].filter(Boolean).join(' · ');
-		return { key: it.key, name: it.name, hint };
-	}
-
-	// The reconnect list: Sources split into Usenet and Torrent, Downloaders with what each needs.
-	let keysOpen = $state(false);
-	// Not moved, by the app it came from; an app opens its reasons, each once with a count.
-	let nmOpen = $state(false);
-	let nmApp = $state<string | null>(null);
 	const nmApps = $derived.by(() => {
 		const m = new Map<string, number>();
 		for (const x of plan?.not_moved ?? []) {
@@ -185,16 +107,10 @@
 		}
 		return [...m.values()].sort((a, b) => b.n - a.n);
 	});
-	let keysOf = $state<'sources' | 'downloaders'>('sources');
-	function openKeys(k: 'sources' | 'downloaders') {
-		keysOf = k;
-		keysOpen = true;
-	}
 	const keyCount = $derived({
 		sources: on.find((g) => g.name === 'sources')?.items.filter((it) => it.needs).length ?? 0,
 		downloaders: on.find((g) => g.name === 'downloaders')?.items.filter((it) => it.needs).length ?? 0
 	});
-	const clean = (n: string) => n.replace(/\s*\((Prowlarr|Jackett)\)$/i, '');
 	const keyGroups = $derived.by(() => {
 		const src = on.find((g) => g.name === 'sources')?.items.filter((it) => it.needs) ?? [];
 		const dls = on.find((g) => g.name === 'downloaders')?.items.filter((it) => it.needs) ?? [];
@@ -208,26 +124,77 @@
 		].filter((g) => g.items.length > 0 && (keysOf === 'downloaders' ? g.label === 'Downloaders' : g.label !== 'Downloaders'));
 	});
 
+	$effect(() => {
+		const owners = asked.filter((it) => it.person?.was_owner);
+		if (owners.length !== 1) return;
+		const k = owners[0].key;
+		if (defaulted.has(k)) return;
+		defaulted.add(k);
+		if (people[k] === undefined) onperson(k, 'owner');
+	});
+	$effect(() => {
+		if (planning) return;
+		const add = oldRows.filter((p) => !picks[p] && !held.includes(p));
+		if (add.length > 0) held = [...held, ...add];
+	});
+	$effect(() => {
+		if (oldRows.some((p) => !needFolders.includes(p) && folderProblem(p, picks[p] ?? '', others[p]) !== '')) open = true;
+		if (extraErrors.some((e) => e !== '')) {
+			open = true;
+			advOpen = true;
+		}
+	});
 
-	// People list: the name and one word, You or Invite.
+	function toggle() {
+		open = !open;
+		keepOpen = open;
+	}
+	function andList(xs: string[]): string {
+		return xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+	}
+	function countOf(g: PlanGroup): string {
+		const w = counted[g.name];
+		return w ? plural(g.items.length, w[0], w[1]) : `${g.label}: ${g.items.length}`;
+	}
+	function choicesFor(p: string): { value: string; label: string }[] {
+		const k = kindOf.get(p);
+		const out = folders.filter((f) => !k || !f.kind || f.kind === k).map((f) => ({ value: f.path, label: f.path }));
+		const s = suggested[p];
+		if (s && !out.some((o) => o.value === s)) out.unshift({ value: s, label: s });
+		return out;
+	}
+	function groupNote(g: PlanGroup): { text: string; warn: boolean } {
+		if (skip.includes(g.name)) return { text: 'Left out', warn: false };
+		const n = g.items.length;
+		const needs = g.items.filter((it) => it.needs);
+		if (needs.length > 0 && g.name === 'people') return { text: 'Invite after the move', warn: true };
+		if (needs.length > 0) return { text: needs.every((it) => /key/i.test(it.needs ?? '')) ? 'Keys after the move' : 'Keys or passwords after the move', warn: true };
+		void n;
+		return { text: '', warn: false };
+	}
+	function itemRow(it: PlanItem) {
+		const hint = [it.why || it.detail, it.needs ? `Needs ${it.needs}` : ''].filter(Boolean).join(' · ');
+		return { key: it.key, name: it.name, hint };
+	}
+	function openKeys(k: 'sources' | 'downloaders') {
+		keysOf = k;
+		keysOpen = true;
+	}
 	function personRow(it: PlanItem) {
 		const me = people[it.key] === 'owner';
 		return { key: it.key, name: it.name, pill: me ? { word: 'You', tone: 'ok' as const } : { word: 'Invite', tone: 'quiet' as const } };
 	}
-
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
 		if (it.person?.was_owner) return `Owner in ${app}. Their requests become yours.`;
 		return `Admin in ${app}. Turn off to bring them in as a member.`;
 	}
-
 	function keyDone(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
 			oncommit();
 		}
 	}
-
 	function clipMiddle(p: string, max = 42): string {
 		if (p.length <= max) return p;
 		const half = Math.floor((max - 1) / 2);
@@ -468,7 +435,6 @@
 	.choose { display: contents; }
 	.dim :global(.ui-settings .body) { opacity: 0.6; transition: opacity var(--dur-fast) var(--ease-out); }
 
-	/* One surface box per list, rows split by --line, like the read rows. */
 	.box { margin: 0; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.list { list-style: none; padding: 0 16px; }
 	.head { margin: 18px 0 8px; font: var(--t-subhead); font-weight: 600; color: var(--text); }
@@ -511,7 +477,6 @@
 	.adv[open] summary :global(svg) { transform: rotate(90deg); }
 	.adv > .sub { margin: 6px 0 8px; }
 
-	/* Phones: the folder pick goes under its path; 44px to tap. */
 	@media (max-width: 600px) {
 		.wrap .txt { flex-basis: 100%; }
 		.wrap .txt + .arrow { display: none; }

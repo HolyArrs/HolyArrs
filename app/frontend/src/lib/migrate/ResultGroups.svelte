@@ -2,9 +2,6 @@
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { groupLabels, needsGroups, needsLook, plural, resultWords, summary, tone, type Bucket, type Line, type Report } from './move.ts';
 
-	// The results of a test run or a move, one row per group, each with
-	// "Show"; then what was not moved, the keys to type again and the apps'
-	// notes. Used by Done and Done (after the move).
 	let {
 		report,
 		groups,
@@ -23,7 +20,6 @@
 		return {
 			key: l.key + ':' + i,
 			name: l.name,
-			// The pill already says what happens; a missing folder needs no path text.
 			hint: l.result === 'not_found' ? undefined : l.detail,
 			pill: { word: resultWords(l.result, after, undo), tone: tone(l.result) },
 			look: needsLook(l.result)
@@ -59,7 +55,6 @@
 </ul>
 
 <style>
-	/* One box, one line per group (its own layout, so it holds in the wizard too). */
 	.rg { list-style: none; margin: 0; padding: 0 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.rg-row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; border-top: 1px solid var(--line); }
 	.rg-row:first-child { border-top: 0; }

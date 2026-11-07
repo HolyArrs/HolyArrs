@@ -1,9 +1,6 @@
 <script lang="ts">
 	import StatusIcon, { type StatusKey } from '../ui/StatusIcon.svelte';
 
-	// A step capsule: a tinted pill whose fill shows how far a step is, with
-	// an icon, a word and a detail. The look is the Requests capsule's.
-	// progress adds role=progressbar with the fill as its value.
 	let {
 		tone = 'soft',
 		live = false,
@@ -17,13 +14,11 @@
 	}: {
 		tone?: 'ok' | 'go' | 'soft' | 'bad' | 'wait';
 		live?: boolean;
-		/** 0 to 1. */
 		fill?: number;
 		word: string;
 		detail?: string;
 		status?: StatusKey;
 		progress?: boolean;
-		/** The progress bar's name (defaults to the word). */
 		label?: string;
 		testid?: string;
 	} = $props();
@@ -80,7 +75,6 @@
 	.st-tx > .st-d::before { content: '·'; margin-right: 6px; opacity: 0.7; }
 	.st-meter { position: absolute; inset: 0; overflow: hidden; background: light-dark(color-mix(in srgb, var(--st-c) 15%, transparent), color-mix(in srgb, var(--st-c) 30%, transparent)); transform: scaleX(var(--st-fill, 0)); transform-origin: left; transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.st-soft .st-meter { background: light-dark(color-mix(in srgb, var(--st-c) 14%, transparent), color-mix(in srgb, var(--st-c) 22%, transparent)); }
-	/* A soft light passes along the fill while the step works. */
 	.st-live .st-meter::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent) no-repeat; background-size: 40% 100%; animation: st-shim 2.2s ease-in-out infinite; }
 	@keyframes st-shim { from { background-position: -60% 0; } to { background-position: 160% 0; } }
 	@media (pointer: coarse) { .st-cap { --st-h: 44px; } }

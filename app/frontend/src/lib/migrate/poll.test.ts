@@ -6,7 +6,6 @@ type Answer = { id: number; done: boolean };
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-// flush lets pending promise callbacks run.
 const flush = () => vi.advanceTimersByTimeAsync(0);
 
 describe('createFollower', () => {
@@ -38,7 +37,6 @@ describe('createFollower', () => {
 		f.follow(2);
 		await flush();
 		await vi.advanceTimersByTimeAsync(3000);
-		// One loop: the first ask of each follow, then one ask a second.
 		const ids = get.mock.calls.map((c) => c[0]);
 		expect(ids.filter((i) => i === 1).length).toBeLessThanOrEqual(1);
 		expect(ids.slice(-3)).toEqual([2, 2, 2]);

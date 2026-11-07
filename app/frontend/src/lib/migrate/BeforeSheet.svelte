@@ -5,9 +5,6 @@
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { chooseHint, needsLook, plural, resultWords, tone, type Bucket, type Line, type PersonChoice } from './move.ts';
 
-	// "Before you move": shown when the quiet test run before a move found
-	// something. One line per problem, the people that need a choice, then
-	// Move anyway or Go back. A choice runs the test again in place.
 	let {
 		open = $bindable(false),
 		groups,
@@ -25,10 +22,8 @@
 		groups: Bucket[];
 		choose: Line[];
 		people: Record<string, PersonChoice>;
-		/** Items that would move. */
 		total?: number;
 		trying?: boolean;
-		/** The test run is current, so Move anyway may go. */
 		ready?: boolean;
 		notice?: string;
 		onchoose: (key: string, c: PersonChoice) => void;
@@ -40,7 +35,6 @@
 		{ value: 'merge', label: 'Same person' },
 		{ value: 'skip', label: 'Leave out' }
 	];
-	// One line per group and problem: "Titles · 345 · folder not found here".
 	const problems = $derived(
 		groups.flatMap((g) =>
 			(['not_found', 'failed'] as const)
