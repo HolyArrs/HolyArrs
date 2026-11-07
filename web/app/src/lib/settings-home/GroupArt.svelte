@@ -118,15 +118,22 @@
 	.sx-art img { display: block; }
 	svg { display: block; width: 100%; height: 100%; }
 
-	/* Library: whole posters on a shelf, nothing cut. Each poster's width is the
-	   smaller of what the row and the height allow, so the set always fits. */
-	.shelf { --g: clamp(6px, 2.4cqw, 14px); inset: 4cqh 6cqw 7cqh; display: flex; flex-wrap: wrap; align-content: flex-end; justify-content: center; gap: var(--g); --w: min(calc((88cqw - 4 * var(--g)) / 5), calc(89cqh * 2 / 3)); }
-	.shelf img { width: var(--w); aspect-ratio: 2 / 3; object-fit: cover; border-radius: clamp(6px, calc(var(--w) * 0.06), 10px); box-shadow: 0 6px 18px var(--art-shadow); outline: 1px solid var(--tile-line); outline-offset: -1px; background: var(--surface-2); }
+	/* Library: a loose fan of posters, front one biggest, the rest tucked behind at a tilt.
+	   Sized from both the card's height and width so the whole fan always fits. */
+	.shelf { inset: 0 0 6cqh; --w: min(calc(78cqh * 2 / 3), 28cqw); }
+	.shelf img { position: absolute; left: 50%; bottom: 0; width: var(--w); aspect-ratio: 2 / 3; object-fit: cover; border-radius: clamp(6px, calc(var(--w) * 0.06), 12px); box-shadow: 0 10px 28px var(--art-shadow); outline: 1px solid var(--tile-line); outline-offset: -1px; background: var(--surface-2); transform-origin: 50% 100%; transform: translateX(calc(-50% + var(--x) * var(--w))) translateY(var(--y, 0)) rotate(var(--r)) scale(var(--s)); }
+	.shelf img:nth-child(1) { --x: -1.15; --r: -14deg; --s: 0.74; --y: -4cqh; z-index: 1; }
+	.shelf img:nth-child(2) { --x: -0.62; --r: -6deg; --s: 0.88; --y: -1cqh; z-index: 2; }
+	.shelf img:nth-child(3) { --x: 0; --r: 0deg; --s: 1; z-index: 3; }
+	.shelf img:nth-child(4) { --x: 0.62; --r: 7deg; --s: 0.88; --y: -1cqh; z-index: 2; }
+	.shelf img:nth-child(5) { --x: 1.15; --r: 15deg; --s: 0.74; --y: -4cqh; z-index: 1; }
 	.shelf img:nth-child(6) { display: none; }
 	@container (orientation: portrait) {
-		.shelf { --w: min(calc((88cqw - 2 * var(--g)) / 3), calc((89cqh - var(--g)) / 2 * 2 / 3)); }
-		.shelf { align-content: center; }
-		.shelf img:nth-child(6) { display: block; }
+		.shelf { --w: min(calc(62cqh * 2 / 3), 36cqw); }
+		.shelf img:nth-child(1) { --x: -0.62; --y: -30cqh; --r: -9deg; --s: 0.82; }
+		.shelf img:nth-child(5) { --x: 0.62; --y: -30cqh; --r: 9deg; --s: 0.82; }
+		.shelf img:nth-child(2) { --x: -0.7; --r: -7deg; }
+		.shelf img:nth-child(4) { --x: 0.7; --r: 7deg; }
 	}
 
 	/* Downloads: three releases coming down, the front one moving. */
