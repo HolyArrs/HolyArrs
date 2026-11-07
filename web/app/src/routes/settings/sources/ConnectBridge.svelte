@@ -290,17 +290,17 @@
 			<div class="form" data-testid="bridge-form">
 				<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
 				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include the base path, if any.' : undefined} error={errors.url}>
-					<input id="br-url" class="input mono" type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" placeholder={(compact ? '' : 'http://') + (kind === 'jackett' ? '192.168.1.10:9117' : '192.168.1.10:9696')} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
+					<input id="br-url" class="input" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" placeholder={(compact ? '' : 'http://') + (kind === 'jackett' ? '192.168.1.10:9117' : '192.168.1.10:9696')} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
 				<Field id="br-key" label="API key" hint={editingId != null ? 'Enter it again to save.' : kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
-					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
+					<input id="br-key" class="input" class:mono={!compact} type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
 					{#if callback && !callbackOpen && !errors.callback_url}
-						<p class="small muted callback-line">Prowlarr reaches HolyArrs at <span class="mono">{callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
+						<p class="small muted callback-line">Prowlarr reaches HolyArrs at <span class="cb-addr" class:mono={!compact}>{compact ? callback.replace(/^https?:\/\//, '') : callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
 					{:else}
 						<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
-							<input id="br-callback" class="input mono" type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
+							<input id="br-callback" class="input" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
 						</Field>
 					{/if}
 					{#if keysNeeded.length}
@@ -373,6 +373,7 @@
 	.grow { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
 	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
 	.callback-line { margin: 0; overflow-wrap: anywhere; }
+	.cb-addr { color: var(--text); }
 	.link { display: inline-flex; align-items: center; min-height: 32px; vertical-align: middle; border: 0; padding: 0 8px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
 	.link:hover { color: var(--text); }
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
