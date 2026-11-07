@@ -78,7 +78,7 @@
 
 <div class="sx-home" bind:this={home}>
 	<div class="sx-head">
-		<PageHeader title="Settings" />
+		<h1 class="sr-only">Settings</h1>
 		<div class="find">
 			<Icon name="search" size={17} />
 			<label class="sr-only" for="settings-find">Search settings</label>
@@ -129,7 +129,8 @@
 </div>
 
 <style>
-	.sx-home { display: flex; flex-direction: column; min-height: calc(100dvh - var(--topbar) - 48px); }
+	/* Desktop: the landing fits the window exactly (main's 24px top and 64px bottom padding taken out), so it never scrolls. */
+	.sx-home { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar) - 88px); min-height: 420px; }
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
 	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
 	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
@@ -140,7 +141,7 @@
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 
 	/* ---------- Bento: Library tall on the left, four around it ---------- */
-	.bento { flex: 1; display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(220px, 1fr) minmax(220px, 1fr); gap: 16px; min-height: 460px; }
+	.bento { flex: 1; display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(150px, 1fr) minmax(150px, 1fr); gap: 14px; min-height: 0; }
 	.sx-card { position: relative; display: block; min-width: 0; border-radius: var(--r-panel); color: var(--text); text-decoration: none; -webkit-tap-highlight-color: transparent; }
 	.sx-card[data-group='library'] { grid-row: span 2; }
 	.sx-card:focus-visible { outline: none; }
@@ -171,12 +172,13 @@
 
 	/* Tablet: Library across the top, two by two under it. */
 	@media (min-width: 768px) and (max-width: 1100px) {
+		.sx-home { height: auto; }
 		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 260px repeat(2, 220px); min-height: 0; flex: none; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
 	}
 	/* Phone: two columns, Library wide on top. */
 	@media (max-width: 767px) {
-		.sx-home { min-height: 0; }
+		.sx-home { min-height: 0; height: auto; }
 		.lede { margin: -10px 0 16px; }
 		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }

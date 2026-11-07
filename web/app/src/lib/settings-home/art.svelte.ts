@@ -40,7 +40,7 @@ function save(member: number | undefined, k: Kept) {
 export function small(url: string): string {
 	const via = proxied(url);
 	if (via !== url) return via;
-	if (/^\/api\/v1\/artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)$/.test(url)) return to(`${url}?size=250`);
+	if (/^\/api\/v1\/artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)$/.test(url)) return to(`${url}?size=500`);
 	return url.startsWith('/') ? to(url) : url;
 }
 
