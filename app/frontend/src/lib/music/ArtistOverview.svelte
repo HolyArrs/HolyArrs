@@ -37,7 +37,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { pictureFor, pictureOf } from '#lib/core/pictures.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { AskArtistDialog, AddArtistDialog, refreshInbox } from '#lib/requests/index.ts';
+import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { albumYear } from './labels.ts';
@@ -49,7 +49,7 @@
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/core/trailer/hero-video.ts';
 	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from './music-pages.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
-	import type { LookupArtist, MusicSettings } from './types.ts';
+	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
 	import ArtistVideos from './ArtistVideos.svelte';
 	import ArtistLibraryTab from './ArtistLibrary.svelte';
 	import type { Snippet } from 'svelte';
@@ -61,7 +61,7 @@
 	// A short banner with the round photo over its edge.
 	// Waits between re-asks of an artist's art when it has no wide photo yet (about 20 s in all).
 	const ART_RETRY = [1500, 3000, 5000, 10000];
-	let { mbid: rawId, library: lib, below }: { mbid: string; library?: ArtistLibrary; below?: Snippet } = $props();
+	let { mbid: rawId, library: lib, below, sheets }: { mbid: string; library?: ArtistLibrary; below?: Snippet; sheets: ArtistSheets } = $props();
 	const mbid = $derived((rawId ?? '').toLowerCase());
 	// Hero first: the core answer (name, picture, bio) draws the hero; the full
 	// answer (albums, songs, links) and the similar artists fill the shelves.
@@ -156,8 +156,8 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let defaults = $state<MusicSettings | null>(null);
-	let askDialog: ReturnType<typeof AskArtistDialog> | undefined = $state();
-	let addDialog: ReturnType<typeof AddArtistDialog> | undefined = $state();
+	let askDialog: ReturnType<ArtistSheets['ask']> | undefined = $state();
+	let addDialog: ReturnType<ArtistSheets['add']> | undefined = $state();
 	let asked = $state(new Set<string>());
 	let follows = $state(new Map<string, boolean>());
 
@@ -1066,9 +1066,9 @@
 {/if}
 
 {#if manage}
-	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' }); void load(); }} />
+	<sheets.add bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' }); void load(); }} />
 {:else if mayAsk}
-	<AskArtistDialog bind:this={askDialog} onasked={onAsked} />
+	<sheets.ask bind:this={askDialog} onasked={onAsked} />
 {/if}
 
 <style>

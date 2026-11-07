@@ -9,7 +9,8 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
 	import { proxied, sized } from '#lib/core/tmdb-image.ts';
-	import { askArtist, askDetails, wantDetails, inbox } from '#lib/requests/index.ts';
+	import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
+import { inbox } from '#lib/core/inbox.svelte.ts';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { METADATA_DOWN, metadataOutage, MetadataNotice } from '#lib/metadata/index.ts';

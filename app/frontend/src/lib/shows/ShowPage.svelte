@@ -29,13 +29,14 @@
 	import Skeleton from '../ui/Skeleton.svelte';
 	import TitleCast from '../ui/TitleCast.svelte';
 	import TitleRows from '../ui/TitleRows.svelte';
+	import type { QuickAskSheet } from '../ui/title-cards.ts';
 	import LibrarySection from '../ui/LibrarySection.svelte';
 	import { audienceStatus } from '../ui/title-status.ts';
 	import TitleSection from '../ui/TitleSection.svelte';
 	import '../ui/title-page.css';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { decided, AskShowDialog } from '../requests/index.ts';
+import { decided } from '../core/plain.ts';
 	import { groupDownloads, HistoryLine as CompactRow, isRoutine } from '../downloads/index.ts';
 	import {
 		detailsSources,
@@ -57,13 +58,16 @@
 	} from './labels.ts';
 	import type { Ask, EpisodeView, EventPage, EventRecord, PickRulesView, TitleView } from '../core/types.ts';
 	import type { LookupShow } from '../core/types.ts';
+	import type { AskShowSheet } from './types.ts';
 
 	let {
 		title,
 		onchange,
 		error = '',
-		onretry
-	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
+		onretry,
+		askSheet: AskDialog,
+		quickAsk
+	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void; askSheet: AskShowSheet; quickAsk: QuickAskSheet } = $props();
 
 	// Who asked.
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
@@ -90,7 +94,7 @@
 	const staff = $derived(session.can('manage_library'));
 
 	// People who ask (not manage) ask for the seasons the Library does not keep.
-	let asker: ReturnType<typeof AskShowDialog> | undefined = $state();
+	let asker: ReturnType<AskShowSheet> | undefined = $state();
 	function askMore() {
 		const s: LookupShow = {
 			source: title.ids?.tmdb ? 'tmdb' : Object.keys(title.ids ?? {})[0] ?? 'tmdb',
@@ -485,7 +489,7 @@
 		<FollowButton titleId={title.id} kind="show" />
 	{/snippet}
 </TitleHero>
-{#if !staff && session.can('ask')}<AskShowDialog bind:this={asker} onasked={asked} />{/if}
+{#if !staff && session.can('ask')}<AskDialog bind:this={asker} onasked={asked} />{/if}
 
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
@@ -536,7 +540,7 @@
 	{/if}
 </section>
 
-<TitleRows kind="show" tmdb={title.ids?.tmdb}>
+<TitleRows kind="show" tmdb={title.ids?.tmdb} {quickAsk}>
 	{#snippet middle()}{#key title.id}<TitleCast titleId={title.id} />{/key}{/snippet}
 </TitleRows>
 

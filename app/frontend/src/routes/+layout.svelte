@@ -19,7 +19,7 @@
 	import { dlPush, decisions, refreshDecisions, activeDownloads, refreshActiveDownloads, resetActiveDownloads, dlTop } from '#lib/downloads/index.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
-	import { inbox, refreshInbox } from '#lib/requests/index.ts';
+	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus, needsAttention } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';

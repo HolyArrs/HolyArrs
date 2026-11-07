@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { healthSentence, looksLikeId, peopleNames, personName, plainReason } from './plain.ts';
+import { decided, healthSentence, looksLikeId, peopleNames, personName, plainReason } from './plain.ts';
 
 describe('plain words', () => {
 	it('spots internal ids', () => {
@@ -28,5 +28,16 @@ describe('plain words', () => {
 		expect(healthSentence({ kind: 'disk_space', state: 'warning' })).toBe('A Library folder is running low on space.');
 		expect(healthSentence({ kind: 'config_disk', state: 'error' })).toBe('The disk that holds the config folder is almost full.');
 		expect(healthSentence({ kind: 'nope' as never, state: 'error' })).toBe('Something in HolyArrs is not working.');
+	});
+	it('says who decided an ask', () => {
+		expect(decided({ state: 'asked', auto_approved: false })).toBe('');
+		expect(decided({ state: 'approved', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Approved by luis');
+		expect(decided({ state: 'available', decided_by: { id: 2, name: 'ana' }, auto_approved: true })).toBe('Auto-approved');
+		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Declined by luis');
+		// A member's view carries no sign-in name, so it says "an admin" instead of an empty "by".
+		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: '' }, auto_approved: false })).toBe('Declined by an admin');
+		expect(decided({ state: 'turned_down', decided_by: { id: 3, name: 'ana', display_name: 'Ana M' }, auto_approved: false }, { id: 1, displayName: 'Luis R' })).toBe('Declined by Ana M');
+		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false }, { id: 1, displayName: 'Luis R' })).toBe('Declined by Luis R');
+		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false }, { id: 2, displayName: 'Ana' })).toBe('Declined by luis');
 	});
 });

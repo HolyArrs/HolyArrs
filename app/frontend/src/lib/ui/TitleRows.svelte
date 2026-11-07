@@ -4,7 +4,7 @@
 	import { detailPath, to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
-		import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from './title-cards.ts';
+		import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem, type QuickAskSheet } from './title-cards.ts';
 		import { defaultRegion, serviceRegion } from './region.ts';
 	import { audienceOf } from './title-status.ts';
 	import type { FilmographyPage } from './people.ts';
@@ -13,8 +13,7 @@
 	import WideCard from './WideCard.svelte';
 	import Sheet from './Sheet.svelte';
 	import TitleReviews from './TitleReviews.svelte';
-	import { QuickAsk } from '../requests/index.ts';
-	import IconButton from './IconButton.svelte';
+		import IconButton from './IconButton.svelte';
 
 	// The requester rows of a movie or show page, read from the details
 	// answer (GET /metadata/{kind}/{tmdb}), in page order: Where to watch,
@@ -29,7 +28,8 @@
 		info = $bindable(null),
 		middle,
 		band = true,
-		reviewsLast = false
+		reviewsLast = false,
+		quickAsk: QuickAsk
 	}: {
 		kind: InfoKind;
 		tmdb: string | null | undefined;
@@ -41,6 +41,8 @@
 		band?: boolean;
 		/** Ratings & reviews after the title rows instead of before them. */
 		reviewsLast?: boolean;
+		/** The round + on a card, from the requests module. */
+		quickAsk: QuickAskSheet;
 	} = $props();
 
 	const region = serviceRegion(defaultRegion());
@@ -110,7 +112,7 @@
 	const hrefOf = (item: ProviderItem) => (item.title_id ? to(`/library/${item.title_id}`) : to(detailPath(item.kind, item.tmdb_id)));
 	let allSimilar = $state(false);
 	/** The + on a card asks or adds as on Explore. */
-	let flow: ReturnType<typeof QuickAsk> | undefined = $state();
+	let flow: ReturnType<QuickAskSheet> | undefined = $state();
 </script>
 
 {#snippet card({ c: raw, item }: Pair)}

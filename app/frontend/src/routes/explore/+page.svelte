@@ -4,6 +4,7 @@
 </script>
 
 <script lang="ts">
+	import { artistSheets } from '../request-sheets.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, genrePath, genresFor, parseGenre, type GenreAnswer, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, pickerServices, readServices, serviceRegion, SERVICES_KEY, SERVICES_SHOWN, type WatchService, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, GENRES, leaveOut, newHref, newServicesPath, type NewServicesAnswer, browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTileData as BrowseTile, fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer, whyShown } from '#lib/discover/index.ts';
@@ -14,7 +15,8 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox, QuickAsk } from '#lib/requests/index.ts';
+	import { QuickAsk } from '#lib/requests/index.ts';
+import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { cardAction, followsByTmdb, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
@@ -794,7 +796,7 @@
 			</GenreBanner>
 		</div>
 	{/if}
-	{#if type === 'music'}<MusicTrendingRows bind:genres={musicGenres} bind:ready={musicReady} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
+	{#if type === 'music'}<MusicTrendingRows sheets={artistSheets} bind:genres={musicGenres} bind:ready={musicReady} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
 
 	{#if type === 'music'}
 		<!-- Music: the music rows above only. -->

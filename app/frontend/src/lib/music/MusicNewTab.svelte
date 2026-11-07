@@ -7,12 +7,12 @@
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { refreshInbox, AddArtistDialog, AskArtistDialog } from '../requests/index.ts';
+import { refreshInbox } from '../core/inbox.svelte.ts';
 	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music-trending.ts';
 	import { coverFor } from './music-pages.ts';
 	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
 	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
-	import type { LookupArtist, MusicSettings } from './types.ts';
+	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
 	import Shelf from '../ui/Shelf.svelte';
 	import MusicVideoRow from './MusicVideoRow.svelte';
 	import MusicBrowseGrid from './MusicBrowseGrid.svelte';
@@ -23,7 +23,7 @@
 	import IconButton from '../ui/IconButton.svelte';
 	import EmptyState from '../ui/EmptyState.svelte';
 
-	let { manage, mayAsk, folders, rules }: { manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[] } = $props();
+	let { manage, mayAsk, folders, rules, sheets }: { manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; sheets: ArtistSheets } = $props();
 
 	let answer = $state<NewMusicAnswer | null>(null);
 	let failed = $state(false);
@@ -31,8 +31,8 @@
 	let addedHere = $state(new Map<string, number>());
 	let follows = $state(new Map<string, boolean>());
 	let defaults = $state<MusicSettings | null>(null);
-	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
-	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
+	let addArtist: ReturnType<ArtistSheets['add']> | undefined = $state();
+	let askArtist: ReturnType<ArtistSheets['ask']> | undefined = $state();
 	const gone = new AbortController();
 	let poll: ReturnType<typeof setTimeout> | undefined;
 
@@ -279,9 +279,9 @@
 {/if}
 
 {#if manage}
-	<AddArtistDialog bind:this={addArtist} {folders} {rules} {defaults} onadded={added} />
+	<sheets.add bind:this={addArtist} {folders} {rules} {defaults} onadded={added} />
 {:else if mayAsk}
-	<AskArtistDialog bind:this={askArtist} onasked={asked} onrefused={(a, body) => typeof body.title_id === 'number' && (addedHere = new Map([...addedHere, [a.mbid, body.title_id]]))} />
+	<sheets.ask bind:this={askArtist} onasked={asked} onrefused={(a, body) => typeof body.title_id === 'number' && (addedHere = new Map([...addedHere, [a.mbid, body.title_id]]))} />
 {/if}
 
 <style>

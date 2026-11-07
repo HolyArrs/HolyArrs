@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { artistSheets } from '../request-sheets.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn, savedDefaults } from '#lib/mediafiles/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -9,7 +10,8 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox, QuickAsk } from '#lib/requests/index.ts';
+	import { QuickAsk } from '#lib/requests/index.ts';
+import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { serverRow, serviceRegion, type WatchService, cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem, PopularRail as NewRail, ExploreHero, whyShown, type Why } from '#lib/discover/index.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
@@ -279,7 +281,7 @@
 	<MetadataNotice />
 
 	{#if type === 'music'}
-		<MusicNewTab {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} />
+		<MusicNewTab sheets={artistSheets} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} />
 	{:else if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
 	{:else}

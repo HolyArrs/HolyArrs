@@ -4,7 +4,7 @@
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { to } from '../core/paths.ts';
-	import { refreshInbox } from './state.svelte.ts';
+	import { refreshInbox } from '../core/inbox.svelte.ts';
 	import { loadDetails } from '../metadata/index.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from '../ui/title-cards.ts';
 	import { seasonWords } from '../shows/index.ts';

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { proxied } from '#lib/core/tmdb-image.ts';
-	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, inbox, markRead, refreshInbox, listReports, liveByTitle, liveFacts, stepFacts, type TitleLive, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, markRead, listReports, liveByTitle, liveFacts, stepFacts, type TitleLive, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
+import { decided as decidedRaw } from '#lib/core/plain.ts';
+import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/core/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';

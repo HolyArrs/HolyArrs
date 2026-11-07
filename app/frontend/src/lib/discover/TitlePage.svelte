@@ -6,7 +6,8 @@
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox, SearchOutcomeLine, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, ReportSheet } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, ReportSheet } from '#lib/requests/index.ts';
+import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { seasonWords, ShowSeasons, SeasonFolds, ShowVersions, SeasonToolsSheet, EpisodeSheet, type SheetEpisode } from '#lib/shows/index.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
 	import { preloadHero } from '#lib/core/tmdb-image.ts';
@@ -1522,7 +1523,7 @@
 		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
-		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} quickAsk={QuickAsk} />
 		{#if d}
 			<!-- Apple TV-like About band: a lighter strip to the page edges; a row of cards (the title, every score,
 			     awards), then three columns of plain label/value facts, then links out. -->
@@ -1614,7 +1615,7 @@
 		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
-		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} quickAsk={QuickAsk} />
 		{/if}
 
 

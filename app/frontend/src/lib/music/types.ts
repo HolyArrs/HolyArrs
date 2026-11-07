@@ -1,4 +1,5 @@
-import type { AskAlbum, EpisodeSlot, AskState } from '../core/types.ts';
+import type { Component } from 'svelte';
+import type { Ask, AskAlbum, EpisodeSlot, AskState, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 
 export interface PressingTrack {
 	id: string;
@@ -79,4 +80,24 @@ export interface MusicSettings {
 	pressing_rule: string;
 	musicbrainz_url: string;
 	cache_hours: number;
+}
+
+/** ArtistSheets are the ask and add dialogs, handed in by the page because a music part cannot import requests. */
+export interface ArtistSheets {
+	ask: Component<
+		{
+			onasked: (artist: LookupArtist, r: { ask: Ask; joined: boolean; already: boolean }) => void;
+			onrefused?: (artist: LookupArtist, body: Record<string, unknown>) => void;
+		},
+		{ open: (a: LookupArtist, album?: string) => Promise<void> }
+	>;
+	add: Component<
+		{
+			folders: LibraryFolder[];
+			rules: PickRulesView[];
+			defaults: MusicSettings | null;
+			onadded: (artist: LookupArtist, title: TitleView) => void;
+		},
+		{ open: (a: LookupArtist) => void }
+	>;
 }

@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { refreshInbox, AddArtistDialog, AskArtistDialog } from '../requests/index.ts';
+import { refreshInbox } from '../core/inbox.svelte.ts';
 	import type { OwnedIndex } from '../ui/title-cards.ts';
 	import { defaultRegion } from '../ui/region.ts';
 	import { coverFor } from './music-pages.ts';
@@ -18,7 +18,7 @@
 	import { to } from '../core/paths.ts';
 	import SongLine from './SongLine.svelte';
 	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
-	import type { LookupArtist, MusicSettings } from './types.ts';
+	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
 	import Shelf from '../ui/Shelf.svelte';
 	import PosterCard from '../ui/PosterCard.svelte';
 	import IconButton from '../ui/IconButton.svelte';
@@ -40,8 +40,9 @@
 		slug = '',
 		kind = 'genre',
 		genres = $bindable([]),
-		ready = $bindable(false)
-	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The page kind for slug (genre, mood, season, decade, activity). */ kind?: MusicPageKind; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[]; /** The first answer (or a failure) is in: genres says all it will. */ ready?: boolean } = $props();
+		ready = $bindable(false),
+		sheets
+	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The page kind for slug (genre, mood, season, decade, activity). */ kind?: MusicPageKind; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[]; /** The first answer (or a failure) is in: genres says all it will. */ ready?: boolean; sheets: ArtistSheets } = $props();
 	type StripGenre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number };
 
 	let region = $state('global');
@@ -63,8 +64,8 @@
 	let addedHere = $state(new Map<string, number>());
 	let busy = $state('');
 	let defaults = $state<MusicSettings | null>(null);
-	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
-	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
+	let addArtist: ReturnType<ArtistSheets['add']> | undefined = $state();
+	let askArtist: ReturnType<ArtistSheets['ask']> | undefined = $state();
 	let gone: AbortController | undefined;
 	/** music_rows_v7: the next rows' cursor, whether a batch is in flight, and batches read this visit. */
 	let next = $state('');
@@ -442,9 +443,9 @@
 {/if}
 
 {#if manage}
-	<AddArtistDialog bind:this={addArtist} {folders} {rules} {defaults} onadded={added} />
+	<sheets.add bind:this={addArtist} {folders} {rules} {defaults} onadded={added} />
 {:else if mayAsk}
-	<AskArtistDialog bind:this={askArtist} onasked={asked} onrefused={(a, body) => typeof body.title_id === 'number' && (addedHere = new Map([...addedHere, [a.mbid, body.title_id]]))} />
+	<sheets.ask bind:this={askArtist} onasked={asked} onrefused={(a, body) => typeof body.title_id === 'number' && (addedHere = new Map([...addedHere, [a.mbid, body.title_id]]))} />
 {/if}
 
 <style>

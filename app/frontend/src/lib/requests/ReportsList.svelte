@@ -11,7 +11,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox } from './state.svelte.ts';
+	import { refreshInbox } from '../core/inbox.svelte.ts';
 	import { ago, dateTime } from '#lib/core/format.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';

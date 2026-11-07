@@ -20,18 +20,6 @@ export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
 	return `Asked by ${names(list)}`;
 }
 
-/** decided says who decided and how, or '' while it waits. */
-export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, me?: { id: number; displayName: string }): string {
-	if (!a.decided_by || a.state === 'asked') return '';
-	// A display name wins over the account name: my own (freshest), else the one the server sends.
-	const mine = me && me.id === a.decided_by.id ? me.displayName.trim() : '';
-	// Members get no sign-in name (the server leaves it empty): "an admin" then.
-	const who = mine || a.decided_by.display_name?.trim() || a.decided_by.name || 'an admin';
-	if (a.state === 'turned_down') return `Declined by ${who}`;
-	if (a.auto_approved) return 'Auto-approved';
-	return `Approved by ${who}`;
-}
-
 /**
  * alsoDeclined names the others who declined the same title on earlier
  * requests (approvers only get the list): "Bo and Cy declined it before.",

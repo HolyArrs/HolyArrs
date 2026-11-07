@@ -8,7 +8,7 @@ import { decisions } from '#lib/downloads/index.ts';
 import { live } from '#lib/core/live.svelte.ts';
 import { to } from '#lib/core/paths.ts';
 import { cut, messageWords } from './bell-words.ts';
-import { inbox } from '#lib/requests/index.ts';
+import { inbox } from '#lib/core/inbox.svelte.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import type { UpdateInfo } from '#lib/core/types.ts';
 import type { PinnedAlert } from '#lib/alerts/index.ts';

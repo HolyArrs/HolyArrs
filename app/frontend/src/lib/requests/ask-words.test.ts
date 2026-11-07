@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './ask-words.ts';
+import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './ask-words.ts';
 import type { AskState } from '../core/types.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
 
@@ -11,18 +11,9 @@ describe('requests words', () => {
 		expect(names(['ana', 'bo', 'cy'])).toBe('ana, bo and cy');
 	});
 
-	it('says who asked and who decided', () => {
+	it('says who asked', () => {
 		const who = (id: number, name: string) => ({ id, name, asked_at: '' });
 		expect(askedBy({ asked_by: { id: 2, name: 'ana' }, people: [who(2, 'ana'), who(3, 'bo')] })).toBe('Asked by ana and bo');
-		expect(decided({ state: 'asked', auto_approved: false })).toBe('');
-		expect(decided({ state: 'approved', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Approved by luis');
-		expect(decided({ state: 'available', decided_by: { id: 2, name: 'ana' }, auto_approved: true })).toBe('Auto-approved');
-		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Declined by luis');
-		// A member's view carries no sign-in name: a neutral word, never an empty "by".
-		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: '' }, auto_approved: false })).toBe('Declined by an admin');
-		expect(decided({ state: 'turned_down', decided_by: { id: 3, name: 'ana', display_name: 'Ana M' }, auto_approved: false }, { id: 1, displayName: 'Luis R' })).toBe('Declined by Ana M');
-		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false }, { id: 1, displayName: 'Luis R' })).toBe('Declined by Luis R');
-		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false }, { id: 2, displayName: 'Ana' })).toBe('Declined by luis');
 	});
 
 	it('colours states', () => {

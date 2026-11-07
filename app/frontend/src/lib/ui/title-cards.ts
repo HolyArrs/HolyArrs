@@ -5,6 +5,7 @@ import { pickFrom, type CardArtPick } from './card-art.ts';
 import type { Fresh } from './fresh.ts';
 import type { StatusKind } from './StatusPill.svelte';
 import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
+import type { Component } from 'svelte';
 import type { Ask, AskBrief, AskState, TitleView } from '../core/types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
@@ -294,3 +295,14 @@ export function cardIdentity(c: Pick<ExploreCard, 'key' | 'kind' | 'ref' | 'titl
 	if (c.titleId !== undefined) return `t${c.titleId}`;
 	return c.key;
 }
+
+/** QuickAskSheet is the round + on a card, handed in by the page because a ui part cannot import requests. */
+export type QuickAskSheet = Component<
+	{ onadded?: (t: TitleView) => void },
+	{
+		live: (c: ExploreCard) => ExploreCard;
+		action: (c: ExploreCard) => 'add' | 'ask' | null;
+		busy: (c: ExploreCard) => boolean;
+		open: (c: ExploreCard, act: 'add' | 'ask') => Promise<void>;
+	}
+>;

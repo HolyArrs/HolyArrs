@@ -13,17 +13,18 @@
 	import { session } from '../core/session.svelte.ts';
 	import { audienceStatus } from '../ui/title-status.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { decided, AskArtistDialog } from '../requests/index.ts';
+import { decided } from '../core/plain.ts';
 	import { albumWords, artistProgress } from './labels.ts';
 	import type { Ask, TitleView } from '../core/types.ts';
-	import type { LookupArtist } from './types.ts';
+	import type { ArtistSheets, LookupArtist } from './types.ts';
 
 	let {
 		title,
 		onchange,
 		error = '',
-		onretry
-	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
+		onretry,
+		sheets
+	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void; sheets: ArtistSheets } = $props();
 
 	// A failed refresh keeps what is shown and says so above it.
 	let loadErr = $state('');
@@ -42,7 +43,7 @@
 	const artist = $derived(title.artist);
 	// Bumped on every read of the artist, so the Library tab reads again too.
 	let stamp = $state(0);
-	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
+	let asker: ReturnType<ArtistSheets['ask']> | undefined = $state();
 	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
 	// One status vocabulary (title-status.ts); staff also see how many are missing.
@@ -113,7 +114,7 @@
 	}
 </script>
 
-<MusicArtistPage mbid={artist?.mbid ?? ''} library={lib}>
+<MusicArtistPage mbid={artist?.mbid ?? ''} library={lib} {sheets}>
 {#snippet below()}
 <div class="tp lib-below">
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
@@ -142,7 +143,7 @@
 </MusicArtistPage>
 
 {#if !staff && session.can('ask')}
-	<AskArtistDialog bind:this={asker} onasked={asked} />
+	<sheets.ask bind:this={asker} onasked={asked} />
 {/if}
 
 <style>

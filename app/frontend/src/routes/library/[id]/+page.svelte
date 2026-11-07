@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { artistSheets, askShowSheet, quickAskSheet } from '../../request-sheets.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { peopleNames } from '#lib/core/plain.ts';
 	import { to } from '#lib/core/paths.ts';
@@ -11,7 +12,8 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import EmptyState from '#lib/ui/TitleEmpty.svelte';
 	import { secondVersion, slotNotes, chooseWarnings, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, type RemovePlan, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
-	import { decided, ReportSheet } from '#lib/requests/index.ts';
+	import { ReportSheet } from '#lib/requests/index.ts';
+import { decided } from '#lib/core/plain.ts';
 	import { downloadTone, percent, timeLeft, groupLabel, kindTone } from '#lib/downloads/index.ts';
 	import { SubtitlePanel } from '#lib/subtitles/index.ts';
 	import { ShowPage } from '#lib/shows/index.ts';
@@ -522,9 +524,9 @@
 {#if shared(title)}
 	{#key title.id}<TitlePage kind={title.kind} tmdb={String(title.ids.tmdb)} libraryId={title.id} backHref={page.url.searchParams.has('returnTo') ? libraryBack : undefined} />{/key}
 {:else if title.kind === 'show'}
-	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
+	<ShowPage askSheet={askShowSheet} quickAsk={quickAskSheet} {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}
-	<ArtistPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
+	<ArtistPage sheets={artistSheets} {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else}
 	<div class="tp">
 		<TitleHero
@@ -577,7 +579,7 @@
 
 		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
 
-		<TitleRows kind="movie" tmdb={title.ids?.tmdb}>
+		<TitleRows kind="movie" tmdb={title.ids?.tmdb} quickAsk={quickAskSheet}>
 			{#snippet middle()}{#key title!.id}<TitleCast titleId={title!.id} />{/key}{/snippet}
 		</TitleRows>
 

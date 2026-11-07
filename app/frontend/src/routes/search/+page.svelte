@@ -35,7 +35,8 @@
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 	import type { LookupShow } from '#lib/core/types.ts';
 	import type { PersonSummary } from '#lib/ui/people.ts';
-	import { refreshInbox, AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
+	import { AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
+import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { createLatestOnly } from '#lib/downloads/index.ts';
 	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';

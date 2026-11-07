@@ -18,14 +18,7 @@
 		"routes/settings/sign-in/plex-popup-opener.test.ts",
 		"routes/settings/tmdb/tmdb-privacy.test.ts"
 	],
-	"edges": [
-		"lib/music/ArtistOverview.svelte -> lib/requests/index.ts",
-		"lib/music/ArtistPage.svelte -> lib/requests/index.ts",
-		"lib/music/MusicNewTab.svelte -> lib/requests/index.ts",
-		"lib/music/MusicTrendingRows.svelte -> lib/requests/index.ts",
-		"lib/shows/ShowPage.svelte -> lib/requests/index.ts",
-		"lib/ui/TitleRows.svelte -> lib/requests/index.ts"
-	],
+	"edges": [],
 	"pageEdges": [],
 	"noIndex": []
 }

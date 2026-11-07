@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { artistSheets } from '../../../request-sheets.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { api } from '#lib/core/api.ts';
@@ -30,7 +31,7 @@
 
 <div class="genre" data-testid="music-browse-page">
 	{#key `${kind}/${slug}`}
-		<MusicTrendingRows {owned} {manage} {mayAsk} {folders} {rules} {slug} {kind} />
+		<MusicTrendingRows sheets={artistSheets} {owned} {manage} {mayAsk} {folders} {rules} {slug} {kind} />
 	{/key}
 </div>
 
