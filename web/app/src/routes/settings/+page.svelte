@@ -158,7 +158,8 @@
 	/* Desktop: a compact landing, at most 640px tall and 1180px wide, centred.
 	   On short windows it shrinks to fit (main's 24px top and 64px bottom
 	   padding taken out), so it never scrolls. */
-	.sx-home { display: flex; flex-direction: column; width: 100%; max-width: 1180px; margin-inline: auto; height: min(640px, calc(100dvh - var(--topbar) - 88px)); min-height: 420px; }
+	/* Desktop: the grid sits in the middle of the window, across and down, and grows with it (no scroll). */
+	.sx-home { display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: min(1480px, calc((100dvh - var(--topbar) - 88px) * 1.9)); margin-inline: auto; margin-bottom: -40px; height: calc(100dvh - var(--topbar) - 48px); min-height: 420px; }
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
 	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
 	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
@@ -169,7 +170,7 @@
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 
 	/* ---------- Bento: Library tall on the left, four around it ---------- */
-	.bento { flex: 1; display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(150px, 1fr) minmax(150px, 1fr); gap: 14px; min-height: 0; }
+	.bento { flex: 0 1 auto; height: min(820px, 100%); display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(150px, 1fr) minmax(150px, 1fr); gap: 14px; min-height: 0; }
 	.sx-card { position: relative; display: block; min-width: 0; border-radius: var(--r-panel); color: var(--text); text-decoration: none; -webkit-tap-highlight-color: transparent; }
 	.sx-card[data-group='library'] { grid-row: span 2; }
 	.sx-card:focus-visible { outline: none; }
@@ -201,14 +202,14 @@
 	/* Tablet: Library across the top, two by two under it. */
 	@media (min-width: 768px) and (max-width: 1100px) {
 		.sx-home { height: auto; }
-		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 260px repeat(2, 220px); min-height: 0; flex: none; }
+		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 260px repeat(2, 220px); min-height: 0; flex: none; height: auto; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
 	}
 	/* Phone: two columns, Library wide on top. */
 	@media (max-width: 767px) {
 		.sx-home { min-height: 0; height: auto; }
 		.lede { margin: -10px 0 16px; }
-		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; }
+		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; height: auto; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
 		.sx-face { padding: 16px; }
 		.nm { font-size: 19px; }
