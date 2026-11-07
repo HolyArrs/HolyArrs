@@ -257,7 +257,7 @@ test('Remove a movie series: grouped by series, Open series, review both movies,
 	await page.goto('/library?kind=movie');
 	// Group by series is a row in the Sort and filter panel.
 	await page.getByRole('main').getByRole('button', { name: /^Sort( &|)/ }).first().click();
-	await page.getByRole('region', { name: 'Sort' }).getByRole('button', { name: 'Group by series' }).click();
+	await page.getByRole('region', { name: 'Sort' }).getByRole('button', { name: 'Group by collection' }).click();
 	await page.keyboard.press('Escape');
 	await expect(page).toHaveURL(/group=series/);
 	await libraryView(page, 'Banners');
@@ -279,7 +279,7 @@ test('Remove a movie series: grouped by series, Open series, review both movies,
 	expect(existsSync(target)).toBe(true);
 
 	await confirm.getByRole('button', { name: 'Remove reviewed movies' }).click();
-	const done = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Movie series removal finished' }) });
+	const done = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Collection removed' }) });
 	await expect(done).toContainText('Brumwick Gate was removed from the Library.');
 	await expect(done).toContainText('Brumwick Gate Again was removed from the Library.');
 

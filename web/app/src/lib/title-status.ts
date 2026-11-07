@@ -36,7 +36,7 @@ const staffWords: Record<StatusKind, string> = {
 	in_library: 'In your Library',
 	downloading: 'Downloading',
 	missing: 'Missing',
-	requested: 'Pending',
+	requested: 'Waiting',
 	approved: 'Approved',
 	turned_down: 'Declined',
 	failed: 'Failed',

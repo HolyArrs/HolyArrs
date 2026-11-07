@@ -51,7 +51,7 @@ export interface LifeFacts {
 
 /** lifecycle places an ask on its line; `facts` adds what is known beyond its state. */
 export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts = {}): Life {
-	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Pending' };
+	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Waiting' };
 	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Declined' };
 	if (a.state === 'available') return ready(facts);
 	if (!a.title_id) return failedLife(facts);

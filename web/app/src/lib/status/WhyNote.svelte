@@ -238,7 +238,7 @@
 						<span class="wchip stk" style="--c:#f2b33d"><i></i>Movies</span>
 						<span class="wchip stk" style="--c:#2fbf71"><i></i>Music</span>
 						<span class="wchip stk" style="--c:#a78bfa"><i></i>Subtitles</span>
-						<span class="wchip stk" style="--c:#38bdf8"><i></i>Indexers</span>
+						<span class="wchip stk" style="--c:#38bdf8"><i></i>Sources</span>
 						<span class="wchip stk" style="--c:#fb7185"><i></i>Requests</span>
 					</div>
 					<p class="say typed">I loved what they made possible. But six apps meant six settings pages, six logins, and six different ideas of what was going on.</p>

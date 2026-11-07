@@ -60,7 +60,7 @@
 
 <svelte:head><title>{detail?.name ?? 'Movie collection'} · HolyArrs</title></svelte:head>
 <div class="page">
-<PageHeader title={detail?.name ?? 'Movie series'} subtitle={detail ? 'Removing a movie removes its Library entry even when it belongs to another series.' : undefined} back={{ href: to('/library/collections'), label: 'Movie series' }} />
+<PageHeader title={detail?.name ?? 'Collection'} subtitle={detail ? 'Also removes it from other collections.' : undefined} back={{ href: to('/library/collections'), label: 'Collections' }} />
 
 {#if error && !detail}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={retry} {busy} />
@@ -110,7 +110,7 @@
 	{/if}
 
 	{#if review?.applied}
-		<section class="card choices" aria-live="polite"><h2>Movie series removal finished</h2>{#each review.results ?? [] as result}<p class:bad-text={result.status === 'failed'}>{collectionResultLine(result)}</p>{/each}<div class="actions"><Button onclick={retry}>Review remaining movies</Button><Button variant="plain" href={to('/library/collections')}>Back to movie series</Button></div></section>
+		<section class="card choices" aria-live="polite"><h2>Collection removed</h2>{#each review.results ?? [] as result}<p class:bad-text={result.status === 'failed'}>{collectionResultLine(result)}</p>{/each}<div class="actions"><Button onclick={retry}>Review remaining movies</Button><Button variant="plain" href={to('/library/collections')}>Back to movie series</Button></div></section>
 	{/if}
 {/if}
 </PageLoader>

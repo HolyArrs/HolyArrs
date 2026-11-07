@@ -177,7 +177,7 @@
 								</div>
 							{:else}
 								<button type="button" class="cc-row act" onclick={() => setProtection(file, true)} disabled={busy !== ''}>
-									<span><b>Protect this copy</b><small>Upgrades never replace it</small></span><Icon name="shield" size={16} />
+									<span><b>Protect this copy</b><small>Better copies never replace it</small></span><Icon name="shield" size={16} />
 								</button>
 							{/if}
 							<button type="button" class="cc-row act" onclick={() => openAdd(file)} disabled={busy !== ''}>

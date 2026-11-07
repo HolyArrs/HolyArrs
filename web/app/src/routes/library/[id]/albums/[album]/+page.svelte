@@ -331,7 +331,7 @@
 				<h3 class="alb-h">Settings</h3>
 				<div class="alb-rows">
 					<button type="button" class="alb-row" role="switch" aria-checked={album.keep_up_to_date} disabled={busy === 'keep' || !album.included} onclick={() => setKeep(!album!.keep_up_to_date)}>
-						<span><b>Keep up to date</b><small>{album.included ? 'Grab missing tracks and better copies' : 'Left out by the artist’s Releases'}</small></span>
+						<span><b>Keep up to date</b><small>{album.included ? 'Gets missing tracks and better copies' : 'Left out by the artist’s Releases'}</small></span>
 						<span class="alb-switch" class:on={album.keep_up_to_date} aria-hidden="true"></span>
 					</button>
 					{#if pressings.length > 1 && current}

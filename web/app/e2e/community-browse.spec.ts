@@ -257,7 +257,7 @@ for (const viewport of viewports) {
 
 			await page.getByRole('button', { name: 'Review 3 selected' }).click();
 			await page.getByRole('button', { name: 'Remove reviewed movies' }).click();
-			await expect(page.getByRole('heading', { name: 'Movie series removal finished' })).toBeVisible();
+			await expect(page.getByRole('heading', { name: 'Collection removed' })).toBeVisible();
 			await expect(page.getByText('North Star was removed from the Library.')).toBeVisible();
 			await expect(page.getByText('North Star II stayed in the Library: the protected file changed after review.')).toBeVisible();
 			await expect(page.getByText('North Star III could not be removed: the Library row changed after review.')).toBeVisible();

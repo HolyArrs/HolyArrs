@@ -163,7 +163,7 @@
 		{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
 		<div class="row modal-actions">
 			<Button variant="plain" onclick={() => dialog?.close()}>Cancel</Button>
-			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>Add Version</Button>
+			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>Add version</Button>
 		</div>
 	</form>
 </dialog>

@@ -148,7 +148,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	const desk = own.getByTestId('requests-desktop');
 	await expect(desk).toBeVisible();
 	for (const a of first) {
-		const tab = a.state === 'asked' ? 'Pending' : a.state === 'approved' ? 'Processing' : 'Done';
+		const tab = a.state === 'asked' ? 'Waiting' : a.state === 'approved' ? 'Processing' : 'Done';
 		await desk.getByRole('button', { name: new RegExp(`^${tab} \\d+`) }).click();
 		const row = desk.locator(`li.bc[data-ask="${a.id}"]`);
 		await expect(row).toContainText(a.name);
