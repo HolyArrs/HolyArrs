@@ -189,7 +189,7 @@
 						Public client (no secret; the provider is set up for that)
 					</label>
 					<Field id="sso-callback" label="Callback address" hint="Register this exact address at the provider." style="display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px">
-						<div class="row">
+						<div class="row callback-row">
 							<input id="sso-callback" class="input mono grow" value={callback} readonly />
 							<Button icon="copy" type="button" onclick={copyCallback}>Copy</Button>
 						</div>
@@ -262,6 +262,16 @@
 		}
 		.check input {
 			margin-top: 0;
+		}
+	}
+	/* Phones: the whole callback address shows, Copy goes under it. */
+	@media (max-width: 560px) {
+		.callback-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.callback-row :global(button) {
+			align-self: flex-start;
 		}
 	}
 	.facts {
