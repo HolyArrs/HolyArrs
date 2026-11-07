@@ -15,7 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -213,7 +214,7 @@ func TestMusicSideKeptStaleAndMiss(t *testing.T) {
 
 // Held, retrying or slow details answer 503 with Retry-After, not 502.
 func TestDiscoverFailBusy(t *testing.T) {
-	for _, err := range []error{outside.ErrSuppressed, metadata.ErrServiceUnavailable, metadata.ErrRateLimited, context.DeadlineExceeded} {
+	for _, err := range []error{outbound.ErrSuppressed, metadata.ErrServiceUnavailable, metadata.ErrRateLimited, context.DeadlineExceeded} {
 		w := httptest.NewRecorder()
 		discoverFail(w, err)
 		if w.Code != http.StatusServiceUnavailable || w.Header().Get("Retry-After") == "" {

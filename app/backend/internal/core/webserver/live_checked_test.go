@@ -1,4 +1,4 @@
-package live
+package webserver
 
 import (
 	"context"
@@ -45,14 +45,14 @@ func TestCheckedStreamEndsWhenViewerChanges(t *testing.T) {
 	var approve, signedIn atomic.Bool
 	approve.Store(true)
 	signedIn.Store(true)
-	view := func(*http.Request) (Viewer, bool) {
-		return Viewer{UserID: 7, Approve: approve.Load()}, signedIn.Load()
+	view := func(*http.Request) (LiveViewer, bool) {
+		return LiveViewer{UserID: 7, Approve: approve.Load()}, signedIn.Load()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Recheck: rights taken away end the stream straight away.
-	h := NewHub(Options{Heartbeat: time.Hour})
+	h := NewLiveHub(LiveOptions{Heartbeat: time.Hour})
 	srv := httptest.NewServer(h.Checked(view))
 	defer srv.Close()
 	done := ends(connect(t, ctx, srv.URL, ""))
@@ -66,7 +66,7 @@ func TestCheckedStreamEndsWhenViewerChanges(t *testing.T) {
 
 	// Heartbeat: a sign-out nobody announced is noticed at the next beat.
 	approve.Store(true)
-	hb := NewHub(Options{Heartbeat: 30 * time.Millisecond})
+	hb := NewLiveHub(LiveOptions{Heartbeat: 30 * time.Millisecond})
 	srv2 := httptest.NewServer(hb.Checked(view))
 	defer srv2.Close()
 	done = ends(connect(t, ctx, srv2.URL, ""))
@@ -91,9 +91,9 @@ func TestCheckedStreamEndsWhenViewerChanges(t *testing.T) {
 func TestCheckedChecksBeforeHandingOverAnEvent(t *testing.T) {
 	var approve atomic.Bool
 	approve.Store(true)
-	h := NewHub(Options{Heartbeat: time.Hour})
-	srv := httptest.NewServer(h.Checked(func(*http.Request) (Viewer, bool) {
-		return Viewer{UserID: 7, Approve: approve.Load()}, true
+	h := NewLiveHub(LiveOptions{Heartbeat: time.Hour})
+	srv := httptest.NewServer(h.Checked(func(*http.Request) (LiveViewer, bool) {
+		return LiveViewer{UserID: 7, Approve: approve.Load()}, true
 	}))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -116,7 +116,7 @@ func TestCheckedChecksBeforeHandingOverAnEvent(t *testing.T) {
 	approve.Store(false)
 	for c := range h.clients {
 		c.check <- struct{}{}
-		c.ch <- Event{ID: 99, Topic: "ask", Data: []byte(`"after"`)}
+		c.ch <- LiveEvent{ID: 99, Topic: "ask", Data: []byte(`"after"`)}
 	}
 	h.mu.Unlock()
 	select {

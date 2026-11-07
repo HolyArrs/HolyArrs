@@ -15,7 +15,8 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
@@ -64,7 +65,7 @@ func keyKitServer(t *testing.T, m *Manager) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
 	m.Routes(mux, func() {})
-	srv := httptest.NewServer(routehits.Wrap(mux))
+	srv := httptest.NewServer(webserver.RecordRouteHits(mux))
 	t.Cleanup(srv.Close)
 	return srv
 }

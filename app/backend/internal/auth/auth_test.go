@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -58,7 +58,7 @@ func setup(t *testing.T, opt Options) *fixture {
 	m.HandleFunc("POST /api/v1/titles", okHandler)
 	m.HandleFunc("GET /healthz", okHandler)
 	a.Routes(m)
-	srv := httptest.NewServer(a.Middleware(routehits.Wrap(m)))
+	srv := httptest.NewServer(a.Middleware(webserver.RecordRouteHits(m)))
 	t.Cleanup(srv.Close)
 	return &fixture{srv: srv, a: a, s: s, clock: c}
 }

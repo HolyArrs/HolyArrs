@@ -3,13 +3,12 @@ package source
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 func TestOutsideBreakerSuppressesOneSourceAndLeavesAnotherRunning(t *testing.T) {
@@ -25,7 +24,7 @@ func TestOutsideBreakerSuppressesOneSourceAndLeavesAnotherRunning(t *testing.T) 
 			t.Fatal("failing source returned no error")
 		}
 	}
-	if _, err := badClient.fetch(context.Background(), bad.URL); !errors.Is(err, outside.ErrSuppressed) {
+	if _, err := badClient.fetch(context.Background(), bad.URL); !errors.Is(err, outbound.ErrSuppressed) {
 		t.Fatalf("fourth call error = %v", err)
 	}
 	if got := badHits.Load(); got != 3 {

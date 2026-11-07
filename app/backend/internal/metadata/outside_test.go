@@ -3,12 +3,11 @@ package metadata
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 func TestOutsideBreakerUsesStableMetadataEndpointIdentity(t *testing.T) {
@@ -25,7 +24,7 @@ func TestOutsideBreakerUsesStableMetadataEndpointIdentity(t *testing.T) {
 			t.Fatal("failing metadata call returned no error")
 		}
 	}
-	if _, err := m.SearchShows(context.Background(), "four"); !errors.Is(err, outside.ErrSuppressed) {
+	if _, err := m.SearchShows(context.Background(), "four"); !errors.Is(err, outbound.ErrSuppressed) {
 		t.Fatalf("fourth query was not suppressed: %v", err)
 	}
 	if got := hits.Load(); got != 3 {

@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
@@ -102,8 +103,8 @@ func TestLinkStates(t *testing.T) {
 func TestOutsideCallRowsHideTheBreakerID(t *testing.T) {
 	w := newWorld(t)
 	const fp = "B68gdslpF06jsy8_OogpQb7_"
-	w.e.Outside = func() []outside.State {
-		return []outside.State{
+	w.e.Outside = func() []outbound.State {
+		return []outbound.State{
 			{ID: fp, Kind: "metadata_tmdb", Status: "retrying", Reason: "It does not answer; HolyArrs tries again on its own."},
 			{ID: "Zz9_other-fingerprint", Kind: "metadata_tmdb", Status: "retrying"},
 			{ID: "Qq1_third", Kind: "downloader", Status: "retrying"},

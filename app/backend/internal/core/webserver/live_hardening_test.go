@@ -1,4 +1,4 @@
-package live
+package webserver
 
 import (
 	"context"
@@ -25,38 +25,38 @@ func next(t *testing.T, ch <-chan got) got {
 // from an older build, or with an id the server never gave, must be told
 // to reload, whatever topic it last saw.
 func TestResumeAfterRestartAsksForResync(t *testing.T) {
-	old := NewHub(Options{})
+	old := NewLiveHub(LiveOptions{})
 	var lastIDs []string
-	for _, topic := range []string{"title", "job", "event", "slot", "ask", "downloader", "health", TopicDL} {
+	for _, topic := range []string{"title", "job", "event", "slot", "ask", "downloader", "health", LiveTopicDL} {
 		var n uint64
-		if topic == TopicDL {
+		if topic == LiveTopicDL {
 			n = old.PublishDL("1", map[string]int{"toRev": 1}, nil)
 		} else {
 			n = old.Publish(topic, 1)
 		}
 		lastIDs = append(lastIDs, old.EventID(n))
 	}
-	h := NewHub(Options{}) // the restarted server
+	h := NewLiveHub(LiveOptions{}) // the restarted server
 	if h.Boot() == old.Boot() {
 		t.Fatal("boot ids repeat")
 	}
 	h.Publish("title", 1)
 	lastIDs = append(lastIDs, "3", h.Boot()+"-99")
 	for _, id := range lastIDs {
-		_, replay := h.subscribe(Viewer{All: true}, id)
+		_, replay := h.subscribe(LiveViewer{All: true}, id)
 		if len(replay) != 1 || replay[0].Topic != "resync" {
 			t.Errorf("resume from %s: %+v, want one resync", id, replay)
 		}
 	}
 	// The same boot and a current id: nothing to replay, no resync.
-	_, replay := h.subscribe(Viewer{All: true}, h.EventID(1))
+	_, replay := h.subscribe(LiveViewer{All: true}, h.EventID(1))
 	if len(replay) != 0 {
 		t.Errorf("current id replay %+v", replay)
 	}
 }
 
 func TestQueryLastResumes(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	first := h.Publish("job", 1)
@@ -80,23 +80,23 @@ func TestQueryLastResumes(t *testing.T) {
 	}
 }
 
-func viewerFromHeader(r *http.Request) Viewer {
+func viewerFromHeader(r *http.Request) LiveViewer {
 	id, _ := strconv.ParseInt(r.Header.Get("X-User"), 10, 64)
-	return Viewer{UserID: id, All: r.Header.Get("X-Manager") == "1", Approve: r.Header.Get("X-Approve") == "1"}
+	return LiveViewer{UserID: id, All: r.Header.Get("X-Manager") == "1", Approve: r.Header.Get("X-Approve") == "1"}
 }
 
 // A member receives only events meant for them, live and on replay; the
 // manager receives everything.
 func TestAudienceFilterLiveAndReplay(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	srv := httptest.NewServer(h.Handler(viewerFromHeader))
 	defer srv.Close()
 	start := h.Publish("job", "boot")
 	h.Publish("event", "manager only")
-	h.PublishTo("ask", "for 7", User(7))
-	h.PublishTo("ask", "for 8", User(8))
-	h.PublishDL("1", "dl for 8", User(8))
-	h.PublishDL("1", "dl for 7", User(7))
+	h.PublishTo("ask", "for 7", LiveUser(7))
+	h.PublishTo("ask", "for 8", LiveUser(8))
+	h.PublishDL("1", "dl for 8", LiveUser(8))
+	h.PublishDL("1", "dl for 7", LiveUser(7))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -117,10 +117,10 @@ func TestAudienceFilterLiveAndReplay(t *testing.T) {
 	manager := open("1", "1")
 	stranger := open("0", "0")
 	waitClients(t, h, 3)
-	h.PublishTo("ask", "live for 7", User(7))
-	h.PublishTo("ask", "live for 8", User(8))
+	h.PublishTo("ask", "live for 7", LiveUser(7))
+	h.PublishTo("ask", "live for 8", LiveUser(8))
 	h.Publish("slot", "live manager only")
-	h.PublishDL("2", "live dl for 7", User(7))
+	h.PublishDL("2", "live dl for 7", LiveUser(7))
 
 	want := []string{`"for 7"`, `"dl for 7"`, `"live for 7"`, `"live dl for 7"`}
 	for _, w := range want {
@@ -146,14 +146,14 @@ func TestAudienceFilterLiveAndReplay(t *testing.T) {
 // A stream that cannot keep up keeps the newest dl patch per key instead
 // of being dropped; other topics still drop it as before.
 func TestDLCoalescesForSlowStream(t *testing.T) {
-	h := NewHub(Options{ClientQueue: 2, Merge: func(old, cur json.RawMessage) json.RawMessage {
+	h := NewLiveHub(LiveOptions{ClientQueue: 2, Merge: func(old, cur json.RawMessage) json.RawMessage {
 		var a, b []int
 		_ = json.Unmarshal(old, &a)
 		_ = json.Unmarshal(cur, &b)
 		out, _ := json.Marshal(append(a, b...))
 		return out
 	}})
-	c, _ := h.subscribe(Viewer{All: true}, "")
+	c, _ := h.subscribe(LiveViewer{All: true}, "")
 	for i := range 6 {
 		h.PublishDL("1", []int{i}, nil)
 	}
@@ -196,14 +196,14 @@ func TestDLCoalescesForSlowStream(t *testing.T) {
 // dl events keep their own ring: a flood of patches does not push other
 // topics out of resume history.
 func TestDLRingSeparate(t *testing.T) {
-	h := NewHub(Options{Ring: 4, DLRing: 2})
+	h := NewLiveHub(LiveOptions{Ring: 4, DLRing: 2})
 	first := h.Publish("title", 1)
 	h.Publish("title", 2)
 	for i := range 50 {
 		h.PublishDL("1", i, nil)
 	}
 	h.Publish("title", 3)
-	_, replay := h.subscribe(Viewer{All: true}, h.EventID(first))
+	_, replay := h.subscribe(LiveViewer{All: true}, h.EventID(first))
 	var topics []string
 	for _, e := range replay {
 		topics = append(topics, e.Topic+":"+string(e.Data))
@@ -221,7 +221,7 @@ func TestDLRingSeparate(t *testing.T) {
 
 // The coalesced patches reach the browser over the wire.
 func TestDLSlotDeliveredOverStream(t *testing.T) {
-	h := NewHub(Options{ClientQueue: 1})
+	h := NewLiveHub(LiveOptions{ClientQueue: 1})
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -253,20 +253,20 @@ func TestDLSlotDeliveredOverStream(t *testing.T) {
 // A patch for one person reaches only that person's streams, live and on
 // replay: never a manager (who gets a fuller one) nor anyone else.
 func TestDLUserOnly(t *testing.T) {
-	h := NewHub(Options{})
-	mgr, _ := h.subscribe(Viewer{All: true, UserID: 1}, "")
-	ana, _ := h.subscribe(Viewer{UserID: 2}, "")
-	bo, _ := h.subscribe(Viewer{UserID: 3}, "")
+	h := NewLiveHub(LiveOptions{})
+	mgr, _ := h.subscribe(LiveViewer{All: true, UserID: 1}, "")
+	ana, _ := h.subscribe(LiveViewer{UserID: 2}, "")
+	bo, _ := h.subscribe(LiveViewer{UserID: 3}, "")
 	h.PublishDLUser("1", "for ana", 2)
 	if len(mgr.ch) != 0 || len(bo.ch) != 0 || len(ana.ch) != 1 {
 		t.Fatalf("live: manager %d, bo %d, ana %d", len(mgr.ch), len(bo.ch), len(ana.ch))
 	}
-	for _, v := range []Viewer{{All: true, UserID: 1}, {UserID: 3}} {
+	for _, v := range []LiveViewer{{All: true, UserID: 1}, {UserID: 3}} {
 		if _, replay := h.subscribe(v, h.EventID(0)); len(replay) != 0 {
 			t.Fatalf("replay to %+v: %+v", v, replay)
 		}
 	}
-	if _, replay := h.subscribe(Viewer{UserID: 2}, h.EventID(0)); len(replay) != 1 {
+	if _, replay := h.subscribe(LiveViewer{UserID: 2}, h.EventID(0)); len(replay) != 1 {
 		t.Fatalf("replay to ana: %+v", replay)
 	}
 	if got := h.Viewers(); len(got) != 2 {
@@ -278,7 +278,7 @@ func TestDLUserOnly(t *testing.T) {
 // who approve, each asker who does not approve gets their own copy, and
 // someone who only runs the Library (or another member) gets neither.
 func TestAskEventsFollowApprove(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	srv := httptest.NewServer(h.Handler(viewerFromHeader))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())

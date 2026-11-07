@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Interfaces in this package that are not optional engine parts.
@@ -104,16 +104,16 @@ func failingServer(t *testing.T, requests *atomic.Int64) *httptest.Server {
 }
 
 // Every method of every optional part an adapter has, reached the way
-// production code reaches it, passes outside.Begin exactly once.
+// production code reaches it, passes outbound.Begin exactly once.
 func TestGuardRegistryEveryOptionalCallPassesBegin(t *testing.T) {
 	var requests atomic.Int64
 	srv := failingServer(t, &requests)
 	for kind, raw := range adapterEngines(t, srv.URL) {
 		t.Run(kind, func(t *testing.T) {
 			var begins int
-			r := outside.New([]byte("registry-test-key"), outside.Options{Threshold: 1 << 20})
-			g := &guardedEngine{Engine: raw, target: outside.Target{Kind: "downloader", Identity: []string{kind}},
-				begin: func(ctx context.Context, tg outside.Target) (*outside.Operation, error) {
+			r := outbound.New([]byte("registry-test-key"), outbound.Options{Threshold: 1 << 20})
+			g := &guardedEngine{Engine: raw, target: outbound.Target{Kind: "downloader", Identity: []string{kind}},
+				begin: func(ctx context.Context, tg outbound.Target) (*outbound.Operation, error) {
 					begins++
 					return r.Begin(ctx, tg)
 				}}
@@ -250,9 +250,9 @@ func TestReadOnlyInsideGuardNeverCounts(t *testing.T) {
 	var requests atomic.Int64
 	srv := failingServer(t, &requests)
 	var begins int
-	r := outside.New([]byte("ro-test-key"), outside.Options{Threshold: 1})
-	g := &guardedEngine{Engine: readOnly(NewQbittorrent(srv.URL, nil)), target: outside.Target{Kind: "downloader"},
-		begin: func(ctx context.Context, tg outside.Target) (*outside.Operation, error) {
+	r := outbound.New([]byte("ro-test-key"), outbound.Options{Threshold: 1})
+	g := &guardedEngine{Engine: readOnly(NewQbittorrent(srv.URL, nil)), target: outbound.Target{Kind: "downloader"},
+		begin: func(ctx context.Context, tg outbound.Target) (*outbound.Operation, error) {
 			begins++
 			return r.Begin(ctx, tg)
 		}}
@@ -338,8 +338,8 @@ func (s syncStub) History(context.Context, int64) (HistoryPage, error) { return 
 // A garbled change feed is transient (counts towards the breaker); a 401
 // stays terminal (never trips it, so no retry loop against a ban).
 func TestGuardSyncClassification(t *testing.T) {
-	parse := &guardedEngine{Engine: syncStub{err: ErrSyncParse}, target: outside.Target{Kind: "downloader"}}
-	r := outside.New([]byte("class-key"), outside.Options{Threshold: 2})
+	parse := &guardedEngine{Engine: syncStub{err: ErrSyncParse}, target: outbound.Target{Kind: "downloader"}}
+	r := outbound.New([]byte("class-key"), outbound.Options{Threshold: 2})
 	parse.begin = r.Begin
 	for range 2 {
 		_, _ = parse.SyncMain(context.Background(), 5)
@@ -347,8 +347,8 @@ func TestGuardSyncClassification(t *testing.T) {
 	if len(r.States()) != 1 {
 		t.Fatal("parse errors did not count as passing failures")
 	}
-	r2 := outside.New([]byte("class-key"), outside.Options{Threshold: 1})
-	auth := &guardedEngine{Engine: syncStub{err: adapterHTTPError{401}}, target: outside.Target{Kind: "downloader"}, begin: r2.Begin}
+	r2 := outbound.New([]byte("class-key"), outbound.Options{Threshold: 1})
+	auth := &guardedEngine{Engine: syncStub{err: adapterHTTPError{401}}, target: outbound.Target{Kind: "downloader"}, begin: r2.Begin}
 	for range 3 {
 		_, _ = auth.History(context.Background(), 1)
 	}

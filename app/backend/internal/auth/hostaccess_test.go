@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -85,7 +85,7 @@ func gatedOn(t *testing.T, s *store.Store, opt Options) *fixture {
 	m.HandleFunc("POST /api/v1/titles", okHandler)
 	m.HandleFunc("GET /api/v1/not-in-the-table", okHandler)
 	a.Routes(m)
-	srv := httptest.NewServer(a.Middleware(routehits.Wrap(Gate(m))))
+	srv := httptest.NewServer(a.Middleware(webserver.RecordRouteHits(Gate(m))))
 	t.Cleanup(srv.Close)
 	return &fixture{srv: srv, a: a, s: s, clock: c}
 }

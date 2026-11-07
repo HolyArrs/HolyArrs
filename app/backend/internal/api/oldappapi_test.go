@@ -16,6 +16,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -24,7 +25,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // oldAppFix is a signed-in app with a show and a movie Library folder,
@@ -125,7 +125,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 		Auth: auth.New(s, auth.Options{}), Parts: pc, Secrets: vault}).Handler()
 	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art, vault: vault}
 	if len(base) > 0 {
-		h, f.base = urlbase.Handler(base[0], h), base[0]
+		h, f.base = webserver.UnderURLBase(base[0], h), base[0]
 	}
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)

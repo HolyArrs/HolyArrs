@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -26,7 +26,7 @@ func TestSignInWhileAWriteIsStalled(t *testing.T) {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /{$}", okHandler)
 	a.Routes(m)
-	srv := httptest.NewServer(a.Middleware(routehits.Wrap(m)))
+	srv := httptest.NewServer(a.Middleware(webserver.RecordRouteHits(m)))
 	t.Cleanup(srv.Close)
 	f := &fixture{srv: srv, a: a, s: s, clock: c}
 	setupOwner(t, f, client(t))

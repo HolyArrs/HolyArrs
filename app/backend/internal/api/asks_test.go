@@ -18,7 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -83,7 +84,7 @@ func newAskRig(t *testing.T) *askRig {
 		{Name: "Paper Harbour", Year: 2023, IDs: map[string]string{"tmdb": "900002"}},
 		{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900003"}}}}
 	q := jobs.New(st, jobs.Options{Workers: 1})
-	a := New(Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: live.NewHub(live.Options{})})
+	a := New(Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	r := &askRig{srv: srv, st: st, asks: a.s.Asks, api: a}

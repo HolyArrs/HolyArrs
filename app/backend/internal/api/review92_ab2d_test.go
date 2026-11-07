@@ -6,7 +6,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"io"
@@ -76,7 +77,7 @@ func TestSecureSetsOpenerPolicy(t *testing.T) {
 func TestTitleViewTrimmedForMember(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	exec41(t, x.s, `UPDATE slots SET last_reason = 'turned down: Secret.Release-GRP'`)
-	a := New(Server{Store: x.s, Queue: x.q, Live: live.NewHub(live.Options{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	a := New(Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
 	ts, err := store.Select[domain.Title](context.Background(), x.s.Read(), "titles", "1=1 LIMIT 1")
 	if err != nil || len(ts) != 1 {
 		t.Fatal(err)

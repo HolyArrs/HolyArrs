@@ -1,4 +1,4 @@
-package urlbase
+package webserver
 
 import (
 	"net/http"
@@ -8,13 +8,13 @@ import (
 
 func TestClean(t *testing.T) {
 	for in, want := range map[string]string{"": "", "/": "", "holyarrs": "/holyarrs", "/holyarrs/": "/holyarrs", "/apps/holy-arrs_2": "/apps/holy-arrs_2"} {
-		if got, err := Clean(in); err != nil || got != want {
-			t.Errorf("Clean(%q) = %q, %v", in, got, err)
+		if got, err := CleanURLBase(in); err != nil || got != want {
+			t.Errorf("CleanURLBase(%q) = %q, %v", in, got, err)
 		}
 	}
 	for _, bad := range []string{"/a/../b", "//evil.example", "/a b", "/a?x", "/a%2f", "/a//b", "/./x"} {
-		if _, err := Clean(bad); err == nil {
-			t.Errorf("Clean(%q) accepted", bad)
+		if _, err := CleanURLBase(bad); err == nil {
+			t.Errorf("CleanURLBase(%q) accepted", bad)
 		}
 	}
 }
@@ -22,13 +22,13 @@ func TestClean(t *testing.T) {
 func TestHandler(t *testing.T) {
 	inner := http.NewServeMux()
 	inner.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(From(r.Context()) + " " + r.URL.Path))
+		_, _ = w.Write([]byte(URLBaseFrom(r.Context()) + " " + r.URL.Path))
 	})
 	inner.HandleFunc("GET /go", func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{Name: "s", Value: "v", Path: "/"})
 		http.Redirect(w, r, r.URL.Query().Get("to"), http.StatusSeeOther)
 	})
-	h := Handler("/holyarrs", inner)
+	h := UnderURLBase("/holyarrs", inner)
 	get := func(p string) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest("GET", p, nil))
@@ -39,7 +39,7 @@ func TestHandler(t *testing.T) {
 	}
 	// AI app sign-in looks for the server's details at the root (RFC 8414).
 	inner.HandleFunc("GET /.well-known/oauth-authorization-server", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(From(r.Context())))
+		_, _ = w.Write([]byte(URLBaseFrom(r.Context())))
 	})
 	if w := get("/.well-known/oauth-authorization-server/holyarrs"); w.Code != 200 || w.Body.String() != "/holyarrs" {
 		t.Fatalf("sign-in details at the root: %d %q", w.Code, w.Body.String())
@@ -65,7 +65,7 @@ func TestHandler(t *testing.T) {
 			t.Errorf("%s became %q", to, got)
 		}
 	}
-	if Handler("", inner) != http.Handler(inner) {
+	if UnderURLBase("", inner) != http.Handler(inner) {
 		t.Fatal("no base should not wrap")
 	}
 }
@@ -79,7 +79,7 @@ func TestHandlerHealthAtRootUnderBase(t *testing.T) {
 	inner.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ready " + r.URL.Path)) })
 	inner.HandleFunc("POST /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("posted")) })
 	inner.HandleFunc("GET /healthz/", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("slash")) })
-	h := Handler("/holyarrs", inner)
+	h := UnderURLBase("/holyarrs", inner)
 	do := func(method, p string) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(method, p, nil))
@@ -100,7 +100,7 @@ func TestHandlerHealthAtRootUnderBase(t *testing.T) {
 		t.Errorf("root readyz served %q", w.Body.String())
 	}
 	// Each phase keeps its own answer: a failing health stays failing at the root.
-	failing := Handler("/holyarrs", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(503) }))
+	failing := UnderURLBase("/holyarrs", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(503) }))
 	w := httptest.NewRecorder()
 	failing.ServeHTTP(w, httptest.NewRequest("GET", "/healthz", nil))
 	if w.Code != 503 {

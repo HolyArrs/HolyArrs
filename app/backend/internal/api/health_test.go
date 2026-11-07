@@ -8,7 +8,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
@@ -79,7 +80,7 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	// Other tests in this package trip breakers in the process-wide outside
 	// registry; read an empty one so only this fixture's states show.
-	eng := &health.Engine{Store: s, Version: "test", Outside: func() []outside.State { return nil }}
+	eng := &health.Engine{Store: s, Version: "test", Outside: func() []outbound.State { return nil }}
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", States: reg, SafeMode: true, Health: eng}).Handler())
 	t.Cleanup(srv.Close)
 	exec41(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
@@ -106,7 +107,7 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s2.Close() })
-	srv2 := httptest.NewServer(New(Server{Store: s2, Metadata: metadata.Lab(), Version: "test", Health: &health.Engine{Store: s2, Version: "test", Outside: func() []outside.State { return nil }}}).Handler())
+	srv2 := httptest.NewServer(New(Server{Store: s2, Metadata: metadata.Lab(), Version: "test", Health: &health.Engine{Store: s2, Version: "test", Outside: func() []outbound.State { return nil }}}).Handler())
 	t.Cleanup(srv2.Close)
 	if b := do(t, "GET", srv2.URL+"/api/v1/health/states", "", 200); string(b) != `{"safe_mode":false,"states":[]}`+"\n" {
 		t.Fatalf("empty: %s", b)

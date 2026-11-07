@@ -16,7 +16,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -27,8 +28,8 @@ func open(t *testing.T) (*store.Store, *secrets.Vault) {
 	t.Helper()
 	// Breakers are process-wide and keyed by Alert id, which every fresh
 	// database starts at 1 again: start and end each test with none.
-	outside.Reset()
-	t.Cleanup(outside.Reset)
+	outbound.Reset()
+	t.Cleanup(outbound.Reset)
 	s, err := store.Open(t.TempDir(), store.Options{})
 	if err != nil {
 		t.Fatal(err)

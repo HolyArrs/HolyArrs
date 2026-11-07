@@ -3,14 +3,13 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // route: POST /api/v1/auth/setup/plex/start
@@ -98,7 +97,7 @@ func fakeSetupServer(t *testing.T) *httptest.Server {
 		}
 	})
 	m.HandleFunc("POST /Sessions/Logout", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })
-	s := httptest.NewServer(routehits.Wrap(m))
+	s := httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(s.Close)
 	return s
 }

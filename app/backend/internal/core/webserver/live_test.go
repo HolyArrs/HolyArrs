@@ -1,4 +1,4 @@
-package live
+package webserver
 
 import (
 	"bufio"
@@ -52,7 +52,7 @@ func connect(t *testing.T, ctx context.Context, url, lastID string) *http.Respon
 	t.Helper()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if lastID != "" {
-		req.Header.Set("Last-Event-ID", lastID)
+		req.Header.Set("Last-LiveEvent-ID", lastID)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -61,7 +61,7 @@ func connect(t *testing.T, ctx context.Context, url, lastID string) *http.Respon
 	return resp
 }
 
-func waitClients(t *testing.T, h *Hub, n int) {
+func waitClients(t *testing.T, h *LiveHub, n int) {
 	t.Helper()
 	deadline := time.Now().Add(3 * time.Second)
 	for h.Clients() != n {
@@ -73,7 +73,7 @@ func waitClients(t *testing.T, h *Hub, n int) {
 }
 
 func TestHeaders(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -92,7 +92,7 @@ func TestHeaders(t *testing.T) {
 }
 
 func TestTenClientsReceiveAndCleanUp(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -132,7 +132,7 @@ func TestTenClientsReceiveAndCleanUp(t *testing.T) {
 }
 
 func TestResumeReplaysMissed(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	first := h.Publish("job", 1)
@@ -161,7 +161,7 @@ func TestResumeReplaysMissed(t *testing.T) {
 }
 
 func TestResumeTooOldAsksForResync(t *testing.T) {
-	h := NewHub(Options{Ring: 4})
+	h := NewLiveHub(LiveOptions{Ring: 4})
 	for i := range 10 {
 		h.Publish("job", i)
 	}
@@ -179,7 +179,7 @@ func TestResumeTooOldAsksForResync(t *testing.T) {
 }
 
 func TestHeartbeat(t *testing.T) {
-	h := NewHub(Options{Heartbeat: 20 * time.Millisecond})
+	h := NewLiveHub(LiveOptions{Heartbeat: 20 * time.Millisecond})
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -199,15 +199,15 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestDefaults(t *testing.T) {
-	h := NewHub(Options{})
+	h := NewLiveHub(LiveOptions{})
 	if h.opt.Heartbeat != 15*time.Second || h.opt.Ring != 256 {
 		t.Fatalf("defaults %+v", h.opt)
 	}
 }
 
 func TestSlowClientIsDropped(t *testing.T) {
-	h := NewHub(Options{ClientQueue: 2})
-	c, _ := h.subscribe(Viewer{All: true}, "")
+	h := NewLiveHub(LiveOptions{ClientQueue: 2})
+	c, _ := h.subscribe(LiveViewer{All: true}, "")
 	for i := range 5 {
 		h.Publish("x", i)
 	}
@@ -222,11 +222,11 @@ func TestSlowClientIsDropped(t *testing.T) {
 }
 
 func TestRingKeepsLast(t *testing.T) {
-	h := NewHub(Options{Ring: 3})
+	h := NewLiveHub(LiveOptions{Ring: 3})
 	for i := range 5 {
 		h.Publish("x", i)
 	}
-	_, replay := h.subscribe(Viewer{All: true}, h.EventID(2))
+	_, replay := h.subscribe(LiveViewer{All: true}, h.EventID(2))
 	if len(replay) != 3 || replay[0].ID != 3 || replay[2].ID != 5 {
 		t.Fatalf("replay %+v", replay)
 	}

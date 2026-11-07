@@ -14,7 +14,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -28,7 +29,7 @@ type liveUser struct {
 
 type liveSetup struct {
 	srv  *httptest.Server
-	hub  *live.Hub
+	hub  *webserver.LiveHub
 	sy   *dlsync.Sync
 	own  liveUser
 	mem  liveUser
@@ -69,7 +70,7 @@ func setupLive(t *testing.T) liveSetup {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hub := live.NewHub(live.Options{})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{})
 	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: s}
 	x := liveSetup{hub: hub, sy: sy, st: s}
 	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: auth.New(s, auth.Options{Vault: v}), Secrets: v,
@@ -204,9 +205,9 @@ func TestLiveMembersSeeOnlyTheirOwn(t *testing.T) {
 	defer cancel()
 	start := x.hub.Publish("job", "start")
 	x.hub.Publish("event", "manager only")
-	x.hub.PublishTo("ask", "mine", live.User(x.mem.id))
-	x.hub.PublishTo("ask", "theirs", live.User(x.mem2.id))
-	x.hub.PublishDL("1", "their dl", live.User(x.mem2.id))
+	x.hub.PublishTo("ask", "mine", webserver.LiveUser(x.mem.id))
+	x.hub.PublishTo("ask", "theirs", webserver.LiveUser(x.mem2.id))
+	x.hub.PublishDL("1", "their dl", webserver.LiveUser(x.mem2.id))
 
 	mem := x.stream(t, ctx, x.mem, x.hub.EventID(start))
 	own := x.stream(t, ctx, x.own, x.hub.EventID(start))
@@ -214,8 +215,8 @@ func TestLiveMembersSeeOnlyTheirOwn(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	x.hub.Publish("slot", "manager only live")
-	x.hub.PublishTo("ask", "mine live", live.User(x.mem.id))
-	x.hub.PublishDL("1", "their dl live", live.User(x.mem2.id))
+	x.hub.PublishTo("ask", "mine live", webserver.LiveUser(x.mem.id))
+	x.hub.PublishDL("1", "their dl live", webserver.LiveUser(x.mem2.id))
 
 	got := frames(mem, 400*time.Millisecond)
 	if len(got) != 2 || got[0].data != `"mine"` || got[1].data != `"mine live"` {

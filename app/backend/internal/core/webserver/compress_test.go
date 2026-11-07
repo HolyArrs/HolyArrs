@@ -1,4 +1,4 @@
-package compress
+package webserver
 
 import (
 	"compress/gzip"
@@ -13,8 +13,8 @@ func TestAccepts(t *testing.T) {
 	for in, want := range map[string]bool{"gzip, br": true, "br;q=1, gzip;q=0.5": true, "gzip;q=0": false, "br": false, "": false, "GZIP": true} {
 		r := httptest.NewRequest("GET", "/", nil)
 		r.Header.Set("Accept-Encoding", in)
-		if got := Accepts(r, "gzip"); got != want {
-			t.Errorf("Accepts(%q) = %v, want %v", in, got, want)
+		if got := AcceptsEncoding(r, "gzip"); got != want {
+			t.Errorf("AcceptsEncoding(%q) = %v, want %v", in, got, want)
 		}
 	}
 }
@@ -35,7 +35,7 @@ func serve(t *testing.T, h http.HandlerFunc, enc string) *http.Response {
 		r.Header.Set("Accept-Encoding", enc)
 	}
 	rec := httptest.NewRecorder()
-	Handler(h).ServeHTTP(rec, r)
+	Compress(h).ServeHTTP(rec, r)
 	return rec.Result()
 }
 

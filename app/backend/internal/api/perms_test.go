@@ -15,7 +15,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -80,7 +81,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 	au := auth.New(s, auth.Options{Vault: v})
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: live.NewHub(live.Options{}),
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backup.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}}).Handler())
 	t.Cleanup(srv.Close)
 

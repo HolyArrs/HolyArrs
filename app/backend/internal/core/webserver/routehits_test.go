@@ -1,4 +1,4 @@
-package routehits
+package webserver
 
 import (
 	"net/http"
@@ -21,7 +21,7 @@ func TestOnlyServedRoutesCount(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	}
-	srv := httptest.NewServer(refuse(Wrap(m)))
+	srv := httptest.NewServer(refuse(RecordRouteHits(m)))
 	defer srv.Close()
 	for _, c := range []struct{ method, path string }{{"GET", "/api/v1/a/7"}, {"POST", "/api/v1/b"}, {"GET", "/nope"}} {
 		req, _ := http.NewRequest(c.method, srv.URL+c.path, nil)
@@ -31,13 +31,13 @@ func TestOnlyServedRoutesCount(t *testing.T) {
 		}
 		resp.Body.Close()
 	}
-	if u := Unhit([]string{"GET /api/v1/a/{id}", "POST /api/v1/b"}); len(u) != 1 || u[0] != "POST /api/v1/b" {
+	if u := UnhitRoutes([]string{"GET /api/v1/a/{id}", "POST /api/v1/b"}); len(u) != 1 || u[0] != "POST /api/v1/b" {
 		t.Fatalf("unhit %v", u)
 	}
 	dir := t.TempDir()
 	_ = os.WriteFile(filepath.Join(dir, "x.go"), []byte("m.HandleFunc(\"GET /api/v1/a/{id}\", h)\n"), 0o644)
 	_ = os.WriteFile(filepath.Join(dir, "x_test.go"), []byte("m.HandleFunc(\"GET /api/v1/test-only\", h)\n"), 0o644)
-	if r, err := Registered(dir); err != nil || len(r) != 1 || r[0] != "GET /api/v1/a/{id}" {
+	if r, err := RegisteredRoutes(dir); err != nil || len(r) != 1 || r[0] != "GET /api/v1/a/{id}" {
 		t.Fatalf("registered %v %v", r, err)
 	}
 }

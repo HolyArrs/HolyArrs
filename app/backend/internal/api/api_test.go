@@ -14,7 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -35,7 +36,7 @@ func setup(t *testing.T) (*httptest.Server, *store.Store, *jobs.Queue) {
 		t.Fatal(err)
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond})
-	hub := live.NewHub(live.Options{Heartbeat: time.Second})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second})
 	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s, q

@@ -3,13 +3,12 @@ package backup
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // route: POST /api/v1/backups
@@ -21,7 +20,7 @@ func TestRoutes(t *testing.T) {
 	restarted := make(chan struct{}, 1)
 	mux := http.NewServeMux()
 	m.Routes(mux, func() { restarted <- struct{}{} })
-	srv := httptest.NewServer(routehits.Wrap(mux))
+	srv := httptest.NewServer(webserver.RecordRouteHits(mux))
 	defer srv.Close()
 	resp, err := http.Post(srv.URL+"/api/v1/backups", "", nil)
 	if err != nil || resp.StatusCode != 201 {
@@ -60,7 +59,7 @@ func TestListAndDeleteRoutes(t *testing.T) {
 	m, _, _, _ := setup(t)
 	mux := http.NewServeMux()
 	m.Routes(mux, func() {})
-	srv := httptest.NewServer(routehits.Wrap(mux))
+	srv := httptest.NewServer(webserver.RecordRouteHits(mux))
 	defer srv.Close()
 	b, err := m.Create(t.Context(), KindManual)
 	if err != nil {

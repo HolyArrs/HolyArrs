@@ -13,7 +13,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -107,7 +108,7 @@ func seed41(t *testing.T, slotState domain.SlotState, dlState string) *dl41 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	x.api = New(Server{Store: s, Queue: x.q, Live: live.NewHub(live.Options{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	x.api = New(Server{Store: s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
 	x.srv = httptest.NewServer(x.api.Handler())
 	t.Cleanup(x.srv.Close)
 	return x

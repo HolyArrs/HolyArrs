@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 func TestSMTPCallerContextInterruptsAfterDial(t *testing.T) {
@@ -44,11 +44,11 @@ func testSMTPInterruption(t *testing.T, want error) {
 	addr := ln.Addr().(*net.TCPAddr)
 	a := domain.Alert{ID: int64(900000 + addr.Port), Kind: "email", SMTPHost: "127.0.0.1", SMTPPort: addr.Port, SMTPSecurity: "none",
 		SMTPFrom: "holyarrs@example.test", StaffTo: "staff@example.test", AllowLocal: true}
-	op, err := outside.Begin(context.Background(), alertTarget(a))
+	op, err := outbound.Begin(context.Background(), alertTarget(a))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer op.Finish(outside.Canceled)
+	defer op.Finish(outbound.Canceled)
 	var ctx context.Context
 	var cancel context.CancelFunc
 	if errors.Is(want, context.DeadlineExceeded) {

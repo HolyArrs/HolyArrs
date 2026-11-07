@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
 )
 
 // openStream opens /live for u and says when the server ends it.
@@ -158,8 +158,8 @@ func TestEventsHideAsksFromManagersWhoDoNotApprove(t *testing.T) {
 // decline note): pages read the title again through its route, which shows
 // them to approvers only.
 func TestLiveTitleUpdateLeavesAsksOut(t *testing.T) {
-	hub := live.NewHub(live.Options{})
-	srv := httptest.NewServer(hub.Handler(func(*http.Request) live.Viewer { return live.Viewer{All: true} }))
+	hub := webserver.NewLiveHub(webserver.LiveOptions{})
+	srv := httptest.NewServer(hub.Handler(func(*http.Request) webserver.LiveViewer { return webserver.LiveViewer{All: true} }))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

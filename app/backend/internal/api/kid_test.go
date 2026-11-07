@@ -20,7 +20,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
@@ -229,7 +230,7 @@ func newKidRig(t *testing.T, off ...parts.Part) *kidRig {
 	f := newKidTMDB(t)
 	prov := f.provider()
 	q := jobs.New(st, jobs.Options{Workers: 1})
-	hub := live.NewHub(live.Options{})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{})
 	lib := &library.Service{Store: st, Queue: q, Metadata: prov, Live: hub, Shows: metadata.ShowSources{"tmdb": prov}}
 	var pc *parts.Control
 	if len(off) > 0 {

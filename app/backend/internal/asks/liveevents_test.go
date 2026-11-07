@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -23,9 +24,9 @@ func TestAskEventsReachOnlyApproversLive(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	hub := live.NewHub(live.Options{})
-	srv := httptest.NewServer(hub.Handler(func(r *http.Request) live.Viewer {
-		return live.Viewer{UserID: 2, All: r.URL.Query().Get("all") == "1", Approve: r.URL.Query().Get("approve") == "1"}
+	hub := webserver.NewLiveHub(webserver.LiveOptions{})
+	srv := httptest.NewServer(hub.Handler(func(r *http.Request) webserver.LiveViewer {
+		return webserver.LiveViewer{UserID: 2, All: r.URL.Query().Get("all") == "1", Approve: r.URL.Query().Get("approve") == "1"}
 	}))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
