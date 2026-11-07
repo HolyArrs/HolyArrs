@@ -1,20 +1,7 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '../core/paths.ts';
-	// Subtitles of a movie, a show or one episode (staff only): the subtitle
-	// wish (inherit or its own languages), the subtitles each File has with
-	// language, kind, source, score and where they are saved, Sync fix and
-	// Turn down for the ones HolyArrs saved, and Choose a subtitle by hand
-	// with every result's score and reasons.
-	import { onMount } from 'svelte';
-	import { api, message } from '../core/api.ts';
-	import { session } from '../core/session.svelte.ts';
-	import { dateTime } from '../core/format.ts';
 	import Icon from '../ui/Icon.svelte';
-	import { live } from '../core/live.svelte.ts';
-	import { toasts } from '../core/toasts.svelte.ts';
 	import WishEditor from './LanguageWants.svelte';
-	import type { EventRecord } from '../core/types.ts';
 	import {
 		fileName,
 		fromWords,
@@ -39,6 +26,14 @@
 		type TitleSubtitles,
 		type Want
 	} from './api.ts';
+	import { onMount } from 'svelte';
+	import { to } from '../core/paths.ts';
+	import { api, message } from '../core/api.ts';
+	import { session } from '../core/session.svelte.ts';
+	import { dateTime } from '../core/format.ts';
+	import { live } from '../core/live.svelte.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import type { EventRecord } from '../core/types.ts';
 
 	let {
 		titleId,
@@ -57,19 +52,17 @@
 	let error = $state('');
 	let searching = $state(false);
 
-	// The wish editor.
 	let editing = $state(false);
 	let own = $state(false);
 	let draft = $state<Want[]>([]);
 	let wishError = $state('');
 	let wishBusy = $state(false);
 
-	// Open forms: one at a time per panel.
-	let choosing = $state(0); // a File id
+	let choosing = $state(0);
 	let choices = $state<Choices | null>(null);
 	let choicesError = $state('');
 	let choosingKey = $state('');
-	let syncing = $state(0); // a subtitle id
+	let syncing = $state(0);
 	let offset = $state(0);
 	let fps = $state({ on: false, from: 25, to: 23.976 });
 	let syncError = $state('');
@@ -102,8 +95,7 @@
 	onMount(() => {
 		void load();
 		api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages), () => {});
-		// The settings need the settings permission; without it the panel
-		// still works, with the usual sync defaults (and asks nothing that would be refused).
+		// without the settings permission the panel keeps its sync defaults
 		if (session.can('settings')) api.get<SubtitleSettings>('/settings/subtitles').then(
 			(s) => {
 				set = s;
@@ -473,7 +465,6 @@
 		font: 700 20px/1.2 var(--font-ui);
 		letter-spacing: -.01em;
 	}
-	/* Rounded rows like the Settings group: languages, then each file (or the missing line). */
 	.wish,
 	.missing-line,
 	.file {
