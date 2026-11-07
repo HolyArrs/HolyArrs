@@ -1,12 +1,8 @@
 <script lang="ts">
-	// Every release, at the foot of the Updates tab: the newest one open with its notes, older ones
-	// folded to one line each, and only three shown until "Show more". The app
-	// knows just the current and newest release today; in dev builds ?releases=demo
-	// fills in a made-up history so the many-release case can be seen.
 	import '../ui/plate.css';
+	import Button from '../ui/Button.svelte';
 	import { page } from '$app/state';
 	import { ago } from '../core/format.ts';
-	import Button from '../ui/Button.svelte';
 
 	type Update = { on: boolean; version: string; latest?: string; newer: boolean; link?: string; notes?: string; checked_at?: string; problem?: string; no_release?: boolean };
 	type Rel = { version: string; date?: string; notes?: string; link?: string };
@@ -17,6 +13,7 @@
 	let shown = $state(STEP);
 	let open = $state<Record<string, boolean>>({});
 
+	// Made-up history for dev builds, shown with ?releases=demo.
 	const demo: Rel[] = [
 		{ version: '1.4.0', date: '2026-10-30', notes: 'Status page with Health, Parts and Jobs.\nRequests page shows live steps for each ask.\nHistory keeps sign-ins and settings changes for a year.' },
 		{ version: '1.3.2', date: '2026-10-21', notes: 'Fixed a stuck download that never moved to import.\nFaster first load of Explore.' },
@@ -33,13 +30,13 @@
 		if (isDemo) return demo;
 		if (!upd) return [];
 		const out: Rel[] = [];
-		// No date on the newer release: the update info has no publish date, only when HolyArrs last checked.
+		// The update info has no publish date, so the newer release gets none.
 		if (upd.newer && upd.latest) out.push({ version: upd.latest, notes: upd.notes, link: upd.link });
 		out.push({ version: upd.version, notes: upd.newer ? undefined : upd.notes, link: upd.newer ? undefined : upd.link });
 		return out;
 	});
 	const current = $derived(isDemo ? '1.3.2' : upd?.version);
-	// Only call the first row the newest when a check actually ran and worked.
+	// Call the first row newest only when a check ran and worked.
 	const known = $derived(isDemo || !!(upd && upd.on && !upd.problem && !upd.no_release && upd.checked_at));
 	const isOpen = (r: Rel, i: number) => open[r.version] ?? i === 0;
 </script>
@@ -99,7 +96,7 @@
 	.rd { margin-left: auto; font-size: 12.5px; color: var(--text-muted); }
 	.body { display: flex; flex-direction: column; gap: 12px; padding: 4px 14px 14px 42px; border-top: 1px solid var(--line); }
 	.notes { margin: 10px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: var(--text); }
-	/* Outside link in a new tab, drawn like the shared secondary Button (whose link form has no target). */
+	/* Looks like the secondary Button, which cannot open a new tab. */
 	.xbtn { display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-headline); font-size: 15px; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
 	.xbtn:hover { background: var(--surface-3); }
 	.xbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }

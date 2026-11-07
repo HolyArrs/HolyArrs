@@ -1,12 +1,9 @@
 <script lang="ts">
-	// Going back after an update: the pre-update backup taken for the update to
-	// this version, and the steps to start the older image on it. Shown on the
-	// Status Updates tab to people who may change settings (the list is theirs).
+	import Button from '../ui/Button.svelte';
+	import { IMAGE, goBackBackup, imageTag, type BackupRow } from './update-notice.ts';
 	import { api } from '../core/api.ts';
 	import { dateTime } from '../core/format.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { IMAGE, goBackBackup, imageTag, type BackupRow } from './update-notice.ts';
-	import Button from '../ui/Button.svelte';
 
 	let { version, canAct }: { version: string | undefined; canAct: boolean } = $props();
 

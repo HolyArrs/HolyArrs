@@ -1,19 +1,15 @@
 <script lang="ts">
+	import Button from '../ui/Button.svelte';
+	import Releases from './Releases.svelte';
+	import GoBack from './GoBack.svelte';
+	import { RELEASE_PAGES, releaseLink } from './update-notice.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	// The Updates tab: where this HolyArrs stands against the newest release,
-	// what is new since it, how an update is done (HolyArrs never updates
-	// itself), the built-in trailer reader's state, and every release.
 	import { page } from '$app/state';
 	import { api, message } from '../core/api.ts';
 	import { ago, dateTime } from '../core/format.ts';
 	import { to } from '../core/paths.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { RELEASE_PAGES, releaseLink } from './update-notice.ts';
-	import type { HealthCheck } from '../core/types.ts';
-	import type { UpdateInfo } from '../core/types.ts';
-	import Button from '../ui/Button.svelte';
-	import Releases from './Releases.svelte';
-	import GoBack from './GoBack.svelte';
+	import type { HealthCheck, UpdateInfo } from '../core/types.ts';
 
 	type Update = UpdateInfo & { notes?: string };
 	let {
@@ -25,17 +21,17 @@
 		onupd
 	}: {
 		upd: Update | null;
-		/** Whether this HolyArrs runs in a container: Docker, Podman, Kubernetes (null until About answers). */
+		/** True in a container; null until the app info loads. */
 		docker: boolean | null;
-		/** The trailers health check: the trailer reader's last good lookup and any failures. */
+		/** The trailers health check. */
 		reader: HealthCheck | undefined;
-		/** False when the health checks call failed: a missing reader check then means unknown, not absent. */
+		/** False when the health call failed, so a missing reader check means unknown. */
 		checksKnown?: boolean;
 		canAct: boolean;
 		onupd: (u: Update) => void;
 	} = $props();
 
-	// Dev builds only: ?releases=demo shows the one-release-behind state with made-up notes (Releases shows its demo history too).
+	// Dev builds only: ?releases=demo fakes a one-release-behind state.
 	const upd: Update | null = $derived(
 		import.meta.env.DEV && page.url.searchParams.get('releases') === 'demo' && real
 			? { ...real, on: true, newer: true, version: '1.3.2', latest: '1.4.0', checked_at: new Date().toISOString(), link: `${RELEASE_PAGES}tag/v1.4.0`, problem: undefined, no_release: false, notes: ['Status page with Health, Parts and Jobs.', 'Requests page shows live steps for each ask.', 'History keeps sign-ins and settings changes for a year.'].join('\n') }
@@ -69,7 +65,7 @@
 	const notes = $derived((upd?.newer && upd.notes ? upd.notes : '').split('\n').filter(Boolean));
 	const link = $derived(releaseLink(upd?.link));
 
-	// The subject is "Trailer reader" plus ", last good lookup <when>" once one worked.
+	// The subject starts with "Trailer reader"; keep only what follows it.
 	const readerSays = $derived.by(() => {
 		const rest = (reader?.subject ?? '').replace(/^Trailer reader,?\s*/, '');
 		return rest ? rest[0].toUpperCase() + rest.slice(1) : 'No good lookup yet';
@@ -110,7 +106,6 @@
 <style>
 	ul { margin: 0; padding: 0; list-style: none; }
 
-	/* band */
 	.band { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 28px; padding: 20px 24px; }
 	.band[data-standing='behind'] { border-color: color-mix(in srgb, var(--wait) 45%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--wait) 10%, color-mix(in srgb, var(--surface-1) 55%, transparent)), color-mix(in srgb, var(--surface-1) 55%, transparent) 55%); }
 	.vers { display: flex; align-items: center; gap: 16px; }
@@ -124,19 +119,16 @@
 	.why { color: var(--text-muted); }
 	.acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 	.when { margin-right: 8px; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
-	/* Outside link in a new tab, drawn like the shared primary Button (whose link form has no target). */
+	/* Looks like the primary Button, which cannot open a new tab. */
 	.xbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-headline); font-size: 15px; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
 	.xbtn:hover { background: var(--accent-fill-hover); }
 	.xbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .xbtn { min-height: 44px; } }
 	.vers .chip { margin-top: 14px; }
 
-	/* new since yours */
 	.notes { display: flex; flex-direction: column; gap: 8px; }
 	.notes li { position: relative; padding-left: 18px; font-size: 14.5px; line-height: 1.5; color: var(--text); }
 	.notes li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent, var(--text)); }
-
-
 
 	@media (max-width: 900px) {
 		.band { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 18px 20px; }

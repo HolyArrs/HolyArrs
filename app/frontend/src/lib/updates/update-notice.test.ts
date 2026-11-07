@@ -4,7 +4,7 @@ import { IMAGE, goBackBackup, imageTag, releaseLink, updatePrivacy, updateWords 
 const base = { on: true, feed: 'f', newer: false, version: 'v1.0.0' };
 
 describe('updateWords', () => {
-	it('covers each state', () => {
+	it('shows a plain sentence for each update state', () => {
 		expect(updateWords({ ...base, on: false })).toContain('off');
 		expect(updateWords(base)).toContain('Not checked yet');
 		expect(updateWords({ ...base, checked_at: 'x', newer: true, latest: 'v2.0.0' })).toBe('HolyArrs v2.0.0 is out, newer than this one.');
@@ -15,7 +15,7 @@ describe('updateWords', () => {
 });
 
 describe('releaseLink', () => {
-	it('keeps only the project release pages', () => {
+	it('opens a release link only when it is a project release page', () => {
 		expect(releaseLink('https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0');
 		for (const bad of [
 			undefined,
@@ -31,7 +31,7 @@ describe('releaseLink', () => {
 			expect(releaseLink(bad)).toBe('');
 		}
 	});
-	it('says what the check sends', () => {
+	it('shows what the update check sends', () => {
 		expect(updatePrivacy('v1.0.0')).toContain('api.github.com');
 		expect(updatePrivacy('v1.0.0')).toContain('HolyArrs/v1.0.0');
 	});
@@ -39,14 +39,14 @@ describe('releaseLink', () => {
 
 describe('goBackBackup', () => {
 	const pre = (from: string, to: string, at: string) => ({ name: `holyarrs-backup-pre-update-${at}.zip`, kind: 'pre-update', created_at: at, from_version: from, to_version: to });
-	it('picks the backup taken for the update to this version', () => {
+	it('offers the backup taken before the update to this version', () => {
 		const list = [pre('1.1.0', '1.2.0', '3'), pre('1.0.0', '1.1.0', '2'), { name: 'm', kind: 'manual', created_at: '1' }];
 		expect(goBackBackup(list, 'v1.2.0')?.from_version).toBe('1.1.0');
 		expect(goBackBackup(list, '1.1.0')?.from_version).toBe('1.0.0');
 		expect(goBackBackup(list, '1.3.0')).toBeNull();
 		expect(goBackBackup([{ name: 'x', kind: 'pre-update', created_at: '1', detail: 'before updating the data (main 1 to 2)' }], '1.2.0')).toBeNull();
 	});
-	it('gives the tag without a leading v', () => {
+	it('shows the image tag without a leading v', () => {
 		expect(imageTag('v1.1.0')).toBe('1.1.0');
 		expect(imageTag('1.1.0')).toBe('1.1.0');
 		expect(`${IMAGE}:${imageTag('v1.1.0')}`).toBe('ghcr.io/coderluii/holyarrs:1.1.0');
