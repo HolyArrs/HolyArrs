@@ -159,9 +159,16 @@ test('the member sees it fixed, with the reply and a Fixed message', async () =>
 	await expect(card.getByTestId('report-reply')).toHaveText(reply);
 	await noSidewaysScroll(member);
 
-	// The Fixed news shows once as a toast when they next open Requests.
+	// The Fixed news pops once as a pill wherever they are (maybe already gone by now) and
+	// stays in Recent alerts behind the bell.
 	await member.goto('/requests');
-	await expect(member.getByRole('status').filter({ hasText: movie })).toContainText('was fixed by');
+	// On a phone the bell is in the More window.
+	await member.getByRole('button', { name: /^More/ }).click();
+	await member.getByRole('link', { name: /^Recent alerts/ }).click();
+	const recent = member.getByRole('dialog', { name: 'Recent alerts' });
+	await expect(recent).toContainText('Problem fixed');
+	await expect(recent).toContainText(movie);
+	await member.keyboard.press('Escape');
 	await noSidewaysScroll(member);
 });
 

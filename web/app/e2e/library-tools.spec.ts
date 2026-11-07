@@ -237,7 +237,7 @@ test('Move: two ticked movies go to a second movie folder together', async ({ pa
 	await expect(bar).toContainText('2 selected');
 	await bar.getByRole('button', { name: 'Move', exact: true }).click();
 	await page.getByRole('menu', { name: 'Move the selected titles to another folder' }).getByRole('menuitem', { name: label, exact: true }).click();
-	await expect(page.getByText(`2 titles moving to ${label}.`)).toBeVisible();
+	await expect(page.getByText('2 titles being moved')).toBeVisible();
 	await expect(bar).toBeHidden();
 
 	// The move runs as a Job: both files land in the second folder and leave the first.
