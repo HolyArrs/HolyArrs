@@ -11,6 +11,11 @@ type Lister interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
+// Execer is what a write needs: a pool or a transaction.
+type Execer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
 // Select reads every row of table matching where (SQL after WHERE, may be
 // empty and may end with ORDER BY or LIMIT) into records of type T.
 func Select[T any](ctx context.Context, q Lister, table, where string, args ...any) ([]T, error) {

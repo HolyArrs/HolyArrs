@@ -332,6 +332,20 @@ func (v *Vault) Delete(ctx context.Context, id int64) error {
 	})
 }
 
+// DeleteTx removes secrets inside the caller's transaction. Ids that do not
+// exist are skipped.
+func (v *Vault) DeleteTx(ctx context.Context, q database.Execer, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	list, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	_, err = q.ExecContext(ctx, "DELETE FROM secrets WHERE id IN (SELECT value FROM json_each(?))", string(list))
+	return err
+}
+
 // Mask is what an API response shows for a secret: never the value, only
 // whether one is set.
 func Mask(plain string) string {

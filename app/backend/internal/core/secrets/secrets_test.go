@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
@@ -160,5 +161,48 @@ func TestCheckFile(t *testing.T) {
 	}
 	if err := CheckFile(m, make([]byte, KeySize)); !errors.Is(err, ErrWrongKey) {
 		t.Fatalf("other key: %v", err)
+	}
+}
+
+func TestDeleteTxFollowsTheCallersTransaction(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	s := openStore(t, dir)
+	key, _ := LoadKey(dir, "")
+	v, err := Open(ctx, s, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, _ := v.Put(ctx, "source_api_key", "one")
+	b, _ := v.Put(ctx, "source_api_key", "two")
+	c, _ := v.Put(ctx, "source_api_key", "three")
+
+	rollback := errors.New("rolled back")
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		if err := v.DeleteTx(ctx, tx, a, b, 9999); err != nil {
+			return err
+		}
+		return rollback
+	})
+	if !errors.Is(err, rollback) {
+		t.Fatalf("got %v", err)
+	}
+	if got, err := v.Get(ctx, a); err != nil || got != "one" {
+		t.Fatalf("rolled back delete left %q %v", got, err)
+	}
+
+	if err := s.Write(ctx, func(tx *sql.Tx) error { return v.DeleteTx(ctx, tx, a, b) }); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []int64{a, b} {
+		if _, err := v.Get(ctx, id); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("secret %d after delete: %v", id, err)
+		}
+	}
+	if got, err := v.Get(ctx, c); err != nil || got != "three" {
+		t.Fatalf("untouched secret: %q %v", got, err)
+	}
+	if err := s.Write(ctx, func(tx *sql.Tx) error { return v.DeleteTx(ctx, tx) }); err != nil {
+		t.Fatal(err)
 	}
 }
