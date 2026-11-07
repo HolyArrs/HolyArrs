@@ -1,10 +1,4 @@
-// The one picture placeholder: an item's initials or
-// short name on the picture's own main colour when its record is known
-// (so the picture fades in over its own colour), else on a calm tint whose
-// hue comes from the name.
 
-/** placeholderText is up to two initials (letters or digits), or the name's
- * first characters when it has no words (a number like "1989"). */
 export function placeholderText(name: string): string {
 	const words = name
 		.replace(/[([{].*$/, '')
@@ -18,7 +12,6 @@ export function placeholderText(name: string): string {
 		.join('');
 }
 
-/** placeholderHue is a stable hue (0 to 359) for a name. */
 export function placeholderHue(name: string): number {
 	let h = 2166136261;
 	for (const ch of name.toLowerCase()) {
@@ -28,8 +21,6 @@ export function placeholderHue(name: string): number {
 	return (h >>> 0) % 360;
 }
 
-/** inkOn is the initials' ink on a main colour (#rrggbb): dark on a light
- * colour, light on a dark one; '' for anything that is not a colour. */
 export function inkOn(color: string | null | undefined): 'dark' | 'light' | '' {
 	const m = color ? /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color) : null;
 	if (!m) return '';

@@ -62,8 +62,6 @@ describe('live', () => {
 		expect(live.status.state).toBe('connecting');
 		src.onopen?.(new Event('open'));
 		expect(live.status.state).toBe('live');
-		// A live stream that drops reopens at once, quietly; only when that
-		// fails too does it show Reconnecting.
 		vi.useFakeTimers();
 		src.onerror?.(new Event('error'));
 		expect(live.status.state).toBe('live');
@@ -455,7 +453,6 @@ describe('session', () => {
 		});
 		const s = createSession(c);
 		const initialLoad = s.load();
-		// A shared read goes out on the next microtask (api.ts start).
 		await Promise.resolve();
 		expect(meCalls).toBe(1);
 		expect(await s.oidcFinish()).toEqual({ done: true });

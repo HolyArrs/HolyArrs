@@ -1,4 +1,3 @@
-// Small helpers that turn numbers, dates and stored states into words.
 
 export function bytes(n: number | null | undefined): string {
 	if (!n || n < 0) return '0 B';
@@ -31,7 +30,6 @@ export function date(s: string | null | undefined): string {
 	if (!s) return '';
 	const d = new Date(s);
 	if (Number.isNaN(d.getTime())) return '';
-	// A calendar day (a release date) comes as midnight UTC: show that day, not the local evening before.
 	const day = /^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?Z)?$/.test(s);
 	return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', ...(day ? { timeZone: 'UTC' } : {}) });
 }
@@ -54,7 +52,6 @@ export function ago(s: string | null | undefined, now = Date.now()): string {
 	return `${Math.round(sec / 86400)} d ago`;
 }
 
-/** `ago` in full words ("7 days ago", "1 hour ago"), for places with room to say it. */
 export function agoLong(s: string | null | undefined, now = Date.now()): string {
 	return ago(s, now).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
 }
@@ -75,7 +72,6 @@ export function tone(state: string | null | undefined): Tone {
 	return 'idle';
 }
 
-/** words turns a stored state like "needs_a_decision" into "Needs a decision". */
 export function words(state: string | null | undefined): string {
 	if (!state) return '';
 	const s = state.replace(/_/g, ' ');
@@ -89,7 +85,6 @@ export function greeting(h = new Date().getHours()): string {
 	return 'Good evening';
 }
 
-/** folderHealth says in plain words what a Library folder's health means. */
 export function folderHealth(health: string): string {
 	switch (health) {
 		case 'ok':

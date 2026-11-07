@@ -6,7 +6,6 @@ import { ago, agoLong, bytes, date, duration, folderHealth, greeting, percent, t
 
 describe('format', () => {
 	it('calendar days keep their day in every time zone', () => {
-		// TMDB release days arrive as midnight UTC; west of UTC they must not show the day before.
 		expect(date('2023-11-21T00:00:00Z')).toContain('21');
 		expect(date('2023-11-21')).toContain('21');
 		expect(date('')).toBe('');
@@ -50,8 +49,6 @@ describe('format', () => {
 	});
 });
 
-// The app owns its approved tokens. Check their shared component contract and
-// accessibility without depending on an unrelated working copy's design file.
 describe('tokens.css', () => {
 	const here = dirname(fileURLToPath(import.meta.url));
 	const ours = readFileSync(join(here, 'tokens.css'), 'utf8');

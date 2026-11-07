@@ -33,7 +33,6 @@ describe('live resume', () => {
 		vi.advanceTimersByTime(20_000);
 		expect(made[1].url).toBe('/live?last=b00t-7');
 		made[1].onopen?.(new Event('open'));
-		// No client-side resync: the server replays or sends one itself.
 		expect(title).toHaveBeenCalledTimes(1);
 		live.stop();
 		vi.useRealTimers();

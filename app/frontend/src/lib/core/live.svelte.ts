@@ -1,15 +1,6 @@
-// Live updates: one event stream per browser (/live). With locks and
-// BroadcastChannel the tabs elect one leader (navigator.locks): only it opens
-// the stream and relays every message to the other tabs; when it closes or
-// goes to the background, the next tab takes over and resumes with ?last=.
-// Without them each tab has its own stream, as before.
-// Each message is {"topic": "...", "data": ...}; pages subscribe to the topics they show.
-// "resync" means the stream lost messages, so every listener reloads.
-// Event ids are "<boot>-<n>": a new stream resumes with ?last=<id> and the
-// server replays what was missed, or sends "resync" when it cannot (it
-// restarted, or the gap is too old). A new boot seen here also reloads.
 import { to } from './paths.ts';
 import { api } from './api.ts';
+import { backoff } from './loader.ts';
 
 export type LiveState = 'off' | 'connecting' | 'live' | 'reconnecting';
 export type Listener = (data: unknown, topic: string) => void;
@@ -23,7 +14,6 @@ interface SourceLike {
 
 export type SourceFactory = (url: string) => SourceLike;
 
-/** The parts of navigator.locks and BroadcastChannel the shared stream uses (fakes in tests). */
 export interface LocksLike {
 	request(name: string, opts: { signal?: AbortSignal }, fn: () => Promise<void>): Promise<unknown>;
 }
@@ -40,9 +30,8 @@ type Relay =
 	| { t: 'hello' }
 	| { t: 'interest'; view: string };
 
+// Only one tab holds this lock and owns the stream; the others get events relayed.
 const LOCK = 'holyarrs-live';
-
-import { backoff } from './loader.ts';
 
 export function createLive(factory: SourceFactory = (u) => new EventSource(u) as unknown as SourceLike, shared?: Shared) {
 	const status = $state<{ state: LiveState; last: number; leader: boolean }>({ state: 'off', last: 0, leader: false });
@@ -50,7 +39,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	let src: SourceLike | null = null;
 	let lastId = '';
 
-	/** seen keeps the newest event id; a new boot id means the server restarted. */
 	function seen(id: string) {
 		if (!id) return;
 		const boot = id.slice(0, id.lastIndexOf('-'));
@@ -72,7 +60,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		run(listeners.get('*'));
 	}
 
-	/** dispatch handles one raw message; exported for tests. */
 	function dispatch(raw: string) {
 		let msg: { topic?: unknown; data?: unknown };
 		try {
@@ -82,18 +69,12 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		}
 		if (typeof msg.topic !== 'string') return;
 		status.last = Date.now();
-		// Something changed on the server: listeners must read fresh answers, not shared ones.
 		api.forget();
 		emit(msg.topic, msg.data);
 	}
 
 	let tries = 0;
 	let retry: ReturnType<typeof setTimeout> | undefined;
-	// A tab in the background lets go of its stream after a short while: the
-	// browser opens only six connections to one address, so open streams in
-	// background tabs would leave a new tab waiting forever. Back in front, the
-	// stream opens again and every listener reloads (it may have missed messages).
-	// With a shared stream the background leader hands the stream to a tab in front.
 	const PAUSE_AFTER = 10_000;
 	let paused = false;
 	let missed = false;
@@ -125,7 +106,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		if (!watching && typeof document !== 'undefined') {
 			watching = true;
 			document.addEventListener('visibilitychange', visibility);
-			// A tab opened in the background never sees a change: start its countdown now.
 			if (document.hidden) queueMicrotask(visibility);
 		}
 	}
@@ -158,11 +138,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			}
 		};
 		src.onerror = () => {
-			// Lost the server (restart, update): retry after 1 s, 2 s, 4 s… up to 15 s.
-			// Without an id to resume from, the reopened stream cannot replay.
-			// The server also ends a stream on purpose when the sign-in behind it
-			// changed (a confirmed password, new rights): a live stream reopens at
-			// once, quietly, and shows Reconnecting only if that fails too.
 			if (!lastId && status.state === 'live') missed = true;
 			const quiet = status.state === 'live' && tries === 0;
 			if (!quiet) setState('reconnecting');
@@ -182,7 +157,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		};
 	}
 
-	// ---- Shared stream (one per browser) ----
 	let chan: ChannelLike | null = null;
 	let joined = false;
 	let release: (() => void) | null = null;
@@ -204,8 +178,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			dispatch(m.data);
 		} else if (m.t === 'state' && !status.leader) {
 			status.state = m.state;
-			// Back from the background as a follower: an id that differs from the
-			// leader's means messages passed while no tab held the stream.
 			if (checkLast && m.state === 'live') {
 				checkLast = false;
 				if (m.last !== lastId) {
@@ -220,7 +192,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			postInterest(m.view);
 		}
 	}
-	/** lead waits for the lock; holding it, this tab opens the stream and relays. */
 	function lead() {
 		if (!shared || release || abort) return;
 		const ctl = (abort = new AbortController());
@@ -246,7 +217,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 				if (abort === ctl) abort = null;
 			});
 	}
-	/** withdraw lets go of the lock (leader) or leaves the queue (follower). */
 	function withdraw() {
 		abort?.abort();
 		abort = null;
@@ -259,7 +229,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		sentAt.set(view, now);
 		(shared?.post ?? ((v: string) => api.post('/live/interest', { view: v })))(view).catch(() => {});
 	}
-	/** interest tells the server someone watches a view; only the leader posts it. */
 	function interest(view: string) {
 		if (!shared || status.leader) postInterest(view);
 		else send({ t: 'interest', view });
@@ -278,7 +247,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		status.state = 'off';
 	}
 
-	/** on listens to a topic ("*" for all) and returns the way to stop. */
 	function on(topic: string, fn: Listener): () => void {
 		let set = listeners.get(topic);
 		if (!set) listeners.set(topic, (set = new Set()));
@@ -289,7 +257,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	return { status, start, stop, on, dispatch, interest };
 }
 
-/** sharedParts is the real locks and channel, or undefined where the browser lacks either (each tab then has its own stream). */
 function sharedParts(): Shared | undefined {
 	if (typeof navigator === 'undefined' || !navigator.locks || typeof BroadcastChannel === 'undefined') return undefined;
 	return { locks: navigator.locks as unknown as LocksLike, channel: () => new BroadcastChannel(LOCK) as unknown as ChannelLike };
@@ -297,5 +264,4 @@ function sharedParts(): Shared | undefined {
 
 export const live = createLive(undefined, sharedParts());
 
-// Development: a hot update makes a new stream; the old one closes so open tabs do not pile up connections.
 if (import.meta.hot) import.meta.hot.dispose(() => live.stop());

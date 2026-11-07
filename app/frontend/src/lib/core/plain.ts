@@ -1,7 +1,5 @@
-// Plain words for people: no internal ids or raw error text on the page.
 import type { Ask, HealthCheck } from './types.ts';
 
-/** looksLikeId says whether a name is an internal id (preview-…, e2e-…, hex, digits), not a person. */
 export function looksLikeId(name: string | null | undefined): boolean {
 	const n = (name ?? '').trim();
 	if (!n) return true;
@@ -10,7 +8,6 @@ export function looksLikeId(name: string | null | undefined): boolean {
 	return /^[0-9a-f-]{12,}$/i.test(n);
 }
 
-/** personName is a name to show for someone, or a household word when it looks like an id. */
 export function personName(name: string | null | undefined, fallback = 'Someone in your household'): string {
 	return looksLikeId(name) ? fallback : (name ?? '').trim();
 }
@@ -27,10 +24,7 @@ const sentences: Record<HealthCheck['kind'], [error: string, warning: string]> =
 	waiting_downloads: ["Downloads are waiting because their Downloader can't use the files.", "Downloads are waiting because their Downloader can't use the files."]
 };
 
-/** healthSentence says a health problem in a plain sentence; the raw text goes in a details part. */
 export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'> & { key?: string; message?: string }): string {
-	// The key kit check shares the backups kind but is its own problem. Only the
-	// owner can save the kit; the server rewords the message for everyone else.
 	if (c.key === 'backups:key') {
 		return /^the owner/i.test(c.message ?? '') ? 'The owner should save the key kit: backups do not hold the master key.' : 'No key kit is saved: backups do not hold the master key.';
 	}
@@ -39,7 +33,6 @@ export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'> & { key?: 
 	return c.state === 'error' ? pair[0] : pair[1];
 }
 
-/** peopleNames lists who asked: real names first, ids folded into "others in your household". */
 export function peopleNames(list: (string | null | undefined)[]): string {
 	const real = list.filter((n) => !looksLikeId(n)).map((n) => (n ?? '').trim());
 	const hidden = list.length - real.length;
@@ -49,14 +42,8 @@ export function peopleNames(list: (string | null | undefined)[]): string {
 	return `${real.slice(0, -1).join(', ')} and ${real[real.length - 1]}`;
 }
 
-// Signs that the rest of a message is for a developer: paths, system calls, network errors.
 const technical = /([A-Za-z]:\\|(^|\s)\/[\w.-]+|GetFile\w+|CreateFile|errno|syscall|dial tcp|EACCES|ENOENT|ENOSPC|0x[0-9a-f]{4,}|\bno such file\b|\bpermission denied\b|\bi\/o timeout\b|\bconnection refused\b|\bx509\b)/i;
 
-/**
- * plainReason keeps the human part of a message and moves the technical
- * rest to detail: "The file could not be placed: GetFileAttributesEx C:\…"
- * reads "The file could not be placed." with the raw text as detail.
- */
 export function plainReason(text: string): { text: string; detail?: string } {
 	const t = text.trim();
 	if (!technical.test(t)) return { text: t };
@@ -67,12 +54,9 @@ export function plainReason(text: string): { text: string; detail?: string } {
 	return { text: /[.!?]$/.test(head) ? head : `${head}.`, detail: t };
 }
 
-/** decided says who decided and how, or '' while it waits. */
 export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, me?: { id: number; displayName: string }): string {
 	if (!a.decided_by || a.state === 'asked') return '';
-	// A display name wins over the account name: my own (freshest), else the one the server sends.
 	const mine = me && me.id === a.decided_by.id ? me.displayName.trim() : '';
-	// Members get no sign-in name (the server leaves it empty): "an admin" then.
 	const who = mine || a.decided_by.display_name?.trim() || a.decided_by.name || 'an admin';
 	if (a.state === 'turned_down') return `Declined by ${who}`;
 	if (a.auto_approved) return 'Auto-approved';

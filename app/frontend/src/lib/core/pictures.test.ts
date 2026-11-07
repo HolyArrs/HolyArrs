@@ -28,7 +28,6 @@ describe('picture records', () => {
 		registerPictures({ [`album:${al}`]: { v: 'c1', w: 500, h: 500, color: '' } });
 		expect(withVersion(p)).toBe(`${p}?pv=c1`);
 		expect(withVersion(`${p}?pv=c0`)).toBe(`${p}?pv=c0`);
-		// An artist photo with no record keeps the old cache mark; with one, the version.
 		const photo = `/api/v1/music-trending/art/artist/${ar}`;
 		expect(versioned(photo)).toBe(`${photo}?v=4`);
 		registerPictures({ [`artist:${ar}`]: { v: 'p1', w: 1200, h: 1200, color: '' } });

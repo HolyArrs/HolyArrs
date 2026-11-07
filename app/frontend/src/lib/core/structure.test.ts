@@ -3,14 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LAYER, SRC, buildGraph, isCode, isTest, listFiles, zoneOf } from '../../structure-graph.ts';
 
-// How src/ is laid out: where files live, what their names look like and which
-// way imports may point. structure-pending.json lists what may still break a
-// rule; every entry is removed by a later step, and an entry that no longer
-// applies fails the test so the list only shrinks.
-// Refresh it after a move with: UPDATE_PENDING=1 npx vitest run src/lib/core/structure.test.ts
-
 const MAX_CORE_FILES = 40;
-/** Route folders that may hold tests next to their code. */
 const ROUTE_TEST_FOLDERS = ['routes/(home)/', 'routes/(frame)/', 'routes/settings/(home)/'];
 
 const PENDING_FILE = join(SRC, 'lib/core/structure-pending.json');
@@ -40,7 +33,6 @@ for (const f of lib.filter(isCode)) {
 		if (from === to || !['core', 'ui', ...Object.keys(LAYER)].includes(from)) continue;
 		const where = `${f} -> ${t}`;
 		if (from === 'core') {
-			// Icon names are the one type core reads from a part.
 			if (!(to === 'core' || t === 'lib/ui/Icon.svelte')) edges.push(where);
 		} else if (from === 'ui') {
 			if (to !== 'core') edges.push(where);

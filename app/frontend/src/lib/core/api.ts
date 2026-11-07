@@ -1,5 +1,3 @@
-// The one way the app talks to HolyArrs: /api/v1, JSON, the CSRF header on
-// every change, and one place that notices a lost sign-in.
 import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
 
@@ -35,9 +33,6 @@ function settle<T>(f: Follower<T>, ok: boolean, v: unknown) {
 	else rej?.(v);
 }
 
-// follow is one caller's own copy of a shared answer. All the shared request
-// keeps of it is f, which an abort empties: a page that was left (its signal
-// and the abort error's stack) is free while the request is still open.
 function follow<T>(shared: Promise<unknown>, signal?: AbortSignal): Promise<T> {
 	const f: Follower<T> = {};
 	const out = new Promise<T>((res, rej) => {
@@ -56,8 +51,7 @@ function follow<T>(shared: Promise<unknown>, signal?: AbortSignal): Promise<T> {
 	return out;
 }
 
-// Calls that answer 401 as part of their normal job; a 401 there is not a
-// lost session.
+// A 401 on these routes is an answer, not an expired session, so it must not trigger a sign-out.
 const quiet401 = [
 	'/auth/login',
 	'/auth/state',
@@ -73,12 +67,9 @@ const quiet401 = [
 	'/auth/reauth'
 ];
 
-/** A kept GET answer lives this long without a max-age. */
 export const KEEP_MOMENT = 1500;
-/** The longest a GET answer is kept, whatever its max-age. */
 export const KEEP_MAX = 60_000;
 
-/** keepFor reads how long to keep a GET answer from its Cache-Control. */
 export function keepFor(cacheControl: string | null): number {
 	const cc = (cacheControl ?? '').toLowerCase();
 	if (/no-store|no-cache/.test(cc)) return 0;
@@ -87,25 +78,21 @@ export function keepFor(cacheControl: string | null): number {
 	return Math.min(KEEP_MAX, Math.max(KEEP_MOMENT, Number(m[1]) * 1000));
 }
 
-/** An answer still filling in on the server (Explore music "partial", artist search "pending"): never kept, asked again quietly. */
 export function isFilling(v: unknown): boolean {
 	if (!v || typeof v !== 'object') return false;
 	const o = v as { partial?: unknown; pending?: unknown };
 	return o.partial === true || o.pending === true;
 }
 
-/** An answer the server marked incomplete (still filling in): never kept. */
 export function isIncomplete(v: unknown): boolean {
 	return !!v && typeof v === 'object' && (v as { incomplete?: unknown }).incomplete === true;
 }
 
-/** The boot requests app.html started beside the app's scripts (window.__holyarrsEarly): address -> answer. */
 export interface EarlyAsks {
 	at: number;
 	asks: Record<string, Promise<Response>>;
 }
 
-/** A boot request is used only this long after it started; later the page asks again. */
 export const EARLY_MAX = 30_000;
 
 const bootAsks = () => (globalThis as { __holyarrsEarly?: EarlyAsks }).__holyarrsEarly;
@@ -114,9 +101,6 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 	let csrf = '';
 	let signedOut: (() => void) | null = null;
 
-	// A boot request answers the first read of the same address once, made
-	// with the cookies the page opened with. Any change (signing in or out
-	// is one), a 401, another session or news of a change drops them all.
 	function takeEarly(url: string): Promise<Response> | undefined {
 		const e = early();
 		if (!e) return undefined;
@@ -135,7 +119,6 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 		let body: BodyInit | undefined;
 		if (opts.raw !== undefined) {
 			body = opts.raw;
-			// A FormData upload gets its multipart boundary from the browser.
 			if (!(typeof FormData !== 'undefined' && opts.raw instanceof FormData)) headers['Content-Type'] = 'application/octet-stream';
 		} else if (opts.body !== undefined) {
 			body = JSON.stringify(opts.body);
@@ -147,7 +130,6 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin' });
 		let res: Response;
 		try {
-			// A boot request that failed on the network is asked again.
 			res = ahead ? await ahead.catch(ask) : await ask();
 		} catch (e) {
 			if (e instanceof DOMException && e.name === 'AbortError') throw e;
@@ -170,30 +152,17 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 				shared.clear();
 				signedOut?.();
 			}
-			// A route that wants the password typed again: Settings shows the
-			// confirm box instead of leaving the bare error on the page.
 			if (res.status === 403 && data.code === 'reauth' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method, path } }));
 			const ra = Number(res.headers.get('Retry-After'));
 			const msg = typeof data.error === 'string' && data.error ? data.error : `Request failed (${res.status})`;
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
 		}
-		// Music answers carry their pictures' records (box, colour, version).
 		if (data && typeof data === 'object' && 'pictures' in data) registerPictures(data.pictures);
 		return data as T;
 	}
 
-	// Identical GETs share one answer while it is in flight and after: as long
-	// as the server's max-age says (at most 60 s, so a page opened again or
-	// fetched ahead draws at once), else a moment (1.5 s), so parts of one page
-	// asking the same thing cost one request. no-store, incomplete and building
-	// answers are never kept. Any change (POST, PUT, DELETE), a lost sign-in or another
-	// session (a new CSRF token) forgets them. Each caller gets its own copy.
 	const shared = new Map<string, { p: Promise<unknown>; done: number; keep: number }>();
 
-	// A shared GET starts on its own microtask, from here, not inside the caller:
-	// the browser keeps a fetch's call stack until the answer comes (for its
-	// error), and a stack through the caller kept the page that asked alive
-	// after it was left (a whole Explore page per slow request).
 	function start(path: string, entry: { keep: number }): Promise<unknown> {
 		return Promise.resolve().then(() => request<unknown>(path, {}, (res) => (entry.keep = keepFor(res.headers.get('Cache-Control')))));
 	}
@@ -231,20 +200,15 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 		put: <T>(p: string, body?: unknown) => change<T>(p, { method: 'PUT', body }),
 		del: <T = void>(p: string) => change<T>(p, { method: 'DELETE' }),
 		setCsrf(v: string) {
-			// A new token is a new session, maybe another account: nothing kept carries over.
 			if (v !== csrf) shared.clear();
 			if (csrf && v !== csrf) dropEarly();
 			csrf = v;
 		},
 		csrf: () => csrf,
-		/** forget drops shared reads, for news of a change made somewhere else (the live stream). */
 		forget: () => {
 			shared.clear();
 			dropEarly();
 		},
-		/** warm fetches path ahead of a page and keeps its answer at least keep ms, so the
-		 * page finds it even when the server sent no max-age. Never when the server said
-		 * no-store or the answer is incomplete; any change forgets it as usual. */
 		warm<T>(path: string, keep: number): Promise<T> {
 			const answer = get<T>(path);
 			const hit = shared.get(path);
@@ -256,7 +220,6 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			);
 			return answer;
 		},
-		/** has says whether a kept answer for path is ready now (a page draws it without waiting). */
 		has(path: string): boolean {
 			const hit = shared.get(path);
 			return !!hit && hit.done > 0 && hit.keep > 0 && Date.now() - hit.done <= hit.keep;
@@ -271,7 +234,6 @@ export type Client = ReturnType<typeof createClient>;
 
 export const api = createClient();
 
-/** message turns any error into a sentence for the screen. */
 export function message(e: unknown): string {
 	if (e instanceof ApiError) return e.message;
 	if (e instanceof Error) return e.message;

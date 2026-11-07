@@ -1,12 +1,9 @@
-// The star rating (TMDB's average vote) is shown only when enough people
-// voted for it to mean something.
 
-/** MIN_VOTES is the fewest votes a star rating needs to be shown. */
+// Below this many votes a score is too noisy to show.
 export const MIN_VOTES = 25;
 
 const pos = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
 
-/** shownScore is the score to show, or undefined when it is missing or has fewer than MIN_VOTES votes. */
 export function shownScore(score: unknown, votes: unknown): number | undefined {
 	const s = pos(score);
 	const n = pos(votes);

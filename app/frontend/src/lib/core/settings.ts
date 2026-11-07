@@ -3,7 +3,6 @@ import type { IconName } from '../ui/Icon.svelte';
 
 export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'system' | 'account';
 
-/** Tile colours for the small icon squares in the Settings menu and home. */
 export type Tint = 'gray' | 'blue' | 'indigo' | 'purple' | 'pink' | 'red' | 'orange' | 'amber' | 'green' | 'teal' | 'graphite';
 
 export interface Section {
@@ -13,9 +12,7 @@ export interface Section {
 	about: string;
 	group: GroupId;
 	tint: Tint;
-	/** users: owner and admins; self: everyone; library: settings or manage_library (read only); otherwise the settings permission. */
 	need?: 'users' | 'self' | 'library';
-	/** A feature switch: the section is hidden while that feature is held back. */
 	feature?: string;
 }
 
@@ -23,14 +20,13 @@ export interface Group {
 	id: GroupId;
 	label: string;
 	icon: IconName;
-	/** Three words on the Settings home card: what the group is for. */
 	line: string;
 	about: string;
 }
 
 type Can = (p: 'settings' | 'users' | 'manage_library') => boolean;
 
-/** Features held back from this release; the session fills it in after sign-in. */
+// Set by the session so this module can ask about held features without importing it.
 let heldNow: (feature: string) => boolean = () => false;
 export function setHeld(fn: (feature: string) => boolean): void {
 	heldNow = fn;
@@ -39,7 +35,6 @@ export function isHeld(feature: string | undefined): boolean {
 	return !!feature && heldNow(feature);
 }
 
-/** mayOpen says whether a person may open one section. */
 export function mayOpen(s: Section, can: Can): boolean {
 	if (isHeld(s.feature)) return false;
 	if (s.need === 'self') return true;
@@ -48,14 +43,10 @@ export function mayOpen(s: Section, can: Can): boolean {
 	return can('settings');
 }
 
-/** visible keeps the sections a person may open. */
 export function visible(all: Section[], can: Can): Section[] {
 	return all.filter((s) => mayOpen(s, can));
 }
 
-// Five groups, each a card on the Settings home: Library, Downloads, People,
-// Linked apps, Server. My account lives in the account menu and stays here
-// only for search and the page's own group.
 export const groups: Group[] = [
 	{ id: 'library', label: 'Library', icon: 'library', line: 'Where titles live', about: 'Folders, parts, defaults, subtitles, file names and moving in.' },
 	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, quality, search and schedules.' },
@@ -92,7 +83,6 @@ export const sections: Section[] = [
 	{ href: '/settings/api', group: 'connections', tint: 'gray', label: 'API', icon: 'key', about: 'Keys and routes for other apps' },
 	{ href: '/settings/tmdb', group: 'connections', tint: 'purple', label: 'Metadata', icon: 'sparkle', about: 'Where posters and names come from' },
 
-
 	{ href: '/settings/health', group: 'system', tint: 'green', label: 'Health checks', icon: 'check', about: "What's working and what isn't" },
 	{ href: '/settings/backups', group: 'system', tint: 'blue', label: 'Backups', icon: 'archive', about: 'Save and restore HolyArrs' },
 	{ href: '/settings/logs', group: 'system', tint: 'gray', label: 'Logs', icon: 'copy', about: 'Read and download the app log', need: 'users' },
@@ -102,22 +92,18 @@ export const sections: Section[] = [
 	{ href: '/settings/account', group: 'account', tint: 'gray', label: 'My account', icon: 'user', about: 'Password, two-factor, devices', need: 'self' }
 ];
 
-/** sectionFor finds the page a path belongs to (a source's health page belongs to Sources). */
 export function sectionFor(all: Section[], path: string): Section | undefined {
 	return all.find((s) => s.href === path || path.startsWith(s.href + '/'));
 }
 
-/** grouped returns each group with the visible pages inside it, leaving out empty groups. */
 export function grouped(all: Section[]): { group: Group; items: Section[] }[] {
 	return groups.map((group) => ({ group, items: all.filter((s) => s.group === group.id) })).filter((g) => g.items.length > 0);
 }
 
-/** groupOf finds a group by id. */
 export function groupOf(id: GroupId | undefined): Group | undefined {
 	return groups.find((g) => g.id === id);
 }
 
-/** filterSections keeps the pages whose name, words or group hold every word typed. */
 export function filterSections(all: Section[], query: string): Section[] {
 	const words = query.toLowerCase().split(/\s+/).filter(Boolean);
 	if (!words.length) return all;
@@ -127,8 +113,6 @@ export function filterSections(all: Section[], query: string): Section[] {
 	});
 }
 
-/** plainMessage is message() for Settings: server text starts with a capital
- *  and ends with a stop, so an error never shows as a bare lowercase line. */
 export function plainMessage(e: unknown): string {
 	const t = message(e).trim();
 	if (!t) return 'Something went wrong.';

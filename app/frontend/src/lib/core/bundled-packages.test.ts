@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { packageRoot } from '../../../bundled-packages.ts';
 
-// The npm package a bundled module belongs to (bundled-packages.ts), for the third-party notices.
 describe('packageRoot', () => {
 	it('finds plain and scoped packages, the innermost node_modules first', () => {
 		expect(packageRoot('/a/node_modules/svelte/src/internal/client/index.js')).toBe('/a/node_modules/svelte');

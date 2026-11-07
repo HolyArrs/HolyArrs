@@ -3,7 +3,6 @@ import { createLive, type ChannelLike, type LocksLike, type SourceFactory } from
 
 type Src = { url: string; onopen: null | ((e: Event) => void); onerror: null | ((e: Event) => void); onmessage: null | ((e: MessageEvent) => void); close: () => void; closed: boolean };
 
-/** A browser with tabs: one exclusive lock queue and one broadcast channel shared by every tab. */
 function browser() {
 	const made: Src[] = [];
 	const factory = ((url: string) => {
@@ -107,7 +106,6 @@ describe('one live stream shared by every tab', () => {
 		expect(b.made[0].closed).toBe(true);
 		expect(c.status.leader).toBe(true);
 		expect(b.made[1].url).toBe('/live?last=B-7');
-		// The server replays what came after B-7.
 		b.made[1].onopen?.(new Event('open'));
 		b.made[1].onmessage?.(ev('dl', 'B-8', 8));
 		await flush();

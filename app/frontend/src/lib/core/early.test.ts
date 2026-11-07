@@ -8,7 +8,6 @@ import { musicPrefetchURLs } from '../music/music-prefetch.ts';
 import { firstPageURL } from '../discover/person-prefetch.ts';
 import { loadDetails } from '../metadata/title-details.ts';
 
-// app.html's boot-request script, run as the browser would, with a stand-in page.
 const html = readFileSync(new URL('../../app.html', import.meta.url), 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).find((s) => s.includes('holyarrs-early'));
 if (!script) throw new Error('app.html has no holyarrs-early script');
@@ -51,7 +50,6 @@ describe('app.html boot requests', () => {
 			'/api/v1/auth/me',
 			...musicPrefetchURLs(`/music/album/${B}?artist=${A}`).map((p) => '/api/v1' + p)
 		]);
-		// A bare album link has no artist: only the full answer.
 		expect(boot({ url: `/music/album/${B}` }).asked).toEqual(['/api/v1/auth/me', `/api/v1/music/albums/${B}?artist=&similar=0`]);
 	});
 
@@ -60,7 +58,6 @@ describe('app.html boot requests', () => {
 		const region = serviceRegion('DE');
 		const want = headPath({ type: 'shows', services: readServices(region, stored['holyarrs.explore.services']) ?? [], region, tz: 'Europe/Berlin' });
 		expect(boot({ url: '/explore?type=shows', stored, langs: ['de-DE'] }).asked).toEqual(['/api/v1/auth/me', '/api/v1' + want]);
-		// Nothing picked yet, and a browser language with no country.
 		expect(boot({ url: '/explore', langs: ['en'] }).asked[1]).toBe('/api/v1' + headPath({ type: 'all', services: [], region: 'US', tz: 'Europe/Berlin' }));
 	});
 
@@ -70,7 +67,6 @@ describe('app.html boot requests', () => {
 		expect(boot({ url: '/explore?type=music', langs: ['en-GB'] }).asked).toEqual(['/api/v1/auth/me', '/api/v1' + want, '/api/v1/explore/music/rising']);
 		const saved = boot({ url: '/explore', stored: { 'holyarrs.explore.type': 'music', 'holyarrs.music-trending': 'GB' } }).asked;
 		expect(saved[1]).toBe('/api/v1' + want);
-		// The address wins over the saved type.
 		expect(boot({ url: '/explore?type=movies', stored: { 'holyarrs.explore.type': 'music' } }).asked[1]).toMatch(/^\/api\/v1\/explore\/head\?type=movies&/);
 	});
 
@@ -108,7 +104,6 @@ describe('app.html boot requests', () => {
 		await loadDetails(get, 'show', '1396').catch(() => {});
 		expect(boot({ url: '/title/movie/693134' }).asked).toEqual(['/api/v1/auth/me', ...asked.slice(0, 2).map((p) => '/api/v1' + p)]);
 		expect(boot({ url: '/title/show/1396' }).asked).toEqual(['/api/v1/auth/me', ...asked.slice(2, 4).map((p) => '/api/v1' + p)]);
-		// Old "tv" links are sent on to /title/show/ first: nothing early.
 		expect(boot({ url: '/title/tv/1396' }).asked).toEqual(['/api/v1/auth/me']);
 	});
 
@@ -144,7 +139,6 @@ describe('api client takes boot requests', () => {
 		expect(early.asks).toEqual({});
 		c.forget();
 		expect(await c.get('/home')).toEqual({ from: 'network' });
-		// Another address is never answered from a boot request.
 		expect(await c.get('/home?x=1')).toEqual({ from: 'network' });
 	});
 

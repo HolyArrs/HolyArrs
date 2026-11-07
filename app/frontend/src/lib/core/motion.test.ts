@@ -70,7 +70,6 @@ describe('theater flip frames', () => {
 		expect(f.outer[0]).toBe('translate(100px, 50px) scale(0.2, 0.2)');
 		expect(f.outer[10]).toBe('translate(0px, 0px) scale(1, 1)');
 		expect(f.inner[10]).toBe('translate(0px, 0px) scale(1, 1)');
-		// Same aspect as the window: the picture's counter-scale stays 1 throughout.
 		for (const t of f.inner) expect(t).toMatch(/scale\(1, 1\)$/);
 		const back = flipFrames({ left: 100, top: 50, width: 320, height: 180 }, 16 / 9, 1600, 900, true, 10);
 		expect(back.outer[0]).toBe(f.outer[10]);
