@@ -102,7 +102,8 @@
 				plexServers = done.servers;
 				plexOwner = { linked: true, name: done.name, can_import: true };
 				if (!ways.plex.server_id && done.servers.length === 1) ways.plex.server_id = done.servers[0].id;
-				linkNote = done.servers.length ? 'Linked. Pick the server people must share, then Save.' : 'Linked. Plex lists no server you own.';
+				// Plex's page cuts this tab's hold on its window, so it may stay open.
+				linkNote = done.servers.length ? 'Linked. Close the Plex window, pick the server people must share, then Save.' : 'Linked. Close the Plex window; Plex lists no server you own.';
 				toasts.push(`Plex ${done.name} linked`, 'ok');
 				return;
 			}
