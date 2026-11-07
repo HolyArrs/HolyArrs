@@ -6,7 +6,6 @@ const https = { url: 'https://m.example/api/v1/mcp', signIn: true };
 const home = { url: 'http://10.10.25.25:18730/api/v1/mcp', key: 'hak_test', signIn: false };
 const app = (id: string) => ROWS.find((r) => r.id === id)!.app;
 const all = (steps: { text: string; code?: string }[]) => steps.map((s) => s.text + '\n' + (s.code ?? '')).join('\n');
-// The website's 8 guide pages; every Guide link goes to one of them or a main-page anchor.
 const PAGES = ['claude-app', 'chatgpt', 'gemini-app', 'claude-code', 'codex', 'cursor', 'claude-desktop-home', 'local-ai'];
 
 describe('ai-connect', () => {
@@ -38,7 +37,6 @@ describe('ai-connect', () => {
 			'Claude Desktop at home', 'Open WebUI, LM Studio, Ollama', 'Any other app'
 		]);
 		expect(ROWS.length).toBe(APP_DATA.filter((d) => d.table).length + 1);
-		// Every app stays in the data; only table rows show.
 		expect(APP_DATA.length).toBe(56);
 	});
 	it('links each row only to an existing guide page or a main-page anchor', () => {
@@ -64,14 +62,12 @@ describe('ai-connect', () => {
 		expect(rowFor(null)).toBeUndefined();
 	});
 	it("opens the linked app's own steps, under the row of its guide or on their own", () => {
-		// LM Studio sits under the local row but keeps its own steps (not Open WebUI's).
 		const lm = pickFor('lm-studio')!;
 		expect(lm.row!.id).toBe('open-webui');
 		expect(lm.app.name).toBe('LM Studio');
 		expect(all(lm.app.steps(https))).toContain('Edit mcp.json');
 		expect(pickFor('codex-ide')!.app.id).toBe('codex-ide');
 		expect(pickFor('codex-ide')!.row!.name).toBe('Codex');
-		// The website's key steps say "pick Windsurf": the link opens Windsurf's steps, with no row.
 		const w = pickFor('windsurf')!;
 		expect(w.row).toBeUndefined();
 		expect(w.app.name).toBe('Windsurf');
@@ -88,12 +84,10 @@ describe('ai-connect', () => {
 		expect(codeParts('Add to Cursor, or `~/.cursor/mcp.json`')).toEqual([{ text: 'Add to Cursor, or ' }, { text: '~/.cursor/mcp.json', code: true }]);
 	});
 	it('fits the "where" cell to the address: no one-click button or header-less command on a home address', () => {
-		// Cursor's "Add to Cursor, or ..." becomes its one-click button, like VS Code's.
 		const cursor = rowFor('cursor')!;
 		expect(cursor.deeplink).toBe('cursor');
 		expect(whereText(cursor, home.url, false)).toBe('`~/.cursor/mcp.json`');
 		expect(rowFor('vs-code-copilot')!.deeplink).toBe('vscode');
-		// The Gemini CLI command takes the key header on a home address, never a real key.
 		const g = whereText(rowFor('gemini-cli')!, home.url, false);
 		expect(g).toBe('`gemini mcp add --scope user --transport http --header "Authorization: Bearer <your AI key>" holyarrs http://10.10.25.25:18730/api/v1/mcp`');
 		expect(whereText(rowFor('gemini-cli')!, https.url, true)).not.toContain('Authorization');
@@ -105,7 +99,6 @@ describe('ai-connect', () => {
 		expect(signIn).not.toMatch(/Bearer/);
 		const key = all(app('claude-code').steps(home));
 		expect(key).toContain('Authorization: Bearer hak_test');
-		// The Make a key button replaces the step done in HolyArrs.
 		expect(key).not.toContain('In HolyArrs');
 	});
 	it('bolds labels and marks commands like the website', () => {
