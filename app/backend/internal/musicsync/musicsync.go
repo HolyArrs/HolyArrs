@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -163,7 +163,7 @@ func (s *Sync) schedule() time.Duration {
 	switch {
 	case s.Every > 0:
 		return s.Every
-	case lowmem.On():
+	case startup.LowMemoryOn():
 		return LowMemoryEvery
 	}
 	return DefaultEvery
@@ -377,7 +377,7 @@ func (s *Sync) storePictures(ctx context.Context, jobs []picJob) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	ok, missed := 0, 0
-	for range min(lowmem.Pick(picWorkers, 2), len(jobs)) { // low-memory mode: fewer at once
+	for range min(startup.LowMemoryPick(picWorkers, 2), len(jobs)) { // low-memory mode: fewer at once
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

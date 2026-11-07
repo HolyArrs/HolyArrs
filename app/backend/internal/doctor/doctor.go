@@ -27,7 +27,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -296,7 +297,7 @@ func appChecks(r *Report, version string, uid, gid int) {
 		}
 		r.add(s, st, "running as "+ids(uid, gid)+", groups "+groups+", umask "+umask(), fix)
 	}
-	inside := runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
+	inside := startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	r.add(s, OK, "in a container: "+yesNo(inside), "")
 	if t := selinuxType(); t != "" {
 		r.add(s, OK, "SELinux: on ("+t+")", "")
@@ -469,7 +470,7 @@ var unmappedConfig = UnmappedConfig
 // unsure).
 func UnmappedConfig(dir string) string {
 	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
-	if !runas.InContainer(exists, os.Getenv) {
+	if !startup.InContainer(exists, os.Getenv) {
 		return ""
 	}
 	b, err := os.ReadFile("/proc/self/mountinfo")

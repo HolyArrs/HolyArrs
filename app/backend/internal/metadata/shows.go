@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // Errors from show lookups.
@@ -196,7 +196,7 @@ func (g *getter) put(key string, body []byte, ttl time.Duration, now time.Time) 
 		}
 		g.swept = now
 	}
-	if g.cache == nil || len(g.cache) >= lowmem.Pick(maxCache, 250) {
+	if g.cache == nil || len(g.cache) >= startup.LowMemoryPick(maxCache, 250) {
 		g.cache = map[string]cached{}
 	}
 	g.cache[key] = cached{body: body, at: now}

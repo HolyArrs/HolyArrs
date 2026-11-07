@@ -14,7 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -227,7 +228,7 @@ func (a *API) aboutView(ctx context.Context) AboutView {
 		ConfigDir: a.configDir(), UptimeS: int64(time.Since(a.s.Started).Seconds()), Started: a.s.Started.UTC().Format(time.RFC3339),
 	}
 	// Docker, Podman, Kubernetes and the rest: the update steps are the same.
-	v.Docker = runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
+	v.Docker = startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	if exe, err := os.Executable(); err == nil {
 		v.StartDir = filepath.Dir(exe)
 	}

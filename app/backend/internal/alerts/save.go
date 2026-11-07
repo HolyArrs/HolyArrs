@@ -1,7 +1,6 @@
 package alerts
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"errors"
@@ -9,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -63,7 +63,7 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 			return ErrKind
 		}
 		// Channels not yet proven end to end are held back (feature switch).
-		if !feature.ProvenAlertKinds[in.Kind] && !feature.On(feature.AlertChannelsMore) {
+		if !startup.ProvenAlertKinds[in.Kind] && !startup.FeatureOn(startup.AlertChannelsMore) {
 			return ErrKind
 		}
 		a.Kind = in.Kind

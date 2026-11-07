@@ -1,13 +1,4 @@
-// Package runas sets up who HolyArrs runs as when it starts, the way
-// linuxserver.io images do, without a shell: FILE__ variables, PUID and PGID,
-// and UMASK.
-//
-// Started as root on Linux, HolyArrs fixes the owner of its config folder,
-// switches to PUID:PGID (default 1000:1000) and starts itself again as that
-// user. Outside a container root only switches when PUID or PGID is set.
-// Started as any other user (Docker's user: setting, rootless, Kubernetes
-// runAsUser) it keeps that user. On other systems only FILE__ is applied.
-package runas
+package startup
 
 import (
 	"errors"
@@ -88,12 +79,12 @@ func parseID(name, s string) (int, error) {
 	return int(n), nil
 }
 
-// Action is what start-up does about the user.
-type Action int
+// RunAsAction is what start-up does about the user.
+type RunAsAction int
 
 const (
 	// Keep runs as the current user (not started as root).
-	Keep Action = iota
+	Keep RunAsAction = iota
 	// Switch fixes the config folder's owner, switches to UID:GID and
 	// starts again.
 	Switch
@@ -101,9 +92,9 @@ const (
 	StayRoot
 )
 
-// Plan is what Decide chose.
-type Plan struct {
-	Action   Action
+// RunAsPlan is what DecideRunAs chose.
+type RunAsPlan struct {
+	Action   RunAsAction
 	UID, GID int
 	// Umask is the mask to apply, or -1 to keep the current one.
 	Umask int
@@ -126,11 +117,11 @@ func InContainer(exists func(string) bool, getenv func(string) string) bool {
 	return exists("/.dockerenv") || exists("/run/.containerenv")
 }
 
-// Decide works out the plan from the effective user and group and the
+// DecideRunAs works out the plan from the effective user and group and the
 // environment. switched is true in the process started after the switch.
 // Outside a container root only switches when PUID or PGID is set.
-func Decide(euid, egid int, lookup func(string) (string, bool), switched, inContainer bool) (Plan, error) {
-	p := Plan{UID: defaultID, GID: defaultID, Umask: -1}
+func DecideRunAs(euid, egid int, lookup func(string) (string, bool), switched, inContainer bool) (RunAsPlan, error) {
+	p := RunAsPlan{UID: defaultID, GID: defaultID, Umask: -1}
 	if v, ok := lookup("UMASK"); ok && strings.TrimSpace(v) != "" {
 		m, err := ParseUmask(v)
 		if err != nil {

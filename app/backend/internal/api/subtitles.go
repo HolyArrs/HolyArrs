@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
@@ -20,7 +20,7 @@ func (a *API) subtitleRoutes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/settings/subtitles", a.putSubtitleSettings)
 	m.HandleFunc("GET /api/v1/titles/{id}/subtitles", a.titleSubtitles)
 	m.HandleFunc("PUT /api/v1/titles/{id}/subtitle-wish", a.putSubtitleWish)
-	if !feature.On(feature.SubtitleSites) {
+	if !startup.FeatureOn(startup.SubtitleSites) {
 		return
 	}
 	m.HandleFunc("POST /api/v1/subtitles/search", a.searchSubtitles)

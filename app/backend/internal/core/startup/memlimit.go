@@ -1,12 +1,10 @@
-package main
+package startup
 
 import (
 	"fmt"
 	"log"
 	"os"
 	"runtime/debug"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
 )
 
 // defaultMemoryTarget is the Go memory target when GOMEMLIMIT is not set,
@@ -37,14 +35,14 @@ func applyMemoryTarget(getenv func(string) string, set func(int64) int64, target
 	return true
 }
 
-// useMemoryMode decides the low-memory mode (#131) and applies the memory
+// UseMemoryMode decides the low-memory mode and applies the memory
 // target for the server (run), with one line saying which and why.
-func useMemoryMode() {
-	total := lowmem.TotalMemory("/")
-	low, why, odd := lowmem.Decide(os.Getenv(lowmem.Env), total)
-	lowmem.Set(low)
+func UseMemoryMode() {
+	total := TotalMemory("/")
+	low, why, odd := DecideLowMemory(os.Getenv(LowMemoryEnv), total)
+	SetLowMemory(low)
 	if odd {
-		log.Printf("holyarrs: %s=%q is not 1 or 0; deciding by the machine's size", lowmem.Env, os.Getenv(lowmem.Env))
+		log.Printf("holyarrs: %s=%q is not 1 or 0; deciding by the machine's size", LowMemoryEnv, os.Getenv(LowMemoryEnv))
 	}
 	target := memoryTarget(low, total)
 	aim := "memory target from GOMEMLIMIT"
@@ -52,8 +50,8 @@ func useMemoryMode() {
 		aim = fmt.Sprintf("memory target %d MiB (set GOMEMLIMIT to change it)", target>>20)
 	}
 	if low {
-		log.Printf("holyarrs: low-memory mode on (%s; %s=0 turns it off): smaller in-memory caches, smaller SQLite cache, %s", why, lowmem.Env, aim)
+		log.Printf("holyarrs: low-memory mode on (%s; %s=0 turns it off): smaller in-memory caches, smaller SQLite cache, %s", why, LowMemoryEnv, aim)
 		return
 	}
-	log.Printf("holyarrs: low-memory mode off (%s; %s=1 turns it on), %s", why, lowmem.Env, aim)
+	log.Printf("holyarrs: low-memory mode off (%s; %s=1 turns it on), %s", why, LowMemoryEnv, aim)
 }

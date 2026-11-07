@@ -8,8 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"io"
@@ -47,7 +46,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -55,6 +54,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -299,7 +299,7 @@ type runOpts struct {
 }
 
 func run(c config) error {
-	useMemoryMode()
+	startup.UseMemoryMode()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	return serve(ctx, c, runOpts{})
@@ -395,7 +395,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: lowmem.Pick(0, 4000), ReaderCacheKiB: lowmem.Pick(0, 2000)})
+	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
 	if err != nil {
 		if !needsPerson(err) {
 			return err
@@ -742,7 +742,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// that finds nothing to do.
 	var watchlists atomic.Pointer[asks.Watchlists]
 	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
-		if !feature.On(feature.PlexWatchlists) {
+		if !startup.FeatureOn(startup.PlexWatchlists) {
 			r.SetResult(map[string]any{"skipped": "held back"})
 			return nil
 		}
@@ -753,7 +753,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return nil
 	})
 	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
-		if !feature.On(feature.PlexWatchlists) {
+		if !startup.FeatureOn(startup.PlexWatchlists) {
 			return false, nil, nil
 		}
 		if w := watchlists.Load(); w != nil {
@@ -766,7 +766,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	subs.Register(q)
 	if !c.SafeMode {
 		s.OnEvent(func(e domain.Event) {
-			if pc.On(parts.Subtitles) && feature.On(feature.SubtitleSites) {
+			if pc.On(parts.Subtitles) && startup.FeatureOn(startup.SubtitleSites) {
 				subs.OnEvent(e)
 			}
 		})
@@ -1064,7 +1064,7 @@ func healthcheck(base string) int {
 // FILE__HOLYARRS_URL_BASE and FILE__HOLYARRS_HEALTH_URL work; it never
 // switches user or sets UMASK.
 func healthcheckCmd() int {
-	if err := runas.LoadFileEnv(os.Environ(), os.ReadFile, os.Setenv); err != nil {
+	if err := startup.LoadFileEnv(os.Environ(), os.ReadFile, os.Setenv); err != nil {
 		log.Printf("holyarrs: %v", err)
 		return 1
 	}
@@ -1080,7 +1080,7 @@ func main() {
 	// FILE__, UMASK and PUID/PGID come first, for the server and for every
 	// command that opens the database, so a root docker exec never leaves
 	// root-owned files. Started as root on Linux this restarts as PUID:PGID.
-	if err := runas.Start(configDirArg(os.Args[1:])); err != nil {
+	if err := startup.StartRunAs(configDirArg(os.Args[1:])); err != nil {
 		log.Printf("holyarrs: %v", err)
 		os.Exit(1)
 	}

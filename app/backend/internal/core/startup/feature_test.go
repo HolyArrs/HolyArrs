@@ -1,4 +1,4 @@
-package feature
+package startup
 
 import (
 	"slices"
@@ -7,26 +7,26 @@ import (
 
 func TestHeldFeaturesAreOffByDefault(t *testing.T) {
 	t.Setenv("HOLYARRS_FLAGS", "")
-	for _, n := range Held {
-		if On(n) {
+	for _, n := range HeldFeatures {
+		if FeatureOn(n) {
 			t.Errorf("%s is on with no switches set", n)
 		}
 	}
-	if got := Off(); !slices.Equal(got, Held) {
-		t.Errorf("Off() = %v, want every held feature %v", got, Held)
+	if got := FeaturesOff(); !slices.Equal(got, HeldFeatures) {
+		t.Errorf("FeaturesOff() = %v, want every held feature %v", got, HeldFeatures)
 	}
 }
 
 func TestSwitchTurnsOneFeatureOn(t *testing.T) {
 	t.Setenv("HOLYARRS_FLAGS", "music_rows_v2, ai_apps ,go_back")
-	if !On(AIApps) || !On(GoBack) {
+	if !FeatureOn(AIApps) || !FeatureOn(GoBack) {
 		t.Fatal("listed switches are not on")
 	}
-	if On(TraktLists) {
+	if FeatureOn(TraktLists) {
 		t.Fatal("an unlisted switch is on")
 	}
-	if got := Off(); slices.Contains(got, AIApps) || !slices.Contains(got, TraktLists) || len(got) != len(Held)-2 {
-		t.Errorf("Off() = %v", got)
+	if got := FeaturesOff(); slices.Contains(got, AIApps) || !slices.Contains(got, TraktLists) || len(got) != len(HeldFeatures)-2 {
+		t.Errorf("FeaturesOff() = %v", got)
 	}
 }
 

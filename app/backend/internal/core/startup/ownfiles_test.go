@@ -1,4 +1,4 @@
-package runas
+package startup
 
 import "testing"
 

@@ -1,6 +1,6 @@
 //go:build linux
 
-package runas
+package startup
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ import (
 // Start applies FILE__, UMASK and PUID/PGID. Started as root it fixes the
 // owner of configDir, switches user and starts the program again, so it only
 // returns in the final process. Any error should stop start-up.
-func Start(configDir string) error {
+func StartRunAs(configDir string) error {
 	switched := os.Getenv(Marker) == "1"
 	_ = os.Unsetenv(Marker)
 	if !switched {
@@ -26,7 +26,7 @@ func Start(configDir string) error {
 		}
 	}
 	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
-	p, err := Decide(os.Geteuid(), os.Getegid(), os.LookupEnv, switched, InContainer(exists, os.Getenv))
+	p, err := DecideRunAs(os.Geteuid(), os.Getegid(), os.LookupEnv, switched, InContainer(exists, os.Getenv))
 	if err != nil {
 		return err
 	}

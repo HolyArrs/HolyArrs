@@ -17,7 +17,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -169,8 +170,8 @@ func TestMemoryChild(t *testing.T) {
 		t.Skip("started by TestMemoryPartsRuns")
 	}
 	if strings.HasSuffix(mode, "-low") {
-		lowmem.Set(true)
-		t.Cleanup(func() { lowmem.Set(false) })
+		startup.SetLowMemory(true)
+		t.Cleanup(func() { startup.SetLowMemory(false) })
 	}
 	base := measure(mode)
 	a := startFaultApp(t, runOpts{})

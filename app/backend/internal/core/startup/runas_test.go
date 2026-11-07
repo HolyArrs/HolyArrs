@@ -1,4 +1,4 @@
-package runas
+package startup
 
 import (
 	"errors"
@@ -93,27 +93,27 @@ func TestDecide(t *testing.T) {
 		euid     int
 		env      map[string]string
 		switched bool
-		want     Plan
+		want     RunAsPlan
 		note     string
 	}{
-		{"root defaults", 0, nil, false, Plan{Action: Switch, UID: 1000, GID: 1000, Umask: -1}, ""},
+		{"root defaults", 0, nil, false, RunAsPlan{Action: Switch, UID: 1000, GID: 1000, Umask: -1}, ""},
 		{"root 99:100 umask", 0, map[string]string{"PUID": "99", "PGID": "100", "UMASK": "002"}, false,
-			Plan{Action: Switch, UID: 99, GID: 100, Umask: 0o2}, ""},
+			RunAsPlan{Action: Switch, UID: 99, GID: 100, Umask: 0o2}, ""},
 		{"root PUID 0 PGID 0", 0, map[string]string{"PUID": "0", "PGID": "0"}, false,
-			Plan{Action: StayRoot, UID: 0, GID: 0, Umask: -1}, "PUID=0"},
+			RunAsPlan{Action: StayRoot, UID: 0, GID: 0, Umask: -1}, "PUID=0"},
 		{"root empty PUID is default", 0, map[string]string{"PUID": "", "PGID": " "}, false,
-			Plan{Action: Switch, UID: 1000, GID: 1000, Umask: -1}, ""},
-		{"non-root no PUID", 1000, nil, false, Plan{Action: Keep, UID: 1000, GID: 1000, Umask: -1}, ""},
+			RunAsPlan{Action: Switch, UID: 1000, GID: 1000, Umask: -1}, ""},
+		{"non-root no PUID", 1000, nil, false, RunAsPlan{Action: Keep, UID: 1000, GID: 1000, Umask: -1}, ""},
 		{"non-root with PUID", 1001, map[string]string{"PUID": "99"}, false,
-			Plan{Action: Keep, UID: 99, GID: 1000, Umask: -1}, "ignored: the container already runs as 1001:1001"},
+			RunAsPlan{Action: Keep, UID: 99, GID: 1000, Umask: -1}, "ignored: the container already runs as 1001:1001"},
 		{"non-root with PGID only", 1001, map[string]string{"PGID": "100", "UMASK": "022"}, false,
-			Plan{Action: Keep, UID: 1000, GID: 100, Umask: 0o22}, "ignored"},
+			RunAsPlan{Action: Keep, UID: 1000, GID: 100, Umask: 0o22}, "ignored"},
 		{"after switch, quiet", 99, map[string]string{"PUID": "99", "PGID": "100"}, true,
-			Plan{Action: Keep, UID: 99, GID: 100, Umask: -1}, ""},
+			RunAsPlan{Action: Keep, UID: 99, GID: 100, Umask: -1}, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := Decide(c.euid, c.euid, envOf(c.env), c.switched, true)
+			got, err := DecideRunAs(c.euid, c.euid, envOf(c.env), c.switched, true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -135,12 +135,12 @@ func TestDecideErrors(t *testing.T) {
 		"neg PGID":  {"PGID": "-5"},
 		"bad UMASK": {"UMASK": "999"},
 	} {
-		if _, err := Decide(0, 0, envOf(env), false, true); err == nil {
+		if _, err := DecideRunAs(0, 0, envOf(env), false, true); err == nil {
 			t.Errorf("%s: expected an error", name)
 		}
 	}
 	// Still root after the switch: never carry on as root.
-	if _, err := Decide(0, 0, envOf(nil), true, true); err == nil || !strings.Contains(err.Error(), "will not run as root") {
+	if _, err := DecideRunAs(0, 0, envOf(nil), true, true); err == nil || !strings.Contains(err.Error(), "will not run as root") {
 		t.Fatalf("root after switch should stop: %v", err)
 	}
 }
@@ -148,17 +148,17 @@ func TestDecideErrors(t *testing.T) {
 // The egid differs from the euid here, so a GID copied from the current group
 // would show.
 func TestDecidePUIDZero(t *testing.T) {
-	got, err := Decide(0, 5, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false, true)
+	got, err := DecideRunAs(0, 5, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false, true)
 	if err != nil || got.Action != StayRoot || got.UID != 0 || got.GID != 0 || !strings.Contains(got.Note, "PGID=0") {
 		t.Fatalf("PUID=0 PGID=0: got %+v, %v", got, err)
 	}
 	for _, env := range []map[string]string{{"PUID": "0"}, {"PUID": "0", "PGID": "100"}, {"PUID": "0", "PGID": " "}} {
-		if _, err := Decide(0, 5, envOf(env), false, true); err == nil || !strings.Contains(err.Error(), "PUID=0 needs PGID=0") {
+		if _, err := DecideRunAs(0, 5, envOf(env), false, true); err == nil || !strings.Contains(err.Error(), "PUID=0 needs PGID=0") {
 			t.Errorf("%v: want the PUID=0 needs PGID=0 error, got %v", env, err)
 		}
 	}
 	// PGID=0 with a normal PUID is an ordinary switch.
-	got, err = Decide(0, 5, envOf(map[string]string{"PUID": "1000", "PGID": "0"}), false, true)
+	got, err = DecideRunAs(0, 5, envOf(map[string]string{"PUID": "1000", "PGID": "0"}), false, true)
 	if err != nil || got.Action != Switch || got.UID != 1000 || got.GID != 0 {
 		t.Fatalf("PUID=1000 PGID=0: got %+v, %v", got, err)
 	}
@@ -167,23 +167,23 @@ func TestDecidePUIDZero(t *testing.T) {
 func TestDecideOutsideContainer(t *testing.T) {
 	// Root without PUID/PGID: stop, never switch to the 1000:1000 default.
 	for _, env := range []map[string]string{nil, {"PUID": "", "PGID": " "}, {"UMASK": "002"}} {
-		got, err := Decide(0, 0, envOf(env), false, false)
+		got, err := DecideRunAs(0, 0, envOf(env), false, false)
 		if err == nil || err.Error() != NotInContainer || got.Action == Switch {
 			t.Errorf("%v: want the outside-a-container error, got %+v, %v", env, got, err)
 		}
 	}
 	// PUID or PGID set by hand: switching is fine.
 	for _, env := range []map[string]string{{"PUID": "1001", "PGID": "1001"}, {"PUID": "1001"}, {"PGID": "1001"}} {
-		got, err := Decide(0, 0, envOf(env), false, false)
+		got, err := DecideRunAs(0, 0, envOf(env), false, false)
 		if err != nil || got.Action != Switch {
 			t.Errorf("%v: want a switch, got %+v, %v", env, got, err)
 		}
 	}
 	// PUID=0 PGID=0 still means root, and a non-root start keeps its user.
-	if got, err := Decide(0, 0, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false, false); err != nil || got.Action != StayRoot {
+	if got, err := DecideRunAs(0, 0, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false, false); err != nil || got.Action != StayRoot {
 		t.Errorf("PUID=0 PGID=0 outside a container: got %+v, %v", got, err)
 	}
-	if got, err := Decide(1000, 1000, envOf(nil), false, false); err != nil || got.Action != Keep {
+	if got, err := DecideRunAs(1000, 1000, envOf(nil), false, false); err != nil || got.Action != Keep {
 		t.Errorf("non-root outside a container: got %+v, %v", got, err)
 	}
 }

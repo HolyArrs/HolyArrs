@@ -14,7 +14,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -249,7 +250,7 @@ func (a *API) runDue(ctx context.Context) {
 	e.mu.Lock()
 	if e.slots == nil {
 		// Low-memory mode builds one pool at a time (catching up after a restart takes longer).
-		e.slots = make(chan struct{}, lowmem.Pick(exploreWorkers, 1))
+		e.slots = make(chan struct{}, startup.LowMemoryPick(exploreWorkers, 1))
 	}
 	slots := e.slots
 	e.mu.Unlock()

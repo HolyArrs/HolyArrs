@@ -1,4 +1,4 @@
-package lowmem
+package startup
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestDecide(t *testing.T) {
+func TestDecideLowMemory(t *testing.T) {
 	const gib = 1 << 30
 	for _, c := range []struct {
 		env   string
@@ -17,7 +17,7 @@ func TestDecide(t *testing.T) {
 		{"", 0, false, false},
 		{"", gib, true, false},
 		{"", 2 * gib, true, false},
-		{"", AutoAtOrBelow, true, false},
+		{"", LowMemoryAutoAtOrBelow, true, false},
 		{"", 3700 << 20, false, false},
 		{"1", 8 * gib, true, false},
 		{" ON ", 0, true, false},
@@ -28,20 +28,20 @@ func TestDecide(t *testing.T) {
 		{"banana", gib, true, true},
 		{"banana", 8 * gib, false, true},
 	} {
-		got, why, odd := Decide(c.env, c.total)
+		got, why, odd := DecideLowMemory(c.env, c.total)
 		if got != c.want || odd != c.odd || why == "" {
-			t.Errorf("Decide(%q, %d) = %v %q odd %v, want %v odd %v", c.env, c.total, got, why, odd, c.want, c.odd)
+			t.Errorf("DecideLowMemory(%q, %d) = %v %q odd %v, want %v odd %v", c.env, c.total, got, why, odd, c.want, c.odd)
 		}
 	}
 }
 
 func TestPick(t *testing.T) {
-	t.Cleanup(func() { Set(false) })
-	if Pick(1000, 150) != 1000 {
+	t.Cleanup(func() { SetLowMemory(false) })
+	if LowMemoryPick(1000, 150) != 1000 {
 		t.Fatal("off: not the normal value")
 	}
-	Set(true)
-	if Pick(1000, 150) != 150 || !On() {
+	SetLowMemory(true)
+	if LowMemoryPick(1000, 150) != 150 || !LowMemoryOn() {
 		t.Fatal("on: not the low value")
 	}
 }

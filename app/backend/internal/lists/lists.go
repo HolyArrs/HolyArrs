@@ -4,7 +4,6 @@
 package lists
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"errors"
@@ -14,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -75,7 +75,7 @@ func NormalRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case KindTrakt:
-		if !feature.On(feature.TraktLists) {
+		if !startup.FeatureOn(startup.TraktLists) {
 			return "", ErrKind
 		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {

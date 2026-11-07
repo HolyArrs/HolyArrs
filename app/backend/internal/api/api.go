@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"log"
 	"net/http"
@@ -33,6 +33,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -449,7 +450,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/strip", a.exploreStrip)
 	m.HandleFunc("POST /api/v1/explore/strip/counts", a.exploreStripCounts)
 	m.HandleFunc("DELETE /api/v1/explore/strip/counts", a.exploreStripReset)
-	if feature.On(feature.RowTitleStats) {
+	if startup.FeatureOn(startup.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	}
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
@@ -463,7 +464,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
 	if a.s.Secrets != nil {
-		if feature.On(feature.TraktLists) {
+		if startup.FeatureOn(startup.TraktLists) {
 			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
 			m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
@@ -473,7 +474,7 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
-	if feature.On(feature.PlexWatchlists) {
+	if startup.FeatureOn(startup.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}
 	a.reportRoutes(m)
@@ -490,7 +491,7 @@ func (a *API) Handler() http.Handler {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
-	if feature.On(feature.AIApps) {
+	if startup.FeatureOn(startup.AIApps) {
 		a.mcpRoutes(m)
 	}
 	a.oldAppRoutes(m)

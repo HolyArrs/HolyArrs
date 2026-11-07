@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // ErrNoAccess means TMDB or the metadata server refused the credential, or none is set.
@@ -170,7 +170,7 @@ func (t *TMDB) kept(ctx context.Context, u string, disk bool) (cached, bool) {
 func (t *TMDB) remember(u string, c cached) {
 	t.mu.Lock()
 	// Low-memory mode keeps fewer answers here: the Disk copy answers the rest.
-	if t.cache == nil || len(t.cache) >= lowmem.Pick(maxCache, 150) {
+	if t.cache == nil || len(t.cache) >= startup.LowMemoryPick(maxCache, 150) {
 		t.cache = map[string]cached{}
 	}
 	t.cache[u] = c

@@ -1,9 +1,4 @@
-// Package lowmem is the low-memory mode (roadmap #131): smaller in-memory
-// caches and a smaller SQLite page cache for any small machine.
-// HOLYARRS_LOW_MEMORY=1 turns it on, =0 off; unset, it is on when the
-// machine (or the container's memory limit) has about 2.5 GiB or less. It is
-// decided once at start and read everywhere through On and Pick.
-package lowmem
+package startup
 
 import (
 	"bufio"
@@ -15,39 +10,39 @@ import (
 	"sync/atomic"
 )
 
-// Env is the setting's name.
-const Env = "HOLYARRS_LOW_MEMORY"
+// LowMemoryEnv is the setting's name.
+const LowMemoryEnv = "HOLYARRS_LOW_MEMORY"
 
-// AutoAtOrBelow turns the mode on by itself: a 2 GB machine reports about
+// LowMemoryAutoAtOrBelow turns the mode on by itself: a 2 GB machine reports about
 // 1.8-1.9 GiB, a container limited to 2g exactly 2 GiB, a 4 GB machine 3.7 GiB.
-const AutoAtOrBelow = 2560 << 20
+const LowMemoryAutoAtOrBelow = 2560 << 20
 
 var on atomic.Bool
 
-// On says the mode is on.
-func On() bool { return on.Load() }
+// LowMemoryOn says the mode is on.
+func LowMemoryOn() bool { return on.Load() }
 
-// Set turns the mode on or off (at start, and in tests).
-func Set(v bool) { on.Store(v) }
+// SetLowMemory turns the mode on or off (at start, and in tests).
+func SetLowMemory(v bool) { on.Store(v) }
 
-// Pick is normal, or low while the mode is on.
-func Pick(normal, low int) int {
+// LowMemoryPick is normal, or low while the mode is on.
+func LowMemoryPick(normal, low int) int {
 	if on.Load() {
 		return low
 	}
 	return normal
 }
 
-// Decide reads the setting: 1/true/on/yes and 0/false/off/no win; anything
+// DecideLowMemory reads the setting: 1/true/on/yes and 0/false/off/no win; anything
 // else (or nothing) leaves it to the machine's size, where 0 means unknown
 // and keeps the mode off. why says which, for the start-up line; odd is a
 // value that was neither and was read as unset.
-func Decide(env string, total uint64) (lowOn bool, why string, odd bool) {
+func DecideLowMemory(env string, total uint64) (lowOn bool, why string, odd bool) {
 	switch strings.ToLower(strings.TrimSpace(env)) {
 	case "1", "true", "on", "yes":
-		return true, Env + "=1", false
+		return true, LowMemoryEnv + "=1", false
 	case "0", "false", "off", "no":
-		return false, Env + "=0", false
+		return false, LowMemoryEnv + "=0", false
 	case "":
 	default:
 		odd = true
@@ -55,11 +50,11 @@ func Decide(env string, total uint64) (lowOn bool, why string, odd bool) {
 	if total == 0 {
 		return false, "machine size unknown", odd
 	}
-	return total <= AutoAtOrBelow, Size(total), odd
+	return total <= LowMemoryAutoAtOrBelow, LowMemorySize(total), odd
 }
 
-// Size writes a byte count as GiB with one decimal ("1.8 GiB").
-func Size(n uint64) string {
+// LowMemorySize writes a byte count as GiB with one decimal ("1.8 GiB").
+func LowMemorySize(n uint64) string {
 	return strconv.FormatFloat(float64(n)/(1<<30), 'f', 1, 64) + " GiB"
 }
 

@@ -4,7 +4,6 @@
 package auth
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -26,10 +25,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Names on the wire.
@@ -574,7 +574,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.providerRoutes(m)
 	a.plexMineRoutes(m)
 	a.ssoRoutes(m)
-	if feature.On(feature.AIApps) {
+	if startup.FeatureOn(startup.AIApps) {
 		a.aiOAuthRoutes(m)
 	}
 }
@@ -1383,7 +1383,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
 		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "setup_open": setupOpen, "has_password": hasPassword,
-		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "held": feature.Off(), "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
+		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "held": startup.FeaturesOff(), "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
 // Cleanup drops ended sessions.

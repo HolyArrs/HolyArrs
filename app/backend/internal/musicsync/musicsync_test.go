@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -148,11 +148,11 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 // Low-memory mode copies every 3 hours instead of every 30 minutes; a set
 // schedule always wins.
 func TestScheduleLowMemory(t *testing.T) {
-	t.Cleanup(func() { lowmem.Set(false) })
+	t.Cleanup(func() { startup.SetLowMemory(false) })
 	if got := (&Sync{}).schedule(); got != DefaultEvery {
 		t.Fatalf("off: %v", got)
 	}
-	lowmem.Set(true)
+	startup.SetLowMemory(true)
 	if got := (&Sync{}).schedule(); got != LowMemoryEvery {
 		t.Fatalf("low: %v", got)
 	}
