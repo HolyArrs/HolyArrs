@@ -63,7 +63,7 @@
 	type F = { key: string; label: string; icon: IconName };
 	// The accessible name starts with the visible label (WCAG 2.5.3); a longer hint follows it.
 	// A hint that already holds the label ("Start (select a download)", "Speed limit: 42 MB/s") is the whole name.
-	const nameOf = (a: Act) => (!a.hint || a.hint === a.label ? a.label : a.hint.includes(a.label) ? a.hint : `${a.label} — ${a.hint}`);
+	const nameOf = (a: Act) => (!a.hint || a.hint === a.label ? a.label : a.hint.includes(a.label) ? a.hint : `${a.label}: ${a.hint}`);
 
 	const pickKind = (k: string) => (kindOn = kindOn === k ? '' : k);
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
