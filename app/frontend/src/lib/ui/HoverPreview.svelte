@@ -1,14 +1,15 @@
 <script lang="ts">
+	// Small floating preview card shown on hover, with an optional trailer.
+	import TrailerPlayer from './TrailerPlayer.svelte';
 	import { metaLine } from './fresh.ts';
+	import { GROW_WIDTH } from './grow.ts';
+	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import { onDestroy, onMount, type Snippet } from 'svelte';
 	import { api } from '../core/api.ts';
-	import { richMetadata, type RichMeta } from './TitleHero.svelte';
-	import TrailerPlayer from './TrailerPlayer.svelte';
+	import { sized } from '../core/tmdb-image.ts';
+	import { popOut } from '../core/transitions.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
 	import { placeCard } from '../core/trailer/trailer.ts';
-	import { sized } from '../core/tmdb-image.ts';
-	import { GROW_WIDTH } from './grow.ts';
-	import { popOut } from '../core/transitions.ts';
 
 	let {
 		anchor,
@@ -48,29 +49,18 @@
 	let playing = $state(false);
 	const ctl = new AbortController();
 
-	function place() {
-		if (!card) return;
-		const a = anchor.getBoundingClientRect();
-		W = Math.min(GROW_WIDTH, document.documentElement.clientWidth - 16);
-		from = Math.min(1, a.width / W);
-		const h = card.offsetHeight;
-		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
-		pos = placeCard(a, W, h, { width: document.documentElement.clientWidth, height: window.innerHeight }, 8, row ? { left: row.left, right: row.right } : undefined);
-		origin = `${Math.round(a.left + a.width / 2 - pos.left)}px ${Math.round(a.top + a.height / 2 - pos.top)}px`;
-	}
-
-	function portal(node: HTMLElement) {
-		document.body.appendChild(node);
-		return { destroy: () => node.remove() };
-	}
+	const art = $derived(sized(meta?.backdrop ?? null, 'backdrop') || sized(image, 'poster'));
+	const line = $derived([...metaLine(kind, [kind === 'movie' && meta?.runtime ? `${Math.floor(meta.runtime / 60) ? `${Math.floor(meta.runtime / 60)}h ` : ''}${meta.runtime % 60}m`.trim() : undefined, meta?.year ?? year]), ...(meta?.genres ?? []).slice(0, 2)].join(' · '));
 
 	onMount(() => {
 		place();
 		const close = () => onclose();
+		// The card is fixed over the page, so any scroll or resize closes it.
 		window.addEventListener('scroll', close, { passive: true, capture: true });
 		window.addEventListener('resize', close);
 		void (async () => {
 			meta = await richMetadata(api.get, kind, tmdb);
+			// Details change the card height, so place it again.
 			requestAnimationFrame(place);
 			await loadUISettings();
 			if (!autoplayHere() || ctl.signal.aborted) return;
@@ -83,8 +73,23 @@
 	});
 	onDestroy(() => ctl.abort());
 
-	const art = $derived(sized(meta?.backdrop ?? null, 'backdrop') || sized(image, 'poster'));
-	const line = $derived([...metaLine(kind, [kind === 'movie' && meta?.runtime ? `${Math.floor(meta.runtime / 60) ? `${Math.floor(meta.runtime / 60)}h ` : ''}${meta.runtime % 60}m`.trim() : undefined, meta?.year ?? year]), ...(meta?.genres ?? []).slice(0, 2)].join(' · '));
+	// Sizes and positions the card beside the anchor; the origin lets it scale out from the anchor's centre.
+	function place() {
+		if (!card) return;
+		const a = anchor.getBoundingClientRect();
+		W = Math.min(GROW_WIDTH, document.documentElement.clientWidth - 16);
+		from = Math.min(1, a.width / W);
+		const h = card.offsetHeight;
+		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
+		pos = placeCard(a, W, h, { width: document.documentElement.clientWidth, height: window.innerHeight }, 8, row ? { left: row.left, right: row.right } : undefined);
+		origin = `${Math.round(a.left + a.width / 2 - pos.left)}px ${Math.round(a.top + a.height / 2 - pos.top)}px`;
+	}
+
+	// Moves the card to body so page transforms and overflow cannot clip it.
+	function portal(node: HTMLElement) {
+		document.body.appendChild(node);
+		return { destroy: () => node.remove() };
+	}
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
@@ -124,6 +129,7 @@
 </div>
 
 <style>
+	/* Fixed over the page; the open animation starts at the anchor size. */
 	.ui-hover {
 		position: fixed; z-index: 60;
 		border-radius: var(--r-panel); overflow: hidden;
@@ -148,6 +154,7 @@
 	.act { flex: none; }
 	.act :global(.ui-ibtn.glass) { background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
 	.act :global(.ui-ibtn.glass:hover) { background: var(--surface-3); }
+	/* Same 16:9 box as the media so the badge sits on the art. */
 	.badge { position: absolute; top: 0; left: 0; right: 0; aspect-ratio: 16 / 9; z-index: 3; pointer-events: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-hover { animation: none; } }
 </style>

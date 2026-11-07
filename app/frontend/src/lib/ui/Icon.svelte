@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	// Icon set: each name maps to one stroke path on a 24 by 24 grid.
 	const paths = {
 		menu: 'M4 6h16M4 12h16M4 18h16',
 		cloudOff: 'M8.2 8.3A4.5 4.5 0 0 0 7 17.5h9.5M12.3 6.6a5 5 0 0 1 4.9 4.1A3.5 3.5 0 0 1 19.6 16M3.5 3.5l17 17',
@@ -80,6 +81,7 @@
 </script>
 
 <script lang="ts">
+	// Decorative unless a label is given, then it is announced as an image.
 	let { name, size = 20, label, stroke = 1.75 }: { name: IconName; size?: number; label?: string; stroke?: number } = $props();
 </script>
 

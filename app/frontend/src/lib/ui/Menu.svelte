@@ -7,9 +7,10 @@
 </script>
 
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	// Dropdown menu with keyboard navigation, built on Popover.
 	import Icon from './Icon.svelte';
 	import Popover from './Popover.svelte';
+	import type { Snippet } from 'svelte';
 
 	let {
 		label,
@@ -37,10 +38,10 @@
 		tabindex?: number;
 	} = $props();
 
-	function entries(panel: HTMLElement) {
-		return [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')];
-	}
+	// Set when the menu opens with ArrowUp so focus lands on the last entry.
 	let startAtEnd = false;
+
+	// Focus the checked entry if there is one, so a radio menu opens on the current value.
 	function focusFirst(panel: HTMLElement) {
 		const list = entries(panel);
 		const first = startAtEnd ? list[list.length - 1] : (list.find((e) => e.getAttribute('aria-checked') === 'true') ?? list[0]);
@@ -59,6 +60,7 @@
 		startAtEnd = e.key === 'ArrowUp';
 		open = true;
 	}
+	// Arrow keys wrap around; Tab closes the menu.
 	function nav(e: KeyboardEvent) {
 		const panel = e.currentTarget as HTMLElement;
 		const list = entries(panel);
@@ -78,6 +80,11 @@
 		if (item.disabled) return;
 		close();
 		item.onselect?.();
+	}
+
+	// Disabled entries are skipped so keys never land on them.
+	function entries(panel: HTMLElement) {
+		return [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')];
 	}
 </script>
 
@@ -123,7 +130,9 @@
 	.danger .ic { color: inherit; }
 	.grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sep { height: 1px; margin: 5px 8px; background: var(--line); }
+	/* Left padding lines the heading up with item labels past the icon column. */
 	.heading { padding: 8px 10px 4px 38px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	kbd { color: var(--text-muted); font: var(--t-footnote); }
+	/* Minimum touch target size. */
 	@media (pointer: coarse) { .item { min-height: 44px; } }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Error state: a compact banner when old data is still shown, otherwise a full block.
 	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
 
