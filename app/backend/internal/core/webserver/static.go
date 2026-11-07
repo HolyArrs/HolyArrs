@@ -16,8 +16,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/compress"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 	"github.com/HolyArrs/holyarrs/app/frontend"
 )
 
@@ -70,7 +68,7 @@ func Page(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
-	b = WithBase(b, urlbase.From(r.Context()))
+	b = WithBase(b, URLBaseFrom(r.Context()))
 	w.Header().Set("Content-Security-Policy", CSP(b))
 	b = withLoginSeed(b, r)
 	_, _ = w.Write(b)
@@ -102,7 +100,7 @@ func withLoginSeed(b []byte, r *http.Request) []byte {
 
 // WithBase puts base in front of the built app's own links: scripts,
 // styles, icons, fonts and the router's base. base is a checked path
-// (urlbase.Clean), so it needs no escaping.
+// (CleanURLBase), so it needs no escaping.
 func WithBase(b []byte, base string) []byte {
 	if base == "" {
 		return b
@@ -141,7 +139,7 @@ func Handler() http.Handler {
 			}
 			// Styles name their fonts from the root, and the split scripts list
 			// the chunks they preload from the root: put the base in.
-			if base := urlbase.From(r.Context()); base != "" && (path.Ext(p) == ".css" || path.Ext(p) == ".js") {
+			if base := URLBaseFrom(r.Context()); base != "" && (path.Ext(p) == ".css" || path.Ext(p) == ".js") {
 				b, err := fs.ReadFile(Files, name)
 				if err != nil {
 					http.NotFound(w, r)
@@ -173,7 +171,7 @@ func Handler() http.Handler {
 // web/app/scripts/precompress.mjs) when the browser accepts brotli and the
 // copy exists. It reports whether it answered.
 func ServeBrotli(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) bool {
-	if r.Header.Get("Range") != "" || !compress.Accepts(r, "br") {
+	if r.Header.Get("Range") != "" || !AcceptsEncoding(r, "br") {
 		return false
 	}
 	b, err := fs.ReadFile(fsys, name+".br")

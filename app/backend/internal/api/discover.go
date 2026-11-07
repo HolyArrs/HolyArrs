@@ -14,7 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -173,7 +174,7 @@ func discoverFail(w http.ResponseWriter, err error) {
 // detailsBusy is an error that passes on its own: the service is held,
 // its breaker is waiting, or it did not answer in time.
 func detailsBusy(err error) bool {
-	return errors.Is(err, outside.ErrSuppressed) || errors.Is(err, metadata.ErrServiceUnavailable) ||
+	return errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, metadata.ErrServiceUnavailable) ||
 		errors.Is(err, metadata.ErrServiceBusy) || errors.Is(err, metadata.ErrRateLimited) ||
 		errors.Is(err, context.DeadlineExceeded)
 }

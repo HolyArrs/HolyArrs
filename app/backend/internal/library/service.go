@@ -16,7 +16,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -40,7 +41,7 @@ type Service struct {
 	Shows metadata.ShowSources
 	// Artists is MusicBrainz (or a mirror); nil has no music details.
 	Artists metadata.ArtistProvider
-	Live    *live.Hub
+	Live    *webserver.LiveHub
 	// Artwork caches posters; nil keeps no pictures.
 	Artwork *ArtworkCache
 	// ArtistImages reads Deezer's artist profiles (top songs, explicit

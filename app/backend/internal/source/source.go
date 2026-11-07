@@ -10,6 +10,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
@@ -21,8 +22,6 @@ import (
 	"syscall"
 	"time"
 	"unicode"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Error kinds match the Source pause reasons in model.md section 2.9.
@@ -481,25 +480,25 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 	if c.cfg.Proxy != nil {
 		identity = append(identity, c.cfg.Proxy.String())
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "source", Identity: identity})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "source", Identity: identity})
 	if err != nil {
-		if errors.Is(err, outside.ErrSuppressed) {
+		if errors.Is(err, outbound.ErrSuppressed) {
 			return nil, &Error{Kind: KindDown, Msg: err.Error(), cause: err}
 		}
 		return nil, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	rctx, cancel := op.AttemptContext(ctx, c.cfg.Timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(rctx, http.MethodGet, raw, nil)
 	if err != nil {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, &Error{Kind: KindBroken, Msg: "bad Source address"}
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		outcome = outside.HTTPOutcome(0, err, ctx)
+		outcome = outbound.HTTPOutcome(0, err, ctx)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -521,10 +520,10 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 		err = closeErr
 	}
 	if err != nil {
-		outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
+		outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
-	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	if b := botCheck(resp, body); b != "" {
 		return nil, &Error{Kind: KindBlocked, Detail: b, Msg: resp.Status + ": " + blockText[b]}
 	}

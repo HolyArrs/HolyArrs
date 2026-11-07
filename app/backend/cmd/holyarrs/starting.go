@@ -18,10 +18,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small
@@ -135,7 +135,7 @@ func refuseEarly(ctx context.Context, c config, err error) error {
 	if lerr != nil {
 		return err
 	}
-	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+	srv := newServer(c.Addr, webserver.UnderURLBase(c.URLBase, failedHandler(publicReason(err))))
 	go func() { _ = srv.Serve(ln) }()
 	<-ctx.Done()
 	_ = srv.Close()

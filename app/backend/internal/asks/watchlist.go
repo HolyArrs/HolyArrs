@@ -16,7 +16,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -402,17 +403,17 @@ var (
 )
 
 func (w *Watchlists) get(ctx context.Context, tok, path string, into any) error {
-	op, err := outside.Begin(ctx, outside.Target{Kind: "plex_watchlist", Identity: []string{w.base(), tok}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "plex_watchlist", Identity: []string{w.base(), tok}})
 	if err != nil {
 		return ErrPlexDown
 	}
-	result := outside.Canceled
+	result := outbound.Canceled
 	defer func() { op.Finish(result) }()
 	rctx, cancel := op.AttemptContext(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(rctx, http.MethodGet, w.base()+path, nil)
 	if err != nil {
-		result = outside.TerminalFailure
+		result = outbound.TerminalFailure
 		return err
 	}
 	req.Header.Set("Accept", "application/json")
@@ -425,12 +426,12 @@ func (w *Watchlists) get(ctx context.Context, tok, path string, into any) error 
 	}
 	resp, err := w.client().Do(req)
 	if err != nil {
-		result = outside.HTTPOutcome(0, err, ctx)
+		result = outbound.HTTPOutcome(0, err, ctx)
 		return ErrPlexDown
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
-	result = outside.HTTPOutcome(resp.StatusCode, err, ctx)
+	result = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return ErrPlexRefused
@@ -438,10 +439,10 @@ func (w *Watchlists) get(ctx context.Context, tok, path string, into any) error 
 		return fmt.Errorf("Plex answered %d; HolyArrs tries again at the next check", resp.StatusCode)
 	}
 	if err := json.Unmarshal(body, into); err != nil {
-		result = outside.TerminalFailure
+		result = outbound.TerminalFailure
 		return errors.New("Plex sent a watchlist HolyArrs could not read")
 	}
-	result = outside.Success
+	result = outbound.Success
 	return nil
 }
 

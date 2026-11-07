@@ -17,7 +17,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
@@ -1229,7 +1230,7 @@ func strPtr(s string) *string { return &s }
 func unreachable(err error) bool {
 	var ne net.Error
 	var status adapterHTTPError
-	return errors.Is(err, ErrAuth) || errors.Is(err, outside.ErrSuppressed) || errors.Is(err, errDownloaderUnavailable) ||
+	return errors.Is(err, ErrAuth) || errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, errDownloaderUnavailable) ||
 		errors.As(err, &status) && (status.status == 408 || status.status == 429 || status.status >= 500) ||
 		errors.Is(err, source.ErrAddressRefused) || errors.Is(err, context.DeadlineExceeded) || errors.As(err, &ne)
 }

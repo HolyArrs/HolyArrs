@@ -11,10 +11,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // The old-app API (roadmap #85, decision 0008): Seerr and Overseerr add
@@ -151,7 +151,7 @@ func (a *API) oldAppAnswer(r *http.Request) (map[string]any, error) {
 	}
 	sides := []OldAppSide{}
 	for _, s := range auth.CompatSides {
-		v := OldAppSide{Side: s, Path: urlbase.From(r.Context()) + "/" + s}
+		v := OldAppSide{Side: s, Path: webserver.URLBaseFrom(r.Context()) + "/" + s}
 		v.URL = scheme + "://" + r.Host + v.Path
 		for i := range keys {
 			if keys[i].Side == s {
@@ -245,7 +245,7 @@ func (a *API) makeOldAppKey(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"side": side, "key": k, "path": urlbase.From(r.Context()) + "/" + side,
+	writeJSON(w, http.StatusCreated, map[string]any{"side": side, "key": k, "path": webserver.URLBaseFrom(r.Context()) + "/" + side,
 		"note": "This key is shown only now. Paste it into Seerr or Overseerr as the API key; an older key for this side no longer works."})
 }
 

@@ -1,7 +1,4 @@
-// Package compress gzips answers that shrink well (API JSON, HTML, scripts,
-// styles) for browsers that accept it. Pictures, fonts, zips, the live
-// stream, ranged answers and answers that are already encoded pass as they are.
-package compress
+package webserver
 
 import (
 	"bufio"
@@ -19,9 +16,9 @@ const minSize = 1024
 
 var pool = sync.Pool{New: func() any { w, _ := gzip.NewWriterLevel(nil, gzip.DefaultCompression); return w }}
 
-// Accepts reports whether the request's Accept-Encoding allows enc
+// AcceptsEncoding reports whether the request's Accept-Encoding allows enc
 // (q=0 refuses it).
-func Accepts(r *http.Request, enc string) bool {
+func AcceptsEncoding(r *http.Request, enc string) bool {
 	for _, part := range strings.Split(r.Header.Get("Accept-Encoding"), ",") {
 		name, params, _ := strings.Cut(strings.TrimSpace(part), ";")
 		if !strings.EqualFold(strings.TrimSpace(name), enc) {
@@ -53,26 +50,26 @@ func Compressible(ct string) bool {
 }
 
 // Handler gzips h's compressible answers.
-func Handler(h http.Handler) http.Handler {
+func Compress(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Accept-Encoding")
-		if r.Method == http.MethodHead || r.Header.Get("Range") != "" || r.URL.Path == "/live" || !Accepts(r, "gzip") {
+		if r.Method == http.MethodHead || r.Header.Get("Range") != "" || r.URL.Path == "/live" || !AcceptsEncoding(r, "gzip") {
 			h.ServeHTTP(w, r)
 			return
 		}
-		gw := &writer{ResponseWriter: w}
+		gw := &gzipWriter{ResponseWriter: w}
 		defer gw.close()
 		h.ServeHTTP(gw, r)
 	})
 }
 
-type writer struct {
+type gzipWriter struct {
 	http.ResponseWriter
 	gz      *gzip.Writer
 	decided bool
 }
 
-func (w *writer) decide(code int) {
+func (w *gzipWriter) decide(code int) {
 	if w.decided {
 		return
 	}
@@ -95,12 +92,12 @@ func (w *writer) decide(code int) {
 	w.gz = gz
 }
 
-func (w *writer) WriteHeader(code int) {
+func (w *gzipWriter) WriteHeader(code int) {
 	w.decide(code)
 	w.ResponseWriter.WriteHeader(code)
 }
 
-func (w *writer) Write(b []byte) (int, error) {
+func (w *gzipWriter) Write(b []byte) (int, error) {
 	if !w.decided {
 		if w.Header().Get("Content-Type") == "" {
 			w.Header().Set("Content-Type", http.DetectContentType(b))
@@ -114,7 +111,7 @@ func (w *writer) Write(b []byte) (int, error) {
 }
 
 // Flush sends what is buffered so far.
-func (w *writer) Flush() {
+func (w *gzipWriter) Flush() {
 	if w.gz != nil {
 		_ = w.gz.Flush()
 	}
@@ -124,17 +121,17 @@ func (w *writer) Flush() {
 }
 
 // Hijack lets websocket-style handlers take the connection.
-func (w *writer) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *gzipWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if hj, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return hj.Hijack()
 	}
 	return nil, nil, errors.New("hijack not supported")
 }
 
-// Unwrap gives http.ResponseController the underlying writer.
-func (w *writer) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+// Unwrap gives http.ResponseController the underlying gzipWriter.
+func (w *gzipWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
-func (w *writer) close() {
+func (w *gzipWriter) close() {
 	if w.gz != nil {
 		_ = w.gz.Close()
 		pool.Put(w.gz)

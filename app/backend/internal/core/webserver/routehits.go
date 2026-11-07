@@ -1,7 +1,7 @@
 // Package routehits records which mux routes test servers actually served,
 // so a test suite can prove every /api/v1 route was called by at least one
 // test request. Only tests import it.
-package routehits
+package webserver
 
 import (
 	"flag"
@@ -24,7 +24,7 @@ var (
 // right outside the mux (or outside a handler that passes the same request
 // to the mux): the mux writes the matched pattern into the request, so a
 // request that never reached the mux (refused before it) is not counted.
-func Wrap(h http.Handler) http.Handler {
+func RecordRouteHits(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.ServeHTTP(w, r)
 		if r.Pattern != "" {
@@ -37,8 +37,8 @@ func Wrap(h http.Handler) http.Handler {
 
 var reRoute = regexp.MustCompile(`HandleFunc\("([A-Z]+ /api/v1/[^"]*)"`)
 
-// Registered lists the /api/v1 routes the non-test Go files in dir register.
-func Registered(dir string) ([]string, error) {
+// RegisteredRoutes lists the /api/v1 routes the non-test Go files in dir register.
+func RegisteredRoutes(dir string) ([]string, error) {
 	files, err := filepath.Glob(filepath.Join(dir, "*.go"))
 	if err != nil {
 		return nil, err
@@ -60,8 +60,8 @@ func Registered(dir string) ([]string, error) {
 	return out, nil
 }
 
-// Unhit lists the routes in want that no test request reached.
-func Unhit(want []string) []string {
+// UnhitRoutes lists the routes in want that no test request reached.
+func UnhitRoutes(want []string) []string {
 	mu.Lock()
 	defer mu.Unlock()
 	var out []string
@@ -76,7 +76,7 @@ func Unhit(want []string) []string {
 // Check is for TestMain after m.Run: when the whole package ran (no -run,
 // -skip or -short), every /api/v1 route registered in dir must have been
 // served at least once. It returns the exit code to use.
-func Check(code int, dir string) int {
+func CheckRouteHits(code int, dir string) int {
 	if code != 0 {
 		return code
 	}
@@ -85,12 +85,12 @@ func Check(code int, dir string) int {
 			return code
 		}
 	}
-	routes, err := Registered(dir)
+	routes, err := RegisteredRoutes(dir)
 	if err != nil || len(routes) == 0 {
 		fmt.Fprintln(os.Stderr, "routehits: no routes found:", err)
 		return 1
 	}
-	if u := Unhit(routes); len(u) > 0 {
+	if u := UnhitRoutes(routes); len(u) > 0 {
 		fmt.Fprintf(os.Stderr, "routehits: %d of %d routes were never served to a test request:\n  %s\n", len(u), len(routes), strings.Join(u, "\n  "))
 		return 1
 	}

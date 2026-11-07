@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
@@ -55,7 +55,7 @@ type oidcLimitTransport struct {
 func (t oidcLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	targetURL := *req.URL
 	targetURL.User, targetURL.RawQuery, targetURL.ForceQuery, targetURL.Fragment = nil, "", false, ""
-	op, err := outside.Begin(req.Context(), outside.Target{Kind: "oidc", Identity: []string{t.issuer, t.clientID, targetURL.String()}})
+	op, err := outbound.Begin(req.Context(), outbound.Target{Kind: "oidc", Identity: []string{t.issuer, t.clientID, targetURL.String()}})
 	if err != nil {
 		return nil, errOIDCSuppressed
 	}
@@ -67,19 +67,19 @@ func (t oidcLimitTransport) RoundTrip(req *http.Request) (*http.Response, error)
 		status = resp.StatusCode
 	}
 	if callErr != nil {
-		op.Finish(outside.HTTPOutcome(status, callErr, req.Context()))
+		op.Finish(outbound.HTTPOutcome(status, callErr, req.Context()))
 		return nil, callErr
 	}
 	defer resp.Body.Close()
 	if resp.ContentLength > oidcBodyLimit {
-		op.Finish(outside.HTTPOutcome(status, errOIDCBodyLarge, req.Context()))
+		op.Finish(outbound.HTTPOutcome(status, errOIDCBodyLarge, req.Context()))
 		return nil, errOIDCBodyLarge
 	}
 	body, readErr := io.ReadAll(io.LimitReader(resp.Body, oidcBodyLimit+1))
 	if readErr == nil && len(body) > oidcBodyLimit {
 		readErr = errOIDCBodyLarge
 	}
-	op.Finish(outside.HTTPOutcome(status, readErr, req.Context()))
+	op.Finish(outbound.HTTPOutcome(status, readErr, req.Context()))
 	if readErr != nil {
 		return nil, readErr
 	}

@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // Signing in an AI app (roadmap #89): instead of pasting an AI key, an AI
@@ -209,7 +209,7 @@ func (a *Auth) aiOrigin(r *http.Request) string {
 	if a.behindHTTPS(r) {
 		scheme = "https"
 	}
-	return scheme + "://" + r.Host + urlbase.From(r.Context())
+	return scheme + "://" + r.Host + webserver.URLBaseFrom(r.Context())
 }
 
 // aiResourceMetadataURL is where an AI app learns how to sign in (sent in
@@ -399,7 +399,7 @@ func (a *Auth) aiAuthorize(w http.ResponseWriter, r *http.Request) {
 		aiErrorPage(w, msg)
 		return
 	}
-	base := urlbase.From(r.Context())
+	base := webserver.URLBaseFrom(r.Context())
 	page := aiConnectPage + "?" + r.URL.RawQuery
 	if _, ok := a.session(w, r); !ok {
 		http.Redirect(w, r, base+"/login?next="+url.QueryEscape(page), http.StatusFound)

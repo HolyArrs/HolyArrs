@@ -20,7 +20,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -146,7 +147,7 @@ type Service struct {
 	// Alerts sends Discord and email Alerts (nil sends none).
 	Alerts Notifier
 	// Live tells staff pages about changes (may be nil).
-	Live *live.Hub
+	Live *webserver.LiveHub
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
 	// PrefetchParts stores an ask's episode and song lists in the

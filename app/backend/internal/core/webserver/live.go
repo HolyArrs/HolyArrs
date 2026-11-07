@@ -1,4 +1,4 @@
-package live
+package webserver
 
 import (
 	"crypto/rand"
@@ -12,13 +12,13 @@ import (
 	"time"
 )
 
-// TopicDL is the Downloads topic. Its events keep their own small ring, so
+// LiveTopicDL is the Downloads topic. Its events keep their own small ring, so
 // large patches never push other topics' history out, and a slow stream
 // keeps only the newest patch per key instead of being dropped.
-const TopicDL = "dl"
+const LiveTopicDL = "dl"
 
-// Options tunes the Hub. Zero values take the defaults.
-type Options struct {
+// LiveOptions tunes the LiveHub. Zero values take the defaults.
+type LiveOptions struct {
 	Heartbeat   time.Duration // default 15s
 	Ring        int           // events kept for resume, default 256
 	DLRing      int           // dl events kept for resume, default 64
@@ -29,34 +29,36 @@ type Options struct {
 	Merge func(old, cur json.RawMessage) json.RawMessage
 }
 
-// Viewer is who holds a stream. All marks a manager, who receives every
+// LiveViewer is who holds a stream. All marks a manager, who receives every
 // event; anyone else receives only events whose audience lets them in.
-type Viewer struct {
+type LiveViewer struct {
 	UserID int64
 	All    bool
 	// Approve: the person approves asks (they read everyone's asks).
 	Approve bool
 }
 
-// Audience says whether a non-manager viewer may receive an event.
-type Audience func(Viewer) bool
+// LiveAudience says whether a non-manager viewer may receive an event.
+type LiveAudience func(LiveViewer) bool
 
 // User is the audience of one person's own items.
-func User(id int64) Audience { return func(v Viewer) bool { return id > 0 && v.UserID == id } }
+func LiveUser(id int64) LiveAudience {
+	return func(v LiveViewer) bool { return id > 0 && v.UserID == id }
+}
 
-// Event is one message on the stream. The topic travels inside the data so
+// LiveEvent is one message on the stream. The topic travels inside the data so
 // one stream per tab carries every topic.
-type Event struct {
+type LiveEvent struct {
 	ID    uint64
 	Topic string
 	Data  json.RawMessage
 	Key   string // dl only: the coalescing key (one per download client)
-	aud   Audience
+	aud   LiveAudience
 	open  bool // sent to every viewer (resync)
 	only  bool // sent only to viewers aud lets in, never to every manager
 }
 
-func (e Event) visible(v Viewer) bool {
+func (e LiveEvent) visible(v LiveViewer) bool {
 	if e.only {
 		return e.aud != nil && e.aud(v)
 	}
@@ -64,13 +66,13 @@ func (e Event) visible(v Viewer) bool {
 }
 
 type client struct {
-	who  Viewer
-	ch   chan Event
+	who  LiveViewer
+	ch   chan LiveEvent
 	gone chan struct{}
 	once sync.Once
 
 	mu      sync.Mutex
-	pending map[string]Event // dl patches waiting while ch is full
+	pending map[string]LiveEvent // dl patches waiting while ch is full
 	order   []string
 	wake    chan struct{}
 	check   chan struct{} // Recheck asks this stream to check its viewer now
@@ -80,7 +82,7 @@ func (c *client) drop() { c.once.Do(func() { close(c.gone) }) }
 
 // offer hands a dl event to the client: through ch when there is room and
 // nothing for its key waits, else into the key's slot (merged).
-func (c *client) offer(e Event, merge func(old, cur json.RawMessage) json.RawMessage) {
+func (c *client) offer(e LiveEvent, merge func(old, cur json.RawMessage) json.RawMessage) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if old, ok := c.pending[e.Key]; ok {
@@ -96,7 +98,7 @@ func (c *client) offer(e Event, merge func(old, cur json.RawMessage) json.RawMes
 	default:
 	}
 	if c.pending == nil {
-		c.pending = map[string]Event{}
+		c.pending = map[string]LiveEvent{}
 	}
 	c.pending[e.Key] = e
 	c.order = append(c.order, e.Key)
@@ -106,10 +108,10 @@ func (c *client) offer(e Event, merge func(old, cur json.RawMessage) json.RawMes
 	}
 }
 
-func (c *client) take() []Event {
+func (c *client) take() []LiveEvent {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	out := make([]Event, 0, len(c.order))
+	out := make([]LiveEvent, 0, len(c.order))
 	for _, k := range c.order {
 		out = append(out, c.pending[k])
 	}
@@ -117,20 +119,20 @@ func (c *client) take() []Event {
 	return out
 }
 
-// Hub fans events out to every connected stream.
-type Hub struct {
-	opt     Options
+// LiveHub fans events out to every connected stream.
+type LiveHub struct {
+	opt     LiveOptions
 	boot    string
 	mu      sync.Mutex
 	next    uint64
-	ring    []Event // oldest first, every topic but dl
-	dlRing  []Event
+	ring    []LiveEvent // oldest first, every topic but dl
+	dlRing  []LiveEvent
 	evicted uint64 // newest id pushed out of ring
 	clients map[*client]struct{}
 }
 
-// NewHub makes a Hub with a fresh boot id.
-func NewHub(opt Options) *Hub {
+// NewHub makes a LiveHub with a fresh boot id.
+func NewLiveHub(opt LiveOptions) *LiveHub {
 	if opt.Heartbeat <= 0 {
 		opt.Heartbeat = 15 * time.Second
 	}
@@ -145,49 +147,49 @@ func NewHub(opt Options) *Hub {
 	}
 	b := make([]byte, 6)
 	_, _ = rand.Read(b)
-	return &Hub{opt: opt, boot: hex.EncodeToString(b), clients: map[*client]struct{}{}}
+	return &LiveHub{opt: opt, boot: hex.EncodeToString(b), clients: map[*client]struct{}{}}
 }
 
 // Boot is this process's boot id; every event id starts with it.
-func (h *Hub) Boot() string { return h.boot }
+func (h *LiveHub) Boot() string { return h.boot }
 
 // EventID is the wire id of event n: "<boot>-<n>".
-func (h *Hub) EventID(n uint64) string { return h.boot + "-" + strconv.FormatUint(n, 10) }
+func (h *LiveHub) EventID(n uint64) string { return h.boot + "-" + strconv.FormatUint(n, 10) }
 
 // Publish sends data on topic to managers only and keeps it for resume.
-func (h *Hub) Publish(topic string, data any) uint64 { return h.publish(topic, "", data, nil) }
+func (h *LiveHub) Publish(topic string, data any) uint64 { return h.publish(topic, "", data, nil) }
 
 // PublishTo sends data on topic to managers and to non-managers aud lets in.
-func (h *Hub) PublishTo(topic string, data any, aud Audience) uint64 {
+func (h *LiveHub) PublishTo(topic string, data any, aud LiveAudience) uint64 {
 	return h.publish(topic, "", data, aud)
 }
 
 // PublishDL sends one dl patch for key (a download client). A stream that
 // is behind keeps only the newest patch per key instead of being dropped.
-func (h *Hub) PublishDL(key string, data any, aud Audience) uint64 {
-	return h.publish(TopicDL, key, data, aud)
+func (h *LiveHub) PublishDL(key string, data any, aud LiveAudience) uint64 {
+	return h.publish(LiveTopicDL, key, data, aud)
 }
 
 // PublishDLUser sends one dl patch for key to one non-manager person's
 // streams only (managers get their own, fuller patch).
-func (h *Hub) PublishDLUser(key string, data any, userID int64) uint64 {
-	return h.publishEvent(TopicDL, key, data, func(v Viewer) bool { return !v.All && userID > 0 && v.UserID == userID }, true)
+func (h *LiveHub) PublishDLUser(key string, data any, userID int64) uint64 {
+	return h.publishEvent(LiveTopicDL, key, data, func(v LiveViewer) bool { return !v.All && userID > 0 && v.UserID == userID }, true)
 }
 
 // PublishApprovers sends data on topic to the people who approve asks
 // only, the same people the asks routes show everyone's asks to (#139).
-func (h *Hub) PublishApprovers(topic string, data any) uint64 {
-	return h.publishEvent(topic, "", data, func(v Viewer) bool { return v.Approve }, true)
+func (h *LiveHub) PublishApprovers(topic string, data any) uint64 {
+	return h.publishEvent(topic, "", data, func(v LiveViewer) bool { return v.Approve }, true)
 }
 
 // PublishUser sends data on topic to one person's streams when they do
 // not approve asks; approvers get their own, fuller event on the topic.
-func (h *Hub) PublishUser(topic string, data any, userID int64) uint64 {
-	return h.publishEvent(topic, "", data, func(v Viewer) bool { return !v.Approve && userID > 0 && v.UserID == userID }, true)
+func (h *LiveHub) PublishUser(topic string, data any, userID int64) uint64 {
+	return h.publishEvent(topic, "", data, func(v LiveViewer) bool { return !v.Approve && userID > 0 && v.UserID == userID }, true)
 }
 
 // Viewers lists the people holding a stream who are not managers.
-func (h *Hub) Viewers() []int64 {
+func (h *LiveHub) Viewers() []int64 {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	seen := map[int64]bool{}
@@ -201,8 +203,8 @@ func (h *Hub) Viewers() []int64 {
 	return out
 }
 
-func push(ring []Event, max int, e Event) ([]Event, Event, bool) {
-	var out Event
+func push(ring []LiveEvent, max int, e LiveEvent) ([]LiveEvent, LiveEvent, bool) {
+	var out LiveEvent
 	full := len(ring) == max
 	if full {
 		out = ring[0]
@@ -212,11 +214,11 @@ func push(ring []Event, max int, e Event) ([]Event, Event, bool) {
 	return append(ring, e), out, full
 }
 
-func (h *Hub) publish(topic, key string, data any, aud Audience) uint64 {
+func (h *LiveHub) publish(topic, key string, data any, aud LiveAudience) uint64 {
 	return h.publishEvent(topic, key, data, aud, false)
 }
 
-func (h *Hub) publishEvent(topic, key string, data any, aud Audience, only bool) uint64 {
+func (h *LiveHub) publishEvent(topic, key string, data any, aud LiveAudience, only bool) uint64 {
 	b, err := json.Marshal(data)
 	if err != nil {
 		b, _ = json.Marshal(map[string]string{"error": err.Error()})
@@ -224,11 +226,11 @@ func (h *Hub) publishEvent(topic, key string, data any, aud Audience, only bool)
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.next++
-	e := Event{ID: h.next, Topic: topic, Data: b, Key: key, aud: aud, only: only}
-	if topic == TopicDL {
+	e := LiveEvent{ID: h.next, Topic: topic, Data: b, Key: key, aud: aud, only: only}
+	if topic == LiveTopicDL {
 		h.dlRing, _, _ = push(h.dlRing, h.opt.DLRing, e)
 	} else {
-		var out Event
+		var out LiveEvent
 		var full bool
 		if h.ring, out, full = push(h.ring, h.opt.Ring, e); full {
 			h.evicted = out.ID
@@ -238,7 +240,7 @@ func (h *Hub) publishEvent(topic, key string, data any, aud Audience, only bool)
 		if !e.visible(c.who) {
 			continue
 		}
-		if topic == TopicDL {
+		if topic == LiveTopicDL {
 			c.offer(e, h.opt.Merge)
 			continue
 		}
@@ -253,15 +255,15 @@ func (h *Hub) publishEvent(topic, key string, data any, aud Audience, only bool)
 }
 
 // Clients returns how many streams are open.
-func (h *Hub) Clients() int {
+func (h *LiveHub) Clients() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return len(h.clients)
 }
 
-func resync(reason string) Event {
+func resync(reason string) LiveEvent {
 	b, _ := json.Marshal(map[string]string{"reason": reason})
-	return Event{Topic: "resync", Data: b, open: true}
+	return LiveEvent{Topic: "resync", Data: b, open: true}
 }
 
 // parseID reads a wire id. A bare number is an id from before boot ids.
@@ -278,8 +280,8 @@ func parseID(s string) (boot string, n uint64, ok bool) {
 // subscribe adds a client and, when resuming from last, returns the events
 // after it that who may see. A last from another boot, from the future or
 // older than the ring keeps returns one "resync" event instead.
-func (h *Hub) subscribe(who Viewer, last string) (*client, []Event) {
-	c := &client{who: who, ch: make(chan Event, h.opt.ClientQueue), gone: make(chan struct{}), wake: make(chan struct{}, 1), check: make(chan struct{}, 1)}
+func (h *LiveHub) subscribe(who LiveViewer, last string) (*client, []LiveEvent) {
+	c := &client{who: who, ch: make(chan LiveEvent, h.opt.ClientQueue), gone: make(chan struct{}), wake: make(chan struct{}, 1), check: make(chan struct{}, 1)}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.clients[c] = struct{}{}
@@ -289,16 +291,16 @@ func (h *Hub) subscribe(who Viewer, last string) (*client, []Event) {
 	boot, n, ok := parseID(last)
 	switch {
 	case !ok || boot != h.boot:
-		return c, []Event{resync("server restarted")}
+		return c, []LiveEvent{resync("server restarted")}
 	case n > h.next:
-		return c, []Event{resync("unknown event id")}
+		return c, []LiveEvent{resync("unknown event id")}
 	case n < h.evicted:
-		return c, []Event{resync("missed too many events")}
+		return c, []LiveEvent{resync("missed too many events")}
 	}
-	var out []Event
+	var out []LiveEvent
 	i, j := 0, 0
 	for i < len(h.ring) || j < len(h.dlRing) {
-		var e Event
+		var e LiveEvent
 		if j >= len(h.dlRing) || i < len(h.ring) && h.ring[i].ID < h.dlRing[j].ID {
 			e = h.ring[i]
 			i++
@@ -315,7 +317,7 @@ func (h *Hub) subscribe(who Viewer, last string) (*client, []Event) {
 
 // Recheck asks every stream opened through Checked to check its viewer
 // now, after a sign-out, an ended session or changed rights.
-func (h *Hub) Recheck() {
+func (h *LiveHub) Recheck() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for c := range h.clients {
@@ -326,14 +328,14 @@ func (h *Hub) Recheck() {
 	}
 }
 
-func (h *Hub) unsubscribe(c *client) {
+func (h *LiveHub) unsubscribe(c *client) {
 	h.mu.Lock()
 	delete(h.clients, c)
 	h.mu.Unlock()
 	c.drop()
 }
 
-func (h *Hub) write(w http.ResponseWriter, e Event) error {
+func (h *LiveHub) write(w http.ResponseWriter, e LiveEvent) error {
 	env, _ := json.Marshal(struct {
 		Topic string          `json:"topic"`
 		Data  json.RawMessage `json:"data"`
@@ -348,13 +350,13 @@ func (h *Hub) write(w http.ResponseWriter, e Event) error {
 }
 
 // ServeHTTP serves one event stream to a viewer who sees everything.
-func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.serve(w, r, Viewer{All: true}, nil)
+func (h *LiveHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.serve(w, r, LiveViewer{All: true}, nil)
 }
 
 // Handler serves streams to the viewer view finds on each request; events
 // reach a non-manager only when their audience lets them in.
-func (h *Hub) Handler(view func(*http.Request) Viewer) http.Handler {
+func (h *LiveHub) Handler(view func(*http.Request) LiveViewer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { h.serve(w, r, view(r), nil) })
 }
 
@@ -362,7 +364,7 @@ func (h *Hub) Handler(view func(*http.Request) Viewer) http.Handler {
 // heartbeat and after Recheck. A stream whose sign-in stopped working or
 // whose viewer changed ends; the browser comes back with the rights it has
 // now and resumes from its last event.
-func (h *Hub) Checked(view func(*http.Request) (Viewer, bool)) http.Handler {
+func (h *LiveHub) Checked(view func(*http.Request) (LiveViewer, bool)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		who, ok := view(r)
 		if !ok {
@@ -376,9 +378,9 @@ func (h *Hub) Checked(view func(*http.Request) (Viewer, bool)) http.Handler {
 	})
 }
 
-// serve resumes from the Last-Event-ID header or the ?last= query (a new
+// serve resumes from the Last-LiveEvent-ID header or the ?last= query (a new
 // stream opened by the page itself carries no header).
-func (h *Hub) serve(w http.ResponseWriter, r *http.Request, who Viewer, still func() bool) {
+func (h *LiveHub) serve(w http.ResponseWriter, r *http.Request, who LiveViewer, still func() bool) {
 	rc := http.NewResponseController(w)
 	hd := w.Header()
 	hd.Set("Content-Type", "text/event-stream")
@@ -386,7 +388,7 @@ func (h *Hub) serve(w http.ResponseWriter, r *http.Request, who Viewer, still fu
 	hd.Set("Connection", "keep-alive")
 	hd.Set("X-Accel-Buffering", "no")
 
-	last := r.Header.Get("Last-Event-ID")
+	last := r.Header.Get("Last-LiveEvent-ID")
 	if last == "" {
 		last = r.URL.Query().Get("last")
 	}

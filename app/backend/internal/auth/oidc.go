@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )
@@ -209,7 +209,7 @@ func validateOIDCOptions(opt OIDCOptions) (*url.URL, *url.URL, error) {
 		return nil, nil, errOIDCConfig
 	}
 	base := strings.TrimSuffix(redirect.Path, "/api/v1/auth/oidc/callback")
-	cleanBase, err := urlbase.Clean(base)
+	cleanBase, err := webserver.CleanURLBase(base)
 	if err != nil || cleanBase != base {
 		return nil, nil, errOIDCConfig
 	}
@@ -464,7 +464,7 @@ func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
 		return
 	}
-	if urlbase.From(r.Context())+"/api/v1/auth/oidc/callback" != o.redirect.Path {
+	if webserver.URLBaseFrom(r.Context())+"/api/v1/auth/oidc/callback" != o.redirect.Path {
 		fail(w, http.StatusServiceUnavailable, "OIDC callback path is not configured for this address")
 		return
 	}
@@ -524,7 +524,7 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	// still in the address bar.
 	failed := func() {
 		a.setOIDCCookie(w, o, "", -1)
-		http.Redirect(w, r, urlbase.From(r.Context())+"/login?sso=failed", http.StatusSeeOther)
+		http.Redirect(w, r, webserver.URLBaseFrom(r.Context())+"/login?sso=failed", http.StatusSeeOther)
 	}
 	query := r.URL.Query()
 	codes, providerErrors := query["code"], query["error"]
@@ -548,7 +548,7 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 		to = "/account?sso=finish"
 	}
 	// Under a URL base the pages live below it too.
-	http.Redirect(w, r, urlbase.From(r.Context())+to, http.StatusSeeOther)
+	http.Redirect(w, r, webserver.URLBaseFrom(r.Context())+to, http.StatusSeeOther)
 }
 
 func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) {
@@ -608,7 +608,7 @@ func (a *Auth) oidcCallbackTrusted(r *http.Request, o *oidcRuntime) bool {
 	}
 	host := &url.URL{Scheme: scheme, Host: r.Host}
 	return strings.EqualFold(scheme, o.redirect.Scheme) && oidcOriginHost(host) == oidcOriginHost(o.redirect) &&
-		urlbase.From(r.Context())+r.URL.Path == o.redirect.Path
+		webserver.URLBaseFrom(r.Context())+r.URL.Path == o.redirect.Path
 }
 
 func (a *Auth) setOIDCCookie(w http.ResponseWriter, o *oidcRuntime, value string, maxAge int) {

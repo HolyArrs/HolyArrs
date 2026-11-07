@@ -28,13 +28,13 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // The versions reported. The manuals set the floor: Seerr and Bazarr need
@@ -189,7 +189,7 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 // /radarr. Seerr stores it as the base path from the status answer.
 // Location headers leave the URL base out: the URL base layer puts it in
 // front of every Location on its way out.
-func (h *handler) base(ctx context.Context) string { return urlbase.From(ctx) + "/" + h.side }
+func (h *handler) base(ctx context.Context) string { return webserver.URLBaseFrom(ctx) + "/" + h.side }
 
 func actor(r *http.Request) domain.Actor { return auth.Actor(r.Context()) }
 

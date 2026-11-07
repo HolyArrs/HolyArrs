@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
@@ -118,7 +119,7 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 	}
 	outsideStates := e.Outside
 	if outsideStates == nil {
-		outsideStates = outside.States
+		outsideStates = outbound.States
 	}
 	// The breaker's ID is a keyed fingerprint of the call (its address and
 	// sign-in): it means nothing to a person and stays on the server, so the

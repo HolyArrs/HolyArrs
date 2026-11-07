@@ -1,7 +1,7 @@
-// Package outside contains the small circuit breaker used at calls to linked
+// Package outbound contains the small circuit breaker used at calls to linked
 // and public services. It does not retry calls; callers keep their existing
 // retry and pacing rules and report one result for the completed operation.
-package outside
+package outbound
 
 import (
 	"context"

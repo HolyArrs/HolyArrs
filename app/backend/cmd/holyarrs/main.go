@@ -2,13 +2,13 @@
 package main
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"bufio"
 	"context"
 	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
@@ -32,7 +32,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/compress"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -42,7 +42,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
@@ -53,7 +53,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 var version = "0.0.0-skeleton"
@@ -108,12 +109,12 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 	fs.StringVar(&c.Movies, "movies", env("HOLYARRS_MOVIES", ""), "movie Library folder to add on start")
 	fs.StringVar(&c.SavePath, "save-path", env("HOLYARRS_SAVE_PATH", ""), "where the Downloader saves (same path in both containers)")
 	fs.BoolVar(&c.SafeMode, "safe-mode", envOn(EnvSafeMode), "start only the core: sign-in, the Library, settings, backups and health ("+EnvSafeMode+"=1)")
-	fs.StringVar(&c.URLBase, "url-base", env(urlbase.Env, ""), "serve under this path behind a reverse proxy, such as /holyarrs ("+urlbase.Env+")")
+	fs.StringVar(&c.URLBase, "url-base", env(webserver.URLBaseEnv, ""), "serve under this path behind a reverse proxy, such as /holyarrs ("+webserver.URLBaseEnv+")")
 	if err := fs.Parse(args); err != nil {
 		return c, err
 	}
 	fs.Visit(func(f *flag.Flag) { c.urlBaseFlag = c.urlBaseFlag || f.Name == "url-base" })
-	base, err := urlbase.Clean(c.URLBase)
+	base, err := webserver.CleanURLBase(c.URLBase)
 	if err != nil {
 		fmt.Fprintln(errOut, "-url-base:", err)
 		return c, err
@@ -368,7 +369,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// (alive) and shows a short page; the real API takes over once ready.
 	swap := &swapHandler{}
 	var updating atomic.Bool
-	swap.set(urlbase.Handler(c.URLBase, startingHandler(&updating)))
+	swap.set(webserver.UnderURLBase(c.URLBase, startingHandler(&updating)))
 	srv := newServer(c.Addr, swap)
 	ln, err := net.Listen("tcp", c.Addr)
 	if err != nil {
@@ -407,7 +408,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		// Older than the data: the page may offer to put back the data
 		// from before the update; once it has, stop so the app starts on it.
 		putBackDone := make(chan struct{})
-		swap.set(urlbase.Handler(c.URLBase, refusedHandler(c.ConfigDir, err, putBackDone)))
+		swap.set(webserver.UnderURLBase(c.URLBase, refusedHandler(c.ConfigDir, err, putBackDone)))
 		select {
 		case <-ctx.Done():
 			return err
@@ -426,7 +427,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// A base saved in Settings is used when the start setting is left
 	// unset; HOLYARRS_URL_BASE=/ forces none.
-	if _, set := os.LookupEnv(urlbase.Env); !set && !c.urlBaseFlag && c.URLBase == "" {
+	if _, set := os.LookupEnv(webserver.URLBaseEnv); !set && !c.urlBaseFlag && c.URLBase == "" {
 		if saved := api.SavedURLBase(ctx, s.Read()); saved != "" {
 			c.URLBase = saved
 			log.Printf("holyarrs: URL base %s (saved in Settings)", saved)
@@ -454,7 +455,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// above: keep a plain page up instead of exiting into a restart loop.
 	hold := func(err error) error {
 		log.Printf("holyarrs: not started: %v", err)
-		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		swap.set(webserver.UnderURLBase(c.URLBase, failedHandler(publicReason(err))))
 		<-ctx.Done()
 		return err
 	}
@@ -476,7 +477,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		// mount, an owner fixed on the host), then exit so the restart
 		// policy starts the app with it.
 		log.Printf("holyarrs: not started: %v", err)
-		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		swap.set(webserver.UnderURLBase(c.URLBase, failedHandler(publicReason(err))))
 		p := named
 		if p == "" {
 			p = filepath.Join(c.ConfigDir, secrets.KeyFile)
@@ -534,7 +535,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// After ensure, so folders added from the environment on a first start
 	// are checked too.
 	logFolderCheck(ctx, s.Read(), c.SavePath)
-	hub := live.NewHub(live.Options{Merge: dlsync.MergePatch})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: dlsync.MergePatch})
 	pools := jobs.DefaultPools
 	if c.SafeMode {
 		pools = map[jobs.Pool]int{jobs.PoolCore: jobs.DefaultPools[jobs.PoolCore]}
@@ -929,7 +930,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 	})
 	pc.Start(ctx)
-	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
+	swap.set(webserver.UnderURLBase(c.URLBase, webserver.Compress(limitBodies(a.Handler()))))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)
 	if o.ready != nil {
 		o.ready(reg, ln.Addr().String())

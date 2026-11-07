@@ -16,7 +16,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
@@ -419,7 +420,7 @@ func (a *API) trailerStream(w http.ResponseWriter, r *http.Request) {
 		s := e.s
 		if s.Type == "hls" {
 			if id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt); id != "" {
-				s.ProxyURL = urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8"
+				s.ProxyURL = webserver.URLBaseFrom(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8"
 			}
 		}
 		writeJSON(w, http.StatusOK, s)

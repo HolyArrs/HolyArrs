@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // The URL base saved from Settings; HOLYARRS_URL_BASE or -url-base win
@@ -26,7 +26,7 @@ func SavedURLBase(ctx context.Context, db *sql.DB) string {
 	if json.Unmarshal([]byte(raw), &v) != nil {
 		return ""
 	}
-	b, err := urlbase.Clean(v)
+	b, err := webserver.CleanURLBase(v)
 	if err != nil {
 		return ""
 	}
@@ -55,7 +55,7 @@ func (a *API) putURLBase(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &body, `send {"url_base": "/holyarrs"}, or "" for none`) {
 		return
 	}
-	b, err := urlbase.Clean(body.URLBase)
+	b, err := webserver.CleanURLBase(body.URLBase)
 	if err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return

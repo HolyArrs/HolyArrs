@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Errors from show lookups.
@@ -249,11 +249,11 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 		}
 		g.mu.Unlock()
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "metadata_" + strings.ToLower(g.name), Identity: identity})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_" + strings.ToLower(g.name), Identity: identity})
 	if err != nil {
 		return nil, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	cl := g.http
 	if cl == nil {
@@ -279,7 +279,7 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 		}
 		resp, err := cl.Do(req)
 		if err != nil {
-			outcome = outside.HTTPOutcome(0, err, ctx)
+			outcome = outbound.HTTPOutcome(0, err, ctx)
 			cancel()
 			return nil, fmt.Errorf("%s: %w", g.name, stripURL(err))
 		}
@@ -289,12 +289,12 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 		}
 		cancel()
 		if err != nil {
-			outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
+			outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 			return nil, fmt.Errorf("%s: %w", g.name, stripURL(err))
 		}
 		switch {
 		case resp.StatusCode == http.StatusOK:
-			outcome = outside.Success
+			outcome = outbound.Success
 			if cacheable {
 				g.mu.Lock()
 				g.put(key, body, ttl, time.Now())
@@ -309,10 +309,10 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 			case <-time.After(time.Duration(min(max(d, 0), 10)) * time.Second):
 			}
 		case resp.StatusCode == http.StatusTooManyRequests:
-			outcome = outside.TransientFailure
+			outcome = outbound.TransientFailure
 			return nil, fmt.Errorf("%s: rate limited; try again shortly", g.name)
 		default:
-			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+			outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 			return nil, errStatus{resp.StatusCode}
 		}
 	}

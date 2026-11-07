@@ -2,7 +2,7 @@
 // a reverse proxy: requests under the base are served with the base taken
 // off, everything else is not found, and the answers are fixed on the way
 // out (redirects and cookie paths get the base back).
-package urlbase
+package webserver
 
 import (
 	"context"
@@ -11,17 +11,17 @@ import (
 	"strings"
 )
 
-// Env and Flag name the setting.
+// URLBaseEnv and Flag name the setting.
 const (
-	Env = "HOLYARRS_URL_BASE"
+	URLBaseEnv = "HOLYARRS_URL_BASE"
 )
 
 // ErrBase refuses a base that is not a plain path.
 var ErrBase = errors.New("the URL base is a path such as /holyarrs: letters, digits, '-', '_', '.' and '/' only, no '..' or '//'")
 
-// Clean checks and normalises a base: "" or "/" is no base; otherwise it
+// CleanURLBase checks and normalises a base: "" or "/" is no base; otherwise it
 // starts with / and does not end with one.
-func Clean(base string) (string, error) {
+func CleanURLBase(base string) (string, error) {
 	b := strings.TrimSpace(base)
 	if b == "" || b == "/" {
 		return "", nil
@@ -48,14 +48,14 @@ func Clean(base string) (string, error) {
 
 type ctxKey struct{}
 
-// From is the base the request came under ("" without one).
-func From(ctx context.Context) string {
+// URLBaseFrom is the base the request came under ("" without one).
+func URLBaseFrom(ctx context.Context) string {
 	b, _ := ctx.Value(ctxKey{}).(string)
 	return b
 }
 
 // With puts base on ctx (tests and in-process callers).
-func With(ctx context.Context, base string) context.Context {
+func WithURLBase(ctx context.Context, base string) context.Context {
 	return context.WithValue(ctx, ctxKey{}, base)
 }
 
@@ -63,7 +63,7 @@ func With(ctx context.Context, base string) context.Context {
 // context. With one: base itself redirects to base/, a path under base is
 // served with base taken off, the root /healthz and /readyz are served as
 // they are, any other path is 404.
-func Handler(base string, h http.Handler) http.Handler {
+func UnderURLBase(base string, h http.Handler) http.Handler {
 	if base == "" {
 		return h
 	}
@@ -77,7 +77,7 @@ func Handler(base string, h http.Handler) http.Handler {
 		// know a base set by flag or in Settings: exact GET and HEAD of
 		// /healthz and /readyz answer there too.
 		if (p == "/healthz" || p == "/readyz") && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
-			h.ServeHTTP(w, r.WithContext(With(r.Context(), base)))
+			h.ServeHTTP(w, r.WithContext(WithURLBase(r.Context(), base)))
 			return
 		}
 		rest, ok := strings.CutPrefix(p, base+"/")
@@ -90,7 +90,7 @@ func Handler(base string, h http.Handler) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		r2 := r.Clone(With(r.Context(), base))
+		r2 := r.Clone(WithURLBase(r.Context(), base))
 		r2.URL.Path = "/" + rest
 		if r.URL.RawPath != "" {
 			if raw, ok := strings.CutPrefix(r.URL.RawPath, base+"/"); ok {
@@ -100,19 +100,19 @@ func Handler(base string, h http.Handler) http.Handler {
 			}
 		}
 		r2.RequestURI = r2.URL.RequestURI()
-		h.ServeHTTP(&writer{ResponseWriter: w, base: base}, r2)
+		h.ServeHTTP(&baseWriter{ResponseWriter: w, base: base}, r2)
 	})
 }
 
-// writer puts the base back on redirects to this app ("/x", never "//x"
+// baseWriter puts the base back on redirects to this app ("/x", never "//x"
 // or another host) and on cookie paths.
-type writer struct {
+type baseWriter struct {
 	http.ResponseWriter
 	base  string
 	wrote bool
 }
 
-func (w *writer) fix() {
+func (w *baseWriter) fix() {
 	if w.wrote {
 		return
 	}
@@ -136,23 +136,23 @@ func (w *writer) fix() {
 	}
 }
 
-func (w *writer) WriteHeader(code int) {
+func (w *baseWriter) WriteHeader(code int) {
 	w.fix()
 	w.ResponseWriter.WriteHeader(code)
 }
 
-func (w *writer) Write(b []byte) (int, error) {
+func (w *baseWriter) Write(b []byte) (int, error) {
 	w.fix()
 	return w.ResponseWriter.Write(b)
 }
 
 // Flush keeps the live stream (SSE) working through the wrapper.
-func (w *writer) Flush() {
+func (w *baseWriter) Flush() {
 	w.fix()
 	if f, ok := w.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
 }
 
-// Unwrap lets http.ResponseController reach the real writer.
-func (w *writer) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+// Unwrap lets http.ResponseController reach the real baseWriter.
+func (w *baseWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }

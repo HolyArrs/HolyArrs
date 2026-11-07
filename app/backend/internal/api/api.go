@@ -3,12 +3,12 @@
 package api
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"log"
 	"net/http"
@@ -23,15 +23,16 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
@@ -42,7 +43,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Server is what the API needs.
@@ -52,7 +52,7 @@ type Server struct {
 	// keeps the Downloads view's own client reads.
 	DLSync   *dlsync.Sync
 	Queue    *jobs.Queue
-	Live     *live.Hub
+	Live     *webserver.LiveHub
 	Metadata metadata.Provider
 	Version  string
 	Started  time.Time
@@ -170,7 +170,7 @@ type API struct {
 	bridgeSvc  *bridge.Service
 	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
 	tlog torrentLog
-	// interest limits each session's live interest calls (live.go).
+	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
 	// dlHealth is the health last pushed per client (downloads_live.go).
 	dlHealth dlHealthSent
