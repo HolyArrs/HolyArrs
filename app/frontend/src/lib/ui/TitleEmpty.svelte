@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Empty state card with an icon, message and optional actions.
 	import type { Snippet } from 'svelte';
 	import Icon, { type IconName } from './Icon.svelte';
 
@@ -41,6 +42,7 @@
 		color: var(--text-muted);
 		max-width: 60ch;
 	}
+	/* body text comes from a snippet, so its tags are styled from here */
 	.text :global(p + p) {
 		margin-top: var(--s-2);
 	}
@@ -55,6 +57,7 @@
 		gap: var(--s-3);
 		margin-top: var(--s-2);
 	}
+	/* tighter padding on phones */
 	@media (max-width: 767px) {
 		.empty {
 			padding: var(--s-5);

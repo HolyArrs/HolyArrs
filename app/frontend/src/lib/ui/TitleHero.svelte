@@ -1,5 +1,9 @@
 <script lang="ts" module>
+	// Title page hero: shared metadata helpers and the banner with art, badges and trailer button.
+	import type { Video } from '../core/trailer/trailer.ts';
+	import { shownScore } from '../core/rating.ts';
 
+	// Minutes as "1 hr 5 min"; empty when unknown.
 	export function runtimeWords(min?: number | null): string {
 		if (!min || min <= 0) return '';
 		const h = Math.floor(min / 60);
@@ -7,19 +11,21 @@
 		return [h ? `${h} hr` : '', m ? `${m} min` : ''].filter(Boolean).join(' ');
 	}
 
+	// Last folder name only, for either slash style.
 	export function shortFolder(path?: string | null): string {
 		const parts = (path ?? '').split(/[\\/]+/).filter(Boolean);
 		return parts[parts.length - 1] ?? '';
 	}
 
 	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[]; moods?: string[]; quality?: string; seasons?: number };
-	import type { Video } from '../core/trailer/trailer.ts';
-	import { shownScore } from '../core/rating.ts';
 	type Raw = Record<string, unknown>;
+	// s and n pick a clean string or positive number from loose server data
 	const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
+	// one request per title, shared by every caller
 	const metaCache = new Map<string, Promise<RichMeta | null>>();
 
+	// Failed lookups are dropped from the cache so a later call can retry.
 	export function richMetadata(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show', tmdb: string | undefined | null): Promise<RichMeta | null> {
 		if (!tmdb) return Promise.resolve(null);
 		const key = `${kind}:${tmdb}`;
@@ -42,26 +48,25 @@
 		}
 		return p;
 	}
-
 </script>
 
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import { setTopCrumbs } from '../core/top-crumbs.svelte.ts';
 	import Icon, { type IconName } from './Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
-	import { viewTransitionName } from '../core/motion.ts';
-	import { proxied, sized } from '../core/tmdb-image.ts';
-	import { awardsTip, loadWikiFacts, type WikiFacts } from './wiki-facts.ts';
 	import Billboard from './Billboard.svelte';
 	import ActionButton from './ActionButton.svelte';
+	import RatingsStrip from './RatingsStrip.svelte';
+	import { awardsTip, loadWikiFacts, type WikiFacts } from './wiki-facts.ts';
+	import { loadExtras, type Extras } from './outside-ratings.ts';
+	import { ratingPicks, shownRatings } from './rating-picks.svelte.ts';
+	import { setTopCrumbs } from '../core/top-crumbs.svelte.ts';
+	import { viewTransitionName } from '../core/motion.ts';
+	import { proxied, sized } from '../core/tmdb-image.ts';
 	import { heroPictures } from '../core/trailer/trailer.ts';
 	import { autoplayHere, loadUISettings, trailerClickSources } from '../core/trailer/autoplay.svelte.ts';
 	import { openTheater } from '../core/trailer/theater.svelte.ts';
 	import { api } from '../core/api.ts';
-	import { loadExtras, type Extras } from './outside-ratings.ts';
-	import RatingsStrip from './RatingsStrip.svelte';
-	import { ratingPicks, shownRatings } from './rating-picks.svelte.ts';
 
 	let {
 		title,
@@ -124,35 +129,30 @@
 	let backdropFailed = $state(false);
 	let logoFailed = $state(false);
 	let darkLogo = $state(false);
-	function checkLogo(src: string) {
-		darkLogo = false;
-		const probe = new Image();
-		probe.crossOrigin = 'anonymous';
-		probe.onload = () => src === shownLogo && (darkLogo = logoIsDark(probe));
-		probe.src = src;
-	}
-	function logoIsDark(img: HTMLImageElement): boolean {
-		try {
-			const c = document.createElement('canvas');
-			c.width = 48; c.height = 24;
-			const g = c.getContext('2d', { willReadFrequently: true });
-			if (!g) return false;
-			g.drawImage(img, 0, 0, 48, 24);
-			const d = g.getImageData(0, 0, 48, 24).data;
-			let n = 0, l = 0;
-			for (let k = 0; k < d.length; k += 4) {
-				if (d[k + 3] < 96) continue;
-				n++; l += (0.2126 * d[k] + 0.7152 * d[k + 1] + 0.0722 * d[k + 2]) / 255;
-			}
-			return n > 20 && l / n < 0.3;
-		} catch {
-			return false;
-		}
-	}
 	let wideLogo = $state(false);
 	let posterFailed = $state(false);
-
 	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
+	let extras = $state<Extras>({ backgrounds: [], scores: [] });
+	let fanartLogoFailed = $state(false);
+	let videos = $state<Video[] | undefined>();
+	let opening = $state(false);
+	let still = $state(true);
+
+	// the title logo wins; fan art logo is the fallback when it fails to load
+	const shownLogo = $derived(logo && !logoFailed ? proxied(logo) : extras.logo && !fanartLogoFailed ? extras.logo : null);
+	const heroBackdrop = $derived(backdrop || (mbid ? extras.backgrounds[0] : null));
+	const heroPoster = $derived(poster || (mbid ? extras.thumb : null));
+
+	// a cover replaces the wide backdrop; a poster fills in only when no backdrop exists
+	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
+	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
+	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
+
+	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
+	// one decimal, like 7.4
+	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
+
+	// each effect below drops late answers once its inputs change
 	$effect(() => {
 		const k = kind;
 		const t = tmdb;
@@ -162,9 +162,6 @@
 		void loadWikiFacts(api.get, k, t).then((f) => live && (wiki = f));
 		return () => (live = false);
 	});
-
-	let extras = $state<Extras>({ backgrounds: [], scores: [] });
-	let fanartLogoFailed = $state(false);
 	$effect(() => {
 		const k = kind ?? (mbid ? 'artist' : undefined);
 		const id = kind ? tmdb : mbid;
@@ -175,22 +172,11 @@
 		void loadExtras(api.get, k, id).then((e) => live && (extras = e));
 		return () => (live = false);
 	});
-	const shownLogo = $derived(logo && !logoFailed ? proxied(logo) : extras.logo && !fanartLogoFailed ? extras.logo : null);
-	const heroBackdrop = $derived(backdrop || (mbid ? extras.backgrounds[0] : null));
-	const heroPoster = $derived(poster || (mbid ? extras.thumb : null));
-
-	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
-	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
-	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
-
-	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
-	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
+	// crumbs live in the top bar, so clear them when the hero leaves
 	$effect(() => {
 		setTopCrumbs(breadcrumb[0] ?? null, breadcrumb.length > 1 ? (breadcrumb.at(-1)?.label ?? title) : title);
 		return () => setTopCrumbs(null);
 	});
-
-	let videos = $state<Video[] | undefined>();
 	$effect(() => {
 		const k = kind;
 		const t = tmdb;
@@ -200,24 +186,11 @@
 		void richMetadata(api.get, k, t).then((m) => live && (videos = m?.videos ?? []));
 		return () => (live = false);
 	});
-	let opening = $state(false);
-	function heroStill(hero: HTMLElement | null | undefined): HTMLCanvasElement | null {
-		const img = hero?.querySelector<HTMLImageElement>('.art img');
-		const r = hero?.getBoundingClientRect();
-		if (!img?.complete || !img.naturalWidth || !r?.width || !r.height) return null;
-		const c = document.createElement('canvas');
-		c.width = Math.round(r.width);
-		c.height = Math.round(r.height);
-		const k = Math.max(c.width / img.naturalWidth, c.height / img.naturalHeight);
-		const w = img.naturalWidth * k;
-		const h = img.naturalHeight * k;
-		try {
-			c.getContext('2d')?.drawImage(img, (c.width - w) * 0.7, (c.height - h) * 0.3, w, h);
-		} catch {
-			return null;
-		}
-		return c;
-	}
+
+	// the still poster pill shows unless autoplay is already running here
+	onMount(() => void loadUISettings().then(() => (still = !autoplayHere())));
+
+	// A running hero trailer is expanded instead of opening a second player.
 	async function playTrailer(e: MouseEvent) {
 		if (!kind || !tmdb || opening) return;
 		const btn = e.currentTarget as HTMLElement;
@@ -237,10 +210,55 @@
 			opening = false;
 		}
 	}
-	let still = $state(true);
-	onMount(() => void loadUISettings().then(() => (still = !autoplayHere())));
+
+	// Dark logos vanish on the dark hero, so they get inverted to white.
+	function checkLogo(src: string) {
+		darkLogo = false;
+		const probe = new Image();
+		probe.crossOrigin = 'anonymous';
+		probe.onload = () => src === shownLogo && (darkLogo = logoIsDark(probe));
+		probe.src = src;
+	}
+	// Samples a tiny canvas; the size, alpha and brightness cutoffs just need to tell black from light.
+	function logoIsDark(img: HTMLImageElement): boolean {
+		try {
+			const c = document.createElement('canvas');
+			c.width = 48; c.height = 24;
+			const g = c.getContext('2d', { willReadFrequently: true });
+			if (!g) return false;
+			g.drawImage(img, 0, 0, 48, 24);
+			const d = g.getImageData(0, 0, 48, 24).data;
+			let n = 0, l = 0;
+			for (let k = 0; k < d.length; k += 4) {
+				if (d[k + 3] < 96) continue;
+				n++; l += (0.2126 * d[k] + 0.7152 * d[k + 1] + 0.0722 * d[k + 2]) / 255;
+			}
+			return n > 20 && l / n < 0.3;
+		} catch {
+			return false;
+		}
+	}
+	// Copies the visible hero image so the theater can grow from the same frame.
+	function heroStill(hero: HTMLElement | null | undefined): HTMLCanvasElement | null {
+		const img = hero?.querySelector<HTMLImageElement>('.art img');
+		const r = hero?.getBoundingClientRect();
+		if (!img?.complete || !img.naturalWidth || !r?.width || !r.height) return null;
+		const c = document.createElement('canvas');
+		c.width = Math.round(r.width);
+		c.height = Math.round(r.height);
+		const k = Math.max(c.width / img.naturalWidth, c.height / img.naturalHeight);
+		const w = img.naturalWidth * k;
+		const h = img.naturalHeight * k;
+		try {
+			c.getContext('2d')?.drawImage(img, (c.width - w) * 0.7, (c.height - h) * 0.3, w, h);
+		} catch {
+			return null;
+		}
+		return c;
+	}
 </script>
 
+<!-- description and byline sit under the banner, outside the art -->
 <div class="ui-thero" class:square>
 	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} once position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
 		{#snippet heading()}
@@ -279,13 +297,16 @@
 {/snippet}
 
 <style>
+	/* dark logos turn white, wide ones get a size floor so they stay legible */
 	.bb-logo.dark :global(img) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / .45)); }
 	.bb-logo.wide :global(img) { min-height: clamp(40px, 3.4vw, 64px); max-width: min(92vw, 760px) !important; }
+	/* backdrop is dimmed so the text on top stays readable */
 	.bd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: saturate(1.1) brightness(.75); }
 	.bd.square { object-position: center 35%; }
 	.bd.blur { filter: blur(40px) saturate(1.3) brightness(.6); transform: scale(1.2); }
 	.cover { display: block; width: clamp(120px, 14vw, 220px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 12px 40px rgb(0 0 0 / 50%); margin-bottom: 12px; }
 	.ui-thero :global(.bb-name.short) { min-height: 0; }
+	/* lifts the hero above later sections while a popover is open */
 	.ui-thero:has(:global(.ui-pop > .panel)) { position: relative; z-index: 10; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.b.award { border-color: rgb(245 197 24 / 75%); color: #f5c518; }
@@ -294,6 +315,7 @@
 	.score svg { color: #f5c518; }
 	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%), 0 0 18px rgb(0 0 0 / 45%); }
 	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
+	/* 44px keeps the member control a comfortable touch target */
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }
 	.status-line { margin-top: var(--s-4); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font: 500 15px/1.4 var(--font-ui); color: var(--text-muted); }
 </style>

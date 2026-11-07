@@ -1,4 +1,5 @@
 <script lang="ts">
+	// Chip list with a text box that turns typed words into tags.
 	import { onMount } from 'svelte';
 	import Chip from './Chip.svelte';
 	import { addTags, tagsInUse } from './tags.ts';
@@ -13,17 +14,20 @@
 
 	let text = $state('');
 	let known = $state<string[]>([]);
+	// suggestions skip tags already chosen
 	const offered = $derived(known.filter((t) => !value.includes(t)));
 
 	onMount(() => {
 		void tagsInUse().then((ts) => (known = ts.map((t) => t.label)));
 	});
 
+	// Blur and comma also commit so a half typed tag is never lost.
 	function commit() {
 		if (!text.trim()) return;
 		value = addTags(value, text);
 		text = '';
 	}
+	// isComposing guard stops Enter from committing mid IME input.
 	function key(e: KeyboardEvent) {
 		if (e.isComposing) return;
 		if (e.key === 'Enter' || e.key === ',') {
@@ -35,6 +39,7 @@
 	}
 </script>
 
+<!-- datalist below offers tags already used elsewhere -->
 <div class="ti" data-testid={testid}>
 	{#if value.length}
 		<div class="chips" role="group" aria-label="Tags">

@@ -1,6 +1,8 @@
 <script lang="ts" module>
+	// Animated status glyphs, one per request state.
 	export type StatusKey = 'pending' | 'upcoming' | 'searching' | 'downloading' | 'importing' | 'processing' | 'ready' | 'failed' | 'declined';
 	type Glyph = { fill?: string; d: string; move?: string; mark?: string };
+	// fill is the faint backing shape, d the outline, move the part that animates, mark the check that draws in
 	const CIRCLE = 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z';
 	const glyphs: Record<StatusKey, Glyph> = {
 		pending: { fill: CIRCLE, d: CIRCLE, move: 'M12 6v6l4 2' },
@@ -16,6 +18,7 @@
 		failed: { fill: CIRCLE, d: CIRCLE + 'M12 8v4M12 16h.01' },
 		declined: { fill: CIRCLE, d: CIRCLE + 'M15 9l-6 6M9 9l6 6' }
 	};
+	// Unknown words fall back to the busy spinner rather than a blank icon.
 	export function statusKey(word: string): StatusKey {
 		const w = word.split(' · ')[0].trim().toLowerCase();
 		return (w in glyphs ? w : 'processing') as StatusKey;
@@ -37,7 +40,9 @@
 <style>
 	.si { display: block; flex: none; overflow: visible; }
 	.si-fill { opacity: 0.2; }
+	/* view-box origin lets the glyph part spin around the icon centre */
 	.si-move { transform-box: view-box; transform-origin: 12px 12px; }
+	/* motion only for people who have not asked to reduce it */
 	@media (prefers-reduced-motion: no-preference) {
 		.si-motion.si-downloading .si-move { animation: si-nudge 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 		.si-motion.si-searching .si-move { transform-origin: 11px 11px; animation: si-sweep 2.4s ease-in-out infinite; }
