@@ -403,15 +403,15 @@
 	<ul class="fl">
 		{#each list as d (d.id)}
 			<li class="dl" data-testid="downloader">
-				<div class="main" title={d.url}>
+				<div class="main" title="{hostOf(d.url)} · priority {d.priority} · {d.category}">
 					<span class="ic"><Icon name={d.protocol === 'usenet' ? 'usenet' : 'torrent'} size={20} /></span>
 					<div class="grow">
 						<div class="top">
 							<span class="name">{d.name}</span>
 							{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
 						</div>
-						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'Torrents'} · {hostOf(d.url)}</div>
-						<div class="facts">
+						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'Torrents'}</div>
+						<div class="sr-only">{hostOf(d.url)} · 
 							Priority {d.priority} · {d.category}
 							{#if d.tags?.length} · <span data-testid="downloader-tags">tags {d.tags.join(', ')}</span>{/if}
 							{#if d.allow_local_network} · may reach the local network{/if}
@@ -474,7 +474,7 @@
 			<span><b>Add matched titles to your Library</b><br /><span class="hint">Sure matches already in a Downloader are added without searching</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
-			<legend class="small muted">Removing a download starts with:</legend>
+			<legend>When you remove a download</legend>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_delete_files} />
 			<span><b>Delete its files</b></span>
@@ -539,8 +539,19 @@
 	.defaults {
 		border: 0;
 		padding: 0;
-		margin: var(--s-3) 0 0;
+		margin: 0;
 	}
+	/* A small sub-heading inside the sheet, never sitting on the divider line. */
+	.defaults > legend {
+		float: left;
+		width: 100%;
+		padding: 18px 0 6px;
+		color: var(--text-muted);
+		font: 600 11px/1.2 var(--font-ui);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.defaults > legend + * { clear: both; }
 	.head {
 		display: flex;
 		align-items: center;
@@ -634,7 +645,13 @@
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i, .st.bad i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
 	.acts { display: flex; align-items: center; gap: 2px; }
-	@media (hover: hover) { .acts { opacity: 0.55; transition: opacity var(--dur-fast) var(--ease-out); } .dl:hover .acts, .dl:focus-within .acts { opacity: 1; } }
+	@media (hover: hover) and (min-width: 761px) {
+		.dl { position: relative; }
+		.main { grid-template-columns: 24px minmax(0, 1fr) auto auto; }
+		/* Buttons sit over the right edge only while you point at the row; the status keeps the edge otherwise. */
+		.acts { position: absolute; right: 12px; top: 50%; translate: 0 -50%; padding: 4px 4px 4px 28px; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--surface-1) 24px); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
+		.dl:hover .acts, .dl:focus-within .acts { opacity: 1; pointer-events: auto; }
+	}
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }
 	@media (max-width: 760px) {

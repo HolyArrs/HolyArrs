@@ -252,13 +252,13 @@
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<ul class="fl">
 		{#each sources as s (s.id)}
-			<li class="dl" data-testid="source">
+			<li class="dl" data-testid="source" title="{s.url} · priority {s.priority} · {uses(s)}">
 				<div class="main">
 					<span class="ic"><Icon name="source" size={20} /></span>
 					<div class="grow">
 						<div class="top"><a class="name" href={to(`/settings/sources/${s.id}`)}>{s.name}</a></div>
-						<div class="sub" title={s.url}>{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)} · {s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if}</div>
-						<div class="facts">
+						<div class="sub">{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)}</div>
+						<div class="sr-only">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if} · 
 							Priority {s.priority} · {uses(s)}
 							{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
 							{#if s.proxy} · through {s.proxy}{/if}
@@ -266,7 +266,7 @@
 							{#if s.tags?.length} · <span data-testid="source-tags">tags {s.tags.join(', ')}</span>{/if}
 						</div>
 					</div>
-					<div class="num" title="Last answer {s.summary.last_success ? ago(s.summary.last_success) : 'never'} · {s.summary.failures_24h} of {s.summary.calls_24h} calls failed today"><b>{ms(s.summary.avg_ms_24h)}</b><small>avg</small></div>
+					{#if s.summary.calls_24h > 0}<div class="num" title="Last answer {s.summary.last_success ? ago(s.summary.last_success) : 'never'} · {s.summary.failures_24h} of {s.summary.calls_24h} calls failed today"><b>{ms(s.summary.avg_ms_24h)}</b><small>avg</small></div>{/if}
 					<span class="st {healthTone(s.health)}"><i></i><span data-testid="source-state">{healthWord(s.health)}</span></span>
 					<div class="acts">
 						<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</Button>
@@ -281,7 +281,7 @@
 						<Button variant="plain" size="sm" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</Button>
 					</div>
 				</div>
-				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
+				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} class:sr-only={s.health.state === 'working' || s.health.state === 'disabled' || s.state === 'paused'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
 				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="note"><a href="#connect-bridge" data-testid="source-bridge-link">Link Jackett or Prowlarr</a></p>{/if}
 				{#if results[s.id]}
 					<div class="testline note" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{results[s.id].text}</span>{/if}</div>
@@ -381,7 +381,13 @@
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i, .st.bad i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
 	.acts { display: flex; align-items: center; gap: 2px; }
-	@media (hover: hover) { .acts { opacity: 0.55; transition: opacity var(--dur-fast) var(--ease-out); } .dl:hover .acts, .dl:focus-within .acts { opacity: 1; } }
+	@media (hover: hover) and (min-width: 761px) {
+		.dl { position: relative; }
+		.main { grid-template-columns: 24px minmax(0, 1fr) auto auto; }
+		/* Buttons sit over the right edge only while you point at the row; the status keeps the edge otherwise. */
+		.acts { position: absolute; right: 12px; top: 50%; translate: 0 -50%; padding: 4px 4px 4px 28px; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--surface-1) 24px); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
+		.dl:hover .acts, .dl:focus-within .acts { opacity: 1; pointer-events: auto; }
+	}
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }
 	@media (max-width: 760px) {
