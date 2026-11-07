@@ -1,13 +1,14 @@
 <script lang="ts">
-	// The Timeline plate's right half: the live job feed drawn as a day column.
+	// Feeds the live job poller and shows it as a day column.
+	import { onMount } from 'svelte';
 	import LiveDay from './LiveDay.svelte';
 	import { LiveJobs } from './live-jobs.svelte.ts';
 	import type { StatusRow } from './rows.ts';
-	import { onMount } from 'svelte';
 
 	let { upcoming, recent }: { upcoming: StatusRow[]; recent: StatusRow[] } = $props();
 
 	const lj = new LiveJobs();
+	// The poller learns job names from the rows so live jobs get readable labels.
 	$effect(() => lj.learn([...upcoming, ...recent]));
 	onMount(() => {
 		lj.start();

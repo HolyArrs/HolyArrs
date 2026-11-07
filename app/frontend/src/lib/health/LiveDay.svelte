@@ -1,26 +1,23 @@
 <script lang="ts">
-	// View "Day": a calendar day column covering 12 hours, from about three
-	// hours ago to nine hours ahead. Each hour has a hairline and a label on
-	// the ruler, and an accent line marks the minute now. Finished runs sit as
-	// quiet chips above that line, planned runs as outlined chips below it,
-	// and a running job as an accent chip on the line that fills as it goes.
-	// Chips that overlap in time share the width, up to three side by side.
+	// Day column: a 12 hour ruler with finished, running and planned runs as chips around a Now line.
 	import type { LiveJobs } from './live-jobs.svelte.ts';
 	import { t } from './live-jobs.svelte.ts';
 	import type { StatusRow } from './rows.ts';
-
-	let { lj, upcoming, recent }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
 
 	type Ev = { key: string; at: number; top: number; name: string; time: string; kind: 'past' | 'next' | 'run'; c: string; fill: number; label: string; lane: number; lanes: number };
 
 	const HOUR = 3600_000;
 	const PX = 24; // pixels per hour
-	const CH = 20; // chip height
+	const CH = 20; // chip height in pixels
 	const PAD = 7; // room above the first and below the last hour line
+	// More than three chips side by side would be too narrow to read.
 	const LANES = 3;
 	const tone: Record<string, string> = { ok: 'var(--ok)', wait: 'var(--wait)', fail: 'var(--fail)', info: 'var(--info)', idle: 'var(--text-faint)' };
-	const hm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-	const hh = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', hour12: false });
+
+	let { lj, upcoming, recent }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
+
+	let pick = $state<{ key: string; label: string } | null>(null);
+	let timer: ReturnType<typeof setTimeout> | undefined;
 
 	const now = $derived(lj.tick);
 	// The window starts on a whole hour, three to four hours back, so the ruler only shifts once an hour.
@@ -35,6 +32,7 @@
 
 	const hours = $derived(Array.from({ length: 13 }, (_, i) => ({ i, ms: start + i * HOUR, y: i * PX })));
 
+	// Past, running and planned chips with their lane, or hidden when all lanes are taken.
 	const placed = $derived.by(() => {
 		const evs: Ev[] = [];
 		for (const j of lj.running) {
@@ -57,8 +55,7 @@
 			evs.push({ key: `n${r.key}`, at: ms, top: y(Math.max(ms, now)), name: r.name, time: late ? 'due' : hm(ms), kind: 'next', c: tone[r.tone] ?? tone.info, fill: 0, label: late ? `${r.name} is due now` : `${r.name} runs at ${hm(ms)}`, lane: 0, lanes: 1 });
 		}
 
-		// Simple lanes: walk the chips top to bottom; chips that touch form a
-		// group, each takes the first free lane, and a group shares the width.
+		// Chips that touch form a group; each takes the first free lane and the group shares the width.
 		evs.sort((a, b) => a.top - b.top || (a.kind === 'run' ? -1 : b.kind === 'run' ? 1 : 0));
 		const shown: Ev[] = [];
 		let hidden = 0;
@@ -95,17 +92,20 @@
 		return 'Today';
 	});
 	const busy = $derived(lj.running.length > 0);
+	const ahead = $derived(placed.shown.filter((e) => e.kind === 'next').length);
 
-	// A tapped chip says its full name and time in the line under the column for a while (touch screens have no hover).
-	let pick = $state<{ key: string; label: string } | null>(null);
-	let timer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => () => clearTimeout(timer));
+
+	// A tapped chip shows its full name and time below the column, since touch screens have no hover.
 	function show(e: Ev) {
 		pick = pick?.key === e.key ? null : { key: e.key, label: e.label };
 		clearTimeout(timer);
 		timer = setTimeout(() => (pick = null), 6000);
 	}
-	$effect(() => () => clearTimeout(timer));
-	const ahead = $derived(placed.shown.filter((e) => e.kind === 'next').length);
+
+	// Local clock time helpers.
+	const hm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+	const hh = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', hour12: false });
 </script>
 
 <div class="day">
@@ -162,7 +162,7 @@
 	.sc { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
 	.col { --rule: 40px; position: relative; box-sizing: border-box; padding: var(--pad) 0; }
 
-	/* The hours already gone get a faint wash so the past reads as past. */
+	/* Faint wash over hours already gone. */
 	.gone { position: absolute; top: var(--pad); left: var(--rule); right: 0; border-radius: 6px 6px 0 0; background: color-mix(in srgb, var(--text) 3.5%, transparent); }
 	.hr, .hf { position: absolute; left: var(--rule); right: 0; height: 0; margin-top: var(--pad); border-top: 1px solid var(--line); }
 	.hf { border-top: 1px dashed color-mix(in srgb, var(--text) 5%, transparent); }
@@ -190,13 +190,13 @@
 	.en { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.et { position: relative; flex: none; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 
-	/* Finished: quiet grey with a tone stripe at the left edge. */
+	/* Finished: grey with a tone stripe. */
 	.ev.past { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); }
 	.ev.past::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
 	.ev.past .et { color: var(--text-muted); }
 	.hit { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* Touch phones: a 44px tap area centred on each 20px chip; the chip lets it out (its name still truncates). */
+	/* Touch: a 44px tap area around each 20px chip. */
 	@media (max-width: 767px) and (pointer: coarse) {
 		.ev { overflow: visible; }
 		.fi { border-radius: inherit; }
@@ -216,7 +216,7 @@
 	@container (max-width: 340px) {
 		.col { --rule: 34px; }
 		.nt { font-size: 9.5px; }
-		/* Side by side on a phone, a chip keeps the name; the ruler gives the hour and a tap gives the time. */
+		/* Side by side, a chip keeps the name; the ruler and a tap give the time. */
 		.ev.shared .et { display: none; }
 		.ev.shared { padding: 0 5px 0 7px; }
 	}

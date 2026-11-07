@@ -1,38 +1,84 @@
 <script lang="ts">
-	// The About note, opened from Status > About: a small retro window that powers on, types its lines,
-	// slams its tags on like stickers, and now and then sends the title-bar runners across.
+	// Retro about window: types its lines, slams tags in, and sends runners across the title bar.
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 	import { tick } from 'svelte';
 	import { to } from '../core/paths.ts';
 
-	// Silkscreen, the pixel font (SIL Open Font License, from @fontsource/silkscreen), loaded once from the app itself.
+	// The pixel font ships with the app and loads once, so the window needs no network.
 	if (typeof document !== 'undefined' && typeof FontFace !== 'undefined' && ![...document.fonts].some((f) => f.family === 'Silkscreen')) {
 		const face = new FontFace('Silkscreen', `url(${to(silkscreen)}) format('woff2')`, { display: 'swap' });
 		document.fonts.add(face);
 		void face.load().catch(() => {});
 	}
 
-	/** Where Support goes; the block stays hidden until there is a real link. */
+	// The Support block stays hidden until this holds a real link.
 	const SUPPORT_URL = '';
+	const TITLE = 'Why HolyArrs';
+	// Run-cycle frames for the two runners.
+	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
+	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
 
 	let dlg = $state<HTMLDialogElement>();
 	let closing = $state(false);
 	let playing = $state(false);
 	let title = $state('');
-	const TITLE = 'Why HolyArrs';
 
-	const reduce = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	// Plain variables: the DOM-driven animation reads them, the markup does not.
 	let timers: ReturnType<typeof setTimeout>[] = [];
-	const later = (ms: number, f: () => void) => timers.push(setTimeout(f, ms));
-	const wait = (ms: number) => new Promise<void>((r) => later(ms, r));
 	let run = 0;
 	const originals = new Map<Element, string>();
+	let scene = 0;
+	let raf = 0;
+	let sceneTimer: ReturnType<typeof setTimeout> | undefined;
 
+	export async function open() {
+		closing = false;
+		if (!dlg) return;
+		if (!dlg.open) dlg.showModal();
+		await tick();
+		resetScene();
+		sceneLater();
+		void play();
+	}
+	function close() {
+		run++;
+		timers.forEach(clearTimeout);
+		timers = [];
+		resetScene();
+		if (reduce()) return dlg?.close();
+		closing = true;
+		setTimeout(() => { dlg?.close(); closing = false; }, 250);
+	}
+	function onScreenClick(e: MouseEvent) {
+		if (playing && !(e.target as HTMLElement).closest('a')) skip();
+	}
+	function onKey(e: KeyboardEvent) {
+		if (e.key === ' ' && playing) { e.preventDefault(); skip(); }
+	}
+
+	// A click or space ends the typing early.
+	function skip() {
+		run++;
+		timers.forEach(clearTimeout);
+		timers = [];
+		finish();
+		resetScene();
+		sceneLater();
+	}
+
+	// Motion is skipped for people who ask for less of it.
+	const reduce = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	// Every timer goes through later so close and skip can cancel them all.
+	const later = (ms: number, f: () => void) => timers.push(setTimeout(f, ms));
+	const wait = (ms: number) => new Promise<void>((r) => later(ms, r));
+
+	// Removing and re-adding the class restarts the CSS animation.
 	function setOn(el: Element) {
 		el.classList.remove('on');
 		void (el as HTMLElement).offsetWidth;
 		el.classList.add('on');
 	}
+	// The window thuds a moment after a tag lands.
 	function slam(el: Element | null) {
 		if (!el || !dlg) return;
 		setOn(el);
@@ -40,7 +86,7 @@
 		w?.classList.remove('thud');
 		later(150, () => { void (w as HTMLElement | null)?.offsetWidth; w?.classList.add('thud'); });
 	}
-	/** typeIn shows an element's letters one by one; the layout is set first, so nothing reflows. */
+	// Letters are wrapped first and revealed later, so the layout never reflows while typing.
 	async function typeIn(el: Element, perChar: number, id: number) {
 		const nodes: Text[] = [];
 		const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -62,20 +108,13 @@
 		}
 		cur.remove();
 	}
+	// Jumps to the finished page: all text shown, no animation.
 	function finish() {
 		if (!dlg) return;
 		title = TITLE;
 		dlg.querySelectorAll('.typed').forEach((el) => { const o = originals.get(el); if (o !== undefined) el.innerHTML = o; });
 		dlg.querySelectorAll('.stk, .typed').forEach((el) => { el.classList.add('on'); (el as HTMLElement).style.animation = 'none'; });
 		playing = false;
-	}
-	function skip() {
-		run++;
-		timers.forEach(clearTimeout);
-		timers = [];
-		finish();
-		resetScene();
-		sceneLater();
 	}
 	async function play() {
 		if (!dlg) return;
@@ -109,11 +148,7 @@
 		playing = false;
 	}
 
-	// Title-bar runners
-	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
-	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
-	let scene = 0;
-	let raf = 0;
+	// Puts the runners back off screen before a new run or on close.
 	function resetScene() {
 		scene++;
 		cancelAnimationFrame(raf);
@@ -126,13 +161,13 @@
 		if (portal) portal.className = 'portal';
 		dlg?.querySelectorAll('.wbar .wx, .wbar .wskip').forEach((b) => b.classList.remove('lift', 'bonk'));
 	}
-	let sceneTimer: ReturnType<typeof setTimeout> | undefined;
-	/** sceneLater starts the run after a while; it has its own timer, apart from the letter's. */
+	// Own timer, so cancelling the letters does not cancel the runners.
 	function sceneLater(ms = 5000) {
 		clearTimeout(sceneTimer);
 		const sc = scene;
 		sceneTimer = setTimeout(() => { if (sc === scene) runScene(); }, ms);
 	}
+	// Runners enter at the portal, run to the button, and bonk it.
 	function runScene() {
 		if (reduce() || !dlg?.open) return;
 		const id = ++scene;
@@ -152,6 +187,7 @@
 		let t0 = 0, lifted = false, lastStep = -1;
 		const puff = (at: number) => { if (at > stop - 8) return; const p = document.createElement('i'); p.className = 'dust'; p.style.left = `${at}px`; r.append(p); setTimeout(() => p.remove(), 450); };
 		const streak = (at: number, y: number) => { if (at > stop - 14) return; const p = document.createElement('i'); p.className = 'streak'; p.style.left = `${at - 16}px`; p.style.bottom = `${y}px`; r.append(p); setTimeout(() => p.remove(), 320); };
+		// Pixels per second.
 		const speed = 95;
 		const step = (now: number) => {
 			if (id !== scene || !dlg?.open) return;
@@ -184,31 +220,6 @@
 			raf = requestAnimationFrame(step);
 		};
 		raf = requestAnimationFrame(step);
-	}
-
-	export async function open() {
-		closing = false;
-		if (!dlg) return;
-		if (!dlg.open) dlg.showModal();
-		await tick();
-		resetScene();
-		sceneLater();
-		void play();
-	}
-	function close() {
-		run++;
-		timers.forEach(clearTimeout);
-		timers = [];
-		resetScene();
-		if (reduce()) return dlg?.close();
-		closing = true;
-		setTimeout(() => { dlg?.close(); closing = false; }, 250);
-	}
-	function onScreenClick(e: MouseEvent) {
-		if (playing && !(e.target as HTMLElement).closest('a')) skip();
-	}
-	function onKey(e: KeyboardEvent) {
-		if (e.key === ' ' && playing) { e.preventDefault(); skip(); }
 	}
 </script>
 
@@ -340,7 +351,7 @@
 	.thanks .big { font-size: 18px; }
 	.cur { display: inline-block; width: 8px; height: 15px; margin-left: 6px; vertical-align: -2px; background: var(--cream); animation: blink 1s steps(1) infinite; }
 
-	/* Placement: everything waits until the script slams or types it in. */
+	/* Hidden until the script slams or types each part in. */
 	.stk, .typed { visibility: hidden; }
 	.stk:global(.on), .typed:global(.on) { visibility: visible; }
 	.stk:global(.on) { animation: slam 380ms cubic-bezier(.2, 1.4, .4, 1) both; }

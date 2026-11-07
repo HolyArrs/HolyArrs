@@ -1,8 +1,5 @@
 <script lang="ts">
-	// The Status page body, laid out the way the *arr status pages are: frosted
-	// plates in four tabs. Status: Health, the parts (PartsRail), Storage.
-	// Jobs: the timeline, then every job. Updates: where this HolyArrs stands,
-	// how to update, bundled tools, every release. About: this HolyArrs and its story.
+	// The Status page body: four tabs of plates (Status, Jobs, Updates, About).
 	import '../ui/plate.css';
 	import AdminLinkButton from '../ui/AdminLinkButton.svelte';
 	import Button from '../ui/Button.svelte';
@@ -12,14 +9,29 @@
 	import WhyNote from './WhyNote.svelte';
 	import { nextRun, until } from './schedules.ts';
 	import type { Health } from './types.ts';
-	import { onMount, untrack } from 'svelte';
-	import type { Snippet } from 'svelte';
+	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './rows.ts';
 	import { api } from '../core/api.ts';
 	import { ago, bytes, dateTime } from '../core/format.ts';
 	import { to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
 	import type { HealthCheck, UpdateInfo } from '../core/types.ts';
-	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './rows.ts';
+	import { onMount, untrack } from 'svelte';
+	import type { Snippet } from 'svelte';
+
+	type Disk = { path: string; kind: string; label: string; free_bytes: number; total_bytes: number };
+	type Update = UpdateInfo & { notes?: string };
+	type About = { version: string; go: string; os: string; docker: boolean; sqlite: string; migration: number; config_dir: string; start_dir: string; uptime_s: number; started_at: string };
+
+	// Library kind to the plural shown beside each disk.
+	const kindWord: Record<string, string> = { movie: 'Movies', show: 'Shows', music: 'Music' };
+	const tabs = [
+		{ id: 'parts', label: 'Status' },
+		{ id: 'jobs', label: 'Jobs' },
+		{ id: 'updates', label: 'Updates' },
+		{ id: 'about', label: 'About' }
+	];
+	// Names of reads an account may not do, mapped to the kind they remove.
+	const hiddenKind: Record<string, string> = { 'outside lists': 'lists', alerts: 'alerts' };
 
 	let {
 		groups,
@@ -39,109 +51,51 @@
 		tab: string;
 		ontab: (t: string) => void;
 		canAct: boolean;
-		/** Whether a row's check or run is under way. */
 		busy: (key: string) => boolean;
 		oncheck: (r: StatusRow) => void;
 		labelOf: (r: StatusRow) => string;
-		/** The trailers health check: the YouTube reader's state (Updates tab). */
 		reader: HealthCheck | undefined;
-		/** Which reads failed on the page's last load ('parts', 'health checks', 'jobs'...). */
 		failed?: string[];
-		/** Reads this account may not do ('outside lists', 'alerts'); their kinds are left out. */
+		// Reads this account may not do; their kinds are left out.
 		hidden?: string[];
-		/** Goes up after every Check again or row check, so Storage reloads its disks. */
+		// Goes up after every check, so Storage reloads its disks.
 		checkRuns?: number;
-		/** The Updates tab, drawn by the page so health does not depend on updates. */
+		// The page draws the Updates tab, so health does not depend on updates.
 		updates: Snippet<[{ upd: Update | null; docker: boolean | null; reader: HealthCheck | undefined; checksKnown: boolean; canAct: boolean; onupd: (u: Update) => void }]>;
 	} = $props();
-
-	type Disk = { path: string; kind: string; label: string; free_bytes: number; total_bytes: number };
-	type Update = UpdateInfo & { notes?: string };
 
 	let disks = $state<Disk[] | null>(null);
 	let upd = $state<Update | null>(null);
 	let updFailed = $state(false);
-	/** uptime is a running clock: "0d 00:27:14". */
-	function uptime(s: number): string {
-		const t = Math.floor(Math.max(0, s));
-		const two = (n: number) => String(n).padStart(2, '0');
-		return `${Math.floor(t / 86400)}d ${two(Math.floor(t / 3600) % 24)}:${two(Math.floor(t / 60) % 60)}:${two(t % 60)}`;
-	}
-	type About = { version: string; go: string; os: string; docker: boolean; sqlite: string; migration: number; config_dir: string; start_dir: string; uptime_s: number; started_at: string };
+	let srv = $state<Health | null>(null);
 	let about = $state<About | null>(null);
 	let aboutAt = $state(0);
 	let aboutFailed = $state(false);
-	// The About details need Settings; an account without it sees the version only.
 	let aboutDenied = $state(false);
-	// One clock for every relative time here, so "in 5 min" keeps counting down.
+	// One clock for every relative time, so "in 5 min" keeps counting.
 	let now = $state(Date.now());
 	let why = $state<ReturnType<typeof WhyNote>>();
-
-	const tabs = [
-		{ id: 'parts', label: 'Status' },
-		{ id: 'jobs', label: 'Jobs' },
-		{ id: 'updates', label: 'Updates' },
-		{ id: 'about', label: 'About' }
-	];
 	let tablist = $state<HTMLElement>();
+	// Tab changes go through the page address and drop focus; this puts it back after a key press.
 	let refocus = false;
+	let disksAt = 0;
+	let disksFor = '';
 
 	const parts = $derived(groups.filter((g) => g.id !== 'jobs'));
-	// Library rows are folder and disk checks: they live in Storage, beside each disk.
-	const hiddenKind: Record<string, string> = { 'outside lists': 'lists', alerts: 'alerts' };
 	const kinds = $derived(everyKind(parts).filter((k) => !hidden.some((h) => hiddenKind[h] === k.id)));
+	// Library rows are folder and disk checks, so they show in Storage beside each disk.
 	const libRows = $derived(parts.find((g) => g.id === 'library')?.rows ?? []);
-	const folderRows = (d: Disk) => libRows.filter((r) => r.name === `Folder ${d.path}` || r.name === `Free space ${d.path}`);
 	const backups = $derived(libRows.find((r) => r.key.startsWith('backups')));
-	const worst = (rs: StatusRow[]) => rs.find((r) => r.tone === 'fail') ?? rs.find((r) => r.tone === 'wait');
 	const jobs = $derived(groups.find((g) => g.id === 'jobs')?.rows ?? []);
 	const jobsTone = $derived(jobs.some((j) => j.tone === 'fail') ? 'fail' : jobs.some((j) => j.tone === 'wait') ? 'wait' : null);
 	const allRows = $derived(groups.flatMap((g) => g.rows));
 	const problems = $derived(needsAttention(allRows));
-	// A fresh install has nothing to check yet; say so instead of "no problems".
+	// A fresh install has nothing to check yet, so say that instead of "no problems".
 	const empty = $derived(!failed.includes('parts') && nothingLinked(allRows));
 	const upcoming = $derived(jobs.filter((j) => j.nextRun && !stopped(j)).sort((a, b) => Date.parse(a.nextRun!) - Date.parse(b.nextRun!)));
 	const recent = $derived(jobs.filter((j) => j.lastRun).sort((a, b) => Date.parse(b.lastRun!) - Date.parse(a.lastRun!)));
-	const kindWord: Record<string, string> = { movie: 'Movies', show: 'Shows', music: 'Music' };
-	/** usedPct is how full a disk is, 0..100, or null when unknown. */
-	const usedPct = (d: Disk) => (d.total_bytes > 0 && d.free_bytes >= 0 ? Math.round(((d.total_bytes - d.free_bytes) / d.total_bytes) * 100) : null);
-	/** nextWord says when a job runs next; a run that should have started already says how late it is ("due 25 min ago"). */
-	function nextWord(j: StatusRow): string {
-		if (!j.nextRun || stopped(j) || Number.isNaN(Date.parse(j.nextRun))) return 'Not planned';
-		return j.word === 'Running' ? until(j.nextRun, now) : nextRun(j.nextRun, now);
-	}
-	const when = (r: StatusRow) => (atVerb[r.group] ? `${atVerb[r.group]} ${ago(r.at, now)}` : ago(r.at, now));
 
-	// Free space hardly changes: read it on entering Storage and after a check, and at most once a minute on live pushes.
-	let disksAt = 0;
-	let disksFor = '';
-	function loadDisks(why: string) {
-		if (why === disksFor && Date.now() - disksAt < 60_000) return;
-		disksFor = why;
-		disksAt = Date.now();
-		api.get<{ disks: Disk[] }>('/health/disks').then((d) => (disks = d.disks), () => (disks ??= []));
-	}
-	function loadUpdate() {
-		updFailed = false;
-		api.get<Update>('/app/update').then((u) => (upd = u), () => (updFailed = !upd));
-	}
-	// The live server numbers (writes, live tabs, URL base) come from /health.
-	let srv = $state<Health | null>(null);
-	function loadAbout() {
-		aboutFailed = false;
-		api.get<Health>('/health').then((h) => (srv = h), () => {});
-		api.get<About>('/app/about').then(
-			(a) => {
-				about = a;
-				aboutAt = Date.now();
-			},
-			(e: unknown) => {
-				if ((e as { status?: number })?.status === 403) aboutDenied = true;
-				else aboutFailed = !about;
-			}
-		);
-	}
-
+	// Reads disks only on the Status tab; groups is read so a live push counts as a change.
 	$effect(() => {
 		void groups;
 		const why = `${tab}:${checkRuns}`;
@@ -149,7 +103,7 @@
 		else disksFor = '';
 	});
 
-	// A tab change goes through the page address, which moves focus away; put it back on a tab picked by key.
+	// Keeps keyboard focus on the picked tab after the address changes.
 	$effect(() => {
 		const t = tab;
 		if (!refocus) return;
@@ -167,12 +121,57 @@
 		ontab(tabs[n].id);
 	}
 
+	// Free space hardly changes: reload on entering Storage and after a check, at most once a minute on live pushes.
+	function loadDisks(why: string) {
+		if (why === disksFor && Date.now() - disksAt < 60_000) return;
+		disksFor = why;
+		disksAt = Date.now();
+		api.get<{ disks: Disk[] }>('/health/disks').then((d) => (disks = d.disks), () => (disks ??= []));
+	}
+	function loadUpdate() {
+		updFailed = false;
+		api.get<Update>('/app/update').then((u) => (upd = u), () => (updFailed = !upd));
+	}
+	// /health holds the live server numbers; /app/about needs Settings, so a 403 means version only.
+	function loadAbout() {
+		aboutFailed = false;
+		api.get<Health>('/health').then((h) => (srv = h), () => {});
+		api.get<About>('/app/about').then(
+			(a) => {
+				about = a;
+				aboutAt = Date.now();
+			},
+			(e: unknown) => {
+				if ((e as { status?: number })?.status === 403) aboutDenied = true;
+				else aboutFailed = !about;
+			}
+		);
+	}
+
 	onMount(() => {
 		loadUpdate();
 		loadAbout();
 		const t = setInterval(() => (now = Date.now()), 1000);
 		return () => clearInterval(t);
 	});
+
+	// Running clock like "0d 00:27:14".
+	function uptime(s: number): string {
+		const t = Math.floor(Math.max(0, s));
+		const two = (n: number) => String(n).padStart(2, '0');
+		return `${Math.floor(t / 86400)}d ${two(Math.floor(t / 3600) % 24)}:${two(Math.floor(t / 60) % 60)}:${two(t % 60)}`;
+	}
+	const folderRows = (d: Disk) => libRows.filter((r) => r.name === `Folder ${d.path}` || r.name === `Free space ${d.path}`);
+	const worst = (rs: StatusRow[]) => rs.find((r) => r.tone === 'fail') ?? rs.find((r) => r.tone === 'wait');
+	// Null when the disk size is unknown.
+	const usedPct = (d: Disk) => (d.total_bytes > 0 && d.free_bytes >= 0 ? Math.round(((d.total_bytes - d.free_bytes) / d.total_bytes) * 100) : null);
+	// A run that should have started already says how late it is.
+	function nextWord(j: StatusRow): string {
+		if (!j.nextRun || stopped(j) || Number.isNaN(Date.parse(j.nextRun))) return 'Not planned';
+		return j.word === 'Running' ? until(j.nextRun, now) : nextRun(j.nextRun, now);
+	}
+	// The verb keeps "3 d ago" from reading as "not checked for 3 days".
+	const when = (r: StatusRow) => (atVerb[r.group] ? `${atVerb[r.group]} ${ago(r.at, now)}` : ago(r.at, now));
 </script>
 
 <div class="secs" data-testid="status-sections">
@@ -333,7 +332,7 @@
 <style>
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
-	/* The tabs: the Downloads pill track, one picked pill. */
+	/* Same pill track as the Downloads page. */
 	.seg { display: inline-flex; align-self: flex-start; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); }
 	.seg:focus { outline: none; }
 	.seg button { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); white-space: nowrap; cursor: pointer; }
@@ -341,7 +340,7 @@
 	.seg button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
 	.seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .seg button { height: 40px; } }
-	/* Phones: a 44px tap area around the 40px pill, no visual change. */
+	/* Grows the tap area to 44px without changing the look. */
 	@media (max-width: 767px) and (pointer: coarse) { .seg button::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); } }
 	.badge { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 	.badge.wait { background: var(--wait); }
@@ -349,7 +348,6 @@
 	.fail-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 	.chip { vertical-align: middle; }
 
-	/* Health */
 	.health { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: color-mix(in srgb, var(--fail) 4%, var(--surface-1)); box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.06); }
 	.hrow { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; min-height: 48px; padding: 6px 14px; border-top: 1px solid var(--line); }
 	.hrow:first-child { border-top: 0; }
@@ -363,7 +361,6 @@
 	.ok-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0; font-size: 14.5px; color: var(--text-muted); }
 	.dload { max-width: 420px; }
 
-	/* Storage */
 	.dtop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.dname { font-weight: 600; font-size: 14.5px; color: var(--text); }
 	.dtop .dnum { margin-left: auto; }
@@ -382,11 +379,10 @@
 	.dfoot span:last-child { flex: none; }
 	.dfoot .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-	/* Tables */
 	.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 	.tbl th { padding: 8px 12px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--line); }
 	.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text); vertical-align: middle; }
-	/* Jobs: on wide screens the timeline and every job are drawn tight so the tab fits a screen */
+	/* Tight on wide screens so the Jobs tab fits one screen. */
 	@media (min-width: 768px) {
 		.tight :global(.st-plate) { padding: 10px 18px 12px; }
 		.tight :global(.st-plate > h2) { margin: 0 -18px 8px; padding: 0 18px 8px; font-size: 15px; }
@@ -405,7 +401,6 @@
 	.jr { display: block; font-weight: 400; font-size: 12.5px; color: var(--fail-text); }
 	.sr, .k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-	/* About */
 	.kv { display: grid; grid-template-columns: 160px minmax(0, 1fr); margin: 0; }
 	.kv dt, .kv dd { margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 	.kv dt:last-of-type, .kv dd:last-of-type { border-bottom: 0; }
@@ -422,7 +417,7 @@
 		.hat { grid-column: 2; }
 		.hacts { grid-column: 2; margin-left: -12px; }
 		.kv { grid-template-columns: 130px minmax(0, 1fr); }
-		/* Phone jobs: name and state on top, then labelled Last run and Next run, the button on the right. */
+		/* Stacks each job: name and state, then labelled times, button on the right. */
 		.tbl.jobs thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 		.tbl.jobs tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 		.tbl.jobs tbody tr:last-child { border-bottom: 0; }
@@ -436,8 +431,7 @@
 		.tbl.jobs .k::after { content: ' '; }
 	}
 	.clock { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
-	/* Why HolyArrs: a small retro panel in the site's look; the note opens in its own window. */
-	/* Colours mirror the website: dark = the site's dark hero, light = its paper-and-ink theme. */
+	/* Colours match the website's dark and light themes. */
 	.why-row { --coal: light-dark(#f4f1ea, #171717); --panel: light-dark(#fbfaf6, #242424); --cream: light-dark(#05080d, #f3f0e9); --muted: light-dark(#4a4f58, #b6bec3); --red: light-dark(#b4271e, #e2443a); --hard: light-dark(#05080d, #080a0c); --scan: light-dark(rgb(5 8 13 / 5%), rgb(0 0 0 / 20%)); --pixel: 'Silkscreen', var(--font-mono, ui-monospace), monospace;
 		position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; background: var(--coal); border: 2px solid var(--cream); box-shadow: 5px 5px 0 var(--hard); border-radius: 0; }
 	.why-row::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, var(--scan) 0 1px, transparent 1px 3px); }

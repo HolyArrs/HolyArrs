@@ -1,15 +1,11 @@
 <script lang="ts">
-	// The linked apps on the Status tab: every kind down the left with its
-	// count and worst colour, the picked kind's apps on the right. Every kind
-	// keeps its seat, added or not, so the plate holds one shape; it opens on
-	// the first kind with a problem, else Sources.
+	// Linked apps: a tab per kind with its count and worst colour, and the picked kind's rows beside it.
 	import Button from '../ui/Button.svelte';
 	import GroupRows from './GroupRows.svelte';
 	import { partKinds, type StatusGroup, type StatusRow, type Tone } from './rows.ts';
 	import { to } from '../core/paths.ts';
 
-	let { kinds, canAct, busy, oncheck }: { kinds: StatusGroup[]; canAct: boolean; busy: (key: string) => boolean; oncheck: (r: StatusRow) => void } = $props();
-
+	// Icon path for each kind's tab.
 	const icon: Record<string, string> = {
 		sources: 'M4 6h12M4 10h12M4 14h8',
 		downloaders: 'M10 3v10m0 0-4-4m4 4 4-4M4 16h12',
@@ -19,33 +15,20 @@
 		alerts: 'M10 3a5 5 0 0 0-5 5v3l-2 3h14l-2-3V8a5 5 0 0 0-5-5zM8 16a2 2 0 0 0 4 0',
 		metadata: 'M10 3c4 0 7 1.3 7 3s-3 3-7 3-7-1.3-7-3 3-3 7-3zM3 6v8c0 1.7 3 3 7 3s7-1.3 7-3V6'
 	};
-	const meta = (g: StatusGroup) => partKinds.find((k) => k.id === g.id)!;
-	const okOf = (g: StatusGroup) => g.rows.filter((r) => r.tone === 'ok').length;
-	// Rows turned off on purpose are not missing, so they stay out of the count.
-	const isOff = (r: StatusRow) => r.word === 'Off';
-	const onOf = (g: StatusGroup) => g.rows.filter((r) => !isOff(r)).length;
-	const count = (g: StatusGroup) => (!g.rows.length ? '–' : onOf(g) ? `${okOf(g)}/${onOf(g)}` : 'Off');
-	/** worst is the kind's colour: a failing part wins, then a waiting one, then working; none when empty. */
-	const worst = (g: StatusGroup): Tone | 'none' =>
-		g.rows.some((r) => r.tone === 'fail') ? 'fail' : g.rows.some((r) => r.tone === 'wait') ? 'wait' : g.rows.length ? (g.rows.every((r) => r.tone === 'idle') ? 'idle' : 'ok') : 'none';
-	/** line says a kind in a few words: "3 working", "1 needs attention", "Off", "Nothing added yet". */
-	function line(g: StatusGroup): string {
-		if (!g.rows.length) return 'Nothing added yet';
-		const bad = g.rows.filter((r) => r.tone === 'fail' || r.tone === 'wait').length;
-		if (bad) return `${bad} need${bad === 1 ? 's' : ''} attention`;
-		if (g.rows.length === 1) return g.rows[0].word;
-		if (g.rows.every(isOff)) return `${g.rows.length} off`;
-		const ok = okOf(g);
-		return ok ? `${ok} working` : `${onOf(g)} waiting`;
-	}
+
+	let { kinds, canAct, busy, oncheck }: { kinds: StatusGroup[]; canAct: boolean; busy: (key: string) => boolean; oncheck: (r: StatusRow) => void } = $props();
+
+	// Every kind keeps its tab, added or not, so the plate holds one shape.
+	let picked = $state<string | null>(null);
+	let list = $state<HTMLElement>();
+
 	const all = $derived(kinds.reduce((n, g) => n + onOf(g), 0));
 	const allOk = $derived(kinds.reduce((n, g) => n + okOf(g), 0));
 
-	let picked = $state<string | null>(null);
+	// Opens on the first kind with a problem, else the first kind.
 	const current = $derived(kinds.find((k) => k.id === picked) ?? kinds.find((k) => worst(k) === 'fail') ?? kinds.find((k) => worst(k) === 'wait') ?? kinds[0]);
 
-	// The kinds are tabs: one tab stop, arrow keys (both ways, as the list turns sideways on narrow screens), Home and End.
-	let list = $state<HTMLElement>();
+	// Arrow keys move in both directions because the list turns sideways on narrow screens.
 	function kindKey(e: KeyboardEvent) {
 		const i = kinds.findIndex((k) => k.id === current.id);
 		const fwd = e.key === 'ArrowDown' || e.key === 'ArrowRight';
@@ -55,6 +38,26 @@
 		e.preventDefault();
 		picked = kinds[n].id;
 		list?.querySelector<HTMLElement>(`#pk-tab-${kinds[n].id}`)?.focus();
+	}
+
+	const meta = (g: StatusGroup) => partKinds.find((k) => k.id === g.id)!;
+	const okOf = (g: StatusGroup) => g.rows.filter((r) => r.tone === 'ok').length;
+	// Rows turned off on purpose are not missing, so they stay out of the count.
+	const isOff = (r: StatusRow) => r.word === 'Off';
+	const onOf = (g: StatusGroup) => g.rows.filter((r) => !isOff(r)).length;
+	const count = (g: StatusGroup) => (!g.rows.length ? '–' : onOf(g) ? `${okOf(g)}/${onOf(g)}` : 'Off');
+	// A failing part wins, then a waiting one, then working; none when empty.
+	const worst = (g: StatusGroup): Tone | 'none' =>
+		g.rows.some((r) => r.tone === 'fail') ? 'fail' : g.rows.some((r) => r.tone === 'wait') ? 'wait' : g.rows.length ? (g.rows.every((r) => r.tone === 'idle') ? 'idle' : 'ok') : 'none';
+	// A kind in a few words, like "3 working" or "Nothing added yet".
+	function line(g: StatusGroup): string {
+		if (!g.rows.length) return 'Nothing added yet';
+		const bad = g.rows.filter((r) => r.tone === 'fail' || r.tone === 'wait').length;
+		if (bad) return `${bad} need${bad === 1 ? 's' : ''} attention`;
+		if (g.rows.length === 1) return g.rows[0].word;
+		if (g.rows.every(isOff)) return `${g.rows.length} off`;
+		const ok = okOf(g);
+		return ok ? `${ok} working` : `${onOf(g)} waiting`;
 	}
 </script>
 
@@ -101,6 +104,7 @@
 	.end { margin-left: auto; }
 
 	.rl { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0 24px; }
+	/* The list takes focus only through its tabs. */
 	.kinds:focus { outline: none; }
 	.kinds { display: flex; flex-direction: column; gap: 2px; padding-right: 20px; border-right: 1px solid var(--line); }
 	.kinds button { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px 0 8px; border: 0; border-radius: 10px; background: none; color: var(--text-muted); font: 500 14px/1 var(--font-ui); text-align: left; cursor: pointer; }
@@ -112,6 +116,7 @@
 	.pane h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; min-height: 34px; font: 600 15px/1.2 var(--font-ui); color: var(--text); }
 	.pane .pl { font-size: 13px; font-weight: 400; color: var(--text-muted); }
 
+	/* Tabs turn into a row above the pane. */
 	@media (max-width: 900px) {
 		.rl { grid-template-columns: minmax(0, 1fr); gap: 14px; }
 		.kinds { flex-direction: row; overflow-x: auto; padding: 0 0 10px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }

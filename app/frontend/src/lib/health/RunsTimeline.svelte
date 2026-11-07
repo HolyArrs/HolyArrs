@@ -1,7 +1,5 @@
 <script lang="ts">
-	// The Jobs tab's first plate. Left: the last runs above a Now line and the
-	// coming runs below it, on one rail, five each way. Right: the live board,
-	// what runs now with its progress and what comes next, counting down.
+	// Last runs above a Now line and coming runs below it, beside the live board.
 	import LiveViews from './LiveViews.svelte';
 	import { pastResult, type StatusRow } from './rows.ts';
 	import { nextRun } from './schedules.ts';
@@ -9,11 +7,12 @@
 
 	let { upcoming, recent, now }: { upcoming: StatusRow[]; recent: StatusRow[]; now: number } = $props();
 
+	// Five runs each way keeps the rail short.
 	const MAX = 5;
 	const up = $derived(upcoming.slice(0, MAX));
-	// Oldest run at the top, the newest right above Now.
+	// Oldest at the top so the newest sits right above Now.
 	const past = $derived(recent.slice(0, MAX).reverse());
-	// A past run shows how that run ended, not what the job is doing now.
+	// A past run shows how it ended, not what the job does now.
 	const result = pastResult;
 </script>
 
@@ -46,16 +45,15 @@
 <style>
 	ol { list-style: none; margin: 0; padding: 0; }
 	.halves { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 0 28px; }
-	/* The shared dot, centred on the rail, with a gap cut into the rail around it. */
+	/* Cuts a gap in the rail around the dot. */
 	.tl .st-dot { justify-self: center; }
 	.tl .st-dot:not(.fail) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--surface-1) 90%, transparent); }
-	/* The rail dot already carries the state; the chip shows only its word. */
+	/* The dot shows the state, so the chip keeps only its word. */
 	.tl .chip::before { display: none; }
 	.nm { min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tm { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 	.none { font-size: 14px; color: var(--text-muted); }
 
-	/* the rail */
 	.tl { position: relative; }
 	.tl::before { content: ''; position: absolute; left: calc(84px + 14px + 4px - 1px); top: 10px; bottom: 10px; width: 2px; border-radius: 1px; background: var(--line); }
 	.tl li { position: relative; display: grid; grid-template-columns: 84px 8px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 40px; }

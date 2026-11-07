@@ -1,21 +1,23 @@
 <script lang="ts">
-	// One group's parts as ruled rows inside its own section: a dot, the name
-	// and its word, and the reason plus Check / Fix right under any row
-	// that is not working. Problems come first; long lists show six rows
-	// until "Show all".
+	// One group's parts as ruled rows, with the reason and Check / Fix under any row that is not working.
 	import Button from '../ui/Button.svelte';
 	import { atVerb, type StatusRow } from './rows.ts';
 	import { ago, dateTime } from '../core/format.ts';
 	import { to } from '../core/paths.ts';
 
-	// flat drops the list's own frame (for rows that sit inside a ledger); compact tightens the rows.
+	// Long lists show six rows until "Show all".
+	const MAX = 6;
+
+	// flat drops the list's own frame so rows can sit inside a ledger.
 	let { rows, canAct, busy, oncheck, flat = false, compact = false }: { rows: StatusRow[]; canAct: boolean; busy: (key: string) => boolean; oncheck: (r: StatusRow) => void; flat?: boolean; compact?: boolean } = $props();
 
-	const MAX = 6;
 	let all = $state(false);
-	const rank = (r: StatusRow) => (r.tone === 'fail' ? 0 : r.tone === 'wait' ? 1 : 2);
+
 	const ordered = $derived([...rows].sort((a, b) => rank(a) - rank(b)));
-	// What the time next to a working row means, so "3 d ago" never reads as "not checked for 3 days".
+
+	// Problems float to the top.
+	const rank = (r: StatusRow) => (r.tone === 'fail' ? 0 : r.tone === 'wait' ? 1 : 2);
+	// The verb keeps "3 d ago" from reading as "not checked for 3 days".
 	const when = (r: StatusRow) => (atVerb[r.group] ? `${atVerb[r.group]} ${ago(r.at)}` : ago(r.at));
 </script>
 
