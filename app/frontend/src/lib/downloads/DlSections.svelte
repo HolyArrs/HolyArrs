@@ -25,6 +25,7 @@
 	import DlTabsView from './DlTabsView.svelte';
 	import DlMorePop from './DlMorePop.svelte';
 	import { createColumns } from './columns-grid.svelte.ts';
+	import DlColumnPicker from './DlColumnPicker.svelte';
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { CONN_HINT, CONN_WORD, tabsOf, type PaneTab } from './pane-facts.ts';
@@ -913,26 +914,7 @@
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
 
-{#if cols.ghost}<div class="ghost" style="left: {cols.ghost.x}px; top: {cols.ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[cols.ghost.id].label}</div>{/if}
-
-{#if cols.pop}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div class="picker" role="dialog" aria-label="Columns" tabindex="-1" bind:this={cols.pickEl} style="left: {cols.pop.x}px; top: {cols.pop.y}px" data-testid="dl-picker" onkeydown={cols.pickerKey}>
-		<p class="ph-t">Columns</p>
-		<ul class="pl">
-			{#each cols.layout.order as id (id)}
-				{@const c = COL[id]}
-				<li data-id={id} class:held={cols.held === id} class:off={c.missing}>
-					<button type="button" class="hd" data-handle={id} aria-label="Move {c.label}" aria-pressed={cols.held === id} aria-describedby="dl-pick-help" disabled={c.missing} onkeydown={(e) => cols.handleKey(e, id)} onpointerdown={(e) => cols.handleDown(e, id)}><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="5" cy="7" r="1.2"/><circle cx="9" cy="7" r="1.2"/><circle cx="5" cy="11" r="1.2"/><circle cx="9" cy="11" r="1.2"/></g></svg></button>
-					<label class="pkl"><input type="checkbox" checked={!c.missing && !cols.layout.hidden.includes(id)} disabled={c.missing} onchange={() => cols.flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">Not reported yet</span>{/if}</label>
-				</li>
-			{/each}
-		</ul>
-		<p id="dl-pick-help" class="help">Drag a handle, or press Space on it, then ↑/↓ and Enter.</p>
-		<div class="pf"><button type="button" class="lk" onclick={cols.resetAll} data-testid="dl-pick-reset">Reset to default</button></div>
-		<span class="sr" aria-live="polite">{cols.said}</span>
-	</div>
-{/if}
+<DlColumnPicker {cols} />
 
 </div>
 
@@ -1002,7 +984,7 @@
 	.drow > .dline { cursor: pointer; }
 	.drow > .dline:hover { background: var(--surface-2); }
 	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
-	.bin:focus-visible, .lk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.bin:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
 	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
 	.post.square { height: var(--pi, 26px); --poster-ratio: 1; }
@@ -1062,21 +1044,6 @@
 	.ch { cursor: grab; user-select: none; touch-action: none; }
 	.ch.moving { opacity: 0.4; }
 	.ins { position: absolute; top: 2px; bottom: 2px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; z-index: 4; }
-	.ghost { position: fixed; z-index: 1000; transform: translate(-50%, -130%); padding: 3px 10px; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: 0 4px 14px rgb(0 0 0 / 0.25); color: var(--text); font: var(--t-caption); font-weight: 600; pointer-events: none; white-space: nowrap; }
-	.picker { position: fixed; z-index: 1000; width: 260px; max-height: min(440px, calc(100vh - 16px)); overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28); }
-	.ph-t { margin: 2px 6px 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
-	.pl { list-style: none; margin: 0; padding: 0; }
-	.pl li { display: flex; align-items: center; gap: 4px; height: 30px; border-radius: 6px; }
-	.pl li.held { background: var(--surface-3); }
-	.hd { display: grid; place-items: center; width: 24px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--text-muted); cursor: grab; touch-action: none; }
-	.hd:disabled { opacity: 0.3; cursor: default; }
-	.hd:focus-visible, .pkl input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pkl { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; color: var(--text); font: var(--t-footnote); cursor: pointer; }
-	.pkl > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.off .pkl { color: var(--text-muted); cursor: default; }
-	.nr { margin-left: auto; padding-right: 4px; color: var(--text-muted); font: var(--t-caption); }
-	.help { margin: 6px 6px 0; color: var(--text-muted); font: var(--t-caption); }
-	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	/* Sorting shows as a line under the column name (blue going up, red going down), so it takes no width. */
 	.sbar { position: absolute; left: 0; right: calc(4px - var(--gap)); bottom: 0; height: 2px; border-radius: 1px; background: var(--info); }
@@ -1112,7 +1079,6 @@
 	.xt { display: grid; gap: 2px; margin: 0; min-width: 0; font: var(--t-footnote); }
 	.xt b { font-weight: 600; overflow-wrap: anywhere; }
 	.xt span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.nr { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }
 	.xtabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; width: max-content; max-width: 100%; border-radius: var(--r-btn); background: var(--surface-2); }
 	.xtab { min-height: 28px; padding: 0 12px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xtab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
@@ -1241,7 +1207,6 @@
 	.xbn:hover:not(:disabled) { background: var(--surface-3); }
 	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
 	.xa { margin: 8px 0 0; }
-	.lk { min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 10px; }
 	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 	.tot { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
@@ -1260,7 +1225,6 @@
 	.st { gap: 8px; }
 	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }
 	.pcl, .bin { border-radius: var(--r-sm); }
-	.ghost, .picker { box-shadow: var(--shadow-lift); }
 	.dep { border-radius: var(--r-card); box-shadow: var(--shadow-card); }
 	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
 	.dv { height: 12px; border-top: 1px solid var(--line); }
@@ -1369,7 +1333,6 @@
 		.fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
 	.strip { gap: 4px 14px; }
-		.picker { display: none; }
 	}
 	@media (max-width: 640px) {
 		.psearch { display: flex; flex: none; align-items: center; gap: 2px; }
@@ -1474,15 +1437,15 @@
 	/* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
 	/* Chrome drops the ::-webkit rules below (and draws its own bar with arrows) once scrollbar-width/-color are set, so those are Firefox only. */
 	@supports not selector(::-webkit-scrollbar) {
-		.tw, .pb, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
+		.tw, .pb { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
 		.tw:hover, .pb:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
 	}
-	.tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+	.tw::-webkit-scrollbar, .pb::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
 	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
-	.tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
 	.tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner { background: transparent; }
-	.tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-	.tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb, .picker::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+	.tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
 	/* Desktop: the table is a card set in like the toolbar above it (14px from the side menu). */
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
@@ -1502,7 +1465,7 @@
 		/* The poster column starts under the checkbox lane's divider: centre its icon and posters between that line and the next. */
 	.ch[data-col='poster'] .lbl, .dline > .post { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
-	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover, .picker::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
 	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
 	.hdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
@@ -1552,7 +1515,7 @@
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
 		.pcl { width: 32px; height: 32px; }
-		.trchip, .qrv, .lk, .xbn { min-height: 32px; }
+		.trchip, .qrv, .xbn { min-height: 32px; }
 		.phd .xtab { min-height: 32px; }
 	}
 	/* Touch phones: every control a finger hits gets a 44px target; the

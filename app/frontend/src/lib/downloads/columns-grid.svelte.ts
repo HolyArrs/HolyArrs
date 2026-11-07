@@ -601,3 +601,6 @@ export function createColumns(ctx: ColumnsContext) {
 		get pickerKey() { return pickerKey; }
 	};
 }
+
+/** The column grid's state, as the parts that draw it receive it. */
+export type Columns = ReturnType<typeof createColumns>;
