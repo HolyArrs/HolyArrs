@@ -1,4 +1,4 @@
-
+// Card and row shapes for explore grids, plus helpers that match cards to owned titles.
 import { pickFrom, type CardArtPick } from './card-art.ts';
 import type { Fresh } from './fresh.ts';
 import type { StatusKind } from './StatusPill.svelte';
@@ -44,14 +44,75 @@ export interface ExploreRow {
 	titleLayer?: string;
 }
 
+export interface ProviderItem {
+	tmdb_id: string;
+	kind: 'movie' | 'show';
+	name: string;
+	year?: number;
+	poster?: string | null;
+	backdrop?: string | null;
+	overview?: string;
+	genres?: string[];
+	in_library: boolean;
+	title_id?: number;
+	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
+	fresh?: Fresh | null;
+	trailer_key?: string;
+	card_art?: string;
+	card_logo?: string;
+	art_has_title?: boolean;
+	streaming?: CardStreaming;
+}
+
+export interface CardStreaming {
+	service: number;
+	name: string;
+	rank?: number;
+}
+
+export type OwnedState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
+
+export interface OwnedMark {
+	state: OwnedState;
+	label: string;
+}
+
+export interface OwnedIndex {
+	byId: Map<number, TitleView>;
+	byRef: Map<string, TitleView>;
+}
+
+export type QuickAskSheet = Component<
+	{ onadded?: (t: TitleView) => void },
+	{
+		live: (c: ExploreCard) => ExploreCard;
+		action: (c: ExploreCard) => 'add' | 'ask' | null;
+		busy: (c: ExploreCard) => boolean;
+		open: (c: ExploreCard, act: 'add' | 'ask') => Promise<void>;
+	}
+>;
+
+// Most cards one row shows.
 export const ROW_MAX = 20;
 
 const kindWord: Record<CardKind, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
+
+// Slot states that count as having the file.
+const fullStates = new Set(['in_library', 'better_wanted', 'no_hardlink']);
+
+const ownedWords: Record<OwnedState, string> = {
+	available: 'In your library',
+	partial: 'Partly available',
+	downloading: 'Downloading',
+	requested: 'Requested',
+	declined: 'Declined'
+};
 
 export function kindOf(k: string): CardKind {
 	return k === 'show' || k === 'artist' ? k : 'movie';
 }
 
+// Buckets are loose so odd crops like 1920x800 still read as 1080p.
 export function quality(t: Pick<TitleView, 'slots'>): string | undefined {
 	let best = 0;
 	for (const s of t.slots ?? []) {
@@ -80,6 +141,7 @@ export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): Ex
 	};
 }
 
+
 export const tmdbArtName = (kind: 'movie' | 'show', tmdb: string) => `tmdb-art-${kind}-${tmdb}`;
 
 export function cardPill(c: ExploreCard, who: Audience): TitleStatus | null {
@@ -95,39 +157,15 @@ export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean 
 	return null;
 }
 
+// Unreleased or episodic cards have no file yet, so they follow by TMDB id.
 export function followsByTmdb(c: Pick<ExploreCard, 'kind' | 'titleId' | 'fresh' | 'year'>): boolean {
 	return !c.titleId && (c.kind === 'show' || c.fresh?.kind === 'coming' || (!!c.year && c.year > new Date().getFullYear()));
 }
 
+// Only TMDB refs of movies and shows give an id.
 export function cardTmdb(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
 	if ((c.kind !== 'movie' && c.kind !== 'show') || !c.ref?.startsWith('tmdb:')) return '';
 	return c.ref.slice(5);
-}
-
-export interface ProviderItem {
-	tmdb_id: string;
-	kind: 'movie' | 'show';
-	name: string;
-	year?: number;
-	poster?: string | null;
-	backdrop?: string | null;
-	overview?: string;
-	genres?: string[];
-	in_library: boolean;
-	title_id?: number;
-	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
-	fresh?: Fresh | null;
-	trailer_key?: string;
-	card_art?: string;
-	card_logo?: string;
-	art_has_title?: boolean;
-	streaming?: CardStreaming;
-}
-
-export interface CardStreaming {
-	service: number;
-	name: string;
-	rank?: number;
 }
 
 export function discoverCard(d: ProviderItem, row: string): ExploreCard {
@@ -151,31 +189,14 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 	};
 }
 
+// Overlays fresh ask or library state on a cached card.
 export function liveCard(c: ExploreCard, here: { ask?: AskState; titleId?: number } | undefined): ExploreCard {
 	if (here?.titleId !== undefined) return { ...c, titleId: here.titleId, status: 'in_library', statusLabel: undefined };
 	if (here?.ask) return { ...c, mine: true, status: titleStatus({ ask: here.ask }, 'staff').kind, statusLabel: undefined };
 	return c;
 }
 
-export type OwnedState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
-
-export interface OwnedMark {
-	state: OwnedState;
-	label: string;
-}
-
-function ownedKeys(kind: CardKind, ids: Record<string, string> | null | undefined): string[] {
-	const out: string[] = [];
-	if (ids?.tmdb) out.push(`${kind}:tmdb:${ids.tmdb}`);
-	if (ids?.musicbrainz) out.push(`${kind}:mbid:${ids.musicbrainz}`);
-	return out;
-}
-
-export interface OwnedIndex {
-	byId: Map<number, TitleView>;
-	byRef: Map<string, TitleView>;
-}
-
+// Indexes titles by id and by external ref so cards from providers can find them.
 export function ownedIndex(titles: TitleView[]): OwnedIndex {
 	const byId = new Map<number, TitleView>();
 	const byRef = new Map<string, TitleView>();
@@ -195,16 +216,7 @@ export function ownedTitle(c: Pick<ExploreCard, 'kind' | 'ref' | 'titleId'>, idx
 	return idx.byRef.get(`${c.kind}:${scheme}:${id}`);
 }
 
-const fullStates = new Set(['in_library', 'better_wanted', 'no_hardlink']);
-
-const ownedWords: Record<OwnedState, string> = {
-	available: 'In your library',
-	partial: 'Partly available',
-	downloading: 'Downloading',
-	requested: 'Requested',
-	declined: 'Declined'
-};
-
+// Picks the badge for a card; declined only shows to staff.
 export function ownedMark(c: ExploreCard, t: TitleView | undefined, who: Audience): OwnedMark | null {
 	const mark = (state: OwnedState, label = ownedWords[state]): OwnedMark => ({ state, label });
 	if (t) {
@@ -241,18 +253,17 @@ export function matchOwned(c: ExploreCard, idx: OwnedIndex): ExploreCard {
 	return { ...c, titleId: t.id, status: titleStatus(factsOf(t), 'staff').kind, statusLabel: undefined };
 }
 
+// Stable id across rows: provider ref first, then library id, then row key.
 export function cardIdentity(c: Pick<ExploreCard, 'key' | 'kind' | 'ref' | 'titleId'>): string {
 	if (c.ref) return `${c.kind}:${c.ref}`;
 	if (c.titleId !== undefined) return `t${c.titleId}`;
 	return c.key;
 }
 
-export type QuickAskSheet = Component<
-	{ onadded?: (t: TitleView) => void },
-	{
-		live: (c: ExploreCard) => ExploreCard;
-		action: (c: ExploreCard) => 'add' | 'ask' | null;
-		busy: (c: ExploreCard) => boolean;
-		open: (c: ExploreCard, act: 'add' | 'ask') => Promise<void>;
-	}
->;
+// Artists match by MusicBrainz id, the rest by TMDB id.
+function ownedKeys(kind: CardKind, ids: Record<string, string> | null | undefined): string[] {
+	const out: string[] = [];
+	if (ids?.tmdb) out.push(`${kind}:tmdb:${ids.tmdb}`);
+	if (ids?.musicbrainz) out.push(`${kind}:mbid:${ids.musicbrainz}`);
+	return out;
+}

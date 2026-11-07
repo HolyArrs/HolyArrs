@@ -1,4 +1,4 @@
-
+// Cleans and caches Wikipedia facts for titles and people.
 import { to } from '../core/paths.ts';
 
 export type WikiAward = { name: string; family: string; won: boolean; year: number; for_work: string };
@@ -7,16 +7,11 @@ export type WikiFacts = { badges: string[]; awards: WikiAward[]; born?: string; 
 
 const EMPTY: WikiFacts = { badges: [], awards: [], bio: null };
 
-const str = (v: unknown) => (typeof v === 'string' ? v : '');
-
-const ownPhoto = /^\/api\/v1\/artwork\/img\/person\/\d+\/\d+\.(?:webp|jpg)(?:\?v=[A-Za-z0-9_-]+)?$/;
-function personImage(v: string): string | undefined {
-	if (ownPhoto.test(v)) return to(v);
-	return /^https:\/\/(upload\.wikimedia\.org|static\.tvmaze\.com)\//.test(v) ? v : undefined;
-}
-
 export const CC_BY_SA = 'https://creativecommons.org/licenses/by-sa/4.0/';
 
+const cache = new Map<string, Promise<WikiFacts>>();
+
+// Only https Wikipedia links are trusted for display.
 export function wikipediaURL(v: unknown): string {
 	try {
 		const u = new URL(str(v));
@@ -26,8 +21,10 @@ export function wikipediaURL(v: unknown): string {
 	}
 }
 
+// Unknown or unsafe license links fall back to CC BY-SA.
 export const licenseURL = (v: unknown) => (str(v).startsWith('https://creativecommons.org/') && !/[\s"<>]/.test(str(v)) ? str(v) : CC_BY_SA);
 
+// Drops anything malformed so the UI can trust the shape.
 export function cleanWikiFacts(raw: unknown): WikiFacts {
 	if (!raw || typeof raw !== 'object') return EMPTY;
 	const r = raw as Record<string, unknown>;
@@ -42,6 +39,7 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: personImage(str(r.image)) };
 }
 
+// Prefers major award families; max caps the lines before an "and N more".
 export function awardsTip(awards: WikiAward[], max = 6): string {
 	const line = (a: WikiAward) => `${a.won ? 'Won' : 'Nominated'}: ${a.name}${a.year ? ` (${a.year})` : ''}`;
 	const major = awards.filter((a) => a.family);
@@ -50,8 +48,7 @@ export function awardsTip(awards: WikiAward[], max = 6): string {
 	return more > 0 ? [...list, `and ${more} more`].join('\n') : list.join('\n');
 }
 
-const cache = new Map<string, Promise<WikiFacts>>();
-
+// Caches per request so repeated opens do not refetch; ids must be positive numbers.
 export function loadWikiFacts(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show' | 'person', id: string | null | undefined, name = ''): Promise<WikiFacts> {
 	if (!id || !/^[1-9][0-9]*$/.test(id)) return Promise.resolve(EMPTY);
 	const q = kind === 'person' && name ? `?name=${encodeURIComponent(name.slice(0, 100))}` : '';
@@ -62,4 +59,13 @@ export function loadWikiFacts(get: <T>(path: string) => Promise<T>, kind: 'movie
 		cache.set(key, p);
 	}
 	return p;
+}
+
+const str = (v: unknown) => (typeof v === 'string' ? v : '');
+
+// Photos are trusted only from our own artwork route or known image hosts.
+const ownPhoto = /^\/api\/v1\/artwork\/img\/person\/\d+\/\d+\.(?:webp|jpg)(?:\?v=[A-Za-z0-9_-]+)?$/;
+function personImage(v: string): string | undefined {
+	if (ownPhoto.test(v)) return to(v);
+	return /^https:\/\/(upload\.wikimedia\.org|static\.tvmaze\.com)\//.test(v) ? v : undefined;
 }

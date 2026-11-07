@@ -1,4 +1,4 @@
-// Silhouette: loading placeholders sized like the real components.
+// Barrel for the loading placeholders shown while real content loads.
 export { default as Silhouette } from './Silhouette.svelte';
 export { default as Orbit } from './Orbit.svelte';
 export { default as SkRail } from './SkRail.svelte';

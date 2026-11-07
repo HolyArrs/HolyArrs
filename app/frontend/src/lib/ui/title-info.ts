@@ -1,7 +1,7 @@
+// Reads loosely typed TMDB detail payloads into safe typed shapes.
 import type { ProviderItem } from './title-cards.ts';
 
 export type InfoKind = 'movie' | 'show';
-
 
 export interface InfoPerson {
 	name: string;
@@ -66,13 +66,11 @@ export interface InfoDetails {
 }
 
 type Raw = Record<string, unknown>;
-const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
-const pos = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
-const words = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : []);
-const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
 
+// Cast is capped so the strip stays short.
 export const MAX_CAST = 8;
 
+// Every field is checked because the payload is untrusted; bad entries are dropped.
 export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 	const people = arr(raw.people).map((p) => ({ name: str(p.name) ?? '', role: str(p.role) ?? 'actor', character: str(p.character), profile: str(p.profile), id: str(p.id) })).filter((p) => p.name);
 	const items = (v: unknown) => arr(v).filter((s) => str(s.tmdb_id) && str(s.name)) as unknown as ProviderItem[];
@@ -132,18 +130,7 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 	};
 }
 
-const day = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : undefined);
-function readDates(v: unknown): InfoDetails['dates'] {
-	const d = v && typeof v === 'object' ? (v as Raw) : {};
-	return { theaters: day(d.theaters), digital: day(d.digital), physical: day(d.physical), firstAir: day(d.first_air), lastAir: day(d.last_air) };
-}
-function readNext(v: unknown): InfoDetails['nextEpisode'] {
-	if (!v || typeof v !== 'object') return undefined;
-	const e = v as Raw;
-	const airDate = day(e.air_date);
-	return airDate ? { season: typeof e.season === 'number' ? e.season : 0, episode: typeof e.episode === 'number' ? e.episode : 0, name: str(e.name), airDate } : undefined;
-}
-
+// Prefers season 1, then the first real season, so specials do not open first.
 export function firstSeason(seasons: InfoSeason[]): number | null {
 	if (!seasons.length) return null;
 	return (seasons.find((s) => s.number === 1) ?? seasons.find((s) => s.number > 0) ?? seasons[0]).number;
@@ -159,12 +146,14 @@ export function readEpisodes(raw: Raw): InfoEpisode[] {
 		.filter((e) => e.number > 0);
 }
 
+// 135 -> "2h 15m".
 export function minutes(m?: number): string {
 	if (!m) return '';
 	const h = Math.floor(m / 60);
 	return h ? `${h}h ${m % 60 ? `${m % 60}m` : ''}`.trim() : `${m}m`;
 }
 
+// Header chips; empty when there is nothing to show.
 export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime' | 'seasons'>): string[] {
 	const out: string[] = [];
 	if (d.kind === 'movie') {
@@ -179,3 +168,21 @@ export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime
 	return out.length ? [d.kind === 'movie' ? 'Movie' : 'Show', ...out] : out;
 }
 
+// Small guards that turn unknown values into a clean value or undefined.
+const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+const pos = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
+const words = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : []);
+const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
+
+// Keeps only the YYYY-MM-DD part of a date.
+const day = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : undefined);
+function readDates(v: unknown): InfoDetails['dates'] {
+	const d = v && typeof v === 'object' ? (v as Raw) : {};
+	return { theaters: day(d.theaters), digital: day(d.digital), physical: day(d.physical), firstAir: day(d.first_air), lastAir: day(d.last_air) };
+}
+function readNext(v: unknown): InfoDetails['nextEpisode'] {
+	if (!v || typeof v !== 'object') return undefined;
+	const e = v as Raw;
+	const airDate = day(e.air_date);
+	return airDate ? { season: typeof e.season === 'number' ? e.season : 0, episode: typeof e.episode === 'number' ? e.episode : 0, name: str(e.name), airDate } : undefined;
+}
