@@ -19,10 +19,10 @@
 
 	const d = (svg: string) => / d="([^"]+)"/.exec(svg)?.[1] ?? '';
 	const LOGOS = [
-		{ k: 'plex', color: '#EBAF00', path: d(plex), x: '17%', y: '26%' },
-		{ k: 'jellyfin', color: '#00A4DC', path: d(jellyfin), x: '83%', y: '26%' },
-		{ k: 'emby', color: '#52B54B', path: d(emby), x: '17%', y: '84%' },
-		{ k: 'discord', color: '#5865F2', path: d(discord), x: '83%', y: '84%' }
+		{ k: 'plex', color: '#EBAF00', path: d(plex), x: '20%', y: '26%' },
+		{ k: 'jellyfin', color: '#00A4DC', path: d(jellyfin), x: '80%', y: '26%' },
+		{ k: 'emby', color: '#52B54B', path: d(emby), x: '20%', y: '74%' },
+		{ k: 'discord', color: '#5865F2', path: d(discord), x: '80%', y: '74%' }
 	];
 	const TINTS = ['linear-gradient(160deg,#6b7d88,#3d4a52)', 'linear-gradient(160deg,#82709a,#4f4462)', 'linear-gradient(160deg,#94795a,#5f4b36)', 'linear-gradient(160deg,#5f7b97,#384d62)'];
 
@@ -81,7 +81,7 @@
 		{/if}
 	{:else if group === 'connections'}
 		<span class="apps">
-			<svg class="cab" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50 56 C40 40 26 30 17 26M50 56 C60 40 74 30 83 26M50 56 C38 66 26 74 17 80M50 56 C62 66 74 74 83 80" /></svg>
+			<svg class="cab" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50 50 C40 38 28 30 20 26M50 50 C60 38 72 30 80 26M50 50 C40 62 28 70 20 74M50 50 C60 62 72 70 80 74" /></svg>
 			{#each LOGOS as l (l.k)}
 				<span class="tile" style="--x: {l.x}; --y: {l.y}"><svg viewBox="0 0 24 24"><path fill={l.color} d={l.path} /></svg></span>
 			{/each}
@@ -154,9 +154,9 @@
 
 	/* Linked apps: the apps it talks to, wired to HolyArrs. */
 	.apps .cab path { fill: none; stroke: var(--line-strong, var(--line)); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-dasharray: 4 5; }
-	.apps .tile { position: absolute; width: min(40cqh, 25cqw); aspect-ratio: 1; border-radius: 24%; background: var(--tile); border: 1px solid var(--tile-line); box-shadow: 0 1.2cqh 4cqh var(--art-shadow); display: grid; place-items: center; left: calc(var(--x) - min(20cqh, 12.5cqw)); top: calc(var(--y) - min(20cqh, 12.5cqw)); }
+	.apps .tile { position: absolute; width: min(30cqh, 21cqw); aspect-ratio: 1; border-radius: 24%; background: var(--tile); border: 1px solid var(--tile-line); box-shadow: 0 1.2cqh 4cqh var(--art-shadow); display: grid; place-items: center; left: calc(var(--x) - min(15cqh, 10.5cqw)); top: calc(var(--y) - min(15cqh, 10.5cqw)); }
 	.apps .tile svg { width: 56%; height: 56%; }
-	.apps .hub { width: min(48cqh, 30cqw); left: calc(50% - min(24cqh, 15cqw)); top: calc(56% - min(24cqh, 15cqw)); z-index: 2; background: #1c1d21; border-color: rgb(255 255 255 / 0.12); }
+	.apps .hub { width: min(38cqh, 26cqw); left: calc(50% - min(19cqh, 13cqw)); top: calc(50% - min(19cqh, 13cqw)); z-index: 2; background: #1c1d21; border-color: rgb(255 255 255 / 0.12); }
 	.apps .hub img { width: 62%; height: 62%; }
 
 	/* Server: a rack with a slow heartbeat. */
