@@ -2,9 +2,7 @@ package bridge
 
 import "testing"
 
-// An entry in Prowlarr that already uses HolyArrs's name (another HolyArrs)
-// is left alone: the new one gets its address in the name instead.
-func TestUniqueName(t *testing.T) {
+func TestUniqueName_TakenNames(t *testing.T) {
 	have := []app{{"name": "HolyArrs TV shows"}, {"name": "Sonarr"}}
 	if got := uniqueName(have, "HolyArrs Movies", "http://10.0.0.5:6262/radarr"); got != "HolyArrs Movies" {
 		t.Fatalf("free name changed: %q", got)

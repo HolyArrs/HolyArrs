@@ -11,39 +11,29 @@ import (
 	"time"
 )
 
-// Jackett is a Jackett the person runs. Its key alone lists the sites set
-// up there and each one's categories; HolyArrs keeps one Torznab Source per
-// site. Calls and answers: research/upstream/jackett/manual/integrations/
-// holyarrs-adapter.md, "Listing configured sites with the API key".
+// Jackett is a client for a Jackett the person runs. Its key alone lists
+// the configured sites and their categories.
 type Jackett struct {
 	URL  string // as the person typed it, any base path included
 	Key  string
 	http *http.Client
 }
 
-// NewJackett is a client for one Jackett.
-func NewJackett(base, key string) *Jackett {
-	return &Jackett{URL: strings.TrimRight(base, "/"), Key: key, http: client(30 * time.Second)}
-}
-
 // Site is one site set up in Jackett.
 type Site struct {
 	ID         string
 	Title      string
-	Type       string           // public, private, semi-private
-	Categories map[string][]int // by HolyArrs kind (movie, tv, music), from its caps
+	Type       string           // public, private or semi-private
+	Categories map[string][]int // category numbers by HolyArrs kind (movie, tv, music), from its caps
 }
 
-// FeedURL is the site's Torznab address in this Jackett.
-func (j *Jackett) FeedURL(id string) string {
-	return j.URL + "/api/v2.0/indexers/" + url.PathEscape(id) + "/results/torznab/"
-}
-
+// jackettCategory is one category in a site's caps, with its children.
 type jackettCategory struct {
 	ID   int               `xml:"id,attr"`
 	Subs []jackettCategory `xml:"subcat"`
 }
 
+// jackettList is the XML answer to the site list, or an error element.
 type jackettList struct {
 	XMLName  xml.Name
 	Code     int    `xml:"code,attr"`
@@ -59,8 +49,18 @@ type jackettList struct {
 	} `xml:"indexer"`
 }
 
-// Sites lists the sites set up in this Jackett. A wrong key is answered
-// with 200 and an error in the body, so the body decides.
+// NewJackett returns a client for one Jackett.
+func NewJackett(base, key string) *Jackett {
+	return &Jackett{URL: strings.TrimRight(base, "/"), Key: key, http: client(30 * time.Second)}
+}
+
+// FeedURL returns the Torznab address of a site in this Jackett.
+func (j *Jackett) FeedURL(id string) string {
+	return j.URL + "/api/v2.0/indexers/" + url.PathEscape(id) + "/results/torznab/"
+}
+
+// Sites lists the sites set up in this Jackett. Jackett answers a wrong key
+// with status 200 and an error in the body, so the body decides.
 func (j *Jackett) Sites(ctx context.Context) ([]Site, error) {
 	q := url.Values{"apikey": {j.Key}, "t": {"indexers"}, "configured": {"true"}}
 	status, b, err := call(ctx, j.http, http.MethodGet, j.URL+"/api/v2.0/indexers/all/results/torznab/api?"+q.Encode(), nil, nil, 16<<20)
@@ -100,9 +100,9 @@ func (j *Jackett) Sites(ctx context.Context) ([]Site, error) {
 	return out, nil
 }
 
-// kindsOf splits a site's categories into HolyArrs's kinds by the standard
-// numbers (movies 2000s, TV 5000s, audio 3000s); a site's own numbers (from
-// 100000) are left out, since Jackett names their standard parent too.
+// kindsOf splits a site's categories into HolyArrs kinds by the standard
+// numbers (movies 2000s, audio 3000s, TV 5000s). A site's own numbers start
+// at 100000 and are left out, since Jackett also lists their standard parent.
 func kindsOf(cats []jackettCategory) map[string][]int {
 	out := map[string][]int{}
 	var walk func([]jackettCategory)
@@ -133,8 +133,8 @@ func kindsOf(cats []jackettCategory) map[string][]int {
 	return out
 }
 
-// clipRunes keeps at most n letters, so a Source name with " (Jackett N)"
-// after it stays within the 80 a name may hold.
+// clipRunes keeps at most n letters, so a Source name with a suffix such as
+// " (Jackett 2)" stays within the 80 letters a name may hold.
 func clipRunes(s string, n int) string {
 	r := []rune(s)
 	if len(r) <= n {
@@ -143,7 +143,7 @@ func clipRunes(s string, n int) string {
 	return strings.TrimSpace(string(r[:n-1])) + "…"
 }
 
-// Version is not given by the site list; Test says how many sites instead.
+// siteWords words a site count for the person.
 func siteWords(n int) string {
 	if n == 1 {
 		return "1 site"

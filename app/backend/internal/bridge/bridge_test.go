@@ -15,17 +15,14 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
-// Bridges (#96) against a fake Jackett and a fake Prowlarr on this machine.
-
 const jackettKey = "jackett-test-key"
 
-// fakeJackett answers the site list the way Jackett does: 200 even for a wrong key.
+// fakeJackett answers the site list the way Jackett does, with status 200 even for a wrong key.
 type fakeJackett struct {
 	srv   *httptest.Server
 	mu    sync.Mutex
@@ -85,7 +82,7 @@ func openStore(t *testing.T) (*database.Store, *secrets.Vault) {
 	return s, v
 }
 
-func TestJackettSitesAndWrongKey(t *testing.T) {
+func TestJackettSites_WrongKey(t *testing.T) {
 	f := newFakeJackett(t, "alpha", "beta")
 	sites, err := NewJackett(f.srv.URL, jackettKey).Sites(context.Background())
 	if err != nil || len(sites) != 2 || sites[0].ID != "alpha" || sites[0].Title != "Site alpha" {
@@ -110,7 +107,7 @@ func TestJackettSitesAndWrongKey(t *testing.T) {
 	}
 }
 
-func TestJackettSourcesFollowItsSites(t *testing.T) {
+func TestJackettCheck_SourcesFollowSites(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha", "beta")
@@ -120,10 +117,10 @@ func TestJackettSourcesFollowItsSites(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := svc.Add(ctx, KindJackett, f.srv.URL+"/", jackettKey, "", domain.System); err == nil {
-		// CleanURL drops the slash before Add in the API; the store refuses the same address.
+		// The API cleans the slash before Add; the store refuses the same address.
 		t.Log("a second add with a slash is the API's to clean")
 	}
-	// A Source of the person's own with the same name as a site.
+	// A Source the person made with the same name as a site.
 	if _, err := source.Add(ctx, s, v, source.Input{Name: "Site beta", Format: "torznab", URL: "https://own.example/api"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +142,7 @@ func TestJackettSourcesFollowItsSites(t *testing.T) {
 	if err != nil || cfg.APIKey != jackettKey {
 		t.Fatalf("key %v %v", cfg.APIKey, err)
 	}
-	// The person's own changes stay; nothing changed in Jackett: nothing written.
+	// The person's own changes stay, and with nothing changed in Jackett nothing is written.
 	prio := 7
 	if _, err := source.Change(ctx, s, v, one.ID, source.Input{Name: "My alpha", Priority: &prio}, domain.System); err != nil {
 		t.Fatal(err)
@@ -158,7 +155,7 @@ func TestJackettSourcesFollowItsSites(t *testing.T) {
 	if s.WriteCount() != before {
 		t.Fatalf("a quiet check wrote %d times", s.WriteCount()-before)
 	}
-	// A site added and one removed in Jackett.
+	// One site added and one removed in Jackett.
 	f.set("beta", "gamma")
 	b, _ = svc.Get(ctx, b.ID)
 	res, err = svc.CheckJackett(ctx, b, domain.System)
@@ -186,7 +183,7 @@ func TestJackettSourcesFollowItsSites(t *testing.T) {
 	if !strings.Contains(b.LastError, "turned down the key") || b.SiteCount != 2 || svc.SourceCount(ctx, b) != 2 {
 		t.Fatalf("after failure %+v", b)
 	}
-	// Disconnect, keeping the Sources as ordinary ones.
+	// Disconnect while keeping the Sources as ordinary ones.
 	n, err := svc.Remove(ctx, b, true)
 	if err != nil || n != 2 {
 		t.Fatalf("remove %d %v", n, err)
@@ -198,7 +195,7 @@ func TestJackettSourcesFollowItsSites(t *testing.T) {
 	}
 }
 
-func TestJackettDisconnectRemovesItsSources(t *testing.T) {
+func TestJackettRemove_RemovesItsSources(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha")
@@ -302,7 +299,7 @@ func newFakeProwlarr(t *testing.T) *fakeProwlarr {
 	return f
 }
 
-func TestProwlarrConnectAddsOrUpdatesTheApp(t *testing.T) {
+func TestProwlarrConnect_AddsOrUpdatesApp(t *testing.T) {
 	ctx := context.Background()
 	f := newFakeProwlarr(t)
 	p := NewProwlarr(f.srv.URL, prowlarrKey)
@@ -348,7 +345,7 @@ func TestProwlarrConnectAddsOrUpdatesTheApp(t *testing.T) {
 	}
 }
 
-func TestFindLooksOnlyAtTheUsualPlaces(t *testing.T) {
+func TestFind_OnlyUsualPlaces(t *testing.T) {
 	j := newFakeJackett(t)
 	p := newFakeProwlarr(t)
 	old := FindHosts
@@ -366,7 +363,7 @@ func TestFindLooksOnlyAtTheUsualPlaces(t *testing.T) {
 	}
 }
 
-func TestCleanURL(t *testing.T) {
+func TestCleanURL_Variants(t *testing.T) {
 	for raw, ok := range map[string]bool{"http://jackett:9117/": true, "https://x.example/jackett": true, "jackett:9117": false, "http://u:p@x": false, "http://x/?a=1": false, "ftp://x": false} {
 		if _, err := CleanURL(raw); (err == nil) != ok {
 			t.Errorf("%s: %v", raw, err)
@@ -375,7 +372,7 @@ func TestCleanURL(t *testing.T) {
 	if u, _ := CleanURL(" http://jackett:9117/ "); u != "http://jackett:9117" {
 		t.Errorf("cleaned %q", u)
 	}
-	// A cloud's metadata address is never called.
+	// A cloud metadata address is never called.
 	if _, _, err := call(context.Background(), client(2_000_000_000), http.MethodGet, "http://169.254.169.254/", nil, nil, 10); err == nil || !strings.Contains(Words(err), "cloud") {
 		t.Errorf("metadata: %v", err)
 	}
@@ -384,10 +381,7 @@ func TestCleanURL(t *testing.T) {
 
 func nowish() time.Time { return time.Now() }
 
-// A Source added by hand for a Jackett site joins the bridge instead of
-// getting a twin, a very long site title still makes a Source, and a
-// Jackett that stays down writes nothing on each check.
-func TestJackettAdoptsHandAddedLongTitlesAndQuietWhenDown(t *testing.T) {
+func TestJackettCheck_AdoptsHandAddedLongTitleQuietWhenDown(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	long := strings.Repeat("x", 95)
@@ -417,7 +411,7 @@ func TestJackettAdoptsHandAddedLongTitlesAndQuietWhenDown(t *testing.T) {
 	if b.LastError != "" {
 		t.Fatalf("error %q", b.LastError)
 	}
-	// Down, then still down: the second failed check writes nothing.
+	// Down and then still down: the second failed check writes nothing.
 	f.srv.Close()
 	_, _ = svc.CheckJackett(ctx, b, domain.System)
 	b, _ = svc.Get(ctx, b.ID)
@@ -433,9 +427,7 @@ func TestJackettAdoptsHandAddedLongTitlesAndQuietWhenDown(t *testing.T) {
 
 func ptrTrue() *bool { t := true; return &t }
 
-// A Source the person removes stays away at the next check; connecting the
-// same Jackett again brings it back.
-func TestJackettRemovedSourceStaysAway(t *testing.T) {
+func TestJackettCheck_RemovedSourceStaysAway(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha", "beta")
@@ -469,9 +461,7 @@ func TestJackettRemovedSourceStaysAway(t *testing.T) {
 	}
 }
 
-// Only a Jackett on the local network gives its Sources the local-network
-// allowance, and a change follows on the next check.
-func TestJackettLocalAllowanceFollowsItsAddress(t *testing.T) {
+func TestJackettCheck_LocalAllowanceFollowsAddress(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha")
@@ -504,7 +494,7 @@ func TestJackettLocalAllowanceFollowsItsAddress(t *testing.T) {
 	}
 }
 
-func TestLocalAddress(t *testing.T) {
+func TestLocalAddress_Variants(t *testing.T) {
 	ctx := context.Background()
 	for raw, want := range map[string]bool{
 		"http://127.0.0.1:9117": true, "http://10.0.0.5:9117": true, "http://192.168.1.2:9117/jackett": true,

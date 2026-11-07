@@ -10,29 +10,31 @@ import (
 	"time"
 )
 
+// findHosts are the usual places a bridge runs beside HolyArrs: this
+// machine, the Docker host and the Docker addresses. Only these are tried,
+// the network is never scanned.
+var findHosts = []string{"localhost", "127.0.0.1", "host.docker.internal", "172.17.0.1"}
+
+// findPorts are the default ports of each kind.
+var findPorts = map[string]string{KindJackett: "9117", KindProwlarr: "9696"}
+
+// FindHosts returns the hosts to try; tests replace it to point at fakes.
+var FindHosts = func() []string { return findHosts }
+
 // Found is a Jackett or Prowlarr that answered at an address.
 type Found struct {
 	Kind string `json:"kind"`
 	URL  string `json:"url"`
 }
 
-// findHosts are the usual places a Jackett or Prowlarr runs beside
-// HolyArrs: this machine, the Docker host, and the usual Docker names. Only
-// these are tried, never a scan of the network.
-var findHosts = []string{"localhost", "127.0.0.1", "host.docker.internal", "172.17.0.1"}
-
-var findPorts = map[string]string{KindJackett: "9117", KindProwlarr: "9696"}
-
-// FindHosts lets tests point the finder at their fake servers.
-var FindHosts = func() []string { return findHosts }
-
-// Find tries the usual addresses at once, each with a short wait, and
-// answers the ones where Jackett or Prowlarr answered, Jackett first.
-// Nothing is sent but a plain look at a page that needs no key.
+// Find tries the usual addresses at once with a short wait and returns the
+// ones where a bridge answered, Jackett first. It only fetches one public
+// page per address and sends no key.
 func Find(ctx context.Context) []Found {
 	var cands []Found
 	for _, kind := range []string{KindJackett, KindProwlarr} {
-		hosts := append(slices.Clone(FindHosts()), kind) // the Docker name
+		// The kind itself is also a host: the usual Docker service name.
+		hosts := append(slices.Clone(FindHosts()), kind)
 		for _, h := range hosts {
 			if !strings.Contains(h, ":") {
 				h += ":" + findPorts[kind]
@@ -56,7 +58,7 @@ func Find(ctx context.Context) []Found {
 		}()
 	}
 	wg.Wait()
-	// One answer per bridge: localhost and 127.0.0.1 are the same one.
+	// localhost and 127.0.0.1 are the same bridge, so keep one answer for them.
 	slices.SortFunc(out, func(a, b Found) int {
 		if a.Kind != b.Kind {
 			return strings.Compare(a.Kind, b.Kind)
@@ -82,21 +84,11 @@ func Find(ctx context.Context) []Found {
 	return uniq
 }
 
-func rank(u string) string {
-	switch {
-	case strings.Contains(u, "://jackett:"), strings.Contains(u, "://prowlarr:"):
-		return "0" + u
-	case strings.Contains(u, "localhost"):
-		return "1" + u
-	}
-	return "2" + u
-}
-
-// Looks says whether the address answers like that kind, without a key:
-// Prowlarr's health probe answers an OK status, and Jackett's feed answers a
-// call without a key with its own "invalid key" error (code 100, status 200;
-// its sign-in page only redirects). A wrong guess costs nothing; the Test
-// with the key decides.
+// Looks says whether the address answers like that kind, without a key.
+// Prowlarr answers its ping with an OK status. Jackett answers a call
+// without a key with its own invalid-key error (code 100, status 200),
+// while its sign-in page only redirects. A wrong guess costs nothing since
+// the Test with the key decides.
 func Looks(ctx context.Context, hc *http.Client, kind, base string) bool {
 	path := "/api/v2.0/indexers/all/results/torznab/api?t=caps"
 	if kind == KindProwlarr {
@@ -111,4 +103,16 @@ func Looks(ctx context.Context, hc *http.Client, kind, base string) bool {
 		return status == http.StatusOK && bytes.Contains(low, []byte(`"status"`)) && bytes.Contains(low, []byte("ok"))
 	}
 	return status == http.StatusOK && bytes.Contains(low, []byte("<error")) && bytes.Contains(low, []byte(`code="100"`))
+}
+
+// rank orders addresses so the Docker name sorts before localhost and
+// localhost before the rest, which decides which duplicate is kept.
+func rank(u string) string {
+	switch {
+	case strings.Contains(u, "://jackett:"), strings.Contains(u, "://prowlarr:"):
+		return "0" + u
+	case strings.Contains(u, "localhost"):
+		return "1" + u
+	}
+	return "2" + u
 }

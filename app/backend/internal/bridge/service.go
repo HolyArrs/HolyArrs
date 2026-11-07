@@ -13,16 +13,32 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
-// KindCheck keeps every Jackett bridge's Sources in step with its sites.
+// KindCheck is the job kind that keeps every Jackett bridge's Sources in
+// step with its sites.
 const KindCheck = "check_bridges"
+
+// Keys in a Source's extra data that tie it to the bridge it came from.
+const (
+	extraBridge = "bridge"
+	extraSite   = "bridge_site"
+)
+
+// Keys in a Jackett bridge's extra data. known_sites lists the sites it has
+// brought in, so a site with no Source was removed by the person and stays
+// away. local is "1" when the address is on the local network.
+const (
+	extraKnown = "known_sites"
+	extraLocal = "local"
+)
+
+// ErrTaken says that this Jackett or Prowlarr is already connected.
+var ErrTaken = errors.New("already connected")
 
 // Bridge is one connected Jackett or Prowlarr.
 type Bridge struct {
@@ -37,48 +53,43 @@ type Bridge struct {
 	Extra       map[string]string `db:"extra,json"`
 }
 
-// Extras a Source made from a bridge keeps.
-const (
-	extraBridge = "bridge"
-	extraSite   = "bridge_site"
-)
-
-// Extras a Jackett bridge keeps: the sites it has brought in (a site in it
-// with no Source was removed by the person and stays away), and whether its
-// address is on the local network ("1").
-const (
-	extraKnown = "known_sites"
-	extraLocal = "local"
-)
-
-// ErrTaken says that Jackett or Prowlarr is already connected.
-var ErrTaken = errors.New("already connected")
+// Result is what one check of a Jackett did.
+type Result struct {
+	Sites   int `json:"sites"`
+	Added   int `json:"added"`
+	Updated int `json:"updated"`
+	Removed int `json:"removed"`
+	Skipped int `json:"skipped"` // sites whose Source the person removed
+}
 
 // Service keeps bridges and their Sources.
 type Service struct {
 	Store *database.Store
 	Vault *secrets.Vault
 
-	mu      sync.Mutex
-	checked map[int64]time.Time // the last quiet check, kept in memory (no write when nothing changed)
-	// work lets one check or removal change a bridge's Sources at a time
-	// (Check now beside the scheduled check would otherwise add a site twice).
+	mu sync.Mutex
+	// checked holds the last quiet check in memory, so an unchanged check
+	// writes nothing.
+	checked map[int64]time.Time
+	// work lets one check or removal change a bridge's Sources at a time.
+	// Without it, Check now beside the scheduled check could add a site twice.
 	work sync.Mutex
 }
 
-// List is every bridge, oldest first.
+// List returns every bridge, oldest first.
 func (s *Service) List(ctx context.Context) ([]Bridge, error) {
 	return database.Select[Bridge](ctx, s.Store.Read(), "bridges", "1=1 ORDER BY id")
 }
 
-// Get is one bridge.
+// Get returns one bridge.
 func (s *Service) Get(ctx context.Context, id int64) (Bridge, error) {
 	var b Bridge
 	err := database.Get(ctx, s.Store.Read(), "bridges", id, &b)
 	return b, err
 }
 
-// LastChecked is the newest check, a quiet one in memory or the stored one.
+// LastChecked returns the newest check time, a quiet one from memory or the
+// stored one.
 func (s *Service) LastChecked(b Bridge) *time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -88,16 +99,7 @@ func (s *Service) LastChecked(b Bridge) *time.Time {
 	return b.LastCheck
 }
 
-func (s *Service) quiet(id int64, at time.Time) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.checked == nil {
-		s.checked = map[int64]time.Time{}
-	}
-	s.checked[id] = at
-}
-
-// Key is a bridge's key (never shown).
+// Key returns a bridge's key. It is never shown to the person.
 func (s *Service) Key(ctx context.Context, b Bridge) (string, error) {
 	if b.SecretRef == nil || s.Vault == nil {
 		return "", nil
@@ -105,7 +107,8 @@ func (s *Service) Key(ctx context.Context, b Bridge) (string, error) {
 	return s.Vault.Get(ctx, *b.SecretRef)
 }
 
-// Add stores a new bridge with its key.
+// Add stores a new bridge with its key, or returns ErrTaken when that kind
+// and address are already connected.
 func (s *Service) Add(ctx context.Context, kind, url, key, callback string, by domain.Actor) (Bridge, error) {
 	b := Bridge{Kind: kind, URL: url, CallbackURL: callback, Extra: map[string]string{}}
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -129,7 +132,7 @@ func (s *Service) Add(ctx context.Context, kind, url, key, callback string, by d
 	return b, err
 }
 
-// Find is the bridge of that kind at that address, if one is connected.
+// Find returns the bridge of that kind at that address, if one is connected.
 func (s *Service) Find(ctx context.Context, kind, url string) (Bridge, bool) {
 	bs, err := s.List(ctx)
 	if err != nil {
@@ -143,8 +146,8 @@ func (s *Service) Find(ctx context.Context, kind, url string) (Bridge, bool) {
 	return Bridge{}, false
 }
 
-// Update gives a connected bridge a new key and callback address (connected
-// again after its key or HolyArrs's address changed).
+// Update gives a connected bridge a new key and callback address. It is used
+// when the key or HolyArrs's address changed and the person connects again.
 func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by domain.Actor) (Bridge, error) {
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if key != "" {
@@ -160,7 +163,8 @@ func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by
 			b.SecretRef = &id
 		}
 		b.CallbackURL = callback
-		delete(b.Extra, extraKnown) // connecting again brings back the sites the person removed
+		// Connecting again brings back the sites the person removed.
+		delete(b.Extra, extraKnown)
 		return database.Update(tx, "bridges", &b, by)
 	})
 	if err != nil {
@@ -169,8 +173,9 @@ func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by
 	return s.Get(ctx, b.ID)
 }
 
-// Remove takes a bridge away. With keepSources its Sources stay as
-// ordinary ones (no longer kept in step); otherwise they go too.
+// Remove takes a bridge away and returns how many Sources it had brought in.
+// With keepSources they stay as ordinary Sources that are no longer kept in
+// step; otherwise they are removed too.
 func (s *Service) Remove(ctx context.Context, b Bridge, keepSources bool) (int, error) {
 	s.work.Lock()
 	defer s.work.Unlock()
@@ -202,70 +207,22 @@ func (s *Service) Remove(ctx context.Context, b Bridge, keepSources bool) (int, 
 	return len(srcs), err
 }
 
-// sourcesOf are the Sources a bridge brought in: for Jackett the ones it
-// made, for Prowlarr the ones its app sync wrote (old-app Sources whose feed
-// is on this Prowlarr).
-func (s *Service) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
-	if b.Kind == KindProwlarr {
-		return database.Select[domain.Source](ctx, s.Store.Read(), "sources",
-			"json_extract(extra, '$.old_app') IS NOT NULL AND lower(url) LIKE lower(?) ESCAPE '\\' ORDER BY id", likePrefix(b.URL))
-	}
-	return database.Select[domain.Source](ctx, s.Store.Read(), "sources", "json_extract(extra, '$.bridge') = ? ORDER BY id", strconv.FormatInt(b.ID, 10))
-}
-
-// likePrefix is a LIKE pattern matching addresses that start with u.
-func likePrefix(u string) string {
-	r := strings.NewReplacer("\\", "\\\\", "%", "\\%", "_", "\\_")
-	return r.Replace(strings.TrimRight(u, "/")) + "/%"
-}
-
-// SourceCount is how many Sources a bridge brought in.
+// SourceCount returns how many Sources a bridge brought in.
 func (s *Service) SourceCount(ctx context.Context, b Bridge) int {
 	srcs, _ := s.sourcesOf(ctx, b)
 	return len(srcs)
 }
 
-// Result is what one check of a Jackett did.
-type Result struct {
-	Sites   int `json:"sites"`
-	Added   int `json:"added"`
-	Updated int `json:"updated"`
-	Removed int `json:"removed"`
-	Skipped int `json:"skipped"` // sites whose Source the person removed
-}
-
-// record keeps the outcome of a check. A quiet check (same count, same
-// error, nothing changed) is kept in memory only, so an idle app writes nothing.
-func (s *Service) record(ctx context.Context, b Bridge, sites int, changed bool, err error) {
-	now := time.Now().UTC()
-	words := ""
-	if err != nil {
-		words = Words(err)
-	}
-	if err != nil {
-		sites = b.SiteCount // a failed check keeps the last known count
-	}
-	if !changed && sites == b.SiteCount && words == b.LastError && b.LastCheck != nil {
-		s.quiet(b.ID, now)
-		return
-	}
-	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, e := tx.ExecContext(ctx, `UPDATE bridges SET last_check = ?, last_error = ?, site_count = ?, updated_at = ? WHERE id = ?`,
-			database.FormatTime(now), words, sites, database.FormatTime(now), b.ID)
-		return e
-	})
-	s.quiet(b.ID, now)
-}
-
-// CheckJackett reads a Jackett's sites and keeps its Sources in step: a new
-// site becomes a Source, a site gone takes its Source away, and an address,
-// key or category change follows. Everything else on a Source (its name,
-// priority, use, limits, tags) is the person's and stays.
+// CheckJackett reads a Jackett's sites and keeps its Sources in step. A new
+// site becomes a Source, a site that is gone loses its Source, and a change
+// of address, key or category follows. Everything else on a Source (name,
+// priority, use, limits, tags) belongs to the person and stays.
 func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (Result, error) {
 	s.work.Lock()
 	defer s.work.Unlock()
 	if fresh, err := s.Get(ctx, b.ID); err == nil {
-		b = fresh // the check waited for another one
+		// Another check may have changed the bridge while this one waited.
+		b = fresh
 	}
 	key, err := s.Key(ctx, b)
 	if err != nil {
@@ -288,7 +245,8 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 	}
 	keyChanged := b.Extra["key_hint"] != hint(key)
 	// Only a Jackett on this machine or the local network gives its Sources
-	// the local-network allowance; a name that can't be looked up keeps the last answer.
+	// the local-network allowance. A name that can't be looked up keeps the
+	// last answer.
 	local, ok := IsLocal(ctx, b.URL)
 	if !ok {
 		local = b.Extra[extraLocal] == "1"
@@ -300,7 +258,9 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		known[id] = true
 	}
 	var failed []string
-	notIn := map[string]bool{} // sites that could not be added: tried again next time
+	// notIn holds the sites that could not be added, so they are tried again
+	// next time.
+	notIn := map[string]bool{}
 	adopted := map[string]bool{}
 	for _, site := range sites {
 		feed := j.FeedURL(site.ID)
@@ -339,7 +299,8 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 			continue
 		}
 		if known[site.ID] {
-			res.Skipped++ // brought in before and removed by the person
+			// It was brought in before and the person removed it.
+			res.Skipped++
 			continue
 		}
 		in := source.Input{Name: s.freeName(ctx, site.Title), Format: "torznab", Protocol: "torrent", URL: feed, APIKey: key,
@@ -351,7 +312,8 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 			return err
 		})
 		if err != nil {
-			failed = append(failed, site.Title) // one site that can't be added does not stop the others
+			// One site that can't be added does not stop the others.
+			failed = append(failed, site.Title)
 			notIn[site.ID] = true
 			continue
 		}
@@ -393,59 +355,6 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 	return res, nil
 }
 
-// hint tells keys apart without keeping one: its length and last two characters.
-func hint(key string) string {
-	if len(key) < 4 {
-		return strconv.Itoa(len(key))
-	}
-	return strconv.Itoa(len(key)) + key[len(key)-2:]
-}
-
-func kindList(cats map[string][]int) []string {
-	var out []string
-	for _, k := range []string{"movie", "tv", "music"} {
-		if len(cats[k]) > 0 {
-			out = append(out, k)
-		}
-	}
-	if len(out) == 0 {
-		return []string{"movie", "tv"} // a site that names no standard category: the usual two
-	}
-	return out
-}
-
-func sameCategories(a, b map[string][]int) bool {
-	return maps.EqualFunc(nonEmpty(a), nonEmpty(b), func(x, y []int) bool { return slices.Equal(x, y) })
-}
-
-func nonEmpty(m map[string][]int) map[string][]int {
-	out := map[string][]int{}
-	for k, v := range m {
-		if len(v) > 0 {
-			out[k] = v
-		}
-	}
-	return out
-}
-
-// freeName is a site's title, or "<title> (Jackett)", "<title> (Jackett 2)"… when a Source has the name.
-func (s *Service) freeName(ctx context.Context, title string) string {
-	for i := 1; ; i++ {
-		name := title
-		switch {
-		case i == 2:
-			name = title + " (Jackett)"
-		case i > 2:
-			name = title + " (Jackett " + strconv.Itoa(i-1) + ")"
-		}
-		var n int
-		_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM sources WHERE lower(name) = lower(?)", name).Scan(&n)
-		if n == 0 {
-			return name
-		}
-	}
-}
-
 // HandleCheck is the scheduled check of every Jackett bridge.
 func (s *Service) HandleCheck(ctx context.Context, r *jobs.Run) error {
 	bs, err := s.List(ctx)
@@ -472,16 +381,128 @@ func (s *Service) HandleCheck(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-// Probe says whether there is a Jackett bridge to check (none: the
-// scheduled check does not run at all).
+// Probe says whether there is a Jackett bridge to check. When there is none
+// the scheduled check does not run at all.
 func (s *Service) Probe(ctx context.Context, _ time.Time) (bool, any, error) {
 	var n int
 	err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM bridges WHERE kind = ?", KindJackett).Scan(&n)
 	return n > 0, nil, err
 }
 
-// RecordProwlarr keeps the outcome of a Prowlarr connect or sync; its Sources
-// are written by Prowlarr through the old-app API, so they are counted there.
+// RecordProwlarr keeps the outcome of a Prowlarr connect or sync. Prowlarr
+// writes its Sources through the old-app API, so they are counted there.
 func (s *Service) RecordProwlarr(ctx context.Context, b Bridge, err error) {
 	s.record(ctx, b, s.SourceCount(ctx, b), false, err)
+}
+
+// quiet remembers a check in memory without writing it.
+func (s *Service) quiet(id int64, at time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.checked == nil {
+		s.checked = map[int64]time.Time{}
+	}
+	s.checked[id] = at
+}
+
+// sourcesOf returns the Sources a bridge brought in. For Jackett these are
+// the ones it made. For Prowlarr they are the ones its app sync wrote, which
+// are old-app Sources whose feed is on this Prowlarr.
+func (s *Service) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
+	if b.Kind == KindProwlarr {
+		return database.Select[domain.Source](ctx, s.Store.Read(), "sources",
+			"json_extract(extra, '$.old_app') IS NOT NULL AND lower(url) LIKE lower(?) ESCAPE '\\' ORDER BY id", likePrefix(b.URL))
+	}
+	return database.Select[domain.Source](ctx, s.Store.Read(), "sources", "json_extract(extra, '$.bridge') = ? ORDER BY id", strconv.FormatInt(b.ID, 10))
+}
+
+// likePrefix returns a LIKE pattern for addresses that start with u, with
+// the pattern characters in u escaped.
+func likePrefix(u string) string {
+	r := strings.NewReplacer("\\", "\\\\", "%", "\\%", "_", "\\_")
+	return r.Replace(strings.TrimRight(u, "/")) + "/%"
+}
+
+// record keeps the outcome of a check. A quiet check (same count, same
+// error, nothing changed) is kept in memory only, so an idle app writes
+// nothing.
+func (s *Service) record(ctx context.Context, b Bridge, sites int, changed bool, err error) {
+	now := time.Now().UTC()
+	words := ""
+	if err != nil {
+		words = Words(err)
+	}
+	if err != nil {
+		// A failed check keeps the last known count.
+		sites = b.SiteCount
+	}
+	if !changed && sites == b.SiteCount && words == b.LastError && b.LastCheck != nil {
+		s.quiet(b.ID, now)
+		return
+	}
+	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(ctx, `UPDATE bridges SET last_check = ?, last_error = ?, site_count = ?, updated_at = ? WHERE id = ?`,
+			database.FormatTime(now), words, sites, database.FormatTime(now), b.ID)
+		return e
+	})
+	s.quiet(b.ID, now)
+}
+
+// hint tells keys apart without keeping one: its length and last two
+// characters.
+func hint(key string) string {
+	if len(key) < 4 {
+		return strconv.Itoa(len(key))
+	}
+	return strconv.Itoa(len(key)) + key[len(key)-2:]
+}
+
+// kindList returns the HolyArrs kinds a site has categories for.
+func kindList(cats map[string][]int) []string {
+	var out []string
+	for _, k := range []string{"movie", "tv", "music"} {
+		if len(cats[k]) > 0 {
+			out = append(out, k)
+		}
+	}
+	if len(out) == 0 {
+		// A site with no standard category gets the usual two kinds.
+		return []string{"movie", "tv"}
+	}
+	return out
+}
+
+// sameCategories compares two category sets, ignoring kinds with none.
+func sameCategories(a, b map[string][]int) bool {
+	return maps.EqualFunc(nonEmpty(a), nonEmpty(b), func(x, y []int) bool { return slices.Equal(x, y) })
+}
+
+// nonEmpty returns m without the kinds that have no categories.
+func nonEmpty(m map[string][]int) map[string][]int {
+	out := map[string][]int{}
+	for k, v := range m {
+		if len(v) > 0 {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+// freeName returns a site's title, or "<title> (Jackett)" and then
+// "<title> (Jackett 2)" and so on, until no Source has that name.
+func (s *Service) freeName(ctx context.Context, title string) string {
+	for i := 1; ; i++ {
+		name := title
+		switch {
+		case i == 2:
+			name = title + " (Jackett)"
+		case i > 2:
+			name = title + " (Jackett " + strconv.Itoa(i-1) + ")"
+		}
+		var n int
+		_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM sources WHERE lower(name) = lower(?)", name).Scan(&n)
+		if n == 0 {
+			return name
+		}
+	}
 }

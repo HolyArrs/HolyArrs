@@ -1,10 +1,3 @@
-// Package bridge connects HolyArrs to a Jackett or Prowlarr the person
-// runs (#96), so the sites set up there become Sources in one step and
-// stay in step. Jackett: HolyArrs reads its configured sites and keeps one
-// Torznab Source per site. Prowlarr: HolyArrs adds itself to Prowlarr as an
-// app, and Prowlarr's own app sync (roadmap #85, internal/compat) writes
-// the Sources. Facts about both come from their manuals
-// (research/upstream/{jackett,prowlarr}/manual).
 package bridge
 
 import (
@@ -13,30 +6,31 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
-// Kinds of bridge.
+// The kinds of bridge.
 const (
 	KindJackett  = "jackett"
 	KindProwlarr = "prowlarr"
 )
 
-// Error is a failed call to a bridge, in plain words; it never holds the key.
+// Error is a failed call to a bridge, worded for the person. It never holds
+// the key.
 type Error struct {
 	Words string
 }
 
+// Error returns the plain words of the failure.
 func (e *Error) Error() string { return e.Words }
 
-func fail(format string, args ...any) error { return &Error{Words: fmt.Sprintf(format, args...)} }
-
-// Words is what went wrong, for the person.
+// Words returns what went wrong, worded for the person.
 func Words(err error) string {
 	var be *Error
 	if errors.As(err, &be) {
@@ -48,18 +42,8 @@ func Words(err error) string {
 	return "Something went wrong talking to it."
 }
 
-// client talks to a bridge on the home network: local addresses are fine
-// (that is where these run), a cloud's metadata address never is, and
-// redirects are not followed (a key must not go to another host).
-func client(timeout time.Duration) *http.Client {
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.Proxy = nil
-	t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
-	return &http.Client{Timeout: timeout, Transport: t, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-}
-
-// CleanURL checks a bridge address: http or https, a host, no name or
-// password, no ? part; the trailing slash is dropped.
+// CleanURL checks a bridge address and drops its trailing slash. It must be
+// http or https with a host, and carry no user, password, query or fragment.
 func CleanURL(raw string) (string, error) {
 	raw = strings.TrimRight(strings.TrimSpace(raw), "/")
 	u, err := url.Parse(raw)
@@ -69,7 +53,21 @@ func CleanURL(raw string) (string, error) {
 	return raw, nil
 }
 
-// call does one request and reads at most limit bytes of the answer.
+func fail(format string, args ...any) error { return &Error{Words: fmt.Sprintf(format, args...)} }
+
+// client builds an HTTP client for a bridge on the home network. Local
+// addresses are allowed because bridges run there, but a cloud metadata
+// address is refused. Redirects are not followed so a key never goes to
+// another host.
+func client(timeout time.Duration) *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.Proxy = nil
+	t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
+	return &http.Client{Timeout: timeout, Transport: t, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+}
+
+// call sends one request and reads at most limit bytes of the answer, so a
+// huge or hostile reply cannot fill memory.
 func call(ctx context.Context, hc *http.Client, method, target string, header map[string]string, body any, limit int64) (int, []byte, error) {
 	var rd io.Reader
 	if body != nil {
