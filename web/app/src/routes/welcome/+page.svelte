@@ -638,10 +638,10 @@
 	{:else if step === 'media'}
 		<form class="card" onsubmit={(e) => { e.preventDefault(); void saveMedia(false); }} data-testid="welcome-media">
 			<PageLoader loading={!rows.length} label="Loading folders">
-			<ul class="rows">
+			<ul class="rows media-list">
 				{#each rows as r (r.kind)}
 					<li class="frow" class:off={!media[r.part]}>
-						<span class="ficon" aria-hidden="true"><Icon name={r.icon} size={22} /></span>
+						<span class="ficon" aria-hidden="true"><Icon name={r.icon} size={20} /></span>
 						<div class="fbody">
 							<!-- The whole top line labels the switch, so the tap target is the row. -->
 							<label class="ftop">
@@ -650,9 +650,9 @@
 							</label>
 							{#if media[r.part]}
 								{#if r.saved && !r.editing}
-									<div class="fsaved"><span class="mono">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label="Change {r.label} folder">Change</button></div>
+									<div class="fsaved"><span class="path">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label="Change {r.label} folder">Change</button></div>
 								{:else}
-									<input id="folder-{r.kind}" class="input mono" bind:value={r.path} oninput={() => (r.error = '')} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
+									<input id="folder-{r.kind}" class="input" bind:value={r.path} oninput={() => (r.error = '')} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
 									{#if r.error}<p class="form-error" id="folder-{r.kind}-error" role="alert">{r.error}</p>{/if}
 									{#if r.editing && r.saved}<button type="button" class="quiet keep" disabled={busy} onclick={() => { r.path = r.saved; r.editing = false; r.error = ''; }}>Keep {r.saved}</button>{/if}
 								{/if}
@@ -677,7 +677,7 @@
 						{@const test = dlTests[d.id]}
 						<li>
 							<div class="conn-row">
-							<div class="conn-text"><b>{d.name}</b><span class="addr mono">{d.url}</span></div>
+							<div class="conn-text"><b>{d.name}</b><span class="addr">{d.url.replace(/^https?:\/\//, '')}</span></div>
 							{#if test}<TestTag ok={test.ok} text={test.text} app={kindWords[d.kind]} />{/if}
 							</div>
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
@@ -705,7 +705,7 @@
 				</div>
 				<div class="field">
 					<label for="dl-url">Address</label>
-					<input id="dl-url" class="input mono" type="text" inputmode="url" bind:value={dl.url} oninput={() => (dlError = '')} placeholder="192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={dlError ? 'true' : undefined} aria-describedby={dlError ? 'dl-url-error' : undefined} />
+					<input id="dl-url" class="input" type="text" inputmode="url" bind:value={dl.url} oninput={() => (dlError = '')} placeholder="192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={dlError ? 'true' : undefined} aria-describedby={dlError ? 'dl-url-error' : undefined} />
 					{#if dlError}<p class="form-error" id="dl-url-error" role="alert">{dlError}</p>{/if}
 				</div>
 				<div class="two">
@@ -927,6 +927,13 @@
 	/* Media: one row per part, its icon, its name and switch, then its folder. */
 	.rows { display: flex; flex-direction: column; gap: 10px; }
 	.frow { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); transition: opacity var(--dur-fast) var(--ease-out); }
+	/* Media: one quiet group, rows split by a hairline (like Settings lists). */
+	.media-list { gap: 0; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); overflow: hidden; }
+	.media-list .frow { border: 0; border-radius: 0; background: none; padding: 6px 16px; gap: 12px; }
+	.media-list .frow + .frow { border-top: 1px solid var(--line); }
+	.media-list .frow:has(input.input) { padding-bottom: 14px; }
+	.media-list .ficon { width: 20px; height: 44px; background: none; box-shadow: none; border-radius: 0; }
+	.path { color: var(--text); font: 400 14px/1.3 var(--font-ui); overflow-wrap: anywhere; }
 	.frow.off .ficon { opacity: 0.55; }
 	.frow.off .fname { color: var(--text-muted); }
 	.ficon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-1); color: var(--text-muted); box-shadow: 0 0 0 1px var(--line); }
@@ -995,6 +1002,8 @@
 		.hint { margin-top: 8px; }
 		.dots { margin-top: 16px; }
 		.ficon { width: 36px; height: 36px; }
+		.media-list .ficon { width: 20px; height: 44px; }
+		.media-list .frow { padding: 6px 14px; }
 	}
 	@media (pointer: coarse), (max-width: 520px) {
 		.alt { min-height: 44px; }
