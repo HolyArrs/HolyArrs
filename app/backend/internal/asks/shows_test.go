@@ -559,7 +559,7 @@ func TestShowAskFutureOnlyForShowInLibrary(t *testing.T) {
 	}
 }
 
-// #139: an approved show ask is looked for at once (scan, then a search of
+// an approved show ask is looked for at once (scan, then a search of
 // what the title wants), not at the next missing search hours away; with
 // Search on approve off it waits for that search as before.
 func TestApprovedShowAskSearchesAtOnce(t *testing.T) {

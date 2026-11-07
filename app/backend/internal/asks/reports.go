@@ -17,7 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Reports (#95): anyone signed in tells the owner and admins about a
+// Reports: anyone signed in tells the owner and admins about a
 // problem with a title in the Library. The staff get an Alert; marking it
 // fixed (with an optional reply) leaves the reporter a message and sends
 // them an Alert. There is no thread: one optional reply closes it.

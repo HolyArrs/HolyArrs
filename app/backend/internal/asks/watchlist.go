@@ -21,7 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
-// Plex watchlist sync (roadmap #102): people who turn it on have the
+// Plex watchlist sync: people who turn it on have the
 // newest entries of their Plex watchlist asked for as them, every few
 // minutes, through the normal ask path (weekly limits, auto-approve,
 // joining an open ask and age-rating limits all apply). Each entry is acted

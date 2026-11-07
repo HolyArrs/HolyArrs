@@ -424,7 +424,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		}
 	}
 	// Albums taken in get their tracks with the refresh that follows: an
-	// artist already in the Library is searched after it (#139).
+	// artist already in the Library is searched after it.
 	searchAfter := set.SearchOnApprove && !added && len(widen) > 0
 	if len(widen) > 0 {
 		if err := s.Library.IncludeAlbumsThen(ctx, tid, widen, searchAfter, by.actor()); err != nil {

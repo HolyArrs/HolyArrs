@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// #139: an approved ask says where it is from the server's records: the
+// an approved ask says where it is from the server's records: the
 // search its approval started, a download, an import, a decision waiting
 // on a person, or why nothing is coming yet (the search's words for staff).
 func TestAskSteps(t *testing.T) {
@@ -68,7 +68,7 @@ func TestAskSteps(t *testing.T) {
 	}
 }
 
-// #139 review: a step is read for what the ask covers. ana asked season 1
+// a step is read for what the ask covers. ana asked season 1
 // and bo season 2 of one show: bo's season downloading is not ana's step,
 // and a Version nobody keeps up to date (so nobody searches) gives no step.
 func TestAskStepsAreTheAsksOwn(t *testing.T) {

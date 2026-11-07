@@ -9,7 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Roadmap #59: a 4K ask is its own ask, approved apart from the plain one,
+// A 4K ask is its own ask, approved apart from the plain one,
 // and approving it adds a 4K Version on the 4K Pick rules.
 func TestFourKAskAddsFourKVersion(t *testing.T) {
 	r := newRig(t)
@@ -44,14 +44,17 @@ func TestFourKAskAddsFourKVersion(t *testing.T) {
 		t.Fatalf("4K versions %d", n)
 	}
 	// With a 4K Version there, a new 4K ask finds it in the Library.
-	_ = r.st.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec("UPDATE asks SET state = 'available' WHERE id = ?", uhd.Ask.ID); return err })
+	_ = r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE asks SET state = 'available' WHERE id = ?", uhd.Ask.ID)
+		return err
+	})
 	var in *InLibraryError
 	if _, err := r.svc.Ask4K(ctx, r.ana, "693134"); !errors.As(err, &in) {
 		t.Fatalf("4K again: %v", err)
 	}
 }
 
-// Roadmap #59: the member who asked for the regular copy may also ask for
+// The member who asked for the regular copy may also ask for
 // 4K, and a movie already in the Library without a 4K Version takes a 4K ask.
 func TestFourKAskAfterOwnAskAndInLibrary(t *testing.T) {
 	r := newRig(t)

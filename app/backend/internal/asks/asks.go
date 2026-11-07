@@ -399,10 +399,10 @@ func (s *Service) changed(ctx context.Context, id int64) {
 	s.AddAlsoDeclined(ctx, vs)
 	v := vs[0]
 	// Everyone's asks, decline notes and names go to the people who
-	// approve, as the asks routes show them (#139), who else declined too
-	// (#136), so a live copy never drops what the list read showed.
+	// approve, as the asks routes show them, with who else declined too,
+	// so a live copy never drops what the list read showed.
 	s.Live.PublishApprovers("ask", v)
-	// The people who asked follow their own ask live too (#139), told who
+	// The people who asked follow their own ask live too, told who
 	// decided by display name only, as their Requests list reads it.
 	mine := v
 	mine.Mine, mine.AlsoDeclined = true, nil
@@ -1007,7 +1007,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 		Data: map[string]any{"ask_id": a.ID}, GroupKey: groupKey(a.ID)})
 	if s.Live != nil {
 		s.Live.PublishApprovers("ask_removed", map[string]any{"id": id})
-		// The people who asked see it go from their own open pages too (#139):
+		// The people who asked see it go from their own open pages too:
 		// only p when the others keep the ask, else everyone on it.
 		gone := ids
 		if left {

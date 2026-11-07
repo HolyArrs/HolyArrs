@@ -477,7 +477,7 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 	}
 }
 
-// #139: an approved album ask is looked for at once too. A new artist's
+// an approved album ask is looked for at once too. A new artist's
 // tracks come with its MusicBrainz refresh, so the search ends the add's
 // own chain; an artist already in the Library is scanned and searched.
 func TestApprovedArtistAskSearchesAtOnce(t *testing.T) {
@@ -517,7 +517,7 @@ func TestApprovedArtistAskSearchesAtOnce(t *testing.T) {
 	}
 }
 
-// #139 review: ana asked for the live album before the artist was in the
+// ana asked for the live album before the artist was in the
 // Library; it was added by hand meanwhile, and its kinds leave ana's album out. Approving hers takes it in, and its tracks come with the
 // refresh that follows: the search waits for that refresh (and the scan).
 func TestApprovedWidenedAlbumSearchesAfterItsRefresh(t *testing.T) {

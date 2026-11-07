@@ -12,7 +12,7 @@ import (
 )
 
 // Step says where an approved ask is right now, from the server's own
-// records (#139): what the Requests page shows when it has no live detail,
+// records: what the Requests page shows when it has no live detail,
 // and all the people who asked see (no percent, no download names).
 type Step struct {
 	// Kind is searching, downloading, importing, waiting_on_admin,
