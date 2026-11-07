@@ -11,6 +11,7 @@
 </script>
 
 {#if askers.length}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="asked" data-testid="asked-by-line" onkeydown={(e) => e.key === 'Escape' && open && ((open = false), e.stopPropagation())}>
 		<button type="button" class="t" aria-expanded={open} aria-controls="{id}-pop" onclick={() => (open = !open)}>{line}</button>
 		{#if open}

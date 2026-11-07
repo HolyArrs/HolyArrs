@@ -110,6 +110,7 @@
 	const cur = $derived((picked !== null && show?.seasons.some((x) => x.number === picked) ? picked : null) ?? newestSeason(show?.seasons ?? []) ?? 0);
 	const freshSeason = $derived(newSeason(show?.seasons ?? []));
 	const curSeason = $derived(show?.seasons.find((x) => x.number === cur));
+	const statusWord: Record<string, string> = { running: 'Still running', ended: 'Ended', announced: 'Announced' };
 	const heroMeta = $derived([title.year ? String(title.year) : '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : '', show?.network ?? '', show ? (statusWord[show.status] ?? show.status) : '', ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 2)].filter(Boolean));
 	const heroBadges = $derived(qualityBadges(title.slots.map((s) => s.file)));
 	const nextWords = $derived(show?.next_air_date ? date(show.next_air_date) : '');
@@ -414,7 +415,6 @@
 		}
 	}
 
-	const statusWord: Record<string, string> = { running: 'Still running', ended: 'Ended', announced: 'Announced' };
 	const still = (ep: EpisodeView) => ep.still;
 	// Members only see a mark on episodes already in the Library.
 	const rowsOf = (n: number): EpisodeRow[] =>

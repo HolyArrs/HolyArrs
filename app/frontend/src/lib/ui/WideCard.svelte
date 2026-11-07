@@ -128,11 +128,13 @@
 
 	// A drag on the row must not open previews under the pointer.
 	const dragging = () => !!root?.closest('.dragging');
+	// svelte-ignore state_referenced_locally
 	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
 		if (dragging() || scrollHold()) return;
 		leaving = false;
 		open = true;
 	});
+	// svelte-ignore state_referenced_locally
 	const closer = dwell(cover ? 60 : 140, () => (cover ? (leaving = true) : (open = false)));
 	const near = shelfNear();
 	function enter() {
@@ -175,6 +177,7 @@
 	}
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, stripWords].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>

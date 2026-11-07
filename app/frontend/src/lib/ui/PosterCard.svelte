@@ -169,6 +169,7 @@
 	}
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} aria-labelledby={href ? `${uid}-t` : undefined} aria-describedby={href && more ? `${uid}-d` : undefined} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl} style:background-color={tint}>
