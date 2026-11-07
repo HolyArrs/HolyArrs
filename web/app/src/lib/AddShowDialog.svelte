@@ -186,7 +186,7 @@
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={more} />
-					<span><b>Also keep a second Version</b><br /><span class="hint">For example every episode in 4K next to the HD one, with its own Pick rules and folder.</span></span>
+					<span><b>Also keep a second Version</b><br /><span class="hint">Like every episode in 4K next to HD, with its own Pick rules and folder.</span></span>
 				</label>
 				{#if more}
 					<fieldset class="more">
@@ -210,7 +210,7 @@
 						</div>
 					</fieldset>
 				{/if}
-				{#if !searchOnAdd}<p class="hint" data-testid="no-show-search">HolyArrs looks for missing episodes at the next feed check and each night. To look at once, tick Search when added, or use Search now on the show page.</p>{/if}
+				{#if !searchOnAdd}<p class="hint" data-testid="no-show-search">Missing episodes are searched at the next feed check and each night. Tick Search when added to start now.</p>{/if}
 			{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />

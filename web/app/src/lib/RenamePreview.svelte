@@ -73,7 +73,7 @@
 				toasts.push(n === 1 ? '1 file renamed' : `${n} files renamed`, 'ok');
 				onDone?.();
 			} else if (end.Error?.code === 'plan_changed') {
-				error = 'Something changed since this preview, so nothing was renamed. The preview below is fresh: check it and rename again.';
+				error = 'Files changed, so nothing was renamed. Check the new preview and try again.';
 			} else {
 				error = end.Error?.message || 'The rename did not finish. Nothing was half-done; try again.';
 			}

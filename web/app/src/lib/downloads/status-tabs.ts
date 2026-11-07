@@ -78,7 +78,7 @@ export const ALL = 'active';
 export const ALL_HINT = 'Everything: waiting, on its way, needing you, or finished.';
 
 const SUBS: Record<string, Sub> = {
-	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.', empty: 'Nothing is queued.' },
+	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Starts when the downloader has room.', empty: 'Nothing is queued.' },
 	paused: { key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.', empty: 'Nothing is paused.' },
 	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.', empty: 'Nothing is downloading.' },
 	checking: { key: 'checking', label: 'Checking', stages: ['checking'], hint: 'Checking its data on disk, or moving to a new folder.', empty: 'Nothing is being checked or moved.' },

@@ -488,7 +488,7 @@
 			: k === 'have' ? [ownBadges.join(' · '), main?.Size ? bytes(main.Size) : '', o.added_at ? `added ${ago(o.added_at)}` : ''].filter(Boolean).join(' · ')
 			: k === 'downloading' ? 'On its way to your library'
 			: k === 'failed' ? 'The last try did not work. It will try another release.'
-			: o.keep_up_to_date ? 'It will be grabbed as soon as a good release shows up.' : 'Not kept up to date, so nothing will be grabbed.';
+			: o.keep_up_to_date ? 'Downloads when a good copy shows up.' : 'Not kept up to date, so nothing downloads.';
 		const action = !manage ? null : k === 'failed' ? { label: 'Try again', icon: 'refresh' as const } : k === 'missing' ? { label: 'Search now', icon: 'search' as const } : null;
 		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : 'In your library') : ownState.label, sub, pct, action };
 	});
@@ -1075,7 +1075,7 @@
 {#if blocked}
 	<EmptyState icon="shield" title="This title is not available on this account." action={{ label: 'Back to Explore', href: to('/explore') }} />
 {:else if missing}
-	<EmptyState icon="search" title="We could not find this title" text="It may have been removed from the movie and show database. Try searching for it by name." action={{ label: 'Search', href: to('/search') }} />
+	<EmptyState icon="search" title="We could not find this title" text="It may have been removed. Try searching by name." action={{ label: 'Search', href: to('/search') }} />
 {:else if error && !details}
 	<LoadError hasData={false} message="Could not load this title. {error}" onretry={() => void load(kind, tmdb)} />
 {:else}

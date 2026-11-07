@@ -320,7 +320,7 @@
 	$effect(() => {
 		if (mounted && (kind === 'movie' || kind === 'all')) void loadSets();
 	});
-	const seriesName = (id: number) => series.find((s) => s.id === id)?.name ?? 'Movie series';
+	const seriesName = (id: number) => series.find((s) => s.id === id)?.name ?? 'Collection';
 
 	// ── Filtering and sorting ──
 	function linkedPeople(t: TitleView) {
@@ -1074,11 +1074,11 @@
 			{#if filter.status !== 'all'}<Chip label={filters.find(([f]) => f === filter.status)?.[1] ?? ''} selected onclick={() => setFilter({ status: 'all' })} onremove={() => setFilter({ status: 'all' })} />{/if}
 			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? 'Kept' : 'Not kept'} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
 			{#if filter.asker !== 'anyone'}<Chip label="Asked by {filter.asker === 'me' ? 'me' : (askers.find((p) => String(p.id) === filter.asker)?.name ?? 'someone')}" selected onclick={() => setFilter({ asker: 'anyone' })} onremove={() => setFilter({ asker: 'anyone' })} />{/if}
-			{#if filter.series}<Chip label="Movie series: {seriesName(filter.series)}" selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
+			{#if filter.series}<Chip label="Collection: {seriesName(filter.series)}" selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
 			{#if filter.codec}<Chip label={codecLabel(filter.codec)} selected onclick={() => setFilter({ codec: '' })} onremove={() => setFilter({ codec: '' })} />{/if}
 			{#if filter.subs}<Chip label="Missing subtitles" selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
 			{#if q}<Chip label="Search: {q}" selected onclick={clearSearch} onremove={clearSearch} />{/if}
-			{#if grouped}<Chip label="Grouped by series" selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
+			{#if grouped}<Chip label="Grouped by collection" selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
 			<Button variant="plain" size="md" onclick={clearFilters}>Clear</Button>
 			{#if canManage && filter.subs && shown.length}<span class="t-miss"><Button size="md" icon="search" busy={subsSearching} onclick={searchMissingSubs} data-testid="search-missing-subtitles">Search subtitles</Button></span>{/if}
 			{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
@@ -1412,7 +1412,7 @@
 			<div class="sf-dir"><SegmentedControl label="Order" size="sm" value={sort.dir} options={[{ value: 'asc', label: 'Ascending' }, { value: 'desc', label: 'Descending' }]} onchange={(d) => setSort(sort.key, d)} /></div>
 			{#if kind === 'movie'}
 				<span class="sf-sep" aria-hidden="true"></span>
-				{@render sfRow('Group by series', groupSets, () => { groupSets = !groupSets; syncUrl(); })}
+				{@render sfRow('Group by collection', groupSets, () => { groupSets = !groupSets; syncUrl(); })}
 			{/if}
 		</section>
 		<section class="sf-col sf-filter" aria-label="Filter">
@@ -1446,7 +1446,7 @@
 				</div>
 			{/if}
 			{#if (kind === 'movie' || kind === 'all') && series.length}
-				<h3 class="sf-h">Movie series</h3>
+				<h3 class="sf-h">Collections</h3>
 				<div class="sf-well">
 					{@render sfRow('Every movie', !filter.series, () => setFilter({ series: 0 }))}
 					{#each series.toSorted((x, y) => x.name.localeCompare(y.name)) as sr (sr.id)}

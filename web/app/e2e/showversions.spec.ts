@@ -104,7 +104,7 @@ test('change, add and remove Versions; a busy Version stays', async () => {
 	await card.getByRole('button', { name: 'Add a Version' }).click();
 	const ad = page.getByRole('dialog').filter({ hasText: 'Add a Version of Tidal Atlas' });
 	await ad.getByLabel('Version name').fill('Small');
-	await ad.getByRole('button', { name: 'Add Version' }).click();
+	await ad.getByRole('button', { name: 'Add version' }).click();
 	await expect(card.getByTestId('version')).toHaveCount(3);
 	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: 'Version actions for Small' }).click();

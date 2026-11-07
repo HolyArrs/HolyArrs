@@ -29,7 +29,7 @@ describe('libraryState: movies', () => {
 		expect(label(movie([slot('in_library', { file: { RelativePath: 'a', Size: 1, AddedAt: '', Quality: { resolution: 2160 } } })]))).toBe('In library · 4K');
 		const ask = (state: string) => [{ state, title_id: 1 }] as unknown as TitleView['asks'];
 		expect(label(movie([slot('wanted')], { asks: ask('approved') }))).toBe('Searching');
-		expect(label(movie([slot('wanted')], { asks: ask('asked') }))).toBe('Pending');
+		expect(label(movie([slot('wanted')], { asks: ask('asked') }))).toBe('Waiting');
 		expect(label(movie([slot('wanted')], { asks: ask('turned_down') }))).toBe('Declined');
 		expect(label(movie([slot('not_out_yet')], { cinema_date: '2027-05-01T00:00:00Z' }))).toMatch(/^Upcoming · /);
 		expect(label(movie([slot('wanted')]))).toBe('Missing');

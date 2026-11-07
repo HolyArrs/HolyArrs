@@ -137,7 +137,7 @@
 		{/each}
 	</ul>
 	{#if title.versions.length > 1}
-		<p class="xs muted">Each episode is looked for, downloaded and placed once per Version. Edit and Move change the main Version only.</p>
+		<p class="xs muted">Edit and Move change the main Version only.</p>
 	{/if}
 </TitleSection>
 {/if}
@@ -145,7 +145,7 @@
 <dialog bind:this={dialog} aria-labelledby="show-version-title" class="modal">
 	<form onsubmit={save}>
 		<h2 id="show-version-title" class="h2">{editing ? `Change the ${editing.label} Version` : `Add a Version of ${title.name}`}</h2>
-		{#if !editing}<p class="small muted">Another copy of every episode to keep next to the others, for example 4K, with its own Pick rules and folder.</p>{/if}
+		{#if !editing}<p class="small muted">Another copy of every episode, like 4K, with its own Pick rules and folder.</p>{/if}
 		<div class="field" style="margin-top: var(--s-5)">
 			<label for="sv-label">Version name</label>
 			<input id="sv-label" class="input" bind:value={vLabel} maxlength="40" required />
@@ -153,7 +153,7 @@
 		<div class="field">
             <label for="sv-audio">Required audio languages</label>
             <input id="sv-audio" class="input" bind:value={vAudio} placeholder="For example, en, ja" />
-            <span class="hint">Every language must be present in inspected episode audio. Subtitles are separate.</span>
+            <span class="hint">Audio must have every language. Subtitles don’t count.</span>
         </div>
         <div class="field">
             <label for="sv-rules">Pick rules for this Version</label>

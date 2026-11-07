@@ -154,7 +154,7 @@
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={more} />
-					<span><b>Also keep a second Version</b><br /><span class="hint">For example a 4K copy next to the HD one, with its own Pick rules and folder.</span></span>
+					<span><b>Also keep a second Version</b><br /><span class="hint">Like a 4K copy next to the HD one, with its own Pick rules and folder.</span></span>
 				</label>
 				{#if more}
 					<fieldset class="more">

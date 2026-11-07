@@ -155,7 +155,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	await tab.click();
 	await own.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: 'Requests, 1 waiting' }).click();
 	// Approvers open on Pending, with the count on the tab.
-	await expect(own.getByRole('button', { name: /^Pending 1/ })).toHaveAttribute('aria-pressed', 'true');
+	await expect(own.getByRole('button', { name: /^Waiting 1/ })).toHaveAttribute('aria-pressed', 'true');
 	const ask = card(own, 'Copper Lighthouse');
 	await expect(ask).toContainText('kim');
 	await expect(ask.getByRole('button', { name: 'Open Copper Lighthouse, asked by kim' })).toBeVisible();
@@ -174,7 +174,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	await expect(win).toBeHidden();
 	// Undo waits at the bottom for a few seconds, then the answer is sent.
 	await expect(own.getByRole('status').filter({ hasText: 'Copper Lighthouse approved' }).getByRole('button', { name: 'Undo' })).toBeVisible();
-	await expect(own.getByRole('button', { name: /^Pending 0/ })).toBeVisible();
+	await expect(own.getByRole('button', { name: /^Waiting 0/ })).toBeVisible();
 	await expect.poll(async () => (await posts()).some((c) => c.startsWith(`<@${kimDiscord}> **Approved: Copper Lighthouse`)), { timeout: 20_000 }).toBe(true);
 
 	// Processing holds it; its window says it is being got for kim.
@@ -367,7 +367,7 @@ test('two members ask for different seasons of a show: one ask, both askers on i
 
 	// The approver gets one card, under the first asker; the Events name both.
 	await own.goto('/requests');
-	await own.getByRole('button', { name: /^Pending/ }).click();
+	await own.getByRole('button', { name: /^Waiting/ }).click();
 	await expect(card(own, show)).toHaveCount(1);
 	await expect(card(own, show).getByRole('button', { name: `Open ${show}, asked by rosa` })).toBeVisible();
 	await noSidewaysScroll(own);
@@ -409,7 +409,7 @@ test('a member asks for one album of an artist from its page', async ({ browser 
 	await noSidewaysScroll(nell);
 
 	await own.goto('/requests');
-	await own.getByRole('button', { name: /^Pending/ }).click();
+	await own.getByRole('button', { name: /^Waiting/ }).click();
 	await expect(card(own, 'Wicker Owls').getByRole('button', { name: 'Open Wicker Owls, asked by nell' })).toBeVisible();
 });
 
@@ -454,7 +454,7 @@ test('4K: a member asks for a 4K copy of a movie and of one in the Library; the 
 
 	// The approver's cards carry the 4K tag, and the window says 4K copy.
 	await own.goto('/requests');
-	await own.getByRole('button', { name: /^Pending/ }).click();
+	await own.getByRole('button', { name: /^Waiting/ }).click();
 	for (const name of ['Saffron Tramline', 'Juniper Telegraph']) {
 		await expect(card(own, name).getByTitle('Asked for a 4K copy, approved on its own')).toBeVisible();
 	}

@@ -118,7 +118,7 @@
 		title={held ? 'Nothing held.' : 'Nothing turned down.'}
 		text={held
 			? 'Waiting out a Pick rule delay.'
-			: 'Turn a Release down from its movie or show page. Wrong downloads land here too.'}
+			: 'Releases you turn down and wrong downloads land here.'}
 	/>
 {:else}
 	<ul class="tp-sheet tp-rows">

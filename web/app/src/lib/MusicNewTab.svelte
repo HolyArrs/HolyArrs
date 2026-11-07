@@ -179,7 +179,7 @@
 {/snippet}
 
 {#if answer?.kid}
-	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
+	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it’s off for age-limited accounts." />
 {:else if failed && !answer}
 	<EmptyState icon="music" title="Could not load new music" text="The music lists did not answer. Try again shortly." />
 {:else if !answer || (answer.building && !answer.rows.length)}

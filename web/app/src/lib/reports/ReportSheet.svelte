@@ -124,7 +124,7 @@
 		<div class="rs-done" data-testid="report-sent">
 			<span class="rs-ok" aria-hidden="true"><Icon name="check" size={26} /></span>
 			<p class="rs-what"><span class="rs-tag"><Icon name={kindIcon(sent.kind)} size={13} />{sent.kind_label}</span>{#if partWords(sent)}<span>{partWords(sent)}</span>{/if}</p>
-			<p>Thanks. The owner and admins can see your report now, and you get a message when it is fixed.</p>
+			<p>Thanks. You’ll hear when it’s fixed.</p>
 		</div>
 	{:else}
 		<form class="rs" data-testid="report-sheet" onsubmit={(e) => { e.preventDefault(); void send(); }}>

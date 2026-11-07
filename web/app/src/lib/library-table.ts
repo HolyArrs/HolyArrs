@@ -73,7 +73,7 @@ export function columnsFor(kind: LibKind): Column[] {
 		col('year', 'Year', '64px', true, true),
 		col('runtime', 'Runtime', '84px', false, true),
 		col('rating', 'Age rating', '88px', false),
-		col('series', 'Movie series', '160px', false),
+		col('series', 'Collection', '160px', false),
 		col('genres', 'Genres', '160px', false),
 		col('requested', 'Requested by', '130px', false),
 		col('quality', 'File quality', '130px', false),

@@ -62,7 +62,7 @@ describe('explore cards', () => {
 		const pill = (x: TitleView, who: 'member' | 'staff') => cardPill(titleCard(x), who);
 		expect(pill(t(1, { slots: [slot('downloading'), slot('in_library')] }), 'staff')?.kind).toBe('downloading');
 		expect(pill(t(1, { asks: [ask(1)] }), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
-		expect(pill(t(1, { asks: [ask(1)] }), 'staff')).toEqual({ kind: 'requested', label: 'Pending' });
+		expect(pill(t(1, { asks: [ask(1)] }), 'staff')).toEqual({ kind: 'requested', label: 'Waiting' });
 		expect(pill(t(1, { asks: [ask(1)], slots: [slot('in_library')] }), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
 		expect(pill(t(1, { slots: [slot('in_library')] }), 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
 	});

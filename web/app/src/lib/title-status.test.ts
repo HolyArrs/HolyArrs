@@ -18,7 +18,7 @@ describe('title status words', () => {
 
 	it('uses the more precise staff words', () => {
 		expect(titleStatus({}, 'staff')).toEqual({ kind: 'missing', label: 'Missing' });
-		expect(titleStatus({ ask: 'asked' }, 'staff')).toEqual({ kind: 'requested', label: 'Pending' });
+		expect(titleStatus({ ask: 'asked' }, 'staff')).toEqual({ kind: 'requested', label: 'Waiting' });
 		expect(titleStatus({ inLibrary: true }, 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
 		expect(titleStatus({ failed: true }, 'staff')).toEqual({ kind: 'failed', label: 'Failed' });
 		expect(titleStatus({ comingSoon: true }, 'staff')).toEqual({ kind: 'coming_soon', label: 'Coming soon' });
@@ -51,7 +51,7 @@ describe('title status words', () => {
 
 	it('says when the ask is the person’s own', () => {
 		expect(titleStatus({ ask: 'asked', mine: true }, 'member')).toEqual({ kind: 'requested', label: 'You asked · Requested' });
-		expect(titleStatus({ ask: 'asked', mine: true }, 'staff')).toEqual({ kind: 'requested', label: 'You asked · Pending' });
+		expect(titleStatus({ ask: 'asked', mine: true }, 'staff')).toEqual({ kind: 'requested', label: 'You asked · Waiting' });
 		expect(titleStatus({ ask: 'approved', mine: true }, 'member').label).toBe('You asked · Approved');
 		expect(titleStatus({ ask: 'asked', mine: false }, 'member').label).toBe('Requested');
 		// Once it is in the Library or downloading, that is what counts.

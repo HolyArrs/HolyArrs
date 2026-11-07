@@ -36,7 +36,7 @@ describe('lifecycle', () => {
 		expect(STAGE_WEIGHT.ready).toBe(100);
 	});
 	it('an ask waiting for an answer sits at the asked weight', () => {
-		expect(lifecycle(ask('asked'))).toMatchObject({ stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Pending' });
+		expect(lifecycle(ask('asked'))).toMatchObject({ stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Waiting' });
 	});
 	it('an approved ask with a title is being got', () => {
 		expect(lifecycle(ask('approved', 7))).toMatchObject({ stage: 'getting', pct: STAGE_WEIGHT.getting, tone: 'go', label: 'Processing' });

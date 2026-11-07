@@ -114,7 +114,7 @@
 	// and when it no longer exists in that tab.
 	let statusPick = $state<{ tab: ApproverTab | ''; word: string }>({ tab: '', word: '' });
 	/** The statuses in one tab, in the page's order (Processing: failed first). */
-	const FLOW = ['Pending', 'Upcoming', 'Searching', 'Downloading', 'Importing', 'Processing', 'Ready'];
+	const FLOW = ['Waiting', 'Upcoming', 'Searching', 'Downloading', 'Importing', 'Processing', 'Ready'];
 	const statusesIn = (t: ApproverTab) => {
 		const n = new Map<string, { count: number; tone: Life['tone'] }>();
 		for (const a of ctx.viewed) {

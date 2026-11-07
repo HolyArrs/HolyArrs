@@ -96,7 +96,7 @@
 	<div class="et" data-testid="edit-sheet">
 		<div class="et-rows">
 			<button type="button" class="et-row" role="switch" aria-checked={keep} onclick={() => (keep = !keep)}>
-				<span><b>Keep up to date</b><small>Grab what is missing and upgrade when a better copy shows up</small></span>
+				<span><b>Keep up to date</b><small>Gets what’s missing and better copies</small></span>
 				<span class="et-switch" class:on={keep} aria-hidden="true"></span>
 			</button>
 		</div>

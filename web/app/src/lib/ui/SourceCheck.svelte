@@ -38,7 +38,7 @@
 </script>
 
 {#if session.can('settings')}
-	<SettingsCard id="source-check" title="Test search" icon="search" description="Ask every enabled Source for one title at once and see which ones answer.">
+	<SettingsCard id="source-check" title="Test search" icon="search" description="Test every Source with one title.">
 		<form class="ask" onsubmit={run}>
 			<Field id="sc-kind" label="Kind">
 				<select id="sc-kind" class="input" value={kind} onchange={(e) => pickKind((e.currentTarget as HTMLSelectElement).value as CheckKind)}>
