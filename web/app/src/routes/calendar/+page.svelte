@@ -953,8 +953,8 @@
 	/* The top bar and the date bar are one solid band, so nothing shows through either. */
 	:global(html:has(.slim-wrap.on) .ui-topbar) { background-color: var(--bg); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	/* Over the poster wall it stays the app's light glass, like every other page. */
-	:global(html:has([data-poster-wall])) .slim { background: color-mix(in srgb, var(--bg) 40%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom-color: color-mix(in srgb, var(--text) 8%, transparent); }
-	:global(html:has([data-poster-wall]):has(.slim-wrap.on) .ui-topbar) { background-color: color-mix(in srgb, var(--bg) 40%, transparent); }
+	:global(html:has([data-poster-wall])) .slim { background: color-mix(in srgb, var(--bg) 62%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom-color: color-mix(in srgb, var(--text) 8%, transparent); }
+	:global(html:has([data-poster-wall]):has(.slim-wrap.on) .ui-topbar) { background-color: color-mix(in srgb, var(--bg) 62%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
 	.slim-wrap { position: sticky; top: var(--topbar); z-index: 20; height: 0; margin-inline: calc(-1 * var(--gutter)); transition: transform var(--bar-glide); }
 	:global(html.bar-hidden) .slim-wrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { display: flex; align-items: center; gap: 12px; padding: 8px var(--gutter); background: var(--bg); border-bottom: 1px solid var(--line); box-shadow: 0 10px 24px rgb(0 0 0 / .25);
