@@ -3,7 +3,7 @@
 // the request a newer key replaced, and never lets an older answer overwrite
 // a newer one. The server answers from the Library, its suggest index and
 // TMDB; MusicBrainz is only asked by the full results page (Enter).
-import { to } from './paths.ts';
+import { to } from './core/paths.ts';
 import { detailPath } from './title-details.ts';
 import { albumHref, artistHref } from './music/music-pages.ts';
 

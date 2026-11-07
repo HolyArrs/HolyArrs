@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scoreName, scoreText, type OutsideScore } from '../outside-ratings.ts';
+	import { scoreName, scoreText, type OutsideScore } from './outside-ratings.ts';
 
 	// A compact row of outside ratings on a title page: each source's mark
 	// with its score. Hidden when there are none.

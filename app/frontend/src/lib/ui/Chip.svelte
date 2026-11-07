@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
 	// A filter or choice token. With `selected` it is a toggle (aria-pressed);
 	// with `onremove` it shows a remove button.

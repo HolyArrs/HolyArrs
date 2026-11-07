@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { Load } from '@sveltejs/kit';
-import { to } from '#lib/paths.ts';
+import { to } from '#lib/core/paths.ts';
 
 // The Requests page used to be called the Wishlist; old links, bookmarks and
 // alerts still land here and go on to /requests with the query kept.

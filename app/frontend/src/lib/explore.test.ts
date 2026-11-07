@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from './api.ts';
+import { ApiError } from './core/api.ts';
 import {
 	enoughCards,
 	genreCardHref,
@@ -38,7 +38,7 @@ import {
 	writeServices,
 	serviceRegion,
 } from './explore.ts';
-import type { Ask, CalendarEntry, SlotView, TitleView } from './types.ts';
+import type { Ask, CalendarEntry, SlotView, TitleView } from './core/types.ts';
 
 const slot = (state: string, resolution?: number): SlotView =>
 	({ id: 1, version: 'Main', version_id: 1, state, state_label: state, file: resolution ? { RelativePath: 'x', Size: 1, AddedAt: '', Quality: { resolution } } : null }) as SlotView;

@@ -1,10 +1,10 @@
 // Home: small pure helpers so the page stays a layout.
-import { duration } from './format.ts';
-import { healthSentence, plainReason } from './plain.ts';
+import { duration } from './core/format.ts';
+import { healthSentence, plainReason } from './core/plain.ts';
 import type { DownloadRow } from './downloaders.ts';
 import { stageOf } from './downloads/status-tabs.ts';
-import type { CalendarEntry, HealthCheck, TitleView } from './types.ts';
-import type { Fresh } from './fresh.ts';
+import type { CalendarEntry, HealthCheck, TitleView } from './core/types.ts';
+import type { Fresh } from './ui/fresh.ts';
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {

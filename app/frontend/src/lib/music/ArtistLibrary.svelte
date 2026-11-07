@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	// This lives on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
 	import { SvelteSet } from 'svelte/reactivity';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
@@ -12,12 +12,12 @@
 	import { groupDownloads } from '#lib/history.ts';
 	import { splitSteps, type RenameStep } from '#lib/organise.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
-	import { api, message } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, bytes } from '#lib/format.ts';
-	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/types.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, bytes } from '#lib/core/format.ts';
+	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/core/types.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from '#lib/music/music.ts';
 
 	// An artist's Library tab: what you have, the albums grouped by kind (closed

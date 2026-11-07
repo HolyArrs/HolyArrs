@@ -2,15 +2,15 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { goto, replaceState, snapshot } from '$app/navigation';
 	import { page } from '$app/state';
-	import { to } from '#lib/paths.ts';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
-	import { preloadHero } from '#lib/tmdb-image.ts';
-	import type { Ask, EventRecord, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
+	import { preloadHero } from '#lib/core/tmdb-image.ts';
+	import type { Ask, EventRecord, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/core/types.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -23,19 +23,19 @@
 	import SeasonFolds from '#lib/SeasonFolds.svelte';
 	import TitleScores from '#lib/TitleScores.svelte';
 	import TitleTrailers from '#lib/TitleTrailers.svelte';
-	import { loadExtras, scoreName, scoreText, type OutsideScore } from '#lib/outside-ratings.ts';
-	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
+	import { loadExtras, scoreName, scoreText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
+	import { ratingPicks, shownRatings } from '#lib/ui/rating-picks.svelte.ts';
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
-	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
+	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/ui/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import CompactRow from '#lib/history-looks/CompactRow.svelte';
 	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import { groupDownloads } from '#lib/history.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { qualityBadges } from '#lib/title-page.ts';
-	import { bytes, ago } from '#lib/format.ts';
+	import { bytes, ago } from '#lib/core/format.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -43,9 +43,9 @@
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { tick, untrack } from 'svelte';
-	import { live } from '#lib/live.svelte.ts';
+	import { live } from '#lib/core/live.svelte.ts';
 	import { downloadTone } from '#lib/downloaders.ts';
-	import { date } from '#lib/format.ts';
+	import { date } from '#lib/core/format.ts';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/askedby.ts';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
 	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
@@ -66,7 +66,7 @@
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import ReportSheet from '#lib/reports/ReportSheet.svelte';
 	import '#lib/title-page.css';
-	import { audienceOf, titleStatus } from '#lib/title-status.ts';
+	import { audienceOf, titleStatus } from '#lib/ui/title-status.ts';
 
 	// The one title page for a movie or show, wherever it is opened from
 	// (/title/<kind>/<tmdb> and /library/<id> both render it). Not in the

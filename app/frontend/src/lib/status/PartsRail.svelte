@@ -3,7 +3,7 @@
 	// count and worst colour, the picked kind's apps on the right. Every kind
 	// keeps its seat, added or not, so the plate holds one shape; it opens on
 	// the first kind with a problem, else Sources.
-	import { to } from '../paths.ts';
+	import { to } from '../core/paths.ts';
 	import Button from '../ui/Button.svelte';
 	import GroupRows from './GroupRows.svelte';
 	import { partKinds, type StatusGroup, type StatusRow, type Tone } from './status.ts';

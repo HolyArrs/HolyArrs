@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { albumKind, albumLine, albumState, albumStateOf, albumWords, albumYear, artistProgress, artistState, pressingLabel, toggle, trackLength, extraKinds, word, albumChoices, artistSearchToast, discography, discographyRow, latestRelease } from './music.ts';
-import type { ArtistInfo } from '../types.ts';
+import type { ArtistInfo } from '../core/types.ts';
 
 const info = (a: Partial<ArtistInfo>): ArtistInfo => ({
 	mbid: 'x', status: 'running', new_albums: 'all', album_types: ['album'], secondary_types: ['studio'], release_statuses: ['official'],

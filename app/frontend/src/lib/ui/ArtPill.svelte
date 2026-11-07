@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 
 	// The one badge over artwork: a small dark glass pill, hairline ring,
 	// sentence case. Colour lives only in the glyph; the word stays white.

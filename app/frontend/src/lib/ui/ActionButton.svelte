@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HTMLButtonAttributes } from 'svelte/elements';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
 	// A title hero action, 44px tall. `primary` is the filled white pill with
 	// its word inside (Search now, Add, Ask). `pill` is a glass pill with its

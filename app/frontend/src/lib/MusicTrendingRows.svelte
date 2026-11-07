@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Chip from './ui/Chip.svelte';
 	import { onMount } from 'svelte';
-	import { api, message } from './api.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { api, message } from './core/api.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { refreshInbox } from './requests.svelte.ts';
 	import type { OwnedIndex } from './explore.ts';
-	import { defaultRegion } from './region.ts';
+	import { defaultRegion } from './ui/region.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { heroArtists, heroLine } from './music/page-hero.ts';
 	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
@@ -15,16 +15,16 @@
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
-	import { to } from './paths.ts';
+	import { to } from './core/paths.ts';
 	import SongLine from './ui/SongLine.svelte';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
+	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './core/types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import EmptyState from './ui/EmptyState.svelte';
 	import AddArtistDialog from './AddArtistDialog.svelte';
 	import AskArtistDialog from './AskArtistDialog.svelte';
-	import { stableRows } from './row-window.ts';
+	import { stableRows } from './ui/row-window.ts';
 
 	// Explore → Music. The server builds every row (personal first, then the
 	// charts, similar artists, missing albums and genre rows); genre chips

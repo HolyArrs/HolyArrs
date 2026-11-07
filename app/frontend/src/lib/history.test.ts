@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLatestOnly, dateRangeProblem, details, downloadSteps, filterParams, groupDownloads, groupLabel, historyQuery, isDownloadStep, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
-import type { EventRecord } from './types.ts';
+import type { EventRecord } from './core/types.ts';
 
 describe('history', () => {
 	it('rejects a date range whose end is before its start', () => {

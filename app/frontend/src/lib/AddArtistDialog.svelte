@@ -2,13 +2,13 @@
 	import Sheet from './ui/Sheet.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from './ui/Button.svelte';
-	import { to } from './paths.ts';
+	import { to } from './core/paths.ts';
 	// The add-an-artist dialog: Library folder, Pick rules, which albums to
 	// keep up to date, new albums, album kinds and Pressing statuses.
-	import { api, message } from './api.ts';
+	import { api, message } from './core/api.ts';
 	import { pickId } from './library.ts';
 	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from './music/music.ts';
-	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
+	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './core/types.ts';
 
 	let {
 		folders,

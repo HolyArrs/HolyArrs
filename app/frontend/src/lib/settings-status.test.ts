@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fromServer, groupState, needsAttention, pageState, stateWords, type ServerStatus } from './settings-status.ts';
-import { filterSections, groups, grouped, sectionFor, sections, visible } from './settings.ts';
-import { searchSettings, settingIndex } from './settings-search.ts';
+import { filterSections, groups, grouped, sectionFor, sections, visible } from './core/settings.ts';
+import { searchSettings, settingIndex } from '../routes/settings/(home)/settings-search.ts';
 
 const answer = (over: Partial<ServerStatus> = {}): ServerStatus => ({ items: [], unset: {}, known: [], metadata_up: true, ...over });
 

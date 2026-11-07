@@ -7,12 +7,12 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import SsoCard from '#lib/signin/SsoCard.svelte';

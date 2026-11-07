@@ -1,4 +1,4 @@
-import { api } from '#lib/api.ts';
+import { api } from '#lib/core/api.ts';
 import { cleanDisplayName, shownName } from './profile.ts';
 
 // My display name, shared by the settings side menu and the Profile card.

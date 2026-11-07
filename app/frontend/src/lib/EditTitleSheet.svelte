@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { api, message } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import TagInput from '#lib/ui/TagInput.svelte';
 	import { forgetTags } from '#lib/tags.ts';
-	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/types.ts';
+	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 
 	// Edit a movie or show from its Library tab: keep up to date, which seasons
 	// to keep (a quick choice that sets every season at once), new seasons,

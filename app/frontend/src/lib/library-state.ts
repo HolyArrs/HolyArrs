@@ -1,11 +1,11 @@
 // One Library state per title: the Status column, the table and poster
 // badges, and the "problems first" sort all read it, so the words never
 // disagree between views.
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
-import type { IconName } from './Icon.svelte';
+import type { IconName } from './ui/Icon.svelte';
 import { quality } from './explore.ts';
-import { date } from './format.ts';
+import { date } from './core/format.ts';
 
 export type LibStateKey =
 	| 'failed' | 'needs_decision' | 'stalled' | 'missing_file' | 'missing' | 'better_wanted' | 'paused' | 'downloading' | 'queued'

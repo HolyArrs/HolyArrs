@@ -7,11 +7,11 @@
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import Confirm from '#lib/ui/Confirm.svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	// id is the card's anchor; the page passes it so Settings search finds it there.
 	let { id = 'sso-card' }: { id?: string } = $props();

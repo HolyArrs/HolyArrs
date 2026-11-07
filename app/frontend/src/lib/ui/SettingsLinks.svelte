@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
-	import { to } from '../paths.ts';
+	import Icon from './Icon.svelte';
+	import { to } from '../core/paths.ts';
 
 	// Plain link rows to other settings pages, one per row, where a page
 	// used to repeat what another page owns.

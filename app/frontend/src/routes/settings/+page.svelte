@@ -3,25 +3,25 @@
 	// cards in a Bento grid over the blurred wall of this Library's posters.
 	// Each card shows what lives inside it and opens on its first page (a zoom
 	// on wider screens, a push on phones). My account is in the account menu.
-	import { to } from '#lib/paths.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { to } from '#lib/core/paths.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { page } from '$app/state';
 	import { goto, preloadData } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
-	import { grouped, groups as allGroups, sections as all, visible } from '#lib/settings.ts';
-	import { searchSettings, settingIndex, type SettingEntry } from '#lib/settings-search.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { grouped, groups as allGroups, sections as all, visible } from '#lib/core/settings.ts';
+	import { searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
 	import { settingsNow } from '#lib/settings-status.svelte.ts';
 	import { groupState, stateWords, type GroupState } from '#lib/settings-status.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import GroupArt from '#lib/settings-home/GroupArt.svelte';
-	import { homeArt } from '#lib/settings-home/art.svelte.ts';
-	import { settingsFind } from '#lib/settings-home/find.svelte.ts';
-	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from '#lib/settings-home/zoom.ts';
+	import GroupArt from './(home)/GroupArt.svelte';
+	import { homeArt } from './(home)/art.svelte.ts';
+	import { settingsFind } from '#lib/core/settings-find.svelte.ts';
+	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from './(home)/zoom.ts';
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections).filter((g) => g.group.id !== 'account'));

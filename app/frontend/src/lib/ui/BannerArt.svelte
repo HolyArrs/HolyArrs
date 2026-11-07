@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { api } from '../api.ts';
+	import { api } from '../core/api.ts';
 
 	// One answer per title for the whole visit; at most four asks at a time
 	// so a fast scroll through a big Library never floods the server.
@@ -34,7 +34,7 @@
 </script>
 
 <script lang="ts">
-	import type { TitleView } from '../types.ts';
+	import type { TitleView } from '../core/types.ts';
 	import { bannerAspect, bannerSrc } from '../library-art.ts';
 
 	// The wide banner at the start of a Library row: fanart's banner when it

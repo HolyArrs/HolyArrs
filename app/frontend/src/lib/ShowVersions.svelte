@@ -5,11 +5,11 @@
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
 	// The Versions card of a show (4.8.11): every wanted copy, such as HD and
 	// 4K, with its Pick rules and folder; staff add, change and remove them.
-	import { api, message } from './api.ts';
-	import Icon from './Icon.svelte';
+	import { api, message } from './core/api.ts';
+	import Icon from './ui/Icon.svelte';
 	import { secondVersion } from './library.ts';
-	import { toasts } from './toasts.svelte.ts';
-	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
+	import { toasts } from './core/toasts.svelte.ts';
+	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from './core/types.ts';
 
 	let { title, staff, onchange }: { title: TitleView; staff: boolean; onchange: () => void | Promise<void> } = $props();
 

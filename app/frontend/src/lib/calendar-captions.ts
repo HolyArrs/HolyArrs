@@ -1,6 +1,6 @@
 // The two caption lines under every calendar card and list row, and the
 // choices Luis compares for them (?movie=1-6, ?music=1-5, ?channels=all|known).
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 import type { CalGroup } from './calendar-looks.ts';
 
 export type Channels = 'all' | 'known';

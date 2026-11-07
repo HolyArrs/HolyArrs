@@ -1,7 +1,7 @@
 import { redirect, type Load } from '@sveltejs/kit';
 import { lastLibraryKind, type ShelfKind } from '#lib/library-last-kind.ts';
 import { partsNow } from '#lib/parts.svelte.ts';
-import { session } from '#lib/session.svelte.ts';
+import { session } from '#lib/core/session.svelte.ts';
 
 // There is no mixed Library page: a link without a kind opens Movies, TV shows
 // or Music (the one used last), keeping any other search words in the link.

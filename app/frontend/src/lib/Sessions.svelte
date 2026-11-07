@@ -4,10 +4,10 @@
 	// Signed-in devices: My account (path /auth/sessions) or one person on
 	// the Users page (path /users/<id>/sessions).
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from './toasts.svelte.ts';
-	import { ago, dateTime } from './format.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from './core/toasts.svelte.ts';
+	import { ago, dateTime } from './core/format.ts';
 	import { endedWords, order, others, type SessionRow } from './sessions.ts';
 
 	// first: how many rows show before Show all (long lists stay short).

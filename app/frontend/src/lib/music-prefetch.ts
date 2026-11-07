@@ -7,8 +7,8 @@
 // Title pages and Library titles are fetched ahead the same way (speed audit,
 // 2026-10-27): a title's metadata and lookup, a Library title and then its
 // metadata, kept 30 s even when the server sends no max-age.
-import { api } from './api.ts';
-import { DWELL_MS, fastEnough, mainPicture, preloadPicture } from './smart-preload.ts';
+import { api } from './core/api.ts';
+import { DWELL_MS, fastEnough, mainPicture, preloadPicture } from '../routes/(frame)/smart-preload.ts';
 import { appPicture, coverFor } from './music/music-pages.ts';
 
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';

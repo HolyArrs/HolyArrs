@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/types.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 	import { entryArt } from '#lib/calendar.ts';
 	import { entryTitle } from '#lib/calendar-looks.ts';
-	import { sized } from '#lib/tmdb-image.ts';
+	import { sized } from '#lib/core/tmdb-image.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 
 	// The small 16:9 picture on a List row (an album's cover fills it, cropped).

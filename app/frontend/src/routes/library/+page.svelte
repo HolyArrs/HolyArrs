@@ -1,28 +1,28 @@
 <script lang="ts">
 	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
 	import { page } from '$app/state';
 	import { beforeNavigate, goto } from '$app/navigation';
-	import { ago, bytes, date } from '#lib/format.ts';
+	import { ago, bytes, date } from '#lib/core/format.ts';
 	import { exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import {
 		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabel, sortTitles, sortsFor, startDir, columnsFor, defaultSort,
 		type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey,
 		tableMinWidth
 	} from '#lib/library-table.ts';
-	import { reducedMotion } from '#lib/motion.ts';
-	import { DUR, EASE, dropIn, dropOut, easeOut, moveMs } from '#lib/ui/transitions.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
+	import { DUR, EASE, dropIn, dropOut, easeOut, moveMs } from '#lib/core/transitions.ts';
 	import { fade, slide } from 'svelte/transition';
 	import { episodeLabel, showProgress } from '#lib/shows.ts';
 	import { artistProgress } from '#lib/music/music.ts';
 	import { artistHref } from '#lib/music/music-pages.ts';
-	import Poster from '#lib/Poster.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import LibraryPoster from '#lib/ui/LibraryPoster.svelte';
 	import { flip } from 'svelte/animate';
 	import { barOf, detailLabels, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, type PosterDetail } from '#lib/library-poster.ts';
@@ -45,16 +45,16 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import { artName, slotKind } from '#lib/title-page.ts';
-	import { peopleNames, plainReason } from '#lib/plain.ts';
+	import { peopleNames, plainReason } from '#lib/core/plain.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { audienceOf, audienceStatus } from '#lib/title-status.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { audienceOf, audienceStatus } from '#lib/ui/title-status.ts';
 	import { libraryState } from '#lib/library-state.ts';
 	import { quality } from '#lib/explore.ts';
-	import type { EpisodeView, TitleView } from '#lib/types.ts';
+	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
 	import type { MovieCollection, CollectionDetail } from '#lib/collections.ts';
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { codecLabel, copyCodecs, languageName, type CopySearchPreview, type CopySearchResult } from '#lib/library-copies.ts';
 	import { deleteBody } from '#lib/organise.ts';
 	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/library-art.ts';

@@ -27,11 +27,11 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
-	import { reducedMotion, viewTransitionName } from '../motion.ts';
-	import { sized } from '../tmdb-image.ts';
-	import { whenLoaded } from '../lazy-art.ts';
+	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
+	import { sized } from '../core/tmdb-image.ts';
+	import { whenLoaded } from './lazy-art.ts';
 	import { tiltFor, type BarTone, type PosterDetail } from '../library-poster.ts';
 	import type { LibState } from '../library-state.ts';
 

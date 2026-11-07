@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
 	import { libraryBrief } from '#lib/owned.ts';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { afterNavigate, replaceState } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { partOff, partOn } from '#lib/parts.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { date } from '#lib/format.ts';
-	import { glideScroll, popIn, popOut } from '#lib/ui/transitions.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { date } from '#lib/core/format.ts';
+	import { glideScroll, popIn, popOut } from '#lib/core/transitions.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
@@ -28,7 +28,7 @@
 	import CalBanner from '#lib/calendar/CalBanner.svelte';
 	import CalListRows from '#lib/calendar/CalListRows.svelte';
 	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
-	import { setFollow } from '#lib/follow.ts';
+	import { setFollow } from '#lib/ui/follow.ts';
 	import {
 		byDay,
 		entryKey,
@@ -60,7 +60,7 @@
 		type CalendarView,
 		type TitlesShown
 	} from '#lib/calendar.ts';
-	import type { CalendarEntry, TitleView } from '#lib/types.ts';
+	import type { CalendarEntry, TitleView } from '#lib/core/types.ts';
 
 	const now = new Date();
 	// ?month=2026-10 opens on that month (a link to a month can be shared).

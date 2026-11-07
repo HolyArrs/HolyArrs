@@ -12,7 +12,7 @@
 
 <script lang="ts">
 	import { untrack, type Snippet } from 'svelte';
-	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../pageload.ts';
+	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../core/pageload.ts';
 
 	// The page loading screen: the branded Orbit (the same ring as the boot screen in
 	// app.html) centred in the content area while a page's main data loads. It appears only

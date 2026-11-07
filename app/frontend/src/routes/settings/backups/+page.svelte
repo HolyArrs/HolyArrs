@@ -5,17 +5,17 @@
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { bytes, dateTime, words } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { bytes, dateTime, words } from '#lib/core/format.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { BackupInfo } from '#lib/types.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import type { BackupInfo } from '#lib/core/types.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	type Preset = 'balanced' | 'light' | 'careful';
 	const presets: { key: Preset; name: string; about: string }[] = [

@@ -9,13 +9,13 @@
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, date } from '#lib/format.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { getBase } from '#lib/paths.ts';
-	import type { ApiKey } from '#lib/types.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, date } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { getBase } from '#lib/core/paths.ts';
+	import type { ApiKey } from '#lib/core/types.ts';
 	import {
 		AI_SCOPE,
 		CHECK_QUESTION,

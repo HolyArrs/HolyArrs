@@ -12,8 +12,8 @@
 	// the wave is done the canvas is clear and the real picture shows. Each
 	// picture is chosen for this screen (size x DPR) so it is never blurry.
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { to } from '#lib/paths.ts';
+	import { api } from '#lib/core/api.ts';
+	import { to } from '#lib/core/paths.ts';
 	import {
 		REVEAL_HOLD_MS,
 		SEED_COLS,

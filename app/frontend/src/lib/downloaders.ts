@@ -1,5 +1,5 @@
 // Downloader helpers, kept apart from the pages so they can be tested.
-import type { Tone } from './format.ts';
+import type { Tone } from './core/format.ts';
 
 export interface DownloaderHealth {
 	state: 'working' | 'paused' | 'resting' | 'not_answering' | 'sign_in_refused';
@@ -85,7 +85,7 @@ export interface DownloadView {
 	active: boolean;
 }
 
-export { testVersion } from './test-tag.ts';
+export { testVersion } from './core/test-tag.ts';
 
 export const kindWords: Record<DownloaderView['kind'], string> = {
 	qbittorrent: 'qBittorrent',

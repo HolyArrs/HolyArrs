@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { deleteSummary, type RemovePlan } from '#lib/organise.ts';
 
 	// Delete a whole movie or show from the title page. The plan below is asked

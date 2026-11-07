@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { api, message, ApiError } from './api.ts';
-	import { session } from './session.svelte.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { api, message, ApiError } from './core/api.ts';
+	import { session } from './core/session.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { goto } from '$app/navigation';
-	import { to } from './paths.ts';
+	import { to } from './core/paths.ts';
 	import { refreshInbox } from './requests.svelte.ts';
 	import { loadDetails } from './title-details.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from './explore.ts';
 	import { seasonWords } from './shows.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
-	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from './types.ts';
+	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from './core/types.ts';
 	import AddMovieDialog from './AddMovieDialog.svelte';
 	import AddShowDialog from './AddShowDialog.svelte';
 	import AskShowDialog from './AskShowDialog.svelte';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 import { applyLayout, columnsFor, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortTitles, tableMinWidth, type FilterContext } from './library-table.ts';
 
 function memory() {

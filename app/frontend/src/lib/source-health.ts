@@ -1,6 +1,6 @@
 // Source health in words and tones, told apart by why a Source waits.
-import type { SourceHealth } from './types.ts';
-import type { Tone } from './format.ts';
+import type { SourceHealth } from './core/types.ts';
+import type { Tone } from './core/format.ts';
 import { healthWords, sourceTone } from './sources.ts';
 
 export const reasonWords: Record<NonNullable<SourceHealth['reason']>, string> = {

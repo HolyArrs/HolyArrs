@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { choices, deleteSummary, episodeFileLine, matchKey, showFolderLine, showIdOf, startPicks, type AdoptCandidate, type RemovePlan } from './organise.ts';
 import { byDay, entryDay, entryName, entryTime, shows } from './calendar.ts';
 import { filterParams, historyQuery, readFilter } from './history.ts';
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 
 describe('show library import', () => {
 	const show: AdoptCandidate = {

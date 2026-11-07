@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { api } from './api.ts';
-	import { date } from './format.ts';
+	import { api } from './core/api.ts';
+	import { date } from './core/format.ts';
 	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
 	import SeasonPicker from './SeasonPicker.svelte';
 	import Skeleton from './ui/Skeleton.svelte';

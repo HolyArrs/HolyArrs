@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { press } from '../motion.ts';
+	import { press } from '../core/motion.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
-	import { api } from '../api.ts';
-	import { loadWikiFacts } from '../wiki-facts.ts';
-	import { pictureOf } from '../pictures.ts';
+	import { api } from '../core/api.ts';
+	import { loadWikiFacts } from './wiki-facts.ts';
+	import { pictureOf } from '../core/pictures.ts';
 	import { tmdbSized } from '../library-art.ts';
 
 	// A person in a cast and crew shelf: round photo (initials fallback), name, role.

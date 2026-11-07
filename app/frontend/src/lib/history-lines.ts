@@ -3,11 +3,11 @@
 // happened, and line 2 says what happened, in plain words and never
 // repeating the title or the step. The details panel and the phone
 // sheet use the same words.
-import type { IconName } from './Icon.svelte';
-import { bytes } from './format.ts';
+import type { IconName } from './ui/Icon.svelte';
+import { bytes } from './core/format.ts';
 import { dayKey } from './history-views.ts';
 import type { HistoryRow } from './history.ts';
-import type { EventRecord, TitleView } from './types.ts';
+import type { EventRecord, TitleView } from './core/types.ts';
 
 /** A status tag: a dot and a word. */
 export interface Tag {

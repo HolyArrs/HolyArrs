@@ -1,5 +1,5 @@
 // Calendar: the month grid and list for movie dates and episodes.
-import type { CalendarEntry, TitleView } from './types.ts';
+import type { CalendarEntry, TitleView } from './core/types.ts';
 
 export const kindWord: Record<CalendarEntry['kind'], string> = {
 	cinema: 'In cinemas',

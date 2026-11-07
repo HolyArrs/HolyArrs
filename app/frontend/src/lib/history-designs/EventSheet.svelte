@@ -3,14 +3,14 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import Poster from '#lib/Poster.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import VerbMark from './VerbMark.svelte';
-	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { HistoryRow } from '#lib/history.ts';
 	import { glue, panelView, pathBits } from '#lib/history-looks/panel.ts';
-	import type { TitleView } from '#lib/types.ts';
+	import type { TitleView } from '#lib/core/types.ts';
 
 	// One History row in a sheet (a bottom sheet on phones): the same content
 	// as the details panel, in the same order.

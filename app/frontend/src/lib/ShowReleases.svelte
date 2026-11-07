@@ -3,13 +3,13 @@
 	// Choose a release for an episode or a season of a show: every Release
 	// the newest search found, with its verdict and plain reasons; choose one
 	// (a season pack fills every episode it holds) or turn it down.
-	import { api, ApiError, message } from './api.ts';
-	import { bytes } from './format.ts';
-	import { live } from './live.svelte.ts';
+	import { api, ApiError, message } from './core/api.ts';
+	import { bytes } from './core/format.ts';
+	import { live } from './core/live.svelte.ts';
 	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from './releases.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import type { ReleaseScope as Scope } from './shows.ts';
-	import type { Choice, ReleasePage, ReleaseView } from './types.ts';
+	import type { Choice, ReleasePage, ReleaseView } from './core/types.ts';
 
 	let {
 		titleId,

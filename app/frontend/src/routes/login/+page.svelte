@@ -1,13 +1,13 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/loader.ts';
+	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/core/loader.ts';
 	import { page } from '$app/state';
-	import { ApiError, message } from '#lib/api.ts';
-	import { session, type FoundServer, type SignInResult } from '#lib/session.svelte.ts';
+	import { ApiError, message } from '#lib/core/api.ts';
+	import { session, type FoundServer, type SignInResult } from '#lib/core/session.svelte.ts';
 	import { safeNext } from '#lib/next.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';

@@ -4,18 +4,18 @@
 	// (a thin toolbar strip, a dense list that scrolls inside, a status bar). Same data and
 	// Undo as the Library's list (ReleaseList); only the look follows Downloads.
 	import { onMount } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { tip } from './tip.ts';
-	import { to } from '../paths.ts';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { bytes, date } from '#lib/format.ts';
+	import { to } from '../core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { bytes, date } from '#lib/core/format.ts';
 	import { facts, keyReasons, listedName, pager } from '#lib/releases.ts';
-	import { plainReason } from '#lib/plain.ts';
+	import { plainReason } from '#lib/core/plain.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
-	import type { ReleasePage, ReleaseView } from '#lib/types.ts';
+	import type { ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
 	// Embedded: shown as a tab on the History page, which carries the heading and the way back.
 	let { embedded = false }: { embedded?: boolean } = $props();

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { popIn, popOut } from './transitions.ts';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import { popIn, popOut } from '../core/transitions.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
 	// A trigger and a floating panel. Closes on Escape, an outside click, or
 	// when content calls close(); focus goes back to the trigger.

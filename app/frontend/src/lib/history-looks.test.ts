@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL, byDay, dayItems, dayLine, lookTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf, loadArtSize, saveArtSize, loadDetailsOpen, saveDetailsOpen } from './history-looks.ts';
 import { groupDownloads } from './history.ts';
-import type { EventRecord } from './types.ts';
+import type { EventRecord } from './core/types.ts';
 
 let id = 0;
 const ev = (Kind: string, At: string, extra: Partial<EventRecord> = {}): EventRecord => ({ ID: ++id, At, Kind, Summary: Kind, TitleID: null, ...extra });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { burstLine, byWhom, dayLabel, eventsQuery, headVerb, tierOf, titleHref, verbOf } from './history-views.ts';
 import { groupDownloads } from './history.ts';
-import type { EventRecord } from './types.ts';
+import type { EventRecord } from './core/types.ts';
 
 let id = 0;
 function ev(Kind: string, At: string, extra: Partial<EventRecord> = {}): EventRecord {

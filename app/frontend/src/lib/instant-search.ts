@@ -2,7 +2,7 @@
 // TV shows and music from the online lookups, five each, with a More link
 // per section and a See all row.
 import { detailPath } from './title-details.ts';
-import type { LookupArtist, LookupShow, Movie, TitleView } from './types.ts';
+import type { LookupArtist, LookupShow, Movie, TitleView } from './core/types.ts';
 
 export type SectionId = 'library' | 'movies' | 'shows' | 'music';
 

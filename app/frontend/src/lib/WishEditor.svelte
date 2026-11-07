@@ -2,7 +2,7 @@
 	// A subtitle wish: languages, each with a hearing-impaired choice and a
 	// forced-only switch. Used by Settings > Subtitles (the default) and the
 	// subtitle panel of movies, shows and episodes.
-	import Icon from './Icon.svelte';
+	import Icon from './ui/Icon.svelte';
 	import Button from './ui/Button.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import { hiWords, langName, type HI, type Language, type Want } from './subtitles.ts';

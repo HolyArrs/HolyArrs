@@ -1,4 +1,4 @@
-import type { CopyFile, VersionView } from './types.ts';
+import type { CopyFile, VersionView } from './core/types.ts';
 
 export type CopyControlFile = Pick<CopyFile, 'ID' | 'VersionID' | 'RelativePath' | 'Protected' | 'MediaInfo' | 'State'>;
 export type CopyControlVersion = Pick<VersionView, 'edition' | 'audio_languages'>;

@@ -1,15 +1,15 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { api } from './api.ts';
-	import { to } from './paths.ts';
-	import { session } from './session.svelte.ts';
+	import { api } from './core/api.ts';
+	import { to } from './core/paths.ts';
+	import { session } from './core/session.svelte.ts';
 	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
 	import { detailPath } from './title-details.ts';
 	import { discoverCard, followsByTmdb, ownedMark, serviceRegion, type ExploreCard, type ProviderItem } from './explore.ts';
-	import { defaultRegion } from './region.ts';
-	import { audienceOf } from './title-status.ts';
+	import { defaultRegion } from './ui/region.ts';
+	import { audienceOf } from './ui/title-status.ts';
 	import type { FilmographyPage } from './people.ts';
-	import type { Ask } from './types.ts';
+	import type { Ask } from './core/types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import WideCard from './ui/WideCard.svelte';
 	import Sheet from './ui/Sheet.svelte';

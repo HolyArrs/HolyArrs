@@ -4,7 +4,7 @@
 	// tokens only; an optional quiet text link (Clear search, Show all).
 	import type { Snippet } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { reducedMotion } from '../motion.ts';
+	import { reducedMotion } from '../core/motion.ts';
 
 	let { title, text = '', compact = false, testid = 'dl-empty', action }: { title: string; text?: string; compact?: boolean; testid?: string; action?: Snippet } = $props();
 	const dur = reducedMotion() ? 0 : 180;

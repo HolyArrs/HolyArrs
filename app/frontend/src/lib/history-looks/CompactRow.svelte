@@ -1,14 +1,14 @@
 <script lang="ts">
 	// History's compact row: small poster, title and time, then the step and
 	// one extra piece. Used by History's Search looks and the title pages.
-	import Poster from '../Poster.svelte';
-	import Icon from '../Icon.svelte';
-	import { dateTime } from '../format.ts';
+	import Poster from '../ui/Poster.svelte';
+	import Icon from '../ui/Icon.svelte';
+	import { dateTime } from '../core/format.ts';
 	import { artOf } from '../history-views.ts';
 	import { agoShort, partOf, rowExtra, rowStep } from './dirs.ts';
 	import { rowText, type LineContext } from '../history-lines.ts';
 	import type { HistoryRow } from '../history.ts';
-	import type { EventRecord, TitleView } from '../types.ts';
+	import type { EventRecord, TitleView } from '../core/types.ts';
 
 	let {
 		row,

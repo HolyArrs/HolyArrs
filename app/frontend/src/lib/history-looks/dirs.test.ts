@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { eventText } from '../history-lines.ts';
 import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, filterVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
-import type { EventRecord } from '../types.ts';
+import type { EventRecord } from '../core/types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
 let id = 0;

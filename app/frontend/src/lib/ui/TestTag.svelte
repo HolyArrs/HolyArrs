@@ -2,8 +2,8 @@
 	// A connection test's result as one small tag: a green tick with "<App> v<version>",
 	// or a red "Not connected". The full answer stays in the tooltip; the place
 	// that shows the tag puts a failure's reason on its own short red line.
-	import Icon from '#lib/Icon.svelte';
-	import { testLabel } from '#lib/test-tag.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { testLabel } from '#lib/core/test-tag.ts';
 
 	let {
 		ok,

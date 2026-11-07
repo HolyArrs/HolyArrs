@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { viewTransitionName } from '../motion.ts';
-	import { proxied, sharpen } from '../tmdb-image.ts';
+	import { viewTransitionName } from '../core/motion.ts';
+	import { proxied, sharpen } from '../core/tmdb-image.ts';
 
 	// Layer 1 of every hero: the backdrop at once (from the artwork cache),
 	// a slow Ken Burns zoom-and-pan, and a crossfade through the title's

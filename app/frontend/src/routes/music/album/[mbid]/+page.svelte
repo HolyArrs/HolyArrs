@@ -1,34 +1,34 @@
 <script lang="ts">
-	import { dragScroll } from '#lib/drag-scroll.ts';
+	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { beforeNavigate, goto } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
-	import { pictureOf } from '#lib/pictures.ts';
+	import { pictureOf } from '#lib/core/pictures.ts';
 	import GapNotice from '#lib/music/GapNotice.svelte';
 	import { gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView } from '#lib/music/reask.ts';
 	import { albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
-	import { followHint, followLabel, followPath, setFollow } from '#lib/follow.ts';
+	import { followHint, followLabel, followPath, setFollow } from '#lib/ui/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
+	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/core/types.ts';
 
 	// An album's page: the cover beside its title and actions, the tracklist
 	// with what the Library has, its other editions, and where to go next.

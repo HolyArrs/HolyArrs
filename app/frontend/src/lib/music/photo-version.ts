@@ -1,4 +1,4 @@
-import { withVersion } from '../pictures.ts';
+import { withVersion } from '../core/pictures.ts';
 
 // Bumped when artist photos change source, so browsers drop copies they were told to keep.
 const artistPhotoVersion = '4';

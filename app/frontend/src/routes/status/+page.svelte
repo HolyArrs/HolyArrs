@@ -6,18 +6,18 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { checkMetadata, metadataHealth } from '#lib/metadata-health.svelte.ts';
-	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/types.ts';
+	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/core/types.ts';
 	import type { ScheduleRow } from '#lib/schedules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { testLabel } from '#lib/test-tag.ts';
+	import { testLabel } from '#lib/core/test-tag.ts';
 	import Sections from '#lib/status/StatusSections.svelte';
 	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 

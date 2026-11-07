@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { api, message } from './api.ts';
+	import { api, message } from './core/api.ts';
 	import { editionDecisionBody } from './copy-controls.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import Button from './ui/Button.svelte';
-	import Icon from './Icon.svelte';
-	import { plainReason } from './plain.ts';
+	import Icon from './ui/Icon.svelte';
+	import { plainReason } from './core/plain.ts';
 
 	let { downloadId, onchange = () => {} }: { downloadId: number; onchange?: () => void | Promise<void> } = $props();
 	let edition = $state('');

@@ -11,7 +11,7 @@
 	import Button from '../ui/Button.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import EmptyState from '../ui/EmptyState.svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import Sheet from '../ui/Sheet.svelte';
 	import { appName, folderProblem, groupLabels, OTHER, plural, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from '../move.ts';

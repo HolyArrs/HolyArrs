@@ -16,8 +16,8 @@
 	}
 
 	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[]; moods?: string[]; quality?: string; seasons?: number };
-	import type { Video } from '../trailer.ts';
-	import { shownScore } from '../rating.ts';
+	import type { Video } from '../core/trailer/trailer.ts';
+	import { shownScore } from '../core/rating.ts';
 	type Raw = Record<string, unknown>;
 	const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
@@ -55,21 +55,21 @@
 
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import { setTopCrumbs } from '../top-crumbs.svelte.ts';
-	import Icon, { type IconName } from '../Icon.svelte';
+	import { setTopCrumbs } from '../core/top-crumbs.svelte.ts';
+	import Icon, { type IconName } from './Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
-	import { viewTransitionName } from '../motion.ts';
-	import { proxied, sized } from '../tmdb-image.ts';
-	import { awardsTip, loadWikiFacts, type WikiFacts } from '../wiki-facts.ts';
+	import { viewTransitionName } from '../core/motion.ts';
+	import { proxied, sized } from '../core/tmdb-image.ts';
+	import { awardsTip, loadWikiFacts, type WikiFacts } from './wiki-facts.ts';
 	import Billboard from './Billboard.svelte';
 	import ActionButton from './ActionButton.svelte';
-	import { heroPictures } from '../trailer.ts';
-	import { autoplayHere, loadUISettings, trailerClickSources } from '../autoplay.svelte.ts';
-	import { openTheater } from '../theater.svelte.ts';
-	import { api } from '../api.ts';
-	import { loadExtras, type Extras } from '../outside-ratings.ts';
+	import { heroPictures } from '../core/trailer/trailer.ts';
+	import { autoplayHere, loadUISettings, trailerClickSources } from '../core/trailer/autoplay.svelte.ts';
+	import { openTheater } from '../core/trailer/theater.svelte.ts';
+	import { api } from '../core/api.ts';
+	import { loadExtras, type Extras } from './outside-ratings.ts';
 	import RatingsStrip from './RatingsStrip.svelte';
-	import { ratingPicks, shownRatings } from '../rating-picks.svelte.ts';
+	import { ratingPicks, shownRatings } from './rating-picks.svelte.ts';
 
 	// The title page hero (movie, show, artist, album, not-yet-added titles):
 	// the Explore billboard (Billboard.svelte), so moving from Explore to a

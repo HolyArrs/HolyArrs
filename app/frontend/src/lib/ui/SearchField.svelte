@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Icon from '../Icon.svelte';
-	import { appPath, to } from '../paths.ts';
-	import { dlScope, registerField, rememberReturn, searchField, searchHooks } from '../search-field.svelte.ts';
-	import { api } from '../api.ts';
+	import Icon from './Icon.svelte';
+	import { appPath, to } from '../core/paths.ts';
+	import { dlScope, registerField, rememberReturn, searchField, searchHooks } from '../core/search-field.svelte.ts';
+	import { api } from '../core/api.ts';
 	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from '../live-search.ts';
 	import GlassDropdown from './GlassDropdown.svelte';
-	import { inSettings, settingsFind } from '../settings-home/find.svelte.ts';
+	import { inSettings, settingsFind } from '../core/settings-find.svelte.ts';
 
 	// The one search field (spec: top bar, centre). Typing or Enter anywhere
 	// opens the Search page with the words; a focus or click on an empty field

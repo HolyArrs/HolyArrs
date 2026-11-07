@@ -4,8 +4,8 @@
 	// sheet shows each torrent's looked-up choices with posters. Picking one
 	// adds the title (when missing) and links the torrent, the same as a sure
 	// match. The list is read from HolyArrs only; no outside lookups here.
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
 	import { bannerWords, candidateLine, type Match, type Matches } from './matches.ts';

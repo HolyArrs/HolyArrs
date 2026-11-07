@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Shelf from './Shelf.svelte';
-	import { artistVideo, autoplayHere, loadUISettings, nativeHLS, prefetchArtistVideo } from '../autoplay.svelte.ts';
-	import { attachHLS } from '../hls-player.ts';
-	import { heroVideoStart, type HeroVideo } from '../music/hero-video.ts';
+	import { artistVideo, autoplayHere, loadUISettings, nativeHLS, prefetchArtistVideo } from '../core/trailer/autoplay.svelte.ts';
+	import { attachHLS } from '../core/trailer/hls-player.ts';
+	import { heroVideoStart, type HeroVideo } from '../core/trailer/hero-video.ts';
 	import { musicCardHref, musicImage, type MusicCardData } from '../music/music-trending.ts';
 
 	// Music videos people watch (flag music_lists_v1): wide 16:9 cards of charting artists

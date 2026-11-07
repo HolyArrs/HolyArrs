@@ -5,20 +5,20 @@
 	import { cubicOut } from 'svelte/easing';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
-	import { to } from '#lib/paths.ts';
-	import { proxied } from '#lib/tmdb-image.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { proxied } from '#lib/core/tmdb-image.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
-	import { ago, dateTime } from '#lib/format.ts';
+	import { ago, dateTime } from '#lib/core/format.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import type { SearchView } from '#lib/types.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import type { SearchView } from '#lib/core/types.ts';
 	import { factsLine, filterOf, fixReport, kindHint, kindIcon, listReports, noteMax, quickReplies, reopenReport, reportFilters, reportHref, searchBody, sortReports, stateCounts, titleLine, whoName, type ReportFilter, type ReportView } from '#lib/reports.ts';
 
 	// Reports (#36): the Requests page's sibling, in the same language. One toolbar

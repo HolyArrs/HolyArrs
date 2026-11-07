@@ -5,15 +5,15 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/rating-picks.svelte.ts';
+	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/ui/rating-picks.svelte.ts';
 	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
 	import Table from '#lib/ui/Table.svelte';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { setAutoplaySetting } from '#lib/autoplay.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { setAutoplaySetting } from '#lib/core/trailer/autoplay.svelte.ts';
 	const aboutGroups = ['Information', 'Production', 'Links', 'Ratings', 'Feel'] as const;
 	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
 

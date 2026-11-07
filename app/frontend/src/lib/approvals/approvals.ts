@@ -1,11 +1,11 @@
 // Requests page: the context every Inbox arrangement (inbox.ts) and the
 // one-by-one review get from the page, and the small rules they share.
 
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { ApproverTab, AskTab } from '../requests.ts';
 import type { TitleDetails } from '../title-details.ts';
-import type { LibraryFolder, PickRulesView } from '../types.ts';
+import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import type { AskInfo, EpisodeInfo } from './inbox.ts';
 import type { LifeFacts } from './lifecycle.ts';
 

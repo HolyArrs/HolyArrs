@@ -6,13 +6,13 @@
 	// the approver can untick albums or seasons; `pick` says what is kept
 	// (null: all of it, as asked).
 	import { slide } from 'svelte/transition';
-	import { DUR, easeOut } from '../ui/transitions.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { DUR, easeOut } from '../core/transitions.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { appPicture, coverFor } from '../music/music-pages.ts';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
-	import type { Ask } from '../types.ts';
+	import type { Ask } from '../core/types.ts';
 
 	let { ctx, a, editable = false, unfolded = false, layout = 'list', pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Requests Stage). */ unfolded?: boolean; /** Rows that open (list), or two panes that fill their box (split: the Requests sheet). */ layout?: 'list' | 'split'; pick?: PartsPick } = $props();
 

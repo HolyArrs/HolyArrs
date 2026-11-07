@@ -3,21 +3,21 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { to } from '#lib/paths.ts';
-	import { proxied } from '#lib/tmdb-image.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { proxied } from '#lib/core/tmdb-image.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
-	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { partOff, partOn } from '#lib/parts.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
 	import { cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
-	import { contextLine } from '#lib/grow-lines.ts';
-	import { defaultRegion } from '#lib/region.ts';
-	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
+	import { contextLine } from '#lib/ui/grow-lines.ts';
+	import { defaultRegion } from '#lib/ui/region.ts';
+	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
-	import { audienceOf } from '#lib/title-status.ts';
+	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import QuickAsk from '#lib/QuickAsk.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
@@ -33,10 +33,10 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { buildingStatus } from '#lib/silhouette.ts';
+	import { buildingStatus } from '#lib/core/silhouette.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import type { IconName } from '#lib/Icon.svelte';
+	import type { IconName } from '#lib/ui/Icon.svelte';
 
 	type Row = ExploreRow & { wide: boolean; type: string };
 

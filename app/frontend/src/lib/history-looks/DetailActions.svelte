@@ -4,13 +4,13 @@
 	// places to go (Import plan, the title, Downloads, Requests, Problems).
 	import { tick } from 'svelte';
 	import Button from '../ui/Button.svelte';
-	import { toasts } from '../toasts.svelte.ts';
-	import { api, message } from '../api.ts';
-	import { to } from '../paths.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { to } from '../core/paths.ts';
 	import { titleHref } from '../history-views.ts';
 	import { canFind, findTarget, qualityOf, rowLinks, rowStep } from './dirs.ts';
 	import type { HistoryRow } from '../history.ts';
-	import type { TitleView } from '../types.ts';
+	import type { TitleView } from '../core/types.ts';
 
 	let { row, titleById }: { row: HistoryRow; titleById: Map<number, TitleView> } = $props();
 	const find = $derived(canFind(row));

@@ -5,8 +5,8 @@
 	// or some tracks (4.15.4). The plan below is what the delete does: it is
 	// asked again whenever a choice changes, and the delete carries out that
 	// same plan.
-	import { api, ApiError, message } from './api.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { api, ApiError, message } from './core/api.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { deleteBody, deleteSummary, wholeScope, type DeleteScope, type RemovePlan } from './organise.ts';
 
 	let {

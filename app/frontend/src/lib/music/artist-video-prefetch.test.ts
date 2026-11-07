@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../autoplay.svelte.ts', () => ({ prefetchArtistVideo: () => {}, watchArtistVideo: () => () => {} }));
+vi.mock('../core/trailer/autoplay.svelte.ts', () => ({ prefetchArtistVideo: () => {}, watchArtistVideo: () => () => {} }));
 
 const { artistOfHref } = await import('./artist-video-prefetch.ts');
 

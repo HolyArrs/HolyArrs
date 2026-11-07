@@ -10,11 +10,11 @@
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
 	import { partOff, partOn } from '#lib/parts.svelte.ts';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
-	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import {
 		cardAction,
@@ -58,11 +58,11 @@
 		type TailAnswer,
 		type WatchService
 	} from '#lib/explore.ts';
-	import { contextLine } from '#lib/grow-lines.ts';
-	import { defaultRegion } from '#lib/region.ts';
-	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
+	import { contextLine } from '#lib/ui/grow-lines.ts';
+	import { defaultRegion } from '#lib/ui/region.ts';
+	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/core/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
-	import { audienceOf } from '#lib/title-status.ts';
+	import { audienceOf } from '#lib/ui/title-status.ts';
 	import QuickAsk from '#lib/QuickAsk.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import TopServicesRow from '#lib/TopServicesRow.svelte';
@@ -80,7 +80,7 @@
 	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
-	import { fitTile } from '#lib/tmdb-image.ts';
+	import { fitTile } from '#lib/core/tmdb-image.ts';
 	import { fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer } from '#lib/category-strip.ts';
 	import { whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -89,11 +89,11 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import type { IconName } from '#lib/Icon.svelte';
-	import { EAGER_ROWS, stableRows } from '#lib/row-window.ts';
-	import Icon from '#lib/Icon.svelte';
-	import { onTheaterExit } from '#lib/theater.svelte.ts';
-	import { whenIdle } from '#lib/lazy-art.ts';
+	import type { IconName } from '#lib/ui/Icon.svelte';
+	import { EAGER_ROWS, stableRows } from '#lib/ui/row-window.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { onTheaterExit } from '#lib/core/trailer/theater.svelte.ts';
+	import { whenIdle } from '#lib/ui/lazy-art.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);

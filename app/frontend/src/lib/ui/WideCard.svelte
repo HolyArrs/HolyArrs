@@ -3,18 +3,18 @@
 	import Badge from './Badge.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { sized } from '../tmdb-image.ts';
-	import { shelfNear, whenLoaded } from '../lazy-art.ts';
-	import { press, viewTransitionName } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { sized } from '../core/tmdb-image.ts';
+	import { shelfNear, whenLoaded } from './lazy-art.ts';
+	import { press, viewTransitionName } from '../core/motion.ts';
 	import HoverPreview from './HoverPreview.svelte';
 	import CardBadges, { type CardOwned } from './CardBadges.svelte';
-	import { freshLabel, shownFresh, typeWord, type Fresh } from '../fresh.ts';
-	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
-	import { dwell, finePointer, HOVER_DELAY, scrollHold } from '../trailer.ts';
+	import { freshLabel, shownFresh, typeWord, type Fresh } from './fresh.ts';
+	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
+	import { dwell, finePointer, HOVER_DELAY, scrollHold } from '../core/trailer/trailer.ts';
 	import GrowCard from './GrowCard.svelte';
-	import { GROW_DELAY } from '../grow.ts';
-	import { cardTemplate, type CardArtPick } from '../card-art.ts';
+	import { GROW_DELAY } from './grow.ts';
+	import { cardTemplate, type CardArtPick } from './card-art.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
 	// bottom edge, overlay badges, title and a meta line below.

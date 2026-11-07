@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { metaLine } from '../fresh.ts';
+	import { metaLine } from './fresh.ts';
 	import { onDestroy, onMount, type Snippet } from 'svelte';
-	import { api } from '../api.ts';
+	import { api } from '../core/api.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
-	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
-	import { placeCard } from '../trailer.ts';
-	import { sized } from '../tmdb-image.ts';
-	import { GROW_WIDTH } from '../grow.ts';
-	import { popOut } from './transitions.ts';
+	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
+	import { placeCard } from '../core/trailer/trailer.ts';
+	import { sized } from '../core/tmdb-image.ts';
+	import { GROW_WIDTH } from './grow.ts';
+	import { popOut } from '../core/transitions.ts';
 
 	// The Netflix-style expanded card: opened over a poster after a hover or
 	// keyboard-focus delay (PosterCard decides when), a scaled-up card with a

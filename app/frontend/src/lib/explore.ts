@@ -2,12 +2,12 @@
 // the calendar and Requests), plus rows from a later discover endpoint.
 // Everything that decides what shows, and in which order, lives here as pure
 // functions so it can be tested and explained.
-import { pickFrom, type CardArtPick } from './card-art.ts';
-import { api, ApiError, type Client } from './api.ts';
-import type { Fresh } from './fresh.ts';
+import { pickFrom, type CardArtPick } from './ui/card-art.ts';
+import { api, ApiError, type Client } from './core/api.ts';
+import type { Fresh } from './ui/fresh.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
-import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
-import type { Ask, AskBrief, AskState, CalendarEntry, TitleView } from './types.ts';
+import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './ui/title-status.ts';
+import type { Ask, AskBrief, AskState, CalendarEntry, TitleView } from './core/types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
 export type CardStatus = StatusKind;

@@ -2,10 +2,10 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { isConfirm, type Confirm } from '#lib/controls.ts';
 
 	const allowed = $derived(session.can('users'));

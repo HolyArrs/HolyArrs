@@ -3,15 +3,15 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import { to } from '#lib/paths.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, dateTime } from '#lib/format.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, dateTime } from '#lib/core/format.ts';
 	import { runTone, runWord } from '#lib/health.ts';
 	import { busyNow, dot, every, groupSchedules, mayRun, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/schedules.ts';
 

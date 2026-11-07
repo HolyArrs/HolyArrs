@@ -2,16 +2,16 @@
 	import Sheet from './ui/Sheet.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from './ui/Button.svelte';
-	import { to } from './paths.ts';
+	import { to } from './core/paths.ts';
 	// The add-a-show dialog: Library folder, Pick rules, which seasons to
 	// keep up to date, new seasons, episode order and details source. It
 	// starts from the Movies and TV defaults and the show settings.
-	import { api, message } from './api.ts';
+	import { api, message } from './core/api.ts';
 	import { secondVersion } from './library.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from './shows.ts';
 	import { builtInDefaults, startChoices } from './title-defaults.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
-	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from './types.ts';
+	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from './core/types.ts';
 
 	let {
 		folders,

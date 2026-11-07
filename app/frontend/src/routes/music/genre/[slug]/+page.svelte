@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { api } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { ownedIndex } from '#lib/explore.ts';
 	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
-	import type { LibraryFolder, PickRulesView } from '#lib/types.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// A Music genre page (Music only): the genre's band, then its rows —
 	// Spotlight, new and top albums in the genre, your artists in it, what

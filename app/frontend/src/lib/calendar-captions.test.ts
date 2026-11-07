@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 import { groupDates } from './calendar-looks.ts';
 import { cardLines, rowWords, channelShown, clockTime, episodeWords, fakeEpisodeName, lookFrom, movieCaption, musicCaption, ordinal, runLength, seriesLine, whereOut, type CaptionLook } from './calendar-captions.ts';
 

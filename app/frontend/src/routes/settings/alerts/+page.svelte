@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { ago } from '#lib/format.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests.ts';
-	import type { AlertView, Moment } from '#lib/types.ts';
+	import type { AlertView, Moment } from '#lib/core/types.ts';
 	import { switchKind } from './kind.ts';
 
 	type Kind = 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';

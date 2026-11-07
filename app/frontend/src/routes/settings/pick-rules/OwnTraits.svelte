@@ -3,9 +3,9 @@
 	// points, make a must-have or put in Never in any Pick rules. A sheet
 	// makes or changes one; removing one also takes it out of every Pick rule.
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { checkOwnTrait, ownTerms } from '#lib/pick-rules.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -15,7 +15,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import type { OwnTrait } from '#lib/types.ts';
+	import type { OwnTrait } from '#lib/core/types.ts';
 
 	let { mayEdit }: { mayEdit: boolean } = $props();
 

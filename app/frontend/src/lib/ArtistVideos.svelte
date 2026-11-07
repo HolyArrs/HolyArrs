@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Icon from './Icon.svelte';
+	import Icon from './ui/Icon.svelte';
 	import Shelf from './ui/Shelf.svelte';
-	import { api } from './api.ts';
-	import { claimPlayer } from './trailer.ts';
-	import { openTheater } from './theater.svelte.ts';
-	import { pickedSources, type HeroVideo } from './music/hero-video.ts';
+	import { api } from './core/api.ts';
+	import { claimPlayer } from './core/trailer/trailer.ts';
+	import { openTheater } from './core/trailer/theater.svelte.ts';
+	import { pickedSources, type HeroVideo } from './core/trailer/hero-video.ts';
 
 	// An artist's music videos (GET /music/artists/{mbid}?part=videos) as one row
 	// of small cards, the same row as a title page's trailers: whole cards, each

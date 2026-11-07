@@ -2,9 +2,9 @@
 // icon it is shown with, its day and clock, and the one line a run of
 // routine Events folds into, so the few Events that matter are not lost
 // among thousands of scans.
-import type { IconName } from './Icon.svelte';
+import type { IconName } from './ui/Icon.svelte';
 import { historyQuery, kindGroups, type HistoryFilter, type HistoryRow } from './history.ts';
-import type { EventRecord, TitleView } from './types.ts';
+import type { EventRecord, TitleView } from './core/types.ts';
 
 /** How much an Event matters: a result to look at, a change, or routine upkeep. */
 export type Tier = 'important' | 'changes' | 'routine';

@@ -2,9 +2,9 @@
 // and /title/show/<tmdb>. GET /metadata/{kind}/{tmdb} is tried first (a
 // backend branch adds it); on 404 the page falls back to a lookup by id,
 // which also says whether the Library has it and who asked.
-import { ApiError } from './api.ts';
-import { shownScore } from './rating.ts';
-import type { AskBrief, LookupMovie, LookupShow } from './types.ts';
+import { ApiError } from './core/api.ts';
+import { shownScore } from './core/rating.ts';
+import type { AskBrief, LookupMovie, LookupShow } from './core/types.ts';
 
 export type DetailKind = 'movie' | 'show';
 

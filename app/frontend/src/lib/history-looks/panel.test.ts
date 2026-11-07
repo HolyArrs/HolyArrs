@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { panelView, pathBits, shortPath, whenText, type PanelContext } from './panel.ts';
 import { groupDownloads, type HistoryRow } from '../history.ts';
-import type { EventRecord } from '../types.ts';
+import type { EventRecord } from '../core/types.ts';
 
 let id = 0;
 const now = new Date(2026, 10, 5, 22, 36);

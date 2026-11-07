@@ -1,12 +1,12 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, ApiError, message } from '#lib/api.ts';
-	import { session, type SignInResult } from '#lib/session.svelte.ts';
+	import { api, ApiError, message } from '#lib/core/api.ts';
+	import { session, type SignInResult } from '#lib/core/session.svelte.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import { alreadyLinked, inviteTiles, type Way } from '#lib/signinArt.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';

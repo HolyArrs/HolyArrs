@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { statusLabel } from '../title-status.ts';
+	import { statusLabel } from './title-status.ts';
 	export type StatusKind = 'in_library' | 'downloading' | 'missing' | 'requested' | 'approved' | 'turned_down' | 'failed' | 'coming_soon';
 	const tones: Record<StatusKind, 'ok' | 'wait' | 'fail' | 'info' | 'idle'> = {
 		in_library: 'ok',
@@ -21,7 +21,7 @@
 	// Dot plus a word, never colour alone (spec §2).
 	// Over art it becomes the shared glass pill with a line glyph instead of the dot.
 	import ArtPill from './ArtPill.svelte';
-	import type { IconName } from '../Icon.svelte';
+	import type { IconName } from './Icon.svelte';
 	let { kind, percent, label, on = 'surface', compact = false, testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; /** Over art only: glyph alone, the word stays as its name. */ compact?: boolean; testid?: string } = $props();
 	const glyphs: Record<StatusKind, IconName> = {
 		in_library: 'owned',

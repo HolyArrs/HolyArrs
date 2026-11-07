@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from './api.ts';
+import { ApiError } from './core/api.ts';
 import { detailPath, fourKOffer, fromMetadata, loadDetails, metaLine } from './title-details.ts';
 
 describe('title details', () => {

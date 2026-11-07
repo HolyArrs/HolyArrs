@@ -1,7 +1,7 @@
 // Why a title is shown: short reasons drawn from data the page already has
 // (the server's freshness strip, the household's taste).
 // Pure, so the Explore hero and any card can share it.
-import type { Fresh } from './fresh.ts';
+import type { Fresh } from './ui/fresh.ts';
 
 export type WhyKind = 'new_season' | 'top10' | 'taste';
 

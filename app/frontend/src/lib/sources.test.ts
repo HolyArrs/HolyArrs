@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { barHeight, emptyForm, formBody, formFrom, ms, sourceTone, uses } from './sources.ts';
-import type { SourceView } from './types.ts';
+import type { SourceView } from './core/types.ts';
 
 const saved: SourceView = {
 	id: 3,

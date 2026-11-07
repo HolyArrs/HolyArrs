@@ -1,7 +1,7 @@
 // The Library's banner table: which columns each library offers, how they
 // sort, the member's saved column layout, the Filter menu's counts and the
 // saved filters. Kept apart from the page so it can be tested.
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 import { matches, type Filter } from './library.ts';
 import { libraryState } from './library-state.ts';
 

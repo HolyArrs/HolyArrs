@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends string">
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 
 	// A small set of mutually exclusive choices. Arrow keys move the choice
 	// (radio group pattern); the thumb slides to the picked segment.

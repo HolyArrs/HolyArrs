@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 	import Button from './Button.svelte';
 
 	// Icon, one sentence, one action (spec §5).

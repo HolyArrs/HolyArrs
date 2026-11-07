@@ -4,11 +4,11 @@
 	// Pick rules, Keep up to date, Search when added), with the Release gate
 	// and the show choices behind Advanced. Three server routes, one form.
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import { changedParts, foldersFor, gateChoices, rulesFor } from '#lib/title-defaults.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows.ts';
@@ -17,7 +17,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { GateDefaults, LibraryFolder, PickRulesView, ShowSettings, TitleDefaults } from '#lib/types.ts';
+	import type { GateDefaults, LibraryFolder, PickRulesView, ShowSettings, TitleDefaults } from '#lib/core/types.ts';
 
 	interface Parts {
 		defaults: TitleDefaults;

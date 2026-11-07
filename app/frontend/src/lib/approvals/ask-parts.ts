@@ -3,7 +3,7 @@
 // it, singles and EPs, live albums and compilations counted apart), and a
 // show ask's seasons. The approver can leave some out before approving.
 
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 import type { SeasonInfo } from './inbox.ts';
 
 /** An album as the artist answer lists it (a MusicBrainz release group). */

@@ -23,8 +23,8 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { session } from '../session.svelte.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { session } from '../core/session.svelte.ts';
 
 	// A grouped settings block: title, one-line description, content, an
 	// optional Advanced disclosure (closed until the person opens it, then

@@ -3,7 +3,7 @@
 // controls ask first: the server answers a confirm id, and the same call
 // again with that id does it.
 
-import { api as defaultClient, type Client } from './api.ts';
+import { api as defaultClient, type Client } from './core/api.ts';
 import { switchPlan, type PartName, type PartsAnswer } from './parts.ts';
 
 /** Confirm is the server's first answer to a control that asks first. */

@@ -2,7 +2,7 @@
 	// Why HolyArrs: Luis's note, opened from Status > About. A retro window in the site's look: it powers on,
 	// types its lines, slams its tags on like stickers, and Luis and Peanut run across the title bar now and then.
 	import { tick } from 'svelte';
-	import { to } from '../paths.ts';
+	import { to } from '../core/paths.ts';
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 
 	// Silkscreen, the pixel font (SIL Open Font License, from @fontsource/silkscreen), loaded once from the app itself.

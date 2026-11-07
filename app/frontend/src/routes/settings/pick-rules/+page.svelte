@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { kindChoices, usedWords } from '#lib/pick-rules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -15,7 +15,7 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import OwnTraits from './OwnTraits.svelte';
-	import type { PickRulesUse, PickRulesView } from '#lib/types.ts';
+	import type { PickRulesUse, PickRulesView } from '#lib/core/types.ts';
 
 	// People without the settings permission see the rules but cannot change them.
 	const mayEdit = $derived(session.can('settings'));

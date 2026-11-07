@@ -5,7 +5,7 @@
 	// fills in a made-up history so the many-release case can be seen.
 	import './plate.css';
 	import { page } from '$app/state';
-	import { ago } from '../format.ts';
+	import { ago } from '../core/format.ts';
 	import Button from '../ui/Button.svelte';
 
 	type Update = { on: boolean; version: string; latest?: string; newer: boolean; link?: string; notes?: string; checked_at?: string; problem?: string; no_release?: boolean };

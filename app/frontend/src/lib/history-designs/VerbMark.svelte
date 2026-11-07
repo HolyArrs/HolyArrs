@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import type { Verb } from '#lib/history-views.ts';
 
 	// What happened, as a tinted icon and its word ("✓ Imported").

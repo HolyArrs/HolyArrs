@@ -6,11 +6,11 @@
 	// The Versions of a movie on the title page's Library tab: every wanted
 	// copy (for example HD and 4K) with its edition, audio and Pick rules;
 	// managers add and remove them here.
-	import { api, message } from './api.ts';
-	import { bytes, date, tone, words } from './format.ts';
+	import { api, message } from './core/api.ts';
+	import { bytes, date, tone, words } from './core/format.ts';
 	import { secondVersion } from './library.ts';
-	import { toasts } from './toasts.svelte.ts';
-	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
+	import { toasts } from './core/toasts.svelte.ts';
+	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from './core/types.ts';
 
 	let { list = true, title, onchange }: { list?: boolean; title: TitleView; onchange: () => void | Promise<void> } = $props();
 

@@ -6,7 +6,7 @@
 // and the remembered poster size and details panel.
 import { details, groupDownloads, type HistoryRow } from './history.ts';
 import { clock, dayKey, dayLabel, rowTier, type Tier } from './history-views.ts';
-import type { EventRecord } from './types.ts';
+import type { EventRecord } from './core/types.ts';
 
 export interface LookSub {
 	key: string;

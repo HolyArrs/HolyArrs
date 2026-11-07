@@ -3,9 +3,9 @@
 import { readFilter, type HistoryRow } from '../history.ts';
 import { fineCheck, lookTabs, tabKinds } from '../history-looks.ts';
 import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from '../history-lines.ts';
-import { bytes } from '../format.ts';
+import { bytes } from '../core/format.ts';
 import type { Verb } from '../history-views.ts';
-import type { EventRecord } from '../types.ts';
+import type { EventRecord } from '../core/types.ts';
 
 /** Who made an Event happen, as the Filter offers it. */
 export type Who = '' | 'me' | 'people' | 'ai' | 'holyarrs';

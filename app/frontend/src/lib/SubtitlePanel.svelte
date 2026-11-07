@@ -1,20 +1,20 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from './paths.ts';
+	import { to } from './core/paths.ts';
 	// Subtitles of a movie, a show or one episode (staff only): the subtitle
 	// wish (inherit or its own languages), the subtitles each File has with
 	// language, kind, source, score and where they are saved, Sync fix and
 	// Turn down for the ones HolyArrs saved, and Choose a subtitle by hand
 	// with every result's score and reasons.
 	import { onMount } from 'svelte';
-	import { api, message } from './api.ts';
-	import { session } from './session.svelte.ts';
-	import { dateTime } from './format.ts';
-	import Icon from './Icon.svelte';
-	import { live } from './live.svelte.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { api, message } from './core/api.ts';
+	import { session } from './core/session.svelte.ts';
+	import { dateTime } from './core/format.ts';
+	import Icon from './ui/Icon.svelte';
+	import { live } from './core/live.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import WishEditor from './WishEditor.svelte';
-	import type { EventRecord } from './types.ts';
+	import type { EventRecord } from './core/types.ts';
 	import {
 		fileName,
 		fromWords,

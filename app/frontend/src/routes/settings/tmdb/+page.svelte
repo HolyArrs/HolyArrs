@@ -4,7 +4,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import { onMount } from 'svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata-health.svelte.ts';
 
 

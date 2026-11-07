@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { api } from './api.ts';
-	import { to } from './paths.ts';
+	import { api } from './core/api.ts';
+	import { to } from './core/paths.ts';
 	import type { PersonSummary } from './people.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PersonCircle from './ui/PersonCircle.svelte';

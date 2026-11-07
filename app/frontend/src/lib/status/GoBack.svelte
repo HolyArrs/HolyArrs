@@ -2,9 +2,9 @@
 	// Going back after an update: the pre-update backup taken for the update to
 	// this version, and the steps to start the older image on it. Shown on the
 	// Status Updates tab to people who may change settings (the list is theirs).
-	import { api } from '../api.ts';
-	import { dateTime } from '../format.ts';
-	import { toasts } from '../toasts.svelte.ts';
+	import { api } from '../core/api.ts';
+	import { dateTime } from '../core/format.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import { IMAGE, goBackBackup, imageTag, type BackupRow } from '../update.ts';
 	import Button from '../ui/Button.svelte';
 

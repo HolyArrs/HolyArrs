@@ -5,9 +5,9 @@
 // pictures whose record says they are stored are asked, at the exact
 // address the page will ask, so nothing is fetched twice.
 import { appPicture, coverFor } from './music/music-pages.ts';
-import { pictureFor } from './pictures.ts';
+import { pictureFor } from './core/pictures.ts';
 import { remembered, type DetailKind } from './title-details.ts';
-import { proxied } from './tmdb-image.ts';
+import { proxied } from './core/tmdb-image.ts';
 
 const album = /\/music\/album\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
 const artist = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;

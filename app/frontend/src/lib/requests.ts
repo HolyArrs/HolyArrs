@@ -1,6 +1,6 @@
 // Words and small rules for Requests screens.
 
-import type { Ask, AskLimit, AskState, LimitKind } from './types.ts';
+import type { Ask, AskLimit, AskState, LimitKind } from './core/types.ts';
 
 /** askTone is the chip colour for an ask state. */
 export function askTone(state: AskState): 'wait' | 'ok' | 'fail' | '' {

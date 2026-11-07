@@ -3,8 +3,8 @@
 	// and its word, and the reason plus Check / Fix right under any row
 	// that is not working. Problems come first; long lists show six rows
 	// until "Show all".
-	import { ago, dateTime } from '../format.ts';
-	import { to } from '../paths.ts';
+	import { ago, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
 	import Button from '../ui/Button.svelte';
 	import { atVerb, type StatusRow } from './status.ts';
 

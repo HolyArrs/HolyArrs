@@ -2,8 +2,8 @@
 // Search → Music's sections and the mix that Explore and New & Popular offer.
 // A tile always has real album covers to try, in order; the server leaves out a
 // tile with none, and the grid drops a tile whose covers all fail to load.
-import { api, type Client } from '../api.ts';
-import { getBase, to } from '../paths.ts';
+import { api, type Client } from '../core/api.ts';
+import { getBase, to } from '../core/paths.ts';
 import { coverFor, appPicture } from './music-pages.ts';
 
 export interface BrowseTileData {

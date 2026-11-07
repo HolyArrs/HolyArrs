@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from '../live-search.ts';
 	import { appPicture, coverFor } from '../music/music-pages.ts';
-	import { pictureOf } from '../pictures.ts';
+	import { pictureOf } from '../core/pictures.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { SkTrackRow } from './sk/index.ts';
 	// No art yet, or it failed: the row shows the one placeholder every

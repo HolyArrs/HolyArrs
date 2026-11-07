@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
 	// One title page section: a heading and its content. On a phone (< 768px)
 	// it folds into a disclosure, open only when `primary`, so the page stays

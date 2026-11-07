@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { defaultRegion } from '#lib/region.ts';
+	import { defaultRegion } from '#lib/ui/region.ts';
 	import { lookFrom, MOVIE_LOOKS, MUSIC_LOOKS, type CaptionLook, type Channels } from '#lib/calendar-captions.ts';
 
 	// The floating glass bar for comparing the calendar's caption lines:

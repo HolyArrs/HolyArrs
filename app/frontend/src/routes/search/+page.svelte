@@ -11,22 +11,22 @@
 </script>
 
 <script lang="ts">
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
-	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/search-field.svelte.ts';
+	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
 	import SearchField from '#lib/ui/SearchField.svelte';
 	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import Icon, { type IconName } from '#lib/Icon.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
+	import { session } from '#lib/core/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import MusicTileGrid from '#lib/ui/MusicTileGrid.svelte';
 	import MusicBrowseSections from '#lib/ui/MusicBrowseSections.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
-	import { reducedMotion } from '#lib/motion.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -35,8 +35,8 @@
 	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import { Orbit, SkRail, SkGrid } from '#lib/ui/sk/index.ts';
-	import { plainReason } from '#lib/plain.ts';
-	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import type { PersonSummary } from '#lib/people.ts';
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
 	import { appPicture, artistHref } from '#lib/music/music-pages.ts';
@@ -53,7 +53,7 @@
 	import { partOn, partsNow, refreshParts } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
 	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
-	import { audienceOf } from '#lib/title-status.ts';
+	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { posterStatus } from '#lib/library.ts';
 	import { describes, found, plainPath, understood, type PlainAnswer } from '#lib/plain-search.ts';
 

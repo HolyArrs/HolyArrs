@@ -1,7 +1,7 @@
 // Which parts are on, asked again on page changes and every minute, so a
 // part turned off hides its pages from the menu and its direct links.
 
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 import type { PartsAnswer } from './parts.ts';
 
 export const partsNow = $state<{ answer: PartsAnswer | null }>({ answer: null });

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/types.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 	import { monthGrid } from '#lib/calendar.ts';
 	import { dayName, thingCount } from '#lib/calendar-looks.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';

@@ -4,10 +4,10 @@
 // the facts themselves and where to go next. The views only lay it out.
 import { artOf, byWhom, clock, dayKey, titleHref, type Verb } from '../history-views.ts';
 import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from '../history-lines.ts';
-import { bytes } from '../format.ts';
+import { bytes } from '../core/format.ts';
 import { canFind, filterVerb, rowLinks, type GoLink } from './dirs.ts';
 import type { HistoryRow, StepKey } from '../history.ts';
-import type { EventRecord, TitleView } from '../types.ts';
+import type { EventRecord, TitleView } from '../core/types.ts';
 
 /** One fact row: its label, its value and how the value is set. */
 export interface Fact {

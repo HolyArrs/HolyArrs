@@ -1,6 +1,6 @@
 // The calendar's words and groupings: card badges, facts lines, day names,
 // month dividers and the cards a busy day folds into.
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 import { byDay, entryDay, entryTime, episodeCode, kindWord } from './calendar.ts';
 
 const at = (day: string) => new Date(day + 'T00:00:00');

@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Poster from '#lib/Poster.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import { titleArt } from '#lib/title-art.ts';
 	// The rename preview for one title (titleId), one album of an artist
 	// (albumId too) or the whole Library: the old and new names, files that
 	// are skipped and why, and Apply. The preview and the rename use the same
 	// planner, so this is what happens.
 	import { onMount } from 'svelte';
-	import { api, message } from './api.ts';
-	import { live } from './live.svelte.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { api, message } from './core/api.ts';
+	import { live } from './core/live.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { albumSteps, fileName, followJob, renamePair, splitSteps, type JobView, type RenameStep } from './organise.ts';
 	import Button from './ui/Button.svelte';
 	import ProgressBar from './ui/ProgressBar.svelte';

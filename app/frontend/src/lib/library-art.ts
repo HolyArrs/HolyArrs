@@ -1,4 +1,4 @@
-import { proxied } from './tmdb-image.ts';
+import { proxied } from './core/tmdb-image.ts';
 
 // Library art sizes: how wide the banner column is for each density, how
 // big posters are, and which picture size keeps each sharp at the screen's

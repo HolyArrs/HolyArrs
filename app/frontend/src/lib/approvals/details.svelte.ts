@@ -5,9 +5,9 @@
 // summary reads, and a season's episodes are asked once when a pill opens
 // or a recent season may still be airing.
 
-import { api } from '../api.ts';
+import { api } from '../core/api.ts';
 import { fromMetadata, type TitleDetails } from '../title-details.ts';
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 import { detailKey } from './approvals.ts';
 import { readInfo, type AskInfo, type EpisodeInfo } from './inbox.ts';
 import { musicDefaults, type ArtistAlbum, type MusicKinds } from './ask-parts.ts';

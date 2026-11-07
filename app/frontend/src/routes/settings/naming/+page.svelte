@@ -7,9 +7,9 @@
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import {
 		airDateChoices,
 		colonChoices,

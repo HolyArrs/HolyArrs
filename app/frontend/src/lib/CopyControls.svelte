@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, message } from './api.ts';
+	import { api, message } from './core/api.ts';
 	import { copyEdition, inspectedAudio, languageList, versionCriteria } from './copy-controls.ts';
-	import { session } from './session.svelte.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { session } from './core/session.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
 	import Badge from './ui/Badge.svelte';
 	import { shortFolder } from './ui/TitleHero.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
-	import Icon from './Icon.svelte';
-	import { plainReason } from './plain.ts';
-	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
+	import Icon from './ui/Icon.svelte';
+	import { plainReason } from './core/plain.ts';
+	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from './core/types.ts';
 
 	let { title, onchange = () => {} }: { title: TitleView; onchange?: () => void | Promise<void> } = $props();
 	const titleId = $derived(title.id);

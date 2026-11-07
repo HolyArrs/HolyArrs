@@ -8,7 +8,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import MoveSteps from '#lib/move/MoveSteps.svelte';
 	import StepFoot from '#lib/move/StepFoot.svelte';
@@ -20,10 +20,10 @@
 	import MoveStep from '#lib/move/MoveStep.svelte';
 	import DoneStep from '#lib/move/DoneStep.svelte';
 	import { createFollower } from '#lib/move/poll.ts';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { to } from '#lib/paths.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
 	import {
 		appName,
 		asStep,

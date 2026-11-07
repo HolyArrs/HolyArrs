@@ -3,8 +3,8 @@
 	// or speed caps, for one or many torrents. One call per Downloader.
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import type { DownloadRow } from '../downloaders.ts';
 	import { byClient, bytesOf, checkLimits, kbOf, modeOf, valueOf, type LimitMode, type ShareLimits, type SteerMode } from './manage.ts';
 

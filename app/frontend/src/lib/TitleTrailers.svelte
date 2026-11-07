@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Icon from './Icon.svelte';
+	import Icon from './ui/Icon.svelte';
 	import Shelf from './ui/Shelf.svelte';
 	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
-	import { sized } from './tmdb-image.ts';
-	import { claimPlayer, pickTrailer, type Video } from './trailer.ts';
-	import { missReason, trailerSources, videoReason, type TrailerSource } from './autoplay.svelte.ts';
-	import { openTheater } from './theater.svelte.ts';
+	import { sized } from './core/tmdb-image.ts';
+	import { claimPlayer, pickTrailer, type Video } from './core/trailer/trailer.ts';
+	import { missReason, trailerSources, videoReason, type TrailerSource } from './core/trailer/autoplay.svelte.ts';
+	import { openTheater } from './core/trailer/theater.svelte.ts';
 
 	// A title's trailers and teasers (YouTube, as TMDB lists them) as one row
 	// of small cards, the main trailer first. Each card shows the video's own

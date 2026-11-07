@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
 	// One page-level "More options" disclosure: the rare and technical
 	// settings of a settings page, closed until opened. A search hit inside

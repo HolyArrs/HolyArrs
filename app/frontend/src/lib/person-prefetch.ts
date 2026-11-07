@@ -1,4 +1,4 @@
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 import type { FilmographyPage, FilmSort } from './people.ts';
 
 // A person page opens filled in when the pointer has rested on that person's face:

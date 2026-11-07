@@ -3,22 +3,22 @@
 	// Sources in one step. Jackett's sites stay in step on their own;
 	// Prowlarr writes its sites in through the old-app API.
 	import { onMount, tick, untrack } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { ago } from '#lib/format.ts';
-	import { to } from '#lib/paths.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { reachWords } from '#lib/downloaders.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
 
 	type Kind = 'jackett' | 'prowlarr';
 	interface Bridge {

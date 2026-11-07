@@ -17,8 +17,8 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from './Icon.svelte';
-	import { sized } from './tmdb-image.ts';
+	import Icon from './ui/Icon.svelte';
+	import { sized } from './core/tmdb-image.ts';
 	import { runtimeWords } from './ui/TitleHero.svelte';
 
 	// A season as a vertical list, the pattern streaming apps use for long

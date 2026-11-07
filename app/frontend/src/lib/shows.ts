@@ -1,7 +1,7 @@
 // Words and small rules for the show screens, kept apart from the pages so
 // they can be tested.
-import type { EpisodeView, SeasonSummary, ShowInfo } from './types.ts';
-import { date } from './format.ts';
+import type { EpisodeView, SeasonSummary, ShowInfo } from './core/types.ts';
+import { date } from './core/format.ts';
 
 /** seasonChoices are what Keep up to date covers when a show is added. */
 export const seasonChoices: [string, string, string][] = [

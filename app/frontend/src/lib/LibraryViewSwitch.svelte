@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends string">
-	import Icon, { type IconName } from './Icon.svelte';
+	import Icon, { type IconName } from './ui/Icon.svelte';
 	import Menu, { type MenuItem } from './ui/Menu.svelte';
 	// The Library's view switch: the picked view shows its icon and name, the
 	// others only their icon. The picked view also carries the art-size menu

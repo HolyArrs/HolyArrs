@@ -1,5 +1,5 @@
 // The artist and album pages: types, links and the small rules they share.
-import { to } from '../paths.ts';
+import { to } from '../core/paths.ts';
 
 export type PageAlbumState = 'complete' | 'partial' | 'missing' | 'downloading' | 'not_out_yet' | 'not_included' | '';
 export type Shelf = 'albums' | 'singles' | 'compilations' | 'live' | 'other';

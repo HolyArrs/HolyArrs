@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
-	import { api } from './api.ts';
-	import { to } from './paths.ts';
+	import { api } from './core/api.ts';
+	import { to } from './core/paths.ts';
 	import { artName, similarTitles } from './title-page.ts';
-	import type { TitleView } from './types.ts';
+	import type { TitleView } from './core/types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import WideCard from './ui/WideCard.svelte';
 	import PersonCircle from './ui/PersonCircle.svelte';

@@ -9,8 +9,8 @@
 	// again. Narrower screens open the row in a sheet instead.
 	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
-	import Poster from '../Poster.svelte';
-	import Icon from '../Icon.svelte';
+	import Poster from '../ui/Poster.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Button from '../ui/Button.svelte';
 	import EventSheet from '../history-designs/EventSheet.svelte';
 	import VerbMark from '../history-designs/VerbMark.svelte';
@@ -18,17 +18,17 @@
 	import DenseRow from './DenseRow.svelte';
 	import LookFrame from './LookFrame.svelte';
 	import { EventFeed } from './feed.svelte.ts';
-	import { to } from '../paths.ts';
-	import { toasts } from '../toasts.svelte.ts';
-	import { reducedMotion } from '../motion.ts';
-	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
+	import { to } from '../core/paths.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { reducedMotion } from '../core/motion.ts';
+	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
 	import type { HistoryFilter, HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, type ArtSize } from '../history-looks.ts';
 	import { dropAiTwins, filterVerb } from './dirs.ts';
 	import { glue, panelView, pathBits } from './panel.ts';
 	import { rowText, type LineContext, type RowText } from '../history-lines.ts';
-	import type { EventRecord, TitleView } from '../types.ts';
+	import type { EventRecord, TitleView } from '../core/types.ts';
 
 	let {
 		filter,

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { api, message } from '#lib/api.ts';
-	import { to } from '#lib/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { seasonName } from '#lib/shows.ts';
 	import { episodeWord, hasFile, kindHint, kindIcon, makeReport, noteMax, partWords, reportKinds, type ReportKind, type ReportView } from '#lib/reports.ts';
 

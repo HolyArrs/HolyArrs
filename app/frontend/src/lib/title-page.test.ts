@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { artName, crumbFor, qualityBadges, similarTitles } from './title-page.ts';
-import type { SlotView } from './types.ts';
+import type { SlotView } from './core/types.ts';
 
 const slot = (s: Partial<SlotView>): SlotView => ({ id: 1, version: 'Main', version_id: 1, state: 'wanted', state_label: '', ...s });
 

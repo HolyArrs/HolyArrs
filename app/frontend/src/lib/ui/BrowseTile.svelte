@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fitTile } from '../tmdb-image.ts';
+	import { fitTile } from '../core/tmdb-image.ts';
 	// A Search Browse tile: a tall 3:4 picture in grey under the category's own
 	// colour wash, the name bottom-left in bold white. Hover lifts it a little.
 	// note is an optional short line under the name (People sections: "6 titles").

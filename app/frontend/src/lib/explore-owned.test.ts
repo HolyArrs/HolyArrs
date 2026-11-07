@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { discoverCard, matchOwned, ownedIndex, ownedMark, ownedTitle, type ExploreCard } from './explore.ts';
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 
 const title = (o: Partial<TitleView>): TitleView => ({ id: 1, kind: 'movie', name: 'M', ids: { tmdb: '10' }, slots: [], asks: [], ...o }) as unknown as TitleView;
 const slot = (state: string, file = false) => ({ state, file: file ? { ID: 1 } : null });

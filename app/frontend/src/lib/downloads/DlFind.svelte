@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import { escStep } from './keys.ts';
 
 	// The Downloads search: a plain field that filters the list as you type. × and Esc only

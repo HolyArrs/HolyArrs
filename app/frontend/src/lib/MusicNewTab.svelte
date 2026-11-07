@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { dragScroll } from '#lib/drag-scroll.ts';
+	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { Orbit, SkRail } from './ui/sk/index.ts';
 	// New & Popular → Music: a shelf of large editorial cards for the week's
 	// biggest new albums, a compact list of fresh tracks, then album rows.
 	// Every action asks for (or adds) music; nothing here plays.
 	import { onMount } from 'svelte';
-	import { api, message } from './api.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { api, message } from './core/api.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { refreshInbox } from './requests.svelte.ts';
 	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music/music-trending.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
+	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './core/types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
 	import { fetchBrowseTiles, type BrowseTileData } from './music/browse-tiles.ts';
-	import { defaultRegion } from './region.ts';
-	import { to } from './paths.ts';
+	import { defaultRegion } from './ui/region.ts';
+	import { to } from './core/paths.ts';
 	import PosterCard from './ui/PosterCard.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import EmptyState from './ui/EmptyState.svelte';

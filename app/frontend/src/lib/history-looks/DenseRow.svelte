@@ -2,16 +2,16 @@
 	// History's row (the compact cards look): the time, a dot on the thin rail, a small poster,
 	// the title with its part and, only when it says something new, one quiet line; the step
 	// mark (the Filter's word) on the right. Back-to-back repeats come in with a count.
-	import Poster from '../Poster.svelte';
-	import Icon from '../Icon.svelte';
+	import Poster from '../ui/Poster.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import VerbMark from '../history-designs/VerbMark.svelte';
-	import { dateTime } from '../format.ts';
+	import { dateTime } from '../core/format.ts';
 	import { artOf, clock } from '../history-views.ts';
 	import { filterVerb, partOf, rowExtra, rowStep, sameWords } from './dirs.ts';
 	import { sysSplit } from './panel.ts';
 	import { rowText, type LineContext } from '../history-lines.ts';
 	import type { HistoryRow } from '../history.ts';
-	import type { EventRecord, TitleView } from '../types.ts';
+	import type { EventRecord, TitleView } from '../core/types.ts';
 
 	let {
 		row,

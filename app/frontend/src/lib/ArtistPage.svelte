@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { peopleNames } from './plain.ts';
+	import { peopleNames } from './core/plain.ts';
 	// One artist in the Library: the artist page (MusicArtistPage) with its
 	// Overview and Library tabs; the Library tab holds the albums, their
 	// actions and the artist's settings. Below them: who asked.
-	import { api, message } from './api.ts';
-	import { live } from './live.svelte.ts';
-	import { date } from './format.ts';
+	import { api, message } from './core/api.ts';
+	import { live } from './core/live.svelte.ts';
+	import { date } from './core/format.ts';
 	import MusicArtistPage, { type ArtistLibrary } from './music/MusicArtistPage.svelte';
 	import LoadError from './ui/LoadError.svelte';
 	import TitleSection from './ui/TitleSection.svelte';
 	import './title-page.css';
-	import { session } from './session.svelte.ts';
-	import { audienceStatus } from './title-status.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { session } from './core/session.svelte.ts';
+	import { audienceStatus } from './ui/title-status.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { decided } from './requests.ts';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 	import { albumWords, artistProgress } from './music/music.ts';
-	import type { Ask, LookupArtist, TitleView } from './types.ts';
+	import type { Ask, LookupArtist, TitleView } from './core/types.ts';
 
 	let {
 		title,

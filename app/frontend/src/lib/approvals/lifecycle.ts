@@ -1,7 +1,7 @@
 // An ask's life cycle as one slim line: how far it has come from asked to in
 // the Library. Each stage owns a weight; while an ask is being got, real
 // download progress (0..1) fills the span between getting and getting_end.
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 import type { AskInfo } from './inbox.ts';
 
 export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 92, ready: 100 } as const;

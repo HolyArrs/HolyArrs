@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { goto } from '$app/navigation';
-	import { to } from '#lib/paths.ts';
-	import Icon from '#lib/Icon.svelte';
-	import { api, message } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, bytes } from '#lib/format.ts';
+	import { to } from '#lib/core/paths.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, bytes } from '#lib/core/format.ts';
 	import { qualityBadges } from '#lib/title-page.ts';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 	import CompactRow from '#lib/history-looks/CompactRow.svelte';
@@ -13,7 +13,7 @@
 	import type { TitleSubtitles } from '#lib/subtitles.ts';
 	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import { groupDownloads } from '#lib/history.ts';
-	import type { EventRecord, TitleView } from '#lib/types.ts';
+	import type { EventRecord, TitleView } from '#lib/core/types.ts';
 
 	// One episode, from the Library tab: its picture and story, where it stands,
 	// its file (quality, size, languages), keep up to date, and what happened to it.

@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
-	import Icon from './Icon.svelte';
+	import Icon from './ui/Icon.svelte';
 	import AlertSymbol from './ui/AlertSymbol.svelte';
 	import Sheet from './ui/Sheet.svelte';
-	import { alertsPanel, toasts } from './toasts.svelte';
+	import { alertsPanel, toasts } from './core/toasts.svelte.ts';
 	import { pinned } from './attention-alerts.ts';
-	import { decisionPins, feedPins } from './bell-feeds.svelte.ts';
-	import { sections } from './settings.ts';
+	import { decisionPins, feedPins } from '../routes/(frame)/bell-feeds.svelte.ts';
+	import { sections } from './core/settings.ts';
 	import { settingsNow } from './settings-status.svelte.ts';
-	import { session } from './session.svelte.ts';
-	import { to } from './paths.ts';
+	import { session } from './core/session.svelte.ts';
+	import { to } from './core/paths.ts';
 
 	// Recent alerts: the last 50 alerts on this device, newest first. Desktop: a glass
 	// panel beside the side menu's bell. Phone: a sheet from the bottom.

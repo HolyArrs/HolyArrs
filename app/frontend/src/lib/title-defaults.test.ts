@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { builtInDefaults, changedParts, defaultsLoader, foldersFor, rulesFor, startChoices } from './title-defaults.ts';
-import type { LibraryFolder, PickRulesView, TitleDefaults } from './types.ts';
+import type { LibraryFolder, PickRulesView, TitleDefaults } from './core/types.ts';
 
 const folder = (id: number, kind: string, over: Partial<LibraryFolder> = {}): LibraryFolder => ({
 	id,

@@ -4,8 +4,8 @@
 // (404) falls back to the full /titles list. The full list is shared too:
 // kept 60 s across pages, forgotten on any change (api.ts).
 
-import { api, ApiError, type Client } from './api.ts';
-import type { AskState, SlotView, TitleView } from './types.ts';
+import { api, ApiError, type Client } from './core/api.ts';
+import type { AskState, SlotView, TitleView } from './core/types.ts';
 
 /** One Library title in the light answer. */
 export interface OwnedItem {

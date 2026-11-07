@@ -2,11 +2,11 @@
 	// History: every step from the ask to the media server, newest first,
 	// with a search bar and one Filter. Routine work is left out.
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
+	import { api } from '#lib/core/api.ts';
 	import { libraryBrief } from '#lib/owned.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import SearchLook from '#lib/history-looks/SearchLook.svelte';
-	import type { TitleView } from '#lib/types.ts';
+	import type { TitleView } from '#lib/core/types.ts';
 
 	// The Library titles and member names, for search, posters and "who".
 	let titles = $state<TitleView[]>([]);

@@ -1,7 +1,7 @@
 // What an ask carries from the metadata answer (seasons, release dates, language),
 // the audio languages an approver can ask for, and who asked.
 
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 
 /** A season as the metadata answer lists it. */
 export interface SeasonInfo {

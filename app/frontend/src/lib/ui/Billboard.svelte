@@ -3,11 +3,11 @@
 	import HeroMotion from './HeroMotion.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
-	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
-	import { dwell, HERO_DELAY, type Video } from '../trailer.ts';
-	import { fromHandoff, openTheater, resumedPlaying, takeBack, theater, type TheaterHandoff } from '../theater.svelte.ts';
-	import { THEATER_CHROME_MS, THEATER_SHRINK_MS } from '../motion.ts';
-	import { heroQuiet, wordsShown, type HeroPhase } from '../hero-quiet.ts';
+	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
+	import { dwell, HERO_DELAY, type Video } from '../core/trailer/trailer.ts';
+	import { fromHandoff, openTheater, resumedPlaying, takeBack, theater, type TheaterHandoff } from '../core/trailer/theater.svelte.ts';
+	import { THEATER_CHROME_MS, THEATER_SHRINK_MS } from '../core/motion.ts';
+	import { heroQuiet, wordsShown, type HeroPhase } from './hero-quiet.ts';
 
 	// The billboard every hero shares (Explore and the four title pages): an
 	// inset rounded frame inside the page gutter, the words in the left 40%,

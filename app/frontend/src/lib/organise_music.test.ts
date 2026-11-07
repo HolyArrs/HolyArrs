@@ -18,7 +18,7 @@ import {
 	type RenameStep
 } from './organise.ts';
 import { albumHave, entryHref, entryKey, entryName, shows } from './calendar.ts';
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 
 describe('music library import', () => {
 	const album: AdoptAlbum = {

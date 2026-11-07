@@ -3,9 +3,9 @@
 	import { page } from '$app/state';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
-	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import Confirm from '#lib/ui/Confirm.svelte';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	// An AI app (Claude Code, Cursor, ChatGPT…) sent the person here to sign
 	// in: say what is asking and what it can do, then allow or cancel.

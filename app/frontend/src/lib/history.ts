@@ -1,6 +1,6 @@
 // History: the words and filters for the Event list (Downloads > History,
 // the movie page and Home).
-import type { EventRecord } from './types.ts';
+import type { EventRecord } from './core/types.ts';
 
 export interface KindGroup {
 	key: string;

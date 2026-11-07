@@ -1,7 +1,7 @@
 // The poster of every Library title by id, for lists that only know a title
 // id (the Library tools). One brief read of the Library, kept for a minute.
 
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 
 type Brief = { id: number; artwork?: string[] };
 let kept: { at: number; map: Map<number, string> } | null = null;

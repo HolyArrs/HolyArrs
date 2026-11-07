@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./api.ts', () => ({ api: { get: vi.fn() } }));
+vi.mock('./core/api.ts', () => ({ api: { get: vi.fn() } }));
 const { createMusicPrefetch, IN_FLIGHT, musicPrefetchURLs, pagePrefetchURLs, PER_MINUTE, VIEW_CARDS } = await import('./music-prefetch.ts');
 const { loadDetails } = await import('./title-details.ts');
 
@@ -111,7 +111,7 @@ describe('createMusicPrefetch', () => {
 
 describe('pagePicture', () => {
 	it('fetches ahead the address the album and artist pages show, versioned and sized', async () => {
-		const { registerPictures } = await import('./pictures.ts');
+		const { registerPictures } = await import('./core/pictures.ts');
 		const al = '3ff81a80-fe2f-4d9a-b542-000000000001';
 		const ar = 'b8a7c51f-362c-4dcb-a259-000000000001';
 		registerPictures({ [`album:${al}`]: { v: 'c1', w: 500, h: 500, color: '' }, [`artist:${ar}`]: { v: 'p1', w: 1200, h: 1200, color: '' } });

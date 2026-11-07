@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isFilling } from '../api.ts';
+import { isFilling } from '../core/api.ts';
 import { reaskWhileFilling } from './reask.ts';
 
 const now = () => Promise.resolve();

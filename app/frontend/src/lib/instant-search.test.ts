@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { artistHits, filterSections, libraryByTmdb, movieHits, options, searchPath, showHits, type Section } from './instant-search.ts';
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 
 const lib = [{ id: 7, kind: 'movie', name: 'Dune', year: 2021, ids: { tmdb: '438631' }, artwork: ['https://p/1.jpg'] }] as unknown as TitleView[];
 

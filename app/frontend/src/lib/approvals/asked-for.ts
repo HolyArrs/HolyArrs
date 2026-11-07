@@ -1,7 +1,7 @@
 // What an ask is for, in the plain words a request list uses: "Seasons 1–2",
 // "Season 3", "All seasons"; "3 albums", "Currents", "All albums". A movie
 // needs no words beyond its type.
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 
 /** runs joins numbers into ranges: [1, 2, 4] → "1–2, 4". */
 function runs(ns: number[]): string {

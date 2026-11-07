@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress, showState } from './shows.ts';
 import { counts, matches, ofKind } from './library.ts';
-import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from './types.ts';
+import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from './core/types.ts';
 
 function season(number: number, o: Partial<SeasonSummary> = {}): SeasonSummary {
 	return { number, name: seasonName(number), keep_up_to_date: true, episodes: 3, aired: 3, in_library: 0, missing: 0, not_out_yet: 0, better_wanted: 0, ...o };

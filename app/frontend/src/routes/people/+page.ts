@@ -1,5 +1,5 @@
 import { redirect, type Load } from '@sveltejs/kit';
-import { to } from '#lib/paths.ts';
+import { to } from '#lib/core/paths.ts';
 
 // People are found on Search (its People tab); the old list keeps any search words.
 export const load: Load = ({ url }) => {

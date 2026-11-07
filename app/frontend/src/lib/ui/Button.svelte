@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
 	type Props = Omit<HTMLButtonAttributes, 'children'> & {
 		variant?: 'primary' | 'secondary' | 'plain' | 'destructive';

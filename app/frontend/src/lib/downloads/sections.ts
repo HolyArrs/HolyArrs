@@ -2,10 +2,10 @@
 // strip's totals, the speed graph and the facts of a row's details panel.
 // Pure, so it can be tested.
 import type { DownloadRow } from '../downloaders.ts';
-import type { ImportRecord } from '../types.ts';
+import type { ImportRecord } from '../core/types.ts';
 import { stageOf, statusWord } from './status-tabs.ts';
 import { failReason, statusDetail } from './imports.ts';
-import { dateTime } from '../format.ts';
+import { dateTime } from '../core/format.ts';
 import { size, sizePair } from './size.ts';
 import { quality } from './columns.ts';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './requests.ts';
-import type { AskKindLimit, AskLimit, AskState } from './types.ts';
+import type { AskKindLimit, AskLimit, AskState } from './core/types.ts';
 
 describe('requests words', () => {
 	it('joins names', () => {
@@ -61,7 +61,7 @@ describe('requests words', () => {
 });
 
 describe('requests views', () => {
-	const ask = (state: string, mine: boolean) => ({ state, mine }) as Pick<import('./types.ts').Ask, 'state' | 'mine'>;
+	const ask = (state: string, mine: boolean) => ({ state, mine }) as Pick<import('./core/types.ts').Ask, 'state' | 'mine'>;
 
 	it('counts each view', () => {
 		expect(viewCounts([ask('asked', true), ask('approved', false), ask('asked', false)])).toEqual({ waiting: 2, all: 3, mine: 1 });

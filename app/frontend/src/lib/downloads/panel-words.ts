@@ -1,5 +1,5 @@
 import { size as bytes } from './size.ts';
-import { duration, percent } from '../format.ts';
+import { duration, percent } from '../core/format.ts';
 import { STEP_WORD } from './usenet.ts';
 
 /** What the health line needs from a row and the client's detail. */

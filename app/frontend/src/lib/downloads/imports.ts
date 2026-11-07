@@ -3,7 +3,7 @@
 // imports in progress, Done for placed ones, Problems for failed ones).
 // Imports with no download row in the list stay in History. Pure, so it can be tested.
 import type { DownloadRow } from '../downloaders.ts';
-import type { ImportRecord } from '../types.ts';
+import type { ImportRecord } from '../core/types.ts';
 import { stageOf } from './status-tabs.ts';
 
 /** byDownload keeps the newest import of every download. */

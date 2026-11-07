@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { to } from './paths.ts';
+	import { to } from './core/paths.ts';
 	// The Held and Turned down lists: paged, remove one or clear all.
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { bytes, date, dateTime } from '#lib/format.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { bytes, date, dateTime } from '#lib/core/format.ts';
 	import { facts, keyReasons, listedName, pager } from '#lib/releases.ts';
 	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
-	import Poster from '#lib/Poster.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import { titleArt } from '#lib/title-art.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
-	import { plainReason } from '#lib/plain.ts';
-	import type { ReleasePage, ReleaseView } from '#lib/types.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import type { ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
 	// from: the Library's lists (Held and Turned down side by side) or the Downloads page's Turned down list (Undo).
 	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();

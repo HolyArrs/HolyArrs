@@ -1,10 +1,10 @@
 // One page of Events for History: the page's filters plus the kinds
 // of the picked tab. Newer requests win; "more" appends the next page.
-import { api, message } from '../api.ts';
-import { live } from '../live.svelte.ts';
+import { api, message } from '../core/api.ts';
+import { live } from '../core/live.svelte.ts';
 import { createLatestOnly, dateRangeProblem, type HistoryFilter } from '../history.ts';
 import { eventsQuery, settle } from '../history-views.ts';
-import type { EventPage, EventRecord } from '../types.ts';
+import type { EventPage, EventRecord } from '../core/types.ts';
 
 export class EventFeed {
 	events = $state<EventRecord[]>([]);

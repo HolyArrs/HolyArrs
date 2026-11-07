@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { libraryState } from './library-state.ts';
-import type { TitleView, SlotView, ShowInfo } from './types.ts';
+import type { TitleView, SlotView, ShowInfo } from './core/types.ts';
 
 const now = Date.parse('2026-10-21T00:00:00Z');
 const slot = (state: string, extra: Partial<SlotView> = {}): SlotView => ({ id: 1, version: 'HD', version_id: 1, state, state_label: state, ...extra });

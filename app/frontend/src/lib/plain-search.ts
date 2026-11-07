@@ -2,7 +2,7 @@
 // the server reads the words; this file decides when to ask it and says
 // back what it understood.
 import type { ProviderItem } from './explore.ts';
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 
 /** What the server understood the words as. */
 export interface PlainQuery {

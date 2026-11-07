@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
-	import { reducedMotion } from '../motion.ts';
+	import { reducedMotion } from '../core/motion.ts';
 
 	// A modal sheet on the native <dialog>: centred on wide screens, from the
 	// bottom on phones. Escape, the close button and a backdrop click close it;

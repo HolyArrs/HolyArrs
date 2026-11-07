@@ -1,6 +1,6 @@
 // Tags (#108): plain lowercase labels on titles, Downloaders and Sources.
 // cleanTag matches the server's tagset.Clean for one label.
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 
 export const MAX_TAG = 40;
 export const MAX_TAGS = 20;

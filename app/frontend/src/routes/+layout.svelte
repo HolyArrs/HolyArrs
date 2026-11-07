@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { personName } from '#lib/plain.ts';
+	import { personName } from '#lib/core/plain.ts';
 	import { resolve } from '$app/paths';
-	import { setBase } from '#lib/paths.ts';
+	import { setBase } from '#lib/core/paths.ts';
 	setBase(resolve('/'));
-	import { to, appPath } from '#lib/paths.ts';
+	import { to, appPath } from '#lib/core/paths.ts';
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
-	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/loader.ts';
-	import Icon from '#lib/Icon.svelte';
-	import ToastList from '#lib/ToastList.svelte';
-	import Theater from '#lib/ui/Theater.svelte';
-	import { theater } from '#lib/theater.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/core/loader.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import ToastList from './(frame)/ToastList.svelte';
+	import Theater from './(frame)/Theater.svelte';
+	import { theater } from '#lib/core/trailer/theater.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { keepPersonPic } from '#lib/recentPeople.ts';
-	import { live } from '#lib/live.svelte.ts';
+	import { live } from '#lib/core/live.svelte.ts';
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
-	import { alertsPanel, toasts } from '#lib/toasts.svelte.ts';
-	import { decisionPins, feedPins, startBellFeeds } from '#lib/bell-feeds.svelte.ts';
+	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
+	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/requests.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
@@ -27,28 +27,28 @@
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { needsAttention } from '#lib/settings-status.ts';
 	import { offPartName } from '#lib/parts.ts';
-	import { navigateWithTransition } from '#lib/motion.ts';
+	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen } from '#lib/music-prefetch.ts';
 	import { installArtistVideoPrefetch } from '#lib/music/artist-video-prefetch.ts';
 	import { installHeroPrefetch } from '#lib/title-details.ts';
 	import { installHeroAhead } from '#lib/hero-prefetch.ts';
-	import { idlePages, installRowAhead } from '#lib/smart-preload.ts';
-	import { preloadHero } from '#lib/tmdb-image.ts';
-	import AppShell from '#lib/ui/AppShell.svelte';
-	import PosterWall from '#lib/ui/PosterWall.svelte';
+	import { idlePages, installRowAhead } from './(frame)/smart-preload.ts';
+	import { preloadHero } from '#lib/core/tmdb-image.ts';
+	import AppShell from './(frame)/AppShell.svelte';
+	import PosterWall from './(frame)/PosterWall.svelte';
 	import { backdrop } from '#lib/backdrop.svelte.ts';
-	import Sidebar from '#lib/ui/Sidebar.svelte';
+	import Sidebar from './(frame)/Sidebar.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
-	import SidebarItem from '#lib/ui/SidebarItem.svelte';
-	import TopBar from '#lib/ui/TopBar.svelte';
-	import TabBar, { type Tab } from '#lib/ui/TabBar.svelte';
+	import SidebarItem from './(frame)/SidebarItem.svelte';
+	import TopBar from './(frame)/TopBar.svelte';
+	import TabBar, { type Tab } from './(frame)/TabBar.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { trackInputModality } from '#lib/focus.ts';
-	import { focusField, rememberReturn, searchField } from '#lib/search-field.svelte.ts';
+	import { trackInputModality } from './(frame)/focus.ts';
+	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
 	import { dlTop } from '#lib/dl-top.svelte.ts';
 	import { checkHero, installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
 	import { arrived, leaving } from '#lib/came-from.svelte.ts';
@@ -62,7 +62,7 @@
 		type Need,
 		type ShellMode,
 		type SidebarPref
-	} from '#lib/ui/nav.ts';
+	} from './(frame)/nav.ts';
 
 	let { children }: { children: Snippet } = $props();
 

@@ -1,7 +1,7 @@
 // Loads Settings status once per visit from the one status route. A person
 // who may not change settings, or a failed read, leaves everything unknown.
-import { api } from './api.ts';
-import { session } from './session.svelte.ts';
+import { api } from './core/api.ts';
+import { session } from './core/session.svelte.ts';
 import { fromServer, type ServerStatus, type StatusAnswer } from './settings-status.ts';
 
 export const settingsNow = $state<{ answer: StatusAnswer | null }>({ answer: null });

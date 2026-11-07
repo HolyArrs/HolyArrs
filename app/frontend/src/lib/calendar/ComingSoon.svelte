@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/types.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 	import type { Follows } from '#lib/calendar.ts';
 	import { groupDates, monthGroups, thingCount } from '#lib/calendar-looks.ts';
 	import { DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';

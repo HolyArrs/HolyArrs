@@ -6,16 +6,16 @@
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import SeerrCard from './SeerrCard.svelte';
 	import ApiKeysCard from './ApiKeysCard.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/apidocs.ts';
 
 	let spec = $state<Spec | null>(null);

@@ -1,23 +1,23 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	// Missing subtitles: every movie and episode missing a wished subtitle.
 	import { onMount } from 'svelte';
-	import Poster from '#lib/Poster.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import { titleArt } from '#lib/title-art.ts';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import { dateTime } from '#lib/format.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { dateTime } from '#lib/core/format.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { pager } from '#lib/releases.ts';
 	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import { plainReason } from '#lib/plain.ts';
+	import { plainReason } from '#lib/core/plain.ts';
 	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles.ts';
 
 	const limit = 100;

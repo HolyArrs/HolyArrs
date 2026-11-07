@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { to, appPath } from '#lib/paths.ts';
+	import { to, appPath } from '#lib/core/paths.ts';
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
-	import { homeArt, startArt } from '#lib/settings-home/art.svelte.ts';
-	import { wall } from '#lib/settings-home/pick.ts';
+	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/core/settings.ts';
+	import { homeArt, startArt } from './(home)/art.svelte.ts';
+	import { wall } from './(home)/pick.ts';
 	import { backdrop } from '#lib/backdrop.svelte.ts';
-	import { arrive, coverPage, push, settingsNav, swap } from '#lib/settings-home/zoom.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { pageState, stateWords } from '#lib/settings-status.ts';
-	import '#lib/ui/settings-looks.css';
+	import '../(frame)/settings-looks.css';
 
 	// Settings (Luis, 2026-11-06, design settings-views v4): the home is five
 	// group cards over a still, blurred wall of this Library's posters; a page

@@ -7,14 +7,14 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { bytes, dateTime, folderHealth, tone } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import type { LibraryFolder } from '#lib/types.ts';
+	import type { LibraryFolder } from '#lib/core/types.ts';
 
 	// Grouped list with a plain line icon per folder (Luis's picks, 2026-11-06).
 	const kindWord = (k: string) => (k === 'show' ? 'Shows' : k === 'music' ? 'Music' : 'Movies');

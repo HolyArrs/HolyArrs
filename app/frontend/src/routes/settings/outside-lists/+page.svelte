@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { dateTime } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { dateTime } from '#lib/core/format.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/lists.ts';
-	import type { LibraryFolder, NeverAddEntry, OutsideList, PickRulesView } from '#lib/types.ts';
+	import type { LibraryFolder, NeverAddEntry, OutsideList, PickRulesView } from '#lib/core/types.ts';
 
 	let lists = $state<OutsideList[]>([]);
 	let folders = $state<LibraryFolder[]>([]);

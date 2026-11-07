@@ -1,6 +1,6 @@
 // The Status page: every linked app, health check and background job turned into one kind
 // of row, grouped in a fixed order. Pure, so grouping and wording are testable.
-import type { AlertView, HealthCheck, OutsideList, StageState } from '../types.ts';
+import type { AlertView, HealthCheck, OutsideList, StageState } from '../core/types.ts';
 import type { ScheduleRow } from '../schedules.ts';
 
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';

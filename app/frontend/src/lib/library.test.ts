@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, inLibraryWord, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes, posterStatus } from './library.ts';
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 
 function title(name: string, ...states: string[]): TitleView {
 	return {

@@ -1,27 +1,27 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import Icon, { type IconName } from '#lib/Icon.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
 	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
 	import MoveFlow from '../settings/move/+page.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { onMount, setContext, tick, untrack } from 'svelte';
-	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/core/loader.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/paths.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
 	import { needsProblem, type PartName } from '#lib/parts.ts';
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import { emptyForm, formBody, formFrom, kindWords, reachWords, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
-	import type { LibraryFolder } from '#lib/types.ts';
+	import type { LibraryFolder } from '#lib/core/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
 	// First run, right after the owner is made, forks once: bring the old apps

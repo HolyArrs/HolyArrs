@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from '../ui/Icon.svelte';
 	import TopMenu from './TopMenu.svelte';
 	import DlFind from './DlFind.svelte';
 	import { tip } from './tip.ts';

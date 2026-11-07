@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { inkOn, placeholderHue, placeholderText } from './art-placeholder.ts';
+	import { inkOn, placeholderHue, placeholderText } from '../core/art-placeholder.ts';
 
 	// The one placeholder for every picture slot: initials (or a short name)
 	// on the picture's main colour (its record) or a calm tint from the name,

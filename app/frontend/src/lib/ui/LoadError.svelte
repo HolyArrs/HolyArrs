@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
 
 	// A failed load. Inline (a slim banner above what is shown) once data

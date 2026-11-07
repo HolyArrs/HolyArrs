@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	// The Updates tab: where this HolyArrs stands against the newest release,
 	// what is new since it, how an update is done (HolyArrs never updates
 	// itself), the built-in trailer reader's state, and every release.
 	import { page } from '$app/state';
-	import { api, message } from '../api.ts';
-	import { ago, dateTime } from '../format.ts';
-	import { to } from '../paths.ts';
-	import { toasts } from '../toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { ago, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import { RELEASE_PAGES, releaseLink } from '../update.ts';
-	import type { HealthCheck, UpdateInfo } from '../types.ts';
+	import type { HealthCheck, UpdateInfo } from '../core/types.ts';
 	import Button from '../ui/Button.svelte';
 	import Releases from './Releases.svelte';
 	import GoBack from './GoBack.svelte';

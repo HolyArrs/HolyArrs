@@ -9,22 +9,22 @@
 	import { flip } from 'svelte/animate';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from '../ui/Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import StatusIcon, { statusKey, type StatusKey } from './StatusIcon.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
-	import { agoLong, dateTime } from '../format.ts';
+	import { agoLong, dateTime } from '../core/format.ts';
 	import { askHref, type ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
-	import { to } from '../paths.ts';
-	import { proxied } from '../tmdb-image.ts';
+	import { to } from '../core/paths.ts';
+	import { proxied } from '../core/tmdb-image.ts';
 	import { shortDate, whenDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../requests.ts';
 	import { askedFor } from './asked-for.ts';
 	import { watchlistLine } from '../account/watchlist.ts';
-	import type { Ask } from '../types.ts';
+	import type { Ask } from '../core/types.ts';
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
 

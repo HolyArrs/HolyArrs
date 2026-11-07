@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { holdFor, loadStage, stageTimers, FADE_MS, type LoadStage } from '../../silhouette.ts';
+	import { holdFor, loadStage, stageTimers, FADE_MS, type LoadStage } from '../../core/silhouette.ts';
 	import Orbit from './Orbit.svelte';
 
 	// A region that loads. While `loading`, it shows `skeleton` (in the layout from the first

@@ -6,11 +6,11 @@
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import {
 		applySize,
 		blankBody,
@@ -45,7 +45,7 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/types.ts';
+	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/core/types.ts';
 
 	interface Form {
 		name: string;

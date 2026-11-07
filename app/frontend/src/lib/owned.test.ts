@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createClient } from './api.ts';
+import { createClient } from './core/api.ts';
 import { ownedIndex, ownedMark, ownedTitle, type ExploreCard } from './explore.ts';
 import { libraryBrief, libraryTitles, ownedLibrary, stubTitle } from './owned.ts';
 

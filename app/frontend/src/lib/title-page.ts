@@ -1,6 +1,6 @@
 // Pure helpers for the title page hero and the Similar shelf.
 import type { StatusKind } from './ui/StatusPill.svelte';
-import type { SlotView, TitleView } from './types.ts';
+import type { SlotView, TitleView } from './core/types.ts';
 
 /** Where a title kind lives, for the hero breadcrumb. */
 export function crumbFor(kind: string): { label: string; path: string } {

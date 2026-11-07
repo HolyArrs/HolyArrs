@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
-	import { api } from '#lib/api.ts';
-	import { ago, bytes } from '#lib/format.ts';
+	import { api } from '#lib/core/api.ts';
+	import { ago, bytes } from '#lib/core/format.ts';
 	import type { SheetEpisode } from '#lib/EpisodeSheet.svelte';
 
 	// One season's tools, from its row in the Library tab: rename its files,

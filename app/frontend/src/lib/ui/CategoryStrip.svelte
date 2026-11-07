@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Shelf from './Shelf.svelte';
-	import Icon from '../Icon.svelte';
-	import { to } from '../paths.ts';
-	import { sized } from '../tmdb-image.ts';
+	import Icon from './Icon.svelte';
+	import { to } from '../core/paths.ts';
+	import { sized } from '../core/tmdb-image.ts';
 	import { browseHref, type BrowseTile } from '../search-browse.ts';
 	import { SECTION_LABEL } from '../category-strip.ts';
 	import type { ExploreType } from '../explore.ts';

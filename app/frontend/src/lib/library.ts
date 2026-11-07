@@ -1,8 +1,8 @@
 // Library filters and the remembered add choices, kept apart from the pages
 // so they can be tested.
-import type { TitleView } from './types.ts';
+import type { TitleView } from './core/types.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
-import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
+import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './ui/title-status.ts';
 import { libraryState } from './library-state.ts';
 
 export type Filter = 'all' | 'missing' | 'not_out_yet' | 'better' | 'have';

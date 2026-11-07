@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { testLabel } from '#lib/test-tag.ts';
+	import { testLabel } from '#lib/core/test-tag.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
@@ -8,18 +8,18 @@
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
-	import { to } from '#lib/paths.ts';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { ago } from '#lib/format.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshParts } from '#lib/parts.svelte.ts';
 	import { partNeeds, partStops, type PartName, type PartsAnswer, type PartView } from '#lib/parts.ts';
 	import { isConfirm, linkAction, linkTarget, type Confirm } from '#lib/controls.ts';
 	import { linkLabel, runTone, runWord, splitStates } from '#lib/health.ts';
-	import type { EventRecord, HealthStates, StageState } from '#lib/types.ts';
+	import type { EventRecord, HealthStates, StageState } from '#lib/core/types.ts';
 
 	let parts = $state<PartsAnswer | null>(null);
 	let states = $state<HealthStates | null>(null);

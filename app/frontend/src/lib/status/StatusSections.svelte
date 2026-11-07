@@ -5,11 +5,11 @@
 	// how to update, bundled tools, every release. About: this HolyArrs and its story.
 	import './plate.css';
 	import { onMount, untrack } from 'svelte';
-	import { api } from '../api.ts';
-	import { ago, bytes, dateTime } from '../format.ts';
+	import { api } from '../core/api.ts';
+	import { ago, bytes, dateTime } from '../core/format.ts';
 	import { nextRun, until } from '../schedules.ts';
-	import { to } from '../paths.ts';
-	import { session } from '../session.svelte.ts';
+	import { to } from '../core/paths.ts';
+	import { session } from '../core/session.svelte.ts';
 	import AdminLinkButton from '../ui/AdminLinkButton.svelte';
 	import Button from '../ui/Button.svelte';
 	import Skeleton from '../ui/Skeleton.svelte';
@@ -17,7 +17,7 @@
 	import RunsTimeline from './RunsTimeline.svelte';
 	import Updates from './Updates.svelte';
 	import WhyNote from './WhyNote.svelte';
-	import type { Health, HealthCheck, UpdateInfo } from '../types.ts';
+	import type { Health, HealthCheck, UpdateInfo } from '../core/types.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {

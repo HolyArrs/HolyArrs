@@ -1,4 +1,4 @@
-import { searchField } from './search-field.svelte.ts';
+import { searchField } from './core/search-field.svelte.ts';
 
 // The top bar hides while you scroll down and comes back when you scroll up.
 // One listener for the whole app (installed by the root layout); pages only

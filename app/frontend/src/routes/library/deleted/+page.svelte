@@ -1,19 +1,19 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	// Recently deleted: files waiting in the holding folder. Pick some and
 	// Restore puts them back where they were; a deleted title comes back too.
 	import { onMount } from 'svelte';
-	import Poster from '#lib/Poster.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import { titleArt } from '#lib/title-art.ts';
-	import { api, message } from '#lib/api.ts';
-	import { bytes, date } from '#lib/format.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { bytes, date } from '#lib/core/format.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { plainReason } from '#lib/plain.ts';
+	import { plainReason } from '#lib/core/plain.ts';
 	import { daysLeft, daysLeftWords, fileName, type HeldFile, type RestoreResult } from '#lib/holding.ts';
 
 	let files = $state<HeldFile[]>([]);

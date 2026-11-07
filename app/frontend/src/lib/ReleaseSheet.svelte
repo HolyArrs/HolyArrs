@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { bytes } from '#lib/format.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { bytes } from '#lib/core/format.ts';
 	import { keyReasons, verdict, verdictTone } from '#lib/releases.ts';
-	import type { Choice, ReleasePage, ReleaseView } from '#lib/types.ts';
+	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 
 	// Pick a release, as a centered window on the title page: the releases the last
 	// search found, best first, with the reason each would or would not be picked.

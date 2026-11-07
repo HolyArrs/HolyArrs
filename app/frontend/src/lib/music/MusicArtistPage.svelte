@@ -14,16 +14,16 @@
 </script>
 
 <script lang="ts">
-	import { dragScroll } from '#lib/drag-scroll.ts';
+	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount, tick } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
-	import { api, message } from '#lib/api.ts';
+	import { api, message } from '#lib/core/api.ts';
 	import { gapWaits, keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
 	import GapNotice from '#lib/music/GapNotice.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -35,22 +35,22 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { pictureFor, pictureOf } from '#lib/pictures.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { pictureFor, pictureOf } from '#lib/core/pictures.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
-	import { attachHLS, holdStart, screenTarget } from '#lib/hls-player.ts';
-	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
-	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
-	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
+	import { attachHLS, holdStart, screenTarget } from '#lib/core/trailer/hls-player.ts';
+	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/core/trailer/trailer.ts';
+	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/core/trailer/autoplay.svelte.ts';
+	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/core/trailer/hero-video.ts';
 	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
-	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
+	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/core/types.ts';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
 	import ArtistLibraryTab from '#lib/music/ArtistLibrary.svelte';
 	import type { Snippet } from 'svelte';

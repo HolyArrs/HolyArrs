@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { proxied } from '../tmdb-image.ts';
+	import { proxied } from '../core/tmdb-image.ts';
 	import type { Snippet } from 'svelte';
 	import ArtPill from './ArtPill.svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
 	// Explore's editorial banner for the household's favourite genre: big slow art,
 	// the genre in large type, a short line, and a row of picks not in the Library yet.

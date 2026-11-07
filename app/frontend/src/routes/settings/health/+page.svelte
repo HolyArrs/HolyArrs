@@ -7,15 +7,15 @@
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { ago } from '#lib/format.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { checkName, stateWord } from '#lib/health.ts';
 	import { refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
-	import type { HealthChecks, HealthSettings, UpdateInfo } from '#lib/types.ts';
+	import type { HealthChecks, HealthSettings, UpdateInfo } from '#lib/core/types.ts';
 	import { updatePrivacy } from '#lib/update.ts';
 
 	let checks = $state<HealthChecks | null>(null);

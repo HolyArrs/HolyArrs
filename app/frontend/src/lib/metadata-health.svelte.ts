@@ -1,4 +1,4 @@
-import { api } from '#lib/api.ts';
+import { api } from '#lib/core/api.ts';
 import { nextCheckIn, outageDismiss, outageShown, outageStart, outageStep, type OutageState } from '#lib/outage.ts';
 
 /** The words of the notification shown while the metadata server is not answering. */

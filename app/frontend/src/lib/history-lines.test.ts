@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dayWord, episodeBits, eventText, fakeEpisodeName, plainWhy, resolutionOf, rowText } from './history-lines.ts';
 import { groupDownloads } from './history.ts';
-import type { EventRecord } from './types.ts';
+import type { EventRecord } from './core/types.ts';
 
 let id = 0;
 const now = new Date(2026, 9, 28, 12);

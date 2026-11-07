@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 	import Shelf from './Shelf.svelte';
-	import { to } from '../paths.ts';
+	import { to } from '../core/paths.ts';
 	import { genreTintToken } from '../music/genre-tint.ts';
 
 	// The Music genre tiles (Explore's Genres row and the Genres button's picker): a

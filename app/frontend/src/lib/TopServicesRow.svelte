@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack, type Snippet } from 'svelte';
-	import { to } from './paths.ts';
-	import { api } from './api.ts';
+	import { to } from './core/paths.ts';
+	import { api } from './core/api.ts';
 	import { detailPath, remember } from './title-details.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
@@ -25,7 +25,7 @@
 		type TopAnswer,
 		cardIdentity
 	} from './explore.ts';
-	import type { Audience } from './title-status.ts';
+	import type { Audience } from './ui/title-status.ts';
 
 	// "Top on your services": one row, one chip per streaming service (one
 	// picked at a time). Every service's list comes in one answer, so a chip

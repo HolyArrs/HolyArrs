@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 import { dayChip, dayName, entryFacts, entryLine, entryTag, entryTitle, groupDates, groupFacts, groupTag, monthGroups, movieDates, thingCount } from './calendar-looks.ts';
 
 const ep = (o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 1, name: "Grey's Anatomy", kind: 'episode', item_id: 9, season: 23, episode: 3, episode_name: 'Collide', air_day: '2026-10-29', date: '2026-10-29T00:00:00Z', network: 'ABC', ...o });

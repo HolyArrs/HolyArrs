@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLAnchorAttributes } from 'svelte/elements';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
 	// A link that looks like the kit Button and keeps every link attribute
 	// (download, target, rel, data-testid). Use Button for actions; this is for

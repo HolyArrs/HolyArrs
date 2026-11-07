@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { api } from './api.ts';
-	import { date } from './format.ts';
-	import { shownScore } from './rating.ts';
+	import { api } from './core/api.ts';
+	import { date } from './core/format.ts';
+	import { shownScore } from './core/rating.ts';
 	import { ordersOf, orderWord, pillState, reviewsPath, scoreText, votesText, type Review, type ReviewsAnswer } from './title-reviews.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import Sheet from './ui/Sheet.svelte';

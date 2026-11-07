@@ -7,15 +7,15 @@
 	import Field from '#lib/ui/Field.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { ago, bytes, dateTime, duration, words } from '#lib/format.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import type { Health } from '#lib/types.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { ago, bytes, dateTime, duration, words } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import type { Health } from '#lib/core/types.ts';
 
 	// App-wide settings kept here: picture storage, the install count and
 	// History keep times. Autoplay trailers and the sign-in art live on

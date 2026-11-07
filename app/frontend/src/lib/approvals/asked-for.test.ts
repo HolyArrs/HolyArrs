@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { askedFor } from './asked-for.ts';
-import type { Ask } from '../types.ts';
+import type { Ask } from '../core/types.ts';
 
 const ask = (o: Partial<Ask>) => ({ kind: 'movie', ...o }) as Ask;
 

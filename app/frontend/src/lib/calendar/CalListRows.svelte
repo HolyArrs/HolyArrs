@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/types.ts';
-	import { to } from '#lib/paths.ts';
-	import { date } from '#lib/format.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { date } from '#lib/core/format.ts';
 	import { entryHref, itemDot, type Follows } from '#lib/calendar.ts';
 	import { groupDates, type CalGroup } from '#lib/calendar-looks.ts';
 	import { rowWords, channelShown, type CaptionLook } from '#lib/calendar-captions.ts';

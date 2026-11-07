@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { bannerArt, type BannerEntry } from '#lib/calendar.ts';
-	import { sized } from '#lib/tmdb-image.ts';
+	import { sized } from '#lib/core/tmdb-image.ts';
 
 	// A List row's wide banner (TV-banner style): the title's textless art
 	// with its logo over it, filling the row's right side and fading into

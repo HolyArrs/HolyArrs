@@ -25,11 +25,11 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import Toast from '#lib/ui/Toast.svelte';
-	import SidebarItem from '#lib/ui/SidebarItem.svelte';
-	import TabBar from '#lib/ui/TabBar.svelte';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { reveal } from '#lib/motion.ts';
+	import Toast from '../(frame)/Toast.svelte';
+	import SidebarItem from '../(frame)/SidebarItem.svelte';
+	import TabBar from '../(frame)/TabBar.svelte';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { reveal } from '#lib/core/motion.ts';
 
 	type Width = 'both' | '1024' | '834' | '390';
 	let width = $state<Width>('both');

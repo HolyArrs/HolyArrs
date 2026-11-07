@@ -1,11 +1,11 @@
 <script lang="ts" generics="T = unknown">
 	import { untrack, type Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
-	import { dragScroll } from '../drag-scroll.ts';
+	import Icon from './Icon.svelte';
+	import { dragScroll } from './drag-scroll.ts';
 	import IconButton from './IconButton.svelte';
-	import { nearView, setShelfNear, whenIdle } from '../lazy-art.ts';
-	import { mountNow, nextLimit, ROW_FIRST } from '../row-window.ts';
-	import { rove } from '../rove.ts';
+	import { nearView, setShelfNear, whenIdle } from './lazy-art.ts';
+	import { mountNow, nextLimit, ROW_FIRST } from './row-window.ts';
+	import { rove } from './rove.ts';
 
 	// A titled horizontal row: native scroll with snap, arrow buttons on hover
 	// (desktop), one tab stop per row with arrow keys between cards (rove.ts),

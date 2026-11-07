@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
 	// One page header for every screen: large title, optional subtitle and
 	// actions (no back link: the top bar's breadcrumb shows where you came from). On phones a compact title appears in a sticky bar once

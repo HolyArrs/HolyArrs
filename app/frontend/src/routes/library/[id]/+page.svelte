@@ -1,15 +1,15 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { peopleNames } from '#lib/plain.ts';
-	import { to } from '#lib/paths.ts';
+	import { peopleNames } from '#lib/core/plain.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { page } from '$app/state';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, bytes, date, dateTime, tone, words } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
-	import { session } from '#lib/session.svelte.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, bytes, date, dateTime, tone, words } from '#lib/core/format.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { session } from '#lib/core/session.svelte.ts';
+	import EmptyState from '#lib/ui/TitleEmpty.svelte';
 	import { secondVersion, slotNotes } from '#lib/library.ts';
 	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from '#lib/releases.ts';
 	import { decided } from '#lib/requests.ts';
@@ -24,12 +24,12 @@
 	import { deleteSummary, type RemovePlan } from '#lib/organise.ts';
 	import { groupLabel, kindTone } from '#lib/history.ts';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
-	import { plainReason } from '#lib/plain.ts';
+	import { plainReason } from '#lib/core/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import FollowButton from '#lib/ui/FollowButton.svelte';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/askedby.ts';
-	import { reducedMotion } from '#lib/motion.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -40,12 +40,12 @@
 	import TitleRows from '#lib/TitleRows.svelte';
 	import LibrarySection from '#lib/ui/LibrarySection.svelte';
 	import { artName, crumbFor, qualityBadges } from '#lib/title-page.ts';
-	import { audienceOf, factsOf, titleStatus } from '#lib/title-status.ts';
+	import { audienceOf, factsOf, titleStatus } from '#lib/ui/title-status.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import ReportSheet from '#lib/reports/ReportSheet.svelte';
 	import '#lib/title-page.css';
-	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/types.ts';
+	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 
 	const id = $derived(Number(page.params.id));
 	const libraryBack = $derived.by(() => {

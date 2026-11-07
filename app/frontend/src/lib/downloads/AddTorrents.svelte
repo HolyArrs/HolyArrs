@@ -4,8 +4,8 @@
 	// and whether to start paused. The torrents go straight to the client.
 	import Sheet from '../ui/Sheet.svelte';
 	import Button from '../ui/Button.svelte';
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import { addWords, isTorrentFile, splitLinks, type AddOutcome } from './manage.ts';
 
 	type Client = { id: number; name: string; category: string };

@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { onDestroy, onMount, type Snippet } from 'svelte';
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import IconButton from './IconButton.svelte';
 	import type { CardOwned } from './CardBadges.svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from '../follow.ts';
-	import { fitTags, growFacts } from '../grow-lines.ts';
-	import { proxied, sized } from '../tmdb-image.ts';
-	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
-	import { fromHandoff, openTheater } from '../theater.svelte.ts';
-	import { THEATER_GROW_MS } from '../motion.ts';
-	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from './follow.ts';
+	import { fitTags, growFacts } from './grow-lines.ts';
+	import { proxied, sized } from '../core/tmdb-image.ts';
+	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
+	import { fromHandoff, openTheater } from '../core/trailer/theater.svelte.ts';
+	import { THEATER_GROW_MS } from '../core/motion.ts';
+	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from './grow.ts';
 
 	// The wide card grown in place, Netflix style: the card itself (same
 	// picture, same logo, same badges) scales up about 1.5x over its

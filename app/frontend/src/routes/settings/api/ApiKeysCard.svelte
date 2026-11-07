@@ -2,11 +2,11 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, date } from '#lib/format.ts';
-	import type { ApiKey } from '#lib/types.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, date } from '#lib/core/format.ts';
+	import type { ApiKey } from '#lib/core/types.ts';
 
 	// API keys for other apps: make one (shown once), see when each was
 	// last used, revoke. Moved here from Sign-in and security; same calls.

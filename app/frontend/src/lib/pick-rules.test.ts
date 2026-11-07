@@ -22,7 +22,7 @@ import {
 	usedWords,
 	videoLadder
 } from './pick-rules.ts';
-import type { OwnTrait, PickRulesBody } from './types.ts';
+import type { OwnTrait, PickRulesBody } from './core/types.ts';
 
 const gb = 2 ** 30;
 

@@ -1,23 +1,23 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
-	import { peopleNames } from './plain.ts';
-	import { to } from './paths.ts';
+	import { peopleNames } from './core/plain.ts';
+	import { to } from './core/paths.ts';
 	// One show: its seasons and episodes, Keep up to date per show, season
 	// and episode, air dates and why each episode is or is not looked for;
 	// Search now and Choose a release for the show, a season or an episode.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
-	import { reducedMotion } from './motion.ts';
-	import { api, message } from './api.ts';
+	import { reducedMotion } from './core/motion.ts';
+	import { api, message } from './core/api.ts';
 	import RenamePreview from './RenamePreview.svelte';
 	import ShowDeleteDialog from './ShowDeleteDialog.svelte';
-	import { live } from './live.svelte.ts';
+	import { live } from './core/live.svelte.ts';
 	import ShowReleases from './ShowReleases.svelte';
 	import ShowVersions from './ShowVersions.svelte';
 	import CopyControls from './CopyControls.svelte';
 	import SubtitlePanel from './SubtitlePanel.svelte';
-	import { ago, date, dateTime, tone } from './format.ts';
+	import { ago, date, dateTime, tone } from './core/format.ts';
 	import AskedByLine from './ui/AskedByLine.svelte';
 	import { loadAskedBy, type AskedByAnswer } from './askedby.ts';
 	import TitleHero, { richMetadata, shortFolder, type RichMeta } from './ui/TitleHero.svelte';
@@ -34,11 +34,11 @@
 	import TitleRows from './TitleRows.svelte';
 	import LibrarySection from './ui/LibrarySection.svelte';
 	import { artName, crumbFor, qualityBadges, slotKind } from './title-page.ts';
-	import { audienceStatus } from './title-status.ts';
+	import { audienceStatus } from './ui/title-status.ts';
 	import TitleSection from './ui/TitleSection.svelte';
 	import './title-page.css';
-	import { session } from './session.svelte.ts';
-	import { toasts } from './toasts.svelte.ts';
+	import { session } from './core/session.svelte.ts';
+	import { toasts } from './core/toasts.svelte.ts';
 	import { decided } from './requests.ts';
 	import { groupDownloads } from './history.ts';
 	import CompactRow from './history-looks/CompactRow.svelte';
@@ -62,7 +62,7 @@
 		showProgress,
 		type ReleaseScope
 	} from './shows.ts';
-	import type { Ask, EpisodeView, EventPage, EventRecord, LookupShow, PickRulesView, TitleView } from './types.ts';
+	import type { Ask, EpisodeView, EventPage, EventRecord, LookupShow, PickRulesView, TitleView } from './core/types.ts';
 	import AskShowDialog from './AskShowDialog.svelte';
 
 	let {

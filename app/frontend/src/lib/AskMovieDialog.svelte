@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { AskBrief } from './types.ts';
+	import type { AskBrief } from './core/types.ts';
 
 	export interface AskMovie {
 		tmdb: string;
@@ -18,8 +18,8 @@
 	// never asks in a single click.
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
-	import { api, message, ApiError } from './api.ts';
-	import type { Ask } from './types.ts';
+	import { api, message, ApiError } from './core/api.ts';
+	import type { Ask } from './core/types.ts';
 
 	let {
 		onasked,

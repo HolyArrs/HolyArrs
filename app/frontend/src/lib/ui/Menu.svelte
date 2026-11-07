@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { IconName } from '../Icon.svelte';
+	import type { IconName } from './Icon.svelte';
 	export type MenuItem =
 		| { kind?: 'item'; label: string; icon?: IconName; href?: string; onselect?: () => void; destructive?: boolean; disabled?: boolean; checked?: boolean; hint?: string }
 		| { kind: 'separator' }
@@ -8,7 +8,7 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 	import Popover from './Popover.svelte';
 
 	// A Popover holding a list of actions. Arrow keys, Home/End move;

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { dragScroll } from '#lib/drag-scroll.ts';
+	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	// This week: a date rail on New & Popular. Days 3 back to 7 ahead, each
 	// with a big day word and its titles beside it. The cards are the page's
 	// own (the same card and hover preview as every row, passed in as `card`);

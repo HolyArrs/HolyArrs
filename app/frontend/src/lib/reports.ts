@@ -2,7 +2,7 @@
 // in the Library; the owner and admins see every report on /reports and mark
 // it fixed (with an optional reply) or open it again. Members see their own.
 
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 
 export type ReportKind = 'picture' | 'sound' | 'subtitles' | 'wont_play' | 'other';
 export type ReportState = 'open' | 'fixed';

@@ -7,8 +7,8 @@
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import ResultGroups from './ResultGroups.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { to } from '../paths.ts';
-	import { dateTime } from '../format.ts';
+	import { to } from '../core/paths.ts';
+	import { dateTime } from '../core/format.ts';
 	import { moveCounts, plural, running as isRunning, type Bucket, type Move } from '../move.ts';
 
 	// Step 5: what the move did, what to do now, and the results per group.

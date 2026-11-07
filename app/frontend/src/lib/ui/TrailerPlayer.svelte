@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onDestroy, untrack } from 'svelte';
 	import IconButton from './IconButton.svelte';
-	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
-	import { adoptWarm, hasSound, hasWarm, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
-	import type { TheaterHandoff } from '../theater.svelte.ts';
-	import { attachHLS, screenTarget } from '../hls-player.ts';
+	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../core/trailer/trailer.ts';
+	import { adoptWarm, hasSound, hasWarm, nativeHLS, onUnmute, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
+	import type { TheaterHandoff } from '../core/trailer/theater.svelte.ts';
+	import { attachHLS, screenTarget } from '../core/trailer/hls-player.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
 	// order (our own <video> on the direct stream, then the privacy-enhanced

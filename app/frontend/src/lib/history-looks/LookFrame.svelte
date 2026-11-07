@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Skeleton from '../ui/Skeleton.svelte';
 	import LoadError from '../ui/LoadError.svelte';
 	import Button from '../ui/Button.svelte';

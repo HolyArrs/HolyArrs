@@ -1,4 +1,4 @@
-import { api } from '#lib/api.ts';
+import { api } from '#lib/core/api.ts';
 
 // Episode descriptions for calendar cards, read from the metadata server one
 // season at a time (the same answer the title page's season list uses) and

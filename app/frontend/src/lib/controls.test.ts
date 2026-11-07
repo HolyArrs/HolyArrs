@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createClient } from './api.ts';
+import { createClient } from './core/api.ts';
 import { applyParts, isConfirm, linkTarget } from './controls.ts';
 import type { PartName, PartsAnswer } from './parts.ts';
 

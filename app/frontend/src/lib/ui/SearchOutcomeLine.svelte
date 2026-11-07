@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { api } from '../api.ts';
-	import { to } from '../paths.ts';
+	import { api } from '../core/api.ts';
+	import { to } from '../core/paths.ts';
 	import { outcomeLine, whyWords, type SearchOutcome } from '../search-outcome.ts';
 
 	// One line when a Title's newest search found nothing. Owners and admins

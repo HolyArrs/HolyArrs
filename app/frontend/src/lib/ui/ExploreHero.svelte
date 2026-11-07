@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { api } from '../api.ts';
+	import { api } from '../core/api.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import Billboard from './Billboard.svelte';
-	import { heroPictures } from '../trailer.ts';
-	import { proxied, sized } from '../tmdb-image.ts';
+	import { heroPictures } from '../core/trailer/trailer.ts';
+	import { proxied, sized } from '../core/tmdb-image.ts';
 	import { shortSynopsis } from '../synopsis.ts';
 
 	// The Explore hero: one featured title in the shared billboard

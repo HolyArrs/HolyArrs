@@ -6,11 +6,11 @@
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { dateTime } from '#lib/format.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { dateTime } from '#lib/core/format.ts';
 	import { emptyFilter, levelTone, levelWord, logQuery, pageWords, type LogFilter, type LogPage } from '#lib/logs.ts';
 
 	let filter = $state<LogFilter>(emptyFilter());

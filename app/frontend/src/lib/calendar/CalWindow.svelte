@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/types.ts';
-	import { to } from '#lib/paths.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { entryArt, entryHref, itemDot } from '#lib/calendar.ts';
 	import { entryTitle, groupTag, type CalGroup } from '#lib/calendar-looks.ts';
 	import { cardLines, rowWords, type CaptionLook } from '#lib/calendar-captions.ts';
-	import { sized } from '#lib/tmdb-image.ts';
+	import { sized } from '#lib/core/tmdb-image.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { epText, movieText } from './ep-text.svelte.ts';

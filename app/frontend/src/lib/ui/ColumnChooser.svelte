@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Popover from './Popover.svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 	import { moveColumn, type Column } from '../library-table.ts';
 
 	// Show or hide the Library table's columns and put them in order: drag

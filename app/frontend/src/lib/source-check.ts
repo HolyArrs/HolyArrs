@@ -1,5 +1,5 @@
-import type { SourceHealth } from './types.ts';
-import type { Tone } from './format.ts';
+import type { SourceHealth } from './core/types.ts';
+import type { Tone } from './core/format.ts';
 import { sourceTone } from './sources.ts';
 
 /** One Source's answer to a test search (POST /sources/check). */

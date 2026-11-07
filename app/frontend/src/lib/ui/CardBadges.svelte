@@ -1,11 +1,11 @@
 <script lang="ts" module>
-	import type { OwnState } from '../fresh.ts';
+	import type { OwnState } from './fresh.ts';
 	export type CardOwned = { state: OwnState; label: string };
 </script>
 
 <script lang="ts">
-	import Icon from '../Icon.svelte';
-	import { freshLabel, type Fresh } from '../fresh.ts';
+	import Icon from './Icon.svelte';
+	import { freshLabel, type Fresh } from './fresh.ts';
 
 	// The badges over a card's artwork, laid on the art box (it must be
 	// position: relative). Top-right: a solid round library status. The one

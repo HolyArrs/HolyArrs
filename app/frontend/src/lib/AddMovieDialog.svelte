@@ -2,13 +2,13 @@
 	import Sheet from './ui/Sheet.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from './ui/Button.svelte';
-	import { to } from './paths.ts';
-	import { api, message } from './api.ts';
-	import { plainReason } from './plain.ts';
+	import { to } from './core/paths.ts';
+	import { api, message } from './core/api.ts';
+	import { plainReason } from './core/plain.ts';
 	import { loadChoices, saveChoices, secondVersion } from './library.ts';
 	import { builtInDefaults, gateChoices as gates, startChoices } from './title-defaults.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
-	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './types.ts';
+	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './core/types.ts';
 
 	// Add a movie to the Library: folder, Pick rules, Release gate, Keep up
 	// to date, Search when added and an optional second Version. Used by Search and

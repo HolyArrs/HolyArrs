@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
-	import type { Tint } from '../settings.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import type { Tint } from '../core/settings.ts';
 
 	// The small rounded colour square in front of a Settings page, like the
 	// tiles in a phone's Settings app. Decorative: the page name sits next to it.

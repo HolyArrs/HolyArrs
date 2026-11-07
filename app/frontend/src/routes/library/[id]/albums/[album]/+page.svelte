@@ -2,15 +2,15 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	// One album: its tracks with their state, every Pressing MusicBrainz
 	// lists, its History, and for the staff Keep up to date, which Pressing
 	// is used, Rename files for the album and Delete for the album or a track.
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
-	import { tone } from '#lib/format.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import EmptyState from '#lib/ui/TitleEmpty.svelte';
+	import { tone } from '#lib/core/format.ts';
 	import TitleHero from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
@@ -18,25 +18,25 @@
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import CompactRow from '#lib/history-looks/CompactRow.svelte';
 	import { isRoutine } from '#lib/history-looks/dirs.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import { crumbFor } from '#lib/title-page.ts';
-	import { audienceStatus } from '#lib/title-status.ts';
-	import { reducedMotion } from '#lib/motion.ts';
+	import { audienceStatus } from '#lib/ui/title-status.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
 	import '#lib/title-page.css';
 	import { groupDownloads } from '#lib/history.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
 	import ShowReleases from '#lib/ShowReleases.svelte';
-	import { toasts } from '#lib/toasts.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength } from '#lib/music/music.ts';
 	import { NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/reask.ts';
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
-	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/types.ts';
+	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/core/types.ts';
 	import ReportSheet from '#lib/reports/ReportSheet.svelte';
 	import { hasFile } from '#lib/reports.ts';
 

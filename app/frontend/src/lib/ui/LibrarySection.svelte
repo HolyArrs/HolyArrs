@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
 	// The manager-only Library section, always last on a title page: files,
 	// Versions, releases, subtitles, history and the search actions. Open by

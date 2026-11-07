@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/types.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 	import { followerNames } from '#lib/calendar.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 

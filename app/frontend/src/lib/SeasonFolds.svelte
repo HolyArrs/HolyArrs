@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { api } from './api.ts';
-	import { date } from './format.ts';
+	import { api } from './core/api.ts';
+	import { date } from './core/format.ts';
 	import Skeleton from './ui/Skeleton.svelte';
 	import Shelf from './ui/Shelf.svelte';
 	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
-	import { sized } from './tmdb-image.ts';
+	import { sized } from './core/tmdb-image.ts';
 	import { runtimeWords } from './ui/TitleHero.svelte';
 	import { newSeason, newestSeason, seasonName } from './shows.ts';
 	import { animeEpisode, animePath, type AnimeView } from './anime.ts';

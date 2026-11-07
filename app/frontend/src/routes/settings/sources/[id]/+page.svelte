@@ -2,18 +2,18 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import { to } from '#lib/paths.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { page } from '$app/state';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { ago, words } from '#lib/format.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { ago, words } from '#lib/core/format.ts';
 	import { barHeight, ms, opWords, uses } from '#lib/sources.ts';
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { testCount } from '#lib/test-tag.ts';
-	import type { SourceCall, SourceDay, SourceView } from '#lib/types.ts';
+	import { testCount } from '#lib/core/test-tag.ts';
+	import type { SourceCall, SourceDay, SourceView } from '#lib/core/types.ts';
 
 	let src = $state<SourceView | null>(null);
 	let days = $state<SourceDay[]>([]);

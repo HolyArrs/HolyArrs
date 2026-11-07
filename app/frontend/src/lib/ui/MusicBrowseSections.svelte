@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { to } from '../paths.ts';
+	import { to } from '../core/paths.ts';
 	import MusicTileGrid from './MusicTileGrid.svelte';
 
 	// Search > Music Browse (music_lists_v1 row templates): titled sections of the

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 	import Menu, { type MenuItem } from './Menu.svelte';
 
 	// A Menu whose trigger matches ActionButton: a glass pill with its word

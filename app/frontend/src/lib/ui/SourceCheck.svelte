@@ -5,10 +5,10 @@
 	import Field from './Field.svelte';
 	import Button from './Button.svelte';
 	import TestTag from './TestTag.svelte';
-	import { api } from '../api.ts';
-	import { plainMessage as message } from '../settings.ts';
-	import { to } from '../paths.ts';
-	import { session } from '../session.svelte.ts';
+	import { api } from '../core/api.ts';
+	import { plainMessage as message } from '../core/settings.ts';
+	import { to } from '../core/paths.ts';
+	import { session } from '../core/session.svelte.ts';
 	import { ms } from '../sources.ts';
 	import { checkCount, checkSummary, checkTone, checkWord, defaultQuery, type CheckKind, type SourceCheck } from '../source-check.ts';
 

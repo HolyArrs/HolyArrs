@@ -4,14 +4,14 @@
 	// Choose a release by hand), every other choice under More, and the plan
 	// behind Why?. A season pack or album gets the same shape for the whole
 	// pack, with each stuck episode or track below it.
-	import { to } from '../paths.ts';
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
-	import { ago } from '../format.ts';
+	import { to } from '../core/paths.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { ago } from '../core/format.ts';
 	import { decisionName, groupDecisions, manyWords, whyWords, type Decision, type DecisionGroup } from '../downloaders.ts';
 	import { refreshDecisions } from '../decisions.svelte.ts';
-	import { session } from '../session.svelte.ts';
-	import { plainReason } from '../plain.ts';
+	import { session } from '../core/session.svelte.ts';
+	import { plainReason } from '../core/plain.ts';
 	import { editionDecisionBody } from '../copy-controls.ts';
 	import Button from '../ui/Button.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';

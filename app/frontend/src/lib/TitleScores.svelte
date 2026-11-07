@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scoreName, scoreText, type OutsideScore } from './outside-ratings.ts';
+	import { scoreName, scoreText, type OutsideScore } from './ui/outside-ratings.ts';
 	// One icon file each: the package's index holds every brand (12.9 MB in dev).
 	import rottentomatoes from 'simple-icons/icons/rottentomatoes.svg?raw';
 	import metacritic from 'simple-icons/icons/metacritic.svg?raw';

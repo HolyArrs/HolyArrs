@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Poster from './Poster.svelte';
-	import { to } from './paths.ts';
-	import { press } from './motion.ts';
+	import Poster from './ui/Poster.svelte';
+	import { to } from './core/paths.ts';
+	import { press } from './core/motion.ts';
 	import type { PersonSummary } from './people.ts';
 
 	let { person }: { person: PersonSummary } = $props();

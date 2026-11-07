@@ -2,9 +2,9 @@
 	// A member asks for an artist: the whole artist, or the albums they pick.
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
-	import { api, message, ApiError } from './api.ts';
+	import { api, message, ApiError } from './core/api.ts';
 	import { albumKind, albumWords, albumYear } from './music/music.ts';
-	import type { Ask, AskableAlbum, LookupArtist } from './types.ts';
+	import type { Ask, AskableAlbum, LookupArtist } from './core/types.ts';
 
 	let {
 		onasked,

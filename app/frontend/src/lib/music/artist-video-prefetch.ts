@@ -3,7 +3,7 @@
 // the in-view batch; at hover start, its video is asked for. Both only note
 // the artist on the server, whose trailer pass makes one of its music
 // videos ready on its schedule; a page never starts a lookup.
-import { prefetchArtistVideo, watchArtistVideo } from '../autoplay.svelte.ts';
+import { prefetchArtistVideo, watchArtistVideo } from '../core/trailer/autoplay.svelte.ts';
 
 const ARTIST = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[/?#]|$)/i;
 

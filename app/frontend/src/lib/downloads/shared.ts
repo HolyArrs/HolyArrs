@@ -1,6 +1,6 @@
 // The artwork and the name a Downloads row uses.
 import { manyWords, rowName, type DownloadRow } from '../downloaders.ts';
-import type { TitleView } from '../types.ts';
+import type { TitleView } from '../core/types.ts';
 
 /** poster is the row's own artwork, else its Title's first poster. */
 export function poster(r: DownloadRow, titles: Map<number, TitleView>): string | undefined {

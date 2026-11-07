@@ -3,9 +3,9 @@
 	// future seasons only (what airs from now on).
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
-	import { api, message, ApiError } from './api.ts';
+	import { api, message, ApiError } from './core/api.ts';
 	import { seasonName, seasonWords } from './shows.ts';
-	import type { Ask, LookupShow } from './types.ts';
+	import type { Ask, LookupShow } from './core/types.ts';
 
 	let {
 		onasked,

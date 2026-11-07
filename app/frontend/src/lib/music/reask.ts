@@ -4,7 +4,7 @@
 // merges each answer into what is on screen, and stops as soon as an answer
 // is complete. Leaving the page stops it. Incomplete answers carry no-store
 // and are never kept by api.get, so each ask reaches the server.
-import { isFilling, isIncomplete } from '../api.ts';
+import { isFilling, isIncomplete } from '../core/api.ts';
 
 /** The pauses before each quiet re-ask. */
 export const REASK_MS = [2500, 3500, 5000, 7000];

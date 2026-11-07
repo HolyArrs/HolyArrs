@@ -3,17 +3,17 @@
 	import Badge from './Badge.svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import CardBadges from './CardBadges.svelte';
-	import { shownFresh, typeWord, type Fresh } from '../fresh.ts';
+	import { shownFresh, typeWord, type Fresh } from './fresh.ts';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import ProgressBar from './ProgressBar.svelte';
-	import { press, viewTransitionName } from '../motion.ts';
-	import { sized } from '../tmdb-image.ts';
-	import { pictureOf } from '../pictures.ts';
-	import { shelfNear, whenLoaded } from '../lazy-art.ts';
+	import { press, viewTransitionName } from '../core/motion.ts';
+	import { sized } from '../core/tmdb-image.ts';
+	import { pictureOf } from '../core/pictures.ts';
+	import { shelfNear, whenLoaded } from './lazy-art.ts';
 	import GrowCard from './GrowCard.svelte';
-	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
-	import { dwell, finePointer, scrollHold } from '../trailer.ts';
-	import { GROW_DELAY } from '../grow.ts';
+	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
+	import { dwell, finePointer, scrollHold } from '../core/trailer/trailer.ts';
+	import { GROW_DELAY } from './grow.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
 	// `action` is an optional round button (Add / Ask) over the art corner.

@@ -1,7 +1,7 @@
 // Active downloads for the sidebar: how many are moving and their average
 // progress. Same source as the Downloads page (/downloads/view).
 
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 import { nowPhases, type DownloadRow } from './downloaders.ts';
 
 export const activeDownloads = $state<{ count: number; percent: number }>({ count: 0, percent: 0 });

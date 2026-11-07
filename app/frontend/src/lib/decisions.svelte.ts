@@ -1,7 +1,7 @@
 // The Needs a decision badge on Downloads: how many movies wait for a
 // person. Asked again on page changes, on Slot news and every minute.
 
-import { api } from './api.ts';
+import { api } from './core/api.ts';
 import type { Decision } from './downloaders.ts';
 
 export const decisions = $state<{ count: number; items: Decision[] }>({ count: 0, items: [] });

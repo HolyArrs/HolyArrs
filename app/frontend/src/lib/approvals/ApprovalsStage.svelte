@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { proxied } from '../tmdb-image.ts';
+	import { proxied } from '../core/tmdb-image.ts';
 	// One ask in the cards' window (ApprovalsDesktop): the trailer as a big
 	// banner (Explore's Billboard; for music, the artist's video over the
 	// photo), type · year · what was asked, who asked and their note, then
@@ -12,29 +12,29 @@
 	import { cubicOut } from 'svelte/easing';
 	import Billboard from '../ui/Billboard.svelte';
 	import TrailerPlayer from '../ui/TrailerPlayer.svelte';
-	import { artistVideo, autoplayHere, loadUISettings } from '../autoplay.svelte.ts';
-	import { heroVideoStart, pickedSources, type HeroVideo } from '../music/hero-video.ts';
-	import Poster from '../Poster.svelte';
-	import Icon from '../Icon.svelte';
+	import { artistVideo, autoplayHere, loadUISettings } from '../core/trailer/autoplay.svelte.ts';
+	import { heroVideoStart, pickedSources, type HeroVideo } from '../core/trailer/hero-video.ts';
+	import Poster from '../ui/Poster.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import AskParts from './AskParts.svelte';
-	import { agoLong, dateTime } from '../format.ts';
-	import { to } from '../paths.ts';
-	import { session } from '../session.svelte.ts';
+	import { agoLong, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
+	import { session } from '../core/session.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
 	import { lifecycle, upcoming, type Life, type LifeFacts } from './lifecycle.ts';
 	import { partialFacts, realAlbum } from './live.ts';
-	import { api } from '../api.ts';
-	import type { AlbumSummary, TitleView } from '../types.ts';
+	import { api } from '../core/api.ts';
+	import type { AlbumSummary, TitleView } from '../core/types.ts';
 	import { nextWhen, shortDate, whenDate } from './inbox.ts';
 	import { askTab } from '../requests.ts';
 	import { askHref } from './approvals.ts';
 	import { askedFor } from './asked-for.ts';
 	import { watchlistLine } from '../account/watchlist.ts';
 	import type { PartsPick } from './ask-parts.ts';
-	import type { Ask } from '../types.ts';
+	import type { Ask } from '../core/types.ts';
 
 	let { ctx, single, choose: startChoosing = false }: { ctx: ApprovalsCtx; /** The ask this window shows. */ single: Ask; /** Open straight into What to get. */ choose?: boolean } = $props();
 

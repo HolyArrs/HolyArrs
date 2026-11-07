@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const get = vi.fn();
-vi.mock('./api.ts', () => ({ api: { get: (url: string) => get(url) } }));
+vi.mock('./core/api.ts', () => ({ api: { get: (url: string) => get(url) } }));
 const { firstPageURL, prefetchPerson, takePrefetched } = await import('./person-prefetch.ts');
 
 describe('person prefetch', () => {

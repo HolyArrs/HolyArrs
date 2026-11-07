@@ -1,5 +1,5 @@
 // The update notice on This app, in plain words.
-import type { UpdateInfo } from './types.ts';
+import type { UpdateInfo } from './core/types.ts';
 
 export function updateWords(u: UpdateInfo): string {
 	if (!u.on) return 'The update check is off: HolyArrs never asks for a newer version.';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon, bannerArt, type BannerEntry } from './calendar.ts';
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry } from './core/types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
 

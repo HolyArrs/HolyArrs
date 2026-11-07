@@ -2,8 +2,8 @@
 // people who approve (and open reported problems for people who manage the
 // Library). Asked again on page changes and every minute.
 
-import { api } from './api.ts';
-import type { AppMessage } from './types.ts';
+import { api } from './core/api.ts';
+import type { AppMessage } from './core/types.ts';
 
 export const inbox = $state<{ unread: number; waiting: number; reports: number; messages: AppMessage[] }>({ unread: 0, waiting: 0, reports: 0, messages: [] });
 
