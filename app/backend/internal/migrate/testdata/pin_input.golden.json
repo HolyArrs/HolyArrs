@@ -1,0 +1,432 @@
+{
+  "ID": 7,
+  "Snap": {
+    "kind": "s",
+    "via": "s",
+    "version": "s",
+    "schema": 7,
+    "read_at": "2026-10-13T12:00:00Z",
+    "titles": [
+      {
+        "source_id": 7,
+        "kind": "s",
+        "name": "s",
+        "year": 7,
+        "ids": {
+          "s": "s"
+        },
+        "path": "s",
+        "folder": "s",
+        "monitored": true,
+        "profile": "s",
+        "profile_id": 7,
+        "added": "s",
+        "tags": [
+          "s"
+        ],
+        "seasons": [
+          {
+            "number": 7,
+            "monitored": true
+          }
+        ],
+        "music_albums": [
+          {
+            "mbid": "s",
+            "monitored": true,
+            "watched_edition": "s"
+          }
+        ],
+        "extra": {
+          "s": "x"
+        }
+      }
+    ],
+    "tags": [
+      {
+        "id": 7,
+        "label": "s"
+      }
+    ],
+    "folders": [
+      {
+        "path": "s",
+        "extra": {
+          "s": "x"
+        }
+      }
+    ],
+    "quality_profiles": [
+      {
+        "id": 7,
+        "name": "s",
+        "upgrade_allowed": true,
+        "cutoff": "s",
+        "allowed": [
+          "s"
+        ],
+        "min_score": 7,
+        "cutoff_score": 7,
+        "scores": {
+          "s": 7
+        }
+      }
+    ],
+    "custom_formats": [
+      {
+        "id": 7,
+        "name": "s",
+        "settings": {
+          "s": "x"
+        },
+        "items": [
+          {
+            "s": "x"
+          }
+        ]
+      }
+    ],
+    "release_profiles": [
+      {
+        "id": 7,
+        "name": "s",
+        "settings": {
+          "s": "x"
+        },
+        "items": [
+          {
+            "s": "x"
+          }
+        ]
+      }
+    ],
+    "delay_profiles": [
+      {
+        "id": 7,
+        "enable_usenet": true,
+        "enable_torrent": true,
+        "preferred_protocol": "s",
+        "usenet_delay": 7,
+        "torrent_delay": 7,
+        "order": 7,
+        "tags": [
+          "s"
+        ],
+        "bypass_if_highest_quality": true,
+        "bypass_if_above_score": true
+      }
+    ],
+    "naming": {
+      "s": "x"
+    },
+    "metadata_profiles": [
+      {
+        "id": 7,
+        "name": "s",
+        "settings": {
+          "s": "x"
+        },
+        "items": [
+          {
+            "s": "x"
+          }
+        ]
+      }
+    ],
+    "language_profiles": [
+      {
+        "id": 7,
+        "name": "s",
+        "settings": {
+          "s": "x"
+        },
+        "items": [
+          {
+            "s": "x"
+          }
+        ]
+      }
+    ],
+    "exclusions": [
+      {
+        "ids": {
+          "s": "s"
+        },
+        "name": "s",
+        "year": 7
+      }
+    ],
+    "subtitles": {
+      "languages": [
+        "s"
+      ],
+      "profiles": [
+        {
+          "id": 7,
+          "name": "s",
+          "cutoff": "s",
+          "languages": [
+            {
+              "language": "s",
+              "forced": true,
+              "hi": true
+            }
+          ],
+          "tag": "s"
+        }
+      ],
+      "providers": [
+        {
+          "id": 7,
+          "name": "s",
+          "kind": "s",
+          "enabled": true,
+          "priority": 7,
+          "protocol": "s",
+          "tags": [
+            "s"
+          ],
+          "settings": {
+            "s": "x"
+          },
+          "needs_reentry": [
+            "s"
+          ]
+        }
+      ],
+      "defaults": {
+        "s": "x"
+      }
+    },
+    "app_profiles": [
+      {
+        "s": "x"
+      }
+    ],
+    "indexers": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "download_clients": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "import_lists": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "notifications": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "metadata": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "app_links": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "indexer_proxies": [
+      {
+        "id": 7,
+        "name": "s",
+        "kind": "s",
+        "enabled": true,
+        "priority": 7,
+        "protocol": "s",
+        "tags": [
+          "s"
+        ],
+        "settings": {
+          "s": "x"
+        },
+        "needs_reentry": [
+          "s"
+        ]
+      }
+    ],
+    "downloader": {
+      "host": "s",
+      "port": 7,
+      "url_base": "s",
+      "tls": true,
+      "username": "s",
+      "needs_password": true,
+      "save_path": "s",
+      "complete_path": "s",
+      "categories": [
+        {
+          "name": "s",
+          "path": "s",
+          "priority": "s"
+        }
+      ],
+      "servers": [
+        {
+          "id": 7,
+          "name": "s",
+          "kind": "s",
+          "enabled": true,
+          "priority": 7,
+          "protocol": "s",
+          "tags": [
+            "s"
+          ],
+          "settings": {
+            "s": "x"
+          },
+          "needs_reentry": [
+            "s"
+          ]
+        }
+      ]
+    },
+    "remote_path_mappings": [
+      {
+        "host": "s",
+        "remote_path": "s",
+        "local_path": "s"
+      }
+    ],
+    "users": [
+      {
+        "source_id": 7,
+        "external_id": "s",
+        "name": "s",
+        "email": "s",
+        "kind": "s",
+        "admin": true,
+        "owner": true,
+        "permissions": [
+          "s"
+        ],
+        "movie_limit": 7,
+        "movie_days": 7,
+        "movie_limit_set": true,
+        "show_limit": 7,
+        "show_days": 7,
+        "show_limit_set": true,
+        "created": "s"
+      }
+    ],
+    "requests": [
+      {
+        "source_id": 7,
+        "kind": "s",
+        "ids": {
+          "s": "s"
+        },
+        "state": "s",
+        "seasons": [
+          7
+        ],
+        "by": 7,
+        "by_name": "s",
+        "decided_by": 7,
+        "four_k": true,
+        "created": "s",
+        "updated": "s"
+      }
+    ],
+    "settings": {
+      "s": "x"
+    },
+    "needs_reentry": [
+      "s"
+    ],
+    "notes": [
+      "s"
+    ]
+  }
+}
