@@ -348,7 +348,7 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 	await expect(own.getByText('Sign-in unlinked for pat')).toBeVisible();
 	own.off('dialog', yes);
 	expect(asked).toHaveLength(2);
-	expect(asked[1]).toContain('no HolyArrs password');
+	expect(asked[1]).toContain('has no password and will be locked out');
 	await expect(own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' })).toHaveCount(0);
 	// The device that single sign-on signed in is signed out.
 	await pat.reload();

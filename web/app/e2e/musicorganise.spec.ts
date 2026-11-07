@@ -40,7 +40,7 @@ async function artistSetting(p: Page, name: RegExp) {
 }
 
 async function openAlbum(p: Page, artist: string, album: string) {
-	await p.goto('/library');
+	await p.goto('/library?kind=artist');
 	await p.getByRole('link', { name: new RegExp(artist) }).first().click();
 	await p.getByRole('link', { name: album, exact: true }).first().click();
 	await expect(p.getByRole('heading', { level: 1, name: album })).toBeVisible();
