@@ -659,7 +659,8 @@
 		moves = [m, ...moves.filter((x) => x.id !== m.id)];
 		if (m.state === 'undone') toasts.push(`Move ${m.id} undone`, 'ok');
 		else if (m.undo_state === 'failed') toasts.push("Couldn't undo move", 'fail', { body: 'Try again' });
-		else toasts.push(`Move ${m.id} finished`, m.state === 'done' ? 'ok' : 'fail');
+		else if (m.state === 'done') toasts.push(`Move ${m.id} finished`, 'ok');
+		else toasts.push(`Move ${m.id} failed`, 'fail', { body: 'See the report' });
 		// A finished move forgets the kept keys.
 		if (m.state === 'done') void loadSaved();
 		if (m.state !== 'undone' && !m.undo_state) {
@@ -885,10 +886,11 @@
 		{@const busyNow = running(m)}
 		{@const canUndo = !busyNow && (m.state === 'done' || m.state === 'failed') && m.undo_state !== 'failed'}
 		{@const retry = !busyNow && m.undo_state === 'failed' && m.state !== 'undone'}
+		{@const restart = !!embedded?.ondone && (m.state === 'undone' || m.state === 'failed')}
 		<StepFoot
-			label={busyNow ? undefined : retry ? 'Try undo again' : embedded?.ondone ? 'Continue' : 'Done'}
+			label={busyNow ? undefined : retry ? 'Try undo again' : restart ? 'Start over' : embedded?.ondone ? 'Continue' : 'Done'}
 			variant={retry ? 'destructive' : 'primary'}
-			onclick={retry ? () => (confirmUndo = true) : (embedded?.ondone ?? done)}
+			onclick={retry ? () => (confirmUndo = true) : restart ? done : (embedded?.ondone ?? done)}
 			disabled={(safeMode || undoing) && retry}
 			busy={undoing && retry}
 		>
@@ -944,7 +946,7 @@
 <Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
 	<form id="move-confirm-form" onsubmit={startMove}>
 		{#if tryNotice}<p class="notice warn" role="status">{tryNotice}</p>{/if}
-		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Paused items stay paused. You can undo this later from Earlier moves {embedded ? 'in Settings, Move from other apps' : 'on this page'}.</p>
+		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Paused items stay paused. You can undo this later from Earlier moves {embedded ? 'on the next screen, or after setup in Settings › Move from other apps' : 'on this page'}.</p>
 	</form>
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (confirmMove = false)}>Cancel</Button>
