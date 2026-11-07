@@ -291,7 +291,7 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	await form.getByRole('button', { name: 'Test' }).click();
 	await expect(form.getByTestId('sso-tested')).toHaveText('OpenID Connect');
 	await form.getByText('Show the single sign-on button on the sign-in page').click();
-	await form.getByLabel('Client id').fill('holyarrs');
+	await form.getByLabel('Client ID').fill('holyarrs');
 	await form.getByLabel('Client secret').fill(`${owner().password}-client`);
 	await expect(form.getByLabel('Callback address')).toHaveValue(/\/api\/v1\/auth\/oidc\/callback$/);
 	// Saving needs the password with it.

@@ -87,7 +87,7 @@
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/link/start', {});
 			if (win) win.location.href = r.auth_url;
-			else linkNote = 'Your browser blocked the Plex window. Allow pop-ups for HolyArrs and try again.';
+			else linkNote = 'Plex window blocked. Allow pop-ups and try again.';
 			const until = Date.now() + 10 * 60 * 1000;
 			while (Date.now() < until) {
 				await new Promise((ok) => setTimeout(ok, 2000));
