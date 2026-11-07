@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initials, pickPosters, wall } from './pick.ts';
-import { flip, shift } from '#lib/settings-home/motion.ts';
+import { flip, shift } from '#lib/core/motion.ts';
 
 describe('Settings home pictures', () => {
 	it('keeps movie and show posters, newest first, no repeats, at most the limit', () => {

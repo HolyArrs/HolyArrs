@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flip, radiusFor, shift } from '../settings-home/motion.ts';
+import { flip, radiusFor, shift } from './motion.ts';
 
 const card = { left: 300, top: 200, width: 300, height: 200 };
 const page = { left: 240, top: 64, width: 1200, height: 836 };

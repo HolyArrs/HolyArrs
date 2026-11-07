@@ -2,7 +2,7 @@
 // move, Back mid-way or a second click turns the current one around or
 // clears it, so nothing is ever left half-drawn. Transform and opacity only.
 
-import { EASE, MS, flip, phone, radiusFor, reduced, shift, type Box, type Move } from '#lib/settings-home/motion.ts';
+import { EASE, MS, flip, phone, radiusFor, reduced, shift, type Box, type Move } from '#lib/core/motion.ts';
 
 /** What the next Settings screen should play, set before it mounts. */
 export const settingsNav: { move: Move; group: string | null } = { move: null, group: null };
