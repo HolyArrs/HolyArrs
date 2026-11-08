@@ -139,7 +139,7 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, database.FormatTime(now))
+		_, err = tx.Exec(askArtistSQL, a.ID, p.UserID, database.FormatTime(now))
 		return err
 	})
 	if errors.Is(err, errAskedMeanwhile) && !retried {
@@ -258,7 +258,7 @@ func (s *Service) joinWiderArtist(ctx context.Context, p Person, o domain.Ask, w
 // date. An asked-for album the kinds leave out is refused.
 func albumsNotKept(ctx context.Context, db querier, titleID int64, want []domain.AskAlbum) ([]domain.AskAlbum, error) {
 	var artistKeep bool
-	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&artistKeep); err != nil {
+	if err := db.QueryRowContext(ctx, albumsNotKeptSQL, titleID).Scan(&artistKeep); err != nil {
 		return nil, err
 	}
 	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY release_date IS NULL, release_date, id", titleID)
@@ -319,9 +319,7 @@ func musicReady(ctx context.Context, db querier, titleID int64, albums []string,
 	}
 	for _, p := range parts {
 		var tracks, ready int
-		err := db.QueryRowContext(ctx, `SELECT count(*), coalesce(sum(CASE WHEN s.state IN ('in_library', 'better_wanted') THEN 1 ELSE 0 END), 0)
-			FROM items i LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-			WHERE i.part_id = ? AND i.kind = 'track' AND i.dropped_at IS NULL AND i.keep_up_to_date = 1`, p.ID).Scan(&tracks, &ready)
+		err := db.QueryRowContext(ctx, musicReadySQL, p.ID).Scan(&tracks, &ready)
 		if err != nil {
 			return false, err
 		}
@@ -402,7 +400,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		}
 	}
 	var artistKeep bool
-	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", tid).Scan(&artistKeep); err != nil {
+	if err := db.QueryRowContext(ctx, addArtistForAskSQL, tid).Scan(&artistKeep); err != nil {
 		return 0, err
 	}
 	if !artistKeep {

@@ -80,7 +80,7 @@ func (s *Service) BackfillParts(ctx context.Context) {
 	}
 	for _, a := range as {
 		var n int
-		_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM ask_parts WHERE key >= ? AND key < ?", "show:"+a.Ref+":", "show:"+a.Ref+":\xff").Scan(&n)
+		_ = s.Store.Read().QueryRowContext(ctx, backfillPartsSQL, "show:"+a.Ref+":", "show:"+a.Ref+":\xff").Scan(&n)
 		if a.Kind == "show" && n > 0 || a.Kind == "artist" && s.partStored(ctx, "askalbums:"+strconv.FormatInt(a.ID, 10)) {
 			continue // stored before
 		}
@@ -95,7 +95,7 @@ func albumKey(mbid string) string           { return "album:" + mbid }
 
 func (s *Service) partStored(ctx context.Context, key string) bool {
 	var n int
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM ask_parts WHERE key = ?", key).Scan(&n)
+	_ = s.Store.Read().QueryRowContext(ctx, partStoredSQL, key).Scan(&n)
 	return n > 0
 }
 
@@ -105,7 +105,7 @@ func (s *Service) putPart(ctx context.Context, key string, v any) error {
 		return err
 	}
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, "INSERT INTO ask_parts (key, body, fetched_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET body = excluded.body, fetched_at = excluded.fetched_at",
+		_, err := tx.ExecContext(ctx, putPartSQL,
 			key, string(b), database.FormatTime(s.now()))
 		return err
 	})
@@ -245,7 +245,7 @@ func (s *Service) AskParts(ctx context.Context, id int64) (Parts, error) {
 	var keys []string
 	switch a.Kind {
 	case "show":
-		rows, err := s.Store.Read().QueryContext(ctx, "SELECT key, body FROM ask_parts WHERE key >= ? AND key < ?", prefix, prefix+"\xff")
+		rows, err := s.Store.Read().QueryContext(ctx, askPartsSQL, prefix, prefix+"\xff")
 		if err != nil {
 			return out, err
 		}
@@ -268,13 +268,13 @@ func (s *Service) AskParts(ctx context.Context, id int64) (Parts, error) {
 		if len(keys) == 0 {
 			// A whole-artist ask: the albums stored for it.
 			var body string
-			if s.Store.Read().QueryRowContext(ctx, "SELECT body FROM ask_parts WHERE key = ?", "askalbums:"+strconv.FormatInt(a.ID, 10)).Scan(&body) == nil {
+			if s.Store.Read().QueryRowContext(ctx, askPartsSQL2, "askalbums:"+strconv.FormatInt(a.ID, 10)).Scan(&body) == nil {
 				_ = json.Unmarshal([]byte(body), &keys)
 			}
 		}
 		for _, k := range keys {
 			var body string
-			if err := s.Store.Read().QueryRowContext(ctx, "SELECT body FROM ask_parts WHERE key = ?", albumKey(k)).Scan(&body); err != nil {
+			if err := s.Store.Read().QueryRowContext(ctx, askPartsSQL3, albumKey(k)).Scan(&body); err != nil {
 				continue
 			}
 			var songs []PartSong

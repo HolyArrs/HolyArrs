@@ -71,7 +71,7 @@ func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 	for i, k := range settingKeys {
 		args[i] = k
 	}
-	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'this_app' AND key IN (?"+strings.Repeat(", ?", len(settingKeys)-1)+")", args...)
+	rows, err := db.QueryContext(ctx, readSettingsSQL+strings.Repeat(", ?", len(settingKeys)-1)+")", args...)
 	if err != nil {
 		return s, err
 	}
@@ -154,7 +154,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			continue
 		}
 		var n int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM pick_rules WHERE id = ?", id).Scan(&n); err != nil {
+		if err := db.QueryRowContext(ctx, saveSettingsSQL, id).Scan(&n); err != nil {
 			return err
 		}
 		if n == 0 {
@@ -168,8 +168,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
 			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists)}
 		for i, k := range settingKeys {
-			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
-				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+			_, err := tx.Exec(saveSettingsSQL2,
 				k, vals[i], now, string(who), now, string(who))
 			if err != nil {
 				return err
@@ -197,15 +196,13 @@ func SetPersonLimit(ctx context.Context, st *database.Store, userID int64, l Per
 	}
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM users WHERE id = ?", userID).Scan(&n); err != nil {
+		if err := tx.QueryRow(setPersonLimitSQL, userID).Scan(&n); err != nil {
 			return err
 		}
 		if n == 0 {
 			return database.ErrNotFound
 		}
-		_, err := tx.Exec(`INSERT INTO user_ask_settings (user_id, per_week, movies_per_week, shows_per_week, music_per_week) VALUES (?, NULL, ?, ?, ?)
-			ON CONFLICT (user_id) DO UPDATE SET per_week = NULL, movies_per_week = excluded.movies_per_week,
-				shows_per_week = excluded.shows_per_week, music_per_week = excluded.music_per_week`, userID, l.Movies, l.Shows, l.Music)
+		_, err := tx.Exec(setPersonLimitSQL2, userID, l.Movies, l.Shows, l.Music)
 		return err
 	})
 }
@@ -230,7 +227,7 @@ func ReadTargets(ctx context.Context, db database.Querier, userID int64) (Target
 	var t Targets
 	on := true
 	t.NewEpisodes = &on
-	err := db.QueryRowContext(ctx, "SELECT email, discord_id, new_episodes = 1 FROM user_ask_settings WHERE user_id = ?", userID).Scan(&t.Email, &t.DiscordID, &on)
+	err := db.QueryRowContext(ctx, readTargetsSQL, userID).Scan(&t.Email, &t.DiscordID, &on)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 	}
@@ -246,10 +243,9 @@ func SaveTargets(ctx context.Context, st *database.Store, userID int64, t Target
 		return ErrDiscordID
 	}
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO user_ask_settings (user_id, email, discord_id) VALUES (?, ?, ?)
-			ON CONFLICT (user_id) DO UPDATE SET email = excluded.email, discord_id = excluded.discord_id`, userID, t.Email, t.DiscordID)
+		_, err := tx.Exec(saveTargetsSQL, userID, t.Email, t.DiscordID)
 		if err == nil && t.NewEpisodes != nil {
-			_, err = tx.Exec("UPDATE user_ask_settings SET new_episodes = ? WHERE user_id = ?", *t.NewEpisodes, userID)
+			_, err = tx.Exec(saveTargetsSQL2, *t.NewEpisodes, userID)
 		}
 		return err
 	})

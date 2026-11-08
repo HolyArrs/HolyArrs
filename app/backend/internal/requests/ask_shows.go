@@ -110,7 +110,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		var keep bool
 		var policy string
 		var choice sql.NullString
-		if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date, new_parts_policy, season_choice FROM titles WHERE id = ?", tid).Scan(&keep, &policy, &choice); err != nil {
+		if err := db.QueryRowContext(ctx, askShowSQL, tid).Scan(&keep, &policy, &choice); err != nil {
 			return Result{}, err
 		}
 		if keep && policy == "all" && (choice.String == library.SeasonsFuture || choice.String == library.SeasonsAll) {
@@ -177,7 +177,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, database.FormatTime(now))
+		_, err = tx.Exec(askShowSQL2, a.ID, p.UserID, database.FormatTime(now))
 		return err
 	})
 	if errors.Is(err, errAskedMeanwhile) && !retried {
@@ -291,7 +291,7 @@ func (s *Service) joinWiderWith(ctx context.Context, p Person, o domain.Ask, kin
 			return ErrNotOpen
 		}
 		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM ask_people WHERE ask_id = ? AND user_id = ?", o.ID, p.UserID).Scan(&n); err != nil {
+		if err := tx.QueryRow(joinWiderWithSQL, o.ID, p.UserID).Scan(&n); err != nil {
 			return err
 		}
 		already = n > 0
@@ -307,7 +307,7 @@ func (s *Service) joinWiderWith(ctx context.Context, p Person, o domain.Ask, kin
 		if already {
 			return nil
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", o.ID, p.UserID, database.FormatTime(s.now()))
+		_, err = tx.Exec(joinWiderWithSQL2, o.ID, p.UserID, database.FormatTime(s.now()))
 		return err
 	})
 	if err != nil {
@@ -334,7 +334,7 @@ func (s *Service) joinWiderWith(ctx context.Context, p Person, o domain.Ask, kin
 
 // regularSeasons lists a show's seasons in the Library except specials.
 func regularSeasons(ctx context.Context, db querier, titleID int64) ([]int, error) {
-	rows, err := db.QueryContext(ctx, "SELECT number FROM parts WHERE title_id = ? AND kind = 'season' AND number > 0 AND dropped_at IS NULL ORDER BY number", titleID)
+	rows, err := db.QueryContext(ctx, regularSeasonsSQL, titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -361,13 +361,13 @@ func notKept(ctx context.Context, db querier, titleID int64, want []int) ([]int,
 		}
 	}
 	var showKeep bool
-	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&showKeep); err != nil {
+	if err := db.QueryRowContext(ctx, notKeptSQL, titleID).Scan(&showKeep); err != nil {
 		return nil, err
 	}
 	out := []int{}
 	for _, n := range want {
 		var keep bool
-		err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", titleID, n).Scan(&keep)
+		err := db.QueryRowContext(ctx, notKeptSQL2, titleID, n).Scan(&keep)
 		if errors.Is(err, sql.ErrNoRows) {
 			// A season the Library does not know yet (the next refresh adds
 			// it) is asked for.
@@ -414,10 +414,7 @@ func showReady(ctx context.Context, db querier, titleID int64, seasons []int, ep
 	}
 	args = append(args, database.FormatTime(now))
 	var aired, ready int
-	err := db.QueryRowContext(ctx, `SELECT count(*), coalesce(sum(CASE WHEN s.state IN ('in_library', 'better_wanted') THEN 1 ELSE 0 END), 0)
-		FROM items i JOIN parts p ON p.id = i.part_id
-		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-		WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND (`+strings.Join(or, " OR ")+`) AND i.air_date IS NOT NULL AND i.air_date <= ?`,
+	err := db.QueryRowContext(ctx, showReadySQL+strings.Join(or, " OR ")+`) AND i.air_date IS NOT NULL AND i.air_date <= ?`,
 		args...).Scan(&aired, &ready)
 	return aired > 0 && aired == ready, err
 }
@@ -459,7 +456,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 	}
 	db := s.Store.Read()
 	var showKeep bool
-	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", tid).Scan(&showKeep); err != nil {
+	if err := db.QueryRowContext(ctx, addShowForAskSQL, tid).Scan(&showKeep); err != nil {
 		return 0, err
 	}
 	if !showKeep {
@@ -476,7 +473,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 	}
 	for _, n := range seasons {
 		var keep bool
-		err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", tid, n).Scan(&keep)
+		err := db.QueryRowContext(ctx, addShowForAskSQL2, tid, n).Scan(&keep)
 		if errors.Is(err, sql.ErrNoRows) || keep {
 			continue
 		}

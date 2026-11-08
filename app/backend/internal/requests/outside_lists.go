@@ -22,9 +22,9 @@ import (
 
 // Kinds of Outside list, and the Job kind that reads them.
 const (
-	ListTMDB  = "tmdb_list"
-	ListTrakt = "trakt_list"
-	OutsideListSync  = "sync_outside_lists"
+	ListTMDB        = "tmdb_list"
+	ListTrakt       = "trakt_list"
+	OutsideListSync = "sync_outside_lists"
 )
 
 // SeasonsFirst is the seasons choice that keeps only season one of a show.
@@ -141,7 +141,7 @@ func EditOutsideList(ctx context.Context, s *database.Store, id int64, in Outsid
 // RemoveOutsideList deletes a list. Titles it added stay in the Library.
 func RemoveOutsideList(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.Exec("DELETE FROM outside_lists WHERE id = ?", id)
+		res, err := tx.Exec(removeOutsideListSQL, id)
 		if err != nil {
 			return err
 		}
@@ -220,7 +220,7 @@ func fill(ctx context.Context, tx *sql.Tx, in OutsideListInput, l *domain.Outsid
 	}
 	folder := in.LibraryFolderID
 	if folder == 0 {
-		if err := tx.QueryRow("SELECT id FROM library_folders WHERE kind = ? ORDER BY id LIMIT 1", kind).Scan(&folder); errors.Is(err, sql.ErrNoRows) {
+		if err := tx.QueryRow(fillSQL, kind).Scan(&folder); errors.Is(err, sql.ErrNoRows) {
 			return noFolder
 		} else if err != nil {
 			return err
@@ -250,7 +250,7 @@ func fill(ctx context.Context, tx *sql.Tx, in OutsideListInput, l *domain.Outsid
 		rules = &id
 	}
 	var taken int
-	if err := tx.QueryRow("SELECT count(*) FROM outside_lists WHERE name = ? COLLATE NOCASE AND id != ?", name, l.ID).Scan(&taken); err != nil {
+	if err := tx.QueryRow(fillSQL2, name, l.ID).Scan(&taken); err != nil {
 		return err
 	}
 	if taken > 0 {

@@ -52,7 +52,7 @@ func (s *Service) FollowTitle(ctx context.Context, p Person, titleID int64) erro
 func (s *Service) follow(ctx context.Context, p Person, titleID int64, tellOnFile bool) error {
 	db := s.Store.Read()
 	var kind string
-	err := db.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ? AND state != 'removed'", titleID).Scan(&kind)
+	err := db.QueryRowContext(ctx, followSQL, titleID).Scan(&kind)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && kind != "movie" && kind != "show" && kind != "artist") {
 		return ErrNotFollowable
 	}
@@ -66,17 +66,14 @@ func (s *Service) follow(ctx context.Context, p Person, titleID int64, tellOnFil
 	}
 	now := database.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.UserID, titleID, now)
+		res, err := tx.Exec(followSQL2, p.UserID, titleID, now)
 		if err != nil || !tellOnFile || kind != "movie" {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
 			return nil
 		}
-		_, err = tx.Exec(`INSERT OR IGNORE INTO tmdb_movie_follows (user_id, tmdb_id, created_at)
-			SELECT ?, json_extract(t.source_ids, '$.tmdb'), ? FROM titles t WHERE t.id = ? AND json_extract(t.source_ids, '$.tmdb') IS NOT NULL
-			AND NOT EXISTS (SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = t.id AND sl.state IN ('in_library', 'better_wanted'))
-			AND NOT EXISTS (SELECT 1 FROM asks a JOIN ask_people ap ON ap.ask_id = a.id WHERE a.title_id = t.id AND ap.user_id = ? AND a.state IN ('asked', 'approved'))`,
+		_, err = tx.Exec(followSQL3,
 			p.UserID, now, titleID, p.UserID)
 		return err
 	})
@@ -88,7 +85,7 @@ func (s *Service) follow(ctx context.Context, p Person, titleID int64, tellOnFil
 // to follow (followAskers).
 func (s *Service) FollowAsk(ctx context.Context, p Person, askID int64, follow bool) error {
 	var tid sql.NullInt64
-	if err := s.Store.Read().QueryRowContext(ctx, "SELECT title_id FROM asks WHERE id = ?", askID).Scan(&tid); err != nil {
+	if err := s.Store.Read().QueryRowContext(ctx, followAskSQL, askID).Scan(&tid); err != nil {
 		return err
 	}
 	on := 0
@@ -96,7 +93,7 @@ func (s *Service) FollowAsk(ctx context.Context, p Person, askID int64, follow b
 		on = 1
 	}
 	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE ask_people SET follow = ? WHERE ask_id = ? AND user_id = ?", on, askID, p.UserID)
+		_, err := tx.Exec(followAskSQL2, on, askID, p.UserID)
 		return err
 	}); err != nil {
 		return err
@@ -116,8 +113,7 @@ func (s *Service) FollowAsk(ctx context.Context, p Person, askID int64, follow b
 func (s *Service) followAskers(ctx context.Context, askID, titleID int64) error {
 	now := database.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT OR IGNORE INTO follows (user_id, title_id, created_at) SELECT user_id, ?, ? FROM ask_people
-			WHERE ask_id = ? AND follow = 1`, titleID, now, askID)
+		_, err := tx.Exec(followAskersSQL, titleID, now, askID)
 		return err
 	})
 }
@@ -139,10 +135,10 @@ func (s *Service) FollowAdded(ctx context.Context, p Person, titleIDs ...int64) 
 // ends too, so the person is not told about it later.
 func (s *Service) Unfollow(ctx context.Context, userID, titleID int64) error {
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.Exec("DELETE FROM follows WHERE user_id = ? AND title_id = ?", userID, titleID); err != nil {
+		if _, err := tx.Exec(unfollowSQL, userID, titleID); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = (SELECT json_extract(source_ids, '$.tmdb') FROM titles WHERE id = ? AND kind = 'movie')`, userID, titleID)
+		_, err := tx.Exec(unfollowSQL2, userID, titleID)
 		return err
 	})
 }
@@ -150,14 +146,13 @@ func (s *Service) Unfollow(ctx context.Context, userID, titleID int64) error {
 // IsFollowing says whether a person follows a title.
 func (s *Service) IsFollowing(ctx context.Context, userID, titleID int64) (bool, error) {
 	var n int
-	err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM follows WHERE user_id = ? AND title_id = ?", userID, titleID).Scan(&n)
+	err := s.Store.Read().QueryRowContext(ctx, isFollowingSQL, userID, titleID).Scan(&n)
 	return n > 0, err
 }
 
 // Following lists what a person follows, by name.
 func (s *Service) Following(ctx context.Context, userID int64) ([]Followed, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT t.id, t.kind, t.name, t.year, f.created_at FROM follows f JOIN titles t ON t.id = f.title_id
-		WHERE f.user_id = ? AND t.state != 'removed' ORDER BY t.sort_name, t.id`, userID)
+	rows, err := s.Store.Read().QueryContext(ctx, followingSQL, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,12 +177,7 @@ func (s *Service) Following(ctx context.Context, userID int64) ([]Followed, erro
 	rows.Close()
 	// Follows of titles not in the Library yet: shows and movies by TMDB id
 	// (skipping any whose title is now followed in the Library), then albums.
-	more, err := s.Store.Read().QueryContext(ctx, `SELECT 'show', tmdb_id, '', '', created_at FROM tmdb_follows tf WHERE user_id = ? AND kind = 'show'
-			AND NOT EXISTS (SELECT 1 FROM follows f JOIN titles t ON t.id = f.title_id WHERE f.user_id = tf.user_id AND t.kind = 'show' AND json_extract(t.source_ids, '$.tmdb') = tf.tmdb_id)
-		UNION ALL SELECT 'movie', tmdb_id, '', '', created_at FROM tmdb_movie_follows mf WHERE user_id = ?
-			AND NOT EXISTS (SELECT 1 FROM follows f JOIN titles t ON t.id = f.title_id WHERE f.user_id = mf.user_id AND t.kind = 'movie' AND json_extract(t.source_ids, '$.tmdb') = mf.tmdb_id)
-		UNION ALL SELECT 'album', mbid, name, artist, created_at FROM album_follows WHERE user_id = ?
-		ORDER BY 1, 5`, userID, userID, userID)
+	more, err := s.Store.Read().QueryContext(ctx, followingSQL2, userID, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -216,8 +206,7 @@ func (s *Service) Following(ctx context.Context, userID int64) ([]Followed, erro
 // moment. It returns how many artists it told about.
 func (s *Service) SendAlbumNotices(ctx context.Context) (int, error) {
 	due := database.FormatTime(s.now().Add(-EpisodeBatch))
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT n.title_id, t.name, count(*) FROM new_album_notices n JOIN titles t ON t.id = n.title_id
-		WHERE n.sent_at IS NULL GROUP BY n.title_id HAVING min(n.arrived_at) <= ? ORDER BY n.title_id`, due)
+	rows, err := s.Store.Read().QueryContext(ctx, sendAlbumNoticesSQL, due)
 	if err != nil {
 		return 0, err
 	}
@@ -248,11 +237,11 @@ func (s *Service) SendAlbumNotices(ctx context.Context) (int, error) {
 		now := database.FormatTime(s.now())
 		text := AlbumWords(a.n, a.name)
 		err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-			if _, err := tx.Exec("UPDATE new_album_notices SET sent_at = ? WHERE title_id = ? AND sent_at IS NULL", now, a.id); err != nil {
+			if _, err := tx.Exec(sendAlbumNoticesSQL2, now, a.id); err != nil {
 				return err
 			}
 			for _, p := range people {
-				if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id) VALUES (?, ?, 'new_albums', ?, ?)",
+				if _, err := tx.Exec(sendAlbumNoticesSQL3,
 					now, p.ID, text+".", a.id); err != nil {
 					return err
 				}
@@ -288,9 +277,7 @@ func AlbumWords(n int, artist string) string {
 
 // followers are the people who follow a title and want new-part notices.
 func (s *Service) followers(ctx context.Context, titleID int64) ([]person, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '')
-		FROM follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
-		WHERE f.title_id = ? AND u.state != 'disabled' AND coalesce(x.new_episodes, 1) = 1 ORDER BY u.id`, titleID)
+	rows, err := s.Store.Read().QueryContext(ctx, followersSQL, titleID)
 	if err != nil {
 		return nil, err
 	}

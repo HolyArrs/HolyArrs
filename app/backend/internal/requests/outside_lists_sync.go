@@ -267,7 +267,7 @@ func (s *OutsideLists) addShow(ctx context.Context, l domain.OutsideList, e entr
 	switch {
 	case err == nil:
 		name := e.name
-		_ = db.QueryRowContext(ctx, "SELECT name FROM titles WHERE id = ?", id).Scan(&name)
+		_ = db.QueryRowContext(ctx, addShowSQL, id).Scan(&name)
 		return "added", name, nil
 	case errors.As(err, &dup):
 		return "already", "", nil
@@ -282,7 +282,7 @@ func (s *OutsideLists) record(ctx context.Context, l domain.OutsideList, res Out
 	now := s.now()
 	text := describe(res)
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE outside_lists SET last_synced_at = ?, last_result = ?, last_error = ?, updated_at = ? WHERE id = ?",
+		_, err := tx.Exec(recordSQL,
 			database.FormatTime(now), text, problem, database.FormatTime(now), l.ID)
 		return err
 	})

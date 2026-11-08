@@ -205,7 +205,7 @@ func libraryOverLimit(ctx context.Context, db database.Querier, p Person, kind s
 		return nil
 	}
 	var rating string
-	if err := db.QueryRowContext(ctx, "SELECT rating FROM titles WHERE id = ?", id).Scan(&rating); err != nil {
+	if err := db.QueryRowContext(ctx, libraryOverLimitSQL, id).Scan(&rating); err != nil {
 		return err
 	}
 	return overLimit(p, kind, rating)
@@ -295,7 +295,7 @@ type querier interface {
 // has no value of its own.
 func PersonLimits(ctx context.Context, db database.Querier, userID int64) (movies, shows, music *int, err error) {
 	var all, m, sh, mu sql.NullInt64
-	err = db.QueryRowContext(ctx, "SELECT per_week, movies_per_week, shows_per_week, music_per_week FROM user_ask_settings WHERE user_id = ?", userID).Scan(&all, &m, &sh, &mu)
+	err = db.QueryRowContext(ctx, personLimitsSQL, userID).Scan(&all, &m, &sh, &mu)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, nil, nil
 	}
@@ -337,8 +337,7 @@ func (s *Service) kindLimit(ctx context.Context, db querier, p Person, kind stri
 	now := s.now()
 	// Only the person's own asks count (counted = 1): joining someone
 	// else's ask is free, and a turned down ask frees its place.
-	rows, err := db.QueryContext(ctx, `SELECT p.asked_at FROM ask_people p JOIN asks a ON a.id = p.ask_id
-		WHERE p.user_id = ? AND p.counted = 1 AND p.asked_at > ? AND a.state != 'turned_down' AND a.kind = ? ORDER BY p.asked_at`,
+	rows, err := db.QueryContext(ctx, kindLimitSQL,
 		p.UserID, database.FormatTime(now.Add(-Window)), askKinds[kind])
 	if err != nil {
 		return l, err
@@ -425,7 +424,7 @@ func (s *Service) changed(ctx context.Context, id int64) {
 // the decider chose, else "an admin" (their sign-in name is never told).
 func (s *Service) shownAs(ctx context.Context, by Person) string {
 	var n string
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT display_name FROM user_profiles WHERE user_id = ?", by.UserID).Scan(&n)
+	_ = s.Store.Read().QueryRowContext(ctx, shownAsSQL, by.UserID).Scan(&n)
 	if n = strings.TrimSpace(n); n != "" {
 		return n
 	}
@@ -454,8 +453,7 @@ func (s *Service) Ask4K(ctx context.Context, p Person, tmdbID string) (Result, e
 // Pick rules), 0 when it has none.
 func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
 	var id int64
-	err := db.QueryRowContext(ctx, `SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
-		WHERE v.title_id = ? AND (v.label = ? COLLATE NOCASE OR p.name = ?) ORDER BY v.id LIMIT 1`, titleID, domain.FourKName, domain.FourKName).Scan(&id)
+	err := db.QueryRowContext(ctx, fourKVersionSQL, titleID, domain.FourKName, domain.FourKName).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
@@ -471,7 +469,7 @@ func HasFourK(ctx context.Context, db database.Querier, titleID int64) (bool, er
 // fourKRules is the 4K Pick rules preset's id (0 when it was removed).
 func fourKRules(ctx context.Context, db database.Querier) (int64, error) {
 	var id int64
-	err := db.QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ? ORDER BY id LIMIT 1", domain.FourKName).Scan(&id)
+	err := db.QueryRowContext(ctx, fourKRulesSQL, domain.FourKName).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
@@ -511,7 +509,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	}
 	// An open ask for the same movie: join it.
 	var openID int64
-	err := db.QueryRowContext(ctx, "SELECT id FROM asks WHERE kind = 'movie' AND tmdb_id = ? AND four_k = ? AND state IN ('asked', 'approved')", tmdbID, fourK).Scan(&openID)
+	err := db.QueryRowContext(ctx, askSQL, tmdbID, fourK).Scan(&openID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return Result{}, err
 	}
@@ -529,7 +527,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 			}
 		}
 		if !fourK || vid != 0 {
-			q, args := "SELECT count(*) FROM slots WHERE state = 'in_library' AND item_id IN (SELECT id FROM items WHERE title_id = ?)", []any{tid}
+			q, args := askSQL2, []any{tid}
 			if fourK {
 				q, args = q+" AND version_id = ?", append(args, vid)
 			}
@@ -566,7 +564,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, database.FormatTime(now))
+		_, err = tx.Exec(askSQL3, a.ID, p.UserID, database.FormatTime(now))
 		return err
 	})
 	if err != nil {
@@ -596,7 +594,7 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 		return Result{}, err
 	}
 	var n int
-	if err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM ask_people WHERE ask_id = ? AND user_id = ?", id, p.UserID).Scan(&n); err != nil {
+	if err := s.Store.Read().QueryRowContext(ctx, joinSQL, id, p.UserID).Scan(&n); err != nil {
 		return Result{}, err
 	}
 	if n > 0 {
@@ -604,7 +602,7 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	}
 	// Joining costs nothing from the weekly limit: nothing new is fetched.
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("INSERT OR IGNORE INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", id, p.UserID, database.FormatTime(s.now()))
+		_, err := tx.Exec(joinSQL2, id, p.UserID, database.FormatTime(s.now()))
 		return err
 	})
 	if err != nil {
@@ -693,9 +691,9 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		if cur.State == domain.AskTurnedDown {
 			// Another open ask for the same thing means it was asked again.
 			// Artist asks have no TMDB id: they match by MusicBrainz id.
-			q, args := "SELECT count(*) FROM asks WHERE kind = ? AND tmdb_id = ? AND four_k = ? AND state IN ('asked', 'approved') AND id != ?", []any{cur.Kind, cur.TMDBID, cur.FourK, id}
+			q, args := decideSQL, []any{cur.Kind, cur.TMDBID, cur.FourK, id}
 			if cur.Kind == "artist" {
-				q = "SELECT count(*) FROM asks WHERE kind = 'artist' AND json_extract(source_ids, '$.musicbrainz') = ? AND state IN ('asked', 'approved') AND id != ?"
+				q = decideSQL2
 				args = []any{cur.SourceIDs["musicbrainz"], id}
 			}
 			var n int
@@ -706,7 +704,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 				return ErrAskedAgain
 			}
 		}
-		res, err := tx.Exec("UPDATE asks SET state = 'approved' WHERE id = ? AND state IN ('asked', 'turned_down')", id)
+		res, err := tx.Exec(decideSQL3, id)
 		if err != nil {
 			return err
 		}
@@ -772,7 +770,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	}
 	a.TitleID = &tid
 	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE asks SET title_id = ? WHERE id = ?", tid, a.ID)
+		_, err := tx.Exec(decideSQL4, tid, a.ID)
 		return err
 	}); err != nil {
 		return a, err
@@ -822,7 +820,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 // setAudio puts the approver's audio languages on the title's main Version.
 func (s *Service) setAudio(ctx context.Context, titleID int64, langs []string, by Person) error {
 	var vid int64
-	if err := s.Store.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1", titleID).Scan(&vid); err != nil {
+	if err := s.Store.Read().QueryRowContext(ctx, setAudioSQL, titleID).Scan(&vid); err != nil {
 		return err
 	}
 	_, err := library.EditVersion(ctx, s.Store, titleID, vid, library.VersionChange{AudioLanguages: &langs}, by.actor())
@@ -895,13 +893,13 @@ func (s *Service) TurnDown(ctx context.Context, id int64, by Person, note string
 	var a domain.Ask
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		// An approved ask that never got its title (adding it failed) can still be declined.
-		res, err := tx.Exec("UPDATE asks SET state = 'turned_down' WHERE id = ? AND (state = 'asked' OR (state = 'approved' AND title_id IS NULL))", id)
+		res, err := tx.Exec(turnDownSQL, id)
 		if err != nil {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
 			var n int
-			if err := tx.QueryRow("SELECT count(*) FROM asks WHERE id = ?", id).Scan(&n); err != nil {
+			if err := tx.QueryRow(turnDownSQL2, id).Scan(&n); err != nil {
 				return err
 			}
 			if n == 0 {
@@ -947,7 +945,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var state string
 		var owner int64
-		if err := tx.QueryRow("SELECT state, asked_by FROM asks WHERE id = ?", id).Scan(&state, &owner); err != nil {
+		if err := tx.QueryRow(withdrawSQL, id).Scan(&state, &owner); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrNotOpen
 			}
@@ -956,7 +954,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 		if state != domain.AskAsked {
 			return ErrNotOpen
 		}
-		rows, err := tx.Query("SELECT user_id FROM ask_people WHERE ask_id = ? ORDER BY asked_at, user_id", id)
+		rows, err := tx.Query(withdrawSQL2, id)
 		if err != nil {
 			return err
 		}
@@ -979,7 +977,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 		}
 		if mine && len(ids) > 1 {
 			left = true
-			if _, err := tx.Exec("DELETE FROM ask_people WHERE ask_id = ? AND user_id = ?", id, p.UserID); err != nil {
+			if _, err := tx.Exec(withdrawSQL3, id, p.UserID); err != nil {
 				return err
 			}
 			if owner != p.UserID {
@@ -991,13 +989,13 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 			if next == p.UserID {
 				next = ids[1]
 			}
-			if _, err := tx.Exec("UPDATE asks SET asked_by = ? WHERE id = ?", next, id); err != nil {
+			if _, err := tx.Exec(withdrawSQL4, next, id); err != nil {
 				return err
 			}
-			_, err := tx.Exec("UPDATE ask_people SET counted = 1 WHERE ask_id = ? AND user_id = ?", id, next)
+			_, err := tx.Exec(withdrawSQL5, id, next)
 			return err
 		}
-		_, err = tx.Exec("DELETE FROM asks WHERE id = ? AND state = 'asked'", id)
+		_, err = tx.Exec(withdrawSQL6, id)
 		return err
 	})
 	if err != nil {
@@ -1029,10 +1027,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 		log.Printf("asks: followed movies ready: %v", err)
 	}
 	// A 4K ask is ready once its 4K copy is in (labelled 4K or on the 4K Pick rules).
-	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", `kind = 'movie' AND state = 'approved' AND title_id IS NOT NULL AND EXISTS (
-		SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = asks.title_id AND sl.state IN ('in_library', 'better_wanted')
-		AND (asks.four_k = 0 OR sl.version_id IN (SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
-			WHERE v.title_id = asks.title_id AND (v.label = '4K' COLLATE NOCASE OR p.name = '4K')))) ORDER BY id`)
+	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", checkReadySQL)
 	if err != nil {
 		return 0, err
 	}
@@ -1057,7 +1052,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 		now := s.now()
 		var moved int64
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("UPDATE asks SET state = 'available', available_at = ?, updated_at = ? WHERE id = ? AND state = 'approved'",
+			res, err := tx.Exec(checkReadySQL2,
 				database.FormatTime(now), database.FormatTime(now), a.ID)
 			if err == nil {
 				moved, _ = res.RowsAffected()
@@ -1127,10 +1122,7 @@ func names(ps []person) []string {
 }
 
 func (s *Service) people(ctx context.Context, askID int64) ([]person, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), p.asked_at,
-			EXISTS (SELECT 1 FROM plex_watchlist_items w WHERE w.user_id = p.user_id AND w.ask_id = p.ask_id AND w.state IN ('asked', 'joined'))
-		FROM ask_people p JOIN users u ON u.id = p.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
-		WHERE p.ask_id = ? ORDER BY p.asked_at, u.id`, askID)
+	rows, err := s.Store.Read().QueryContext(ctx, peopleSQL, askID)
 	if err != nil {
 		return nil, err
 	}
@@ -1154,7 +1146,7 @@ func (s *Service) tell(ctx context.Context, a domain.Ask, people []person, momen
 	now := database.FormatTime(s.now())
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, p := range people {
-			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, ask_id, title_id) VALUES (?, ?, ?, ?, ?, ?)",
+			if _, err := tx.Exec(tellSQL,
 				now, p.ID, kind, text, a.ID, a.TitleID); err != nil {
 				return err
 			}

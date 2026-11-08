@@ -133,8 +133,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 		return ReportView{}, err
 	}
 	var have int
-	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM slots s JOIN items i ON i.id = s.item_id
-		WHERE i.title_id = ? AND s.file_id IS NOT NULL`, t.ID).Scan(&have); err != nil {
+	if err := db.QueryRowContext(ctx, reportSQL, t.ID).Scan(&have); err != nil {
 		return ReportView{}, err
 	}
 	if t.State == "removed" || have == 0 {
@@ -142,7 +141,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	}
 	r := domain.Report{TitleID: t.ID, Kind: in.Kind, Note: in.Note, State: domain.ReportOpen, MadeBy: &p.UserID}
 	if in.ItemID == 0 && t.Kind == "movie" {
-		_ = db.QueryRowContext(ctx, "SELECT id FROM items WHERE title_id = ? AND kind = 'movie' ORDER BY id LIMIT 1", t.ID).Scan(&in.ItemID)
+		_ = db.QueryRowContext(ctx, reportSQL2, t.ID).Scan(&in.ItemID)
 	}
 	if in.ItemID != 0 {
 		var it domain.Item
@@ -170,7 +169,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 			return ReportView{}, ErrReportPart
 		}
 		var n int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM items WHERE title_id = ? AND kind = 'episode' AND json_extract(numbers, '$.season') = ?", t.ID, *in.Season).Scan(&n); err != nil {
+		if err := db.QueryRowContext(ctx, reportSQL3, t.ID, *in.Season).Scan(&n); err != nil {
 			return ReportView{}, err
 		}
 		if n == 0 {
@@ -180,7 +179,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	}
 	if in.AlbumID != 0 {
 		var n int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM parts WHERE id = ? AND title_id = ? AND kind = 'album'", in.AlbumID, t.ID).Scan(&n); err != nil {
+		if err := db.QueryRowContext(ctx, reportSQL4, in.AlbumID, t.ID).Scan(&n); err != nil {
 			return ReportView{}, err
 		}
 		if n == 0 {
@@ -190,7 +189,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	}
 	if in.VersionID != 0 {
 		var n int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM versions WHERE id = ? AND title_id = ?", in.VersionID, t.ID).Scan(&n); err != nil {
+		if err := db.QueryRowContext(ctx, reportSQL5, in.VersionID, t.ID).Scan(&n); err != nil {
 			return ReportView{}, err
 		}
 		if n == 0 {
@@ -202,8 +201,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	// (or the Version picks one), keep it and its Version.
 	var slotID *int64
 	if r.ItemID != nil {
-		rows, err := db.QueryContext(ctx, `SELECT id, version_id, file_id FROM slots WHERE item_id = ? AND file_id IS NOT NULL
-			AND (? = 0 OR version_id = ?) ORDER BY id LIMIT 2`, *r.ItemID, in.VersionID, in.VersionID)
+		rows, err := db.QueryContext(ctx, reportSQL6, *r.ItemID, in.VersionID, in.VersionID)
 		if err != nil {
 			return ReportView{}, err
 		}
@@ -228,7 +226,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 	}
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var open int
-		if err := tx.QueryRow("SELECT count(*) FROM reports WHERE made_by = ? AND state = 'open'", p.UserID).Scan(&open); err != nil {
+		if err := tx.QueryRow(reportSQL7, p.UserID).Scan(&open); err != nil {
 			return err
 		}
 		if open >= maxOpenReports {
@@ -337,7 +335,7 @@ func (s *Service) reportSlot(ctx context.Context, r domain.Report) *int64 {
 		return nil
 	}
 	var id int64
-	if err := s.Store.Read().QueryRowContext(ctx, "SELECT id FROM slots WHERE item_id = ? AND version_id = ?", *r.ItemID, *r.VersionID).Scan(&id); err != nil {
+	if err := s.Store.Read().QueryRowContext(ctx, reportSlotSQL, *r.ItemID, *r.VersionID).Scan(&id); err != nil {
 		return nil
 	}
 	return &id
@@ -346,8 +344,7 @@ func (s *Service) reportSlot(ctx context.Context, r domain.Report) *int64 {
 // tellReporter leaves the reporter a message and sends them the Alert.
 func (s *Service) tellReporter(ctx context.Context, r domain.Report, v ReportView, by Person) {
 	var p person
-	err := s.Store.Read().QueryRowContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '')
-		FROM users u LEFT JOIN user_ask_settings x ON x.user_id = u.id WHERE u.id = ?`, *r.MadeBy).Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID)
+	err := s.Store.Read().QueryRowContext(ctx, tellReporterSQL, *r.MadeBy).Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID)
 	if err != nil {
 		return
 	}
@@ -356,7 +353,7 @@ func (s *Service) tellReporter(ctx context.Context, r domain.Report, v ReportVie
 		text += " Reply: " + r.Reply
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id, report_id) VALUES (?, ?, 'fixed', ?, ?, ?)",
+		_, err := tx.Exec(tellReporterSQL2,
 			database.FormatTime(s.now()), p.ID, text, r.TitleID, r.ID)
 		return err
 	})
@@ -387,7 +384,7 @@ func (s *Service) ListReports(ctx context.Context, p Person, all bool, state str
 // OpenReports counts the reports still open.
 func OpenReports(ctx context.Context, db database.Querier) (int, error) {
 	var n int
-	err := db.QueryRowContext(ctx, "SELECT count(*) FROM reports WHERE state = 'open'").Scan(&n)
+	err := db.QueryRowContext(ctx, openReportsSQL).Scan(&n)
 	return n, err
 }
 
@@ -420,7 +417,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 		}
 		n, ok := names[*id]
 		if !ok {
-			_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", *id).Scan(&n)
+			_ = db.QueryRowContext(ctx, reportViewsSQL, *id).Scan(&n)
 			names[*id] = n
 		}
 		return &Who{ID: *id, Name: n}
@@ -431,7 +428,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 			_ = database.Get(ctx, db, "titles", r.TitleID, &t)
 			titles[r.TitleID] = t
 			var n int
-			_ = db.QueryRowContext(ctx, "SELECT count(*) FROM versions WHERE title_id = ?", r.TitleID).Scan(&n)
+			_ = db.QueryRowContext(ctx, reportViewsSQL2, r.TitleID).Scan(&n)
 			versions[r.TitleID] = n
 		}
 		v := ReportView{ID: r.ID, CreatedAt: r.CreatedAt, TitleID: r.TitleID, TitleName: t.Name, TitleKind: t.Kind, Year: t.Year, Rating: t.Rating,
@@ -441,7 +438,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 			v.Poster = t.Artwork[0]
 		}
 		if r.AlbumID != nil {
-			_ = db.QueryRowContext(ctx, "SELECT name FROM parts WHERE id = ?", *r.AlbumID).Scan(&v.AlbumName)
+			_ = db.QueryRowContext(ctx, reportViewsSQL3, *r.AlbumID).Scan(&v.AlbumName)
 		}
 		if r.ItemID != nil {
 			var it domain.Item
@@ -453,7 +450,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 			}
 		}
 		if r.VersionID != nil {
-			_ = db.QueryRowContext(ctx, "SELECT label FROM versions WHERE id = ?", *r.VersionID).Scan(&v.Version)
+			_ = db.QueryRowContext(ctx, reportViewsSQL4, *r.VersionID).Scan(&v.Version)
 		}
 		v.Where = reportWhere(v, versions[r.TitleID] > 1)
 		out = append(out, v)

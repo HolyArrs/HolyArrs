@@ -52,15 +52,9 @@ func (s *Service) AddSteps(ctx context.Context, vs []View, staff bool) {
 // why nothing is coming yet. Nothing left to get (or a failed read): no step.
 func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 	titleID := *v.TitleID
-	q := `SELECT s.id, s.state, COALESCE(s.last_reason, ''), COALESCE(i.part_id, 0), i.last_searched_at
-		FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id JOIN titles t ON t.id = i.title_id
-		LEFT JOIN parts p ON p.id = i.part_id
-		WHERE i.title_id = ? AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL AND v.keep_up_to_date = 1 AND t.state = 'active'
-		AND (t.kind = 'movie' OR t.keep_up_to_date = 1)
-		AND (i.part_id IS NULL OR (p.keep_up_to_date = 1 AND p.dropped_at IS NULL AND (t.kind != 'artist' OR p.included = 1)))`
+	q := stepOfSQL
 	args := []any{titleID}
-	fourK := `(SELECT v4.id FROM versions v4 LEFT JOIN pick_rules pr ON pr.id = v4.pick_rules_id
-		WHERE v4.title_id = i.title_id AND (v4.label = '4K' COLLATE NOCASE OR pr.name = '4K'))`
+	fourK := stepOfSQL2
 	switch v.Kind {
 	case "movie":
 		if v.FourK {
@@ -157,7 +151,7 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		if searched == nil {
 			var next sql.NullString
 			var on bool
-			if db.QueryRowContext(ctx, "SELECT next_run, enabled FROM schedules WHERE kind = 'search_missing'").Scan(&next, &on) == nil && on {
+			if db.QueryRowContext(ctx, stepOfSQL3).Scan(&next, &on) == nil && on {
 				if t, ok := parseAt(next); ok {
 					st.NextSearch = &t
 				}
@@ -175,9 +169,7 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 // season or album of it.
 func searchQueued(ctx context.Context, db *sql.DB, titleID int64, slotIDs, partIDs []any) bool {
 	key := func(p string) string { return p + ":" + strconv.FormatInt(titleID, 10) }
-	q := `SELECT count(*) FROM jobs WHERE state IN ('queued', 'running') AND (
-		dedupe_key IN (?, ?)
-		OR (kind IN ('refresh_title', 'scan_title') AND json_extract(subject, '$.type') = 'title' AND json_extract(subject, '$.id') = ? AND params LIKE '%search%')`
+	q := searchQueuedSQL
 	args := []any{key("scan_then_search"), key("search_wanted"), titleID}
 	if len(slotIDs) > 0 {
 		q += ` OR (kind = 'search_slot' AND json_extract(subject, '$.id') IN (` + marks(len(slotIDs)) + `))`

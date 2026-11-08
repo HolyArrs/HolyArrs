@@ -174,14 +174,14 @@ func (s *Service) applySongs(ctx context.Context, a domain.Ask) error {
 				continue
 			}
 			var partID int64
-			err := tx.QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'album' AND json_extract(source_ids, '$.musicbrainz') = ?", *cur.TitleID, al.MBID).Scan(&partID)
+			err := tx.QueryRowContext(ctx, applySongsSQL, *cur.TitleID, al.MBID).Scan(&partID)
 			if errors.Is(err, sql.ErrNoRows) {
 				continue
 			} else if err != nil {
 				return err
 			}
 			var n int
-			if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM items WHERE part_id = ? AND kind = 'track' AND recording_id IS NOT NULL", partID).Scan(&n); err != nil {
+			if err := tx.QueryRowContext(ctx, applySongsSQL2, partID).Scan(&n); err != nil {
 				return err
 			}
 			if n == 0 {
@@ -192,7 +192,7 @@ func (s *Service) applySongs(ctx context.Context, a domain.Ask) error {
 			for _, r := range al.Songs {
 				args = append(args, r)
 			}
-			if _, err := tx.ExecContext(ctx, "UPDATE items SET keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track' AND (recording_id IS NULL OR lower(recording_id) NOT IN ("+marks+"))", args...); err != nil {
+			if _, err := tx.ExecContext(ctx, applySongsSQL3+marks+"))", args...); err != nil {
 				return err
 			}
 			cur.Albums[i].SongsDone, changed = true, true

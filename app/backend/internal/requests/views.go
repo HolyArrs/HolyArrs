@@ -92,7 +92,7 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 			return n
 		}
 		var n string
-		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&n)
+		_ = db.QueryRowContext(ctx, viewsSQL, id).Scan(&n)
 		names[id] = n
 		return n
 	}
@@ -102,7 +102,7 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 			return n
 		}
 		var n string
-		_ = db.QueryRowContext(ctx, "SELECT display_name FROM user_profiles WHERE user_id = ?", id).Scan(&n)
+		_ = db.QueryRowContext(ctx, viewsSQL2, id).Scan(&n)
 		n = strings.TrimSpace(n)
 		shown[id] = n
 		return n
@@ -141,7 +141,7 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		// An approved ask whose title was deleted from the Library since will not arrive.
 		if a.State == domain.AskApproved && a.TitleID != nil {
 			var st string
-			_ = db.QueryRowContext(ctx, "SELECT state FROM titles WHERE id = ?", *a.TitleID).Scan(&st)
+			_ = db.QueryRowContext(ctx, viewsSQL3, *a.TitleID).Scan(&st)
 			if st == "removed" {
 				v.Problem = "It was deleted from the Library after it was approved."
 			}
@@ -172,8 +172,8 @@ func (s *Service) AddAlsoDeclined(ctx context.Context, vs []View) {
 			return w
 		}
 		w := Who{ID: id}
-		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&w.Name)
-		_ = db.QueryRowContext(ctx, "SELECT display_name FROM user_profiles WHERE user_id = ?", id).Scan(&w.DisplayName)
+		_ = db.QueryRowContext(ctx, addAlsoDeclinedSQL, id).Scan(&w.Name)
+		_ = db.QueryRowContext(ctx, addAlsoDeclinedSQL2, id).Scan(&w.DisplayName)
 		w.DisplayName = strings.TrimSpace(w.DisplayName)
 		shown[id] = w
 		return w
@@ -220,7 +220,7 @@ func alsoDeclined(ctx context.Context, db *sql.DB, a domain.Ask) []int64 {
 	if len(match) == 0 {
 		return nil
 	}
-	q := "SELECT decided_by FROM asks WHERE kind = ? AND " + strings.Join(match, " AND ") + " AND state = 'turned_down' AND decided_by IS NOT NULL AND id != ? ORDER BY decided_at DESC, id DESC"
+	q := alsoDeclinedSQL + strings.Join(match, " AND ") + " AND state = 'turned_down' AND decided_by IS NOT NULL AND id != ? ORDER BY decided_at DESC, id DESC"
 	args = append([]any{a.Kind}, append(args, a.ID)...)
 	rows, err := db.QueryContext(ctx, q, args...)
 	if err != nil {
@@ -258,10 +258,10 @@ type Message struct {
 func Messages(ctx context.Context, db *sql.DB, userID int64, limit int) ([]Message, int, error) {
 	out := []Message{}
 	var unread int
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM messages WHERE user_id = ? AND read_at IS NULL", userID).Scan(&unread); err != nil {
+	if err := db.QueryRowContext(ctx, messagesSQL, userID).Scan(&unread); err != nil {
 		return out, 0, err
 	}
-	rows, err := db.QueryContext(ctx, "SELECT id, created_at, kind, text, ask_id, title_id, read_at, report_id FROM messages WHERE user_id = ? ORDER BY id DESC LIMIT ?", userID, limit)
+	rows, err := db.QueryContext(ctx, messagesSQL2, userID, limit)
 	if err != nil {
 		return out, 0, err
 	}
@@ -286,7 +286,7 @@ func Messages(ctx context.Context, db *sql.DB, userID int64, limit int) ([]Messa
 // MarkRead marks all of a person's messages as read.
 func MarkRead(ctx context.Context, st *database.Store, userID int64) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE messages SET read_at = ? WHERE user_id = ? AND read_at IS NULL", database.FormatTime(time.Now()), userID)
+		_, err := tx.Exec(markReadSQL, database.FormatTime(time.Now()), userID)
 		return err
 	})
 }

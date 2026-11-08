@@ -104,7 +104,7 @@ func widenParts(a *domain.Ask, want []int, wantEps []domain.AskEpisodes) {
 // be kept). An episode the Library does not know yet is asked for.
 func episodesNotKept(ctx context.Context, db querier, titleID int64, eps []domain.AskEpisodes) ([]domain.AskEpisodes, error) {
 	var showKeep bool
-	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&showKeep); err != nil {
+	if err := db.QueryRowContext(ctx, episodesNotKeptSQL, titleID).Scan(&showKeep); err != nil {
 		return nil, err
 	}
 	out := []domain.AskEpisodes{}
@@ -112,8 +112,7 @@ func episodesNotKept(ctx context.Context, db querier, titleID int64, eps []domai
 		var missing []int
 		for _, n := range e.Episodes {
 			var keep bool
-			err := db.QueryRowContext(ctx, `SELECT p.keep_up_to_date AND i.keep_up_to_date FROM items i JOIN parts p ON p.id = i.part_id
-				WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND p.kind = 'season' AND p.number = ? AND json_extract(i.numbers, '$.episode') = ?`,
+			err := db.QueryRowContext(ctx, episodesNotKeptSQL2,
 				titleID, e.Season, n).Scan(&keep)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return nil, err

@@ -114,8 +114,7 @@ func (w *Watchlists) people(ctx context.Context) ([]int64, error) {
 	if err != nil || !set.PlexWatchlists {
 		return nil, err
 	}
-	rows, err := db.QueryContext(ctx, `SELECT x.user_id FROM plex_watchlist_people x JOIN users u ON u.id = x.user_id
-		WHERE (x.movies = 1 OR x.shows = 1) AND u.state = 'active' ORDER BY x.user_id`)
+	rows, err := db.QueryContext(ctx, peopleSQL2)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +181,7 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 	db := w.Asks.Store.Read()
 	var name, role, perms, state, maxRating string
 	var movies, shows bool
-	err := db.QueryRowContext(ctx, `SELECT u.name, u.role, u.perms, u.state, u.max_rating, coalesce(x.movies, 0), coalesce(x.shows, 0)
-		FROM users u LEFT JOIN plex_watchlist_people x ON x.user_id = u.id WHERE u.id = ?`, userID).Scan(&name, &role, &perms, &state, &maxRating, &movies, &shows)
+	err := db.QueryRowContext(ctx, passSQL, userID).Scan(&name, &role, &perms, &state, &maxRating, &movies, &shows)
 	if errors.Is(err, sql.ErrNoRows) {
 		return res, nil
 	}
@@ -219,14 +217,14 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 		}
 		var was string
 		var tries int
-		err := db.QueryRowContext(ctx, "SELECT state, tries FROM plex_watchlist_items WHERE user_id = ? AND plex_key = ?", userID, e.key).Scan(&was, &tries)
+		err := db.QueryRowContext(ctx, passSQL2, userID, e.key).Scan(&was, &tries)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return res, err
 		}
 		seen := err == nil
 		if seen && was != WatchLimit && !(was == WatchFailed && tries < watchlistTries) {
 			if err := w.Asks.Store.Write(ctx, func(tx *sql.Tx) error {
-				_, err := tx.Exec("UPDATE plex_watchlist_items SET seen_at = ? WHERE user_id = ? AND plex_key = ?", now, userID, e.key)
+				_, err := tx.Exec(passSQL3, now, userID, e.key)
 				return err
 			}); err != nil {
 				return res, err
@@ -262,10 +260,7 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 			year = &e.year
 		}
 		if err := w.Asks.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec(`INSERT INTO plex_watchlist_items (user_id, plex_key, kind, ref, name, year, state, ask_id, note, tries, seen_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				ON CONFLICT (user_id, plex_key) DO UPDATE SET ref = excluded.ref, name = excluded.name, year = excluded.year, state = excluded.state,
-					ask_id = excluded.ask_id, note = excluded.note, tries = excluded.tries, seen_at = excluded.seen_at, updated_at = excluded.updated_at`,
+			_, err := tx.Exec(passSQL4,
 				userID, e.key, e.kind, ref, truncateWords(e.name, 300), year, st, askID, truncateWords(note, 300), tries, now, now)
 			return err
 		}); err != nil {
@@ -301,8 +296,7 @@ func (w *Watchlists) act(ctx context.Context, p Person, e watchEntry) (state, re
 		}
 		ref = "tmdb:" + tmdb
 		var before int64
-		_ = db.QueryRowContext(ctx, `SELECT a.id FROM asks a JOIN ask_people x ON x.ask_id = a.id
-			WHERE a.kind = 'movie' AND a.tmdb_id = ? AND a.four_k = 0 AND x.user_id = ? ORDER BY a.id DESC LIMIT 1`, tmdb, p.UserID).Scan(&before)
+		_ = db.QueryRowContext(ctx, actSQL, tmdb, p.UserID).Scan(&before)
 		if before != 0 {
 			return WatchAlready, ref, &before, ""
 		}
@@ -327,8 +321,7 @@ func (w *Watchlists) act(ctx context.Context, p Person, e watchEntry) (state, re
 		}
 	}
 	var before int64
-	_ = db.QueryRowContext(ctx, `SELECT a.id FROM asks a JOIN ask_people x ON x.ask_id = a.id
-		WHERE a.kind = 'show' AND x.user_id = ? AND (`+strings.Join(or, " OR ")+`) ORDER BY a.id DESC LIMIT 1`, args...).Scan(&before)
+	_ = db.QueryRowContext(ctx, actSQL2+strings.Join(or, " OR ")+`) ORDER BY a.id DESC LIMIT 1`, args...).Scan(&before)
 	if before != 0 {
 		return WatchAlready, ref, &before, ""
 	}
@@ -365,8 +358,7 @@ func outcome(r Result, err error, ref string) (string, string, *int64, string) {
 // checked notes the pass time and its problem ("" for none).
 func (w *Watchlists) checked(ctx context.Context, userID int64, problem string) error {
 	return w.Asks.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO plex_watchlist_people (user_id, checked_at, error) VALUES (?, ?, ?)
-			ON CONFLICT (user_id) DO UPDATE SET checked_at = excluded.checked_at, error = excluded.error`,
+		_, err := tx.Exec(checkedSQL,
 			userID, database.FormatTime(w.Asks.now()), problem)
 		return err
 	})
@@ -542,7 +534,7 @@ type WatchlistState struct {
 func ReadWatchlist(ctx context.Context, db *sql.DB, userID int64) (WatchlistState, error) {
 	s := WatchlistState{Items: []WatchlistItem{}}
 	var at sql.NullString
-	err := db.QueryRowContext(ctx, "SELECT movies, shows, checked_at, error FROM plex_watchlist_people WHERE user_id = ?", userID).
+	err := db.QueryRowContext(ctx, readWatchlistSQL, userID).
 		Scan(&s.Movies, &s.Shows, &at, &s.Error)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return s, err
@@ -551,8 +543,7 @@ func ReadWatchlist(ctx context.Context, db *sql.DB, userID int64) (WatchlistStat
 		t, _ := time.Parse(database.TimeLayout, at.String)
 		s.CheckedAt = &t
 	}
-	rows, err := db.QueryContext(ctx, `SELECT name, year, kind, state, ask_id, note, seen_at FROM plex_watchlist_items
-		WHERE user_id = ? ORDER BY seen_at DESC, updated_at DESC LIMIT ?`, userID, WatchlistSize)
+	rows, err := db.QueryContext(ctx, readWatchlistSQL2, userID, WatchlistSize)
 	if err != nil {
 		return s, err
 	}
@@ -572,8 +563,7 @@ func ReadWatchlist(ctx context.Context, db *sql.DB, userID int64) (WatchlistStat
 // SaveWatchlistSwitches stores which kinds a person has HolyArrs read.
 func SaveWatchlistSwitches(ctx context.Context, st *database.Store, userID int64, sw WatchlistSwitches) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO plex_watchlist_people (user_id, movies, shows) VALUES (?, ?, ?)
-			ON CONFLICT (user_id) DO UPDATE SET movies = excluded.movies, shows = excluded.shows`,
+		_, err := tx.Exec(saveWatchlistSwitchesSQL,
 			userID, sw.Movies, sw.Shows)
 		return err
 	})
