@@ -1,4 +1,4 @@
-package api
+package mediafiles
 
 import (
 	"database/sql"
@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"net/url"
 )
 
-type libraryMissingView struct {
+// LibraryMissingView is one Missing row title on Home.
+type LibraryMissingView struct {
 	ID         int64  `json:"id"`
 	Name       string `json:"name"`
 	Year       *int   `json:"year"`
@@ -26,12 +25,11 @@ type libraryMissingView struct {
 const recentMax = 20
 
 // librarySummary reads only the count and eight rows displayed on Home.
-func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) librarySummary(w http.ResponseWriter, r *http.Request) {
 	var kinds []string
 	var args []any
 	for _, kind := range []string{"movie", "show", "artist"} {
-		part, _ := parts.ForTitleKind(kind)
-		if a.partIsOn(part) || (a.s.Parts != nil && a.s.Parts.SafeMode) {
+		if h.KindShown == nil || h.KindShown(kind) {
 			kinds = append(kinds, "?")
 			args = append(args, kind)
 		}
@@ -40,12 +38,12 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	if len(kinds) == 0 {
 		where = "0"
 	}
-	if kid, kidArgs := kidSQL(a.kidMax(r)); kid != "" {
+	if kid, kidArgs := KidSQL(h.KidMax(r)); kid != "" {
 		// A Kid counts and sees only the titles their limit allows.
 		where += " AND " + kid
 		args = append(args, kidArgs...)
 	}
-	ctx, db := r.Context(), a.s.Store.Read()
+	ctx, db := r.Context(), h.Store.Read()
 	var total int
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM titles t WHERE "+where, args...).Scan(&total); err != nil {
 		webserver.Internal(w, "api", err)
@@ -60,9 +58,9 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-	missing := []libraryMissingView{}
+	missing := []LibraryMissingView{}
 	for rows.Next() {
-		var title libraryMissingView
+		var title LibraryMissingView
 		var art sql.NullString
 		if err := rows.Scan(&title.ID, &title.Name, &title.Year, &art); err != nil {
 			webserver.Internal(w, "api", err)
@@ -85,7 +83,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for i := range missing {
-		var state mediafiles.SlotState
+		var state SlotState
 		if err := db.QueryRowContext(ctx, `SELECT s.state FROM slots s JOIN items i ON i.id = s.item_id
 			WHERE i.title_id = ? ORDER BY s.id LIMIT 1`, missing[i].ID).Scan(&state); err != nil {
 			webserver.Internal(w, "api", err)
@@ -95,19 +93,41 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	}
 	// Recent: the newest titles by date added, for Home's Recently added.
 	recentWhere := strings.ReplaceAll(where, "t.", "") + " ORDER BY created_at DESC, id DESC LIMIT ?"
-	newest, err := database.Select[mediafiles.Title](ctx, db, "titles", recentWhere, append(args, recentMax)...)
+	newest, err := database.Select[Title](ctx, db, "titles", recentWhere, append(args, recentMax)...)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	recent := []TitleView{}
+	recent := []any{}
 	for _, t := range newest {
-		v, err := a.titleView(ctx, t)
+		v, err := h.TitleView(ctx, t)
 		if err != nil {
 			webserver.Internal(w, "api", err)
 			return
 		}
 		recent = append(recent, v)
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent, "card_art": a.libraryCardArt(r, newest)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent, "card_art": h.CardArt(r, newest)})
+}
+
+// StateLabels are the words people see for Slot states.
+var StateLabels = map[SlotState]string{
+	SlotNotOutYet: "Not out yet", SlotWanted: "Missing", SlotSearching: "Searching",
+	SlotHeld: "Held", SlotChosen: "Chosen", SlotDownloading: "Downloading",
+	SlotStalled: "Stalled", SlotFailed: "Failed", SlotImporting: "Importing",
+	SlotNeedsADecision: "Needs a decision", SlotRejected: "Rejected", SlotInLibrary: "In library",
+	SlotBetterWanted: "Better copy sought", SlotRemoved: "Removed",
+}
+
+// artworkLinks turns stored artwork ("poster:<cache name>") into links the
+// web app can load (/api/v1/artwork/<cache name>); anything else is kept.
+func artworkLinks(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, a := range in {
+		if name, ok := strings.CutPrefix(a, "poster:"); ok && name != "" {
+			a = "/api/v1/artwork/" + url.PathEscape(name)
+		}
+		out = append(out, a)
+	}
+	return out
 }

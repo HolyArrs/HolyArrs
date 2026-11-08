@@ -6,6 +6,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -187,6 +190,8 @@ type API struct {
 	sourceH    *sources.Handlers
 	// dl serves the Downloads routes (internal/downloads).
 	dl *downloads.Web
+	// mf serves the Library files routes (internal/mediafiles).
+	mf *mediafiles.Handlers
 	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
 	// listSeen is each region's last world-list shelves signature
@@ -194,14 +199,12 @@ type API struct {
 	listSeen map[string]string
 	// lookups counts each person's music lookups in flight.
 	lookups inFlight
-	// confirm holds the two-step controls' confirmation ids.
-	confirm webserver.Confirms
+	// controls serves the part switches, the controls and the part gate (internal/setup).
+	controls *setupmod.Handlers
 	// ai serves the AI connections (internal/ai).
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
-	// rated keeps TMDB ratings looked up for Kid limits.
-	rated ratingState
 	// status keeps the Settings status answer for 30 seconds.
 	status health.StatusCache
 	// serviceTop keeps the per-service top lists for 12 hours.
@@ -303,13 +306,53 @@ func New(s Server) *API {
 			}}
 	}
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
+	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, KidMax: a.kidMax, RouteUsable: routeUsable}}
+	a.mf.DetailsRating = a.detailsRating
+	a.mf.KindShown = a.kindShown
+	a.mf.TitleBatch = withLookupMemo
+	a.mf.AlbumNames = a.albumNames
+	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
+	a.mf.CardArt = a.libraryCardArt
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
 	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
 		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
 		ShowSource: a.showSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
+	a.controls = &setupmod.Handlers{Deps: setupmod.Deps{Store: s.Store, Parts: s.Parts, SafeMode: s.SafeMode, States: s.States, ExitApp: s.ExitApp,
+		TitleAllowed: a.titleAllowed, TestDownloader: a.dl.TestDownloader,
+		TestSource: func(w http.ResponseWriter, r *http.Request) { a.sourceHandlers().TestSource(w, r) },
+		TestSubtitleSite: func(w http.ResponseWriter, r *http.Request) {
+			subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).ServeSiteTest(w, r)
+		}}}
+	if s.Media != nil {
+		a.controls.TestMediaServer = a.media.Test
+	}
 	return a
+}
+
+// partIsOn reports whether the part p is on (always, without a Control).
+// In safe mode the Library still lists every title (parts.SafeLibrary).
+func (a *API) partIsOn(p parts.Part) bool { return parts.PartOn(a.s.Parts, p) }
+
+// viewer is the signed-in person's id (1, the owner, without sign-in).
+func viewer(ctx context.Context) int64 {
+	if who, ok := webserver.From(ctx); ok {
+		return who.UserID
+	}
+	return 1
+}
+
+// byHandRoutes registers the import-by-hand routes (internal/importer).
+func (a *API) byHandRoutes(m *http.ServeMux) {
+	h := &importer.Handlers{Deps: importer.Deps{Store: a.s.Store, SavePath: a.s.SavePath}}
+	if h.SavePath == "" && a.s.Library != nil {
+		h.SavePath = a.s.Library.SavePath
+	}
+	if a.s.Live != nil {
+		h.Live = a.s.Live // a nil hub must stay a nil Publisher
+	}
+	h.Routes(m)
 }
 
 // WireUpdateChecks hands the update check to the health checks: health
@@ -339,10 +382,8 @@ func (a *API) Routes(rt *webserver.Router) {
 		(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
 	}
 	a.ownedHandlers().Routes(m)
-	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/search", a.plainSearch)
-	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
 	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)
 	m.HandleFunc("GET /api/v1/titles/lookup", a.lookupTitles)
@@ -389,12 +430,10 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.peopleRoutes(m)
 	a.copyRoutes(m)
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
-	m.HandleFunc("GET /api/v1/library/copies", a.listLibraryCopies)
-	m.HandleFunc("POST /api/v1/library/copies/search/preview", a.previewLibraryCopySearch)
-	m.HandleFunc("POST /api/v1/library/copies/search", a.searchLibraryCopies)
+	a.mf.Routes(m)
 	a.dl.Routes(m)
-	a.organiseRoutes(m)
-	a.manualImportRoutes(m)
+	(&library.OrganiseHandlers{OrganiseDeps: library.OrganiseDeps{Store: a.s.Store, Lib: a.s.Library, Queue: a.s.Queue, TitleID: a.titleID, Fail: libraryError}}).Routes(m)
+	a.byHandRoutes(m)
 	a.holding().Routes(m)
 	a.healthHandlers().Routes(m)
 	a.media.Routes(m)
@@ -405,7 +444,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.appHandlers().Routes(m)
 	(&updates.Handlers{Checker: a.s.Updates}).Routes(m)
-	a.dataPackRoutes(m)
+	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
 	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)
@@ -469,10 +508,10 @@ func (a *API) Routes(rt *webserver.Router) {
 	if startup.FeatureOn(features.PlexWatchlists) {
 		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
-	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.reportTitleGate}).Routes(m)
+	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.controls.ReportTitleGate}).Routes(m)
 	(&requests.AskedByHandlers{Store: a.s.Store, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.followsChanged}).Routes(m)
-	a.controlRoutes(m)
+	a.controls.Routes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
@@ -503,11 +542,11 @@ func (a *API) Handler() http.Handler {
 func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
-		a.ai.Inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
-		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
+		a.ai.Inner = a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m)))
+		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m))))))))))
 	}
-	a.ai.Inner = a.partGate(m, m)
-	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.partGate(m, m))))))
+	a.ai.Inner = a.controls.PartGate(m, m)
+	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.controls.PartGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.
@@ -617,13 +656,7 @@ func (a *API) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo, erro
 }
 
 // StateLabels are the words people see for Slot states.
-var StateLabels = map[mediafiles.SlotState]string{
-	mediafiles.SlotNotOutYet: "Not out yet", mediafiles.SlotWanted: "Missing", mediafiles.SlotSearching: "Searching",
-	mediafiles.SlotHeld: "Held", mediafiles.SlotChosen: "Chosen", mediafiles.SlotDownloading: "Downloading",
-	mediafiles.SlotStalled: "Stalled", mediafiles.SlotFailed: "Failed", mediafiles.SlotImporting: "Importing",
-	mediafiles.SlotNeedsADecision: "Needs a decision", mediafiles.SlotRejected: "Rejected", mediafiles.SlotInLibrary: "In library",
-	mediafiles.SlotBetterWanted: "Better copy sought", mediafiles.SlotRemoved: "Removed",
-}
+var StateLabels = mediafiles.StateLabels
 
 // artworkLinks turns stored artwork ("poster:<cache name>") into links the
 // web app can load (/api/v1/artwork/<cache name>); anything else is kept.
@@ -665,10 +698,10 @@ func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, err
 			v.LastActivity = &at
 		}
 	} else {
-		if v.SizeBytes, err = titleSize(ctx, db, t.ID); err != nil {
+		if v.SizeBytes, err = mediafiles.TitleSize(ctx, db, t.ID); err != nil {
 			return v, err
 		}
-		if v.LastActivity, err = titleActivity(ctx, db, t.ID); err != nil {
+		if v.LastActivity, err = mediafiles.TitleActivity(ctx, db, t.ID); err != nil {
 			return v, err
 		}
 	}
@@ -849,7 +882,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if v.Artist != nil {
-			v.Artist.Bio = a.keptArtistBio(r.Context(), v.Artist.MBID, t.Name)
+			v.Artist.Bio = mediafiles.KeptArtistBio(r.Context(), v.Artist.MBID, t.Name, a.sideKept)
 		}
 		if !manage {
 			v.Copy = nil

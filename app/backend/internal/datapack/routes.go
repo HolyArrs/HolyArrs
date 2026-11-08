@@ -1,4 +1,4 @@
-package api
+package datapack
 
 import (
 	"bytes"
@@ -8,39 +8,49 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 )
 
-// dataPackRoutes is wired into Handler by the shared route-registration patch.
-func (a *API) dataPackRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/data-packs", a.listDataPacks)
-	m.HandleFunc("GET /api/v1/data-packs/{id}", a.exportDataPack)
-	m.HandleFunc("GET /api/v1/data-packs/{id}/preview", a.previewDataPack)
-	m.HandleFunc("POST /api/v1/data-packs/validate", a.validateDataPack)
-	m.HandleFunc("POST /api/v1/data-packs", a.importDataPack)
-	m.HandleFunc("POST /api/v1/data-packs/{id}/apply", a.applyDataPack)
+// Deps is what the data pack routes need.
+type Deps struct {
+	Store *database.Store
 }
 
-func (a *API) listDataPacks(w http.ResponseWriter, r *http.Request) {
-	packs, err := datapack.List(r.Context(), a.s.Store)
+// Handlers serves the data pack routes under /api/v1/data-packs.
+type Handlers struct {
+	Deps
+}
+
+// Routes registers the data pack routes.
+func (h *Handlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/data-packs", h.listDataPacks)
+	m.HandleFunc("GET /api/v1/data-packs/{id}", h.exportDataPack)
+	m.HandleFunc("GET /api/v1/data-packs/{id}/preview", h.previewDataPack)
+	m.HandleFunc("POST /api/v1/data-packs/validate", h.validateDataPack)
+	m.HandleFunc("POST /api/v1/data-packs", h.importDataPack)
+	m.HandleFunc("POST /api/v1/data-packs/{id}/apply", h.applyDataPack)
+}
+
+func (h *Handlers) listDataPacks(w http.ResponseWriter, r *http.Request) {
+	packs, err := List(r.Context(), h.Store)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
 	if packs == nil {
-		packs = []datapack.Summary{}
+		packs = []Summary{}
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"data_packs": packs})
 }
 
-func (a *API) validateDataPack(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) validateDataPack(w http.ResponseWriter, r *http.Request) {
 	raw, ok := readDataPack(w, r)
 	if !ok {
 		return
 	}
-	p, err := datapack.Decode(raw)
-	if errors.Is(err, datapack.ErrTooLarge) {
+	p, err := Decode(raw)
+	if errors.Is(err, ErrTooLarge) {
 		webserver.Fail(w, http.StatusRequestEntityTooLarge, err.Error())
 		return
 	}
@@ -51,18 +61,18 @@ func (a *API) validateDataPack(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"valid": true, "pack": dataPackSummary(p)})
 }
 
-func (a *API) importDataPack(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) importDataPack(w http.ResponseWriter, r *http.Request) {
 	raw, ok := readDataPack(w, r)
 	if !ok {
 		return
 	}
-	p, err := datapack.Import(r.Context(), a.s.Store, raw, actor(r))
+	p, err := Import(r.Context(), h.Store, raw, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	switch {
-	case errors.Is(err, datapack.ErrConflict):
+	case errors.Is(err, ErrConflict):
 		webserver.Fail(w, http.StatusConflict, "a data pack with this id already exists")
-	case errors.Is(err, datapack.ErrTooLarge):
+	case errors.Is(err, ErrTooLarge):
 		webserver.Fail(w, http.StatusRequestEntityTooLarge, err.Error())
-	case errors.Is(err, datapack.ErrInvalidInput):
+	case errors.Is(err, ErrInvalidInput):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
 		webserver.Internal(w, "api", err)
@@ -71,13 +81,13 @@ func (a *API) importDataPack(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *API) exportDataPack(w http.ResponseWriter, r *http.Request) {
-	b, err := datapack.Export(r.Context(), a.s.Store, r.PathValue("id"))
+func (h *Handlers) exportDataPack(w http.ResponseWriter, r *http.Request) {
+	b, err := Export(r.Context(), h.Store, r.PathValue("id"))
 	switch {
-	case errors.Is(err, datapack.ErrNotFound):
+	case errors.Is(err, ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "data pack not found")
 		return
-	case errors.Is(err, datapack.ErrInvalidInput):
+	case errors.Is(err, ErrInvalidInput):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	case err != nil:
@@ -89,7 +99,7 @@ func (a *API) exportDataPack(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(append(b, '\n'))
 }
 
-func (a *API) previewDataPack(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) previewDataPack(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	for key := range q {
 		if key != "pick_rule_id" && key != "naming_id" {
@@ -102,15 +112,15 @@ func (a *API) previewDataPack(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "select at most one naming_id")
 		return
 	}
-	selection := datapack.Selection{PickRuleIDs: q["pick_rule_id"]}
+	selection := Selection{PickRuleIDs: q["pick_rule_id"]}
 	if len(namingIDs) == 1 {
 		selection.NamingID = namingIDs[0]
 	}
-	preview, err := datapack.Preview(r.Context(), a.s.Store, r.PathValue("id"), selection)
+	preview, err := Preview(r.Context(), h.Store, r.PathValue("id"), selection)
 	switch {
-	case errors.Is(err, datapack.ErrNotFound):
+	case errors.Is(err, ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "data pack not found")
-	case errors.Is(err, datapack.ErrInvalidInput):
+	case errors.Is(err, ErrInvalidInput):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
 		webserver.Internal(w, "api", err)
@@ -119,7 +129,7 @@ func (a *API) previewDataPack(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *API) applyDataPack(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) applyDataPack(w http.ResponseWriter, r *http.Request) {
 	raw, ok := readRequestBody(w, r, 16<<10, "request is too large")
 	if !ok {
 		return
@@ -140,16 +150,16 @@ func (a *API) applyDataPack(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "send one JSON object")
 		return
 	}
-	result, err := datapack.Apply(r.Context(), a.s.Store, r.PathValue("id"),
-		datapack.Selection{PickRuleIDs: body.PickRuleIDs, NamingID: body.NamingID}, body.ApprovalHash, actor(r))
+	result, err := Apply(r.Context(), h.Store, r.PathValue("id"),
+		Selection{PickRuleIDs: body.PickRuleIDs, NamingID: body.NamingID}, body.ApprovalHash, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	switch {
-	case errors.Is(err, datapack.ErrNotFound):
+	case errors.Is(err, ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "data pack not found")
-	case errors.Is(err, datapack.ErrConflict):
+	case errors.Is(err, ErrConflict):
 		webserver.Fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, datapack.ErrStaleApproval):
+	case errors.Is(err, ErrStaleApproval):
 		webserver.Fail(w, http.StatusConflict, "data pack preview is stale; preview the selection again")
-	case errors.Is(err, datapack.ErrInvalidInput):
+	case errors.Is(err, ErrInvalidInput):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
 		webserver.Internal(w, "api", err)
@@ -159,7 +169,7 @@ func (a *API) applyDataPack(w http.ResponseWriter, r *http.Request) {
 }
 
 func readDataPack(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
-	return readRequestBody(w, r, datapack.MaxBytes, datapack.ErrTooLarge.Error())
+	return readRequestBody(w, r, MaxBytes, ErrTooLarge.Error())
 }
 
 func readRequestBody(w http.ResponseWriter, r *http.Request, limit int64, tooLarge string) ([]byte, bool) {
@@ -176,6 +186,6 @@ func readRequestBody(w http.ResponseWriter, r *http.Request, limit int64, tooLar
 	return nil, false
 }
 
-func dataPackSummary(p datapack.Pack) datapack.Summary {
-	return datapack.Summary{ID: p.ID, Name: p.Name, Status: "inactive", PickRules: len(p.PickRules), NamingSets: len(p.Naming), ReleaseTests: len(p.ReleaseTests)}
+func dataPackSummary(p Pack) Summary {
+	return Summary{ID: p.ID, Name: p.Name, Status: "inactive", PickRules: len(p.PickRules), NamingSets: len(p.Naming), ReleaseTests: len(p.ReleaseTests)}
 }

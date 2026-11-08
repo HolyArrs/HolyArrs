@@ -112,6 +112,15 @@ func waitFlight[T any](ctx context.Context, fl *sideFlight, by time.Time) (v T, 
 	}
 }
 
+// sideKept is sideRead's kept value for the Library bio (false for a miss).
+func (a *API) sideKept(ctx context.Context, k string) (json.RawMessage, bool) {
+	row, ok := a.sideRead(ctx, k)
+	if !ok || row.Miss {
+		return nil, false
+	}
+	return row.V, true
+}
+
 // sideRead answers the kept row of k: memory first, then lookup_cache.
 func (a *API) sideRead(ctx context.Context, k string) (sideRow, bool) {
 	s := &a.side

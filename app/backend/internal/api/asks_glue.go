@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 	"net/http"
 	"strings"
 
@@ -39,7 +40,7 @@ func (a *API) askHandlers() *requests.AskHandlers {
 	return &requests.AskHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, Actor: actor,
 		PartOff: func(w http.ResponseWriter, kind string) bool {
 			if p, known := parts.ForTitleKind(kind); known && !a.partIsOn(p) {
-				webserver.WriteJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
+				webserver.WriteJSON(w, http.StatusConflict, setupmod.PartOffBody(parts.Of(p)))
 				return true
 			}
 			return false
@@ -83,4 +84,12 @@ func decodeKeys(w http.ResponseWriter, r *http.Request, v any, help string) (map
 func (a *API) kindDefaultsFor(ctx context.Context, kind string, sent map[string]json.RawMessage,
 	folder, rules *int64, keep **bool, search *bool) error {
 	return requests.KindDefaultsFor(ctx, a.s.Store.Read(), kind, sent, folder, rules, keep, search)
+}
+
+// whoName names the person for an Event summary.
+func whoName(r *http.Request) string {
+	if who, ok := webserver.From(r.Context()); ok && who.Name != "" {
+		return who.Name
+	}
+	return "The owner"
 }

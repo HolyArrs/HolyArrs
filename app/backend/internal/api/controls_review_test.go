@@ -54,7 +54,7 @@ func TestConfirmIDsAreCapped(t *testing.T) {
 		do(t, "POST", u+"app/restart", "", 202)
 	}
 	a := f.api
-	n := a.confirm.Len()
+	n := a.controls.ConfirmCount()
 	if n > webserver.MaxConfirmsPerUser {
 		t.Fatalf("%d confirm ids kept, cap %d", n, webserver.MaxConfirmsPerUser)
 	}
@@ -63,7 +63,7 @@ func TestConfirmIDsAreCapped(t *testing.T) {
 	defer func() { webserver.ConfirmNow = time.Now }()
 	webserver.ConfirmNow = func() time.Time { return time.Now().Add(2 * webserver.ConfirmFor) }
 	do(t, "POST", u+"app/restart", "", 202) // purges the expired ones
-	n = a.confirm.Len()
+	n = a.controls.ConfirmCount()
 	if n != 1 {
 		t.Fatalf("expired ids not purged: %d left", n)
 	}

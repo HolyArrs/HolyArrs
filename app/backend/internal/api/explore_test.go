@@ -211,7 +211,7 @@ func TestExploreKidPoolFiltered(t *testing.T) {
 		if i%2 == 0 {
 			r = "PG"
 		}
-		a.rated.put(fmt.Sprintf("movie|%d", i), r, time.Now())
+		a.mf.KeepRating("movie", fmt.Sprint(i), r)
 	}
 	if err := a.buildPool(ctx, 3, "movies"); err != nil {
 		t.Fatal(err)

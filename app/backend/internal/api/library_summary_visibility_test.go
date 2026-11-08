@@ -56,12 +56,12 @@ func addSummaryTitle(t *testing.T, s *database.Store, kind, name string, slotSta
 
 func readLibrarySummary(t *testing.T, base string) struct {
 	Total   int                  `json:"total"`
-	Missing []libraryMissingView `json:"missing"`
+	Missing []mediafiles.LibraryMissingView `json:"missing"`
 } {
 	t.Helper()
 	var got struct {
 		Total   int                  `json:"total"`
-		Missing []libraryMissingView `json:"missing"`
+		Missing []mediafiles.LibraryMissingView `json:"missing"`
 	}
 	decodeJSON(t, do(t, http.MethodGet, base+"/api/v1/library-summary", "", http.StatusOK), &got)
 	return got
@@ -173,7 +173,7 @@ func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 	}
 	var got struct {
 		Total   int                  `json:"total"`
-		Missing []libraryMissingView `json:"missing"`
+		Missing []mediafiles.LibraryMissingView `json:"missing"`
 	}
 	decodeJSON(t, body, &got)
 	if got.Total != 10000 || len(got.Missing) != 8 {

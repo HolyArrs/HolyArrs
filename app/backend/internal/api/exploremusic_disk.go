@@ -264,6 +264,12 @@ func (a *API) refreshMusicV7(member int64, region string, key musicscore.PlanKey
 // forgetMusicV7Snaps marks a member's plans stale (-1: everyone's), in
 // memory and on disk (a follow, a Library change). Nothing is deleted: the
 // stale plan is served while the next visit's rebuild runs behind.
+// followsChanged drops a person's music rows built from their follows.
+func (a *API) followsChanged(userID int64) {
+	a.musicv2.days.Invalidate(userID)
+	a.forgetMusicV7Snaps(userID)
+}
+
 func (a *API) forgetMusicV7Snaps(member int64) {
 	a.musicv2.plans.MarkStale(member)
 	if a.s.Store == nil {

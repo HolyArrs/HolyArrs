@@ -1,4 +1,4 @@
-package api
+package mediafiles
 
 import (
 	"errors"
@@ -7,14 +7,17 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
+
+// musicArtPrefix is the music picture route (music module).
+const musicArtPrefix = "/api/v1/music-trending/art/"
+
+// AlbumName is a matched album handed to the music picture warmer.
+type AlbumName struct{ MBID, Name, Artist string }
 
 // librarySearchMax bounds each list of a Library search: Search shows one row.
 const librarySearchMax = 24
@@ -47,7 +50,7 @@ type LibraryPersonIn struct {
 // It reads only the local database: titles by name, original name, aliases and
 // year (accents and case folded), albums of Library artists and people
 // credited in Library titles. Kid limits and parts that are off hide titles.
-func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) librarySearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	term := strings.TrimSpace(q.Get("q"))
 	kind := q.Get("kind")
@@ -58,21 +61,24 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "kind is all, movie, show, music or people")
 		return
 	}
-	out := map[string]any{"titles": []TitleView{}, "albums": []LibraryAlbum{}, "people": []LibraryPerson{}}
+	out := map[string]any{"titles": []any{}, "albums": []LibraryAlbum{}, "people": []LibraryPerson{}}
 	if term == "" {
 		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
-	visible := func(t mediafiles.Title) bool {
-		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
+	visible := func(t Title) bool {
+		if h.KindShown != nil && !h.KindShown(t.Kind) {
 			return false
 		}
-		return t.State != "removed" && a.titleAllowed(r, t)
+		return t.State != "removed" && h.TitleAllowed(r, t)
 	}
-	ctx := withLookupMemo(r.Context())
+	ctx := r.Context()
+	if h.TitleBatch != nil {
+		ctx = h.TitleBatch(ctx)
+	}
 	if kind != "people" {
-		ts, err := mediafiles.SearchTitles(ctx, a.s.Store, term)
-		if errors.Is(err, mediafiles.ErrTitleSearchQuery) {
+		ts, err := SearchTitles(ctx, h.Store, term)
+		if errors.Is(err, ErrTitleSearchQuery) {
 			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -81,7 +87,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		want := map[string]string{"movie": "movie", "show": "show", "music": "artist"}[kind]
-		views := []TitleView{}
+		views := []any{}
 		for _, t := range ts {
 			if len(views) == librarySearchMax {
 				break
@@ -89,7 +95,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 			if (want != "" && t.Kind != want) || !visible(t) {
 				continue
 			}
-			v, err := a.titleView(ctx, t)
+			v, err := h.TitleView(ctx, t)
 			if err != nil {
 				webserver.Internal(w, "api", err)
 				return
@@ -98,13 +104,13 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 		}
 		out["titles"] = views
 	}
-	words := foldWords(term)
+	words := FoldWords(term)
 	if len(words) == 0 {
 		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	if kind == "all" || kind == "music" {
-		albums, err := a.libraryAlbums(r, words, visible)
+		albums, err := h.libraryAlbums(r, words, visible)
 		if err != nil {
 			webserver.Internal(w, "api", err)
 			return
@@ -112,7 +118,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 		out["albums"] = albums
 	}
 	if kind == "all" || kind == "people" {
-		people, err := a.libraryPeople(r, words, visible)
+		people, err := h.LibraryPeople(r, words, visible)
 		if err != nil {
 			webserver.Internal(w, "api", err)
 			return
@@ -122,26 +128,26 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
-func (a *API) libraryAlbums(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]LibraryAlbum, error) {
-	pre, args := foldPrefilter("name", words)
-	ps, err := database.Select[mediafiles.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
+func (h *Handlers) libraryAlbums(r *http.Request, words []string, visible func(Title) bool) ([]LibraryAlbum, error) {
+	pre, args := FoldPrefilter("name", words)
+	ps, err := database.Select[Part](r.Context(), h.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
 	if err != nil {
 		return nil, err
 	}
-	artists := map[int64]*mediafiles.Title{}
+	artists := map[int64]*Title{}
 	out := []LibraryAlbum{}
-	var names []nameKey
+	var names []AlbumName
 	for _, p := range ps {
 		if len(out) == librarySearchMax {
 			break
 		}
-		if !foldMatch(p.Name, words) {
+		if !FoldMatch(p.Name, words) {
 			continue
 		}
 		t, seen := artists[p.TitleID]
 		if !seen {
-			var x mediafiles.Title
-			if err := database.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &x); err == nil && visible(x) {
+			var x Title
+			if err := database.Get(r.Context(), h.Store.Read(), "titles", p.TitleID, &x); err == nil && visible(x) {
 				t = &x
 			}
 			artists[p.TitleID] = t
@@ -155,19 +161,22 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(mediaf
 		}
 		if rg := strings.ToLower(p.SourceIDs["musicbrainz"]); rg != "" {
 			al.Image = musicArtPrefix + "album/" + rg
-			names = append(names, nameKey{kind: "album", mbid: rg, name: p.Name, artist: t.Name})
+			names = append(names, AlbumName{MBID: rg, Name: p.Name, Artist: t.Name})
 		}
 		out = append(out, al)
 	}
 	// The covers come from the same chain and prefetch as Explore's rows.
-	a.rememberMusicNames(names)
-	a.warmMusicNames(names)
+	if h.AlbumNames != nil {
+		h.AlbumNames(names)
+	}
 	return out, nil
 }
 
-func (a *API) libraryPeople(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]LibraryPerson, error) {
-	pre, args := foldPrefilter("people", words)
-	ts, err := database.Select[mediafiles.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
+// LibraryPeople are the people credited in visible Library titles whose
+// names hold every folded word.
+func (h *Handlers) LibraryPeople(r *http.Request, words []string, visible func(Title) bool) ([]LibraryPerson, error) {
+	pre, args := FoldPrefilter("people", words)
+	ts, err := database.Select[Title](r.Context(), h.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +187,7 @@ func (a *API) libraryPeople(r *http.Request, words []string, visible func(mediaf
 			continue
 		}
 		for _, name := range t.People {
-			if !foldMatch(name, words) {
+			if !FoldMatch(name, words) {
 				continue
 			}
 			i, ok := index[name]
@@ -196,8 +205,8 @@ func (a *API) libraryPeople(r *http.Request, words []string, visible func(mediaf
 	return out, nil
 }
 
-// fold lowercases s and drops its accents ("Amélie" → "amelie").
-func fold(s string) string {
+// Fold lowercases s and drops its accents ("Amélie" → "amelie").
+func Fold(s string) string {
 	var b strings.Builder
 	for _, c := range norm.NFD.String(s) {
 		if !unicode.Is(unicode.Mn, c) {
@@ -207,16 +216,16 @@ func fold(s string) string {
 	return b.String()
 }
 
-// foldWords are the folded words of a query.
-func foldWords(s string) []string {
-	return strings.FieldsFunc(fold(s), func(c rune) bool { return !unicode.IsLetter(c) && !unicode.IsNumber(c) })
+// FoldWords are the folded words of a query.
+func FoldWords(s string) []string {
+	return strings.FieldsFunc(Fold(s), func(c rune) bool { return !unicode.IsLetter(c) && !unicode.IsNumber(c) })
 }
 
-// foldPrefilter narrows a scan in SQL without changing what foldMatch
+// FoldPrefilter narrows a scan in SQL without changing what foldMatch
 // keeps: a row whose column is plain ASCII must hold every ASCII query word
 // (a word prefix is a substring of the lowercased text); rows with other
 // characters (accents) are left to foldMatch.
-func foldPrefilter(col string, words []string) (string, []any) {
+func FoldPrefilter(col string, words []string) (string, []any) {
 	var b strings.Builder
 	var args []any
 	for _, w := range words {
@@ -232,9 +241,9 @@ func foldPrefilter(col string, words []string) (string, []any) {
 	return " AND (" + col + " GLOB '*[^ -~]*' OR (1 = 1" + b.String() + "))", args
 }
 
-// foldMatch: every query word starts a word of s, accents and case folded.
-func foldMatch(s string, words []string) bool {
-	have := foldWords(s)
+// FoldMatch: every query word starts a word of s, accents and case folded.
+func FoldMatch(s string, words []string) bool {
+	have := FoldWords(s)
 	for _, w := range words {
 		if !slices.ContainsFunc(have, func(h string) bool { return strings.HasPrefix(h, w) }) {
 			return false

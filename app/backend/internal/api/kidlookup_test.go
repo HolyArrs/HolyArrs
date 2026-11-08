@@ -11,6 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -43,7 +44,7 @@ func newRatingAPI(t *testing.T) (*API, *lightRater) {
 func unknownRefs(from, n int) []ratingRef {
 	var refs []ratingRef
 	for i := range n {
-		refs = append(refs, ratingRef{kind: "movie", tmdbID: fmt.Sprint(from + i)})
+		refs = append(refs, ratingRef{Kind: "movie", TMDBID: fmt.Sprint(from + i)})
 	}
 	return refs
 }
@@ -57,10 +58,10 @@ func kidCtx(id int64) context.Context {
 func TestKidRatingLookupsCappedPerRequest(t *testing.T) {
 	a, _ := newRatingAPI(t)
 	got := a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 40), 0)
-	if c := rateCalls.Load(); c != ratingLookupsPerRequest {
-		t.Fatalf("%d lookups in one request, want %d", c, ratingLookupsPerRequest)
+	if c := rateCalls.Load(); c != mediafiles.RatingLookupsPerRequest {
+		t.Fatalf("%d lookups in one request, want %d", c, mediafiles.RatingLookupsPerRequest)
 	}
-	if slices.Contains(got[:ratingLookupsPerRequest], false) || slices.Contains(got[ratingLookupsPerRequest:], true) {
+	if slices.Contains(got[:mediafiles.RatingLookupsPerRequest], false) || slices.Contains(got[mediafiles.RatingLookupsPerRequest:], true) {
 		t.Fatalf("allowed %v", got)
 	}
 }
@@ -99,28 +100,6 @@ func TestKidRatingLightLookupsOwnCache(t *testing.T) {
 	}
 	if len(a.discover.cache) != 1 {
 		t.Fatalf("Explore cache has %d entries, want the 1 it had", len(a.discover.cache))
-	}
-}
-
-// TestRatingCacheEvictsOldest: a full rating cache drops its oldest
-// entries, not everything.
-func TestRatingCacheEvictsOldest(t *testing.T) {
-	var s ratingState
-	now := time.Now()
-	for i := range maxRatingCache + 10 {
-		s.put(fmt.Sprint(i), "G", now)
-	}
-	if len(s.cache) != maxRatingCache {
-		t.Fatalf("cache holds %d, want %d", len(s.cache), maxRatingCache)
-	}
-	if _, ok := s.get("9", now); ok {
-		t.Fatal("oldest entry kept")
-	}
-	if _, ok := s.get("10", now); !ok {
-		t.Fatal("newer entry dropped")
-	}
-	if _, ok := s.get(fmt.Sprint(maxRatingCache+9), now.Add(ratingTTL)); ok {
-		t.Fatal("entry kept past a day")
 	}
 }
 
