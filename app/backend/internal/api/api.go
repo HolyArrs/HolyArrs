@@ -209,12 +209,12 @@ type API struct {
 	// watchOn keeps each title's TMDB watch providers per region a day.
 	watchOn watchOnCache
 	// music keeps the music trending lists for an hour.
-	music musicTrendCache
-	// side keeps music page side data, also in lookup_cache (musicside.go).
-	side   sideStore
+	music  musicTrendCache
 	rising risingCache
-	// pics are the metadata server's music picture records (musicpictures.go).
-	pics picRecords
+	// mus serves the moved Music code (internal/music); built on first use
+	// by mh() so a bare &API{} in tests works too.
+	mus     *music.Handlers
+	musOnce sync.Once
 	// musicx keeps artist genres and similar artists for Explore → Music.
 	musicx musicExplore
 	// musicAns keeps each member's Explore → Music answers a minute.

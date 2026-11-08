@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"bytes"
@@ -40,15 +40,15 @@ const (
 // later is there for the next answer (tests change it).
 var picWait = 400 * time.Millisecond
 
-type picEntry struct {
-	artist metadata.ArtistPictures
-	album  metadata.AlbumPictures
+type PicEntry struct {
+	Artist metadata.ArtistPictures
+	Album  metadata.AlbumPictures
 	at     time.Time
 }
 
-func (e picEntry) fresh(kind string, now time.Time) bool {
+func (e PicEntry) fresh(kind string, now time.Time) bool {
 	keep := picShort
-	if kind == "album" && e.album.Cover != nil || kind == "artist" && e.artist.Photo != nil {
+	if kind == "album" && e.Album.Cover != nil || kind == "artist" && e.Artist.Photo != nil {
 		keep = picKeep
 	}
 	return now.Sub(e.at) < keep
@@ -56,7 +56,7 @@ func (e picEntry) fresh(kind string, now time.Time) bool {
 
 type picRecords struct {
 	mu sync.Mutex
-	m  map[string]picEntry
+	m  map[string]PicEntry
 	// busy are the items being asked now: each channel closes when its
 	// batch has answered.
 	busy map[string]chan struct{}
@@ -66,11 +66,11 @@ type picRecords struct {
 	aheadBusy map[string]bool
 }
 
-// pictureRecords answers the records of these artists and albums, asking
+// PictureRecords answers the records of these artists and albums, asking
 // the server for the ones not known (in batches of up to
 // metadata.MusicPicturesMax, all at once) and waiting up to wait for them.
-func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait time.Duration) map[string]picEntry {
-	c := &a.pics
+func (h *Handlers) PictureRecords(ctx context.Context, artists, albums []string, wait time.Duration) map[string]PicEntry {
+	c := &h.pics
 	now := time.Now()
 	type ask struct {
 		kind, id string
@@ -86,21 +86,21 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 		kind string
 		ids  []string
 	}{{"artist", artists}, {"album", albums}}
-	kept := map[string]picEntry{}
+	kept := map[string]PicEntry{}
 	for _, l := range lists {
 		for _, id := range l.ids {
 			id = strings.ToLower(id)
 			if _, done := kept[l.kind+"|"+id]; done || !metadata.ValidMBID(id) {
 				continue
 			}
-			if pe, ok := a.packagePictures(l.kind, id); ok {
+			if pe, ok := h.packagePictures(l.kind, id); ok {
 				kept[l.kind+"|"+id] = pe
 			}
 		}
 	}
 	c.mu.Lock()
 	if c.m == nil || len(c.m) > picMax {
-		c.m = map[string]picEntry{}
+		c.m = map[string]PicEntry{}
 	}
 	if c.busy == nil || c.aheadBusy == nil {
 		c.busy, c.aheadBusy = map[string]chan struct{}{}, map[string]bool{}
@@ -133,7 +133,7 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 			need = append(need, ask{l.kind, id, known})
 		}
 	}
-	if a.s.MusicPictures == nil {
+	if h.MusicPictures == nil {
 		need = nil
 	}
 	for len(need) > 0 {
@@ -156,7 +156,7 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 		if hold {
 			waits = append(waits, done)
 		}
-		go a.askPictureRecords(context.WithoutCancel(ctx), ar, al, done)
+		go h.askPictureRecords(context.WithoutCancel(ctx), ar, al, done)
 	}
 	c.mu.Unlock()
 	if len(waits) > 0 && wait > 0 {
@@ -173,7 +173,7 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 			}
 		}
 	}
-	out := map[string]picEntry{}
+	out := map[string]PicEntry{}
 	c.mu.Lock()
 	for k := range seen {
 		if e, ok := c.m[k]; ok {
@@ -186,16 +186,16 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 
 // askPictureRecords is one batch call; a failed call keeps nothing, so the
 // next answer asks again.
-func (a *API) askPictureRecords(ctx context.Context, artists, albums []string, done chan struct{}) {
+func (h *Handlers) askPictureRecords(ctx context.Context, artists, albums []string, done chan struct{}) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	got, err := a.s.MusicPictures(ctx, artists, albums)
-	c := &a.pics
+	got, err := h.MusicPictures(ctx, artists, albums)
+	c := &h.pics
 	now := time.Now()
 	c.mu.Lock()
 	for _, id := range artists {
 		if err == nil {
-			c.m["artist|"+id] = picEntry{artist: got.Artists[id], at: now}
+			c.m["artist|"+id] = PicEntry{Artist: got.Artists[id], at: now}
 		}
 		if c.busy["artist|"+id] == done {
 			delete(c.busy, "artist|"+id)
@@ -204,7 +204,7 @@ func (a *API) askPictureRecords(ctx context.Context, artists, albums []string, d
 	}
 	for _, id := range albums {
 		if err == nil {
-			c.m["album|"+id] = picEntry{album: got.Albums[id], at: now}
+			c.m["album|"+id] = PicEntry{Album: got.Albums[id], at: now}
 		}
 		if c.busy["album|"+id] == done {
 			delete(c.busy, "album|"+id)
@@ -217,68 +217,69 @@ func (a *API) askPictureRecords(ctx context.Context, artists, albums []string, d
 
 // pictureRecord is the known record of one picture (kind album, artist,
 // wide or logo), or nil; it never asks the server.
-func (a *API) pictureRecord(kind, mbid string) *metadata.PictureRecord {
+func (h *Handlers) pictureRecord(kind, mbid string) *metadata.PictureRecord {
 	owner := "artist"
 	if kind == "album" {
 		owner = "album"
 	}
-	c := &a.pics
+	c := &h.pics
 	c.mu.Lock()
 	e, ok := c.m[owner+"|"+strings.ToLower(mbid)]
 	c.mu.Unlock()
 	if !ok {
-		if e, ok = a.packagePictures(owner, mbid); !ok {
+		if e, ok = h.packagePictures(owner, mbid); !ok {
 			return nil
 		}
 	}
 	switch kind {
 	case "album":
-		return e.album.Cover
+		return e.Album.Cover
 	case "artist":
-		return e.artist.Photo
+		return e.Artist.Photo
 	case "wide":
-		return e.artist.Wide
+		return e.Artist.Wide
 	case "logo":
-		return e.artist.Logo
+		return e.Artist.Logo
 	}
 	return nil
 }
 
-// pictureVersion is the stored version of a picture ("" when not known).
-func (a *API) pictureVersion(kind, mbid string) string {
-	if r := a.pictureRecord(kind, mbid); r != nil {
+// PictureVersion is the stored version of a picture ("" when not known).
+func (h *Handlers) PictureVersion(kind, mbid string) string {
+	if r := h.pictureRecord(kind, mbid); r != nil {
 		return r.V
 	}
 	return ""
 }
 
-// warmPictureRecords asks the records of a page's items ahead (one batch per
+// WarmPictureRecords asks the records of a page's items ahead (one batch per
 // hundred) without waiting, so the pictures warmed next are the versioned
-// ones the page asks for (the warm waits for them: awaitPictureRecords).
-func (a *API) warmPictureRecords(list []nameKey) {
+// ones the page asks for (the warm waits for them: AwaitPictureRecords).
+// The items come as kind ("album", "artist", "wide", "logo") and mbid.
+func (h *Handlers) WarmPictureRecords(kinds, mbids []string) {
 	var ar, al []string
-	for _, n := range list {
-		switch n.kind {
+	for i, kind := range kinds {
+		switch kind {
 		case "album":
-			al = append(al, n.mbid)
+			al = append(al, mbids[i])
 		case "artist", "wide", "logo":
-			ar = append(ar, n.mbid)
+			ar = append(ar, mbids[i])
 		}
 	}
 	if len(ar)+len(al) > 0 {
-		a.pictureRecords(metadata.Ahead(context.Background()), ar, al, 0)
+		h.PictureRecords(metadata.Ahead(context.Background()), ar, al, 0)
 	}
 }
 
-// awaitPictureRecords waits up to wait for an item's records that are being
+// AwaitPictureRecords waits up to wait for an item's records that are being
 // asked now; it never asks the server itself (one call per row, never one
 // per card).
-func (a *API) awaitPictureRecords(ctx context.Context, kind, mbid string, wait time.Duration) {
+func (h *Handlers) AwaitPictureRecords(ctx context.Context, kind, mbid string, wait time.Duration) {
 	owner := "artist"
 	if kind == "album" {
 		owner = "album"
 	}
-	c := &a.pics
+	c := &h.pics
 	c.mu.Lock()
 	ch := c.busy[owner+"|"+strings.ToLower(mbid)]
 	c.mu.Unlock()
@@ -298,7 +299,7 @@ var musicArtPath = regexp.MustCompile(`/api/v1/music-trending/art/(album|artist|
 
 // answerPictures is the "pictures" map for every music picture an encoded
 // answer shows (and the extra picture paths given).
-func (a *API) answerPictures(ctx context.Context, b []byte, extra ...string) map[string]*metadata.PictureRecord {
+func (h *Handlers) answerPictures(ctx context.Context, b []byte, extra ...string) map[string]*metadata.PictureRecord {
 	type item struct{ kind, mbid string }
 	var items []item
 	seen := map[item]bool{}
@@ -327,7 +328,7 @@ func (a *API) answerPictures(ctx context.Context, b []byte, extra ...string) map
 	if len(items) == 0 {
 		return nil
 	}
-	a.pictureRecords(ctx, artists, albums, picWait)
+	h.PictureRecords(ctx, artists, albums, picWait)
 	out := map[string]*metadata.PictureRecord{}
 	for _, it := range items {
 		kinds := []string{it.kind}
@@ -337,7 +338,7 @@ func (a *API) answerPictures(ctx context.Context, b []byte, extra ...string) map
 			kinds = []string{"artist", "wide", "logo"}
 		}
 		for _, k := range kinds {
-			if r := a.pictureRecord(k, it.mbid); r != nil {
+			if r := h.pictureRecord(k, it.mbid); r != nil {
 				out[k+":"+it.mbid] = r
 			}
 		}
@@ -345,9 +346,9 @@ func (a *API) answerPictures(ctx context.Context, b []byte, extra ...string) map
 	return out
 }
 
-// withPictures adds the "pictures" map to an encoded JSON object.
-func (a *API) withPictures(ctx context.Context, b []byte, extra ...string) []byte {
-	pics := a.answerPictures(ctx, b, extra...)
+// WithPictures adds the "pictures" map to an encoded JSON object.
+func (h *Handlers) WithPictures(ctx context.Context, b []byte, extra ...string) []byte {
+	pics := h.answerPictures(ctx, b, extra...)
 	t := bytes.TrimLeft(b, " \t\r\n")
 	if len(pics) == 0 || len(t) < 2 || t[0] != '{' {
 		return b
@@ -366,15 +367,15 @@ func (a *API) withPictures(ctx context.Context, b []byte, extra ...string) []byt
 	return append(out, rest...)
 }
 
-// writeMusicJSON is writeJSON for answers that show music pictures: the
+// WriteMusicJSON is writeJSON for answers that show music pictures: the
 // answer carries their records.
-func (a *API) writeMusicJSON(w http.ResponseWriter, r *http.Request, v any, extra ...string) {
+func (h *Handlers) WriteMusicJSON(w http.ResponseWriter, r *http.Request, v any, extra ...string) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	b := a.withPictures(r.Context(), buf.Bytes(), extra...)
+	b := h.WithPictures(r.Context(), buf.Bytes(), extra...)
 	// The answer's hash is its ETag: a revisit with the same answer is a
 	// 304 without the body.
 	sum := sha256.Sum256(b)
@@ -402,20 +403,20 @@ func etagMatch(h, tag string) bool {
 
 // packagePictures is the records a kept artist package has for an artist
 // or album (kind "artist" or "album"), stamped now.
-func (a *API) packagePictures(kind, mbid string) (picEntry, bool) {
-	p := a.s.Packages
+func (h *Handlers) packagePictures(kind, mbid string) (PicEntry, bool) {
+	p := h.Packages
 	if p == nil {
-		return picEntry{}, false
+		return PicEntry{}, false
 	}
 	switch kind {
 	case "artist":
 		if pics, ok := p.ArtistPictures(mbid); ok {
-			return picEntry{artist: pics, at: time.Now()}, true
+			return PicEntry{Artist: pics, at: time.Now()}, true
 		}
 	case "album":
 		if cover, ok := p.AlbumCover(mbid); ok {
-			return picEntry{album: metadata.AlbumPictures{Cover: cover}, at: time.Now()}, true
+			return PicEntry{Album: metadata.AlbumPictures{Cover: cover}, at: time.Now()}, true
 		}
 	}
-	return picEntry{}, false
+	return PicEntry{}, false
 }
