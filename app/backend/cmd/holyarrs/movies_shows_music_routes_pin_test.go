@@ -1,10 +1,11 @@
-package api
+package main
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -41,7 +42,7 @@ type t10Env struct {
 	t      *testing.T
 	srv    *httptest.Server
 	store  *database.Store
-	api    *API
+	api    *api.API
 	lib    *library.Service
 	owner  t10Client
 	member t10Client
@@ -86,9 +87,9 @@ func t10Setup(t *testing.T) *t10Env {
 	tmdb := &fakeShowSource{shows: map[string]metadata.Show{"tmdb:100": apiShow("tmdb", "100"), "tvdb:200": apiShow("tmdb", "100")}}
 	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Metadata: metadata.Lab(),
 		Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}}
-	a := New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, Version: "test", Auth: au, Secrets: v,
+	a := api.New(api.Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, Version: "test", Auth: au, Secrets: v,
 		Live: webserver.NewLiveHub(webserver.LiveOptions{}), Backups: &backups.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}})
-	srv := httptest.NewServer(a.Handler())
+	srv := httptest.NewServer(routes(a, config{}))
 	t.Cleanup(srv.Close)
 	e := &t10Env{t: t, srv: srv, store: s, api: a, lib: lib, anon: t10Client{c: t10NewClient()}}
 	csrfOf := func(b []byte) string {
