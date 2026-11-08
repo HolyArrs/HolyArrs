@@ -152,7 +152,6 @@ type Auth struct {
 	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
 	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
-	setupCode    string
 	// codes are AI app sign-ins waiting for their key (aioauth.go).
 	codes aiCodes
 	// cimd reads AI apps' client ID metadata documents (aicimd.go).
