@@ -1,5 +1,13 @@
-// Package downloader sends Releases to download engines (torrent and Usenet clients) and reads back their progress.
+// Package downloads owns download clients, grabbing, the download queue,
+// client sync, matching client items to titles, and the torrent log.
+//
+// It sends Releases to download engines (torrent and Usenet clients) and reads back their progress.
 // Each client sits behind the Engine interface, so the rest of HolyArrs does not care which one runs a Download.
+//
+// The background reader polls each Downloader on its own cadence, keeps one
+// in-memory snapshot per client, works out what changed between reads, saves
+// items and torrent log lines to the database, queues new items for title
+// matching, and publishes patches to the live stream.
 package downloads
 
 import (
