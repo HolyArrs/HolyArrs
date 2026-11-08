@@ -9,7 +9,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 const (
@@ -48,7 +48,7 @@ func TestMusicPagesUsePackagePictures(t *testing.T) {
 	}
 	defer st.Close()
 	src := &onePackage{}
-	p := &musicsync.Sync{Store: st, Source: src}
+	p := &music.PackageSync{Store: st, Source: src}
 	if _, err := p.SyncOnce(context.Background()); err != nil {
 		t.Fatal(err)
 	}

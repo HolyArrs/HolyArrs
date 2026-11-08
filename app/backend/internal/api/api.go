@@ -41,7 +41,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
@@ -120,8 +119,8 @@ type Server struct {
 	// nil: nothing to tell.
 	CountryCount func(on bool)
 	// Packages is the local copy of the metadata server's artist packages
-	// (internal/musicsync): music pages answer from it first. nil: none.
-	Packages *musicsync.Sync
+	// (internal/music): music pages answer from it first. nil: none.
+	Packages *music.PackageSync
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.

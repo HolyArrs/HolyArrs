@@ -1,4 +1,4 @@
-package musicsync
+package music
 
 import (
 	"context"
@@ -74,7 +74,7 @@ func TestSyncOnce_CopiesPackagesAndPictures(t *testing.T) {
 	}
 	var mu sync.Mutex
 	pics := map[string]bool{}
-	s := &Sync{Store: st, Source: src, Pictures: func(_ context.Context, kind, mbid, size, v string) bool {
+	s := &PackageSync{Store: st, Source: src, Pictures: func(_ context.Context, kind, mbid, size, v string) bool {
 		mu.Lock()
 		pics[kind+"/"+mbid+"/"+size+"?"+v] = true
 		mu.Unlock()
@@ -119,7 +119,7 @@ func TestSyncOnce_CopiesPackagesAndPictures(t *testing.T) {
 	if c, _ := s.AlbumCover(albumID(2)); c == nil || c.V != "c6" {
 		t.Fatalf("cover after change %+v", c)
 	}
-	s2 := &Sync{Store: st, Source: src}
+	s2 := &PackageSync{Store: st, Source: src}
 	if err := s2.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -140,14 +140,14 @@ func TestSyncOnce_CopiesPackagesAndPictures(t *testing.T) {
 // Low-memory mode copies every 3 hours, and a set schedule always wins.
 func TestSchedule_LowMemory(t *testing.T) {
 	t.Cleanup(func() { startup.SetLowMemory(false) })
-	if got := (&Sync{}).schedule(); got != DefaultEvery {
+	if got := (&PackageSync{}).schedule(); got != DefaultEvery {
 		t.Fatalf("off: %v", got)
 	}
 	startup.SetLowMemory(true)
-	if got := (&Sync{}).schedule(); got != LowMemoryEvery {
+	if got := (&PackageSync{}).schedule(); got != LowMemoryEvery {
 		t.Fatalf("low: %v", got)
 	}
-	if got := (&Sync{Every: time.Minute}).schedule(); got != time.Minute {
+	if got := (&PackageSync{Every: time.Minute}).schedule(); got != time.Minute {
 		t.Fatalf("set schedule: %v", got)
 	}
 }
@@ -155,7 +155,7 @@ func TestSchedule_LowMemory(t *testing.T) {
 func TestUncovered_WantsOnlyAfterWholeCopy(t *testing.T) {
 	st := openStore(t)
 	src := &fakeSource{pkgs: []json.RawMessage{pkgJSON(1, 1, 1)}}
-	s := &Sync{Store: st, Source: src}
+	s := &PackageSync{Store: st, Source: src}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.startWants(ctx)
@@ -188,7 +188,7 @@ func TestUncovered_WantsOnlyAfterWholeCopy(t *testing.T) {
 func TestSyncOnce_SkipsInvalidPackages(t *testing.T) {
 	st := openStore(t)
 	src := &fakeSource{pkgs: []json.RawMessage{json.RawMessage(`{"schema_version":2,"mbid":"x"}`), pkgJSON(2, 2, 1)}}
-	s := &Sync{Store: st, Source: src}
+	s := &PackageSync{Store: st, Source: src}
 	if n, err := s.SyncOnce(context.Background()); err != nil || n != 1 || s.Covers("x") || !s.Covers(artistID(2)) {
 		t.Fatalf("changed %d err %v", n, err)
 	}
@@ -205,7 +205,7 @@ func emptyPkgJSON(i int, version int64) json.RawMessage {
 func TestLocalArtist_EmptyPackageIsNoAnswerAndWanted(t *testing.T) {
 	st := openStore(t)
 	src := &fakeSource{pkgs: []json.RawMessage{pkgJSON(1, 1, 1), emptyPkgJSON(2, 2)}}
-	s := &Sync{Store: st, Source: src}
+	s := &PackageSync{Store: st, Source: src}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.startWants(ctx)

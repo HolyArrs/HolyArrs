@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// startMusicSync starts the artist package copy (internal/musicsync): its
+// startMusicSync starts the artist package copy (internal/music): its
 // pictures go to the local picture store through the picture route's own
 // fetch, and after each copy that changed packages the Explore music
 // pictures are warmed again.

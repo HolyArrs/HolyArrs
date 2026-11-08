@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
@@ -894,7 +893,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// Artist packages are copied to disk on a schedule (no credential sent);
 	// the hosted music source answers from them first.
-	pkgs := &musicsync.Sync{Store: s, Source: hosted.Service}
+	pkgs := &music.PackageSync{Store: s, Source: hosted.Service}
 	hosted.Service.SetLocalMusic(pkgs)
 	a := api.New(api.Server{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
