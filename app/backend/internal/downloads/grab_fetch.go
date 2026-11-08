@@ -3,13 +3,14 @@ package downloads
 import (
 	"context"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}

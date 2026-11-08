@@ -6,7 +6,9 @@ import "github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 // MusicBrainz ids (so art loads), each with the Library state it shows.
 // SEED.md beside the showcase scripts lists the same in words.
 
-func parseName(release string) releasename.Result { return releasename.Parse(release, releasename.Hints{}) }
+func parseName(release string) releasename.Result {
+	return releasename.Parse(release, releasename.Hints{})
+}
 
 // Showcase-only movie plans (the lab plans are in catalog.go).
 const (

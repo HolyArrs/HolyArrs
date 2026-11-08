@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
@@ -226,7 +224,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// A base saved in Settings is used when the start setting is left
 	// unset; HOLYARRS_URL_BASE=/ forces none.
 	if _, set := os.LookupEnv(webserver.URLBaseEnv); !set && !c.urlBaseFlag && c.URLBase == "" {
-		if saved := api.SavedURLBase(ctx, s.Read()); saved != "" {
+		if saved := webserver.SavedURLBase(ctx, s.Read()); saved != "" {
 			c.URLBase = saved
 			log.Printf("holyarrs: URL base %s (saved in Settings)", saved)
 		}
@@ -370,7 +368,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		FromVault: vault.Get}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
-	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: api.TorrentLines}
+	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
 	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
@@ -426,7 +424,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	hosted.Disk = metadata.LookupCache{Store: s}
 	// "Count this install" is set before the Job queue starts: a Job's
 	// request must not go out counted after the owner switched it off.
-	hosted.Gate.SetCountryCount(api.CountInstall(ctx, s.Read()))
+	hosted.Gate.SetCountryCount(health.CountInstall(ctx, s.Read()))
 	var md metadata.Provider = hosted.TMDB()
 	showMD := showSources(vault, hosted)
 	var artistMD metadata.ArtistProvider = musicSource(s, version)
@@ -523,7 +521,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
-	api.WireUpdateChecks(he, uc)
+	WireUpdateChecks(he, uc)
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
 	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
@@ -697,7 +695,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// the hosted music source answers from them first.
 	pkgs := &music.PackageSync{Store: s, Source: hosted.Service}
 	hosted.Service.SetLocalMusic(pkgs)
-	a := api.New(api.Server{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	a := buildHandlers(services{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
@@ -706,9 +704,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
 	// Matching in the reader's queue is link-only: it never adds a title.
-	dls.Match = a.MatchLinkOnly
+	dls.Match = a.DownloadsWeb().MatchLinkOnly
 	// Push updates of the snapshots to the Downloads page (only while on).
-	dls.Pub = &downloads.SnapshotPublisher{Store: dls.Store, Build: a.PublishDL, Health: a.PublishDLHealth}
+	dls.Pub = &downloads.SnapshotPublisher{Store: dls.Store, Build: a.DownloadsWeb().PublishDL, Health: a.DownloadsWeb().PublishDLHealth}
 	a.StartSpeedHistory(ctx)
 	if !c.SafeMode {
 		a.StartExplore(ctx)

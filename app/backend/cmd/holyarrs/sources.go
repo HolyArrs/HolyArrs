@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // showSources are the show details sources: TMDB and TVmaze through the
@@ -35,7 +35,9 @@ func showSources(v *secrets.Vault, hosted *metadata.Hosted) metadata.ShowSources
 		"tmdb":   hosted.TMDB(),
 		"tvmaze": maze,
 		"tvdb": &metadata.TVDB{BaseURL: os.Getenv("HOLYARRS_TVDB_URL"),
-			Key: func(ctx context.Context) (string, error) { return v.Setting(ctx, api.TVDBKeyGroup, api.TVDBKeyName) }},
+			Key: func(ctx context.Context) (string, error) {
+				return v.Setting(ctx, shows.TVDBKeyGroup, shows.TVDBKeyName)
+			}},
 	}
 }
 

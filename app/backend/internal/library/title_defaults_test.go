@@ -12,6 +12,7 @@ import (
 )
 
 func TestTitleDefaultsBuiltIn(t *testing.T) {
+	t.Parallel()
 	s := open(t)
 	d, saved, err := ReadTitleDefaults(context.Background(), s.Read())
 	if err != nil {
@@ -24,6 +25,7 @@ func TestTitleDefaultsBuiltIn(t *testing.T) {
 }
 
 func TestTitleDefaultsSaveAndValidate(t *testing.T) {
+	t.Parallel()
 	s := open(t)
 	ctx := context.Background()
 	movies := addFolder(t, s)

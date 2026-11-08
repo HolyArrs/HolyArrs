@@ -166,6 +166,11 @@ func VersionLabel(ctx context.Context, q database.Querier, versionID int64) stri
 	return label
 }
 
+// SlotsOfTitle lists every Slot of a Title, oldest first.
+func SlotsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]Slot, error) {
+	return database.Select[Slot](ctx, q, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", titleID)
+}
+
 // VersionSlotsOfTitle lists the Slots of one Version that belong to a Title.
 func VersionSlotsOfTitle(ctx context.Context, q database.Lister, versionID, titleID int64) ([]Slot, error) {
 	return database.Select[Slot](ctx, q, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", versionID, titleID)
@@ -257,4 +262,49 @@ func SlotCopyProtected(ctx context.Context, q database.Querier, slotID int64) (b
 	err := q.QueryRowContext(ctx, `SELECT COALESCE(f.protected, 0) FROM slots s
 		LEFT JOIN files f ON f.id = s.file_id WHERE s.id = ?`, slotID).Scan(&protected)
 	return protected, err
+}
+
+// VersionsOfTitle lists a Title's Versions, the main one first.
+func VersionsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]Version, error) {
+	return database.Select[Version](ctx, q, "versions", "title_id = ? ORDER BY is_main DESC, id", titleID)
+}
+
+// SlotsOfItem lists an Item's Slots, oldest first.
+func SlotsOfItem(ctx context.Context, q database.Lister, itemID int64) ([]Slot, error) {
+	return database.Select[Slot](ctx, q, "slots", "item_id = ? ORDER BY id", itemID)
+}
+
+// SeasonPartID is the id of a show's season Part with that number.
+func SeasonPartID(ctx context.Context, q database.Querier, titleID int64, number int) (int64, error) {
+	var id int64
+	err := q.QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", titleID, number).Scan(&id)
+	return id, err
+}
+
+// ItemOfTitle reports whether the Item belongs to the Title.
+func ItemOfTitle(ctx context.Context, q database.Querier, itemID, titleID int64) bool {
+	var n int
+	_ = q.QueryRowContext(ctx, "SELECT count(*) FROM items WHERE id = ? AND title_id = ?", itemID, titleID).Scan(&n)
+	return n == 1
+}
+
+// ShowEpisodes lists every episode of a show (dropped ones too) by season
+// and episode; season limits it to one season when not nil.
+func ShowEpisodes(ctx context.Context, q database.Lister, titleID int64, season *int) ([]Item, error) {
+	where, args := "title_id = ? AND kind = 'episode'", []any{titleID}
+	if season != nil {
+		where += " AND json_extract(numbers, '$.season') = ?"
+		args = append(args, *season)
+	}
+	return database.Select[Item](ctx, q, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
+}
+
+// EpisodeSlotsOfTitle lists the Slots of a show's episodes, oldest first.
+func EpisodeSlotsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]Slot, error) {
+	return database.Select[Slot](ctx, q, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", titleID)
+}
+
+// EpisodeFilesOfTitle lists the files held by a show's episode Slots.
+func EpisodeFilesOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]File, error) {
+	return database.Select[File](ctx, q, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, titleID)
 }

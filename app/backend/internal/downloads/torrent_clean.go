@@ -3,10 +3,11 @@ package downloads
 import (
 	"bytes"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 var errTorrent = errors.New("the Source did not return a valid torrent file")

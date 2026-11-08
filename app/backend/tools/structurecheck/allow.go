@@ -6,34 +6,23 @@ var oversized = map[string]bool{
 	"app/backend/internal/migrate/apply.go":                  true,
 	"app/backend/internal/migrate/plan.go":                   true,
 	"app/frontend/src/lib/TitlePage.svelte":                  true,
-	"app/backend/internal/api/musicpages.go":                 true,
 	"app/frontend/src/lib/ai-apps.ts":                        true,
 	"app/backend/internal/importer/importer.go":              true,
-	"app/backend/internal/api/api.go":                        true,
 	"app/frontend/src/lib/music/MusicArtistPage.svelte":      true,
-	"app/backend/internal/api/exploremusic_v3.go":            true,
 	"app/backend/cmd/holyarrs/main.go":                       true,
-	"app/backend/internal/api/explore_new.go":                true,
 	"app/frontend/src/lib/types.ts":                          true,
 	"app/backend/internal/importer/shows.go":                 true,
-	"app/backend/internal/api/downloads.go":                  true,
+	"app/backend/internal/downloads/routes_downloads.go":     true,
 	"app/backend/tools/demo/showcase.go":                     true,
-	"app/backend/internal/api/trailer.go":                    true,
-	"app/backend/internal/api/explore.go":                    true,
-	"app/backend/internal/api/exploremusic_v7.go":            true,
 	"app/frontend/src/lib/explore.ts":                        true,
-	"app/backend/internal/api/exploremusic.go":               true,
 	"app/backend/internal/library/rename.go":                 true,
 	"app/frontend/src/lib/SigninBackdrop.svelte":             true,
 	"app/frontend/src/lib/Account.svelte":                    true,
 	"app/backend/internal/compat/shows.go":                   true,
-	"app/backend/internal/api/titles.go":                     true,
 	"app/backend/internal/library/adopt.go":                  true,
-	"app/backend/internal/api/asks.go":                       true,
 	"app/backend/internal/library/artist.go":                 true,
 	"app/backend/internal/migrate/arr.go":                    true,
 	"app/frontend/src/lib/approvals/ApprovalsDesktop.svelte": true,
-	"app/backend/internal/api/explore_new_music.go":          true,
 	"app/backend/internal/parts/table.go":                    true, // split into the modules by t13
 }
 
@@ -67,6 +56,7 @@ var layers = map[string]int{
 	"health":       9,
 	"updates":      9,
 	"setup":        9,
+	"titleview":    9, // Title views above shows, music and requests; same-layer callers get injected funcs
 }
 
 // coreRows orders the core packages. A core package imports only core
@@ -92,7 +82,6 @@ var packageHome = map[string]string{
 	"features":      "-",             // held-back feature names; each module task moves its names, t13 deletes the package
 	"parts":         "core/startup",  // leftover until t13 splits table.go into the modules; judged by its strictest home
 	"domain":        "-",             // split per R4, deleted at the end of t06b
-	"api":           "-",             // dissolved into the owning modules by t13 and t14
 	"ratings":       "metadata",
 	"youtube":       "metadata",
 	"judge":         "mediafiles",

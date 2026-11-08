@@ -3,7 +3,6 @@ package downloads
 import (
 	"context"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )

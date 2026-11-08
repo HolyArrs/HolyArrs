@@ -3,13 +3,14 @@ package downloads
 import (
 	"context"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // addFetchMax caps a fetched .torrent at 10 MiB. Real ones are tiny, so a bigger answer is not a torrent. It is a variable so tests can lower it.

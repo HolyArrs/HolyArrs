@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // The whole app under /holyarrs: pages, files, the API, sign-in redirects

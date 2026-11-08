@@ -23,4 +23,5 @@ const (
 		WHERE user_id = ? ORDER BY seen_at DESC, updated_at DESC LIMIT ?`
 	saveWatchlistSwitchesSQL = `INSERT INTO plex_watchlist_people (user_id, movies, shows) VALUES (?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET movies = excluded.movies, shows = excluded.shows`
+	plexLinkNameSQL = "SELECT external_name FROM user_links WHERE provider = 'plex' AND user_id = ? LIMIT 1"
 )
