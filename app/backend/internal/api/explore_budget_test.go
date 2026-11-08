@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"strings"
 	"sync"
 	"testing"
@@ -27,7 +28,7 @@ func (f *recordingTMDB) count(part string) int {
 func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 	t.Parallel()
 	a, s, f := exploreRig(t)
-	a.explore.paced = &engine.Paced{Source: listerSource{L: f.provider()}, Gap: 30 * time.Millisecond}
+	a.explore.Paced = &engine.Paced{Source: discover.ListerSource{L: f.provider()}, Gap: 30 * time.Millisecond}
 	q := engine.Request{List: "trending", Kind: "movie", Scope: engine.ScopeShared}
 	var wg sync.WaitGroup
 	calls := &engine.Calls{}
@@ -35,7 +36,7 @@ func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			items, err := exploreSource{a: a, lister: f.provider(), calls: calls}.List(context.Background(), q)
+			items, err := discover.ExploreSource{E: &a.explore, Lister: f.provider(), Calls: calls}.List(context.Background(), q)
 			if err != nil || len(items) == 0 {
 				t.Errorf("%d items, %v", len(items), err)
 			}
@@ -49,7 +50,7 @@ func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 		t.Fatalf("counted %s", calls)
 	}
 	b := New(Server{Store: s, Metadata: f.provider(), Version: "test"})
-	src := exploreSource{a: b, lister: f.provider()}
+	src := discover.ExploreSource{E: &b.explore, Lister: f.provider()}
 	if !src.Cached(context.Background(), q) {
 		t.Fatal("a new server did not find the stored list")
 	}
@@ -58,31 +59,28 @@ func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 	}
 }
 
-// The pool job builds up to exploreWorkers pools at once, all through the
+// The pool job builds up to discover.ExploreWorkers pools at once, all through the
 // one paced limiter, and records each build's outside calls.
 func TestExploreBuildsInParallel(t *testing.T) {
 	t.Parallel()
 	a, _, f := exploreRig(t)
-	a.explore.paced = &engine.Paced{Source: listerSource{L: f.provider()}, Gap: 5 * time.Millisecond}
+	a.explore.Paced = &engine.Paced{Source: discover.ListerSource{L: f.provider()}, Gap: 5 * time.Millisecond}
 	now := time.Now()
 	for _, m := range []int64{1, 2, 3} {
-		a.queuePool(poolKey{m, "all"}, now, false)
+		a.explore.QueuePool(discover.PoolKey{Member: m, Switch: "all"}, now, false)
 	}
-	a.queuePool(poolKey{1, "movies"}, now, false)
+	a.explore.QueuePool(discover.PoolKey{Member: 1, Switch: "movies"}, now, false)
 	ctx := context.Background()
-	a.runDue(ctx)
-	a.explore.mu.Lock()
-	running := len(a.explore.building)
-	a.explore.mu.Unlock()
-	if running != exploreWorkers {
-		t.Fatalf("%d builds running, want %d", running, exploreWorkers)
+	a.explore.RunDue(ctx)
+	_, _, running := a.explore.BuildCounts()
+	if running != discover.ExploreWorkers {
+		t.Fatalf("%d builds running, want %d", running, discover.ExploreWorkers)
 	}
 	deadline := time.Now().Add(20 * time.Second)
 	for {
-		a.runDue(ctx)
-		a.explore.mu.Lock()
-		done, left := a.explore.builds, len(a.explore.due)+len(a.explore.building)
-		a.explore.mu.Unlock()
+		a.explore.RunDue(ctx)
+		done, queued, busy := a.explore.BuildCounts()
+		left := queued + busy
 		if done == 4 && left == 0 {
 			break
 		}
@@ -91,18 +89,17 @@ func TestExploreBuildsInParallel(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	a.explore.mu.Lock()
-	defer a.explore.mu.Unlock()
-	for k, c := range a.explore.calls {
+	calls := a.explore.LastCalls()
+	for k, c := range calls {
 		if c.Member > engine.MemberBudget {
 			t.Errorf("pool %v: %s over the budget", k, c)
 		}
 	}
-	if len(a.explore.calls) != 4 {
-		t.Fatalf("calls kept for %d pools", len(a.explore.calls))
+	if len(calls) != 4 {
+		t.Fatalf("calls kept for %d pools", len(calls))
 	}
-	if a.explore.paced.Calls != f.count("") {
-		t.Logf("paced %d, tmdb %d (genre and person lookups add a few)", a.explore.paced.Calls, f.count(""))
+	if a.explore.Paced.Calls != f.count("") {
+		t.Logf("paced %d, tmdb %d (genre and person lookups add a few)", a.explore.Paced.Calls, f.count(""))
 	}
 }
 

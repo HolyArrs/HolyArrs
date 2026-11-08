@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -36,11 +37,11 @@ func TestExploreListFailureLoggedOncePerOutage(t *testing.T) {
 	a, _, f := exploreRig(t)
 	src := &downSource{}
 	src.down.Store(true)
-	a.explore.paced = &engine.Paced{Source: src, Gap: time.Millisecond, Burst: 100}
+	a.explore.Paced = &engine.Paced{Source: src, Gap: time.Millisecond, Burst: 100}
 	b := catchLog(t)
 	ask := func(ctx context.Context, list, ref string) error {
 		q := engine.Request{List: list, Kind: "movie", Ref: ref, Scope: engine.ScopeShared}
-		_, err := exploreSource{a: a, lister: f.provider()}.List(ctx, q)
+		_, err := discover.ExploreSource{E: &a.explore, Lister: f.provider()}.List(ctx, q)
 		return err
 	}
 	bg := context.Background()

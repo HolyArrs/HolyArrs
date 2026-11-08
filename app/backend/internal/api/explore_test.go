@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -71,7 +72,7 @@ func exploreRig(t *testing.T) (*API, *database.Store, *recordingTMDB) {
 	f := newRecordingTMDB(t)
 	_, s := discoverRig(t, f.provider())
 	a := New(Server{Store: s, Metadata: f.provider(), Version: "test"})
-	a.explore.paced = &engine.Paced{Source: listerSource{L: f.provider()}, Gap: time.Millisecond}
+	a.explore.Paced = &engine.Paced{Source: discover.ListerSource{L: f.provider()}, Gap: time.Millisecond}
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash, max_rating) VALUES
 			(2, 't', '{}', 't', '{}', 'zelda-member', 'member', 'x', ''), (3, 't', '{}', 't', '{}', 'kiddo', 'member', 'x', 'PG')`)
@@ -104,8 +105,8 @@ func TestExplorePoolInvalidation(t *testing.T) {
 	a, s, _ := exploreRig(t)
 	ctx := context.Background()
 	for _, m := range []int64{1, 2} {
-		for _, sw := range exploreSwitches {
-			if err := a.buildPool(ctx, m, sw); err != nil {
+		for _, sw := range discover.ExploreSwitches {
+			if err := a.explore.BuildPool(ctx, m, sw); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -116,7 +117,7 @@ func TestExplorePoolInvalidation(t *testing.T) {
 	if ok, stale := poolState(t, s, 1, "all"); !ok || stale {
 		t.Fatal("pool not stored fresh")
 	}
-	a.exploreOnEvent(domain.Event{Kind: domain.EventAskMade, Actor: domain.Actor{Kind: "user", ID: 2}})
+	a.explore.OnEvent(domain.Event{Kind: domain.EventAskMade, Actor: domain.Actor{Kind: "user", ID: 2}})
 	if _, stale := poolState(t, s, 2, "all"); !stale {
 		t.Fatal("an ask did not mark the member's pool stale")
 	}
@@ -126,8 +127,8 @@ func TestExplorePoolInvalidation(t *testing.T) {
 	var showID int64
 	_ = s.Read().QueryRow("SELECT id FROM titles WHERE kind = 'show'").Scan(&showID)
 	now := time.Now()
-	a.explore.now = func() time.Time { return now }
-	a.exploreOnEvent(domain.Event{Kind: domain.EventTitleAdded, TitleID: &showID})
+	a.explore.Clock = func() time.Time { return now }
+	a.explore.OnEvent(domain.Event{Kind: domain.EventTitleAdded, TitleID: &showID})
 	for _, m := range []int64{1, 2} {
 		if _, stale := poolState(t, s, m, "shows"); !stale {
 			t.Fatalf("member %d shows pool not stale after a show was added", m)
@@ -140,26 +141,26 @@ func TestExplorePoolInvalidation(t *testing.T) {
 		t.Fatal("a show add marked the movies pool stale")
 	}
 	// Debounce: a second add moves the rebuild on; nothing is due yet.
-	a.explore.now = func() time.Time { return now.Add(5 * time.Minute) }
-	a.exploreOnEvent(domain.Event{Kind: domain.EventTitleAdded, TitleID: &showID})
-	a.explore.now = func() time.Time { return now.Add(11 * time.Minute) }
+	a.explore.Clock = func() time.Time { return now.Add(5 * time.Minute) }
+	a.explore.OnEvent(domain.Event{Kind: domain.EventTitleAdded, TitleID: &showID})
+	a.explore.Clock = func() time.Time { return now.Add(11 * time.Minute) }
 	for {
-		k, ok := a.nextDue()
+		k, ok := a.explore.NextDue()
 		if !ok {
 			break
 		}
-		if k.sw == "shows" {
+		if k.Switch == "shows" {
 			t.Fatal("a show pool came due 11 minutes after the first add, 6 after the last")
 		}
 	}
-	a.explore.now = func() time.Time { return now.Add(16 * time.Minute) }
+	a.explore.Clock = func() time.Time { return now.Add(16 * time.Minute) }
 	n := 0
 	for {
-		k, ok := a.nextDue()
+		k, ok := a.explore.NextDue()
 		if !ok {
 			break
 		}
-		if k.sw == "shows" {
+		if k.Switch == "shows" {
 			n++
 		}
 	}
@@ -185,7 +186,7 @@ func TestExplorePoolBuildPrivacy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := a.buildPool(ctx, 2, "all"); err != nil {
+	if err := a.explore.BuildPool(ctx, 2, "all"); err != nil {
 		t.Fatal(err)
 	}
 	if len(f.urls) == 0 {
@@ -213,10 +214,10 @@ func TestExploreKidPoolFiltered(t *testing.T) {
 		}
 		a.mf.KeepRating("movie", fmt.Sprint(i), r)
 	}
-	if err := a.buildPool(ctx, 3, "movies"); err != nil {
+	if err := a.explore.BuildPool(ctx, 3, "movies"); err != nil {
 		t.Fatal(err)
 	}
-	p, _, err := a.readPool(ctx, 3, "movies", engine.Day(time.Now()), false)
+	p, _, err := a.explore.ReadPool(ctx, 3, "movies", engine.Day(time.Now()), false)
 	if err != nil || p == nil {
 		t.Fatalf("pool %v %v", p, err)
 	}
@@ -260,10 +261,10 @@ func TestExploreHeadAndTail(t *testing.T) {
 	if cold["building"] != true {
 		t.Fatalf("no pool yet, building = %v", cold["building"])
 	}
-	if k, ok := a.nextDue(); !ok || k.member != 1 || k.sw != "all" {
+	if k, ok := a.explore.NextDue(); !ok || k.Member != 1 || k.Switch != "all" {
 		t.Fatal("head did not queue a pool build")
 	}
-	if err := a.buildPool(context.Background(), 1, "all"); err != nil {
+	if err := a.explore.BuildPool(context.Background(), 1, "all"); err != nil {
 		t.Fatal(err)
 	}
 	h := get("/api/v1/explore/head?type=all")
@@ -340,10 +341,10 @@ func TestExploreFinishCollection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := a.buildPool(ctx, 1, "movies"); err != nil {
+	if err := a.explore.BuildPool(ctx, 1, "movies"); err != nil {
 		t.Fatal(err)
 	}
-	p, _, _ := a.readPool(ctx, 1, "movies", engine.Day(time.Now()), false)
+	p, _, _ := a.explore.ReadPool(ctx, 1, "movies", engine.Day(time.Now()), false)
 	if p.Version != engine.PoolVersion {
 		t.Fatalf("pool version %d", p.Version)
 	}

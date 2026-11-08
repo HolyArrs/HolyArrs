@@ -222,7 +222,7 @@ type API struct {
 	// artMisses is each person's budget of artwork cache misses.
 	artMisses discover.ArtworkBudget
 	// explore runs the Explore pool job and keeps its lists and pages.
-	explore   exploreState
+	explore   discover.Explore
 	genreRows genreRowCache
 	// trailers keeps resolved trailer addresses, serves the trailer routes
 	// and runs the trailer pass (metadata).
@@ -306,6 +306,7 @@ func New(s Server) *API {
 		a.signin.ClientKey = s.Auth.ClientKey
 	}
 	a.wireCardArt()
+	a.wireExplore()
 	a.disc = a.newDiscover()
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()

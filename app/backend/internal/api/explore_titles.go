@@ -21,7 +21,7 @@ func (a *API) titleExplore(ctx context.Context, member int64, pg engine.Page, m 
 }
 
 func (a *API) exploreTitleCount(ctx context.Context, member int64, field string, layers []string) {
-	discover.ExploreTitleCount(ctx, a.s.Store, a.exploreNow(), member, field, layers)
+	discover.ExploreTitleCount(ctx, a.s.Store, a.explore.Now(), member, field, layers)
 }
 
 func validTitleLayer(l string) bool { return discover.ValidTitleLayer(l) }
@@ -35,5 +35,5 @@ func rowLayers(rows []exploreRowView) []string {
 }
 
 func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
-	discover.ExploreTitleStats(w, r, a.s.Store, a.exploreNow())
+	discover.ExploreTitleStats(w, r, a.s.Store, a.explore.Now())
 }

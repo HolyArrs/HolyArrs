@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http/httptest"
 	"strconv"
 	"testing"
@@ -75,7 +76,7 @@ func TestAwardWinnersCollection(t *testing.T) {
 	if !ok {
 		t.Fatal("no awards category")
 	}
-	src := exploreSource{a: a, lister: f.provider()}
+	src := discover.ExploreSource{E: &a.explore, Lister: f.provider()}
 	items, err := a.browseItems(context.Background(), src, c, "all", false, "")
 	if err != nil || len(items) < engine.BrowseMin {
 		t.Fatalf("%d items, %v", len(items), err)

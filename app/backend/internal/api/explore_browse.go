@@ -285,7 +285,7 @@ func (a *API) browsePage(ctx context.Context, r *http.Request, sw string) (engin
 // browseItems fetches category c for the tab (both kinds merged by
 // popularity), without titles above the rating limit max. Never-add
 // titles are left to browseDropNever.
-func (a *API) browseItems(ctx context.Context, src exploreSource, c engine.Category, sw string, kid bool, max string) ([]engine.Item, error) {
+func (a *API) browseItems(ctx context.Context, src discover.ExploreSource, c engine.Category, sw string, kid bool, max string) ([]engine.Item, error) {
 	if c.ID == "awards" {
 		if merged, ok, err := a.awardItems(ctx, src, c, sw, kid); ok {
 			if err != nil || max == "" {

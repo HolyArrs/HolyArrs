@@ -14,13 +14,13 @@ import (
 // cardArt is the wide card art filler (discover.CardArt) on this API's
 // store and metadata provider.
 func (a *API) cardArt() *discover.CardArt {
-	return &a.explore.cards
+	return &a.explore.Cards
 }
 
 // wireCardArt points the filler at this API's store and provider (New).
 func (a *API) wireCardArt() {
-	a.explore.cards.Store = func() *database.Store { return a.s.Store }
-	a.explore.cards.Metadata = func() metadata.Provider { return a.s.Metadata }
+	a.explore.Cards.Store = func() *database.Store { return a.s.Store }
+	a.explore.Cards.Metadata = func() metadata.Provider { return a.s.Metadata }
 }
 
 func cardKey(kind, id, lang string) string { return discover.CardKey(kind, id, lang) }

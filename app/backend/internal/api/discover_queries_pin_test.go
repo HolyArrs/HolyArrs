@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"testing"
 	"time"
 
@@ -98,7 +99,7 @@ func TestRDPExploreReturningOverALargeLibrary(t *testing.T) {
 	rdpEpisode(t, r.st, rdpTitle(t, r.st, "show", "Dropped", "7003", "active", rdpStamp), day(10), true)
 	rdpEpisode(t, r.st, rdpTitle(t, r.st, "movie", "Film", "7004", "active", rdpStamp), day(10), false)
 
-	got, err := exploreReturning(ctx, r.st.Read(), rdpNow)
+	got, err := discover.ExploreReturning(ctx, r.st.Read(), rdpNow)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +153,7 @@ func TestRDPExploreCollectionsCountOwnedMovies(t *testing.T) {
 	put(d, m("D1", "active"))
 	put(d, m("D2", "active"))
 	put(empty, m("E1", "removed"))
-	got, err := exploreCollections(ctx, r.st.Read())
+	got, err := discover.ExploreCollections(ctx, r.st.Read())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,11 +243,11 @@ func TestRDPExploreInputReadsLibraryAndAsks(t *testing.T) {
 	if _, err := r.asks.Ask(ctx, requests.Person{UserID: r.bo.id, Name: "bo"}, "900002"); err != nil {
 		t.Fatal(err)
 	}
-	m, err := r.api.loadMember(ctx, r.ana.id)
-	if err != nil || m.kid {
+	m, err := r.api.explore.LoadMember(ctx, r.ana.id)
+	if err != nil || m.Kid {
 		t.Fatalf("member %+v %v", m, err)
 	}
-	in, err := r.api.exploreInput(ctx, m, "", rdpNow)
+	in, err := r.api.explore.Input(ctx, m, "", rdpNow)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,11 +259,11 @@ func TestRDPExploreInputReadsLibraryAndAsks(t *testing.T) {
 	}
 	// A turned-down ask drops out of the signals.
 	rdpExec(t, r.st, "UPDATE asks SET state = 'turned_down' WHERE tmdb_id = '693134'")
-	in, err = r.api.exploreInput(ctx, m, "", rdpNow)
+	in, err = r.api.explore.Input(ctx, m, "", rdpNow)
 	if err != nil || len(in.MyAsks) != 0 {
 		t.Fatalf("after turn down: %+v %v", in.MyAsks, err)
 	}
-	if _, err := r.api.loadMember(ctx, 99999); err == nil {
+	if _, err := r.api.explore.LoadMember(ctx, 99999); err == nil {
 		t.Fatal("unknown member loaded")
 	}
 }

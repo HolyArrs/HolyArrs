@@ -25,12 +25,12 @@ const genreMoodMin = 8
 
 // liveSource is the Explore list source with outside calls allowed (lists
 // are cached by their own TTL).
-func (a *API) liveSource(ctx context.Context) exploreSource {
+func (a *API) liveSource(ctx context.Context) discover.ExploreSource {
 	var lister metadata.ExploreLister
 	if l, ok := metadata.ExploreListerFor(ctx, a.s.Metadata); ok {
 		lister = l
 	}
-	return exploreSource{a: a, lister: lister, calls: &engine.Calls{}}
+	return discover.ExploreSource{E: &a.explore, Lister: lister, Calls: &engine.Calls{}}
 }
 
 // exploreTop answers GET /api/v1/explore/top?type=&chip=all|<service id>
@@ -227,7 +227,7 @@ func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre strin
 		}
 		return out
 	}
-	now := a.exploreNow().UTC()
+	now := a.explore.Now().UTC()
 	lower := strings.ToLower(genre)
 	seed, hasSeed := a.genreSeed(ctx, r, kind, genre)
 	cacheKey := kind + "|" + genre + "|" + a.kidMax(r) + "|" + seed.TMDBID + "|" + now.Format("2006-01-02")
@@ -373,12 +373,12 @@ func (a *API) warmGenres(ctx context.Context) {
 				continue
 			}
 			for _, genre := range engine.Genres[kind] {
-				for _, q := range discover.GenreRequests(kind, genre, a.exploreNow().UTC()) {
+				for _, q := range discover.GenreRequests(kind, genre, a.explore.Now().UTC()) {
 					if ctx.Err() != nil {
 						return
 					}
 					src := a.liveSource(ctx)
-					if got, ok := src.cachedList(ctx, q.String()); ok && time.Since(got.at) < exploreListTTL[q.List] {
+					if src.Cached(ctx, q) {
 						continue
 					}
 					_, _ = src.List(ctx, q)

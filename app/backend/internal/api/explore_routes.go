@@ -34,13 +34,13 @@ type exploreRowView struct {
 // newest older one, else cold-start rows from the list cache. It never
 // waits for outside calls; a missing or stale pool is queued instead.
 func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw string) (engine.Page, bool, error) {
-	now := a.exploreNow()
+	now := a.explore.Now()
 	day := engine.Day(now)
 	moment, tz := exploreMoment(r, now)
 	region := r.URL.Query().Get("region")
 	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + tz
 	e := &a.explore
-	pool, stale, err := a.readPool(ctx, member, sw, day, false)
+	pool, stale, err := a.explore.ReadPool(ctx, member, sw, day, false)
 	if err != nil {
 		return engine.Page{}, false, err
 	}
@@ -48,53 +48,46 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	if pool == nil || stale || pool.Version != engine.PoolVersion {
 		// A pool from an older build has other rows: build it again.
 		building = true
-		a.queuePool(poolKey{member, sw}, now, false)
+		a.explore.QueuePool(discover.PoolKey{Member: member, Switch: sw}, now, false)
 	}
 	if pool == nil {
-		if pool, _, err = a.readPool(ctx, member, sw, day, true); err != nil {
+		if pool, _, err = a.explore.ReadPool(ctx, member, sw, day, true); err != nil {
 			return engine.Page{}, false, err
 		}
 	}
 	if pool != nil {
-		e.mu.Lock()
-		got, ok := e.pages[key]
-		e.mu.Unlock()
-		if ok && now.Sub(got.at) < explorePageTTL && got.built.Equal(pool.Built) {
-			pg, err := a.titleExplore(ctx, member, got.page, moment)
+		got, ok := e.Page(key)
+		if ok && now.Sub(got.At) < discover.ExplorePageTTL && got.Built.Equal(pool.Built) {
+			pg, err := a.titleExplore(ctx, member, got.Page, moment)
 			return pg, building, err
 		}
 	}
 	if pool == nil {
-		m, err := a.loadMember(ctx, member)
+		m, err := a.explore.LoadMember(ctx, member)
 		if err != nil && err != sql.ErrNoRows {
 			return engine.Page{}, false, err
 		}
 		// The cold head is built from the Library, the asks and whatever
 		// lists are cached (memory or SQLite), with no outside call.
-		in := engine.Input{Member: member, Kid: m.kid, Switch: sw, Now: now, Services: m.services, Region: m.region}
+		in := engine.Input{Member: member, Kid: m.Kid, Switch: sw, Now: now, Services: m.Services, Region: m.Region}
 		if err == nil {
-			if full, ierr := a.exploreInput(ctx, m, sw, now); ierr == nil {
+			if full, ierr := a.explore.Input(ctx, m, sw, now); ierr == nil {
 				in = full
 			}
 		}
-		if m.kid {
-			in.Allow = a.kidAllow(ctx, m.maxRating)
+		if m.Kid {
+			in.Allow = a.explore.KidAllow(ctx, m.MaxRating)
 		}
-		cold, err := engine.Build(ctx, exploreSource{a: a, cacheOnly: true}, in)
+		cold, err := engine.Build(ctx, discover.ExploreSource{E: &a.explore, CacheOnly: true}, in)
 		if err != nil {
 			return engine.Page{}, false, err
 		}
 		pool = &cold
 	}
 	pg := a.poolPage(*pool, member, sw, region, moment)
-	e.mu.Lock()
-	if e.pages == nil || len(e.pages) >= 1000 {
-		e.pages = map[string]explorePage{}
-	}
 	if !building || pool.Date == day {
-		e.pages[key] = explorePage{at: now, built: pool.Built, page: pg}
+		e.KeepPage(key, discover.ExplorePage{At: now, Built: pool.Built, Page: pg})
 	}
-	e.mu.Unlock()
 	pg, err = a.titleExplore(ctx, member, pg, moment)
 	return pg, building, err
 }
@@ -160,7 +153,7 @@ func (a *API) exploreCount(ctx context.Context, member int64, field string, type
 	if len(types) == 0 {
 		return
 	}
-	day := engine.Day(a.exploreNow())
+	day := engine.Day(a.explore.Now())
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		return accounts.AddRowCounts(ctx, tx, member, day, field, types)
 	})
@@ -209,7 +202,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 				webserver.Internal(w, "api", err)
 				return
 			}
-			a.markMemberStale(r.Context(), me, a.exploreNow())
+			a.explore.MarkMemberStale(r.Context(), me, a.explore.Now())
 		}
 	}
 	pg, building, err := a.explorePageFor(r.Context(), r, me, sw)
@@ -363,7 +356,7 @@ func (a *API) exploreHero(r *http.Request, pg engine.Page, all bool, me int64) (
 	if len(ready) < engine.HeroCount/2 {
 		ready = append(ready, artOnly...)
 	}
-	day := engine.Day(a.exploreNow())
+	day := engine.Day(a.explore.Now())
 	picked := engine.PickHero(ready, all, me, day)
 	heroShown.Store(me, picked) // New & Popular's hero leaves these out
 	out := make([]discoverItemView, 0, len(picked))

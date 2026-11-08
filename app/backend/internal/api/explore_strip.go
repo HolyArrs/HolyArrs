@@ -102,7 +102,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	now := a.exploreNow()
+	now := a.explore.Now()
 	moment, _ := exploreMoment(r, now)
 	member := a.person(r).UserID
 	max := a.kidMax(r)
@@ -370,7 +370,7 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 		}
 		seen[c] = true
 	}
-	member, day := a.person(r).UserID, engine.Day(a.exploreNow())
+	member, day := a.person(r).UserID, engine.Day(a.explore.Now())
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		// A member's day holds at most stripDayCategoriesMax categories, so
 		// made-up names cannot grow the database without end; past it only

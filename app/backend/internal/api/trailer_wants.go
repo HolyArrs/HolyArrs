@@ -63,37 +63,37 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 	if err != nil {
 		return nil
 	}
-	var keys []poolKey
+	var keys []discover.PoolKey
 	for rows.Next() {
-		var k poolKey
-		if rows.Scan(&k.member, &k.sw) == nil {
+		var k discover.PoolKey
+		if rows.Scan(&k.Member, &k.Switch) == nil {
 			keys = append(keys, k)
 		}
 	}
 	rows.Close()
-	now := a.exploreNow()
+	now := a.explore.Now()
 	day := engine.Day(now)
 	var heroes [][2]string
 	var cards []engine.Item
 	for _, k := range keys {
-		m, err := a.loadMember(ctx, k.member)
-		if err != nil || m.kid {
+		m, err := a.explore.LoadMember(ctx, k.Member)
+		if err != nil || m.Kid {
 			continue
 		}
 		// Today's pool, else the newest older one, as Explore shows it.
-		pool, _, err := a.readPool(ctx, k.member, k.sw, day, false)
+		pool, _, err := a.explore.ReadPool(ctx, k.Member, k.Switch, day, false)
 		if err == nil && pool == nil {
-			pool, _, err = a.readPool(ctx, k.member, k.sw, day, true)
+			pool, _, err = a.explore.ReadPool(ctx, k.Member, k.Switch, day, true)
 		}
 		if err != nil || pool == nil || pool.Kid {
 			continue
 		}
-		pg := a.poolPage(*pool, k.member, k.sw, m.region, engine.Moment{Local: now.Local()})
-		heroes = append(heroes, discover.ExploreTrailerTitles(discover.HeroCandidates(pg, k.sw == "all"), nil)...)
+		pg := a.poolPage(*pool, k.Member, k.Switch, m.Region, engine.Moment{Local: now.Local()})
+		heroes = append(heroes, discover.ExploreTrailerTitles(discover.HeroCandidates(pg, k.Switch == "all"), nil)...)
 		for _, row := range append(append([]engine.Row{}, pg.Head...), pg.Tail...) {
 			if row.Type == engine.TypeTopServices {
 				// The page fills this row itself, from the kept lists.
-				cards = append(cards, a.keptServiceTop(strings.ToUpper(m.region), k.sw)...)
+				cards = append(cards, a.keptServiceTop(strings.ToUpper(m.Region), k.Switch)...)
 				continue
 			}
 			cards = append(cards, row.Items...)

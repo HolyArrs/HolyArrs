@@ -159,7 +159,7 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 		{Service: "netflix", Items: []metadata.ServiceTopItem{{TMDBID: 9001, Kind: "movie"}, {TMDBID: 100, Kind: "movie"}, {TMDBID: 9002, Kind: "tv"}}}}})
 
 	// What the page shows, in its order.
-	pg := a.poolPage(pool, 1, "all", "US", engine.Moment{Local: a.exploreNow().Local()})
+	pg := a.poolPage(pool, 1, "all", "US", engine.Moment{Local: a.explore.Now().Local()})
 	if len(pg.Tail) == 0 || pg.Head[0].Type != engine.TypeTopServices {
 		t.Fatalf("pool lays out %d head, %d tail rows", len(pg.Head), len(pg.Tail))
 	}

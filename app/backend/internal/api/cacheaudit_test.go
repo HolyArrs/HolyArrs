@@ -38,8 +38,8 @@ func TestShorterListAndCardKeeps(t *testing.T) {
 	if discover.CardArtTTL != 7*24*time.Hour {
 		t.Fatalf("card art %v", discover.CardArtTTL)
 	}
-	if exploreListTTL["person"] != 24*time.Hour || exploreListTTL["collection"] != 24*time.Hour {
-		t.Fatalf("lists %v", exploreListTTL)
+	if discover.ExploreListTTL["person"] != 24*time.Hour || discover.ExploreListTTL["collection"] != 24*time.Hour {
+		t.Fatalf("lists %v", discover.ExploreListTTL)
 	}
 }
 

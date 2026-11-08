@@ -46,7 +46,7 @@ func newServiceTopFake(reads *int) func(context.Context, string) (metadata.Servi
 func newRig(t *testing.T) (*API, *httptest.Server, *int) {
 	t.Helper()
 	a, s, _ := exploreRig(t)
-	a.explore.now = func() time.Time { return newNow }
+	a.explore.Clock = func() time.Time { return newNow }
 	reads := 0
 	a.s.ServiceTop = newServiceTopFake(&reads)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {

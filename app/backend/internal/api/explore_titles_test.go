@@ -28,7 +28,7 @@ func TestExploreTitleStatsRoute(t *testing.T) {
 		_ = json.NewDecoder(resp.Body).Decode(&out)
 		return out
 	}
-	if err := a.buildPool(context.Background(), 1, "all"); err != nil {
+	if err := a.explore.BuildPool(context.Background(), 1, "all"); err != nil {
 		t.Fatal(err)
 	}
 	titles := func() []string {

@@ -8,6 +8,6 @@ import (
 )
 
 // awardItems builds the Award winners collection (discover.AwardItems).
-func (a *API) awardItems(ctx context.Context, src exploreSource, c engine.Category, sw string, kid bool) ([]engine.Item, bool, error) {
+func (a *API) awardItems(ctx context.Context, src discover.ExploreSource, c engine.Category, sw string, kid bool) ([]engine.Item, bool, error) {
 	return discover.AwardItems(ctx, src.List, a.titles.AwardWinners, c, sw, kid)
 }

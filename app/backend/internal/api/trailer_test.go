@@ -493,8 +493,8 @@ func TestTrailerPageOpensNeverLookUp(t *testing.T) {
 	ea, _, _ := exploreRig(t)
 	ea.s.TrailerPick = func(context.Context, string, string, string) (string, error) { return "trailerKey1", nil }
 	ctx := context.Background()
-	for _, sw := range exploreSwitches {
-		if err := ea.buildPool(ctx, 1, sw); err != nil {
+	for _, sw := range discover.ExploreSwitches {
+		if err := ea.explore.BuildPool(ctx, 1, sw); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -98,7 +98,7 @@ const newHeroMax = 6
 // newHeroKeys keeps the hero picked for a built page (page cache key ->
 // kind:tmdb set), so every page of rows leaves those titles out. Entries
 // expire with the page cache.
-var newHeroKeys = discover.NewTTLMap(explorePageTTL, 2000)
+var newHeroKeys = discover.NewTTLMap(discover.ExplorePageTTL, 2000)
 
 // newHero picks the hero: the best-scoring new titles of the rail, the
 // services row and the hot and new rows that pass Explore's quality gate
@@ -151,7 +151,7 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 	}
 	a.fillTrailerKeys(r, vs)
 	a.fillCardArt(r, vs)
-	now := a.exploreNow().UTC()
+	now := a.explore.Now().UTC()
 	out := []discoverItemView{}
 	for _, v := range vs {
 		if len(out) == newHeroMax || v.TrailerKey == "" || !heroArtReady(v) {
@@ -490,7 +490,7 @@ func (f newFacts) dated(it engine.Item) {
 // buildNewPage builds the member's page (before per-person views): kept 6
 // hours once every list is back; building says some lists were still out.
 func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string) (newPage, bool) {
-	now := a.exploreNow().UTC()
+	now := a.explore.Now().UTC()
 	h := a.newHousehold(ctx, me, now)
 	kinds := map[string]bool{}
 	for _, k := range engine.Kinds(sw) {
@@ -830,7 +830,7 @@ func (a *API) newViews(r *http.Request, rows []engine.Row, pg newPage, least int
 	if err != nil {
 		return nil, err
 	}
-	now := a.exploreNow().UTC()
+	now := a.explore.Now().UTC()
 	out := []exploreRowView{}
 	for _, v := range views {
 		if len(v.Items) < least {
