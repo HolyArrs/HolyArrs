@@ -902,7 +902,7 @@ func Gate(m *http.ServeMux) http.Handler {
 			return
 		}
 		if !who.Has(need) {
-			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" && CompatSide(r.URL.Path) == "" {
+			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" && ArrSide(r.URL.Path) == "" {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}

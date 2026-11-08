@@ -70,7 +70,7 @@ func (h *Handlers) oldAppDeleteFiles(ctx context.Context) bool {
 // Gate answers 404 for both prefixes while the old-app API is off.
 func (h *Handlers) Gate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if auth.CompatSide(r.URL.Path) != "" && !h.On(r.Context()) {
+		if auth.ArrSide(r.URL.Path) != "" && !h.On(r.Context()) {
 			http.NotFound(w, r)
 			return
 		}
@@ -86,14 +86,14 @@ type OldAppSide struct {
 	// request reached HolyArrs.
 	Path string              `json:"path"`
 	URL  string              `json:"url"`
-	Key  *auth.CompatKeyView `json:"key,omitempty"` // nil: no key made yet
+	Key  *auth.ArrKeyView `json:"key,omitempty"` // nil: no key made yet
 }
 
 func (h *Handlers) oldAppAnswer(r *http.Request) (map[string]any, error) {
-	var keys []auth.CompatKeyView
+	var keys []auth.ArrKeyView
 	if h.Auth != nil {
 		var err error
-		if keys, err = h.Auth.CompatKeys(r.Context()); err != nil {
+		if keys, err = h.Auth.ArrKeys(r.Context()); err != nil {
 			return nil, err
 		}
 	}
@@ -102,7 +102,7 @@ func (h *Handlers) oldAppAnswer(r *http.Request) (map[string]any, error) {
 		scheme = "https"
 	}
 	sides := []OldAppSide{}
-	for _, s := range auth.CompatSides {
+	for _, s := range auth.ArrSides {
 		v := OldAppSide{Side: s, Path: webserver.URLBaseFrom(r.Context()) + "/" + s}
 		v.URL = scheme + "://" + r.Host + v.Path
 		for i := range keys {
@@ -173,8 +173,8 @@ func (h *Handlers) makeOldAppKey(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusForbidden, "the key acts as you, and your account may not manage the Library")
 		return
 	}
-	k, err := h.Auth.MakeCompatKey(r, side)
-	if errors.Is(err, auth.ErrNoCompatSide) {
+	k, err := h.Auth.MakeArrKey(r, side)
+	if errors.Is(err, auth.ErrNoArrSide) {
 		webserver.Fail(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -195,7 +195,7 @@ func (h *Handlers) deleteOldAppKey(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	ok, err := h.Auth.DeleteCompatKey(r, side)
+	ok, err := h.Auth.DeleteArrKey(r, side)
 	if err != nil {
 		webserver.Internal(w, "arrapi", err)
 		return

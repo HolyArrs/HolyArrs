@@ -19,16 +19,16 @@ import (
 // apart from HolyArrs API keys (hak_), never accepted anywhere else, and
 // masked in the log like every apikey= value.
 
-// CompatSides are the two sides, in the order screens show them.
-var CompatSides = []string{"sonarr", "radarr"}
+// ArrSides are the two sides, in the order screens show them.
+var ArrSides = []string{"sonarr", "radarr"}
 
-// ErrNoCompatSide says the side is not sonarr or radarr.
-var ErrNoCompatSide = errors.New("the side is sonarr or radarr")
+// ErrNoArrSide says the side is not sonarr or radarr.
+var ErrNoArrSide = errors.New("the side is sonarr or radarr")
 
-// CompatSide names the side a path is under ("sonarr" for /sonarr/...),
+// ArrSide names the side a path is under ("sonarr" for /sonarr/...),
 // or "" when it is under neither.
-func CompatSide(path string) string {
-	for _, s := range CompatSides {
+func ArrSide(path string) string {
+	for _, s := range ArrSides {
 		if strings.HasPrefix(path, "/"+s+"/") {
 			return s
 		}
@@ -36,12 +36,12 @@ func CompatSide(path string) string {
 	return ""
 }
 
-// compatKey reads the key the way those apps send it. Only the first place
+// arrKey reads the key the way those apps send it. Only the first place
 // found counts, as in the old apps: the apikey query value (any case of
 // the name), then the X-Api-Key header, then Authorization with or
 // without "Bearer ". A wrong value in an earlier place is not saved by a
 // right one in a later place.
-func compatKey(r *http.Request) (string, bool) {
+func arrKey(r *http.Request) (string, bool) {
 	for name, vs := range r.URL.Query() {
 		if strings.EqualFold(name, "apikey") {
 			if len(vs) == 0 {
@@ -59,11 +59,11 @@ func compatKey(r *http.Request) (string, bool) {
 	return "", false
 }
 
-// compatLink matches the page link Seerr shows admins to open a title in
+// arrLink matches the page link Seerr shows admins to open a title in
 // the old app (/sonarr/series/<id>, /radarr/movie/<id>, no API path). A
 // browser follows it with no key, so it goes to the HolyArrs title page:
 // a show's slug is its Library id, a movie's is its TMDB id.
-func compatLink(r *http.Request) (string, bool) {
+func arrLink(r *http.Request) (string, bool) {
 	if r.Method != http.MethodGet {
 		return "", false
 	}
@@ -75,9 +75,9 @@ func compatLink(r *http.Request) (string, bool) {
 	return "", false
 }
 
-// checkCompatKey finds the person behind a side's key. The key works only
+// checkArrKey finds the person behind a side's key. The key works only
 // on its own side, and only while its maker's account is active.
-func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (Who, bool) {
+func (a *Auth) checkArrKey(ctx context.Context, side, k string) (Who, bool) {
 	if len(k) != 32 {
 		return Who{}, false
 	}
@@ -105,8 +105,8 @@ func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (Who, bool) {
 	return who, true
 }
 
-// CompatKeyView is one side's key without its value.
-type CompatKeyView struct {
+// ArrKeyView is one side's key without its value.
+type ArrKeyView struct {
 	Side       string  `json:"side"`
 	Hint       string  `json:"hint"`
 	Owner      string  `json:"owner"`
@@ -115,17 +115,17 @@ type CompatKeyView struct {
 	LastUsedAt *string `json:"last_used_at,omitempty"`
 }
 
-// CompatKeys lists the sides that have a key.
-func (a *Auth) CompatKeys(ctx context.Context) ([]CompatKeyView, error) {
+// ArrKeys lists the sides that have a key.
+func (a *Auth) ArrKeys(ctx context.Context) ([]ArrKeyView, error) {
 	rows, err := a.s.Read().QueryContext(ctx, `SELECT k.side, k.hint, COALESCE(u.name, ''), COALESCE(u.state = 'active', 0), k.created_at, k.last_used_at
 		FROM compat_keys k LEFT JOIN users u ON u.id = k.owner_user_id ORDER BY k.side DESC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	out := []CompatKeyView{}
+	out := []ArrKeyView{}
 	for rows.Next() {
-		var v CompatKeyView
+		var v ArrKeyView
 		var used sql.NullString
 		if err := rows.Scan(&v.Side, &v.Hint, &v.Owner, &v.OwnerOK, &v.CreatedAt, &used); err != nil {
 			return nil, err
@@ -139,13 +139,13 @@ func (a *Auth) CompatKeys(ctx context.Context) ([]CompatKeyView, error) {
 	return out, rows.Err()
 }
 
-// MakeCompatKey makes a new key for side, owned by the person asking, and
+// MakeArrKey makes a new key for side, owned by the person asking, and
 // returns it; this is the only time it is shown. An older key of that side
 // stops working at once. The key is 32 lowercase hex characters, the form
 // those apps expect.
-func (a *Auth) MakeCompatKey(r *http.Request, side string) (string, error) {
+func (a *Auth) MakeArrKey(r *http.Request, side string) (string, error) {
 	if side != "sonarr" && side != "radarr" {
-		return "", ErrNoCompatSide
+		return "", ErrNoArrSide
 	}
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
@@ -168,8 +168,8 @@ func (a *Auth) MakeCompatKey(r *http.Request, side string) (string, error) {
 	return k, nil
 }
 
-// DeleteCompatKey removes side's key; false when it had none.
-func (a *Auth) DeleteCompatKey(r *http.Request, side string) (bool, error) {
+// DeleteArrKey removes side's key; false when it had none.
+func (a *Auth) DeleteArrKey(r *http.Request, side string) (bool, error) {
 	var n int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		res, err := tx.Exec("DELETE FROM compat_keys WHERE side = ?", side)

@@ -218,7 +218,7 @@ func (a *API) compatSides(ctx context.Context) (map[string]bool, error) {
 	if a.s.Auth == nil {
 		return out, nil
 	}
-	ks, err := a.s.Auth.CompatKeys(ctx)
+	ks, err := a.s.Auth.ArrKeys(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 		uctx, ucancel := context.WithTimeout(context.WithoutCancel(r.Context()), 30*time.Second)
 		defer ucancel()
 		for _, side := range fresh {
-			_, _ = a.s.Auth.DeleteCompatKey(r.WithContext(uctx), side)
+			_, _ = a.s.Auth.DeleteArrKey(r.WithContext(uctx), side)
 		}
 		if turnedOn {
 			off := false
@@ -341,7 +341,7 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		side := sideOf(s.Kind)
-		k, err := a.s.Auth.MakeCompatKey(r, side)
+		k, err := a.s.Auth.MakeArrKey(r, side)
 		if err != nil {
 			undo()
 			internal(w, err)

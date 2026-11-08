@@ -137,7 +137,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		}
 		// The old-app API takes no session at all, only its own keys;
 		// TestOldAppMemberKeyRefused checks a member's key gets 403.
-		if auth.CompatSide(path) != "" {
+		if auth.ArrSide(path) != "" {
 			continue
 		}
 		st, body := signed(method, fill.Replace(path), "{}", mem, memCSRF)
