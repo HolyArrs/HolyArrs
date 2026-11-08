@@ -6,30 +6,12 @@ import { api } from '#lib/core/api.ts';
 import { proxied } from '#lib/core/tmdb-image.ts';
 import { to } from '#lib/core/paths.ts';
 
-const KEY = 'holyarrs-settings-art';
-
 interface Kept {
 	posters: string[];
 	people: Person[];
 }
 
-function load(member: number | undefined): Kept {
-	try {
-		const raw = localStorage.getItem(`${KEY}:${member ?? 0}`);
-		const v = raw ? (JSON.parse(raw) as Partial<Kept>) : null;
-		return { posters: Array.isArray(v?.posters) ? v.posters.filter((s) => typeof s === 'string') : [], people: Array.isArray(v?.people) ? v.people : [] };
-	} catch {
-		return { posters: [], people: [] };
-	}
-}
-
-function save(member: number | undefined, k: Kept) {
-	try {
-		localStorage.setItem(`${KEY}:${member ?? 0}`, JSON.stringify(k));
-	} catch {
-		/* Private window or full: the next visit just starts with line art. */
-	}
-}
+const KEY = 'holyarrs-settings-art';
 
 /** The 250 px copy of a Library picture (the wall is blurred, the cards are small). */
 export function small(url: string): string {
@@ -67,4 +49,22 @@ export function startArt(member: number | undefined, mayUsers: boolean, self: Pe
 			save(member, { posters: homeArt.posters, people: homeArt.people });
 		})
 		.catch(() => {});
+}
+
+function load(member: number | undefined): Kept {
+	try {
+		const raw = localStorage.getItem(`${KEY}:${member ?? 0}`);
+		const v = raw ? (JSON.parse(raw) as Partial<Kept>) : null;
+		return { posters: Array.isArray(v?.posters) ? v.posters.filter((s) => typeof s === 'string') : [], people: Array.isArray(v?.people) ? v.people : [] };
+	} catch {
+		return { posters: [], people: [] };
+	}
+}
+
+function save(member: number | undefined, k: Kept) {
+	try {
+		localStorage.setItem(`${KEY}:${member ?? 0}`, JSON.stringify(k));
+	} catch {
+		/* Private window or full: the next visit just starts with line art. */
+	}
 }

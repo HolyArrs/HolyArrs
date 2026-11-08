@@ -42,17 +42,22 @@ export interface NavInput {
 	settingsAttention?: boolean;
 }
 
+export interface Destination {
+	href: string;
+	label: string;
+	icon: IconName;
+	section: string;
+}
+
+export type SidebarPref = 'expanded' | 'collapsed';
+
+export type ShellMode = 'phone' | 'tablet' | 'desktop';
+
 const kindItems: Record<'movie' | 'show' | 'artist', NavItem> = {
 	movie: { href: '/library?kind=movie', label: 'Movies', icon: 'film', need: null },
 	show: { href: '/library?kind=show', label: 'TV shows', icon: 'tv', need: null },
 	artist: { href: '/library?kind=artist', label: 'Music', icon: 'music', need: null }
 };
-
-function downloadsBadge(input: NavInput): Pick<NavItem, 'badge' | 'badgeLabel' | 'ring'> {
-	const a = input.active;
-	if (a && a.count > 0) return { badge: a.count, badgeLabel: `${a.count} active, ${a.percent}%`, ring: a.percent };
-	return { badge: input.decisions, badgeLabel: `${input.decisions} need a decision` };
-}
 
 /** The sections this person may see, empty ones left out. */
 export function buildNav(input: NavInput): NavSection[] {
@@ -125,13 +130,6 @@ export function currentHref(items: Pick<NavItem, 'href' | 'also'>[], path: strin
 	return hits[0]?.href ?? null;
 }
 
-export interface Destination {
-	href: string;
-	label: string;
-	icon: IconName;
-	section: string;
-}
-
 /** Flattens the sections for the command palette, one per href and label. */
 export function destinations(sections: NavSection[], extra: Destination[] = []): Destination[] {
 	const out: Destination[] = [];
@@ -163,7 +161,6 @@ export function filterDestinations(list: Destination[], query: string): Destinat
 	return scored.map((x) => x.d);
 }
 
-export type SidebarPref = 'expanded' | 'collapsed';
 export const SIDEBAR_KEY = 'holyarrs.sidebar';
 
 /** Reads the saved choice; storage may be missing or refuse. */
@@ -184,7 +181,6 @@ export function writeSidebarPref(storage: Pick<Storage, 'setItem'> | undefined, 
 	}
 }
 
-export type ShellMode = 'phone' | 'tablet' | 'desktop';
 /** Maps a viewport width onto the three shell layouts. */
 export function shellMode(width: number): ShellMode {
 	return width < 768 ? 'phone' : width < 1024 ? 'tablet' : 'desktop';
@@ -193,4 +189,10 @@ export function shellMode(width: number): ShellMode {
 /** Where the logo goes: Home, which every signed-in person may use (members see their own shelves). */
 export function homeHref(): string {
 	return '/';
+}
+
+function downloadsBadge(input: NavInput): Pick<NavItem, 'badge' | 'badgeLabel' | 'ring'> {
+	const a = input.active;
+	if (a && a.count > 0) return { badge: a.count, badgeLabel: `${a.count} active, ${a.percent}%`, ring: a.percent };
+	return { badge: input.decisions, badgeLabel: `${input.decisions} need a decision` };
 }

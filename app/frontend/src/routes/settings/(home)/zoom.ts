@@ -2,9 +2,6 @@
 
 import { EASE, MS, flip, phone, radiusFor, reduced, shift, type Box, type Move } from '#lib/core/motion.ts';
 
-/** What the next Settings screen should play, set before it mounts. */
-export const settingsNav: { move: Move; group: string | null } = { move: null, group: null };
-
 interface Flight {
 	group: string;
 	dir: 'open' | 'back' | 'cover';
@@ -18,50 +15,15 @@ interface Flight {
 	landed: Promise<boolean>;
 }
 
+/** What the next Settings screen should play, set before it mounts. */
+export const settingsNav: { move: Move; group: string | null } = { move: null, group: null };
+
 let flight: Flight | null = null;
 
 const boxOf = (el: Element): Box => {
 	const r = el.getBoundingClientRect();
 	return { left: r.left, top: r.top, width: r.width, height: r.height };
 };
-
-/** The content column below the top bar, inside the screen. */
-function stage(): Box {
-	const col = document.querySelector('.ui-shell > .content') ?? document.body;
-	const r = col.getBoundingClientRect();
-	const bar = document.querySelector('.ui-topbar');
-	const top = Math.max(0, bar ? bar.getBoundingClientRect().bottom : 0);
-	return { left: r.left, top, width: Math.min(r.width, innerWidth - r.left), height: innerHeight - top };
-}
-
-function place(el: HTMLElement, b: Box) {
-	el.style.left = `${b.left}px`;
-	el.style.top = `${b.top}px`;
-	el.style.width = `${b.width}px`;
-	el.style.height = `${b.height}px`;
-}
-
-function make(cls: string, b: Box): HTMLElement {
-	const el = document.createElement('div');
-	el.className = cls;
-	el.setAttribute('aria-hidden', 'true');
-	place(el, b);
-	document.body.appendChild(el);
-	return el;
-}
-
-function artClone(card: HTMLElement, b: Box): HTMLElement | null {
-	const art = card.querySelector('.sx-art');
-	if (!art) return null;
-	const el = make('sx-flyart', b);
-	const copy = art.cloneNode(true) as HTMLElement;
-	// Keep the hover scale it has right now, so the picture does not jump.
-	const now = getComputedStyle(art).transform;
-	if (now && now !== 'none') copy.style.transform = now;
-	copy.style.transition = 'none';
-	el.appendChild(copy);
-	return el;
-}
 
 /** Ends any flight at once and puts every card back as it was. */
 export function clearFlight() {
@@ -73,17 +35,7 @@ export function clearFlight() {
 	flight = null;
 }
 
-function others(card: HTMLElement): HTMLElement[] {
-	return [...document.querySelectorAll<HTMLElement>('.sx-card .sx-face, .sx-head, .sx-attention')].filter((el) => !card.contains(el));
-}
-
 const done = (a: Animation) => a.finished.then(() => true, () => false);
-
-function sheet(b: Box, radius: number): HTMLElement {
-	const el = make('sx-ghost', b);
-	el.style.borderRadius = `${radius}px`;
-	return el;
-}
 
 /** Grows the card into an opaque sheet the size of the page and resolves true once it has landed, so the caller can then load the page under it. Resolves false if the flight was turned around or replaced. Returns null where it does not zoom (phones, less motion). */
 export function zoomOpen(card: HTMLElement, group: string): Promise<boolean> | null {
@@ -132,15 +84,6 @@ export function arrive() {
 	f.hidden = null; // That card is gone with the Settings home.
 	// Wait for the page's first paint, so the fade never shares a frame with mounting.
 	requestAnimationFrame(() => requestAnimationFrame(() => settle(f)));
-}
-
-function settle(f: Flight) {
-	if (flight !== f) return;
-	const fade = f.ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MS.reveal, easing: EASE, fill: 'both' });
-	f.anims.push(fade);
-	void done(fade).then(() => {
-		if (flight === f) clearFlight();
-	});
 }
 
 /** Fades a blank sheet over the open page before Back swaps it for the Settings home, so the home mounts unseen and the sheet then shrinks into its card. Resolves when covered (at once where it does not zoom). */
@@ -206,4 +149,61 @@ export function push(el: HTMLElement, back: boolean): Animation | null {
 export function swap(el: HTMLElement): Animation | null {
 	if (reduced()) return null;
 	return el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MS.swap, easing: EASE });
+}
+
+/** The content column below the top bar, inside the screen. */
+function stage(): Box {
+	const col = document.querySelector('.ui-shell > .content') ?? document.body;
+	const r = col.getBoundingClientRect();
+	const bar = document.querySelector('.ui-topbar');
+	const top = Math.max(0, bar ? bar.getBoundingClientRect().bottom : 0);
+	return { left: r.left, top, width: Math.min(r.width, innerWidth - r.left), height: innerHeight - top };
+}
+
+function place(el: HTMLElement, b: Box) {
+	el.style.left = `${b.left}px`;
+	el.style.top = `${b.top}px`;
+	el.style.width = `${b.width}px`;
+	el.style.height = `${b.height}px`;
+}
+
+function make(cls: string, b: Box): HTMLElement {
+	const el = document.createElement('div');
+	el.className = cls;
+	el.setAttribute('aria-hidden', 'true');
+	place(el, b);
+	document.body.appendChild(el);
+	return el;
+}
+
+function artClone(card: HTMLElement, b: Box): HTMLElement | null {
+	const art = card.querySelector('.sx-art');
+	if (!art) return null;
+	const el = make('sx-flyart', b);
+	const copy = art.cloneNode(true) as HTMLElement;
+	// Keep the hover scale it has right now, so the picture does not jump.
+	const now = getComputedStyle(art).transform;
+	if (now && now !== 'none') copy.style.transform = now;
+	copy.style.transition = 'none';
+	el.appendChild(copy);
+	return el;
+}
+
+function others(card: HTMLElement): HTMLElement[] {
+	return [...document.querySelectorAll<HTMLElement>('.sx-card .sx-face, .sx-head, .sx-attention')].filter((el) => !card.contains(el));
+}
+
+function sheet(b: Box, radius: number): HTMLElement {
+	const el = make('sx-ghost', b);
+	el.style.borderRadius = `${radius}px`;
+	return el;
+}
+
+function settle(f: Flight) {
+	if (flight !== f) return;
+	const fade = f.ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MS.reveal, easing: EASE, fill: 'both' });
+	f.anims.push(fade);
+	void done(fade).then(() => {
+		if (flight === f) clearFlight();
+	});
 }

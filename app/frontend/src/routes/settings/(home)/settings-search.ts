@@ -2,9 +2,6 @@
 
 import { isHeld } from '#lib/core/settings.ts';
 
-/** Search entries for features held back from this release, by anchor. */
-const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'sites-card': 'subtitle_sites', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
-
 export interface SettingEntry {
 	label: string;
 	href: string;
@@ -13,6 +10,9 @@ export interface SettingEntry {
 	words?: string;
 	advanced?: boolean;
 }
+
+/** Search entries for features held back from this release, by anchor. */
+const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'sites-card': 'subtitle_sites', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
 
 const e = (href: string, anchor: string, label: string, words = '', advanced = false): SettingEntry => ({ href, anchor, label, words, advanced });
 

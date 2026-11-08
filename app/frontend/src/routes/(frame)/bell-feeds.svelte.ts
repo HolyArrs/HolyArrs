@@ -29,20 +29,6 @@ export function decisionPins(): PinnedAlert[] {
 const known = new Set<number>();
 
 const TOLD = 'holyarrs.bell.told';
-function readTold(): Set<number> {
-	try {
-		return new Set((JSON.parse(localStorage.getItem(TOLD) ?? '[]') as number[]).slice(-200));
-	} catch {
-		return new Set();
-	}
-}
-function saveTold(ids: Set<number>) {
-	try {
-		localStorage.setItem(TOLD, JSON.stringify([...ids].slice(-200)));
-	} catch {
-		// Private window: the next reload may show one again.
-	}
-}
 
 /** Runs while someone is signed in. `canManage` turns on the parts only staff see (failed downloads, a new version). Returns the stop function. */
 export function startBellFeeds(canManage: boolean): () => void {
@@ -104,4 +90,20 @@ export function startBellFeeds(canManage: boolean): () => void {
 /** For sign-out: the next person starts with nothing handled. */
 export function forgetFeeds(): void {
 	known.clear();
+}
+
+function readTold(): Set<number> {
+	try {
+		return new Set((JSON.parse(localStorage.getItem(TOLD) ?? '[]') as number[]).slice(-200));
+	} catch {
+		return new Set();
+	}
+}
+
+function saveTold(ids: Set<number>) {
+	try {
+		localStorage.setItem(TOLD, JSON.stringify([...ids].slice(-200)));
+	} catch {
+		// Private window: the next reload may show one again.
+	}
 }
