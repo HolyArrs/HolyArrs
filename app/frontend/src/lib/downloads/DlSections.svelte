@@ -817,8 +817,6 @@
 	.ch[data-col='poster'] .lbl { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
 	.tw::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
-	@media (min-width: 641px) {
-	}
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
 		.trchip, .qrv, .xbn { min-height: 32px; }
@@ -836,5 +834,4 @@
 		.psearch:not(.open) .psb::after { right: -6px; }
 		.psx::after { content: ''; position: absolute; inset: -6px -6px -6px 0; }
 	}
-	/* A disabled bin is a stand-in; a tap goes to the row underneath. */
 </style>
