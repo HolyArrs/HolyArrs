@@ -59,13 +59,6 @@ func (a *API) musicProvider() musicProvider { return musicProvider{a} }
 
 func (p musicProvider) On() bool { return p.a.mh().MusicOn() }
 
-func (p musicProvider) Suggest(ctx context.Context, r *http.Request, q string) []SuggestRow {
-	if !p.On() {
-		return nil
-	}
-	return p.a.suggestMusicServer(ctx, r, q)
-}
-
 func (p musicProvider) WarmNew() { p.a.mh().WarmNew() }
 
 func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {

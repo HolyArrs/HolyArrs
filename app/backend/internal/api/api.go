@@ -411,7 +411,7 @@ func (a *API) Routes(rt *webserver.Router) {
 		(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
 	}
 	a.ownedHandlers().Routes(m)
-	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
+	a.suggest().Routes(m)
 	th := a.titleHandlers()
 	th.Routes(m)
 	(&library.VersionHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Publish: a.publishTitle, View: func(ctx context.Context, db database.Querier, v mediafiles.Version) any {
