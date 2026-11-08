@@ -30,20 +30,12 @@ func (a *API) exploreCaching(w http.ResponseWriter, r *http.Request, cache strin
 
 func (a *API) kindsOn(kind string) []string { return a.disc.KindsOn(kind) }
 
-func (a *API) cachedRow(ctx context.Context, d metadata.Discoverer, row, kind, ref, genre string) ([]metadata.DiscoverItem, error) {
-	return a.disc.CachedRow(ctx, d, row, kind, ref, genre)
-}
-
 func (a *API) libraryJoin(ctx context.Context, it metadata.DiscoverItem, me int64) (discoverItemView, bool, error) {
 	return a.disc.LibraryJoin(ctx, it, me)
 }
 
 func (a *API) dropNeverAdd(ctx context.Context, items []metadata.DiscoverItem) ([]metadata.DiscoverItem, error) {
 	return a.disc.DropNeverAdd(ctx, items)
-}
-
-func (a *API) joinItems(ctx context.Context, items []metadata.DiscoverItem, me int64, n int) ([]discoverItemView, error) {
-	return a.disc.JoinItems(ctx, items, me, n)
 }
 
 func (a *API) cachedDetails(ctx context.Context, d metadata.Discoverer, kind, id string) (*metadata.Details, error) {

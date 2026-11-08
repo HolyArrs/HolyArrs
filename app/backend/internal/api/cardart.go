@@ -23,8 +23,6 @@ func (a *API) wireCardArt() {
 	a.explore.Cards.Metadata = func() metadata.Provider { return a.s.Metadata }
 }
 
-func cardKey(kind, id, lang string) string { return discover.CardKey(kind, id, lang) }
-
 func (a *API) readCardArt(ctx context.Context, keys [][2]string, lang string) map[string]discover.CardArtRow {
 	return a.cardArt().Read(ctx, keys, lang)
 }
