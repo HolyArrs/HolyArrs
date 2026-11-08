@@ -476,8 +476,7 @@ func (a *API) Routes(rt *webserver.Router) {
 			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
 			reviews.TokenRoutes(m)
 		}
-		m.HandleFunc("GET /api/v1/settings/tvdb-key", a.getTVDBKey)
-		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
+		(&shows.TVDBKeyHandlers{Secrets: a.s.Secrets}).Routes(m)
 	}
 	a.askRoutes(m)
 	a.alertRoutes(m)

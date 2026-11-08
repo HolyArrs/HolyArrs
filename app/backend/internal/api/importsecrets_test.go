@@ -9,6 +9,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // keyCall sends one call with an API key in its header.
@@ -143,7 +144,7 @@ func TestSavedKeyNeedsSignedInOwner(t *testing.T) {
 
 func TestImportSecretsSameKeys(t *testing.T) {
 	pairs := [][2]string{{secretsfile.LinksGroup, traktKeyGroup},
-		{secretsfile.TraktClientKey, traktKeyName}, {secretsfile.LinksGroup, TVDBKeyGroup}, {secretsfile.TVDBKeyKey, TVDBKeyName}}
+		{secretsfile.TraktClientKey, traktKeyName}, {secretsfile.LinksGroup, shows.TVDBKeyGroup}, {secretsfile.TVDBKeyKey, shows.TVDBKeyName}}
 	for _, p := range pairs {
 		if p[0] != p[1] {
 			t.Errorf("the import writes %q where the Settings screen reads %q", p[0], p[1])
