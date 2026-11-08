@@ -5,7 +5,7 @@ level: Setup
 sidebar: { order: 5 }
 ---
 
-See what HolyArrs runs on a timer, start a job now, or change how often it runs. Open **Settings > Schedules**.
+Every timed job lives in **Settings > Schedules**.
 
 ## Run a job now
 
@@ -36,13 +36,15 @@ The next timed run does not move. A job already waiting or running is not starte
 | Try Held releases again | 1 min to 1 h | |
 | Read Plex watchlists | 3 min to 1 h | Settings > Request rules |
 | Read Outside lists | 15 min to 1 day, 5-min steps | |
-| Health checks | 1 min to 1 day | Settings > Health checks |
+| Health checks | 1 min to 1 day | Settings > This app |
 | Check Library folders | 1 h to 1 day | |
 | Find artist pictures | 1 h to 7 days | |
 | Look for missing subtitles | 1 h to 7 days | Settings > Subtitles |
 | Look for better subtitles | 6 h to 7 days | Settings > Subtitles |
 | Check Jackett | 6 h to 7 days | Settings > Sources |
-| Refresh movie, show and artist details | 6 h to 7 days | |
+| Refresh movie details | 6 h to 7 days | |
+| Refresh show details | 6 h to 7 days | |
+| Refresh artist details | 6 h to 7 days | |
 | Search for missing | 6 h to 7 days | Settings > Search |
 | Rescan the Library | 6 h to 7 days | |
 | Clean the holding folder | 6 h to 7 days | |
@@ -50,7 +52,7 @@ The next timed run does not move. A job already waiting or running is not starte
 
 ### Turn a schedule off
 
-Two schedules turn off: **Refresh movie details** and **Rescan the Library**. Use it to let NAS disks sleep. Off survives restarts and leaves other jobs running.
+Only **Refresh movie details** and **Rescan the Library** turn off, for example to let NAS disks sleep. Off survives restarts and leaves other jobs running.
 
 | Off | Cost |
 | --- | --- |

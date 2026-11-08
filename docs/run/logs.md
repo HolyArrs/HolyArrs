@@ -5,8 +5,6 @@ level: Setup
 sidebar: { order: 4 }
 ---
 
-Read what HolyArrs did, share the log for support, and find where its files live.
-
 ## Read the log
 
 1. Open **Settings > Logs**. The owner and admins see it.

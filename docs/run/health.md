@@ -5,7 +5,7 @@ level: Setup
 sidebar: { order: 3 }
 ---
 
-HolyArrs checks itself on a timer and tells you when something is wrong, before it costs you a download.
+HolyArrs checks itself on a timer and tells you when something is wrong.
 
 ## See the checks
 
@@ -70,7 +70,7 @@ The update settings live on the same card; see [Updates](updates.md#choices).
 
 <details class="ha-more"><summary>How alerting holds back blips</summary>
 
-A new result must hold for **Alert after this many runs in a row** before it counts. With the default 2, a downloader that fails one run and recovers on the next stays quiet. Raising either setting makes real alerts arrive later.
+A new result must hold for **Alert after this many runs in a row** before it counts. With the default 2, a downloader that fails one run and recovers on the next stays quiet. Raising it makes real alerts arrive later too.
 
 </details>
 

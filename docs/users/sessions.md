@@ -5,8 +5,6 @@ level: Setup
 sidebar: { order: 4 }
 ---
 
-See where you are signed in, end a lost device, or get back in after a forgotten password.
-
 ## Sign out a device
 
 1. Open **My account > Signed-in devices**. Each row shows a device name such as "Firefox on Windows", when it signed in and when it was last used. Yours says **This device**.
