@@ -68,12 +68,6 @@ export function tileSlug(key: string): string {
 	return ALIAS[s] ?? s;
 }
 
-function hash(s: string): number {
-	let h = 2166136261;
-	for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-	return h >>> 0;
-}
-
 const INDEX = new Map(TILE_PALETTE.map((c, i) => [c.name, i]));
 
 /** The palette index a key asks for: its fixed colour, else a hash of its slug. */
@@ -107,4 +101,10 @@ export function assignTileColours(keys: readonly string[]): TileColour[] {
 		out.push(TILE_PALETTE[pick]);
 	}
 	return out;
+}
+
+function hash(s: string): number {
+	let h = 2166136261;
+	for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+	return h >>> 0;
 }

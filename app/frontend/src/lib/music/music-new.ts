@@ -4,11 +4,6 @@ import type { MusicCardData, MusicRowData } from './music-trending.ts';
 /** explicit: explicit lyrics (the "E" mark). track: a Fresh tracks song, whose card asks for its album. */
 export type NewMusicCard = MusicCardData & { badge?: string; following?: boolean; explicit?: boolean; track?: string };
 
-/** The art badges of a New music album card: the explicit "E" only. */
-export function cardBadges(c: Pick<NewMusicCard, 'explicit'>): string[] {
-	return c.explicit ? ['E'] : [];
-}
-
 export interface NewMusicAnswer {
 	kid: boolean;
 	building: boolean;
@@ -18,13 +13,12 @@ export interface NewMusicAnswer {
 	genres: string[];
 }
 
-export const newMusicPath = '/explore/new/music';
-
-function daysAgo(date: string, now: Date): number | null {
-	const t = Date.parse(`${date}T00:00:00Z`);
-	if (Number.isNaN(t)) return null;
-	return Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - t) / 86400000);
+/** The art badges of a New music album card: the explicit "E" only. */
+export function cardBadges(c: Pick<NewMusicCard, 'explicit'>): string[] {
+	return c.explicit ? ['E'] : [];
 }
+
+export const newMusicPath = '/explore/new/music';
 
 /** A card says "New" only within 60 days of its first release. */
 export const NEW_DAYS = 60;
@@ -33,15 +27,6 @@ export const NEW_DAYS = 60;
 export function isNewRelease(date: string | undefined, now = new Date()): boolean {
 	const d = date ? daysAgo(date, now) : null;
 	return d !== null && d >= -7 && d <= NEW_DAYS;
-}
-
-function shortDate(date: string): string {
-	return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
-}
-
-/** "Released Mar 4" within a year, else "2013 album". */
-function olderWords(date: string, d: number): string {
-	return d > 365 ? `${date.slice(0, 4)} album` : `Released ${shortDate(date)}`;
 }
 
 /** The one-line note over a hero card, made only from its data. */
@@ -74,4 +59,19 @@ export function rowNote(row: Pick<MusicRowData, 'type'>, c: NewMusicCard, now = 
 	const d = c.date ? daysAgo(c.date, now) : null;
 	const when = d === null || !c.date ? '' : d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d <= NEW_DAYS ? `${d} days ago` : d <= 365 ? shortDate(c.date) : c.date.slice(0, 4);
 	return [c.artist, row.type === 'np_music_climbing' ? (c.note ?? '') : when].filter(Boolean).join(' · ');
+}
+
+function daysAgo(date: string, now: Date): number | null {
+	const t = Date.parse(`${date}T00:00:00Z`);
+	if (Number.isNaN(t)) return null;
+	return Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - t) / 86400000);
+}
+
+function shortDate(date: string): string {
+	return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+/** "Released Mar 4" within a year, else "2013 album". */
+function olderWords(date: string, d: number): string {
+	return d > 365 ? `${date.slice(0, 4)} album` : `Released ${shortDate(date)}`;
 }

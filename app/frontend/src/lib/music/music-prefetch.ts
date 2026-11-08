@@ -3,6 +3,8 @@ import { appPicture, coverFor } from './music-pages.ts';
 import { api } from '../core/api.ts';
 import { DWELL_MS, fastEnough, mainPicture, preloadPicture } from '../core/smart-preload.ts';
 
+type Get = (path: string) => Promise<unknown>;
+
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ARTIST = new RegExp(`/music/artist/(${ID})(?:[/?#]|$)`, 'i');
 const ALBUM = new RegExp(`/music/album/(${ID})(?:[/?#]|$)`, 'i');
@@ -12,14 +14,19 @@ const LINKS = 'a[href*="/music/artist/"], a[href*="/music/album/"], a[href*="/ti
 
 /** An answer fetched ahead is kept at least this long for its page. */
 export const KEEP = 30_000;
+
 /** A mouse or focus rests this long on a link before its page is fetched (smart-preload.ts). */
 export const DWELL = DWELL_MS;
+
 /** Cards on screen fetched ahead after a page opens. */
 export const VIEW_CARDS = 6;
+
 /** Fetches running at once; the rest wait their turn. */
 export const IN_FLIGHT = 3;
+
 /** Fetches started in any minute, hover and touch included. */
 export const PER_MINUTE = 40;
+
 /** An address fetched within this long is not fetched again. */
 export const FRESH = 60_000;
 
@@ -46,8 +53,6 @@ export function pagePrefetchURLs(href: string | null | undefined): string[] {
 	return m ? [`/titles/${m[1]}`] : [];
 }
 
-type Get = (path: string) => Promise<unknown>;
-
 /** The address a page shows its main picture at, so the copy fetched ahead is the one it uses: an album's hero cover (versioned, at its slot size), an artist's versioned photo, other pages' main picture as is. */
 export function pagePicture(path: string, answer: unknown): string | null {
 	const main = mainPicture(answer);
@@ -55,22 +60,6 @@ export function pagePicture(path: string, answer: unknown): string | null {
 	if (path.startsWith('/music/albums/')) return coverFor(appPicture(main), 260, undefined, true).src;
 	if (path.startsWith('/music/artists/')) return appPicture(main);
 	return main;
-}
-
-/** Fetches one address ahead; a Library title then fetches its metadata too, as its page will. */
-function warmPage(path: string): Promise<unknown> {
-	const answer = api.warm<{ kind?: string; ids?: { tmdb?: string } }>(path, KEEP);
-	// The page's main picture too, when it is one of ours.
-	answer.then((a) => void preloadPicture(pagePicture(path, a)), () => {});
-	if (/^\/titles\/[0-9]+$/.test(path))
-		answer.then(
-			(t) => {
-				const id = t?.ids?.tmdb;
-				if ((t?.kind === 'movie' || t?.kind === 'show') && id) api.warm(`/metadata/${t.kind}/${encodeURIComponent(id)}`, KEEP).catch(() => {});
-			},
-			() => {}
-		);
-	return answer;
 }
 
 /** The fetch-ahead queue, separate for tests; installMusicPrefetch uses one for the app. */
@@ -146,19 +135,8 @@ export function createMusicPrefetch(get: Get = warmPage, now: () => number = () 
 
 const ahead = createMusicPrefetch();
 
-/** The links to music pages inside the screen, in page order. */
-function onScreen(): string[] {
-	const vh = innerHeight;
-	const vw = innerWidth;
-	const out: string[] = [];
-	for (const a of document.querySelectorAll<HTMLAnchorElement>(LINKS)) {
-		const b = a.getBoundingClientRect();
-		if (b.width > 40 && b.height > 0 && b.top < vh && b.bottom > 0 && b.left < vw && b.right > 0) out.push(a.getAttribute('href') ?? '');
-	}
-	return out;
-}
-
 let scans: ReturnType<typeof setTimeout>[] = [];
+
 /** After each navigation: the first cards on screen, once the page has drawn and again once its rows have. */
 export function prefetchMusicOnScreen(): void {
 	if (typeof window === 'undefined') return;
@@ -207,4 +185,32 @@ export function installMusicPrefetch(): () => void {
 		window.removeEventListener('pointerover', over, { capture: true });
 		window.removeEventListener('touchstart', touch, { capture: true });
 	};
+}
+
+/** Fetches one address ahead; a Library title then fetches its metadata too, as its page will. */
+function warmPage(path: string): Promise<unknown> {
+	const answer = api.warm<{ kind?: string; ids?: { tmdb?: string } }>(path, KEEP);
+	// The page's main picture too, when it is one of ours.
+	answer.then((a) => void preloadPicture(pagePicture(path, a)), () => {});
+	if (/^\/titles\/[0-9]+$/.test(path))
+		answer.then(
+			(t) => {
+				const id = t?.ids?.tmdb;
+				if ((t?.kind === 'movie' || t?.kind === 'show') && id) api.warm(`/metadata/${t.kind}/${encodeURIComponent(id)}`, KEEP).catch(() => {});
+			},
+			() => {}
+		);
+	return answer;
+}
+
+/** The links to music pages inside the screen, in page order. */
+function onScreen(): string[] {
+	const vh = innerHeight;
+	const vw = innerWidth;
+	const out: string[] = [];
+	for (const a of document.querySelectorAll<HTMLAnchorElement>(LINKS)) {
+		const b = a.getBoundingClientRect();
+		if (b.width > 40 && b.height > 0 && b.top < vh && b.bottom > 0 && b.left < vw && b.right > 0) out.push(a.getAttribute('href') ?? '');
+	}
+	return out;
 }

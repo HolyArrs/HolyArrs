@@ -2,8 +2,6 @@
 import { to } from '../core/paths.ts';
 import { appPicture, coverFor, coverSize } from '../core/pictures.ts';
 
-export { appPicture, coverFor, coverSize };
-
 export type PageAlbumState = 'complete' | 'partial' | 'missing' | 'downloading' | 'not_out_yet' | 'not_included' | '';
 export type Shelf = 'albums' | 'singles' | 'compilations' | 'live' | 'other';
 
@@ -79,66 +77,12 @@ export interface StoreAlbum {
 	image?: string;
 }
 
-/** Asks once more after a pause when the first ask fails, so a slow first load never shows an error. */
-export function askAgainOnce<T>(ask: () => Promise<T>, pause = 1500, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<T> {
-	return ask().catch(async () => {
-		await wait(pause);
-		return ask();
-	});
-}
-
-/** Writes 1234 as 1.2K and 81500000 as 81.5M. */
-export function shortCount(n: number): string {
-	const a = Math.abs(n);
-	const f = (v: number, u: string) => `${v >= 100 ? Math.round(v) : Number(v.toFixed(1))}${u}`;
-	if (a >= 1e9) return f(a / 1e9, 'B');
-	if (a >= 1e6) return f(a / 1e6, 'M');
-	if (a >= 1e3) return f(a / 1e3, 'K');
-	return String(Math.round(a));
-}
-
-/** Turns an artist's listening figures into stat-band entries; none when nothing is known. */
-export function popularityStats(p: ArtistPopularity | undefined | null): { v: string; l: string }[] {
-	if (!p) return [];
-	if (p.monthly_listeners && p.monthly_listeners > 0) {
-		const out = [{ v: shortCount(p.monthly_listeners), l: 'Monthly listeners' }];
-		if (p.world_rank && p.world_rank > 0) out.push({ v: `#${p.world_rank}`, l: 'World rank' });
-		const d = p.listeners_change_today ?? 0;
-		if (d) out.push({ v: `${d > 0 ? '+' : '−'}${shortCount(d)}`, l: 'Listeners today' });
-		return out;
-	}
-	if (p.total_plays && p.total_plays > 0) return [{ v: shortCount(p.total_plays), l: 'Total plays' }];
-	return [];
-}
-
 /** The one headline figure an artist has: monthly listeners (with rank and today's change) for the most played, else total plays; null when none is known. */
 export interface Listening {
 	n: number;
 	unit: 'monthly listeners' | 'total plays';
 	rank?: number;
 	today?: number;
-}
-export function listening(p: ArtistPopularity | undefined | null): Listening | null {
-	if (!p) return null;
-	if (p.monthly_listeners && p.monthly_listeners > 0) {
-		const out: Listening = { n: p.monthly_listeners, unit: 'monthly listeners' };
-		if (p.world_rank && p.world_rank > 0) out.rank = p.world_rank;
-		if (p.listeners_change_today) out.today = p.listeners_change_today;
-		return out;
-	}
-	if (p.total_plays && p.total_plays > 0) return { n: p.total_plays, unit: 'total plays' };
-	return null;
-}
-
-/** Today's listener change as "▲ 387K today" or "▼ 12K today"; empty when there is none. */
-export function changeWords(d: number | undefined | null, tail = ' today'): string {
-	if (!d) return '';
-	return `${d > 0 ? '▲' : '▼'} ${shortCount(d)}${tail}`;
-}
-
-/** Writes 72785924 as 72,785,924. */
-export function fullCount(n: number): string {
-	return Math.round(n).toLocaleString('en-US');
 }
 
 /** What an artist has put out, for the stats band. */
@@ -150,19 +94,6 @@ export interface Catalog {
 	since: string;
 	/** "2005–2026", or one year when all came out the same year. */
 	span: string;
-}
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
-/** The catalog in words: ["16 albums", "5 EPs", "89 singles", "since 2005"], leaving out what is zero. */
-export function catalogParts(c: Catalog): string[] {
-	return [c.albums ? plural(c.albums, 'album', 'albums') : '', c.eps ? plural(c.eps, 'EP', 'EPs') : '', c.singles ? plural(c.singles, 'single', 'singles') : '', c.since ? `since ${c.since}` : ''].filter(Boolean);
-}
-
-/** Singles and EPs counted together: "Singles & EPs", or only the kind there is. */
-export function smallReleasesWord(c: Pick<Catalog, 'eps' | 'singles'>): string {
-	if (c.eps && c.singles) return 'Singles & EPs';
-	if (c.eps) return c.eps === 1 ? 'EP' : 'EPs';
-	return c.singles === 1 ? 'Single' : 'Singles';
 }
 
 export interface ArtistPageData {
@@ -193,22 +124,6 @@ export interface ArtistPageData {
 	incomplete?: boolean;
 	/** The server is still getting this artist (or it waits in line): its words show in place of the content. */
 	gap?: PageGap;
-}
-
-/** Turns a failed music page load into calm words. `network` is true only when HolyArrs itself could not be reached, the one case where "check the connection" is true. */
-export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: string; network: boolean } {
-	const status = typeof e === 'object' && e && 'status' in e ? Number((e as { status: unknown }).status) : -1;
-	if (status === 0) return { text: 'HolyArrs is not answering.', network: true };
-	if (status === 404) return { text: `We could not find this ${thing}.`, network: false };
-	if (status === 400) return { text: `That ${thing} link is not valid.`, network: false };
-	if (status === 401 || status === 403) return { text: `You cannot open this ${thing}.`, network: false };
-	return { text: `This ${thing} is taking longer than usual to load.`, network: false };
-}
-
-/** The artist to put in the address when the album named a different one than the link did, else ''. */
-export function albumArtistFix(linkArtist: string, found: string | undefined): string {
-	const real = (found ?? '').toLowerCase();
-	return real && real !== linkArtist.toLowerCase() ? real : '';
 }
 
 /** The metadata server's word on an item it is still getting. */
@@ -276,10 +191,99 @@ export interface AlbumPageData extends PageAlbum {
 	gap?: PageGap;
 }
 
+export { appPicture, coverFor, coverSize };
+
+/** Asks once more after a pause when the first ask fails, so a slow first load never shows an error. */
+export function askAgainOnce<T>(ask: () => Promise<T>, pause = 1500, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<T> {
+	return ask().catch(async () => {
+		await wait(pause);
+		return ask();
+	});
+}
+
+/** Writes 1234 as 1.2K and 81500000 as 81.5M. */
+export function shortCount(n: number): string {
+	const a = Math.abs(n);
+	const f = (v: number, u: string) => `${v >= 100 ? Math.round(v) : Number(v.toFixed(1))}${u}`;
+	if (a >= 1e9) return f(a / 1e9, 'B');
+	if (a >= 1e6) return f(a / 1e6, 'M');
+	if (a >= 1e3) return f(a / 1e3, 'K');
+	return String(Math.round(a));
+}
+
+/** Turns an artist's listening figures into stat-band entries; none when nothing is known. */
+export function popularityStats(p: ArtistPopularity | undefined | null): { v: string; l: string }[] {
+	if (!p) return [];
+	if (p.monthly_listeners && p.monthly_listeners > 0) {
+		const out = [{ v: shortCount(p.monthly_listeners), l: 'Monthly listeners' }];
+		if (p.world_rank && p.world_rank > 0) out.push({ v: `#${p.world_rank}`, l: 'World rank' });
+		const d = p.listeners_change_today ?? 0;
+		if (d) out.push({ v: `${d > 0 ? '+' : '−'}${shortCount(d)}`, l: 'Listeners today' });
+		return out;
+	}
+	if (p.total_plays && p.total_plays > 0) return [{ v: shortCount(p.total_plays), l: 'Total plays' }];
+	return [];
+}
+
+export function listening(p: ArtistPopularity | undefined | null): Listening | null {
+	if (!p) return null;
+	if (p.monthly_listeners && p.monthly_listeners > 0) {
+		const out: Listening = { n: p.monthly_listeners, unit: 'monthly listeners' };
+		if (p.world_rank && p.world_rank > 0) out.rank = p.world_rank;
+		if (p.listeners_change_today) out.today = p.listeners_change_today;
+		return out;
+	}
+	if (p.total_plays && p.total_plays > 0) return { n: p.total_plays, unit: 'total plays' };
+	return null;
+}
+
+/** Today's listener change as "▲ 387K today" or "▼ 12K today"; empty when there is none. */
+export function changeWords(d: number | undefined | null, tail = ' today'): string {
+	if (!d) return '';
+	return `${d > 0 ? '▲' : '▼'} ${shortCount(d)}${tail}`;
+}
+
+/** Writes 72785924 as 72,785,924. */
+export function fullCount(n: number): string {
+	return Math.round(n).toLocaleString('en-US');
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** The catalog in words: ["16 albums", "5 EPs", "89 singles", "since 2005"], leaving out what is zero. */
+export function catalogParts(c: Catalog): string[] {
+	return [c.albums ? plural(c.albums, 'album', 'albums') : '', c.eps ? plural(c.eps, 'EP', 'EPs') : '', c.singles ? plural(c.singles, 'single', 'singles') : '', c.since ? `since ${c.since}` : ''].filter(Boolean);
+}
+
+/** Singles and EPs counted together: "Singles & EPs", or only the kind there is. */
+export function smallReleasesWord(c: Pick<Catalog, 'eps' | 'singles'>): string {
+	if (c.eps && c.singles) return 'Singles & EPs';
+	if (c.eps) return c.eps === 1 ? 'EP' : 'EPs';
+	return c.singles === 1 ? 'Single' : 'Singles';
+}
+
+/** Turns a failed music page load into calm words. `network` is true only when HolyArrs itself could not be reached, the one case where "check the connection" is true. */
+export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: string; network: boolean } {
+	const status = typeof e === 'object' && e && 'status' in e ? Number((e as { status: unknown }).status) : -1;
+	if (status === 0) return { text: 'HolyArrs is not answering.', network: true };
+	if (status === 404) return { text: `We could not find this ${thing}.`, network: false };
+	if (status === 400) return { text: `That ${thing} link is not valid.`, network: false };
+	if (status === 401 || status === 403) return { text: `You cannot open this ${thing}.`, network: false };
+	return { text: `This ${thing} is taking longer than usual to load.`, network: false };
+}
+
+/** The artist to put in the address when the album named a different one than the link did, else ''. */
+export function albumArtistFix(linkArtist: string, found: string | undefined): string {
+	const real = (found ?? '').toLowerCase();
+	return real && real !== linkArtist.toLowerCase() ? real : '';
+}
+
 /** Opens an artist's page. */
 export const artistHref = (mbid: string) => to(`/music/artist/${mbid}`);
+
 /** Opens an album's page; the artist id says whose album it is. */
 export const albumHref = (mbid: string, artist: string) => to(`/music/album/${mbid}?artist=${artist}`);
+
 /** Keeps the albums and artists that have a real picture, so a row never shows a letter tile. */
 export const withCover = <T extends { image?: string | null }>(list: readonly T[] | null | undefined): T[] => (list ?? []).filter((x) => !!x.image?.trim());
 

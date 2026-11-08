@@ -3,6 +3,8 @@ import type { PressingView } from './types.ts';
 import type { AlbumSummary, ArtistInfo, AskAlbum } from '../core/types.ts';
 import { to } from '../core/paths.ts';
 
+export type DiscographyRow = (typeof DISCOGRAPHY)[number][0];
+
 /** The add-an-artist choices of which albums to keep up to date. */
 export const albumChoices: [string, string, string][] = [
 	['all', 'Every album', 'Every album the album kinds include.'],
@@ -178,7 +180,6 @@ export const DISCOGRAPHY = [
 	['compilations', 'Compilations'],
 	['other', 'Other releases']
 ] as const;
-export type DiscographyRow = (typeof DISCOGRAPHY)[number][0];
 
 /** Places an album: live and compilations first by their extra kind, then by the main kind. */
 export function discographyRow(a: Pick<AlbumSummary, 'type' | 'secondary_types'>): DiscographyRow {

@@ -18,6 +18,7 @@ export interface AlbumTint {
 
 /** The tint of a page whose cover gave no colour: a quiet near black. */
 export const FALLBACK = '#1d1d22';
+
 /** The softer text's white share. */
 export const SOFT = 0.72;
 
@@ -52,23 +53,10 @@ export function hslRgb([h, s, l]: [number, number, number]): Rgb {
 	return [f(0) * 255, f(8) * 255, f(4) * 255];
 }
 
-function lum([r, g, b]: Rgb): number {
-	const c = (v: number) => {
-		const x = v / 255;
-		return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-	};
-	return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
-}
-
 /** The WCAG contrast ratio of two colours. */
 export function contrast(a: Rgb, b: Rgb): number {
 	const x = lum(a), y = lum(b);
 	return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-}
-
-/** Blends white over a colour by a share (0 to 1). */
-function overWhite(c: Rgb, share: number): Rgb {
-	return [c[0] + (255 - c[0]) * share, c[1] + (255 - c[1]) * share, c[2] + (255 - c[2]) * share];
 }
 
 /** Turns a cover colour into the page colour: muted, dark, with light text at AA (soft) and AAA (white). */
@@ -167,4 +155,17 @@ export function unpaintWindow(root: HTMLElement = document.documentElement, ms =
 		delete root.dataset.tint;
 		for (const k of ['--tint-bg', '--tint-bg-2', '--tint-ink', '--tint-soft', '--tint-line']) root.style.removeProperty(k);
 	}, ms);
+}
+
+function lum([r, g, b]: Rgb): number {
+	const c = (v: number) => {
+		const x = v / 255;
+		return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+	};
+	return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
+}
+
+/** Blends white over a colour by a share (0 to 1). */
+function overWhite(c: Rgb, share: number): Rgb {
+	return [c[0] + (255 - c[0]) * share, c[1] + (255 - c[1]) * share, c[2] + (255 - c[2]) * share];
 }
