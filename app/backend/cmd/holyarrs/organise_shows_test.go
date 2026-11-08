@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -37,7 +37,7 @@ func showOrganiseSetup(t *testing.T) (url string, s *database.Store, lib string,
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: svc, Metadata: &metadata.Static{}}).Handler())
+	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Queue: q, Library: svc, Metadata: &metadata.Static{}}), config{}))
 	t.Cleanup(srv.Close)
 	lib = t.TempDir()
 	for _, rel := range []string{"Lab Show (2025)/Season 1/Lab.Show.S01E01.1080p.WEB-DL-GRP.mkv", "Lab Show (2025)/Season 1/Lab.Show.S01E02.1080p.WEB-DL-GRP.mkv",
@@ -98,7 +98,7 @@ func TestScanAndAdoptShowsAPI(t *testing.T) {
 	do(t, "POST", url+"/api/v1/library-folders/"+itoa(folderID)+"/adopt", `{"folders":[{"folder":"Lab Show (2025)"}]}`, 400)
 	id := adoptLabShow(t, url, folderID)
 	var eps struct {
-		Episodes []EpisodeView `json:"episodes"`
+		Episodes []api.EpisodeView `json:"episodes"`
 	}
 	_ = json.Unmarshal(do(t, "GET", url+"/api/v1/titles/"+itoa(id)+"/episodes", "", 200), &eps)
 	in := 0
@@ -215,9 +215,9 @@ func TestEpisodeHistoryAPI(t *testing.T) {
 	add("season_changed", nil, map[string]any{"item_id": item["S01E02"]})
 	add("episodes_removed", nil, map[string]any{"item_ids": []int64{item["S02E01"]}})
 	var page struct {
-		Events  []EventView `json:"events"`
-		Total   int         `json:"total"`
-		Episode string      `json:"episode"`
+		Events  []api.EventView `json:"events"`
+		Total   int             `json:"total"`
+		Episode string          `json:"episode"`
 	}
 	_ = json.Unmarshal(do(t, "GET", url+"/api/v1/events?episode="+itoa(item["S01E02"]), "", 200), &page)
 	kinds := map[string]string{}
