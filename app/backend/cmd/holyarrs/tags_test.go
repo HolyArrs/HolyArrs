@@ -18,7 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// Tags (#108) on Downloaders, Sources and titles: cleaned on save, kept
+// Tags on Downloaders, Sources and titles: cleaned on save, kept
 // when not sent, cleared with an empty list, and listed by GET /tags.
 func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 	t.Parallel()

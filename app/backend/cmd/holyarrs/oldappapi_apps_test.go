@@ -23,7 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// The other apps that read the arr API (roadmap #85, phase 2): Bazarr
+// The other apps that read the arr API: Bazarr
 // copies the Library for subtitles, Unpackerr polls the download list,
 // and Homepage's start-page widgets read counts and lists. Their calls
 // and the fields they read come from the Sonarr, Radarr and Bazarr
@@ -167,7 +167,7 @@ func TestOldAppBazarrSync(t *testing.T) {
 	sm := fields(t, "bazarr series", all[0], []string{"id", "title", "path", "tvdbId", "overview", "images", "sortTitle", "year", "alternateTitles",
 		"tags", "seriesType", "imdbId", "monitored", "ended", "lastAired", "originalLanguage"})
 	// lastAired is the newest air date gone by outside the specials (the
-	// special aired later, on 2025-03-01).
+	// special aired later, on 1 March 2025).
 	if sm["lastAired"] != "2025-01-13T02:00:00Z" || sm["originalLanguage"].(map[string]any)["name"] != "English" ||
 		sm["alternateTitles"].([]any)[0].(map[string]any)["title"] != "Lab Show Alt" || sm["path"] != filepath.Join(f.showDir, "Lab Show (2025)") {
 		t.Errorf("series: %v", sm)

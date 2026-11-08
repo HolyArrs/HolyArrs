@@ -22,7 +22,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// Live search (music plan 2026-10-22, Phase 4): the search field's dropdown.
+// Live search (music plan 22 October 2026, Phase 4): the search field's dropdown.
 // Typing never reaches MusicBrainz: the answer comes from the Library and
 // the metadata server's suggest index, with TMDB movies, shows and people as
 // the existing search finds them. Each outside source has suggestWait; a

@@ -18,7 +18,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// Explore → Music, flag music_rows_v2 (plan 2026-10-22, Phase 1): eight
+// Explore → Music, flag music_rows_v2 (plan 22 October 2026, Phase 1): eight
 // rows with plain sort keys, one shared dedup, and three cache layers.
 // Layer 1 keeps chart and library candidates, layer 2 the member's row and
 // item order for the day, layer 3 (state chips and the asks row) is read

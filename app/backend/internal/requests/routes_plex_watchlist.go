@@ -13,7 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Plex watchlist sync (roadmap #102): each person turns on having their
+// Plex watchlist sync: each person turns on having their
 // Plex watchlist asked for as them, once the owner allows it in Request
 // rules. These routes read nothing from Plex: the schedule does.
 

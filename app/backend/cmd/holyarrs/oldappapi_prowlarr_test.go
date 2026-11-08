@@ -17,7 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Prowlarr's app sync (roadmap #85, phase 2): Prowlarr writes its indexers
+// Prowlarr's app sync: Prowlarr writes its indexers
 // into HolyArrs's /sonarr and /radarr sides as Sources, in the order its
 // manual gives (status, templates, test, add, read back, rewrite only on a
 // difference, delete).

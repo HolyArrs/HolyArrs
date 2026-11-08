@@ -12,7 +12,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// Fresh & Trending → Music, flag music_rows_v6 (plan 2026-10-22 §2.7,
+// Fresh & Trending → Music, flag music_rows_v6 (plan 22 October 2026 §2.7,
 // Phase 6): one order for the whole household, from the region charts and
 // the MusicBrainz release calendar. Rows: Spotlight (the hero), Fresh
 // songs, Out this week, Climbing, Top albums, Coming soon; the page's

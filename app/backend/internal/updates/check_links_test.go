@@ -14,7 +14,7 @@ func TestUpdateLinkPinnedToProjectReleases(t *testing.T) {
 	for link, keep := range map[string]bool{
 		"https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0":          true,
 		"https://github.com/HolyArrs/holyarrs/releases/":                    true,
-		"https://example.com/r/v1.2.0":                                       false,
+		"https://example.com/r/v1.2.0":                                      false,
 		"http://github.com/HolyArrs/holyarrs/releases/tag/v1":               false,
 		"https://github.com.evil.example/HolyArrs/holyarrs/releases/tag/v1": false,
 		"https://github.com/HolyArrs/holyarrs/releasesX/tag/v1":             false,

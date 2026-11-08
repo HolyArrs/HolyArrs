@@ -14,8 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// Music cover preload (Luis, 2026-10-24: everything the UI will show is
-// fetched before anyone opens the page). At start, whenever a new catalog
+// Music cover preload: everything the UI will show is fetched before
+// anyone opens the page. At start, whenever a new catalog
 // bundle arrives and when a region is first asked for, every album and
 // artist an engine page can show has its pictures stored: every shown
 // Browse page, the Browse tile covers, Explore's engine rows and New &

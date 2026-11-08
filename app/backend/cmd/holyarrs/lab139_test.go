@@ -31,7 +31,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// Roadmap #139 on the lab, from a throwaway container in the lab network
+// on the lab, from a throwaway container in the lab network
 // with research/lab/downloads at /data/downloads:
 //
 //	HOLYARRS_LAB139_OUT=/src/web/app/src/lib/approvals/testdata/lab139.json go test -tags lab -run TestLabAskLiveProgress ./cmd/holyarrs/

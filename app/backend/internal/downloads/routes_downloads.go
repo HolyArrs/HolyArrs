@@ -309,7 +309,7 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	manage := !ok || who.Has(webserver.PermManageLibrary)
 	where, args := "1=1", []any{}
 	// People who approve read the downloads of every approved ask on the
-	// Requests page (?asked=1), as they read everyone's asks there (#139);
+	// Requests page (?asked=1), as they read everyone's asks there;
 	// the rows stay the plain ones members get.
 	asked := r.URL.Query().Get("asked") == "1"
 	if !manage && !(asked && ok && who.Has(webserver.PermApprove)) {

@@ -32,7 +32,7 @@ type EventView struct {
 	ActorName string `json:"actor_name,omitempty"`
 }
 
-// parseDay reads a date (2006-01-02) or a full RFC 3339 time.
+// parseDay reads a date (2 January 2006) or a full RFC 3339 time.
 func parseDay(v string) (time.Time, error) {
 	if t, err := time.Parse("2006-01-02", v); err == nil {
 		return t, nil

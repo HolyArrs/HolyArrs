@@ -25,7 +25,7 @@
 	import type { CalendarEntry } from '#lib/core/types.ts';
 
 	const now = new Date();
-	// ?month=2026-10 opens on that month, so a link to a month can be shared.
+	// ?month=October 2026 opens on that month, so a link to a month can be shared.
 	const asked = /^(\d{4})-(\d{2})$/.exec(page.url.searchParams.get('month') ?? '');
 	const askedMonth = asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : null;
 	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the session. Old layout links (?view=2&span=...) land on Cards.

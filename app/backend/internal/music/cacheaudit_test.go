@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Cache audit 2026-10-23, finding 7: a genre tile without a content version
+// Cache audit 23 October 2026, finding 7: a genre tile without a content version
 // is not immutable for a week.
 func TestGenreArtImmutableOnlyWithVersion(t *testing.T) {
 	t.Parallel()

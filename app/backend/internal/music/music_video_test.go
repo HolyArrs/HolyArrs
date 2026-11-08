@@ -164,7 +164,7 @@ func videoReady(t *testing.T, u string) []byte {
 }
 
 // The first ask for an artist whose stream is not looked up answers 404 at
-// once and starts no lookup at all (#191): it only notes the artist, and
+// once and starts no lookup at all: it only notes the artist, and
 // the trailer pass makes a video ready, which the page then plays without
 // another lookup.
 func TestArtistVideoNeverWaitsOnLookup(t *testing.T) {

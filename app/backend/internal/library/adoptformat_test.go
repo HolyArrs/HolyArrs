@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// #43: an adopted .m4a is named by its codec, so an ALAC library is known
+// An adopted .m4a is named by its codec, so an ALAC library is known
 // as lossless and an AAC one as lossy; other files by their extension.
 func TestAdoptedFormatReadsTheCodec(t *testing.T) {
 	box := func(kind string, payload []byte) []byte {

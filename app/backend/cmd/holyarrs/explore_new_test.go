@@ -18,7 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// newNow is the rig's clock: the fake TMDB dates every title 2026-09-01.
+// newNow is the rig's clock: the fake TMDB dates every title 1 September 2026.
 var newNow = time.Date(2026, 9, 5, 12, 0, 0, 0, time.UTC)
 
 func newServiceTopFake(reads *int) func(context.Context, string) (metadata.ServiceTop, error) {

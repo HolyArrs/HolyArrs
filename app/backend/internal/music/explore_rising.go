@@ -12,7 +12,7 @@ import (
 // risingGenres is how many of the member's top G genres Rising reads.
 const risingGenres = 5
 
-// risingRow is Explore → Music row 13 (plan 2026-10-22 §2.6, Phase 6):
+// risingRow is Explore → Music row 13 (plan 22 October 2026 §2.6, Phase 6):
 // albums climbing a genre chart, from artists whose first release is at
 // most 3 years old, in the member's top-5 G genres; 0.4·G + 0.4·ΔR +
 // 0.2·F60. Hidden while any of those genre charts has fewer than 7 days

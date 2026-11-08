@@ -19,7 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// #43 Lossless protection on the lab (labclients.py run beta, as the 4.14
+// Lossless protection on the lab (labclients.py run beta, as the 4.14
 // album tests): an album already in the Library as FLAC is never replaced
 // by the lab's MP3 320 copy, and the same album held as MP3 320 is upgraded
 // to the FLAC copy, downloaded and imported over it.
@@ -142,7 +142,7 @@ func TestLabBeta43LossyUpgradedToLossless(t *testing.T) {
 	t.Logf("#43: MP3 320 album upgraded to FLAC; %d MP3 files no longer present; slots %v", replaced, x.states())
 }
 
-// #43, the two nets for a person: picking the lab MP3 320 copy by hand over
+// , the two nets for a person: picking the lab MP3 320 copy by hand over
 // an album held as FLAC needs force; forced, it is downloaded, and the
 // import still refuses every MP3 over its FLAC copy, which stays.
 func TestLabBeta43ForcedLossyRefusedAtImport(t *testing.T) {

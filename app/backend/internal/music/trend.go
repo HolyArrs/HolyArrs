@@ -513,7 +513,7 @@ func (h *Handlers) fetchMusicArt(ctx context.Context, kind, mbid, size, v string
 		temporary = temporary || h.artTemporary(err)
 		return "", "", false
 	}
-	// Pictures come only from our metadata server (Luis, 2026-10-24): never
+	// Pictures come only from our metadata server: never
 	// straight from an outside source. One the server has not stored yet is
 	// a miss (the card shows its placeholder); the server queues it, and the
 	// picture is asked again after musicArtMissTTL or on the next preload.

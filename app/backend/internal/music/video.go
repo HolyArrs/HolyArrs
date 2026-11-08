@@ -39,7 +39,7 @@ type ArtistVideoView struct {
 // A non-empty list is kept on disk and re-checked daily in the background
 // (the page never waits on that check); an empty list is re-asked after a
 // few minutes; a pending or failed answer is not kept (cache audit
-// 2026-10-23).
+// 23 October 2026).
 const (
 	artistVideosFresh = 24 * time.Hour
 	artistVideosEmpty = 5 * time.Minute

@@ -20,4 +20,3 @@ func TestUsenetID(t *testing.T) {
 		}
 	}
 }
-

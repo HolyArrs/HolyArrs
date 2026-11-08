@@ -34,7 +34,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// The last beta lab checks (#41 #46 #47 #48 #49 #50 #52; #43 is in
+// The last beta lab checks (lossless protection is in
 // labbeta43_test.go), from a throwaway container in the lab network with
 // the lab downloads folder mounted (labclients.py run beta):
 //
@@ -548,7 +548,7 @@ func (x *labMovie) labDownloads() map[string]int {
 	return out
 }
 
-// #41 Pick a release yourself: Search shows the lab's Dune listings with
+// Pick a release yourself: Search shows the lab's Dune listings with
 // their verdicts and moves nothing; choosing the program behind a video name
 // needs force; choosing our Dune test torrent by hand sends it, and it is
 // downloaded and imported.
@@ -586,7 +586,7 @@ func TestLabBeta41PickReleaseYourself(t *testing.T) {
 	t.Logf("#41: %d listings shown, the .exe needs force (%s), our Dune chosen by hand, imported as %s (%s); row %s", len(rels), exe.has("hard.safety:executable")+exe.has("hard.never"), f.RelativePath, f.PlacedBy, row.Label)
 }
 
-// #41 the whole chain: a program file behind a video name, chosen by hand
+// The whole chain: a program file behind a video name, chosen by hand
 // with force, is sent; when qBittorrent lists its files it fails as
 // dangerous, is turned down, and the Slot is searched again, which sends our
 // Dune test torrent, imported. Clearing the Turned down list afterwards
@@ -639,7 +639,7 @@ func TestLabBeta41ForcedProgramFileChain(t *testing.T) {
 	t.Logf("#41 chain: forced %s failed as dangerous (%s), turned down, our Dune sent next and imported as %s; after clearing the list it still needs force", exeName, why, f.RelativePath)
 }
 
-// #46 Pick your quality: with Standard the 1080p copy ranks over our
+// Pick your quality: with Standard the 1080p copy ranks over our
 // own 720p copy; with Pick rules that allow only 720p, the 1080p copy is
 // refused as not allowed and the 720p copy is grabbed and imported.
 func TestLabBeta46PickYourQuality(t *testing.T) {
@@ -680,7 +680,7 @@ func TestLabBeta46PickYourQuality(t *testing.T) {
 	t.Logf("#46: Standard ranks 1080p_web over 720p_web; 720p-only rules refuse 1080p (%s) and import %s", rels[labDune1080].has("step.not_allowed"), f.RelativePath)
 }
 
-// #48 Wait for a better release: with a 60 minute wait the first copy found
+// Wait for a better release: with a 60 minute wait the first copy found
 // (our 720p) is held, not sent; a better copy found during the wait (our
 // 1080p Dune) takes its place; when the wait is over the better copy is
 // sent and imported, and the held one never was.
@@ -744,7 +744,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	t.Logf("#48: 720p held until %s, replaced by 1080p during the wait, 1080p sent when the wait ended and imported as %s", r.HoldUntil.Format(time.RFC3339), f.RelativePath)
 }
 
-// #52 Start when it's out: a movie whose digital release is a month away is
+// Start when it's out: a movie whose digital release is a month away is
 // not searched by the app (the Slot waits as not out yet); when the date
 // passes, the gate opens, the next search grabs our Dune test torrent and it
 // is imported.
@@ -785,7 +785,7 @@ func TestLabBeta52StartWhenOut(t *testing.T) {
 	t.Logf("#52: not searched while not out (%s); gate opened, grabbed and imported as %s", strings.TrimSpace(res), f.RelativePath)
 }
 
-// #49 Hardlinks: with the Library on the same lab volume as the downloads,
+// Hardlinks: with the Library on the same lab volume as the downloads,
 // the import links the file (same inode, two links) and qBittorrent keeps
 // seeding the original.
 func TestLabBeta49Hardlink(t *testing.T) {
@@ -819,7 +819,7 @@ func TestLabBeta49Hardlink(t *testing.T) {
 	t.Logf("#49: %s and %s are one file (inode %d, %d links); qBittorrent %s", f.RelativePath, src, labInode(a), labLinks(a), st)
 }
 
-// #50 Folder mapping: this container sees the lab downloads folder at
+// Folder mapping: this container sees the lab downloads folder at
 // another path than qBittorrent does (HOLYARRS_LAB_DL_HERE), and the
 // Library is on a second mount. The Downloader's folder mapping turns
 // qBittorrent's path into ours; the file is found, copied across the
@@ -862,7 +862,7 @@ func TestLabBeta50FolderMapping(t *testing.T) {
 	t.Logf("#50: qBittorrent path %s mapped to %s; imported across mounts as %s (%s, fell back %v); row %s", save, here, f.RelativePath, f.PlacedBy, f.FellBack, row.Label)
 }
 
-// #47 Jackett bridge: connect the lab Jackett (it holds only our own site
+// Jackett bridge: connect the lab Jackett (it holds only our own site
 // definition, which reads the fake indexer); its site becomes a Source; the
 // app's own search finds our Dune test torrent through Jackett, sends it to
 // the lab qBittorrent through Jackett's download link, and imports it.

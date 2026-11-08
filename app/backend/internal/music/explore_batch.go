@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Explore → Music, flag music_rows_v3 (plan 2026-10-22, Phase 3): the v2
+// Explore → Music, flag music_rows_v3 (plan 22 October 2026, Phase 3): the v2
 // rows with their scores (rows 1, 2, 4, 5, 6, 8), plus Since you have,
 // Finish the set, Artists near your taste, genre shelves and Guest spots;
 // diversity in every scored row and the exploration slot in personal
@@ -22,7 +22,7 @@ const (
 	musicArtistTTL = 7 * 24 * time.Hour // similarity and listeners: weekly
 	musicMissTTL   = time.Hour
 	// musicEmptyTTL keeps an empty value (no similar artists, 0 listeners,
-	// no genres or albums) only minutes (cache audit 2026-10-23).
+	// no genres or albums) only minutes (cache audit 23 October 2026).
 	musicEmptyTTL = 10 * time.Minute
 	musicSeedsTop = 10
 	musicSimilarS = 0.3

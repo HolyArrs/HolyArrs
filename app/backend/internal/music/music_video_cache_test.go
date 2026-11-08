@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Cache audit 2026-10-23, finding 2: a pending, failed or empty video
+// Cache audit 23 October 2026, finding 2: a pending, failed or empty video
 // answer is not kept an hour; a non-empty list is kept on disk and
 // re-checked daily in the background.
 

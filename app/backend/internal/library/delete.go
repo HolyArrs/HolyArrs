@@ -508,7 +508,7 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 }
 
 // CleanHolding empties holding folder days older than the holding setting
-// (0 keeps everything). Only folders named as a day (2006-01-02) directly
+// (0 keeps everything). Only folders named as a day (2 January 2006) directly
 // in a Library folder's holding folder are removed; it returns how many.
 func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error) {
 	unlock := s.Store.LockFiles()

@@ -141,7 +141,7 @@ func TestOutsideListsAPI(t *testing.T) {
 	do(t, "DELETE", srv.URL+"/api/v1/outside-lists/"+itoa(l.ID), "", 204)
 	do(t, "DELETE", srv.URL+"/api/v1/outside-lists/"+itoa(l.ID), "", 404)
 
-	// Show lists (#104): they need a show folder, and keep their season choice.
+	// Show lists: they need a show folder, and keep their season choice.
 	off := `,"enabled":false`
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"show"`+off+`}`, 409)
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"album"`+off+`}`, 400)

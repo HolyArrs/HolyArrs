@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Reports (#95): anyone signed in reports a problem with a title in the
+// Reports: anyone signed in reports a problem with a title in the
 // Library; the owner and admins (manage_library) see every report and mark
 // it fixed or open it again; everyone else sees only their own.
 type ReportHandlers struct {

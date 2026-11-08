@@ -29,7 +29,7 @@ const settingMCP = "mcp_enabled"
 // older two only differ in what this server never uses, so clients that
 // still send them keep working. Protocol version 2026-07-28 is not offered: it
 // needs a resultType on every answer, and clients refuse tool lists without
-// it. Claude Code sends 2025-11-25 instead.
+// it. Claude Code sends 25 November 2025 instead.
 var Versions = []string{"2025-11-25", "2025-06-18", "2025-03-26"}
 
 // Routes registers the AI connection routes and their on/off setting.

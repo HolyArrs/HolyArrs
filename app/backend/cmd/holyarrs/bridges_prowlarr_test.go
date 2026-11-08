@@ -167,8 +167,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	}
 	// Making the keys is a risky action: a sign-in whose password proof is
 	// older than 10 minutes is asked to confirm it, and nothing is made. The
-	// first-run setup session is the exception for its first hour (Luis,
-	// 2026-11-05, "No check during setup"); f.own holds that session.
+	// first-run setup session is the exception for its first hour; f.own holds that session.
 	exec := func(q string, args ...any) {
 		if err := f.s.WriteCore(context.Background(), func(tx *sql.Tx) error {
 			_, err := tx.Exec(q, args...)

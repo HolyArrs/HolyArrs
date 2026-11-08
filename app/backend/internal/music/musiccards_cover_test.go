@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// Music pictures come only from our metadata server (Luis, 2026-10-24):
+// Music pictures come only from our metadata server:
 // a card's album the server stored is prefetched from it; one it has not
 // stored yet (it redirects) is a miss, and no outside source is ever asked.
 func TestMusicCardsPicturesFromServerOnly(t *testing.T) {

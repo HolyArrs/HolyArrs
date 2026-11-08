@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// Connect Jackett or Prowlarr (#96), through the API, against fakes on this machine.
+// Connect Jackett or Prowlarr, through the API, against fakes on this machine.
 
 const bridgeJackettKey = "jackett-api-test-key"
 

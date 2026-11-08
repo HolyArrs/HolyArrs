@@ -7,7 +7,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 )
 
-// Roadmap #59: the movie lookup tells a member about the open 4K ask and
+// the movie lookup tells a member about the open 4K ask and
 // whether the Library copy has 4K, so the title page can offer a 4K ask
 // after a plain ask and on a movie already in the Library.
 // route: GET /api/v1/titles/lookup

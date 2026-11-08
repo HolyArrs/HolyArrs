@@ -95,7 +95,7 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	r.owner.call("POST", "/api/v1/asks/999/approve", ``, 404)
 
 	// The Movie page names who asked and who approved; a member sees
-	// everyone who asked, and who decided by display name only (#136).
+	// everyone who asked, and who decided by display name only.
 	var tv TitleView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &tv)
 	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 2 || tv.Asks[0].DecidedBy == nil || tv.Asks[0].DecidedBy.Name != "" || tv.WhyAdded != "ask" {
@@ -538,7 +538,7 @@ func pushForm(call string) url.Values {
 }
 
 // route: GET /api/v1/asks
-// #136: who else declined the same title is told to people who approve
+// Who else declined the same title is told to people who approve
 // only. A member's list and their own ask carry no also_declined at all.
 func TestAlsoDeclinedForApproversOnly(t *testing.T) {
 	t.Parallel()
@@ -595,7 +595,7 @@ func TestAlsoDeclinedForApproversOnly(t *testing.T) {
 // route: GET /api/v1/asks
 // The people who asked read who decided by display name only: their list
 // carries no sign-in name and their message says "an admin" until the
-// decider picks a display name (#136 follow-up).
+// decider picks a display name.
 func TestDeciderSignInNameHiddenFromMembers(t *testing.T) {
 	t.Parallel()
 	r := newAskRig(t)
@@ -638,7 +638,7 @@ func TestDeciderSignInNameHiddenFromMembers(t *testing.T) {
 }
 
 // route: GET /api/v1/asks
-// #139: an approved ask says where it is. The person who asked reads the
+// An approved ask says where it is. The person who asked reads the
 // step only; people who approve also read the search's words for why.
 func TestAskStepOverHTTP(t *testing.T) {
 	t.Parallel()

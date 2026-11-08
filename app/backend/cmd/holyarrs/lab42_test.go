@@ -139,7 +139,7 @@ type labShow struct {
 
 // labNoSizeFloors turns the import size floors off in a lab test's own
 // database: its payloads are a few hundred KB on purpose, which the fake
-// guard (#42) would rightly refuse as too small to be the full video or track.
+// guard would rightly refuse as too small to be the full video or track.
 func labNoSizeFloors(t *testing.T, s *database.Store) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -199,7 +199,7 @@ func newLabShow(t *testing.T, qb string, state mediafiles.SlotState) labShow {
 			}
 			x.slots = append(x.slots, sl.ID)
 		}
-		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home (#152) */, Kinds: []string{}, Categories: map[string][]int{},
+		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home */, Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
 		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err

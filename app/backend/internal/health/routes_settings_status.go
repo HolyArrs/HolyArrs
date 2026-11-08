@@ -364,7 +364,7 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 			state = *s.PauseReason
 		}
 		if b := sources.BlockOf(s); b != "" {
-			state = b // a site's bot check or ban (#106), not the local network
+			state = b // a site's bot check or ban, not the local network
 		}
 		in.Sources = append(in.Sources, NamedState{s.Name, state})
 		if s.State != "disabled" {

@@ -44,7 +44,7 @@ func TestCalendarAlbums(t *testing.T) {
 }
 
 // 4.15 review: an album dated only by year (Middle, 2018) or month (Short,
-// 2019-02) has no release day, so the Calendar leaves it out; its stored
+// February 2019) has no release day, so the Calendar leaves it out; its stored
 // date keeps the release-gate rule (end of that year or month).
 func TestCalendarLeavesOutAlbumsWithNoDay(t *testing.T) {
 	svc, s, _, _ := musicService(t)

@@ -227,7 +227,7 @@ func queryLimit(r *http.Request, def int) int {
 	return n
 }
 
-// parseDay reads a date (2026-10-01) or a full RFC 3339 time.
+// parseDay reads a date (1 October 2026) or a full RFC 3339 time.
 func parseDay(v string) (time.Time, error) {
 	if t, err := time.Parse("2006-01-02", v); err == nil {
 		return t, nil

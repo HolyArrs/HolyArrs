@@ -23,7 +23,7 @@ var showLibrary = append(slices.Clone(library),
 )
 
 // episodes builds a show's episodes: seasons x per season, absolute
-// numbers counted from 1, air days one a week from 2026-01-01.
+// numbers counted from 1, air days one a week from 1 January 2026.
 func episodes(seasons, per int) []EpisodeRef {
 	var out []EpisodeRef
 	abs := 0

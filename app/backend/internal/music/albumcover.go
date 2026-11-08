@@ -37,7 +37,7 @@ func (h *Handlers) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	// Only the metadata server's stored copy (Luis, 2026-10-24): an album it
+	// Only the metadata server's stored copy: an album it
 	// has not stored yet is 204 (the page shows its placeholder) until it has.
 	size := CoverSize(r)
 	want := size

@@ -55,7 +55,7 @@ func TestEventsFilters(t *testing.T) {
 	if p := get("kind=import_*,renamed", 200); p.Total != 2 {
 		t.Fatalf("by kind: %+v", p)
 	}
-	// to is a whole day: 2026-10-02 includes the download sent that day.
+	// to is a whole day: 2 October 2026 includes the download sent that day.
 	if p := get("from=2026-10-02&to=2026-10-03", 200); p.Total != 2 || p.Events[0].Kind != "import_done" || p.Events[1].Kind != "download_sent" {
 		t.Fatalf("by dates: %+v", p)
 	}

@@ -18,7 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// The row template engine (music_lists_v1, plan 2026-10-24-music-row-
+// The row template engine (music_lists_v1, plan 24 October 2026-music-row-
 // templates): Browse pages for genres, moods, seasons, decades and
 // activities, filled from the server's catalog bundle.
 

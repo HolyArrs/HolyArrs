@@ -8,7 +8,7 @@ import (
 )
 
 // route: GET /live
-// #136: the live 'ask' copy an approver receives carries who else declined
+// The live 'ask' copy an approver receives carries who else declined
 // the same title, as the list read does, so a live update never drops it.
 // The asker's own live copy carries no also_declined and no sign-in name of
 // the decider.

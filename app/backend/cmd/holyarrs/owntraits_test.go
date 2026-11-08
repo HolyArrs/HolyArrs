@@ -12,7 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// Your own traits (#97): made, changed and removed here, judged at once,
+// Your own traits: made, changed and removed here, judged at once,
 // and taken out of every Pick rule when removed.
 //
 // route: GET /api/v1/own-traits

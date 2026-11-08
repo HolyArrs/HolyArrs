@@ -113,7 +113,7 @@ func TestComposeMusicTrending(t *testing.T) {
 			t.Fatal("Climbing cards carry their move")
 		}
 	}
-	// #13 climbed 13 places (ΔR 0.65); new entries count from L + 1, so #14
+	// Climbed 13 places (ΔR 0.65); new entries count from L + 1, so place 14
 	// gains (21 − 14)/20 = 0.35 and follows the climbers.
 	if climb.Items[0].Rank != 13 || climb.Items[0].Note != "Up 13 · #13" {
 		t.Fatalf("first climber %d %q", climb.Items[0].Rank, climb.Items[0].Note)

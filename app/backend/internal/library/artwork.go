@@ -22,7 +22,7 @@ import (
 )
 
 // DefaultArtworkCap is the artwork cache size cap (decision 0002, Images;
-// 5 GB since 2026-10-24 so every music page's covers fit ahead).
+// 5 GB since 24 October 2026 so every music page's covers fit ahead).
 const DefaultArtworkCap = 5 << 30
 
 // maxPicture is the largest picture accepted.

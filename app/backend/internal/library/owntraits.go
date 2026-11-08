@@ -17,7 +17,7 @@ import (
 // ErrOwnTraitName says another own trait already has this name.
 var ErrOwnTraitName = errors.New("another trait already has this name")
 
-// OwnTraitInput is a new or changed own trait (#97).
+// OwnTraitInput is a new or changed own trait.
 type OwnTraitInput struct {
 	Name  string   `json:"name"`
 	Match string   `json:"match"`

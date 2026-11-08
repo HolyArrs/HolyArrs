@@ -32,8 +32,7 @@ const emptyArtwork = "(artwork IS NULL OR artwork IN ('', '[]', 'null'))"
 
 // FillArtistPictures fills what is missing of an artist's pictures and
 // returns the source that filled the artwork ("" when none did or it was
-// already there). Pictures come only from our metadata server (Luis,
-// 2026-10-24): its stored photo, wide background and logo, by MusicBrainz
+// already there). Pictures come only from our metadata server: its stored photo, wide background and logo, by MusicBrainz
 // id. One it has not stored yet fills nothing now; the 6-hour pass asks
 // again. Artwork, backdrop or logo already set is never replaced.
 func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by domain.Actor) (string, error) {

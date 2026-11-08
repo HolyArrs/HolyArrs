@@ -17,7 +17,7 @@ type Deps struct {
 	Live Publisher
 }
 
-// Handlers serve Import files by hand (roadmap #33): scan a folder for
+// Handlers serve Import files by hand: scan a folder for
 // videos with a guess of each, then import the chosen files.
 type Handlers struct {
 	Deps

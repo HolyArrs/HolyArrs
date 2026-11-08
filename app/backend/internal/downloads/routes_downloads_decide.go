@@ -105,7 +105,7 @@ func why(reason string) string {
 	case strings.Contains(reason, "not replaced (setting)"):
 		return "not_replaced"
 	case strings.HasPrefix(reason, "not sent:"):
-		// No Downloader takes the title's tags (#108).
+		// No Downloader takes the title's tags.
 		return "not_sent"
 	case strings.HasPrefix(reason, "nothing could be placed"), strings.Contains(reason, "import"),
 		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"),

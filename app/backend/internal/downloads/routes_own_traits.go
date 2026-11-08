@@ -12,7 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// OwnTraitView is one of your own traits (#97). Key is how Pick rules name it.
+// OwnTraitView is one of your own traits. Key is how Pick rules name it.
 type OwnTraitView struct {
 	ID    int64    `json:"id"`
 	Key   string   `json:"key"`

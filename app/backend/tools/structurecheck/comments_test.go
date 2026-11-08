@@ -25,6 +25,7 @@ var commentSkip = []string{
 	"services/**",
 	"design-notes/**",
 	"CHANGELOG.md",
+	"deploy/release/tests/test_changelog_notes.py", // sample changelog text
 	"**/testdata/**",
 }
 
@@ -156,6 +157,11 @@ func TestCommentHygiene(t *testing.T) {
 		codeLines := strings.Split(src, "\n")
 		for i, c := range lineComments(src, kind) {
 			for _, r := range commentRules {
+				// The AI protocol names its versions by date, so the AI
+				// feature may write those dates.
+				if aiOK && r.why == "date" {
+					continue
+				}
 				if c != "" && r.re.MatchString(c) {
 					t.Errorf("%s:%d: %s in a comment", rel, i+1, r.why)
 					hits++

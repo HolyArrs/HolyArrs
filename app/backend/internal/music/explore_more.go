@@ -55,7 +55,7 @@ var musicColdTypes = map[string]bool{
 	"rising": true, "classic": true, "decade": true, "mood": true, "anniversary": true,
 }
 
-// musicOrder places each row type on the page (rows review 2026-10-20:
+// musicOrder places each row type on the page (rows review 20 October 2026:
 // New from artists you have, Top albums, Missing albums, Trending artists,
 // the seeded artist rows, genre picks, then the tail); rows of one type
 // keep their order. Seed rows past the first two go to the tail. Just

@@ -424,7 +424,7 @@ func tplTiles(t *testing.T, r *askRig) (a tplTilesAnswer, n int) {
 	return a, n
 }
 
-// The cover rule (Luis, 2026-10-27): a Browse tile shows a real album cover or
+// The cover rule: a Browse tile shows a real album cover or
 // is left out. Once pictures are being stored, a tile's covers come only from
 // albums whose picture is stored, and a tile with no such album is not sent.
 func TestTplBrowseTilesTakeCoversOnlyFromStoredPictures(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// Music genre pages (plan 2026-10-22, Phase 2, §2.8), Music only: built
+// Music genre pages (plan 22 October 2026, Phase 2, §2.8), Music only: built
 // from the region chart filtered to the genre, the Library's artists in
 // the genre (MusicBrainz genres or a charted album), their missing albums
 // and the genre's popular artists. Movies and Shows genre pages are the

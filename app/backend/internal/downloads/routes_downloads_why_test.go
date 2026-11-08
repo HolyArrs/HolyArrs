@@ -2,7 +2,7 @@ package downloads
 
 import "testing"
 
-// An unpack that falls short (#54) is a stuck import on the Needs a decision
+// An unpack that falls short is a stuck import on the Needs a decision
 // card, not "ran out of Releases".
 func TestWhyCountsUnpackReasonsAsAStuckImport(t *testing.T) {
 	t.Parallel()

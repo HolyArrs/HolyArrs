@@ -16,7 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// Connect Jackett or Prowlarr (#96) against the lab's own Jackett and
+// Connect Jackett or Prowlarr against the lab's own Jackett and
 // Prowlarr, which hold nothing but the lab's fake indexer. Keys come from the
 // environment only (labclients.py reads them from the lab apps' own config)
 // and are never printed.

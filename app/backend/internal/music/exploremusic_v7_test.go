@@ -16,7 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// v7Fixed is the v7 tests' clock (2001-10-30 turns 25 within the window).
+// v7Fixed is the v7 tests' clock (30 October 2001 turns 25 within the window).
 var v7Fixed = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 
 type v7Album struct {

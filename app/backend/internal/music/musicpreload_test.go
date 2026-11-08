@@ -22,7 +22,7 @@ func waitPreload(t *testing.T, a *API) musicPreloadStatus {
 	return musicPreloadStatus{}
 }
 
-// Luis's rule: every cover a music page shows is stored before anyone opens
+// The rule: every cover a music page shows is stored before anyone opens
 // it. The preload warms every shown Browse page, the tile covers, Explore's
 // engine rows and New & Popular; a member's first visit finds every card
 // warmed, and asking again for the same region and bundle warms nothing new.

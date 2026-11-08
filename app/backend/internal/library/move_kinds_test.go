@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// #28: a show or an artist moves to another Library folder of its own kind,
+// A show or an artist moves to another Library folder of its own kind,
 // sub-folders (seasons, albums) and all; a folder of another kind is refused.
 func TestMoveShowAndArtistToTheirOwnFolderKind(t *testing.T) {
 	for _, c := range []struct {

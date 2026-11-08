@@ -59,7 +59,7 @@ func (c *clock) set(s string)        { c.mu.Lock(); c.t, _ = time.Parse(time.RFC
 func (c *clock) add(d time.Duration) { c.mu.Lock(); c.t = c.t.Add(d); c.mu.Unlock() }
 
 // TestEpisodeBecomesWantedOnTime is the air-date gate: S02E02 airs at
-// 2026-10-19 02:00 UTC. A minute before, nothing happens and nothing is
+// 19 October 2026 02:00 UTC. A minute before, nothing happens and nothing is
 // written; at the air time its Slot is wanted, with an Event naming it.
 // With a 30-minute wait it moves half an hour later.
 func TestEpisodeBecomesWantedOnTime(t *testing.T) {

@@ -73,7 +73,7 @@ func tm(s string) *time.Time { t, _ := time.Parse(time.RFC3339, s); return &t }
 
 // labShow is the lab show as a source tells it: specials, a first season
 // that has aired, and a second one that airs around now (see now in
-// library_test.go: 2026-10-13 12:00 UTC).
+// library_test.go: 13 October 2026 12:00 UTC).
 func labShow(source, id string) metadata.Show {
 	ids := map[string]string{"tvdb": "200", "imdb": "tt0100", source: id}
 	return metadata.Show{Source: source, Name: "Lab Show", Year: 2025, Status: "running", Network: "Lab TV", IDs: ids,

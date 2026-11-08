@@ -12,7 +12,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// Explore → Music, flag music_rows_v7 (plan 2026-10-23): the v3 rows plus
+// Explore → Music, flag music_rows_v7 (plan 23 October 2026): the v3 rows plus
 // mixes, Because you have ×4, Deep cuts, Turning N this month and Together
 // with, ordered once a day into a plan of up to 30 rows and served 6 at a
 // time behind a signed cursor. Off keeps the v3/v6 page.
@@ -387,7 +387,7 @@ func (h *Handlers) musicV7Rows(ctx context.Context, member int64, date string, l
 	}
 
 	// Turning N this month: not-had albums of A > 0 artists whose 10th, 20th,
-	// 25th or 30th anniversary falls in −7..+30 days (Luis: not-had only).
+	// 25th or 30th anniversary falls in −7..+30 days (not-had only).
 	{
 		type cand struct {
 			al musicLibAlbum
@@ -433,7 +433,7 @@ func (h *Handlers) musicV7Rows(ctx context.Context, member int64, date string, l
 	}
 
 	// Together with {X}: members, founders and collaborations of top-A
-	// artists (Luis, 2026-10-23: allowed); their albums not had.
+	// artists; their albums not had.
 	{
 		made := 0
 		for _, s := range byA {

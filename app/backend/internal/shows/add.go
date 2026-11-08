@@ -42,7 +42,7 @@ type ShowAddOptions struct {
 	// date (Seasons is then none): the arr API's per-season choice.
 	SeasonNumbers []int `json:"-"`
 	// FirstSeason keeps only the show's first season up to date: season 1,
-	// else the lowest numbered season after it, else Specials (Luis, 11-03).
+	// else the lowest numbered season after it, else Specials.
 	FirstSeason bool `json:"-"`
 }
 

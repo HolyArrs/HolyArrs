@@ -21,7 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Roadmap #54 in the lab, as TestLabMovieZeroToDone but with our own RAR
+// in the lab, as TestLabMovieZeroToDone but with our own RAR
 // test torrent (research/lab/make_rar_torrent.py): a compressed RAR 5 set in
 // four volumes with an .nfo and a Sample clip. The lab qBittorrent downloads
 // it from qbt-seed, the importer unpacks it with the built-in decoder next to
@@ -71,7 +71,7 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
-		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home (#152) */, Kinds: []string{}, Categories: map[string][]int{},
+		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home */, Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
 		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err

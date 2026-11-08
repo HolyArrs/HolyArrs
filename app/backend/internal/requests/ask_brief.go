@@ -69,7 +69,7 @@ func OpenShowAsk(ctx context.Context, db *sql.DB, ids map[string]string, me int6
 }
 
 // HideDeciderNames drops the decider's sign-in name from asks shown to
-// people who do not approve; the display name stays (#136).
+// people who do not approve; the display name stays.
 func HideDeciderNames(vs []View) {
 	for i := range vs {
 		if vs[i].DecidedBy != nil {

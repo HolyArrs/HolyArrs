@@ -67,7 +67,7 @@ func TestDownloadsViewOwnAsksOnly(t *testing.T) {
 	if len(admin) != 1 || !admin[0].CanAct {
 		t.Fatalf("admin rows %+v", admin)
 	}
-	// #139: someone who approves (but does not run the Library) reads every
+	// Someone who approves (but does not run the Library) reads every
 	// approved ask's downloads on the Requests page, as plain rows with no actions.
 	approver := webserver.Caller{UserID: 3, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk, webserver.PermApprove}, Via: "session"}
 	if rows := viewAt(t, x, approver, "/api/v1/downloads/view?asked=1"); len(rows) != 1 || rows[0].CanAct {

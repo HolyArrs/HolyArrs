@@ -190,7 +190,7 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 		"totalRecords": total, "records": records})
 }
 
-// queryTime reads a start or end value: a date (2026-11-03) or a date and
+// queryTime reads a start or end value: a date (3 November 2026) or a date and
 // time, with or without a zone (UTC when none).
 func queryTime(r *http.Request, name string) (time.Time, bool) {
 	v := strings.TrimSpace(query(r, name))

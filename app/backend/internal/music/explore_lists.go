@@ -12,7 +12,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// World-list rows, flag music_lists_v1 (plan 2026-10-24): the metadata
+// World-list rows, flag music_lists_v1 (plan 24 October 2026): the metadata
 // server's shelves (daily song charts turned into their albums or artists,
 // weekly album and artist charts, new releases) become rows on Explore →
 // Music and New & Popular → Music. Titles and reason lines come only from
@@ -521,7 +521,7 @@ const listNewDays = 60
 // listRecentDays: rows meant to be new take releases of the last 90 days.
 const listRecentDays = 90
 
-// listAge is the days since a release date ("2026-10-02", "2026-10" or
+// listAge is the days since a release date ("2 October 2026", "October 2026" or
 // "2026"; a partial date counts from its first day).
 func listAge(date string, now time.Time) (int, bool) {
 	for _, layout := range []string{"2006-01-02", "2006-01", "2006"} {

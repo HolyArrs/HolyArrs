@@ -413,7 +413,7 @@ func TestEditGateMovesSlots(t *testing.T) {
 	}
 	year := 365
 	res, err := svc.Edit(ctx, id, TitleChange{GateDelayDays: &year}, false, domain.System)
-	// 2024-04-16 + 365 days is still before now, so nothing moves.
+	// 16 April 2024 + 365 days is still before now, so nothing moves.
 	if err != nil || len(res.SlotChanges) != 0 {
 		t.Fatalf("delay edit %+v %v", res, err)
 	}

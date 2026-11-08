@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Cache audit 2026-10-23, finding 4: the metadata server's grey stand-in is
+// Cache audit 23 October 2026, finding 4: the metadata server's grey stand-in is
 // never stored, whichever caller fetches it.
 func TestFetchRefusesServerPlaceholder(t *testing.T) {
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

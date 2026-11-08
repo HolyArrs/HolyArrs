@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Artists' music videos on the trailer pass's schedule (#191): the artist
+// Artists' music videos on the trailer pass's schedule: the artist
 // page and the in-view batch only note an artist; the pass makes one of
 // its videos ready (the stream address only) and keeps it ready, renewing
 // it before it expires, for as long as the artist is asked for. A page

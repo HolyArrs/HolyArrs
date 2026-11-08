@@ -760,8 +760,7 @@ func (s *Service) recordFoundTracks(ctx context.Context, lf mediafiles.LibraryFo
 
 // adoptedFormat is the format word an adopted file's Release name gets: its
 // extension, or for a file that may hold either kind (.m4a, .mka, .mp4)
-// the codec read from its headers, so an ALAC library is known as lossless
-// (#43).
+// the codec read from its headers, so an ALAC library is known as lossless.
 func adoptedFormat(abs, ext string) string {
 	word := strings.ToUpper(strings.TrimPrefix(ext, "."))
 	switch ext {

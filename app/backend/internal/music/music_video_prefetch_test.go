@@ -13,7 +13,7 @@ import (
 )
 
 // route: GET /api/v1/trailer/batch
-// An artist named in the in-view batch is only noted (#191): nothing is
+// An artist named in the in-view batch is only noted: nothing is
 // pending and no lookup starts; the trailer pass makes its music video
 // ready, the batch then has it, and the artist page answers from it
 // without a lookup. The pass keeps it ready: a nearly expired stream is

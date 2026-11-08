@@ -29,7 +29,7 @@ func (h *TagHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/tags", h.listTags)
 }
 
-// listTags answers GET /api/v1/tags: every tag in use (#108), for the tag
+// listTags answers GET /api/v1/tags: every tag in use, for the tag
 // fields' suggestions and to show where a tag is used.
 func (h *TagHandlers) listTags(w http.ResponseWriter, r *http.Request) {
 	uses := map[string]*TagUse{}
