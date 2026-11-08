@@ -2,12 +2,12 @@ import { expect, test, type APIResponse, type Locator, type Page } from '@playwr
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { owner, signIn, inLibrary } from './helpers.ts';
+import { owner, signIn, inLibrary } from '../helpers/helpers.ts';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #35 Change many titles at once: the Library's select bar. Each test ticks
 // the same two movies and one show (fakes.mjs keeps them for this file only),

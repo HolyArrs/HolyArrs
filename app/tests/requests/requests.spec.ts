@@ -3,8 +3,8 @@ import { expect, test, type APIResponse, type Browser, type Page } from '@playwr
 import { mkdirSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discordPort, indexerKey, indexerPort, movieReleaseHash, qbitPort } from './fakes.mjs';
-import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
+import { discordPort, indexerKey, indexerPort, movieReleaseHash, qbitPort } from '../fakes/fakes.mjs';
+import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from '../helpers/helpers.ts';
 
 // Requests at phone width (Pixel 7): a member asks for movies, the owner
 // approves and turns down from a phone, a Discord Alert (the fake one in
@@ -300,7 +300,7 @@ async function inLibrary(call: Call, tmdb: number, name: string): Promise<number
 /** giveFile imports a stand-in video into a Library movie by hand (as library-tools.spec does), so its file is in. */
 async function giveFile(call: Call, titleId: number, name: string, year: number) {
 	// Import by hand reads only from known folders: .tmp/by-hand is an extra import folder.
-	const byHand = join(dirname(fileURLToPath(import.meta.url)), '.tmp', 'by-hand');
+	const byHand = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'by-hand');
 	const now = (await (await call('GET', '/settings/import-folders')).json()) as { extra_folders?: string[] };
 	const extra = now.extra_folders ?? [];
 	if (!extra.includes(byHand)) {
@@ -672,7 +672,7 @@ async function musicFolder(call: Call): Promise<number> {
 	const { library_folders } = (await (await call('GET', '/library-folders')).json()) as { library_folders: { id: number; kind: string }[] };
 	const have = library_folders.find((f) => f.kind === 'music');
 	if (have) return have.id;
-	const path = join(dirname(fileURLToPath(import.meta.url)), '.tmp', 'requests-music');
+	const path = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'requests-music');
 	mkdirSync(path, { recursive: true });
 	const made = await call('POST', '/library-folders', { path, kind: 'music', label: 'Requests music' });
 	expect(made.status(), await made.text()).toBe(201);
@@ -978,7 +978,7 @@ test('a member sees their request downloading, then added to the Library', async
 	const hash = ((await (await fetch(`${qbit}/state`)).json()) as { added: string[] }).added.find((h) => h.startsWith(prefix));
 	expect(hash, 'a Cobalt Weathervane release went to qBittorrent').toBeTruthy();
 	const name = 'Cobalt.Weathervane.2018.1080p.WEB-DL.H264-HOLYARRS';
-	const dl = join(dirname(fileURLToPath(import.meta.url)), '.tmp', 'downloads');
+	const dl = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'downloads');
 	rmSync(join(dl, name), { recursive: true, force: true });
 	mkdirSync(join(dl, name), { recursive: true });
 	// Big enough for the import's fake checks: 1 MB a minute of a 101-minute movie on disk

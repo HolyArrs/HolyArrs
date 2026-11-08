@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plainForm } from './helpers.ts';
+import { plainForm } from '../helpers/helpers.ts';
 
 type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge';
 

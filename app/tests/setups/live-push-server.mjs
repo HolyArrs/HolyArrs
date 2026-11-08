@@ -8,17 +8,17 @@ import { createReadStream, existsSync, mkdirSync, rmSync, statSync } from 'node:
 import { createServer, request } from 'node:http';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { metadataEnv, startFakes } from './fakes.mjs';
+import { metadataEnv, startFakes } from '../fakes/fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../..');
-const tmp = join(here, '.tmp-live');
+const repo = resolve(here, '../../..');
+const tmp = join(here, '..', '.tmp-live');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');
 export const backendPort = Number(process.env.HOLYARRS_LIVE_BACKEND_PORT ?? 18732);
 export const qbitPort = Number(process.env.HOLYARRS_LIVE_QBIT_PORT ?? 18733);
 export const webPort = Number(process.env.HOLYARRS_LIVE_WEB_PORT ?? 18734);
-const site = resolve(here, '../frontend/.svelte-kit/showcase/site');
+const site = resolve(here, '../../frontend/.svelte-kit/showcase/site');
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 

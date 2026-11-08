@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 // Parts (3.7.6): with Requests and Music turned off through the API
 // (the controls screen waits on its design), their menu entries and

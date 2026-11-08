@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, addFromSearch } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, addFromSearch } from '../helpers/helpers.ts';
 
 // Settings: My account on top, then the six groups, setting search with a deep link that scrolls to
 // and highlights the field, the save bar and its leave guard, Advanced

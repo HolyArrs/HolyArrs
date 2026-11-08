@@ -2,9 +2,9 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openLibraryTab, owner, signIn } from './helpers.ts';
+import { openLibraryTab, owner, signIn } from '../helpers/helpers.ts';
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #28 Library folders: a show and an artist move to a second Library folder
 // of their kind later on, from Edit on their Library page, files and all

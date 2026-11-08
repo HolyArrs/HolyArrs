@@ -2,8 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { subsPort } from './fakes.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from './helpers.ts';
+import { subsPort } from '../fakes/fakes.mjs';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from '../helpers/helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle

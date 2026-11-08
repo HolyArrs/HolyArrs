@@ -2,9 +2,9 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { episodeState, libraryTool, owner, signIn } from './helpers.ts';
+import { episodeState, libraryTool, owner, signIn } from '../helpers/helpers.ts';
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #33 Import files by hand: the parts a person does in the page itself.
 // Picking another Library title than the scan's guess, and bringing in

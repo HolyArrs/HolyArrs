@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openRequests, openSeason, openSeasonNamed, seasonCount, episodeAction, episodeKept, episodeState, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openRequests, openSeason, openSeasonNamed, seasonCount, episodeAction, episodeKept, episodeState, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from '../helpers/helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss

@@ -2,7 +2,7 @@ import { expect, test, type APIResponse, type Browser, type Page } from '@playwr
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { addFromSearch, noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 // Reported problems (#95): a member reports a problem with a movie from a
 // phone (the sheet is a bottom sheet there), the owner finds it from
@@ -11,7 +11,7 @@ import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
 // its own data: the movie, a file for it and the member.
 test.describe.configure({ mode: 'serial' });
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 const movie = 'Driftwood Moon';
 const memberName = `rep${Math.random().toString(36).slice(2, 7)}`;
 const memberPw = `e2e-${Math.random().toString(36).slice(2)}-rep`;

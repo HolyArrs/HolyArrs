@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
-	testDir: '.',
-	testMatch: 'csp-check.spec.ts',
+	testDir: '..',
+	testMatch: '**/whole-app/csp-check.spec.ts',
 	workers: 1,
 	reporter: [['list']],
 	use: { baseURL: 'http://127.0.0.1:18741', ...devices['Desktop Chrome'] },

@@ -2,9 +2,9 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { libraryStatus, owner, signIn } from './helpers.ts';
+import { libraryStatus, owner, signIn } from '../helpers/helpers.ts';
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #27 Missing list: Search all missing (top of the Library's Missing list,
 // after a confirm) searches every missing title of the kind shown at once:

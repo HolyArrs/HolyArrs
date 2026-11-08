@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openAdvanced, addFromSearch } from './helpers.ts';
-import { movieReleaseHash, qbitPort, sabKey, sabPort } from './fakes.mjs';
+import { noSidewaysScroll, owner, signIn, openAdvanced, addFromSearch } from '../helpers/helpers.ts';
+import { movieReleaseHash, qbitPort, sabKey, sabPort } from '../fakes/fakes.mjs';
 
 // Settings > Downloaders against the fake qBittorrent and SABnzbd in
 // fakes.mjs, then a movie whose download is marked failed: the next

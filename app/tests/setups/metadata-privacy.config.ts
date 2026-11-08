@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 // Runs on its own (like csp-check): a fresh server, first-run setup, then the Metadata page.
 export default defineConfig({
-	testDir: '.',
-	testMatch: 'metadata-privacy.spec.ts',
+	testDir: '..',
+	testMatch: '**/metadata/metadata-privacy.spec.ts',
 	workers: 1,
 	reporter: [['list']],
 	use: { baseURL: 'http://127.0.0.1:18741', ...devices['Desktop Chrome'] },

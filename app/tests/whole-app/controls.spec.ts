@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 // Parts and controls (3.7.7) and the first-run "What do you use?" step
 // (3.7.8): a part turned off and on with the two-step confirm, a refused

@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openSeasonNamed, episodeAction, seasonKept } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openSeasonNamed, episodeAction, seasonKept } from '../helpers/helpers.ts';
 
 // Organise for shows (5.2): Quarry Bells sits on disk before HolyArrs knows
 // it. The owner imports it from the show Library folder (nothing moves),

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced } from '../helpers/helpers.ts';
 
 // The rest of the app frame (3.4.3, 3.5.7-3.5.12): signed-in devices, This
 // app (storage, log download, update notice), Schedules, the log viewer and

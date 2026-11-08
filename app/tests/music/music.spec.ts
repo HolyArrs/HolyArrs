@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openRequests, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openRequests, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch } from '../helpers/helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and

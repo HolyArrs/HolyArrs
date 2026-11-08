@@ -4,8 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 const baseURL = process.env.HOLYARRS_OPTIONAL_UI_URL ?? 'http://127.0.0.1:9';
 
 export default defineConfig({
-	testDir: '.',
-	testMatch: 'optional-downloaders.spec.ts',
+	testDir: '..',
+	testMatch: '**/downloads/optional-downloaders.spec.ts',
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,

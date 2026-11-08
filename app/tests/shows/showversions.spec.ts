@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Browser, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch, openLibraryTab, inLibrary } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch, openLibraryTab, inLibrary } from '../helpers/helpers.ts';
 
 // Several Versions per show (4.8.11): Tidal Atlas is added with a second
 // 4K Version from the add dialog; the show page lists both Versions and

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from '../helpers/helpers.ts';
 
 // A cover or photo no source has shows the one shared placeholder art (no
 // broken picture), on desktop and at phone widths 390 and 360. The fake

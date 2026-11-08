@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn } from '../helpers/helpers.ts';
 
 // Kid accounts: an age-rating limit set at invite time. The fake movie
 // database rates Paper Harbour PG and Ember Road R; every other fake movie

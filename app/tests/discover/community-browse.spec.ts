@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 type ViewportCase = { name: string; width: number; height: number };
 

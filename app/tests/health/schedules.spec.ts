@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from '../helpers/helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 

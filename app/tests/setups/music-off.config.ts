@@ -4,7 +4,7 @@ const port = process.env.HOLYARRS_E2E_PORT ?? '18741';
 
 // Music off: a fresh app (bootstrap makes the owner), then music-off.spec.ts.
 export default defineConfig({
-	testDir: '.',
+	testDir: '..',
 	fullyParallel: false,
 	workers: 2,
 	retries: 0,
@@ -19,7 +19,7 @@ export default defineConfig({
 		stderr: 'pipe'
 	},
 	projects: [
-		{ name: 'bootstrap', testMatch: 'app.spec.ts', use: { ...devices['Desktop Chrome'] } },
-		{ name: 'music-off', testMatch: 'music-off.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['bootstrap'] }
+		{ name: 'bootstrap', testMatch: '**/whole-app/app.spec.ts', use: { ...devices['Desktop Chrome'] } },
+		{ name: 'music-off', testMatch: '**/music/music-off.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['bootstrap'] }
 	]
 });

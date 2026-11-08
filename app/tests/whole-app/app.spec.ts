@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { finishFirstRun, moviesDir, newOwner, owner, plainForm, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
+import { finishFirstRun, moviesDir, newOwner, owner, plainForm, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from '../helpers/helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 

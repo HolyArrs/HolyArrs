@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, finishFirstRun } from '../helpers/helpers.ts';
 
 // #94: Settings > Metadata says what the metadata server gets and links to
 // the Count this install switch, at desktop and phone width.

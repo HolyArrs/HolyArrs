@@ -2,8 +2,8 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { episodeAction, episodeState, openFromSearch, openSeasonNamed, owner, signIn } from './helpers.ts';
-import { animeReleaseHash, qbitPort } from './fakes.mjs';
+import { episodeAction, episodeState, openFromSearch, openSeasonNamed, owner, signIn } from '../helpers/helpers.ts';
+import { animeReleaseHash, qbitPort } from '../fakes/fakes.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
@@ -15,7 +15,7 @@ test.describe.configure({ timeout: 90_000 });
 // to S02E01, the Release for 14 to S02E02, and the file of 13 must land on
 // S02E01 in the Library.
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 const qbit = `http://127.0.0.1:${qbitPort}`;
 const show = 'Hoshikage Relay';
 const want = `[Lab Fansub] ${show} - 13 [1080p]`;

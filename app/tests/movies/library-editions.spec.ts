@@ -2,13 +2,13 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { noSidewaysScroll, openLibraryTab, owner, signIn, titleAction } from './helpers.ts';
-import { plexPort, plexServerToken } from './fakes.mjs';
+import { noSidewaysScroll, openLibraryTab, owner, signIn, titleAction } from '../helpers/helpers.ts';
+import { plexPort, plexServerToken } from '../fakes/fakes.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 const plex = `http://127.0.0.1:${plexPort}`;
 const edition = "Director's Cut";
 const tag = `{edition-${edition}}`;

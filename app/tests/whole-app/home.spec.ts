@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 // Home (roadmap #3): the owner's overview, and the setup bar while setup is open, on a desktop and a phone.
 for (const width of [1280, 390]) {

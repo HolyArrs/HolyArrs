@@ -1,5 +1,5 @@
 import { expect, test, type CDPSession, type Page, type Route } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn } from '../helpers/helpers.ts';
 
 // Explore memory: after 20 Home -> Explore -> title -> Home rounds the
 // heap, DOM nodes and event listeners come back to where they started

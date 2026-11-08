@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { plexPort } from './fakes.mjs';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { plexPort } from '../fakes/fakes.mjs';
+import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 // Plex watchlist sync (#102), with the fake Plex only (fakes.mjs): the
 // owner links their Plex account, allows watchlists in Request rules and

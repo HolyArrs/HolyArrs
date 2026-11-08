@@ -9,8 +9,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../..');
-const tmp = join(here, '.tmp-base');
+const repo = resolve(here, '../../..');
+const tmp = join(here, '..', '.tmp-base');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');
 export const appPort = Number(process.env.HOLYARRS_E2E_BASE_APP_PORT ?? 18734);

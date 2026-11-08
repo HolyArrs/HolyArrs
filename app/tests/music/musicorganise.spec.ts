@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openAdvanced, openInLibrary } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openAdvanced, openInLibrary } from '../helpers/helpers.ts';
 
 // Organise for music (4.15.4): runs after musicdownloads.spec.ts, so Tin
 // Lanterns – Harbour Songs (2019) has three tracks in the music Library

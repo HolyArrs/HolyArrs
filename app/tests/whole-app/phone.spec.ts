@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 test('phone: bottom menu, one column, no sideways scroll on any page', async ({ page }) => {
 	await signIn(page, owner());

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
-import { traktKey } from './fakes.mjs';
+import { owner, signIn } from '../helpers/helpers.ts';
+import { traktKey } from '../fakes/fakes.mjs';
 
 // Outside lists settings against the fake TMDB and fake Trakt in fakes.mjs.
 // Runs after the movie tests, so the owner, the Movies folder and the TMDB

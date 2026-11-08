@@ -5,7 +5,7 @@ const port = process.env.HOLYARRS_E2E_PORT ?? '18797';
 // Status (#71, #78): a fresh app of its own (the phone audit's server), so it
 // runs without the main suite; every tab at 1280 and 390.
 export default defineConfig({
-	testDir: '.',
+	testDir: '..',
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,
@@ -19,5 +19,5 @@ export default defineConfig({
 		stdout: 'ignore',
 		stderr: 'pipe'
 	},
-	projects: [{ name: 'status', testMatch: 'status.spec.ts', use: { ...devices['Desktop Chrome'] } }]
+	projects: [{ name: 'status', testMatch: '**/health/status.spec.ts', use: { ...devices['Desktop Chrome'] } }]
 });

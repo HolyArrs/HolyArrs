@@ -2,13 +2,13 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { owner, signIn, inLibrary } from './helpers.ts';
-import { traktKey } from './fakes.mjs';
+import { owner, signIn, inLibrary } from '../helpers/helpers.ts';
+import { traktKey } from '../fakes/fakes.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
+const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #104 Auto-add shows from lists: an Outside list that adds shows, against
 // the fake TMDB list 104 and the fake Trakt list lab/tv-picks in fakes.mjs.

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn } from '../helpers/helpers.ts';
 
 // Music off leaks nothing: with Music turned off in Settings > Parts and
 // controls, no screen shows music, the music pages and routes give the

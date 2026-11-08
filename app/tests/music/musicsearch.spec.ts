@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openAdvanced, openInLibrary } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced, openInLibrary } from '../helpers/helpers.ts';
 
 // Searching albums (3.3.3, 3.3.4) against the fake Torznab Source in
 // fakes.mjs: an album search answers with a FLAC copy, an MP3 320 copy and

@@ -4,7 +4,7 @@ const appPort = '18739';
 
 export default defineConfig({
 	testDir: '../tests',
-	testMatch: 'acceptance-library.spec.ts',
+	testMatch: '**/mediafiles/acceptance-library.spec.ts',
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,
@@ -17,7 +17,7 @@ export default defineConfig({
 		trace: 'retain-on-failure'
 	},
 	webServer: {
-		command: 'node ../tests/acceptance-library-server.mjs',
+		command: 'node ../tests/setups/acceptance-library-server.mjs',
 		url: `http://127.0.0.1:${appPort}/healthz`,
 		reuseExistingServer: false,
 		timeout: 240_000,

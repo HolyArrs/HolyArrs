@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn } from '../helpers/helpers.ts';
 
 // Runs after the desktop tests (which make the owner and add a movie) and
 // scans every page in light and dark with axe. Every WCAG violation fails.

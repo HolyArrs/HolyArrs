@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { fakeYouTube, tmdbPort, videoArtist } from './fakes.mjs';
-import { owner, signIn } from './helpers.ts';
+import { fakeYouTube, tmdbPort, videoArtist } from '../fakes/fakes.mjs';
+import { owner, signIn } from '../helpers/helpers.ts';
 
 // Trailers from HolyArrs's own reader, against the fake YouTube (fakes.mjs):
 // a page only notes a title, the trailer pass (every few seconds here)

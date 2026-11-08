@@ -6,7 +6,7 @@ const port = process.env.HOLYARRS_E2E_PORT ?? '18797';
 // the block the main suite's fakes take, so it can run
 // beside the main suite; every page at 360 and 390 wide.
 export default defineConfig({
-	testDir: '.',
+	testDir: '..',
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,
@@ -20,5 +20,5 @@ export default defineConfig({
 		stdout: 'ignore',
 		stderr: 'pipe'
 	},
-	projects: [{ name: 'phone-audit', testMatch: 'phone-audit.spec.ts', use: { ...devices['Pixel 7'] } }]
+	projects: [{ name: 'phone-audit', testMatch: '**/whole-app/phone-audit.spec.ts', use: { ...devices['Pixel 7'] } }]
 });

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, finishFirstRun } from '../helpers/helpers.ts';
 
 const tiny = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 

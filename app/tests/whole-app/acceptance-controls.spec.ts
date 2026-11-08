@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn } from '../helpers/helpers.ts';
 
 test('the Downloaders Test button reaches the preserved lab qBittorrent with its API key', async ({ page }) => {
 	// The lab's own qBittorrent (research\lab); without it the test is skipped with the reason.

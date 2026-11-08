@@ -5,11 +5,11 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deezerURL, mbPort, metadataEnv, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from './fakes.mjs';
+import { deezerURL, mbPort, metadataEnv, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from '../fakes/fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../..');
-const tmp = join(here, '.tmp-acceptance-library');
+const repo = resolve(here, '../../..');
+const tmp = join(here, '..', '.tmp-acceptance-library');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');
 const subsBin = join(tmp, process.platform === 'win32' ? 'holyarrs-fakesubs.exe' : 'holyarrs-fakesubs');

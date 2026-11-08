@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { finishFirstRun } from './helpers.ts';
+import { finishFirstRun } from '../helpers/helpers.ts';
 
 // The whole app at http://127.0.0.1:18735/holyarrs behind a reverse proxy
 // that answers nothing outside /holyarrs: first run, sign-in, pages, the
@@ -36,7 +36,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await page.getByLabel('Password again').fill('base-test-password');
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).toHaveURL(`${root}/welcome?first=1`);
-	const movies = join(here, '.tmp-base', 'movies');
+	const movies = join(here, '..', '.tmp-base', 'movies');
 	mkdirSync(movies, { recursive: true });
 	await finishFirstRun(page, movies);
 	await expect(page).toHaveURL(`${root}/`);

@@ -6,8 +6,8 @@ const port = process.env.HOLYARRS_E2E_PORT ?? '18734';
 process.env.HOLYARRS_E2E_PORT = port;
 
 export default defineConfig({
-	testDir: '.',
-	testMatch: 'acceptance-controls.spec.ts',
+	testDir: '..',
+	testMatch: '**/whole-app/acceptance-controls.spec.ts',
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,
@@ -25,9 +25,9 @@ export default defineConfig({
 		stderr: 'ignore'
 	},
 	projects: [
-		{ name: 'bootstrap', testMatch: 'app.spec.ts', use: { ...devices['Desktop Chrome'] } },
-		{ name: 'lab-qbittorrent', testMatch: 'acceptance-controls.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['bootstrap'] },
-		{ name: 'controls', testMatch: 'controls.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['lab-qbittorrent'] },
-		{ name: 'parts', testMatch: 'parts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] }
+		{ name: 'bootstrap', testMatch: '**/whole-app/app.spec.ts', use: { ...devices['Desktop Chrome'] } },
+		{ name: 'lab-qbittorrent', testMatch: '**/whole-app/acceptance-controls.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['bootstrap'] },
+		{ name: 'controls', testMatch: '**/whole-app/controls.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['lab-qbittorrent'] },
+		{ name: 'parts', testMatch: '**/whole-app/parts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] }
 	]
 });

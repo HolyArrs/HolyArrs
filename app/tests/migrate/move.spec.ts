@@ -11,8 +11,8 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { oldKey, oldRadarrPort, oldSeerrPort } from "./fakes.mjs";
-import { moviesDir, noSidewaysScroll, owner, signIn } from "./helpers.ts";
+import { oldKey, oldRadarrPort, oldSeerrPort } from "../fakes/fakes.mjs";
+import { moviesDir, noSidewaysScroll, owner, signIn } from "../helpers/helpers.ts";
 
 // Move from other apps (6.2.2), in four steps: read a fake old Radarr and
 // Seerr, choose what to move, move (a quiet test run first; problems open
@@ -383,7 +383,7 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
 // offered without being shown, and kept for Read again until a move
 // finishes (Luis 2026-11-05: "Keep key until moved").
 test("import a made-up secrets file, then read Radarr with the saved key", async () => {
-  const tmp = join(dirname(fileURLToPath(import.meta.url)), ".tmp");
+  const tmp = join(dirname(fileURLToPath(import.meta.url)), "..", ".tmp");
   const me = (await (await page.request.get("/api/v1/auth/me")).json()) as {
     csrf: string;
   };

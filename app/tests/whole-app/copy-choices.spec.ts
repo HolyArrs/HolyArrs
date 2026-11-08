@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, addFromSearch, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, addFromSearch, finishFirstRun } from '../helpers/helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 

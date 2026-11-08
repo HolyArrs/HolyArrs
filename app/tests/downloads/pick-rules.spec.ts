@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, openAdvanced, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, openAdvanced, owner, signIn } from '../helpers/helpers.ts';
 
 // Pick rules: copy a ready-made set, change a step and a trait, save, see it
 // after a reload, change it again, remove the copy (asked first); a

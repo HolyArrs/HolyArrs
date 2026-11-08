@@ -4,11 +4,11 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deezerURL, mbPort, metadataEnv, plexPort, startFakes, subsPort, tmdbPort, traktPort, tvmazePort, youtubeURL } from './fakes.mjs';
+import { deezerURL, mbPort, metadataEnv, plexPort, startFakes, subsPort, tmdbPort, traktPort, tvmazePort, youtubeURL } from '../fakes/fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../..');
-const tmp = join(here, '.tmp');
+const repo = resolve(here, '../../..');
+const tmp = join(here, '..', '.tmp');
 const config = join(tmp, 'config');
 const movies = join(tmp, 'movies');
 const showsDir = join(tmp, 'shows');
