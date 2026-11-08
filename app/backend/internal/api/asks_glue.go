@@ -18,14 +18,14 @@ type askBrief = requests.AskBrief
 // person is the signed-in person as Requests sees them. Without
 // sign-in (tests) it is user 1 with every right.
 func (a *API) person(r *http.Request) requests.Person {
-	who, ok := webserver.From(r.Context())
-	if !ok {
-		var name string
-		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name FROM users WHERE id = 1").Scan(&name)
-		return requests.Person{UserID: 1, Name: name, AutoApprove: true, NoLimit: true}
-	}
-	return requests.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(webserver.PermAutoApprove), NoLimit: who.Has(webserver.PermApprove),
-		MaxRating: a.kidMax(r)}
+	return requests.PersonOf(r, a.kidMax, a.ownerName)
+}
+
+// ownerName is user 1's name (the stand-in person without sign-in).
+func (a *API) ownerName(ctx context.Context) string {
+	var name string
+	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT name FROM users WHERE id = 1").Scan(&name)
+	return name
 }
 
 // mayApprove says whether the signed-in person decides asks.
