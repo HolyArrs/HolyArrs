@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"strings"
 	"testing"
 
@@ -82,23 +81,6 @@ func TestPinMoveCredentialStore(t *testing.T) {
 	if _, ok, err := ReadMoveCredential(ctx, d.Store, d.Vault, "bazarr"); ok || err != nil {
 		t.Fatalf("bazarr %v %v", ok, err)
 	}
-	// Consuming with the version it was read at works once; a replaced one is refused.
-	_, ver, _, _ := ReadMoveCredentialVersion(ctx, d.Store, d.Vault, "radarr")
-	save("radarr", "http://radarr:7878", "key-2b")
-	err = d.Store.Write(ctx, func(tx *sql.Tx) error { return ForgetMoveCredentialTx(ctx, tx, "radarr", ver) })
-	if !errors.Is(err, ErrMoveCredentialChanged) {
-		t.Fatalf("stale consume: %v", err)
-	}
-	_, ver, _, _ = ReadMoveCredentialVersion(ctx, d.Store, d.Vault, "radarr")
-	if err := d.Store.Write(ctx, func(tx *sql.Tx) error { return ForgetMoveCredentialTx(ctx, tx, "radarr", ver) }); err != nil {
-		t.Fatalf("consume: %v", err)
-	}
-	if err := d.Store.Write(ctx, func(tx *sql.Tx) error { return ForgetMoveCredentialTx(ctx, tx, "radarr", ver) }); !errors.Is(err, ErrMoveCredentialChanged) {
-		t.Fatalf("second consume: %v", err)
-	}
-	if n := pinCount(t, d, "SELECT count(*) FROM secrets"); n != others+2 {
-		t.Fatalf("secrets after consume %d, want %d", n, others+2)
-	}
 	// Forget one, then all; the others' secrets stay.
 	if n, err := ForgetMoveCredential(ctx, d.Store, "sonarr"); err != nil || n != 1 {
 		t.Fatalf("forget one: %d %v", n, err)
@@ -106,7 +88,7 @@ func TestPinMoveCredentialStore(t *testing.T) {
 	if n, err := ForgetMoveCredential(ctx, d.Store, "sonarr"); err != nil || n != 0 {
 		t.Fatalf("forget again: %d %v", n, err)
 	}
-	if n, err := ForgetMoveCredential(ctx, d.Store, ""); err != nil || n != 1 {
+	if n, err := ForgetMoveCredential(ctx, d.Store, ""); err != nil || n != 2 {
 		t.Fatalf("forget all: %d %v", n, err)
 	}
 	if n := pinCount(t, d, "SELECT count(*) FROM secrets"); n != others {

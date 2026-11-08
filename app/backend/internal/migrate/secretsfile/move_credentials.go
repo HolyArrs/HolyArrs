@@ -2,7 +2,6 @@ package secretsfile
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -161,40 +160,6 @@ func dropMove(ctx context.Context, tx *sql.Tx, kind string) error {
 		return err
 	}
 	_, err = tx.ExecContext(ctx, "DELETE FROM move_credentials WHERE kind = ?", kind)
-	return err
-}
-
-// ForgetMoveCredentialTx consumes one saved credential in the same
-// transaction that keeps its successful read.
-var ErrMoveCredentialChanged = errors.New("the saved credential changed or was already used; read again with the current key")
-
-func ForgetMoveCredentialTx(ctx context.Context, tx *sql.Tx, kind string, version MoveCredentialVersion) error {
-	if !validMoveKind(kind) {
-		return errors.New("unknown old app")
-	}
-	var sealed string
-	err := tx.QueryRowContext(ctx, "SELECT s.value FROM move_credentials m JOIN secrets s ON s.id = m.secret_id WHERE m.kind = ? AND m.secret_id = ?", kind, version.SecretID).Scan(&sealed)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrMoveCredentialChanged
-	}
-	if err != nil {
-		return err
-	}
-	if sha256.Sum256([]byte(sealed)) != version.SealedSHA {
-		return ErrMoveCredentialChanged
-	}
-	res, err := tx.ExecContext(ctx, "DELETE FROM move_credentials WHERE kind = ? AND secret_id = ?", kind, version.SecretID)
-	if err != nil {
-		return err
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n != 1 {
-		return ErrMoveCredentialChanged
-	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM secrets WHERE id = ?", version.SecretID)
 	return err
 }
 
