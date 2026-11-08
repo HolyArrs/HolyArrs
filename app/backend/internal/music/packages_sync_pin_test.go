@@ -168,3 +168,42 @@ func TestPinSyncStatsEmptyStore(t *testing.T) {
 		t.Fatal("empty store covers something")
 	}
 }
+
+func TestPackageAlbumLookupCaseAndMissing(t *testing.T) {
+	s, src := pinSyncer(t)
+	ctx := context.Background()
+	src.pkgs = append(src.pkgs, pkgJSON(1, 1, 1))
+	if _, err := s.SyncOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	upper := strings.ToUpper(albumID(1))
+	if !s.HasAlbum(upper) {
+		t.Fatal("an upper-case album key is not found")
+	}
+	if s.HasAlbum(albumID(9)) {
+		t.Fatal("an album no package lists reads as kept")
+	}
+	if c, ok := s.AlbumCover(upper); !ok || c == nil || c.V != "c1" {
+		t.Fatalf("cover %+v %v", c, ok)
+	}
+	if c, ok := s.AlbumCover(albumID(9)); ok || c != nil {
+		t.Fatalf("missing album cover %+v %v", c, ok)
+	}
+	if artist, _, ok := s.album(ctx, upper); !ok || artist != artistID(1) {
+		t.Fatalf("album artist %q %v", artist, ok)
+	}
+	if n := s.albumCount(ctx); n != 1 {
+		t.Fatalf("album count %d", n)
+	}
+	// The same artist again, now listing no albums.
+	src.pkgs = append(src.pkgs, emptyPkgJSON(1, 2))
+	if _, err := s.SyncOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if n := s.albumCount(ctx); n != 0 {
+		t.Fatalf("album count after the artist lists none: %d", n)
+	}
+	if s.HasAlbum(albumID(1)) {
+		t.Fatal("dropped album still kept")
+	}
+}
