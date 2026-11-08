@@ -132,7 +132,6 @@ var packageHome = map[string]string{
 	"downloader":    "downloads",
 	"dlsync":        "downloads",
 	"mediaserver":   "mediaservers",
-	"musicsync":     "music",
 	"asks":          "requests",
 	"lists":         "requests",
 	"explore":       "discover",

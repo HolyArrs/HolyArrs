@@ -15,7 +15,7 @@ import (
 // Artist packages: the metadata server builds one package per covered
 // artist (header, every release group with its cover record, the picked
 // albums' track lists, the artist's picture records). An install copies
-// them all on a fixed schedule (internal/musicsync), so a music page
+// them all on a fixed schedule (the music package copy), so a music page
 // answers from local disk and never waits on the server.
 
 // PackageGroup is one release group in a package.

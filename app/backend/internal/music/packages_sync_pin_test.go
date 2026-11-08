@@ -1,4 +1,4 @@
-package musicsync
+package music
 
 import (
 	"context"
@@ -34,14 +34,14 @@ func (f *pinSource) WantMusicPackage(context.Context, string) error { return nil
 // Pins today's music_package* SQL (upsert, delete-then-insert of an
 // artist's albums, cursor row, aggregates) before it moves to music/store.
 
-func pinSyncer(t *testing.T) (*Sync, *pinSource) {
+func pinSyncer(t *testing.T) (*PackageSync, *pinSource) {
 	t.Helper()
 	picGap = 0
 	src := &pinSource{}
-	return &Sync{Store: openStore(t), Source: src}, src
+	return &PackageSync{Store: openStore(t), Source: src}, src
 }
 
-func pinCount(t *testing.T, s *Sync, table string) int {
+func pinCount(t *testing.T, s *PackageSync, table string) int {
 	t.Helper()
 	var n int
 	if err := s.Store.Read().QueryRow("SELECT count(*) FROM " + table).Scan(&n); err != nil {
@@ -81,7 +81,7 @@ func TestPinSyncLargeLibraryRows(t *testing.T) {
 		t.Fatalf("stats %+v", st)
 	}
 	// A restart reads the same index from disk.
-	s2 := &Sync{Store: s.Store, Source: src}
+	s2 := &PackageSync{Store: s.Store, Source: src}
 	if err := s2.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
