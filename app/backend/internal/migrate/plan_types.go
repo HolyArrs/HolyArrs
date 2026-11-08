@@ -1,7 +1,7 @@
 package migrate
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // A Plan says what a move would bring over from one or more Snapshots:

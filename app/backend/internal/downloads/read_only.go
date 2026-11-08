@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // ReadOnlyEnv names the env var that lists Downloaders to treat as read only.

@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // seedPack turns seed41's movie into a show whose pack Download covers

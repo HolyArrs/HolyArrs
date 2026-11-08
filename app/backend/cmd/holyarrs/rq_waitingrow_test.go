@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // A download waiting for its files (a share mounted late) says so on its

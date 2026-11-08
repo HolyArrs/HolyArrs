@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // KeyKitPath (POST) downloads the key kit: the master key as a key file with

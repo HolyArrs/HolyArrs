@@ -7,10 +7,9 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
@@ -24,7 +23,7 @@ func (a *handlers) ModuleRoutes(rt *webserver.Router) {
 	a.sourceHandlers().Routes(rt)
 	a.migrateHandlers().Routes(rt)
 	a.arr().Routes(rt)
-	if startup.FeatureOn(features.AIApps) {
+	if startup.FeatureOn(startup.AIApps) {
 		a.ai.Routes(rt)
 	}
 }

@@ -7,8 +7,6 @@ app/backend/internal/alerts/shows.go
 app/backend/internal/core/jobs/jobs.go
 app/backend/internal/core/jobs/schedule.go
 app/backend/internal/core/secrets/secrets.go
-app/backend/internal/datapack/apply.go
-app/backend/internal/datapack/datapack.go
 app/backend/internal/discover/calendar.go
 app/backend/internal/discover/cardart.go
 app/backend/internal/discover/details.go
@@ -97,6 +95,8 @@ app/backend/internal/library/standin.go
 app/backend/internal/library/store_episode_lists.go
 app/backend/internal/library/title_defaults.go
 app/backend/internal/library/versions.go
+app/backend/internal/mediafiles/datapack/apply.go
+app/backend/internal/mediafiles/datapack/datapack.go
 app/backend/internal/mediafiles/kid.go
 app/backend/internal/mediafiles/routes_library_summary.go
 app/backend/internal/mediafiles/routes_owned.go

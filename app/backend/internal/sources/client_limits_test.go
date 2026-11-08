@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestChange_KeyAgainWhenProxyOfPlainHTTPSourceChanges checks that a plain http Source needs its key typed again when the proxy changes, and an https Source does not.

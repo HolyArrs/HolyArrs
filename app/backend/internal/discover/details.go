@@ -14,7 +14,6 @@ import (
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -631,7 +630,7 @@ func (h *Handlers) reviewHandlers() *metadata.ReviewHandlers {
 		Provider:      h.Metadata,
 		Secrets:       h.Secrets,
 		TraktBase:     h.TraktBase,
-		TraktOn:       func() bool { return startup.FeatureOn(features.TraktLists) },
+		TraktOn:       func() bool { return startup.FeatureOn(startup.TraktLists) },
 		PartOn:        func(kind string) bool { return len(h.KindsOn(kind)) > 0 },
 		KidLimited:    h.KidLimited,
 		KidMax:        h.KidMax,

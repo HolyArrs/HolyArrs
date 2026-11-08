@@ -3,7 +3,7 @@ package downloads
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // A downloading torrent carries the swarm's full copies; a finished one or

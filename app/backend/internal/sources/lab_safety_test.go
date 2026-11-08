@@ -11,7 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // labFeed serves the lab indexer's saved feed and caps, and skips the test when the files are missing. HOLYARRS_LAB_FEED overrides the path.

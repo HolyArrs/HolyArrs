@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // Webhook headers. The signature is "sha256=" and the hex HMAC-SHA256 of

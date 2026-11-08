@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // EnsureOwn adds the Source named on the command line once and lets it reach

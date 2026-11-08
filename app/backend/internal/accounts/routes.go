@@ -5,7 +5,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Routes adds the sign-in routes and the sign-in page.
@@ -32,7 +31,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.mediaServerPeopleRoutes(m)
 	a.plexMineRoutes(m)
 	a.ssoRoutes(m)
-	if startup.FeatureOn(features.AIApps) {
+	if startup.FeatureOn(startup.AIApps) {
 		a.aiOAuthRoutes(m)
 	}
 }

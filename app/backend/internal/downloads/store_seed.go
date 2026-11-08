@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // EnsureDownloader adds the Downloader once, matched by its address.

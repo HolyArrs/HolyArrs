@@ -10,7 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestQueueAfterFailure_AlbumSearchesAlbumAgain checks that a failed album queues one album search for all its tracks, which takes the next Release.

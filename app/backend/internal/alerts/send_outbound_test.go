@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestSMTPCallerContextInterruptsAfterDial(t *testing.T) {

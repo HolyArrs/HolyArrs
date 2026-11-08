@@ -3,7 +3,7 @@ package downloads
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // M10: an empty reason never panics, and the first letter is capitalised as a whole rune.

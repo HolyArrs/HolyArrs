@@ -7,7 +7,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
@@ -23,7 +22,7 @@ import (
 func TestMain(m *testing.M) {
 	_ = os.Setenv("HOLYARRS_RELEASE_FEED", "http://127.0.0.1:1/no-network-in-tests")
 	_ = os.Setenv("HOLYARRS_DEEZER_URL", "off") // no artist pictures from the real Deezer
-	features.Register()
+	startup.RegisterHeldFeatures()
 	parts.Register()
 	registerHooks()
 	_ = os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))

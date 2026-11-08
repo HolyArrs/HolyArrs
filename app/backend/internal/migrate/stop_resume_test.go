@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestMoveStoppedByShutdownResumes: a stop of the app (docker stop, an

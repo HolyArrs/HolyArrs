@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestAskedAlbumSurvivesRefresh: an album taken in by IncludeAlbums (a single

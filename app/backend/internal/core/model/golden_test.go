@@ -1,4 +1,4 @@
-package domain
+package model
 
 import (
 	"reflect"
@@ -12,7 +12,7 @@ func fieldLayout(v any) string {
 	var b strings.Builder
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		typ := strings.NewReplacer("domain.", "", "database.", "", "jobs.", "").Replace(f.Type.String())
+		typ := strings.NewReplacer("model.", "", "domain.", "", "database.", "", "jobs.", "").Replace(f.Type.String())
 		b.WriteString(f.Name + " " + typ + " `" + string(f.Tag) + "`\n")
 	}
 	return b.String()

@@ -1,12 +1,7 @@
-// Package features names the features held back from the first release and
-// registers them with core/startup. A name moves to the module that owns the
-// feature when that module moves.
-package features
+package startup
 
 import (
 	"sync"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // The held-back features, by switch name.
@@ -27,10 +22,10 @@ var ProvenAlertKinds = map[string]bool{"discord": true, "email": true}
 
 // Register adds the held-back feature names to the registry. The program
 // wiring calls it once; calling it again does nothing.
-func Register() {
+func RegisterHeldFeatures() {
 	registerOnce.Do(func() {
 		for _, n := range []string{AIApps, PlexWatchlists, RowTitleStats, TraktLists, AlertChannelsMore, SubtitleSites, EmbySignIn, GoBack} {
-			startup.RegisterFeature(n)
+			RegisterFeature(n)
 		}
 	})
 }

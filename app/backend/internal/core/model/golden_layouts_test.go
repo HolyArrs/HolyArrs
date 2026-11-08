@@ -1,4 +1,4 @@
-package domain
+package model
 
 // goldenLayouts pins the field layout of the shared records.
 var goldenLayouts = map[string]string{

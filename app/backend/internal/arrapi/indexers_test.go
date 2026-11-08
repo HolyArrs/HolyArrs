@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // golden compares got with testdata/name; HOLYARRS_WRITE_GOLDEN=1 writes it.

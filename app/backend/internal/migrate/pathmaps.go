@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // Path rewrites from Sonarr, Radarr and Lidarr (b2-1, decision 32): each

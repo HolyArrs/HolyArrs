@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestTurnedDownRemoval_KeepsAttemptAuditLink checks that taking a Release off the Turned down list keeps the link from its attempt record.

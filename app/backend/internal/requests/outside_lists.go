@@ -13,9 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -80,7 +79,7 @@ func NormalListRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case ListTrakt:
-		if !startup.FeatureOn(features.TraktLists) {
+		if !startup.FeatureOn(startup.TraktLists) {
 			return "", ErrKind
 		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {

@@ -13,7 +13,6 @@ import (
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // ExploreMoment is the viewer's local time: the tz query value or the
@@ -90,7 +89,7 @@ func ExploreTitleCount(ctx context.Context, store *database.Store, now time.Time
 			keep = append(keep, l)
 		}
 	}
-	if len(keep) == 0 || !startup.FeatureOn(features.RowTitleStats) {
+	if len(keep) == 0 || !startup.FeatureOn(startup.RowTitleStats) {
 		return
 	}
 	day := engine.Day(now)

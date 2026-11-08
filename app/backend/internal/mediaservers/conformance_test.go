@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound/adaptertest"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestMediaServerAdapterConformance(t *testing.T) {

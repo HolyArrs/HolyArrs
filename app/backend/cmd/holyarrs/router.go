@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles/datapack"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -31,8 +31,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // byHandRoutes registers the import-by-hand routes (internal/importer).
@@ -102,14 +100,14 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	a.uiHandlers().Routes(m)
 	a.signin.Routes(m)
 	a.disc.StripRoutes(m)
-	if startup.FeatureOn(features.RowTitleStats) {
+	if startup.FeatureOn(startup.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", func(w http.ResponseWriter, r *http.Request) {
 			discover.ExploreTitleStats(w, r, a.s.Store, a.explore.Now())
 		})
 	}
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
-		if startup.FeatureOn(features.TraktLists) {
+		if startup.FeatureOn(startup.TraktLists) {
 			lists.TraktKeyRoutes(m)
 			a.disc.TokenRoutes(m)
 		}
@@ -122,7 +120,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 			t, err := requests.ReadTargets(ctx, a.s.Store.Read(), userID)
 			return t.Email, err
 		}}).Routes(m)
-	if startup.FeatureOn(features.PlexWatchlists) {
+	if startup.FeatureOn(startup.PlexWatchlists) {
 		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
 	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.controls.ReportTitleGate}).Routes(m)

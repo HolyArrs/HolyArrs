@@ -8,7 +8,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
@@ -20,7 +19,7 @@ import (
 // modules own. Each module that
 // leaves a leftover package adds its registrations here.
 func registerHooks() {
-	features.Register()
+	startup.RegisterHeldFeatures()
 	parts.Register()
 	secrets.RegisterRewriter("sources", sources.EncryptPlainExtras)
 }

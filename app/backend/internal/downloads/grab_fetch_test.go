@@ -14,7 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 var grabPayload = []byte("d4:infod6:lengthi1e4:name7:lab.mkvee")

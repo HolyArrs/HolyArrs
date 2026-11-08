@@ -6,7 +6,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // With the local network allowed, link-local and cloud

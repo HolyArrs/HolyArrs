@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 func currentCriteriaCopy(t *testing.T, s *database.Store, titleID int64, facts map[string]any, protected bool) (mediafiles.Version, mediafiles.Slot, mediafiles.File) {

@@ -5,7 +5,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // 5.1.7 minor 6: with the local network allowed, link-local and cloud

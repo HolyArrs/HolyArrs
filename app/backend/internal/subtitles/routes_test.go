@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 func routeCode(m *http.ServeMux, method, path string) int {
@@ -33,7 +33,7 @@ func TestRoutes_SitesOffKeepsBaseRoutes(t *testing.T) {
 	}
 
 	// With the feature on, the site routes exist too.
-	t.Setenv("HOLYARRS_FLAGS", features.SubtitleSites)
+	t.Setenv("HOLYARRS_FLAGS", startup.SubtitleSites)
 	m = http.NewServeMux()
 	NewHandlers(f.st, nil, &Service{Store: f.st}).Routes(m)
 	if c := routeCode(m, "GET", "/api/v1/subtitles/languages"); c != http.StatusOK {

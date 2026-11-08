@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // Errors from checking an ntfy, Gotify or Pushover Alert.

@@ -5,14 +5,13 @@ var oversized = map[string]bool{}
 
 // bannedNameAllowed lists folders that keep a banned name until their
 // task moves them.
-var bannedNameAllowed = map[string]bool{
-	"app/backend/internal/domain": true,
-}
+var bannedNameAllowed = map[string]bool{}
 
 // layers is the module layer order, bottom first. A module imports only
 // modules on a lower layer, and only their root package. Core packages sit
 // below layer 1 and are ordered by coreRows.
 var layers = map[string]int{
+	"parts":        1, // which parts of the app are on; every module asks it
 	"metadata":     1,
 	"accounts":     2,
 	"mediafiles":   3,
@@ -49,6 +48,7 @@ var coreRows = map[string]int{
 	"secrets":     1,
 	"logs":        2,
 	"jobs":        2,
+	"model":       2,
 	"webserver":   3,
 	"startup":     3,
 }
@@ -58,16 +58,12 @@ var coreRows = map[string]int{
 // so an import that breaks the layer order shows up before the move. A dash
 // means the package is split or dissolved and is not judged.
 var packageHome = map[string]string{
-	"features":      "-",            // held-back feature names; each module task moves its names, t13 deletes the package
-	"parts":         "core/startup", // leftover until t13 splits table.go into the modules; judged by its strictest home
-	"domain":        "-",            // split per R4, deleted at the end of t06b
 	"ratings":       "metadata",
 	"youtube":       "metadata",
 	"judge":         "mediafiles",
 	"naming":        "mediafiles",
 	"mediainfo":     "mediafiles",
 	"tagset":        "mediafiles",
-	"datapack":      "mediafiles",
 	"importsecrets": "migrate",
 	"compat":        "arrapi",
 	"doctor":        "health",

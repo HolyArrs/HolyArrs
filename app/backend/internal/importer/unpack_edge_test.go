@@ -11,7 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 func refusedClearly(t *testing.T, w world, imp *mediafiles.Import, why string, before map[string]string) {

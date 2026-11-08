@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 const labNZBGetRel = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"

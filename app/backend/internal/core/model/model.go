@@ -1,6 +1,6 @@
-// Package domain holds the HolyArrs records (design/domain/model.md) as Go
+// Package model holds the HolyArrs records (design/domain/model.md) as Go
 // types. Field tags name the database columns; ",json" marks a JSON column.
-package domain
+package model
 
 import (
 	"time"

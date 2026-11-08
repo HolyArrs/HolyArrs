@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestBotCheck_ToldApartFromRefusedKey checks that a bot check or ban page is told apart from a refused key, while a plain 403 still means the key.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 func TestCopyChoicesKeepEditionAndAudioIndependent(t *testing.T) {

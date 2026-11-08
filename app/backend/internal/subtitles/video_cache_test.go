@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // Disks that sleep: a subtitle look or search does not read the video again

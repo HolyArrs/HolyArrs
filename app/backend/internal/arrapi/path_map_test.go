@@ -3,7 +3,7 @@ package arrapi
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // The queue's outputPath (read by Unpackerr) maps a Windows

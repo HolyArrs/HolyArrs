@@ -3,7 +3,7 @@ package downloads
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // A failed Usenet job says why; a finished one is Done, not Seeding; a

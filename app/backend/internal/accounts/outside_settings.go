@@ -16,7 +16,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // WayView is one outside sign-in way as settings show it.
@@ -30,7 +29,7 @@ type WayView struct {
 
 func (a *Auth) way(ctx context.Context, p string) WayView {
 	v := WayView{
-		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || startup.FeatureOn(features.EmbySignIn)),
+		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || startup.FeatureOn(startup.EmbySignIn)),
 		URL:      a.signInSetting(ctx, p+"_url"),
 		ServerID: a.signInSetting(ctx, p+"_server_id"),
 		Join:     a.signInSetting(ctx, p+"_join"),

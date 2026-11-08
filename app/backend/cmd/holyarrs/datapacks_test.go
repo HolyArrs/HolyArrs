@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles/datapack"
 )
 
 func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
@@ -24,7 +24,7 @@ func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	raw, err := os.ReadFile("../../internal/datapack/testdata/synthetic-pack.json")
+	raw, err := os.ReadFile("../../internal/mediafiles/datapack/testdata/synthetic-pack.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +232,7 @@ func assertGenericDataPackError(t *testing.T, body []byte) {
 func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
 	t.Parallel()
 	r := newAskRig(t)
-	raw, err := os.ReadFile("../../internal/datapack/testdata/synthetic-pack.json")
+	raw, err := os.ReadFile("../../internal/mediafiles/datapack/testdata/synthetic-pack.json")
 	if err != nil {
 		t.Fatal(err)
 	}

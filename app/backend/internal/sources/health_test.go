@@ -3,7 +3,7 @@ package sources
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // TestHealthOf_Reason checks the reason and block words for each pause state.
