@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ func TestUsenetQueueRoutesOnATorrentClient(t *testing.T) {
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
-	base := x.srv.URL + "/api/v1/downloaders/" + itoa(did) + "/items/" + outHash
+	base := x.srv.URL + "/api/v1/downloaders/" + dlItoa(did) + "/items/" + outHash
 	for _, act := range []string{"up", "down", "bottom"} {
 		do(t, "POST", base+"/"+act, "", 409)
 	}
