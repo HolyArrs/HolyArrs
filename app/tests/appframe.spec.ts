@@ -126,7 +126,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	await openAdvanced(page);
 	await page.getByLabel('Feed may be on the local network').check();
 	await saved();
-	await page.goto('/status?tab=updates');
+	await page.goto('/health?tab=updates');
 	const upd = page.getByTestId('status-updates');
 	await upd.getByRole('button', { name: /^Check (now|again)$/ }).click();
 	await expect(upd).toContainText('v9.9.9');
@@ -135,7 +135,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	await expect(page.getByTestId('update-privacy')).toContainText('api.github.com');
 	await page.getByLabel('Check for a newer HolyArrs').uncheck();
 	await saved();
-	await page.goto('/status?tab=updates');
+	await page.goto('/health?tab=updates');
 	await expect(page.getByTestId('status-updates')).toContainText('Update check is off');
 	await expect(page.getByTestId('status-updates').getByRole('button', { name: /^Check (now|again)$/ })).toHaveCount(0);
 	await page.goto('/settings/health');

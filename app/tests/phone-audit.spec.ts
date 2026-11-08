@@ -11,7 +11,7 @@ const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp-phone');
 const pages = [
 	'/', '/explore', '/popular', '/search', '/library', '/library/copies', '/library/held',
 	'/library/import', '/library/missing-subtitles', '/library/rename', '/library/turned-down', '/calendar',
-	'/requests', '/downloads', '/downloads/decide', '/downloads/history', '/downloads/turned-down', '/status', '/account',
+	'/requests', '/downloads', '/downloads/decide', '/downloads/history', '/downloads/turned-down', '/health', '/account',
 	'/settings', '/settings/account', '/settings/alerts', '/settings/api', '/settings/appearance', '/settings/backups',
 	'/settings/danger', '/settings/downloaders', '/settings/health', '/settings/library-folders', '/settings/logs',
 	'/settings/media-servers', '/settings/move', '/settings/music', '/settings/naming', '/settings/outside-lists',

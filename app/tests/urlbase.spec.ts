@@ -49,7 +49,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect(page).toHaveURL(`${root}/settings/this-app`);
 	await expect(page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Logs', exact: true })).toHaveAttribute('href', '/holyarrs/settings/logs');
 	// The URL base in use is on Status, About.
-	await page.goto(`${root}/status?tab=about`);
+	await page.goto(`${root}/health?tab=about`);
 	await expect(page.getByTestId('url-base')).toContainText('/holyarrs');
 
 	await page.goto(`${root}/settings/api`);
@@ -67,7 +67,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect(page).toHaveURL(new RegExp(`${root}/library(\\?kind=movie)?$`));
 
 	// Every Settings page and the main pages open under the base.
-	for (const p of ['/explore', '/status', '/requests', '/downloads', '/history', '/calendar', '/settings/library-folders', '/settings/naming', '/settings/downloaders', '/settings/sources', '/settings/search', '/settings/users', '/settings/sign-in', '/settings/appearance', '/settings/alerts', '/settings/api', '/settings/health', '/settings/logs', '/settings/this-app']) {
+	for (const p of ['/explore', '/health', '/requests', '/downloads', '/history', '/calendar', '/settings/library-folders', '/settings/naming', '/settings/downloaders', '/settings/sources', '/settings/search', '/settings/users', '/settings/sign-in', '/settings/appearance', '/settings/alerts', '/settings/api', '/settings/health', '/settings/logs', '/settings/this-app']) {
 		await page.goto(`${root}${p}`);
 		await expect(page).toHaveURL(new RegExp(`^${root}${p.replace(/[/]/g, '\/')}`));
 		await expect(page.locator('main')).toBeVisible();

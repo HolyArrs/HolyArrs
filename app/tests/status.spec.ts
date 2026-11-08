@@ -48,13 +48,13 @@ for (const width of [1280, 390]) {
 		const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
 		await signIn(page, owner());
 		for (const t of tabs) {
-			await open(page, `/status?tab=${t}`);
+			await open(page, `/health?tab=${t}`);
 			await expect(page.getByRole('tablist', { name: 'Status view' }).getByRole('tab', { selected: true })).toHaveAttribute('id', `st-tab-${t}`);
 			await expect(page.locator('#st-panel-' + t)).toBeVisible();
 			await noSidewaysScroll(page);
 		}
 		// The Jobs tab draws the coming day beside the timeline; the last job row stays reachable.
-		await open(page, '/status?tab=jobs');
+		await open(page, '/health?tab=jobs');
 		await expect(page.getByTestId('status-live')).toBeVisible();
 		await expect(page.getByTestId('status-live-pills')).toHaveCount(0);
 		const last = page.getByTestId('status-row').last();
@@ -69,7 +69,7 @@ for (const width of [1280, 390]) {
 	test(`status: About downloads the support bundle at ${width}`, async ({ browser }) => {
 		const page = await (await browser.newContext({ viewport: { width, height: 844 }, acceptDownloads: true })).newPage();
 		await signIn(page, owner());
-		await open(page, '/status?tab=about');
+		await open(page, '/health?tab=about');
 		const button = page.getByTestId('status-support-bundle');
 		await expect(button).toBeVisible();
 		await button.scrollIntoViewIfNeeded();
@@ -100,7 +100,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 	await uma.getByLabel('Confirm password').fill(umaPw);
 	await uma.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(uma).toHaveURL(/\/$/);
-	await uma.goto('/status?tab=about');
+	await uma.goto('/health?tab=about');
 	await expect(uma).not.toHaveURL(/\/status/);
 	expect((await uma.request.get('/api/v1/support/bundle')).status()).toBe(403);
 	// Run the Library opens Status, but the bundle stays with the owner and admins.
@@ -109,7 +109,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 	await own.getByRole('dialog').getByLabel('Run the Library').check();
 	await own.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByText('uma saved')).toBeVisible();
-	await open(uma, '/status?tab=about');
+	await open(uma, '/health?tab=about');
 	await expect(uma.locator('#st-panel-about')).toBeVisible();
 	await expect(uma.getByTestId('status-support-bundle')).toHaveCount(0);
 	expect((await uma.request.get('/api/v1/support/bundle')).status()).toBe(403);
@@ -120,7 +120,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 test('status: tabs move with the arrow keys and keep focus', async ({ browser }) => {
 	const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 	await signIn(page, owner());
-	await open(page, '/status');
+	await open(page, '/health');
 	await page.getByRole('tablist', { name: 'Status view' }).getByRole('tab', { name: /^Status/ }).focus();
 	await page.keyboard.press('ArrowRight');
 	await expect(page).toHaveURL(/tab=jobs/);

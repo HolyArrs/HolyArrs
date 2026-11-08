@@ -165,7 +165,7 @@ test('settings pages render their forms', async () => {
 	for (const p of ['Balanced', 'Light', 'Careful']) await expect(page.getByText(p, { exact: true })).toBeVisible();
 	await page.goto('/settings/sign-in');
 	await expect(page.getByText('Skip sign-in on my local network')).toBeVisible();
-	await page.goto('/status?tab=about');
+	await page.goto('/health?tab=about');
 	await expect(page.getByText('0.0.0-skeleton', { exact: true })).toBeVisible();
 	await page.goto('/settings/parts');
 	const stages = page.getByTestId('control-stages');
