@@ -21,8 +21,14 @@ func TestEveryScreenHasAPart(t *testing.T) {
 			return err
 		}
 		rel, _ := filepath.Rel(webRoutes, filepath.Dir(p))
-		path := "/" + strings.TrimPrefix(filepath.ToSlash(rel), ".")
-		path = strings.TrimSuffix(path, "/")
+		// Route groups like (home) do not show in the address.
+		var segs []string
+		for _, seg := range strings.Split(filepath.ToSlash(rel), "/") {
+			if seg != "." && !(strings.HasPrefix(seg, "(") && strings.HasSuffix(seg, ")")) {
+				segs = append(segs, seg)
+			}
+		}
+		path := "/" + strings.Join(segs, "/")
 		if path == "" {
 			path = "/"
 		}
@@ -43,9 +49,9 @@ func TestEveryScreenHasAPart(t *testing.T) {
 			t.Errorf("Screens lists %s, but there is no such page", s)
 		}
 	}
-	// The menu lives in the layout and in lib/ui/nav.ts (the sidebar, tab bar and palette).
+	// The menu lives in the layout and in (frame)/nav.ts (the sidebar, tab bar and palette).
 	var menu []byte
-	for _, f := range []string{filepath.Join(webRoutes, "+layout.svelte"), filepath.Join(webRoutes, "..", "lib", "ui", "nav.ts")} {
+	for _, f := range []string{filepath.Join(webRoutes, "+layout.svelte"), filepath.Join(webRoutes, "(frame)", "nav.ts")} {
 		b, err := os.ReadFile(f)
 		if err != nil {
 			t.Fatal(err)

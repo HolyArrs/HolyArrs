@@ -31,7 +31,7 @@ concurrency:
 jobs:
   promote:
     if: ${{ false }}
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     # The maintainer approves each run in the release environment.
     environment: release
