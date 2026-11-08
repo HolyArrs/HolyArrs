@@ -94,6 +94,8 @@ func ReadMoveCredential(ctx context.Context, st *database.Store, v *secrets.Vaul
 	return c, found, err
 }
 
+// MoveCredentialVersion pins the stored secret a credential was read from, so a
+// later write can tell whether it changed in between.
 type MoveCredentialVersion struct {
 	SecretID  int64
 	SealedSHA [32]byte

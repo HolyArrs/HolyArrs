@@ -60,6 +60,7 @@ func (h *Handlers) switchOn(ctx context.Context, key string) bool {
 	return switchValue(ctx, h.Store, key) == "on"
 }
 
+// On reports whether the old-app API is switched on.
 func (h *Handlers) On(ctx context.Context) bool { return h.switchOn(ctx, settingOn) }
 
 // deleteFilesOn says whether a delete from those apps may take the
@@ -86,8 +87,8 @@ type Side struct {
 	// Path is the address to paste into Seerr or Overseerr as the URL base
 	// (with this server's host and port); URL is the whole address as this
 	// request reached HolyArrs.
-	Path string              `json:"path"`
-	URL  string              `json:"url"`
+	Path string           `json:"path"`
+	URL  string           `json:"url"`
 	Key  *auth.ArrKeyView `json:"key,omitempty"` // nil: no key made yet
 }
 

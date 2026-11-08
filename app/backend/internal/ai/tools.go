@@ -34,6 +34,7 @@ type toolSpec struct {
 // failure is a tool error said to the AI in plain words.
 type failure struct{ msg string }
 
+// Error returns the message shown to the client.
 func (e failure) Error() string { return e.msg }
 
 func object(props map[string]any, required ...string) map[string]any {
