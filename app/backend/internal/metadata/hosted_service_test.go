@@ -142,7 +142,7 @@ func TestMetadataURLAndAddressPolicy(t *testing.T) {
 			t.Fatalf("unsafe local policy: %s", ip)
 		}
 	}
-	for _, ip := range []string{"127.0.0.1", "::1", "10.10.25.25"} {
+	for _, ip := range []string{"127.0.0.1", "::1", "192.168.1.10"} {
 		if !outbound.MetadataServiceLocal(net.ParseIP(ip)) {
 			t.Fatalf("private endpoint denied: %s", ip)
 		}
