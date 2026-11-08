@@ -58,7 +58,7 @@ The file holds every secret in plain text until you delete it. Delete it on the 
 | `indexers` | One Source per entry, **paused**. |
 | `jackett`, `prowlarr` | Their key fills any `indexers` entry on the same address that has no key. |
 | `qbittorrent`, `sabnzbd` | A Downloader, **paused**. |
-| `nzbget`, `transmission`, `deluge` | Skipped. HolyArrs cannot use these Downloaders yet. |
+| `nzbget`, `transmission`, `deluge` | Skipped. The import cannot set these up yet; add them in **Settings > Downloaders**. |
 | `jellyfin`, `emby`, `plex` | A media server, **off** until you test it. |
 | `smtp`, `discord`, `webhook` | The Alerts "Email", "Discord" and "Webhook", **off** until you test them. |
 | `radarr`, `sonarr`, `lidarr`, `prowlarr`, `bazarr`, `seerr` | A key saved for **Move from other apps**. |
