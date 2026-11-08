@@ -1,25 +1,26 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { Orbit, SkRail } from '#lib/ui/sk/index.ts';
-	// New & Popular > Music: a shelf of large editorial cards for the week's biggest new albums, a compact list of fresh tracks, then album rows. Every action asks for (or adds) music; nothing here plays.
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import { defaultRegion } from '#lib/ui/region.ts';
+	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music-trending.ts';
+	import { coverFor } from './music-pages.ts';
+	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
+	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
+	import MusicVideoRow from './MusicVideoRow.svelte';
+	import MusicBrowseGrid from './MusicBrowseGrid.svelte';
+	import { fetchBrowseTiles, type BrowseTileData } from './browse-tiles.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { refreshInbox } from '../core/inbox.svelte.ts';
-	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music-trending.ts';
-	import { coverFor } from './music-pages.ts';
-	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
 	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
-	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
-	import Shelf from '#lib/ui/Shelf.svelte';
-	import MusicVideoRow from './MusicVideoRow.svelte';
-	import MusicBrowseGrid from './MusicBrowseGrid.svelte';
-	import { fetchBrowseTiles, type BrowseTileData } from './browse-tiles.ts';
-	import { defaultRegion } from '#lib/ui/region.ts';
 	import { to } from '../core/paths.ts';
-	import PosterCard from '#lib/ui/PosterCard.svelte';
-	import IconButton from '#lib/ui/IconButton.svelte';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
+
+	// New & Popular > Music: a shelf of large editorial cards for the week's biggest new albums, a compact list of fresh tracks, then album rows. Every action asks for (or adds) music; nothing here plays.
 
 	let { manage, mayAsk, folders, rules, sheets }: { manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; sheets: ArtistSheets } = $props();
 

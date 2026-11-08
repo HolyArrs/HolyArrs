@@ -1,20 +1,21 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	// This sits on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
-	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { ReleaseSheet, DeleteSheet, splitSteps, type RenameStep, RenamePreview } from '#lib/mediafiles/index.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import type { TrackView } from './types.ts';
+	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from './labels.ts';
+	import { ReleaseSheet, DeleteSheet, splitSteps, type RenameStep, RenamePreview } from '#lib/mediafiles/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
+	import { goto } from '$app/navigation';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
 	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { TrackView } from './types.ts';
-	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/core/paths.ts';
-	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from './labels.ts';
+
+	// This sits on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
 
 	// An artist's Library tab: what you have, the albums grouped by kind (closed until opened, with their tracks and a link to the album page), keep up to date, search and pick per album and track, activity, and settings (album kinds, quality, folder, delete).
 	let { titleId, manage = false, stamp = 0, ondeleted }: { titleId: number; manage?: boolean; stamp?: number; ondeleted?: () => void } = $props();

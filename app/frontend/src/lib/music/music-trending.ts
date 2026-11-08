@@ -1,10 +1,11 @@
-import { versioned } from '../core/pictures.ts';
-// Music trending: the metadata server's weekly lists (ListenBrainz worldwide, Deezer's charts per country) as artist and album rows.
-import { api, ApiError, type Client } from '../core/api.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
-import { to } from '../core/paths.ts';
 import type { ExploreCard } from '#lib/ui/title-cards.ts';
+import { versioned } from '../core/pictures.ts';
+import { api, ApiError, type Client } from '../core/api.ts';
+import { to } from '../core/paths.ts';
 import type { CalendarEntry } from '../core/types.ts';
+
+// Music trending: the metadata server's weekly lists (ListenBrainz worldwide, Deezer's charts per country) as artist and album rows.
 
 export type MusicTrendKind = 'artist' | 'album';
 

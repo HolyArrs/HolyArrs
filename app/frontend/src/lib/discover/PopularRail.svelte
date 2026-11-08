@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
-	import type { Snippet } from 'svelte';
 	import { dayOffset, railLabel, type RailDay, type RailItem } from './popular.ts';
+	import type { Snippet } from 'svelte';
 
 	// This week: a date rail on New & Popular, from 3 days back to 7 ahead, each with a day word and its titles beside it. The cards are the page's own, passed in as `card`.
 	let { days, card }: { days: RailDay[]; card: Snippet<[RailItem]> } = $props();
