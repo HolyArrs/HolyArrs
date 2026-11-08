@@ -10,7 +10,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 - [First run](user/setup/first-run.md)
 - [Home and Settings](user/getting-started/home-and-settings.md)
 - [Run under a path behind a reverse proxy](user/getting-started/url-base.md)
-- [Import keys and passwords from one file](user/getting-started/import-secrets.md)
+- [Import keys and passwords from one file](migrate/import-secrets.md)
 
 ## Guides by area
 
@@ -29,7 +29,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Metadata | [Metadata and privacy](library/metadata.md), [trailers](library/trailers.md), [data packs](library/data-packs.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
 | Alerts | [Alerts](users/alerts.md) |
-| Moving from other apps | [Move from other apps](user/migrate/move-from-other-apps.md), [how HolyArrs reads them](user/migrate/move-reading.md) |
+| Moving from other apps | [Move from other apps](migrate/index.md), [how HolyArrs reads them](migrate/what-is-read.md) |
 | Older apps' API | [Connect Seerr, Overseerr, Bazarr and others](user/arrapi/README.md) |
 | AI apps (held back) | [Connect AI apps](reference/ai.md) |
 | Backups | [Backups](run/backups.md) |
@@ -82,7 +82,7 @@ A changing number or token is in square brackets.
 | AI apps | `/settings/ai` | [Connect AI apps](reference/ai.md) (held back) |
 | Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
 | Backups | `/settings/backups` | [Backups](run/backups.md) |
-| Move from other apps | `/settings/move` | [Move from other apps](user/migrate/move-from-other-apps.md) |
+| Move from other apps | `/settings/move` | [Move from other apps](migrate/index.md) |
 | Downloaders | `/settings/downloaders` | [Downloaders](user/downloads/downloaders.md) |
 | Library folders | `/settings/library-folders` | [Library folders](user/mediafiles/library-folders.md) |
 | Media servers | `/settings/media-servers` | [Media servers](library/media-servers.md) |

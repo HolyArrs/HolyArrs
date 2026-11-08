@@ -21,7 +21,7 @@ Only the owner, or an admin who may change settings, can finish it.
 
 You can skip any step and finish it later in Settings. If you picked
 **Bring my apps**, HolyArrs only reads your old apps. Nothing moves until you
-say so, and your old apps keep running. See [Migrate](../migrate/move-from-other-apps.md).
+say so, and your old apps keep running. See [Migrate](../../migrate/index.md).
 
 Metadata needs no keys. See [Metadata](../../library/metadata.md).
 

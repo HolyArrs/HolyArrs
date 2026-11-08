@@ -10,7 +10,7 @@ No. Names, pictures and charts come from the HolyArrs.com metadata server. See [
 
 ## Can I keep my old apps while I try it?
 
-Yes. Moving your data over only reads your old apps. They keep running until you turn them off. See [Move from other apps](../migrate/move-from-other-apps.md).
+Yes. Moving your data over only reads your old apps. They keep running until you turn them off. See [Move from other apps](../../migrate/index.md).
 
 ## Will Seerr still work?
 

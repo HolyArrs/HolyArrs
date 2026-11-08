@@ -31,9 +31,9 @@ Stays behind: metadata profiles, import lists for music, custom formats, release
 | From Bazarr | In HolyArrs |
 | --- | --- |
 | Default language profile | Default subtitle languages. |
-| Podnapisi and Gestdown | **Subtitle sites**. Held back in this version. |
+| Podnapisi and Gestdown | **Subtitle sites**, one of each kind. A kind already here is left alone. |
 
-Stays behind: other subtitle sites and their accounts. Add them under **Settings > Subtitles**, or from a file with [Import keys from a file](import-secrets.md).
+Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed through Gestdown with no account, so add Gestdown under **Settings > Subtitles**. For a site with an account, type it there or use [Import keys from a file](import-secrets.md).
 
 ## Prowlarr
 
@@ -66,7 +66,7 @@ Type each key again and resume each item. See [After the move](index.md#after-th
 | --- | --- | --- |
 | qBittorrent read fails | Wrong user name or password, or the key on a version before 5.2. | Use the user name and password from qBittorrent's Web UI settings. |
 | A Downloader at home does not answer | **May reach the local network** is off. | Turn it on for that Downloader. |
-| Subtitle sites do nothing | They are held back in this version. | Use default subtitle languages for now. |
+| A subtitle site is off | It needs an account, which a move cannot bring. | Type the account under **Settings > Subtitles**, then turn it on. |
 
 ## Related
 

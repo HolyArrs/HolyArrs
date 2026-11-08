@@ -90,4 +90,4 @@ These point HolyArrs at stand-ins for tests. Leave them unset on a real install.
 
 - [Install](../getting-started/install.md)
 - [Run under a path](../getting-started/url-base.md)
-- [Import keys from a file](../migrate/import-secrets.md)
+- [Import keys from a file](../../migrate/import-secrets.md)

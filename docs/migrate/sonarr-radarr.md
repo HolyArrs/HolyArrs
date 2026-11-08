@@ -34,12 +34,12 @@ Old apps often run in other containers and see folders under other names. A rule
 | Exclusions | The **Never-add** list. |
 | Radarr's release stage per movie, and its availability delay | Each movie's **Release gate** and gate delay, up to 365 days. Your default for new movies stays. |
 | The untagged default wait rule | The preferred protocol and Usenet and torrent waits on the matched Pick rules, up to 7 days. See [Waits](#waits). |
-| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists**, added paused, with folder, Pick rules, Keep up to date, search on add, Release gate and read interval (6 to 168 hours). Trakt lists are held back in this version; they will need your Trakt key and a public list. |
+| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists**, added paused, with folder, Pick rules, Keep up to date, search on add, Release gate and read interval (6 to 168 hours). A Trakt list must be public and needs your Trakt key. |
 | Torznab, Newznab and RSS indexers | **Sources**, added paused and blocked from your home network. |
 | Download clients (qBittorrent, SABnzbd, Transmission, Deluge, NZBGet) | **Downloaders**, added paused and blocked from your home network. They use the `holyarrs` category, so they never pick up the old apps' downloads. |
 | Remote path mappings | **Different folder names** on the Downloader at that host, up to 100 pairs. |
 | Naming | HolyArrs naming, where a pattern word has a match. Nothing on disk is renamed. |
-| Discord, webhook and email notifications | **Alerts**, off until you type the link, address or mail password. Webhook alerts are held back in this version. |
+| Discord, webhook and email notifications | **Alerts**, off until you type the link, address or mail password. |
 
 An indexer is a site that lists releases; in HolyArrs it is a **Source**.
 
@@ -57,7 +57,7 @@ The old default wait rule comes over only when it differs from that app's own de
 
 ## What stays behind
 
-Custom formats, tag-scoped wait rules (listed with their waits, so you can set them under Pick rules), release word rules, language profiles, tags, import lists for shows, list kinds HolyArrs does not read (IMDb, Plex, another Radarr), metadata writers, download categories and other notification kinds. Each is on the **not moved** list with its reason. Auto-tag rules and history are not read.
+Custom formats, tag-scoped wait rules (listed with their waits, so you can set them under Pick rules), release word rules, language profiles, tags, import lists from Sonarr (Outside lists add movies only), list kinds HolyArrs does not read (IMDb, Plex, another Radarr, Trakt watched or collection lists), metadata writers, download categories and notification kinds other than Discord, webhook and email. Each is on the **not moved** list with its reason. Auto-tag rules and history are not read.
 
 ## If it does not work
 

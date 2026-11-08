@@ -105,7 +105,7 @@ class HealthDocs(unittest.TestCase):
         self.assertIn("`rescan_library`", text)
 
     def test_moved_path_maps(self):
-        s = section(read(DOCS / "user" / "migrate" / "move-from-other-apps.md"), "What comes over")
+        s = section(read(DOCS / "migrate" / "sonarr-radarr.md"), "What comes over")
         self.assertRegex(s, r"(?i)remote path mappings")
         self.assertIn("not visible here yet", s)
 

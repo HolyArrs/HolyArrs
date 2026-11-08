@@ -19,7 +19,7 @@ HolyArrs only reads the old apps. Nothing in them changes, and after the read Ho
 
 Open **Settings > Move from other apps** (`http://your-server:6262/settings/move`). The five steps sit in a row at the top. Click a finished step to go back to it. Each step has one main button; when it waits, the text next to it says why.
 
-1. **Read.** Click **Add an app** for each old app. See [Read your old apps](what-is-read.md). You should see one row per read, with its switch on.
+1. **Read.** Click **Add an app** for each old app. See [Read your old apps](../../migrate/what-is-read.md). You should see one row per read, with its switch on.
 2. **Choose.** Turn groups on or off. Click **Show** to see a group's items. Match each old folder to a Library folder here.
 3. **Try it.** HolyArrs tests the move against this server. You should see, per group, what will be added, used, updated, left out, not found or already here. Nothing changes yet.
 4. **Move.** Click **Move** and confirm. It runs in the background, so you can leave the page. It runs exactly what the test showed; if you change anything, the test runs again first.
@@ -33,10 +33,10 @@ Keys, passwords and tokens never come over. After the move you type each one aga
 
 | Order | App | Why this order |
 | --- | --- | --- |
-| 1 | Radarr, Sonarr | Library folders and titles come first. See [Sonarr and Radarr](sonarr-radarr.md). |
-| 2 | Lidarr, Prowlarr, Bazarr | Music, Sources and subtitle languages. See [Lidarr, Bazarr and Prowlarr](lidarr-bazarr-prowlarr.md). |
+| 1 | Radarr, Sonarr | Library folders and titles come first. See [Sonarr and Radarr](../../migrate/sonarr-radarr.md). |
+| 2 | Lidarr, Prowlarr, Bazarr | Music, Sources and subtitle languages. See [Lidarr, Bazarr and Prowlarr](../../migrate/lidarr-bazarr-prowlarr.md). |
 | 3 | qBittorrent, SABnzbd | Downloaders. Read them in the same move as the apps above. |
-| 4 | Seerr, Overseerr | People and requests, matched to titles already here. See [Request apps](requests-apps.md). |
+| 4 | Seerr, Overseerr | People and requests, matched to titles already here. See [Request apps](../../migrate/requests-apps.md). |
 
 You can read every app and move them all at once. The order matters only if you move in batches.
 
@@ -56,7 +56,7 @@ A Source, Downloader or Alert that had tags in the old app now serves every titl
 
 Sources and Downloaders arrive with **May reach the local network** off. Turn it on only for one on your home network. Link-local and cloud metadata addresses stay blocked either way.
 
-To type many keys at once, see [Import keys from a file](import-secrets.md).
+To type many keys at once, see [Import keys from a file](../../migrate/import-secrets.md).
 
 ## What stays behind
 
@@ -128,6 +128,6 @@ A person choice is `owner` (old app's owner only), `admin`, `merge` or `skip`. G
 
 ## Related
 
-- [Read your old apps](what-is-read.md)
-- [Sonarr and Radarr](sonarr-radarr.md)
-- [Import keys from a file](import-secrets.md)
+- [Read your old apps](../../migrate/what-is-read.md)
+- [Sonarr and Radarr](../../migrate/sonarr-radarr.md)
+- [Import keys from a file](../../migrate/import-secrets.md)
