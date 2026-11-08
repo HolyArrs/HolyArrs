@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"io"
@@ -28,7 +28,8 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 	defer pics.Close()
 	u, _ := url.Parse(pics.URL)
 	a, _ := signinRig(t, [][2]string{{"movie", ""}})
-	a.s.Library = &library.Service{Artwork: &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{metadata.ImageBase + "/"}, HTTP: &http.Client{Transport: toServer{u}}}}
+	cache := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{metadata.ImageBase + "/"}, HTTP: &http.Client{Transport: toServer{u}}}
+	a.Artwork = func() *library.ArtworkCache { return cache }
 
 	w, shots := getSigninArt(t, a, "10.0.0.9")
 	if w.Code != 200 || len(shots) == 0 {
@@ -48,7 +49,7 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 		r := httptest.NewRequest("GET", p, nil)
 		r.RemoteAddr = "10.0.0.9:5555"
 		rec := httptest.NewRecorder()
-		a.Handler().ServeHTTP(rec, r)
+		signinMux(a).ServeHTTP(rec, r)
 		return rec.Code
 	}
 	if c := get(s.Backdrop.URL); c != 200 {
@@ -79,4 +80,13 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 	if hits.Load() != before {
 		t.Fatal("a refused address reached the picture host")
 	}
+}
+
+// toServer sends every request to srv (the fake picture host).
+type toServer struct{ srv *url.URL }
+
+func (t toServer) RoundTrip(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	r.URL.Scheme, r.URL.Host = t.srv.Scheme, t.srv.Host
+	return http.DefaultTransport.RoundTrip(r)
 }
