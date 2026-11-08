@@ -157,7 +157,6 @@ app/backend/internal/mediaserver/mediaserver.go
 app/backend/internal/migrate/apply.go
 app/backend/internal/migrate/files.go
 app/backend/internal/musicsync/musicsync.go
-app/backend/internal/naming/naming.go
 app/backend/internal/parts/control.go
 app/backend/internal/source/afterfail.go
 app/backend/internal/source/choose.go
