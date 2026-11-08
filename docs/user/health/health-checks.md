@@ -22,6 +22,7 @@ Checks run every 5 minutes, when HolyArrs starts, and right after an import is r
 | Waiting downloads | No download waits for its files | A download waits because the Downloader cannot use its files, often a share that mounted late | One has waited about 3 days |
 | Backups | A recent backup exists | No backup yet, or the newest is old | The last scheduled backup failed |
 | Key kit | A key kit was saved for the current master key | No key kit saved yet | |
+| Trailer reader (when trailers are on) | Lookups work | 5 different videos failed in a row. If YouTube turns the reader away sooner, the row says so | |
 | Update | You run the newest version | A newer HolyArrs is out | |
 
 ## Settings

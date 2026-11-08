@@ -58,7 +58,7 @@ The **Go back** panel on the Status page is held back in this release. Going bac
 
 HolyArrs cannot change its own image, so going back takes two parts. You run the older image. HolyArrs puts the older data back.
 
-1. Change the image in your compose file (or `docker run`) to the older tag, for example `ghcr.io/coderluii/holyarrs:1.1.0`. If you pull from another registry, change only the tag.
+1. Change the image in your compose file (or `docker run`) to the older tag, for example `ghcr.io/coderluii/holyarrs:<older version>`. If you pull from another registry, change only the tag.
 2. Start the container with `docker compose up -d`.
 3. If the update did not change the data, the older version just starts. You are done.
 4. If it did, the older version shows a page instead of the app. Click **Put back the data from before the update**.

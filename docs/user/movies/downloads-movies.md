@@ -11,7 +11,7 @@ The tabs at the top sort the rows:
 | Tab | Means |
 | --- | --- |
 | Queued | Starts when the Downloader has room. |
-| Paused | Paused in the Downloader. |
+| Paused | Paused in the Downloader. Or the row says "The Downloader can't use the files", most often a share that mounted late. Once the share is there, use Check again on the row, or recheck it in the Downloader. After about 3 days the health check turns red. |
 | Downloading | Taking in data, or stalled while it keeps trying. |
 | Checking | Checking its data on disk, or moving to a new folder. |
 | Importing | Done downloading. Being checked and moved into your Library. |

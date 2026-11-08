@@ -11,6 +11,8 @@ Without Docker, see [Portable archives](../platforms/portable.md).
 
 1. Make a folder for the config on a local disk, for example
    `/srv/holyarrs/config`.
+   Not a network share. On Docker Desktop, use a named volume instead. See
+   [Docker Desktop](#docker-desktop-windows-and-mac).
 2. Find the user and group that own your media folders:
 
    ```sh
@@ -183,7 +185,12 @@ first start makes `/config/holyarrs.key`.
 Backups never contain this key. Keep a copy somewhere else. The easy way: as
 the owner, open Settings > Backups and choose **Download key kit**. To put it
 back, name the file `holyarrs.key` and place it in the config folder while
-HolyArrs is stopped. A restore with a different key is refused.
+HolyArrs is stopped. A restore with a different key is refused. With a named
+volume there is no folder to open: copy it in with
+`docker cp holyarrs.key hx:/config/` as in
+[Docker Desktop](#docker-desktop-windows-and-mac). Moving to a new machine? Put
+the key back first, then restore the backup. See
+[Backups](../backups/backups.md).
 
 You can also keep the key in its own read-only file:
 
@@ -245,7 +252,7 @@ If the two disagree, HolyArrs treats the visitor as outside your network.
 
 ## Special setups
 
-### Docker Desktop on Windows and Mac
+### Docker Desktop (Windows and Mac)
 
 Docker Desktop shares host folders through a layer where database file locks
 are not safe. HolyArrs refuses a `/config` there and shows the fix on port
@@ -344,16 +351,29 @@ Restart=always
 WantedBy=default.target
 ```
 
-- `:Z` is for SELinux systems. Use `:z` on folders the Downloader shares. Use
-  neither on NFS or SMB.
-- Give the health check as a list. The image has no shell.
-- Keep the restart policy `always`.
-- To start after a reboot without signing in, run
-  `loginctl enable-linger $USER` once.
+Or as one command:
 
-If the folder already belongs to a high id, stop the container and run
-`podman unshare chown -R 0:0 ~/holyarrs/config` (Option 1) or
-`podman unshare chown -R 1000:1000 ~/holyarrs/config`.
+```sh
+podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)" -v ~/holyarrs/config:/config:Z -p 6262:6262 --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s --restart always ghcr.io/coderluii/holyarrs:beta
+```
+
+- `:Z` is for SELinux systems. Use `:z` on folders the Downloader shares. Use
+  neither on a network share (NFS or SMB): it cannot be relabelled and the
+  container would not start.
+- Give the health check as a list. The image has no shell.
+- Keep the restart policy `always`. Podman's start-after-reboot service only
+  starts `always` containers.
+- To start after a reboot without signing in, run
+  `loginctl enable-linger $USER` once. Then use the Quadlet file, or for
+  `podman run` run `systemctl --user enable podman-restart.service`.
+
+If the folder already belongs to a high id, stop the container first, then:
+
+- Rootless Podman: `podman unshare chown -R 0:0 ~/holyarrs/config` (Option 1)
+  or `podman unshare chown -R 1000:1000 ~/holyarrs/config`.
+- Rootless Docker: `rootlesskit chown -R 0:0 ~/holyarrs/config`, run through
+  `nsenter` into the rootless daemon
+  (`nsenter -U --preserve-credentials -n -m -t $(cat $XDG_RUNTIME_DIR/docker.pid)`).
 
 ### Build your own image
 
@@ -403,5 +423,7 @@ docker cp holyarrs:/config ./holyarrs-config
 ```
 
 Then map `./holyarrs-config:/config` (or a named volume) and recreate the
-container. An older setup may still sit in an unnamed volume. List them with
-`docker volume ls`.
+container. On Docker Desktop (Windows and Mac), use a named volume, not a host
+folder, and copy the data in as shown in
+[Docker Desktop](#docker-desktop-windows-and-mac). An older setup may still sit
+in an unnamed volume. List them with `docker volume ls`.
