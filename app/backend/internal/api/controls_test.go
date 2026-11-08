@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -129,7 +131,7 @@ func TestPartSwitchesOverHTTP(t *testing.T) {
 	f := newCtl(t, false)
 	u := f.srv.URL + "/api/v1/"
 	var got struct {
-		Parts    []PartView             `json:"parts"`
+		Parts    []setupmod.PartView    `json:"parts"`
 		Screens  map[string]parts.Owner `json:"screens"`
 		SafeMode bool                   `json:"safe_mode"`
 	}
@@ -157,10 +159,10 @@ func TestPartSwitchesOverHTTP(t *testing.T) {
 	var ask struct{ Confirm string }
 	decodeJSON(t, do(t, "POST", u+"parts/shows/off", "{}", 202), &ask)
 	do(t, "POST", u+"parts/music/off", `{"confirm":"`+ask.Confirm+`"}`, 409)
-	defer func() { controlNow = time.Now }()
-	controlNow = func() time.Time { return time.Now().Add(61 * time.Second) }
+	defer func() { webserver.ConfirmNow = time.Now }()
+	webserver.ConfirmNow = func() time.Time { return time.Now().Add(61 * time.Second) }
 	do(t, "POST", u+"parts/shows/off", `{"confirm":"`+ask.Confirm+`"}`, 409)
-	controlNow = time.Now
+	webserver.ConfirmNow = time.Now
 	do(t, "POST", u+"parts/shows/off", `{"confirm":"nope"}`, 409)
 	do(t, "POST", u+"parts/shows/off", `not json`, 400)
 	if !f.pc.On(parts.Shows) {

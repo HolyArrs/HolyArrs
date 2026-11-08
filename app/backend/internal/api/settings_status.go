@@ -262,9 +262,9 @@ func (a *API) forgetStatusOnWrite(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
-		sw := &statusWriter{ResponseWriter: w}
+		sw := &webserver.StatusWriter{ResponseWriter: w}
 		h.ServeHTTP(sw, r)
-		if sw.code < 400 { // 0: nothing written, a plain 200
+		if sw.Code < 400 { // 0: nothing written, a plain 200
 			a.status.forget()
 		}
 	})

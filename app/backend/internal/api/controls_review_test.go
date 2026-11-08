@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/cookiejar"
 	"strings"
@@ -48,24 +49,20 @@ func TestLinkRestartNotFoundFirst(t *testing.T) {
 func TestConfirmIDsAreCapped(t *testing.T) {
 	f := newCtl(t, false)
 	u := f.srv.URL + "/api/v1/"
-	for i := 0; i < maxConfirmsPerUser+50; i++ {
+	for i := 0; i < webserver.MaxConfirmsPerUser+50; i++ {
 		do(t, "POST", u+"app/restart", "", 202)
 	}
 	a := f.api
-	a.confirm.mu.Lock()
-	n := len(a.confirm.ids)
-	a.confirm.mu.Unlock()
-	if n > maxConfirmsPerUser {
-		t.Fatalf("%d confirm ids kept, cap %d", n, maxConfirmsPerUser)
+	n := a.confirm.Len()
+	if n > webserver.MaxConfirmsPerUser {
+		t.Fatalf("%d confirm ids kept, cap %d", n, webserver.MaxConfirmsPerUser)
 	}
 	// The newest id still works.
 	confirmTwice(t, u+"app/restart", 202)
-	defer func() { controlNow = time.Now }()
-	controlNow = func() time.Time { return time.Now().Add(2 * ConfirmFor) }
+	defer func() { webserver.ConfirmNow = time.Now }()
+	webserver.ConfirmNow = func() time.Time { return time.Now().Add(2 * webserver.ConfirmFor) }
 	do(t, "POST", u+"app/restart", "", 202) // purges the expired ones
-	a.confirm.mu.Lock()
-	n = len(a.confirm.ids)
-	a.confirm.mu.Unlock()
+	n = a.confirm.Len()
 	if n != 1 {
 		t.Fatalf("expired ids not purged: %d left", n)
 	}

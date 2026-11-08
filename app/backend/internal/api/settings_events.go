@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -106,9 +107,9 @@ func (a *API) logSettingsChanges(h http.Handler) http.Handler {
 		if item && action == "deleted" {
 			name = a.settingsName(r.Context(), area, id)
 		}
-		sw := &statusWriter{ResponseWriter: w}
+		sw := &webserver.StatusWriter{ResponseWriter: w}
 		h.ServeHTTP(sw, r)
-		if sw.code >= 300 {
+		if sw.Code >= 300 {
 			return
 		}
 		ctx := context.WithoutCancel(r.Context())
