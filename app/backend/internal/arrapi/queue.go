@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // queueRow is one row of the download list: one per episode on the Sonarr
@@ -192,13 +194,7 @@ func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 // queueRows reads the rows of this side in a fixed number of queries.
 func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, error) {
 	db := h.Store.Read()
-	rows, err := db.QueryContext(ctx, `SELECT d.id, d.external_id, d.progress, d.eta, d.state, COALESCE(d.state_reason, ''), d.save_path, d.slot_ids, d.created_at,
-		COALESCE(r.name, ''), COALESCE(r.size, 0), COALESCE(src.name, ''), COALESCE(dl.name, ''), COALESCE(dl.protocol, ''), d.files_seen, COALESCE(dl.path_map, '[]')
-		FROM downloads d LEFT JOIN releases r ON r.id = d.release_id LEFT JOIN sources src ON src.id = r.source_id
-		LEFT JOIN downloaders dl ON dl.id = d.downloader_id
-		WHERE d.state IN ('sent', 'queued', 'downloading', 'stalled', 'paused')
-		OR (d.state IN ('finished', 'seeding') AND EXISTS (SELECT 1 FROM slots s WHERE s.active_download_id = d.id))
-		ORDER BY d.id`)
+	rows, err := downloader.QueueRows(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -210,52 +206,34 @@ func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, 
 	}
 	var dls []dl
 	var allSlots []int64
-	for rows.Next() {
-		var d dl
-		var slotsJSON, added, save, seenJSON, mapJSON string
-		if err := rows.Scan(&d.row.ID, &d.row.DownloadID, &d.row.progress, &d.row.eta, &d.state, &d.why, &save, &slotsJSON, &added,
-			&d.row.Title, &d.row.Size, &d.row.Indexer, &d.row.DownloadClient, &d.row.Protocol, &seenJSON, &mapJSON); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		_ = json.Unmarshal([]byte(slotsJSON), &d.slots)
+	for _, r := range rows {
+		d := dl{state: r.State, why: r.StateReason}
+		d.row.ID, d.row.DownloadID, d.row.progress, d.row.eta = r.ID, r.ExternalID, r.Progress, r.ETA
+		d.row.Title, d.row.Size, d.row.Indexer, d.row.DownloadClient, d.row.Protocol = r.ReleaseName, r.ReleaseSize, r.SourceName, r.DownloaderName, r.Protocol
+		_ = json.Unmarshal([]byte(r.SlotIDs), &d.slots)
 		var seen []domain.SeenFile
 		var maps []domain.PathMap
-		_ = json.Unmarshal([]byte(seenJSON), &seen)
-		_ = json.Unmarshal([]byte(mapJSON), &maps)
-		d.row.OutputPath = outputPath(save, maps, seen)
+		_ = json.Unmarshal([]byte(r.FilesSeen), &seen)
+		_ = json.Unmarshal([]byte(r.PathMap), &maps)
+		d.row.OutputPath = outputPath(r.SavePath, maps, seen)
+		added := r.CreatedAt
 		d.row.Added = utcPtr(parseTime(&added))
 		allSlots = append(allSlots, d.slots...)
 		dls = append(dls, d)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 	out := []queueRow{}
 	if len(allSlots) == 0 {
 		return out, nil
 	}
 	slots := map[int64]queueSlot{}
-	srows, err := db.QueryContext(ctx, `SELECT s.id, s.state, i.id, i.title_id, i.kind, json_extract(i.numbers, '$.season') FROM slots s
-		JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id WHERE t.state != 'removed' AND s.id IN `+idList(allSlots))
+	slotItems, err := library.SlotItems(ctx, db, allSlots)
 	if err != nil {
 		return nil, err
 	}
 	var items []int64
-	for srows.Next() {
-		var id int64
-		var q queueSlot
-		if err := srows.Scan(&id, &q.state, &q.itemID, &q.titleID, &q.itemKind, &q.season); err != nil {
-			srows.Close()
-			return nil, err
-		}
-		slots[id] = q
-		items = append(items, q.itemID)
-	}
-	srows.Close()
-	if err := srows.Err(); err != nil {
-		return nil, err
+	for _, si := range slotItems {
+		slots[si.SlotID] = queueSlot{state: si.State, itemID: si.ItemID, titleID: si.TitleID, itemKind: si.ItemKind, season: si.Season}
+		items = append(items, si.ItemID)
 	}
 	eps := map[int64]episode{}
 	if withEpisode && h.side == "sonarr" && len(items) > 0 {

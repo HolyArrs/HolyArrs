@@ -191,8 +191,7 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 	if err != nil {
 		return nil, err
 	}
-	fs, err := database.Select[domain.File](ctx, db, "files", `id IN (SELECT s.file_id FROM slots s JOIN items i ON i.id = s.item_id
-		JOIN versions v ON v.id = s.version_id AND v.is_main = 1 WHERE i.kind = 'movie' AND s.file_id IS NOT NULL AND i.title_id IN `+idList(ids)+`)`)
+	fs, err := library.MovieMainFiles(ctx, db, ids)
 	if err != nil {
 		return nil, err
 	}

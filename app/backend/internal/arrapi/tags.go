@@ -85,20 +85,10 @@ type tag struct {
 }
 
 func (h *handler) listTags(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.Store.Read().QueryContext(r.Context(), "SELECT id, label FROM compat_tags ORDER BY id")
+	out, err := listTags(r.Context(), h.Store.Read())
 	if err != nil {
 		internalError(w, err)
 		return
-	}
-	defer rows.Close()
-	out := []tag{}
-	for rows.Next() {
-		var t tag
-		if err := rows.Scan(&t.ID, &t.Label); err != nil {
-			internalError(w, err)
-			return
-		}
-		out = append(out, t)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -115,16 +105,14 @@ func (h *handler) addTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		if err := tx.QueryRow("SELECT id, label FROM compat_tags WHERE label = ?", in.Label).Scan(&in.ID, &in.Label); err == nil {
+		found, err := tagByLabel(tx, in.Label)
+		if err == nil {
+			in = found
 			return nil
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		res, err := tx.Exec("INSERT INTO compat_tags(label, created_at) VALUES (?, ?)", in.Label, database.FormatTime(h.now()))
-		if err != nil {
-			return err
-		}
-		in.ID, err = res.LastInsertId()
+		in.ID, err = insertTag(tx, in.Label, h.now())
 		return err
 	})
 	if err != nil {
@@ -150,10 +138,8 @@ func (h *handler) putTag(w http.ResponseWriter, r *http.Request) {
 	}
 	var n int64
 	err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		res, err := tx.Exec("UPDATE compat_tags SET label = ? WHERE id = ?", in.Label, in.ID)
-		if err == nil {
-			n, err = res.RowsAffected()
-		}
+		var err error
+		n, err = renameTag(tx, in.ID, in.Label)
 		return err
 	})
 	if err != nil {

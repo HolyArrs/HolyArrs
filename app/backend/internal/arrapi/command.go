@@ -105,8 +105,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		return err
 	}
 	// searchSlots hand-searches each Slot of the items; one Job per Slot.
-	searchSlots := func(where string, args ...any) error {
-		slots, err := database.Select[domain.Slot](ctx, h.Store.Read(), "slots", where+" ORDER BY id", args...)
+	searchSlots := func(slots []domain.Slot, err error) error {
 		if err != nil {
 			return err
 		}
@@ -153,8 +152,8 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		if in.SeasonNumber == nil {
 			return nil, database.ErrNotFound
 		}
-		var partID int64
-		if err := h.Store.Read().QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", in.SeriesID, *in.SeasonNumber).Scan(&partID); err != nil {
+		partID, err := library.SeasonPartID(ctx, h.Store.Read(), in.SeriesID, *in.SeasonNumber)
+		if err != nil {
 			return nil, database.ErrNotFound
 		}
 		vs, err := database.Select[domain.Version](ctx, h.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", in.SeriesID)
@@ -170,14 +169,12 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		if len(in.EpisodeIDs) == 0 {
 			return nil, nil
 		}
-		return ids, searchSlots(`item_id IN (SELECT i.id FROM items i JOIN titles t ON t.id = i.title_id WHERE i.kind = 'episode' AND t.kind = 'show'
-			AND t.state != 'removed' AND i.id IN ` + idList(in.EpisodeIDs) + `)`)
+		return ids, searchSlots(library.EpisodeSearchSlots(ctx, h.Store.Read(), in.EpisodeIDs))
 	case "MoviesSearch":
 		if len(in.MovieIDs) == 0 {
 			return nil, nil
 		}
-		return ids, searchSlots(`item_id IN (SELECT i.id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie'
-			AND t.state != 'removed' AND t.id IN ` + idList(in.MovieIDs) + `)`)
+		return ids, searchSlots(library.MovieSearchSlots(ctx, h.Store.Read(), in.MovieIDs))
 	case "RefreshSeries", "RefreshMovie", "RescanSeries", "RescanMovie":
 		kind, word := "show", library.KindRefreshTitle
 		if strings.HasSuffix(name, "Movie") {

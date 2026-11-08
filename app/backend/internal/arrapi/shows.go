@@ -161,35 +161,18 @@ func parseTime(s *string) *time.Time {
 // seasonCountsOf reads the counts of every season of the shows in ids in
 // one grouped query (no query per show), keyed by show and season.
 func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]map[int]*seasonCounts, error) {
-	now := database.FormatTime(h.now())
-	rows, err := h.Store.Read().QueryContext(ctx, `SELECT i.title_id, COALESCE(json_extract(i.numbers, '$.season'), 0) AS sn, count(*),
-		sum(s.file_id IS NOT NULL OR (i.keep_up_to_date = 1 AND i.air_date IS NOT NULL AND i.air_date <= ?)),
-		sum(s.file_id IS NOT NULL), COALESCE(sum(f.size), 0),
-		min(CASE WHEN i.keep_up_to_date = 1 AND i.air_date > ? THEN i.air_date END),
-		max(CASE WHEN i.keep_up_to_date = 1 AND i.air_date <= ? THEN i.air_date END),
-		COALESCE(group_concat(DISTINCT f.release_group), ''), max(CASE WHEN i.air_date <= ? THEN i.air_date END)
-		FROM items i
-		LEFT JOIN versions v ON v.title_id = i.title_id AND v.is_main = 1
-		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = v.id
-		LEFT JOIN files f ON f.id = s.file_id
-		WHERE i.kind = 'episode' AND i.dropped_at IS NULL AND i.title_id IN `+idList(ids)+` GROUP BY i.title_id, sn`, now, now, now, now)
+	counts, err := library.SeasonCounts(ctx, h.Store.Read(), ids, h.now())
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	out := map[int64]map[int]*seasonCounts{}
-	for rows.Next() {
-		var id int64
-		var n int
+	for _, row := range counts {
+		id, n := row.TitleID, row.Season
 		var c seasonCounts
-		var next, prev, last *string
-		var groups string
-		if err := rows.Scan(&id, &n, &c.TotalEpisodeCount, &c.EpisodeCount, &c.EpisodeFileCount, &c.SizeOnDisk, &next, &prev, &groups, &last); err != nil {
-			return nil, err
-		}
-		c.NextAiring, c.PreviousAiring, c.lastAired = utcPtr(parseTime(next)), utcPtr(parseTime(prev)), parseTime(last)
+		c.TotalEpisodeCount, c.EpisodeCount, c.EpisodeFileCount, c.SizeOnDisk = row.Total, row.Wanted, row.WithFile, row.Size
+		c.NextAiring, c.PreviousAiring, c.lastAired = utcPtr(parseTime(row.NextAiring)), utcPtr(parseTime(row.PreviousAired)), parseTime(row.LastAired)
 		c.ReleaseGroups = []string{}
-		for _, g := range strings.Split(groups, ",") {
+		for _, g := range strings.Split(row.ReleaseGroups, ",") {
 			if g != "" {
 				c.ReleaseGroups = append(c.ReleaseGroups, g)
 			}
@@ -201,7 +184,7 @@ func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]ma
 		}
 		out[id][n] = &c
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 // loadSeries reads the shows in the Library matching where, with their
@@ -748,8 +731,12 @@ type episode struct {
 // episodesWhere reads the episodes of shows in the Library matching where,
 // each with the file of its main Version.
 func (h *handler) episodesWhere(ctx context.Context, where string, args ...any) ([]episode, error) {
-	its, err := database.Select[domain.Item](ctx, h.Store.Read(), "items", "kind = 'episode' AND dropped_at IS NULL AND title_id IN (SELECT id FROM titles WHERE kind = 'show' AND state != 'removed') AND "+
-		where+" ORDER BY title_id, json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
+	return h.episodesOf(ctx, library.EpisodeFilter{Where: where, Args: args})
+}
+
+// episodesOf is episodesWhere with the filter spelled out.
+func (h *handler) episodesOf(ctx context.Context, f library.EpisodeFilter) ([]episode, error) {
+	its, err := library.EpisodeRows(ctx, h.Store.Read(), f)
 	if err != nil || len(its) == 0 {
 		return []episode{}, err
 	}
@@ -757,21 +744,8 @@ func (h *handler) episodesWhere(ctx context.Context, where string, args ...any) 
 	for i, it := range its {
 		ids[i] = it.ID
 	}
-	files := map[int64]int64{}
-	rows, err := h.Store.Read().QueryContext(ctx, `SELECT s.item_id, s.file_id FROM slots s JOIN versions v ON v.id = s.version_id AND v.is_main = 1
-		WHERE s.file_id IS NOT NULL AND s.item_id IN `+idList(ids))
+	files, err := library.MainFileOfItems(ctx, h.Store.Read(), ids)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var item, file int64
-		if err := rows.Scan(&item, &file); err != nil {
-			return nil, err
-		}
-		files[item] = file
-	}
-	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	out := make([]episode, 0, len(its))

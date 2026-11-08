@@ -125,11 +125,6 @@ func inOrder(eps []episode, ids []int64) []episode {
 	return eps
 }
 
-// keptWhere is the "monitored" rule of the lists: the episode, its season
-// and its show are all kept up to date (the rule the missing search uses).
-const keptWhere = `(i.keep_up_to_date = 1 AND t.keep_up_to_date = 1
-	AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1)))`
-
 // missingSorts are the missing list's sort keys, by lower-case name: the
 // name answered and the column sorted on.
 var missingSorts = map[string][2]string{
@@ -155,9 +150,9 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 	}
 	dir := strings.ToLower(query(r, "sortDirection"))
 	asc := dir == "ascending" || dir == "default"
-	word, sqlDir := "descending", "DESC"
+	word := "descending"
 	if asc {
-		word, sqlDir = "ascending", "ASC"
+		word = "ascending"
 	}
 	size := missingDefaultSize
 	if n, err := strconv.Atoi(query(r, "pageSize")); err == nil && n > 0 {
@@ -173,47 +168,12 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 			kept = b
 		}
 	}
-	filter := keptWhere
-	if !kept {
-		filter = "NOT " + keptWhere
-	}
-	from := `FROM items i JOIN titles t ON t.id = i.title_id JOIN versions v ON v.title_id = i.title_id AND v.is_main = 1
-		JOIN slots s ON s.item_id = i.id AND s.version_id = v.id
-		WHERE i.kind = 'episode' AND i.dropped_at IS NULL AND t.kind = 'show' AND t.state != 'removed' AND s.state != 'removed'
-		AND s.file_id IS NULL AND i.air_date IS NOT NULL AND i.air_date <= ? AND ` + filter
-	now := database.FormatTime(h.now())
-	db := h.Store.Read()
-	var total int
-	if err := db.QueryRowContext(ctx, "SELECT count(DISTINCT i.id) "+from, now).Scan(&total); err != nil {
-		internalError(w, err)
-		return
-	}
-	offset := total // a page past the end (checked first, so a huge page cannot overflow)
-	if page-1 <= total/size {
-		offset = (page - 1) * size
-	}
-	rows, err := db.QueryContext(ctx, "SELECT DISTINCT i.id, "+sort[1]+" "+from+" ORDER BY "+sort[1]+" "+sqlDir+", i.id "+sqlDir+" LIMIT ? OFFSET ?",
-		now, size, offset)
+	found, err := library.MissingEpisodes(ctx, h.Store.Read(), kept, sort[1], !asc, h.now(), page, size)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
-	var ids []int64
-	for rows.Next() {
-		var id int64
-		var key any
-		if err := rows.Scan(&id, &key); err != nil {
-			rows.Close()
-			internalError(w, err)
-			return
-		}
-		ids = append(ids, id)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		internalError(w, err)
-		return
-	}
+	total, ids := found.Total, found.IDs
 	records := []episode{}
 	if len(ids) > 0 {
 		if records, err = h.episodesWhere(ctx, "id IN "+idList(ids)); err == nil {
@@ -280,11 +240,8 @@ func (h *handler) calendarEpisodes(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, out)
 		return
 	}
-	where := "id IN " + idList(ids)
-	if !queryBool(r, "unmonitored") {
-		where += " AND keep_up_to_date = 1 AND title_id IN (SELECT id FROM titles WHERE keep_up_to_date = 1)"
-	}
-	if out, err = h.episodesWhere(ctx, where); err == nil {
+	f := library.EpisodeFilter{Where: "id IN " + idList(ids), KeptShows: !queryBool(r, "unmonitored")}
+	if out, err = h.episodesOf(ctx, f); err == nil {
 		out = inOrder(out, ids)
 		err = h.include(ctx, r, out)
 	}

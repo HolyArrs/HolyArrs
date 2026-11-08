@@ -514,8 +514,7 @@ func (h *handler) pickName(ctx context.Context, want string, own int64) (string,
 		word = " (movies)"
 	}
 	for _, n := range []string{cutName(want, 80), cutName(want, 80-len(word)) + word} {
-		var c int
-		if err := h.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM sources WHERE name = ? COLLATE NOCASE AND id != ?", n, own).Scan(&c); err == nil && c == 0 {
+		if c, err := source.CountNamed(ctx, h.Store.Read(), n, own); err == nil && c == 0 {
 			return n, true
 		}
 	}
@@ -645,8 +644,7 @@ func (h *handler) addIndexer(w http.ResponseWriter, r *http.Request) {
 	}
 	extra, _ := json.Marshal(h.extras(nil, p, name))
 	src, err := source.Add(ctx, h.Store, h.Secrets, p.input(h.sourceKind(), name), actor(r), func(tx *sql.Tx, id int64) error {
-		_, err := tx.Exec("UPDATE sources SET state = 'disabled', pause_reason = NULL, paused_until = NULL, extra = ? WHERE id = ?", string(extra), id)
-		return err
+		return source.DisableTx(tx, id, string(extra))
 	})
 	if err != nil {
 		sourceFailure(w, err)

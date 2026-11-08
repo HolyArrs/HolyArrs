@@ -43,7 +43,6 @@ app/backend/internal/api/mcp.go
 app/backend/internal/api/music.go
 app/backend/internal/api/musicpages.go
 app/backend/internal/api/musicsearch.go
-app/backend/internal/api/oldappapi.go
 app/backend/internal/api/owned.go
 app/backend/internal/api/people.go
 app/backend/internal/api/people_shelves.go
@@ -85,7 +84,6 @@ app/backend/internal/auth/aioauth.go
 app/backend/internal/auth/assurance.go
 app/backend/internal/auth/auth.go
 app/backend/internal/auth/avatar.go
-app/backend/internal/auth/compatkeys.go
 app/backend/internal/auth/invite_outside.go
 app/backend/internal/auth/outside.go
 app/backend/internal/auth/plex_tokens.go
@@ -99,13 +97,6 @@ app/backend/internal/auth/still.go
 app/backend/internal/auth/totp.go
 app/backend/internal/auth/users.go
 app/backend/internal/bridge/service.go
-app/backend/internal/compat/command.go
-app/backend/internal/compat/common.go
-app/backend/internal/compat/indexers.go
-app/backend/internal/compat/lists.go
-app/backend/internal/compat/movies.go
-app/backend/internal/compat/queue.go
-app/backend/internal/compat/shows.go
 app/backend/internal/core/jobs/jobs.go
 app/backend/internal/core/jobs/schedule.go
 app/backend/internal/core/secrets/secrets.go
@@ -120,6 +111,7 @@ app/backend/internal/downloader/choice.go
 app/backend/internal/downloader/failure.go
 app/backend/internal/downloader/manager.go
 app/backend/internal/downloader/save.go
+app/backend/internal/downloader/store_queue.go
 app/backend/internal/health/health.go
 app/backend/internal/health/settings.go
 app/backend/internal/health/states.go
