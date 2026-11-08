@@ -10,8 +10,10 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // route: POST /api/v1/sources/check
@@ -51,17 +53,17 @@ func TestCheckAllSources(t *testing.T) {
 	add("Off", bad.URL, "disabled")
 
 	a := New(Server{Store: st, Metadata: metadata.Lab(), Version: "test"})
-	m := http.NewServeMux()
-	m.HandleFunc("POST /api/v1/sources/check", a.checkSources)
-	srv := httptest.NewServer(wrapMux(m))
+	rt := webserver.NewRouter()
+	a.sourceHandlers().Routes(rt)
+	srv := httptest.NewServer(wrapMux(rt))
 	t.Cleanup(srv.Close)
 
 	var out struct {
-		Query   string        `json:"query"`
-		Sources []SourceCheck `json:"sources"`
+		Query   string                `json:"query"`
+		Sources []sources.SourceCheck `json:"sources"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources/check", `{"query":"The Matrix"}`, 200), &out)
-	by := map[string]SourceCheck{}
+	by := map[string]sources.SourceCheck{}
 	for _, c := range out.Sources {
 		by[c.Name] = c
 	}

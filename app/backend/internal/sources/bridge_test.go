@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import (
 	"context"
@@ -17,7 +17,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 const jackettKey = "jackett-test-key"
@@ -84,25 +83,25 @@ func openStore(t *testing.T) (*database.Store, *secrets.Vault) {
 
 func TestJackettSites_WrongKey(t *testing.T) {
 	f := newFakeJackett(t, "alpha", "beta")
-	sites, err := NewJackett(f.srv.URL, jackettKey).Sites(context.Background())
+	sites, err := NewBridgeJackett(f.srv.URL, jackettKey).Sites(context.Background())
 	if err != nil || len(sites) != 2 || sites[0].ID != "alpha" || sites[0].Title != "Site alpha" {
 		t.Fatalf("%+v %v", sites, err)
 	}
 	if got := sites[0].Categories; !slices.Equal(got["movie"], []int{2000, 2040}) || !slices.Equal(got["tv"], []int{5000, 5040}) || len(got["music"]) != 0 {
 		t.Fatalf("categories %+v", got)
 	}
-	if want := f.srv.URL + "/api/v2.0/indexers/alpha/results/torznab/"; NewJackett(f.srv.URL+"/", "k").FeedURL("alpha") != want {
-		t.Fatalf("feed %s", NewJackett(f.srv.URL, "k").FeedURL("alpha"))
+	if want := f.srv.URL + "/api/v2.0/indexers/alpha/results/torznab/"; NewBridgeJackett(f.srv.URL+"/", "k").FeedURL("alpha") != want {
+		t.Fatalf("feed %s", NewBridgeJackett(f.srv.URL, "k").FeedURL("alpha"))
 	}
-	if _, err := NewJackett(f.srv.URL, "wrong").Sites(context.Background()); !strings.Contains(Words(err), "turned down the key") {
+	if _, err := NewBridgeJackett(f.srv.URL, "wrong").Sites(context.Background()); !strings.Contains(BridgeWords(err), "turned down the key") {
 		t.Fatalf("wrong key: %v", err)
 	}
 	notJackett := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("<html>hello</html>")) }))
 	defer notJackett.Close()
-	if _, err := NewJackett(notJackett.URL, jackettKey).Sites(context.Background()); !strings.Contains(Words(err), "not like Jackett") {
+	if _, err := NewBridgeJackett(notJackett.URL, jackettKey).Sites(context.Background()); !strings.Contains(BridgeWords(err), "not like Jackett") {
 		t.Fatalf("not jackett: %v", err)
 	}
-	if _, err := NewJackett("http://127.0.0.1:1", jackettKey).Sites(context.Background()); !strings.Contains(Words(err), "could not reach") {
+	if _, err := NewBridgeJackett("http://127.0.0.1:1", jackettKey).Sites(context.Background()); !strings.Contains(BridgeWords(err), "could not reach") {
 		t.Fatalf("down: %v", err)
 	}
 }
@@ -111,17 +110,17 @@ func TestJackettCheck_SourcesFollowSites(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha", "beta")
-	svc := &Service{Store: s, Vault: v}
-	b, err := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	svc := &BridgeService{Store: s, Vault: v}
+	b, err := svc.Add(ctx, BridgeKindJackett, f.srv.URL, jackettKey, "", domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.Add(ctx, KindJackett, f.srv.URL+"/", jackettKey, "", domain.System); err == nil {
+	if _, err := svc.Add(ctx, BridgeKindJackett, f.srv.URL+"/", jackettKey, "", domain.System); err == nil {
 		// The API cleans the slash before Add; the store refuses the same address.
 		t.Log("a second add with a slash is the API's to clean")
 	}
 	// A Source the person made with the same name as a site.
-	if _, err := source.Add(ctx, s, v, source.Input{Name: "Site beta", Format: "torznab", URL: "https://own.example/api"}, domain.System); err != nil {
+	if _, err := Add(ctx, s, v, Input{Name: "Site beta", Format: "torznab", URL: "https://own.example/api"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	res, err := svc.CheckJackett(ctx, b, domain.System)
@@ -138,13 +137,13 @@ func TestJackettCheck_SourcesFollowSites(t *testing.T) {
 	if one.Format != "torznab" || !one.AllowLocal || !strings.HasSuffix(one.URL, "/results/torznab/") || !slices.Equal(one.Categories["movie"], []int{2000, 2040}) {
 		t.Fatalf("source %+v", one)
 	}
-	cfg, err := source.ConfigFor(ctx, one, v)
+	cfg, err := ConfigFor(ctx, one, v)
 	if err != nil || cfg.APIKey != jackettKey {
 		t.Fatalf("key %v %v", cfg.APIKey, err)
 	}
 	// The person's own changes stay, and with nothing changed in Jackett nothing is written.
 	prio := 7
-	if _, err := source.Change(ctx, s, v, one.ID, source.Input{Name: "My alpha", Priority: &prio}, domain.System); err != nil {
+	if _, err := Change(ctx, s, v, one.ID, Input{Name: "My alpha", Priority: &prio}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	b, _ = svc.Get(ctx, b.ID)
@@ -199,8 +198,8 @@ func TestJackettRemove_RemovesItsSources(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha")
-	svc := &Service{Store: s, Vault: v}
-	b, _ := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	svc := &BridgeService{Store: s, Vault: v}
+	b, _ := svc.Add(ctx, BridgeKindJackett, f.srv.URL, jackettKey, "", domain.System)
 	if _, err := svc.CheckJackett(ctx, b, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -302,11 +301,11 @@ func newFakeProwlarr(t *testing.T) *fakeProwlarr {
 func TestProwlarrConnect_AddsOrUpdatesApp(t *testing.T) {
 	ctx := context.Background()
 	f := newFakeProwlarr(t)
-	p := NewProwlarr(f.srv.URL, prowlarrKey)
+	p := NewBridgeProwlarr(f.srv.URL, prowlarrKey)
 	if v, err := p.Status(ctx); err != nil || v != "2.6.5.5623" {
 		t.Fatalf("%q %v", v, err)
 	}
-	side := Side{Kind: "Sonarr", Name: "HolyArrs TV shows", Base: "http://10.0.0.5:18730/sonarr", Key: "k1"}
+	side := BridgeSide{Kind: "Sonarr", Name: "HolyArrs TV shows", Base: "http://10.0.0.5:18730/sonarr", Key: "k1"}
 	if err := p.Connect(ctx, side); err != nil {
 		t.Fatal(err)
 	}
@@ -333,14 +332,14 @@ func TestProwlarrConnect_AddsOrUpdatesApp(t *testing.T) {
 		t.Fatalf("disconnect %d %v", len(f.apps), err)
 	}
 	f.refuse = "Unable to connect to HolyArrs"
-	if err := p.Connect(ctx, side); !strings.Contains(Words(err), "Unable to connect to HolyArrs") {
+	if err := p.Connect(ctx, side); !strings.Contains(BridgeWords(err), "Unable to connect to HolyArrs") {
 		t.Fatalf("refused: %v", err)
 	}
-	if _, err := NewProwlarr(f.srv.URL, "wrong").Status(ctx); !strings.Contains(Words(err), "turned down the key") {
+	if _, err := NewBridgeProwlarr(f.srv.URL, "wrong").Status(ctx); !strings.Contains(BridgeWords(err), "turned down the key") {
 		t.Fatalf("wrong key: %v", err)
 	}
 	f.appName = "Sonarr"
-	if _, err := p.Status(ctx); !strings.Contains(Words(err), "That is Sonarr") {
+	if _, err := p.Status(ctx); !strings.Contains(BridgeWords(err), "That is Sonarr") {
 		t.Fatalf("sonarr: %v", err)
 	}
 }
@@ -348,12 +347,12 @@ func TestProwlarrConnect_AddsOrUpdatesApp(t *testing.T) {
 func TestFind_OnlyUsualPlaces(t *testing.T) {
 	j := newFakeJackett(t)
 	p := newFakeProwlarr(t)
-	old := FindHosts
-	t.Cleanup(func() { FindHosts = old })
+	old := BridgeFindHosts
+	t.Cleanup(func() { BridgeFindHosts = old })
 	jh, _ := url.Parse(j.srv.URL)
 	ph, _ := url.Parse(p.srv.URL)
-	FindHosts = func() []string { return []string{jh.Host, ph.Host, "127.0.0.1:1"} }
-	found := Find(context.Background())
+	BridgeFindHosts = func() []string { return []string{jh.Host, ph.Host, "127.0.0.1:1"} }
+	found := FindBridges(context.Background())
 	var kinds []string
 	for _, f := range found {
 		kinds = append(kinds, f.Kind+" "+f.URL)
@@ -365,15 +364,15 @@ func TestFind_OnlyUsualPlaces(t *testing.T) {
 
 func TestCleanURL_Variants(t *testing.T) {
 	for raw, ok := range map[string]bool{"http://jackett:9117/": true, "https://x.example/jackett": true, "jackett:9117": false, "http://u:p@x": false, "http://x/?a=1": false, "ftp://x": false} {
-		if _, err := CleanURL(raw); (err == nil) != ok {
+		if _, err := BridgeCleanURL(raw); (err == nil) != ok {
 			t.Errorf("%s: %v", raw, err)
 		}
 	}
-	if u, _ := CleanURL(" http://jackett:9117/ "); u != "http://jackett:9117" {
+	if u, _ := BridgeCleanURL(" http://jackett:9117/ "); u != "http://jackett:9117" {
 		t.Errorf("cleaned %q", u)
 	}
 	// A cloud metadata address is never called.
-	if _, _, err := call(context.Background(), client(2_000_000_000), http.MethodGet, "http://169.254.169.254/", nil, nil, 10); err == nil || !strings.Contains(Words(err), "cloud") {
+	if _, _, err := call(context.Background(), client(2_000_000_000), http.MethodGet, "http://169.254.169.254/", nil, nil, 10); err == nil || !strings.Contains(BridgeWords(err), "cloud") {
 		t.Errorf("metadata: %v", err)
 	}
 	_ = net.IPv4len
@@ -386,12 +385,12 @@ func TestJackettCheck_AdoptsHandAddedLongTitleQuietWhenDown(t *testing.T) {
 	s, v := openStore(t)
 	long := strings.Repeat("x", 95)
 	f := newFakeJackett(t, "alpha", long)
-	svc := &Service{Store: s, Vault: v}
-	j := NewJackett(f.srv.URL, jackettKey)
-	if _, err := source.Add(ctx, s, v, source.Input{Name: "My Jackett alpha", Format: "torznab", URL: j.FeedURL("alpha"), APIKey: jackettKey, AllowLocal: ptrTrue()}, domain.System); err != nil {
+	svc := &BridgeService{Store: s, Vault: v}
+	j := NewBridgeJackett(f.srv.URL, jackettKey)
+	if _, err := Add(ctx, s, v, Input{Name: "My Jackett alpha", Format: "torznab", URL: j.FeedURL("alpha"), APIKey: jackettKey, AllowLocal: ptrTrue()}, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	b, _ := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	b, _ := svc.Add(ctx, BridgeKindJackett, f.srv.URL, jackettKey, "", domain.System)
 	res, err := svc.CheckJackett(ctx, b, domain.System)
 	if err != nil || res.Added != 1 || res.Updated != 1 {
 		t.Fatalf("check %+v %v", res, err)
@@ -431,13 +430,13 @@ func TestJackettCheck_RemovedSourceStaysAway(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha", "beta")
-	svc := &Service{Store: s, Vault: v}
-	b, _ := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	svc := &BridgeService{Store: s, Vault: v}
+	b, _ := svc.Add(ctx, BridgeKindJackett, f.srv.URL, jackettKey, "", domain.System)
 	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Added != 2 {
 		t.Fatalf("first %+v %v", res, err)
 	}
 	srcs, _ := svc.sourcesOf(ctx, b)
-	if err := source.Remove(ctx, s, srcs[0].ID); err != nil {
+	if err := Remove(ctx, s, srcs[0].ID); err != nil {
 		t.Fatal(err)
 	}
 	b, _ = svc.Get(ctx, b.ID)
@@ -465,11 +464,11 @@ func TestJackettCheck_LocalAllowanceFollowsAddress(t *testing.T) {
 	ctx := context.Background()
 	s, v := openStore(t)
 	f := newFakeJackett(t, "alpha")
-	svc := &Service{Store: s, Vault: v}
+	svc := &BridgeService{Store: s, Vault: v}
 	local := false
-	IsLocal = func(context.Context, string) (bool, bool) { return local, true }
-	t.Cleanup(func() { IsLocal = LocalAddress })
-	b, _ := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	BridgeIsLocal = func(context.Context, string) (bool, bool) { return local, true }
+	t.Cleanup(func() { BridgeIsLocal = BridgeLocalAddress })
+	b, _ := svc.Add(ctx, BridgeKindJackett, f.srv.URL, jackettKey, "", domain.System)
 	if _, err := svc.CheckJackett(ctx, b, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -488,7 +487,7 @@ func TestJackettCheck_LocalAllowanceFollowsAddress(t *testing.T) {
 		t.Fatalf("local Jackett: %+v %v", srcs[0], b.Extra)
 	}
 	// A name that can't be looked up keeps the last answer.
-	IsLocal = func(context.Context, string) (bool, bool) { return false, false }
+	BridgeIsLocal = func(context.Context, string) (bool, bool) { return false, false }
 	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Updated != 0 {
 		t.Fatalf("lookup failed %+v %v", res, err)
 	}
@@ -501,11 +500,11 @@ func TestLocalAddress_Variants(t *testing.T) {
 		"http://localhost:9117": true, "http://[::1]:9117": true, "http://100.87.70.86:9117": true,
 		"http://8.8.8.8:9117": false, "https://1.1.1.1": false,
 	} {
-		if got, ok := LocalAddress(ctx, raw); got != want || !ok {
+		if got, ok := BridgeLocalAddress(ctx, raw); got != want || !ok {
 			t.Errorf("%s: %v %v", raw, got, ok)
 		}
 	}
-	if _, ok := LocalAddress(ctx, "::bad"); ok {
+	if _, ok := BridgeLocalAddress(ctx, "::bad"); ok {
 		t.Error("a bad address looked up")
 	}
 }

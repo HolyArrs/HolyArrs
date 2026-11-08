@@ -13,6 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // route: POST /api/v1/sources/{id}/try
@@ -37,7 +38,7 @@ func TestSourceTryNow(t *testing.T) {
 		_, _ = w.Write([]byte(sourceCaps))
 	}))
 	t.Cleanup(idx.Close)
-	var x SourceView
+	var x sources.SourceView
 	raw, _ := json.Marshal(map[string]any{"name": "Lab", "format": "torznab", "url": idx.URL + "/api", "allow_local_network": true})
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", string(raw), 201), &x)
 	id := fmt.Sprint(x.ID)

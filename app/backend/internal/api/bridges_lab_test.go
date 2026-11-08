@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Connect Jackett or Prowlarr (#96) against the lab's own Jackett and
@@ -45,7 +45,7 @@ func TestLabBridgeProwlarr(t *testing.T) {
 	back.Start()
 	t.Cleanup(back.Close)
 	callback := fmt.Sprintf("http://%s:%d", envOr("HOLYARRS_LAB_HOST", "host.docker.internal"), ln.Addr().(*net.TCPAddr).Port)
-	p := bridge.NewProwlarr(prowlarr, key)
+	p := sources.NewBridgeProwlarr(prowlarr, key)
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
@@ -60,7 +60,7 @@ func TestLabBridgeProwlarr(t *testing.T) {
 	if st != 201 {
 		t.Fatalf("connect %d %s", st, out)
 	}
-	var v BridgeView
+	var v sources.BridgeView
 	_ = json.Unmarshal([]byte(out), &v)
 	// Prowlarr's sync runs in the background there: wait for its Sources.
 	deadline := time.Now().Add(90 * time.Second)
@@ -68,7 +68,7 @@ func TestLabBridgeProwlarr(t *testing.T) {
 		time.Sleep(2 * time.Second)
 		_, out = f.session("GET", "/api/v1/bridges", "")
 		var list struct {
-			Bridges []BridgeView `json:"bridges"`
+			Bridges []sources.BridgeView `json:"bridges"`
 		}
 		_ = json.Unmarshal([]byte(out), &list)
 		if len(list.Bridges) == 1 {
@@ -111,7 +111,7 @@ func TestLabBridgeJackett(t *testing.T) {
 	jackett := envOr("HOLYARRS_LAB_JACKETT_URL", "http://127.0.0.1:18715")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	sites, err := bridge.NewJackett(jackett, key).Sites(ctx)
+	sites, err := sources.NewBridgeJackett(jackett, key).Sites(ctx)
 	if err != nil {
 		t.Fatalf("site list: %v", err)
 	}
@@ -119,15 +119,15 @@ func TestLabBridgeJackett(t *testing.T) {
 	if len(sites) == 0 {
 		t.Fatal("the lab Jackett has no site set up: set up the lab definition first")
 	}
-	if _, err := bridge.NewJackett(jackett, "not-the-key").Sites(ctx); err == nil || !strings.Contains(bridge.Words(err), "turned down the key") {
+	if _, err := sources.NewBridgeJackett(jackett, "not-the-key").Sites(ctx); err == nil || !strings.Contains(sources.BridgeWords(err), "turned down the key") {
 		t.Fatalf("wrong key: %v", err)
 	}
-	if !bridge.Looks(ctx, &http.Client{Timeout: 5 * time.Second}, bridge.KindJackett, jackett) {
+	if !sources.BridgeLooks(ctx, &http.Client{Timeout: 5 * time.Second}, sources.BridgeKindJackett, jackett) {
 		t.Fatal("the finder does not know the lab Jackett's sign-in page")
 	}
 	// Connected through the API: its sites become Sources (none, if it has none).
 	srv, _ := sourceServer(t)
-	var v BridgeView
+	var v sources.BridgeView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/bridges", fmt.Sprintf(`{"kind":"jackett","url":%q,"key":%q}`, jackett, key), 201), &v)
 	if v.Sites != len(sites) || v.Sources != len(sites) {
 		t.Fatalf("connect %+v, want %d sites", v, len(sites))

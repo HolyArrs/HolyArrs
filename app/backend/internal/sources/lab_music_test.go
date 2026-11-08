@@ -1,6 +1,6 @@
 //go:build lab
 
-package source
+package sources
 
 import (
 	"context"

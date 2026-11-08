@@ -3,11 +3,13 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // A feed with its passkey in the path (TorrentLeech style) is shown masked,
@@ -26,7 +28,7 @@ func TestSourcePathPasskeyMasked(t *testing.T) {
 	t.Cleanup(feed.Close)
 
 	raw, _ := json.Marshal(map[string]any{"name": "TL", "format": "rss", "url": feed.URL + "/" + passkey, "allow_local_network": true})
-	var x SourceView
+	var x sources.SourceView
 	b := do(t, "POST", srv.URL+"/api/v1/sources", string(raw), 201)
 	_ = json.Unmarshal(b, &x)
 	if strings.Contains(string(b), passkey) || x.URL != feed.URL+"/"+secrets.Masked {

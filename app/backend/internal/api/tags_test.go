@@ -11,6 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Tags (#108) on Downloaders, Sources and titles: cleaned on save, kept
@@ -36,7 +37,7 @@ func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 		_, _ = w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel><title>t</title></channel></rss>`))
 	}))
 	t.Cleanup(feed.Close)
-	var src SourceView
+	var src sources.SourceView
 	raw, _ = json.Marshal(map[string]any{"name": "Kids feed", "format": "rss", "url": feed.URL, "allow_local_network": true, "tags": []string{"Kids"}})
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", string(raw), 201), &src)
 	if !reflect.DeepEqual(src.Tags, []string{"kids"}) {

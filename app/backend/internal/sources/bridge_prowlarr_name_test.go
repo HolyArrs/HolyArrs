@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import "testing"
 

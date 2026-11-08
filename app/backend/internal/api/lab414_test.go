@@ -19,7 +19,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Stage 4.14 on the lab, from a throwaway container in the lab network with
@@ -143,7 +143,7 @@ func newLabAlbum(t *testing.T) labAlbum {
 	q := jobs.New(s, jobs.Options{Workers: 2, BaseBackoff: time.Hour, PollInterval: 50 * time.Millisecond})
 	x.m = &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", lab414Cat)}
 	im := &importer.Importer{Store: s}
-	sr := &source.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 type attemptEngine struct {
@@ -134,7 +134,7 @@ func TestNZBGetJournalAbandonedPairAllowsDifferentRelease(t *testing.T) {
 	if sl := w.slot(t); sl.State != domain.SlotNeedsADecision || sl.ChosenReleaseID != nil {
 		t.Fatal("abandon did not release the choice for a person's decision", sl)
 	}
-	if _, err := (&source.Searcher{Store: w.s}).Choose(ctx, w.relID, w.slotID, true, domain.System); !errors.Is(err, source.ErrBusy) {
+	if _, err := (&sources.Searcher{Store: w.s}).Choose(ctx, w.relID, w.slotID, true, domain.System); !errors.Is(err, sources.ErrBusy) {
 		t.Fatal("abandoned Release could be chosen again", err)
 	}
 	if sl := w.slot(t); sl.State != domain.SlotNeedsADecision || sl.ChosenReleaseID != nil {
@@ -148,7 +148,7 @@ func TestNZBGetJournalAbandonedPairAllowsDifferentRelease(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "releases", &rel, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (&source.Searcher{Store: w.s}).Choose(ctx, rel.ID, w.slotID, false, domain.System); err != nil {
+	if _, err := (&sources.Searcher{Store: w.s}).Choose(ctx, rel.ID, w.slotID, false, domain.System); err != nil {
 		t.Fatal("could not choose a different Release after abandonment", err)
 	}
 	// An old recovery action repeated later must not disturb the new choice.

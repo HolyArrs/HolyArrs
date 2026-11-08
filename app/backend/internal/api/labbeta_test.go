@@ -28,7 +28,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // The last beta lab checks (#41 #46 #47 #48 #49 #50 #52; #43 is in
@@ -299,11 +299,11 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	x.lib = &library.Service{Store: s, Queue: x.q, Metadata: md}
 	x.m = &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", o.cat)}
 	x.m.Link = func(ctx context.Context, rel domain.Release) (string, error) {
-		return source.GrabLink(ctx, s, vault, rel)
+		return sources.GrabLink(ctx, s, vault, rel)
 	}
 	im := &importer.Importer{Store: s}
 	q := x.q
-	sr := &source.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) { _ = sr.QueueAfterFailure(ctx, slotID, domain.System) }
@@ -871,7 +871,7 @@ func TestLabBeta47JackettGrab(t *testing.T) {
 	jackett := envOr("HOLYARRS_LAB_JACKETT_URL", "http://jackett:9117")
 	x := newLabMovie(t, labMovieOpts{cat: "holyarrs-lab-b47"})
 	x.remove(t, labDuneHash)
-	var v BridgeView
+	var v sources.BridgeView
 	_ = json.Unmarshal(do(t, "POST", x.srv.URL+"/api/v1/bridges", fmt.Sprintf(`{"kind":"jackett","url":%q,"key":%q}`, jackett, key), 201), &v)
 	if v.Sources < 1 {
 		t.Fatalf("bridge %+v", v)

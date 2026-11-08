@@ -23,7 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -258,13 +258,13 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	if len(storedSources) != spec.Feeds {
 		t.Fatalf("stored fixture Sources %d, want %d", len(storedSources), spec.Feeds)
 	}
-	feedClients := make([]*source.Client, len(storedSources))
+	feedClients := make([]*sources.Client, len(storedSources))
 	for i, src := range storedSources {
-		cfg, err := source.ConfigFor(context.Background(), src, nil)
+		cfg, err := sources.ConfigFor(context.Background(), src, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		feedClients[i] = source.New(cfg)
+		feedClients[i] = sources.New(cfg)
 	}
 	var feedWG sync.WaitGroup
 	feedErrs := make(chan error, len(feedClients))

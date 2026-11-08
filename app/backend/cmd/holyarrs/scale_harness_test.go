@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
@@ -34,15 +34,15 @@ func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
 	if err := seedScale(t, s, spec, feed.URL, filepath.Join(t.TempDir(), "media")); err != nil {
 		t.Fatal(err)
 	}
-	sources, err := database.Select[domain.Source](context.Background(), s.Read(), "sources", "1 ORDER BY id")
-	if err != nil || len(sources) != 1 {
-		t.Fatalf("stored Sources %d: %v", len(sources), err)
+	stored, err := database.Select[domain.Source](context.Background(), s.Read(), "sources", "1 ORDER BY id")
+	if err != nil || len(stored) != 1 {
+		t.Fatalf("stored Sources %d: %v", len(stored), err)
 	}
-	cfg, err := source.ConfigFor(context.Background(), sources[0], nil)
+	cfg, err := sources.ConfigFor(context.Background(), stored[0], nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	items, err := source.New(cfg).Feed(context.Background(), nil)
+	items, err := sources.New(cfg).Feed(context.Background(), nil)
 	if err != nil || len(items) != 1 || requests != 1 {
 		t.Fatalf("stored Source feed: %d items, %d requests, error %v", len(items), requests, err)
 	}
