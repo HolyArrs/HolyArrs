@@ -92,7 +92,7 @@ class ReleaseBuild(unittest.TestCase):
         self.text = read(WORKFLOWS / "release.yml")
 
     def test_stays_inert_until_approved(self):
-        # Publishing waits for Luis's release approval; this change must not switch it on.
+        # Publishing waits for the maintainer's release approval; this change must not switch it on.
         self.assertRegex(self.text, r"\n\s+if:\s*\$\{\{\s*false\s*\}\}")
         self.assertEqual(triggers(self.text), ["workflow_dispatch"])
 
