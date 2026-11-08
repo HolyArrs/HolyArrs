@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ const backdropDarkLuma = 40
 
 // backdropLuma caches each sampled backdrop's brightness (-1: sample failed),
 // for a week and at most 50,000 backdrops.
-var backdropLuma = newTTLMap(7*24*time.Hour, 50000)
+var backdropLuma = NewTTLMap(7*24*time.Hour, 50000)
 
 // backdropSampling is the one sample worker's queue.
 var backdropSampling = make(chan string, 512)
@@ -111,10 +111,10 @@ func decodeBackdrop(r io.Reader) (image.Image, error) {
 	return img, err
 }
 
-// startBackdropDark makes the Browse pickers skip too-dark backdrops. The
+// StartBackdropDark makes the Browse pickers skip too-dark backdrops. The
 // pickers only read the cache; unknown backdrops are queued and sampled
 // one at a time in the background (cheap, low priority).
-func startBackdropDark(ctx context.Context) {
+func StartBackdropDark(ctx context.Context) {
 	backdropOnce.Do(func() {
 		cl := library.ArtworkClient()
 		go func() {
@@ -151,9 +151,9 @@ func queueBackdrop(b string) {
 	}
 }
 
-// sampleBackdrops samples the backdrops not yet known, waiting for each
+// SampleBackdrops samples the backdrops not yet known, waiting for each
 // (the warm-up uses it so built sections pick with brightness known).
-func sampleBackdrops(ctx context.Context, items []engine.Item, n int) {
+func SampleBackdrops(ctx context.Context, items []engine.Item, n int) {
 	cl := library.ArtworkClient()
 	for _, it := range items {
 		if n == 0 || ctx.Err() != nil {

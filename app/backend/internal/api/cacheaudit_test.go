@@ -46,10 +46,10 @@ func TestShorterListAndCardKeeps(t *testing.T) {
 // add a season trailer); full details keep the day.
 func TestDetailsWithoutVideosShort(t *testing.T) {
 	t.Parallel()
-	if d := detailsTTL(discoverEntry{details: &metadata.Details{}}); d > 15*time.Minute {
+	if d := detailsTTL(discoverEntry{Details: &metadata.Details{}}); d > 15*time.Minute {
 		t.Fatalf("no videos kept %v", d)
 	}
-	if d := detailsTTL(discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != discoverTTL["details"] {
+	if d := detailsTTL(discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != discoverTTL["details"] {
 		t.Fatalf("videos kept %v", d)
 	}
 }

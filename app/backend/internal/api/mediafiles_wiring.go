@@ -27,8 +27,8 @@ func (a *API) kidMax(r *http.Request) string { return accounts.KidMax(r) }
 
 // detailsRating is the rating a cached details page already knows.
 func (a *API) detailsRating(kind, tmdbID string) (string, bool) {
-	if e, ok := a.discover.get("details|" + kind + "|" + tmdbID); ok && e.details != nil && time.Since(e.at) < discoverTTL["details"] {
-		return e.details.Rating, true
+	if e, ok := a.discover.Get("details|" + kind + "|" + tmdbID); ok && e.Details != nil && time.Since(e.At) < discoverTTL["details"] {
+		return e.Details.Rating, true
 	}
 	return "", false
 }

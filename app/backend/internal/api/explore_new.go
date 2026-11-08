@@ -12,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -89,7 +90,7 @@ var newPages newPageCache
 
 // heroShown is each member's latest Explore hero (member id -> []engine.Item),
 // so New & Popular's hero shows other titles. Entries expire after a day.
-var heroShown = newTTLMap(24*time.Hour, 10000)
+var heroShown = discover.NewTTLMap(24*time.Hour, 10000)
 
 // newHeroMax is how many titles New & Popular's hero rotates through.
 const newHeroMax = 6
@@ -97,7 +98,7 @@ const newHeroMax = 6
 // newHeroKeys keeps the hero picked for a built page (page cache key ->
 // kind:tmdb set), so every page of rows leaves those titles out. Entries
 // expire with the page cache.
-var newHeroKeys = newTTLMap(explorePageTTL, 2000)
+var newHeroKeys = discover.NewTTLMap(explorePageTTL, 2000)
 
 // newHero picks the hero: the best-scoring new titles of the rail, the
 // services row and the hot and new rows that pass Explore's quality gate
@@ -963,7 +964,7 @@ func (a *API) newParams(w http.ResponseWriter, r *http.Request) (string, bool) {
 	if a.kidLimited(w, r) {
 		return "", false
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return "", false

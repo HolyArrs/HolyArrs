@@ -1,9 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
+	"image"
+	"image/color"
+	"image/jpeg"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -11,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -44,7 +49,7 @@ func signinRig(t *testing.T, titles [][2]string) (*API, *int) {
 	}
 	a := New(Server{Store: s, Version: "test"})
 	calls := 0
-	a.signin.images = func(_ context.Context, kind, id string) (metadata.CardImages, error) {
+	a.signin.Images = func(_ context.Context, kind, id string) (metadata.CardImages, error) {
 		calls++
 		b := metadata.ImageBase + "/w780/"
 		en := "en"
@@ -54,7 +59,7 @@ func signinRig(t *testing.T, titles [][2]string) (*API, *int) {
 			Posters:   []metadata.CardImage{{Path: metadata.ImageBase + "/w500/p" + id + ".jpg", Width: 2000, Height: 3000}},
 		}, nil
 	}
-	a.signin.trending = func(_ context.Context, kind string) ([]metadata.DiscoverItem, error) {
+	a.signin.Trending = func(_ context.Context, kind string) ([]metadata.DiscoverItem, error) {
 		var out []metadata.DiscoverItem
 		for i := 0; i < 8; i++ {
 			id := strconv.Itoa(900 + i)
@@ -137,8 +142,8 @@ func TestSigninArtLibraryOn(t *testing.T) {
 			lib++
 		}
 	}
-	if lib != 2 || len(shots) != signinArtMax {
-		t.Fatalf("want 2 Library shots topped up to %d, got %d Library of %d", signinArtMax, lib, len(shots))
+	if lib != 2 || len(shots) != discover.SigninArtMax {
+		t.Fatalf("want 2 Library shots topped up to %d, got %d Library of %d", discover.SigninArtMax, lib, len(shots))
 	}
 }
 
@@ -156,8 +161,8 @@ func TestSigninArtCacheAndRateLimit(t *testing.T) {
 	t.Parallel()
 	a, calls := signinRig(t, nil)
 	now := time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)
-	a.signin.now = func() time.Time { return now }
-	for i := 0; i < signinArtPerMinute; i++ {
+	a.signin.SetNow(func() time.Time { return now })
+	for i := 0; i < discover.SigninArtPerMinute; i++ {
 		if w, _ := getSigninArt(t, a, "10.0.0.9"); w.Code != 200 {
 			t.Fatalf("call %d: %d", i, w.Code)
 		}
@@ -178,27 +183,19 @@ func TestSigninArtCacheAndRateLimit(t *testing.T) {
 	}
 }
 
-// A title qualifies only with a textless backdrop at least 1920 wide and a PNG logo.
-func TestPickSigninShot(t *testing.T) {
-	t.Parallel()
-	en := "en"
-	b := metadata.ImageBase + "/w780/"
-	logo := []metadata.CardImage{{Path: metadata.ImageBase + "/w500/l.png", Lang: &en}}
-	if _, ok := pickSigninShot(metadata.CardImages{Backdrops: []metadata.CardImage{{Path: b + "x.jpg", Lang: &en, Width: 3840, Height: 2160}}, Logos: logo}); ok {
-		t.Fatal("a titled backdrop qualified")
+type signinShot = discover.SigninShot
+
+func testJPEG(t *testing.T, w, h int) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			img.Set(x, y, color.RGBA{uint8(x), uint8(y), 90, 255})
+		}
 	}
-	if _, ok := pickSigninShot(metadata.CardImages{Backdrops: []metadata.CardImage{{Path: b + "x.jpg", Width: 1280, Height: 720}}, Logos: logo}); ok {
-		t.Fatal("a small backdrop qualified")
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, nil); err != nil {
+		t.Fatal(err)
 	}
-	if _, ok := pickSigninShot(metadata.CardImages{Backdrops: []metadata.CardImage{{Path: b + "x.jpg", Width: 1920, Height: 1080}}}); ok {
-		t.Fatal("a title without a logo qualified")
-	}
-	s, ok := pickSigninShot(metadata.CardImages{Backdrops: []metadata.CardImage{{Path: b + "s.jpg", Width: 1920, Height: 1080}, {Path: b + "w.jpg", Width: 3840, Height: 2160}}, Logos: logo})
-	if !ok || s.Backdrop.URL != metadata.ImageBase+"/original/w.jpg" || s.Backdrop.W != 3840 {
-		t.Fatalf("want the widest original: %+v", s)
-	}
-	s, _ = pickSigninShot(metadata.CardImages{Backdrops: []metadata.CardImage{{Path: b + "sq.jpg", Width: 3840, Height: 2400}, {Path: b + "hd.jpg", Width: 2560, Height: 1440}}, Logos: logo})
-	if s.Backdrop.URL != metadata.ImageBase+"/original/hd.jpg" {
-		t.Fatalf("want the 16:9 one: %+v", s)
-	}
+	return buf.Bytes()
 }

@@ -5,10 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"mime"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -829,33 +826,20 @@ func (a *API) serveRemoteArtwork(w http.ResponseWriter, r *http.Request, src str
 	send(w, r, name, p)
 }
 
-// serveArtwork sends a cached picture as it is stored (no re-compression).
-// Cache names come from the picture's address. Where the address names
-// the bytes (TMDB, a versioned server address) browsers keep it a year; a
-// picture from a stable address (one that may change in place) is kept a
-// day and then revalidated with an ETag that follows the file.
-func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
-	if library.StableFile(p) {
-		if st, err := os.Stat(p); err == nil {
-			serveArtworkCached(w, r, strings.TrimSuffix(name, filepath.Ext(name))+"-"+strconv.FormatInt(st.ModTime().Unix(), 36)+filepath.Ext(name), p, "private, max-age=86400")
-			return
-		}
+func (a *API) serverArtLink(u string) string { return discover.ServerArtLink(a.s.ImageBase, u) }
+
+func (a *API) serverArtwork(w http.ResponseWriter, r *http.Request) {
+	var c *library.ArtworkCache
+	if a.s.Library != nil {
+		c = a.s.Library.Artwork
 	}
-	serveArtworkCached(w, r, name, p, "private, max-age=31536000, immutable")
+	discover.ServerArtwork(w, r, a.s.ImageBase, c, &a.artMisses)
+}
+
+func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
+	library.ServeArtwork(w, r, name, p)
 }
 
 func serveArtworkCached(w http.ResponseWriter, r *http.Request, name, p, cacheControl string) {
-	f, err := os.Open(p)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	defer f.Close()
-	h := w.Header()
-	h.Set("Cache-Control", cacheControl)
-	h.Set("ETag", `"`+strings.TrimSuffix(name, filepath.Ext(name))+`"`)
-	if ct := mime.TypeByExtension(filepath.Ext(name)); ct != "" {
-		h.Set("Content-Type", ct)
-	}
-	http.ServeContent(w, r, name, time.Time{}, f)
+	library.ServeArtworkCached(w, r, name, p, cacheControl)
 }

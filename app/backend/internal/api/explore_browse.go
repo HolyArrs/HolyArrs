@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -118,7 +119,7 @@ func (a *API) buildShared(ctx context.Context, s *browseShared, sw string, kid b
 			if warm {
 				// The warm-up learns the top backdrops' brightness first, so
 				// the pickers skip too-dark art.
-				sampleBackdrops(ctx, items, 4)
+				discover.SampleBackdrops(ctx, items, 4)
 			}
 			res[i] = engine.CategoryResult{Cat: c, Items: items}
 		}(i, c)

@@ -8,11 +8,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
@@ -38,69 +38,17 @@ var discoverTTL = map[string]time.Duration{
 
 const (
 	discoverMax = 20
-	// discoverPerMinute is each person's Explore asks a minute: high enough that
-	// flipping genre pages never hits it, low enough to stop a runaway client.
-	discoverPerMinute = 240
-	maxDiscoverCache  = 500
 )
 
-type discoverEntry struct {
-	at       time.Time
-	items    []metadata.DiscoverItem
-	details  *metadata.Details
-	services []metadata.WatchService
-	episodes []metadata.DetailEpisode
-	reviews  *metadata.ReviewPage
-}
+type discoverEntry = discover.Entry
 
 // discoverState holds the row cache and each person's request times.
-type discoverState struct {
-	mu    sync.Mutex
-	cache map[string]discoverEntry
-	hits  map[int64][]time.Time
-}
-
-// allow counts one request for a person; false when over the minute limit.
-func (d *discoverState) allow(who int64, now time.Time) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.hits == nil {
-		d.hits = map[int64][]time.Time{}
-	}
-	kept := d.hits[who][:0]
-	for _, t := range d.hits[who] {
-		if now.Sub(t) < time.Minute {
-			kept = append(kept, t)
-		}
-	}
-	if len(kept) >= discoverPerMinute {
-		d.hits[who] = kept
-		return false
-	}
-	d.hits[who] = append(kept, now)
-	return true
-}
-
-func (d *discoverState) get(key string) (discoverEntry, bool) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	e, ok := d.cache[key]
-	return e, ok
-}
-
-func (d *discoverState) put(key string, e discoverEntry) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.cache == nil || len(d.cache) >= maxDiscoverCache {
-		d.cache = map[string]discoverEntry{}
-	}
-	d.cache[key] = e
-}
+type discoverState = discover.Cache
 
 // loadedDetails is the details page already loaded for kind/id, nil if none.
 func (a *API) loadedDetails(kind, id string) *metadata.Details {
-	if e, ok := a.discover.get("details|" + kind + "|" + id); ok {
-		return e.details
+	if e, ok := a.discover.Get("details|" + kind + "|" + id); ok {
+		return e.Details
 	}
 	return nil
 }
@@ -108,7 +56,7 @@ func (a *API) loadedDetails(kind, id string) *metadata.Details {
 // kidLimited counts one TMDB search, lookup or details page of a Kid
 // against the Explore minute limit; true when it answered 429.
 func (a *API) kidLimited(w http.ResponseWriter, r *http.Request) bool {
-	if a.kidMax(r) == "" || a.discover.allow(a.person(r).UserID, time.Now()) {
+	if a.kidMax(r) == "" || a.discover.Allow(a.person(r).UserID, time.Now()) {
 		return false
 	}
 	w.Header().Set("Retry-After", "60")
@@ -194,18 +142,18 @@ func staleOK(err error) bool {
 // rate-limited TMDB is answered from a stale copy when there is one.
 func (a *API) cachedRow(ctx context.Context, d metadata.Discoverer, row, kind, ref, genre string) ([]metadata.DiscoverItem, error) {
 	key := row + "|" + kind + "|" + ref + "|" + genre
-	e, ok := a.discover.get(key)
-	if ok && time.Since(e.at) < discoverTTL[row] {
-		return e.items, nil
+	e, ok := a.discover.Get(key)
+	if ok && time.Since(e.At) < discoverTTL[row] {
+		return e.Items, nil
 	}
 	items, err := d.Discover(ctx, row, kind, ref, genre)
 	if err != nil {
 		if ok && staleOK(err) {
-			return e.items, nil
+			return e.Items, nil
 		}
 		return nil, err
 	}
-	a.discover.put(key, discoverEntry{at: time.Now(), items: items})
+	a.discover.Put(key, discoverEntry{At: time.Now(), Items: items})
 	return items, nil
 }
 
@@ -316,7 +264,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	me := a.person(r).UserID
-	if !a.discover.allow(me, time.Now()) {
+	if !a.discover.Allow(me, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
@@ -406,29 +354,29 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := "details|" + kind + "|" + id
-	e, cached := a.discover.get(key)
-	if !cached || e.details == nil {
+	e, cached := a.discover.Get(key)
+	if !cached || e.Details == nil {
 		// Details are kept on disk: a restart or a full memory cache does
 		// not send the next view out to TMDB.
 		if k, ok := loadKept[metadata.Details](r.Context(), a, key); ok {
-			e, cached = discoverEntry{at: k.at, details: &k.v}, true
-			a.discover.put(key, e)
+			e, cached = discoverEntry{At: k.at, Details: &k.v}, true
+			a.discover.Put(key, e)
 		}
 	}
-	if cached && e.details != nil && time.Since(e.at) >= detailsTTL(e) {
+	if cached && e.Details != nil && time.Since(e.At) >= detailsTTL(e) {
 		// Stale but kept: served now, refreshed in the background.
 		metadata.RefreshOnce(key, func(ctx context.Context) {
 			if det, err := d.Details(ctx, kind, id); err == nil {
-				a.discover.put(key, discoverEntry{at: time.Now(), details: &det})
+				a.discover.Put(key, discoverEntry{At: time.Now(), Details: &det})
 				keepOnDisk(ctx, a, key, det)
 			}
 		})
-	} else if !cached || time.Since(e.at) >= detailsTTL(e) {
+	} else if !cached || time.Since(e.At) >= detailsTTL(e) {
 		det, err := d.Details(r.Context(), kind, id)
 		switch {
 		case err == nil:
-			e = discoverEntry{at: time.Now(), details: &det}
-			a.discover.put(key, e)
+			e = discoverEntry{At: time.Now(), Details: &det}
+			a.discover.Put(key, e)
 			keepOnDisk(r.Context(), a, key, det)
 		case !(cached && staleOK(err)):
 			discoverFail(w, err)
@@ -439,7 +387,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if max != "" {
 		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
 		if !inLibrary {
-			rating = e.details.Rating
+			rating = e.Details.Rating
 		}
 		if !metadata.RatingAllows(max, kind, rating) {
 			webserver.Fail(w, http.StatusForbidden, aboveLimit)
@@ -447,18 +395,18 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	me := a.person(r).UserID
-	head, never, err := a.libraryJoin(r.Context(), e.details.DiscoverItem, me)
+	head, never, err := a.libraryJoin(r.Context(), e.Details.DiscoverItem, me)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	similar, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, e.details.Similar, 0), me, len(e.details.Similar))
+	similar, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, e.Details.Similar, 0), me, len(e.Details.Similar))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
 	a.exploreCaching(w, r, "")
-	det := *e.details
+	det := *e.Details
 	if det.People == nil {
 		det.People = []metadata.DetailPerson{}
 	}
@@ -468,7 +416,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		Parts []discoverItemView `json:"parts"`
 	}
 	var coll *collectionView
-	if c := e.details.Collection; c != nil {
+	if c := e.Details.Collection; c != nil {
 		parts, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, c.Parts, 0), me, len(c.Parts))
 		if err != nil {
 			webserver.Internal(w, "api", err)
@@ -536,13 +484,13 @@ const collectionRetry = 5 * time.Minute
 // detailsTTL is how long a details answer is kept: a day, or a few minutes
 // when its movie collection could not be read.
 func detailsTTL(e discoverEntry) time.Duration {
-	if e.details != nil && e.details.CollectionMissed {
+	if e.Details != nil && e.Details.CollectionMissed {
 		return collectionRetry
 	}
-	if e.details != nil && peopleWithoutIDs(e.details.People) {
+	if e.Details != nil && peopleWithoutIDs(e.Details.People) {
 		return 0
 	}
-	if e.details != nil && len(e.details.Videos) == 0 {
+	if e.Details != nil && len(e.Details.Videos) == 0 {
 		// No trailer yet: asked again soon (the server may find a season's).
 		return 15 * time.Minute
 	}
@@ -602,62 +550,62 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := "morefrom|" + kind + "|" + id
-	e, cached := a.discover.get(key)
-	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+	e, cached := a.discover.Get(key)
+	if !cached || time.Since(e.At) >= discoverTTL["details"] {
 		dkey := "details|" + kind + "|" + id
-		de, dcached := a.discover.get(dkey)
-		if !dcached || time.Since(de.at) >= discoverTTL["details"] {
+		de, dcached := a.discover.Get(dkey)
+		if !dcached || time.Since(de.At) >= discoverTTL["details"] {
 			det, err := d.Details(r.Context(), kind, id)
 			if err != nil {
 				discoverFail(w, err)
 				return
 			}
-			de = discoverEntry{at: time.Now(), details: &det}
-			a.discover.put(dkey, de)
+			de = discoverEntry{At: time.Now(), Details: &det}
+			a.discover.Put(dkey, de)
 		}
 		role := "director"
 		if kind == "show" {
 			role = "creator"
 		}
 		var who metadata.DetailPerson
-		for _, p := range de.details.People {
+		for _, p := range de.Details.People {
 			if p.Role == role && p.ID != "" {
 				who = p
 				break
 			}
 		}
 		// The source title's rating is kept so the Kid gate below runs on cache hits too.
-		e = discoverEntry{at: time.Now(), details: &metadata.Details{Rating: de.details.Rating, People: []metadata.DetailPerson{who}}, items: []metadata.DiscoverItem{}}
+		e = discoverEntry{At: time.Now(), Details: &metadata.Details{Rating: de.Details.Rating, People: []metadata.DetailPerson{who}}, Items: []metadata.DiscoverItem{}}
 		if who.ID != "" {
 			items, err := l.MadeBy(r.Context(), kind, who.ID)
 			switch {
 			case err == nil:
 				for _, it := range items {
 					if it.TMDBID != id {
-						e.items = append(e.items, it)
+						e.Items = append(e.Items, it)
 					}
 				}
 			case cached && errors.Is(err, metadata.ErrRateLimited):
-				e, _ = a.discover.get(key)
+				e, _ = a.discover.Get(key)
 			default:
 				discoverFail(w, err)
 				return
 			}
 		}
-		a.discover.put(key, e)
+		a.discover.Put(key, e)
 	}
 	max := a.kidMax(r)
 	if max != "" {
 		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
 		if !inLibrary {
-			rating = e.details.Rating
+			rating = e.Details.Rating
 		}
 		if !metadata.RatingAllows(max, kind, rating) {
 			webserver.Fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
 	}
-	items := a.kidItems(r.Context(), max, e.items, 0)
+	items := a.kidItems(r.Context(), max, e.Items, 0)
 	out := []discoverItemView{}
 	if len(items) >= moreFromMin {
 		var err error
@@ -668,7 +616,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 		}
 		a.rowCardArt(r, out)
 	}
-	who := e.details.People[0]
+	who := e.Details.People[0]
 	a.exploreCaching(w, r, "")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"person": who.Name, "role": who.Role, "items": out})
 }
@@ -709,17 +657,17 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			key := "details|show|" + id
-			e, cached := a.discover.get(key)
-			if !cached || time.Since(e.at) >= discoverTTL["details"] {
+			e, cached := a.discover.Get(key)
+			if !cached || time.Since(e.At) >= discoverTTL["details"] {
 				det, err := d.Details(r.Context(), "show", id)
 				if err != nil {
 					discoverFail(w, err)
 					return
 				}
-				e = discoverEntry{at: time.Now(), details: &det}
-				a.discover.put(key, e)
+				e = discoverEntry{At: time.Now(), Details: &det}
+				a.discover.Put(key, e)
 			}
-			rating = e.details.Rating
+			rating = e.Details.Rating
 		}
 		if !metadata.RatingAllows(max, "show", rating) {
 			webserver.Fail(w, http.StatusForbidden, aboveLimit)
@@ -727,20 +675,20 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	key := "season|" + id + "|" + strconv.Itoa(season)
-	e, cached := a.discover.get(key)
-	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+	e, cached := a.discover.Get(key)
+	if !cached || time.Since(e.At) >= discoverTTL["details"] {
 		eps, err := l.SeasonEpisodes(r.Context(), id, season)
 		switch {
 		case err == nil:
-			e = discoverEntry{at: time.Now(), episodes: eps}
-			a.discover.put(key, e)
+			e = discoverEntry{At: time.Now(), Episodes: eps}
+			a.discover.Put(key, e)
 		case !(cached && errors.Is(err, metadata.ErrRateLimited)):
 			discoverFail(w, err)
 			return
 		}
 	}
 	a.exploreCaching(w, r, "")
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.episodes})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.Episodes})
 }
 
 // watchServices answers GET /api/v1/watch-services?region=<ISO>: the
@@ -752,12 +700,12 @@ func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := "services-list|" + region
-	if e, ok := a.discover.get(key); ok && time.Since(e.at) < 24*time.Hour {
+	if e, ok := a.discover.Get(key); ok && time.Since(e.At) < 24*time.Hour {
 		a.exploreCaching(w, r, "private, max-age=3600")
-		webserver.WriteJSON(w, http.StatusOK, map[string]any{"region": region, "services": e.services})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"region": region, "services": e.Services})
 		return
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
@@ -788,7 +736,7 @@ func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Priority < out[j].Priority })
-	a.discover.put(key, discoverEntry{at: time.Now(), services: out})
+	a.discover.Put(key, discoverEntry{At: time.Now(), Services: out})
 	a.exploreCaching(w, r, "private, max-age=3600")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"region": region, "services": out})
 }
@@ -816,29 +764,29 @@ func (a *API) reviewHandlers() *metadata.ReviewHandlers {
 // cachedDetails is a title's details through the Explore cache.
 func (a *API) cachedDetails(ctx context.Context, d metadata.Discoverer, kind, id string) (*metadata.Details, error) {
 	key := "details|" + kind + "|" + id
-	e, ok := a.discover.get(key)
-	if !ok || time.Since(e.at) >= discoverTTL["details"] {
+	e, ok := a.discover.Get(key)
+	if !ok || time.Since(e.At) >= discoverTTL["details"] {
 		det, err := d.Details(ctx, kind, id)
 		if err != nil {
 			return nil, err
 		}
-		e = discoverEntry{at: time.Now(), details: &det}
-		a.discover.put(key, e)
+		e = discoverEntry{At: time.Now(), Details: &det}
+		a.discover.Put(key, e)
 	}
-	return e.details, nil
+	return e.Details, nil
 }
 
 // reviewCache keeps review pages in the Explore cache.
 type reviewCache API
 
 func (c *reviewCache) GetReviews(key string) (*metadata.ReviewPage, time.Time, bool) {
-	e, ok := c.discover.get(key)
-	if !ok || e.reviews == nil {
+	e, ok := c.discover.Get(key)
+	if !ok || e.Reviews == nil {
 		return nil, time.Time{}, false
 	}
-	return e.reviews, e.at, true
+	return e.Reviews, e.At, true
 }
 
 func (c *reviewCache) PutReviews(key string, p *metadata.ReviewPage) {
-	c.discover.put(key, discoverEntry{at: time.Now(), reviews: p})
+	c.discover.Put(key, discoverEntry{At: time.Now(), Reviews: p})
 }

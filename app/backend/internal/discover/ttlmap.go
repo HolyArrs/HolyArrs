@@ -1,14 +1,14 @@
-package api
+package discover
 
 import (
 	"sync"
 	"time"
 )
 
-// ttlMap is a small concurrent map whose entries expire after ttl and that
+// TTLMap is a small concurrent map whose entries expire after ttl and that
 // never holds more than max entries: a Store sweeps expired entries once a
 // minute, and when it is still full it starts over.
-type ttlMap struct {
+type TTLMap struct {
 	ttl   time.Duration
 	max   int
 	mu    sync.Mutex
@@ -21,11 +21,12 @@ type ttlEntry struct {
 	at time.Time
 }
 
-func newTTLMap(ttl time.Duration, max int) *ttlMap {
-	return &ttlMap{ttl: ttl, max: max, m: map[any]ttlEntry{}}
+// NewTTLMap makes a TTLMap keeping entries ttl and at most max of them.
+func NewTTLMap(ttl time.Duration, max int) *TTLMap {
+	return &TTLMap{ttl: ttl, max: max, m: map[any]ttlEntry{}}
 }
 
-func (t *ttlMap) Load(k any) (any, bool) {
+func (t *TTLMap) Load(k any) (any, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	e, ok := t.m[k]
@@ -35,7 +36,7 @@ func (t *ttlMap) Load(k any) (any, bool) {
 	return e.v, true
 }
 
-func (t *ttlMap) Store(k, v any) {
+func (t *TTLMap) Store(k, v any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	now := time.Now()
@@ -53,7 +54,7 @@ func (t *ttlMap) Store(k, v any) {
 	t.m[k] = ttlEntry{v: v, at: now}
 }
 
-func (t *ttlMap) Len() int {
+func (t *TTLMap) Len() int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return len(t.m)

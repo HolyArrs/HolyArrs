@@ -39,7 +39,7 @@ func (a *API) mh() *music.Handlers {
 					a.publishTitleView(tv)
 				}
 			},
-			Limit: func(userID int64, now time.Time) bool { return a.discover.allow(userID, now) },
+			Limit: func(userID int64, now time.Time) bool { return a.discover.Allow(userID, now) },
 			TrackRoutes: func(m *http.ServeMux) {
 				music.TrackHandlers[EpisodeSlot]{Store: a.s.Store, Slots: trackSlots}.Routes(m)
 			}}}

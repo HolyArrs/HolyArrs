@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -29,21 +29,22 @@ type watchOnEntry struct {
 	names []string
 }
 
-// watchOnCache keeps, per region|kind:tmdb, the subscription services TMDB
+// WatchOn keeps, per region|kind:tmdb, the subscription services TMDB
 // lists for a title. Reads never wait: a miss is queued and filled in the
 // background for the next answer.
-type watchOnCache struct {
-	mu      sync.Mutex
-	titles  map[string]watchOnEntry
-	pending map[string]bool
-	// fetch is the TMDB read (tests replace it).
-	fetch func(ctx context.Context, kind, tmdbID string) (map[string][]metadata.WatchService, error)
+type WatchOn struct {
+	// Metadata is the TMDB reader used when Fetch is nil.
+	Metadata metadata.Provider
+	mu       sync.Mutex
+	titles   map[string]watchOnEntry
+	pending  map[string]bool
+	// Fetch is the TMDB read (tests replace it).
+	Fetch func(ctx context.Context, kind, tmdbID string) (map[string][]metadata.WatchService, error)
 }
 
 // watchOnKept returns the kept answer of kind:tmdb in region, and whether
 // one is kept (a failure counts while it is remembered; see e.ok).
-func (a *API) watchOnKept(region, key string, now time.Time) (watchOnEntry, bool) {
-	c := &a.watchOn
+func (c *WatchOn) kept(region, key string, now time.Time) (watchOnEntry, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	e, ok := c.titles[region+"|"+key]
@@ -55,15 +56,14 @@ func (a *API) watchOnKept(region, key string, now time.Time) (watchOnEntry, bool
 
 // queueWatchOn reads the missing titles' watch providers in the
 // background (one read per title fills every region).
-func (a *API) queueWatchOn(keys []string) {
-	c := &a.watchOn
-	fetch := c.fetch
+func (c *WatchOn) queue(keys []string) {
+	fetch := c.Fetch
 	if fetch == nil {
-		if a.s.Metadata == nil {
+		if c.Metadata == nil {
 			return
 		}
 		fetch = func(ctx context.Context, kind, id string) (map[string][]metadata.WatchService, error) {
-			l, ok := metadata.WatchListerFor(ctx, a.s.Metadata)
+			l, ok := metadata.WatchListerFor(ctx, c.Metadata)
 			if !ok {
 				return nil, metadata.ErrNoAccess
 			}
@@ -94,15 +94,14 @@ func (a *API) queueWatchOn(keys []string) {
 		for _, k := range todo {
 			kind, id, _ := strings.Cut(k, ":")
 			got, err := fetch(ctx, kind, id)
-			a.keepWatchOn(k, got, err, time.Now())
+			c.keep(k, got, err, time.Now())
 		}
 	})
 }
 
 // keepWatchOn stores one title's answer for every region it lists; a
 // failure is remembered under the "" region for watchOnMiss.
-func (a *API) keepWatchOn(key string, got map[string][]metadata.WatchService, err error, now time.Time) {
-	c := &a.watchOn
+func (c *WatchOn) keep(key string, got map[string][]metadata.WatchService, err error, now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.pending, key)
@@ -124,22 +123,22 @@ func (a *API) keepWatchOn(key string, got map[string][]metadata.WatchService, er
 	}
 }
 
-// watchOnMarks maps each of keys (kind:tmdb) to the first of the member's
+// Marks maps each of keys (kind:tmdb) to the first of the member's
 // services (in their order) TMDB lists the title on in region. Titles not
 // kept yet are queued and left out.
-func (a *API) watchOnMarks(region string, services []int, keys []string) map[string]streamingMark {
+func (c *WatchOn) Marks(region string, services []int, keys []string) map[string]StreamingMark {
 	if region == "" || len(services) == 0 || len(keys) == 0 {
 		return nil
 	}
 	now := time.Now()
-	out := map[string]streamingMark{}
+	out := map[string]StreamingMark{}
 	var miss []string
 	for _, k := range keys {
-		e, ok := a.watchOnKept(region, k, now)
+		e, ok := c.kept(region, k, now)
 		if !ok {
 			// A title read (or failed) lately but absent from region
 			// streams nowhere there; only an unread title is queued.
-			if _, read := a.watchOnKept("", k, now); !read {
+			if _, read := c.kept("", k, now); !read {
 				miss = append(miss, k)
 			}
 			continue
@@ -148,14 +147,23 @@ func (a *API) watchOnMarks(region string, services []int, keys []string) map[str
 		for _, want := range services {
 			for i, id := range e.ids {
 				if id == want {
-					out[k] = streamingMark{Service: id, Name: e.names[i]}
+					out[k] = StreamingMark{Service: id, Name: e.names[i]}
 					break pick
 				}
 			}
 		}
 	}
 	if len(miss) > 0 {
-		a.queueWatchOn(miss)
+		c.queue(miss)
 	}
 	return out
+}
+
+// StreamingMark says a card's title is on one of the member's streaming
+// services in their region, from the kept per-service lists only. Rank is
+// set when that list is the service's own top today.
+type StreamingMark struct {
+	Service int    `json:"service"`
+	Name    string `json:"name"`
+	Rank    int    `json:"rank,omitempty"`
 }
