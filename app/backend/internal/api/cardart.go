@@ -18,8 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Wide title cards show their title on the art (docs/design-review/apple/
-// spec.md, card system). The picture is chosen on the server once per
+// Wide title cards show their title on the art. The picture is chosen on the server once per
 // title and language, kept 7 days in card_art, and handed out with the
 // Explore and Home answers. Page loads only read the table; the image
 // lists are fetched by the Explore pool job, one paced call per title.

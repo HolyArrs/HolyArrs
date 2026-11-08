@@ -39,7 +39,7 @@ func TestKeyReasonsSayWhatToDo(t *testing.T) {
 		t.Fatalf("key folder reason %q", r)
 	}
 	// The pointer must say where the guide is.
-	if r := publicReason(secrets.ErrWrongKey); !strings.Contains(r, "docs/backups.md") {
+	if r := publicReason(secrets.ErrWrongKey); !strings.Contains(r, "docs/user/backups/backups.md") {
 		t.Fatalf("wrong key reason %q does not say where the guide is", r)
 	}
 }
@@ -167,14 +167,14 @@ func TestDamagedKeyKeepsAPlainPage(t *testing.T) {
 // The key messages point at this section, so it must be there and name the
 // way to restore without the app running.
 func TestMoveToNewMachineDocs(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "docs", "backups.md"))
+	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "docs", "user", "backups", "backups.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := string(b)
 	i := strings.Index(s, "## Move to a new machine")
 	if i < 0 {
-		t.Fatal(`docs/backups.md has no "Move to a new machine" section`)
+		t.Fatal(`docs/user/backups/backups.md has no "Move to a new machine" section`)
 	}
 	sec := s[i:]
 	if j := strings.Index(sec[3:], "\n## "); j >= 0 {

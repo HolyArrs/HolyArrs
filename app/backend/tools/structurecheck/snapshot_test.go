@@ -126,7 +126,7 @@ func registeredRoutes(t *testing.T, root string) []string {
 			return nil
 		}
 		rel, _ := filepath.Rel(root, p)
-		if strings.Contains(filepath.ToSlash(rel), "/tools/") || strings.HasPrefix(filepath.ToSlash(rel), "tools/") || strings.HasPrefix(filepath.ToSlash(rel), "examples/") {
+		if strings.Contains(filepath.ToSlash(rel), "/tools/") || strings.HasPrefix(filepath.ToSlash(rel), "tools/") || strings.HasPrefix(filepath.ToSlash(rel), "deploy/platforms/") {
 			return nil
 		}
 		b, err := os.ReadFile(p)

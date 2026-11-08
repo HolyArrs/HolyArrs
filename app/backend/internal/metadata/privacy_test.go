@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// docs/metadata-privacy.md promises that a request to the metadata server
+// docs/user/metadata/metadata-privacy.md promises that a request to the metadata server
 // carries only the install token and a few plain headers: no cookies, user
 // names or other details about the install.
 func TestMetadataRequestsCarryOnlyAllowedHeaders(t *testing.T) {
@@ -50,7 +50,7 @@ func TestMetadataRequestsCarryOnlyAllowedHeaders(t *testing.T) {
 		t.Fatalf("only %d requests reached the server", seen)
 	}
 	if len(bad) > 0 {
-		t.Fatalf("headers or bodies beyond docs/metadata-privacy.md: %v", bad)
+		t.Fatalf("headers or bodies beyond docs/user/metadata/metadata-privacy.md: %v", bad)
 	}
 }
 

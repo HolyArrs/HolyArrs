@@ -7,7 +7,7 @@ You want to know what your install tells the metadata server. This page lists al
 - **An install token.** On first start HolyArrs asks the server for one with an empty request. After that every lookup carries it. It identifies the install, not a person.
 - **What you look up.** The words you type in Explore or Search, and the ids of the movies, shows, people, artists and albums a page shows (TMDB and MusicBrainz ids).
 - **Display choices.** The language and region the app shows, so posters, trailers and "where to watch" match.
-- **A few standard request headers.** These say what kind of answer HolyArrs wants, whether a stored list is still current, and whether HolyArrs is loading a page ahead of time.
+- **A few standard request headers.** These say what kind of answer HolyArrs wants, whether a stored list is still current, and whether HolyArrs is loading a page ahead of time: `Accept`, `Cache-Control`, `If-None-Match` and `X-Fetch: ahead`.
 - **Install count by country.** The server counts installs per country, by where requests come from.
 
 Like any web request, the server also sees your public IP address.
@@ -25,7 +25,7 @@ Like any web request, the server also sees your public IP address.
 1. Open **Settings > This app**.
 2. In the **This server** card, turn off **Count this install**.
 
-Requests then tell the server to leave your install out.
+Requests then carry `X-Country-Count: off`, which tells the server to leave your install out.
 
 ## Skip the metadata server for movies and shows
 

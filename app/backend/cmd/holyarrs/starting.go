@@ -51,7 +51,7 @@ func startingHandler(updating *atomic.Bool) http.Handler {
 }
 
 // goBack is how to return to the data from before the update.
-const newMachine = " Moving to a new machine? See \"Move to a new machine\" in the HolyArrs docs, in docs/backups.md."
+const newMachine = " Moving to a new machine? See \"Move to a new machine\" in the HolyArrs docs, in docs/user/backups/backups.md."
 
 // keyRecheck is how often a held key file problem is checked again.
 var keyRecheck = 10 * time.Second

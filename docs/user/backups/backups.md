@@ -84,7 +84,8 @@ recommended Docker restart policy, the restart happens on its own. See
 A new install makes its own master key on first start. That key can't open
 your old backups, so the restore is refused. Put the old key in place first.
 
-1. Create the container without starting it. Use `docker compose create`, or
+1. Before the first start, create the container without starting it. Use
+   `docker compose create`, or
    your usual `docker run` line with `docker create` in place of
    `docker run -d`. The examples call the container `holyarrs`. Use your own
    name.
