@@ -23,7 +23,6 @@ var commentExts = map[string]string{
 var commentSkip = []string{
 	"app/backend/internal/core/database/migrations/**",
 	"services/**",
-	"docs/design-review/**",
 	"design-notes/**",
 	"CHANGELOG.md",
 	"**/testdata/**",
