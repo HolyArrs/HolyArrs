@@ -64,8 +64,8 @@ Read **Modules and rules** under For experts so your change lands in the right p
 
 - End-to-end tests use Playwright in `app/tests/`, with stand-in servers for downloaders, sources and the metadata server, so no test reaches a real outside service.
 - Each run starts its own HolyArrs on a fresh config. The `setup` project makes the owner first; the other projects follow. Run the full suite before a release.
-- Long tests (crash recovery in every loop, restart timing, memory under load) carry the `overnight` build tag: `go test -tags overnight ./app/backend/cmd/holyarrs`. Run them before a release, with the machine free for 1 h or more.
-- Stand-in variables such as `HOLYARRS_TMDB_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_PLEX_URL` and `HOLYARRS_QBITTORRENT_URL` are set by the tests; a real install never needs them. Lab tests read `HOLYARRS_LAB_*` and skip when unset.
+- The crash-recovery test in `app/backend/internal/store` is skipped under `-short`. Set `HOLYARRS_CRASH_RUNS` for more rounds and `HOLYARRS_CRASH_SEED` to repeat one. Download timing checks carry the `measure` build tag. Run both before a release.
+- Stand-in variables such as `HOLYARRS_TMDB_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_PLEX_URL` and `HOLYARRS_QBITTORRENT_URL` are set by the tests; a real install never needs them. Lab tests carry the `lab` build tag and read `HOLYARRS_LAB_*`.
 
 | Test kind | Where |
 |---|---|
@@ -253,7 +253,7 @@ Tags are plain numbers (`1.0.0`, `1.1.0`, `1.1.1`), built from a tag on the main
 
 Before you tag:
 
-1. Every check above passes, including a full end-to-end run and the `overnight` tests.
+1. Every check above passes, including a full end-to-end run, the crash test and the `measure` tests.
 2. `CHANGELOG.md` has the new version.
 3. `python3 deploy/release/notices.py --check` passes.
 4. `docker build --file deploy/Dockerfile .` builds and starts on a fresh config.
