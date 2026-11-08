@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func TestPlexWatchlistOverHTTP(t *testing.T) {
 		}
 		return "", nil
 	}}
-	r.api.s.Watchlists = wl
+	*r.wl = *wl
 	type view struct {
 		On, Linked    bool
 		Movies, Shows bool
