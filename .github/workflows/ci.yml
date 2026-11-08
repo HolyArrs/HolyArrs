@@ -212,7 +212,7 @@ jobs:
       - name: API spec matches the code (contract)
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestOpenAPIGenerated$' ./app/backend/internal/api 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestOpenAPIGenerated$' ./app/backend/cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Every route checks its API key scope
         run: |
           set -o pipefail

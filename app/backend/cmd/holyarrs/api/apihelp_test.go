@@ -59,7 +59,7 @@ func do(t *testing.T, method, url, body string, want int) []byte {
 
 // routePackages are the packages that register /api/v1 routes, seen from
 // this folder (cmd/holyarrs keeps the same list for the spec tests).
-var routePackages = []string{".", "../accounts", "../backups", "../alerts", "../health", "../updates", "../mediaservers", "../metadata", "../sources", "../subtitles", "../ai", "../arrapi", "../migrate", "../movies", "../shows", "../library", "../mediafiles", "../datapack", "../importer", "../setup", "../downloads", "../requests", "../music", "../discover", "../core/webserver"}
+var routePackages = []string{".", "../../../internal/accounts", "../../../internal/backups", "../../../internal/alerts", "../../../internal/health", "../../../internal/updates", "../../../internal/mediaservers", "../../../internal/metadata", "../../../internal/sources", "../../../internal/subtitles", "../../../internal/ai", "../../../internal/arrapi", "../../../internal/migrate", "../../../internal/movies", "../../../internal/shows", "../../../internal/library", "../../../internal/mediafiles", "../../../internal/datapack", "../../../internal/importer", "../../../internal/setup", "../../../internal/downloads", "../../../internal/requests", "../../../internal/music", "../../../internal/discover", "../../../internal/core/webserver"}
 
 // The jobs and imports lists answer JSON (their end-to-end test runs in
 // cmd/holyarrs; this keeps the routes served here too).

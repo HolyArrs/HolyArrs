@@ -125,7 +125,7 @@ func TestNoBannedWords(t *testing.T) {
 	}
 	// API names and descriptions.
 	var doc any
-	if err := json.Unmarshal(mustRead(t, filepath.Join("..", "..", "internal", "api", "openapi.json")), &doc); err != nil {
+	if err := json.Unmarshal(mustRead(t, filepath.Join("api", "openapi.json")), &doc); err != nil {
 		t.Fatal(err)
 	}
 	var walk func(v any, at string)

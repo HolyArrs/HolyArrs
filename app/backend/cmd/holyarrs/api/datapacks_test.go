@@ -24,7 +24,7 @@ func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	raw, err := os.ReadFile("../datapack/testdata/synthetic-pack.json")
+	raw, err := os.ReadFile("../../../internal/datapack/testdata/synthetic-pack.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +232,7 @@ func assertGenericDataPackError(t *testing.T, body []byte) {
 func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
 	t.Parallel()
 	r := newAskRig(t)
-	raw, err := os.ReadFile("../datapack/testdata/synthetic-pack.json")
+	raw, err := os.ReadFile("../../../internal/datapack/testdata/synthetic-pack.json")
 	if err != nil {
 		t.Fatal(err)
 	}

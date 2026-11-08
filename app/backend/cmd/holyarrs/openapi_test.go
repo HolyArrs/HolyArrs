@@ -18,7 +18,7 @@ import (
 // server's mux. Every such route must be in openapi.json; that each one is
 // served to at least one test request is checked by each package's
 // TestMain (internal/routehits), not by comments.
-var routePackages = []string{".", "../../internal/api", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
+var routePackages = []string{".", "api", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
 
 type openapiOp struct {
 	Summary    string         `json:"summary"`
@@ -30,7 +30,7 @@ type openapiOp struct {
 	} `json:"parameters"`
 }
 
-var updateSpec = flag.Bool("update", false, "rewrite openapi.json from the code (go generate ./internal/api)")
+var updateSpec = flag.Bool("update", false, "rewrite openapi.json from the code (go generate ./cmd/holyarrs/api)")
 
 // generateSpec builds openapi.json from the code: the operations are
 // exactly the registered /api/v1 routes, and each one's permission
@@ -131,7 +131,7 @@ func TestOpenAPIGenerated(t *testing.T) {
 		return
 	}
 	if !bytes.Equal(bytes.ReplaceAll(openapiJSON, []byte("\r\n"), []byte("\n")), got) {
-		t.Fatal("openapi.json does not match the code: run go generate ./internal/api, read the diff and commit it with the change")
+		t.Fatal("openapi.json does not match the code: run go generate ./cmd/holyarrs/api, read the diff and commit it with the change")
 	}
 	var doc struct {
 		OpenAPI string                          `json:"openapi"`
@@ -164,7 +164,7 @@ func TestOpenAPIServed(t *testing.T) {
 }
 
 // specFile is the spec api embeds and serves.
-const specFile = "../../internal/api/openapi.json"
+const specFile = "api/openapi.json"
 
 func readSpec(t *testing.T) []byte {
 	t.Helper()
