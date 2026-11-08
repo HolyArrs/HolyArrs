@@ -6,7 +6,7 @@
 // Nothing this package says (results, errors) ever holds a value from the
 // file: results name the item and what happened, errors name a line number
 // or a key.
-package importsecrets
+package secretsfile
 
 import (
 	"bytes"
@@ -90,7 +90,7 @@ type File struct {
 		Password          string `json:"password"`
 		AllowLocalNetwork bool   `json:"allow_local_network"`
 	} `json:"qbittorrent"`
-	SABnzbd     struct {
+	SABnzbd struct {
 		Address           string `json:"address"`
 		APIKey            string `json:"api_key"`
 		NZBKey            string `json:"nzb_key"`

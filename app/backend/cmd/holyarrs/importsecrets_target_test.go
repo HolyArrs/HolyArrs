@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 )
 
 // Plain http carries the owner key and the whole file, so it goes only to
@@ -33,7 +33,7 @@ func TestAppTargetHTTPRule(t *testing.T) {
 		{"https://[fd00:ec2::254]", false, false, false},
 		{"https://100.100.100.200", false, false, false},
 	} {
-		f := &importsecrets.File{}
+		f := &secretsfile.File{}
 		f.HolyArrs.Address, f.HolyArrs.OwnerAPIKey = c.addr, "your-owner-key-6"
 		var warned []string
 		_, _, err := appTarget(f, c.lan, func(format string, a ...any) { warned = append(warned, format) })

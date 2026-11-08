@@ -414,7 +414,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.musicRoutes(m)
 	a.musicPageRoutes(m)
 	a.subtitleRoutes(m)
-	a.importSecretsRoutes(m)
 	a.thisAppRoutes(m)
 	a.dataPackRoutes(m)
 	a.scheduleRoutes(m)
@@ -486,8 +485,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.profileRoutes(m)
 	a.followRoutes(m)
 	a.controlRoutes(m)
-	a.migrateRoutes(m)
-	a.moveRoutes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
@@ -512,6 +509,7 @@ func (a *API) Routes(rt *webserver.Router) {
 func (a *API) Handler() http.Handler {
 	rt := webserver.NewRouter()
 	a.Routes(rt)
+	a.ModuleRoutes(rt)
 	return a.Chain(rt)
 }
 

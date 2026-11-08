@@ -25,5 +25,6 @@ func registerHooks() {
 func routes(a *api.API, c config) http.Handler {
 	rt := webserver.NewRouter()
 	a.Routes(rt)
+	a.ModuleRoutes(rt)
 	return webserver.UnderURLBase(c.URLBase, webserver.Compress(limitBodies(a.Chain(rt))))
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 )
 
 // importSecrets is `holyarrs import-secrets`: it reads the owner's secrets
@@ -51,7 +51,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 	say := func(format string, a ...any) { fmt.Fprintf(stdout, format+"\n", a...) }
 	warn := func(format string, a ...any) { fmt.Fprintf(stderr, "import-secrets: "+format+"\n", a...) }
 
-	var f *importsecrets.File
+	var f *secretsfile.File
 	if *file != "" {
 		var err error
 		f, err = readSecretsFile(*file, *shared, warn)
@@ -77,7 +77,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	unlock, lockErr := files.LockDir(*dir)
-	var lines []importsecrets.Line
+	var lines []secretsfile.Line
 	switch {
 	case lockErr == nil:
 		defer unlock()
@@ -109,7 +109,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 			return 2
 		}
 		if *forget {
-			n, err := importsecrets.ForgetMoveCredential(ctx, s, "")
+			n, err := secretsfile.ForgetMoveCredential(ctx, s, "")
 			if err != nil {
 				warn("%s", hide(err.Error()))
 				return 1
@@ -118,7 +118,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 			return 0
 		}
 		say("mode: offline (HolyArrs is stopped; writing to the config folder)")
-		lines = importsecrets.Apply(ctx, importsecrets.Deps{Store: s, Vault: vault, By: domain.System}, f, *dry)
+		lines = secretsfile.Apply(ctx, secretsfile.Deps{Store: s, Vault: vault, By: domain.System}, f, *dry)
 	case errors.Is(lockErr, files.ErrDirLocked):
 		if f == nil {
 			warn("HolyArrs is running: pass -file <path> so its address and owner key can be read from the secrets file")
@@ -144,7 +144,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 		send := *f
 		send.HolyArrs.Address, send.HolyArrs.OwnerAPIKey = "", ""
 		var out struct {
-			Lines []importsecrets.Line `json:"lines"`
+			Lines []secretsfile.Line `json:"lines"`
 		}
 		if err := callApp(ctx, http.MethodPost, base+"/api/v1/settings/import-secrets", key, map[string]any{"dry_run": *dry, "file": send}, &out); err != nil {
 			warn("%s", hide(err.Error()))
@@ -158,7 +158,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 	for _, l := range lines {
 		say("%-26s %s", l.Item, hide(l.Result))
 	}
-	if !importsecrets.AllOK(lines) {
+	if !secretsfile.AllOK(lines) {
 		say("some items failed; fix them in the file and run the import again (items already set say unchanged)")
 		if *del {
 			say("the file was kept because not every item went well")
@@ -183,7 +183,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 // of at most MaxSize that other users may not read (Unix; Windows gets a
 // warning). The checks run on the opened file, so it cannot be swapped
 // between the check and the read.
-func readSecretsFile(path string, shared bool, warn func(string, ...any)) (*importsecrets.File, error) {
+func readSecretsFile(path string, shared bool, warn func(string, ...any)) (*secretsfile.File, error) {
 	lst, err := os.Lstat(path)
 	if err != nil {
 		return nil, errors.New("the secrets file cannot be found or opened")
@@ -203,8 +203,8 @@ func readSecretsFile(path string, shared bool, warn func(string, ...any)) (*impo
 	if !st.Mode().IsRegular() {
 		return nil, errors.New("the secrets file is not a regular file")
 	}
-	if st.Size() > importsecrets.MaxSize {
-		return nil, importsecrets.ErrTooBig
+	if st.Size() > secretsfile.MaxSize {
+		return nil, secretsfile.ErrTooBig
 	}
 	if runtime.GOOS == "windows" {
 		warn("warning: on Windows HolyArrs cannot check who may read the file; keep it in a folder only you can open")
@@ -214,11 +214,11 @@ func readSecretsFile(path string, shared bool, warn func(string, ...any)) (*impo
 		}
 		warn("warning: other users may read the secrets file")
 	}
-	b, err := io.ReadAll(io.LimitReader(fh, importsecrets.MaxSize+1))
+	b, err := io.ReadAll(io.LimitReader(fh, secretsfile.MaxSize+1))
 	if err != nil {
 		return nil, errors.New("the secrets file cannot be read")
 	}
-	f, err := importsecrets.Parse(b)
+	f, err := secretsfile.Parse(b)
 	if err != nil {
 		return nil, fmt.Errorf("the secrets file: %w", err)
 	}
@@ -230,7 +230,7 @@ func readSecretsFile(path string, shared bool, warn func(string, ...any)) (*impo
 // goes only to this machine (loopback) unless allowLAN (-allow-http-lan)
 // lets it reach a local-network address, with a warning. https may go
 // anywhere. A cloud metadata or link-local address is always refused.
-func appTarget(f *importsecrets.File, allowLAN bool, warn func(string, ...any)) (string, string, error) {
+func appTarget(f *secretsfile.File, allowLAN bool, warn func(string, ...any)) (string, string, error) {
 	raw, key := strings.TrimRight(strings.TrimSpace(f.HolyArrs.Address), "/"), strings.TrimSpace(f.HolyArrs.OwnerAPIKey)
 	if raw == "" || key == "" {
 		return "", "", errors.New("fill in holyarrs.address and holyarrs.owner_api_key in the file (an owner API key from My account)")

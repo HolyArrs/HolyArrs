@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 )
 
 // keyCall sends one call with an API key in its header.
@@ -127,7 +127,7 @@ func TestImportSecretsRoutes(t *testing.T) {
 		t.Fatalf("forget %s", b)
 	}
 	// Events say counts, never a value.
-	ev := r.owner.call("GET", "/api/v1/events?kind="+importsecrets.EventImported, "", 200)
+	ev := r.owner.call("GET", "/api/v1/events?kind="+secretsfile.EventImported, "", 200)
 	if !strings.Contains(string(ev), "Imported settings from a secrets file") || strings.Contains(string(ev), "your-") {
 		t.Fatalf("events %s", ev)
 	}
@@ -142,8 +142,8 @@ func TestSavedKeyNeedsSignedInOwner(t *testing.T) {
 }
 
 func TestImportSecretsSameKeys(t *testing.T) {
-	pairs := [][2]string{{importsecrets.LinksGroup, traktKeyGroup},
-		{importsecrets.TraktClientKey, traktKeyName}, {importsecrets.LinksGroup, TVDBKeyGroup}, {importsecrets.TVDBKeyKey, TVDBKeyName}}
+	pairs := [][2]string{{secretsfile.LinksGroup, traktKeyGroup},
+		{secretsfile.TraktClientKey, traktKeyName}, {secretsfile.LinksGroup, TVDBKeyGroup}, {secretsfile.TVDBKeyKey, TVDBKeyName}}
 	for _, p := range pairs {
 		if p[0] != p[1] {
 			t.Errorf("the import writes %q where the Settings screen reads %q", p[0], p[1])

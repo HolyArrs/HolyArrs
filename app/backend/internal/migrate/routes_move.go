@@ -1,4 +1,4 @@
-package api
+package migrate
 
 import (
 	"errors"
@@ -6,62 +6,48 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-func (a *API) moveRoutes(m *http.ServeMux) {
-	m.HandleFunc("POST /api/v1/migrate/plan", a.movePlan)
-	m.HandleFunc("POST /api/v1/migrate/dry-run", a.moveDryRun)
-	m.HandleFunc("GET /api/v1/migrate/moves", a.listMoves)
-	m.HandleFunc("POST /api/v1/migrate/moves", a.startMove)
-	m.HandleFunc("GET /api/v1/migrate/moves/{id}", a.getMove)
-	m.HandleFunc("GET /api/v1/migrate/moves/{id}/report", a.moveReport)
-	m.HandleFunc("POST /api/v1/migrate/moves/{id}/undo", a.undoMove)
+func (h *Handlers) moveRoutes(r *webserver.Router) {
+	r.Handle("POST /api/v1/migrate/plan", webserver.NeedUsers, http.HandlerFunc(h.movePlan))
+	r.Handle("POST /api/v1/migrate/dry-run", webserver.NeedUsers, http.HandlerFunc(h.moveDryRun))
+	r.Handle("GET /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.listMoves))
+	r.Handle("POST /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.startMove))
+	r.Handle("GET /api/v1/migrate/moves/{id}", webserver.NeedUsers, http.HandlerFunc(h.getMove))
+	r.Handle("GET /api/v1/migrate/moves/{id}/report", webserver.NeedUsers, http.HandlerFunc(h.moveReport))
+	r.Handle("POST /api/v1/migrate/moves/{id}/undo", webserver.NeedUsers, http.HandlerFunc(h.undoMove))
 }
-
-// mover is the move runner (made on first use in tests).
-func (a *API) mover() *migrate.Mover {
-	if a.s.Mover == nil {
-		a.s.Mover = &migrate.Mover{Store: a.s.Store, Library: a.s.Library, Queue: a.s.Queue}
-	}
-	if a.s.Mover.PartOn == nil {
-		a.s.Mover.PartOn = func(p string) bool { return !a.safeMode() && a.partIsOn(parts.Part(p)) }
-	}
-	return a.s.Mover
-}
-
-func (a *API) safeMode() bool { return a.s.SafeMode || (a.s.Parts != nil && a.s.Parts.SafeMode) }
 
 // MoveInput picks the read apps (kept snapshots) and the owner's choices;
 // a move also sends the plan_hash its dry run answered.
 type MoveInput struct {
 	Snapshots []int64 `json:"snapshots"`
-	migrate.Choices
+	Choices
 	PlanHash string `json:"plan_hash,omitempty"`
 }
 
 // moveInput reads the body; it answers and returns false on a bad one.
 func moveInput(w http.ResponseWriter, r *http.Request) (MoveInput, bool) {
 	var in MoveInput
-	if !decode(w, r, &in, `send {"snapshots": [1, 2], "path_rules": [{"from": "/movies", "to": "/data/movies"}], "skip": ["alerts"], "people": {"person:seerr:2": "merge"}, "plan_hash": "<from the dry run>"}`) {
+	if !webserver.Decode(w, r, &in, `send {"snapshots": [1, 2], "path_rules": [{"from": "/movies", "to": "/data/movies"}], "skip": ["alerts"], "people": {"person:seerr:2": "merge"}, "plan_hash": "<from the dry run>"}`) {
 		return in, false
 	}
 	if len(in.People) > 1000 {
-		fail(w, http.StatusBadRequest, "at most 1000 person choices")
+		webserver.Fail(w, http.StatusBadRequest, "at most 1000 person choices")
 		return in, false
 	}
 	for k, v := range in.People {
 		switch v {
-		case migrate.PersonOwner, migrate.PersonAdmin, migrate.PersonMerge, migrate.PersonSkip:
+		case PersonOwner, PersonAdmin, PersonMerge, PersonSkip:
 		default:
-			fail(w, http.StatusBadRequest, fmt.Sprintf("person %q: choose owner, admin, merge or skip", k))
+			webserver.Fail(w, http.StatusBadRequest, fmt.Sprintf("person %q: choose owner, admin, merge or skip", k))
 			return in, false
 		}
 	}
 	for _, s := range in.Skip {
-		if migrate.GroupLabels[s] == "" || s == migrate.GroupOther {
-			fail(w, http.StatusBadRequest, fmt.Sprintf("unknown group %q", s))
+		if GroupLabels[s] == "" || s == GroupOther {
+			webserver.Fail(w, http.StatusBadRequest, fmt.Sprintf("unknown group %q", s))
 			return in, false
 		}
 	}
@@ -70,27 +56,27 @@ func moveInput(w http.ResponseWriter, r *http.Request) (MoveInput, bool) {
 
 func moveFail(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, migrate.ErrNoSnapshot), errors.Is(err, migrate.ErrNoMove):
-		fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, migrate.ErrMoveBusy), errors.Is(err, migrate.ErrUndone), errors.Is(err, migrate.ErrPlanChanged):
-		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, migrate.ErrNoSnapshotPicked), errors.Is(err, migrate.ErrTooManySnaps):
-		fail(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrNoSnapshot), errors.Is(err, ErrNoMove):
+		webserver.Fail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, ErrMoveBusy), errors.Is(err, ErrUndone), errors.Is(err, ErrPlanChanged):
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, ErrNoSnapshotPicked), errors.Is(err, ErrTooManySnaps):
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	default:
 		if isRuleError(err) {
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		internal(w, err)
+		webserver.Internal(w, "migrate", err)
 	}
 }
 
 func isRuleError(err error) bool {
-	var re *migrate.RuleError
+	var re *RuleError
 	return errors.As(err, &re)
 }
 
-func (a *API) loadPlan(w http.ResponseWriter, r *http.Request) (*migrate.Plan, MoveInput, bool) {
+func (h *Handlers) loadPlan(w http.ResponseWriter, r *http.Request) (*Plan, MoveInput, bool) {
 	if !auth.RequireStrong(w, r) {
 		return nil, MoveInput{}, false
 	}
@@ -98,7 +84,7 @@ func (a *API) loadPlan(w http.ResponseWriter, r *http.Request) (*migrate.Plan, M
 	if !ok {
 		return nil, in, false
 	}
-	p, err := migrate.LoadPlan(r.Context(), a.s.Store, in.Snapshots, in.Choices)
+	p, err := LoadPlan(r.Context(), h.Store, in.Snapshots, in.Choices)
 	if err != nil {
 		moveFail(w, err)
 		return nil, in, false
@@ -106,72 +92,72 @@ func (a *API) loadPlan(w http.ResponseWriter, r *http.Request) (*migrate.Plan, M
 	return p, in, true
 }
 
-func (a *API) movePlan(w http.ResponseWriter, r *http.Request) {
-	p, _, ok := a.loadPlan(w, r)
+func (h *Handlers) movePlan(w http.ResponseWriter, r *http.Request) {
+	p, _, ok := h.loadPlan(w, r)
 	if !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": migrate.SuggestRules(r.Context(), a.s.Store, p),
-		"plan_hash": migrate.PlanHash(p)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": SuggestRules(r.Context(), h.Store, p),
+		"plan_hash": PlanHash(p)})
 }
 
-func (a *API) moveDryRun(w http.ResponseWriter, r *http.Request) {
-	p, _, ok := a.loadPlan(w, r)
+func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {
+	p, _, ok := h.loadPlan(w, r)
 	if !ok {
 		return
 	}
-	rep := a.mover().Run(r.Context(), 0, p, true, actor(r), nil)
+	rep := h.mover().Run(r.Context(), 0, p, true, actor(r), nil)
 	// The move must start from this very plan: it sends this hash back.
-	writeJSON(w, http.StatusOK, map[string]any{"report": rep, "plan_hash": migrate.PlanHash(p)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"report": rep, "plan_hash": PlanHash(p)})
 }
 
 // refuseSafe answers 409 in safe mode: a move or an undo changes the
 // Library, which safe mode keeps still.
-func (a *API) refuseSafe(w http.ResponseWriter) bool {
-	if a.safeMode() {
-		fail(w, http.StatusConflict, "HolyArrs started in safe mode; restart it normally to move or undo")
+func (h *Handlers) refuseSafe(w http.ResponseWriter) bool {
+	if h.safeMode() {
+		webserver.Fail(w, http.StatusConflict, "HolyArrs started in safe mode; restart it normally to move or undo")
 		return true
 	}
 	return false
 }
 
-func (a *API) startMove(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) || a.refuseSafe(w) {
+func (h *Handlers) startMove(w http.ResponseWriter, r *http.Request) {
+	if !auth.RequireStrong(w, r) || h.refuseSafe(w) {
 		return
 	}
 	in, ok := moveInput(w, r)
 	if !ok {
 		return
 	}
-	mv, err := a.mover().Start(r.Context(), in.Snapshots, in.Choices, in.PlanHash, actor(r))
+	mv, err := h.mover().Start(r.Context(), in.Snapshots, in.Choices, in.PlanHash, actor(r))
 	if err != nil {
 		moveFail(w, err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"move": mv, "job_id": mv.JobID})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"move": mv, "job_id": mv.JobID})
 }
 
-func (a *API) listMoves(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) listMoves(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	ms, err := migrate.ListMoves(r.Context(), a.s.Store)
+	ms, err := ListMoves(r.Context(), h.Store)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "migrate", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"moves": ms})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"moves": ms})
 }
 
-func (a *API) oneMove(w http.ResponseWriter, r *http.Request) (migrate.Move, bool) {
+func (h *Handlers) oneMove(w http.ResponseWriter, r *http.Request) (Move, bool) {
 	if !auth.RequireStrong(w, r) {
-		return migrate.Move{}, false
+		return Move{}, false
 	}
-	id, ok := pathID(w, r)
+	id, ok := snapshotID(w, r)
 	if !ok {
-		return migrate.Move{}, false
+		return Move{}, false
 	}
-	mv, err := migrate.GetMove(r.Context(), a.s.Store, id)
+	mv, err := GetMove(r.Context(), h.Store, id)
 	if err != nil {
 		moveFail(w, err)
 		return mv, false
@@ -180,8 +166,8 @@ func (a *API) oneMove(w http.ResponseWriter, r *http.Request) (migrate.Move, boo
 }
 
 // getMove answers a move with its Job's progress while it runs.
-func (a *API) getMove(w http.ResponseWriter, r *http.Request) {
-	mv, ok := a.oneMove(w, r)
+func (h *Handlers) getMove(w http.ResponseWriter, r *http.Request) {
+	mv, ok := h.oneMove(w, r)
 	if !ok {
 		return
 	}
@@ -192,22 +178,22 @@ func (a *API) getMove(w http.ResponseWriter, r *http.Request) {
 		job = mv.UndoJobID
 	}
 	if job != 0 {
-		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT progress, COALESCE(progress_note, '') FROM jobs WHERE id = ?", job).Scan(&progress, &note)
+		_ = h.Store.Read().QueryRowContext(r.Context(), "SELECT progress, COALESCE(progress_note, '') FROM jobs WHERE id = ?", job).Scan(&progress, &note)
 	}
 	if mv.State == "done" || mv.State == "undone" {
 		progress = 1
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"move": mv, "progress": progress, "progress_note": note})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"move": mv, "progress": progress, "progress_note": note})
 }
 
 // moveReport answers the report as a Markdown file to keep.
-func (a *API) moveReport(w http.ResponseWriter, r *http.Request) {
-	mv, ok := a.oneMove(w, r)
+func (h *Handlers) moveReport(w http.ResponseWriter, r *http.Request) {
+	mv, ok := h.oneMove(w, r)
 	if !ok {
 		return
 	}
 	if mv.Report == nil {
-		fail(w, http.StatusConflict, "this move has no report yet")
+		webserver.Fail(w, http.StatusConflict, "this move has no report yet")
 		return
 	}
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
@@ -215,16 +201,16 @@ func (a *API) moveReport(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(mv.Report.Markdown()))
 }
 
-func (a *API) undoMove(w http.ResponseWriter, r *http.Request) {
-	mv, ok := a.oneMove(w, r)
-	if !ok || a.refuseSafe(w) {
+func (h *Handlers) undoMove(w http.ResponseWriter, r *http.Request) {
+	mv, ok := h.oneMove(w, r)
+	if !ok || h.refuseSafe(w) {
 		return
 	}
 	// The undo runs as its own Job; GET the move for its progress.
-	mv, err := a.mover().StartUndo(r.Context(), mv.ID, actor(r))
+	mv, err := h.mover().StartUndo(r.Context(), mv.ID, actor(r))
 	if err != nil {
 		moveFail(w, err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"move": mv, "undo_job_id": mv.UndoJobID})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"move": mv, "undo_job_id": mv.UndoJobID})
 }

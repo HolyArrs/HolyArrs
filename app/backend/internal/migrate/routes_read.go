@@ -1,4 +1,4 @@
-package api
+package migrate
 
 import (
 	"context"
@@ -10,25 +10,18 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 )
 
-// readTimeout bounds one whole read of an old app.
-var readTimeout = 5 * time.Minute
-
-// migrateLimits are the readers' limits (tests make them small).
-var migrateLimits migrate.Limits
-
-func (a *API) migrateRoutes(m *http.ServeMux) {
-	m.HandleFunc("POST /api/v1/migrate/probe", a.migrateProbe)
-	m.HandleFunc("POST /api/v1/migrate/read", a.migrateRead)
-	m.HandleFunc("GET /api/v1/migrate/snapshots", a.listSnapshots)
-	m.HandleFunc("GET /api/v1/migrate/snapshots/{id}", a.getSnapshot)
-	m.HandleFunc("DELETE /api/v1/migrate/snapshots/{id}", a.deleteSnapshot)
+func (h *Handlers) readRoutes(r *webserver.Router) {
+	r.Handle("POST /api/v1/migrate/probe", webserver.NeedUsers, http.HandlerFunc(h.migrateProbe))
+	r.Handle("POST /api/v1/migrate/read", webserver.NeedUsers, http.HandlerFunc(h.migrateRead))
+	r.Handle("GET /api/v1/migrate/snapshots", webserver.NeedUsers, http.HandlerFunc(h.listSnapshots))
+	r.Handle("GET /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.getSnapshot))
+	r.Handle("DELETE /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.deleteSnapshot))
 }
 
 // MigrateSourceInput says which old app to read and how: an address with
@@ -37,13 +30,13 @@ func (a *API) migrateRoutes(m *http.ServeMux) {
 // answered; after a successful read the owner's typed key is kept in the
 // vault for "Read again" until a move finishes.
 type MigrateSourceInput struct {
-	Kind       migrate.Kind `json:"kind"`
-	URL        string       `json:"url"`
-	Key        string       `json:"key"`
-	Username   string       `json:"username"`
-	Password   string       `json:"password"`
-	Path       string       `json:"path"`
-	AllowLocal bool         `json:"allow_local_network"`
+	Kind       Kind   `json:"kind"`
+	URL        string `json:"url"`
+	Key        string `json:"key"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	Path       string `json:"path"`
+	AllowLocal bool   `json:"allow_local_network"`
 	// UseSavedKey reads with the key the secrets file saved for this app
 	// or a past read kept for this app (owner only); the address is the
 	// saved one unless url is given. The saved key stays after the read.
@@ -52,180 +45,180 @@ type MigrateSourceInput struct {
 
 // migrateSource reads and checks the body; it answers and returns false
 // on a bad one. saved says the read uses a saved key.
-func (a *API) migrateSource(w http.ResponseWriter, r *http.Request) (src migrate.Source, savedID importsecrets.MoveCredentialVersion, ok bool) {
+func (h *Handlers) migrateSource(w http.ResponseWriter, r *http.Request) (src Source, savedID secretsfile.MoveCredentialVersion, ok bool) {
 	var in MigrateSourceInput
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&in); err != nil {
-		fail(w, http.StatusBadRequest, "the body must be JSON naming the app and an address or a backup path")
-		return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+		webserver.Fail(w, http.StatusBadRequest, "the body must be JSON naming the app and an address or a backup path")
+		return Source{}, secretsfile.MoveCredentialVersion{}, false
 	}
-	if !migrate.ValidKind(in.Kind) {
-		fail(w, http.StatusBadRequest, "unknown app; pick one of radarr, sonarr, lidarr, prowlarr, bazarr, seerr, overseerr, qbittorrent, sabnzbd")
-		return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+	if !ValidKind(in.Kind) {
+		webserver.Fail(w, http.StatusBadRequest, "unknown app; pick one of radarr, sonarr, lidarr, prowlarr, bazarr, seerr, overseerr, qbittorrent, sabnzbd")
+		return Source{}, secretsfile.MoveCredentialVersion{}, false
 	}
 	if in.UseSavedKey {
 		// Fail closed: only a signed-in owner may use a saved key.
 		if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
-			fail(w, http.StatusForbidden, "only the owner may use a saved key")
-			return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+			webserver.Fail(w, http.StatusForbidden, "only the owner may use a saved key")
+			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
-		c, id, has, err := importsecrets.ReadMoveCredentialVersion(r.Context(), a.s.Store, a.s.Secrets, string(in.Kind))
+		c, id, has, err := secretsfile.ReadMoveCredentialVersion(r.Context(), h.Store, h.Secrets, string(in.Kind))
 		if err != nil {
-			internal(w, err)
-			return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+			webserver.Internal(w, "migrate", err)
+			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
 		if !has || in.Path != "" {
-			fail(w, http.StatusBadRequest, "there is no saved key for this app; type its key")
-			return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+			webserver.Fail(w, http.StatusBadRequest, "there is no saved key for this app; type its key")
+			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
 		// The key goes only to the address it was saved with, with only
 		// the local-network leave it was saved with.
 		if want := sameAddress(in.URL); in.URL != "" && (want == "" || want != sameAddress(c.Address)) {
-			fail(w, http.StatusBadRequest, "a saved key is only sent to its saved address")
-			return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+			webserver.Fail(w, http.StatusBadRequest, "a saved key is only sent to its saved address")
+			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
 		in.URL, in.Key, in.Username, in.Password, in.AllowLocal, savedID = c.Address, c.APIKey, c.Username, c.Password, c.AllowLocalNetwork, id
 	}
 	if (in.URL == "") == (in.Path == "") {
-		fail(w, http.StatusBadRequest, migrate.ErrBadSource.Error())
-		return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+		webserver.Fail(w, http.StatusBadRequest, ErrBadSource.Error())
+		return Source{}, secretsfile.MoveCredentialVersion{}, false
 	}
 	if in.Path != "" && !filepath.IsAbs(in.Path) {
-		fail(w, http.StatusBadRequest, "the backup path must be a full path on this server")
-		return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
+		webserver.Fail(w, http.StatusBadRequest, "the backup path must be a full path on this server")
+		return Source{}, secretsfile.MoveCredentialVersion{}, false
 	}
-	return migrate.Source{Kind: in.Kind, URL: in.URL, Key: in.Key, Username: in.Username, Password: in.Password,
-		Path: in.Path, AllowLocal: in.AllowLocal, Limits: migrateLimits}, savedID, true
+	return Source{Kind: in.Kind, URL: in.URL, Key: in.Key, Username: in.Username, Password: in.Password,
+		Path: in.Path, AllowLocal: in.AllowLocal, Limits: h.Limits}, savedID, true
 }
 
 // migrateFail answers a reader's error in plain words.
 func migrateFail(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, migrate.ErrUnreachable), errors.Is(err, migrate.ErrBadAnswer):
-		fail(w, http.StatusBadGateway, err.Error())
-	case errors.Is(err, migrate.ErrSnapshotTooBig), errors.Is(err, migrate.ErrTooBig):
-		fail(w, http.StatusRequestEntityTooLarge, migrate.ErrTooBig.Error())
-	case errors.Is(err, migrate.ErrBackupBusy):
-		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, migrate.ErrHeldKey):
-		fail(w, http.StatusInternalServerError, err.Error())
+	case errors.Is(err, ErrUnreachable), errors.Is(err, ErrBadAnswer):
+		webserver.Fail(w, http.StatusBadGateway, err.Error())
+	case errors.Is(err, ErrSnapshotTooBig), errors.Is(err, ErrTooBig):
+		webserver.Fail(w, http.StatusRequestEntityTooLarge, ErrTooBig.Error())
+	case errors.Is(err, ErrBackupBusy):
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, ErrHeldKey):
+		webserver.Fail(w, http.StatusInternalServerError, err.Error())
 	default:
-		for _, e := range []error{migrate.ErrWrongApp, migrate.ErrBadKey, migrate.ErrNotBackup, migrate.ErrUnsafeBackup,
-			migrate.ErrNotSQLite, migrate.ErrBadSource, migrate.ErrVersion} {
+		for _, e := range []error{ErrWrongApp, ErrBadKey, ErrNotBackup, ErrUnsafeBackup,
+			ErrNotSQLite, ErrBadSource, ErrVersion} {
 			if errors.Is(err, e) {
-				fail(w, http.StatusUnprocessableEntity, e.Error())
+				webserver.Fail(w, http.StatusUnprocessableEntity, e.Error())
 				return
 			}
 		}
 		if errors.Is(err, context.DeadlineExceeded) {
-			fail(w, http.StatusGatewayTimeout, "the read took too long")
+			webserver.Fail(w, http.StatusGatewayTimeout, "the read took too long")
 			return
 		}
-		fail(w, http.StatusBadRequest, "the app could not be read: "+err.Error())
+		webserver.Fail(w, http.StatusBadRequest, "the app could not be read: "+err.Error())
 	}
 }
 
-func (a *API) migrateProbe(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) migrateProbe(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	src, _, ok := a.migrateSource(w, r)
+	src, _, ok := h.migrateSource(w, r)
 	if !ok {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), readTimeout)
 	defer cancel()
-	info, err := migrate.Probe(ctx, src)
+	info, err := Probe(ctx, src)
 	if err != nil {
 		migrateFail(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"app": info})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"app": info})
 }
 
-func (a *API) migrateRead(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) migrateRead(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	src, usedSaved, ok := a.migrateSource(w, r)
+	src, usedSaved, ok := h.migrateSource(w, r)
 	if !ok {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), readTimeout)
 	defer cancel()
-	movesDone := a.movesDone(r.Context())
-	snap, err := migrate.Read(ctx, src)
+	movesDone := h.movesDone(r.Context())
+	snap, err := Read(ctx, src)
 	if err != nil {
 		migrateFail(w, err)
 		return
 	}
-	var saved migrate.Saved
-	err = a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+	var saved Saved
+	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		var err error
-		saved, err = migrate.SaveTx(r.Context(), tx, actor(r).ID, snap)
+		saved, err = SaveTx(r.Context(), tx, actor(r).ID, snap)
 		return err
 	})
 	if err != nil {
-		if errors.Is(err, migrate.ErrSnapshotTooBig) {
+		if errors.Is(err, ErrSnapshotTooBig) {
 			migrateFail(w, err)
 			return
 		}
-		internal(w, err)
+		webserver.Internal(w, "migrate", err)
 		return
 	}
 	// A move that finished while this read ran has forgotten every key: this
 	// read's key stays forgotten too.
-	if a.movesDone(r.Context()) == movesDone {
-		a.keepMoveKey(r, src, usedSaved)
+	if h.movesDone(r.Context()) == movesDone {
+		h.keepMoveKey(r, src, usedSaved)
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"snapshot": saved, "needs_reentry": snap.NeedsReentry, "notes": snap.Notes})
+	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"snapshot": saved, "needs_reentry": snap.NeedsReentry, "notes": snap.Notes})
 }
 
 // keepMoveKey keeps the owner's typed key (or qBittorrent sign-in) after a
 // good read, replacing any older one for the app, so "Read again" needs no
 // typing. A read with the saved key leaves it as it is. Keeping is best
 // effort: the read already counts.
-func (a *API) keepMoveKey(r *http.Request, src migrate.Source, usedSaved importsecrets.MoveCredentialVersion) {
+func (h *Handlers) keepMoveKey(r *http.Request, src Source, usedSaved secretsfile.MoveCredentialVersion) {
 	if usedSaved.SecretID != 0 || src.Path != "" || src.URL == "" {
 		return
 	}
 	if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
 		return
 	}
-	c := importsecrets.MoveCredential{Address: src.URL, APIKey: src.Key, Username: src.Username, Password: src.Password, AllowLocalNetwork: src.AllowLocal}
-	_ = importsecrets.SaveMoveCredential(context.WithoutCancel(r.Context()), a.s.Store, a.s.Secrets, string(src.Kind), c, actor(r))
+	c := secretsfile.MoveCredential{Address: src.URL, APIKey: src.Key, Username: src.Username, Password: src.Password, AllowLocalNetwork: src.AllowLocal}
+	_ = secretsfile.SaveMoveCredential(context.WithoutCancel(r.Context()), h.Store, h.Secrets, string(src.Kind), c, actor(r))
 }
 
 // movesDone counts the finished moves (-2 when it can't be read).
-func (a *API) movesDone(ctx context.Context) int {
+func (h *Handlers) movesDone(ctx context.Context) int {
 	n := 0
-	if err := a.s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM moves WHERE state = 'done'").Scan(&n); err != nil {
+	if err := h.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM moves WHERE state = 'done'").Scan(&n); err != nil {
 		return -2
 	}
 	return n
 }
 
-func (a *API) listSnapshots(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) listSnapshots(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	list, err := migrate.List(r.Context(), a.s.Store)
+	list, err := List(r.Context(), h.Store)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "migrate", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"snapshots": list})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"snapshots": list})
 }
 
 func snapshotID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
-		fail(w, http.StatusNotFound, migrate.ErrNoSnapshot.Error())
+		webserver.Fail(w, http.StatusNotFound, ErrNoSnapshot.Error())
 		return 0, false
 	}
 	return id, true
 }
 
-func (a *API) getSnapshot(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) getSnapshot(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
@@ -233,19 +226,19 @@ func (a *API) getSnapshot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	saved, snap, err := migrate.Get(r.Context(), a.s.Store, id)
-	if errors.Is(err, migrate.ErrNoSnapshot) {
-		fail(w, http.StatusNotFound, err.Error())
+	saved, snap, err := Get(r.Context(), h.Store, id)
+	if errors.Is(err, ErrNoSnapshot) {
+		webserver.Fail(w, http.StatusNotFound, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "migrate", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"snapshot": saved, "data": snap})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"snapshot": saved, "data": snap})
 }
 
-func (a *API) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
@@ -254,19 +247,19 @@ func (a *API) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var kind string
-	_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT app_kind FROM migrate_snapshots WHERE id = ?", id).Scan(&kind)
-	if err := migrate.Delete(r.Context(), a.s.Store, id); err != nil {
-		if errors.Is(err, migrate.ErrNoSnapshot) {
-			fail(w, http.StatusNotFound, err.Error())
+	_ = h.Store.Read().QueryRowContext(r.Context(), "SELECT app_kind FROM migrate_snapshots WHERE id = ?", id).Scan(&kind)
+	if err := Delete(r.Context(), h.Store, id); err != nil {
+		if errors.Is(err, ErrNoSnapshot) {
+			webserver.Fail(w, http.StatusNotFound, err.Error())
 			return
 		}
-		internal(w, err)
+		webserver.Internal(w, "migrate", err)
 		return
 	}
 	// Forgetting a read also forgets the key kept for that app.
 	if kind != "" {
-		if _, err := importsecrets.ForgetMoveCredential(r.Context(), a.s.Store, kind); err != nil {
-			internal(w, err)
+		if _, err := secretsfile.ForgetMoveCredential(r.Context(), h.Store, kind); err != nil {
+			webserver.Internal(w, "migrate", err)
 			return
 		}
 	}
