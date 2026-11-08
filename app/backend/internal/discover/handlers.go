@@ -3,6 +3,7 @@ package discover
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -65,6 +66,12 @@ type Deps struct {
 	AllowedTitleIDs func(ctx context.Context, max string, ids []int64) (map[int64]bool, error)
 	KnownGenres     func(mbid string) []string
 	ReadCardArt     func(ctx context.Context, keys [][2]string, lang string) map[string]CardArtRow
+	// GenreLists fetches Explore list requests side by side, waiting up to
+	// wait; NoteTrailers notes titles for the trailer pass; WarmMusicNew
+	// starts the Music tab's New lists (New & Popular).
+	GenreLists   func(ctx context.Context, kind string, reqs []engine.Request, wait time.Duration) ([][]engine.Item, bool)
+	NoteTrailers func(lang string, titles [][2]string)
+	WarmMusicNew func()
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
@@ -115,6 +122,9 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/explore/head", h.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", h.exploreTail)
 	m.HandleFunc("POST /api/v1/explore/counts", h.exploreCounts)
+	m.HandleFunc("GET /api/v1/explore/new", h.exploreNew)
+	m.HandleFunc("GET /api/v1/explore/new/services", h.exploreNewServices)
+	m.HandleFunc("GET /api/v1/explore/new/service", h.exploreNewService)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only

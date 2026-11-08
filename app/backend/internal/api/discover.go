@@ -61,7 +61,9 @@ func (a *API) newDiscover() *discover.Handlers {
 		KidKnownFor: a.kidKnownFor, LibraryMovieAllowed: a.libraryMovieAllowed,
 		LiveSource: func(ctx context.Context) discover.Lister { return a.liveSource(ctx) },
 		TitleView:  a.titleView, KidMovies: a.kidMovies,
-		AllowedTitleIDs: a.allowedTitleIDs, KnownGenres: func(mbid string) []string { return a.mh().KnownGenres(mbid) }, ReadCardArt: a.readCardArt}}
+		AllowedTitleIDs: a.allowedTitleIDs, KnownGenres: func(mbid string) []string { return a.mh().KnownGenres(mbid) }, ReadCardArt: a.readCardArt,
+		GenreLists: a.genreLists, NoteTrailers: func(lang string, titles [][2]string) { a.trailers.Note(lang, titles) },
+		WarmMusicNew: func() { a.musicProvider().WarmNew() }}}
 }
 
 func peopleError(w http.ResponseWriter, err error) { discover.PeopleError(w, err) }

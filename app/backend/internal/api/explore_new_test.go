@@ -55,7 +55,7 @@ func newRig(t *testing.T) (*API, *httptest.Server, *int) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	newPages = newPageCache{}
+	discover.ResetNewPages()
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	return a, srv, &reads
@@ -155,27 +155,27 @@ func TestExploreNewAcceptance(t *testing.T) {
 	a, srv, _ := newRig(t)
 	r := httptest.NewRequest("GET", "/api/v1/explore/new", nil)
 	r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Role: webserver.RoleAdmin}))
-	var pg newPage
+	var pg discover.NewPage
 	for i := 0; i < 40; i++ {
 		var building bool
-		if pg, building = a.newRows(r.Context(), r, 1, "all"); !building {
+		if pg, building = a.disc.NewRows(r.Context(), r, 1, "all"); !building {
 			break
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 	places := map[string]int{}
 	var top []string
-	for _, row := range pg.rows {
+	for _, row := range pg.Rows {
 		for _, it := range row.Items {
 			places[it.Key()]++
 			top = append(top, it.Key())
-			f := pg.facts[it.Key()]
+			f := pg.Facts[it.Key()]
 			if f.Kind == engine.NewUpcoming || !engine.InWindow(f, newNow) {
 				t.Fatalf("%s in %s outside its window: %+v", it.Key(), row.Type, f)
 			}
 		}
 	}
-	for _, d := range pg.rail {
+	for _, d := range pg.Rail {
 		for _, it := range d.Items {
 			places[it.Key()]++
 		}
@@ -188,7 +188,7 @@ func TestExploreNewAcceptance(t *testing.T) {
 	top = top[:min(20, len(top))]
 	fresh := 0
 	for _, k := range top {
-		f := pg.facts[k]
+		f := pg.Facts[k]
 		if f.Kind == engine.NewUpcoming || newNow.Sub(f.At) <= 30*24*time.Hour {
 			fresh++
 		}
@@ -209,22 +209,22 @@ func TestExploreNewHeroNotesTrailers(t *testing.T) {
 	a, _, _ := newRig(t)
 	r := httptest.NewRequest("GET", "/api/v1/explore/new?language=de", nil)
 	r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Role: webserver.RoleAdmin}))
-	var pg newPage
+	var pg discover.NewPage
 	for i := 0; i < 40; i++ {
 		var building bool
-		if pg, building = a.newRows(r.Context(), r, 1, "all"); !building {
+		if pg, building = a.disc.NewRows(r.Context(), r, 1, "all"); !building {
 			break
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 	kid := r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Role: webserver.RoleMember, MaxRating: "PG-13"}))
-	if _, err := a.newHero(kid, pg, 1); err != nil {
+	if _, err := a.disc.NewHero(kid, pg, 1); err != nil {
 		t.Fatal(err)
 	}
 	if got := a.trailers.Asks(time.Now()); len(got) != 0 {
 		t.Fatalf("a Kid's hero noted %v", got)
 	}
-	if _, err := a.newHero(r, pg, 1); err != nil {
+	if _, err := a.disc.NewHero(r, pg, 1); err != nil {
 		t.Fatal(err)
 	}
 	got := a.trailers.Asks(time.Now())
@@ -232,7 +232,7 @@ func TestExploreNewHeroNotesTrailers(t *testing.T) {
 		t.Fatalf("noted %d", len(got))
 	}
 	for _, j := range got {
-		if j[2] != "de" || pg.scores[j[0]+":"+j[1]] <= 0 {
+		if j[2] != "de" || pg.Scores[j[0]+":"+j[1]] <= 0 {
 			t.Fatalf("noted %v", j)
 		}
 	}
@@ -289,7 +289,7 @@ func TestNewFreshText(t *testing.T) {
 // included.
 func TestKidExploreNew(t *testing.T) {
 	k := newKidRig(t)
-	newPages = newPageCache{}
+	discover.ResetNewPages()
 	code, b := k.kai.get("/api/v1/explore/new?type=all")
 	if code != 200 && code != 403 {
 		t.Fatalf("kid new page %d", code)
@@ -368,7 +368,7 @@ func TestExploreNewServiceList(t *testing.T) {
 // A Kid's service list never shows a title over their limit.
 func TestKidExploreNewService(t *testing.T) {
 	k := newKidRig(t)
-	newPages = newPageCache{}
+	discover.ResetNewPages()
 	code, b := k.kai.get("/api/v1/explore/new/service?id=8&type=all")
 	if code != 200 && code != 403 {
 		t.Fatalf("kid service list %d", code)

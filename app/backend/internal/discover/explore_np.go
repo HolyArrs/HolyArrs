@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -11,10 +11,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // newPageTTL is how long a member's built New & Popular page is kept; the
@@ -42,11 +41,11 @@ const newPerService = 20
 // newPage is one member's built page: the rows, the This week rail, why each
 // title is new, its score and the service each services-row title is on.
 type newPage struct {
-	rows   []engine.Row
-	rail   []newRailDay
-	facts  map[string]engine.NewFact
-	scores map[string]float64
-	marks  map[string]streamingMark
+	Rows   []engine.Row
+	Rail   []newRailDay
+	Facts  map[string]engine.NewFact
+	Scores map[string]float64
+	marks  map[string]StreamingMark
 	// picked says the member chose their services.
 	picked bool
 	// key is the page cache key (member, switch, Kid limit, region, day).
@@ -70,7 +69,7 @@ type newRailDay struct {
 type newRailItem struct {
 	engine.Item
 	What      string
-	Service   *streamingMark
+	Service   *StreamingMark
 	Following bool
 	Upcoming  bool
 }
@@ -94,76 +93,7 @@ const newHeroMax = 6
 // newHeroKeys keeps the hero picked for a built page (page cache key ->
 // kind:tmdb set), so every page of rows leaves those titles out. Entries
 // expire with the page cache.
-var newHeroKeys = discover.NewTTLMap(discover.ExplorePageTTL, 2000)
-
-// newHero picks the hero: the best-scoring new titles of the rail, the
-// services row and the hot and new rows that pass Explore's quality gate
-// (a trailer, a logo and a backdrop), leaving out Explore's own hero.
-func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView, error) {
-	skip := map[string]bool{}
-	if v, ok := discover.HeroShown.Load(me); ok {
-		for _, it := range v.([]engine.Item) {
-			skip[it.Key()] = true
-		}
-	}
-	var cands []engine.Item
-	seen := map[string]bool{}
-	take := func(it engine.Item) {
-		if !seen[it.Key()] && !skip[it.Key()] && pg.scores[it.Key()] > 0 {
-			seen[it.Key()] = true
-			cands = append(cands, it)
-		}
-	}
-	for _, d := range pg.rail {
-		for _, it := range d.Items {
-			take(it.Item)
-		}
-	}
-	for _, row := range pg.rows {
-		if row.Type == engine.TypeNPServices || row.Type == engine.TypeNPTopShows || row.Type == engine.TypeNPTopFilms {
-			for _, it := range row.Items {
-				take(it)
-			}
-		}
-	}
-	engine.SortByScore(cands, func(it engine.Item) float64 { return pg.scores[it.Key()] })
-	cands = cands[:min(len(cands), 24)]
-	views, err := a.exploreViews(r.Context(), r, []engine.Row{{Items: cands}})
-	if err != nil || len(views) != 1 {
-		return []discoverItemView{}, err
-	}
-	var vs []discoverItemView
-	var titles [][2]string
-	for _, v := range views[0].Items {
-		if !v.InLibrary {
-			vs = append(vs, v)
-			titles = append(titles, [2]string{v.Kind, v.TMDBID})
-		}
-	}
-	// The trailer pass reads only Explore's pools: the titles this hero
-	// picks from are noted for its next round (no lookup here).
-	if a.kidMax(r) == "" {
-		a.trailers.Note(metadata.TrailerLanguage(r), titles)
-	}
-	a.fillTrailerKeys(r, vs)
-	a.fillCardArt(r, vs)
-	now := a.explore.Now().UTC()
-	out := []discoverItemView{}
-	for _, v := range vs {
-		if len(out) == newHeroMax || v.TrailerKey == "" || !discover.HeroArtReady(v) {
-			continue
-		}
-		k := v.Kind + ":" + v.TMDBID
-		if f := discover.NewFresh(pg.facts[k], now); f != nil {
-			v.Fresh = f
-		}
-		if m, ok := pg.marks[k]; ok {
-			v.Streaming = &m
-		}
-		out = append(out, v)
-	}
-	return out, nil
-}
+var newHeroKeys = NewTTLMap(ExplorePageTTL, 2000)
 
 func (c *newPageCache) get(key string) (newPage, bool) {
 	c.mu.Lock()
@@ -214,9 +144,9 @@ type newHousehold struct {
 	episodes []newEpisode
 }
 
-func (a *API) newHousehold(ctx context.Context, me int64, now time.Time) newHousehold {
+func (hd *Handlers) newHousehold(ctx context.Context, me int64, now time.Time) newHousehold {
 	h := newHousehold{genres: map[string]int{}, topGenre: map[string]string{}, follows: map[string]bool{}, owned: map[string]bool{}}
-	db := a.s.Store.Read()
+	db := hd.Store.Read()
 	var services string
 	_ = db.QueryRowContext(ctx, "SELECT services, region FROM explore_prefs WHERE member_id = ?", me).Scan(&services, &h.region)
 	h.region = strings.ToUpper(h.region)
@@ -278,7 +208,7 @@ func (a *API) newHousehold(ctx context.Context, me int64, now time.Time) newHous
 			_ = json.Unmarshal([]byte(genres), &e.show.Genres)
 			var art []string
 			_ = json.Unmarshal([]byte(artwork), &art)
-			if links := artworkLinks(art); len(links) > 0 {
+			if links := titleview.ArtworkLinks(art); len(links) > 0 {
 				e.show.Poster = links[0]
 			}
 			e.show.Kind, e.show.Owned = "show", true
@@ -314,14 +244,14 @@ func (h newHousehold) suit(it engine.Item) float64 {
 // services (every Streaming Availability service when none is picked),
 // newest first, each with when it was added; from the kept lists (never
 // fetched here beyond the 12-hour service-top read).
-func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[string]bool) ([]streamingMark, map[int][]engine.Item, map[string]time.Time, metadata.ServiceTop) {
+func (hd *Handlers) newServiceLists(ctx context.Context, h newHousehold, kinds map[string]bool) ([]StreamingMark, map[int][]engine.Item, map[string]time.Time, metadata.ServiceTop) {
 	added := map[string]time.Time{}
 	by := map[int][]engine.Item{}
-	var order []streamingMark
-	if a.s.ServiceTop == nil || h.region == "" {
+	var order []StreamingMark
+	if hd.ServiceTop == nil || hd.ServiceTop() == nil || h.region == "" {
 		return nil, by, added, metadata.ServiceTop{}
 	}
-	list, err := a.cachedServiceTop(ctx, h.region)
+	list, err := hd.cachedServiceTop(ctx, h.region)
 	if err != nil {
 		return nil, by, added, metadata.ServiceTop{}
 	}
@@ -330,13 +260,13 @@ func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[str
 		picked[s] = true
 	}
 	for _, sv := range list.Services {
-		id := discover.ServiceTopProviders[sv.Service]
+		id := ServiceTopProviders[sv.Service]
 		if id == 0 || (len(picked) > 0 && !picked[id]) {
 			continue
 		}
-		order = append(order, streamingMark{Service: id, Name: sv.Name})
+		order = append(order, StreamingMark{Service: id, Name: sv.Name})
 		for _, it := range sv.New {
-			kind := serviceKind(it.Kind)
+			kind := ServiceKind(it.Kind)
 			if it.TMDBID <= 0 || !kinds[kind] {
 				continue
 			}
@@ -355,21 +285,21 @@ func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[str
 
 // newCharts are today's top titles of kind on each of the member's services
 // (Streaming Availability's own charts), in rank order.
-func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]streamingMark, [][]engine.Item) {
+func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]StreamingMark, [][]engine.Item) {
 	picked := map[int]bool{}
 	for _, s := range h.services {
 		picked[s] = true
 	}
-	var marks []streamingMark
+	var marks []StreamingMark
 	var lists [][]engine.Item
 	for _, sv := range list.Services {
-		id := discover.ServiceTopProviders[sv.Service]
+		id := ServiceTopProviders[sv.Service]
 		if id == 0 || sv.Source != "streaming-availability" || (len(picked) > 0 && !picked[id]) {
 			continue
 		}
 		var l []engine.Item
 		for _, it := range sv.Items {
-			if it.TMDBID <= 0 || serviceKind(it.Kind) != kind {
+			if it.TMDBID <= 0 || ServiceKind(it.Kind) != kind {
 				continue
 			}
 			e := engine.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind, Name: it.Title, Genres: []string{}}
@@ -378,7 +308,7 @@ func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]streami
 			}
 			l = append(l, e)
 		}
-		marks = append(marks, streamingMark{Service: id, Name: sv.Name})
+		marks = append(marks, StreamingMark{Service: id, Name: sv.Name})
 		lists = append(lists, l)
 	}
 	return marks, lists
@@ -395,7 +325,7 @@ type newLists struct {
 
 // newRequests are one kind's shared lists: TMDB only, each kept by the list
 // cache (warmed like Browse; a cold build waits newWait and says building).
-func newRequests(kind, genre, region string, services []streamingMark, now time.Time) ([]engine.Request, func([][]engine.Item) newLists) {
+func newRequests(kind, genre, region string, services []StreamingMark, now time.Time) ([]engine.Request, func([][]engine.Item) newLists) {
 	day := func(d int) string { return now.AddDate(0, 0, d).Format("2006-01-02") }
 	back := -45 // a movie release window
 	if kind == "show" {
@@ -485,26 +415,26 @@ func (f newFacts) dated(it engine.Item) {
 
 // buildNewPage builds the member's page (before per-person views): kept 6
 // hours once every list is back; building says some lists were still out.
-func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string) (newPage, bool) {
-	now := a.explore.Now().UTC()
-	h := a.newHousehold(ctx, me, now)
+func (hd *Handlers) newRows(ctx context.Context, r *http.Request, me int64, sw string) (newPage, bool) {
+	now := hd.Explore.Now().UTC()
+	h := hd.newHousehold(ctx, me, now)
 	kinds := map[string]bool{}
 	for _, k := range engine.Kinds(sw) {
-		if len(a.kindsOn(k)) > 0 {
+		if len(hd.KindsOn(k)) > 0 {
 			kinds[k] = true
 		}
 	}
-	key := strconv.FormatInt(me, 10) + "|" + sw + "|" + a.kidMax(r) + "|" + h.region + "|" + now.Format("2006-01-02")
+	key := strconv.FormatInt(me, 10) + "|" + sw + "|" + hd.KidMax(r) + "|" + h.region + "|" + now.Format("2006-01-02")
 	if p, ok := newPages.get(key); ok {
 		return p, false
 	}
-	order, svcNew, added, top := a.newServiceLists(ctx, h, kinds)
-	pg := newPage{facts: map[string]engine.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0, key: key,
+	order, svcNew, added, top := hd.newServiceLists(ctx, h, kinds)
+	pg := newPage{Facts: map[string]engine.NewFact{}, Scores: map[string]float64{}, marks: map[string]StreamingMark{}, picked: len(h.services) > 0, key: key,
 		perService: map[string]map[int][]engine.Item{engine.TypeNPServices: {}, engine.TypeNPTopShows: {}, engine.TypeNPTopFilms: {}}, svcNames: map[int]string{}}
 	for _, s := range order {
 		pg.svcNames[s.Service] = s.Name
 	}
-	facts := newFacts{now: now, m: pg.facts}
+	facts := newFacts{now: now, m: pg.Facts}
 	for k, at := range added {
 		facts.put(k, engine.NewFact{Kind: engine.NewService, At: at})
 	}
@@ -515,7 +445,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 			continue
 		}
 		reqs, name := newRequests(k, h.topGenre[k], h.region, order, now)
-		g, ok := a.genreLists(ctx, k, reqs, newWait)
+		g, ok := hd.GenreLists(ctx, k, reqs, newWait)
 		lists[k], ready = name(g), ready && ok
 	}
 	// Every TMDB title's own date, then the stronger facts on top.
@@ -557,7 +487,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		maxSuit = max(maxSuit, h.suit(it))
 	}
 	score := func(it engine.Item) float64 {
-		if s, ok := pg.scores[it.Key()]; ok {
+		if s, ok := pg.Scores[it.Key()]; ok {
 			return s
 		}
 		p, ok := pop[it.Key()]
@@ -568,14 +498,14 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		if maxSuit > 0 {
 			t = h.suit(it) / maxSuit
 		}
-		s := engine.NewScore(engine.Freshness(pg.facts[it.Key()], now), p, t)
-		pg.scores[it.Key()] = s
+		s := engine.NewScore(engine.Freshness(pg.Facts[it.Key()], now), p, t)
+		pg.Scores[it.Key()] = s
 		return s
 	}
 	fresh := func(items []engine.Item) []engine.Item {
 		out := []engine.Item{}
 		for _, it := range items {
-			if kinds[it.Kind] && score(it) > 0 && pg.facts[it.Key()].Kind != engine.NewUpcoming {
+			if kinds[it.Kind] && score(it) > 0 && pg.Facts[it.Key()].Kind != engine.NewUpcoming {
 				out = append(out, it)
 			}
 		}
@@ -702,7 +632,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 	if kinds["show"] {
 		var first []engine.Item
 		for _, it := range ranked(pool) {
-			if it.Kind == "show" && pg.facts[it.Key()].Kind == engine.NewSeries {
+			if it.Kind == "show" && pg.Facts[it.Key()].Kind == engine.NewSeries {
 				first = append(first, it)
 			}
 		}
@@ -726,8 +656,8 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 	}))
 	weight := map[string]float64{engine.TypeNPEpisodes: 1.3, engine.TypeNPPicks: 1.2, engine.TypeNPSeries: 1, engine.TypeNPGenre: 1,
 		engine.TypeNPCinema: 0.9, engine.TypeNPAcclaim: 0.8, engine.TypeNPWorld: 0.6}
-	pg.rows = engine.OrderNewRows(engine.DedupeRows(rows, engine.NewRowMin), score, weight)
-	pg.rail = newRail(h, lists, svcNew, order, pg, kinds, score, now)
+	pg.Rows = engine.OrderNewRows(engine.DedupeRows(rows, engine.NewRowMin), score, weight)
+	pg.Rail = newRail(h, lists, svcNew, order, pg, kinds, score, now)
 	if ready {
 		newPages.put(key, pg)
 	}
@@ -740,7 +670,7 @@ const newRailMax = 12
 // newRail is the This week rail: three days back to seven ahead. Past days
 // carry service adds, releases and Library episodes; days ahead carry TMDB's
 // upcoming movies and the Library's next episodes.
-func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]engine.Item, order []streamingMark, pg newPage, kinds map[string]bool, score func(engine.Item) float64, now time.Time) []newRailDay {
+func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]engine.Item, order []StreamingMark, pg newPage, kinds map[string]bool, score func(engine.Item) float64, now time.Time) []newRailDay {
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	byDay := map[string][]newRailItem{}
 	seen := map[string]bool{}
@@ -763,14 +693,14 @@ func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]engine.
 		it.Owned = h.owned[it.Key()]
 		byDay[d.Format("2006-01-02")] = append(byDay[d.Format("2006-01-02")], it)
 	}
-	names := map[int]streamingMark{}
+	names := map[int]StreamingMark{}
 	for _, s := range order {
 		names[s.Service] = s
 	}
 	for _, s := range order {
 		id := s.Service
 		for _, it := range svcNew[id] {
-			f := pg.facts[it.Key()]
+			f := pg.Facts[it.Key()]
 			if f.Kind == engine.NewService {
 				m := names[id]
 				put(f.At, newRailItem{Item: it, What: "On " + m.Name, Service: &m})
@@ -817,264 +747,4 @@ func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]engine.
 		}
 	}
 	return out
-}
-
-// newViews joins rows (Kid limit, never-add, Library), drops rows left
-// under least and puts each card's newness strip and service on it.
-func (a *API) newViews(r *http.Request, rows []engine.Row, pg newPage, least int) ([]exploreRowView, error) {
-	views, err := a.exploreViews(r.Context(), r, rows)
-	if err != nil {
-		return nil, err
-	}
-	now := a.explore.Now().UTC()
-	out := []exploreRowView{}
-	for _, v := range views {
-		if len(v.Items) < least {
-			continue
-		}
-		a.fillTrailerKeys(r, v.Items)
-		out = append(out, v)
-	}
-	a.fillRowsCardArt(r, out)
-	a.fillStreaming(r, out)
-	for i := range out {
-		for j := range out[i].Items {
-			it := &out[i].Items[j]
-			k := it.Kind + ":" + it.TMDBID
-			if f := discover.NewFresh(pg.facts[k], now); f != nil {
-				it.Fresh = f
-			}
-			if m, ok := pg.marks[k]; ok && (out[i].Type == engine.TypeNPServices || out[i].Type == engine.TypeNPTopShows || out[i].Type == engine.TypeNPTopFilms) {
-				it.Streaming = &m
-			}
-		}
-	}
-	return out, nil
-}
-
-// newRailView is one rail title: its card plus the day's word for it.
-type newRailView struct {
-	discoverItemView
-	What      string `json:"what"`
-	Following bool   `json:"following"`
-	Upcoming  bool   `json:"upcoming"`
-}
-
-type newRailDayView struct {
-	Day   string        `json:"day"`
-	Items []newRailView `json:"items"`
-}
-
-// newRailViews joins the rail with the Library and the Kid limit.
-func (a *API) newRailViews(r *http.Request, rail []newRailDay) ([]newRailDayView, error) {
-	out := []newRailDayView{}
-	for _, d := range rail {
-		row := engine.Row{ID: "np_rail_" + d.Day, Type: "np_rail", Items: make([]engine.Item, 0, len(d.Items))}
-		extra := map[string]newRailItem{}
-		for _, it := range d.Items {
-			row.Items = append(row.Items, it.Item)
-			if _, ok := extra[it.Key()]; !ok {
-				extra[it.Key()] = it
-			}
-		}
-		views, err := a.exploreViews(r.Context(), r, []engine.Row{row})
-		if err != nil {
-			return nil, err
-		}
-		if len(views) == 0 || len(views[0].Items) == 0 {
-			continue
-		}
-		dv := newRailDayView{Day: d.Day, Items: []newRailView{}}
-		for _, v := range views[0].Items {
-			e := extra[v.Kind+":"+v.TMDBID]
-			if e.Service != nil {
-				m := *e.Service
-				v.Streaming = &m
-			}
-			dv.Items = append(dv.Items, newRailView{discoverItemView: v, What: e.What, Following: e.Following, Upcoming: e.Upcoming})
-		}
-		out = append(out, dv)
-	}
-	return out, nil
-}
-
-// newParams reads ?type= and checks the member may see the page.
-func (a *API) newParams(w http.ResponseWriter, r *http.Request) (string, bool) {
-	sw, ok := discover.ExploreSwitch(r.URL.Query().Get("type"))
-	if !ok {
-		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
-		return "", false
-	}
-	if a.kidLimited(w, r) {
-		return "", false
-	}
-	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
-		w.Header().Set("Retry-After", "60")
-		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
-		return "", false
-	}
-	return sw, true
-}
-
-// exploreNew answers GET /api/v1/explore/new?type=all|movies|shows&page=n:
-// New & Popular, a page of its rows (5 first, then 4 a page); page 0 also
-// carries the This week rail. more says another page follows, building
-// that some lists are still on their way (ask again shortly), services_set
-// whether the member picked their services.
-func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
-	n, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if r.URL.Query().Get("page") == "" {
-		n, err = 0, nil
-	}
-	if err != nil || n < 0 || n > 20 {
-		webserver.Fail(w, http.StatusBadRequest, "page must be a number from 0")
-		return
-	}
-	sw, ok := a.newParams(w, r)
-	if !ok {
-		return
-	}
-	me := a.person(r).UserID
-	a.musicProvider().WarmNew() // the Music tab's lists build in the background (Music on)
-	pg, building := a.newRows(r.Context(), r, me, sw)
-	var hero []discoverItemView
-	if n == 0 {
-		if hero, err = a.newHero(r, pg, me); err != nil {
-			webserver.Internal(w, "api", err)
-			return
-		}
-		keys := map[string]bool{}
-		for _, v := range hero {
-			keys[v.Kind+":"+v.TMDBID] = true
-		}
-		newHeroKeys.Store(pg.key, keys)
-	}
-	heroKeys := map[string]bool{}
-	if v, ok := newHeroKeys.Load(pg.key); ok {
-		heroKeys = v.(map[string]bool)
-	}
-	rows := discover.WithoutHero(pg.rows, heroKeys)
-	from, to := 0, newFirstRows
-	if n > 0 {
-		from = newFirstRows + (n-1)*newPageRows
-		to = from + newPageRows
-	}
-	from, to = min(from, len(rows)), min(to, len(rows))
-	views, err := a.newViews(r, rows[from:to], pg, engine.NewRowMin)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	body := map[string]any{"type": sw, "page": n, "more": to < len(rows), "building": building, "services_set": pg.picked, "rows": views}
-	if n == 0 {
-		body["hero"] = hero
-		rail, err := a.newRailViews(r, pg.rail)
-		if err != nil {
-			webserver.Internal(w, "api", err)
-			return
-		}
-		body["rail"] = rail
-	}
-	a.exploreCaching(w, r, "private, no-cache")
-	webserver.WriteJSON(w, http.StatusOK, body)
-}
-
-// newPreviewMax and newPreviewPer shape Explore's New on your services
-// row: the best-scoring new titles of the page's services row, a few per
-// service.
-const (
-	newPreviewMax = 12
-	newPreviewPer = 3
-)
-
-// exploreNewServices answers GET /api/v1/explore/new/services?type=: the
-// best of "Fresh on your services" for Explore (12 titles, at most 3 per
-// service, all new).
-func (a *API) exploreNewServices(w http.ResponseWriter, r *http.Request) {
-	sw, ok := a.newParams(w, r)
-	if !ok {
-		return
-	}
-	pg, _ := a.newRows(r.Context(), r, a.person(r).UserID, sw)
-	var items []engine.Item
-	for _, row := range pg.rows {
-		if row.Type == engine.TypeNPServices {
-			items = append(items, row.Items...)
-		}
-	}
-	engine.SortByScore(items, func(it engine.Item) float64 { return pg.scores[it.Key()] })
-	items = engine.CapPer(items, func(it engine.Item) string { return strconv.Itoa(pg.marks[it.Key()].Service) }, newPreviewPer, newPreviewMax*2)
-	row := exploreRowView{ID: "np_services", Type: engine.TypeNPServices, Title: "New on your services", Items: []discoverItemView{}}
-	views, err := a.newViews(r, []engine.Row{{ID: "np_services", Type: engine.TypeNPServices, Title: "New on your services", Items: items}}, pg, 1)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	if len(views) == 1 {
-		row = views[0]
-		row.Items = row.Items[:min(len(row.Items), newPreviewMax)]
-	}
-	a.exploreCaching(w, r, "private, max-age=300")
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "row": row})
-}
-
-// newServiceRows names the chip rows exploreNewService answers for.
-var newServiceRows = map[string]string{"services": engine.TypeNPServices, "hot_shows": engine.TypeNPTopShows, "hot_movies": engine.TypeNPTopFilms}
-
-// exploreNewService answers GET /api/v1/explore/new/service?id=&type=&row=:
-// one service's own list for a chip row (row services, the default: up to
-// 20 new titles, Library titles last; hot_shows or hot_movies: that
-// service's chart, new titles only). From the built page (kept 6 hours), so
-// it never asks Streaming Availability again.
-func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil || id <= 0 {
-		webserver.Fail(w, http.StatusBadRequest, "id must be a service id")
-		return
-	}
-	name := r.URL.Query().Get("row")
-	if name == "" {
-		name = "services"
-	}
-	typ, ok := newServiceRows[name]
-	if !ok {
-		webserver.Fail(w, http.StatusBadRequest, "row must be services, hot_shows or hot_movies")
-		return
-	}
-	sw, ok := a.newParams(w, r)
-	if !ok {
-		return
-	}
-	pg, building := a.newRows(r.Context(), r, a.person(r).UserID, sw)
-	items := pg.perService[typ][id]
-	row := exploreRowView{ID: typ + "_" + strconv.Itoa(id), Type: typ, Items: []discoverItemView{}}
-	views, err := a.newViews(r, []engine.Row{{ID: row.ID, Type: typ, Items: items}}, pg, 1)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	if len(views) == 1 {
-		row = views[0]
-	}
-	var mark streamingMark
-	if n, ok := pg.svcNames[id]; ok {
-		mark = streamingMark{Service: id, Name: n}
-	}
-	// Library titles last (the Library join may know more than the page).
-	sort.SliceStable(row.Items, func(i, j int) bool { return !row.Items[i].InLibrary && row.Items[j].InLibrary })
-	for i := range row.Items {
-		m := mark
-		if typ != engine.TypeNPServices {
-			m.Rank = i + 1
-		}
-		if m.Service != 0 {
-			row.Items[i].Streaming = &m
-		}
-	}
-	cache := "private, max-age=21600"
-	if building {
-		cache = "private, no-cache"
-	}
-	a.exploreCaching(w, r, cache)
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "service": id, "building": building, "row": row})
 }
