@@ -81,7 +81,7 @@ class Shape(unittest.TestCase):
 
     def test_image_line(self):
         body = notes.render_github(load(), {})
-        self.assertIn("## Get the image\n- Docker Hub: `docker pull holyarrs/holyarrs:1.0.0` or `holyarrs/holyarrs:latest`", body)
+        self.assertIn("## Get the image\nDocker Hub:\n\n`holyarrs/holyarrs:1.0.0`\n\n`holyarrs/holyarrs:latest`", body)
         self.assertNotIn("ghcr", body.lower())
         self.assertNotIn("## Docs", body)
 

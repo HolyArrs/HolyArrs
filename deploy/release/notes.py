@@ -203,9 +203,9 @@ def render_github(n, cmap):
         blocks.append("## Before you update\n" + "\n".join(rows))
     imgs = images(n)
     if imgs:
-        rows = ["- %s: `docker pull %s:%s` or `%s:latest`" % (i["registry"], i["name"], n["version"], i["name"])
+        rows = ["%s:\n\n`%s:%s`\n\n`%s:latest`" % (i["registry"], i["name"], n["version"], i["name"])
                 for i in imgs]
-        blocks.append("## Get the image\n" + "\n".join(rows))
+        blocks.append("## Get the image\n" + "\n\n".join(rows))
     if not empty(n.get("docs_url")):
         blocks.append("## Docs\n[Read the docs](%s)" % n["docs_url"])
     cs = sorted_credits(n)
