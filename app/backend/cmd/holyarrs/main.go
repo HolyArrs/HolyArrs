@@ -855,26 +855,26 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		media.Watch(ctx)
 	}
 	defer sender.Wait()
-	wish := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
-	readyCheck.Store(wish)
+	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
+	readyCheck.Store(requestsSvc)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
-		if _, err := wish.CheckReady(ctx); err != nil {
+		if _, err := requestsSvc.CheckReady(ctx); err != nil {
 			return err
 		}
-		if _, err := wish.SendEpisodeNotices(ctx); err != nil {
+		if _, err := requestsSvc.SendEpisodeNotices(ctx); err != nil {
 			return err
 		}
-		_, err := wish.SendAlbumNotices(ctx)
+		_, err := requestsSvc.SendAlbumNotices(ctx)
 		return err
 	}})
-	wish.PrefetchParts = true
+	requestsSvc.PrefetchParts = true
 	// Plex watchlists are read with each person's own kept Plex sign-in.
-	plexWatch := &requests.Watchlists{Asks: wish, Base: env("HOLYARRS_PLEX_DISCOVER_URL", requests.DefaultPlexDiscover),
+	plexWatch := &requests.Watchlists{Asks: requestsSvc, Base: env("HOLYARRS_PLEX_DISCOVER_URL", requests.DefaultPlexDiscover),
 		Token: au.PlexToken, ClientID: au.PlexClientID}
 	watchlists.Store(plexWatch)
-	go wish.BackfillParts(context.Background())
-	wish.WatchEpisodes()
-	wish.WatchTMDBFollows()
+	go requestsSvc.BackfillParts(context.Background())
+	requestsSvc.WatchEpisodes()
+	requestsSvc.WatchTMDBFollows()
 	reg.Set(jobs.StageKey("alerts"), "stage", "Alerts", jobs.Running, "")
 	if c.SafeMode {
 		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Off, notStarted)
@@ -882,7 +882,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Running, "")
 	}
 	reg.Set(jobs.StageKey("events"), "stage", "Event hooks", jobs.Running, "")
-	defer wish.Wait()
+	defer requestsSvc.Wait()
 	// Deezer marks and artist bios come from the metadata server; only the
 	// direct stand-in (a Deezer stand-in in tests, or
 	// HOLYARRS_DIRECT_SOURCES=1) is asked directly.
@@ -898,7 +898,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// "Count this install" rides on every request to the metadata server.

@@ -1,6 +1,3 @@
-// Package lists keeps Outside lists: TMDB and Trakt lists whose movies or
-// shows are added to the Library on a schedule. Titles on the Never-add list
-// are skipped, and every added title is marked as added by a list.
 package requests
 
 import (

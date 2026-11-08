@@ -1,8 +1,3 @@
-// Package asks runs Requests for movies, shows and music: people ask (a
-// show whole or by seasons, an artist whole or by albums), a second ask for the same thing joins the first, an owner or admin approves or turns it
-// down (or auto-approve does), approving adds the Title and starts the
-// search, and the people who asked are told when it is approved, turned
-// down and ready. Each person may ask for a number of movies per week.
 package requests
 
 import (

@@ -1,6 +1,3 @@
-// Package explore builds each member's Explore page: it fetches candidate
-// lists from an outside source within a call budget, scores them against the
-// member's taste and the household, and assembles the rows the page shows.
 package rows
 
 import (

@@ -1,6 +1,3 @@
-// Package plainwords turns a search typed in plain words, like "that space
-// movie with the robot from 2014", into a name plus filters. It never fails:
-// words it does not know stay in the name.
 package discover
 
 import (

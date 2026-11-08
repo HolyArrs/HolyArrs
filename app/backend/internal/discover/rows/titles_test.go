@@ -17,7 +17,7 @@ func genreItems(n int, genres ...[]string) []Item {
 	return out
 }
 
-// plainMoment is Tuesday 2026-10-06, 14:00 local, with no occasion.
+// plainMoment is a Tuesday afternoon with no occasion.
 var plainMoment = Moment{Local: time.Date(2026, 10, 6, 14, 0, 0, 0, time.UTC)}
 
 // ctxAt builds a title context for a moment with nothing remembered.
