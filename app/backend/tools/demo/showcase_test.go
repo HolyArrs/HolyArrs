@@ -32,7 +32,7 @@ func TestShowcaseAcceptsMarkedShowcase(t *testing.T) {
 
 func TestShowcaseRefusesShippedPorts(t *testing.T) {
 	dir := showcaseDir(t, true)
-	for _, u := range []string{"http://127.0.0.1:18730", "http://10.10.25.25:18731"} {
+	for _, u := range []string{"http://127.0.0.1:18730", "http://192.168.1.10:18731"} {
 		if err := checkShowcase(showcaseOptions{Runtime: dir, AppURL: u}); err == nil || !strings.Contains(err.Error(), "shipped") {
 			t.Fatalf("%s: got %v", u, err)
 		}

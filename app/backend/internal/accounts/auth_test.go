@@ -415,7 +415,7 @@ func TestCleanupDropsExpired(t *testing.T) {
 
 func mustURL(s string) *url.URL { u, _ := url.Parse(s); return u }
 
-// First run has no setup code (decisions/0009): a leftover code file from
+// First run has no setup code: a leftover code file from
 // an older version is removed at start, and a "code" field is ignored.
 func TestSetupNeedsNoCode(t *testing.T) {
 	s, err := database.Open(t.TempDir(), database.Options{})

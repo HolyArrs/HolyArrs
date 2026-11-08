@@ -97,16 +97,16 @@ func TestLabQbitControls(t *testing.T) {
 }
 
 // Needs the lab SABnzbd. It has no Usenet server, so only the whole-client
-// controls are checked. Run: HOLYARRS_LAB_SAB_KEY=... HOLYARRS_LAB_SAB=http://10.10.25.25:18707
+// controls are checked. Run: HOLYARRS_LAB_SAB_KEY=<key from labctl> HOLYARRS_LAB_SAB=http://127.0.0.1:18707
 // go test -tags lab -run LabSabControls ./internal/downloads/
 func TestLabSabControls(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_SAB_KEY")
 	if key == "" {
-		t.Skip("HOLYARRS_LAB_SAB_KEY not set")
+		t.Skip("set HOLYARRS_LAB_SAB_KEY to the lab SABnzbd API key (labctl prints it) to run this test")
 	}
 	base := os.Getenv("HOLYARRS_LAB_SAB")
 	if base == "" {
-		base = "http://10.10.25.25:18707"
+		t.Skip("set HOLYARRS_LAB_SAB to the lab SABnzbd address, for example http://127.0.0.1:18707")
 	}
 	s := NewSabnzbd(base, key, nil)
 	ctx := context.Background()

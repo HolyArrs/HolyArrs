@@ -495,7 +495,7 @@ func tableCounts(t *testing.T, st *database.Store, tables ...string) []int {
 	return out
 }
 
-// Your own traits (#97) belong to one install: a data pack naming one is refused.
+// Your own traits belong to one install: a data pack naming one is refused.
 func TestPickRuleWithOwnTraitIsRefused(t *testing.T) {
 	p, err := Decode(fixture(t))
 	if err != nil {

@@ -530,7 +530,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	})
 	q.ProbeSchedule(health.KindCheck, he.Probe)
-	// Connected Jackett (#96): its Sources follow its sites; no bridge, no run.
+	// Connected Jackett: its Sources follow its sites; no bridge, no run.
 	bridges := &sources.BridgeService{Store: s, Vault: vault}
 	q.Handle(sources.BridgeKindCheck, bridges.HandleCheck)
 	q.ProbeSchedule(sources.BridgeKindCheck, bridges.Probe)

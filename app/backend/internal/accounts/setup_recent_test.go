@@ -26,8 +26,7 @@ func newKey(t *testing.T, f *fixture, p person) bool {
 	return false
 }
 
-// Luis, 2026-11-05 ("No check during setup"), widened 2026-11-06: the
-// session first-run setup starts passes the recent-password check until the
+// The session first-run setup starts passes the recent-password check until the
 // wizard is done or 24 hours pass; nothing else does.
 func TestSetupSessionCountsAsRecentUntilDone(t *testing.T) {
 	f := gated(t, Options{})

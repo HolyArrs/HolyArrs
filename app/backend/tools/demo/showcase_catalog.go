@@ -152,7 +152,7 @@ var showcaseArtistList = []showcaseArtist{
 	{MBID: "20244d07-534f-4eff-b4d4-930878889970", Name: "Taylor Swift", Scenario: "new albums kept; upcoming album when MusicBrainz lists one", Albums: 3, NewAlbums: "all", Follow: []string{"Maya"}},
 	{MBID: "f4abc0b5-3f7a-4eff-8f78-ac078dbce533", Name: "Billie Eilish", Scenario: "asked for by a member", Ask: true},
 	{MBID: "381086ea-f511-4aba-bdf9-71c753dc5077", Name: "Kendrick Lamar", Scenario: "asked for by a member", Ask: true},
-	// Music part 2 (2026-10-22): well-known artists so the personal Explore
+	// Music part 2: well-known artists so the personal Explore
 	// music rows have something to show. "Albums: 30" keeps every studio album.
 	{MBID: "ada7a83c-e3e1-40f1-93f9-3e73dbc9298a", Name: "Arctic Monkeys", Scenario: "indie: 4 albums on disk, the rest missing", Albums: 4, NewAlbums: "new", Complete: true, Follow: []string{"owner"}},
 	{MBID: "b8a7c51f-362c-4dcb-a259-bc6e0095f0a6", Name: "Ed Sheeran", Scenario: "pop: 3 albums on disk, the rest missing", Albums: 3, NewAlbums: "new", Complete: true, Follow: []string{"Maya"}},
@@ -169,7 +169,7 @@ var showcaseArtistList = []showcaseArtist{
 	{MBID: "afb680f2-b6eb-4cd7-a70b-a63b25c763d5", Name: "Bruno Mars", Scenario: "pop: every album on disk", Albums: 30, NewAlbums: "new", Complete: true},
 	{MBID: "63aa26c3-d59b-4da4-84ac-716b54f1ef4d", Name: "Tame Impala", Scenario: "electronic/indie: asked for by a member", Ask: true},
 	{MBID: "5b11f4ce-a62d-471e-81fc-a69a8278c7da", Name: "Nirvana", Scenario: "rock: albums kept, none on disk", Albums: 3, NewAlbums: "none"},
-	// Music part 3 (2026-10-22): artists from the Apple album charts with a
+	// Music part 3: artists from the Apple album charts with a
 	// studio album out in the last 30 days (New from your artists), and
 	// artists with all but their newest album on disk (Finish the set).
 	{MBID: "fd87acc7-e0a0-4a45-bc2a-d2ab5c10be68", Name: "Fontaines D.C.", Scenario: "new album 2026-10-15; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},

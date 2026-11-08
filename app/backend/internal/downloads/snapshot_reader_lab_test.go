@@ -20,15 +20,15 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy:
+// TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy. The key comes from labctl qbt-apikey:
 //
-//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabReader -v ./internal/downloads/
+//	go test -tags lab -run LabReader -v ./internal/downloads/
 //
 // It adds a test torrent from the lab indexer as a HolyArrs Download and times grab to finished, or to the first applied state (see the target below), then removes it. The Manager must not list the client at all.
 func TestLabReaderGrabToFinished(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_QBIT_KEY")
 	if key == "" {
-		t.Skip("HOLYARRS_LAB_QBIT_KEY not set (run through labctl qbt-apikey)")
+		t.Skip("HOLYARRS_LAB_QBIT_KEY not set (get it from labctl qbt-apikey)")
 	}
 	base := os.Getenv("HOLYARRS_LAB_QBIT")
 	if base == "" {

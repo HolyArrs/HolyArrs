@@ -1,5 +1,4 @@
-// Command explore-load is the Explore load test (plan 2026-10-19, criterion
-// 7). It has three parts, all local and with fake data only:
+// Command explore-load is the Explore load test. It has three parts, all local and with fake data only:
 //
 //	fake -addr A [-delay D]     a stand-in TMDB (fake ids, no real calls)
 //	seed -config DIR [-titles N -members N]  a fake Library and members, server stopped

@@ -497,7 +497,7 @@ func TestLocalAddress_Variants(t *testing.T) {
 	ctx := context.Background()
 	for raw, want := range map[string]bool{
 		"http://127.0.0.1:9117": true, "http://10.0.0.5:9117": true, "http://192.168.1.2:9117/jackett": true,
-		"http://localhost:9117": true, "http://[::1]:9117": true, "http://100.87.70.86:9117": true,
+		"http://localhost:9117": true, "http://[::1]:9117": true, "http://100.64.0.1:9117": true,
 		"http://8.8.8.8:9117": false, "https://1.1.1.1": false,
 	} {
 		if got, ok := BridgeLocalAddress(ctx, raw); got != want || !ok {

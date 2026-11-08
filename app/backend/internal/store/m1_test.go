@@ -25,7 +25,7 @@ var (
 	unquotedSQLNameAtStart = regexp.MustCompile(`(?i)^\s*([A-Z_][A-Z0-9_]*)\s*(?:WHERE\b|;|$)`)
 )
 
-// stage4 is the main migration set as it was after Stage 4 (up to 0006).
+// stage4 is the main migration set up to 0006.
 func stage4(t *testing.T) fs.FS {
 	t.Helper()
 	ms, err := database.EmbeddedMigrations("migrations/main")
@@ -41,7 +41,7 @@ func stage4(t *testing.T) fs.FS {
 	return out
 }
 
-// TestM1RollForwardFromStage4 opens a database made by the Stage 4 schema,
+// TestM1RollForwardFromStage4 opens a database made by the schema up to 0006,
 // writes old-style rows, then opens it with this build: the old rows keep
 // working, the new tables and columns are there, and a backup was taken.
 func TestM1RollForwardFromStage4(t *testing.T) {

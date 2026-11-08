@@ -2,7 +2,7 @@ package domain
 
 import "testing"
 
-// #50: a Downloader's folder as HolyArrs sees it, for Linux and Windows
+// A Downloader's folder as HolyArrs sees it, for Linux and Windows
 // Downloaders, with HolyArrs on Linux (Docker) or on Windows.
 func TestMapPath(t *testing.T) {
 	for _, c := range []struct {

@@ -42,7 +42,7 @@ const (
 	EventReportReopened = "report_reopened" // a fixed report was opened again
 )
 
-// Event kinds for Organise (stage 5.1).
+// Event kinds for Organise.
 const (
 	EventFreeSpaceLow      = "free_space_low"             // an import was refused: the disk would be left too full
 	EventRenamed           = "renamed"                    // a File got a new name
@@ -73,7 +73,7 @@ const (
 // action, target and via (session or api_key).
 const EventControl = "control_used"
 
-// Event kinds for shows (stage 2.2).
+// Event kinds for shows.
 const (
 	EventEpisodesChanged = "episodes_changed"       // a refresh added, changed or dropped seasons or episodes
 	EventSourceSwitched  = "details_source_changed" // a show now follows another details source
@@ -81,7 +81,7 @@ const (
 	EventEpisodesRemoved = "episodes_removed"       // a season or some episodes were deleted from the Library (5.2.3)
 )
 
-// Event kinds for music (stage 2.3).
+// Event kinds for music.
 const (
 	EventAlbumsChanged = "albums_changed" // a refresh added, changed or dropped albums, Pressings or tracks
 	EventAlbumChanged  = "album_changed"  // Keep up to date or the Pressing was changed for an album
