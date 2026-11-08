@@ -21,10 +21,6 @@ const (
 // may take: under the 255 most file systems allow, with room to spare.
 const MusicMaxComponent = 240
 
-// VariousArtistsMBID is the MusicBrainz artist that compilations of many
-// artists are filed under.
-const VariousArtistsMBID = "89ad4ac3-39f7-470e-963a-56509c546377"
-
 // musicWords may appear only in music patterns ({year} and {edition} are
 // shared with movies).
 var musicWords = map[string]bool{"artist": true, "artist_sort": true, "album": true, "album_type": true, "disc": true, "track": true,

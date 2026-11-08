@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
-// Own traits (#97) are the traits a person makes. The judge reads them from
+// Own traits are the traits a person makes. The judge reads them from
 // one shared set, so every path that judges a Release (searches, the feed,
 // Choose a release, Good enough after an edit) sees the same ones; the app
 // sets it at start and after each change (SetOwnTraits).

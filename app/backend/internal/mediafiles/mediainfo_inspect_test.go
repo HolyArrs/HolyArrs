@@ -405,7 +405,7 @@ func ebmlSize(size int) []byte {
 	}
 }
 
-// #43: an .m4a or .mka holds lossless (ALAC, FLAC) or lossy (AAC) audio:
+// An .m4a or .mka holds lossless (ALAC, FLAC) or lossy (AAC) audio:
 // the codec read from its headers says which.
 func TestInspectAudioCodecsLossless(t *testing.T) {
 	for _, c := range []struct {

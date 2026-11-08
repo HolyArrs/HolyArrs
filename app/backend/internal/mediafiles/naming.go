@@ -1,9 +1,10 @@
-// Package naming turns a movie's facts into folder and file names through
+// Naming turns a movie's facts into folder and file names through
 // the naming patterns in Settings > Where files go. Imports and renames use
 // the same functions, so a rename preview is exactly what a rename does.
 //
 // A pattern is plain text with words in braces, such as
 // "{title} ({year}) {quality}". The words are listed in Words.
+
 package mediafiles
 
 import (
@@ -136,7 +137,7 @@ const (
 
 // How {air_date} writes 14 March 2026.
 const (
-	AirDateDash  = "dash"  // 2026-03-14
+	AirDateDash  = "dash"  // YYYY-MM-DD
 	AirDateDot   = "dot"   // 2026.03.14
 	AirDateSpace = "space" // 2026 03 14
 )

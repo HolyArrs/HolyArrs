@@ -571,7 +571,7 @@ func normalizeCodec(value string) string {
 	}
 }
 
-// normalizeAudioCodec names an MP4 audio sample entry (#43: an .m4a holds
+// normalizeAudioCodec names an MP4 audio sample entry (an .m4a holds
 // ALAC or AAC).
 func normalizeAudioCodec(value string) string {
 	switch value {

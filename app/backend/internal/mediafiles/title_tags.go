@@ -1,10 +1,11 @@
-// Package tagset holds the rules for tags (#108): plain lowercase labels on
-// titles, Downloaders and Sources that route a title's grabs and searches.
+// Title tags are plain lowercase labels on titles, Downloaders and Sources
+// that route a title's grabs and searches.
 //
 // The rules follow the old apps: a title goes to the Downloaders that share
 // one of its tags; when none does, to the Downloaders with no tags at all.
 // A Source with tags serves only the titles that share one of them; a
 // Source with no tags serves every title.
+
 package mediafiles
 
 import (

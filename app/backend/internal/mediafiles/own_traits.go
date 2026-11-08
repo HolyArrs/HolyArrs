@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// OwnTrait is a trait a person makes (#97): a test on a Release's name or
+// OwnTrait is a trait a person makes: a test on a Release's name or
 // on its release group, used in Pick rules like the built-in traits under
 // the key OwnTraitKey(id). Each term is plain words, matched anywhere in
 // the name (or as the whole group) ignoring case, or a /pattern/.

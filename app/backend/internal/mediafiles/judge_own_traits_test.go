@@ -9,7 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
-// Own traits (#97): a name test finds any word or pattern in the Release
+// Own traits: a name test finds any word or pattern in the Release
 // name, a group test needs the release group; Pick rules use them like the
 // built-in traits.
 func withOwnTraits(t *testing.T, ts ...OwnTrait) {

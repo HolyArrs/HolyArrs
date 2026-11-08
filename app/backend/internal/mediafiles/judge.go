@@ -23,7 +23,7 @@ type ReleaseFacts struct {
 	Files          []string
 	SourcePriority int // lower wins
 	// Dangerous: a Download of this Release (by info hash or name) failed
-	// before because its files were a program (#41).
+	// before because its files were a program.
 	Dangerous bool
 }
 
@@ -36,7 +36,7 @@ type TitleRef struct {
 	OriginalLanguage string
 	Runtime          int    // minutes
 	Kind             string // "show" for a show, "artist" for an artist; "" or "movie" for a movie
-	// Tags are the title's (#108); a feed matches a tagged Source's releases only to titles sharing one.
+	// Tags are the title's; a feed matches a tagged Source's releases only to titles sharing one.
 	Tags []string
 }
 
@@ -644,8 +644,7 @@ func langName(code string) string {
 }
 
 // better applies pick-rules.md section 4. A fix of the same step counts
-// first under take_any (decision of 2026-10-12, mirroring the common
-// default), so a proper replaces a copy that is already good enough.
+// first under take_any, with no time limit, so a proper replaces a copy that is already good enough.
 func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, idx, points int) {
 	curIdx := stepIndex(rules, cur.Step)
 	p := rel.Parse

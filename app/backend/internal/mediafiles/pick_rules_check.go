@@ -94,7 +94,7 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 		return fieldErr("body.traits", "List at most 64 traits.")
 	}
 	seen := map[string]bool{}
-	// An own trait (#97) is checked by its key's form; one deleted later
+	// An own trait is checked by its key's form; one deleted later
 	// simply never matches.
 	known := func(t string) bool { _, own := OwnTraitID(t); return traits[t] || own }
 	for _, tp := range b.Traits {

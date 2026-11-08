@@ -132,7 +132,7 @@ var rows = []row{
 	{ID: "T22", Name: "The.Lantern.Keepers.2021.1080p.WEB-DL.x264.UPSCALED-GRAVELY", Outcome: "refused", Codes: []string{"points.below_min"}, Title: 1},
 	{ID: "T23", Name: "The.Lantern.Keepers.2021.PROPER.1080p.WEB-DL.H.265-QUILL", Current: &Current{Step: "1080p_web", Points: 15, Group: "QUILL", ImportedAt: time.Now().Add(-72 * time.Hour)}, Outcome: "chosen", Points: 15, Title: 1},
 	// The test set says "fix older than 7 days"; the proper policy is take_any
-	// with no time limit (decided 2026-10-12), so the fix is taken.
+	// with no time limit, so the fix is taken.
 	{ID: "T24", Name: "The.Lantern.Keepers.2021.PROPER.1080p.WEB-DL.H.265-QUILL", Current: &Current{Step: "1080p_web", Points: 15, Group: "QUILL", ImportedAt: time.Now().Add(-20 * 24 * time.Hour)}, Outcome: "chosen", Points: 15, Title: 1},
 	{ID: "T25", Name: "The.Lantern.Keepers.2021.720p.WEB-DL-QUILL", Current: &Current{Step: "1080p_web", Points: 5, Group: "QUILL"}, Outcome: "refused", Codes: []string{"better.lower_step"}, Title: 1},
 	{ID: "T26", Name: "Lantern Keepers, The (2021) 1080p WEB-DL", Outcome: "chosen", Points: 5, Title: 1},
