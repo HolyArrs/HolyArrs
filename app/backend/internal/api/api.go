@@ -228,7 +228,8 @@ type API struct {
 	// and runs the trailer pass (metadata).
 	trailers *metadata.Trailers
 	// warm fills listed titles' details, extras and trailers ahead.
-	warm titleWarmer
+	warm    titleWarmer
+	warmSet sync.Once
 }
 
 // New makes the API.

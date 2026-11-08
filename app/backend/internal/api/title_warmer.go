@@ -2,18 +2,12 @@ package api
 
 import (
 	"context"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
-	"strings"
-	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
-
-// titleWarmFresh is how long a warmed title is left alone; kept extras are
-// refreshed on the same clock.
-const titleWarmFresh = 6 * time.Hour
 
 // keepOnDisk stores v under key in lookup_cache with when it was fetched.
 func keepOnDisk[T any](ctx context.Context, a *API, key string, v T) {
@@ -34,127 +28,18 @@ func loadKept[T any](ctx context.Context, a *API, key string) (struct {
 	return out, ok
 }
 
-// titleWarmer fills title details, extras and trailer links ahead, on the
-// server's own schedule, for every title Explore and New & Popular list,
-// so no visitor action makes the first outside call. Two workers at most.
-// Trailer addresses are not looked up here (the trailer pass does that).
-type titleWarmer struct {
-	once  sync.Once
-	mu    sync.Mutex
-	queue chan warmJob
-	// listed is when each title was last listed and warmed.
-	listed map[string]warmMark
-}
+// titleWarmer is discover's title warmer, kept on the API.
+type titleWarmer = discover.TitleWarmer
 
-type warmJob struct{ kind, id, lang string }
-
-type warmMark struct{ listed, warmed time.Time }
-
-const (
-	warmWorkers = 2
-	warmEvery   = time.Hour          // the schedule re-warms what went stale
-	warmListed  = 7 * 24 * time.Hour // titles listed this recently stay warm
-	warmMax     = 5000
-)
-
-// warmTitles queues titles (kind movie or show, TMDB id) to be warmed; a
-// title warmed within titleWarmFresh is skipped. It never blocks.
+// warmTitles queues titles to be warmed ahead (discover.TitleWarmer).
 func (a *API) warmTitles(lang string, titles [][2]string) {
-	w := &a.warm
-	w.once.Do(func() {
-		w.queue = make(chan warmJob, 1000)
-		w.listed = map[string]warmMark{}
-		for range warmWorkers {
-			go a.warmWorker()
-		}
-		go a.warmSchedule()
-	})
-	now := time.Now()
-	for _, t := range titles {
-		if (t[0] != "movie" && t[0] != "show") || !metadata.DigitsOnly(t[1]) {
-			continue
-		}
-		k := t[0] + "|" + t[1] + "|" + lang
-		w.mu.Lock()
-		m := w.listed[k]
-		fresh := now.Sub(m.warmed) < titleWarmFresh
-		m.listed = now
-		if !fresh {
-			m.warmed = now // queued; a failure is tried again on the schedule
-		}
-		if len(w.listed) < warmMax || w.listed[k] != (warmMark{}) {
-			w.listed[k] = m
-		}
-		w.mu.Unlock()
-		if fresh {
-			continue
-		}
-		select {
-		case w.queue <- warmJob{t[0], t[1], lang}:
-		default: // full: the schedule picks it up later
-		}
-	}
-}
-
-func (a *API) warmSchedule() {
-	tick := time.NewTicker(warmEvery)
-	defer tick.Stop()
-	for range tick.C {
-		now := time.Now()
-		var due []warmJob
+	a.warmSet.Do(func() {
 		w := &a.warm
-		w.mu.Lock()
-		for k, m := range w.listed {
-			if now.Sub(m.listed) > warmListed {
-				delete(w.listed, k)
-				continue
-			}
-			if now.Sub(m.warmed) >= titleWarmFresh {
-				parts := strings.SplitN(k, "|", 3)
-				due = append(due, warmJob{parts[0], parts[1], parts[2]})
-				m.warmed = now
-				w.listed[k] = m
-			}
-		}
-		w.mu.Unlock()
-		for _, j := range due {
-			w.queue <- j
-		}
-	}
-}
-
-func (a *API) warmWorker() {
-	for j := range a.warm.queue {
-		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-		a.warmOne(ctx, j)
-		cancel()
-	}
-}
-
-// warmOne stores one title's details and extras (when missing or old) and
-// learns its trailer's key.
-func (a *API) warmOne(ctx context.Context, j warmJob) {
-	if d, ok := metadata.DiscovererFor(ctx, a.s.Metadata); ok {
-		key := "details|" + j.kind + "|" + j.id
-		e, cached := a.discover.Get(key)
-		if !cached || e.Details == nil {
-			if k, found := loadKept[metadata.Details](ctx, a, key); found {
-				e, cached = discoverEntry{At: k.at, Details: &k.v}, true
-				a.discover.Put(key, e)
-			}
-		}
-		if !cached || e.Details == nil || time.Since(e.At) >= discover.DetailsTTL(e) {
-			if det, err := d.Details(ctx, j.kind, j.id); err == nil {
-				a.discover.Put(key, discoverEntry{At: time.Now(), Details: &det})
-				keepOnDisk(ctx, a, key, det)
-			}
-		}
-	}
-	a.titles.WarmExtras(ctx, j.kind, j.id)
-	if !health.AutoplayOn(ctx, a.s.Store) {
-		return
-	}
-	// The key only (the metadata server's pick, else TMDB's videos; no
-	// YouTube call), for the cards and the hero's gate.
-	_, _ = a.trailers.Key(metadata.Ahead(ctx), j.kind, j.id, j.lang)
+		w.Store = func() *database.Store { return a.s.Store }
+		w.Metadata = func() metadata.Provider { return a.s.Metadata }
+		w.Cache = func() *discover.Cache { return &a.discover }
+		w.WarmExtras = func(ctx context.Context, kind, id string) { a.titles.WarmExtras(ctx, kind, id) }
+		w.TrailerKey = func(ctx context.Context, kind, id, lang string) { _, _ = a.trailers.Key(ctx, kind, id, lang) }
+	})
+	a.warm.Warm(lang, titles)
 }
