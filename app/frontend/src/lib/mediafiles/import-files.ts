@@ -1,4 +1,5 @@
 // Types and rules for importing files by hand into the Library.
+import { episodeCode as code } from '../core/episodes.ts';
 
 export interface ByHandGuess {
 	title_id?: number;
@@ -73,7 +74,7 @@ export function startPick(f: ByHandFile): Pick | null {
 
 export function episodeCode(season?: number, episode?: number): string {
 	if (season === undefined || episode === undefined) return '';
-	return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
+	return code(season, episode);
 }
 
 export function pickLine(p: Pick | null): string {

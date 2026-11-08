@@ -1,5 +1,6 @@
 // Calendar: the month grid and list for movie dates and episodes.
 import type { CalendarEntry, TitleView } from '../core/types.ts';
+import { episodeCode as code } from '../core/episodes.ts';
 
 /** Which titles the calendar shows. */
 export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
@@ -85,8 +86,7 @@ export function entryTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>): st
 
 /** S01E02 for an episode entry. */
 export function episodeCode(e: Pick<CalendarEntry, 'season' | 'episode'>): string {
-	const p = (n = 0) => String(n).padStart(2, '0');
-	return `S${p(e.season)}E${p(e.episode)}`;
+	return code(e.season ?? 0, e.episode ?? 0);
 }
 
 /** The line an entry shows: the movie, the show and episode, or the artist and album. */
