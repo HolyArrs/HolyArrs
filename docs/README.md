@@ -18,15 +18,15 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 |---|---|
 | Requests | [Asking](requests/asking.md), [approving](requests/approving.md), [reports](requests/reports.md), [limits and Request rules](requests/settings.md) |
 | Movies | [Searching](user/movies/search-movies.md), [downloads](user/movies/downloads-movies.md), [organising](movies/organise.md), [editions and collections](movies/editions-collections.md) |
-| Shows | [Searching](user/shows/search-shows.md), [downloads](user/shows/downloads-shows.md), [organising](user/shows/organise-shows.md) |
+| Shows | [Searching](shows/search.md), [downloads](shows/downloads.md), [organising](shows/organise.md) |
 | Music | [Searching](user/music/search.md), [downloads](user/music/downloads.md), [organising](user/music/organise.md) |
 | Explore and the calendar | [Explore](discover/explore.md), [people](discover/popular-people.md), [calendar](discover/calendar.md) |
 | Sources | [Sources, Jackett and Prowlarr](downloads/sources.md), [find titles in the Library](downloads/library-search.md) |
 | Downloads | [Downloaders](user/downloads/downloaders.md), [history](downloads/history.md) |
-| Subtitles | [Subtitles](user/subtitles/subtitles.md) |
+| Subtitles | [Subtitles](library/subtitles.md) |
 | Files and folders | [Library folders](user/mediafiles/library-folders.md), [codecs and media inspection](user/library/codecs-inspection.md), [audio versions](user/library/audio-versions.md), [protected copies](user/library/protected-copies.md) |
 | Media servers | [Plex, Jellyfin and Emby](library/media-servers.md) |
-| Metadata | [Metadata](user/metadata/metadata-service.md), [privacy](user/metadata/metadata-privacy.md), [trailers](library/trailers.md), [data packs](user/metadata/data-packs.md) |
+| Metadata | [Metadata and privacy](library/metadata.md), [trailers](library/trailers.md), [data packs](library/data-packs.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
 | Alerts | [Alerts](users/alerts.md) |
 | Moving from other apps | [Move from other apps](user/migrate/move-from-other-apps.md), [how HolyArrs reads them](user/migrate/move-reading.md) |
@@ -58,7 +58,7 @@ A changing number or token is in square brackets.
 | Home | `/` | [Home and Settings](user/getting-started/home-and-settings.md) |
 | New & Popular | `/popular` | [New & Popular](discover/popular-people.md) |
 | Explore | `/explore` | [Explore](discover/explore.md) |
-| Search | `/search` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
+| Search | `/search` | Searching for [movies](user/movies/search-movies.md), [shows](shows/search.md), [music](user/music/search.md) |
 | People | `/people/[id]` | [People](discover/popular-people.md) |
 | Calendar | `/calendar` | [Calendar](discover/calendar.md) |
 | Title page | `/title/...` | [Ask for a title](requests/asking.md) |
@@ -68,14 +68,14 @@ A changing number or token is in square brackets.
 | My account | `/account`, `/settings/account` | [Signed-in devices](users/sessions.md), [sign-in](users/sign-in.md) |
 | First run | `/login`, `/welcome` | [First run](user/setup/first-run.md) |
 | Join by invite | `/invite/[token]` | [Users and roles](users/roles.md) |
-| Downloads | `/downloads` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads.md) |
+| Downloads | `/downloads` | Downloads for [movies](user/movies/downloads-movies.md), [shows](shows/downloads.md), [music](user/music/downloads.md) |
 | History | `/downloads/history` | [History](downloads/history.md) |
-| Needs a decision | `/downloads/decide` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads.md) |
+| Needs a decision | `/downloads/decide` | Downloads for [movies](user/movies/downloads-movies.md), [shows](shows/downloads.md), [music](user/music/downloads.md) |
 | Library | `/library` | [Find titles in the Library](downloads/library-search.md) |
-| Movie, show or artist | `/library/[id]` | Organising [movies](movies/organise.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
-| Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
-| Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
-| Missing subtitles | `/library/missing-subtitles` | [Subtitles](user/subtitles/subtitles.md) |
+| Movie, show or artist | `/library/[id]` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](user/music/organise.md) |
+| Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](user/movies/search-movies.md), [shows](shows/search.md), [music](user/music/search.md) |
+| Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](user/music/organise.md) |
+| Missing subtitles | `/library/missing-subtitles` | [Subtitles](library/subtitles.md) |
 | Connect an AI app | `/ai` | [Connect AI apps](reference/ai.md) (held back) |
 | Settings | `/settings` | [Home and Settings](user/getting-started/home-and-settings.md#settings) |
 | Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
@@ -93,13 +93,13 @@ A changing number or token is in square brackets.
 | Logs | `/settings/logs` | [Logs](run/logs.md) |
 | Schedules | `/settings/schedules` | [Schedules](run/schedules.md) |
 | API | `/settings/api` | [The HolyArrs API](dev/api.md) |
-| Metadata | `/settings/tmdb` | [Metadata](user/metadata/metadata-service.md) |
+| Metadata | `/settings/tmdb` | [Metadata](library/metadata.md) |
 | Users and roles | `/settings/users` | [Users and roles](users/roles.md), [kid accounts](users/kids.md) |
-| Naming and files | `/settings/naming` | Organising [movies](movies/organise.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
+| Naming and files | `/settings/naming` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](user/music/organise.md) |
 | Outside lists | `/settings/outside-lists` | [Ask for a title](requests/asking.md) (no Outside lists guide yet) |
-| Search settings | `/settings/search` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
+| Search settings | `/settings/search` | Searching for [movies](user/movies/search-movies.md), [shows](shows/search.md), [music](user/music/search.md) |
 | Music defaults | `/settings/music` | [Organising music](user/music/organise.md) |
-| Subtitles | `/settings/subtitles` | [Subtitles](user/subtitles/subtitles.md) |
+| Subtitles | `/settings/subtitles` | [Subtitles](library/subtitles.md) |
 
 ## For developers
 

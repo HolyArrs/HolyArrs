@@ -56,4 +56,4 @@ Each Version's group shows the file, the audio found, the edition, and whether t
 
 - [Protected copies](protected-copies.md)
 - [Codecs and media inspection](codecs-inspection.md)
-- [Subtitles](subtitles.md)
+- [Subtitles](../../library/subtitles.md)

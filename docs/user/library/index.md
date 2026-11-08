@@ -8,8 +8,8 @@ The Library holds the movies, shows and music you keep. These pages cover where 
 
 - [Library folders](folders.md)
 - [Metadata](metadata.md)
-- [Subtitles](subtitles.md)
-- [Subtitle scoring and sites](subtitle-scoring.md)
+- [Subtitles](../../library/subtitles.md)
+- [Subtitle scoring and sites](../../library/subtitle-scoring.md)
 - [Original and dubbed audio](audio-versions.md)
 - [Codecs and media inspection](codecs-inspection.md)
 - [Protected copies](protected-copies.md)
