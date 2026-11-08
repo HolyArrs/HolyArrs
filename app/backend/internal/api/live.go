@@ -1,27 +1,13 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
-
-// interestEvery is how often one session's interest counts; more calls in
-// between answer 204 and change nothing.
-const interestEvery = 10 * time.Second
-
-// interestState remembers when each session last said it watches a view.
-type interestState struct {
-	mu   sync.Mutex
-	last map[string]time.Time
-}
 
 // liveViewer is who holds a /live stream: managers receive every event,
 // anyone else only events for their own items. Without sign-in everyone
@@ -80,42 +66,13 @@ func (a *API) liveRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/live/interest", a.liveInterest)
 }
 
-// liveInterest records that a signed-in page shows a view that wants fast
-// updates (today: downloads). Each call counts for 60 seconds; the leader
-// tab repeats it every 30 seconds.
+// liveInterest is webserver.Interest; a counted call wakes the download sync.
 func (a *API) liveInterest(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		View string `json:"view"`
-	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&in); err != nil || in.View != "downloads" {
-		webserver.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": `view must be "downloads"`})
-		return
-	}
-	key := "anon"
-	if who, ok := webserver.From(r.Context()); ok {
-		key = who.Via + ":" + strconv.FormatInt(who.UserID, 10) + ":" + who.CSRF
-	}
-	now := time.Now()
-	a.interest.mu.Lock()
-	if a.interest.last == nil {
-		a.interest.last = map[string]time.Time{}
-	}
-	if t, ok := a.interest.last[key]; ok && now.Sub(t) < interestEvery {
-		a.interest.mu.Unlock()
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	for k, t := range a.interest.last {
-		if now.Sub(t) > time.Minute {
-			delete(a.interest.last, k)
+	a.interest.Serve(w, r, func() {
+		if a.dl.DLSync != nil {
+			a.dl.DLSync.Watched()
 		}
-	}
-	a.interest.last[key] = now
-	a.interest.mu.Unlock()
-	if a.dl.DLSync != nil {
-		a.dl.DLSync.Watched()
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ttl_seconds": 60})
+	})
 }
 
 // publishTitle sends the changed title to live pages.
@@ -134,10 +91,5 @@ func (a *API) publishTitle(r *http.Request, id int64) {
 
 // versionID reads the {vid} Version id, answering 404 itself.
 func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
-	if err != nil || id <= 0 {
-		webserver.Fail(w, http.StatusNotFound, "not found")
-		return 0, false
-	}
-	return id, true
+	return webserver.PathID(w, r, "vid")
 }
