@@ -14,4 +14,4 @@ You add a show once. Every aired episode is then searched until its copy is good
 - [Show downloads](downloads.md): follow the queue, fix stuck downloads and settle episodes in Review.
 - [Organise shows](organise.md): adopt shows you already have, rename files and delete safely.
 
-If this is your first title, start with [First title](../start/first-title.md). Movies work the same way: see [Movies](../movies/index.md).
+If this is your first title, start with [First title](../start/first-title.md). For movies, which work the same way, see [Movies](../movies/index.md).
