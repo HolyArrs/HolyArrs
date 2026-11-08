@@ -1,8 +1,0 @@
-{
-  "score": 82,
-  "verdict": "needs_changes",
-  "category_match": "Intercom-derived media workspace; responsive usability audit underway",
-  "differences": ["Light-theme status chips fail measured contrast on Library cards and a selected download row", "Library desktop search relies on a negative absolute offset inside the workspace", "Phone filter controls consume substantial vertical space before media content"],
-  "suggestions": ["Darken semantic foreground tokens while preserving status hues", "Validate and repair Library search placement in the desktop workspace", "Test dense controls and navigation at intermediate widths before reducing spacing"],
-  "reasoning": "Qualitative iteration score, not pixel parity. Inspected fresh 390px Library capture and automated axe results. Existing saved desktop Intercom specification supplies geometry; mobile behavior is an adaptation. Full route and state coverage remains pending."
-}

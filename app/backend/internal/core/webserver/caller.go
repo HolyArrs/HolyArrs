@@ -87,6 +87,15 @@ func Actor(ctx context.Context) database.Actor {
 	return database.System
 }
 
+// RequestActor is the signed-in person on r; without sign-in (tests) it is
+// the owner.
+func RequestActor(r *http.Request) database.Actor {
+	if _, ok := From(r.Context()); ok {
+		return Actor(r.Context())
+	}
+	return database.Actor{Kind: "user", ID: 1}
+}
+
 // Strong reports whether the request uses a browser session or an API key.
 // Requests let in by the local-network skip are not strong: they may not make
 // API keys, change sign-in or security settings, read or replace secrets, or

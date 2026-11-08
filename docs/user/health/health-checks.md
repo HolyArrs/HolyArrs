@@ -8,7 +8,7 @@ You want to know if something is wrong before it costs you a download. HolyArrs 
 2. For the full list, open **Settings > This app**. Each check shows its state and when it last changed.
 3. Click **Check again** to run all checks now.
 
-Checks run every 5 minutes, when HolyArrs starts, and right after an import is refused for lack of space. The **Status** page at `/status` shows free space for each Library folder.
+Checks run every 5 minutes, when HolyArrs starts, and right after an import is refused for lack of space. The **Status** page at `/health` shows free space for each Library folder.
 
 ## What each check means
 

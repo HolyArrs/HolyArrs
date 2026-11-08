@@ -132,7 +132,7 @@ func (h *Handlers) add(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	x, err := Add(r.Context(), h.Store, h.Secrets, in, actor(r))
+	x, err := Add(r.Context(), h.Store, h.Secrets, in, webserver.RequestActor(r))
 	if err != nil {
 		answerError(w, err)
 		return
@@ -152,7 +152,7 @@ func (h *Handlers) edit(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	x, err := Change(r.Context(), h.Store, h.Secrets, id, in, actor(r))
+	x, err := Change(r.Context(), h.Store, h.Secrets, id, in, webserver.RequestActor(r))
 	if err != nil {
 		answerError(w, err)
 		return
@@ -258,12 +258,4 @@ func answerError(w http.ResponseWriter, err error) {
 	default:
 		webserver.Internal(w, "api", err)
 	}
-}
-
-// actor is the signed-in person; without sign-in (tests) it is the owner.
-func actor(r *http.Request) domain.Actor {
-	if _, ok := webserver.From(r.Context()); ok {
-		return webserver.Actor(r.Context())
-	}
-	return domain.Actor{Kind: "user", ID: 1}
 }

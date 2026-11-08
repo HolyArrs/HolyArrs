@@ -7,7 +7,5 @@ config/
 app/frontend/node_modules/
 app/frontend/.svelte-kit/
 app/tests/
-.claude/
-.omc/
 .env
 .env.*

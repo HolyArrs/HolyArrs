@@ -1,8 +1,0 @@
-{
-  "score": 80,
-  "verdict": "WATCH: strong visual-system match; targeted phone-action and inspector polish remains. This is a qualitative still-image score, not pixel parity.",
-  "category_match": { "shell": "strong", "surfaces": "strong", "typography": "provisional font identity", "responsive": "coherent adaptation", "motion": "unverified" },
-  "differences": ["Phone movie actions form a long narrow stack beside the poster.", "Movie inspector begins below the hero and utility band.", "Fixture artwork is absent because fake hosts fail the existing image-host policy.", "Calendar date span needs a semantic accessible-name repair.", "Unused nav-divider CSS remains after its markup was removed."],
-  "suggestions": ["Give phone movie actions the full content width and group secondary actions without removing handlers.", "Keep primary content and inspector alignment coherent on desktop.", "Use hidden full-date text alongside the visible calendar day.", "Delete the proven unused nav-divider rule."],
-  "reasoning": "Independent visual review found no material blocker for showing the user, but a literal exact clone remains unproven. These bounded corrections improve the actual application without weakening authorization, status semantics or error recovery. Product-content differences and unknown font/motion values remain explicit."
-}

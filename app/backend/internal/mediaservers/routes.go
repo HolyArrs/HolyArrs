@@ -45,7 +45,7 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
 	for _, m := range ms {
 		out = append(out, ViewOf(m))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"media_servers": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"media_servers": out})
 }
 
 func (h *Handlers) add(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +61,7 @@ func (h *Handlers) add(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, ViewOf(m))
+	webserver.WriteJSON(w, http.StatusCreated, ViewOf(m))
 }
 
 func (h *Handlers) edit(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +81,7 @@ func (h *Handlers) edit(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, ViewOf(m))
+	webserver.WriteJSON(w, http.StatusOK, ViewOf(m))
 }
 
 func (h *Handlers) remove(w http.ResponseWriter, r *http.Request) {
@@ -122,10 +122,10 @@ func (h *Handlers) Test(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	res, err := h.Linker.Test(ctx, m)
 	if err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
+		webserver.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "found": res})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "found": res})
 }
 
 const inputHelp = `send name, kind (plex, jellyfin or emby), url, token, and optionally enabled, on_import, on_rename, on_delete, path_from and path_to, allow_local_network`
@@ -134,11 +134,11 @@ func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
 	var in Input
 	err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&in)
 	if mb := (*http.MaxBytesError)(nil); errors.As(err, &mb) {
-		fail(w, http.StatusRequestEntityTooLarge, "request body too large")
+		webserver.Fail(w, http.StatusRequestEntityTooLarge, "request body too large")
 		return in, false
 	}
 	if err != nil {
-		fail(w, http.StatusBadRequest, inputHelp)
+		webserver.Fail(w, http.StatusBadRequest, inputHelp)
 		return in, false
 	}
 	if in.Token == secrets.Masked {
@@ -150,7 +150,7 @@ func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
 func idParam(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, "no such media server")
+		webserver.Fail(w, http.StatusNotFound, "no such media server")
 		return 0, false
 	}
 	return id, true
@@ -159,11 +159,11 @@ func idParam(w http.ResponseWriter, r *http.Request) (int64, bool) {
 func writeError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, ErrNameUsed):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case IsInputError(err):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, database.ErrNotFound):
-		fail(w, http.StatusNotFound, "no such media server")
+		webserver.Fail(w, http.StatusNotFound, "no such media server")
 	default:
 		internalError(w, err)
 	}
@@ -177,17 +177,7 @@ func actorOf(r *http.Request) domain.Actor {
 	return domain.Actor{Kind: "user", ID: 1}
 }
 
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func fail(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
-}
-
 func internalError(w http.ResponseWriter, err error) {
 	log.Printf("mediaservers: %v", err)
-	fail(w, http.StatusInternalServerError, "something went wrong; see the log")
+	webserver.Fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 }

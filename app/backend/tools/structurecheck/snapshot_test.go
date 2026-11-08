@@ -34,7 +34,7 @@ func repoRoot(t *testing.T) string {
 // the metadata server, a separate Go module with its own routes.
 func skipDir(name string) bool {
 	switch name {
-	case ".git", ".omc", "node_modules", ".svelte-kit", "dist", "testdata", "services":
+	case ".git", "node_modules", ".svelte-kit", "dist", "testdata", "services":
 		return true
 	}
 	return false

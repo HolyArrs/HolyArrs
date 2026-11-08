@@ -136,7 +136,8 @@ export default defineConfig({
 		host: '0.0.0.0',
 		port: 18729,
 		strictPort: true,
-		allowedHosts: ['holyarrs-app.luiverse.com'],
+		// Extra host names come from HOLYARRS_PREVIEW_HOSTS (comma-separated).
+		allowedHosts: ['localhost', ...(process.env.HOLYARRS_PREVIEW_HOSTS ?? '').split(',').filter(Boolean)],
 		// AI app sign-in and the short AI address go to the server too (it serves them in the built app).
 		proxy: { '/api': isolatedProxy(), '/live': isolatedProxy(), '/healthz': isolatedProxy(), '/oauth': isolatedProxy(), '/.well-known': isolatedProxy(), '^/mcp$': isolatedProxy() }
 	}

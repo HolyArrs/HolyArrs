@@ -128,7 +128,7 @@ func (h *Handlers) putSettings(w http.ResponseWriter, r *http.Request) {
 	if !webserver.Decode(w, r, &in, `send {"every_minutes": 5, "flap_guard": 2, "low_space_mb": 1024, "update_check_url": ""}`) {
 		return
 	}
-	if err := SaveSettings(r.Context(), h.Store, in, actor(r)); err != nil {
+	if err := SaveSettings(r.Context(), h.Store, in, webserver.RequestActor(r)); err != nil {
 		if errors.Is(err, ErrSettings) {
 			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
@@ -166,12 +166,4 @@ func ownerWords(r *http.Request, cs []domain.HealthCheck) {
 			cs[i].Message = KeyKitForOthers
 		}
 	}
-}
-
-// actor is the signed-in person; without sign-in (tests) it is the owner.
-func actor(r *http.Request) domain.Actor {
-	if _, ok := webserver.From(r.Context()); ok {
-		return webserver.Actor(r.Context())
-	}
-	return domain.Actor{Kind: "user", ID: 1}
 }

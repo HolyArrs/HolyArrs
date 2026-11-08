@@ -15,16 +15,6 @@ import (
 // RestorePath takes the uploaded zip; its body may be larger than other API bodies.
 const RestorePath = "/api/v1/backups/restore"
 
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func fail(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
-}
-
 // Routes adds the backup routes. restart, when set, is called after a
 // restore is staged so the swap happens right away.
 func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
@@ -32,20 +22,20 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 	mux.HandleFunc("GET /api/v1/backups", func(w http.ResponseWriter, r *http.Request) {
 		list, err := m.List()
 		if err != nil {
-			fail(w, http.StatusInternalServerError, "could not list backups")
+			webserver.Fail(w, http.StatusInternalServerError, "could not list backups")
 			return
 		}
 		if list == nil {
 			list = []Info{}
 		}
 		p, _ := m.Preset(r.Context())
-		writeJSON(w, http.StatusOK, map[string]any{"backups": list, "preset": p, "restore_waiting": Staged(m.Dir), "key_note": KeyNote,
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"backups": list, "preset": p, "restore_waiting": Staged(m.Dir), "key_note": KeyNote,
 			"key_kit": m.keyKitState(r.Context())})
 	})
 	mux.HandleFunc("POST /api/v1/backups", func(w http.ResponseWriter, r *http.Request) {
 		if err := m.roomFor(); err != nil {
 			log.Printf("backup: %v", err)
-			fail(w, http.StatusInsufficientStorage, err.Error()+" and try again.")
+			webserver.Fail(w, http.StatusInsufficientStorage, err.Error()+" and try again.")
 			return
 		}
 		// A dropped request (closed tab, proxy timeout) must not cut the
@@ -59,27 +49,27 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 		if err != nil {
 			log.Printf("backup: %v", err)
 			if diskFull(err) {
-				fail(w, http.StatusInsufficientStorage, noSpace+" and try again.")
+				webserver.Fail(w, http.StatusInsufficientStorage, noSpace+" and try again.")
 				return
 			}
-			fail(w, http.StatusInternalServerError, "the backup failed; see the log")
+			webserver.Fail(w, http.StatusInternalServerError, "the backup failed; see the log")
 			return
 		}
-		writeJSON(w, http.StatusCreated, b)
+		webserver.WriteJSON(w, http.StatusCreated, b)
 	})
 	mux.HandleFunc("PUT /api/v1/backups/settings", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Preset Preset `json:"preset"`
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&body); err != nil {
-			fail(w, http.StatusBadRequest, `send {"preset": "balanced"|"light"|"careful"}`)
+			webserver.Fail(w, http.StatusBadRequest, `send {"preset": "balanced"|"light"|"careful"}`)
 			return
 		}
 		if err := m.SetPreset(r.Context(), body.Preset, webserver.Actor(r.Context())); err != nil {
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"preset": body.Preset})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"preset": body.Preset})
 	})
 	mux.HandleFunc("GET /api/v1/backups/{name}", func(w http.ResponseWriter, r *http.Request) {
 		if !webserver.RequireStrong(w, r) {
@@ -87,7 +77,7 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 		}
 		f, err := m.Open(r.PathValue("name"))
 		if err != nil {
-			fail(w, http.StatusNotFound, "no such backup")
+			webserver.Fail(w, http.StatusNotFound, "no such backup")
 			return
 		}
 		defer f.Close()
@@ -105,7 +95,7 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			return
 		}
 		if err := m.Delete(r.PathValue("name")); err != nil {
-			fail(w, http.StatusNotFound, "no such backup")
+			webserver.Fail(w, http.StatusNotFound, "no such backup")
 			return
 		}
 		m.audit(r, "deleted", r.PathValue("name"))
@@ -116,11 +106,11 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			return
 		}
 		if err := m.Stage(r.Context(), http.MaxBytesReader(w, r.Body, MaxUpload)); err != nil {
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		log.Printf("backup: a restore is staged; it is put in place on the next start")
-		writeJSON(w, http.StatusAccepted, map[string]any{"staged": true, "restarting": restart != nil,
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"staged": true, "restarting": restart != nil,
 			"note": "The backup is checked and staged. HolyArrs puts it in place when it starts again."})
 		if restart != nil {
 			if f, ok := w.(http.Flusher); ok {
