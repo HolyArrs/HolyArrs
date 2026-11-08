@@ -30,8 +30,9 @@ type Services struct {
 type Handlers struct {
 	*Deps
 	Services
-	pics picRecords
-	side sideStore
+	pics    picRecords
+	side    sideStore
+	artWarm artWarmer
 }
 
 // Routes registers the Music routes; empty until they move here.

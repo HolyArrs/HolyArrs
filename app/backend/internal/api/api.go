@@ -240,8 +240,7 @@ type API struct {
 	// warm fills listed titles' details, extras and trailers ahead.
 	warm titleWarmer
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
-	ahead   musicAhead
-	artWarm artWarmer
+	ahead musicAhead
 	// musicPre stores every engine page's covers ahead (musicpreload.go).
 	musicPre musicPreload
 	ctl      musicControl
