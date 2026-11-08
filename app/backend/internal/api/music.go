@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -14,9 +15,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // musicRoutes serves adding artists, their albums, Pressings and tracks,
@@ -25,40 +26,17 @@ func (a *API) musicRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/artists/lookup", a.lookupArtists)
 	m.HandleFunc("POST /api/v1/artists", a.addArtist)
 	m.HandleFunc("PUT /api/v1/titles/{id}/artist", a.setArtist)
-	m.HandleFunc("GET /api/v1/titles/{id}/albums", a.listAlbums)
-	m.HandleFunc("GET /api/v1/albums/{id}", a.getAlbum)
-	m.HandleFunc("PUT /api/v1/albums/{id}", a.setAlbum)
-	m.HandleFunc("GET /api/v1/albums/{id}/tracks", a.listTracks)
+	music.TrackHandlers[EpisodeSlot]{Store: a.s.Store, Slots: trackSlots}.Routes(m)
 	m.HandleFunc("GET /api/v1/albums/{id}/cover", a.albumCoverArt)
-	m.HandleFunc("GET /api/v1/settings/music", a.getMusicSettings)
-	m.HandleFunc("PUT /api/v1/settings/music", a.putMusicSettings)
 }
 
 // musicError answers music refusals with a status and a reason; anything
 // else goes to libraryError.
-func musicError(w http.ResponseWriter, err error) {
-	var dup *library.ArtistAlreadyAddedError
-	switch {
-	case errors.As(err, &dup):
-		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
-	case errors.Is(err, library.ErrNoMusicFolder), errors.Is(err, library.ErrArtistNeverAdd), errors.Is(err, library.ErrAlbumNotIncluded):
-		webserver.Fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, library.ErrBadAlbumChoice), errors.Is(err, library.ErrBadNewAlbums), errors.Is(err, library.ErrBadAlbumKinds),
-		errors.Is(err, library.ErrBadExtraKinds), errors.Is(err, library.ErrBadStatuses), errors.Is(err, library.ErrBadPressingRule),
-		errors.Is(err, library.ErrBadMusicURL), errors.Is(err, library.ErrBadCacheHours), errors.Is(err, library.ErrNotMusicFolder),
-		errors.Is(err, library.ErrBadArtistID):
-		webserver.Fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, library.ErrNotArtist), errors.Is(err, library.ErrNotAlbum), errors.Is(err, library.ErrNoSuchPressing),
-		errors.Is(err, metadata.ErrArtistNotFound):
-		webserver.Fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, library.ErrNoMusicSource), errors.Is(err, metadata.ErrMusicBusy):
-		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
-	case errors.Is(err, metadata.ErrMusicUnavailable):
-		// Plain words only: no status code or connection detail.
-		webserver.Fail(w, http.StatusBadGateway, metadata.ErrMusicUnavailable.Error())
-	default:
-		libraryError(w, err)
-	}
+func musicError(w http.ResponseWriter, err error) { music.Error(w, err, libraryError) }
+
+// libraryHandlers serves albums and the music settings.
+func (a *API) libraryHandlers() music.LibraryHandlers {
+	return music.LibraryHandlers{Store: a.s.Store, Library: a.s.Library, ArtistID: a.artistID, Actor: actor, Fallback: libraryError}
 }
 
 // ArtistResult is a looked-up artist (without its albums) with what the
@@ -340,12 +318,10 @@ type ArtistInfo struct {
 	Bio string `json:"bio,omitempty"`
 }
 
-func listOr(v []string) []string {
-	if v == nil {
-		return []string{}
-	}
-	return v
-}
+var listOr = music.ListOr
+
+// PressingView is one Pressing of an album with its tracks.
+type PressingView = music.PressingView
 
 func (a *API) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, error) {
 	n, err := library.Totals(ctx, a.s.Store.Read(), t.ID, time.Now())
@@ -359,163 +335,24 @@ func (a *API) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, 
 		Downloading: n.Downloading, Failed: n.Failed, NextRelease: n.NextRelease}, nil
 }
 
-// listAlbums lists an artist's albums, newest first; ?included=true leaves
-// out the albums the artist's kinds do not include.
-func (a *API) listAlbums(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.artistID(w, r)
-	if !ok {
-		return
-	}
-	als, err := library.Albums(r.Context(), a.s.Store.Read(), t.ID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	if r.URL.Query().Get("included") == "true" {
-		kept := als[:0]
-		for _, al := range als {
-			if al.Included {
-				kept = append(kept, al)
-			}
-		}
-		als = kept
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"albums": als})
-}
-
 // albumID reads an album from the path.
 func (a *API) albumID(w http.ResponseWriter, r *http.Request) (mediafiles.Part, bool) {
-	var p mediafiles.Part
-	id, ok := pathID(w, r)
-	if !ok {
-		return p, false
-	}
-	if err := database.Get(r.Context(), a.s.Store.Read(), "parts", id, &p); err != nil || p.Kind != "album" {
-		webserver.Fail(w, http.StatusNotFound, "no such album")
-		return p, false
-	}
-	return p, true
+	return music.AlbumID(w, r, a.s.Store.Read())
 }
 
-// PressingView is one Pressing of an album with its tracks.
-type PressingView struct {
-	ID             int64                  `json:"id"`
-	MBID           string                 `json:"mbid"`
-	Name           string                 `json:"name"`
-	Status         string                 `json:"status"`
-	Country        string                 `json:"country,omitempty"`
-	Date           string                 `json:"date,omitempty"`
-	Disambiguation string                 `json:"disambiguation,omitempty"`
-	Formats        []string               `json:"formats"`
-	TrackCount     int                    `json:"track_count"`
-	Chosen         bool                   `json:"chosen"`
-	ChosenBy       string                 `json:"chosen_by,omitempty"` // auto, person (the chosen one only)
-	Tracks         []domain.PressingTrack `json:"tracks"`
-}
-
-func (a *API) getAlbum(w http.ResponseWriter, r *http.Request) {
-	p, ok := a.albumID(w, r)
-	if !ok {
-		return
-	}
-	sum, err := library.AlbumOf(r.Context(), a.s.Store.Read(), p)
+// trackSlots builds the Slot views for an album's tracks, keyed by item id.
+func trackSlots(ctx context.Context, db *sql.DB, p mediafiles.Part) (map[int64][]EpisodeSlot, error) {
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
 	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	ps, err := database.Select[domain.AlbumPressing](r.Context(), a.s.Store.Read(), "pressings", "part_id = ? ORDER BY chosen DESC, date, id", p.ID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	views := make([]PressingView, 0, len(ps))
-	for _, x := range ps {
-		v := PressingView{ID: x.ID, MBID: x.MBID, Name: x.Name, Status: x.Status, Country: x.Country, Date: x.Date, Disambiguation: x.Disambiguation,
-			Formats: listOr(x.Formats), TrackCount: x.TrackCount, Chosen: x.Chosen, Tracks: x.Tracks}
-		if x.Chosen {
-			v.ChosenBy = x.ChosenBy
-		}
-		if v.Tracks == nil {
-			v.Tracks = []domain.PressingTrack{}
-		}
-		views = append(views, v)
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"album": sum, "title_id": p.TitleID, "pressings": views})
-}
-
-const albumHelp = `send {"keep_up_to_date": true or false} and/or {"pressing_id": <id of one of the album's Pressings>}`
-
-func (a *API) setAlbum(w http.ResponseWriter, r *http.Request) {
-	p, ok := a.albumID(w, r)
-	if !ok {
-		return
-	}
-	var body struct {
-		KeepUpToDate *bool `json:"keep_up_to_date"`
-		PressingID   int64 `json:"pressing_id"`
-	}
-	if !decode(w, r, &body, albumHelp) {
-		return
-	}
-	if body.KeepUpToDate == nil && body.PressingID == 0 {
-		webserver.Fail(w, http.StatusBadRequest, albumHelp)
-		return
-	}
-	p, err := a.s.Library.SetAlbum(r.Context(), p.ID, body.KeepUpToDate, body.PressingID, actor(r))
-	if err != nil {
-		musicError(w, err)
-		return
-	}
-	sum, err := library.AlbumOf(r.Context(), a.s.Store.Read(), p)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, sum)
-}
-
-// TrackView is one track with its Slots.
-type TrackView struct {
-	ID           int64             `json:"id"`
-	Disc         int               `json:"disc"`
-	Number       int               `json:"number"`
-	Name         string            `json:"name,omitempty"`
-	LengthMS     *int              `json:"length_ms,omitempty"`
-	RecordingID  string            `json:"recording_id,omitempty"`
-	ReleaseDate  *time.Time        `json:"release_date,omitempty"`
-	KeepUpToDate bool              `json:"keep_up_to_date"`
-	Dropped      bool              `json:"dropped,omitempty"`
-	IDs          map[string]string `json:"ids"`
-	Slots        []EpisodeSlot     `json:"slots"`
-}
-
-// listTracks lists an album's tracks in disc and track order, each with its
-// Slot per Version.
-func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
-	p, ok := a.albumID(w, r)
-	if !ok {
-		return
-	}
-	db := a.s.Store.Read()
-	its, err := database.Select[mediafiles.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
-		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track'), id`, p.ID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	vs, err := database.Select[mediafiles.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
+		return nil, err
 	}
 	label := map[int64]string{}
 	for _, v := range vs {
 		label[v.ID] = v.Label
 	}
-	slots, err := database.Select[mediafiles.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
 	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
+		return nil, err
 	}
 	byItem := map[int64][]EpisodeSlot{}
 	for _, s := range slots {
@@ -525,54 +362,6 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 		}
 		byItem[s.ItemID] = append(byItem[s.ItemID], es)
 	}
-	trimEpisodeSlots(r.Context(), byItem)
-	out := make([]TrackView, 0, len(its))
-	for _, it := range its {
-		v := TrackView{ID: it.ID, Name: strOr(it.Name), LengthMS: it.LengthMS, RecordingID: strOr(it.RecordingID), ReleaseDate: it.AirDate,
-			KeepUpToDate: it.KeepUpToDate, Dropped: it.DroppedAt != nil, IDs: it.SourceIDs, Slots: []EpisodeSlot{}}
-		if it.Numbers.Disc != nil {
-			v.Disc = *it.Numbers.Disc
-		}
-		if it.Numbers.Track != nil {
-			v.Number = *it.Numbers.Track
-		}
-		if v.IDs == nil {
-			v.IDs = map[string]string{}
-		}
-		if sl := byItem[it.ID]; sl != nil {
-			v.Slots = sl
-		}
-		out = append(out, v)
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tracks": out, "album_id": p.ID})
-}
-
-func (a *API) getMusicSettings(w http.ResponseWriter, r *http.Request) {
-	d, err := library.ReadMusicDefaults(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, d)
-}
-
-func (a *API) putMusicSettings(w http.ResponseWriter, r *http.Request) {
-	d, err := library.ReadMusicDefaults(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	if !decode(w, r, &d, "send any of album_choice, new_albums, album_types, secondary_types, release_statuses, pressing_rule, musicbrainz_url, musicbrainz_allow_local_network, cache_hours") {
-		return
-	}
-	if err := library.SetMusicDefaults(r.Context(), a.s.Store, d, actor(r)); err != nil {
-		musicError(w, err)
-		return
-	}
-	d, err = library.ReadMusicDefaults(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, d)
+	trimEpisodeSlots(ctx, byItem)
+	return byItem, nil
 }
