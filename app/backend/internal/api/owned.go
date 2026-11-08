@@ -1,11 +1,8 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -20,35 +17,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
-
-// writeTaggedJSON writes v with an ETag (a hash of the body) and, unless
-// the handler set its own, "private, no-cache", so the browser keeps the
-// answer and revalidates it; a matching If-None-Match gets 304.
-func writeTaggedJSON(w http.ResponseWriter, r *http.Request, v any) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		internal(w, err)
-		return
-	}
-	sum := sha256.Sum256(buf.Bytes())
-	tag := `"` + hex.EncodeToString(sum[:12]) + `"`
-	h := w.Header()
-	h.Set("ETag", tag)
-	if h.Get("Cache-Control") == "" {
-		h.Set("Cache-Control", "private, no-cache")
-	}
-	if inm := r.Header.Get("If-None-Match"); inm != "" {
-		for _, t := range strings.Split(inm, ",") {
-			if t = strings.TrimSpace(t); t == tag || t == "*" || strings.TrimPrefix(t, "W/") == tag {
-				w.WriteHeader(http.StatusNotModified)
-				return
-			}
-		}
-	}
-	h.Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(buf.Bytes())
-}
 
 // OwnedItem is one entry of GET /api/v1/titles/owned: a Library title (or
 // one album of a Library artist) with its outside id and one state word.
@@ -156,7 +124,7 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Vary", "Cookie, Authorization")
-	writeTaggedJSON(w, r, map[string]any{"items": out})
+	webserver.WriteTaggedJSON(w, r, map[string]any{"items": out})
 }
 
 func max64(a, b float64) float64 {

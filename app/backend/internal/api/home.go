@@ -196,7 +196,7 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 	}
 	soon = kept
 	has := homeHas{Empty: titles == 0 && asked == 0, Attention: failed > 0, Arrived: len(arrived) > 0, NewSeason: len(seasons) > 0, Following: len(following) > 0, Soon: len(soon) > 0}
-	writeTaggedJSON(w, r, map[string]any{
+	webserver.WriteTaggedJSON(w, r, map[string]any{
 		"rows": homeRows(v, has), "owner": v.Owner, "kid": v.Kid,
 		"arrived": arrived, "new_seasons": seasons, "following": following, "soon": soon,
 		"ask_progress": progress, "library": library,

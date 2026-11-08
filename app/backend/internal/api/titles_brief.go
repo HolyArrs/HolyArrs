@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -67,5 +68,5 @@ func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []media
 		}
 		out = append(out, b)
 	}
-	writeTaggedJSON(w, r, map[string]any{"titles": out})
+	webserver.WriteTaggedJSON(w, r, map[string]any{"titles": out})
 }

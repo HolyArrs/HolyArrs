@@ -923,7 +923,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, v)
 	}
-	writeTaggedJSON(w, r, map[string]any{"titles": out})
+	webserver.WriteTaggedJSON(w, r, map[string]any{"titles": out})
 }
 
 func (a *API) titleID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
