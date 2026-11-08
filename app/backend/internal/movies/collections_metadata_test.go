@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -124,5 +125,49 @@ func TestAddAndRefreshSyncConfirmedMovieCollection(t *testing.T) {
 	}
 	if got := collectionMemberships(t, s, titleID); len(got) != 0 {
 		t.Fatalf("after refresh %v", got)
+	}
+}
+
+// TestAddMovieRecordsCollectionThroughHook: the shared add and refresh record
+// a movie's collection only because this package installs its step; a
+// refresh renames the collection and a refresh that knows no collection
+// takes the movie out of it.
+func TestAddMovieRecordsCollectionThroughHook(t *testing.T) {
+	s := open(t)
+	addFolder(t, s)
+	ctx := context.Background()
+	m := dune
+	m.CollectionKnown = true
+	m.Collection = &metadata.MovieCollection{ID: "10", Name: "Saga"}
+	src := &metadata.Static{Movies: []metadata.Movie{m}}
+	svc := &library.Service{Store: s, Queue: jobs.New(s, jobs.Options{}), Metadata: src, Now: func() time.Time { return now }}
+	id, _, err := svc.Add(ctx, m, library.AddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cs, err := ListCollections(ctx, s.Read())
+	if err != nil || len(cs) != 1 || cs[0].Name != "Saga" || cs[0].SourceID != "tmdb:10" || len(cs[0].TitleIDs) != 1 || cs[0].TitleIDs[0] != id {
+		t.Fatalf("after add %+v %v", cs, err)
+	}
+
+	renamed := m
+	renamed.Collection = &metadata.MovieCollection{ID: "10", Name: "Saga Renamed"}
+	src.Movies[0] = renamed
+	if _, err := svc.RefreshTitle(ctx, id, domain.System, nil); err != nil {
+		t.Fatal(err)
+	}
+	cs, err = ListCollections(ctx, s.Read())
+	if err != nil || len(cs) != 1 || cs[0].Name != "Saga Renamed" || len(cs[0].TitleIDs) != 1 {
+		t.Fatalf("after refresh rename %+v %v", cs, err)
+	}
+
+	left := m
+	left.Collection = nil
+	src.Movies[0] = left
+	if _, err := svc.RefreshTitle(ctx, id, domain.System, nil); err != nil {
+		t.Fatal(err)
+	}
+	if cs, err = ListCollections(ctx, s.Read()); err != nil || len(cs) != 0 {
+		t.Fatalf("after leaving the collection %+v %v", cs, err)
 	}
 }

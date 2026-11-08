@@ -49,3 +49,40 @@ func TestShowAdoptionAndFoundFilesUseInspectedHeaders(t *testing.T) {
 		t.Fatalf("found show facts: %+v", found)
 	}
 }
+
+// TestRescanRecordsNewEpisodeFile: a new episode file dropped into an
+// adopted show's folder is recorded as found on the next rescan, once.
+func TestRescanRecordsNewEpisodeFile(t *testing.T) {
+	svc, s, _, _ := addShowService(t)
+	ctx := context.Background()
+	lf := addShowFolder(t, s)
+	showTree(t, lf.Path)
+	res, err := svc.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}}, domain.System)
+	if err != nil || res[0].Error != "" {
+		t.Fatalf("adopt: %+v %v", res, err)
+	}
+	id := res[0].TitleID
+	// Adopting leaves some files alone (extras, a sample); the first rescan
+	// records what is there so the next one counts only the new file.
+	if _, err := svc.Rescan(ctx, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(lf.Path, "Lab Show (2025)", "Season 2", "Lab Show S02E03.mkv"), "new episode file")
+	first, err := svc.Rescan(ctx, domain.System)
+	if err != nil || first.Found != 1 {
+		t.Fatalf("first rescan %+v %v", first, err)
+	}
+	rel := filepath.ToSlash(filepath.Join("Lab Show (2025)", "Season 2", "Lab Show S02E03.mkv"))
+	var fid int64
+	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", rel).Scan(&fid); err != nil {
+		t.Fatalf("the new episode file was not recorded: %v", err)
+	}
+	f := fileRow(t, s, fid)
+	if f.Origin != "found" || len(f.SlotIDs) != 1 || f.SlotIDs[0] != episodes(t, s, id)["S02E03"].SlotID {
+		t.Fatalf("found file %+v, want origin found on the S02E03 slot", f)
+	}
+	second, err := svc.Rescan(ctx, domain.System)
+	if err != nil || second.Found != 0 {
+		t.Fatalf("second rescan %+v %v", second, err)
+	}
+}
