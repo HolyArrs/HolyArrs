@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
@@ -1017,7 +1018,7 @@ func writeJournal(dir string, j journal) error {
 		if err := os.Remove(p + ".tmp"); err != nil && !errors.Is(err, os.ErrNotExist) && !sharingErr(err) {
 			return err
 		}
-		err := database.WriteFileSynced(p, b, 0o600)
+		err := files.WriteFileSynced(p, b, 0o600)
 		if err == nil || !sharingErr(err) || time.Now().After(deadline) {
 			return err
 		}
@@ -1046,7 +1047,7 @@ func removeJournal(dir string) error {
 	if err := os.Remove(filepath.Join(dir, JournalFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	return database.SyncDir(dir)
+	return files.SyncDir(dir)
 }
 
 func syncMoveDirs(dir string, j journal) error {
@@ -1060,7 +1061,7 @@ func syncMoveDirs(dir string, j journal) error {
 			seen[d] = true
 			// A folder already gone (restore-staged removed just before a
 			// cut-off) has nothing left to sync.
-			if err := database.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
+			if err := files.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
 		}

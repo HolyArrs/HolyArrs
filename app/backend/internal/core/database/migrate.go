@@ -483,17 +483,17 @@ func pinnedBackup(w *writer, backupDir, label string, from, to int) (string, err
 	if err != nil {
 		return fail(err)
 	}
-	if err := SyncFile(part); err != nil {
+	if err := files.SyncFile(part); err != nil {
 		return fail(fmt.Errorf("sync: %w", err))
 	}
-	if err := WriteFileSynced(final+".sha256", []byte(sum+"  "+name+"\n"), 0o600); err != nil {
+	if err := files.WriteFileSynced(final+".sha256", []byte(sum+"  "+name+"\n"), 0o600); err != nil {
 		return fail(err)
 	}
 	if err := os.Rename(part, final); err != nil {
 		_ = os.Remove(final + ".sha256")
 		return fail(err)
 	}
-	if err := SyncDir(backupDir); err != nil {
+	if err := files.SyncDir(backupDir); err != nil {
 		return "", fmt.Errorf("sync %s: %w", backupDir, err)
 	}
 	log.Printf("store: backup before the %s update %04d -> %04d: %s (sha256 %s)", label, from, to, final, sum)
