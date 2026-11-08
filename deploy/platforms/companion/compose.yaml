@@ -1,8 +1,8 @@
 services:
   health-companion:
     build:
-      context: ../..
-      dockerfile: examples/health-companion/Dockerfile
+      context: ../../..
+      dockerfile: deploy/platforms/companion/Dockerfile
     environment:
       HOLYARRS_URL: ${HOLYARRS_URL:?set the app address}
     secrets:

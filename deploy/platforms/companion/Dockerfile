@@ -2,7 +2,7 @@ FROM --platform=$BUILDPLATFORM golang:1.27.2@sha256:007a316059246276cb214df93950
 ARG TARGETOS=linux
 ARG TARGETARCH
 WORKDIR /src
-COPY cmd/holyarrs-companion ./cmd/holyarrs-companion
+COPY app/backend/cmd/holyarrs-companion ./cmd/holyarrs-companion
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /companion ./cmd/holyarrs-companion/main.go
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
