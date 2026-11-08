@@ -48,9 +48,9 @@ func rqAddMovie(t *testing.T, base, body string) rqAddAnswer {
 	return a
 }
 
-func rqFolder(t *testing.T, base, kind string) api.FolderView {
+func rqFolder(t *testing.T, base, kind string) library.FolderView {
 	t.Helper()
-	var lf api.FolderView
+	var lf library.FolderView
 	_ = json.Unmarshal(rqDo(t, "POST", base+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":%q,"label":%q}`, t.TempDir(), kind, kind+t.Name()), 201), &lf)
 	return lf
 }

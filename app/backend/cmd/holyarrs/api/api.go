@@ -227,7 +227,7 @@ type API struct {
 	// and runs the trailer pass (metadata).
 	trailers *metadata.Trailers
 	// warm fills listed titles' details, extras and trailers ahead.
-	warm    titleWarmer
+	warm    discover.TitleWarmer
 	warmSet sync.Once
 }
 
@@ -293,7 +293,7 @@ func New(s Server) *API {
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
 	a.mf.CardArt = a.explore.Cards.Library
 	a.watchOn.Metadata = s.Metadata
-	a.signin.Store, a.signin.Metadata, a.signin.ServeArtwork = s.Store, s.Metadata, serveArtwork
+	a.signin.Store, a.signin.Metadata, a.signin.ServeArtwork = s.Store, s.Metadata, library.ServeArtwork
 	a.signin.Artwork = func() *library.ArtworkCache {
 		if a.s.Library == nil {
 			return nil
@@ -331,17 +331,17 @@ func New(s Server) *API {
 				return nil, err
 			}
 			if a.s.Live != nil {
-				a.publishTitleView(v)
+				a.tv().PublishView(v)
 			}
 			return v, nil
 		},
-		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: titleview.TrimEpisodeSlots, LibraryError: libraryError})
+		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: titleview.TrimEpisodeSlots, LibraryError: library.WriteError})
 	// newTrailers built the music handlers before the trailers and shows existed.
 	mh := a.mh()
 	mh.Trailers, mh.SlotOfTitle, mh.SeasonLabel = a.trailers, a.shows.SlotOfTitle, a.shows.SeasonLabel
 	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
 		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
-		ShowSource: a.shows.ShowSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
+		ShowSource: a.shows.ShowSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: library.WriteError}
 	a.controls = &setupmod.Handlers{Deps: setupmod.Deps{Store: s.Store, Parts: s.Parts, SafeMode: s.SafeMode, States: s.States, ExitApp: s.ExitApp,
 		TitleAllowed: a.titleAllowed, TestDownloader: a.dl.TestDownloader,
 		TestSource: func(w http.ResponseWriter, r *http.Request) { a.sourceHandlers().TestSource(w, r) },
@@ -352,7 +352,7 @@ func New(s Server) *API {
 		a.controls.TestMediaServer = a.media.Test
 	}
 	a.dlh = &downloads.Handlers{Deps: downloads.Deps{Store: s.Store, Library: s.Library, Queue: s.Queue,
-		TitleID: a.titleID, PublishTitle: a.publishTitle, LibraryError: libraryError,
+		TitleID: a.titleID, PublishTitle: a.publishTitle, LibraryError: library.WriteError,
 		VersionJSON: func(ctx context.Context, v mediafiles.Version) any {
 			return titleview.VersionViewOf(ctx, s.Store.Read(), v)
 		}}}
@@ -415,7 +415,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	th.Routes(m)
 	(&library.VersionHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Publish: a.publishTitle, View: func(ctx context.Context, db database.Querier, v mediafiles.Version) any {
 		return titleview.VersionViewOf(ctx, db, v)
-	}, Fail: libraryError, DownloadPaths: a.downloadPaths}).Routes(m)
+	}, Fail: library.WriteError, DownloadPaths: a.downloadPaths}).Routes(m)
 	th.RefreshRoutes(m)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
 	m.HandleFunc("GET /api/v1/artwork/tmdb/{size}/{file}", a.tmdbArtwork)
@@ -423,8 +423,8 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.statusHandlers().Routes(m)
 	(&requests.TitleDefaultsHandlers{Store: a.s.Store, Actor: actor}).Routes(m)
 	a.dlh.Routes(m)
-	(&library.FolderHandlers{Store: a.s.Store, DownloadPaths: a.downloadPaths, Actor: actor, Fail: libraryError}).Routes(m)
-	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, Actor: actor, LibraryError: libraryError}
+	(&library.FolderHandlers{Store: a.s.Store, DownloadPaths: a.downloadPaths, Actor: actor, Fail: library.WriteError}).Routes(m)
+	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, Actor: actor, LibraryError: library.WriteError}
 	lists.Routes(m)
 	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.mh().SearchArtist}).Routes(m)
 	m.HandleFunc("GET /api/v1/downloads", a.listDownloads)
@@ -436,7 +436,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	a.mf.Routes(m)
 	a.dl.Routes(m)
-	(&library.OrganiseHandlers{OrganiseDeps: library.OrganiseDeps{Store: a.s.Store, Lib: a.s.Library, Queue: a.s.Queue, TitleID: a.titleID, Fail: libraryError}}).Routes(m)
+	(&library.OrganiseHandlers{OrganiseDeps: library.OrganiseDeps{Store: a.s.Store, Lib: a.s.Library, Queue: a.s.Queue, TitleID: a.titleID, Fail: library.WriteError}}).Routes(m)
 	a.byHandRoutes(m)
 	a.holding().Routes(m)
 	a.healthHandlers().Routes(m)
@@ -489,7 +489,11 @@ func (a *API) Routes(rt *webserver.Router) {
 	// readyz answers 200 once the app has fully started (until then the
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
-	a.liveRoutes(m)
+	a.s.Auth.LiveRoutes(m, a.s.Live, &a.interest, func() {
+		if a.dl.DLSync != nil {
+			a.dl.DLSync.Watched()
+		}
+	})
 	m.Handle("GET /", webserver.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
@@ -514,7 +518,7 @@ func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
 		a.ai.Inner = a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m)))
-		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m))))))))))
+		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(accounts.LiveRecheck(a.s.Live, a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m))))))))))
 	}
 	a.ai.Inner = a.controls.PartGate(m, m)
 	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.controls.PartGate(m, m))))))
@@ -545,8 +549,8 @@ type (
 	ArtistInfo  = titleview.ArtistInfo
 )
 
-// showError answers show refusals; anything else goes to libraryError.
-func showError(w http.ResponseWriter, err error) { shows.ShowError(w, err, libraryError) }
+// showError answers show refusals; anything else goes to library.WriteError.
+func showError(w http.ResponseWriter, err error) { shows.ShowError(w, err, library.WriteError) }
 
 // EpisodeSlot and EpisodeView are the shows module's episode views.
 type (
@@ -582,6 +586,9 @@ func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, err
 func (a *API) tv() *titleview.Handlers {
 	return titleview.New(titleview.Deps{Store: a.s.Store, Asks: a.s.Asks, Live: a.s.Live})
 }
+
+// publishTitle sends the changed title to live pages (titleview.PublishTitle).
+func (a *API) publishTitle(r *http.Request, id int64) { a.tv().PublishTitle(r.Context(), id) }
 
 func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 	ts, err := mediafiles.SearchTitles(r.Context(), a.s.Store, r.URL.Query().Get("q"))
@@ -1006,7 +1013,7 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	year, _ := strconv.Atoi(r.URL.Query().Get("year"))
 	ms, err := a.s.Metadata.Search(r.Context(), q, year)
-	if metadataServiceError(w, err) {
+	if library.ServiceError(w, err) {
 		return
 	}
 	if errors.Is(err, metadata.ErrNoAccess) {

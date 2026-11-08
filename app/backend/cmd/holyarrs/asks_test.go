@@ -13,8 +13,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -44,7 +45,7 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 
 	// bo joins; the lookup shows him the open ask.
 	var look struct {
-		Movies []api.LookupView `json:"movies"`
+		Movies []discover.LookupView `json:"movies"`
 	}
 	_ = json.Unmarshal(r.bo.call("GET", "/api/v1/titles/lookup?term=tmdb:693134", "", 200), &look)
 	if len(look.Movies) != 1 || look.Movies[0].Ask == nil || look.Movies[0].Ask.Mine || look.Movies[0].Ask.State != "asked" {

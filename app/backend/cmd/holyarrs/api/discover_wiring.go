@@ -174,3 +174,16 @@ func (a *API) artistVideosOn() bool {
 func (a *API) musicFresh(row string, c music.MusicCard) *engine.Fresh {
 	return discover.MusicFresh(a.explore.Now(), row, c)
 }
+
+// warmTitles queues titles to be warmed ahead (discover.TitleWarmer).
+func (a *API) warmTitles(lang string, titles [][2]string) {
+	a.warmSet.Do(func() {
+		w := &a.warm
+		w.Store = func() *database.Store { return a.s.Store }
+		w.Metadata = func() metadata.Provider { return a.s.Metadata }
+		w.Cache = func() *discover.Cache { return &a.discover }
+		w.WarmExtras = func(ctx context.Context, kind, id string) { a.titles.WarmExtras(ctx, kind, id) }
+		w.TrailerKey = func(ctx context.Context, kind, id, lang string) { _, _ = a.trailers.Key(ctx, kind, id, lang) }
+	})
+	a.warm.Warm(lang, titles)
+}
