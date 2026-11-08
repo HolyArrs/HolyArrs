@@ -73,7 +73,7 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if sc == webserver.ScopeCompat {
-			fail(w, http.StatusBadRequest, "old-app API keys are made with POST /api/v1/settings/old-app-api/keys/{side}, not here")
+			fail(w, http.StatusBadRequest, "make arr API keys in Settings > API (POST /api/v1/settings/old-app-api/keys/{side}), not here")
 			return
 		}
 		if !who.HasScope(sc) {

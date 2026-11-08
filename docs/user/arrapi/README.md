@@ -8,7 +8,7 @@ Pages in this section:
 - [Connect Bazarr, Prowlarr, Unpackerr and Homepage](other-apps.md): the other apps that work this way.
 - [Limits and troubleshooting](limits.md): what these apps cannot do with HolyArrs, and how to fix common problems.
 
-This is a small API made only for those apps. If you want to write your own scripts, use [the HolyArrs API](../../dev/api.md) instead.
+This is the **arr API**, a small API made only for those apps. Its keys are **arr API keys**. If you want to write your own scripts, use [the HolyArrs API](../../dev/api.md) instead.
 
 ## Turn it on
 

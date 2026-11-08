@@ -92,7 +92,7 @@ func (a *Auth) checkArrKey(ctx context.Context, side, k string) (webserver.Calle
 	}
 	who.Via = "api_key"
 	who.Scopes = []string{webserver.ScopeCompat}
-	who.KeyLabel = "old-app API (" + side + ")"
+	who.KeyLabel = "arr API (" + side + ")"
 	return who, true
 }
 
@@ -128,7 +128,7 @@ func (a *Auth) MakeArrKey(r *http.Request, side string) (string, error) {
 	if err := a.putArrKey(r.Context(), side, who.UserID, k); err != nil {
 		return "", err
 	}
-	a.event(r, webserver.Actor(r.Context()), "api_key_created", "Old-app API key ("+side+") made", map[string]any{"old_app_side": side})
+	a.event(r, webserver.Actor(r.Context()), "api_key_created", "arr API key ("+side+") made", map[string]any{"old_app_side": side})
 	return k, nil
 }
 
@@ -138,6 +138,6 @@ func (a *Auth) DeleteArrKey(r *http.Request, side string) (bool, error) {
 	if err != nil || n == 0 {
 		return false, err
 	}
-	a.event(r, webserver.Actor(r.Context()), "api_key_deleted", "Old-app API key ("+side+") removed", map[string]any{"old_app_side": side})
+	a.event(r, webserver.Actor(r.Context()), "api_key_deleted", "arr API key ("+side+") removed", map[string]any{"old_app_side": side})
 	return true, nil
 }
