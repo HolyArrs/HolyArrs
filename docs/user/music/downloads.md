@@ -26,7 +26,7 @@ Lab Band/Second Tide (2023)/2-01 - Night Train.flac
 A multi-disc album keeps every track in one album folder, each name starting with its disc. To change names, see [Organise music](organise.md#change-how-tracks-are-named).
 
 :::tip
-Put downloads and the Library on the same disk. HolyArrs then hardlinks each file: no extra space, and your Downloader keeps sharing it. On another disk files are copied. See [Folders](../../start/folders.md).
+Put downloads and the Library on the same disk. HolyArrs then hardlinks each file, a second name for the same data, so it takes no extra space and your Downloader keeps sharing it. On another disk files are copied. See [Folders](../../start/folders.md).
 :::
 
 HolyArrs never moves or deletes the Downloader's files, and never writes over a file it did not put there.
