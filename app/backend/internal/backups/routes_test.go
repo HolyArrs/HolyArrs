@@ -87,3 +87,25 @@ func TestListAndDeleteRoutes(t *testing.T) {
 		resp.Body.Close()
 	}
 }
+
+func TestSettingsRefusesUnknownPreset(t *testing.T) {
+	m, _, _, _ := setup(t)
+	mux := http.NewServeMux()
+	m.Routes(mux, func() {})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	for _, body := range []string{`{"preset":"hourly"}`, `not json`} {
+		req, _ := http.NewRequest("PUT", srv.URL+"/api/v1/backups/settings", strings.NewReader(body))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != 400 {
+			t.Fatalf("body %q: status %d, want 400", body, resp.StatusCode)
+		}
+	}
+	if p, err := m.Preset(t.Context()); err != nil || p != Balanced {
+		t.Fatalf("preset after refusals %q %v", p, err)
+	}
+}

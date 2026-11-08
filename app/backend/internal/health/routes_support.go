@@ -59,7 +59,11 @@ func (h *AppHandlers) supportBundle(w http.ResponseWriter, r *http.Request) {
 	rep := RunDoctor(ctx, DoctorOptions{Version: h.Version, ConfigDir: h.configDir(), DB: h.Store.Read(), SavePath: h.SavePath,
 		FolderBudget: 10 * time.Second, NetTimeout: 5 * time.Second})
 	about, _ := json.MarshalIndent(h.aboutView(r.Context()), "", "  ")
-	healthJSON, _ := json.MarshalIndent(h.HealthView(r.Context()), "", "  ")
+	var view any
+	if h.HealthView != nil {
+		view = h.HealthView(r.Context())
+	}
+	healthJSON, _ := json.MarshalIndent(view, "", "  ")
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	now := time.Now().UTC()
