@@ -122,4 +122,4 @@ The page also has **Check feeds now** and **Find a better copy for all**, which 
 
 - [Movie downloads](downloads-movies.md)
 - [Organise movies](../../movies/organise.md)
-- [Search for shows](../shows/search-shows.md)
+- [Search for shows](../../shows/search.md)

@@ -7,7 +7,7 @@ sidebar: { order: 2 }
 
 A finished album download lands in your Library as named tracks, one folder per album.
 
-Only the owner and admins see this. Shows work much the same way, see [Downloads for shows](../shows/downloads-shows.md).
+Only the owner and admins see this. Shows work much the same way, see [Downloads for shows](../../shows/downloads.md).
 
 ## How an album comes in
 

@@ -44,7 +44,7 @@ HolyArrs encrypts stored passwords, keys and tokens with the file `holyarrs.key`
 
 ## Metadata
 
-You don't need any API keys. Titles, artwork and charts come from the HolyArrs metadata server. See [Metadata](docs/user/metadata/).
+You don't need any API keys. Titles, artwork and charts come from the HolyArrs metadata server. See [Metadata](docs/library/metadata.md).
 
 ## When something goes wrong
 

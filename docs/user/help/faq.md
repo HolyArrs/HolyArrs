@@ -6,7 +6,7 @@ It handles movies, shows and music in one app: requests, searching your sites, p
 
 ## Do I need API keys for names and pictures?
 
-No. Names, pictures and charts come from the HolyArrs.com metadata server. See [Metadata](../metadata/metadata-service.md).
+No. Names, pictures and charts come from the HolyArrs.com metadata server. See [Metadata](../../library/metadata.md).
 
 ## Can I keep my old apps while I try it?
 
@@ -42,4 +42,4 @@ It may be held back in the first release. See [Features held back](../../run/upd
 
 ## Does HolyArrs send anything home?
 
-Only what the metadata server needs to answer a lookup. See [Metadata privacy](../metadata/metadata-privacy.md).
+Only what the metadata server needs to answer a lookup. See [Metadata](../../library/metadata.md.

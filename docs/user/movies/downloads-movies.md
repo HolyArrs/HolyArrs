@@ -100,5 +100,5 @@ Fix: remove it with **Add its Release to Turned down** on.
 ## Related
 
 - [Search for movies](search-movies.md)
-- [Show downloads](../shows/downloads-shows.md)
+- [Show downloads](../../shows/downloads.md)
 - [Organise movies](../../movies/organise.md)

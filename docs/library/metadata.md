@@ -70,8 +70,10 @@ Requests then carry `X-Country-Count: off` and the server leaves your install ou
 | Variable | Does | Default |
 |---|---|---|
 | `HOLYARRS_METADATA_URL` | Points HolyArrs at another metadata server. Restart after changing | `https://holyarrs-api.coderluii.dev` |
-| `HOLYARRS_TMDB_KEY` | Your own TMDB read token. Movie and show lookups go to TMDB directly | Empty |
+| `HOLYARRS_TMDB_KEY` | Your own TMDB read token. Movie and show lookups skip the metadata server and go to TMDB directly | Empty |
 | `HOLYARRS_DEEZER_URL=off` | Turns off artist top songs | On |
+
+**Trakt key** under **Settings > Outside lists** is held back in this release. It stays off until the `trakt_lists` switch is on, see [Updates](../run/updates.md#held-back-features). After you save a key you only see a masked value.
 
 Headers sent: `Accept`, `Cache-Control`, `If-None-Match`, and `X-Fetch: ahead` when a page is loaded ahead of time. With **Count this install** off, requests also carry `X-Country-Count: off`.
 

@@ -14,7 +14,7 @@ Fill in one file with your Sources, Downloaders, media servers, subtitle sites a
 
 ## Import the file
 
-1. Copy [holyarrs-secrets.template.yaml](../getting-started/holyarrs-secrets.template.yaml) to `holyarrs-secrets.yaml`.
+1. Copy [holyarrs-secrets.template.yaml](holyarrs-secrets.template.yaml) to `holyarrs-secrets.yaml`.
 2. Fill in what you use. Leave the rest empty; empty means skip.
 3. Make it readable by you only:
 

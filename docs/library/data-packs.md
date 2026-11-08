@@ -41,7 +41,7 @@ Apply body:
 ```
 
 :::caution
-A naming set replaces your current naming patterns. Existing files are not renamed, but later imports use the new names.
+A naming set replaces your current naming patterns. Existing files are not renamed.
 :::
 
 ## What applying changes

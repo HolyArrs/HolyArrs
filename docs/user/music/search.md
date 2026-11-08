@@ -7,7 +7,7 @@ sidebar: { order: 1 }
 
 HolyArrs finds each album of your artists as one Release and sends it to your Downloader as one download.
 
-Only the owner and admins see music search. Movies and shows work the same way, see [Search for movies](../movies/search-movies.md) and [Search for shows](../shows/search-shows.md).
+Only the owner and admins see music search. Movies and shows work the same way, see [Search for movies](../movies/search-movies.md) and [Search for shows](../../shows/search.md).
 
 ## Before you start
 
