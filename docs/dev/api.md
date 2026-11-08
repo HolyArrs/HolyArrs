@@ -1,89 +1,104 @@
-# The HolyArrs API
+---
+title: The HolyArrs API
+description: Make a scoped key and call the JSON API from a script, or run your own metadata server.
+level: Setup
+sidebar: { order: 7 }
+---
 
-You want a script or another app to talk to HolyArrs. Everything the web app does goes through a JSON API under `/api/v1`, and you can use the same API.
+Call the same JSON API the web app uses, under `/api/v1`, from your own scripts.
 
-## Steps
+## Make your first call
 
-1. Make a key in **Settings > API > API keys**. Give it only the scopes it needs. You see the key once, so copy it.
-2. Send it in the `X-Api-Key` header with every call. Never put it in the address.
-3. Call `http://your-server:6262/api/v1`. With a URL base of `/holyarrs`, call `http://your-server:6262/holyarrs/api/v1`.
+1. Open **Settings > API > API keys** and make a key with only the scopes it needs. Copy it now, because it is shown once.
+2. Send it in the `X-Api-Key` header on every call. Never put it in the address.
+3. Call the base address `http://your-server:6262/api/v1`. Under a URL base of `/holyarrs`, call `http://your-server:6262/holyarrs/api/v1`.
 
 ```sh
 export HOLYARRS_KEY=...your key...
 curl -H "X-Api-Key: $HOLYARRS_KEY" "http://your-server:6262/api/v1/health"
 ```
 
-Answers are JSON. Errors are `{"error": "plain words"}` with an HTTP status. Secrets never come back in full. You get them masked.
+You should get JSON back. Errors are `{"error": "plain words"}` with an HTTP status. Secrets come back masked.
 
-## Scopes
+## Choices
+
+### Pick a scope
 
 | Scope | Allows |
 |---|---|
-| health_read | only the health feed, for monitoring tools |
-| read | looking: the read routes, including the health feed |
-| write | changing things, except admin routes and the controls |
-| admin | people, invites, ask limits, API keys, passwords and two-factor, sign-in settings, restore |
-| control | part switches, stages, linked apps, restart and shut down |
-| all | read, write and admin together, without the controls |
+| `health_read` | Only the health feed, for monitoring tools |
+| `read` | The read routes, health feed included |
+| `write` | Changes, except admin routes and controls |
+| `admin` | People, invites, ask limits, API keys, passwords and two-factor, sign-in settings, restore |
+| `control` | Part switches, stages, linked apps, restart and shut down |
+| `all` | `read`, `write` and `admin`. Not `control` |
 
-More detail is in [API keys and scopes](../user/help/parts-and-safe-mode.md#api-keys-and-scopes).
+Give a monitoring tool `health_read` and nothing else.
 
-## Finding routes
+### Find a route
 
-**Settings > API** shows the base address with a copy button, the scopes, example calls, and every route with its scope and permission. The full OpenAPI file is at `/api/v1/openapi.json` when you are signed in.
+**Settings > API** shows the base address, the scopes, example calls, and every route with its scope and permission. The OpenAPI file is at `/api/v1/openapi.json` when you are signed in. [API routes](api-routes.md) lists every route.
 
-## Adding a route
+### Talk to HolyArrs as an older app
 
-Routes live in each module's `routes.go`. Each one is registered with its method, its path and the permission it needs, so a route can't exist without a permission check.
+Seerr, Overseerr, Bazarr and similar apps do not use this API. They talk to HolyArrs as if it were Sonarr and Radarr, with keys of their own. See [Old-app API](../reference/old-app-api.md).
 
-`openapi.json` comes from the routes. A test fails when they drift, so update it in the same change. Once released, API paths and field names stay. Add fields, don't rename them.
+## If it does not work
 
-## Older apps
+**Symptom.** 401 on every call.
+**Cause.** The key is wrong or deleted.
+**Fix.** Make a new key.
 
-Seerr, Overseerr, Bazarr and similar apps don't use this API. They talk to HolyArrs as if it were Sonarr and Radarr, with keys of their own. See [Connect older apps](../user/arrapi/README.md).
+**Symptom.** 403 on one route.
+**Cause.** The key's scope does not cover that route.
+**Fix.** Check the route's scope on **Settings > API**.
 
-## The metadata server
+**Symptom.** 404 on every call.
+**Cause.** The URL base is missing.
+**Fix.** Put it before `/api/v1`. See [URL base](../run/url-base.md).
 
-HolyArrs gets names, pictures and ids from the HolyArrs metadata server. This part is for people who run their own server, or who want to know what the app sends.
+## For experts
 
-### Registration
+<details class="ha-more"><summary>Add a route</summary>
 
-On its first lookup, an install calls `POST /v1/installations` with no body. The server answers `201` with `{"schema_version":1,"token":"hai_..."}`. The app stores the token encrypted and sends it as `Authorization: Bearer <token>` on every lookup after that. It registers once. After a `401` it doesn't register again, so a revoked install stays revoked. Registration has an hourly limit per address group. Over it, the answer is `429 registration_limit` with `Retry-After`.
+Routes live in each module's `routes.go`. Each one is registered with its method, its path and the permission it needs, so no route exists without a permission check.
 
-### Lookups
+`openapi.json` comes from the routes. `TestOpenAPIGenerated` fails when they drift, so update it in the same change. A route-table snapshot also fails when a route is added, removed or moved without a snapshot update.
 
-All lookups are GET.
+Once released, paths and field names stay. Add fields, never rename them. After a change, run `go run ./app/backend/tools/apidoc` to rewrite [API routes](api-routes.md).
 
-| Lookup | Route |
+</details>
+
+<details class="ha-more"><summary>Metadata server calls</summary>
+
+HolyArrs gets names, pictures and ids from the HolyArrs metadata server. Point an install at another server with `HOLYARRS_METADATA_URL`. The server code is not in this repo.
+
+**Registration.** On its first lookup, an install calls `POST /v1/installations` with no body. The answer is `201` with `{"schema_version":1,"token":"hai_..."}`. The app stores the token encrypted and sends `Authorization: Bearer <token>` on every lookup. It registers once. After a `401` it does not register again, so a revoked install stays revoked. Over the hourly limit per address group, the answer is `429 registration_limit` with `Retry-After`.
+
+| Lookup (all GET) | Route |
 |---|---|
 | Search | `/v1/search?provider=tmdb&kind=movie&q=Example&page=1` |
-| Movie details | `/v1/movies/tmdb/{id}` |
-| Show details | `/v1/shows/{tmdb or tvmaze}/{id}` |
-| Season details | `/v1/shows/tmdb/{id}/seasons/{n}` (season 0 is specials) |
-| Music details | `/v1/music/musicbrainz/{artist, release-group, release or recording}/{id}` |
+| Movie | `/v1/movies/tmdb/{id}` |
+| Show | `/v1/shows/{tmdb or tvmaze}/{id}` |
+| Season | `/v1/shows/tmdb/{id}/seasons/{n}` (season 0 is specials) |
+| Music | `/v1/music/musicbrainz/{artist, release-group, release or recording}/{id}` |
 
 Unknown or repeated parameters are refused. Ids from one provider are never used for another.
-
-### Answers
 
 A good answer has `schema_version`, `source`, `source_id`, `fetched_at`, `expires_at`, `completeness`, `stale` and `data`. Treat HTML in summaries as plain text.
 
 | Status | Means |
 |---|---|
-| 400 | bad query, don't retry |
-| 401 | bad or revoked token, don't retry |
-| 404 | no such record |
-| 429 | too many calls, wait for `Retry-After` |
-| 503 | busy, wait and retry once |
+| 400 | Bad query, do not retry |
+| 401 | Bad or revoked token, do not retry |
+| 404 | No such record |
+| 429 | Too many calls, wait for `Retry-After` |
+| 503 | Busy, wait and retry once |
 
-### Running your own
+</details>
 
-Point an install at it with `HOLYARRS_METADATA_URL`. The server code isn't in this repo.
+## Related
 
-## Troubleshooting
-
-- **401 on every call.** The key is wrong or deleted. Make a new one.
-- **403.** The key's scope doesn't cover that route. Check the route's scope on **Settings > API**.
-- **404 on every call.** Check the URL base. It goes before `/api/v1`.
-
-The full list of routes and the permission each needs is in [API routes](api-routes.md).
+- [API routes](api-routes.md)
+- [Old-app API](../reference/old-app-api.md)
+- [Environment variables](../reference/env-vars.md)

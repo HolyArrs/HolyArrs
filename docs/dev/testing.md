@@ -1,64 +1,151 @@
-# Testing
+---
+title: Testing
+description: Run the checks CI runs, then the end-to-end tests for the area you changed.
+level: Setup
+sidebar: { order: 5 }
+---
 
-You want to know your change works before you send it. Run the everyday checks, then the end-to-end tests for the areas you touched.
+Check your change on your machine before you send it.
 
-## The everyday checks
+## Before you start
 
-CI runs the same ones.
+- Finish [Setup](setup.md). The Go tests serve the built web app, so build it first.
+- Install the test browser once:
 
-```sh
-go build ./...
-go vet ./...
-go test ./...
-npm --prefix app/frontend run check
-npm --prefix app/frontend run test
-```
+  ```sh
+  npx --prefix app/frontend playwright install chromium
+  ```
 
-`go test ./...` includes the structure checks that hold the module rules. See [Modules](modules.md#the-checks).
+## Run the everyday checks
 
-## End-to-end tests
+1. Build and vet the Go code:
 
-End-to-end tests use Playwright and live in `app/tests/`. Stand-in servers for Downloaders, Sources and the metadata server live there too, so no test reaches a real outside service.
+   ```sh
+   go build ./...
+   go vet ./...
+   ```
 
-```sh
-npx --prefix app/frontend playwright install chromium
-npm --prefix app/frontend run e2e
-```
+2. Run the Go tests:
 
-The run starts its own HolyArrs on a fresh config folder. The tests are split into projects. The `setup` project makes the owner first, then the others run. To run one area:
+   ```sh
+   go test ./...
+   ```
+
+3. Check and test the web app:
+
+   ```sh
+   npm --prefix app/frontend run check
+   npm --prefix app/frontend run lint
+   npm --prefix app/frontend run test
+   ```
+
+4. Run the layer and file-layout rules:
+
+   ```sh
+   go test -tags structure ./app/backend/tools/structurecheck
+   ```
+
+You should see no failure. CI runs the same commands, the Go ones on `amd64` and `arm64`, plus one run with the race detector (`go test -race ./...`).
+
+:::note
+The full `go test ./...` runs long. Use `make test`, which sets a 25 min timeout. Go's default is 10 min.
+:::
+
+## Run the end-to-end tests
+
+End-to-end tests drive a real browser against a real program. Run the project for the area you touched:
 
 ```sh
 npm --prefix app/frontend run e2e -- --project=movies
 ```
 
-A full run takes a while. Run the projects you touched while you work, and the full run before a release.
+The run starts its own HolyArrs on a fresh config folder. The `setup` project makes the owner first, and most other projects wait for it. Run the full suite with no `--project` before a release.
 
-## Long tests
+## Choices
 
-Some program-level tests take a long time: crash recovery in every loop, restart timing, memory under load. They carry the `overnight` build tag and skip in a normal `go test ./...`:
+### Which projects to run
+
+| You changed | Run |
+|---|---|
+| Movies | `movies` |
+| Shows | `shows` |
+| Requests | `requests`, `lists`, `reports` |
+| Downloads | `sources`, `downloaders`, `downloads` |
+| Sign-in and users | `accounts`, `kid` |
+| Health and schedules | `schedules`, `controls` |
+| Page layout | `desktop`, `phone`, `a11y` |
+
+Projects are named in `app/frontend/playwright.config.ts`. A project that depends on another runs it first.
+
+### Where a new test goes
+
+| Kind | Where |
+|---|---|
+| Go | Beside the file it tests |
+| Web unit | Beside its file, as `name.test.ts` |
+| End-to-end | `app/tests/<module>/` |
+
+Never call a real outside service. Add a stand-in under `app/tests/fakes`. A test that passes only on your machine is broken.
+
+## If it does not work
+
+**Symptom.** A structure check fails.
+**Cause.** The message names the file and the rule you broke.
+**Fix.** Move the code, or pass plain data in from the higher module. See [Modules](modules.md#the-checks).
+
+**Symptom.** End-to-end tests cannot start.
+**Cause.** The test browser is not installed.
+**Fix.** Run the `playwright install` line above.
+
+**Symptom.** The Go tests fail on missing pages.
+**Cause.** The web app is not built.
+**Fix.** Run `npm --prefix app/frontend run build`.
+
+## For experts
+
+<details class="ha-more"><summary>Build tags</summary>
+
+A test with a tag skips in a plain `go test ./...`. Pass `-tags <tag>` to run it.
+
+| Tag | Holds |
+|---|---|
+| `structure` | The layer, file-layout, SQL-placement and comment rules in `tools/structurecheck` |
+| `measure` | Download timing checks |
+| `lab` | Tests against real apps in a test lab. They read `HOLYARRS_LAB_*` and skip when those are unset |
+| `labms`, `livesubs` | Lab runs for media servers and live subtitle sites |
+
+</details>
+
+<details class="ha-more"><summary>Long and fault runs</summary>
+
+CI runs these on top of the plain tests. Run them before a release.
 
 ```sh
-go test -tags overnight ./app/backend/cmd/holyarrs
+go test -count=1 -run '^TestFault|^TestCrashInEveryLoopIsContained$' ./app/backend/cmd/holyarrs
+HOLYARRS_RESTART_TIMING=1 go test -count=1 -run '^TestCrashRestartTime$' ./app/backend/cmd/holyarrs
+HOLYARRS_MEMORY=1 go test -count=1 -timeout 30m -run '^TestMemoryPartsRuns$' ./app/backend/cmd/holyarrs
+go test -count=1 -run '^TestDownloaderConformance$' ./app/backend/internal/downloads
 ```
 
-Run them before a release, when the machine is free for an hour or more.
+| Variable | Does |
+|---|---|
+| `HOLYARRS_FAULT_OUT` | File the fault runs write their table to |
+| `HOLYARRS_RESTART_TIMING`, `HOLYARRS_RESTART_TIMING_OUT` | Turn on the crash-to-sign-in timing and name its output file |
+| `HOLYARRS_MEMORY`, `HOLYARRS_MEMORY_OUT` | Turn on the memory runs and name their output file |
+| `HOLYARRS_CRASH_RUNS`, `HOLYARRS_CRASH_SEED` | Rounds and seed for the crash loop in `internal/store`, which skips under `-short` |
 
-## Test variables
+</details>
 
-Most tests need nothing set. Some variables point the program at stand-in servers, for example `HOLYARRS_TMDB_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_PLEX_URL` and `HOLYARRS_QBITTORRENT_URL`. The tests set them. You never need them in a real install.
+<details class="ha-more"><summary>Stand-in servers and variables</summary>
 
-Tests against real apps in a test lab read `HOLYARRS_LAB_*` variables and skip when they aren't set.
+End-to-end tests start stand-in servers for Downloaders, Sources and the metadata server, so no test reaches a real service. The tests set variables such as `HOLYARRS_TMDB_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_PLEX_URL` and `HOLYARRS_QBITTORRENT_URL` to point the program at them. A real install never needs them.
 
-## Writing tests
+The API contract has its own tests. `TestOpenAPIGenerated` fails when `openapi.json` drifts from the routes, and the route-table snapshot in `tools/structurecheck/testdata` fails on any added, removed or moved route.
 
-- Put a Go test beside the file it tests.
-- Put a web unit test beside its file as `name.test.ts`.
-- Put an end-to-end test in `app/tests/<module>/`.
-- Never call a real outside service. Add a stand-in instead.
-- A test that passes only on your machine is a broken test.
+</details>
 
-## When something fails
+## Related
 
-- **Structure check fails.** Read the message. It names the file and the rule. Move the code, or pass plain data in from the higher module.
-- **The web app looks old.** Build the web app again before you build the program.
-- **End-to-end tests can't start.** Install the browser with the `playwright install` line above.
+- [Contributing](contributing.md)
+- [Modules](modules.md)
+- [Releasing](releasing.md)

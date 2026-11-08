@@ -1,25 +1,35 @@
 ---
 title: Develop HolyArrs
-description: Build HolyArrs from source, learn how it is put together, use its API, test it and cut a release.
+description: Build HolyArrs from source, find where code lives, run the checks, call the API and cut a release.
 level: Expert
-sidebar: { order: 0 }
+sidebar: { order: 0, label: "Develop" }
 ---
 
-For people who change HolyArrs or build on top of it.
+Build HolyArrs from source, change it in the right place and check the change before you send it.
 
-## Start here
+## Make your first change
 
-- [Contributing](contributing.md): build, run the checks, open a pull request.
-- [Developer setup](setup.md): tools you need and how to run HolyArrs locally.
+Do these in order.
 
-## How it is built
+1. [Setup](setup.md): install the tools, build the program and open it on port `6262`.
+2. [Contributing](contributing.md): make a change and open a pull request.
+3. [Testing](testing.md): run the checks that CI runs.
 
-- [Architecture](architecture.md): how one request moves through the program.
-- [Modules](modules.md): what each module owns.
-- [Testing](testing.md): the checks and how to run them.
-- [Releasing](releasing.md): how a build becomes a release.
+## Learn the code
 
-## The API
+- [Architecture](architecture.md): the folder map, the data files and the rules that keep modules apart.
+- [Modules](modules.md): what each of the 20 modules owns, the layer order and the structure checks.
 
-- [The HolyArrs API](api.md): how to call it.
-- [API routes](api-routes.md): every route.
+## Build on HolyArrs
+
+- [The HolyArrs API](api.md): make a key and call the JSON API, or run your own metadata server.
+- [API routes](api-routes.md): every route with the permission it needs.
+
+## Maintainers
+
+- [Releasing](releasing.md): release notes, the update list, the image and taking a release back.
+
+## Related
+
+- [Reference](../reference/index.md)
+- [Get support](../help/get-support.md)
