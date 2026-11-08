@@ -422,7 +422,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	}, Fail: libraryError, DownloadPaths: a.downloadPaths}).Routes(m)
 	m.HandleFunc("POST /api/v1/titles/{id}/refresh", a.refreshTitle)
 	m.HandleFunc("POST /api/v1/titles/refresh", a.refreshTitles)
-	m.HandleFunc("GET /api/v1/calendar", a.calendar)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
 	m.HandleFunc("GET /api/v1/artwork/tmdb/{size}/{file}", a.tmdbArtwork)
 	m.HandleFunc("GET /api/v1/artwork/img/{kind}/{id}/{file}", a.serverArtwork)

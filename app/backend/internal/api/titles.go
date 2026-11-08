@@ -1,18 +1,14 @@
 package api
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -359,298 +355,23 @@ func (a *API) refreshTitles(w http.ResponseWriter, r *http.Request) {
 
 // calendar lists cinema, digital and physical dates of Library movies in
 // [from, to); dates are YYYY-MM-DD, default today to today + 30 days.
-func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	from := time.Now().UTC().Truncate(24 * time.Hour)
-	to := from.AddDate(0, 0, 30)
-	var err error
-	if v := q.Get("from"); v != "" {
-		if from, err = time.Parse("2006-01-02", v); err != nil {
-			webserver.Fail(w, http.StatusBadRequest, "from must be YYYY-MM-DD")
-			return
-		}
-		if q.Get("to") == "" {
-			to = from.AddDate(0, 0, 30)
-		}
-	}
-	if v := q.Get("to"); v != "" {
-		if to, err = time.Parse("2006-01-02", v); err != nil {
-			webserver.Fail(w, http.StatusBadRequest, "to must be YYYY-MM-DD")
-			return
-		}
-	}
-	if !to.After(from) || to.Sub(from) > 366*24*time.Hour {
-		webserver.Fail(w, http.StatusBadRequest, "to must be after from, at most a year later")
-		return
-	}
-	titles, ok := discover.CalendarTitles(q.Get("titles"))
-	if !ok {
-		webserver.Fail(w, http.StatusBadRequest, "titles must be all, movies, shows or music")
-		return
-	}
-	es, err := library.Calendar(r.Context(), a.s.Store.Read(), from, to, titles)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	if max := a.kidMax(r); max != "" {
-		ids := make([]int64, len(es))
-		for i, e := range es {
-			ids[i] = e.TitleID
-		}
-		ok, err := a.allowedTitleIDs(r.Context(), max, ids)
-		if err != nil {
-			webserver.Internal(w, "api", err)
-			return
-		}
-		kept := []library.CalendarEntry{}
-		for _, e := range es {
-			if ok[e.TitleID] {
-				kept = append(kept, e)
-			}
-		}
-		es = kept
-	}
-	for i := range es {
-		if es[i].Poster != "" {
-			es[i].Poster = artworkLinks([]string{es[i].Poster})[0]
-		}
-		// An album carries its artist's genres when already known (read at
-		// start for every Library artist); the calendar never looks them up.
-		if es[i].Kind == "album" && es[i].ArtistMBID != "" {
-			es[i].Genres = a.knownGenres(es[i].ArtistMBID)
-		}
-	}
-	out, mine, people, err := a.calendarFollows(r.Context(), es)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	a.calendarArt(r, out)
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": out,
-		"my_follows": mine, "people": people})
-}
-
-// knownGenres is an artist's genres from the music genre cache, without
-// queueing a lookup (nil when not known).
-func (a *API) knownGenres(mbid string) []string {
-	return a.mh().KnownGenres(mbid)
-}
-
-// calendarRow is a calendar date with who follows its title: following
-// says the viewer does; followers are everyone who follows it.
-type calendarRow struct {
-	library.CalendarEntry
-	Following bool               `json:"following,omitempty"`
-	Followers []calendarFollower `json:"followers,omitempty"`
-	// Banner is the List view's wide picture (textless when a logo goes
-	// over it); Logo is the title or artist logo. Both may be empty.
-	Banner string `json:"banner,omitempty"`
-	Logo   string `json:"logo,omitempty"`
-}
-
-// calendarArt adds the List view's banner pictures. Movies and shows get
-// the stored card pick (a textless backdrop and the title logo, from
-// card_art); albums get the artist's wide picture and logo through our
-// metadata server's picture route. Only stored data is read: no outside
-// call on the request, and a title without a pick keeps its backdrop.
-func (a *API) calendarArt(r *http.Request, rows []calendarRow) {
-	lang := metadata.TrailerLanguage(r)
-	ids := map[int64]string{}
-	var args []any
-	for _, e := range rows {
-		if e.Kind != "album" {
-			if _, ok := ids[e.TitleID]; !ok {
-				ids[e.TitleID] = ""
-				args = append(args, e.TitleID)
-			}
-		}
-	}
-	db := a.s.Store.Read()
-	for len(args) > 0 {
-		chunk := args[:min(len(args), 500)]
-		args = args[len(chunk):]
-		q, err := db.QueryContext(r.Context(), `SELECT id, kind, COALESCE(CAST(json_extract(source_ids, '$.tmdb') AS TEXT), '') FROM titles
-			WHERE id IN (?`+strings.Repeat(", ?", len(chunk)-1)+`)`, chunk...)
-		if err != nil {
-			return
-		}
-		for q.Next() {
-			var id int64
-			var kind string
-			var tmdb string
-			if q.Scan(&id, &kind, &tmdb) == nil {
-				ids[id] = kind + ":" + tmdb
-			}
-		}
-		_ = q.Close()
-	}
-	var keys [][2]string
-	for _, k := range ids {
-		if kind, id, ok := strings.Cut(k, ":"); ok && id != "" && (kind == "movie" || kind == "show") {
-			keys = append(keys, [2]string{kind, id})
-		}
-	}
-	got := a.readCardArt(r.Context(), keys, lang)
-	for i := range rows {
-		e := &rows[i]
-		if e.Kind == "album" {
-			if e.ArtistMBID != "" {
-				e.Banner = music.ArtPrefix + "wide/" + e.ArtistMBID
-				e.Logo = music.ArtPrefix + "logo/" + e.ArtistMBID
-			}
-			continue
-		}
-		kind, id, _ := strings.Cut(ids[e.TitleID], ":")
-		row, ok := got[cardKey(kind, id, lang)]
-		if !ok {
-			row, ok = got[cardKey(kind, id, "en")]
-		}
-		if !ok {
-			continue
-		}
-		e.Logo = row.Logo
-		// A backdrop with the title printed on it is never used under a logo.
-		if row.Art != "" && !row.HasTitle {
-			e.Banner = row.Art
-		}
-	}
-}
-
-type calendarFollower struct {
-	ID     int64   `json:"id"`
-	Name   string  `json:"name"`
-	Avatar *string `json:"avatar,omitempty"`
-	Me     bool    `json:"me,omitempty"`
-}
-
-// calendarFollows adds who follows each date's title, and says how many
-// titles the viewer follows in all and how many people use this server.
-func (a *API) calendarFollows(ctx context.Context, es []library.CalendarEntry) ([]calendarRow, int, int, error) {
-	db := a.s.Store.Read()
-	me := viewer(ctx)
-	var mine, people int
-	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM follows f JOIN titles t ON t.id = f.title_id
-		WHERE f.user_id = ? AND t.state != 'removed'`, me).Scan(&mine); err != nil {
-		return nil, 0, 0, err
-	}
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&people); err != nil {
-		return nil, 0, 0, err
-	}
-	type who struct {
-		seen []calendarFollower
-		me   bool
-	}
-	by := map[int64]*who{}
-	var ids []any
-	for _, e := range es {
-		if by[e.TitleID] == nil {
-			by[e.TitleID] = &who{}
-			ids = append(ids, e.TitleID)
-		}
-	}
-	for len(ids) > 0 {
-		chunk := ids[:min(len(ids), 500)]
-		ids = ids[len(chunk):]
-		rows, err := db.QueryContext(ctx, `SELECT f.title_id, u.id, u.name, (SELECT etag FROM user_avatars WHERE user_id = u.id)
-			FROM follows f JOIN users u ON u.id = f.user_id
-			WHERE u.state != 'disabled' AND f.title_id IN (?`+strings.Repeat(", ?", len(chunk)-1)+`) ORDER BY f.created_at, u.id`, chunk...)
-		if err != nil {
-			return nil, 0, 0, err
-		}
-		for rows.Next() {
-			var tid, uid int64
-			var name string
-			var etag sql.NullString
-			if err := rows.Scan(&tid, &uid, &name, &etag); err != nil {
-				rows.Close()
-				return nil, 0, 0, err
-			}
-			w := by[tid]
-			if uid == me {
-				w.me = true
-			}
-			f := calendarFollower{ID: uid, Name: strings.TrimSpace(name), Me: uid == me}
-			if etag.Valid && etag.String != "" {
-				u := "/api/v1/users/" + strconv.FormatInt(uid, 10) + "/avatar?v=" + etag.String
-				f.Avatar = &u
-			}
-			w.seen = append(w.seen, f)
-		}
-		if err := rows.Close(); err != nil {
-			return nil, 0, 0, err
-		}
-	}
-	out := make([]calendarRow, len(es))
-	for i, e := range es {
-		w := by[e.TitleID]
-		out[i] = calendarRow{CalendarEntry: e, Following: w.me, Followers: w.seen}
-	}
-	return out, mine, people, nil
-}
-
+// artwork serves a stored Library picture (discover.LibraryArtwork).
 func (a *API) artwork(w http.ResponseWriter, r *http.Request) {
-	if a.s.Library.Artwork == nil {
-		http.NotFound(w, r)
-		return
-	}
-	name := r.PathValue("name")
-	p, ok := a.s.Library.Artwork.Path(name)
-	if !ok {
-		http.NotFound(w, r)
-		return
-	}
-	// ?size=250: the small copy for thumbnails (made here once, like album covers).
-	if r.URL.Query().Get("size") == "250" {
-		if n, sp, err := a.s.Library.Artwork.Smaller(name, 250); err == nil && n != name {
-			// A day, not a year: the address stays when the stored picture is replaced.
-			serveArtworkCached(w, r, n, sp, "private, max-age=86400")
-			return
-		}
-	}
-	serveArtwork(w, r, name, p)
+	discover.LibraryArtwork(w, r, a.s.Library.Artwork)
 }
 
-// tmdbArtwork serves a TMDB picture (search results, Explore rows, title
-// pages) through the artwork cache: fetched once at TMDB's own size (with
-// no Referer, through the metadata server's pass-through when TMDB cannot
-// be reached), kept on disk at most six months, then sent from here, so
-// the browser never calls TMDB itself.
+// tmdbArtwork serves a TMDB picture through the artwork cache (discover.TMDBArtwork).
 func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
-	if a.s.Library == nil || a.s.Library.Artwork == nil {
-		http.NotFound(w, r)
-		return
+	var c *library.ArtworkCache
+	if a.s.Library != nil {
+		c = a.s.Library.Artwork
 	}
-	src, ok := library.TMDBArtworkURL(metadata.ImageBase, r.PathValue("size"), r.PathValue("file"))
-	if !ok {
-		http.NotFound(w, r)
-		return
-	}
-	a.serveRemoteArtwork(w, r, src, serveArtwork)
+	discover.TMDBArtwork(w, r, c, &a.artMisses)
 }
 
-// serveRemoteArtwork sends the picture at src from the artwork cache with
-// send, fetching it once on a miss (within the person's miss budget).
+// serveRemoteArtwork is discover.ServeRemoteArtwork on the Library's cache.
 func (a *API) serveRemoteArtwork(w http.ResponseWriter, r *http.Request, src string, send func(http.ResponseWriter, *http.Request, string, string)) {
-	c := a.s.Library.Artwork
-	name := library.ArtworkName(src)
-	p, ok := c.Path(name)
-	if ok {
-		c.Recheck(src, nil) // a copy past TMDB's six months is fetched again
-	} else {
-		if !a.artMisses.MissOK(w, r) {
-			return
-		}
-		if _, err := c.Fetch(r.Context(), src); err != nil {
-			http.Error(w, "picture unavailable", http.StatusBadGateway)
-			return
-		}
-		if p, ok = c.Path(name); !ok {
-			http.NotFound(w, r)
-			return
-		}
-	}
-	send(w, r, name, p)
+	discover.ServeRemoteArtwork(w, r, a.s.Library.Artwork, &a.artMisses, src, send)
 }
 
 func (a *API) serverArtLink(u string) string { return discover.ServerArtLink(a.s.ImageBase, u) }

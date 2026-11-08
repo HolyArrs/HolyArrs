@@ -57,6 +57,12 @@ type Deps struct {
 	// search hits to a Kid's limit (plain-words Search).
 	TitleView func(ctx context.Context, t mediafiles.Title) (titleview.TitleView, error)
 	KidMovies func(ctx context.Context, max string, ms []metadata.Movie) []metadata.Movie
+	// AllowedTitleIDs are the Library titles within a Kid's limit;
+	// KnownGenres an artist's cached genres; ReadCardArt the stored card
+	// picks (the Calendar).
+	AllowedTitleIDs func(ctx context.Context, max string, ids []int64) (map[int64]bool, error)
+	KnownGenres     func(mbid string) []string
+	ReadCardArt     func(ctx context.Context, keys [][2]string, lang string) map[string]CardArtRow
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
@@ -103,6 +109,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/explore/service-top", h.exploreServiceTop)
 	m.HandleFunc("GET /api/v1/home", h.home)
 	m.HandleFunc("GET /api/v1/search", h.plainSearch)
+	m.HandleFunc("GET /api/v1/calendar", h.calendar)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only
