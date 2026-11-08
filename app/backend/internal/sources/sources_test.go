@@ -1,7 +1,6 @@
-package api
+package sources
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,31 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
-
-const sourceCaps = `<?xml version="1.0"?><caps><limits max="50"/><searching><search available="yes" supportedParams="q"/>
-<movie-search available="yes" supportedParams="q,imdbid"/></searching><categories><category id="2000"/></categories></caps>`
-
-func sourceServer(t *testing.T) (*httptest.Server, *secrets.Vault) {
-	t.Helper()
-	dir := t.TempDir()
-	s, err := database.Open(dir, database.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = s.Close() })
-	v, err := secrets.Open(context.Background(), s, make([]byte, secrets.KeySize))
-	if err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v}).Handler())
-	t.Cleanup(srv.Close)
-	return srv, v
-}
 
 // route: GET /api/v1/sources
 // route: POST /api/v1/sources
@@ -56,7 +32,7 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 	}))
 	t.Cleanup(idx.Close)
 
-	var x sources.SourceView
+	var x SourceView
 	raw, _ := json.Marshal(map[string]any{"name": "Lab", "format": "torznab", "url": idx.URL + "/api", "api_key": key, "allow_local_network": true, "priority": 10})
 	body := string(raw)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", body, 201), &x)
@@ -111,7 +87,7 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 	}
 
 	var st struct {
-		Source sources.SourceView `json:"source"`
+		Source SourceView `json:"source"`
 		Days   []struct {
 			Calls, Failures int
 		} `json:"days"`
