@@ -12,7 +12,7 @@ type Snap = {
 };
 const snaps = lab as unknown as Snap[];
 
-// Roadmap #139: the responses TestLabAskLiveProgress (internal/api/lab139_test.go,
+// Roadmap #139: the responses TestLabAskLiveProgress (cmd/holyarrs/lab139_test.go,
 // build tag lab) kept while an approved ask for Dune: Part Two ran through the lab:
 // GET /api/v1/searches and GET /api/v1/downloads/view, read as the Requests page reads them.
 describe("Requests card during a real lab download (#139)", () => {

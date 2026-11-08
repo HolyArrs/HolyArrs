@@ -1,11 +1,12 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -27,7 +28,7 @@ import (
 // it from qbt-seed, the importer unpacks it with the built-in decoder next to
 // the download and puts the video in the Library.
 //
-//	go test -tags lab -run TestLabRarMovieZeroToDone ./internal/api/
+//	go test -tags lab -run TestLabRarMovieZeroToDone ./cmd/holyarrs/
 func TestLabRarMovieZeroToDone(t *testing.T) {
 	qb := os.Getenv("HOLYARRS_LAB_QBIT")
 	if qb == "" {
@@ -101,7 +102,7 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 	labNoSizeFloors(t, s)
 	im := &importer.Importer{Store: s}
 	m := &downloads.Manager{Store: s, SavePath: "/data/downloads/incomplete/" + cat}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
+	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	view := func() downloads.DownloadRow {
 		var out struct {

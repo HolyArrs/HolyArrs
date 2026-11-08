@@ -1,18 +1,20 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -37,7 +39,7 @@ import (
 // labbeta43_test.go), from a throwaway container in the lab network with
 // the lab downloads folder mounted (labclients.py run beta):
 //
-//	HOLYARRS_LAB_SELF=<container> go test -tags lab -run 'TestLabBeta' ./internal/api/
+//	HOLYARRS_LAB_SELF=<container> go test -tags lab -run 'TestLabBeta' ./cmd/holyarrs/
 //
 // Every test runs the app as cmd/holyarrs wires it (search, judge, grab,
 // Downloader sync, import) against the lab fake indexer, our own Dune test
@@ -320,7 +322,7 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	}
 	t.Cleanup(func() { cancel(); q.Stop() })
 	t.Cleanup(func() { _ = os.RemoveAll(labHere(filepath.Join("/data/downloads/incomplete", o.cat))) })
-	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: md, Version: "lab", Downloads: x.m, Queue: q, Library: x.lib, Secrets: vault, Search: sr}).Handler())
+	x.srv = httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: md, Version: "lab", Downloads: x.m, Queue: q, Library: x.lib, Secrets: vault, Search: sr}), config{}))
 	t.Cleanup(x.srv.Close)
 	return x
 }
@@ -373,7 +375,7 @@ func (x *labMovie) handSearch(t *testing.T, choose bool) {
 	var out struct {
 		JobIDs []int64 `json:"job_ids"`
 	}
-	_ = json.Unmarshal(do(t, "POST", x.srv.URL+"/api/v1/titles/"+itoa(x.title)+"/search", fmt.Sprintf(`{"slot_id":%d,"choose":%v}`, x.slot, choose), 202), &out)
+	_ = json.Unmarshal(do(t, "POST", x.srv.URL+"/api/v1/titles/"+labItoa(x.title)+"/search", fmt.Sprintf(`{"slot_id":%d,"choose":%v}`, x.slot, choose), 202), &out)
 	if len(out.JobIDs) == 0 {
 		t.Fatal("no search job")
 	}
@@ -417,7 +419,7 @@ func (x *labMovie) releases(t *testing.T) map[string]labRel {
 	var out struct {
 		Releases []labRel `json:"releases"`
 	}
-	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/titles/"+itoa(x.title)+"/releases?slot_id="+itoa(x.slot)+"&limit=100", "", 200), &out)
+	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/titles/"+labItoa(x.title)+"/releases?slot_id="+labItoa(x.slot)+"&limit=100", "", 200), &out)
 	m := map[string]labRel{}
 	for _, r := range out.Releases {
 		m[r.Name] = r
@@ -571,8 +573,8 @@ func TestLabBeta41PickReleaseYourself(t *testing.T) {
 	if exe.Outcome != "refused" || !exe.NeedsForce {
 		t.Fatalf("the .exe: %+v", exe)
 	}
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(exe.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(dune.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 200)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(exe.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(dune.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 200)
 	f, row := x.untilPlaced(t)
 	if got := x.labDownloads(); len(got) != 1 || got[labDune1080] != 1 {
 		t.Fatalf("sent %v", got)
@@ -606,8 +608,8 @@ func TestLabBeta41ForcedProgramFileChain(t *testing.T) {
 	if r.Outcome != "refused" || !r.NeedsForce || r.has("hard.safety:executable")+r.has("hard.never") == "" {
 		t.Fatalf("the program file: %+v", r)
 	}
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d,"force":true}`, x.slot), 200)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d,"force":true}`, x.slot), 200)
 	f, _ := x.untilPlaced(t)
 	var failed, why string
 	_ = x.s.Read().QueryRow("SELECT d.state, COALESCE(d.state_reason, '') FROM downloads d JOIN releases r ON r.id = d.release_id WHERE r.name = ?", exeName).Scan(&failed, &why)
@@ -634,7 +636,7 @@ func TestLabBeta41ForcedProgramFileChain(t *testing.T) {
 	if r := x.releases(t)[exeName]; r.State != "refused" || !r.NeedsForce {
 		t.Fatalf("after clearing the list: %+v", r)
 	}
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
 	t.Logf("#41 chain: forced %s failed as dangerous (%s), turned down, our Dune sent next and imported as %s; after clearing the list it still needs force", exeName, why, f.RelativePath)
 }
 
@@ -917,3 +919,12 @@ func labQbitState(t *testing.T, hash string) string {
 	}
 	return fmt.Sprintf("%s %.0f%%", out[0].State, out[0].Progress*100)
 }
+
+func envOr(k, def string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return def
+}
+
+func labItoa(n int64) string { return strconv.FormatInt(n, 10) }
