@@ -184,7 +184,7 @@ func (h *AppHandlers) downloadLogs(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-// AboutView is what the Status page's About section shows, like the About
+// AboutView is what the Health page's About section shows, like the About
 // block of the apps HolyArrs replaces: versions, database, folders, uptime.
 type AboutView struct {
 	Version   string `json:"version"`

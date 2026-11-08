@@ -191,7 +191,7 @@ func (h *ScheduleHandlers) listSchedules(w http.ResponseWriter, r *http.Request)
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"schedules": out, "loops": loops, "safe_mode": h.SafeMode})
 }
 
-// ActiveJob is one Job running or waiting right now, for the Status page's
+// ActiveJob is one Job running or waiting right now, for the Health page's
 // live board.
 type ActiveJob struct {
 	ID    int64  `json:"id"`
