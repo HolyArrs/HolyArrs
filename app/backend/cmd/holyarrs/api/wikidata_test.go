@@ -97,7 +97,7 @@ func TestAwardWinnersCollection(t *testing.T) {
 	}
 	// Without the server's list the keyword lists stay.
 	a.s.AwardWinners = nil
-	if _, ok, _ := a.awardItems(context.Background(), src, c, "all", false); ok {
+	if _, ok, _ := discover.AwardItems(context.Background(), src.List, a.titles.AwardWinners, c, "all", false); ok {
 		t.Fatal("award list used without the server")
 	}
 }

@@ -23,12 +23,12 @@ func (h TrailerHooks) PutServiceTop(region string, v metadata.ServiceTop) {
 	h.a.serviceTop.Put(region, v)
 }
 func (h TrailerHooks) PoolPage(p engine.Pool, member int64, sw, region string, m engine.Moment) engine.Page {
-	return h.a.poolPage(p, member, sw, region, m)
+	return h.a.disc.PoolPage(p, member, sw, region, m)
 }
 func (h TrailerHooks) PassLanguages(ctx context.Context) []string {
 	return h.a.trailerPassLanguages(ctx)
 }
-func (h TrailerHooks) NoteCardLang(lang string)               { h.a.noteCardLang(lang) }
+func (h TrailerHooks) NoteCardLang(lang string)               { h.a.explore.Cards.NoteLang(lang) }
 func (h TrailerHooks) Person(r *http.Request) requests.Person { return h.a.person(r) }
 func (h TrailerHooks) FillTrailerKeys(r *http.Request, items []discover.ItemView) {
 	h.a.fillTrailerKeys(r, items)

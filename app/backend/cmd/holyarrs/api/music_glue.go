@@ -27,7 +27,7 @@ func (a *API) mh() *music.Handlers {
 				return requests.OpenArtistAsks(ctx, a.s.Store.Read(), mbid, me)
 			},
 
-			ArtistVideosOn: a.artistVideosOn, MusicFresh: a.musicFresh, ExploreCaching: a.exploreCaching,
+			ArtistVideosOn: a.artistVideosOn, MusicFresh: a.musicFresh, ExploreCaching: func(w http.ResponseWriter, r *http.Request, c string) { a.disc.Caching(w, r, c) },
 			TitleID: a.titleID, LibraryError: libraryError,
 			TitleView: func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) },
 			PublishTitleView: func(v any) {

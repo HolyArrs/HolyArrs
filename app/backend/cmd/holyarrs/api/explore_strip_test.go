@@ -42,7 +42,7 @@ func TestExploreStripRoute(t *testing.T) {
 		t.Fatalf("tiles %v", first)
 	}
 	// The built sections: every category with enough titles that have art.
-	share := a.browseShare("shows", false, "")
+	share := a.disc.BrowseShare("shows", false, "")
 	n := 0
 	for _, s := range engine.BrowseSections {
 		var res []engine.CategoryResult

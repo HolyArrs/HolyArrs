@@ -204,7 +204,7 @@ type API struct {
 	// ai serves the AI connections (internal/ai).
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
-	discover discoverState
+	discover discover.Cache
 	// disc serves the Explore rows, details and reviews routes (internal/discover).
 	disc *discover.Handlers
 	// status keeps the Settings status answer for 30 seconds.
@@ -291,7 +291,7 @@ func New(s Server) *API {
 	a.mf.TitleBatch = titleview.WithLookupMemo
 	a.mf.AlbumNames = a.albumNames
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
-	a.mf.CardArt = a.libraryCardArt
+	a.mf.CardArt = a.explore.Cards.Library
 	a.watchOn.Metadata = s.Metadata
 	a.signin.Store, a.signin.Metadata, a.signin.ServeArtwork = s.Store, s.Metadata, serveArtwork
 	a.signin.Artwork = func() *library.ArtworkCache {
@@ -304,15 +304,14 @@ func New(s Server) *API {
 	if s.Auth != nil {
 		a.signin.ClientKey = s.Auth.ClientKey
 	}
-	a.wireCardArt()
 	a.wireExplore()
 	a.disc = a.newDiscover()
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
 	a.shows = shows.NewHandlers(shows.Deps{Store: s.Store, Library: s.Library, Metadata: s.Metadata, AnimeMap: s.AnimeMap,
-		KidMax: a.kidMax, KidLimited: a.kidLimited, KidShows: a.kidShows, KindsOn: a.kindsOn, LibraryRating: a.libraryRating,
-		Caching: a.exploreCaching, CachedDetails: a.loadedDetails, Details: a.cachedDetails,
+		KidMax: a.kidMax, KidLimited: a.disc.KidLimited, KidShows: a.kidShows, KindsOn: a.disc.KindsOn, LibraryRating: a.libraryRating,
+		Caching: a.disc.Caching, CachedDetails: a.disc.LoadedDetails, Details: a.disc.CachedDetails,
 		OpenAsk: func(r *http.Request, ids map[string]string) (any, error) {
 			b, err := a.openShowAsk(r.Context(), ids, a.person(r).UserID)
 			if b == nil || err != nil {
@@ -458,7 +457,9 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.signin.Routes(m)
 	a.disc.StripRoutes(m)
 	if startup.FeatureOn(features.RowTitleStats) {
-		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
+		m.HandleFunc("GET /api/v1/explore/title-stats", func(w http.ResponseWriter, r *http.Request) {
+			discover.ExploreTitleStats(w, r, a.s.Store, a.explore.Now())
+		})
 	}
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
@@ -1000,7 +1001,7 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "send ?q=<name>, and &year=<year> if you know it")
 		return
 	}
-	if a.kidLimited(w, r) {
+	if a.disc.KidLimited(w, r) {
 		return
 	}
 	year, _ := strconv.Atoi(r.URL.Query().Get("year"))
