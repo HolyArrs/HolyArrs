@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // showOrganiseSetup is a server with running Jobs, the fake show sources
@@ -214,9 +215,9 @@ func TestEpisodeHistoryAPI(t *testing.T) {
 	add("season_changed", nil, map[string]any{"item_id": item["S01E02"]})
 	add("episodes_removed", nil, map[string]any{"item_ids": []int64{item["S02E01"]}})
 	var page struct {
-		Events  []EventView `json:"events"`
-		Total   int         `json:"total"`
-		Episode string      `json:"episode"`
+		Events  []shows.EventView `json:"events"`
+		Total   int               `json:"total"`
+		Episode string            `json:"episode"`
 	}
 	_ = json.Unmarshal(do(t, "GET", url+"/api/v1/events?episode="+itoa(item["S01E02"]), "", 200), &page)
 	kinds := map[string]string{}

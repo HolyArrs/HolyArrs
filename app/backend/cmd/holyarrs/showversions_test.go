@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // 4.8.11: a show is added with a 4K Version, gets one Slot per episode per
@@ -63,7 +64,7 @@ func TestShowVersionsAPI(t *testing.T) {
 	_ = s.Read().QueryRow("SELECT id FROM slots WHERE version_id = ? LIMIT 1", tv.Versions[1].ID).Scan(&slot4K)
 	addEvent(t, s, tv.ID, slot4K)
 	var hist struct {
-		Events []EventView `json:"events"`
+		Events []shows.EventView `json:"events"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/events?title=%d&kind=test_version", u, tv.ID), "", 200), &hist)
 	if len(hist.Events) != 1 || hist.Events[0].Version != "4K" {
