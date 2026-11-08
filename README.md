@@ -1,114 +1,80 @@
 # HolyArrs
 
-One self-hosted app that keeps a library of movies, shows and music: it finds
-Releases on your Sources, picks one with your Pick rules, sends it to your
-Downloader, and imports the finished file into your Library folder.
+HolyArrs is one self-hosted app for your movies, shows and music. You or the people you share it with ask for something. HolyArrs finds a release on your Sources, chooses one with your Pick rules, hands it to your Downloader, and files the finished download in your Library.
 
-## Status
+Downloaders: qBittorrent, SABnzbd, Transmission, NZBGet and Deluge. Sources: Jackett or Prowlarr. Media servers: Plex, Jellyfin and Emby get told when something new arrives.
 
-Local v1 pre-release build. The image is not published yet.
+Already using Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr or Overseerr? HolyArrs can read your old setup and bring it over. Your old apps keep running until you switch them off.
 
-## Documentation
+Website: [HolyArrs.com](https://holyarrs.com)
 
-- [Install with Docker](docs/install.md)
-- [Screen-by-screen documentation index](docs/index.md)
+## Install
 
-## Run
+Add this to your Docker Compose file:
 
-    make build
-    ./bin/holyarrs -config ./config -addr :6262
+```yaml
+services:
+  holyarrs:
+    image: ghcr.io/coderluii/holyarrs:beta
+    container_name: holyarrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - ./config:/config
+      - /path/to/media:/data
+    ports:
+      - 6262:6262
+    restart: unless-stopped
+```
 
-Or with Docker:
+1. Set `PUID` and `PGID` to the user that owns your media folders.
+2. Start it with `docker compose up -d`.
+3. Open `http://your-server:6262`.
+4. Make the owner account right away. The first person to open a fresh HolyArrs becomes the owner.
 
-    make docker
-    docker run -p 6262:6262 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v ./config:/config holyarrs:dev
+Keep `/config` on a local disk. HolyArrs refuses to run its database from a network share.
 
-The container starts as root, gives the config folder to `PUID:PGID` (1000:1000
-when unset) and then runs as that user. Media folders mount as optional
-`/movies`, `/tv`, `/music` and `/downloads`; see
-[docs/install.md](docs/install.md) for the full Compose example, `UMASK`,
-`FILE__` variables and hardlinks.
+Full guide: [Install HolyArrs with Docker](docs/user/getting-started/install.md). NAS guides live in [docs/user/platforms](docs/user/platforms/).
 
-The config folder must sit on a local disk. HolyArrs refuses to start its
-database on a network share.
+## Keep your master key safe
 
-## Support Info
-
-- Follow the log: `docker logs -f holyarrs`
-- Check the setup (owners, write access, free space, hardlinks, network, clock):
-  `docker exec holyarrs /holyarrs doctor` (for a container that keeps
-  stopping, see [docs/support.md](docs/support.md#run-the-doctor))
-- Version: `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' holyarrs`
-- Support bundle (owner and admins): `GET /api/v1/support/bundle`, a zip with the
-  masked log, the About details, the doctor report and the health checks.
-
-The image has no shell on purpose. [docs/support.md](docs/support.md) explains
-each step and how to look around with a throwaway helper container.
-
-## First run and sign-in
-
-On first start, open the page and pick the owner name and password (there
-is no default password). Whoever opens a fresh HolyArrs first becomes the
-owner, so finish this right after the first start; `holyarrs reset-owner`
-takes it back if someone else got there first. Every page and API route needs sign-in except
-`/healthz` and `/login`. Scripts use an API key in the `X-Api-Key` header.
-Each key holds scopes (read, write, admin, control, or all), and how long a
-route stays after it is marked to go is in
-[docs/parts-and-safe-mode.md](docs/parts-and-safe-mode.md#api-keys-and-scopes).
-
-Host names other than IP addresses and `localhost` must be listed under
-Allowed host names in Settings or in
-`HOLYARRS_ALLOWED_HOSTS` (comma-separated), for example
-`HOLYARRS_ALLOWED_HOSTS=holyarrs.home.lan`. Behind a reverse proxy, list the
-proxy in `HOLYARRS_TRUSTED_PROXIES` if you turn on "skip sign-in on the local
-network" (off by default).
+HolyArrs encrypts stored passwords, keys and tokens with the file `holyarrs.key` in your config folder. Backups do not include it. Copy it somewhere safe. Without it, a restored backup can't open your stored secrets. See [Backups](docs/user/backups/).
 
 ## Metadata
 
-Metadata needs no keys. Names, dates, pictures, Explore and music details come
-from the HolyArrs metadata server at `https://holyarrs-api.coderluii.dev`;
-each install registers itself on its first lookup. `HOLYARRS_METADATA_URL`
-points HolyArrs at another server. See [docs/metadata-keys.md](docs/metadata-keys.md).
+You don't need any API keys. Titles, artwork and charts come from the HolyArrs metadata server. See [Metadata](docs/user/metadata/).
 
-## Explore and trailers
+## When something goes wrong
 
-Explore builds a page of rows for each person from the Library, their asks and
-the metadata server's charts, and can play a muted trailer over the art. See
-[Explore](docs/explore.md) and [Trailers](docs/trailers.md). The Docker image
-is an empty base with only HolyArrs in it
-([details](docs/install.md#the-image)).
+- Follow the log: `docker logs -f holyarrs`
+- Check your setup: `docker exec holyarrs /holyarrs doctor`
+- Locked out of the owner account: `docker exec -i holyarrs /holyarrs reset-owner`
+- More help: [docs/user/help](docs/user/help/)
 
-## Master key and backups
+Ask questions on [Discord](https://discord.com/invite/mthsvesKpC). Share ideas on [r/HolyArrs](https://www.reddit.com/r/HolyArrs/). Report bugs in Issues.
 
-Passwords, Source keys and tokens are stored encrypted with a master key. On
-first start HolyArrs makes `holyarrs.key` (mode 0600) in the config folder, or
-reads the file named by `HOLYARRS_MASTER_KEY_FILE`.
+## All docs
 
-**Backups do not hold the master key.** Keep a copy of the key file somewhere
-safe. A backup restored without its key cannot open the stored secrets, and
-HolyArrs refuses such a restore.
+Start at [docs/README.md](docs/README.md).
 
-Backups are zips in `backups/` in the config folder: a safe copy of both
-databases and a version and date file, never media. Presets: Balanced (every
-night, keeps 7 nightly and 4 weekly, the default), Light (weekly, 28 days),
-Careful (every night, 30 days). HolyArrs also backs up before every database
-migration and update; backups you make by hand stay until you delete them.
-To restore, upload a zip (`POST /api/v1/backups/restore`); HolyArrs checks it,
-stages it and restarts (exit status 75) to put it in place, keeping the
-replaced databases in `backups/before-restore-<time>/`. Run the container with
-a restart policy such as `--restart unless-stopped`.
+## Contributing
 
-## Develop
-
-    make test
-    make vet
-
-Builds use `CGO_ENABLED=0` and Go 1.27.
+Read [CONTRIBUTING](.github/CONTRIBUTING.md) first, then [Architecture](docs/dev/architecture.md) and [Setup](docs/dev/setup.md). The code lives in `app/backend`, `app/frontend` and `app/tests`. Docs are in `docs`, and Docker and release files are in `deploy`. Open an issue before you start a big change.
 
 ## Security
 
-See [SECURITY.md](SECURITY.md) to report a problem privately.
+Report security problems privately. See [SECURITY](.github/SECURITY.md).
 
 ## Licence
 
-GPL-3.0.
+HolyArrs is free software under the [GNU AGPL-3.0](LICENSE) (AGPL-3.0-only).
+
+Running it at home is free, forever. You can read the code, change it and share it. If you share a changed version, or let other people use it over a network, you have to offer them your changed source under the same licence.
+
+If you want to build HolyArrs into a closed product, or run a changed version without sharing your changes, you can buy a commercial licence instead. See [COMMERCIAL.md](COMMERCIAL.md).
+
+Contributors agree to a short licence agreement on their first pull request. See [CLA.md](.github/CLA.md).
+
+"HolyArrs" and the HolyArrs logo are trademarks of Luis (CoderLuii). The AGPL covers the code, not the name. If you ship a changed version, give it a different name.
