@@ -423,7 +423,7 @@ func (a *API) suggestShows(ctx context.Context, r *http.Request, q string) []Sug
 	if err != nil {
 		return nil
 	}
-	p, err := a.showSource(d.Source)
+	p, err := a.shows.ShowSource(d.Source)
 	if err != nil {
 		return nil
 	}

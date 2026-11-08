@@ -51,14 +51,14 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		album = *in.AlbumID
 	case in.SlotID != nil:
 		var sl mediafiles.Slot
-		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) {
+		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.shows.SlotOfTitle(ctx, sl.ItemID, t.ID) {
 			webserver.Fail(w, http.StatusNotFound, "no such Slot on this artist")
 			return
 		}
 		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != sl.VersionID })
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(part_id, 0) FROM items WHERE id = ?", sl.ItemID).Scan(&album)
 	case in.ItemID != nil:
-		if !a.slotOfTitle(ctx, *in.ItemID, t.ID) {
+		if !a.shows.SlotOfTitle(ctx, *in.ItemID, t.ID) {
 			webserver.Fail(w, http.StatusNotFound, "no such track on this artist")
 			return
 		}
@@ -174,6 +174,6 @@ func (a *API) partLabel(ctx context.Context, partID int64) (titleID int64, title
 		_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT t.id, t.name FROM parts p JOIN titles t ON t.id = p.title_id WHERE p.id = ?", partID).Scan(&titleID, &title)
 		return titleID, title, "", album
 	}
-	titleID, title, season = a.seasonLabel(ctx, partID)
+	titleID, title, season = a.shows.SeasonLabel(ctx, partID)
 	return titleID, title, season, ""
 }

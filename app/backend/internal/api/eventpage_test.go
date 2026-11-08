@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 type countingDB struct {
@@ -49,9 +50,9 @@ func TestEventPageQueriesDoNotGrowWithRows(t *testing.T) {
 	if len(es) < 8 {
 		t.Fatalf("only %d events", len(es))
 	}
-	count := func(list []domain.Event) (int, *eventPage) {
+	count := func(list []domain.Event) (int, *shows.EventPage) {
 		c := &countingDB{db: s.Read()}
-		p, err := loadEventPage(context.Background(), c, list)
+		p, err := shows.LoadEventPage(context.Background(), c, list)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -62,7 +63,7 @@ func TestEventPageQueriesDoNotGrowWithRows(t *testing.T) {
 	if one != 4 || all != 4 {
 		t.Fatalf("queries: %d for 4 rows, %d for %d rows", one, all, len(es))
 	}
-	if p.episode(es[0]) == "" || p.version(es[0]) == "" || p.episode(es[2]) == "" || p.version(es[3]) == "" {
-		t.Fatalf("names: %q %q %q %q", p.episode(es[0]), p.version(es[0]), p.episode(es[2]), p.version(es[3]))
+	if p.Episode(es[0]) == "" || p.Version(es[0]) == "" || p.Episode(es[2]) == "" || p.Version(es[3]) == "" {
+		t.Fatalf("names: %q %q %q %q", p.Episode(es[0]), p.Version(es[0]), p.Episode(es[2]), p.Version(es[3]))
 	}
 }

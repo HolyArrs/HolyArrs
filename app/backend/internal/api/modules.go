@@ -57,7 +57,7 @@ func (c libraryCatalog) TitleFromPath(w http.ResponseWriter, r *http.Request) (m
 }
 
 func (c libraryCatalog) EpisodeLabels(ctx context.Context, slotIDs []int64) string {
-	return c.a.episodeLabels(ctx, slotIDs)
+	return c.a.shows.EpisodeLabels(ctx, slotIDs)
 }
 
 func (c libraryCatalog) AlbumLabels(ctx context.Context, slotIDs []int64) string {
