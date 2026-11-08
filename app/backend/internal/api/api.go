@@ -479,7 +479,7 @@ func (a *API) Routes(rt *webserver.Router) {
 		(&shows.TVDBKeyHandlers{Secrets: a.s.Secrets}).Routes(m)
 	}
 	a.askRoutes(m)
-	a.alertRoutes(m)
+	(&alerts.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Sender: a.s.Alerts, Caller: a.callerID, OwnEmail: a.ownEmail}).Routes(m)
 	if startup.FeatureOn(features.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}
