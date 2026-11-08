@@ -1,9 +1,8 @@
 app/backend/cmd/holyarrs/main.go
 app/backend/internal/accounts/compatkeys.go
-app/backend/internal/alerts/alerts.go
-app/backend/internal/alerts/library.go
+app/backend/internal/alerts/events.go
 app/backend/internal/alerts/music.go
-app/backend/internal/alerts/save.go
+app/backend/internal/alerts/service.go
 app/backend/internal/alerts/shows.go
 app/backend/internal/api/api.go
 app/backend/internal/api/askedby.go
@@ -35,7 +34,6 @@ app/backend/internal/api/exploremusic_v2.go
 app/backend/internal/api/exploremusic_v7.go
 app/backend/internal/api/extras.go
 app/backend/internal/api/fresh.go
-app/backend/internal/api/health.go
 app/backend/internal/api/home.go
 app/backend/internal/api/kid.go
 app/backend/internal/api/library_summary.go
@@ -50,7 +48,6 @@ app/backend/internal/api/oldappapi.go
 app/backend/internal/api/owned.go
 app/backend/internal/api/people.go
 app/backend/internal/api/people_shelves.go
-app/backend/internal/api/schedules.go
 app/backend/internal/api/search.go
 app/backend/internal/api/servicetop.go
 app/backend/internal/api/settings_status.go
@@ -60,7 +57,6 @@ app/backend/internal/api/signinart.go
 app/backend/internal/api/speedhistory.go
 app/backend/internal/api/subtitles.go
 app/backend/internal/api/tags.go
-app/backend/internal/api/thisapp.go
 app/backend/internal/api/titlefacts.go
 app/backend/internal/api/titles.go
 app/backend/internal/api/titles_brief.go
@@ -99,16 +95,17 @@ app/backend/internal/datapack/datapack.go
 app/backend/internal/dlsync/match.go
 app/backend/internal/dlsync/persist.go
 app/backend/internal/dlsync/sync.go
-app/backend/internal/doctor/doctor.go
 app/backend/internal/downloader/attempts.go
 app/backend/internal/downloader/choice.go
 app/backend/internal/downloader/failure.go
 app/backend/internal/downloader/manager.go
 app/backend/internal/downloader/save.go
+app/backend/internal/health/doctor.go
 app/backend/internal/health/health.go
+app/backend/internal/health/routes_schedules.go
 app/backend/internal/health/settings.go
 app/backend/internal/health/states.go
-app/backend/internal/health/update.go
+app/backend/internal/health/store.go
 app/backend/internal/importer/albums.go
 app/backend/internal/importer/byhand_places.go
 app/backend/internal/importer/fake.go
