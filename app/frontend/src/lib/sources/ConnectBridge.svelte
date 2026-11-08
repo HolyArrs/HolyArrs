@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Connect Jackett or Prowlarr: HolyArrs takes the address and key, tests them, and brings the sites in as Sources in one step. Jackett's sites stay in step on their own; Prowlarr writes its sites in through the old-app API.
+	// Connect Jackett or Prowlarr: HolyArrs takes the address and key, tests them, and brings the sites in as Sources in one step. Jackett's sites stay in step on their own; Prowlarr writes its sites in through the arr API.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -61,7 +61,7 @@
 	let newKeys = $state(false);
 	let typedKeys = $state<Record<string, string>>({ sonarr: '', radarr: '' });
 	let checking = $state<number | null>(null);
-	// Old-app keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it). Making old-app keys wants a fresh password: the server answers "reauth". Ask inline instead of showing that answer, then run the step again.
+	// Arr API keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it). Making arr API keys wants a fresh password: the server answers "reauth". Ask inline instead of showing that answer, then run the step again.
 	let reauthFor = $state<'test' | 'connect' | null>(null);
 	const isReauth = (e: unknown) => e instanceof ApiError && e.status === 403 && e.body.code === 'reauth';
 	function askPassword(step: 'test' | 'connect') {
