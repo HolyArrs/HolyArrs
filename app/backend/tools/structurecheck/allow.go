@@ -13,7 +13,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/importer/importer.go":              true,
 	"app/backend/internal/api/api.go":                        true,
 	"app/frontend/src/lib/music/MusicArtistPage.svelte":      true,
-	"app/backend/internal/backup/backup.go":                  true,
 	"app/backend/internal/api/exploremusic_v3.go":            true,
 	"app/backend/internal/asks/asks.go":                      true,
 	"app/backend/cmd/holyarrs/main.go":                       true,

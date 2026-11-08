@@ -1,18 +1,12 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"sort"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 const restoreUsage = "usage:\n" +
@@ -46,7 +40,7 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 		fmt.Fprintf(errOut, "restore: %v\n", err)
 		return 1
 	}
-	bm, unlock, err := openBackups(*dir)
+	bm, unlock, err := backups.OpenDir(*dir, version)
 	if err != nil {
 		return fail(err)
 	}
@@ -66,7 +60,7 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 		}
 		return 0
 	}
-	name, kept, err := putBack(bm, name)
+	name, kept, err := backups.PutBack(bm, name)
 	if err != nil {
 		return fail(err)
 	}
@@ -74,62 +68,3 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 	return 0
 }
 
-// openBackups takes the config folder's lock (refused while HolyArrs runs
-// on it) and turns raw copies left by an update into pre-update backups.
-// The caller calls unlock when done.
-func openBackups(dir string) (*backups.Manager, func(), error) {
-	if _, err := os.Stat(dir); err != nil {
-		return nil, nil, fmt.Errorf("config folder: %w", err)
-	}
-	unlock, err := files.LockDir(dir)
-	if err != nil {
-		if errors.Is(err, files.ErrDirLocked) {
-			return nil, nil, errors.New("HolyArrs is running on this config folder; stop it first (docker stop <container>), then run this again")
-		}
-		return nil, nil, err
-	}
-	bm := &backups.Manager{Dir: dir, Version: version}
-	if named := os.Getenv(secrets.EnvKeyFile); named != "" || exists(filepath.Join(dir, secrets.KeyFile)) {
-		key, err := secrets.LoadKey(dir, named)
-		if err != nil {
-			unlock()
-			return nil, nil, err
-		}
-		bm.CheckKey = func(p string) error { return secrets.CheckFile(p, key) }
-	}
-	if _, err := bm.AdoptMigrationCopies(); err != nil {
-		unlock()
-		return nil, nil, err
-	}
-	return bm, unlock, nil
-}
-
-// putBack checks the backup name (the newest pre-update backup this build
-// can read when name is "") and puts it in place. The data it replaces is
-// kept in backups/before-restore-<time>, returned as kept.
-func putBack(bm *backups.Manager, name string) (string, string, error) {
-	if name == "" {
-		b, err := bm.NewestPreUpdate()
-		if err != nil {
-			return "", "", err
-		}
-		name = b.Name
-	}
-	if err := bm.StageNamed(context.Background(), name); err != nil {
-		return name, "", fmt.Errorf("%s: %w", name, err)
-	}
-	if _, err := backups.ApplyStaged(bm.Dir); err != nil {
-		return name, "", fmt.Errorf("putting %s in place: %w (it stays staged and is tried again on the next start)", name, err)
-	}
-	kept := ""
-	if ds, _ := filepath.Glob(filepath.Join(bm.Dir, "backups", "before-restore-*")); len(ds) > 0 {
-		sort.Strings(ds)
-		kept = ds[len(ds)-1]
-	}
-	return name, kept, nil
-}
-
-func exists(p string) bool {
-	_, err := os.Stat(p)
-	return err == nil
-}
