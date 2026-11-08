@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -72,10 +73,10 @@ func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 	}
 
 	var list struct {
-		Tags []TagUse `json:"tags"`
+		Tags []downloads.TagUse `json:"tags"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/tags", "", 200), &list)
-	want := []TagUse{{Label: "4k-only", Downloaders: 1}, {Label: "family-night", Titles: 1}, {Label: "kids", Titles: 1, Downloaders: 1, Sources: 1}}
+	want := []downloads.TagUse{{Label: "4k-only", Downloaders: 1}, {Label: "family-night", Titles: 1}, {Label: "kids", Titles: 1, Downloaders: 1, Sources: 1}}
 	if !reflect.DeepEqual(list.Tags, want) {
 		t.Fatalf("tags %+v", list.Tags)
 	}

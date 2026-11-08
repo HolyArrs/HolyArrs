@@ -1,10 +1,13 @@
 package downloads
 
 import (
+	"context"
+	"database/sql"
 	"net/http"
 	"sort"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
@@ -16,59 +19,39 @@ type TagUse struct {
 	Sources     int    `json:"sources"`
 }
 
+// TagHandlers serves the tag list.
+type TagHandlers struct {
+	DB *sql.DB
+}
+
+// Routes registers GET /api/v1/tags.
+func (h *TagHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/tags", h.listTags)
+}
+
 // listTags answers GET /api/v1/tags: every tag in use (#108), for the tag
 // fields' suggestions and to show where a tag is used.
-func (a *API) listTags(w http.ResponseWriter, r *http.Request) {
+func (h *TagHandlers) listTags(w http.ResponseWriter, r *http.Request) {
 	uses := map[string]*TagUse{}
 	for _, q := range []struct {
-		table string
-		count func(*TagUse)
+		read  func(context.Context, *sql.DB) (map[string]int, error)
+		count func(*TagUse, int)
 	}{
-		{"titles", func(u *TagUse) { u.Titles++ }},
-		{"downloaders", func(u *TagUse) { u.Downloaders++ }},
+		{mediafiles.TitleTagUses, func(u *TagUse, n int) { u.Titles += n }},
+		{DownloaderTagUses, func(u *TagUse, n int) { u.Downloaders += n }},
+		{sources.TagUses, func(u *TagUse, n int) { u.Sources += n }},
 	} {
-		// A row saved without tags may hold JSON null rather than a list.
-		where := " WHERE json_type(x.tags) = 'array'"
-		if q.table == "titles" {
-			where += " AND x.state != 'removed'"
-		}
-		if q.table == "downloaders" {
-			where += " AND x.removed = 0"
-		}
-		rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT j.value FROM "+q.table+" x, json_each(x.tags) j"+where)
+		got, err := q.read(r.Context(), h.DB)
 		if err != nil {
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "downloads", err)
 			return
 		}
-		for rows.Next() {
-			var label string
-			if err := rows.Scan(&label); err != nil {
-				_ = rows.Close()
-				webserver.Internal(w, "api", err)
-				return
-			}
+		for label, n := range got {
 			if uses[label] == nil {
 				uses[label] = &TagUse{Label: label}
 			}
-			q.count(uses[label])
+			q.count(uses[label], n)
 		}
-		err = rows.Err()
-		_ = rows.Close()
-		if err != nil {
-			webserver.Internal(w, "api", err)
-			return
-		}
-	}
-	onSources, err := sources.TagUses(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	for label, n := range onSources {
-		if uses[label] == nil {
-			uses[label] = &TagUse{Label: label}
-		}
-		uses[label].Sources += n
 	}
 	out := make([]TagUse, 0, len(uses))
 	for _, u := range uses {

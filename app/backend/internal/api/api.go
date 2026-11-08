@@ -350,7 +350,7 @@ func actor(r *http.Request) domain.Actor {
 func (a *API) Routes(rt *webserver.Router) {
 	m := rt.Mux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
-	m.HandleFunc("GET /api/v1/tags", a.listTags)
+	(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
 	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)

@@ -50,14 +50,12 @@ app/backend/internal/api/showroutes.go
 app/backend/internal/api/showsearch.go
 app/backend/internal/api/signinart.go
 app/backend/internal/api/speedhistory.go
-app/backend/internal/api/tags.go
 app/backend/internal/api/titlefacts.go
 app/backend/internal/api/titles.go
 app/backend/internal/api/titles_brief.go
 app/backend/internal/api/torrentlog.go
 app/backend/internal/api/trailer_wants.go
 app/backend/internal/api/ui_settings.go
-app/backend/internal/api/urlbase_setting.go
 app/backend/internal/api/watchlist.go
 app/backend/internal/core/jobs/jobs.go
 app/backend/internal/core/jobs/schedule.go
