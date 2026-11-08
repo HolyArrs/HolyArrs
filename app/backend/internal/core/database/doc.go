@@ -1,2 +1,2 @@
-// Package store opens the SQLite databases and owns the single writer queue.
+// Package database opens the SQLite databases and owns the single writer queue.
 package database

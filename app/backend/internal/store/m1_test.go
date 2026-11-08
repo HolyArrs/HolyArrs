@@ -283,7 +283,10 @@ func migrationHasDestructiveDelete(sqlText string) bool {
 
 // TestM1MigrationsAreAddOnly guards old rows: M1 migrations only add.
 func TestM1MigrationsAreAddOnly(t *testing.T) {
-	ms, _ := database.EmbeddedMigrations("migrations/main")
+	ms, err := database.EmbeddedMigrations("migrations/main")
+	if err != nil || len(ms) == 0 {
+		t.Fatalf("migrations: %d, %v", len(ms), err)
+	}
 	for _, m := range ms {
 		// 0008 rebuilds users, sessions and API keys to widen the role
 		// check; TestAccountsKeepTheOwner proves no row is lost.

@@ -1,6 +1,6 @@
 package domain
 
-// goldenLayouts is the field layout of the shared records, taken before they moved to core.
+// goldenLayouts pins the field layout of the shared records.
 var goldenLayouts = map[string]string{
 	"Actor":    "Kind string `json:\"kind\"`\nID int64 `json:\"id,omitempty\"`\n",
 	"Meta":     "ID int64 `db:\"id\"`\nCreatedAt time.Time `db:\"created_at\"`\nCreatedBy Actor `db:\"created_by,json\"`\nUpdatedAt time.Time `db:\"updated_at\"`\nUpdatedBy Actor `db:\"updated_by,json\"`\n",

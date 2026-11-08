@@ -103,7 +103,7 @@ func New(key []byte, opt Options) *Registry {
 	if len(key) == 0 {
 		key = make([]byte, 32)
 		if _, err := rand.Read(key); err != nil {
-			panic("outbound: no random identity key available")
+			panic("outbound: random identity key unavailable")
 		}
 	} else {
 		key = append([]byte(nil), key...)

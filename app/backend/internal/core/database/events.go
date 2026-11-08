@@ -6,13 +6,23 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
 // eventGuard runs a hook so that a crash in it never reaches the caller. By
 // default it logs the crash; the program sets it to the supervisor's guard at
-// start so the crash also shows in the health stages.
-var eventGuard = func(name string, f func()) {
+// start so the crash also shows in the health stages. It is read by every
+// AddEvent and written by each start, so it sits behind an atomic pointer.
+var eventGuard atomic.Pointer[func(name string, f func())]
+
+// guardHook is the guard used until the program sets one. Only the panic's
+// type is logged, on purpose: its text may hold a secret.
+func guardHook(name string, f func()) {
+	if g := eventGuard.Load(); g != nil {
+		(*g)(name, f)
+		return
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("database: %s hook crashed: %T", name, r)
@@ -67,7 +77,7 @@ type EventFilter struct {
 }
 
 // SetEventGuard sets the function that runs each event hook.
-func SetEventGuard(g func(name string, f func())) { eventGuard = g }
+func SetEventGuard(g func(name string, f func())) { eventGuard.Store(&g) }
 
 // OnEvent adds fn to the functions told about every Event once it is
 // stored. fn runs on the writer's caller and must return quickly (start a
@@ -102,7 +112,7 @@ func (s *Store) AddEvent(ctx context.Context, e *Event) error {
 	// A hook that crashes is caught here, so it never takes down the
 	// caller that stored the Event.
 	for _, fn := range hooks {
-		eventGuard("events", func() { fn(*e) })
+		guardHook("events", func() { fn(*e) })
 	}
 	return nil
 }

@@ -279,7 +279,7 @@ func (v *Vault) GetVersion(ctx context.Context, id int64) (string, [32]byte, err
 }
 
 // Values returns every stored secret in the clear, for masking them in the
-// app log only (internal/applog). Callers must never log or answer them.
+// app log only (internal/core/logs). Callers must never log or answer them.
 func (v *Vault) Values(ctx context.Context) ([]string, error) {
 	rows, err := v.s.Read().QueryContext(ctx, "SELECT id, value FROM secrets WHERE kind != ?", checkKind)
 	if err != nil {
