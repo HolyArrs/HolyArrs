@@ -21,13 +21,13 @@ var outsideHosts = []string{"api.deezer.com", "wikipedia.org", "musicbrainz.org"
 // (HOLYARRS_DIRECT_SOURCES=1, or a stand-in address in tests) and off for
 // installs; TestDirectSourcesOffByDefault checks that they are off.
 var standInFiles = map[string]bool{
-	"internal/metadata/musicbrainz.go":  true, // MusicBrainz (stand-in, Settings > Music URL)
-	"internal/metadata/tvmaze.go":       true, // TVmaze
-	"internal/metadata/artistimages.go": true, // Deezer
-	"internal/metadata/deezerartist.go": true, // Deezer and Wikipedia bios
+	"internal/metadata/musicbrainz.go":   true, // MusicBrainz (stand-in, Settings > Music URL)
+	"internal/metadata/tvmaze.go":        true, // TVmaze
+	"internal/metadata/artist_images.go": true, // Deezer
+	"internal/metadata/deezer_artist.go": true, // Deezer and Wikipedia bios
 	// Only checks that a bio link the server sent is a Wikipedia page; it
 	// makes no request.
-	"internal/metadata/serverwikidata.go": true,
+	"internal/metadata/server_wikidata.go": true,
 }
 
 // TestNoOutsideHostsOutsideStandIns: no Go file outside the stand-in

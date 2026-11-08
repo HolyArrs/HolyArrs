@@ -21,7 +21,7 @@ import (
 )
 
 // Trailers in HolyArrs' own player: the title's YouTube trailer, looked up
-// by HolyArrs's own reader (internal/youtube) to addresses on YouTube's
+// by HolyArrs's own reader (metadata/youtube) to addresses on YouTube's
 // video servers (an adaptive HLS manifest and an H.264 MP4). Only the
 // addresses are kept (in memory and in lookup_cache, until shortly before
 // they expire), and each title's YouTube key for 30 days. Video is never

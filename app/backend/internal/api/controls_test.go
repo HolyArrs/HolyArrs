@@ -523,7 +523,7 @@ func TestControlsNeedRoleAndScope(t *testing.T) {
 func TestEveryRouteHasAPart(t *testing.T) {
 	re := regexp.MustCompile(`m(?:ux)?\.Handle(?:Func)?\("([A-Z]+ [^"]*)"`)
 	seen := map[string]bool{}
-	for _, dir := range []string{".", "../auth", "../backup"} {
+	for _, dir := range []string{".", "../auth", "../backup", "../mediaservers"} {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
 			if strings.HasSuffix(f, "_test.go") {
