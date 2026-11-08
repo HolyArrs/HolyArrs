@@ -1,6 +1,7 @@
 package mediafiles
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -21,6 +22,14 @@ type Deps struct {
 	// DetailsRating is a rating a cached details page already knows
 	// (discover's cache); nil for none.
 	DetailsRating func(kind, tmdbID string) (string, bool)
+	// KindShown says whether a title kind's part is on (or safe mode
+	// shows every part); nil shows all.
+	KindShown func(kind string) bool
+	// TitleView is how a Library title is shown (api's title view until
+	// the join step).
+	TitleView func(ctx context.Context, t Title) (any, error)
+	// CardArt is the card pictures for the titles (discover).
+	CardArt func(r *http.Request, titles []Title) map[string]metadata.CardArt
 	// RouteUsable says the signed-in person may use the route pattern, so
 	// KidGate leaves the 403 to the permission gate.
 	RouteUsable func(r *http.Request, pattern string) bool
@@ -36,6 +45,7 @@ type Handlers struct {
 
 // Routes registers the Library files routes.
 func (h *Handlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/library-summary", h.librarySummary)
 	m.HandleFunc("GET /api/v1/library/copies", h.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", h.previewLibraryCopySearch)
 	m.HandleFunc("POST /api/v1/library/copies/search", h.searchLibraryCopies)

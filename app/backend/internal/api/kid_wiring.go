@@ -9,6 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // The Kid limit lives in internal/mediafiles; these wrappers keep the
@@ -83,3 +84,10 @@ func (a *API) allowedTitleIDs(ctx context.Context, max string, ids []int64) (map
 func (a *API) kidGate(m *http.ServeMux, next http.Handler) http.Handler { return a.mf.KidGate(m, next) }
 
 func kidSQL(max string) (string, []any) { return mediafiles.KidSQL(max) }
+
+// summaryKindShown says Home's Library summary counts a title kind: its
+// part is on, or safe mode shows every part.
+func (a *API) summaryKindShown(kind string) bool {
+	part, _ := parts.ForTitleKind(kind)
+	return a.partIsOn(part) || (a.s.Parts != nil && a.s.Parts.SafeMode)
+}

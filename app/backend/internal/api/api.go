@@ -307,6 +307,9 @@ func New(s Server) *API {
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
 	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, KidMax: a.kidMax, RouteUsable: routeUsable}}
 	a.mf.DetailsRating = a.detailsRating
+	a.mf.KindShown = a.summaryKindShown
+	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
+	a.mf.CardArt = a.libraryCardArt
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
@@ -358,7 +361,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/search", a.plainSearch)
-	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
 	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)
 	m.HandleFunc("GET /api/v1/titles/lookup", a.lookupTitles)
@@ -627,13 +629,7 @@ func (a *API) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo, erro
 }
 
 // StateLabels are the words people see for Slot states.
-var StateLabels = map[mediafiles.SlotState]string{
-	mediafiles.SlotNotOutYet: "Not out yet", mediafiles.SlotWanted: "Missing", mediafiles.SlotSearching: "Searching",
-	mediafiles.SlotHeld: "Held", mediafiles.SlotChosen: "Chosen", mediafiles.SlotDownloading: "Downloading",
-	mediafiles.SlotStalled: "Stalled", mediafiles.SlotFailed: "Failed", mediafiles.SlotImporting: "Importing",
-	mediafiles.SlotNeedsADecision: "Needs a decision", mediafiles.SlotRejected: "Rejected", mediafiles.SlotInLibrary: "In library",
-	mediafiles.SlotBetterWanted: "Better copy sought", mediafiles.SlotRemoved: "Removed",
-}
+var StateLabels = mediafiles.StateLabels
 
 // artworkLinks turns stored artwork ("poster:<cache name>") into links the
 // web app can load (/api/v1/artwork/<cache name>); anything else is kept.
