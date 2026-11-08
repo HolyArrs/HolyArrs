@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// TestLabMaindata runs the change feed against the lab qBittorrent only, never a real client, behind a counting proxy. Set the key in the environment first:
+// TestLabMaindata runs the change feed against the lab qBittorrent only, never a real client, behind a counting proxy. Set the key from labctl qbt-apikey in the environment first:
 //
 //	go test -tags lab -run LabMaindata -v ./internal/downloads/
 //

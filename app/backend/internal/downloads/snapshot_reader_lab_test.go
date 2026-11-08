@@ -20,7 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy:
+// TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy. The key comes from labctl qbt-apikey:
 //
 //	go test -tags lab -run LabReader -v ./internal/downloads/
 //
@@ -28,7 +28,7 @@ import (
 func TestLabReaderGrabToFinished(t *testing.T) {
 	key := os.Getenv("HOLYARRS_LAB_QBIT_KEY")
 	if key == "" {
-		t.Skip("HOLYARRS_LAB_QBIT_KEY not set")
+		t.Skip("HOLYARRS_LAB_QBIT_KEY not set (get it from labctl qbt-apikey)")
 	}
 	base := os.Getenv("HOLYARRS_LAB_QBIT")
 	if base == "" {

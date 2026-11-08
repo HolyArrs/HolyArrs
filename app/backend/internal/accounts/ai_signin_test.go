@@ -238,7 +238,7 @@ func TestAIRedirectRules(t *testing.T) {
 		"http://[::1]:9/cb":                true,
 		"https://claude.ai/api/mcp/cb":     true,
 		"cursor://anysphere.cursor-mcp/cb": true,
-		"http://192.168.1.10/cb":            false,
+		"http://192.168.1.10/cb":           false,
 		"javascript:alert(1)":              false,
 		"data:text/html,x":                 false,
 		"https://a/cb#frag":                false,
