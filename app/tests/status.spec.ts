@@ -101,7 +101,7 @@ test('status: a member never gets the support bundle, even with Status open', as
 	await uma.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(uma).toHaveURL(/\/$/);
 	await uma.goto('/health?tab=about');
-	await expect(uma).not.toHaveURL(/\/status/);
+	await expect(uma).not.toHaveURL(/\/health/);
 	expect((await uma.request.get('/api/v1/support/bundle')).status()).toBe(403);
 	// Run the Library opens Status, but the bundle stays with the owner and admins.
 	await own.goto('/settings/users');
