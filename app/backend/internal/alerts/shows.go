@@ -44,9 +44,9 @@ const (
 // pack_alerts each before the rest go in one summary Alert.
 const DefaultEachLimit = 25
 
-// Settings are the Alert settings that are not one Alert's own (group
-// 'alerts'; pack_alerts was in 'links' before migration 0023, and an old row
-// there is still read).
+// Settings are the Alert settings that belong to no single Alert (group
+// 'alerts'). Older installs may still hold pack_alerts in the 'links' group;
+// that row is read until the settings are saved.
 type Settings struct {
 	PackAlerts string `json:"pack_alerts"`
 	EachLimit  int    `json:"each_limit"`

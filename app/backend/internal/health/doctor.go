@@ -1,8 +1,3 @@
-// Package doctor checks the things people usually open a shell for: who
-// HolyArrs runs as, whether its folders can be written, free space,
-// hardlinks, the metadata server and the clock. Each finding is one line
-// marked OK, WARN or FAIL, with a one-line fix in plain words. It never
-// prints secrets: only paths, ids, sizes and the metadata server's host.
 package health
 
 import (

@@ -351,7 +351,7 @@ func TestLibraryMomentsReachEveryKind(t *testing.T) {
 	}
 }
 
-// 4.15 review: a webhook never carries a full path of this machine (the
+// A webhook never carries a full path of this machine (the
 // download folder, a Library folder, source files): only their last name.
 func TestWebhookDataHasNoFullPaths(t *testing.T) {
 	in := map[string]any{"from": "/downloads/complete/Lab Band - Old Days", "folder": `D:\Music\Lab Band`, "to": "Lab Band/Old Days (2010)/01 - a.flac",

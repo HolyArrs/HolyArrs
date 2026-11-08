@@ -1,7 +1,3 @@
-// Package backup makes and restores backups (design/domain/backups.md): a zip
-// with a safe copy of the databases (which hold the settings) and a small
-// version and date file. It never holds media, downloads, cached pictures or
-// the master key.
 package backups
 
 import (

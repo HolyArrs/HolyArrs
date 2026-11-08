@@ -1,6 +1,3 @@
-// Package updatelist reads the signed update list (manifest.json plus its
-// minisign signature, manifest.json.minisig) and applies the rules the app
-// enforces before it shows any update notice.
 package updates
 
 import (
@@ -17,8 +14,8 @@ import (
 
 // PinnedKeys are the trusted minisign public keys (main and next), in
 // minisign's public key format (the base64 line of a .pub file).
-// Empty for now: Luis adds the real public keys at the key ceremony. While
-// it is empty the app keeps its old GitHub releases check.
+// The list stays empty until release keys exist; while it is empty the
+// release feed check is used instead.
 var PinnedKeys = []string{}
 
 // ErrSignature is any problem with the signature: the file is ignored.

@@ -1,12 +1,3 @@
-// Package alerts sends outgoing messages (Alerts) through Discord links,
-// email servers, webhooks, Telegram bots, ntfy, Gotify and Pushover. Each
-// Alert picks the moments it speaks for: an
-// ask waiting for approval goes to the staff, and approved, turned down and
-// ready go to the people who asked; the Library moments (grab, import,
-// rename, add, delete, health, needs a decision) go to the staff. Secrets
-// (the Discord link, the mail password, the webhook link and its secret, the
-// Telegram bot token, the ntfy, Gotify and Pushover tokens) are read from
-// the encrypted vault only when a message is sent.
 package alerts
 
 import (

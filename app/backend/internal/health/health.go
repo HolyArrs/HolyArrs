@@ -1,9 +1,3 @@
-// Package health runs the regular health checks: Library folders, disk
-// space, Sources, Downloaders, backups and whether a newer HolyArrs is out.
-// Every result is kept in health_checks and shown on Home and on This app.
-// When a check breaks or recovers, and the new result held for a few runs
-// in a row (the flap guard), a health_broken or health_recovered Event is
-// written; Alerts speak for those Events through their health moment.
 package health
 
 import (
