@@ -1,6 +1,6 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 // environment only (labclients.py reads them from the lab apps' own config)
 // and are never printed.
 //
-//	HOLYARRS_LAB_PROWLARR_KEY=… HOLYARRS_LAB_JACKETT_KEY=… go test -tags lab -run TestLabBridge ./internal/api/
+//	HOLYARRS_LAB_PROWLARR_KEY=… HOLYARRS_LAB_JACKETT_KEY=… go test -tags lab -run TestLabBridge ./cmd/holyarrs/
 
 // TestLabBridgeProwlarr: the lab Prowlarr gets HolyArrs as an app on both
 // sides, tests it live (it calls HolyArrs back through the Docker host),
@@ -97,10 +97,4 @@ func TestLabBridgeProwlarr(t *testing.T) {
 	if left != 0 {
 		t.Fatalf("%d of Prowlarr's Sources stayed after disconnect", left)
 	}
-}
-func envOr(k, def string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
-	return def
 }

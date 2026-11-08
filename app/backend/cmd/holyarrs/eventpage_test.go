@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
@@ -26,7 +27,7 @@ func TestEventPageQueriesDoNotGrowWithRows(t *testing.T) {
 	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	var add struct {
-		Title TitleView `json:"title"`
+		Title api.TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/shows", `{"id":"tmdb:100","more_versions":[{"label":"4K"}]}`, 201), &add)
 	rows, err := s.Read().Query("SELECT s.id, s.item_id, s.version_id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?", add.Title.ID)

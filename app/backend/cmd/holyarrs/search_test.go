@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
@@ -22,7 +23,7 @@ func searchWorld(t *testing.T) (srvURL string, s *database.Store, q *jobs.Queue,
 	t.Helper()
 	srv, s, q := setup(t)
 	var resp struct {
-		Title TitleView `json:"title"`
+		Title api.TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &resp)
 	titleID, slotID = resp.Title.ID, resp.Title.Slots[0].ID

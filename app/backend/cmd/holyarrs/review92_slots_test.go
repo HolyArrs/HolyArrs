@@ -1,9 +1,10 @@
-package api
+package main
 
 import (
 	"context"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
@@ -13,9 +14,9 @@ import (
 // Episode and track lists leave out the same Slot details as a title does.
 func TestEpisodeSlotsTrimmedForMember(t *testing.T) {
 	t.Parallel()
-	mk := func() map[int64][]EpisodeSlot {
+	mk := func() map[int64][]api.EpisodeSlot {
 		f := mediafiles.File{RelativePath: "Shows/Secret/S01E01.mkv", Size: 9}
-		return map[int64][]EpisodeSlot{1: {{Reason: "turned down: Secret.Release-GRP", File: &f}}}
+		return map[int64][]api.EpisodeSlot{1: {{Reason: "turned down: Secret.Release-GRP", File: &f}}}
 	}
 	member := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk}, Via: "session"})
 	got := mk()

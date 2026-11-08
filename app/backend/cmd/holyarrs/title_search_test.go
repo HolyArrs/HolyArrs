@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -37,7 +38,7 @@ func TestLibraryTitleSearch(t *testing.T) {
 	for _, q := range []string{"amelie", "AMÉL", "Ame\u0301lie", "fabuleux", "2001", "destin fab"} {
 		t.Run(q, func(t *testing.T) {
 			var result struct {
-				Titles []TitleView `json:"titles"`
+				Titles []api.TitleView `json:"titles"`
 			}
 			body := do(t, "GET", srv.URL+"/api/v1/titles?q="+url.QueryEscape(q), "", 200)
 			if err := json.Unmarshal(body, &result); err != nil {
@@ -50,7 +51,7 @@ func TestLibraryTitleSearch(t *testing.T) {
 	}
 	for _, q := range []string{"\" OR *", "---", "\u0301", "not-a-film", `name:Other`} {
 		var result struct {
-			Titles []TitleView `json:"titles"`
+			Titles []api.TitleView `json:"titles"`
 		}
 		body := do(t, "GET", srv.URL+"/api/v1/titles?q="+url.QueryEscape(q), "", 200)
 		if err := json.Unmarshal(body, &result); err != nil || len(result.Titles) != 0 {
@@ -62,7 +63,7 @@ func TestLibraryTitleSearch(t *testing.T) {
 	}
 	for _, q := range []string{"", "  "} {
 		var result struct {
-			Titles []TitleView `json:"titles"`
+			Titles []api.TitleView `json:"titles"`
 		}
 		body := do(t, "GET", srv.URL+"/api/v1/titles?q="+url.QueryEscape(q), "", 200)
 		if err := json.Unmarshal(body, &result); err != nil || len(result.Titles) != 2 {

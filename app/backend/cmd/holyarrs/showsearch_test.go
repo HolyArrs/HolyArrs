@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -35,7 +36,7 @@ func TestShowSearchOverHTTP(t *testing.T) {
 	ctx := context.Background()
 
 	var eps struct {
-		Episodes []EpisodeView `json:"episodes"`
+		Episodes []api.EpisodeView `json:"episodes"`
 	}
 	_ = json.Unmarshal(do(t, "GET", tu+"/episodes?season=1", "", 200), &eps)
 	if len(eps.Episodes) != 2 || eps.Episodes[0].Slots[0].State != "wanted" {
