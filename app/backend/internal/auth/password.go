@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+
 	"golang.org/x/crypto/argon2"
 )
 
@@ -46,8 +48,7 @@ const (
 // settings, clamped to MinPassword..MaxMinPassword; DefaultMinPassword when
 // unset or unreadable.
 func MinPasswordLength(ctx context.Context, db *sql.DB) int {
-	var v string
-	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, signInPrefix+keyMinLength).Scan(&v)
+	v := database.SettingOr(ctx, db, settingsGroup, signInPrefix+keyMinLength, "")
 	n, err := strconv.Atoi(v)
 	if err != nil {
 		return DefaultMinPassword

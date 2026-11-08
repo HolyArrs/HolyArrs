@@ -538,7 +538,5 @@ func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
 // aiOn says AI connections are on (Settings > AI connections; the API
 // package owns the switch, this_app mcp_enabled).
 func (a *Auth) aiOn(ctx context.Context) bool {
-	var v string
-	_ = a.s.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'mcp_enabled'").Scan(&v)
-	return v == "on"
+	return database.SettingOr(ctx, a.s.Read(), "this_app", "mcp_enabled", "") == "on"
 }

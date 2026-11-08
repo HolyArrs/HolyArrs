@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -251,7 +252,7 @@ func (a *Auth) setupDone(w http.ResponseWriter, r *http.Request) {
 	}
 	now := a.now()
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if err := putSetting(tx, settingsGroup, settingFirstRunDone, "1", domain.Actor{Kind: "user", ID: who.UserID}, now); err != nil {
+		if err := database.PutSetting(tx, settingsGroup, settingFirstRunDone, "1", domain.Actor{Kind: "user", ID: who.UserID}, now); err != nil {
 			return err
 		}
 		_, err := tx.Exec(`UPDATE sessions SET family = substr(family, ?) WHERE family LIKE 'setup.%' AND family = (SELECT family FROM sessions WHERE hash = ?)`,

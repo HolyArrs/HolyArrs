@@ -233,11 +233,7 @@ func New(s *database.Store, opt Options) *Auth {
 		a.hash = testHash
 	}
 	a.dummy, _ = hashPassword("not a real password", a.hash)
-	var v string
-	err := s.Read().QueryRow("SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingSkipLocal).Scan(&v)
-	if err == nil {
-		a.skipLocal.Store(v == "true")
-	}
+	a.skipLocal.Store(database.SettingOr(context.Background(), s.Read(), settingsGroup, settingSkipLocal, "") == "true")
 	a.localNets.Store(a.loadLocalNets(context.Background()))
 	a.loadKnown(context.Background())
 	a.loadSavedHosts(context.Background())
@@ -659,7 +655,7 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		}
 		saved = append(slices.Clone(a.savedHostList()), newHost)
 		v, _ := json.Marshal(saved)
-		return putSetting(tx, settingsGroup, signInPrefix+keyAllowedHosts, string(v), domain.System, a.now())
+		return database.PutSetting(tx, settingsGroup, signInPrefix+keyAllowedHosts, string(v), domain.System, a.now())
 	})
 	if errors.Is(err, errOwnerExists) {
 		fail(w, http.StatusConflict, "the owner is already set up; sign in instead")
@@ -1370,9 +1366,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	// The owner stays in the first-run wizard until it is finished.
 	setupOpen := false
 	if who.Role == RoleOwner {
-		var done string
-		_ = a.s.Read().QueryRowContext(r.Context(), "SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, settingFirstRunDone).Scan(&done)
-		setupOpen = done != "1"
+		setupOpen = database.SettingOr(r.Context(), a.s.Read(), settingsGroup, settingFirstRunDone, "") != "1"
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,

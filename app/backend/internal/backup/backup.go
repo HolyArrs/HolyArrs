@@ -473,22 +473,12 @@ const (
 )
 
 func (m *Manager) setting(ctx context.Context, key string) (string, error) {
-	var v string
-	err := m.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", key).Scan(&v)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", nil
-	}
-	return v, err
+	return database.Setting(ctx, m.Store.Read(), "this_app", key)
 }
 
 func (m *Manager) setSetting(ctx context.Context, key, val string, by domain.Actor) error {
-	who, _ := json.Marshal(by)
-	t := database.FormatTime(m.now())
 	return m.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
-			ON CONFLICT(grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-			key, val, t, string(who), t, string(who))
-		return err
+		return database.PutSetting(tx, "this_app", key, val, by, m.now())
 	})
 }
 

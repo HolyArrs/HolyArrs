@@ -388,9 +388,8 @@ func Mask(plain string) string {
 // settings row holds only a reference.
 func (v *Vault) SetSetting(ctx context.Context, grp, key, plain string, by database.Actor) error {
 	return v.s.Write(ctx, func(tx *sql.Tx) error {
-		var cur string
-		err := tx.QueryRow("SELECT value FROM settings WHERE grp = ? AND key = ?", grp, key).Scan(&cur)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		cur, err := database.Setting(ctx, tx, grp, key)
+		if err != nil {
 			return err
 		}
 		if ref, ok := strings.CutPrefix(cur, settingRef); ok {
@@ -408,22 +407,14 @@ func (v *Vault) SetSetting(ctx context.Context, grp, key, plain string, by datab
 		if err != nil {
 			return err
 		}
-		t, who := now(), actor(by)
-		_, err = tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
-			ON CONFLICT(grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-			grp, key, settingRef+strconv.FormatInt(id, 10), t, who, t, who)
-		return err
+		return database.PutSetting(tx, grp, key, settingRef+strconv.FormatInt(id, 10), by, time.Now())
 	})
 }
 
 // Setting reads a secret setting; "" when it is not set.
 func (v *Vault) Setting(ctx context.Context, grp, key string) (string, error) {
-	var cur string
-	err := v.s.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", grp, key).Scan(&cur)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", nil
-	}
-	if err != nil {
+	cur, found, err := database.SettingFound(ctx, v.s.Read(), grp, key)
+	if err != nil || !found {
 		return "", err
 	}
 	ref, ok := strings.CutPrefix(cur, settingRef)
@@ -459,8 +450,7 @@ func (v *Vault) MigratePlaintext(ctx context.Context) (int, error) {
 			if err != nil {
 				return err
 			}
-			if _, err := tx.Exec("UPDATE settings SET value = ?, updated_at = ? WHERE grp = ? AND key = ?",
-				settingRef+strconv.FormatInt(id, 10), now(), x.grp, x.key); err != nil {
+			if err := database.ReplaceSettingValue(tx, x.grp, x.key, settingRef+strconv.FormatInt(id, 10), time.Now()); err != nil {
 				return err
 			}
 			moved++
@@ -584,20 +574,15 @@ func actor(a database.Actor) string {
 }
 
 func plainSettings(tx *sql.Tx) ([]plainSetting, error) {
-	rows, err := tx.Query("SELECT grp, key, value FROM settings")
+	all, err := database.Settings(tx)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	var out []plainSetting
-	for rows.Next() {
-		var x plainSetting
-		if err := rows.Scan(&x.grp, &x.key, &x.val); err != nil {
-			return nil, err
-		}
-		if settingSecretKeys[x.key] && x.val != "" && !strings.HasPrefix(x.val, settingRef) {
-			out = append(out, x)
+	for _, r := range all {
+		if settingSecretKeys[r.Key] && r.Value != "" && !strings.HasPrefix(r.Value, settingRef) {
+			out = append(out, plainSetting{r.Grp, r.Key, r.Value})
 		}
 	}
-	return out, rows.Err()
+	return out, nil
 }

@@ -86,10 +86,7 @@ func (a *Auth) clientID(ctx context.Context) string {
 	}
 	id := "holyarrs-" + token(12)
 	_ = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by)
-			VALUES (?, ?, ?, ?, '{"kind":"system"}', ?, '{"kind":"system"}') ON CONFLICT(grp, key) DO NOTHING`,
-			settingsGroup, signInPrefix+keyClientID, id, database.FormatTime(a.now()), database.FormatTime(a.now()))
-		return err
+		return database.PutSettingIfMissing(tx, settingsGroup, signInPrefix+keyClientID, id, database.System, a.now())
 	})
 	return a.signInSetting(ctx, keyClientID)
 }
@@ -311,7 +308,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		for k, v := range set {
 			grp, key, _ := strings.Cut(k, "/")
-			if err := putSetting(tx, grp, key, v, by, a.now()); err != nil {
+			if err := database.PutSetting(tx, grp, key, v, by, a.now()); err != nil {
 				return err
 			}
 		}

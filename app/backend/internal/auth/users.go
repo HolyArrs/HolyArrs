@@ -33,19 +33,7 @@ const (
 
 // signInSetting reads one sign-in setting; "" when unset.
 func (a *Auth) signInSetting(ctx context.Context, key string) string {
-	var v string
-	_ = a.s.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, signInPrefix+key).Scan(&v)
-	return v
-}
-
-func putSetting(tx *sql.Tx, grp, key, value string, by domain.Actor, now time.Time) error {
-	actor, _ := json.Marshal(by)
-	t := database.FormatTime(now)
-	_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-		grp, key, value, t, string(actor), t, string(actor))
-	return err
+	return database.SettingOr(ctx, a.s.Read(), settingsGroup, signInPrefix+key, "")
 }
 
 // UserView is a user as the Users screen shows them.

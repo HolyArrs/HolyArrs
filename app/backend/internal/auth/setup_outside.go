@@ -111,7 +111,7 @@ func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64
 	}
 	saved := append(slices.Clone(a.savedHostList()), newHost)
 	v, _ := json.Marshal(saved)
-	return id, name, saved, putSetting(tx, settingsGroup, signInPrefix+keyAllowedHosts, string(v), domain.System, a.now())
+	return id, name, saved, database.PutSetting(tx, settingsGroup, signInPrefix+keyAllowedHosts, string(v), domain.System, a.now())
 }
 
 // ownerMade finishes an outside first-run setup: the saved host name, the
@@ -193,11 +193,11 @@ func (a *Auth) setupPlexFinish(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		g := signInPrefix + ProviderPlex
-		if err := putSetting(tx, settingsGroup, g+"_on", "true", domain.System, a.now()); err != nil {
+		if err := database.PutSetting(tx, settingsGroup, g+"_on", "true", domain.System, a.now()); err != nil {
 			return err
 		}
 		if serverID != "" {
-			return putSetting(tx, settingsGroup, g+"_server_id", serverID, domain.System, a.now())
+			return database.PutSetting(tx, settingsGroup, g+"_server_id", serverID, domain.System, a.now())
 		}
 		return nil
 	})
@@ -363,10 +363,10 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 		}
 		// The same keys Settings > Sign-in saves, so it shows this way on.
 		g := signInPrefix + kind
-		if err := putSetting(tx, settingsGroup, g+"_url", addr, domain.System, a.now()); err != nil {
+		if err := database.PutSetting(tx, settingsGroup, g+"_url", addr, domain.System, a.now()); err != nil {
 			return err
 		}
-		return putSetting(tx, settingsGroup, g+"_on", "true", domain.System, a.now())
+		return database.PutSetting(tx, settingsGroup, g+"_on", "true", domain.System, a.now())
 	})
 	if a.setupFailed(w, err, "this "+word+" account") {
 		return

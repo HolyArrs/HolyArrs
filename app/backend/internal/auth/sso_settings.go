@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Single sign-on (OpenID Connect) set up from Settings, and unlinking
@@ -347,7 +349,7 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 		}
 		for k, v := range map[string]string{ssoKeyOn: strconv.FormatBool(next.On), ssoKeyIssuer: next.Issuer, ssoKeyClient: next.ClientID,
 			ssoKeyRedirect: next.RedirectURL, ssoKeyJoin: strconv.FormatBool(next.AllowJoin), ssoKeyVaultRef: secretRef} {
-			if err := putSetting(tx, settingsGroup, signInPrefix+k, v, by, a.now()); err != nil {
+			if err := database.PutSetting(tx, settingsGroup, signInPrefix+k, v, by, a.now()); err != nil {
 				return err
 			}
 		}

@@ -90,7 +90,6 @@ app/backend/internal/auth/avatar.go
 app/backend/internal/auth/compatkeys.go
 app/backend/internal/auth/invite_outside.go
 app/backend/internal/auth/outside.go
-app/backend/internal/auth/password.go
 app/backend/internal/auth/plex_tokens.go
 app/backend/internal/auth/providers.go
 app/backend/internal/auth/reset.go
@@ -101,7 +100,6 @@ app/backend/internal/auth/sso_settings.go
 app/backend/internal/auth/still.go
 app/backend/internal/auth/totp.go
 app/backend/internal/auth/users.go
-app/backend/internal/backup/backup.go
 app/backend/internal/bridge/service.go
 app/backend/internal/compat/command.go
 app/backend/internal/compat/common.go
