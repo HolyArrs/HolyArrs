@@ -495,7 +495,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	if startup.FeatureOn(features.AIApps) {
 		a.mcpRoutes(m)
 	}
-	a.oldAppRoutes(m)
 	m.Handle("GET /", webserver.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
@@ -520,10 +519,10 @@ func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
 		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
-		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))))
+		return secure(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))))
 	}
 	a.ai.inner = a.partGate(m, m)
-	return secure(a.oldAppGate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
+	return secure(a.arr().Gate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.

@@ -1,4 +1,4 @@
-package compat
+package arrapi
 
 import (
 	"database/sql"

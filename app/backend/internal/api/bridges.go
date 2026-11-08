@@ -308,7 +308,7 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 		}
 		if turnedOn {
 			off := false
-			_ = a.saveOldAppSwitches(uctx, actor(r), &off, nil)
+			_ = a.arr().SaveSwitches(uctx, actor(r), &off, nil)
 		}
 	}
 	for i, s := range sides {
@@ -356,9 +356,9 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 			fresh = append(fresh, side)
 		}
 	}
-	if !a.oldAppOn(ctx) {
+	if !a.arr().On(ctx) {
 		on := true
-		if err := a.saveOldAppSwitches(ctx, actor(r), &on, nil); err != nil {
+		if err := a.arr().SaveSwitches(ctx, actor(r), &on, nil); err != nil {
 			undo()
 			internal(w, err)
 			return

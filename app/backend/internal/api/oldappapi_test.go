@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -90,7 +90,7 @@ func (f *oldAppFix) arrOK(key, method, path, body string, want int) any {
 	if st != want {
 		f.t.Fatalf("%s %s: %d, want %d: %s", method, path, st, want, b)
 	}
-	if v := hd.Get("X-Application-Version"); v != compat.SonarrVersion && v != compat.RadarrVersion {
+	if v := hd.Get("X-Application-Version"); v != arrapi.SonarrVersion && v != arrapi.RadarrVersion {
 		f.t.Fatalf("%s %s: version header %q", method, path, v)
 	}
 	var v any
@@ -405,7 +405,7 @@ func TestOldAppServerTestFields(t *testing.T) {
 	f := newOldAppFix(t)
 	f.turnOn()
 	for _, side := range []struct{ name, key, version, folder string }{
-		{"sonarr", f.sonarrKey, compat.SonarrVersion, f.showDir}, {"radarr", f.radarrKey, compat.RadarrVersion, f.movieDir}} {
+		{"sonarr", f.sonarrKey, arrapi.SonarrVersion, f.showDir}, {"radarr", f.radarrKey, arrapi.RadarrVersion, f.movieDir}} {
 		p := "/" + side.name + "/api/v3/"
 		st, hd, b := f.arr(side.key, "GET", p+"system/status", "")
 		if st != 200 || hd.Get("X-Application-Version") != side.version {

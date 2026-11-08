@@ -10,7 +10,7 @@
 //
 // Sign-in, the key, permissions and parts are checked before a request
 // gets here.
-package compat
+package arrapi
 
 import (
 	"context"
