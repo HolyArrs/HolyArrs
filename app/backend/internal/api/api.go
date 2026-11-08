@@ -419,6 +419,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.media.Routes(m)
 	a.showRoutes(m)
 	a.musicRoutes(m)
+	a.libraryHandlers().Routes(m)
 	a.musicPageRoutes(m)
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.thisAppRoutes(m)
