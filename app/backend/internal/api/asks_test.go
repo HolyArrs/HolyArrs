@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 

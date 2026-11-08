@@ -365,7 +365,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		FromVault: vault.Get}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
-	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: api.TorrentLines}
+	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
 	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
@@ -705,9 +705,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
 	// Matching in the reader's queue is link-only: it never adds a title.
-	dls.Match = a.MatchLinkOnly
+	dls.Match = a.DownloadsWeb().MatchLinkOnly
 	// Push updates of the snapshots to the Downloads page (only while on).
-	dls.Pub = &downloads.SnapshotPublisher{Store: dls.Store, Build: a.PublishDL, Health: a.PublishDLHealth}
+	dls.Pub = &downloads.SnapshotPublisher{Store: dls.Store, Build: a.DownloadsWeb().PublishDL, Health: a.DownloadsWeb().PublishDLHealth}
 	a.StartSpeedHistory(ctx)
 	if !c.SafeMode {
 		a.StartExplore(ctx)

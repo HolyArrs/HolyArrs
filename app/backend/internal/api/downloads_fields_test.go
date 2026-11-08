@@ -7,7 +7,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
@@ -41,11 +40,11 @@ func TestDownloadRowOutsideRequested(t *testing.T) {
 	var titleID int64
 	_ = x.s.Read().QueryRow("SELECT id FROM titles LIMIT 1").Scan(&titleID)
 	exec41(t, x.s, `INSERT INTO client_links (downloader_id, hash, name, state, title_id, slot_ids, covers, candidates, how, matched_at) VALUES (1, ?, 'Linux.ISO', 'linked', ?, '[]', '', '[]', 'name', '')`, outHash, titleID)
-	read := func() map[string]DownloadRow {
+	read := func() map[string]downloads.DownloadRow {
 		feedStore(t, x.api)
 		var out viewRows
 		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
-		by := map[string]DownloadRow{}
+		by := map[string]downloads.DownloadRow{}
 		for _, r := range out.Downloads {
 			by[r.Hash] = r
 		}
@@ -62,18 +61,6 @@ func TestDownloadRowOutsideRequested(t *testing.T) {
 	exec41(t, x.s, `UPDATE titles SET created_by = '{"kind":"user","id":7}'`)
 	if o := read()[outHash]; o.RequestedBy != "mara" {
 		t.Fatalf("outside row by person %+v", o)
-	}
-}
-
-// A Usenet client's post time reaches the row; torrents never carry one.
-func TestClientRowPostedAt(t *testing.T) {
-	u := domain.Downloader{ID: 2, Name: "S", Adapter: "sabnzbd", Protocol: "usenet"}
-	if r := clientRow(u, downloads.Job{ID: "SABnzbd_nzo_1", PostedAt: 1700000000}); r.PostedAt == nil || r.PostedAt.Unix() != 1700000000 {
-		t.Fatalf("usenet row %+v", r.PostedAt)
-	}
-	q := domain.Downloader{ID: 1, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent"}
-	if r := clientRow(q, downloads.Job{ID: outHash, PostedAt: 1700000000}); r.PostedAt != nil {
-		t.Fatalf("torrent row %+v", r.PostedAt)
 	}
 }
 

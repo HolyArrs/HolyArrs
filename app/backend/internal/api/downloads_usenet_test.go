@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -135,7 +136,7 @@ func TestUsenetItemRetryAndTabs(t *testing.T) {
 	}
 
 	// The Servers and Repair tabs.
-	var u UsenetView
+	var u downloads.UsenetView
 	_ = json.Unmarshal(r.ana.call("GET", item+"/usenet", "", 200), &u)
 	if len(u.Stages) != 3 || u.Stages[2].Stage != "repair" || len(u.JobServers) != 2 || u.JobServers[0].Amount != "812.4 MB" {
 		t.Fatalf("usenet view %+v", u)
@@ -162,17 +163,9 @@ func TestUsenetOwnDownload(t *testing.T) {
 	if strings.Contains(f.saw(), "retry:") {
 		t.Fatal("retry reached the client")
 	}
-	var u UsenetView
+	var u downloads.UsenetView
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/usenet", "", 200), &u)
 	if len(u.Stages) != 3 || len(u.JobServers) != 2 {
 		t.Fatalf("usenet view %+v", u)
-	}
-}
-
-func TestClientHintUsenetSteps(t *testing.T) {
-	for in, want := range map[string]string{"Verifying": "verifying", "QuickCheck": "verifying", "Repairing": "repairing", "Extracting": "unpacking", "Moving": "finishing", "Running": "script", "moving": "moving", "Downloading": ""} {
-		if got := clientHint(in); got != want {
-			t.Errorf("%s: %q, want %q", in, got, want)
-		}
 	}
 }

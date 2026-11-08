@@ -282,9 +282,9 @@ func labRemove(t *testing.T, m *downloads.Manager, qb string, hashes ...string) 
 	})
 }
 
-func labRows(t *testing.T, url string) []DownloadRow {
+func labRows(t *testing.T, url string) []downloads.DownloadRow {
 	var out struct {
-		Downloads []DownloadRow `json:"downloads"`
+		Downloads []downloads.DownloadRow `json:"downloads"`
 	}
 	_ = json.Unmarshal(do(t, "GET", url+"/api/v1/downloads/view", "", 200), &out)
 	return out.Downloads

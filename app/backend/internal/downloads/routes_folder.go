@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Guards for the hand steering routes: what a person may name as a folder
@@ -22,34 +21,34 @@ import (
 // Downloader's machine: the settings permission and an admin-scoped key.
 // No identity attached means no, unless the server runs without sign-in
 // (Auth nil, tests only).
-func (a *API) mayPickAnyFolder(ctx context.Context) bool {
+func (a *Web) mayPickAnyFolder(ctx context.Context) bool {
 	who, ok := webserver.From(ctx)
 	if !ok {
-		return a.s.Auth == nil
+		return a.Auth == nil
 	}
 	return who.Has(webserver.PermSettings) && who.HasScope(webserver.ScopeAdmin)
 }
 
-var errFolder = errors.New("the folder is a subfolder name inside the Downloader's own folder (no full paths, drive letters or ..)")
-var errCategory = errors.New("pick one of the Downloader's own categories")
+var ErrFolder = errors.New("the folder is a subfolder name inside the Downloader's own folder (no full paths, drive letters or ..)")
+var ErrPickCategory = errors.New("pick one of the Downloader's own categories")
 
 // subfolder checks a relative subfolder: no absolute path, drive letter,
 // UNC path, .. part or control character.
 func subfolder(p string) (string, error) {
 	if hasControl(p) || strings.Contains(p, `\`) || strings.Contains(p, ":") {
-		return "", errFolder
+		return "", ErrFolder
 	}
 	if strings.HasPrefix(p, "/") {
-		return "", errFolder
+		return "", ErrFolder
 	}
 	for _, part := range strings.Split(p, "/") {
 		if part == ".." {
-			return "", errFolder
+			return "", ErrFolder
 		}
 	}
 	c := path.Clean(p)
 	if c == "." || c == ".." || strings.HasPrefix(c, "../") || path.IsAbs(c) {
-		return "", errFolder
+		return "", ErrFolder
 	}
 	return c, nil
 }
@@ -63,27 +62,27 @@ func joinFolder(base, sub string) string {
 	return path.Join(base, sub)
 }
 
-// clientFolder settles the category and folder of a hand-made add or move.
+// ClientFolder settles the category and folder of a hand-made add or move.
 // Someone with the settings permission may name any; anyone else picks one
 // of the client's categories (or the Downloader's own) and at most a
 // subfolder of where that category saves.
-func (a *API) clientFolder(ctx context.Context, downloaderID int64, category, folder string, checkCategory bool) (string, string, error) {
+func (a *Web) ClientFolder(ctx context.Context, downloaderID int64, category, folder string, checkCategory bool) (string, string, error) {
 	category, folder = strings.TrimSpace(category), strings.TrimSpace(folder)
 	if hasControl(category) || hasControl(folder) {
-		return "", "", errFolder
+		return "", "", ErrFolder
 	}
 	if a.mayPickAnyFolder(ctx) || (folder == "" && (!checkCategory || category == "")) {
 		return category, folder, nil
 	}
 	var dr domain.Downloader
-	if err := database.Get(ctx, a.s.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
-		return "", "", downloads.ErrNoDownloader
+	if err := database.Get(ctx, a.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
+		return "", "", ErrNoDownloader
 	}
-	var base downloads.SaveBase
-	err := a.manager().ControlTorrentClient(ctx, downloaderID, false, func(e downloads.Engine) error {
-		t, ok := e.(downloads.TorrentFolders)
+	var base SaveBase
+	err := a.Manager().ControlTorrentClient(ctx, downloaderID, false, func(e Engine) error {
+		t, ok := e.(TorrentFolders)
 		if !ok {
-			return downloads.ErrNotSupported
+			return ErrNotSupported
 		}
 		var err error
 		base, err = t.SaveBase(ctx)
@@ -94,7 +93,7 @@ func (a *API) clientFolder(ctx context.Context, downloaderID int64, category, fo
 	}
 	if checkCategory && category != "" {
 		if _, ok := base.Categories[category]; !ok && category != dr.Category {
-			return "", "", errCategory
+			return "", "", ErrPickCategory
 		}
 	}
 	if folder == "" {
@@ -109,7 +108,7 @@ func (a *API) clientFolder(ctx context.Context, downloaderID int64, category, fo
 		root = p
 	}
 	if root == "" {
-		return "", "", errFolder
+		return "", "", ErrFolder
 	}
 	return category, joinFolder(root, sub), nil
 }
@@ -166,7 +165,7 @@ func isHex(s string, n int) bool {
 // folderError answers a refused folder, category or link.
 func folderError(w http.ResponseWriter, err error) bool {
 	switch {
-	case errors.Is(err, errFolder), errors.Is(err, errCategory), errors.Is(err, errLink):
+	case errors.Is(err, ErrFolder), errors.Is(err, ErrPickCategory), errors.Is(err, errLink):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return true
 	}

@@ -37,7 +37,7 @@ func TestWritableSwitchLive(t *testing.T) {
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	pause := x.srv.URL + "/api/v1/downloaders/" + itoa(did) + "/items/" + outHash + "/pause"
 	exec41(t, x.s, "UPDATE downloaders SET writable = 0")
-	x.api.manager().Forget(did)
+	x.api.dl.Manager().Forget(did)
 	do(t, "POST", pause, "", http.StatusConflict)
 	// The Downloads screen learns the row's Downloader is locked, so it offers no client controls.
 	if body := string(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=100", "", http.StatusOK)); !strings.Contains(body, `"client_locked":true`) {
@@ -46,17 +46,17 @@ func TestWritableSwitchLive(t *testing.T) {
 	if strings.Contains(f.saw(), "torrents/stop") || strings.Contains(f.saw(), "torrents/pause") {
 		t.Fatalf("a read-only pause reached the client: %s", f.saw())
 	}
-	var v DownloaderView
+	var v downloads.DownloaderView
 	_ = json.Unmarshal(do(t, "PUT", x.srv.URL+"/api/v1/downloaders/"+itoa(did), `{"name":"Q","writable":true}`, http.StatusOK), &v)
 	if !v.Writable || v.WritableLocked {
 		t.Fatalf("view %+v", v)
 	}
 	do(t, "POST", pause, "", http.StatusOK)
 	t.Setenv(downloads.ReadOnlyEnv, itoa(did))
-	x.api.manager().Forget(did)
+	x.api.dl.Manager().Forget(did)
 	do(t, "POST", pause, "", http.StatusConflict)
 	var list struct {
-		Downloaders []DownloaderView `json:"downloaders"`
+		Downloaders []downloads.DownloaderView `json:"downloaders"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloaders", "", http.StatusOK), &list)
 	if len(list.Downloaders) != 1 || !list.Downloaders[0].Writable || !list.Downloaders[0].WritableLocked {

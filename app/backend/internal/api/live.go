@@ -119,8 +119,8 @@ func (a *API) liveInterest(w http.ResponseWriter, r *http.Request) {
 	}
 	a.interest.last[key] = now
 	a.interest.mu.Unlock()
-	if a.s.DLSync != nil {
-		a.s.DLSync.Watched()
+	if a.dl.DLSync != nil {
+		a.dl.DLSync.Watched()
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ttl_seconds": 60})
 }

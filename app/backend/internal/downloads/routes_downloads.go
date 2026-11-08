@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -19,14 +19,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Stage 4.1: the Downloads screen and Needs a decision.
-func (a *API) downloadsRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/downloads/view", a.downloadsView)
-	m.HandleFunc("GET /api/v1/downloads/speeds", a.speeds.Serve)
+func (a *Web) downloadsRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/downloads/view", a.DownloadsView)
+	m.HandleFunc("GET /api/v1/downloads/speeds", a.Speeds.Serve)
 	m.HandleFunc("POST /api/v1/downloads/{id}/remove", a.removeDownload)
 	m.HandleFunc("GET /api/v1/needs-decision", a.needsDecision)
 	a.downloadControlRoutes(m)
@@ -94,7 +94,7 @@ type DownloadRow struct {
 	Ratio *float64 `json:"ratio,omitempty"`
 	// Limits are a client torrent's own seeding rules (-2 the client's
 	// global rule, -1 none), when the client reports them.
-	Limits *downloads.ShareLimits `json:"limits,omitempty"`
+	Limits *ShareLimits `json:"limits,omitempty"`
 	// ClientHint is a client torrent's finer state where the phase is too
 	// coarse: checking, moving, errored, missing (files gone) or idle_seed
 	// (finished, nobody asking for it now).
@@ -152,7 +152,7 @@ func episodeLines(ctx context.Context, db *sql.DB, slotIDs []int64) []EpisodeLin
 		labelLine(&e, kind)
 		out = append(out, e)
 	}
-	sortLines(out)
+	SortLines(out)
 	return out
 }
 
@@ -169,8 +169,8 @@ func labelLine(e *EpisodeLine, kind string) {
 	}
 }
 
-// sortLines puts episode lines in season and episode order.
-func sortLines(out []EpisodeLine) {
+// SortLines puts episode lines in season and episode order.
+func SortLines(out []EpisodeLine) {
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Season != out[j].Season {
 			return out[i].Season < out[j].Season
@@ -179,9 +179,9 @@ func sortLines(out []EpisodeLine) {
 	})
 }
 
-// covers names the episodes in a short line: "S01E02 The Mill" for one,
+// Covers names the episodes in a short line: "S01E02 The Mill" for one,
 // "S01E01-E03, 3 episodes" for a run in one season, else the first few.
-func covers(eps []EpisodeLine) string {
+func Covers(eps []EpisodeLine) string {
 	switch len(eps) {
 	case 0:
 		return ""
@@ -305,7 +305,7 @@ func phase(d domain.Download, slot string) string {
 	return "done"
 }
 
-func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
+func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	// People who may not manage the Library watch only the downloads for
 	// titles they asked for, and act on none of them.
 	// (No person on the request: the sign-in layer is off, as in tests.)
@@ -327,7 +327,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	only, _ := strconv.ParseInt(r.URL.Query().Get("client"), 10, 64)
 	var revs map[int64]uint64
 	if a.syncOn() {
-		revs = a.s.DLSync.Store.Revs()
+		revs = a.DLSync.Store.Revs()
 		if only > 0 {
 			revs = map[int64]uint64{only: revs[only]}
 		}
@@ -365,10 +365,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	rows := make([]DownloadRow, 0, len(ds))
 	shown := map[clientKey]bool{}
 	for _, d := range ds {
-		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID, Path: d.SavePath}
+		row := DownloadRow{DownloadView: DownloadViewOf(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID, Path: d.SavePath}
 		if d.ExternalID != "" {
 			shown[clientKey{d.DownloaderID, strings.ToLower(d.ExternalID)}] = true
-			row.LiveKey = liveKey(d.DownloaderID, d.ExternalID)
+			row.LiveKey = LiveKey(d.DownloaderID, d.ExternalID)
 		}
 		n := names[d.DownloaderID]
 		row.Downloader, row.DownloaderKind, row.Protocol = n.Name, n.Adapter, n.Protocol
@@ -414,12 +414,12 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 		if row.Kind == "show" || row.Kind == "artist" {
 			row.Episodes = linesOf(d.SlotIDs, slots)
-			row.Covers = covers(row.Episodes)
+			row.Covers = Covers(row.Episodes)
 			row.Phase = phaseOfMany(d, row.Episodes)
 		}
 		row.Label = PhaseLabels[row.Phase]
 		row.CanAct = row.Active && manage
-		row.ClientLocked = downloads.ReadOnlyFor(n)
+		row.ClientLocked = ReadOnlyFor(n)
 		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(mediafiles.SlotFailed) && row.SlotState != string(mediafiles.SlotNeedsADecision) {
 			row.Replaced = true
 		}
@@ -455,7 +455,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	if manage {
 		outside, health = a.clientRows(ctx, names, shown)
 		// HolyArrs' own torrents take the ratio the reader's snapshot saw.
-		if a.s.DLSync != nil {
+		if a.DLSync != nil {
 			for i := range rows {
 				if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
 					rows[i].Ratio = a.storeRatio(rows[i].DownloaderID, rows[i].Hash)
@@ -481,10 +481,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next}
 	if a.syncOn() {
 		// Someone is watching: the reader reads faster (no write, no call).
-		a.s.DLSync.Watched()
+		a.DLSync.Watched()
 		out["revs"] = revs
-		if a.s.Live != nil {
-			out["boot"] = a.s.Live.Boot()
+		if a.Live != nil {
+			out["boot"] = a.Live.Boot()
 		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)
@@ -504,8 +504,8 @@ func viewTotals(sets ...[]DownloadRow) DownloadTotals {
 	return t
 }
 
-// outsideCap is how many outside rows one view answer carries by default.
-const outsideCap = 200
+// OutsideCap is how many outside rows one view answer carries by default.
+const OutsideCap = 200
 
 // outsideMax is the most outside rows one view answer carries.
 const outsideMax = 2000
@@ -515,7 +515,7 @@ const outsideMax = 2000
 func outsideLimit(r *http.Request) int {
 	n, err := strconv.Atoi(r.URL.Query().Get("outside_limit"))
 	if err != nil || n <= 0 {
-		return outsideCap
+		return OutsideCap
 	}
 	return min(n, outsideMax)
 }
@@ -649,7 +649,7 @@ func linesOf(ids []int64, slots map[int64]slotInfo) []EpisodeLine {
 			out = append(out, si.line)
 		}
 	}
-	sortLines(out)
+	SortLines(out)
 	return out
 }
 
@@ -661,7 +661,7 @@ func upperFirst(s string) string {
 	return string(unicode.ToUpper(r)) + s[n:]
 }
 
-func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
+func (a *Web) removeDownload(w http.ResponseWriter, r *http.Request) {
 	id, ok := idIn(w, r, "download")
 	if !ok {
 		return
@@ -676,10 +676,10 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 		TurnDown    *bool `json:"turn_down"`
 		SearchAgain *bool `json:"search_again"`
 	}
-	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"delete_files": bool, "turn_down": bool, "search_again": bool}, each optional (defaults in Settings > Downloaders)`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"delete_files": bool, "turn_down": bool, "search_again": bool}, each optional (defaults in Settings > Downloaders)`) {
 		return
 	}
-	c := downloads.RemoveChoice{DeleteFiles: st.RemoveDeleteFiles, TurnDown: st.RemoveTurnDown, SearchAgain: st.RemoveSearchAgain}
+	c := RemoveChoice{DeleteFiles: st.RemoveDeleteFiles, TurnDown: st.RemoveTurnDown, SearchAgain: st.RemoveSearchAgain}
 	if in.DeleteFiles != nil {
 		c.DeleteFiles = *in.DeleteFiles
 	}
@@ -693,21 +693,21 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	if p, ok := webserver.From(r.Context()); ok {
 		who = p.Name
 	}
-	err = a.manager().Remove(r.Context(), id, c, actor(r), who)
+	err = a.Manager().Remove(r.Context(), id, c, actor(r), who)
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		webserver.Fail(w, http.StatusNotFound, "no such download")
-	case errors.Is(err, downloads.ErrNotActive):
+	case errors.Is(err, ErrNotActive):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil:
 		webserver.Internal(w, "api", err)
 	default:
 		var d domain.Download
-		_ = database.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
+		_ = database.Get(r.Context(), a.Store.Read(), "downloads", id, &d)
 		if d.ExternalID != "" {
 			a.forgetTorrents(r.Context(), d.DownloaderID, []string{d.ExternalID})
 		}
-		v := downloadView(d)
+		v := DownloadViewOf(d)
 		v.Label = PhaseLabels["removed"]
 		if d.StateReason != nil {
 			v.Text = upperFirst(*d.StateReason) + "."
@@ -759,7 +759,7 @@ func why(reason string) string {
 	return "ran_out"
 }
 
-func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, error) {
+func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, error) {
 	q := `SELECT s.id, t.id, t.name, t.year, v.label, (SELECT count(*) FROM versions v2 WHERE v2.title_id = t.id),
 		COALESCE(s.last_reason, ''), s.file_id IS NOT NULL, s.updated_at,
 		(SELECT d.release_id FROM downloads d WHERE EXISTS (SELECT 1 FROM json_each(d.slot_ids) WHERE value = s.id) ORDER BY d.id DESC LIMIT 1),
@@ -771,7 +771,7 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 		q += " AND s.id = ?"
 		args = append(args, slotID)
 	}
-	rows, err := a.s.Store.Read().QueryContext(ctx, q+" ORDER BY s.updated_at DESC, s.id DESC", args...)
+	rows, err := a.Store.Read().QueryContext(ctx, q+" ORDER BY s.updated_at DESC, s.id DESC", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -803,17 +803,17 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 	}
 	for i := range out {
 		if out[i].Kind == "artist" {
-			_ = a.s.Store.Read().QueryRowContext(ctx, `SELECT p.name FROM slots s JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id
+			_ = a.Store.Read().QueryRowContext(ctx, `SELECT p.name FROM slots s JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id
 				WHERE s.id = ?`, out[i].SlotID).Scan(&out[i].Album)
 		}
 		if out[i].Kind == "show" || out[i].Kind == "artist" {
-			if eps := episodeLines(ctx, a.s.Store.Read(), []int64{out[i].SlotID}); len(eps) == 1 {
+			if eps := episodeLines(ctx, a.Store.Read(), []int64{out[i].SlotID}); len(eps) == 1 {
 				out[i].Episode = &eps[0]
 			}
 			if out[i].DownloadID != nil {
 				var d domain.Download
-				if database.Get(ctx, a.s.Store.Read(), "downloads", *out[i].DownloadID, &d) == nil && len(d.SlotIDs) > 1 {
-					out[i].Pack = episodeLines(ctx, a.s.Store.Read(), d.SlotIDs)
+				if database.Get(ctx, a.Store.Read(), "downloads", *out[i].DownloadID, &d) == nil && len(d.SlotIDs) > 1 {
+					out[i].Pack = episodeLines(ctx, a.Store.Read(), d.SlotIDs)
 					for _, e := range out[i].Pack {
 						if e.State == string(mediafiles.SlotNeedsADecision) {
 							out[i].PackSlotIDs = append(out[i].PackSlotIDs, e.SlotID)
@@ -823,7 +823,7 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 			}
 		}
 		if out[i].ReleaseID != nil {
-			_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *out[i].ReleaseID).Scan(&out[i].ReleaseName)
+			_ = a.Store.Read().QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *out[i].ReleaseID).Scan(&out[i].ReleaseName)
 		}
 		if out[i].Reason != "" {
 			out[i].Reason = upperFirst(out[i].Reason) + "."
@@ -832,7 +832,7 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 	return out, nil
 }
 
-func (a *API) needsDecision(w http.ResponseWriter, r *http.Request) {
+func (a *Web) needsDecision(w http.ResponseWriter, r *http.Request) {
 	list, err := a.decisions(r.Context(), 0)
 	if err != nil {
 		webserver.Internal(w, "api", err)
@@ -849,10 +849,10 @@ func (a *API) needsDecision(w http.ResponseWriter, r *http.Request) {
 // errMovedOn is a Slot that left Needs a decision while a choice was made.
 var errMovedOn = errors.New("the slot no longer needs a decision")
 
-// beforeDecide lets tests change a Slot between the read and the write.
-var beforeDecide func()
+// BeforeDecide lets tests change a Slot between the read and the write.
+var BeforeDecide func()
 
-func (a *API) decide(w http.ResponseWriter, r *http.Request) {
+func (a *Web) decide(w http.ResponseWriter, r *http.Request) {
 	id, ok := idIn(w, r, "slot")
 	if !ok {
 		return
@@ -861,7 +861,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 		Action string `json:"action"`
 		Pack   bool   `json:"pack"`
 	}
-	if !decode(w, r, &in, `body is {"action": "search" | "turn_down" | "stop", "pack": bool (optional, for every episode of the same download)}`) {
+	if !webserver.Decode(w, r, &in, `body is {"action": "search" | "turn_down" | "stop", "pack": bool (optional, for every episode of the same download)}`) {
 		return
 	}
 	list, err := a.decisions(r.Context(), id)
@@ -895,8 +895,8 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if beforeDecide != nil {
-		beforeDecide()
+	if BeforeDecide != nil {
+		BeforeDecide()
 	}
 	by := actor(r)
 	who := "someone"
@@ -923,13 +923,13 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 		}
 		fallthrough
 	case "search":
-		if a.s.Queue == nil {
+		if a.Queue == nil {
 			webserver.Fail(w, http.StatusServiceUnavailable, "searches are not running")
 			return
 		}
 		var queued []int64
 		for _, t := range targets {
-			jid, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: t.SlotID}, map[string]any{"by_hand": true},
+			jid, _, err := a.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: t.SlotID}, map[string]any{"by_hand": true},
 				"hand_search_slot:"+itoa(t.SlotID), by)
 			if err != nil {
 				webserver.Internal(w, "api", err)
@@ -945,7 +945,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 		}
 		reason := "stopped looking (" + who + ")"
 		var stopped []DecisionView
-		err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		err := a.Store.Write(r.Context(), func(tx *sql.Tx) error {
 			stopped = nil
 			for _, t := range targets {
 				// The Slot may have moved on since it was read: only one that
@@ -995,15 +995,15 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 				name = t.Title + " " + t.Episode.Label
 			}
 			e := &domain.Event{Actor: by, Kind: "stopped_looking", Summary: "Stopped looking for " + name, TitleID: &tid, SlotID: &sid}
-			if a.s.Store.AddEvent(r.Context(), e) == nil && a.s.Live != nil {
-				a.s.Live.Publish("event", e)
+			if a.Store.AddEvent(r.Context(), e) == nil && a.Live != nil {
+				a.Live.Publish("event", e)
 			}
 			st := mediafiles.SlotWanted
 			if t.HasCopy {
 				st = mediafiles.SlotBetterWanted
 			}
-			if a.s.Live != nil {
-				a.s.Live.Publish("slot", map[string]any{"id": sid, "state": st, "reason": reason})
+			if a.Live != nil {
+				a.Live.Publish("slot", map[string]any{"id": sid, "state": st, "reason": reason})
 			}
 		}
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"action": "stop", "state": to, "stopped": len(stopped)})

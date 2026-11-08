@@ -69,8 +69,8 @@ func TestPublishDLAudiences(t *testing.T) {
 	var dlr int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
 
-	sy := &downloads.Sync{Store: &downloads.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
-	x.api.s.DLSync = sy
+	sy := &downloads.Sync{Store: &downloads.Store{}, DB: x.s, Manager: noClient{x.api.dl.Manager()}}
+	x.api.dl.DLSync = sy
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { sy.Around(ctx, func(ctx context.Context) { <-ctx.Done() }); close(done) }()
@@ -94,11 +94,11 @@ func TestPublishDLAudiences(t *testing.T) {
 		out:           {ID: out, Name: "Secret.Outside", Progress: 0.2, State: downloads.StateDownloading},
 		"f" + out[1:]: {ID: "f" + out[1:], Name: "New.Outside", State: downloads.StateQueued},
 	}
-	x.api.PublishDL(ctx, dlr, 4, 5, prev, cur)
+	x.api.dl.PublishDL(ctx, dlr, 4, 5, prev, cur)
 	gone := map[string]downloads.Job{own: cur[own]}
-	x.api.PublishDL(ctx, dlr, 5, 6, cur, gone)
+	x.api.dl.PublishDL(ctx, dlr, 5, 6, cur, gone)
 
-	k := func(ext string) string { return liveKey(dlr, ext) }
+	k := func(ext string) string { return downloads.LiveKey(dlr, ext) }
 	mgr := dlPatches(t, frames(st[0], 300*time.Millisecond))
 	if len(mgr) != 2 {
 		t.Fatalf("manager patches %+v", mgr)
@@ -138,8 +138,8 @@ func TestPublishDLAudiences(t *testing.T) {
 	}
 
 	// Health events go to managers only, once per change.
-	x.api.PublishDLHealth(ctx)
-	x.api.PublishDLHealth(ctx)
+	x.api.dl.PublishDLHealth(ctx)
+	x.api.dl.PublishDLHealth(ctx)
 	hs := dlPatches(t, frames(st[0], 200*time.Millisecond))
 	if len(hs) != 1 || hs[0].Kind != downloads.KindHealth || hs[0].Client != dlr {
 		t.Fatalf("manager health %+v", hs)

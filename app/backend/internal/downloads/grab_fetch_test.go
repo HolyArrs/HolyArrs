@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )

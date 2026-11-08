@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -77,7 +78,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 	do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"Bad","kind":"unsupported","url":"http://x"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"Bad","kind":"sabnzbd","url":"http://user:pw@x","secret":"k"}`, 400)
 
-	var d DownloaderView
+	var d downloads.DownloaderView
 	raw, _ := json.Marshal(map[string]any{"name": "Lab SABnzbd", "kind": "sabnzbd", "url": sab.URL, "secret": key, "category": "movies", "allow_local_network": true, "priority": 2})
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders", string(raw), 201), &d)
 	if d.ID == 0 || d.Protocol != "usenet" || d.Secret != secrets.Masked || d.Priority != 2 || d.Health.State != "working" {
@@ -143,7 +144,7 @@ func TestDownloaderOnTheLocalNetworkNeedsTheSwitch(t *testing.T) {
 	srv, _ := dlServer(t)
 	key := "0123456789abcdef0123456789abcdef"
 	sab := fakeSAB(t, key)
-	var d DownloaderView
+	var d downloads.DownloaderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"S","kind":"sabnzbd","url":"`+sab.URL+`","secret":"`+key+`","category":"movies"}`, 201), &d)
 	var res struct {
 		OK   bool   `json:"ok"`
@@ -237,7 +238,7 @@ func TestMarkFailedRoute(t *testing.T) {
 	if len(tv.Slots) != 1 || tv.Slots[0].Download == nil || tv.Slots[0].Download.Label != "Downloading" || !tv.Slots[0].Download.Active {
 		t.Fatalf("slot %+v", tv.Slots)
 	}
-	var dv DownloadView
+	var dv downloads.DownloadView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(dlID)+"/mark-failed", "", 200), &dv)
 	if dv.State != "failed" || dv.Active || !strings.HasPrefix(dv.Text, "Marked failed") {
 		t.Fatalf("marked %+v", dv)
@@ -258,7 +259,7 @@ func TestMarkFailedRoute(t *testing.T) {
 // route: PUT /api/v1/settings/downloaders
 func TestDownloaderSettings(t *testing.T) {
 	srv, _ := dlServer(t)
-	var st DownloaderSettings
+	var st downloads.DownloaderSettings
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/settings/downloaders", "", 200), &st)
 	if st.StalledAfterHours != 6 || st.StalledActHours != 24 || st.GrabSpacingSeconds != 2 || !st.RemoveFailed || !st.FailDangerous || !st.ReplaceVanished || !st.TryNextDownloader {
 		t.Fatalf("defaults %+v", st)

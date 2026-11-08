@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -17,24 +18,24 @@ import (
 )
 
 // viewAs reads the Downloads rows as one person, past the sign-in.
-func viewAs(t *testing.T, x *dl41, who webserver.Caller) []DownloadRow {
+func viewAs(t *testing.T, x *dl41, who webserver.Caller) []downloads.DownloadRow {
 	t.Helper()
 	return viewAt(t, x, who, "/api/v1/downloads/view")
 }
 
 // viewAt is viewAs at a given address (?asked=1 for the Requests page).
-func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []DownloadRow {
+func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []downloads.DownloadRow {
 	t.Helper()
 	a := New(Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
 	r := httptest.NewRequest("GET", url, nil)
 	r = r.WithContext(webserver.ContextWith(r.Context(), who))
 	w := httptest.NewRecorder()
-	a.downloadsView(w, r)
+	a.dl.DownloadsView(w, r)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status %d: %s", w.Code, w.Body.String())
 	}
 	var out struct {
-		Downloads []DownloadRow `json:"downloads"`
+		Downloads []downloads.DownloadRow `json:"downloads"`
 	}
 	_ = json.Unmarshal(w.Body.Bytes(), &out)
 	return out.Downloads

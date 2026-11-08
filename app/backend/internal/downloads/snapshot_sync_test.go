@@ -72,9 +72,9 @@ func (f *fakeClient) Get(_ context.Context, id string) (Job, error) {
 }
 func (f *fakeClient) Remove(context.Context, string, bool) error { return nil }
 
-func (f *fakeClient) set(j Job) { f.mu.Lock(); f.jobs[j.ID] = j; f.mu.Unlock() }
-func (f *fakeClient) drop(id string)       { f.mu.Lock(); delete(f.jobs, id); f.mu.Unlock() }
-func (f *fakeClient) listCount() int       { f.mu.Lock(); defer f.mu.Unlock(); return f.lists }
+func (f *fakeClient) set(j Job)      { f.mu.Lock(); f.jobs[j.ID] = j; f.mu.Unlock() }
+func (f *fakeClient) drop(id string) { f.mu.Lock(); delete(f.jobs, id); f.mu.Unlock() }
+func (f *fakeClient) listCount() int { f.mu.Lock(); defer f.mu.Unlock(); return f.lists }
 
 // rig is a reader wired to a fake client, a Manager and a test database.
 type rig struct {
@@ -485,7 +485,7 @@ func TestCadence_Table(t *testing.T) {
 func TestSync_NeverWritesDownloads(t *testing.T) {
 	write := regexp.MustCompile(`(?i)(UPDATE\s+downloads\b|INSERT\s+INTO\s+downloads\b|DELETE\s+FROM\s+downloads\b|store\.(Update|Insert|UpdateWhere)\([^)]*"downloads")`)
 	files, _ := filepath.Glob("snapshot*.go") // the reader's files since the fold
-	files = append(files, filepath.Join("..", "api", "downloads_sync.go"))
+	files = append(files, "routes_sync.go")
 	for _, f := range files {
 		if strings.HasSuffix(f, "_test.go") {
 			continue

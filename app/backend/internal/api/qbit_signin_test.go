@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // qBittorrent signs in with an API key or with a user name and password;
@@ -40,13 +41,13 @@ func TestQbitDownloaderKeyOrPassword(t *testing.T) {
 	do(t, "POST", base, `{"name":"None","kind":"qbittorrent","url":"`+qb.URL+`","allow_local_network":true}`, 400)
 	do(t, "POST", base, `{"name":"NoPw","kind":"qbittorrent","url":"`+qb.URL+`","username":"admin","allow_local_network":true}`, 400)
 
-	var key, pw DownloaderView
+	var key, pw downloads.DownloaderView
 	_ = json.Unmarshal(do(t, "POST", base, `{"name":"Key","kind":"qbittorrent","url":"`+qb.URL+`","secret":"your-test-key","allow_local_network":true}`, 201), &key)
 	_ = json.Unmarshal(do(t, "POST", base, `{"name":"Pw","kind":"qbittorrent","url":"`+qb.URL+`/","username":"admin","secret":"your-test-word","allow_local_network":true,"priority":2}`, 201), &pw)
 	if key.Secret != secrets.Masked || pw.Secret != secrets.Masked || pw.Username != "admin" || key.Username != "" {
 		t.Fatalf("views %+v %+v", key, pw)
 	}
-	for _, d := range []DownloaderView{key, pw} {
+	for _, d := range []downloads.DownloaderView{key, pw} {
 		var out map[string]any
 		_ = json.Unmarshal(do(t, "POST", base+"/"+itoa(d.ID)+"/test", "", 200), &out)
 		if out["ok"] != true {

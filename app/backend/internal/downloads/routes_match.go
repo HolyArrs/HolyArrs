@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -15,10 +15,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // Matching torrents HolyArrs did not send (Sonarr's and Radarr's "match
@@ -31,9 +29,9 @@ import (
 
 // Link states.
 const (
-	linkLinked   = "linked"
-	linkUnsure   = "unsure"
-	linkNotMedia = "not_media"
+	LinkLinked   = "linked"
+	LinkUnsure   = "unsure"
+	LinkNotMedia = "not_media"
 	linkSkipped  = "skipped"
 )
 
@@ -54,15 +52,15 @@ type matchWant struct {
 	category   string
 }
 
-// clientMatch holds the match lookups' hooks (the background reader's
+// ClientMatch holds the match lookups' hooks (the background reader's
 // queue does the matching, through MatchLinkOnly).
-type clientMatch struct {
+type ClientMatch struct {
 	mu sync.Mutex
 	// Hooks; nil means the real lookups and adds (tests swap them).
-	searchMovies func(ctx context.Context, name string, year int) ([]metadata.Movie, error)
-	searchShows  func(ctx context.Context, name string) ([]metadata.Show, error)
-	addMovie     func(ctx context.Context, id string) (int64, error)
-	addShow      func(ctx context.Context, id string) (int64, error)
+	SearchMovies func(ctx context.Context, name string, year int) ([]metadata.Movie, error)
+	SearchShows  func(ctx context.Context, name string) ([]metadata.Show, error)
+	AddMovie     func(ctx context.Context, id string) (int64, error)
+	AddShow      func(ctx context.Context, id string) (int64, error)
 }
 
 // guess is what a torrent name says.
@@ -179,17 +177,17 @@ func pickSure(cs []Candidate, year int) int {
 }
 
 // candidatesFor looks the guess up once and scores the answers.
-func (a *API) candidatesFor(ctx context.Context, g guess) ([]Candidate, error) {
+func (a *Web) candidatesFor(ctx context.Context, g guess) ([]Candidate, error) {
 	var cs []Candidate
-	m := &a.match
+	m := &a.Match
 	switch g.kind {
 	case "movie":
-		find := m.searchMovies
+		find := m.SearchMovies
 		if find == nil {
-			if a.s.Metadata == nil {
+			if a.Metadata == nil {
 				return nil, errors.New("no movie details source")
 			}
-			find = a.s.Metadata.Search
+			find = a.Metadata.Search
 		}
 		ms, err := find(ctx, g.title, g.year)
 		if err != nil {
@@ -207,14 +205,14 @@ func (a *API) candidatesFor(ctx context.Context, g guess) ([]Candidate, error) {
 			cs = append(cs, Candidate{ID: "tmdb:" + x.IDs["tmdb"], Kind: "movie", Name: x.Name, Year: x.Year, Poster: x.Poster, Score: likeness(g.title, x.Name)})
 		}
 	case "show":
-		find := m.searchShows
+		find := m.SearchShows
 		if find == nil {
 			find = func(ctx context.Context, name string) ([]metadata.Show, error) {
-				d, err := library.ReadShowDefaults(ctx, a.s.Store.Read())
+				d, err := library.ReadShowDefaults(ctx, a.Store.Read())
 				if err != nil {
 					return nil, err
 				}
-				p, err := a.showSource(d.Source)
+				p, err := a.ShowSource(d.Source)
 				if err != nil {
 					return nil, err
 				}
@@ -250,7 +248,7 @@ func (a *API) candidatesFor(ctx context.Context, g guess) ([]Candidate, error) {
 
 // addAndLink adds the candidate (or reuses the Library's copy) and links the
 // torrent to it and the episodes it names.
-func (a *API) addAndLink(ctx context.Context, w matchWant, g guess, c Candidate, cs []Candidate, how string) error {
+func (a *Web) addAndLink(ctx context.Context, w matchWant, g guess, c Candidate, cs []Candidate, how string) error {
 	titleID, err := a.ensureTitle(ctx, c)
 	if err != nil {
 		if isNoFolder(err) {
@@ -258,12 +256,12 @@ func (a *API) addAndLink(ctx context.Context, w matchWant, g guess, c Candidate,
 				return errHandNoFolder
 			}
 			// Adding needs a choice that has no default: ask instead.
-			return a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "no default folder")
+			return a.saveLink(ctx, w, LinkUnsure, 0, nil, "", cs, "no default folder")
 		}
 		return err
 	}
 	slots, covers := a.linkSlots(ctx, titleID, c.Kind, g)
-	return a.saveLink(ctx, w, linkLinked, titleID, slots, covers, cs, how)
+	return a.saveLink(ctx, w, LinkLinked, titleID, slots, covers, cs, how)
 }
 
 // errHandNoFolder answers a hand pick whose title has no default Library
@@ -284,49 +282,31 @@ func isNoFolder(err error) bool {
 
 // ensureTitle finds the candidate in the Library or adds it the normal way,
 // without searching and without keeping it up to date.
-func (a *API) ensureTitle(ctx context.Context, c Candidate) (int64, error) {
-	db := a.s.Store.Read()
+func (a *Web) ensureTitle(ctx context.Context, c Candidate) (int64, error) {
+	db := a.Store.Read()
 	kind, v, _ := strings.Cut(c.ID, ":")
 	if c.Kind == "movie" {
 		if id, err := library.TitleByTMDB(ctx, db, v); err != nil || id != 0 {
 			return id, err
 		}
-		if a.match.addMovie != nil {
-			return a.match.addMovie(ctx, c.ID)
+		if a.Match.AddMovie != nil {
+			return a.Match.AddMovie(ctx, c.ID)
 		}
-		m, err := a.s.Metadata.Movie(ctx, c.ID)
-		if err != nil {
-			return 0, err
-		}
-		opt := library.AddOptions{}
-		if err := a.kindDefaultsFor(ctx, "movie", nil, &opt.LibraryFolderID, &opt.PickRulesID, &opt.KeepUpToDate, &opt.SearchOnAdd); err != nil {
-			return 0, err
-		}
-		off := false
-		opt.KeepUpToDate, opt.SearchOnAdd, opt.WhyAdded = &off, false, "import"
-		id, _, err := a.s.Library.Add(ctx, m, opt, domain.System)
-		return id, err
+		return a.AddMovieTitle(ctx, c.ID)
 	}
 	if id, err := library.ShowByIDs(ctx, db, map[string]string{kind: v}); err != nil || id != 0 {
 		return id, err
 	}
-	if a.match.addShow != nil {
-		return a.match.addShow(ctx, c.ID)
+	if a.Match.AddShow != nil {
+		return a.Match.AddShow(ctx, c.ID)
 	}
-	opt := shows.ShowAddOptions{}
-	if err := a.kindDefaultsFor(ctx, "show", nil, &opt.LibraryFolderID, &opt.PickRulesID, &opt.KeepUpToDate, &opt.SearchOnAdd); err != nil {
-		return 0, err
-	}
-	off := false
-	opt.KeepUpToDate, opt.SearchOnAdd, opt.WhyAdded = &off, false, "import"
-	id, _, err := shows.New(a.s.Library).AddShow(ctx, c.ID, opt, domain.System)
-	return id, err
+	return a.AddShowTitle(ctx, c.ID)
 }
 
 // linkSlots finds the main Version's Slots the torrent covers and a short
 // line naming them.
-func (a *API) linkSlots(ctx context.Context, titleID int64, kind string, g guess) ([]int64, string) {
-	db := a.s.Store.Read()
+func (a *Web) linkSlots(ctx context.Context, titleID int64, kind string, g guess) ([]int64, string) {
+	db := a.Store.Read()
 	q := `SELECT s.id, COALESCE(json_extract(i.numbers, '$.season'), 0), COALESCE(json_extract(i.numbers, '$.episode'), 0)
 		FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
 		WHERE i.title_id = ? AND v.is_main = 1 ORDER BY 2, 3`
@@ -400,7 +380,7 @@ func coversLine(g guess) string {
 }
 
 // saveLink writes (or replaces) the torrent's one link row.
-func (a *API) saveLink(ctx context.Context, w matchWant, state string, titleID int64, slots []int64, covers string, cs []Candidate, how string) error {
+func (a *Web) saveLink(ctx context.Context, w matchWant, state string, titleID int64, slots []int64, covers string, cs []Candidate, how string) error {
 	if slots == nil {
 		slots = []int64{}
 	}
@@ -413,7 +393,7 @@ func (a *API) saveLink(ctx context.Context, w matchWant, state string, titleID i
 	if titleID != 0 {
 		tid = titleID
 	}
-	return a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+	return a.Store.Write(ctx, func(tx *sql.Tx) error {
 		if cj == nil { // keep the choices already stored
 			_ = tx.QueryRow("SELECT candidates FROM client_links WHERE downloader_id = ? AND hash = ?", w.downloader, w.hash).Scan(&cj)
 			if cj == nil {
@@ -431,7 +411,7 @@ func (a *API) saveLink(ctx context.Context, w matchWant, state string, titleID i
 
 // linkedTitles names outside rows from their links: the Library title,
 // its kind and the episodes the torrent holds. They stay outside rows.
-func (a *API) linkedTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) {
+func (a *Web) linkedTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) {
 	db := a.read()
 	rs, err := db.QueryContext(ctx, `SELECT l.hash, t.id, t.name, t.kind, t.year, l.covers FROM client_links l JOIN titles t ON t.id = l.title_id
 		WHERE l.downloader_id = ? AND l.state = 'linked'`, downloaderID)
@@ -479,14 +459,14 @@ type MatchView struct {
 	MatchedAt    string      `json:"matched_at"`
 }
 
-func (a *API) clientMatchRoutes(m *http.ServeMux) {
+func (a *Web) clientMatchRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/downloads/matches", a.listMatches)
 	m.HandleFunc("POST /api/v1/downloads/matches/run", a.runMatches)
 	m.HandleFunc("POST /api/v1/downloads/matches/{id}/pick", a.pickMatch)
 }
 
-func (a *API) readMatches(ctx context.Context, where string, args ...any) ([]MatchView, error) {
-	rs, err := a.s.Store.Read().QueryContext(ctx, `SELECT id, downloader_id, hash, name, state, COALESCE(title_id, 0), covers, how, candidates, matched_at
+func (a *Web) readMatches(ctx context.Context, where string, args ...any) ([]MatchView, error) {
+	rs, err := a.Store.Read().QueryContext(ctx, `SELECT id, downloader_id, hash, name, state, COALESCE(title_id, 0), covers, how, candidates, matched_at
 		FROM client_links `+where, args...)
 	if err != nil {
 		return nil, err
@@ -508,14 +488,14 @@ func (a *API) readMatches(ctx context.Context, where string, args ...any) ([]Mat
 
 // listMatches is the Confirm match list, with how many torrents are in
 // each state.
-func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
+func (a *Web) listMatches(w http.ResponseWriter, r *http.Request) {
 	unsure, err := a.readMatches(r.Context(), "WHERE state = 'unsure' ORDER BY name")
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	counts := map[string]int{linkLinked: 0, linkUnsure: 0, linkNotMedia: 0, linkSkipped: 0}
-	rs, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT state, COUNT(*) FROM client_links GROUP BY state")
+	counts := map[string]int{LinkLinked: 0, LinkUnsure: 0, LinkNotMedia: 0, linkSkipped: 0}
+	rs, err := a.Store.Read().QueryContext(r.Context(), "SELECT state, COUNT(*) FROM client_links GROUP BY state")
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -535,17 +515,17 @@ func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
 
 // runMatches (Match now) makes every unmatched outside item due again in
 // the reader's match queue, failed lookups included.
-func (a *API) runMatches(w http.ResponseWriter, r *http.Request) {
+func (a *Web) runMatches(w http.ResponseWriter, r *http.Request) {
 	// The reader's queue matches: everything waiting or given up is due
 	// again.
-	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.rematch(r.Context())})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.Rematch(r.Context())})
 }
 
 const pickHelp = `send {"candidate": "<id from the list>"}, {"not_media": true} or {"skip": true}`
 
 // pickMatch answers one Confirm match entry: a candidate (added and linked
 // the same way as a sure match), not media, or skip.
-func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
+func (a *Web) pickMatch(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
@@ -555,7 +535,7 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 		NotMedia  bool   `json:"not_media"`
 		Skip      bool   `json:"skip"`
 	}
-	if !decode(w, r, &in, pickHelp) {
+	if !webserver.Decode(w, r, &in, pickHelp) {
 		return
 	}
 	vs, err := a.readMatches(r.Context(), "WHERE id = ?", id)
@@ -571,7 +551,7 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 	want := matchWant{downloader: v.DownloaderID, hash: v.Hash, name: v.Name}
 	switch {
 	case in.NotMedia:
-		err = a.saveLink(r.Context(), want, linkNotMedia, 0, nil, "", nil, "by hand")
+		err = a.saveLink(r.Context(), want, LinkNotMedia, 0, nil, "", nil, "by hand")
 	case in.Skip:
 		err = a.saveLink(r.Context(), want, linkSkipped, 0, nil, "", nil, "by hand")
 	case in.Candidate != "":
@@ -599,7 +579,7 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		libraryError(w, err)
+		a.LibraryError(w, err)
 		return
 	}
 	vs, err = a.readMatches(r.Context(), "WHERE id = ?", id)
@@ -612,9 +592,9 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 
 // outsideHash says the hash is not tied to any HolyArrs download record in
 // that Downloader.
-func (a *API) outsideHash(ctx context.Context, downloaderID int64, hash string) bool {
+func (a *Web) outsideHash(ctx context.Context, downloaderID int64, hash string) bool {
 	var n int
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT COUNT(*) FROM downloads WHERE downloader_id = ? AND lower(external_id) = ?",
+	_ = a.Store.Read().QueryRowContext(ctx, "SELECT COUNT(*) FROM downloads WHERE downloader_id = ? AND lower(external_id) = ?",
 		downloaderID, strings.ToLower(hash)).Scan(&n)
 	return n == 0
 }

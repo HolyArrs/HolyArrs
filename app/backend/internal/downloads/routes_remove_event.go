@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 // itemRemovedEvent writes the download_removed Event for an item taken out
 // straight in a Downloader (Manager.Remove logs its own; this path skips
 // it). It names the item when HolyArrs knows it.
-func (a *API) itemRemovedEvent(r *http.Request, downloaderID int64, key string, deleteFiles bool) {
+func (a *Web) itemRemovedEvent(r *http.Request, downloaderID int64, key string, deleteFiles bool) {
 	verb := "removed"
 	if deleteFiles {
 		verb = "removed (with its files)"
@@ -23,12 +23,12 @@ func (a *API) itemRemovedEvent(r *http.Request, downloaderID int64, key string, 
 // itemChangedEvent writes a download_changed Event for a change a person
 // sent straight to a Downloader (pause, resume, a move, priority, Try
 // again): who did it, what, and to which item.
-func (a *API) itemChangedEvent(r *http.Request, downloaderID int64, key, action, verb string) {
+func (a *Web) itemChangedEvent(r *http.Request, downloaderID int64, key, action, verb string) {
 	a.itemEvent(r, downloaderID, key, "download_changed", verb, map[string]any{"by_hand": true, "action": action, "hash": key})
 }
 
 // itemChanged is itemChangedEvent with the Downloader id read from the path.
-func (a *API) itemChanged(r *http.Request, key, action, verb string) {
+func (a *Web) itemChanged(r *http.Request, key, action, verb string) {
 	if did, err := strconv.ParseInt(r.PathValue("id"), 10, 64); err == nil {
 		a.itemChangedEvent(r, did, key, action, verb)
 	}
@@ -36,25 +36,25 @@ func (a *API) itemChanged(r *http.Request, key, action, verb string) {
 
 // manyChangedEvent writes one download_changed Event for a change sent to
 // many items of one Downloader at once.
-func (a *API) manyChangedEvent(r *http.Request, downloaderID int64, keys []string, action, verb string, extra map[string]any) {
+func (a *Web) manyChangedEvent(r *http.Request, downloaderID int64, keys []string, action, verb string, extra map[string]any) {
 	if len(keys) == 1 {
 		a.itemEvent(r, downloaderID, keys[0], "download_changed", verb, map[string]any{"by_hand": true, "action": action, "hash": keys[0]})
 		return
 	}
 	ctx := context.WithoutCancel(r.Context())
 	var client string
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT name FROM downloaders WHERE id = ?", downloaderID).Scan(&client)
+	_ = a.Store.Read().QueryRowContext(ctx, "SELECT name FROM downloaders WHERE id = ?", downloaderID).Scan(&client)
 	data := map[string]any{"by_hand": true, "action": action, "count": len(keys), "downloader": client}
 	for k, v := range extra {
 		data[k] = v
 	}
-	_ = a.s.Store.AddEvent(ctx, &domain.Event{Actor: actor(r), Kind: "download_changed", Data: data,
+	_ = a.Store.AddEvent(ctx, &domain.Event{Actor: actor(r), Kind: "download_changed", Data: data,
 		Summary: strings.TrimSpace(whoName(r) + " " + verb + " " + strconv.Itoa(len(keys)) + " items in " + client)})
 }
 
-func (a *API) itemEvent(r *http.Request, downloaderID int64, key, kind, verb string, data map[string]any) {
+func (a *Web) itemEvent(r *http.Request, downloaderID int64, key, kind, verb string, data map[string]any) {
 	ctx := context.WithoutCancel(r.Context())
-	db := a.s.Store.Read()
+	db := a.Store.Read()
 	var client, name string
 	_ = db.QueryRowContext(ctx, "SELECT name FROM downloaders WHERE id = ?", downloaderID).Scan(&client)
 	if client != "" {
@@ -80,5 +80,5 @@ func (a *API) itemEvent(r *http.Request, downloaderID int64, key, kind, verb str
 		where = " in "
 	}
 	e.Summary = strings.TrimSpace(whoName(r) + " " + verb + " " + name + where + client)
-	_ = a.s.Store.AddEvent(ctx, e)
+	_ = a.Store.AddEvent(ctx, e)
 }

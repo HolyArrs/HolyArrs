@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 const labNZBGetRel = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"

@@ -134,7 +134,7 @@ func TestNZBGetOutsideIDsGetRemoveRetry(t *testing.T) {
 		t.Fatalf("edits %v", f.edits)
 	}
 	for i, e := range f.edits {
-		if got := e[0].(string) + " " + itoa(e[1].([]int)[0]); got != want[i] {
+		if got := e[0].(string) + " " + itoaInt(e[1].([]int)[0]); got != want[i] {
 			t.Fatalf("edit %d: %s, want %s", i, got, want[i])
 		}
 	}
@@ -207,4 +207,4 @@ func nzbAllRig(t *testing.T) (*nzbAll, *NZBGet) {
 	return f, NewNZBGet(s.URL, "u", "p", nil)
 }
 
-func itoa(n int) string { b, _ := json.Marshal(n); return string(b) }
+func itoaInt(n int) string { b, _ := json.Marshal(n); return string(b) }

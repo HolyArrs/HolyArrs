@@ -447,7 +447,7 @@ func (x *labMovie) placed() (mediafiles.File, bool) {
 
 // untilPlaced syncs the Downloader every second until the Slot's file is in
 // the Library and its row says Done.
-func (x *labMovie) untilPlaced(t *testing.T) (mediafiles.File, DownloadRow) {
+func (x *labMovie) untilPlaced(t *testing.T) (mediafiles.File, downloads.DownloadRow) {
 	t.Helper()
 	deadline := time.Now().Add(4 * time.Minute)
 	var phases []string
