@@ -1,7 +1,6 @@
-package api
+package discover
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -9,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -20,13 +20,13 @@ func TestServeArtworkStableRevalidates(t *testing.T) {
 	p := filepath.Join(dir, name)
 	_ = os.WriteFile(p, []byte("jpeg"), 0o644)
 	w := httptest.NewRecorder()
-	serveArtwork(w, httptest.NewRequest("GET", "/x", nil), name, p)
+	library.ServeArtwork(w, httptest.NewRequest("GET", "/x", nil), name, p)
 	if !strings.Contains(w.Header().Get("Cache-Control"), "immutable") {
 		t.Fatalf("hashed address %q", w.Header().Get("Cache-Control"))
 	}
 	_ = os.WriteFile(filepath.Join(dir, ".chk-"+name), []byte(`"e1"`), 0o644)
 	w = httptest.NewRecorder()
-	serveArtwork(w, httptest.NewRequest("GET", "/x", nil), name, p)
+	library.ServeArtwork(w, httptest.NewRequest("GET", "/x", nil), name, p)
 	if cc := w.Header().Get("Cache-Control"); cc != "private, max-age=86400" || w.Header().Get("ETag") == `"0123456789abcdef0123456789abcdef"` {
 		t.Fatalf("stable address %q %q", cc, w.Header().Get("ETag"))
 	}
@@ -35,11 +35,11 @@ func TestServeArtworkStableRevalidates(t *testing.T) {
 // Findings 12 and 14: card art 7 days; person and collection lists a day.
 func TestShorterListAndCardKeeps(t *testing.T) {
 	t.Parallel()
-	if discover.CardArtTTL != 7*24*time.Hour {
-		t.Fatalf("card art %v", discover.CardArtTTL)
+	if CardArtTTL != 7*24*time.Hour {
+		t.Fatalf("card art %v", CardArtTTL)
 	}
-	if discover.ExploreListTTL["person"] != 24*time.Hour || discover.ExploreListTTL["collection"] != 24*time.Hour {
-		t.Fatalf("lists %v", discover.ExploreListTTL)
+	if ExploreListTTL["person"] != 24*time.Hour || ExploreListTTL["collection"] != 24*time.Hour {
+		t.Fatalf("lists %v", ExploreListTTL)
 	}
 }
 
@@ -47,10 +47,10 @@ func TestShorterListAndCardKeeps(t *testing.T) {
 // add a season trailer); full details keep the day.
 func TestDetailsWithoutVideosShort(t *testing.T) {
 	t.Parallel()
-	if d := discover.DetailsTTL(discoverEntry{Details: &metadata.Details{}}); d > 15*time.Minute {
+	if d := DetailsTTL(Entry{Details: &metadata.Details{}}); d > 15*time.Minute {
 		t.Fatalf("no videos kept %v", d)
 	}
-	if d := discover.DetailsTTL(discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != discover.TTL["details"] {
+	if d := DetailsTTL(Entry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != TTL["details"] {
 		t.Fatalf("videos kept %v", d)
 	}
 }
