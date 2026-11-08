@@ -6,7 +6,7 @@ level: Setup
 
 Make new movies, shows and music appear in Plex, Jellyfin or Emby right after import.
 
-HolyArrs tells the server to look at a folder again after it imports, renames or deletes files there. It only sends these updates and never reads your library back.
+HolyArrs tells the server to look at a folder again after it imports, renames or deletes files there.
 
 ## Before you start
 
@@ -18,8 +18,8 @@ HolyArrs tells the server to look at a folder again after it imports, renames or
 
 1. Open **Settings > Media servers**.
 2. Select **Add a media server**.
-3. Pick the **Kind**: Plex, Jellyfin or Emby.
-4. Enter a **Name**. Each server needs its own, up to 80 characters.
+3. Enter a **Name**. Each server needs its own, up to 80 characters.
+4. Pick the **Kind**: Plex, Jellyfin or Emby. You cannot change it later.
 5. Enter the **Address** with `http` or `https`, such as `http://192.168.1.10:32400` for Plex or `http://192.168.1.10:8096` for Jellyfin and Emby.
 6. Paste the **Plex token**, or the **API key** for Jellyfin and Emby.
 7. Select **Save**, then **Test** on the new card. You should see the library names (Plex) or the server name and version (Jellyfin, Emby).
