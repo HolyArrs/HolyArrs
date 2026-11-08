@@ -37,7 +37,7 @@ const (
 	GroupNaming      = "naming"
 	GroupSubtitles   = "subtitles"
 	GroupPeople      = "people"
-	GroupWishlist    = "wishlist"
+	GroupRequests    = "wishlist"
 	GroupAlerts      = "alerts"
 	// GroupOther holds only not-moved entries (tags, lists, app links).
 	GroupOther = "other"
@@ -45,13 +45,13 @@ const (
 
 // GroupOrder lists the groups in the order they are shown and moved.
 var GroupOrder = []string{GroupFolders, GroupRules, GroupTitles, GroupNeverAdd, GroupLists, GroupSources, GroupDownloaders,
-	GroupNaming, GroupSubtitles, GroupPeople, GroupWishlist, GroupAlerts}
+	GroupNaming, GroupSubtitles, GroupPeople, GroupRequests, GroupAlerts}
 
 // GroupLabels are the groups' names on the move screen.
 var GroupLabels = map[string]string{
 	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list", GroupLists: "Outside lists",
 	GroupSources: "Sources", GroupDownloaders: "Downloaders", GroupNaming: "Naming", GroupSubtitles: "Subtitles",
-	GroupPeople: "People", GroupWishlist: "Requests", GroupAlerts: "Alerts", GroupOther: "Other settings",
+	GroupPeople: "People", GroupRequests: "Requests", GroupAlerts: "Alerts", GroupOther: "Other settings",
 }
 
 // Caps on what one Plan holds; anything past them is listed as not moved.
@@ -2003,7 +2003,7 @@ func (b *builder) people(s *Snapshot) {
 			if *planned > 0 && hasDays {
 				b.p.Mapped = append(b.p.Mapped, from+"."+daysKey)
 			} else if hasDays {
-				b.not(GroupWishlist, from+"."+daysKey, kind+" default", "the quota is unlimited, so its old access-window length is not used")
+				b.not(GroupRequests, from+"."+daysKey, kind+" default", "the quota is unlimited, so its old access-window length is not used")
 			}
 			return
 		}
@@ -2013,21 +2013,21 @@ func (b *builder) people(s *Snapshot) {
 			if n < 0 || n > 1000 {
 				reason = "the default quota is outside HolyArrs' supported range of 0 to 1000, so it is not approximated"
 			}
-			b.not(GroupWishlist, from+"."+limitKey, kind+" default", reason)
+			b.not(GroupRequests, from+"."+limitKey, kind+" default", reason)
 		}
 		if hasDays {
 			reason := "the access-window length has no matching default quota to move"
 			if hasLimit {
 				reason = "the default quota pair cannot be moved without changing its meaning"
 			}
-			b.not(GroupWishlist, from+"."+daysKey, kind+" default", reason)
+			b.not(GroupRequests, from+"."+daysKey, kind+" default", reason)
 		}
 	}
 	accountDefault("movie", movies)
 	accountDefault("show", shows)
 	if movies != nil || shows != nil {
 		as := &AskSettingsPlan{MoviesPerWeek: movies, ShowsPerWeek: shows}
-		b.add(GroupWishlist, Item{Key: "wishlist_defaults", Name: "Request defaults", From: b.from("settings", -1),
+		b.add(GroupRequests, Item{Key: "wishlist_defaults", Name: "Request defaults", From: b.from("settings", -1),
 			Detail: "default weekly limits", AskSettings: as})
 	}
 	// Radarr's availability delay is a Release gate setting (titleList).
@@ -2071,7 +2071,7 @@ func (b *builder) asks(s *Snapshot) {
 			}
 		}
 		if ref == "" {
-			b.not(GroupWishlist, from, "ask "+strconv.FormatInt(r.SourceID, 10), "no id HolyArrs can find it by")
+			b.not(GroupRequests, from, "ask "+strconv.FormatInt(r.SourceID, 10), "no id HolyArrs can find it by")
 			continue
 		}
 		name := b.titles[kind+":"+ref]
@@ -2090,29 +2090,29 @@ func (b *builder) asks(s *Snapshot) {
 			By: byKey, ByName: clip(r.ByName, 64), AskedAt: clip(r.Created, 40), DecidedAt: clip(r.Updated, 40)}
 		if ap.AskedAt != "" {
 			if asked, ok := sourceTime(ap.AskedAt); !ok {
-				b.not(GroupWishlist, from+".created", ap.AskedAt, "the source timestamp format is invalid, so the move cannot preserve it")
+				b.not(GroupRequests, from+".created", ap.AskedAt, "the source timestamp format is invalid, so the move cannot preserve it")
 				ap.AskedAt = ""
 			} else if s.ReadAt.IsZero() {
-				b.not(GroupWishlist, from+".created", ap.AskedAt, "this kept read has no capture time, so the source timestamp cannot be verified")
+				b.not(GroupRequests, from+".created", ap.AskedAt, "this kept read has no capture time, so the source timestamp cannot be verified")
 				ap.AskedAt = ""
 			} else if asked.After(s.ReadAt) {
-				b.not(GroupWishlist, from+".created", ap.AskedAt, "the source timestamp is after this kept read, so the move cannot preserve it")
+				b.not(GroupRequests, from+".created", ap.AskedAt, "the source timestamp is after this kept read, so the move cannot preserve it")
 				ap.AskedAt = ""
 			}
 		} else {
-			b.not(GroupWishlist, from+".created", "(missing)", "the source has no request timestamp, so the move cannot preserve it")
+			b.not(GroupRequests, from+".created", "(missing)", "the source has no request timestamp, so the move cannot preserve it")
 		}
 		if ap.Approved && ap.DecidedAt == "" {
-			b.not(GroupWishlist, from+".updated", "(missing)", "the source has no decision timestamp, so the move cannot preserve it")
+			b.not(GroupRequests, from+".updated", "(missing)", "the source has no decision timestamp, so the move cannot preserve it")
 		} else if ap.DecidedAt != "" {
 			if decided, ok := sourceTime(ap.DecidedAt); !ok {
-				b.not(GroupWishlist, from+".updated", ap.DecidedAt, "the source decision timestamp format is invalid, so the move cannot preserve it")
+				b.not(GroupRequests, from+".updated", ap.DecidedAt, "the source decision timestamp format is invalid, so the move cannot preserve it")
 				ap.DecidedAt = ""
 			} else if s.ReadAt.IsZero() {
-				b.not(GroupWishlist, from+".updated", ap.DecidedAt, "this kept read has no capture time, so the source decision timestamp cannot be verified")
+				b.not(GroupRequests, from+".updated", ap.DecidedAt, "this kept read has no capture time, so the source decision timestamp cannot be verified")
 				ap.DecidedAt = ""
 			} else if decided.After(s.ReadAt) {
-				b.not(GroupWishlist, from+".updated", ap.DecidedAt, "the source decision timestamp is after this kept read, so the move cannot preserve it")
+				b.not(GroupRequests, from+".updated", ap.DecidedAt, "the source decision timestamp is after this kept read, so the move cannot preserve it")
 				ap.DecidedAt = ""
 			}
 		}
@@ -2138,7 +2138,7 @@ func (b *builder) asks(s *Snapshot) {
 		if by == "" {
 			by = "someone"
 		}
-		b.add(GroupWishlist, Item{Key: fmt.Sprintf("ask:%s:%d", s.Kind, r.SourceID), Name: name, From: from,
+		b.add(GroupRequests, Item{Key: fmt.Sprintf("ask:%s:%d", s.Kind, r.SourceID), Name: name, From: from,
 			Detail: state + ", asked by " + by, Ask: ap})
 	}
 }

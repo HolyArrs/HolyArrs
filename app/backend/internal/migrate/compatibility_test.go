@@ -45,11 +45,11 @@ func TestCompatibilityPlanKeepsLeastPrivilegeStableIdentityAndPerKindLimits(t *t
 	if _, ok := notMoved(p, "seerr users[1].permissions"); !ok {
 		t.Fatal("unrepresentable scoped permissions were not reported")
 	}
-	ask := item(t, p, GroupWishlist, "ask:seerr:21")
+	ask := item(t, p, GroupRequests, "ask:seerr:21")
 	if ask.Ask.By != ana.Key || ask.Ask.Decider != bo.Key || ask.Ask.DecidedAt != "2026-09-02T11:00:00Z" {
 		t.Fatalf("request identities/timestamp not stable: %+v", ask.Ask)
 	}
-	defaults := item(t, p, GroupWishlist, "wishlist_defaults")
+	defaults := item(t, p, GroupRequests, "wishlist_defaults")
 	if defaults.AskSettings == nil || defaults.AskSettings.MoviesPerWeek == nil || *defaults.AskSettings.MoviesPerWeek != 3 || defaults.AskSettings.ShowsPerWeek != nil {
 		t.Fatalf("supported defaults not mapped: %+v", defaults)
 	}
@@ -178,7 +178,7 @@ func TestCompatibilitySkippedPeopleCannotOwnOrDecideLaterMoveRequest(t *testing.
 		}
 		p := &Plan{Apps: []string{"seerr"}, Groups: []Group{
 			{Name: GroupPeople, Label: GroupLabels[GroupPeople], Skipped: peopleSkipped, Items: people},
-			{Name: GroupWishlist, Label: GroupLabels[GroupWishlist], Items: []Item{{
+			{Name: GroupRequests, Label: GroupLabels[GroupRequests], Items: []Item{{
 				Key: "ask:seerr:" + name, Name: "Numeric reuse guard " + name,
 				Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:" + ref, IDs: map[string]string{"tmdb": ref}, By: asker.Key, Approved: true, Decider: decider.Key},
 			}}},
@@ -216,7 +216,7 @@ func TestCompatibilitySkippedPeopleCannotOwnOrDecideLaterMoveRequest(t *testing.
 	}
 	stablePlan := &Plan{Apps: []string{"seerr"}, Groups: []Group{
 		{Name: GroupPeople, Label: GroupLabels[GroupPeople], Items: stablePeople},
-		{Name: GroupWishlist, Label: GroupLabels[GroupWishlist], Items: []Item{{
+		{Name: GroupRequests, Label: GroupLabels[GroupRequests], Items: []Item{{
 			Key: "ask:seerr:stable-explicit-skip", Name: "Stable explicit skip guard",
 			Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700080", IDs: map[string]string{"tmdb": "700080"}, By: stableAsker.Key, Approved: true, Decider: stableDecider.Key},
 		}}},
@@ -345,7 +345,7 @@ func TestCompatibilityPersonChoicePrecedesPriorIdentityMarks(t *testing.T) {
 			}
 			p := &Plan{Apps: []string{"seerr"}, Groups: []Group{
 				{Name: GroupPeople, Label: GroupLabels[GroupPeople], Skipped: tc.groupSkipped, Items: people},
-				{Name: GroupWishlist, Label: GroupLabels[GroupWishlist], Items: []Item{{Key: "ask:seerr:" + tc.name, Name: tc.name,
+				{Name: GroupRequests, Label: GroupLabels[GroupRequests], Items: []Item{{Key: "ask:seerr:" + tc.name, Name: tc.name,
 					Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:" + ref, IDs: map[string]string{"tmdb": ref}, By: people[0].Key, Approved: true, Decider: people[1].Key}}}},
 			}}
 			moveID := newMove()
@@ -548,7 +548,7 @@ func TestCompatibilityPlanKeepsUnlimitedWishlistDefaults(t *testing.T) {
 		"default_show_limit": int64(0), "default_show_days": int64(7),
 	}}
 	p := BuildPlan([]Input{{ID: 1, Snap: seerr}}, Choices{})
-	defaults := item(t, p, GroupWishlist, "wishlist_defaults")
+	defaults := item(t, p, GroupRequests, "wishlist_defaults")
 	if defaults.AskSettings == nil || defaults.AskSettings.MoviesPerWeek == nil || *defaults.AskSettings.MoviesPerWeek != 0 ||
 		defaults.AskSettings.ShowsPerWeek == nil || *defaults.AskSettings.ShowsPerWeek != 0 {
 		t.Fatalf("unlimited defaults not retained: %+v", defaults.AskSettings)
@@ -1267,10 +1267,10 @@ func TestCompatibilityDecisionTimeGapsAndStaleTitleMarksAreExplicit(t *testing.T
 	if _, ok := notMoved(p, "seerr requests[1].updated"); !ok {
 		t.Fatal("future decision time was not reported")
 	}
-	if got := item(t, p, GroupWishlist, "ask:seerr:2").Ask.DecidedAt; got != "" {
+	if got := item(t, p, GroupRequests, "ask:seerr:2").Ask.DecidedAt; got != "" {
 		t.Fatalf("future decision time survived in plan: %q", got)
 	}
-	if got := item(t, p, GroupWishlist, "ask:seerr:3").Ask.DecidedAt; got != "2026-10-15T11:59:59Z" {
+	if got := item(t, p, GroupRequests, "ask:seerr:3").Ask.DecidedAt; got != "2026-10-15T11:59:59Z" {
 		t.Fatalf("captured decision time lost: %q", got)
 	}
 	if h1, h2 := PlanHash(BuildPlan([]Input{{ID: 1, Snap: s}}, Choices{})), PlanHash(BuildPlan([]Input{{ID: 1, Snap: s}}, Choices{})); h1 != h2 {
@@ -1278,7 +1278,7 @@ func TestCompatibilityDecisionTimeGapsAndStaleTitleMarksAreExplicit(t *testing.T
 	}
 	legacy := &Snapshot{Kind: Seerr, Requests: []Request{{SourceID: 4, Kind: "movie", IDs: map[string]string{"tmdb": "606"}, Created: "2026-10-01T00:00:00Z"}}}
 	lp := BuildPlan([]Input{{ID: 2, Snap: legacy}}, Choices{})
-	if _, ok := notMoved(lp, "seerr requests[0].created"); !ok || item(t, lp, GroupWishlist, "ask:seerr:4").Ask.AskedAt != "" {
+	if _, ok := notMoved(lp, "seerr requests[0].created"); !ok || item(t, lp, GroupRequests, "ask:seerr:4").Ask.AskedAt != "" {
 		t.Fatal("timestamp without a persisted capture bound was not left explicit")
 	}
 
@@ -1312,7 +1312,7 @@ func TestCompatibilityFractionalSourceTimeBeforeCaptureIsRetained(t *testing.T) 
 	s := &Snapshot{Kind: Seerr, ReadAt: time.Date(2026, 10, 15, 12, 0, 0, 900_000_000, time.UTC),
 		Requests: []Request{{SourceID: 1, Kind: "movie", IDs: map[string]string{"tmdb": "700004"}, Created: "2026-10-15T12:00:00.500Z"}}}
 	p := BuildPlan([]Input{{ID: 1, Snap: s}}, Choices{})
-	if got := item(t, p, GroupWishlist, "ask:seerr:1").Ask.AskedAt; got != "2026-10-15T12:00:00.500Z" {
+	if got := item(t, p, GroupRequests, "ask:seerr:1").Ask.AskedAt; got != "2026-10-15T12:00:00.500Z" {
 		t.Fatalf("valid same-second source time was rejected: %q", got)
 	}
 }
@@ -1432,7 +1432,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	moveE := move()
 	rE := &run{m: l.mv, ctx: ctx, move: moveE, by: domain.Actor{Kind: "user", ID: 1}, owner: 1, people: map[string]int64{}}
 	same := Item{Key: "ask:seerr:same-owner", Name: "same owner", From: "seerr requests[2]", Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700005", IDs: map[string]string{"tmdb": "700005"}}}
-	if got, why := rE.one(GroupWishlist, same); got != ResAlready {
+	if got, why := rE.one(GroupRequests, same); got != ResAlready {
 		t.Fatalf("later same-owner move %s: %s", got, why)
 	}
 	claim := mark(moveE)
@@ -1452,11 +1452,11 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	moveF := move()
 	rF := &run{m: l.mv, ctx: ctx, move: moveF, by: domain.Actor{Kind: "user", ID: 1}, owner: 1, people: map[string]int64{}}
 	repeated := Item{Key: "ask:seerr:same-move", Name: "same move", From: "seerr requests[3]", Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700006", IDs: map[string]string{"tmdb": "700006"}}}
-	if got, why := rF.one(GroupWishlist, repeated); got != ResCreated {
+	if got, why := rF.one(GroupRequests, repeated); got != ResCreated {
 		t.Fatalf("same-move first apply %s: %s", got, why)
 	}
 	firstMark := mark(moveF)
-	if got, why := rF.one(GroupWishlist, repeated); got != ResAlready {
+	if got, why := rF.one(GroupRequests, repeated); got != ResAlready {
 		t.Fatalf("same-move repeat %s: %s", got, why)
 	}
 	secondMark := mark(moveF)
@@ -1473,7 +1473,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := rF.one(GroupWishlist, repeated); got != ResFailed {
+	if got, _ := rF.one(GroupRequests, repeated); got != ResFailed {
 		t.Fatalf("same-move repeat trusted a changed relationship: %s", got)
 	}
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
@@ -1489,7 +1489,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := rF.one(GroupWishlist, repeated); got != ResFailed {
+	if got, _ := rF.one(GroupRequests, repeated); got != ResFailed {
 		t.Fatalf("same-move repeat trusted a replaced ask: %s", got)
 	}
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
@@ -1501,7 +1501,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := rF.one(GroupWishlist, repeated); got != ResFailed {
+	if got, _ := rF.one(GroupRequests, repeated); got != ResFailed {
 		t.Fatalf("same-move repeat trusted a replaced request owner: %s", got)
 	}
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
@@ -1545,10 +1545,10 @@ func TestCompatibilitySameMoveAskClaimsDoNotBlockFullUndo(t *testing.T) {
 	first := Item{Key: "ask:seerr:same-move-a", Name: "same move ask", Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700040", IDs: map[string]string{"tmdb": "700040"}}}
 	second := first
 	second.Key = "ask:seerr:same-move-b"
-	if got, why := rA.one(GroupWishlist, first); got != ResCreated {
+	if got, why := rA.one(GroupRequests, first); got != ResCreated {
 		t.Fatalf("same-move ask create %s: %s", got, why)
 	}
-	if got, why := rA.one(GroupWishlist, second); got != ResAlready {
+	if got, why := rA.one(GroupRequests, second); got != ResAlready {
 		t.Fatalf("same-move ask claim %s: %s", got, why)
 	}
 	finish(moveA)
@@ -1581,10 +1581,10 @@ func TestCompatibilitySameMoveAskClaimsDoNotBlockFullUndo(t *testing.T) {
 	join1 := Item{Key: "ask:seerr:same-relation-a", Name: "existing", Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700041", IDs: map[string]string{"tmdb": "700041"}, By: "person:b"}}
 	join2 := join1
 	join2.Key = "ask:seerr:same-relation-b"
-	if got, why := rB.one(GroupWishlist, join1); got != ResCreated {
+	if got, why := rB.one(GroupRequests, join1); got != ResCreated {
 		t.Fatalf("same-move relation create %s: %s", got, why)
 	}
-	if got, why := rB.one(GroupWishlist, join2); got != ResAlready {
+	if got, why := rB.one(GroupRequests, join2); got != ResAlready {
 		t.Fatalf("same-move relation claim %s: %s", got, why)
 	}
 	finish(moveB)

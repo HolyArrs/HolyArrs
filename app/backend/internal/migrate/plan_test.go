@@ -347,11 +347,11 @@ func TestPlanMapsEachGroup(t *testing.T) {
 		t.Fatalf("perms %+v", n)
 	}
 	// Requests: names from the read titles, attributed to the people.
-	ask := item(t, p, GroupWishlist, "ask:seerr:7")
+	ask := item(t, p, GroupRequests, "ask:seerr:7")
 	if ask.Name != "The Matrix" || ask.Ask.By != "person:seerr:2" || ask.Ask.Approved {
 		t.Fatalf("ask %+v", ask)
 	}
-	if sh := item(t, p, GroupWishlist, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || sh.Note == "" {
+	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || sh.Note == "" {
 		t.Fatalf("show ask %+v", sh)
 	}
 	// Alerts: Discord and email (off until their secret), others listed.

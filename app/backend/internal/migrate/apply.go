@@ -1654,7 +1654,7 @@ func (r *run) ask(it Item) (string, string) {
 			return ResFailed, "the existing request owner identity could not be verified"
 		}
 		if a.Approved || a.Decider != "" || a.DecidedAt != "" {
-			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupWishlist, From: it.From, What: it.Name + ": old decision",
+			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupRequests, From: it.From, What: it.Name + ": old decision",
 				Why: "Requests entry already exists, so its current decision and decision time are kept"})
 		}
 		if by > 0 && r.id("SELECT ask_id FROM ask_people WHERE ask_id = ? AND user_id = ?", existing, by) != 0 {
@@ -1746,7 +1746,7 @@ func (r *run) ask(it Item) (string, string) {
 	if state == "approved" {
 		decidedBy = r.personID(a.Decider)
 		if decidedBy <= 0 {
-			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupWishlist, From: it.From, What: it.Name + ": decision owner", Why: "the source approver could not be matched, so HolyArrs records the current owner as the approver"})
+			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupRequests, From: it.From, What: it.Name + ": decision owner", Why: "the source approver could not be matched, so HolyArrs records the current owner as the approver"})
 			decidedBy = r.owner
 		}
 		expectedDeciderFP, identityErr = r.expectedUserIdentity(a.Decider, decidedBy)
