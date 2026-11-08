@@ -61,7 +61,7 @@ Keep the program running. In a second terminal, start the dev server:
 npm --prefix app/frontend run dev
 ```
 
-The dev server reloads on save and sends API calls to the running program. You should see your edit in the browser within a second or two.
+The dev server reloads on save and sends API calls to the running program. You should see your edit in the browser within 2 s.
 
 ## Choices
 

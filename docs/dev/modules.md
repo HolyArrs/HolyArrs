@@ -84,7 +84,7 @@ Fit your change into the 20 first, and open an issue before you add one. A new m
 - Store functions take a `database.Querier`. Read another module's rows through its service by ID, and pass long ID lists as one JSON array with `json_each(?)`.
 - `settings`, `schedules`, `secrets`, `jobs` and `events` belong to core. Each settings group has one owner module. To change another module's group, call its owner.
 - Every outside call goes through `core/outbound`.
-- Core packages sit in rows, top to bottom: `webserver`, `startup` and `logs`, `jobs` and `outbound`, `secrets` and `database`, `files`, `releasename`. A core package imports only its own row or lower.
+- Core packages sit in rows, top to bottom: `webserver` and `startup`, `logs` and `jobs`, `outbound` and `secrets`, then `database`, `files` and `releasename`. A core package imports only its own row or lower.
 - Names: Go files are lowercase with underscores, Svelte parts are PascalCase, and TypeScript, docs, tests and deploy files are kebab-case. Folders in `app/` are lowercase, one word.
 - Rename code freely, but anything stored or sent keeps its name: tables and columns, settings keys, JSON fields, job names and switch names.
 - Comments carry no roadmap numbers, dates, names or em dashes.
@@ -116,7 +116,7 @@ The checks live in `app/backend/tools/structurecheck`. Most need `-tags structur
 | `TestModuleEdges` | Layer order |
 | `TestModuleImportsRootOnly` | Root-package imports only |
 | `TestCoreImportsNoModule`, `TestCoreRowOrder`, `TestCoreNamesNoModuleTable` | Core imports, row order and names |
-| `TestSQLOnlyInStore`, `TestTableOwnership`, `TestSQLAllowlistShrinks` | SQL placement and table owners |
+| `TestSQLOnlyInStore`, `TestTableOwnership`, `TestSQLAllowlistShrinks`, `TestSeedSQLAllowlist` | SQL placement and table owners |
 | `TestGoFileNames`, `TestNoBannedPackageNames` | File and package names |
 | `TestFileSizeCap`, `TestCorePackageSize` | File and core package size |
 | `TestCommentHygiene` | Comment rules above |
