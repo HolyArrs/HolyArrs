@@ -125,7 +125,7 @@
 
 	const entries = $derived(buildEntries(shown, grouped, seriesOfTitle, seriesName));
 	const rowEntries = $derived(entries.filter((e): e is Extract<Entry, { type: 'row' }> => e.type === 'row'));
-	/** The series a title belongs to, as the Series column prints it. */
+	/** The movie series a title is in, as its column prints it. */
 	const seriesOf = (t: TitleView) => {
 		const id = seriesOfTitle.get(t.id);
 		return id ? seriesName(id) : '';
