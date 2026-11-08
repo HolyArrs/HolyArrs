@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -73,7 +72,7 @@ func TestLibraryFacts(t *testing.T) {
 // as an artwork cache link.
 func TestExtrasBanner(t *testing.T) {
 	t.Parallel()
-	a := api.New(api.Server{Version: "test", ImageBase: "https://api.example.test/v1/img", ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
+	a := buildHandlers(services{Version: "test", ImageBase: "https://api.example.test/v1/img", ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
 		return metadata.ServerArt{Banner: "https://api.example.test/v1/img/title-banner/tv-1/1000.webp"}, nil
 	}})
 	r := httptest.NewRequest("GET", "/api/v1/extras/show/1", nil)

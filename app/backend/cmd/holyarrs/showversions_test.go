@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -32,7 +31,7 @@ func TestShowVersionsAPI(t *testing.T) {
 	do(t, "POST", u+"/shows", `{"id":"tmdb:100","more_versions":[{"label":""}]}`, 400)
 	do(t, "POST", u+"/shows", fmt.Sprintf(`{"id":"tmdb:100","more_versions":[{"label":"4K","library_folder_id":%d}]}`, movies.ID), 400)
 	var add struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100","more_versions":[{"label":"4K"}]}`, 201), &add)
 	tv := add.Title
@@ -40,7 +39,7 @@ func TestShowVersionsAPI(t *testing.T) {
 		t.Fatalf("added %+v", tv.Versions)
 	}
 	var eps struct {
-		Episodes []api.EpisodeView `json:"episodes"`
+		Episodes []EpisodeView `json:"episodes"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/titles/%d/episodes", u, tv.ID), "", 200), &eps)
 	if len(eps.Episodes) == 0 {
@@ -53,7 +52,7 @@ func TestShowVersionsAPI(t *testing.T) {
 	}
 	base := fmt.Sprintf("%s/titles/%d/versions", u, tv.ID)
 	do(t, "POST", base, fmt.Sprintf(`{"label":"Remux","library_folder_id":%d}`, movies.ID), 400)
-	var v api.VersionView
+	var v VersionView
 	_ = json.Unmarshal(do(t, "POST", base, `{"label":"Remux"}`, 201), &v)
 	do(t, "PUT", fmt.Sprintf("%s/%d", base, v.ID), `{"keep_up_to_date":false}`, 200)
 	do(t, "DELETE", fmt.Sprintf("%s/%d", base, tv.Versions[0].ID), "", 409)
@@ -64,7 +63,7 @@ func TestShowVersionsAPI(t *testing.T) {
 	_ = s.Read().QueryRow("SELECT id FROM slots WHERE version_id = ? LIMIT 1", tv.Versions[1].ID).Scan(&slot4K)
 	addEvent(t, s, tv.ID, slot4K)
 	var hist struct {
-		Events []api.EventView `json:"events"`
+		Events []EventView `json:"events"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/events?title=%d&kind=test_version", u, tv.ID), "", 200), &hist)
 	if len(hist.Events) != 1 || hist.Events[0].Version != "4K" {
@@ -88,7 +87,7 @@ func TestShowVersionRulesLabelsAndFolders(t *testing.T) {
 		t.Fatal("no presets")
 	}
 	var add struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	b := do(t, "POST", u+"/shows", fmt.Sprintf(`{"id":"tmdb:100","more_versions":[{"label":"4K","pick_rules_id":%d}]}`, music), 400)
 	if !strings.Contains(string(b), "for music") {
@@ -97,7 +96,7 @@ func TestShowVersionRulesLabelsAndFolders(t *testing.T) {
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100"}`, 201), &add)
 	base := fmt.Sprintf("%s/titles/%d/versions", u, add.Title.ID)
 	do(t, "POST", base, fmt.Sprintf(`{"label":"4K","pick_rules_id":%d}`, music), 400)
-	var v api.VersionView
+	var v VersionView
 	_ = json.Unmarshal(do(t, "POST", base, fmt.Sprintf(`{"label":"4K","pick_rules_id":%d}`, movie), 201), &v)
 	do(t, "PUT", fmt.Sprintf("%s/%d", base, v.ID), fmt.Sprintf(`{"pick_rules_id":%d}`, music), 400)
 	do(t, "PUT", fmt.Sprintf("%s/%d", base, add.Title.Versions[0].ID), `{"label":"CON"}`, 400)

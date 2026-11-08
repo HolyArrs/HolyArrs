@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -29,7 +28,7 @@ type dl41 struct {
 	dlID, slotID, relID int64
 	mu                  sync.Mutex
 	deleted             []string
-	api                 *api.API
+	api                 *handlers
 }
 
 // seed41 makes one movie with a Slot in slotState, its Release, a fake
@@ -111,7 +110,7 @@ func seed41(t *testing.T, slotState mediafiles.SlotState, dlState string) *dl41 
 	if err != nil {
 		t.Fatal(err)
 	}
-	x.api = api.New(api.Server{Store: s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	x.api = buildHandlers(services{Store: s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
 	x.srv = httptest.NewServer(x.api.Handler())
 	t.Cleanup(x.srv.Close)
 	return x

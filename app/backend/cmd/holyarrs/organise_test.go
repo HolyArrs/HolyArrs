@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -25,7 +24,7 @@ func organiseWorld(t *testing.T) (url string, s *database.Store, lib string, tit
 	lib = t.TempDir()
 	lbDo(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, lib), 201)
 	var added struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &added)
 	titleID = added.Title.ID

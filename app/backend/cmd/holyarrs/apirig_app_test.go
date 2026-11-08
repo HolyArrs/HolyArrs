@@ -8,13 +8,11 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -25,8 +23,6 @@ import (
 )
 
 // Helpers for the whole-app tests that moved here from internal/api.
-
-func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
 func decodeJSON(t *testing.T, b []byte, v any) {
 	t.Helper()
@@ -128,7 +124,7 @@ func newOwnerRig(t *testing.T) *ownerRig {
 	}
 	au := accounts.New(st, accounts.Options{Vault: v})
 	q := jobs.New(st, jobs.Options{Workers: 1})
-	a := api.New(api.Server{Store: st, Queue: q, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
+	a := buildHandlers(services{Store: st, Queue: q, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)
@@ -155,7 +151,7 @@ func apiServer(t *testing.T) (*httptest.Server, *database.Store) {
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond})
 	hub := webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second})
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s
 }

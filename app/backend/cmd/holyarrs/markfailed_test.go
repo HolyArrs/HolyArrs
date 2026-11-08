@@ -10,7 +10,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -33,7 +32,7 @@ func markServer(t *testing.T) (*httptest.Server, *database.Store) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v}), config{}))
 	t.Cleanup(srv.Close)
 	return srv, s
 }

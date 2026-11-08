@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -257,7 +256,7 @@ func newDlPinWorld(t *testing.T) *dlPinWorld {
 		t.Fatal(err)
 	}
 	au := accounts.New(s, accounts.Options{Vault: v})
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v,
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v,
 		Live: webserver.NewLiveHub(webserver.LiveOptions{})}).Handler())
 	t.Cleanup(srv.Close)
 	w := &dlPinWorld{srv: srv, s: s, want: map[int64]*dlPinWant{}}
@@ -475,7 +474,7 @@ func viewAs(t *testing.T, x *dl41, who webserver.Caller) []downloads.DownloadRow
 // viewAt is viewAs at a given address (?asked=1 for the Requests page).
 func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []downloads.DownloadRow {
 	t.Helper()
-	a := api.New(api.Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	a := buildHandlers(services{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
 	r := httptest.NewRequest("GET", url, nil)
 	r = r.WithContext(webserver.ContextWith(r.Context(), who))
 	w := httptest.NewRecorder()

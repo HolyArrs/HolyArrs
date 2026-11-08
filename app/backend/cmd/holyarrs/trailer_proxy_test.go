@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -89,11 +88,11 @@ func fakeYouTube(t *testing.T) (release chan struct{}) {
 	return release
 }
 
-func proxyRig(t *testing.T) (*httptest.Server, *api.API) {
+func proxyRig(t *testing.T) (*httptest.Server, *handlers) {
 	t.Helper()
 	fakeReader(t, "ok")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	if err := lookUp(t, a, "movie", "11"); err != nil {
@@ -226,7 +225,7 @@ func TestTrailerPassThroughReplays(t *testing.T) {
 func TestTrailerKeyKept(t *testing.T) {
 	fakeReader(t, "ok")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	if k := a.Trailers().KnownKey(ctx, "movie", "11", "en"); k != "" {
 		t.Fatalf("known before lookup: %q", k)
@@ -234,7 +233,7 @@ func TestTrailerKeyKept(t *testing.T) {
 	if _, err := a.Trailers().ResolveTitle(ctx, "movie", "11", "en"); err != nil {
 		t.Fatal(err)
 	}
-	b := api.New(api.Server{Store: st, Version: "test"}) // a restart, and no metadata source at all
+	b := buildHandlers(services{Store: st, Version: "test"}) // a restart, and no metadata source at all
 	if k := b.Trailers().KnownKey(ctx, "movie", "11", "en"); k != "trailerKey1" {
 		t.Fatalf("after restart %q", k)
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
@@ -22,7 +21,7 @@ func registerHooks() {
 
 // routes returns the handler that serves every route of the app. Each module
 // that leaves the api package adds one registration line here.
-func routes(a *api.API, c config) http.Handler {
+func routes(a *handlers, c config) http.Handler {
 	rt := webserver.NewRouter()
 	a.Routes(rt)
 	a.ModuleRoutes(rt)

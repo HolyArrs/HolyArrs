@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -40,12 +39,9 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 	}
 	seen := 0
 	for _, dir := range routePackages {
-		if dir == "." {
-			continue // the program's own page routes are not api routes
-		}
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
-			if strings.HasSuffix(f, "_test.go") || (dir == "../../internal/arrapi" && filepath.Base(f) != "routes_settings.go") {
+			if strings.HasSuffix(f, "_test.go") || (dir == "../../internal/arrapi" && filepath.Base(f) != "routes_settings.go") || (dir == "." && filepath.Base(f) == "starting.go") {
 				continue
 			}
 			b, err := os.ReadFile(f)
@@ -87,7 +83,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 	au := accounts.New(s, accounts.Options{Vault: v})
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backups.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}}).Handler())
 	t.Cleanup(srv.Close)
 

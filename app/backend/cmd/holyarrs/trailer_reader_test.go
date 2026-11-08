@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
@@ -22,7 +21,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	yt := fakeReader(t, "age", "ageGated001")
 	yt.set("secondKey01", "ok")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	s, err := a.Trailers().ResolveTitle(ctx, "movie", "13", "en")
 	if err != nil || s.Key != "secondKey01" || s.Type != "hls" {
@@ -40,7 +39,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	if n := yt.count("ageGated001"); n != 1 {
 		t.Fatalf("the bad key was asked %d times", n)
 	}
-	b := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}) // a restart
+	b := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"}) // a restart
 	now := time.Now()
 	if why, bad := b.Trailers().Bad(ctx, "ageGated001", now); !bad || why != youtube.AgeRestricted {
 		t.Fatalf("not kept across a restart: %q %v", why, bad)
@@ -72,7 +71,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 func TestTrailerShortRefusalsNotMarkedBad(t *testing.T) {
 	yt := fakeReader(t, "premiere", "ageGated001", "secondKey01", "thirdKey001")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	now := time.Now()
 	m := (*metadata.TrailerMissed)(nil)
@@ -154,7 +153,7 @@ func TestTrailerAllUnplayableSaysWhy(t *testing.T) {
 // (age) counts toward neither.
 func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	fakeReader(t, "bot")
 	for i := 1; i <= 2; i++ {
@@ -175,7 +174,7 @@ func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 
 // failVideos looks n different videos up again (deadVideo00,
 // deadVideo01...), as renewals: they played here before.
-func failVideos(a *api.API, from, n int) {
+func failVideos(a *handlers, from, n int) {
 	for i := from; i < from+n; i++ {
 		k := fmt.Sprintf("deadVideo%02d", i)
 		_, _ = a.Trailers().Read(metadata.Renewing(context.Background()), k, k, time.Now(), false)
@@ -189,7 +188,7 @@ func failVideos(a *api.API, from, n int) {
 func TestTrailerUpkeepCountsDifferentVideos(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := metadata.Renewing(context.Background())
 	for range health.TrailerFailLimit {
 		_, _ = a.Trailers().Read(ctx, "deadVideo00", "deadVideo00", time.Now(), false)
@@ -223,10 +222,10 @@ func TestTrailerUpkeepCountsDifferentVideos(t *testing.T) {
 func TestTrailerUpkeepSurvivesARestart(t *testing.T) {
 	fakeReader(t, "unavailable", "goodVideo01")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	failVideos(a, 0, 3)
-	b := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	b := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	if s := b.Trailers().ReaderState(); s.Videos != 3 || s.LastReason != youtube.Unavailable {
 		t.Fatalf("after a restart: %+v", s)
 	}
@@ -260,7 +259,7 @@ func TestTrailerUpkeepSurvivesARestart(t *testing.T) {
 	if gone() {
 		t.Fatal("the last good lookup is not written after a minute")
 	}
-	c := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	c := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	if s := c.Trailers().ReaderState(); s.Videos != 0 || time.Since(s.LastGood) > time.Minute {
 		t.Fatalf("after the reset and a restart: %+v", s)
 	}
@@ -307,7 +306,7 @@ func TestTrailerPremiereKeepsTheShortMiss(t *testing.T) {
 	yt.set("secondKey01", "age")
 	yt.set("thirdKey001", "age")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	_, _ = a.Trailers().ResolveTitle(context.Background(), "movie", "13", "en")
 	e, ok := a.Trailers().Get("movie|13|en", time.Now())
 	if !ok || e.Miss.IsZero() || time.Until(e.Miss) > time.Hour+time.Minute || time.Until(e.Miss) < time.Hour-time.Minute {
@@ -327,7 +326,7 @@ func TestTrailerPremiereKeepsTheShortMiss(t *testing.T) {
 func TestTrailerUnknownTitleIsNoTrailer(t *testing.T) {
 	fakeReader(t, "ok")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	if _, err := a.Trailers().ResolveTitle(context.Background(), "movie", "987654", "en"); !errors.Is(err, metadata.ErrNoTrailer) {
 		t.Fatalf("unknown title: %v", err)
 	}
@@ -340,7 +339,7 @@ func TestTrailerUnknownTitleIsNoTrailer(t *testing.T) {
 func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	recentGood(a, time.Hour)
 	for i := range 2 * health.TrailerFailLimit {
 		k := fmt.Sprintf("deadVideo%02d", i)
@@ -358,7 +357,7 @@ func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
 
 // recentGood sets the reader's last good lookup to ago before now (after
 // the kept state was read).
-func recentGood(a *api.API, ago time.Duration) {
+func recentGood(a *handlers, ago time.Duration) {
 	a.Trailers().ReaderState()
 	a.Trailers().SetHealthTimes(time.Now().Add(-ago), time.Time{})
 }
@@ -371,7 +370,7 @@ func TestTrailerUpkeepCountsAfterALongGap(t *testing.T) {
 	for _, ago := range []time.Duration{7*time.Hour + time.Minute, 0} {
 		fakeReader(t, "unavailable")
 		_, st := trDiscoverRig(t, trailerTMDB(t))
-		a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+		a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 		if ago > 0 {
 			recentGood(a, ago)
 		}
@@ -391,12 +390,12 @@ func TestTrailerBadMarksPerVersion(t *testing.T) {
 	_, st := trDiscoverRig(t, trailerTMDB(t))
 	ctx := context.Background()
 	now := time.Now()
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"})
 	a.Trailers().MarkBad(ctx, "deadVideo00", youtube.Unavailable, now)
-	if _, bad := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"}).Trailers().Bad(ctx, "deadVideo00", now); !bad {
+	if _, bad := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"}).Trailers().Bad(ctx, "deadVideo00", now); !bad {
 		t.Fatal("a restart of the same version forgot the mark")
 	}
-	if _, bad := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.1"}).Trailers().Bad(ctx, "deadVideo00", now); bad {
+	if _, bad := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "1.0.1"}).Trailers().Bad(ctx, "deadVideo00", now); bad {
 		t.Fatal("an update kept the old mark")
 	}
 }
@@ -408,7 +407,7 @@ func TestTrailerBadMarksPerVersion(t *testing.T) {
 func TestTrailerUncountedMissNotMarked(t *testing.T) {
 	yt := fakeReader(t, "unavailable", "trailerKey1")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	recentGood(a, time.Hour)
 	ctx := context.Background()
 	now := time.Now()

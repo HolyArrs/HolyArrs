@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -65,7 +64,7 @@ func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 		t.Fatal(err)
 	}
 	au := accounts.New(s, accounts.Options{Vault: vault})
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: vault, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: vault, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backups.Manager{Store: s, Dir: dir, Version: "test"}}).Handler())
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)

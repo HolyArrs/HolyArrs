@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -41,7 +39,7 @@ func setup(t *testing.T) (*httptest.Server, *database.Store, *jobs.Queue) {
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond})
 	hub := webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second})
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}), config{}))
 	t.Cleanup(srv.Close)
 	return srv, s, q
 }
@@ -54,7 +52,7 @@ func TestAddListSearch(t *testing.T) {
 	srv, _, q := setup(t)
 	// Nothing yet.
 	var list struct {
-		Titles []api.TitleView `json:"titles"`
+		Titles []TitleView `json:"titles"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles", "", 200), &list)
 	if len(list.Titles) != 0 {
@@ -62,7 +60,7 @@ func TestAddListSearch(t *testing.T) {
 	}
 	b := do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
 	var resp struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(b, &resp)
 	added := resp.Title
@@ -158,7 +156,7 @@ func TestSignInGuardsRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: accounts.New(s, accounts.Options{})}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: accounts.New(s, accounts.Options{})}), config{}))
 	t.Cleanup(srv.Close)
 	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	resp, err := noFollow.Get(srv.URL + "/")
@@ -223,7 +221,7 @@ func TestNoTMDBKeyRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test"}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test"}), config{}))
 	t.Cleanup(srv.Close)
 	for _, m := range []string{"GET", "PUT"} {
 		req, _ := http.NewRequest(m, srv.URL+"/api/v1/settings/tmdb-token", strings.NewReader(`{"token":"TOKEN_FOR_TEST_ONLY"}`))

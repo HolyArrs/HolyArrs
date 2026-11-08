@@ -13,7 +13,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
@@ -97,12 +96,12 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 
 	// The Movie page names who asked and who approved; a member sees
 	// everyone who asked, and who decided by display name only (#136).
-	var tv api.TitleView
+	var tv TitleView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &tv)
 	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 2 || tv.Asks[0].DecidedBy == nil || tv.Asks[0].DecidedBy.Name != "" || tv.WhyAdded != "ask" {
 		t.Fatalf("title asks %+v", tv.Asks)
 	}
-	var owv api.TitleView
+	var owv TitleView
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &owv)
 	if len(owv.Asks) != 1 || owv.Asks[0].DecidedBy == nil || owv.Asks[0].DecidedBy.Name != "luis" {
 		t.Fatalf("owner's title asks %+v", owv.Asks)
@@ -110,7 +109,7 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	msgs.Waiting = nil
 	// A member who did not ask does not see who did.
 	orchard := askOf(t, r.owner.call("POST", "/api/v1/asks/"+itoa(other.ID)+"/approve", ``, 200))
-	var otv api.TitleView
+	var otv TitleView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/titles/"+itoa(*orchard.TitleID), "", 200), &otv)
 	if len(otv.Asks) != 0 {
 		t.Fatalf("ana sees bo's ask: %+v", otv.Asks)

@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
@@ -106,7 +105,7 @@ func trDiscoverRig(t *testing.T, p metadata.Provider, off ...parts.Part) (*httpt
 			}
 		}
 	}
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: p, Parts: pc, Version: "test"}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: p, Parts: pc, Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s
 }
@@ -147,11 +146,11 @@ func trListTMDB(t *testing.T) *metadata.TMDB {
 
 // trExploreRig is an API whose Explore lists come from a fake TMDB, with a
 // member (2) and a Kid member (3) beside the owner.
-func trExploreRig(t *testing.T, pick func(ctx context.Context, kind, id, lang string) (string, error)) (*api.API, *database.Store, *metadata.TMDB) {
+func trExploreRig(t *testing.T, pick func(ctx context.Context, kind, id, lang string) (string, error)) (*handlers, *database.Store, *metadata.TMDB) {
 	t.Helper()
 	p := trListTMDB(t)
 	_, s := trDiscoverRig(t, p)
-	a := api.New(api.Server{Store: s, Metadata: p, Version: "test", TrailerPick: pick})
+	a := buildHandlers(services{Store: s, Metadata: p, Version: "test", TrailerPick: pick})
 	a.TrailerTest().Explore().Paced = &engine.Paced{Source: discover.ListerSource{L: p}, Gap: time.Millisecond}
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash, max_rating) VALUES

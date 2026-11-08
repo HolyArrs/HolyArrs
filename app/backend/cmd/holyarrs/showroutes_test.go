@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
@@ -70,8 +69,8 @@ func TestShowsAPI(t *testing.T) {
 	do(t, "PUT", fmt.Sprintf("%s/titles/%d/seasons/9", u, id), `{"keep_up_to_date":true}`, 404)
 
 	var eps struct {
-		Episodes []api.EpisodeView `json:"episodes"`
-		Order    string            `json:"episode_order"`
+		Episodes []EpisodeView `json:"episodes"`
+		Order    string        `json:"episode_order"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/titles/%d/episodes?season=1", u, id), "", 200), &eps)
 	if len(eps.Episodes) != 2 || eps.Order != "aired" || eps.Episodes[0].Name != "Pilot" || len(eps.Episodes[0].Slots) != 1 ||
@@ -79,7 +78,7 @@ func TestShowsAPI(t *testing.T) {
 		t.Fatalf("episodes %+v", eps)
 	}
 	do(t, "GET", fmt.Sprintf("%s/titles/%d/episodes?season=x", u, id), "", 400)
-	var ev api.EpisodeView
+	var ev EpisodeView
 	_ = json.Unmarshal(do(t, "PUT", fmt.Sprintf("%s/episodes/%d", u, eps.Episodes[0].ID), `{"keep_up_to_date":false}`, 200), &ev)
 	if ev.KeepUpToDate || ev.Season != 1 || ev.Episode != 1 {
 		t.Fatalf("episode off %+v", ev)
@@ -105,8 +104,8 @@ func TestAddShowPerEpisodeOrder(t *testing.T) {
 				t.Fatalf("order %q", add.Title.Show.EpisodeOrder)
 			}
 			var eps struct {
-				Episodes []api.EpisodeView `json:"episodes"`
-				Order    string            `json:"episode_order"`
+				Episodes []EpisodeView `json:"episodes"`
+				Order    string        `json:"episode_order"`
 			}
 			_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/titles/%d/episodes", u, add.Title.ID), "", 200), &eps)
 			if eps.Order != order || len(eps.Episodes) != 5 {
@@ -167,7 +166,7 @@ func TestShowSettingsAndEditAPI(t *testing.T) {
 	}
 	// Searching a show queues a season search per season with an episode looking (3.2).
 	do(t, "POST", tu+"/search", "", 202)
-	var view api.TitleView
+	var view TitleView
 	_ = json.Unmarshal(do(t, "GET", tu, "", 200), &view)
 	if view.Show == nil || view.Show.Episodes != 5 || view.Stage != "running" || len(view.Slots) != 0 {
 		t.Fatalf("show view %+v", view)

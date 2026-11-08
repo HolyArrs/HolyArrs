@@ -23,7 +23,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -38,7 +37,7 @@ type ctlFix struct {
 	s       *database.Store
 	pc      *parts.Control
 	reg     *jobs.Registry
-	api     *api.API
+	api     *handlers
 	runs    atomic.Int64 // passes of the test loops
 	mu      sync.Mutex
 	exits   []string
@@ -83,7 +82,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 	if err := q.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	srvOpts := api.Server{Store: s, Queue: q, Metadata: metadata.Lab(), Version: "test", Parts: f.pc, States: f.reg, SafeMode: safe,
+	srvOpts := services{Store: s, Queue: q, Metadata: metadata.Lab(), Version: "test", Parts: f.pc, States: f.reg, SafeMode: safe,
 		ExitApp: func(how string) error {
 			f.mu.Lock()
 			defer f.mu.Unlock()
@@ -96,7 +95,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 	if withAuth {
 		srvOpts.Auth = accounts.New(s, accounts.Options{})
 	}
-	f.api = api.New(srvOpts)
+	f.api = buildHandlers(srvOpts)
 	f.srv = httptest.NewServer(f.api.Handler())
 	t.Cleanup(f.srv.Close)
 	return f
@@ -530,12 +529,9 @@ func TestEveryRouteHasAPart(t *testing.T) {
 	re := regexp.MustCompile(`m(?:ux)?\.Handle(?:Func)?\("([A-Z]+ [^"]*)"`)
 	seen := map[string]bool{}
 	for _, dir := range routePackages {
-		if dir == "." {
-			continue // the program's own page routes are not api routes
-		}
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
-			if strings.HasSuffix(f, "_test.go") || (dir == "../../internal/arrapi" && filepath.Base(f) != "routes_settings.go") {
+			if strings.HasSuffix(f, "_test.go") || (dir == "../../internal/arrapi" && filepath.Base(f) != "routes_settings.go") || (dir == "." && filepath.Base(f) == "starting.go") {
 				continue
 			}
 			b, err := os.ReadFile(f)
@@ -568,7 +564,7 @@ func plainServer(t *testing.T) *httptest.Server {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test"}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv
 }

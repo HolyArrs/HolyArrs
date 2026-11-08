@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -20,7 +19,7 @@ func TestTitleViewCarriesHeaderFacts(t *testing.T) {
 	t.Parallel()
 	srv, s, _ := lbSetup(t)
 	var resp struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &resp)
 	slot := resp.Title.Slots[0]
@@ -38,7 +37,7 @@ func TestTitleViewCarriesHeaderFacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got api.TitleView
+	var got TitleView
 	_ = json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/titles/"+lbItoa(resp.Title.ID), "", 200), &got)
 	if len(got.Slots) == 0 || got.Slots[0].File == nil {
 		t.Fatalf("no file on the slot: %+v", got.Slots)

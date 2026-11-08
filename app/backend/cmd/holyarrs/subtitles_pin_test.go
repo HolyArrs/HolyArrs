@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -169,7 +168,7 @@ func TestSubPinTitleSubtitlesLargeShow(t *testing.T) {
 	if strings.Join(keys, ",") != "files,wishes" {
 		t.Fatalf("keys %v", keys)
 	}
-	var files []api.SubtitleFileView
+	var files []SubtitleFileView
 	decodeJSON(t, top["files"], &files)
 	if len(files) != len(b.files) {
 		t.Fatalf("%d files, want %d", len(files), len(b.files))

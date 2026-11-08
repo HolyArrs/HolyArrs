@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -86,7 +85,7 @@ func TestMetadataReviews(t *testing.T) {
 	}))
 	t.Cleanup(tk.Close)
 	prov := &metadata.TMDB{BaseURL: tm.URL + "/3", Access: func(context.Context) (string, error) { return "x", nil }, Gap: time.Millisecond}
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: prov, Version: "test", Secrets: v, TraktBase: tk.URL}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: prov, Version: "test", Secrets: v, TraktBase: tk.URL}).Handler())
 	t.Cleanup(srv.Close)
 	get := func(path string) rqReviewsView {
 		var out rqReviewsView

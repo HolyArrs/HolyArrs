@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -53,7 +52,7 @@ func arrSetup(t *testing.T) (*httptest.Server, *database.Store, *jobs.Queue) {
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond})
 	hub := webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second})
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s, q
 }
@@ -106,7 +105,7 @@ type arrAskRig struct {
 	owner *arrSignedIn
 	ana   *arrSignedIn
 	bo    *arrSignedIn
-	api   *api.API
+	api   *handlers
 }
 
 func newArrAskRig(t *testing.T) *arrAskRig {
@@ -130,7 +129,7 @@ func newArrAskRig(t *testing.T) *arrAskRig {
 		{Name: "Paper Harbour", Year: 2023, IDs: map[string]string{"tmdb": "900002"}},
 		{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900003"}}}}
 	q := jobs.New(st, jobs.Options{Workers: 1})
-	a := api.New(api.Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
+	a := buildHandlers(services{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	r := &arrAskRig{srv: srv, st: st, api: a}
@@ -176,7 +175,7 @@ type arrCtlFix struct {
 	s       *database.Store
 	pc      *parts.Control
 	reg     *jobs.Registry
-	api     *api.API
+	api     *handlers
 	runs    atomic.Int64 // passes of the test loops
 	mu      sync.Mutex
 	exits   []string
@@ -207,7 +206,7 @@ func newArrCtlMode(t *testing.T, withAuth, safe bool) *arrCtlFix {
 	if err := q.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	srvOpts := api.Server{Store: s, Queue: q, Metadata: metadata.Lab(), Version: "test", Parts: f.pc, States: f.reg, SafeMode: safe,
+	srvOpts := services{Store: s, Queue: q, Metadata: metadata.Lab(), Version: "test", Parts: f.pc, States: f.reg, SafeMode: safe,
 		ExitApp: func(how string) error {
 			f.mu.Lock()
 			defer f.mu.Unlock()
@@ -220,7 +219,7 @@ func newArrCtlMode(t *testing.T, withAuth, safe bool) *arrCtlFix {
 	if withAuth {
 		srvOpts.Auth = accounts.New(s, accounts.Options{})
 	}
-	f.api = api.New(srvOpts)
+	f.api = buildHandlers(srvOpts)
 	f.srv = httptest.NewServer(f.api.Handler())
 	t.Cleanup(f.srv.Close)
 	return f
@@ -244,7 +243,7 @@ func arrMoveSetup(t *testing.T, safe bool) (*httptest.Server, *database.Store, i
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(api.New(api.Server{Store: st, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test", Mover: mv, SafeMode: safe}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: st, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test", Mover: mv, SafeMode: safe}).Handler())
 	t.Cleanup(srv.Close)
 	snap := &migrate.Snapshot{Kind: migrate.Radarr, Via: migrate.ViaBackup, Version: "6.4.4",
 		Folders: []migrate.Folder{{Path: "/movies"}},

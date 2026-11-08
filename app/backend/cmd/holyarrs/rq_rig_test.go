@@ -2,7 +2,7 @@ package main
 
 // Rigs for the request-side tests that span several modules (reports,
 // reviews, title defaults, the waiting download row). They run the real
-// api.New server, like the old tests in internal/api did.
+// New server, like the old tests in internal/api did.
 
 import (
 	"context"
@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -114,7 +113,7 @@ func rqNewAskRig(t *testing.T) *rqAskRig {
 	au := accounts.New(st, accounts.Options{Vault: v})
 	md := &metadata.Static{Movies: []metadata.Movie{metadata.Lab().Movies[0]}}
 	q := jobs.New(st, jobs.Options{Workers: 1})
-	a := api.New(api.Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
+	a := buildHandlers(services{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{})})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	r := &rqAskRig{st: st}
@@ -256,7 +255,7 @@ func rqSeedDownload(t *testing.T, slotState mediafiles.SlotState, dlState string
 		t.Fatal(err)
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: time.Hour})
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s
 }
@@ -284,7 +283,7 @@ func rqLibSetup(t *testing.T) (*httptest.Server, *database.Store) {
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Metadata: md, Version: "test", Library: svc}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Metadata: md, Version: "test", Library: svc}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s
 }
@@ -330,7 +329,7 @@ func rqShowSetup(t *testing.T) (*httptest.Server, *database.Store) {
 	q := jobs.New(s, jobs.Options{})
 	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": &rqShows{shows: map[string]metadata.Show{"tmdb:100": show}},
 		"tvmaze": &rqShows{}, "tvdb": &rqShows{err: metadata.ErrNoTVDBKey}}}
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}).Handler())
 	t.Cleanup(srv.Close)
 	rqDo(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"show","label":"Shows"}`, t.TempDir()), 201)
 	return srv, s

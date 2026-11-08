@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -22,7 +21,7 @@ func TestHistoryKeepSetting(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	a := api.New(api.Server{Store: st, Version: "test"})
+	a := buildHandlers(services{Store: st, Version: "test"})
 	if s := health.UISettingsOf(context.Background(), st); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 0 {
 		t.Fatalf("defaults %+v", s)
 	}

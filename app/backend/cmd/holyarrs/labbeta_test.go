@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -323,7 +321,7 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	}
 	t.Cleanup(func() { cancel(); q.Stop() })
 	t.Cleanup(func() { _ = os.RemoveAll(labHere(filepath.Join("/data/downloads/incomplete", o.cat))) })
-	x.srv = httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: md, Version: "lab", Downloads: x.m, Queue: q, Library: x.lib, Secrets: vault, Search: sr}), config{}))
+	x.srv = httptest.NewServer(routes(buildHandlers(services{Store: s, Metadata: md, Version: "lab", Downloads: x.m, Queue: q, Library: x.lib, Secrets: vault, Search: sr}), config{}))
 	t.Cleanup(x.srv.Close)
 	return x
 }

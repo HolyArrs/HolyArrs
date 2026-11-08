@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
@@ -18,7 +17,7 @@ func TestMetadataAnime(t *testing.T) {
 	st := showsStore(t)
 	one, two := 1, 2
 	var asked []string
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: st, Metadata: md, Version: "test", AnimeMap: func(_ context.Context, by, id string) (metadata.AnimeMap, error) {
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: st, Metadata: md, Version: "test", AnimeMap: func(_ context.Context, by, id string) (metadata.AnimeMap, error) {
 		asked = append(asked, by+":"+id)
 		if id != "9000" {
 			return metadata.AnimeMap{}, metadata.ErrNotFound

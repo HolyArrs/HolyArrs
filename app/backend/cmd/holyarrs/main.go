@@ -25,7 +25,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
@@ -520,7 +519,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
-	api.WireUpdateChecks(he, uc)
+	WireUpdateChecks(he, uc)
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
 	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
@@ -694,7 +693,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// the hosted music source answers from them first.
 	pkgs := &music.PackageSync{Store: s, Source: hosted.Service}
 	hosted.Service.SetLocalMusic(pkgs)
-	a := api.New(api.Server{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	a := buildHandlers(services{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err

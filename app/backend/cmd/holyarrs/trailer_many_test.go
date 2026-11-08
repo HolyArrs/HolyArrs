@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
@@ -49,7 +48,7 @@ func TestTrailerManyListedStopsAtFive(t *testing.T) {
 	yt.set(keys[5], "ok")
 	yt.set(keys[6], "ok")
 	_, st := trDiscoverRig(t, p)
-	a := api.New(api.Server{Store: st, Metadata: p, Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: p, Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 
@@ -82,7 +81,7 @@ func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 	keys, p := manyListed(t)
 	yt := fakeReader(t, "premiere", keys...)
 	_, st := trDiscoverRig(t, p)
-	a := api.New(api.Server{Store: st, Metadata: p, Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: p, Version: "test"})
 	// A first lookup of a title that will not play says nothing about the
 	// reader (after a restart, known misses are looked up again).
 	recentGood(a, time.Hour)

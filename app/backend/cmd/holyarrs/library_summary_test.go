@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -64,7 +63,7 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 	if got.Total != 11 || len(got.Missing) != 8 || got.Missing[0].Name != "Movie 01" || got.Missing[7].Name != "Movie 08" {
 		t.Fatalf("summary: %s", body)
 	}
-	if got.Missing[0].StateLabel != api.StateLabels[mediafiles.SlotSearching] {
+	if got.Missing[0].StateLabel != StateLabels[mediafiles.SlotSearching] {
 		t.Fatalf("missing title state: %+v", got.Missing[0])
 	}
 	if s.WriteCount() != before {

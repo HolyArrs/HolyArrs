@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
@@ -204,10 +203,10 @@ func trailerTMDB(t *testing.T) metadata.Provider {
 }
 
 // trailerRig is an API on the discover rig's database, with its server.
-func trailerRig(t *testing.T) (*httptest.Server, *api.API) {
+func trailerRig(t *testing.T) (*httptest.Server, *handlers) {
 	t.Helper()
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	return srv, a
@@ -215,7 +214,7 @@ func trailerRig(t *testing.T) (*httptest.Server, *api.API) {
 
 // lookUp looks a title up as the trailer pass does; the routes then read
 // what it kept.
-func lookUp(t *testing.T, a *api.API, kind, id string) error {
+func lookUp(t *testing.T, a *handlers, kind, id string) error {
 	t.Helper()
 	_, err := a.Trailers().ResolveTitle(context.Background(), kind, id, "en")
 	return err
@@ -333,7 +332,7 @@ func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=136") || s.MP4URL != "" || s.Audio {
 		t.Fatalf("mp4 %+v", s)
 	}
-	srv2 := httptest.NewServer(api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
+	srv2 := httptest.NewServer(buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
 	t.Cleanup(srv2.Close)
 	n := yt.runs.Load()
 	var again metadata.TrailerStream
@@ -362,7 +361,7 @@ func TestTrailerStreamPrefersMuxed(t *testing.T) {
 func TestTrailerUsesServerPick(t *testing.T) {
 	fakeReader(t, "ok", "serverPick1")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
 		if id == "12" {
 			return "", metadata.ErrNotFound
 		}
@@ -389,7 +388,7 @@ func TestTrailerUsesServerPick(t *testing.T) {
 func TestTrailerSharedLookupAndFailures(t *testing.T) {
 	fakeReader(t, "fail")
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	for range 3 {
 		_, _ = a.Trailers().ResolveTitle(ctx, "movie", "11", "en")
@@ -449,7 +448,7 @@ func TestTrailerLanguageChecked(t *testing.T) {
 // A kept address is checked again when read back from SQLite.
 func TestTrailerStoredRechecked(t *testing.T) {
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx, now := context.Background(), time.Now()
 	later := now.Add(time.Hour)
 	put := func(k string, s metadata.TrailerStream) {

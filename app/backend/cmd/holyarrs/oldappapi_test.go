@@ -17,7 +17,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -125,7 +124,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := api.New(api.Server{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
+	h := buildHandlers(services{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
 		Auth: accounts.New(s, accounts.Options{}), Parts: pc, Secrets: vault}).Handler()
 	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art, vault: vault}
 	if len(base) > 0 {

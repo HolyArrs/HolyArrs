@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -109,13 +108,13 @@ func catchLog(t *testing.T) *syncBuf {
 // passRig is an API whose trailer key is the metadata server's pick, which
 // notes each title asked for (once per first lookup); "107" has none. The
 // gap between lookups is 0.
-func passRig(t *testing.T, st *database.Store, pc *parts.Control) (*api.API, func() []string) {
+func passRig(t *testing.T, st *database.Store, pc *parts.Control) (*handlers, func() []string) {
 	t.Helper()
 	gap := metadata.SetTrailerPassGap(0)
 	t.Cleanup(func() { metadata.SetTrailerPassGap(gap) })
 	var mu sync.Mutex
 	var asked []string
-	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test", Parts: pc, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
+	a := buildHandlers(services{Store: st, Metadata: trailerTMDB(t), Version: "test", Parts: pc, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 		if !metadata.IsAhead(ctx) {
 			t.Errorf("%s:%s asked without the fetch-ahead mark", kind, id)
 		}
@@ -345,7 +344,7 @@ func TestTrailerPassCoversAskedTitles(t *testing.T) {
 // Noted titles are bounded: the oldest goes when full, and one no pass
 // reached in a week is dropped.
 func TestTrailerAskedBounded(t *testing.T) {
-	a := api.New(api.Server{Version: "test"})
+	a := buildHandlers(services{Version: "test"})
 	a.Trailers().Note("en", [][2]string{{"movie", "1"}, {"music", "2"}, {"show", "x"}})
 	a.Trailers().Note("english", [][2]string{{"movie", "3"}})
 	if got := a.Trailers().Asks(time.Now()); len(got) != 1 || got[0] != [3]string{"movie", "1", "en"} {
@@ -366,7 +365,7 @@ func TestTrailerAskedBounded(t *testing.T) {
 // At the cap, the title asked for least lately goes: one that has waited
 // longest but was asked for again just now stays, and keeps its place.
 func TestTrailerAskedEvictsLeastLately(t *testing.T) {
-	a := api.New(api.Server{Version: "test"})
+	a := buildHandlers(services{Version: "test"})
 	var full [][2]string
 	for i := 1; i <= notedMax; i++ {
 		full = append(full, [2]string{"movie", strconv.Itoa(i)})
@@ -527,7 +526,7 @@ func TestTrailerPassRenewsFirst(t *testing.T) {
 // The pass covers the languages already noted, most used first, at most 3.
 func TestTrailerPassLanguages(t *testing.T) {
 	_, st := trDiscoverRig(t, trailerTMDB(t))
-	a := api.New(api.Server{Store: st, Version: "test"})
+	a := buildHandlers(services{Store: st, Version: "test"})
 	ctx := context.Background()
 	if got := strings.Join(a.TrailerTest().PassLanguages(ctx), " "); got != "en" {
 		t.Fatalf("none noted: %s", got)
@@ -557,7 +556,7 @@ func TestTrailerPassLanguages(t *testing.T) {
 
 // The loop is a long one with its own schedule, owned by a part.
 func TestTrailerLoops(t *testing.T) {
-	ls := api.New(api.Server{Version: "test"}).Trailers().Loops()
+	ls := buildHandlers(services{Version: "test"}).Trailers().Loops()
 	if len(ls) != 1 || ls[0].Name != "trailer_pass" || ls[0].Run == nil || ls[0].Every != 0 {
 		t.Fatalf("%+v", ls)
 	}

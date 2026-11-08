@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
@@ -18,7 +17,7 @@ func TestRoutesServeModuleRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	h := routes(api.New(api.Server{Store: s, Version: "test"}), config{})
+	h := routes(buildHandlers(services{Store: s, Version: "test"}), config{})
 	for _, path := range []string{"/api/v1/sources", "/api/v1/bridges", "/api/v1/searches", "/api/v1/settings/search", "/api/v1/held"} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))

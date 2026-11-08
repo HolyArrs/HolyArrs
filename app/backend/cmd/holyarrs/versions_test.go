@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
@@ -40,7 +39,7 @@ func TestVersionsAPI(t *testing.T) {
 	// Add with a second Version.
 	b := lbDo(t, "POST", srv.URL+"/api/v1/titles", fmt.Sprintf(`{"id":"tmdb:693134","library_folder_id":%d,"more_versions":[{"label":"4K","pick_rules_id":%d,"library_folder_id":%d}]}`, hd.ID, fourK, uhd.ID), 201)
 	var added struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(b, &added)
 	tv := added.Title
@@ -55,7 +54,7 @@ func TestVersionsAPI(t *testing.T) {
 
 	// A third Version in the same folder as the main one; a clash of labels is refused.
 	b = lbDo(t, "POST", base, `{"label":"Remux"}`, 201)
-	var v api.VersionView
+	var v VersionView
 	_ = json.Unmarshal(b, &v)
 	if v.Label != "Remux" || v.Main || !strings.HasSuffix(v.FolderPath, "[Remux]") {
 		t.Fatalf("third %s", b)
@@ -77,7 +76,7 @@ func TestVersionsAPI(t *testing.T) {
 	lbDo(t, "DELETE", base+"/"+lbItoa(tv.Versions[0].ID), "", 409) // the main one stays
 	lbDo(t, "DELETE", base+"/"+lbItoa(v.ID), "", 204)
 	lbDo(t, "DELETE", base+"/"+lbItoa(v.ID), "", 404)
-	var got api.TitleView
+	var got TitleView
 	_ = json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/titles/"+lbItoa(tv.ID), "", 200), &got)
 	if len(got.Versions) != 2 || len(got.Slots) != 2 {
 		t.Fatalf("after remove %+v", got)

@@ -21,8 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
@@ -319,7 +317,7 @@ func TestLabSeasonPackImports(t *testing.T) {
 	m := &downloads.Manager{Store: x.s, SavePath: save}
 	labRemove(t, m, qb, hash)
 	im := &importer.Importer{Store: x.s}
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	// 5.2.5: a webhook Alert for grab and import, received here.
 	var hookMu sync.Mutex
@@ -407,7 +405,7 @@ func TestLabSeasonPackImports(t *testing.T) {
 		t.Fatalf("alerts %v", subjects)
 	}
 	var hist struct {
-		Events []api.EventView `json:"events"`
+		Events []EventView `json:"events"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/events?kind=download_sent,import_*", "", 200), &hist)
 	if len(hist.Events) != 2 || hist.Events[0].Episode != "S01E01-E03, 3 episodes" || hist.Events[1].Episode != "S01E01-E03, 3 episodes" {
@@ -469,7 +467,7 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 		}
 		nextDL = id
 	}
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	first, err := m.Grab(ctx, ep, brokenID, domain.System)
 	if err != nil {

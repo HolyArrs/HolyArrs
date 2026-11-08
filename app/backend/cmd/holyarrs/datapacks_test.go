@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -29,7 +28,7 @@ func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(api.New(api.Server{Store: st, Version: "test"}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: st, Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, st, string(raw)
 }

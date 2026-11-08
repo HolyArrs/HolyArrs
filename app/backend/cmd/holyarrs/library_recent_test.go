@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -44,7 +43,7 @@ func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got struct {
-		Recent []api.TitleView `json:"recent"`
+		Recent []TitleView `json:"recent"`
 	}
 	if err := json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/library-summary", "", 200), &got); err != nil {
 		t.Fatal(err)

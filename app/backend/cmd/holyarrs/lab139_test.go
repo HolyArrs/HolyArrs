@@ -17,8 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -169,7 +167,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	} else {
 		t.Logf("no payload at %s: the lab qBittorrent must fetch it from qbt-seed", payload)
 	}
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: md, Version: "lab", Downloads: m, Queue: q, Library: lib, Asks: svc}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Metadata: md, Version: "lab", Downloads: m, Queue: q, Library: lib, Asks: svc}), config{}))
 	t.Cleanup(srv.Close)
 
 	res, err := svc.Ask(ctx, requests.Person{UserID: ana, Name: "ana"}, "693134")

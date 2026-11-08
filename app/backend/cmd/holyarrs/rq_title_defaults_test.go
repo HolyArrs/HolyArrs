@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -37,8 +36,8 @@ func rqThenOf(t *testing.T, st *database.Store, jobID int64) []string {
 }
 
 type rqAddAnswer struct {
-	Title api.TitleView `json:"title"`
-	JobID int64         `json:"job_id"`
+	Title TitleView `json:"title"`
+	JobID int64     `json:"job_id"`
 }
 
 func rqAddMovie(t *testing.T, base, body string) rqAddAnswer {

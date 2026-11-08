@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -30,7 +29,7 @@ type askRig struct {
 	owner *signedIn
 	ana   *signedIn
 	bo    *signedIn
-	api   *api.API
+	api   *handlers
 	live  *webserver.LiveHub
 	wl    *requests.Watchlists
 	md    metadata.Provider
@@ -60,12 +59,12 @@ func newAskRig(t *testing.T) *askRig {
 		{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900003"}}}}
 	q := jobs.New(st, jobs.Options{Workers: 1})
 	live := webserver.NewLiveHub(webserver.LiveOptions{})
-	// The services api.New would make, built here so the tests can reach them.
+	// The services New would make, built here so the tests can reach them.
 	lib := &library.Service{Store: st, Queue: q, Metadata: md, Live: live}
 	al := &alerts.Sender{Store: st, Vault: v}
 	asks := &requests.Service{Store: st, Library: lib, Metadata: md, Live: live, Alerts: al}
 	wl := &requests.Watchlists{}
-	a := api.New(api.Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: live,
+	a := buildHandlers(services{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: live,
 		Library: lib, Alerts: al, Asks: asks, Watchlists: wl})
 	srv := httptest.NewServer(routes(a, config{}))
 	t.Cleanup(srv.Close)

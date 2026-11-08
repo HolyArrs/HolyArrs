@@ -16,8 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -43,7 +41,7 @@ type t10Env struct {
 	t      *testing.T
 	srv    *httptest.Server
 	store  *database.Store
-	api    *api.API
+	api    *handlers
 	lib    *library.Service
 	owner  t10Client
 	member t10Client
@@ -88,7 +86,7 @@ func t10Setup(t *testing.T) *t10Env {
 	tmdb := &fakeShowSource{shows: map[string]metadata.Show{"tmdb:100": apiShow("tmdb", "100"), "tvdb:200": apiShow("tmdb", "100")}}
 	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Metadata: metadata.Lab(),
 		Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}}
-	a := api.New(api.Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, Version: "test", Auth: au, Secrets: v,
+	a := buildHandlers(services{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, Version: "test", Auth: au, Secrets: v,
 		Live: webserver.NewLiveHub(webserver.LiveOptions{}), Backups: &backups.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}})
 	srv := httptest.NewServer(routes(a, config{}))
 	t.Cleanup(srv.Close)

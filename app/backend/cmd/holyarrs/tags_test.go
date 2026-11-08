@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -68,7 +67,7 @@ func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 		t.Fatal(err)
 	}
 	var edited struct {
-		Title api.TitleView `json:"title"`
+		Title TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(lbDo(t, "PUT", srv.URL+"/api/v1/titles/"+lbItoa(titleID), `{"tags":["Kids","Family Night"]}`, 200), &edited)
 	if !reflect.DeepEqual(edited.Title.Tags, []string{"family-night", "kids"}) {

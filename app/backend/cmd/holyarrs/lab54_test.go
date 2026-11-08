@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -103,7 +101,7 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 	labNoSizeFloors(t, s)
 	im := &importer.Importer{Store: s}
 	m := &downloads.Manager{Store: s, SavePath: "/data/downloads/incomplete/" + cat}
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	view := func() downloads.DownloadRow {
 		var out struct {

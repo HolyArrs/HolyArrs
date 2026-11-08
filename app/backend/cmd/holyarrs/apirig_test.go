@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -51,14 +50,14 @@ func libSetup(t *testing.T) (*httptest.Server, *database.Store, chan int64) {
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Metadata: md, Version: "test", Library: svc}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Metadata: md, Version: "test", Library: svc}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s, searched
 }
 
 type addAnswer struct {
-	Title api.TitleView `json:"title"`
-	JobID int64         `json:"job_id"`
+	Title TitleView `json:"title"`
+	JobID int64     `json:"job_id"`
 }
 
 func addMovie(t *testing.T, base, body string) addAnswer {

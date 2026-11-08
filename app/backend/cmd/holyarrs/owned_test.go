@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -71,9 +70,9 @@ func TestFoldPrefilterKeepsMatches(t *testing.T) {
 // Kept outside answers survive a restart (they live in SQLite).
 func TestKeptOnDisk(t *testing.T) {
 	_, st, _ := lbSetup(t)
-	_ = api.New(api.Server{Store: st, Version: "test"})
+	_ = buildHandlers(services{Store: st, Version: "test"})
 	metadata.KeepOnDisk(context.Background(), st, "extras|movie:1", metadata.TitleExtras{Logo: "x", Scores: []metadata.OutsideScore{}})
-	_ = api.New(api.Server{Store: st, Version: "test"})
+	_ = buildHandlers(services{Store: st, Version: "test"})
 	k, ok := metadata.LoadKept[metadata.TitleExtras](context.Background(), st, "extras|movie:1")
 	if !ok || k.V.Logo != "x" || time.Since(k.At) > time.Minute {
 		t.Fatalf("%+v %v", k, ok)
@@ -122,7 +121,7 @@ func TestKeptKeysBounded(t *testing.T) {
 	old := metadata.KeptPerPrefix
 	metadata.KeptPerPrefix = 40
 	t.Cleanup(func() { metadata.KeptPerPrefix = old })
-	_ = api.New(api.Server{Store: st, Version: "test"})
+	_ = buildHandlers(services{Store: st, Version: "test"})
 	ctx := context.Background()
 	for i := range metadata.KeptPerPrefix + 5 {
 		metadata.KeepOnDisk(ctx, st, "extras|movie:"+lbItoa(int64(i+1)), metadata.TitleExtras{Scores: []metadata.OutsideScore{}})
@@ -136,7 +135,7 @@ func TestKeptKeysBounded(t *testing.T) {
 // A bogus name cannot change what another caller gets for a person.
 func TestWikiNameCannotPoison(t *testing.T) {
 	_, st, _ := lbSetup(t)
-	a := api.New(api.Server{Store: st, Version: "test", WikiPerson: func(_ context.Context, id, name string) (metadata.WikiEntity, error) {
+	a := buildHandlers(services{Store: st, Version: "test", WikiPerson: func(_ context.Context, id, name string) (metadata.WikiEntity, error) {
 		return metadata.WikiEntity{Born: "by " + name}, nil
 	}})
 	get := func(q string) metadata.WikiFacts {
@@ -156,7 +155,7 @@ func TestWikiNameCannotPoison(t *testing.T) {
 		t.Fatalf("shared answer poisoned: %+v", v)
 	}
 	// A fresh process reads the disk copy: still the name-free one.
-	_ = api.New(api.Server{Store: st, Version: "test"})
+	_ = buildHandlers(services{Store: st, Version: "test"})
 	if k, ok := metadata.LoadKept[metadata.WikiFacts](context.Background(), st, "wiki|person:5"); !ok || k.V.Born != "by " {
 		t.Fatalf("disk %+v %v", k, ok)
 	}

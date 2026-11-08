@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -63,7 +62,7 @@ func listSetup(t *testing.T) (*httptest.Server, *database.Store) {
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Metadata: md, Version: "test", Library: lib, Lists: ls, Secrets: v}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: s, Queue: q, Metadata: md, Version: "test", Library: lib, Lists: ls, Secrets: v}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s
 }

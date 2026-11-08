@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
@@ -19,7 +18,7 @@ import (
 // feedStore does one background read by hand: every torrent Downloader's
 // whole list goes into the reader's Store (made when the API has none),
 // the way the reader's pollers fill it. The Downloads view reads only it.
-func feedStore(t *testing.T, a *api.API) *downloads.Sync {
+func feedStore(t *testing.T, a *handlers) *downloads.Sync {
 	t.Helper()
 	if a.DownloadsWeb().DLSync == nil {
 		a.DownloadsWeb().DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: a.DownloadsWeb().Store}
@@ -57,7 +56,7 @@ func feedStore(t *testing.T, a *api.API) *downloads.Sync {
 
 // matchStored runs the reader's match lookup (MatchLinkOnly) once for every
 // outside item in the Store, as its match queue would.
-func matchStored(t *testing.T, a *api.API) {
+func matchStored(t *testing.T, a *handlers) {
 	t.Helper()
 	ctx := context.Background()
 	ds, err := database.Select[domain.Downloader](ctx, a.DownloadsWeb().Store.Read(), "downloaders", "1=1")

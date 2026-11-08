@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -28,7 +27,7 @@ func showSetup(t *testing.T) (*httptest.Server, *database.Store, *fakeShowSource
 	q := jobs.New(s, jobs.Options{})
 	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvmaze": maze,
 		"tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}}
-	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}), config{}))
+	srv := httptest.NewServer(routes(buildHandlers(services{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}), config{}))
 	t.Cleanup(srv.Close)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"show","label":"Shows"}`, t.TempDir()), 201)
 	return srv, s, tmdb, maze

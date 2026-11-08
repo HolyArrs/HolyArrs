@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -41,7 +40,7 @@ func moveSetup(t *testing.T, safe bool) (*httptest.Server, *database.Store, int6
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(api.New(api.Server{Store: st, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test", Mover: mv, SafeMode: safe}).Handler())
+	srv := httptest.NewServer(buildHandlers(services{Store: st, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test", Mover: mv, SafeMode: safe}).Handler())
 	t.Cleanup(srv.Close)
 	snap := &migrate.Snapshot{Kind: migrate.Radarr, Via: migrate.ViaBackup, Version: "6.4.4",
 		Folders: []migrate.Folder{{Path: "/movies"}},
