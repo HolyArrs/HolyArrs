@@ -294,7 +294,6 @@ func New(s Server) *API {
 	a.mf.CardArt = a.libraryCardArt
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
-	a.mh().Trailers = a.trailers // newTrailers built the music handlers before the trailers existed
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
 	a.shows = shows.NewHandlers(shows.Deps{Store: s.Store, Library: s.Library, Metadata: s.Metadata, AnimeMap: s.AnimeMap,
 		KidMax: a.kidMax, KidLimited: a.kidLimited, KidShows: a.kidShows, KindsOn: a.kindsOn, LibraryRating: a.libraryRating,
@@ -323,6 +322,9 @@ func New(s Server) *API {
 			return v, nil
 		},
 		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: trimEpisodeSlots, LibraryError: libraryError})
+	// newTrailers built the music handlers before the trailers and shows existed.
+	mh := a.mh()
+	mh.Trailers, mh.SlotOfTitle, mh.SeasonLabel = a.trailers, a.shows.SlotOfTitle, a.shows.SeasonLabel
 	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
 		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
 		ShowSource: a.shows.ShowSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
