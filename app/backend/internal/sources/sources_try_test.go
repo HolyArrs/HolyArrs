@@ -1,4 +1,4 @@
-package api
+package sources
 
 import (
 	"context"
@@ -12,8 +12,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // route: POST /api/v1/sources/{id}/try
@@ -28,8 +26,7 @@ func TestSourceTryNow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v}).Handler())
-	t.Cleanup(srv.Close)
+	srv := routesServer(t, s, v)
 	var down atomic.Bool
 	idx := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if down.Load() {
@@ -39,7 +36,7 @@ func TestSourceTryNow(t *testing.T) {
 		_, _ = w.Write([]byte(sourceCaps))
 	}))
 	t.Cleanup(idx.Close)
-	var x sources.SourceView
+	var x SourceView
 	raw, _ := json.Marshal(map[string]any{"name": "Lab", "format": "torznab", "url": idx.URL + "/api", "allow_local_network": true})
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", string(raw), 201), &x)
 	id := fmt.Sprint(x.ID)

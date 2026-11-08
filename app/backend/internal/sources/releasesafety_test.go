@@ -1,10 +1,8 @@
-package api
+package sources
 
 import (
 	"encoding/json"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // 4.3.5: the early and fake switches in Settings > Search.
@@ -12,9 +10,9 @@ import (
 // route: PUT /api/v1/settings/search
 func TestReleaseSafetySettings(t *testing.T) {
 	t.Parallel()
-	srv, _, _ := libSetup(t)
+	srv, _ := sourceServer(t)
 	u := srv.URL + "/api/v1"
-	var st sources.SearchSettings
+	var st SearchSettings
 	_ = json.Unmarshal(do(t, "GET", u+"/settings/search", "", 200), &st)
 	if !st.RefuseEarlyReleases || st.EarlyReleaseGraceHours != 24 || !st.RefuseTinyReleases || st.ImportMinVideoMB != 0 || st.ImportMinTrackKB != 0 ||
 		!st.ImportSizeFloors || st.HoldUnknownReleases || st.EpisodeDefaultMinutes != 20 {

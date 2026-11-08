@@ -1,4 +1,4 @@
-package api
+package sources
 
 import (
 	"context"
@@ -10,10 +10,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // route: POST /api/v1/sources/check
@@ -53,18 +50,14 @@ func TestCheckAllSources(t *testing.T) {
 	add("Sleepy", bad.URL, "paused")
 	add("Off", bad.URL, "disabled")
 
-	a := New(Server{Store: st, Metadata: metadata.Lab(), Version: "test"})
-	rt := webserver.NewRouter()
-	a.sourceHandlers().Routes(rt)
-	srv := httptest.NewServer(wrapMux(rt))
-	t.Cleanup(srv.Close)
+	srv := routesServer(t, st, nil)
 
 	var out struct {
-		Query   string                `json:"query"`
-		Sources []sources.SourceCheck `json:"sources"`
+		Query   string        `json:"query"`
+		Sources []SourceCheck `json:"sources"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources/check", `{"query":"The Matrix"}`, 200), &out)
-	by := map[string]sources.SourceCheck{}
+	by := map[string]SourceCheck{}
 	for _, c := range out.Sources {
 		by[c.Name] = c
 	}
