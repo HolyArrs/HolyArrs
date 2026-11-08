@@ -166,3 +166,14 @@ func VersionLabel(ctx context.Context, q database.Querier, versionID int64) stri
 	_ = q.QueryRowContext(ctx, "SELECT label FROM versions WHERE id = ?", versionID).Scan(&label)
 	return label
 }
+
+// VersionSlotsOfTitle lists the Slots of one Version that belong to a Title.
+func VersionSlotsOfTitle(ctx context.Context, q database.Lister, versionID, titleID int64) ([]domain.Slot, error) {
+	return database.Select[domain.Slot](ctx, q, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", versionID, titleID)
+}
+
+// VersionSlotsOfPart lists the Slots of one Version that belong to a Part
+// (a season or an album).
+func VersionSlotsOfPart(ctx context.Context, q database.Lister, versionID, partID int64) ([]domain.Slot, error) {
+	return database.Select[domain.Slot](ctx, q, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", versionID, partID)
+}

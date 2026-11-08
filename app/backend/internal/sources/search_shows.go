@@ -156,7 +156,7 @@ func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Ver
 	if err != nil {
 		return set, err
 	}
-	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", ver.ID, ti.ID)
+	slots, err := store.VersionSlotsOfTitle(ctx, db, ver.ID, ti.ID)
 	if err != nil {
 		return set, err
 	}

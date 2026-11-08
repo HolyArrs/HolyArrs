@@ -175,8 +175,6 @@ app/backend/internal/migrate/files.go
 app/backend/internal/musicsync/musicsync.go
 app/backend/internal/naming/naming.go
 app/backend/internal/parts/control.go
-app/backend/internal/sources/search_music.go
-app/backend/internal/sources/shows.go
 app/backend/internal/sources/store.go
 app/backend/internal/sources/store_health.go
 app/backend/internal/sources/store_releases.go

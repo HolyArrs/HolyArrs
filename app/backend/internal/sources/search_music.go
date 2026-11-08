@@ -313,7 +313,7 @@ func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Ve
 	if err != nil {
 		return set, err
 	}
-	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
+	slots, err := store.VersionSlotsOfPart(ctx, db, ver.ID, part.ID)
 	if err != nil {
 		return set, err
 	}
