@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // Deps is what the Explore routes need: services and core types, and funcs
@@ -52,6 +53,10 @@ type Deps struct {
 	LibraryMovieAllowed func(ctx context.Context, max, tmdbID string) bool
 	// LiveSource lists Explore's live TMDB lists (the trending shelf).
 	LiveSource func(ctx context.Context) Lister
+	// TitleView builds a Library title's full view; KidMovies trims movie
+	// search hits to a Kid's limit (plain-words Search).
+	TitleView func(ctx context.Context, t mediafiles.Title) (titleview.TitleView, error)
+	KidMovies func(ctx context.Context, max string, ms []metadata.Movie) []metadata.Movie
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
@@ -97,6 +102,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/watch-services", h.watchServices)
 	m.HandleFunc("GET /api/v1/explore/service-top", h.exploreServiceTop)
 	m.HandleFunc("GET /api/v1/home", h.home)
+	m.HandleFunc("GET /api/v1/search", h.plainSearch)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only
