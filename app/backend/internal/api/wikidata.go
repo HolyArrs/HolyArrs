@@ -11,7 +11,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // WikiFacts is a title's or person's awards and Wikipedia bio for the page
@@ -181,7 +180,7 @@ func (a *API) wikiKidAllows(w http.ResponseWriter, r *http.Request, kind, id str
 		}
 		rating = e.details.Rating
 	}
-	if rating == "" || !ratings.Allows(max, kind, rating) {
+	if rating == "" || !metadata.RatingAllows(max, kind, rating) {
 		fail(w, http.StatusForbidden, aboveLimit)
 		return false
 	}

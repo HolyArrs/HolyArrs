@@ -1,8 +1,4 @@
-// Package mediaserver tells Plex, Jellyfin and Emby to look at a movie,
-// show or album folder again after HolyArrs imported, renamed or deleted files there, so
-// the change shows up without waiting for the server's own scan. It only
-// pushes: nothing is read back. Tokens live in the encrypted vault.
-package mediaserver
+package mediaservers
 
 import (
 	"bytes"
@@ -24,6 +20,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -124,17 +121,6 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 	return nil
 }
 
-func nameUsed(tx *sql.Tx, name string, id int64) error {
-	var n int
-	if err := tx.QueryRow("SELECT count(*) FROM media_servers WHERE name = ? COLLATE NOCASE AND id != ?", name, id).Scan(&n); err != nil {
-		return err
-	}
-	if n > 0 {
-		return ErrNameUsed
-	}
-	return nil
-}
-
 // Add stores a media server; its token goes to the vault.
 func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.MediaServer, error) {
 	var m domain.MediaServer
@@ -150,8 +136,7 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 			return err
 		}
 		m.TokenSecretID = &id
-		_, err = database.Insert(tx, "media_servers", &m, by)
-		return err
+		return insertServer(tx, &m, by)
 	})
 	return m, err
 }
@@ -159,8 +144,8 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 // Change saves a media server; an empty token keeps the stored one, unless
 // the address moved to another host or scheme.
 func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.MediaServer, error) {
-	var m domain.MediaServer
-	if err := database.Get(ctx, s.Read(), "media_servers", id, &m); err != nil {
+	m, err := getServer(ctx, s.Read(), id)
+	if err != nil {
 		return m, err
 	}
 	old := m
@@ -170,13 +155,13 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 	if in.Token == "" && originOf(m.URL) != originOf(old.URL) {
 		return old, ErrKeyAgain
 	}
-	err := s.Write(ctx, func(tx *sql.Tx) error {
+	err = s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, m.Name, m.ID); err != nil {
 			return err
 		}
 		if in.Token != "" {
 			if m.TokenSecretID != nil {
-				if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", *m.TokenSecretID); err != nil {
+				if err := v.DeleteTx(ctx, tx, *m.TokenSecretID); err != nil {
 					return err
 				}
 			}
@@ -186,25 +171,24 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 			}
 			m.TokenSecretID = &nid
 		}
-		return database.Update(tx, "media_servers", &m, by)
+		return updateServer(tx, &m, by)
 	})
 	return m, err
 }
 
 // Remove deletes a media server and its token.
-func Remove(ctx context.Context, s *database.Store, id int64) error {
+func Remove(ctx context.Context, s *database.Store, v *secrets.Vault, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		var m domain.MediaServer
-		if err := database.Get(ctx, tx, "media_servers", id, &m); err != nil {
+		m, err := getServer(ctx, tx, id)
+		if err != nil {
 			return err
 		}
 		if m.TokenSecretID != nil {
-			if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", *m.TokenSecretID); err != nil {
+			if err := v.DeleteTx(ctx, tx, *m.TokenSecretID); err != nil {
 				return err
 			}
 		}
-		_, err := tx.Exec("DELETE FROM media_servers WHERE id = ?", id)
-		return err
+		return deleteServer(tx, id)
 	})
 }
 
@@ -233,19 +217,7 @@ type Linker struct {
 
 // Folders returns the movie folders of a Title (one per Version).
 func (l *Linker) Folders(ctx context.Context, titleID int64) []string {
-	rows, err := l.Store.Read().QueryContext(ctx, `SELECT lf.path, v.folder_name FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id
-		WHERE v.title_id = ? ORDER BY v.is_main DESC, v.id`, titleID)
-	if err != nil {
-		return nil
-	}
-	defer rows.Close()
-	var out []string
-	for rows.Next() {
-		var root, folder string
-		if rows.Scan(&root, &folder) == nil && folder != "" {
-			out = append(out, filepath.Join(root, folder))
-		}
-	}
+	out, _ := mediafiles.TitleFolders(ctx, l.Store.Read(), titleID)
 	return out
 }
 
@@ -272,8 +244,7 @@ func (l *Linker) Watch(ctx context.Context) {
 		if ch == "" || e.TitleID == nil {
 			return
 		}
-		var kind string
-		_ = l.Store.Read().QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", *e.TitleID).Scan(&kind)
+		kind := mediafiles.TitleKind(ctx, l.Store.Read(), *e.TitleID)
 		for _, f := range l.FoldersOf(ctx, e) {
 			l.queue(ctx, f, ch, kind)
 		}
@@ -287,9 +258,8 @@ func (l *Linker) Watch(ctx context.Context) {
 // title's folders.
 func (l *Linker) FoldersOf(ctx context.Context, e domain.Event) []string {
 	db := l.Store.Read()
-	var kind, root, artist string
-	if db.QueryRowContext(ctx, `SELECT t.kind, lf.path, v.folder_name FROM titles t JOIN versions v ON v.title_id = t.id AND v.is_main = 1
-		JOIN library_folders lf ON lf.id = v.library_folder_id WHERE t.id = ?`, *e.TitleID).Scan(&kind, &root, &artist) != nil || kind != "artist" || artist == "" {
+	kind, root, artist, err := mediafiles.MainFolder(ctx, db, *e.TitleID)
+	if err != nil || kind != "artist" || artist == "" {
 		return l.Folders(ctx, *e.TitleID)
 	}
 	var rels []string
@@ -309,8 +279,7 @@ func (l *Linker) FoldersOf(ctx context.Context, e domain.Event) []string {
 	if len(rels) == 0 {
 		for _, k := range []string{"placed_slot_ids", "slot_ids"} {
 			for _, id := range idList(e.Data[k]) {
-				var rel string
-				if db.QueryRowContext(ctx, "SELECT f.relative_path FROM slots s JOIN files f ON f.id = s.file_id WHERE s.id = ?", id).Scan(&rel) == nil {
+				if rel, err := mediafiles.SlotPath(ctx, db, id); err == nil {
 					rels = append(rels, rel)
 				}
 			}
@@ -424,7 +393,7 @@ func (l *Linker) Flush(ctx context.Context) {
 	if len(batch) == 0 {
 		return
 	}
-	ms, err := database.Select[domain.MediaServer](ctx, l.Store.Read(), "media_servers", "enabled = 1 ORDER BY id")
+	ms, err := enabledServers(ctx, l.Store.Read())
 	if err != nil {
 		log.Printf("media servers: %v", err)
 		return
@@ -492,14 +461,11 @@ func (l *Linker) record(ctx context.Context, m domain.MediaServer, sent []Update
 	if sendErr != nil {
 		msg = sendErr.Error()
 	}
-	_ = l.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
-		if sendErr != nil {
-			_, err := tx.Exec("UPDATE media_servers SET last_error = ? WHERE id = ?", msg, m.ID)
-			return err
-		}
-		_, err := tx.Exec("UPDATE media_servers SET last_ok_at = ?, last_error = '' WHERE id = ?", now, m.ID)
-		return err
-	})
+	if sendErr != nil {
+		markError(ctx, l.Store, m.ID, msg)
+	} else {
+		markOK(ctx, l.Store, m.ID, now)
+	}
 	paths := []string{}
 	for _, u := range sent {
 		paths = append(paths, u.Path)
@@ -742,14 +708,11 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 		}
 	}
 	now := database.FormatTime(time.Now())
-	_ = l.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
-		if err != nil {
-			log.Printf("media servers: %s: test: %v", m.Name, err)
-			_, e := tx.Exec("UPDATE media_servers SET last_error = ? WHERE id = ?", err.Error(), m.ID)
-			return e
-		}
-		_, e := tx.Exec("UPDATE media_servers SET last_ok_at = ?, last_error = '' WHERE id = ?", now, m.ID)
-		return e
-	})
+	if err != nil {
+		log.Printf("media servers: %s: test: %v", m.Name, err)
+		markError(ctx, l.Store, m.ID, err.Error())
+	} else {
+		markOK(ctx, l.Store, m.ID, now)
+	}
 	return res, err
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // discoverTitles are the row headings the app may show.
@@ -437,7 +436,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		if !inLibrary {
 			rating = e.details.Rating
 		}
-		if !ratings.Allows(max, kind, rating) {
+		if !metadata.RatingAllows(max, kind, rating) {
 			fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
@@ -648,7 +647,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 		if !inLibrary {
 			rating = e.details.Rating
 		}
-		if !ratings.Allows(max, kind, rating) {
+		if !metadata.RatingAllows(max, kind, rating) {
 			fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
@@ -717,7 +716,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			}
 			rating = e.details.Rating
 		}
-		if !ratings.Allows(max, "show", rating) {
+		if !metadata.RatingAllows(max, "show", rating) {
 			fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}

@@ -18,7 +18,7 @@ import (
 func allRoutes(t *testing.T) []string {
 	t.Helper()
 	seen := map[string]bool{}
-	for _, dir := range []string{".", "../api", "../backup"} {
+	for _, dir := range []string{".", "../api", "../backups", "../alerts", "../health", "../updates", "../mediaservers"} {
 		rs, err := webserver.RegisteredRoutes(dir)
 		if err != nil {
 			t.Fatal(err)

@@ -6,8 +6,7 @@ import (
 	"strings"
 )
 
-// Batch artist data for the scored Music rows (plan 2026-10-22 §5,
-// endpoints 4 and 5). Requests carry artist ids only.
+// Batch artist data for the scored Music rows. Requests carry artist ids only.
 
 // MusicSimilarScore is one artist like a seed, S normalised by the seed's
 // top score.

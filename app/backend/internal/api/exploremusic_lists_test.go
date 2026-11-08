@@ -14,7 +14,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeShelves answers every region with the same blocks: 30 items each,
@@ -354,15 +353,15 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	now := time.Now()
 	snap := musicSnapKey(1, "US")
 	put := func() {
-		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, snap, []byte("{}"), now, now.Add(time.Hour))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, snap, []byte("{}"), now, now.Add(time.Hour))
 	}
 	kept := func() bool {
-		_, ok, _ := store.LookupCache{Store: a.s.Store}.Get(ctx, snap, now)
+		_, ok, _ := metadata.LookupCache{Store: a.s.Store}.Get(ctx, snap, now)
 		clock := now
 		if a.musicv2.now != nil {
 			clock = a.musicv2.now()
 		}
-		_, stale, _ := store.LookupCache{Store: a.s.Store}.Get(ctx, musicStalePrefix+"all", clock)
+		_, stale, _ := metadata.LookupCache{Store: a.s.Store}.Get(ctx, musicStalePrefix+"all", clock)
 		return ok && !stale
 	}
 	wait := func(want bool) {
@@ -375,7 +374,7 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	}
 	// A restart with the same shelves as stored: the plan stays.
 	sh, _ := fakeShelves(ctx, "us")
-	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte(sh.AsOf+"|"+fmt.Sprint(listCount(&sh))), now, now.Add(time.Hour))
+	_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte(sh.AsOf+"|"+fmt.Sprint(listCount(&sh))), now, now.Add(time.Hour))
 	put()
 	a.listSeen = nil
 	a.musicv2.cand = musicscore.Candidates{}
@@ -385,7 +384,7 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	wait(true)
 	// Shelves changed while down: the kept plan is no longer current.
-	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte("2026-10-23|5"), now, now.Add(time.Hour))
+	_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte("2026-10-23|5"), now, now.Add(time.Hour))
 	a.listSeen = nil
 	a.musicv2.cand = musicscore.Candidates{}
 	a.musicShelvesOf(ctx, "us", now)

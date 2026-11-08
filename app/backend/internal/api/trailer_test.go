@@ -18,8 +18,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // ytFake plays YouTube for the trailer reader: the watch page and the
@@ -466,7 +465,7 @@ func TestTrailerStoredRechecked(t *testing.T) {
 	later := now.Add(time.Hour)
 	put := func(k string, s TrailerStream) {
 		b, _ := json.Marshal(s)
-		if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|"+k, b, now, later); err != nil {
+		if err := (metadata.LookupCache{Store: st}).Put(ctx, "trailer|"+k, b, now, later); err != nil {
 			t.Fatal(err)
 		}
 	}

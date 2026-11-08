@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // TitleExtras is the optional extra artwork (the metadata server's stored
@@ -110,7 +107,7 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 			}
 			rating = e.details.Rating
 		}
-		if rating == "" || !ratings.Allows(max, kind, rating) {
+		if rating == "" || !metadata.RatingAllows(max, kind, rating) {
 			fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
@@ -253,7 +250,7 @@ func keepOnDisk[T any](ctx context.Context, a *API, key string, v T) {
 	now := time.Now()
 	if b, err := json.Marshal(keptBody[T]{V: v, At: now}); err == nil {
 		ctx := context.WithoutCancel(ctx)
-		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, key, b, now, now.Add(keptOnDisk))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, key, b, now, now.Add(keptOnDisk))
 		capKept(ctx, a, key)
 	}
 }
@@ -268,12 +265,7 @@ func capKept(ctx context.Context, a *API, key string) {
 	if !ok {
 		return
 	}
-	like := prefix + "|%"
-	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`DELETE FROM lookup_cache WHERE key IN (SELECT key FROM lookup_cache WHERE key LIKE ?
-			ORDER BY fetched_at DESC LIMIT -1 OFFSET ?)`, like, keptPerPrefix)
-		return err
-	})
+	_ = metadata.LookupCache{Store: a.s.Store}.TrimPrefix(ctx, prefix+"|", keptPerPrefix)
 }
 
 // loadKept reads an answer keepOnDisk stored, as a memory entry.
@@ -288,7 +280,7 @@ func loadKept[T any](ctx context.Context, a *API, key string) (struct {
 	if a.s.Store == nil || a.s.Store.Read() == nil {
 		return out, false
 	}
-	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, key, time.Now())
+	b, ok, err := metadata.LookupCache{Store: a.s.Store}.Get(ctx, key, time.Now())
 	var k keptBody[T]
 	if err != nil || !ok || json.Unmarshal(b, &k) != nil {
 		return out, false

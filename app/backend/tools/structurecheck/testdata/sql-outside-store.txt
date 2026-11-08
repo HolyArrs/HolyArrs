@@ -32,7 +32,6 @@ app/backend/internal/api/exploremusic_disk.go
 app/backend/internal/api/exploremusic_more.go
 app/backend/internal/api/exploremusic_v2.go
 app/backend/internal/api/exploremusic_v7.go
-app/backend/internal/api/extras.go
 app/backend/internal/api/fresh.go
 app/backend/internal/api/home.go
 app/backend/internal/api/kid.go
@@ -150,7 +149,6 @@ app/backend/internal/library/title_defaults.go
 app/backend/internal/library/versions.go
 app/backend/internal/lists/lists.go
 app/backend/internal/lists/sync.go
-app/backend/internal/mediaserver/mediaserver.go
 app/backend/internal/migrate/apply.go
 app/backend/internal/migrate/files.go
 app/backend/internal/musicsync/musicsync.go

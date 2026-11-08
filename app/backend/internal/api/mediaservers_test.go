@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -33,7 +34,7 @@ func TestMediaServersOverHTTP(t *testing.T) {
 	if strings.Contains(string(b), "tk-1234") {
 		t.Fatalf("token leaked: %s", b)
 	}
-	var v MediaServerView
+	var v mediaservers.View
 	_ = json.Unmarshal(b, &v)
 	if v.Token != secrets.Masked || !v.OnImport || !v.OnRename || !v.OnDelete || !v.AllowLocal {
 		t.Fatalf("view %+v", v)

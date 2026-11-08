@@ -361,7 +361,7 @@ func (a *API) linkRestart(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusServiceUnavailable, "media servers are not available here")
 			return
 		}
-		test = a.testMediaServer
+		test = a.media.Test
 	case "subtitle_site":
 		test = a.testSubtitleSite
 	default:

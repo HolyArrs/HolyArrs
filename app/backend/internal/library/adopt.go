@@ -27,7 +27,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // Job kinds for an existing library.
@@ -573,7 +572,7 @@ func (s *Service) followAdopted(ctx context.Context, by domain.Actor, res []Adop
 			}
 			if max != "" {
 				var kind, rating string
-				if err := tx.QueryRow("SELECT kind, coalesce(rating, '') FROM titles WHERE id = ?", x.TitleID).Scan(&kind, &rating); err != nil || !ratings.Allows(max, kind, rating) {
+				if err := tx.QueryRow("SELECT kind, coalesce(rating, '') FROM titles WHERE id = ?", x.TitleID).Scan(&kind, &rating); err != nil || !metadata.RatingAllows(max, kind, rating) {
 					continue
 				}
 			}

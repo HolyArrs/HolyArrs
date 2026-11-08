@@ -14,8 +14,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Kid accounts: a member with an age-rating limit sees and asks for only
@@ -43,7 +41,7 @@ func (a *API) kidMax(r *http.Request) string {
 
 // titleAllowed says the signed-in person may see the Library title t.
 func (a *API) titleAllowed(r *http.Request, t mediafiles.Title) bool {
-	return ratings.Allows(a.kidMax(r), t.Kind, t.Rating)
+	return metadata.RatingAllows(a.kidMax(r), t.Kind, t.Rating)
 }
 
 // libraryRating is the rating of the Library movie or show with that TMDB
@@ -150,7 +148,7 @@ func (a *API) knownRating(ctx context.Context, ref ratingRef) (string, bool) {
 		return r, true
 	}
 	if a.s.Store != nil {
-		if b, ok, err := (store.LookupCache{Store: a.s.Store}).Get(ctx, "rating|"+ref.kind+"|"+ref.tmdbID, time.Now()); err == nil && ok {
+		if b, ok, err := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, "rating|"+ref.kind+"|"+ref.tmdbID, time.Now()); err == nil && ok {
 			a.rated.put(ref.kind+"|"+ref.tmdbID, string(b), time.Now())
 			return string(b), true
 		}
@@ -189,7 +187,7 @@ func (a *API) lookupRating(ctx context.Context, ref ratingRef) (string, bool) {
 	now := time.Now()
 	a.rated.put(ref.kind+"|"+ref.tmdbID, rating, now)
 	if a.s.Store != nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "rating|"+ref.kind+"|"+ref.tmdbID, []byte(rating), now, now.Add(ratingStoredTTL))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "rating|"+ref.kind+"|"+ref.tmdbID, []byte(rating), now, now.Add(ratingStoredTTL))
 	}
 	return rating, true
 }
@@ -228,7 +226,7 @@ func (a *API) kidAllowed(ctx context.Context, max string, refs []ratingRef, n in
 			if n > 0 && found == n {
 				break
 			}
-			if known[j] && ratings.Allows(max, ref.kind, got[j]) {
+			if known[j] && metadata.RatingAllows(max, ref.kind, got[j]) {
 				out[i+j] = true
 				found++
 			}
@@ -298,7 +296,7 @@ func (a *API) kidShows(ctx context.Context, max string, shows []metadata.Show) [
 // max allows; person credits outside the Library stay hidden for a Kid.
 func (a *API) libraryMovieAllowed(ctx context.Context, max, tmdbID string) bool {
 	r, ok := a.libraryRating(ctx, "movie", tmdbID)
-	return ok && ratings.Allows(max, "movie", r)
+	return ok && metadata.RatingAllows(max, "movie", r)
 }
 
 // kidKnownFor keeps the person's known-for movies a Kid may see.
@@ -326,11 +324,11 @@ func kidSQL(max string) (string, []any) {
 	for _, l := range []struct {
 		kind   string
 		ladder []string
-	}{{"movie", ratings.Movie}, {"show", ratings.TV}} {
+	}{{"movie", metadata.MovieRatings}, {"show", metadata.TVRatings}} {
 		var marks []string
 		args = append(args, l.kind)
 		for _, r := range l.ladder {
-			if ratings.Allows(max, l.kind, r) {
+			if metadata.RatingAllows(max, l.kind, r) {
 				marks = append(marks, "?")
 				args = append(args, r)
 			}
@@ -359,7 +357,7 @@ func (a *API) allowedTitleIDs(ctx context.Context, max string, ids []int64) (map
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
-		out[id] = err == nil && ratings.Allows(max, kind, rating)
+		out[id] = err == nil && metadata.RatingAllows(max, kind, rating)
 	}
 	return out, nil
 }
@@ -390,7 +388,7 @@ func (a *API) kidGate(m *http.ServeMux, next http.Handler) http.Handler {
 			var kind, rating string
 			err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT kind, rating FROM titles WHERE id = ?",
 				pathValue(pattern, r.URL.Path, "{id}")).Scan(&kind, &rating)
-			if errors.Is(err, sql.ErrNoRows) || (err == nil && !ratings.Allows(max, kind, rating)) {
+			if errors.Is(err, sql.ErrNoRows) || (err == nil && !metadata.RatingAllows(max, kind, rating)) {
 				fail(w, http.StatusNotFound, "not found")
 				return
 			}

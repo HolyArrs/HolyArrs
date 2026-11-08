@@ -1,5 +1,3 @@
-// Package metadata looks up Titles. Every lookup goes through Provider, so
-// the real online provider drops in later without touching callers.
 package metadata
 
 import (

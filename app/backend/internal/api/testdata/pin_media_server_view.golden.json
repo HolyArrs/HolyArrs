@@ -1,0 +1,16 @@
+{
+  "id": 2,
+  "name": "Jellyfin",
+  "kind": "jellyfin",
+  "url": "http://jf:8096",
+  "token": "••••••••",
+  "enabled": true,
+  "on_import": true,
+  "on_rename": true,
+  "on_delete": false,
+  "path_from": "/data",
+  "path_to": "/media",
+  "allow_local_network": true,
+  "last_ok_at": "2026-10-01T12:00:00Z",
+  "last_error": "slow"
+}

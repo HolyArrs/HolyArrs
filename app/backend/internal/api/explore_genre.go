@@ -10,7 +10,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // netflixService is Netflix's TMDB watch-provider id; its chip uses
@@ -317,7 +316,7 @@ func (a *API) genreSeed(ctx context.Context, r *http.Request, kind, genre string
 		if rows.Scan(&it.TMDBID, &it.Name, &rating) != nil {
 			continue
 		}
-		if max != "" && !ratings.Allows(max, kind, rating) {
+		if max != "" && !metadata.RatingAllows(max, kind, rating) {
 			continue
 		}
 		it.Kind = kind

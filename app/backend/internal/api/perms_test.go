@@ -37,7 +37,7 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 		"POST /api/v1/auth/invites/{token}/media-server/{kind}": true,
 	}
 	seen := 0
-	for _, dir := range []string{".", "../auth", "../backup"} {
+	for _, dir := range routePackages {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
 			if strings.HasSuffix(f, "_test.go") {

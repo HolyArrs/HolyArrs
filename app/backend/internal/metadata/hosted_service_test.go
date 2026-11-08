@@ -1,4 +1,4 @@
-package main
+package metadata
 
 import (
 	"context"
@@ -12,9 +12,8 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // fixtureInstall is a made-up installation credential.
@@ -61,14 +60,14 @@ func fakeMetadataServer(t *testing.T, registered *atomic.Int32, tmdb *atomic.Int
 func TestFreshInstallRegistersOnceAndSearchesThroughServer(t *testing.T) {
 	var registered, tmdb atomic.Int32
 	srv := fakeMetadataServer(t, &registered, &tmdb)
-	t.Setenv(metadata.EnvServiceURL, srv.URL)
+	t.Setenv(EnvServiceURL, srv.URL)
 	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
 	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", "")
-	t.Setenv(metadata.EnvTMDBKey, "")
-	t.Setenv(metadata.EnvTokenFile, "")
+	t.Setenv(EnvTMDBKey, "")
+	t.Setenv(EnvTokenFile, "")
 	t.Setenv("HOLYARRS_TMDB_URL", "")
 	v := testVault(t)
-	h, err := newHostedMetadata(v)
+	h, err := NewHosted(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +88,7 @@ func TestFreshInstallRegistersOnceAndSearchesThroughServer(t *testing.T) {
 		t.Fatal("credential not kept")
 	}
 	// A restart reuses the kept credential.
-	h, _ = newHostedMetadata(v)
+	h, _ = NewHosted(v)
 	if _, err := h.TMDB().Search(context.Background(), "Again", 0); err != nil || registered.Load() != 1 {
 		t.Fatalf("registered again: %d %v", registered.Load(), err)
 	}
@@ -98,16 +97,16 @@ func TestFreshInstallRegistersOnceAndSearchesThroughServer(t *testing.T) {
 func TestRefusedCredentialIsNotReplaced(t *testing.T) {
 	var registered, tmdb atomic.Int32
 	srv := fakeMetadataServer(t, &registered, &tmdb)
-	t.Setenv(metadata.EnvServiceURL, srv.URL)
+	t.Setenv(EnvServiceURL, srv.URL)
 	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
 	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", "")
-	t.Setenv(metadata.EnvTMDBKey, "")
-	t.Setenv(metadata.EnvTokenFile, "")
+	t.Setenv(EnvTMDBKey, "")
+	t.Setenv(EnvTokenFile, "")
 	v := testVault(t)
-	if err := v.SetSetting(context.Background(), installationGroup, installationKey, "hai_revoked_fixture", domain.System); err != nil {
+	if err := v.SetSetting(context.Background(), installationGroup, installationKey, "hai_revoked_fixture", database.System); err != nil {
 		t.Fatal(err)
 	}
-	h, err := newHostedMetadata(v)
+	h, err := NewHosted(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,11 +119,11 @@ func TestRefusedCredentialIsNotReplaced(t *testing.T) {
 }
 
 func TestOwnTMDBKeyGoesDirect(t *testing.T) {
-	t.Setenv(metadata.EnvServiceURL, "")
-	t.Setenv(metadata.EnvTMDBKey, "own-fixture-key")
-	t.Setenv(metadata.EnvTokenFile, "")
+	t.Setenv(EnvServiceURL, "")
+	t.Setenv(EnvTMDBKey, "own-fixture-key")
+	t.Setenv(EnvTokenFile, "")
 	t.Setenv("HOLYARRS_TMDB_URL", "")
-	h, err := newHostedMetadata(nil)
+	h, err := NewHosted(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,29 +131,29 @@ func TestOwnTMDBKeyGoesDirect(t *testing.T) {
 	if !h.OwnKey || h.TMDBBase != "" || tok != "own-fixture-key" {
 		t.Fatalf("own key: %+v", h)
 	}
-	if h.Service.Base() != metadata.DefaultServiceURL {
+	if h.Service.Base() != DefaultServiceURL {
 		t.Fatal(h.Service.Base())
 	}
 }
 
 func TestMetadataURLAndAddressPolicy(t *testing.T) {
 	for _, ip := range []string{"169.254.169.254", "100.100.100.200", "fd00:ec2::254", "0.0.0.0", "::", "224.0.0.1", "ff02::1", "255.255.255.255"} {
-		if metadataServiceLocal(net.ParseIP(ip)) {
+		if outbound.MetadataServiceLocal(net.ParseIP(ip)) {
 			t.Fatalf("unsafe local policy: %s", ip)
 		}
 	}
 	for _, ip := range []string{"127.0.0.1", "::1", "10.10.25.25"} {
-		if !metadataServiceLocal(net.ParseIP(ip)) {
+		if !outbound.MetadataServiceLocal(net.ParseIP(ip)) {
 			t.Fatalf("private endpoint denied: %s", ip)
 		}
 	}
-	t.Setenv(metadata.EnvServiceURL, "http://example.com")
+	t.Setenv(EnvServiceURL, "http://example.com")
 	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
-	if _, err := newHostedMetadata(nil); err == nil {
+	if _, err := NewHosted(nil); err == nil {
 		t.Fatal("public bearer HTTP accepted")
 	}
 	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "yes-please")
-	if _, err := newHostedMetadata(nil); err == nil {
+	if _, err := NewHosted(nil); err == nil {
 		t.Fatal("invalid opt-in accepted")
 	}
 }

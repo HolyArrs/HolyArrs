@@ -12,8 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // Reports (#95): anyone signed in reports a problem with a title in the
@@ -88,7 +88,7 @@ func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
 	}
 	// A title above the reader's Kid limit stays hidden, even their own
 	// report of it after the limit was lowered.
-	vs = slices.DeleteFunc(vs, func(v asks.ReportView) bool { return !ratings.Allows(a.kidMax(r), v.TitleKind, v.Rating) })
+	vs = slices.DeleteFunc(vs, func(v asks.ReportView) bool { return !metadata.RatingAllows(a.kidMax(r), v.TitleKind, v.Rating) })
 	out := map[string]any{"reports": a.reportLinks(r, vs)}
 	if mayManageReports(r) {
 		n, _ := asks.OpenReports(r.Context(), a.s.Store.Read())

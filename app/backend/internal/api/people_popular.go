@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // TMDB's popular people follow short page-view spikes, so Search re-ranks
@@ -84,7 +83,7 @@ func rankPopular(people []metadata.Person, boost map[string]bool) []metadata.Per
 func (a *API) popularPool(ctx context.Context, p metadata.PeopleProvider, pop metadata.PopularPeopler) ([]metadata.Person, error) {
 	const key = "peoplepopular|v1"
 	now := time.Now()
-	c := store.LookupCache{Store: a.s.Store}
+	c := metadata.LookupCache{Store: a.s.Store}
 	if b, ok, _ := c.Get(ctx, key, now); ok {
 		var out []metadata.Person
 		if json.Unmarshal(b, &out) == nil {

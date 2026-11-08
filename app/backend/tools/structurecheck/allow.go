@@ -28,7 +28,6 @@ var oversized = map[string]bool{
 	"app/frontend/src/lib/explore.ts":                        true,
 	"app/backend/internal/api/exploremusic.go":               true,
 	"app/backend/internal/music/rowtpl/catalog.go":           true,
-	"app/backend/internal/metadata/discover.go":              true,
 	"app/backend/internal/library/rename.go":                 true,
 	"app/backend/internal/source/source.go":                  true,
 	"app/frontend/src/lib/SigninBackdrop.svelte":             true,
@@ -41,7 +40,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/library/artist.go":                 true,
 	"app/backend/internal/migrate/arr.go":                    true,
 	"app/frontend/src/lib/approvals/ApprovalsDesktop.svelte": true,
-	"app/backend/internal/metadata/musicbrainz.go":           true,
 	"app/backend/internal/api/explore_new_music.go":          true,
 	"app/backend/internal/parts/table.go":                    true, // split into the modules by t13
 	"app/frontend/src/routes/library/+page.svelte":           true,

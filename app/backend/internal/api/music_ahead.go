@@ -10,7 +10,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Music fetch-ahead: whenever the prebuild or a rebuild picks items for a
@@ -213,7 +212,7 @@ func (a *API) aheadKept(ctx context.Context, it aheadItem, now time.Time) bool {
 	if a.s.Store == nil {
 		return false
 	}
-	if _, ok, err := (store.LookupCache{Store: a.s.Store}).Get(ctx, "musicahead|"+it.kind+"|"+it.mbid, now); err == nil && ok {
+	if _, ok, err := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, "musicahead|"+it.kind+"|"+it.mbid, now); err == nil && ok {
 		h.mu.Lock()
 		if h.kept == nil {
 			h.kept = map[aheadItem]time.Time{}
@@ -234,7 +233,7 @@ func (a *API) keepAhead(ctx context.Context, it aheadItem, now time.Time) {
 	h.kept[it] = now
 	h.mu.Unlock()
 	if a.s.Store != nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "musicahead|"+it.kind+"|"+it.mbid, []byte("1"), now, now.Add(aheadKeep))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "musicahead|"+it.kind+"|"+it.mbid, []byte("1"), now, now.Add(aheadKeep))
 	}
 }
 

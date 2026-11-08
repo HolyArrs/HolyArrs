@@ -1,0 +1,45 @@
+{
+  "id": 3,
+  "name": "Lab",
+  "protocol": "torrent",
+  "format": "torznab",
+  "url": "http://idx.example/api",
+  "api_key": "••••••••",
+  "use_for": {
+    "feed": true,
+    "auto_search": true,
+    "hand_search": true
+  },
+  "kinds": [
+    "movie",
+    "tv"
+  ],
+  "categories": {
+    "movie": [
+      2000
+    ],
+    "tv": [
+      5000
+    ]
+  },
+  "min_seeders": 5,
+  "limits": {},
+  "priority": 10,
+  "state": "enabled",
+  "health": {
+    "state": "working",
+    "text": "Working."
+  },
+  "allow_local_network": true,
+  "proxy": "",
+  "proxy_password": "",
+  "proxy_allow_local_network": false,
+  "summary": {
+    "last_success": null,
+    "last_failure": null,
+    "calls_24h": 0,
+    "failures_24h": 0,
+    "avg_ms_24h": 0
+  },
+  "tags": []
+}

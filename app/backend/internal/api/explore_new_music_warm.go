@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The New & Popular → Music lists are prebuilt by the Music read-ahead
@@ -39,7 +38,7 @@ func (a *API) loadMusicNew() {
 	if musicNew.data != nil {
 		return
 	}
-	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(context.Background(), musicNewDiskKey, time.Now())
+	b, ok, err := metadata.LookupCache{Store: a.s.Store}.Get(context.Background(), musicNewDiskKey, time.Now())
 	if err != nil || !ok {
 		return
 	}
@@ -69,7 +68,7 @@ func (a *API) refreshMusicNew(ctx context.Context) bool {
 		b, err := json.Marshal(musicNewDisk{At: nd.at, Releases: nd.releases, Fresh: nd.fresh, Albums: nd.albums, Artists: nd.artists, Server: nd.server})
 		if err == nil {
 			// Kept long past the TTL: a stale build still answers at once.
-			_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), musicNewDiskKey, b, now, now.Add(30*24*time.Hour))
+			_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), musicNewDiskKey, b, now, now.Add(30*24*time.Hour))
 		}
 	}
 	return true

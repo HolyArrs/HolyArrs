@@ -27,7 +27,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
 
 // Window is how far back the weekly limit looks (a rolling week).
@@ -191,13 +190,13 @@ func (e limitRefusal) Unwrap() error { return ErrAboveLimit }
 // overLimit refuses a movie or show rated rating when p's limit does not
 // allow it; nil when it does.
 func overLimit(p Person, kind, rating string) error {
-	if ratings.Allows(p.MaxRating, kind, rating) {
+	if metadata.RatingAllows(p.MaxRating, kind, rating) {
 		return nil
 	}
 	if kind == "artist" {
 		return limitRefusal("This account cannot ask for music, because music has no age ratings.")
 	}
-	return limitRefusal("This account can ask only for titles rated " + ratings.Up(p.MaxRating) + ".")
+	return limitRefusal("This account can ask only for titles rated " + metadata.RatingUp(p.MaxRating) + ".")
 }
 
 // libraryOverLimit refuses when the Library title id (0: none) is rated

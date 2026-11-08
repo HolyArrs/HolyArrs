@@ -14,7 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Sign-in settings live in the this_app group with keys starting sign_in_.
@@ -72,7 +72,7 @@ func (a *Auth) signInSetting(ctx context.Context, key string) string {
 
 // countryOr reads an empty rating country as US.
 func countryOr(c string) string {
-	if c = ratings.Norm(c); c == "" {
+	if c = metadata.NormRating(c); c == "" {
 		return "US"
 	}
 	return c
@@ -82,11 +82,11 @@ func countryOr(c string) string {
 // returns it as stored, or an error in plain words for a 400. A limit is
 // refused while sign-in is skipped on the local network (skipLocal).
 func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool) (string, string, error) {
-	max, country = ratings.Norm(max), countryOr(country)
-	if !ratings.Valid(max) {
-		return "", "", fmt.Errorf("unknown age rating %q: pick one of %s, or leave it empty for no limit", max, ratings.Choices())
+	max, country = metadata.NormRating(max), countryOr(country)
+	if !metadata.ValidRating(max) {
+		return "", "", fmt.Errorf("unknown age rating %q: pick one of %s, or leave it empty for no limit", max, metadata.RatingChoices())
 	}
-	if !ratings.ValidCountry(country) {
+	if !metadata.ValidRatingCountry(country) {
 		return "", "", errors.New("Only US age ratings are known for now.")
 	}
 	if max != "" && role != webserver.RoleMember {

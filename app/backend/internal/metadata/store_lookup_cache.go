@@ -1,4 +1,4 @@
-package store
+package metadata
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 // LookupCache keeps provider answers in the lookup_cache table with an
-// expiry (model.md 2.19). It is not the person's data: rows may go at any
+// expiry. It is not the person's data: rows may go at any
 // time. It satisfies metadata.Cache.
 type LookupCache struct{ Store *database.Store }
 
@@ -34,6 +34,16 @@ func (c LookupCache) Put(ctx context.Context, key string, body []byte, now, expi
 			return err
 		}
 		_, err := tx.Exec("DELETE FROM lookup_cache WHERE key IN (SELECT key FROM lookup_cache WHERE expires_at <= ? LIMIT 100)", database.FormatTime(now))
+		return err
+	})
+}
+
+// TrimPrefix keeps the newest keep rows whose key starts with prefix and
+// drops the older ones.
+func (c LookupCache) TrimPrefix(ctx context.Context, prefix string, keep int) error {
+	return c.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`DELETE FROM lookup_cache WHERE key IN (SELECT key FROM lookup_cache WHERE key LIKE ?
+			ORDER BY fetched_at DESC LIMIT -1 OFFSET ?)`, prefix+"%", keep)
 		return err
 	})
 }

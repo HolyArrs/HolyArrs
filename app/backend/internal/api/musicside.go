@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Music page side data (genres and links, bios, Deezer profiles, outside
@@ -122,7 +121,7 @@ func (a *API) sideRead(ctx context.Context, k string) (sideRow, bool) {
 	if ok || a.s.Store == nil {
 		return row, ok
 	}
-	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, musicSidePrefix+k, time.Now())
+	b, ok, err := metadata.LookupCache{Store: a.s.Store}.Get(ctx, musicSidePrefix+k, time.Now())
 	if err != nil || !ok || json.Unmarshal(b, &row) != nil || row.At.IsZero() {
 		return sideRow{}, false
 	}
@@ -164,7 +163,7 @@ func (a *API) sideKeep(k string, v any, found bool) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, musicSidePrefix+k, b, row.At, until)
+	_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, musicSidePrefix+k, b, row.At, until)
 }
 
 // sideStart runs fetch for k once at a time under base (bounded by

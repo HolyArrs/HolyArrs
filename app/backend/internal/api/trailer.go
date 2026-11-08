@@ -15,14 +15,13 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // Trailers in HolyArrs' own player: the title's YouTube trailer, looked up
-// by HolyArrs's own reader (internal/youtube) to addresses on YouTube's
+// by HolyArrs's own reader (metadata/youtube) to addresses on YouTube's
 // video servers (an adaptive HLS manifest and an H.264 MP4). Only the
 // addresses are kept (in memory and in lookup_cache, until shortly before
 // they expire), and each title's YouTube key for 30 days. Video is never
@@ -39,7 +38,6 @@ const (
 	trailerLongMiss       = 2 * time.Hour      // ...when it has no trailer, or none plays here for a lasting reason
 	trailerUnplayableMiss = time.Hour          // ...when one is blocked here or a premiere not on yet
 	trailerPool           = 4                  // reader lookups at once
-	trailerAhead          = 40                 // ahead-of-time music video lookups per 10 minutes for the whole install
 	trailerBadKeep        = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
 	trailerMore           = 4                  // other trailers of the title tried in one lookup (up to 5 in all, 4 when the first is marked bad)
 )
@@ -115,7 +113,6 @@ type trailerState struct {
 	cache   map[string]trailerEntry
 	budget  map[int64][]time.Time
 	flights map[string]*trailerFlight
-	ahead   []time.Time
 	pool    chan struct{}
 	// failed counts lookups that failed in a row at YouTube's door (a
 	// success resets; a video YouTube will not play here does not count);
@@ -222,7 +219,7 @@ func (a *API) loadUpkeep(ctx context.Context) {
 		if a.s.Store == nil || a.s.Store.Read() == nil {
 			return
 		}
-		b, ok, err := store.LookupCache{Store: a.s.Store}.Get(context.WithoutCancel(ctx), trailerUpkeepKey, time.Now())
+		b, ok, err := metadata.LookupCache{Store: a.s.Store}.Get(context.WithoutCancel(ctx), trailerUpkeepKey, time.Now())
 		var k trailerUpkeep
 		if err != nil || !ok || json.Unmarshal(b, &k) != nil {
 			return
@@ -249,7 +246,7 @@ func (a *API) saveUpkeep(ctx context.Context) {
 	t.saved = now
 	t.mu.Unlock()
 	if b, err := json.Marshal(k); err == nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), trailerUpkeepKey, b, now, now.Add(trailerUpkeepKeep))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), trailerUpkeepKey, b, now, now.Add(trailerUpkeepKeep))
 	}
 }
 
@@ -297,24 +294,6 @@ func (t *trailerState) allow(user int64, now time.Time) bool {
 		return false
 	}
 	t.budget[user] = append(kept, now)
-	return true
-}
-
-// allowAhead spends one of the install's ahead-of-time lookups.
-func (t *trailerState) allowAhead(now time.Time) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	kept := t.ahead[:0]
-	for _, at := range t.ahead {
-		if now.Sub(at) < 10*time.Minute {
-			kept = append(kept, at)
-		}
-	}
-	t.ahead = kept
-	if len(kept) >= trailerAhead {
-		return false
-	}
-	t.ahead = append(t.ahead, now)
 	return true
 }
 
@@ -448,7 +427,7 @@ func (a *API) trailerStored(ctx context.Context, ckey string, now time.Time) boo
 	if a.s.Store == nil || a.s.Store.Read() == nil {
 		return false
 	}
-	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, "trailer|"+ckey, now)
+	b, ok, err := metadata.LookupCache{Store: a.s.Store}.Get(ctx, "trailer|"+ckey, now)
 	if err != nil || !ok {
 		return false
 	}
@@ -559,7 +538,7 @@ func (a *API) knownTrailerKey(ctx context.Context, kind, id, lang string) string
 	}
 	e = trailerKeyEntry{at: now}
 	if a.s.Store != nil {
-		if b, found, err := (store.LookupCache{Store: a.s.Store}).Get(ctx, "trailerkey|"+ck, now); err == nil && found {
+		if b, found, err := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, "trailerkey|"+ck, now); err == nil && found {
 			e.key = string(b)
 		}
 	}
@@ -581,7 +560,7 @@ func (a *API) keepTrailerKey(ctx context.Context, kind, id, lang, key string) {
 	now := time.Now()
 	a.trailerKeys.put(ck, trailerKeyEntry{key: key, at: now})
 	if a.s.Store != nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailerkey|"+ck, []byte(key), now, now.Add(trailerKeyKeep))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, "trailerkey|"+ck, []byte(key), now, now.Add(trailerKeyKeep))
 	}
 }
 
@@ -686,7 +665,7 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 			a.trailers.put(ckey, e)
 			if a.s.Store != nil {
 				if b, err := json.Marshal(s); err == nil {
-					_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
+					_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
 				}
 			}
 			return e, nil
@@ -825,7 +804,7 @@ func (a *API) trailerBad(ctx context.Context, key string, now time.Time) (youtub
 	if a.s.Store == nil || a.s.Store.Read() == nil {
 		return "", false
 	}
-	b, found, err := store.LookupCache{Store: a.s.Store}.Get(ctx, a.trailerBadKey(key), now)
+	b, found, err := metadata.LookupCache{Store: a.s.Store}.Get(ctx, a.trailerBadKey(key), now)
 	if err != nil || !found {
 		return "", false
 	}
@@ -850,7 +829,7 @@ func (a *API) markTrailerBad(ctx context.Context, key string, reason youtube.Rea
 	t.bad[key] = trailerBadEntry{until: now.Add(trailerBadKeep), reason: reason}
 	t.mu.Unlock()
 	if a.s.Store != nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, a.trailerBadKey(key), []byte(reason), now, now.Add(trailerBadKeep))
+		_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, a.trailerBadKey(key), []byte(reason), now, now.Add(trailerBadKeep))
 	}
 }
 

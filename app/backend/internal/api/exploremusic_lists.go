@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
@@ -54,7 +53,7 @@ func (a *API) musicShelvesOf(ctx context.Context, region string, now time.Time) 
 	first := prev == ""
 	if first && a.s.Store != nil {
 		// After a restart: the shelves the kept plans were built from.
-		if b, ok, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, listSigPrefix+key, now); ok {
+		if b, ok, _ := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, listSigPrefix+key, now); ok {
 			prev = string(b)
 		}
 	}
@@ -63,7 +62,7 @@ func (a *API) musicShelvesOf(ctx context.Context, region string, now time.Time) 
 		go a.queueAhead(listAhead(&sh))
 		go a.warmListVideos(&sh)
 		if a.s.Store != nil {
-			_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), listSigPrefix+key, []byte(sig), now, now.Add(30*24*time.Hour))
+			_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), listSigPrefix+key, []byte(sig), now, now.Add(30*24*time.Hour))
 		}
 	}
 	if changed && (prev != "" || first) {

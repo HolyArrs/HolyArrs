@@ -1,0 +1,24 @@
+{
+  "ID": 2,
+  "CreatedAt": "2026-10-01T12:00:00Z",
+  "CreatedBy": {
+    "kind": ""
+  },
+  "UpdatedAt": "2026-10-01T12:00:00Z",
+  "UpdatedBy": {
+    "kind": ""
+  },
+  "Name": "Jellyfin",
+  "Kind": "jellyfin",
+  "URL": "http://jf:8096",
+  "TokenSecretID": 7,
+  "Enabled": true,
+  "OnImport": true,
+  "OnRename": true,
+  "OnDelete": false,
+  "PathFrom": "/data",
+  "PathTo": "/media",
+  "AllowLocal": true,
+  "LastOKAt": "2026-10-01T12:00:00Z",
+  "LastError": "slow"
+}

@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -600,7 +600,7 @@ func (r *run) mediaServer(item, kind, name, addr, tok string, local bool) {
 			return
 		}
 		off := false
-		if _, err := mediaserver.Add(r.ctx, r.d.Store, r.d.Vault, mediaserver.Input{Name: name, Kind: kind, URL: addr, Token: tok, Enabled: &off, AllowLocal: &local}, r.d.By); err != nil {
+		if _, err := mediaservers.Add(r.ctx, r.d.Store, r.d.Vault, mediaservers.Input{Name: name, Kind: kind, URL: addr, Token: tok, Enabled: &off, AllowLocal: &local}, r.d.By); err != nil {
 			r.fail(item, err)
 			return
 		}
@@ -622,7 +622,7 @@ func (r *run) mediaServer(item, kind, name, addr, tok string, local bool) {
 		r.done(item, "")
 		return
 	}
-	if _, err := mediaserver.Change(r.ctx, r.d.Store, r.d.Vault, m.ID, mediaserver.Input{Name: m.Name, URL: addr, Token: tok, AllowLocal: &local,
+	if _, err := mediaservers.Change(r.ctx, r.d.Store, r.d.Vault, m.ID, mediaservers.Input{Name: m.Name, URL: addr, Token: tok, AllowLocal: &local,
 		PathFrom: m.PathFrom, PathTo: m.PathTo}, r.d.By); err != nil {
 		r.fail(item, err)
 		return

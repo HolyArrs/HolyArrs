@@ -13,7 +13,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // People shelves are Search's People sections ahead of the popular list:
@@ -73,7 +72,7 @@ func eachLimited(n int, f func(i int)) {
 func (a *API) peopleShelf(ctx context.Context, id, max string, p metadata.PeopleProvider) (peopleShelf, error) {
 	key := "peopleshelf|v2|" + id + "|" + max
 	now := time.Now()
-	c := store.LookupCache{Store: a.s.Store}
+	c := metadata.LookupCache{Store: a.s.Store}
 	if b, ok, _ := c.Get(ctx, key, now); ok {
 		var s peopleShelf
 		if json.Unmarshal(b, &s) == nil {

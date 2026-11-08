@@ -28,7 +28,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The showcase seeder fills the redesign preview (the showcase backend on
@@ -212,7 +211,7 @@ func showcaseProviders(ctx context.Context, w *world) (providers, error) {
 			return time.Duration(d.CacheHours) * time.Hour
 		},
 		UserAgent: metadata.UserAgentFor("showcase-seed"),
-		Cache:     store.LookupCache{Store: w.s},
+		Cache:     metadata.LookupCache{Store: w.s},
 	}
 	return providers{Movies: tmdb, Shows: metadata.ShowSources{"tmdb": tmdb, "tvmaze": &metadata.TVMaze{}}, Artists: svc.Artists(mb)}, nil
 }

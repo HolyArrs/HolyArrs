@@ -20,8 +20,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The Explore engine's server side: the background pool job (its own
@@ -386,7 +384,7 @@ func (s exploreSource) cachedList(ctx context.Context, key string) (exploreList,
 	if ok || s.a.s.Store == nil {
 		return got, ok
 	}
-	b, ok, err := store.LookupCache{Store: s.a.s.Store}.Get(ctx, "explore|"+key, time.Now())
+	b, ok, err := metadata.LookupCache{Store: s.a.s.Store}.Get(ctx, "explore|"+key, time.Now())
 	if err != nil || !ok {
 		return got, false
 	}
@@ -488,7 +486,7 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 	s.keepList(key, exploreList{at: now, items: f.items})
 	if s.a.s.Store != nil {
 		if b, err := json.Marshal(storedList{At: now, Items: f.items}); err == nil {
-			_ = store.LookupCache{Store: s.a.s.Store}.Put(context.WithoutCancel(ctx), "explore|"+key, b, now, now.Add(ttl))
+			_ = metadata.LookupCache{Store: s.a.s.Store}.Put(context.WithoutCancel(ctx), "explore|"+key, b, now, now.Add(ttl))
 		}
 	}
 	return f.items, nil
@@ -732,7 +730,7 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		t.Added, _ = time.Parse(database.TimeLayout, added)
 		key := t.Kind + ":" + t.TMDBID
 		in.Owned[key] = true
-		if m.kid && !ratings.Allows(m.maxRating, t.Kind, t.Rating) {
+		if m.kid && !metadata.RatingAllows(m.maxRating, t.Kind, t.Rating) {
 			continue
 		}
 		lib = append(lib, t)
@@ -884,7 +882,7 @@ func (a *API) kidAllow(ctx context.Context, max string) func(explore.Item) bool 
 			left--
 			r, ok = a.lookupRating(ctx, ref)
 		}
-		return ok && ratings.Allows(max, it.Kind, r)
+		return ok && metadata.RatingAllows(max, it.Kind, r)
 	}
 }
 

@@ -47,7 +47,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -55,7 +55,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
@@ -614,7 +613,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return err
 	})
-	hosted, err := newHostedMetadata(vault)
+	hosted, err := metadata.NewHosted(vault)
 	if err != nil {
 		return fmt.Errorf("metadata server: %w", err)
 	}
@@ -622,7 +621,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := trailerStandIns(); err != nil {
 		return err
 	}
-	hosted.Disk = store.LookupCache{Store: s}
+	hosted.Disk = metadata.LookupCache{Store: s}
 	// "Count this install" is set before the Job queue starts: a Job's
 	// request must not go out counted after the owner switched it off.
 	hosted.Gate.SetCountryCount(api.CountInstall(ctx, s.Read()))
@@ -853,7 +852,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault}
 	sender.Watch(ctx)
-	media := &mediaserver.Linker{Store: s, Vault: vault}
+	media := &mediaservers.Linker{Store: s, Vault: vault}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {
@@ -955,7 +954,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 // TVmaze stand-in is asked directly, and HOLYARRS_DIRECT_SOURCES=1
 // (developers only) keeps the real TVmaze behind the server for TVDB and
 // IMDb ids.
-func showSources(v *secrets.Vault, hosted *hostedMetadata) metadata.ShowSources {
+func showSources(v *secrets.Vault, hosted *metadata.Hosted) metadata.ShowSources {
 	var maze metadata.ShowProvider = &metadata.TVMaze{BaseURL: os.Getenv("HOLYARRS_TVMAZE_URL")}
 	if !standIn("HOLYARRS_TVMAZE_URL") {
 		var direct metadata.ShowProvider
@@ -1041,7 +1040,7 @@ func musicSource(s *database.Store, version string) *metadata.MusicBrainz {
 			return time.Duration(d.CacheHours) * time.Hour
 		},
 		UserAgent: metadata.UserAgentFor(version),
-		Cache:     store.LookupCache{Store: s},
+		Cache:     metadata.LookupCache{Store: s},
 	}
 }
 
