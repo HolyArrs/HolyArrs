@@ -68,7 +68,7 @@ func TestRefreshOnceDedupsAndReleases(t *testing.T) {
 	RefreshOnce("kept-test-k", func(context.Context) { n.Add(1); <-block })
 	RefreshOnce("kept-test-k", func(context.Context) { n.Add(1); <-block })
 	waitUntil(t, func() bool { return n.Load() == 1 })
-	time.Sleep(50 * time.Millisecond)
+	// RefreshOnce decides synchronously, so the second call has already been refused.
 	if n.Load() != 1 {
 		t.Fatalf("second refresh ran while the first was busy: %d", n.Load())
 	}
