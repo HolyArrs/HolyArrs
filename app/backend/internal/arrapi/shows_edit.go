@@ -214,8 +214,21 @@ func (h *handler) deleteTitle(w http.ResponseWriter, r *http.Request) {
 		notFound(w)
 	case err != nil:
 		log.Printf("arrapi: remove title %d: %v", id, err)
-		message(w, http.StatusConflict, "this title could not be removed")
+		message(w, http.StatusConflict, removeReason(err))
 	default:
 		writeJSON(w, http.StatusOK, map[string]any{})
+	}
+}
+
+// removeReason says in plain words why a delete was refused; anything
+// unknown stays a short generic line so no inner detail leaks out.
+func removeReason(err error) string {
+	switch {
+	case errors.Is(err, library.ErrProtectedCopy):
+		return library.ErrProtectedCopy.Error()
+	case strings.Contains(err.Error(), "to the holding folder"):
+		return "a file could not be moved to the holding folder"
+	default:
+		return "this title could not be removed"
 	}
 }

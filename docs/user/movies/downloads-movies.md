@@ -70,5 +70,5 @@ Open **Settings**, then **Downloaders**.
 ## Troubleshooting
 
 - **A row is paused and says the Downloader cannot use the files.** Most often a share mounted late. Once the share is back, use **Check again** on the row.
-- **Downloads never start.** Check the Downloader on **Settings**, **Downloaders**. Then open the status page, for example `http://your-server:6262/status`.
+- **Downloads never start.** Check the Downloader on **Settings**, **Downloaders**. Then open the status page, for example `http://your-server:6262/health`.
 - **The same bad release keeps coming back.** Remove it with **Add its Release to Turned down** on.

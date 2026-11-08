@@ -1,13 +1,6 @@
-package library
+package library_test
 
 import (
-	"os"
-	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
+	// Linking subtitles in gives the library its subtitle rules (its init).
+	_ "github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
-
-func TestMain(m *testing.M) {
-	UseSubtitleNames(subtitles.Names{})
-	os.Exit(m.Run())
-}

@@ -34,4 +34,4 @@ To follow a title, press **Follow** on its row. Press **Unfollow** to stop. In *
 
 - **Nothing coming up.** Your Library has no dates yet. Add a movie, show or artist and dates show up.
 - **Nothing you follow here.** You follow nothing with a date in this stretch. Press **Show the Whole Library**, or follow more titles.
-- **Calendar could not be loaded.** HolyArrs could not answer. Reload the page. If it keeps happening, open `http://your-server:6262/status` to see what is wrong.
+- **Calendar could not be loaded.** HolyArrs could not answer. Reload the page. If it keeps happening, open `http://your-server:6262/health` to see what is wrong.

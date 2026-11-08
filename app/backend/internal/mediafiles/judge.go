@@ -404,14 +404,14 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 		v.add("hard", "gate", "fail", set.GateDetail, 0)
 	case set.HandSearch:
 		// A single-Item search by a person may skip the gate, and it says so.
-		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the ReleaseFacts gate is skipped because a person searched for it", 0)
+		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the Release gate is skipped because a person searched for it", 0)
 	case set.SkipGate:
-		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the ReleaseFacts gate is skipped because bulk searches are set to skip it", 0)
+		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the Release gate is skipped because bulk searches are set to skip it", 0)
 	default:
 		v.add("hard", "gate", "fail", "the Title is not out yet", 0)
 	}
 	if slices.Contains(set.TurnedDown, rel.Name) || (rel.InfoHash != "" && slices.Contains(set.TurnedDown, rel.InfoHash)) {
-		v.add("hard", "turned_down", "fail", "this ReleaseFacts was turned down for this Slot before", 0)
+		v.add("hard", "turned_down", "fail", "this Release was turned down for this Slot before", 0)
 	} else {
 		v.add("hard", "turned_down", "pass", "not turned down before", 0)
 	}

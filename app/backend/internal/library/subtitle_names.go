@@ -29,3 +29,6 @@ func subtitleNames() SubtitleNames {
 	}
 	return noSubtitles{}
 }
+
+// CurrentSubtitleNames returns the subtitle rules in use.
+func CurrentSubtitleNames() SubtitleNames { return subtitleNames() }

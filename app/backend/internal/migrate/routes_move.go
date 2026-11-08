@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -153,7 +154,7 @@ func (h *Handlers) oneMove(w http.ResponseWriter, r *http.Request) (Move, bool) 
 	if !webserver.RequireStrong(w, r) {
 		return Move{}, false
 	}
-	id, ok := snapshotID(w, r)
+	id, ok := moveID(w, r)
 	if !ok {
 		return Move{}, false
 	}
@@ -163,6 +164,16 @@ func (h *Handlers) oneMove(w http.ResponseWriter, r *http.Request) (Move, bool) 
 		return mv, false
 	}
 	return mv, true
+}
+
+// moveID reads the move id from the address; a bad one is a missing move.
+func moveID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		webserver.Fail(w, http.StatusNotFound, ErrNoMove.Error())
+		return 0, false
+	}
+	return id, true
 }
 
 // getMove answers a move with its Job's progress while it runs.
