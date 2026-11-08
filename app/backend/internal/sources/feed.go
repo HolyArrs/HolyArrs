@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
@@ -97,10 +98,8 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	var failures []string
 	read := 0
 	var showsWanted, musicWanted bool
-	_ = db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE t.kind = 'artist' AND t.state = 'active' AND s.state IN ('wanted', 'better_wanted', 'held'))`).Scan(&musicWanted)
-	_ = db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE t.kind = 'show' AND t.state = 'active' AND s.state IN ('wanted', 'better_wanted', 'held'))`).Scan(&showsWanted)
+	musicWanted = store.KindWanted(ctx, db, "artist")
+	showsWanted = store.KindWanted(ctx, db, "show")
 	prepared, _ := r.TakePrepared().(*feedPrepared)
 	if prepared != nil && (prepared.fingerprint != feedSourceFingerprint(srcs) || prepared.showsWanted != showsWanted || prepared.musicWanted != musicWanted) {
 		prepared = nil
@@ -122,11 +121,11 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			read++
 			s.recovered(ctx, src)
 			for _, it := range answer.items {
-				var seen int
-				if err := db.QueryRowContext(ctx, "SELECT count(*) FROM releases WHERE source_id = ? AND name = ? AND (found_by = 'feed' OR state = 'judged')", src.ID, it.Title).Scan(&seen); err != nil {
+				seen, err := releaseSeen(ctx, db, src.ID, it.Title)
+				if err != nil {
 					return err
 				}
-				if seen == 0 {
+				if !seen {
 					all = append(all, found{src: src, item: it, keys: answer.keys})
 				}
 			}
@@ -167,11 +166,11 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			read++
 			s.recovered(ctx, src)
 			for _, it := range items {
-				var seen int
-				if err := db.QueryRowContext(ctx, "SELECT count(*) FROM releases WHERE source_id = ? AND name = ? AND (found_by = 'feed' OR state = 'judged')", src.ID, it.Title).Scan(&seen); err != nil {
+				seen, err := releaseSeen(ctx, db, src.ID, it.Title)
+				if err != nil {
 					return err
 				}
-				if seen == 0 {
+				if !seen {
 					all = append(all, found{src: src, item: it, keys: secretValues(cl.cfg)})
 				}
 			}
@@ -228,9 +227,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	}
 	ctxs := make(map[int64][]slotCtx, len(byTitle))
 	for titleID := range byTitle {
-		slots, err := database.Select[domain.Slot](ctx, db, "slots", `state IN (?, ?, ?) AND item_id IN (
-			SELECT id FROM items WHERE title_id = ?) ORDER BY id`,
-			string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2]), titleID)
+		slots, err := store.LookingSlotsOfTitle(ctx, db, titleID, lookingStateNames())
 		if err != nil {
 			return err
 		}
@@ -342,10 +339,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 
 // ProbeGrabHeld reports whether the scheduled held-Release Job can change a Slot. It only runs the due check that grabHeld uses.
 func (s *Searcher) ProbeGrabHeld(ctx context.Context, now time.Time) (bool, any, error) {
-	var due bool
-	err := s.Store.Read().QueryRowContext(ctx, `SELECT EXISTS (
-		SELECT 1 FROM slots WHERE state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ?)`,
-		database.FormatTime(now.UTC())).Scan(&due)
+	due, err := store.HeldSlotDue(ctx, s.Store.Read(), now.UTC())
 	return due, nil, err
 }
 
@@ -400,27 +394,14 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	if skipGate && states[0] == string(domain.SlotWanted) {
 		states = append(states, string(domain.SlotNotOutYet))
 	}
-	ph := strings.TrimSuffix(strings.Repeat("?, ", len(states)), ", ")
 
 	// A person may keep a bulk search to one kind (movie, show or artist).
 	only, _ := r.Job.Params["kind"].(string)
 
 	// The shows and music switches apply to nightly and bulk searches. A search kept to one Title always covers its shows and music.
-	argsFor := func(shows, music bool) []any {
-		a := []any{}
-		for _, st := range states {
-			a = append(a, st)
-		}
-		return append(a, only, only, int64(titleID), int64(titleID), shows, music)
-	}
-	args := argsFor(titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false", titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false")
-	from := ` FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
-		JOIN titles t ON t.id = i.title_id
-		WHERE s.state IN (` + ph + `) AND (? = '' OR t.kind = ?) AND (? = 0 OR t.id = ?) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL
-		AND (t.kind = 'movie' OR (? AND t.kind = 'show' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
-			AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.dropped_at IS NULL)))
-			OR (? AND t.kind = 'artist' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
-			AND EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.included = 1 AND p.dropped_at IS NULL)))`
+	filter := missingFilter{States: states, Only: only, TitleID: int64(titleID)}
+	shows := titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false"
+	music := titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false"
 
 	// Approved requests go first. A Title with an approved ask and something never searched gets the one-title search that approval starts, oldest approval first, whatever the cap. The same Job is used so the two never run twice.
 	// It is skipped while approval's own scan and search are still to run, and after a one-title search was queued since the approval. Then the Title rejoins the oldest-searched-first turn below. Without this, an ask approved behind a large never-searched Library would wait for months.
@@ -429,35 +410,12 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	var askTitles []string
 	var startAfter time.Time
 	if titleID == 0 && states[0] == string(domain.SlotWanted) && limit > 0 {
-		var onApprove string
-		_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'ask_search_on_approve'").Scan(&onApprove)
-		approveOn := onApprove != "false"
+		approveOn := database.SettingOr(ctx, db, "this_app", "ask_search_on_approve", "") != "false"
 
 		// The approved asks are few. The jobs table only grows, so it is read once for the last one-title search of each Title, and through its state index for what is still to run.
-		cq := `WITH c AS (SELECT a.title_id AS id, MIN(a.decided_at) AS d FROM asks a WHERE a.state = 'approved' AND a.title_id IS NOT NULL GROUP BY a.title_id),
-			w AS (SELECT dedupe_key AS k, MAX(created_at) AS m FROM jobs WHERE dedupe_key LIKE 'search_wanted:%' GROUP BY dedupe_key)
-			SELECT c.id, (SELECT count(*)` + from + ` AND t.id = c.id) FROM c LEFT JOIN w ON w.k = 'search_wanted:' || c.id
-			WHERE (w.m IS NULL OR w.m < c.d) AND EXISTS (SELECT 1` + from + ` AND t.id = c.id AND i.last_searched_at IS NULL)
-			AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.state IN ('queued', 'running') AND (j.dedupe_key = 'search_wanted:' || c.id
-				OR (j.kind IN ('refresh_title', 'scan_title') AND json_extract(j.subject, '$.type') = 'title' AND json_extract(j.subject, '$.id') = c.id AND j.params LIKE '%search%')))
-			ORDER BY c.d, c.id LIMIT ` + strconv.Itoa(min(limit, askCatchUpPerRun))
-		ca := argsFor(approveOn || Setting(ctx, db, SettingMissingShows) != "false", approveOn || Setting(ctx, db, SettingMissingMusic) != "false")
-		trows, err := db.QueryContext(ctx, cq, append(append([]any{}, ca...), ca...)...)
+		tids, err := approvedAskTitles(ctx, db, filter, approveOn || Setting(ctx, db, SettingMissingShows) != "false",
+			approveOn || Setting(ctx, db, SettingMissingMusic) != "false", min(limit, askCatchUpPerRun))
 		if err != nil {
-			return err
-		}
-		type askTitle struct{ id, slots int64 }
-		var tids []askTitle
-		for trows.Next() {
-			var a askTitle
-			if err := trows.Scan(&a.id, &a.slots); err != nil {
-				trows.Close()
-				return err
-			}
-			tids = append(tids, a)
-		}
-		trows.Close()
-		if err := trows.Err(); err != nil {
 			return err
 		}
 
@@ -474,38 +432,13 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		}
 		startAfter = at
 	}
-	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id` + from
-	if len(askTitles) > 0 {
-
-		// Their own search covers them, so the cap goes to the rest.
-		q += ` AND t.id NOT IN (` + strings.Join(askTitles, ", ") + `)`
-	}
-	q += ` ORDER BY i.last_searched_at IS NOT NULL, i.last_searched_at, s.id`
-	if limit >= 0 {
-		q += " LIMIT " + strconv.Itoa(limit)
-	}
-	rows, err := db.QueryContext(ctx, q, args...)
+	list, err := missingSlots(ctx, db, filter, shows, music, askTitles, limit)
 	if err != nil {
 		return err
 	}
-	type found struct {
-		id, part, ver int64
-		kind          string
-	}
-	var ids []int64
-	var list []found
-	for rows.Next() {
-		var f found
-		if err := rows.Scan(&f.id, &f.kind, &f.part, &f.ver); err != nil {
-			rows.Close()
-			return err
-		}
+	ids := make([]int64, 0, len(list))
+	for _, f := range list {
 		ids = append(ids, f.id)
-		list = append(list, f)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return err
 	}
 
 	// Episodes of one season in one Version are searched together as a season when there are several. A single one gets an episode search.
@@ -568,9 +501,7 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 
 // Setting reads one what_to_pick setting and returns "" when unset.
 func Setting(ctx context.Context, db *sql.DB, key string) string {
-	var v string
-	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", searchSettingsGroup, key).Scan(&v)
-	return v
+	return database.SettingOr(ctx, db, searchSettingsGroup, key, "")
 }
 
 // Checks reads the early-release and fake-size settings that judging needs.
@@ -590,10 +521,7 @@ func Checks(ctx context.Context, db *sql.DB) judge.Checks {
 
 // wantedTitleRefs lists one small record per active Title that still has a Slot looking, so a feed can be matched without loading every Slot.
 func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]judge.TitleRef, error) {
-	titles, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", `state = 'active' AND EXISTS (
-		SELECT 1 FROM items i JOIN slots sl ON sl.item_id = i.id
-		WHERE i.title_id = titles.id AND sl.state IN (?, ?, ?)) ORDER BY sort_name, id`,
-		string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2]))
+	titles, err := store.TitlesLooking(ctx, s.Store.Read(), lookingStateNames())
 	if err != nil {
 		return nil, err
 	}
@@ -636,8 +564,7 @@ func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 
 // grabHeld chooses the Held Releases whose wait is over and returns how many Slots were settled.
 func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, now time.Time) (int, error) {
-	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots",
-		"state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ? ORDER BY next_try_at, id", database.FormatTime(now))
+	slots, err := store.HeldSlotsDue(ctx, s.Store.Read(), now)
 	if err != nil {
 		return 0, err
 	}
@@ -657,13 +584,8 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 
 				// Only while it is still held, since a person may have chosen it meanwhile.
-				res, err := tx.Exec(`UPDATE releases SET state = 'refused', hold_until = NULL,
-					verdict = json_set(COALESCE(verdict, '{}'), '$.outcome', 'refused', '$.dangerous_files', json('true')), updated_at = ?, updated_by = ? WHERE id = ? AND state = 'held'`,
-					database.FormatTime(now), actorText(by), rel.ID)
-				if err != nil {
-					return err
-				}
-				if n, err := res.RowsAffected(); err != nil || n == 0 {
+				n, err := refuseHeldDangerousTx(tx, rel.ID, now, by)
+				if err != nil || n == 0 {
 					return err
 				}
 				return unholdTx(tx, rel.ID, "not sent: "+dangerousWhy, by)
@@ -691,8 +613,7 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			return n, err
 		}
 		n++
-		var titleID int64
-		_ = s.Store.Read().QueryRowContext(ctx, "SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&titleID)
+		titleID, _ := store.ItemTitleID(ctx, s.Store.Read(), sl.ItemID)
 		for _, id := range pick {
 			s.addEvent(ctx, by, jobID, titleID, id, EventReleaseChosen, "Wait over, chose "+rel.Name, map[string]any{"release_id": rel.ID, "was_held": true})
 			s.publish("slot", map[string]any{"id": id, "state": domain.SlotChosen, "reason": "chose " + rel.Name})
@@ -713,4 +634,9 @@ func movieOut(t domain.Title) *time.Time {
 		}
 	}
 	return first
+}
+
+// lookingStateNames is lookingStates as the strings the store compares with.
+func lookingStateNames() [3]string {
+	return [3]string{string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2])}
 }

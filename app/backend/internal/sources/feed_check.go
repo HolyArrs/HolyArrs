@@ -127,10 +127,8 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			return true, prepared, nil
 		}
 		for _, item := range answer.items {
-			var seen bool
-			if err := db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM releases
-				WHERE source_id = ? AND name = ? AND (found_by = 'feed' OR state = 'judged'))`,
-				answer.src.ID, item.Title).Scan(&seen); err != nil {
+			seen, err := releaseSeen(ctx, db, answer.src.ID, item.Title)
+			if err != nil {
 				return true, nil, err
 			}
 			if seen {

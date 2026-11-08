@@ -189,7 +189,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, t := range looking {
-			if _, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(now), t.it.ID); err != nil {
+			if err := store.TouchItemSearchedTx(tx, t.it.ID, now); err != nil {
 				return err
 			}
 		}

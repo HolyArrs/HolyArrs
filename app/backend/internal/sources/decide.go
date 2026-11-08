@@ -155,11 +155,7 @@ func (s *Searcher) overGrabLimit(ctx context.Context, src domain.Source, now tim
 	}
 
 	since := database.FormatTime(now.Add(-window))
-	var n int
-	err := s.Store.Read().QueryRowContext(ctx, `SELECT
-		(SELECT count(*) FROM downloads d JOIN releases r ON r.id = d.release_id WHERE r.source_id = ? AND d.created_at > ?) +
-		(SELECT count(*) FROM releases r WHERE r.source_id = ? AND r.state = 'chosen' AND r.updated_at > ?
-			AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = r.id))`, src.ID, since, src.ID, since).Scan(&n)
+	n, err := picksSince(ctx, s.Store.Read(), src.ID, since)
 	if err != nil || n < l.GrabsPerWindow {
 		return false, ""
 	}
@@ -232,13 +228,7 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 			}
 			if f.relID > 0 {
 				ids[i] = f.relID
-				_, err := tx.Exec(`UPDATE releases SET state = CASE WHEN state = 'chosen' THEN state ELSE ? END,
-					hold_until = CASE WHEN state = 'chosen' THEN hold_until ELSE ? END,
-					verdict = json_set(json(?), '$.by_slot', json_patch(COALESCE(json_extract(verdict, '$.by_slot'), '{}'), json(?))),
-					matched_slot_ids = (SELECT json_group_array(value) FROM (SELECT value FROM json_each(matched_slot_ids) UNION SELECT value FROM json_each(?))),
-					updated_at = ?, updated_by = ? WHERE id = ?`,
-					state, timeOrNil(hold), jsonText(toMap(v)), jsonText(bySlot), jsonText(nonNil(v.SlotIDs)), database.FormatTime(time.Now()), actorText(by), f.relID)
-				if err != nil {
+				if err := updateJudgedTx(tx, f.relID, state, hold, v, bySlot, by); err != nil {
 					return err
 				}
 				continue
@@ -260,7 +250,7 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 				h := f.item.InfoHash
 				rel.InfoHash = &h
 			}
-			id, err := database.Insert(tx, "releases", rel, by)
+			id, err := insertReleaseTx(tx, rel, by)
 			if err != nil {
 				return err
 			}
@@ -273,8 +263,7 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 
 // slotStateTx reads a Slot's state inside the caller's write.
 func slotStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
-	var from string
-	err := tx.QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&from)
+	from, err := store.SlotStateOf(context.Background(), tx, slotID)
 	return domain.SlotState(from), err
 }
 
@@ -287,11 +276,8 @@ func busyErr(st domain.SlotState) error {
 func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by domain.Actor, releaseID int64) error {
 	if to == domain.SlotChosen {
 
-		var abandoned bool
-		if err := tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM downloader_attempts a
-			JOIN releases r ON r.id = a.release_id AND r.created_at = a.release_created_at
-			JOIN versions v ON v.id = a.version_id AND v.created_at = a.version_created_at
-			JOIN slots s ON s.version_id = v.id WHERE s.id = ? AND r.id = ? AND a.state = 'abandoned')`, slotID, releaseID).Scan(&abandoned); err != nil {
+		abandoned, err := sendAbandonedTx(tx, slotID, releaseID)
+		if err != nil {
 			return err
 		}
 		if abandoned {
@@ -304,13 +290,11 @@ func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 	}
 	if from == to {
 		if to == domain.SlotChosen {
-			var st string
-			if err := tx.QueryRow("SELECT state FROM releases WHERE id = ?", releaseID).Scan(&st); err != nil || st != "chosen" {
+			if st, err := releaseStateTx(tx, releaseID); err != nil || st != "chosen" {
 				return busyErr(from)
 			}
 		}
-		_, err := tx.Exec("UPDATE slots SET last_reason = ?, updated_at = ?, updated_by = ? WHERE id = ?", reason, database.FormatTime(time.Now()), actorText(by), slotID)
-		return err
+		return store.SetSlotReasonTx(tx, slotID, reason, by)
 	}
 	if domain.Transition(from, to) != nil && from != domain.SlotSearching {
 		if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", by); err != nil {
@@ -321,9 +305,7 @@ func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 		return err
 	}
 	if to == domain.SlotChosen {
-
-		_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", releaseID, slotID)
-		return err
+		return store.SetSlotChosenTx(tx, slotID, releaseID)
 	}
 	return nil
 }
@@ -368,7 +350,7 @@ func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name
 		if err := moveSlotTx(tx, slotID, domain.SlotHeld, "holding "+name, by, releaseID); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, database.FormatTime(until), slotID); err != nil {
+		if err := store.SetSlotHeldTx(tx, slotID, releaseID, until); err != nil {
 			return err
 		}
 		return pickReleaseTx(tx, releaseID, "held", &until, []int64{slotID}, by)
@@ -382,26 +364,22 @@ func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name
 // lostRace marks a Release that lost its Slot to another pick as passed over, unless it is already settled.
 func (s *Searcher) lostRace(ctx context.Context, releaseID int64, by domain.Actor) {
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, updated_at = ?, updated_by = ?
-			WHERE id = ? AND state IN ('judged', 'held')`, database.FormatTime(time.Now()), actorText(by), releaseID)
-		return err
+		return passOverOpenTx(tx, releaseID, by)
 	})
 }
 
 // passOverHeldTx passes over the Slot's held Release unless it is the one to keep, and clears the hold.
 func passOverHeldTx(tx *sql.Tx, slotID, keep int64, by domain.Actor) error {
-	var held sql.NullInt64
-	if err := tx.QueryRow("SELECT held_release_id FROM slots WHERE id = ?", slotID).Scan(&held); err != nil {
+	held, err := store.HeldReleaseOf(context.Background(), tx, slotID)
+	if err != nil {
 		return err
 	}
 	if held.Valid && held.Int64 != keep {
-		if _, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, updated_at = ?, updated_by = ?
-			WHERE id = ? AND state = 'held'`, database.FormatTime(time.Now()), actorText(by), held.Int64); err != nil {
+		if err := passOverHeldReleaseTx(tx, held.Int64, by); err != nil {
 			return err
 		}
 	}
-	_, err := tx.Exec("UPDATE slots SET held_release_id = NULL, next_try_at = NULL WHERE id = ?", slotID)
-	return err
+	return store.ClearSlotHeldTx(tx, slotID)
 }
 
 // restState returns the state a Slot goes back to when it stays unsettled.

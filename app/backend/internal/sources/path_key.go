@@ -207,27 +207,13 @@ func hideReleaseKeys(ctx context.Context, s *database.Store, v *secrets.Vault) e
 				if k == "" {
 					continue
 				}
-				rows, err := tx.QueryContext(ctx, "SELECT id, link_ref FROM releases WHERE source_id = ? AND instr(link_ref, ?) > 0", src.ID, k)
-				if err != nil {
-					return err
-				}
-				for rows.Next() {
-					var id int64
-					var link string
-					if err := rows.Scan(&id, &link); err != nil {
-						rows.Close()
-						return err
-					}
-					links[id] = link
-				}
-				rows.Close()
-				if err := rows.Err(); err != nil {
+				if err := collectLinksWith(ctx, tx, src.ID, k, links); err != nil {
 					return err
 				}
 			}
 			for id, link := range links {
 				if clean := hideKeys(link, keys); clean != link {
-					if _, err := tx.ExecContext(ctx, "UPDATE releases SET link_ref = ? WHERE id = ?", clean, id); err != nil {
+					if err := setReleaseLink(ctx, tx, id, clean); err != nil {
 						return err
 					}
 				}

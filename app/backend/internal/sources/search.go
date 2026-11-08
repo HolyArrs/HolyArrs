@@ -346,10 +346,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
-	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(now), c.it.ID)
-		return err
-	})
+	_ = s.Store.Write(ctx, func(tx *sql.Tx) error { return store.TouchItemSearchedTx(tx, c.it.ID, now) })
 
 	refused := 0
 	for _, v := range vs {
@@ -424,25 +421,7 @@ func jobActor(r *jobs.Run) domain.Actor { return domain.Actor{Kind: "job", ID: r
 
 // turnedDown lists names and info hashes turned down for the Slot.
 func (s *Searcher) turnedDown(ctx context.Context, slotID int64) ([]string, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT name, COALESCE(info_hash, '') FROM releases
-		WHERE state = 'turned_down' AND EXISTS (SELECT 1 FROM json_each(COALESCE(json_extract(verdict, '$.turned_down_slot_ids'), matched_slot_ids))
-			WHERE value = ?) OR EXISTS (SELECT 1 FROM json_each(json_extract(verdict, '$.turned_down_slot_ids')) WHERE value = ?)`, slotID, slotID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []string
-	for rows.Next() {
-		var n, h string
-		if err := rows.Scan(&n, &h); err != nil {
-			return nil, err
-		}
-		out = append(out, n)
-		if h != "" {
-			out = append(out, h)
-		}
-	}
-	return out, rows.Err()
+	return turnedDownNames(ctx, s.Store.Read(), slotID)
 }
 
 // pause puts a failing Source on a back-off pause. Only the health columns
@@ -459,25 +438,9 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 	var until time.Time
 	paused := false
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		var failures sql.NullString
-		err := tx.QueryRowContext(ctx, `SELECT json_extract(extra, '$.failures') FROM sources WHERE id = ? AND state != 'disabled'`, src.ID).Scan(&failures)
-		if err != nil {
-			return err
-		}
-		n, _ = strconv.Atoi(failures.String)
-		n++
-		until = time.Now().UTC().Add(max(wait, Backoff(n)))
-		now := time.Now().UTC()
-		res, err := tx.ExecContext(ctx, `UPDATE sources SET state = 'paused', pause_reason = ?, paused_until = ?,
-			extra = CASE WHEN ? = '' THEN json_remove(json_set(extra, '$.failures', ?), '$.block') ELSE json_set(extra, '$.failures', ?, '$.block', ?) END,
-			updated_at = ?, updated_by = ? WHERE id = ? AND state != 'disabled'`,
-			kind, database.FormatTime(until), detail, strconv.Itoa(n), strconv.Itoa(n), detail, database.FormatTime(now), systemActor(), src.ID)
-		if err != nil {
-			return err
-		}
-		k, _ := res.RowsAffected()
-		paused = k == 1
-		return nil
+		var err error
+		n, until, paused, err = pauseSourceTx(tx, ctx, src.ID, kind, detail, wait)
+		return err
 	})
 	if !paused {
 		return
@@ -499,33 +462,16 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 // recovered moves a paused Source back to enabled after it answered and
 // clears its failure count. A Source the person turned off stays off.
 func (s *Searcher) recovered(ctx context.Context, src domain.Source) {
-	var need bool
-	if err := s.Store.Read().QueryRowContext(ctx, `SELECT state = 'paused' OR json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL FROM sources WHERE id = ?`,
-		src.ID).Scan(&need); err != nil || !need {
+	if need, err := sourceNeedsRecovery(ctx, s.Store.Read(), src.ID); err != nil || !need {
 		return
 	}
-	now := database.FormatTime(time.Now().UTC())
-	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(ctx, `UPDATE sources SET state = 'enabled', pause_reason = NULL, paused_until = NULL,
-			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'paused'`, now, systemActor(), src.ID); err != nil {
-			return err
-		}
-		_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures', '$.block'), updated_at = ?, updated_by = ?
-			WHERE id = ? AND (json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL)`, now, systemActor(), src.ID)
-		return err
-	})
-}
-
-func systemActor() string {
-	b, _ := json.Marshal(domain.System)
-	return string(b)
+	_ = s.Store.Write(ctx, func(tx *sql.Tx) error { return recoverSourceTx(tx, ctx, src.ID) })
 }
 
 // SweepSearching puts Slots left searching longer than olderThan back to
 // looking, after a crash cut a search off. It runs at start, before any job.
 func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) (int, error) {
-	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots", "state = 'searching' AND updated_at < ?",
-		database.FormatTime(time.Now().Add(-olderThan)))
+	slots, err := store.SlotsSearchingBefore(ctx, s.Store.Read(), time.Now().Add(-olderThan))
 	if err != nil {
 		return 0, err
 	}

@@ -122,8 +122,8 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 	case "":
 		return ""
 	case ".m4a", ".mka", ".mp4":
-		var lib string
-		if db.QueryRowContext(ctx, "SELECT lf.path FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id WHERE v.id = ?", f.VersionID).Scan(&lib) != nil {
+		lib, err := store.LibraryPathOfVersion(ctx, db, f.VersionID)
+		if err != nil {
 			return ""
 		}
 		info, err := mediainfo.Inspect(filepath.Join(lib, filepath.FromSlash(f.RelativePath)))
@@ -571,7 +571,7 @@ func (s *Searcher) settleHeldMany(ctx context.Context, slotIDs []int64, releaseI
 			if err := moveSlotTx(tx, id, domain.SlotHeld, "holding "+name, by, releaseID); err != nil {
 				return err
 			}
-			if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, database.FormatTime(until), id); err != nil {
+			if err := store.SetSlotHeldTx(tx, id, releaseID, until); err != nil {
 				return err
 			}
 		}
@@ -588,13 +588,7 @@ func (s *Searcher) settleHeldMany(ctx context.Context, slotIDs []int64, releaseI
 // Slots of another Version picked for the same release stay listed, and the
 // Download keeps to one Version and the Slots still chosen for it.
 func pickReleaseTx(tx *sql.Tx, releaseID int64, state string, until *time.Time, slotIDs []int64, by domain.Actor) error {
-	_, err := tx.Exec(`UPDATE releases SET state = ?, hold_until = ?,
-		verdict = json_set(COALESCE(verdict, '{}'), '$.pick_slot_ids', (SELECT json_group_array(value) FROM (
-			SELECT value FROM json_each(COALESCE(json_extract(verdict, '$.pick_slot_ids'), '[]')) UNION SELECT value FROM json_each(?)))),
-		matched_slot_ids = (SELECT json_group_array(value) FROM (SELECT value FROM json_each(matched_slot_ids) UNION SELECT value FROM json_each(?))),
-		updated_at = ?, updated_by = ? WHERE id = ?`,
-		state, timeOrNil(until), jsonText(slotIDs), jsonText(slotIDs), database.FormatTime(time.Now()), actorText(by), releaseID)
-	return err
+	return markPickedTx(tx, releaseID, state, until, slotIDs, by)
 }
 
 // PickSlots lists the Slots a release was chosen or held for when it fills
@@ -805,7 +799,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	}
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, e := range looking {
-			if _, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(now), e.it.ID); err != nil {
+			if err := store.TouchItemSearchedTx(tx, e.it.ID, now); err != nil {
 				return err
 			}
 		}
@@ -864,8 +858,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 }
 
 func (s *Searcher) slotState(ctx context.Context, id int64) domain.SlotState {
-	var st string
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st)
+	st, _ := store.SlotStateOf(ctx, s.Store.Read(), id)
 	return domain.SlotState(st)
 }
 

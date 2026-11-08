@@ -77,14 +77,12 @@ type BridgeService struct {
 
 // List returns every bridge, oldest first.
 func (s *BridgeService) List(ctx context.Context) ([]Bridge, error) {
-	return database.Select[Bridge](ctx, s.Store.Read(), "bridges", "1=1 ORDER BY id")
+	return listBridges(ctx, s.Store.Read())
 }
 
 // Get returns one bridge.
 func (s *BridgeService) Get(ctx context.Context, id int64) (Bridge, error) {
-	var b Bridge
-	err := database.Get(ctx, s.Store.Read(), "bridges", id, &b)
-	return b, err
+	return getBridge(ctx, s.Store.Read(), id)
 }
 
 // LastChecked returns the newest check time, a quiet one from memory or the
@@ -111,8 +109,8 @@ func (s *BridgeService) Key(ctx context.Context, b Bridge) (string, error) {
 func (s *BridgeService) Add(ctx context.Context, kind, url, key, callback string, by domain.Actor) (Bridge, error) {
 	b := Bridge{Kind: kind, URL: url, CallbackURL: callback, Extra: map[string]string{}}
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		var n int
-		if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM bridges WHERE kind = ? AND lower(url) = lower(?)", kind, url).Scan(&n); err != nil {
+		n, err := bridgesAt(ctx, tx, kind, url)
+		if err != nil {
 			return err
 		}
 		if n > 0 {
@@ -125,8 +123,7 @@ func (s *BridgeService) Add(ctx context.Context, kind, url, key, callback string
 			}
 			b.SecretRef = &id
 		}
-		_, err := database.Insert(tx, "bridges", &b, by)
-		return err
+		return insertBridgeTx(tx, &b, by)
 	})
 	return b, err
 }
@@ -151,7 +148,7 @@ func (s *BridgeService) Update(ctx context.Context, b Bridge, key, callback stri
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if key != "" {
 			if b.SecretRef != nil {
-				if _, err := tx.ExecContext(ctx, "DELETE FROM secrets WHERE id = ?", *b.SecretRef); err != nil {
+				if err := secrets.DeleteTx(ctx, tx, *b.SecretRef); err != nil {
 					return err
 				}
 			}
@@ -164,7 +161,7 @@ func (s *BridgeService) Update(ctx context.Context, b Bridge, key, callback stri
 		b.CallbackURL = callback
 		// Connecting again brings back the sites the person removed.
 		delete(b.Extra, extraKnown)
-		return database.Update(tx, "bridges", &b, by)
+		return updateBridgeTx(tx, &b, by)
 	})
 	if err != nil {
 		return b, err
@@ -191,17 +188,16 @@ func (s *BridgeService) Remove(ctx context.Context, b Bridge, keepSources bool) 
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if keepSources {
-			if _, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.bridge', '$.bridge_site') WHERE json_extract(extra, '$.bridge') = ?`, strconv.FormatInt(b.ID, 10)); err != nil {
+			if err := releaseSourcesTx(ctx, tx, b.ID); err != nil {
 				return err
 			}
 		}
 		if b.SecretRef != nil {
-			if _, err := tx.ExecContext(ctx, "DELETE FROM secrets WHERE id = ?", *b.SecretRef); err != nil {
+			if err := secrets.DeleteTx(ctx, tx, *b.SecretRef); err != nil {
 				return err
 			}
 		}
-		_, err := tx.ExecContext(ctx, "DELETE FROM bridges WHERE id = ?", b.ID)
-		return err
+		return deleteBridgeTx(ctx, tx, b.ID)
 	})
 	return len(srcs), err
 }
@@ -267,15 +263,9 @@ func (s *BridgeService) CheckJackett(ctx context.Context, b Bridge, by domain.Ac
 		if _, ok := bySite[site.ID]; !ok {
 			// A Source the person added by hand for this site joins the bridge
 			// instead of getting a twin.
-			if own, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
-				"lower(rtrim(url, '/')) = lower(?) AND json_extract(extra, '$.bridge') IS NULL AND json_extract(extra, '$.old_app') IS NULL ORDER BY id LIMIT 1",
-				strings.TrimRight(feed, "/")); err == nil && len(own) == 1 {
+			if own, err := handMadeSourceAt(ctx, s.Store.Read(), feed); err == nil && len(own) == 1 {
 				src := own[0]
-				if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-					_, e := tx.ExecContext(ctx, `UPDATE sources SET extra = json_set(extra, '$.bridge', ?, '$.bridge_site', ?) WHERE id = ?`,
-						strconv.FormatInt(b.ID, 10), site.ID, src.ID)
-					return e
-				}); err == nil {
+				if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return joinBridgeTx(ctx, tx, src.ID, b.ID, site.ID) }); err == nil {
 					bySite[site.ID] = src
 					adopted[site.ID] = true
 					res.Updated++
@@ -306,9 +296,7 @@ func (s *BridgeService) CheckJackett(ctx context.Context, b Bridge, by domain.Ac
 			Kinds: kinds, Categories: site.Categories, AllowLocal: &local}
 		siteID := site.ID
 		_, err := Add(ctx, s.Store, s.Vault, in, by, func(tx *sql.Tx, id int64) error {
-			_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_set(extra, '$.bridge', ?, '$.bridge_site', ?) WHERE id = ?`,
-				strconv.FormatInt(b.ID, 10), siteID, id)
-			return err
+			return joinBridgeTx(ctx, tx, id, b.ID, siteID)
 		})
 		if err != nil {
 			// One site that can't be added does not stop the others.
@@ -340,9 +328,7 @@ func (s *BridgeService) CheckJackett(ctx context.Context, b Bridge, by domain.Ac
 	}
 	if keyChanged || string(nowJSON) != b.Extra[extraKnown] || localWord != b.Extra[extraLocal] {
 		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, e := tx.ExecContext(ctx, `UPDATE bridges SET extra = json_set(extra, '$.key_hint', ?, '$.known_sites', ?, '$.local', ?) WHERE id = ?`,
-				hint(key), string(nowJSON), localWord, b.ID)
-			return e
+			return rememberBridgeTx(ctx, tx, b.ID, hint(key), string(nowJSON), localWord)
 		})
 	}
 	if len(failed) > 0 {
@@ -383,8 +369,7 @@ func (s *BridgeService) HandleCheck(ctx context.Context, r *jobs.Run) error {
 // Probe says whether there is a Jackett bridge to check. When there is none
 // the scheduled check does not run at all.
 func (s *BridgeService) Probe(ctx context.Context, _ time.Time) (bool, any, error) {
-	var n int
-	err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM bridges WHERE kind = ?", BridgeKindJackett).Scan(&n)
+	n, err := countBridges(ctx, s.Store.Read(), BridgeKindJackett)
 	return n > 0, nil, err
 }
 
@@ -409,10 +394,9 @@ func (s *BridgeService) quiet(id int64, at time.Time) {
 // are old-app Sources whose feed is on this Prowlarr.
 func (s *BridgeService) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
 	if b.Kind == BridgeKindProwlarr {
-		return database.Select[domain.Source](ctx, s.Store.Read(), "sources",
-			"json_extract(extra, '$.old_app') IS NOT NULL AND lower(url) LIKE lower(?) ESCAPE '\\' ORDER BY id", likePrefix(b.URL))
+		return prowlarrSources(ctx, s.Store.Read(), likePrefix(b.URL))
 	}
-	return database.Select[domain.Source](ctx, s.Store.Read(), "sources", "json_extract(extra, '$.bridge') = ? ORDER BY id", strconv.FormatInt(b.ID, 10))
+	return bridgeSources(ctx, s.Store.Read(), b.ID)
 }
 
 // likePrefix returns a LIKE pattern for addresses that start with u, with
@@ -439,11 +423,7 @@ func (s *BridgeService) record(ctx context.Context, b Bridge, sites int, changed
 		s.quiet(b.ID, now)
 		return
 	}
-	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, e := tx.ExecContext(ctx, `UPDATE bridges SET last_check = ?, last_error = ?, site_count = ?, updated_at = ? WHERE id = ?`,
-			database.FormatTime(now), words, sites, database.FormatTime(now), b.ID)
-		return e
-	})
+	_ = s.Store.Write(ctx, func(tx *sql.Tx) error { return recordBridgeCheckTx(ctx, tx, b.ID, now, words, sites) })
 	s.quiet(b.ID, now)
 }
 
@@ -498,9 +478,7 @@ func (s *BridgeService) freeName(ctx context.Context, title string) string {
 		case i > 2:
 			name = title + " (Jackett " + strconv.Itoa(i-1) + ")"
 		}
-		var n int
-		_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM sources WHERE lower(name) = lower(?)", name).Scan(&n)
-		if n == 0 {
+		if sourcesCalled(ctx, s.Store.Read(), name) == 0 {
 			return name
 		}
 	}

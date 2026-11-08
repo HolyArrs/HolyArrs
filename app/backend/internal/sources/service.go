@@ -222,8 +222,7 @@ func Remove(ctx context.Context, s *database.Store, id int64) error {
 		if err := dropSecret(tx, &src.PathSecretRef); err != nil {
 			return err
 		}
-		_, err := tx.Exec("DELETE FROM sources WHERE id = ?", id)
-		return err
+		return deleteSource(tx, id)
 	})
 }
 
@@ -493,8 +492,8 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 }
 
 func nameUsed(tx *sql.Tx, name string, id int64) error {
-	var n int
-	if err := tx.QueryRow("SELECT count(*) FROM sources WHERE name = ? COLLATE NOCASE AND id != ?", name, id).Scan(&n); err != nil {
+	n, err := sourcesNamed(tx, name, id)
+	if err != nil {
 		return err
 	}
 	if n > 0 {
@@ -512,7 +511,7 @@ func putSecret(tx *sql.Tx, v *secrets.Vault, ref **int64, kind, plain string, by
 		return ErrNoVault
 	}
 	if *ref != nil {
-		if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", **ref); err != nil {
+		if err := secrets.DeleteTx(context.Background(), tx, **ref); err != nil {
 			return err
 		}
 	}
@@ -525,7 +524,7 @@ func dropSecret(tx *sql.Tx, ref **int64) error {
 	if *ref == nil {
 		return nil
 	}
-	_, err := tx.Exec("DELETE FROM secrets WHERE id = ?", **ref)
+	err := secrets.DeleteTx(context.Background(), tx, **ref)
 	*ref = nil
 	return err
 }

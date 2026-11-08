@@ -63,51 +63,51 @@ type Handlers struct {
 }
 
 // Routes registers every route of this module.
-func (h *Handlers) Routes(r *webserver.Router) {
-	h.sourceRoutes(r)
-	h.searchRoutes(r)
-	h.bridgeRoutes(r)
+func (h *Handlers) Routes(m *webserver.Router) {
+	h.sourceRoutes(m)
+	h.searchRoutes(m)
+	h.bridgeRoutes(m)
 }
 
-func (h *Handlers) sourceRoutes(r *webserver.Router) {
-	r.Handle("GET /api/v1/sources", webserver.PermManageLibrary, http.HandlerFunc(h.listSources))
-	r.Handle("POST /api/v1/sources", webserver.PermSettings, http.HandlerFunc(h.addSource))
-	r.Handle("PUT /api/v1/sources/{id}", webserver.PermSettings, http.HandlerFunc(h.editSource))
-	r.Handle("DELETE /api/v1/sources/{id}", webserver.PermSettings, http.HandlerFunc(h.deleteSource))
-	r.Handle("POST /api/v1/sources/{id}/test", webserver.PermSettings, http.HandlerFunc(h.TestSource))
-	r.Handle("POST /api/v1/sources/{id}/pause", webserver.PermSettings, http.HandlerFunc(h.pauseSource))
-	r.Handle("POST /api/v1/sources/{id}/resume", webserver.PermSettings, http.HandlerFunc(h.resumeSource))
-	r.Handle("GET /api/v1/sources/{id}/stats", webserver.PermManageLibrary, http.HandlerFunc(h.sourceStats))
-	r.Handle("POST /api/v1/sources/{id}/try", webserver.PermSettings, http.HandlerFunc(h.trySource))
-	r.Handle("POST /api/v1/sources/check", webserver.PermSettings, http.HandlerFunc(h.checkSources))
-	r.Handle("GET /api/v1/titles/{id}/search-outcome", webserver.NeedSignedIn, http.HandlerFunc(h.searchOutcome))
+func (h *Handlers) sourceRoutes(m *webserver.Router) {
+	m.Handle("GET /api/v1/sources", webserver.PermManageLibrary, http.HandlerFunc(h.listSources))
+	m.Handle("POST /api/v1/sources", webserver.PermSettings, http.HandlerFunc(h.addSource))
+	m.Handle("PUT /api/v1/sources/{id}", webserver.PermSettings, http.HandlerFunc(h.editSource))
+	m.Handle("DELETE /api/v1/sources/{id}", webserver.PermSettings, http.HandlerFunc(h.deleteSource))
+	m.Handle("POST /api/v1/sources/{id}/test", webserver.PermSettings, http.HandlerFunc(h.TestSource))
+	m.Handle("POST /api/v1/sources/{id}/pause", webserver.PermSettings, http.HandlerFunc(h.pauseSource))
+	m.Handle("POST /api/v1/sources/{id}/resume", webserver.PermSettings, http.HandlerFunc(h.resumeSource))
+	m.Handle("GET /api/v1/sources/{id}/stats", webserver.PermManageLibrary, http.HandlerFunc(h.sourceStats))
+	m.Handle("POST /api/v1/sources/{id}/try", webserver.PermSettings, http.HandlerFunc(h.trySource))
+	m.Handle("POST /api/v1/sources/check", webserver.PermSettings, http.HandlerFunc(h.checkSources))
+	m.Handle("GET /api/v1/titles/{id}/search-outcome", webserver.NeedSignedIn, http.HandlerFunc(h.searchOutcome))
 }
 
-func (h *Handlers) searchRoutes(r *webserver.Router) {
-	r.Handle("GET /api/v1/titles/{id}/releases", webserver.PermManageLibrary, http.HandlerFunc(h.titleReleases))
-	r.Handle("POST /api/v1/releases/{id}/choose", webserver.PermManageLibrary, http.HandlerFunc(h.chooseRelease))
-	r.Handle("POST /api/v1/releases/{id}/turn-down", webserver.PermManageLibrary, http.HandlerFunc(h.turnDownRelease))
-	r.Handle("GET /api/v1/held", webserver.PermManageLibrary, h.listState("held"))
-	r.Handle("DELETE /api/v1/held", webserver.PermManageLibrary, h.removeFrom("held", false))
-	r.Handle("DELETE /api/v1/held/{id}", webserver.PermManageLibrary, h.removeFrom("held", true))
-	r.Handle("GET /api/v1/turned-down", webserver.PermManageLibrary, h.listState("turned_down"))
-	r.Handle("DELETE /api/v1/turned-down", webserver.PermManageLibrary, h.removeFrom("turned_down", false))
-	r.Handle("DELETE /api/v1/turned-down/{id}", webserver.PermManageLibrary, h.removeFrom("turned_down", true))
-	r.Handle("POST /api/v1/search/missing", webserver.PermManageLibrary, h.bulkSearch("missing"))
-	r.Handle("POST /api/v1/search/better", webserver.PermManageLibrary, h.bulkSearch("better"))
-	r.Handle("POST /api/v1/search/feed-check", webserver.PermManageLibrary, http.HandlerFunc(h.feedCheckNow))
-	r.Handle("GET /api/v1/searches", webserver.PermManageLibrary, http.HandlerFunc(h.searches))
-	r.Handle("GET /api/v1/settings/search", webserver.PermSettings, http.HandlerFunc(h.getSearchSettings))
-	r.Handle("PUT /api/v1/settings/search", webserver.PermSettings, http.HandlerFunc(h.putSearchSettings))
+func (h *Handlers) searchRoutes(m *webserver.Router) {
+	m.Handle("GET /api/v1/titles/{id}/releases", webserver.PermManageLibrary, http.HandlerFunc(h.titleReleases))
+	m.Handle("POST /api/v1/releases/{id}/choose", webserver.PermManageLibrary, http.HandlerFunc(h.chooseRelease))
+	m.Handle("POST /api/v1/releases/{id}/turn-down", webserver.PermManageLibrary, http.HandlerFunc(h.turnDownRelease))
+	m.Handle("GET /api/v1/held", webserver.PermManageLibrary, h.listState("held"))
+	m.Handle("DELETE /api/v1/held", webserver.PermManageLibrary, h.removeFrom("held", false))
+	m.Handle("DELETE /api/v1/held/{id}", webserver.PermManageLibrary, h.removeFrom("held", true))
+	m.Handle("GET /api/v1/turned-down", webserver.PermManageLibrary, h.listState("turned_down"))
+	m.Handle("DELETE /api/v1/turned-down", webserver.PermManageLibrary, h.removeFrom("turned_down", false))
+	m.Handle("DELETE /api/v1/turned-down/{id}", webserver.PermManageLibrary, h.removeFrom("turned_down", true))
+	m.Handle("POST /api/v1/search/missing", webserver.PermManageLibrary, h.bulkSearch("missing"))
+	m.Handle("POST /api/v1/search/better", webserver.PermManageLibrary, h.bulkSearch("better"))
+	m.Handle("POST /api/v1/search/feed-check", webserver.PermManageLibrary, http.HandlerFunc(h.feedCheckNow))
+	m.Handle("GET /api/v1/searches", webserver.PermManageLibrary, http.HandlerFunc(h.searches))
+	m.Handle("GET /api/v1/settings/search", webserver.PermSettings, http.HandlerFunc(h.getSearchSettings))
+	m.Handle("PUT /api/v1/settings/search", webserver.PermSettings, http.HandlerFunc(h.putSearchSettings))
 }
 
-func (h *Handlers) bridgeRoutes(r *webserver.Router) {
-	r.Handle("GET /api/v1/bridges", webserver.PermManageLibrary, http.HandlerFunc(h.listBridges))
-	r.Handle("POST /api/v1/bridges", webserver.PermSettings, http.HandlerFunc(h.addBridge))
-	r.Handle("POST /api/v1/bridges/find", webserver.PermSettings, http.HandlerFunc(h.findBridges))
-	r.Handle("POST /api/v1/bridges/test", webserver.PermSettings, http.HandlerFunc(h.testBridge))
-	r.Handle("POST /api/v1/bridges/{id}/check", webserver.PermSettings, http.HandlerFunc(h.checkBridge))
-	r.Handle("DELETE /api/v1/bridges/{id}", webserver.PermSettings, http.HandlerFunc(h.deleteBridge))
+func (h *Handlers) bridgeRoutes(m *webserver.Router) {
+	m.Handle("GET /api/v1/bridges", webserver.PermManageLibrary, http.HandlerFunc(h.listBridges))
+	m.Handle("POST /api/v1/bridges", webserver.PermSettings, http.HandlerFunc(h.addBridge))
+	m.Handle("POST /api/v1/bridges/find", webserver.PermSettings, http.HandlerFunc(h.findBridges))
+	m.Handle("POST /api/v1/bridges/test", webserver.PermSettings, http.HandlerFunc(h.testBridge))
+	m.Handle("POST /api/v1/bridges/{id}/check", webserver.PermSettings, http.HandlerFunc(h.checkBridge))
+	m.Handle("DELETE /api/v1/bridges/{id}", webserver.PermSettings, http.HandlerFunc(h.deleteBridge))
 }
 
 func (h *Handlers) search() *Searcher { return h.Search() }

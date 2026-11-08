@@ -19,11 +19,7 @@ func protectedChoiceErr() error {
 
 // choiceStateTx reads a Slot's state inside the write that chooses for it, and refuses when its Title is not active or its copy is protected. Checking in the same transaction keeps a protection set meanwhile from being overwritten.
 func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
-	var slotState, titleState string
-	var protected bool
-	err := tx.QueryRow(`SELECT s.state, t.state, COALESCE(f.protected, 0)
-		FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		LEFT JOIN files f ON f.id = s.file_id WHERE s.id = ?`, slotID).Scan(&slotState, &titleState, &protected)
+	slotState, titleState, protected, err := slotChoiceFacts(tx, slotID)
 	if err != nil {
 		return "", err
 	}
@@ -40,9 +36,7 @@ func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
 func slotHasProtectedCopy(ctx context.Context, db interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, slotID int64) bool {
-	var protected bool
-	err := db.QueryRowContext(ctx, `SELECT COALESCE(f.protected, 0) FROM slots s
-		LEFT JOIN files f ON f.id = s.file_id WHERE s.id = ?`, slotID).Scan(&protected)
+	protected, err := slotCopyProtected(ctx, db, slotID)
 	return err == nil && protected
 }
 

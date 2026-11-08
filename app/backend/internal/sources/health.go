@@ -127,19 +127,7 @@ func Record(ctx context.Context, s *database.Store, sourceID int64, op string, t
 			kind = se.Kind
 		}
 	}
-	now := time.Now().UTC()
-	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.Exec("INSERT INTO source_calls(source_id, at, op, ok, ms, error_kind) VALUES (?, ?, ?, ?, ?, ?)",
-			sourceID, database.FormatTime(now), op, err == nil, took.Milliseconds(), kind); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("DELETE FROM source_calls WHERE source_id = ? AND at < ?", sourceID, database.FormatTime(now.Add(-keepCalls))); err != nil {
-			return err
-		}
-		_, err := tx.Exec(`DELETE FROM source_calls WHERE source_id = ? AND id <= (SELECT id FROM source_calls WHERE source_id = ?
-			ORDER BY id DESC LIMIT 1 OFFSET ?)`, sourceID, sourceID, maxCallsPerSource)
-		return err
-	})
+	storeCall(ctx, s, sourceID, op, took, err == nil, kind, time.Now().UTC())
 }
 
 // Summarise reads the last day of calls for every Source, by id.
@@ -147,27 +135,7 @@ func Record(ctx context.Context, s *database.Store, sourceID int64, op string, t
 // The last success and failure are searched within the kept record only.
 func Summarise(ctx context.Context, db *sql.DB, now time.Time) (map[int64]Summary, error) {
 	day, kept := since(now, 1), database.FormatTime(now.Add(-keepCalls))
-	rows, err := db.QueryContext(ctx, `SELECT s.id,
-		(SELECT max(at) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ? AND c.ok = 1),
-		(SELECT max(at) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ? AND c.ok = 0),
-		(SELECT count(*) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ?),
-		(SELECT count(*) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ? AND c.ok = 0),
-		(SELECT COALESCE(CAST(avg(ms) AS INTEGER), 0) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ? AND c.ok = 1)
-		FROM sources s`, kept, kept, day, day, day)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := map[int64]Summary{}
-	for rows.Next() {
-		var id int64
-		var x Summary
-		if err := rows.Scan(&id, &x.LastSuccess, &x.LastFailure, &x.Calls, &x.Failures, &x.AvgMS); err != nil {
-			return nil, err
-		}
-		out[id] = x
-	}
-	return out, rows.Err()
+	return callSummaries(ctx, db, kept, day)
 }
 
 // StatsFor reads a Source's last days, oldest first with every day listed, and its last 20 calls.
@@ -188,55 +156,26 @@ func StatsFor(ctx context.Context, db *sql.DB, sourceID int64, days int, now tim
 		byDay[st.Days[i].Day] = &st.Days[i]
 	}
 	from := now.UTC().AddDate(0, 0, -(days - 1)).Format("2006-01-02")
-	rows, err := db.QueryContext(ctx, `SELECT substr(at, 1, 10) d, count(*), count(CASE WHEN ok = 0 THEN 1 END),
-		COALESCE(CAST(avg(CASE WHEN ok = 1 THEN ms END) AS INTEGER), 0)
-		FROM source_calls WHERE source_id = ? AND at >= ? GROUP BY d`, sourceID, from)
+	perDay, err := callsPerDay(ctx, db, sourceID, from)
 	if err != nil {
 		return st, err
 	}
-	for rows.Next() {
-		var d string
-		var x Day
-		if err := rows.Scan(&d, &x.Calls, &x.Failures, &x.AvgMS); err != nil {
-			rows.Close()
-			return st, err
-		}
-		if p := byDay[d]; p != nil {
+	for _, x := range perDay {
+		if p := byDay[x.Day]; p != nil {
 			p.Calls, p.Failures, p.AvgMS = x.Calls, x.Failures, x.AvgMS
 		}
 	}
-	rows.Close()
-	rows, err = db.QueryContext(ctx, `SELECT substr(updated_at, 1, 10) d, count(*) FROM releases
-		WHERE source_id = ? AND state = 'chosen' AND updated_at >= ? GROUP BY d`, sourceID, from)
+	grabs, err := grabsPerDay(ctx, db, sourceID, from)
 	if err != nil {
 		return st, err
 	}
-	for rows.Next() {
-		var d string
-		var n int
-		if err := rows.Scan(&d, &n); err != nil {
-			rows.Close()
-			return st, err
-		}
+	for d, n := range grabs {
 		if p := byDay[d]; p != nil {
 			p.Grabs = n
 		}
 	}
-	rows.Close()
-	rows, err = db.QueryContext(ctx, `SELECT at, op, ok, ms, error_kind FROM source_calls WHERE source_id = ? ORDER BY at DESC, id DESC LIMIT 20`, sourceID)
-	if err != nil {
-		return st, err
-	}
-	defer rows.Close()
-	st.Recent = []Call{}
-	for rows.Next() {
-		var c Call
-		if err := rows.Scan(&c.At, &c.Op, &c.OK, &c.MS, &c.ErrorKind); err != nil {
-			return st, err
-		}
-		st.Recent = append(st.Recent, c)
-	}
-	return st, rows.Err()
+	st.Recent, err = recentCalls(ctx, db, sourceID)
+	return st, err
 }
 
 // since formats the time that many days before now.

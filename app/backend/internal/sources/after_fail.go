@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -20,11 +19,7 @@ func (s *Searcher) QueueAfterFailure(ctx context.Context, slotID int64, by domai
 		return errors.New("searching again needs the job queue")
 	}
 	db := s.Store.Read()
-	var versionID int64
-	var partID, dlID sql.NullInt64
-	var kind string
-	err := db.QueryRowContext(ctx, `SELECT s.version_id, i.part_id, s.active_download_id, t.kind FROM slots s JOIN items i ON i.id = s.item_id
-		JOIN titles t ON t.id = i.title_id WHERE s.id = ?`, slotID).Scan(&versionID, &partID, &dlID, &kind)
+	versionID, partID, dlID, kind, err := slotRetryFacts(ctx, db, slotID)
 	if err != nil {
 		return err
 	}
@@ -34,9 +29,8 @@ func (s *Searcher) QueueAfterFailure(ctx context.Context, slotID int64, by domai
 		return err
 	}
 	if kind == "show" && partID.Valid && dlID.Valid {
-		var same int
-		if err := db.QueryRowContext(ctx, `SELECT count(*) FROM downloads d, json_each(d.slot_ids) j JOIN slots s ON s.id = j.value
-			JOIN items i ON i.id = s.item_id WHERE d.id = ? AND i.part_id = ? AND s.version_id = ?`, dlID.Int64, partID.Int64, versionID).Scan(&same); err != nil {
+		same, err := slotsOfDownloadInSeason(ctx, db, dlID.Int64, partID.Int64, versionID)
+		if err != nil {
 			return err
 		}
 		if same > 1 {

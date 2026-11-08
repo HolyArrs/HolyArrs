@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
@@ -19,9 +18,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
-
-// turnedDownList selects Releases on the Turned down list: turned down whole, or for some Slots only.
-const turnedDownList = "(state = 'turned_down' OR json_extract(verdict, '$.turned_down_slot_ids') IS NOT NULL)"
 
 // dangerousWhy is the reason shown when a Release is refused because it once turned out to be a program.
 const dangerousWhy = "its files were a program when it was downloaded before"
@@ -169,10 +165,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		if err := passOverHeldTx(tx, slotID, rel.ID, by); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`UPDATE releases SET state = 'chosen', hold_until = NULL,
-			matched_slot_ids = CASE WHEN EXISTS (SELECT 1 FROM json_each(matched_slot_ids) WHERE value = ?) THEN matched_slot_ids
-				ELSE json_insert(matched_slot_ids, '$[#]', ?) END,
-			updated_at = ?, updated_by = ? WHERE id = ?`, slotID, slotID, database.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
+		if err := markChosenTx(tx, rel.ID, slotID, by); err != nil {
 			return err
 		}
 
@@ -216,13 +209,11 @@ func (s *Searcher) TurnDownFor(ctx context.Context, releaseID, slotID int64, rea
 		reason = "turned down by hand"
 	}
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL, verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?),
-			updated_at = ?, updated_by = ? WHERE id = ?`, reason, database.FormatTime(time.Now()), actorText(by), rel.ID); err != nil {
+		if err := markTurnedDownTx(tx, rel.ID, reason, by); err != nil {
 			return err
 		}
 		if slotID > 0 {
-			ids := append(TurnedDownSlots(rel), slotID)
-			if _, err := tx.Exec(`UPDATE releases SET verdict = json_set(verdict, '$.turned_down_slot_ids', json(?)) WHERE id = ?`, jsonText(ids), rel.ID); err != nil {
+			if err := setTurnedDownSlotsTx(tx, rel.ID, append(TurnedDownSlots(rel), slotID)); err != nil {
 				return err
 			}
 		}
@@ -246,13 +237,7 @@ func (s *Searcher) TurnDownFor(ctx context.Context, releaseID, slotID int64, rea
 func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (int, error) {
 	n := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		q := "SELECT id FROM releases WHERE state = 'held'"
-		args := []any{}
-		if id > 0 {
-			q += " AND id = ?"
-			args = append(args, id)
-		}
-		ids, err := scanIDs(tx.Query(q, args...))
+		ids, err := heldReleaseIDsTx(tx, id)
 		if err != nil {
 			return err
 		}
@@ -260,8 +245,7 @@ func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (i
 			return ErrState
 		}
 		for _, rid := range ids {
-			if _, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, verdict = json_set(COALESCE(verdict, '{}'), '$.removed_by_hand', json('true')),
-				updated_at = ?, updated_by = ? WHERE id = ?`, database.FormatTime(time.Now()), actorText(by), rid); err != nil {
+			if err := markRemovedByHandTx(tx, rid, by); err != nil {
 				return err
 			}
 			if err := unholdTx(tx, rid, "Held Release removed by hand", by); err != nil {
@@ -282,39 +266,11 @@ func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (i
 func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Actor) (int, error) {
 	n := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		where := "state = 'turned_down'"
-		args := []any{}
-		if id > 0 {
-			where += " AND id = ?"
-			args = append(args, id)
-		}
-
-		res, err := tx.Exec(`UPDATE releases SET verdict = json_remove(verdict, '$.turned_down_slot_ids'), updated_at = ?, updated_by = ?
-			WHERE state != 'turned_down' AND json_extract(verdict, '$.turned_down_slot_ids') IS NOT NULL`+strings.TrimPrefix(where, "state = 'turned_down'"),
-			append([]any{database.FormatTime(time.Now()), actorText(by)}, args...)...)
+		removed, err := removeTurnedDownTx(tx, id, by)
 		if err != nil {
 			return err
 		}
-		forgot, _ := res.RowsAffected()
-		n += int(forgot)
-		used := " AND (EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = releases.id) OR EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.release_id = releases.id))"
-
-		res, err = tx.Exec(`UPDATE releases SET state = CASE WHEN json_extract(verdict, '$.outcome') = 'refused' AND EXISTS (SELECT 1 FROM json_each(verdict, '$.reasons') rr
-				WHERE json_extract(rr.value, '$.effect') = 'fail' AND NOT (json_extract(rr.value, '$.step') = 'hard' AND json_extract(rr.value, '$.rule') = 'turned_down'))
-				OR EXISTS (SELECT 1 FROM downloads dd WHERE dd.release_id = releases.id AND dd.state = 'failed' AND dd.state_reason LIKE 'dangerous files%')
-				THEN 'refused' ELSE 'passed_over' END,
-			verdict = json_set(COALESCE(verdict, '{}'), '$.taken_off_turned_down', json('true')),
-			updated_at = ?, updated_by = ? WHERE `+where+used, append([]any{database.FormatTime(time.Now()), actorText(by)}, args...)...)
-		if err != nil {
-			return err
-		}
-		kept, _ := res.RowsAffected()
-		res, err = tx.Exec("DELETE FROM releases WHERE "+where, args...)
-		if err != nil {
-			return err
-		}
-		k, _ := res.RowsAffected()
-		n += int(k + kept)
+		n += removed
 		if id > 0 && n == 0 {
 			return ErrState
 		}
@@ -330,32 +286,19 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 // List returns Releases in a state, newest first (held ones by wait end), with the total before paging.
 func (s *Searcher) List(ctx context.Context, state string, limit, offset int) ([]ListedRelease, int, error) {
 	db := s.Store.Read()
-	var total int
-	where, args := "state = ?", []any{state}
-	if state == "turned_down" {
-		where, args = turnedDownList, nil
-	}
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM releases WHERE "+where, args...).Scan(&total); err != nil {
-		return nil, 0, err
-	}
-	order := "updated_at DESC, id DESC"
-	if state == "held" {
-		order = "hold_until, id"
-	}
-	rels, err := database.Select[domain.Release](ctx, db, "releases", where+" ORDER BY "+order+" LIMIT ? OFFSET ?", append(args, limit, offset)...)
+	rels, total, err := listReleases(ctx, db, state, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	out := make([]ListedRelease, 0, len(rels))
 	for _, r := range rels {
 		l := ListedRelease{Release: r}
-		_ = db.QueryRowContext(ctx, "SELECT name FROM sources WHERE id = ?", r.SourceID).Scan(&l.SourceName)
+		l.SourceName = sourceName(ctx, db, r.SourceID)
 		if only := TurnedDownSlots(r); state == "turned_down" && len(only) > 0 {
 			l.SlotID = only[0]
 		} else if len(r.MatchedSlotIDs) > 0 {
 			l.SlotID = r.MatchedSlotIDs[0]
-			_ = db.QueryRowContext(ctx, `SELECT t.id, t.name, v.label FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-				JOIN versions v ON v.id = s.version_id WHERE s.id = ?`, l.SlotID).Scan(&l.TitleID, &l.TitleName, &l.Version)
+			l.TitleID, l.TitleName, l.Version, _ = store.SlotNames(ctx, db, l.SlotID)
 		}
 		out = append(out, l)
 	}
@@ -433,54 +376,23 @@ func busySlot(st domain.SlotState) bool {
 
 // unholdTx sends every Slot that was holding the Release back to looking. A Slot with a file goes to better wanted so the file is kept.
 func unholdTx(tx *sql.Tx, releaseID int64, reason string, by domain.Actor) error {
-	rows, err := tx.Query("SELECT id, file_id IS NOT NULL FROM slots WHERE held_release_id = ? AND state = 'held'", releaseID)
+	list, err := store.SlotsHeldBy(tx, releaseID)
 	if err != nil {
 		return err
 	}
-	type hs struct {
-		id      int64
-		hasFile bool
-	}
-	var list []hs
-	for rows.Next() {
-		var h hs
-		if err := rows.Scan(&h.id, &h.hasFile); err != nil {
-			rows.Close()
-			return err
-		}
-		list = append(list, h)
-	}
-	rows.Close()
 	for _, h := range list {
 		to := domain.SlotWanted
-		if h.hasFile {
+		if h.HasFile {
 			to = domain.SlotBetterWanted
 		}
-		if _, err := tx.Exec("UPDATE slots SET held_release_id = NULL, next_try_at = NULL WHERE id = ?", h.id); err != nil {
+		if err := store.ClearSlotHeldTx(tx, h.ID); err != nil {
 			return err
 		}
-		if err := store.MoveSlotTx(tx, h.id, to, reason, by); err != nil {
+		if err := store.MoveSlotTx(tx, h.ID, to, reason, by); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-// scanIDs reads a column of IDs and closes the rows. It takes the query result directly so callers can pass it on.
-func scanIDs(rows *sql.Rows, err error) ([]int64, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var ids []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
 }
 
 // turnedDownFor reports whether the Release was turned down for this Slot.
@@ -493,16 +405,14 @@ func turnedDownFor(rel domain.Release, slotID int64) bool {
 
 // packSlots returns the matched Slots of a show or album Release that could take it, and why each other Slot was left out. Other kinds return none.
 func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int64, skipped []string, kind string) {
-	_ = s.Store.Read().QueryRowContext(ctx, `SELECT t.kind FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE s.id = ?`, rel.MatchedSlotIDs[0]).Scan(&kind)
+	kind, _ = store.SlotKind(ctx, s.Store.Read(), rel.MatchedSlotIDs[0])
 	if kind != "show" && kind != "artist" {
 		return nil, nil, kind
 	}
 	jr := judge.Release{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Show: kind == "show", Music: kind == "artist"}), Size: rel.Size, Protocol: rel.Protocol}
 	for _, id := range rel.MatchedSlotIDs {
-		var st string
-		if s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st) != nil ||
-			!canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) {
+		st, err := store.SlotStateOf(ctx, s.Store.Read(), id)
+		if err != nil || !canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) {
 			continue
 		}
 		if slotHasProtectedCopy(ctx, s.Store.Read(), id) {
@@ -556,29 +466,22 @@ func (s *Searcher) dangerousRel(ctx context.Context, rel domain.Release) bool {
 	if d := s.dangerousSeen(ctx); d.has(listingHash(h, rel.LinkRef), rel.Name) {
 		return true
 	}
-	var n int
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM downloads WHERE release_id = ? AND state = 'failed' AND state_reason LIKE 'dangerous files%'", rel.ID).Scan(&n)
-	return n > 0
+	return dangerousDownloadOf(ctx, s.Store.Read(), rel.ID)
 }
 
 // dangerousSeen collects every hash and name whose download failed for dangerous files.
 func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
 	d := dangerousRels{hashes: map[string]bool{}, names: map[string]bool{}}
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT lower(d.external_id), COALESCE(r.name, '') FROM downloads d LEFT JOIN releases r ON r.id = d.release_id
-		WHERE d.state = 'failed' AND d.state_reason LIKE 'dangerous files%'`)
+	pairs, err := dangerousDownloads(ctx, s.Store.Read())
 	if err != nil {
 		return d
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var h, n string
-		if rows.Scan(&h, &n) == nil {
-			if releasename.ValidInfoHash(h) {
-				d.hashes[h] = true
-			}
-			if n != "" {
-				d.names[n] = true
-			}
+	for _, p := range pairs {
+		if releasename.ValidInfoHash(p.hash) {
+			d.hashes[p.hash] = true
+		}
+		if p.name != "" {
+			d.names[p.name] = true
 		}
 	}
 	return d
@@ -588,9 +491,8 @@ func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
 func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []int64 {
 	var out []int64
 	for _, id := range rel.MatchedSlotIDs {
-		var st string
-		if s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st) != nil ||
-			!canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
+		st, err := store.SlotStateOf(ctx, s.Store.Read(), id)
+		if err != nil || !canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
 			continue
 		}
 		out = append(out, id)
@@ -665,8 +567,7 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 	if len(overridden) > 0 {
 		data["reasons_overridden"] = overridden
 	}
-	var titleID int64
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", took[0]).Scan(&titleID)
+	titleID, _ := store.SlotTitleID(ctx, s.Store.Read(), took[0])
 	for _, id := range took {
 		s.addEvent(ctx, by, nil, titleID, id, EventChosenByHand, "Chosen by hand: "+rel.Name, data)
 		s.publish("slot", map[string]any{"id": id, "state": domain.SlotChosen, "reason": "chosen by hand: " + rel.Name})
@@ -675,14 +576,4 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 		s.OnChosen(ctx, took[0], rel.ID)
 	}
 	return ch, nil
-}
-
-// setTurnedDownSlotsTx replaces the Slots a Release is turned down for, and clears the list when empty.
-func setTurnedDownSlotsTx(tx *sql.Tx, releaseID int64, ids []int64) error {
-	if len(ids) == 0 {
-		_, err := tx.Exec("UPDATE releases SET verdict = json_remove(verdict, '$.turned_down_slot_ids') WHERE id = ?", releaseID)
-		return err
-	}
-	_, err := tx.Exec("UPDATE releases SET verdict = json_set(verdict, '$.turned_down_slot_ids', json(?)) WHERE id = ?", jsonText(ids), releaseID)
-	return err
 }

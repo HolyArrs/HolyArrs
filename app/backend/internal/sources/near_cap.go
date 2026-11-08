@@ -26,18 +26,13 @@ func NearCap(ctx context.Context, st *database.Store, src domain.Source, now tim
 	since := database.FormatTime(now.Add(-window))
 	db := st.Read()
 	if l.SearchesPerWindow > 0 {
-		var n int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM source_calls WHERE source_id = ? AND op = 'search' AND at > ?", src.ID, since).Scan(&n); err == nil &&
+		if n, err := searchCallsSince(ctx, db, src.ID, since); err == nil &&
 			float64(n) >= nearCapShare*float64(l.SearchesPerWindow) {
 			return true, fmt.Sprintf("The Source %s is close to its search limit (%d of %d)", src.Name, n, l.SearchesPerWindow)
 		}
 	}
 	if l.GrabsPerWindow > 0 {
-		var n int
-		if err := db.QueryRowContext(ctx, `SELECT
-		(SELECT count(*) FROM downloads d JOIN releases r ON r.id = d.release_id WHERE r.source_id = ? AND d.created_at > ?) +
-		(SELECT count(*) FROM releases r WHERE r.source_id = ? AND r.state = 'chosen' AND r.updated_at > ?
-			AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = r.id))`, src.ID, since, src.ID, since).Scan(&n); err == nil &&
+		if n, err := picksSince(ctx, db, src.ID, since); err == nil &&
 			float64(n) >= nearCapShare*float64(l.GrabsPerWindow) {
 			return true, fmt.Sprintf("The Source %s is close to its pick limit (%d of %d)", src.Name, n, l.GrabsPerWindow)
 		}

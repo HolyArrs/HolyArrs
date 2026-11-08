@@ -3,7 +3,6 @@ package sources
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Search routes (stage 3.1): searching a Title, the releases a search found
@@ -125,12 +125,10 @@ func releaseView(x domain.Release) ReleaseView {
 func (h *Handlers) named(ctx context.Context, vs []ReleaseView) {
 	db := h.Store.Read()
 	for i := range vs {
-		_ = db.QueryRowContext(ctx, "SELECT name FROM sources WHERE id = ?", vs[i].SourceID).Scan(&vs[i].SourceName)
+		vs[i].SourceName = sourceName(ctx, db, vs[i].SourceID)
 		if vs[i].SlotID != nil {
-			var tid int64
-			if db.QueryRowContext(ctx, `SELECT t.id, t.name, v.label FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-				JOIN versions v ON v.id = s.version_id WHERE s.id = ?`, *vs[i].SlotID).Scan(&tid, &vs[i].TitleName, &vs[i].Version) == nil {
-				vs[i].TitleID = &tid
+			if tid, title, version, err := store.SlotNames(ctx, db, *vs[i].SlotID); err == nil {
+				vs[i].TitleID, vs[i].TitleName, vs[i].Version = &tid, title, version
 			}
 			slots := vs[i].SlotIDs
 			if len(slots) == 0 {
@@ -153,8 +151,7 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 	}
 	n, off := queryPage(r, 100)
 	db := h.Store.Read()
-	slotFilter := ""
-	var slotArg []any
+	var filters []slotFilter
 	for _, f := range []struct{ param, cond string }{{"slot_id", " AND s.id = ?"}, {"item_id", " AND i.id = ?"},
 		{"season", " AND json_extract(i.numbers, '$.season') = ?"}, {"version_id", " AND s.version_id = ?"}, {"album_id", " AND i.part_id = ?"}} {
 		sid := r.URL.Query().Get(f.param)
@@ -166,55 +163,18 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 			webserver.Fail(w, http.StatusBadRequest, f.param+" must be a number")
 			return
 		}
-		slotFilter += f.cond
-		slotArg = append(slotArg, id)
+		filters = append(filters, slotFilter{cond: f.cond, id: id})
 	}
-	args := append(append([]any{t.ID}, slotArg...), append([]any{jobs.KindSearchSlot, t.ID}, slotArg...)...)
-	args = append(args, append([]any{jobs.KindSearchSeason, jobs.KindSearchAlbum, t.ID}, slotArg...)...)
-	// The newest search Job per Slot of this Title: one whose Releases
-	// matched the Slot, or a search of the Slot itself, so Releases that
-	// matched no Title are listed too.
-	rows, err := db.QueryContext(r.Context(), `SELECT max(job_id) FROM (
-		SELECT s.id AS slot, r.job_id AS job_id FROM releases r JOIN json_each(r.matched_slot_ids) j
-			JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
-			WHERE i.title_id = ? AND r.job_id IS NOT NULL AND r.found_by != 'feed'`+slotFilter+`
-		UNION ALL
-		SELECT s.id, jb.id FROM jobs jb JOIN slots s ON s.id = json_extract(jb.subject, '$.id') JOIN items i ON i.id = s.item_id
-			WHERE jb.kind = ? AND json_extract(jb.subject, '$.type') = 'slot' AND i.title_id = ?`+slotFilter+`
-			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
-		UNION ALL
-		SELECT s.id, jb.id FROM jobs jb JOIN items i ON i.part_id = json_extract(jb.subject, '$.id')
-			JOIN slots s ON s.item_id = i.id AND s.version_id = json_extract(jb.params, '$.version_id')
-			WHERE jb.kind IN (?, ?) AND json_extract(jb.subject, '$.type') = 'part' AND i.title_id = ?`+slotFilter+`
-			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
-	) GROUP BY slot`, args...)
+	jobIDs, err := latestSearchJobs(r.Context(), db, t.ID, filters)
 	if err != nil {
 		webserver.Internal(w, "sources", err)
 		return
 	}
-	var jobIDs []any
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			rows.Close()
-			webserver.Internal(w, "sources", err)
-			return
-		}
-		jobIDs = append(jobIDs, id)
-	}
-	rows.Close()
 	out := []ReleaseView{}
 	total := 0
-	var running []int64
 	if len(jobIDs) > 0 {
-		in := "job_id IN (" + strings.TrimSuffix(strings.Repeat("?,", len(jobIDs)), ",") + ")"
-		if err := db.QueryRowContext(r.Context(), "SELECT count(*) FROM releases WHERE "+in, jobIDs...).Scan(&total); err != nil {
-			webserver.Internal(w, "sources", err)
-			return
-		}
-		rels, err := database.Select[domain.Release](r.Context(), db, "releases", in+` ORDER BY CASE state WHEN 'chosen' THEN 0 WHEN 'held' THEN 1
-			WHEN 'judged' THEN 2 WHEN 'passed_over' THEN 3 WHEN 'turned_down' THEN 5 ELSE 4 END,
-			COALESCE(json_extract(verdict, '$.rank'), 9999), id LIMIT ? OFFSET ?`, append(jobIDs, n, off)...)
+		var rels []domain.Release
+		rels, total, err = releasesOfJobs(r.Context(), db, jobIDs, n, off)
 		if err != nil {
 			webserver.Internal(w, "sources", err)
 			return
@@ -225,19 +185,7 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 		h.named(r.Context(), out)
 	}
 	// Searches of this Title still running, so a screen can wait for them.
-	js, err := database.Select[domain.Job](r.Context(), db, "jobs", `state IN ('queued', 'running') AND (
-		kind = ? AND json_extract(subject, '$.type') = 'slot'
-			AND json_extract(subject, '$.id') IN (SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?)
-		OR kind IN (?, ?) AND json_extract(subject, '$.type') = 'part' AND json_extract(subject, '$.id') IN (SELECT id FROM parts WHERE title_id = ?)) ORDER BY id`,
-		jobs.KindSearchSlot, t.ID, jobs.KindSearchSeason, jobs.KindSearchAlbum, t.ID)
-	if err == nil {
-		for _, j := range js {
-			running = append(running, j.ID)
-		}
-	}
-	if running == nil {
-		running = []int64{}
-	}
+	running := runningSearchJobs(r.Context(), db, t.ID)
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off, "running_job_ids": running})
 }
 
@@ -426,17 +374,14 @@ type SearchSettings struct {
 func (h *Handlers) readSearchSettings(ctx context.Context) (SearchSettings, error) {
 	db := h.Store.Read()
 	var st SearchSettings
-	var every int
-	var enabled bool
-	err := db.QueryRowContext(ctx, "SELECT every_seconds, enabled FROM schedules WHERE kind = ?", jobs.KindFeedCheck).Scan(&every, &enabled)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	every, enabled, err := jobs.ScheduleEvery(ctx, db, jobs.KindFeedCheck)
+	if err != nil {
 		return st, err
 	}
 	if enabled {
 		st.FeedCheckMinutes = every / 60
 	}
-	var missingOn bool
-	_ = db.QueryRowContext(ctx, "SELECT enabled FROM schedules WHERE kind = ?", jobs.KindSearchMissing).Scan(&missingOn)
+	missingOn := jobs.ScheduleEnabled(ctx, db, jobs.KindSearchMissing)
 	st.MissingSearchCount, _ = strconv.Atoi(Setting(ctx, db, SettingMissingCount))
 	if !missingOn {
 		st.MissingSearchCount = 0
@@ -528,44 +473,7 @@ func (h *Handlers) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "missing_search_count is 0 (off) to 500")
 		return
 	}
-	by := actorOf(r)
-	now := database.FormatTime(time.Now())
-	byText := actorJSONText(by)
-	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		feedOn, feedEvery := in.FeedCheckMinutes > 0, in.FeedCheckMinutes*60
-		if !feedOn {
-			feedEvery = 15 * 60 // off keeps the default interval for when it is turned on again
-		}
-		if _, err := tx.Exec("UPDATE schedules SET every_seconds = ?, enabled = ?, updated_at = ?, updated_by = ? WHERE kind = ?",
-			feedEvery, feedOn, now, byText, jobs.KindFeedCheck); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("UPDATE schedules SET enabled = ?, updated_at = ?, updated_by = ? WHERE kind = ?",
-			in.MissingSearchCount > 0, now, byText, jobs.KindSearchMissing); err != nil {
-			return err
-		}
-		for k, v := range map[string]string{SettingMissingCount: strconv.Itoa(max(in.MissingSearchCount, 0)),
-			SettingMissingBetter: strconv.FormatBool(in.MissingSearchBetter), "try_next_downloader": strconv.FormatBool(in.TryNextDownloader),
-			SettingMissingShows: strconv.FormatBool(in.MissingSearchShows), SettingPackUpgrade: in.SeasonPackUpgrade,
-			SettingPackPrefer: in.SeasonPackPrefer, SettingMultiSeason: strconv.FormatBool(in.MultiSeasonPacks),
-			SettingMissingMusic: strconv.FormatBool(in.MissingSearchMusic), SettingDiscography: strconv.FormatBool(in.MusicDiscographyPacks),
-			SettingTrackTolerance: strconv.Itoa(in.AlbumTrackTolerance), SettingExtraFiles: strconv.Itoa(in.AlbumExtraFiles),
-			SettingArtistSearchCap: strconv.Itoa(in.ArtistSearchCap),
-			SettingRefuseEarly:     strconv.FormatBool(in.RefuseEarlyReleases), SettingEarlyGrace: strconv.Itoa(in.EarlyReleaseGraceHours),
-			SettingRefuseTiny: strconv.FormatBool(in.RefuseTinyReleases), "import_min_video_mb": strconv.Itoa(in.ImportMinVideoMB),
-			"import_min_track_kb": strconv.Itoa(in.ImportMinTrackKB), SettingImportFloors: strconv.FormatBool(in.ImportSizeFloors),
-			SettingHoldUnknown: strconv.FormatBool(in.HoldUnknownReleases), SettingEpisodeMinutes: strconv.Itoa(in.EpisodeDefaultMinutes)} {
-			if k == SettingMissingCount && in.MissingSearchCount == 0 {
-				continue // off keeps the last count for when it is turned on again
-			}
-			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
-				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				k, v, now, byText, now, byText); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error { return saveSearchSettings(tx, in, actorOf(r), time.Now()) })
 	if err != nil {
 		webserver.Internal(w, "sources", err)
 		return
@@ -573,11 +481,6 @@ func (h *Handlers) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 	// The change is logged once by logSettingsChanges as an audit Event (area
 	// and who, never the values), so it is not written or sent live here.
 	h.getSearchSettings(w, r)
-}
-
-func actorJSONText(a domain.Actor) string {
-	b, _ := json.Marshal(a)
-	return string(b)
 }
 
 // SearchView is one search Job for Home: what it looks for, how far it is
@@ -604,21 +507,12 @@ type SearchView struct {
 	Error     string     `json:"error,omitempty"`
 }
 
-var searchKinds = []any{jobs.KindSearchSlot, jobs.KindSearchMissing, jobs.KindFeedCheck, jobs.KindSearchSeason, jobs.KindSearchAlbum}
-
 // searches lists the search Jobs queued or running, oldest first, and the
 // newest finished ones (limit, default 10) with what each found.
 func (h *Handlers) searches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := h.Store.Read()
-	kinds := "kind IN (?, ?, ?, ?, ?)"
-	running, err := database.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('queued', 'running') ORDER BY id LIMIT 100", searchKinds...)
-	if err != nil {
-		webserver.Internal(w, "sources", err)
-		return
-	}
-	recent, err := database.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('done', 'failed') AND ended_at IS NOT NULL ORDER BY ended_at DESC, id DESC LIMIT ?",
-		append(searchKinds, queryLimit(r, 10))...)
+	running, recent, err := searchJobs(ctx, db, queryLimit(r, 10))
 	if err != nil {
 		webserver.Internal(w, "sources", err)
 		return
@@ -638,10 +532,8 @@ func (h *Handlers) searches(w http.ResponseWriter, r *http.Request) {
 				v.Error = j.Error.Message
 			}
 			if j.Subject != nil && j.Subject.Type == "slot" {
-				var tid int64
-				if db.QueryRowContext(ctx, `SELECT t.id, t.name, v.label FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-					JOIN versions v ON v.id = s.version_id WHERE s.id = ?`, j.Subject.ID).Scan(&tid, &v.TitleName, &v.Version) == nil {
-					v.TitleID = &tid
+				if tid, title, version, err := store.SlotNames(ctx, db, j.Subject.ID); err == nil {
+					v.TitleID, v.TitleName, v.Version = &tid, title, version
 				}
 				v.Episode = h.Catalog.EpisodeLabels(ctx, []int64{j.Subject.ID})
 				v.Album = h.Catalog.AlbumLabels(ctx, []int64{j.Subject.ID})
@@ -652,7 +544,7 @@ func (h *Handlers) searches(w http.ResponseWriter, r *http.Request) {
 					v.TitleID, v.TitleName, v.Episode, v.Album = &tid, name, season, album
 				}
 				if vid, ok := j.Params["version_id"].(float64); ok {
-					_ = db.QueryRowContext(ctx, "SELECT label FROM versions WHERE id = ?", int64(vid)).Scan(&v.Version)
+					v.Version = store.VersionLabel(ctx, db, int64(vid))
 				}
 			}
 			if n, ok := j.Result["releases"].(float64); ok {
@@ -679,7 +571,7 @@ func (h *Handlers) searches(w http.ResponseWriter, r *http.Request) {
 			}
 			for _, k := range []string{"chosen_release_id", "held_release_id"} {
 				if id, ok := j.Result[k].(float64); ok {
-					_ = db.QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", int64(id)).Scan(&v.Picked)
+					v.Picked = releaseName(ctx, db, int64(id))
 				}
 			}
 			out = append(out, v)
