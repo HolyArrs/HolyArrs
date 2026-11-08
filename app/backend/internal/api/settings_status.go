@@ -13,6 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
@@ -170,7 +171,7 @@ func settingsStatus(in statusInput) statusAnswer {
 	if in.MetadataUp != nil {
 		known("/settings/tmdb")
 		if !*in.MetadataUp {
-			add(statusItem{"library", "/settings/tmdb", MetadataDown, "warning"}, "metadata")
+			add(statusItem{"library", "/settings/tmdb", metadata.Down, "warning"}, "metadata")
 		}
 	}
 	if in.NewestBackup != nil {

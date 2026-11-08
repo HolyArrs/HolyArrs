@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -76,7 +77,7 @@ func TestSettingsStatusRules(t *testing.T) {
 			t.Fatalf("%+v", a.Items)
 		}
 		want := map[string]statusItem{
-			"/settings/tmdb":          {Group: "library", Page: "/settings/tmdb", Text: MetadataDown, Severity: "warning"},
+			"/settings/tmdb":          {Group: "library", Page: "/settings/tmdb", Text: metadata.Down, Severity: "warning"},
 			"/settings/backups":       {Group: "maintenance", Page: "/settings/backups", Text: "No backup in the last 7 days", Severity: "warning"},
 			"/settings/media-servers": {Group: "linked", Page: "/settings/media-servers", Text: "The media server Jelly failed", Severity: "error"},
 		}
