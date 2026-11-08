@@ -28,7 +28,7 @@
 	const isDemo = $derived(import.meta.env.DEV && page.url.searchParams.get('releases') === 'demo');
 
 	const list = $derived<ReleaseNote[]>(isDemo ? demo.map((r) => ({ ...r, lines: noteLines(r.notes) })) : whatsNew(upd));
-	const current = $derived(isDemo ? '1.3.2' : upd?.version);
+	const current = $derived(isDemo ? '1.3.2' : upd?.version ? plainVersion(upd.version) : undefined);
 	// Call the first row newest only when a check ran and worked.
 	const known = $derived(isDemo || !!(upd && upd.on && !upd.problem && !upd.no_release && upd.checked_at));
 	const isOpen = (r: ReleaseNote, i: number) => open[r.version] ?? i === 0;
