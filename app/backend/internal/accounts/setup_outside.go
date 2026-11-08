@@ -39,15 +39,24 @@ const (
 	discoverMax  = 10
 )
 
+// setupWays are the ways the first-run screen offers to make the owner.
+var setupWays = []string{"password", ProviderPlex, ProviderJellyfin, ProviderEmby}
+
+var kindWord = map[string]string{ProviderJellyfin: "Jellyfin", ProviderEmby: "Emby"}
+
+// foundServer is a Jellyfin or Emby server that answered the network search.
+type foundServer struct {
+	Kind    string `json:"kind"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+}
+
 func (a *Auth) setupOutsideRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/setup/plex/start", a.setupPlexStart)
 	m.HandleFunc("POST /api/v1/auth/setup/plex/finish", a.setupPlexFinish)
 	m.HandleFunc("POST /api/v1/auth/setup/media-server/{kind}", a.setupMediaServer)
 	m.HandleFunc("GET /api/v1/auth/setup/discover", a.setupDiscover)
 }
-
-// setupWays are the ways the first-run screen offers to make the owner.
-var setupWays = []string{"password", ProviderPlex, ProviderJellyfin, ProviderEmby}
 
 // setupOutsidePath says whether a request is one of the first-run calls
 // that check the host name themselves (like POST /api/v1/auth/setup).
@@ -251,8 +260,6 @@ func serverAddress(s string) (string, bool) {
 	return out, true
 }
 
-var kindWord = map[string]string{ProviderJellyfin: "Jellyfin", ProviderEmby: "Emby"}
-
 func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	kind := r.PathValue("kind")
@@ -371,13 +378,6 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.ownerMade(w, r, kind, id, name, saved)
-}
-
-// foundServer is a Jellyfin or Emby server that answered the network search.
-type foundServer struct {
-	Kind    string `json:"kind"`
-	Name    string `json:"name"`
-	Address string `json:"address"`
 }
 
 // setupDiscover looks for Jellyfin and Emby servers on the local network,

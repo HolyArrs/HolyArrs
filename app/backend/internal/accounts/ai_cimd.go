@@ -26,6 +26,9 @@ const (
 	cimdTimeout = 5 * time.Second
 )
 
+// errPrivate refuses a document on this computer or a private network.
+var errPrivate = errors.New("client metadata must come from a public address")
+
 type aiCIMD struct {
 	mu sync.Mutex
 	m  map[string]cimdEntry
@@ -38,9 +41,6 @@ type cimdEntry struct {
 	ok    bool
 	until time.Time
 }
-
-// errPrivate refuses a document on this computer or a private network.
-var errPrivate = errors.New("client metadata must come from a public address")
 
 func publicOnly(_, address string, _ syscall.RawConn) error {
 	host, _, err := net.SplitHostPort(address)

@@ -9,29 +9,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-func validPerm(p webserver.Perm) bool { return slices.Contains(webserver.AllPerms, p) }
-
-// parsePerms reads a JSON permission list, keeping only known ones.
-func parsePerms(s string) []webserver.Perm {
-	var raw []webserver.Perm
-	_ = json.Unmarshal([]byte(s), &raw)
-	out := []webserver.Perm{}
-	for _, p := range raw {
-		if validPerm(p) && !slices.Contains(out, p) {
-			out = append(out, p)
-		}
-	}
-	return out
-}
-
-func permsJSON(ps []webserver.Perm) string {
-	if ps == nil {
-		ps = []webserver.Perm{}
-	}
-	b, _ := json.Marshal(ps)
-	return string(b)
-}
-
 // RoutePerms says what each route needs. Routes missing here are for the
 // owner only, so a new route is closed until someone decides who may use it.
 var RoutePerms = map[string]webserver.Perm{
@@ -620,4 +597,27 @@ func Gate(m *http.ServeMux) http.Handler {
 		}
 		m.ServeHTTP(w, r)
 	})
+}
+
+func validPerm(p webserver.Perm) bool { return slices.Contains(webserver.AllPerms, p) }
+
+// parsePerms reads a JSON permission list, keeping only known ones.
+func parsePerms(s string) []webserver.Perm {
+	var raw []webserver.Perm
+	_ = json.Unmarshal([]byte(s), &raw)
+	out := []webserver.Perm{}
+	for _, p := range raw {
+		if validPerm(p) && !slices.Contains(out, p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func permsJSON(ps []webserver.Perm) string {
+	if ps == nil {
+		ps = []webserver.Perm{}
+	}
+	b, _ := json.Marshal(ps)
+	return string(b)
 }

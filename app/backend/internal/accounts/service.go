@@ -57,35 +57,6 @@ const (
 
 const settingSkipLocal = "skip_login_local_network"
 
-// Options tunes Auth.
-type Options struct {
-	Now func() time.Time
-	// AllowedHosts are host names (no port) the app answers to besides IP
-	// literals and localhost. Requests that change something, local-network
-	// requests without sign-in, and the first-run setup need one of these in
-	// Host, which stops DNS rebinding.
-	AllowedHosts []string
-	// TrustedProxies are proxy addresses or CIDR ranges whose forwarded
-	// headers are believed. Empty by default.
-	TrustedProxies []string
-	// Vault keeps two-factor secrets encrypted. Without it two-factor
-	// sign-in cannot be turned on.
-	Vault *secrets.Vault
-	// HTTP talks to Plex, Jellyfin and Emby; PlexURL and PlexAppURL point
-	// at plex.tv and app.plex.tv unless a test changes them.
-	HTTP       *http.Client
-	PlexURL    string
-	PlexAppURL string
-	// SafeMode is told to the sign-in page and every signed-in page, which
-	// show a banner.
-	SafeMode bool
-	SSO      SSOOptions
-	// ConfigUnmapped tells the setup page that /config is not mapped to the
-	// host, so it can show a note before the owner is made.
-	ConfigUnmapped bool
-	fastHash       bool
-}
-
 // EnvAllowedHosts and EnvTrustedProxies add comma-separated entries.
 const (
 	EnvAllowedHosts   = "HOLYARRS_ALLOWED_HOSTS"
@@ -105,6 +76,9 @@ const SetupCodeFile = "setup-code.txt"
 
 // maxChecks caps password checks running at once.
 const maxChecks = 4
+
+// userCols are the users columns fill reads, prefixed with u.
+const userCols = "u.id, u.name, u.role, u.perms, u.totp_secret_id IS NOT NULL, u.max_rating, u.rating_country"
 
 // Auth guards every route.
 type Auth struct {
@@ -157,6 +131,35 @@ type Auth struct {
 	discoverTo   string
 	discoverWait time.Duration
 	discovering  atomic.Bool
+}
+
+// Options tunes Auth.
+type Options struct {
+	Now func() time.Time
+	// AllowedHosts are host names (no port) the app answers to besides IP
+	// literals and localhost. Requests that change something, local-network
+	// requests without sign-in, and the first-run setup need one of these in
+	// Host, which stops DNS rebinding.
+	AllowedHosts []string
+	// TrustedProxies are proxy addresses or CIDR ranges whose forwarded
+	// headers are believed. Empty by default.
+	TrustedProxies []string
+	// Vault keeps two-factor secrets encrypted. Without it two-factor
+	// sign-in cannot be turned on.
+	Vault *secrets.Vault
+	// HTTP talks to Plex, Jellyfin and Emby; PlexURL and PlexAppURL point
+	// at plex.tv and app.plex.tv unless a test changes them.
+	HTTP       *http.Client
+	PlexURL    string
+	PlexAppURL string
+	// SafeMode is told to the sign-in page and every signed-in page, which
+	// show a banner.
+	SafeMode bool
+	SSO      SSOOptions
+	// ConfigUnmapped tells the setup page that /config is not mapped to the
+	// host, so it can show a note before the owner is made.
+	ConfigUnmapped bool
+	fastHash       bool
 }
 
 type failure struct {
@@ -241,8 +244,22 @@ func New(s *database.Store, opt Options) *Auth {
 	return a
 }
 
-// userCols are the users columns fill reads, prefixed with u.
-const userCols = "u.id, u.name, u.role, u.perms, u.totp_secret_id IS NOT NULL, u.max_rating, u.rating_country"
+// Cleanup drops ended sessions.
+func (a *Auth) Cleanup(ctx context.Context) error {
+	now := a.now()
+	expiresAt := database.FormatTime(now)
+	idleBefore := database.FormatTime(now.Add(-IdleTimeout))
+	needed, err := endedSessionsExist(ctx, a.s.Read(), expiresAt, idleBefore)
+	if err != nil {
+		return err
+	}
+	if !needed {
+		return nil
+	}
+	return a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		return deleteEndedSessions(ctx, tx, expiresAt, idleBefore)
+	})
+}
 
 // fill completes who from a row of userCols and the sign-in settings.
 func (a *Auth) fill(who *webserver.Caller, perms string) {
@@ -280,21 +297,4 @@ func truncate(s string, n int) string {
 func parseTime(s string) time.Time {
 	t, _ := time.Parse(database.TimeLayout, s)
 	return t
-}
-
-// Cleanup drops ended sessions.
-func (a *Auth) Cleanup(ctx context.Context) error {
-	now := a.now()
-	expiresAt := database.FormatTime(now)
-	idleBefore := database.FormatTime(now.Add(-IdleTimeout))
-	needed, err := endedSessionsExist(ctx, a.s.Read(), expiresAt, idleBefore)
-	if err != nil {
-		return err
-	}
-	if !needed {
-		return nil
-	}
-	return a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		return deleteEndedSessions(ctx, tx, expiresAt, idleBefore)
-	})
 }

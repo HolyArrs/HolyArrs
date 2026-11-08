@@ -23,10 +23,7 @@ const (
 	signInPrefix  = "sign_in_"
 )
 
-// signInSetting reads one sign-in setting; "" when unset.
-func (a *Auth) signInSetting(ctx context.Context, key string) string {
-	return database.SettingOr(ctx, a.s.Read(), settingsGroup, signInPrefix+key, "")
-}
+const errSkipLocalKid = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
 
 // UserView is a user as the Users screen shows them.
 type UserView struct {
@@ -45,6 +42,32 @@ type UserView struct {
 	// MaxRating is a Kid's age-rating limit ("" for no limit).
 	MaxRating     string `json:"max_rating"`
 	RatingCountry string `json:"rating_country"`
+}
+
+// LinkView is an outside account linked to a user.
+type LinkView struct {
+	Provider string `json:"provider"`
+	Name     string `json:"name"`
+}
+
+// SkipLocal says sign-in is skipped on the local network.
+func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
+
+// OutsideJoinOpen says new people can join by signing in with Plex,
+// Jellyfin, Emby or single sign-on.
+func (a *Auth) OutsideJoinOpen(ctx context.Context) bool {
+	for _, p := range []string{ProviderPlex, ProviderJellyfin, ProviderEmby} {
+		if v := a.way(ctx, p); v.On && v.Join != JoinNobody {
+			return true
+		}
+	}
+	sso := a.ssoNow()
+	return (sso.oidc != nil && sso.oidc.opt.AllowJoin) || (sso.forward != nil && sso.forward.opt.AllowJoin)
+}
+
+// signInSetting reads one sign-in setting; "" when unset.
+func (a *Auth) signInSetting(ctx context.Context, key string) string {
+	return database.SettingOr(ctx, a.s.Read(), settingsGroup, signInPrefix+key, "")
 }
 
 // countryOr reads an empty rating country as US.
@@ -82,29 +105,6 @@ func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool)
 		}
 	}
 	return max, country, nil
-}
-
-// SkipLocal says sign-in is skipped on the local network.
-func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
-
-// OutsideJoinOpen says new people can join by signing in with Plex,
-// Jellyfin, Emby or single sign-on.
-func (a *Auth) OutsideJoinOpen(ctx context.Context) bool {
-	for _, p := range []string{ProviderPlex, ProviderJellyfin, ProviderEmby} {
-		if v := a.way(ctx, p); v.On && v.Join != JoinNobody {
-			return true
-		}
-	}
-	sso := a.ssoNow()
-	return (sso.oidc != nil && sso.oidc.opt.AllowJoin) || (sso.forward != nil && sso.forward.opt.AllowJoin)
-}
-
-const errSkipLocalKid = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
-
-// LinkView is an outside account linked to a user.
-type LinkView struct {
-	Provider string `json:"provider"`
-	Name     string `json:"name"`
 }
 
 func serverError(w http.ResponseWriter, what string, err error) {

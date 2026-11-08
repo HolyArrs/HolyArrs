@@ -14,6 +14,16 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
+var errOwnerExists = errors.New("owner exists")
+
+var errNoLocalSignIn = errors.New("signs in only through an outside account")
+
+type creds struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Code     string `json:"code,omitempty"` // ignored; first run needs no code
+}
+
 func (a *Auth) owner(ctx context.Context) (int64, string, bool) {
 	id, name, err := ownerIdentity(ctx, a.s.Read())
 	return id, name, err == nil
@@ -30,12 +40,6 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 		out["setup_ways"] = setupWays
 	}
 	writeJSON(w, http.StatusOK, out)
-}
-
-type creds struct {
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Code     string `json:"code,omitempty"` // ignored; first run needs no code
 }
 
 func readCreds(w http.ResponseWriter, r *http.Request) (creds, bool) {
@@ -120,7 +124,3 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	log.Printf("auth: first-run setup made the owner %q from %s", c.Name, r.RemoteAddr)
 	a.startSetupSession(w, r, id, c.Name, http.StatusCreated, AuthMethodLocalSetup)
 }
-
-var errOwnerExists = errors.New("owner exists")
-
-var errNoLocalSignIn = errors.New("signs in only through an outside account")

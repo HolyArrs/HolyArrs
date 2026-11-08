@@ -27,6 +27,14 @@ const keyAllowedHosts = "allowed_hosts"
 // maxAllowedHosts caps the saved list.
 const maxAllowedHosts = 50
 
+// Failed first-run owner attempts: about 10 a minute per client. There is no
+// cap for all clients together: a shared cap would let anyone who reaches the
+// port block the owner's setup.
+const (
+	setupTries  = 10
+	setupWindow = time.Minute
+)
+
 // crossOrigin is Go's cross-origin protection: Sec-Fetch-Site must be
 // same-origin or none, else the Origin host and port must equal Host. It
 // does not guess the scheme, so a browser on https behind a proxy, tunnel
@@ -209,14 +217,6 @@ func (a *Auth) savedHostList() []string {
 	}
 	return []string{}
 }
-
-// Failed first-run owner attempts: about 10 a minute per client. There is no
-// cap for all clients together: a shared cap would let anyone who reaches the
-// port block the owner's setup.
-const (
-	setupTries  = 10
-	setupWindow = time.Minute
-)
 
 // ownerSetupLimited says whether a client has used up its failed first-run
 // owner attempts for the current minute.

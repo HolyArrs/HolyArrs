@@ -20,13 +20,6 @@ import (
 
 const plexTokenKind = "plex_token"
 
-func (a *Auth) plexMineRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/auth/plex/my-link", a.myPlexLink)
-	m.HandleFunc("POST /api/v1/auth/plex/my-link/start", a.myPlexLinkStart)
-	m.HandleFunc("POST /api/v1/auth/plex/my-link/finish", a.myPlexLinkFinish)
-	m.HandleFunc("DELETE /api/v1/auth/plex/my-link", a.myPlexUnlink)
-}
-
 // PlexClientID is this HolyArrs's id toward Plex, the one its tokens belong to.
 func (a *Auth) PlexClientID(ctx context.Context) string { return a.clientID(ctx) }
 
@@ -51,6 +44,13 @@ func (a *Auth) PlexToken(ctx context.Context, userID int64) (string, error) {
 		return a.vault.Setting(ctx, settingsGroup, signInPrefix+keyPlexOwner)
 	}
 	return "", nil
+}
+
+func (a *Auth) plexMineRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/auth/plex/my-link", a.myPlexLink)
+	m.HandleFunc("POST /api/v1/auth/plex/my-link/start", a.myPlexLinkStart)
+	m.HandleFunc("POST /api/v1/auth/plex/my-link/finish", a.myPlexLinkFinish)
+	m.HandleFunc("DELETE /api/v1/auth/plex/my-link", a.myPlexUnlink)
 }
 
 // keepPlexToken puts a newer token on an existing Plex link after a sign-in.

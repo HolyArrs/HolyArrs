@@ -32,6 +32,8 @@ const (
 
 var errAvatarImage = errors.New("send a JPEG, PNG or WebP picture")
 
+var avatarSlot = make(chan struct{}, 1)
+
 func (a *Auth) avatarRoutes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/account/avatar", a.putAvatar)
 	m.HandleFunc("DELETE /api/v1/account/avatar", a.deleteAvatar)
@@ -55,8 +57,6 @@ func (a *Auth) avatarOf(ctx context.Context, id int64) *string {
 	}
 	return avatarURL(id, etag)
 }
-
-var avatarSlot = make(chan struct{}, 1)
 
 // makeAvatar decodes an upload, crops the middle square, shrinks it to
 // 256 by 256 and writes a JPEG.

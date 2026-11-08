@@ -25,6 +25,10 @@ const (
 	invitePath    = "/invite/"
 )
 
+var errInviteGone = errors.New("invite gone")
+
+var errNameTaken = errors.New("name taken")
+
 // InviteView is an invite without its link.
 type InviteView struct {
 	ID        string           `json:"id"`
@@ -181,10 +185,6 @@ func (a *Auth) lookInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"role": role, "note": note, "max_rating": maxRating, "rating_country": country})
 }
-
-var errInviteGone = errors.New("invite gone")
-
-var errNameTaken = errors.New("name taken")
 
 // inviteUser reads an open invite inside a write and returns the new user it
 // makes (no name or password yet), or errInviteGone.

@@ -14,6 +14,16 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
+// KeyView is an API key without its value.
+type KeyView struct {
+	ID         int64    `json:"id"`
+	Label      string   `json:"label"`
+	Hint       string   `json:"hint"`
+	CreatedAt  string   `json:"created_at"`
+	LastUsedAt *string  `json:"last_used_at,omitempty"`
+	Scopes     []string `json:"scopes"`
+}
+
 func (a *Auth) checkKey(ctx context.Context, k string) (webserver.Caller, bool) {
 	if !strings.HasPrefix(k, keyPrefix) {
 		return webserver.Caller{}, false
@@ -98,16 +108,6 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	a.event(r, webserver.Actor(r.Context()), "api_key_created", "API key "+body.Label+" created", map[string]any{"key_id": id, "label": body.Label, "scopes": body.Scopes})
 	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "label": body.Label, "scopes": body.Scopes, "key": k,
 		"note": "This key is shown only now. Send it in the " + APIKeyHeader + " header."})
-}
-
-// KeyView is an API key without its value.
-type KeyView struct {
-	ID         int64    `json:"id"`
-	Label      string   `json:"label"`
-	Hint       string   `json:"hint"`
-	CreatedAt  string   `json:"created_at"`
-	LastUsedAt *string  `json:"last_used_at,omitempty"`
-	Scopes     []string `json:"scopes"`
 }
 
 // parseScopes reads a key's stored scope list, keeping known scopes.

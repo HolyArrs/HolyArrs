@@ -13,9 +13,48 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// clientKey is the key every sign-in limit uses: the proxy-aware ClientKey,
-// so behind a trusted proxy each visitor gets their own budget.
-func (a *Auth) clientKey(r *http.Request) string { return a.ClientKey(r) }
+const (
+	knownPerName = 20   // places kept for one name
+	knownNames   = 2000 // names kept at all
+)
+
+// maxTracked bounds the failure and known-place maps.
+const maxTracked = 10000
+
+// fullExtra caps the real-account records noteFail adds once the table is
+// full, a hard ceiling in case names that look real are made up.
+const fullExtra = 1000
+
+// accountKeep is how long a real account's count is kept after its last
+// failure, so a quiet spell between guessing rounds does not hand back free
+// guesses. Its wait still ends after MaxBackoff; only the level is kept.
+const accountKeep = 24 * time.Hour
+
+// accountPrefixes are fail keys that name a user id, so their number is
+// bounded by the users.
+var accountPrefixes = []string{"2fa:", "reauth:", "pw:", "code:", "sso-proof:", "sso-test:"}
+
+// place is where a sign-in came from, for known places.
+type place struct {
+	ipKey, userKey string
+	sure           bool
+}
+
+// knownChange is one noteKnown for saveKnown: the place to store, and the
+// places it pushed out (an empty ip key: every place of that name).
+type knownChange struct {
+	put  place
+	at   time.Time
+	gone [][2]string
+}
+
+// failMark is how one key stood before noteFail, so undoFail can put back
+// its time as well as its count.
+type failMark struct {
+	key  string
+	had  bool
+	last time.Time
+}
 
 // ClientKey names the caller for rate limits: the peer address, or the
 // client a trusted proxy forwards, by the shared rule in clientAddr.
@@ -24,6 +63,10 @@ func (a *Auth) ClientKey(r *http.Request) string {
 	k, _ := a.clientKeySure(r)
 	return k
 }
+
+// clientKey is the key every sign-in limit uses: the proxy-aware ClientKey,
+// so behind a trusted proxy each visitor gets their own budget.
+func (a *Auth) clientKey(r *http.Request) string { return a.ClientKey(r) }
 
 // clientKeySure is ClientKey plus whether the address is sure enough to stand
 // for a known place (false when the proxy headers disagree).
@@ -63,12 +106,6 @@ func (a *Auth) altWait(altKey string) time.Duration {
 		return 0
 	}
 	return a.waitFor(altKey, freeTries)
-}
-
-// place is where a sign-in came from, for known places.
-type place struct {
-	ipKey, userKey string
-	sure           bool
 }
 
 // limitAddr is the address as limits count it: IPv4 as is (an IPv4-mapped
@@ -133,11 +170,6 @@ func (a *Auth) knownPlace(ipKey, userKey string, sure bool) bool {
 	return ok && a.now().Sub(t) < knownPlaceFor
 }
 
-const (
-	knownPerName = 20   // places kept for one name
-	knownNames   = 2000 // names kept at all
-)
-
 // noteKnown remembers a finished sign-in for signInWait; the caller holds
 // a.mu and passes the result to saveKnown once a.mu is unlocked, so the place
 // still counts after a restart. Places are kept per name, so other names and
@@ -150,14 +182,6 @@ func (a *Auth) noteKnown(p place) *knownChange {
 	ch := &knownChange{put: p, at: a.now()}
 	ch.gone = a.rememberKnown(p.userKey, p.ipKey, ch.at)
 	return ch
-}
-
-// knownChange is one noteKnown for saveKnown: the place to store, and the
-// places it pushed out (an empty ip key: every place of that name).
-type knownChange struct {
-	put  place
-	at   time.Time
-	gone [][2]string
 }
 
 // rememberKnown records userKey signing in from ipKey at the given time and
@@ -349,27 +373,11 @@ func (a *Auth) isRealName(k string, now time.Time) bool {
 	return ok && (kind == ProviderJellyfin || kind == ProviderEmby) && a.realNames[after]
 }
 
-// maxTracked bounds the failure and known-place maps.
-const maxTracked = 10000
-
-// fullExtra caps the real-account records noteFail adds once the table is
-// full, a hard ceiling in case names that look real are made up.
-const fullExtra = 1000
-
 // protectedKey says whether a fail key is a per-name one (sign-in name or
 // second-step ticket), which is kept for as long as its wait runs.
 func protectedKey(k string) bool {
 	return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:")
 }
-
-// accountKeep is how long a real account's count is kept after its last
-// failure, so a quiet spell between guessing rounds does not hand back free
-// guesses. Its wait still ends after MaxBackoff; only the level is kept.
-const accountKeep = 24 * time.Hour
-
-// accountPrefixes are fail keys that name a user id, so their number is
-// bounded by the users.
-var accountPrefixes = []string{"2fa:", "reauth:", "pw:", "code:", "sso-proof:", "sso-test:"}
 
 // accountKey says whether a fail record belongs to a real account; the caller
 // holds a.mu.
@@ -414,14 +422,6 @@ func (a *Auth) pruneFails(now time.Time) {
 	for _, e := range addrs[:min(len(addrs)/5+1, len(addrs))] {
 		delete(a.fails, e.k)
 	}
-}
-
-// failMark is how one key stood before noteFail, so undoFail can put back
-// its time as well as its count.
-type failMark struct {
-	key  string
-	had  bool
-	last time.Time
 }
 
 // markFails reads the keys before noteFail; the caller holds a.mu.

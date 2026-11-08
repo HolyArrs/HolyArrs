@@ -13,6 +13,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
+// pinInvite starts the purpose of a Plex PIN started from an invite; the
+// invite's hash follows, so the PIN finishes only that invite.
+const pinInvite = "invite:"
+
 // Joining through an invite with Plex, Jellyfin or Emby instead of a new
 // password. The invite is the permission: the owner's join rule for that
 // way does not apply, but the way must be on. The new user gets what a
@@ -21,10 +25,6 @@ import (
 // unused.
 
 var errAlreadyLinked = errors.New("outside account already linked")
-
-// pinInvite starts the purpose of a Plex PIN started from an invite; the
-// invite's hash follows, so the PIN finishes only that invite.
-const pinInvite = "invite:"
 
 func (a *Auth) inviteOutsideRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/invites/{token}/plex/start", a.invitePlexStart)

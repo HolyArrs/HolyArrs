@@ -57,14 +57,6 @@ func ReadNewOwner(r io.Reader) (name, password string, err error) {
 	return name, password, nil
 }
 
-func cutLabel(line string) (string, string, bool) {
-	i := strings.IndexAny(line, ":=")
-	if i <= 0 {
-		return "", "", false
-	}
-	return strings.ToLower(strings.TrimSpace(line[:i])), strings.TrimSpace(line[i+1:]), true
-}
-
 // ResetOwner sets the owner's name and password, or makes the owner when there
 // is none yet. It ends every session, removes every API key and turns off
 // two-factor sign-in, so anything
@@ -117,6 +109,14 @@ func ResetOwner(ctx context.Context, s *database.Store, name, password string) e
 			Data:    map[string]any{"user_id": id, "action": "owner_reset", "name": name}})
 	}
 	return err
+}
+
+func cutLabel(line string) (string, string, bool) {
+	i := strings.IndexAny(line, ":=")
+	if i <= 0 {
+		return "", "", false
+	}
+	return strings.ToLower(strings.TrimSpace(line[:i])), strings.TrimSpace(line[i+1:]), true
 }
 
 // endOutsideLinks drops the Plex, Jellyfin, Emby and single sign-on

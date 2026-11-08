@@ -10,6 +10,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
+const displayNameMax = 64
+
+type myProfile struct {
+	DisplayName string `json:"display_name"`
+	Username    string `json:"username"`
+}
+
 // My profile: the display name each person sets for themselves. The sign-in
 // name (username) and the role are not editable here; an owner changes a
 // role on Users and roles, and the username stays what people sign in with.
@@ -17,13 +24,6 @@ func (a *Auth) profileRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/my/profile", a.getProfile)
 	m.HandleFunc("PUT /api/v1/my/profile", a.putProfile)
 }
-
-type myProfile struct {
-	DisplayName string `json:"display_name"`
-	Username    string `json:"username"`
-}
-
-const displayNameMax = 64
 
 // cleanDisplayName trims the name and refuses control characters and names
 // over 64 characters. An empty name means "show my username".

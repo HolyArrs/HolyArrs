@@ -16,19 +16,6 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-// argon2id settings: the OWASP minimum (19 MiB, 2 passes, 1 lane) keeps a
-// sign-in cheap enough for a small NAS while still slow to guess.
-type hashParams struct {
-	memKiB uint32
-	passes uint32
-	lanes  uint8
-}
-
-var (
-	normalHash = hashParams{memKiB: 19 * 1024, passes: 2, lanes: 1}
-	testHash   = hashParams{memKiB: 64, passes: 1, lanes: 1}
-)
-
 const (
 	saltLen = 16
 	keyLen  = 32
@@ -43,6 +30,19 @@ const (
 	// keyMinLength is the sign-in setting with the owner's minimum length.
 	keyMinLength = "min_password_length"
 )
+
+var (
+	normalHash = hashParams{memKiB: 19 * 1024, passes: 2, lanes: 1}
+	testHash   = hashParams{memKiB: 64, passes: 1, lanes: 1}
+)
+
+// argon2id settings: the OWASP minimum (19 MiB, 2 passes, 1 lane) keeps a
+// sign-in cheap enough for a small NAS while still slow to guess.
+type hashParams struct {
+	memKiB uint32
+	passes uint32
+	lanes  uint8
+}
 
 // MinPasswordLength reads the owner's minimum password length from the
 // settings, clamped to MinPassword..MaxMinPassword; DefaultMinPassword when
@@ -59,6 +59,20 @@ func MinPasswordLength(ctx context.Context, db *sql.DB) int {
 	return min(n, MaxMinPassword)
 }
 
+// HashPassword returns an argon2id hash in the usual
+// $argon2id$v=19$m=..,t=..,p=..$salt$key form.
+func HashPassword(pw string) (string, error) { return hashPassword(pw, normalHash) }
+
+// CheckPassword reports whether pw matches the stored hash.
+func CheckPassword(hash, pw string) bool {
+	p, salt, key, err := decodeHash(hash)
+	if err != nil {
+		return false
+	}
+	got := argon2.IDKey([]byte(pw), salt, p.passes, p.memKiB, p.lanes, uint32(len(key)))
+	return subtle.ConstantTimeCompare(got, key) == 1
+}
+
 // passwordProblem says what is wrong with a password's length, or "".
 func passwordProblem(pw string, minLen int) string {
 	if len(pw) < minLen {
@@ -70,10 +84,6 @@ func passwordProblem(pw string, minLen int) string {
 	return ""
 }
 
-// HashPassword returns an argon2id hash in the usual
-// $argon2id$v=19$m=..,t=..,p=..$salt$key form.
-func HashPassword(pw string) (string, error) { return hashPassword(pw, normalHash) }
-
 func hashPassword(pw string, p hashParams) (string, error) {
 	salt := make([]byte, saltLen)
 	if _, err := rand.Read(salt); err != nil {
@@ -83,16 +93,6 @@ func hashPassword(pw string, p hashParams) (string, error) {
 	enc := base64.RawStdEncoding
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", argon2.Version, p.memKiB, p.passes, p.lanes,
 		enc.EncodeToString(salt), enc.EncodeToString(key)), nil
-}
-
-// CheckPassword reports whether pw matches the stored hash.
-func CheckPassword(hash, pw string) bool {
-	p, salt, key, err := decodeHash(hash)
-	if err != nil {
-		return false
-	}
-	got := argon2.IDKey([]byte(pw), salt, p.passes, p.memKiB, p.lanes, uint32(len(key)))
-	return subtle.ConstantTimeCompare(got, key) == 1
 }
 
 func decodeHash(h string) (hashParams, []byte, []byte, error) {

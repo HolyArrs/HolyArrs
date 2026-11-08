@@ -11,15 +11,20 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
+// unknownName stands for a typed sign-in name that is no member.
+const unknownName = "unknown name"
+
+// EventAccountChanged is a change to someone's account: role, permissions,
+// turned off or on, password set or changed, two-factor reset or turned on
+// or off, sessions ended, an invite made. Never a password, code or key.
+const EventAccountChanged = "account_changed"
+
 // event writes a sign-in or API key Event with the caller's address. It
 // never holds a password or a key.
 func (a *Auth) event(r *http.Request, by domain.Actor, kind, summary string, data map[string]any) {
 	data["ip"] = a.eventAddr(r)
 	_ = a.s.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: by, Kind: kind, Summary: summary, Data: data})
 }
-
-// unknownName stands for a typed sign-in name that is no member.
-const unknownName = "unknown name"
 
 // knownName is the member (in any state) a typed sign-in name belongs to,
 // or unknownName.
@@ -75,11 +80,6 @@ func ssoRefusal(kind string, err error) string {
 	}
 	return kind + " refused"
 }
-
-// EventAccountChanged is a change to someone's account: role, permissions,
-// turned off or on, password set or changed, two-factor reset or turned on
-// or off, sessions ended, an invite made. Never a password, code or key.
-const EventAccountChanged = "account_changed"
 
 // accountEvent writes an account_changed Event about the member userID.
 func (a *Auth) accountEvent(r *http.Request, userID int64, action, summary string, extra map[string]any) {

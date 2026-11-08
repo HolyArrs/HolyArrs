@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+// mediaMe is the Jellyfin or Emby account a name and password belong to.
+type mediaMe struct {
+	ID, Name string
+	// Limited is set when the server limits what this person may watch.
+	Limited bool
+}
+
 func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	kind := r.PathValue("kind")
 	v, ok := a.mediaWay(w, r, kind)
@@ -36,13 +43,6 @@ func (a *Auth) mediaWay(w http.ResponseWriter, r *http.Request, kind string) (Wa
 		return v, false
 	}
 	return v, true
-}
-
-// mediaMe is the Jellyfin or Emby account a name and password belong to.
-type mediaMe struct {
-	ID, Name string
-	// Limited is set when the server limits what this person may watch.
-	Limited bool
 }
 
 // checkMediaServer checks the name and password in the request against the

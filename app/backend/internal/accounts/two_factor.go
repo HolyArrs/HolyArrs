@@ -38,6 +38,22 @@ const (
 
 var b32 = base32.StdEncoding.WithPadding(base32.NoPadding)
 
+// ticket is the half-way point of a sign-in: the password (or outside
+// account) was right and a two-factor code is still needed.
+type ticket struct {
+	userKey string // the limit key of the first step, for known places
+	userID  int64
+	name    string
+	method  string
+	expires time.Time
+	tries   int
+}
+
+type codeBody struct {
+	Ticket string `json:"ticket,omitempty"`
+	Code   string `json:"code"`
+}
+
 // totpCode is the code for one time step.
 func totpCode(secret []byte, step int64) string {
 	var msg [8]byte
@@ -69,17 +85,6 @@ func totpMatch(secret []byte, code string, now time.Time, last int64) int64 {
 
 func normBackup(c string) string {
 	return strings.ToLower(strings.NewReplacer("-", "", " ", "").Replace(strings.TrimSpace(c)))
-}
-
-// ticket is the half-way point of a sign-in: the password (or outside
-// account) was right and a two-factor code is still needed.
-type ticket struct {
-	userKey string // the limit key of the first step, for known places
-	userID  int64
-	name    string
-	method  string
-	expires time.Time
-	tries   int
 }
 
 // passed finishes a sign-in whose first step was right: straight to a
@@ -130,11 +135,6 @@ func (a *Auth) twoFactorRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/two-factor/enable", a.twoFactorEnable)
 	m.HandleFunc("POST /api/v1/auth/two-factor/disable", a.twoFactorDisable)
 	m.HandleFunc("POST /api/v1/auth/two-factor/backup-codes", a.twoFactorNewCodes)
-}
-
-type codeBody struct {
-	Ticket string `json:"ticket,omitempty"`
-	Code   string `json:"code"`
 }
 
 func readCode(w http.ResponseWriter, r *http.Request) (codeBody, bool) {

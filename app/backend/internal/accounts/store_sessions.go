@@ -9,16 +9,16 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
+// sessionRow is the stored side of one session.
+type sessionRow struct {
+	perms, created, rotated, seen, expires, localAuthAt, family string
+}
+
 // sessionFamily is the public id of the session a cookie hash belongs to.
 func sessionFamily(ctx context.Context, q conn, hash string) (string, error) {
 	var family string
 	err := q.QueryRowContext(ctx, "SELECT family FROM sessions WHERE hash = ?", hash).Scan(&family)
 	return family, err
-}
-
-// sessionRow is the stored side of one session.
-type sessionRow struct {
-	perms, created, rotated, seen, expires, localAuthAt, family string
 }
 
 // sessionBy reads the session behind a cookie hash and its active person

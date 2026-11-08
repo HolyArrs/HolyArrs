@@ -20,32 +20,6 @@ var (
 	errOIDCSuppressed = errors.New("OIDC provider is temporarily unavailable")
 )
 
-func newOIDCHTTPClient(opt OIDCOptions, issuer *url.URL) *http.Client {
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.Proxy = nil
-	t.DialContext = outbound.PolicyDialer(func(ip net.IP) bool { return oidcAddressAllowed(opt, ip) }).DialContext
-	return &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: oidcLimitTransport{base: t, issuer: issuer.String(), clientID: opt.ClientID},
-		CheckRedirect: func(*http.Request, []*http.Request) error {
-			return errOIDCRedirect
-		},
-	}
-}
-
-func oidcAddressAllowed(opt OIDCOptions, ip net.IP) bool {
-	if ip == nil || ip.IsUnspecified() || ip.IsMulticast() || ip.IsInterfaceLocalMulticast() || ip.Equal(net.IPv4bcast) {
-		return false
-	}
-	if opt.AllowLoopbackHTTP && ip.IsLoopback() {
-		return true
-	}
-	if opt.AllowLocal {
-		return outbound.NotMetadata(ip)
-	}
-	return outbound.PublicOnly(ip)
-}
-
 type oidcLimitTransport struct {
 	base             http.RoundTripper
 	issuer, clientID string
@@ -85,4 +59,30 @@ func (t oidcLimitTransport) RoundTrip(req *http.Request) (*http.Response, error)
 	resp.Body = io.NopCloser(bytes.NewReader(body))
 	resp.ContentLength = int64(len(body))
 	return resp, nil
+}
+
+func newOIDCHTTPClient(opt OIDCOptions, issuer *url.URL) *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.Proxy = nil
+	t.DialContext = outbound.PolicyDialer(func(ip net.IP) bool { return oidcAddressAllowed(opt, ip) }).DialContext
+	return &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: oidcLimitTransport{base: t, issuer: issuer.String(), clientID: opt.ClientID},
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return errOIDCRedirect
+		},
+	}
+}
+
+func oidcAddressAllowed(opt OIDCOptions, ip net.IP) bool {
+	if ip == nil || ip.IsUnspecified() || ip.IsMulticast() || ip.IsInterfaceLocalMulticast() || ip.Equal(net.IPv4bcast) {
+		return false
+	}
+	if opt.AllowLoopbackHTTP && ip.IsLoopback() {
+		return true
+	}
+	if opt.AllowLocal {
+		return outbound.NotMetadata(ip)
+	}
+	return outbound.PublicOnly(ip)
 }

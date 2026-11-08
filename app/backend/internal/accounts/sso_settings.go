@@ -39,6 +39,8 @@ const (
 	ssoKeyVaultRef = "oidc_vault_ref" // the client secret's vault id; "" is a public client
 )
 
+var errNoWayIn = errors.New("no other way in")
+
 // savedOIDC is single sign-on as saved in Settings.
 type savedOIDC struct {
 	On          bool
@@ -47,6 +49,57 @@ type savedOIDC struct {
 	RedirectURL string
 	AllowJoin   bool
 	SecretID    int64
+}
+
+// SSOView is the single sign-on setup as Settings shows it. Never a secret.
+type SSOView struct {
+	Source      string        `json:"source"` // "settings" or "environment"
+	On          bool          `json:"on"`
+	Running     bool          `json:"running"`
+	Issuer      string        `json:"issuer"`
+	ClientID    string        `json:"client_id"`
+	SecretSet   bool          `json:"secret_set"`
+	RedirectURL string        `json:"redirect_url"`
+	Suggested   string        `json:"suggested_redirect_url"`
+	AllowJoin   bool          `json:"allow_join"`
+	Links       int           `json:"links"` // people linked through this issuer
+	LocalOK     bool          `json:"local_network_allowed"`
+	Forward     ForwardStatus `json:"forward"`
+}
+
+// ForwardStatus is trusted proxy sign-in, read-only: it is set only in the environment.
+type ForwardStatus struct {
+	On        bool   `json:"on"`
+	Issuer    string `json:"issuer,omitempty"`
+	AllowJoin bool   `json:"allow_join"`
+	Links     int    `json:"links"`
+}
+
+type ssoSaveBody struct {
+	Password        string `json:"password"`
+	Code            string `json:"code"`
+	On              bool   `json:"on"`
+	Issuer          string `json:"issuer"`
+	ClientID        string `json:"client_id"`
+	ClientSecret    string `json:"client_secret"` // blank keeps the saved one, only while issuer and client id stay
+	PublicClient    bool   `json:"public_client"` // no secret at all
+	RedirectURL     string `json:"redirect_url"`  // keeps the saved callback when it is the same; anything else takes this browser's address
+	AllowJoin       bool   `json:"allow_join"`
+	ConfirmEveryone bool   `json:"confirm_everyone"`
+}
+
+// SSOLinkView is one single sign-on or trusted proxy identity linked to a person.
+type SSOLinkView struct {
+	Kind      string `json:"kind"` // "oidc" or "forward_auth"
+	Issuer    string `json:"issuer"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+}
+
+type unlinkBody struct {
+	Kind    string `json:"kind"`
+	Issuer  string `json:"issuer"`
+	NoWayIn bool   `json:"confirm_no_way_in"` // the owner confirms a person keeps no way to sign in
 }
 
 func (a *Auth) savedOIDCNow(ctx context.Context) savedOIDC {
@@ -127,30 +180,6 @@ func (a *Auth) suggestedRedirect(r *http.Request) string {
 	return scheme + "://" + r.Host + webserver.URLBaseFrom(r.Context()) + "/api/v1/auth/oidc/callback"
 }
 
-// SSOView is the single sign-on setup as Settings shows it. Never a secret.
-type SSOView struct {
-	Source      string        `json:"source"` // "settings" or "environment"
-	On          bool          `json:"on"`
-	Running     bool          `json:"running"`
-	Issuer      string        `json:"issuer"`
-	ClientID    string        `json:"client_id"`
-	SecretSet   bool          `json:"secret_set"`
-	RedirectURL string        `json:"redirect_url"`
-	Suggested   string        `json:"suggested_redirect_url"`
-	AllowJoin   bool          `json:"allow_join"`
-	Links       int           `json:"links"` // people linked through this issuer
-	LocalOK     bool          `json:"local_network_allowed"`
-	Forward     ForwardStatus `json:"forward"`
-}
-
-// ForwardStatus is trusted proxy sign-in, read-only: it is set only in the environment.
-type ForwardStatus struct {
-	On        bool   `json:"on"`
-	Issuer    string `json:"issuer,omitempty"`
-	AllowJoin bool   `json:"allow_join"`
-	Links     int    `json:"links"`
-}
-
 func (a *Auth) ssoView(r *http.Request) SSOView {
 	ctx := r.Context()
 	now := a.ssoNow()
@@ -229,19 +258,6 @@ func (a *Auth) checkOwnerProof(w http.ResponseWriter, r *http.Request, who webse
 // reads 401 as a signed-out session and would leave the page.
 func wrongProof(w http.ResponseWriter) {
 	writeJSON(w, http.StatusForbidden, map[string]string{"error": "the password or code is wrong", "code": "wrong_proof"})
-}
-
-type ssoSaveBody struct {
-	Password        string `json:"password"`
-	Code            string `json:"code"`
-	On              bool   `json:"on"`
-	Issuer          string `json:"issuer"`
-	ClientID        string `json:"client_id"`
-	ClientSecret    string `json:"client_secret"` // blank keeps the saved one, only while issuer and client id stay
-	PublicClient    bool   `json:"public_client"` // no secret at all
-	RedirectURL     string `json:"redirect_url"`  // keeps the saved callback when it is the same; anything else takes this browser's address
-	AllowJoin       bool   `json:"allow_join"`
-	ConfirmEveryone bool   `json:"confirm_everyone"`
 }
 
 // sameIssuer compares issuers as typed, ignoring a trailing slash, so
@@ -444,14 +460,6 @@ func (a *Auth) testSSO(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
-// SSOLinkView is one single sign-on or trusted proxy identity linked to a person.
-type SSOLinkView struct {
-	Kind      string `json:"kind"` // "oidc" or "forward_auth"
-	Issuer    string `json:"issuer"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
-}
-
 func (a *Auth) ssoLinksOf(ctx context.Context, userID int64) []SSOLinkView {
 	out, err := ssoLinksOfUser(ctx, a.s.Read(), userID)
 	if err != nil {
@@ -468,14 +476,6 @@ func (a *Auth) mySSOLinks(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"links": a.ssoLinksOf(r.Context(), who.UserID)})
 }
-
-type unlinkBody struct {
-	Kind    string `json:"kind"`
-	Issuer  string `json:"issuer"`
-	NoWayIn bool   `json:"confirm_no_way_in"` // the owner confirms a person keeps no way to sign in
-}
-
-var errNoWayIn = errors.New("no other way in")
 
 // unlinkSSO removes one identity from userID and, in the same write, ends
 // the sessions it could have made; pending two-factor steps and finished

@@ -37,15 +37,6 @@ const (
 	setupFamily = "setup."
 )
 
-// RecentLocal reports whether this request is an authenticated browser
-// session with a recent local password proof (or a first-run setup session
-// before the wizard is done, see setupRecentFor) and no unfinished two-factor
-// enrollment requirement. Other outside sign-ins and API keys never satisfy it.
-func RecentLocal(r *http.Request) bool {
-	who, ok := webserver.From(r.Context())
-	return ok && who.Via == "session" && (who.LocalRecent || who.SetupRecent) && !who.MustTwoFactor
-}
-
 // riskyRoutes are the routes a browser session may use only with a local
 // password proof from the last localRecentFor. Opening pages and ordinary
 // settings never ask: passwords and two-factor, API and
@@ -98,6 +89,20 @@ var riskyRoutes = map[string]bool{
 	"PUT /api/v1/auth/settings": true,
 }
 
+type reauthBody struct {
+	Password string `json:"password"`
+	Code     string `json:"code,omitempty"`
+}
+
+// RecentLocal reports whether this request is an authenticated browser
+// session with a recent local password proof (or a first-run setup session
+// before the wizard is done, see setupRecentFor) and no unfinished two-factor
+// enrollment requirement. Other outside sign-ins and API keys never satisfy it.
+func RecentLocal(r *http.Request) bool {
+	who, ok := webserver.From(r.Context())
+	return ok && who.Via == "session" && (who.LocalRecent || who.SetupRecent) && !who.MustTwoFactor
+}
+
 // needsRecentLocal says whether a signed-in request must show a recent local
 // password proof first. A browser session needs one only on a risky route.
 // Every other kind of sign-in without an API key (the trusted-network skip)
@@ -139,11 +144,6 @@ func recentLocalExempt(pattern string, who webserver.Caller) bool {
 	default:
 		return false
 	}
-}
-
-type reauthBody struct {
-	Password string `json:"password"`
-	Code     string `json:"code,omitempty"`
 }
 
 // reauth replaces the complete current session family after checking the

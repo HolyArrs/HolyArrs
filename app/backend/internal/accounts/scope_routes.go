@@ -139,6 +139,27 @@ var RouteScopes = map[string]string{
 // these answers are masked.
 var ReadRoutes = map[string]bool{}
 
+// RouteScope is the scope an API key needs for a route pattern: the
+// RouteScopes entry, else admin for a route only the owner or admins may
+// use, else read for a GET listed in ReadRoutes, admin for any other GET,
+// and write for every other method.
+func RouteScope(pattern string) string {
+	if sc := RouteScopes[pattern]; sc != "" {
+		return sc
+	}
+	if need, ok := RoutePerms[pattern]; !ok || need == webserver.NeedUsers || need == webserver.NeedOwner {
+		return webserver.ScopeAdmin
+	}
+	method, _, _ := strings.Cut(pattern, " ")
+	if method == http.MethodGet || method == http.MethodHead {
+		if ReadRoutes[pattern] {
+			return webserver.ScopeRead
+		}
+		return webserver.ScopeAdmin // no decision yet: fail closed
+	}
+	return webserver.ScopeWrite
+}
+
 func init() {
 	for _, r := range []string{
 		"GET /api/v1/titles/{id}/copies",
@@ -181,25 +202,4 @@ func init() {
 	} {
 		ReadRoutes[r] = true
 	}
-}
-
-// RouteScope is the scope an API key needs for a route pattern: the
-// RouteScopes entry, else admin for a route only the owner or admins may
-// use, else read for a GET listed in ReadRoutes, admin for any other GET,
-// and write for every other method.
-func RouteScope(pattern string) string {
-	if sc := RouteScopes[pattern]; sc != "" {
-		return sc
-	}
-	if need, ok := RoutePerms[pattern]; !ok || need == webserver.NeedUsers || need == webserver.NeedOwner {
-		return webserver.ScopeAdmin
-	}
-	method, _, _ := strings.Cut(pattern, " ")
-	if method == http.MethodGet || method == http.MethodHead {
-		if ReadRoutes[pattern] {
-			return webserver.ScopeRead
-		}
-		return webserver.ScopeAdmin // no decision yet: fail closed
-	}
-	return webserver.ScopeWrite
 }

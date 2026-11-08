@@ -108,6 +108,13 @@ func SSOFromEnv(urlBase string) (SSOOptions, error) {
 	return out, nil
 }
 
+// Close stops auth-owned provider work and is safe to call more than once.
+func (a *Auth) Close() {
+	if s := a.sso.Load(); s != nil && s.oidc != nil {
+		s.oidc.close()
+	}
+}
+
 // initSSO builds each way on its own: a broken single sign-on setup turns
 // off only single sign-on, never trusted proxy sign-in, and the other way round.
 func (a *Auth) initSSO(opt SSOOptions) {
@@ -156,13 +163,6 @@ func (a *Auth) swapOIDC(o *oidcRuntime) {
 			}
 			return
 		}
-	}
-}
-
-// Close stops auth-owned provider work and is safe to call more than once.
-func (a *Auth) Close() {
-	if s := a.sso.Load(); s != nil && s.oidc != nil {
-		s.oidc.close()
 	}
 }
 

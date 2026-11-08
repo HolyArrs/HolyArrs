@@ -22,6 +22,14 @@ const (
 	product    = "HolyArrs"
 )
 
+const (
+	pinOwner = "owner"
+	pinMine  = "mine"
+)
+
+// pinCheckGap is the shortest time between two checks of one pin.
+const pinCheckGap = time.Second
+
 // pin is a Plex sign-in in progress.
 type pin struct {
 	ip string
@@ -41,13 +49,15 @@ type pin struct {
 	userID  int64 // who started a pinMine pin; only they may finish it
 }
 
-const (
-	pinOwner = "owner"
-	pinMine  = "mine"
-)
-
-// pinCheckGap is the shortest time between two checks of one pin.
-const pinCheckGap = time.Second
+// plexMe is the Plex account a confirmed PIN belongs to.
+type plexMe struct {
+	ID       int64  `json:"id"`
+	UUID     string `json:"uuid"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	// A managed Plex Home user with limits on what they may watch.
+	Restricted bool `json:"restricted"`
+}
 
 func (a *Auth) plexHeaders(ctx context.Context) map[string]string {
 	return map[string]string{"X-Plex-Product": product, "X-Plex-Client-Identifier": a.clientID(ctx)}
@@ -151,16 +161,6 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist
 	}
 	a.outsideDone(w, r, ProviderPlex, id, name, err, place{})
-}
-
-// plexMe is the Plex account a confirmed PIN belongs to.
-type plexMe struct {
-	ID       int64  `json:"id"`
-	UUID     string `json:"uuid"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	// A managed Plex Home user with limits on what they may watch.
-	Restricted bool `json:"restricted"`
 }
 
 // plexUser asks Plex who a confirmed PIN's token belongs to. It returns the

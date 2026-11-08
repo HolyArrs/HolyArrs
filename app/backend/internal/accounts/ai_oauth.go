@@ -41,6 +41,8 @@ const (
 // aiConnectPage is the web page where a person allows an AI app.
 const aiConnectPage = "/ai-connect"
 
+const aiClientPrefix = "hai_"
+
 // aiClient is a registered AI app. Registration is open to anyone, so the
 // client id simply carries the registration (name and return addresses):
 // nothing is stored, and the person sees both before allowing.
@@ -51,7 +53,29 @@ type aiClient struct {
 	ID string `json:"-"`
 }
 
-const aiClientPrefix = "hai_"
+// aiCode is an allowed sign-in waiting for the app to fetch its key.
+type aiCode struct {
+	client    aiClient
+	redirect  string
+	challenge string
+	resource  string
+	user      int64
+	until     time.Time
+}
+
+type aiCodes struct {
+	mu sync.Mutex
+	m  map[string]aiCode
+}
+
+// aiRequest is a checked sign-in request from an AI app.
+type aiRequest struct {
+	client    aiClient
+	redirect  string
+	challenge string
+	state     string
+	resource  string
+}
 
 func (c aiClient) id() string {
 	b, _ := json.Marshal(c)
@@ -154,21 +178,6 @@ func redirectMatches(registered, got string) bool {
 		return false
 	}
 	return loopbackHost(a.Hostname()) && strings.EqualFold(a.Hostname(), b.Hostname()) && a.Path == b.Path && a.RawQuery == b.RawQuery
-}
-
-// aiCode is an allowed sign-in waiting for the app to fetch its key.
-type aiCode struct {
-	client    aiClient
-	redirect  string
-	challenge string
-	resource  string
-	user      int64
-	until     time.Time
-}
-
-type aiCodes struct {
-	mu sync.Mutex
-	m  map[string]aiCode
 }
 
 func (c *aiCodes) put(now time.Time, code string, v aiCode) bool {
@@ -326,15 +335,6 @@ func (a *Auth) aiRegister(w http.ResponseWriter, r *http.Request) {
 		"response_types":             []string{"code"},
 		"token_endpoint_auth_method": "none",
 	})
-}
-
-// aiRequest is a checked sign-in request from an AI app.
-type aiRequest struct {
-	client    aiClient
-	redirect  string
-	challenge string
-	state     string
-	resource  string
 }
 
 // checkAIRequest reads an authorize request: bad is a bad client or return

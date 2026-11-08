@@ -18,6 +18,7 @@ import (
 var errIdentityLinked = errors.New("this identity is already linked to another account")
 
 type ssoProofKey struct{}
+
 type ssoLinkProof struct {
 	hash, family string
 	userID       int64

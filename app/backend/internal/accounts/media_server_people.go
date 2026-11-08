@@ -36,6 +36,10 @@ const (
 	testMax    = 64 << 10
 )
 
+var errTaken = errors.New("linked to someone else")
+
+var errImportKidSkip = errors.New("kid import while skipping local sign-in")
+
 // importPerson is one person an import preview offers.
 type importPerson struct {
 	ID       string `json:"id"`
@@ -150,8 +154,6 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	a.accountEvent(r, me.ID, "sign_in_linked", byName(r)+" linked the Plex account "+outsideName(user.Username), map[string]any{"provider": "plex"})
 	writeJSON(w, http.StatusOK, map[string]any{"name": user.Username, "servers": servers})
 }
-
-var errTaken = errors.New("linked to someone else")
 
 func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
@@ -431,8 +433,6 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 	}
 	return out, true
 }
-
-var errImportKidSkip = errors.New("kid import while skipping local sign-in")
 
 func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {

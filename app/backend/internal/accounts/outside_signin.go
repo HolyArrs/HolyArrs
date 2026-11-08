@@ -30,6 +30,12 @@ const (
 	JoinEveryone = "everyone" // everyone the server lets in
 )
 
+var errNotAllowed = errors.New("not allowed to join")
+
+var errDisabled = errors.New("account disabled")
+
+var errKidSkipLocal = errors.New("kid join while skipping local sign-in")
+
 func (a *Auth) outsideRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/plex/start", a.plexStart)
 	m.HandleFunc("POST /api/v1/auth/plex/finish", a.plexFinish)
@@ -37,7 +43,3 @@ func (a *Auth) outsideRoutes(m *http.ServeMux) {
 	a.setupOutsideRoutes(m)
 	a.inviteOutsideRoutes(m)
 }
-
-var errNotAllowed = errors.New("not allowed to join")
-var errDisabled = errors.New("account disabled")
-var errKidSkipLocal = errors.New("kid join while skipping local sign-in")

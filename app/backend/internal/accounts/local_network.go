@@ -19,6 +19,17 @@ const keyLocalNets = "local_networks"
 // maxLocalNets caps the networks the owner may list.
 const maxLocalNets = 32
 
+// containerNets are networks Docker, Podman and Docker Desktop hand out by
+// default. Behind them every browser can show up as one gateway address.
+var containerNets = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, s := range []string{"172.17.0.0/16", "10.88.0.0/16", "10.0.2.0/24", "192.168.65.0/24"} {
+		_, n, _ := net.ParseCIDR(s)
+		out = append(out, n)
+	}
+	return out
+}()
+
 // localNets is the owner's list as typed (cleaned up) and as parsed.
 type localNets struct {
 	list []string
@@ -112,17 +123,6 @@ func (a *Auth) isLocal(remote string) bool {
 	}
 	return false
 }
-
-// containerNets are networks Docker, Podman and Docker Desktop hand out by
-// default. Behind them every browser can show up as one gateway address.
-var containerNets = func() []*net.IPNet {
-	var out []*net.IPNet
-	for _, s := range []string{"172.17.0.0/16", "10.88.0.0/16", "10.0.2.0/24", "192.168.65.0/24"} {
-		_, n, _ := net.ParseCIDR(s)
-		out = append(out, n)
-	}
-	return out
-}()
 
 // gatewayLike says whether an address looks like a container gateway:
 // 172.x.0.1, 10.88.0.1 or 10.89.x.1 bridges, 10.0.2.2 (rootless) or Docker Desktop's

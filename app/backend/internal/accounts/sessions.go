@@ -13,9 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// newFamily is a session's public id: random, never the cookie or its hash.
-func newFamily() string { return token(16) }
-
 // SessionView is one signed-in device as the screens show it.
 type SessionView struct {
 	ID       string    `json:"id"`
@@ -26,6 +23,63 @@ type SessionView struct {
 	// Current marks the session the request came with.
 	Current bool `json:"current"`
 }
+
+// Device names a browser and system from a User-Agent in a few words,
+// such as "Firefox on Windows"; it never repeats the raw text.
+func Device(ua string) string {
+	l := strings.ToLower(ua)
+	if l == "" {
+		return "Unknown device"
+	}
+	browser := ""
+	switch {
+	case strings.Contains(l, "edg/"):
+		browser = "Edge"
+	case strings.Contains(l, "opr/") || strings.Contains(l, "opera"):
+		browser = "Opera"
+	case strings.Contains(l, "firefox/") || strings.Contains(l, "fxios/"):
+		browser = "Firefox"
+	case strings.Contains(l, "chrome/") || strings.Contains(l, "crios/") || strings.Contains(l, "chromium/"):
+		browser = "Chrome"
+	case strings.Contains(l, "safari/"):
+		browser = "Safari"
+	case strings.HasPrefix(l, "curl/"):
+		browser = "curl"
+	case strings.Contains(l, "python"):
+		browser = "Python script"
+	case strings.HasPrefix(l, "go-http-client"):
+		browser = "Go program"
+	}
+	system := ""
+	switch {
+	case strings.Contains(l, "iphone"):
+		system = "iPhone"
+	case strings.Contains(l, "ipad"):
+		system = "iPad"
+	case strings.Contains(l, "android"):
+		system = "Android"
+	case strings.Contains(l, "windows"):
+		system = "Windows"
+	case strings.Contains(l, "mac os x") || strings.Contains(l, "macintosh"):
+		system = "Mac"
+	case strings.Contains(l, "cros"):
+		system = "ChromeOS"
+	case strings.Contains(l, "linux"):
+		system = "Linux"
+	}
+	switch {
+	case browser != "" && system != "":
+		return browser + " on " + system
+	case browser != "":
+		return browser
+	case system != "":
+		return "A browser on " + system
+	}
+	return "Unknown device"
+}
+
+// newFamily is a session's public id: random, never the cookie or its hash.
+func newFamily() string { return token(16) }
 
 func (a *Auth) sessionRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/auth/sessions", a.mySessions)
@@ -203,58 +257,4 @@ func (a *Auth) endUserSession(w http.ResponseWriter, r *http.Request) {
 	log.Printf("auth: user %d signed out one session of user %d", by.UserID, id)
 	a.accountEvent(r, id, "session_ended", byName(r)+" signed "+a.userName(r.Context(), id)+" out of one session", nil)
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// Device names a browser and system from a User-Agent in a few words,
-// such as "Firefox on Windows"; it never repeats the raw text.
-func Device(ua string) string {
-	l := strings.ToLower(ua)
-	if l == "" {
-		return "Unknown device"
-	}
-	browser := ""
-	switch {
-	case strings.Contains(l, "edg/"):
-		browser = "Edge"
-	case strings.Contains(l, "opr/") || strings.Contains(l, "opera"):
-		browser = "Opera"
-	case strings.Contains(l, "firefox/") || strings.Contains(l, "fxios/"):
-		browser = "Firefox"
-	case strings.Contains(l, "chrome/") || strings.Contains(l, "crios/") || strings.Contains(l, "chromium/"):
-		browser = "Chrome"
-	case strings.Contains(l, "safari/"):
-		browser = "Safari"
-	case strings.HasPrefix(l, "curl/"):
-		browser = "curl"
-	case strings.Contains(l, "python"):
-		browser = "Python script"
-	case strings.HasPrefix(l, "go-http-client"):
-		browser = "Go program"
-	}
-	system := ""
-	switch {
-	case strings.Contains(l, "iphone"):
-		system = "iPhone"
-	case strings.Contains(l, "ipad"):
-		system = "iPad"
-	case strings.Contains(l, "android"):
-		system = "Android"
-	case strings.Contains(l, "windows"):
-		system = "Windows"
-	case strings.Contains(l, "mac os x") || strings.Contains(l, "macintosh"):
-		system = "Mac"
-	case strings.Contains(l, "cros"):
-		system = "ChromeOS"
-	case strings.Contains(l, "linux"):
-		system = "Linux"
-	}
-	switch {
-	case browser != "" && system != "":
-		return browser + " on " + system
-	case browser != "":
-		return browser
-	case system != "":
-		return "A browser on " + system
-	}
-	return "Unknown device"
 }

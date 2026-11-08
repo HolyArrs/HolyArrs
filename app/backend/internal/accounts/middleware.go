@@ -9,80 +9,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// public routes need no sign-in.
-func public(r *http.Request) bool {
-	switch r.Method + " " + r.URL.Path {
-	case "GET /healthz", "HEAD /healthz", "GET /readyz", "HEAD /readyz", "GET /login", "GET /api/v1/auth/state",
-		"POST /api/v1/auth/login", "POST /api/v1/auth/setup", "POST /api/v1/auth/login/two-factor",
-		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
-		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",
-		"POST /api/v1/auth/plex/start", "POST /api/v1/auth/plex/finish",
-		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
-		"POST /api/v1/auth/setup/plex/start", "POST /api/v1/auth/setup/plex/finish",
-		"POST /api/v1/auth/setup/media-server/jellyfin", "POST /api/v1/auth/setup/media-server/emby",
-		"GET /api/v1/auth/setup/discover":
-		return true
-	}
-	// The sign-in page's pictures (the handler serves only its own art).
-	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/v1/public/signin-pic/t/p/") {
-		return true
-	}
-	// Invite links: the page and the two calls it makes.
-	if rest, ok := strings.CutPrefix(r.URL.Path, "/api/v1/auth/invites/"); ok && rest != "" && !strings.Contains(rest, "/") &&
-		(r.Method == http.MethodGet || r.Method == http.MethodPost) {
-		return true
-	}
-	// Joining through an invite with Plex, Jellyfin or Emby.
-	if r.Method == http.MethodPost && inviteOutsidePath(r.URL.Path) {
-		return true
-	}
-	if rest, ok := strings.CutPrefix(r.URL.Path, "/invite/"); ok && rest != "" && !strings.Contains(rest, "/") && r.Method == http.MethodGet {
-		return true
-	}
-	// The web app's own files hold no data; the sign-in page needs them.
-	return (r.Method == http.MethodGet || r.Method == http.MethodHead) && webserver.IsAsset(r.URL.Path)
-}
-
-func unsafeMethod(m string) bool {
-	return m != http.MethodGet && m != http.MethodHead && m != http.MethodOptions
-}
-
-func (a *Auth) trustedProxy(ip net.IP) bool {
-	for _, n := range a.proxies {
-		if n.Contains(ip) {
-			return true
-		}
-	}
-	return false
-}
-
-// localPeer says whether the request comes from a listed local network,
-// reading the caller's address by the shared rule in clientAddr.
-func (a *Auth) localPeer(r *http.Request) bool {
-	addr, ok := a.clientAddr(r)
-	return ok && a.isLocal(addr)
-}
-
-// behindHTTPS believes X-Forwarded-Proto only from a trusted proxy.
-func (a *Auth) behindHTTPS(r *http.Request) bool {
-	if r.TLS != nil {
-		return true
-	}
-	if !strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
-		return false
-	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && a.trustedProxy(ip)
-}
-
-func wantsPage(r *http.Request) bool {
-	return r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live"
-}
-
 // Middleware lets only signed-in requests through.
 func (a *Auth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +106,80 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		}
 		fail(w, http.StatusUnauthorized, "sign in first")
 	})
+}
+
+// public routes need no sign-in.
+func public(r *http.Request) bool {
+	switch r.Method + " " + r.URL.Path {
+	case "GET /healthz", "HEAD /healthz", "GET /readyz", "HEAD /readyz", "GET /login", "GET /api/v1/auth/state",
+		"POST /api/v1/auth/login", "POST /api/v1/auth/setup", "POST /api/v1/auth/login/two-factor",
+		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
+		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",
+		"POST /api/v1/auth/plex/start", "POST /api/v1/auth/plex/finish",
+		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
+		"POST /api/v1/auth/setup/plex/start", "POST /api/v1/auth/setup/plex/finish",
+		"POST /api/v1/auth/setup/media-server/jellyfin", "POST /api/v1/auth/setup/media-server/emby",
+		"GET /api/v1/auth/setup/discover":
+		return true
+	}
+	// The sign-in page's pictures (the handler serves only its own art).
+	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/v1/public/signin-pic/t/p/") {
+		return true
+	}
+	// Invite links: the page and the two calls it makes.
+	if rest, ok := strings.CutPrefix(r.URL.Path, "/api/v1/auth/invites/"); ok && rest != "" && !strings.Contains(rest, "/") &&
+		(r.Method == http.MethodGet || r.Method == http.MethodPost) {
+		return true
+	}
+	// Joining through an invite with Plex, Jellyfin or Emby.
+	if r.Method == http.MethodPost && inviteOutsidePath(r.URL.Path) {
+		return true
+	}
+	if rest, ok := strings.CutPrefix(r.URL.Path, "/invite/"); ok && rest != "" && !strings.Contains(rest, "/") && r.Method == http.MethodGet {
+		return true
+	}
+	// The web app's own files hold no data; the sign-in page needs them.
+	return (r.Method == http.MethodGet || r.Method == http.MethodHead) && webserver.IsAsset(r.URL.Path)
+}
+
+func unsafeMethod(m string) bool {
+	return m != http.MethodGet && m != http.MethodHead && m != http.MethodOptions
+}
+
+func (a *Auth) trustedProxy(ip net.IP) bool {
+	for _, n := range a.proxies {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+// localPeer says whether the request comes from a listed local network,
+// reading the caller's address by the shared rule in clientAddr.
+func (a *Auth) localPeer(r *http.Request) bool {
+	addr, ok := a.clientAddr(r)
+	return ok && a.isLocal(addr)
+}
+
+// behindHTTPS believes X-Forwarded-Proto only from a trusted proxy.
+func (a *Auth) behindHTTPS(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	if !strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
+		return false
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && a.trustedProxy(ip)
+}
+
+func wantsPage(r *http.Request) bool {
+	return r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live"
 }
 
 // mcpPath is the AI connection route, the only one a bearer key reaches.
