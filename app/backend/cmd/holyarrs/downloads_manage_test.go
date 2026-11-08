@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bytes"
@@ -11,23 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
-func manageBase(t *testing.T) (x *dl41, f *allClient, base string) {
-	t.Helper()
-	x = seed41(t, mediafiles.SlotDownloading, "downloading")
-	f = &allClient{}
-	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
-	var did int64
-	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
-	return x, f, x.srv.URL + "/api/v1/downloaders/" + itoa(did)
-}
-
-// route: POST /api/v1/downloaders/{id}/torrents
 func TestAddTorrentsRoute(t *testing.T) {
 	t.Parallel()
 	_, f, base := manageBase(t)
@@ -88,23 +75,23 @@ func TestClientFolderWithoutSettings(t *testing.T) {
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	ctx := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 7, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}})
-	if _, _, err := x.api.dl.ClientFolder(ctx, did, "linux", "/etc", true); !errors.Is(err, downloads.ErrFolder) {
+	if _, _, err := x.api.DownloadsWeb().ClientFolder(ctx, did, "linux", "/etc", true); !errors.Is(err, downloads.ErrFolder) {
 		t.Fatalf("absolute: %v", err)
 	}
-	if _, _, err := x.api.dl.ClientFolder(ctx, did, "linux", "../../root", true); !errors.Is(err, downloads.ErrFolder) {
+	if _, _, err := x.api.DownloadsWeb().ClientFolder(ctx, did, "linux", "../../root", true); !errors.Is(err, downloads.ErrFolder) {
 		t.Fatalf("traversal: %v", err)
 	}
-	if _, _, err := x.api.dl.ClientFolder(ctx, did, "made-up", "", true); !errors.Is(err, downloads.ErrPickCategory) {
+	if _, _, err := x.api.DownloadsWeb().ClientFolder(ctx, did, "made-up", "", true); !errors.Is(err, downloads.ErrPickCategory) {
 		t.Fatalf("category: %v", err)
 	}
-	if c, f, err := x.api.dl.ClientFolder(ctx, did, "linux", "iso/new", true); err != nil || c != "linux" || f != "/data/linux/iso/new" {
+	if c, f, err := x.api.DownloadsWeb().ClientFolder(ctx, did, "linux", "iso/new", true); err != nil || c != "linux" || f != "/data/linux/iso/new" {
 		t.Fatalf("subfolder %q %q %v", c, f, err)
 	}
-	if _, f, err := x.api.dl.ClientFolder(ctx, did, "music", "x", true); err != nil || f != "/data/downloads/x" {
+	if _, f, err := x.api.DownloadsWeb().ClientFolder(ctx, did, "music", "x", true); err != nil || f != "/data/downloads/x" {
 		t.Fatalf("default root %q %v", f, err)
 	}
 	admin := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 1, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary, webserver.PermSettings}})
-	if _, f, err := x.api.dl.ClientFolder(admin, did, "anything", "/srv/media", true); err != nil || f != "/srv/media" {
+	if _, f, err := x.api.DownloadsWeb().ClientFolder(admin, did, "anything", "/srv/media", true); err != nil || f != "/srv/media" {
 		t.Fatalf("admin %q %v", f, err)
 	}
 }
@@ -157,9 +144,6 @@ func TestSlowModeRoute(t *testing.T) {
 	do(t, "POST", base+"/slow-mode", `{}`, 400)
 }
 
-// Seeding rules on an outside torrent that may end in a remove (the
-// torrent's own action, or the client's global one) need the settings
-// permission; an explicit stop on 5.2, or clearing every limit, does not.
 func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 	t.Parallel()
 	x, f, _ := manageBase(t)
@@ -169,9 +153,9 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 	owner := webserver.Caller{UserID: 1, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary, webserver.PermSettings}, Scopes: []string{webserver.ScopeAdmin, webserver.ScopeWrite}}
 	call := func(who webserver.Caller, body string) int {
 		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(webserver.ContextWith(context.Background(), who))
-		req.SetPathValue("id", itoa(did))
+		req.SetPathValue("id", dlItoa(did))
 		rec := httptest.NewRecorder()
-		x.api.dl.ShareLimits(rec, req)
+		x.api.DownloadsWeb().ShareLimits(rec, req)
 		return rec.Code
 	}
 	ratio := `{"hashes":["` + outHash + `"],"ratio":2,"seeding_minutes":-2,"inactive_minutes":-2}`
@@ -250,8 +234,6 @@ func TestLocationAndSpeedRoutes(t *testing.T) {
 	do(t, "POST", base+"/speed-limits", `{"hashes":`+hs+`,"down":-1,"up":0}`, 400)
 }
 
-// Without the settings permission a move of a HolyArrs-sent torrent stays
-// inside the Downloader's folders; one HolyArrs did not send cannot move.
 func TestLocationWithoutSettings(t *testing.T) {
 	t.Parallel()
 	x, f, _ := manageBase(t)
@@ -260,9 +242,9 @@ func TestLocationWithoutSettings(t *testing.T) {
 	member := webserver.Caller{UserID: 7, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}, Scopes: []string{webserver.ScopeWrite}}
 	call := func(body string) int {
 		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(webserver.ContextWith(context.Background(), member))
-		req.SetPathValue("id", itoa(did))
+		req.SetPathValue("id", dlItoa(did))
 		rec := httptest.NewRecorder()
-		x.api.dl.SetLocation(rec, req)
+		x.api.DownloadsWeb().SetLocation(rec, req)
 		return rec.Code
 	}
 	// A torrent HolyArrs did not send needs the settings permission to move at all.

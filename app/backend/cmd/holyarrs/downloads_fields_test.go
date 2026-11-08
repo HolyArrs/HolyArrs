@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -10,8 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
-// HolyArrs' own row names the Source it came from and who added its
-// Library title.
 func TestDownloadRowSourcePostedRequested(t *testing.T) {
 	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")

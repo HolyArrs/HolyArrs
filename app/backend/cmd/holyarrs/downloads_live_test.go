@@ -1,63 +1,16 @@
-package api
+package main
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
-// dlStreams opens /live streams on the API's hub as a manager (uid 0) or
-// as non-manager people, without the sign-in layer.
-func dlStreams(t *testing.T, ctx context.Context, hub *webserver.LiveHub, uids ...int64) (map[int64]<-chan liveFrame, func(uid int64, last string) <-chan liveFrame) {
-	t.Helper()
-	srv := httptest.NewServer(hub.Handler(func(r *http.Request) webserver.LiveViewer {
-		id, _ := strconv.ParseInt(r.URL.Query().Get("u"), 10, 64)
-		return webserver.LiveViewer{UserID: id, All: id == 0}
-	}))
-	t.Cleanup(srv.Close)
-	x := liveSetup{srv: srv}
-	out := map[int64]<-chan liveFrame{}
-	for _, id := range uids {
-		out[id] = x.streamURL(t, ctx, srv.URL+"/live?u="+strconv.FormatInt(id, 10))
-	}
-	for hub.Clients() != len(uids) {
-		time.Sleep(5 * time.Millisecond)
-	}
-	resume := func(uid int64, last string) <-chan liveFrame {
-		return x.streamURL(t, ctx, srv.URL+"/live?u="+strconv.FormatInt(uid, 10)+"&last="+last)
-	}
-	return out, resume
-}
-
-func dlPatches(t *testing.T, fs []liveFrame) []downloads.Patch {
-	t.Helper()
-	var out []downloads.Patch
-	for _, f := range fs {
-		if f.topic != webserver.LiveTopicDL {
-			continue
-		}
-		var p downloads.Patch
-		if err := json.Unmarshal([]byte(f.data), &p); err != nil {
-			t.Fatal(err)
-		}
-		out = append(out, p)
-	}
-	return out
-}
-
-// Patches reach managers in full, and a member only for HolyArrs rows tied
-// to their own asks: never another person's rows, never outside torrents
-// (new, changed or removed), and their rev chain has no holes.
 func TestPublishDLAudiences(t *testing.T) {
 	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
@@ -70,8 +23,8 @@ func TestPublishDLAudiences(t *testing.T) {
 	var dlr int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
 
-	sy := &downloads.Sync{Store: &downloads.Store{}, DB: x.s, Manager: noClient{x.api.dl.Manager()}}
-	x.api.dl.DLSync = sy
+	sy := &downloads.Sync{Store: &downloads.Store{}, DB: x.s, Manager: noClient{x.api.DownloadsWeb().Manager()}}
+	x.api.DownloadsWeb().DLSync = sy
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { sy.Around(ctx, func(ctx context.Context) { <-ctx.Done() }); close(done) }()
@@ -79,7 +32,7 @@ func TestPublishDLAudiences(t *testing.T) {
 	for !sy.On() {
 		time.Sleep(5 * time.Millisecond)
 	}
-	hub := x.api.s.Live
+	hub := x.api.DownloadsWeb().Live
 	sctx, scancel := context.WithCancel(context.Background())
 	defer scancel()
 	st, resume := dlStreams(t, sctx, hub, 0, 2, 3)
@@ -95,9 +48,9 @@ func TestPublishDLAudiences(t *testing.T) {
 		out:           {ID: out, Name: "Secret.Outside", Progress: 0.2, State: downloads.StateDownloading},
 		"f" + out[1:]: {ID: "f" + out[1:], Name: "New.Outside", State: downloads.StateQueued},
 	}
-	x.api.dl.PublishDL(ctx, dlr, 4, 5, prev, cur)
+	x.api.DownloadsWeb().PublishDL(ctx, dlr, 4, 5, prev, cur)
 	gone := map[string]downloads.Job{own: cur[own]}
-	x.api.dl.PublishDL(ctx, dlr, 5, 6, cur, gone)
+	x.api.DownloadsWeb().PublishDL(ctx, dlr, 5, 6, cur, gone)
 
 	k := func(ext string) string { return downloads.LiveKey(dlr, ext) }
 	mgr := dlPatches(t, frames(st[0], 300*time.Millisecond))
@@ -139,8 +92,8 @@ func TestPublishDLAudiences(t *testing.T) {
 	}
 
 	// Health events go to managers only, once per change.
-	x.api.dl.PublishDLHealth(ctx)
-	x.api.dl.PublishDLHealth(ctx)
+	x.api.DownloadsWeb().PublishDLHealth(ctx)
+	x.api.DownloadsWeb().PublishDLHealth(ctx)
 	hs := dlPatches(t, frames(st[0], 200*time.Millisecond))
 	if len(hs) != 1 || hs[0].Kind != downloads.KindHealth || hs[0].Client != dlr {
 		t.Fatalf("manager health %+v", hs)
