@@ -58,9 +58,7 @@ Stays behind: download categories and SABnzbd's usenet servers.
 
 ## Before you turn things on
 
-1. Type each Source's key in **Settings > Sources**, then resume it.
-2. Type each Downloader's password or key in **Settings > Downloaders**, then resume it.
-3. Turn on **May reach the local network** only for items on your home network.
+Type each key again and resume each item. See [After the move](index.md#after-the-move).
 
 ## If it does not work
 

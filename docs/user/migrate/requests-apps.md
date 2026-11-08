@@ -17,7 +17,7 @@ Bring over the people who ask for titles, their limits and their open requests, 
 1. In **Settings > Move from other apps**, click **Add an app** and pick **Seerr** or **Overseerr**.
 2. Read it. You should see a count of people and requests.
 3. In **Choose**, turn on **This is me** if the Seerr owner is you. Turn on **Keep as admin** for each admin who should stay one.
-4. Click **Try it**. Answer any row under **Needs a choice** (see below).
+4. Click **Try it**. Answer any row under **Needs a choice** (see [People with the same name](#people-with-the-same-name)).
 5. Click **Move**. Then invite each person from **Settings > Users and roles**. You should see them listed, turned off until invited.
 
 ## What comes over

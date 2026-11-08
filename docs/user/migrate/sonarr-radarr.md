@@ -34,7 +34,7 @@ Old apps often run in other containers and see folders under other names. A rule
 | Exclusions | The **Never-add** list. |
 | Radarr's release stage per movie, and its availability delay | Each movie's **Release gate** and gate delay, up to 365 days. Your default for new movies stays. |
 | The untagged default wait rule | The preferred protocol and Usenet and torrent waits on the matched Pick rules, up to 7 days. See [Waits](#waits). |
-| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists**, added paused, with folder, Pick rules, Keep up to date, search on add, Release gate and read interval (6 to 168 hours). A Trakt list needs your Trakt key and must be public. Trakt lists are held back in this version. |
+| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists**, added paused, with folder, Pick rules, Keep up to date, search on add, Release gate and read interval (6 to 168 hours). Trakt lists are held back in this version; they will need your Trakt key and a public list. |
 | Torznab, Newznab and RSS indexers | **Sources**, added paused and blocked from your home network. |
 | Download clients (qBittorrent, SABnzbd, Transmission, Deluge, NZBGet) | **Downloaders**, added paused and blocked from your home network. They use the `holyarrs` category, so they never pick up the old apps' downloads. |
 | Remote path mappings | **Different folder names** on the Downloader at that host, up to 100 pairs. |
@@ -72,12 +72,6 @@ Custom formats, tag-scoped wait rules (listed with their waits, so you can set t
 <details class="ha-more"><summary>Remote path mappings in detail</summary>
 
 A Downloader that was already here is left alone; its pairs are listed for you to add by hand. A pair whose folder HolyArrs cannot see yet is still added and marked "not visible here yet (check your mounts)".
-
-</details>
-
-<details class="ha-more"><summary>Tags</summary>
-
-Tags are not moved. A Source, Downloader or Alert that had tags now serves every title of its kind. Check each before you turn it on.
 
 </details>
 
