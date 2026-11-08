@@ -13,8 +13,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 var version = "0.0.0-skeleton"
@@ -89,56 +91,27 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 // ensure adds the configured Source, Downloader and Library folder once.
 func ensure(ctx context.Context, s *database.Store, c config) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		exists := func(q string, arg any) (bool, error) {
-			var n int
-			err := tx.QueryRow(q, arg).Scan(&n)
-			return n > 0, err
-		}
 		if c.Movies != "" && !library.FullPath(c.Movies) {
 			// Git Bash turns /data/media/movies into "C:/Program Files/Git/data/media/movies"
 			// when a container is made without MSYS_NO_PATHCONV=1: a folder that can never be reached.
 			log.Printf("setup: movie Library folder %q is not a full path here; not added", c.Movies)
 		} else if c.Movies != "" {
-			ok, err := exists("SELECT count(*) FROM library_folders WHERE path = ?", c.Movies)
-			if err != nil {
+			if err := mediafiles.EnsureFolder(tx, c.Movies, "movie", "Movies"); err != nil {
 				return err
-			}
-			if !ok {
-				if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
-					Health: "unknown", SameDiskAs: []int64{}}, domain.System); err != nil {
-					return err
-				}
 			}
 		}
 		if c.SourceURL != "" {
-			ok, err := exists("SELECT count(*) FROM sources WHERE url = ?", c.SourceURL)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
-					URL: c.SourceURL, UseFor: domain.SourceUse{Feed: false, AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
-					Categories: map[string][]int{"movie": {2000}}, Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600},
-					Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}, domain.System); err != nil {
-					return err
-				}
-			}
-			// The Source named on the command line is the person's own (the lab's
-			// fake indexer on a private network), so it may reach the local network.
-			if _, err := tx.Exec("UPDATE sources SET allow_local_network = 1 WHERE url = ?", c.SourceURL); err != nil {
+			if err := sources.EnsureOwn(tx, domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
+				URL: c.SourceURL, UseFor: domain.SourceUse{Feed: false, AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
+				Categories: map[string][]int{"movie": {2000}}, Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600},
+				Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}); err != nil {
 				return err
 			}
 		}
 		if c.QbitURL != "" {
-			ok, err := exists("SELECT count(*) FROM downloaders WHERE url = ?", c.QbitURL)
-			if err != nil {
+			if err := downloads.EnsureDownloader(tx, domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
+				URL: c.QbitURL, Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}); err != nil {
 				return err
-			}
-			if !ok {
-				if _, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
-					URL: c.QbitURL, Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}, domain.System); err != nil {
-					return err
-				}
 			}
 		}
 		return nil
