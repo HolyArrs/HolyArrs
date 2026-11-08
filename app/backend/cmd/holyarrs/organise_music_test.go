@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -37,7 +38,7 @@ func musicOrganiseSetup(t *testing.T) (url string, s *database.Store, lib string
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: svc, Metadata: &metadata.Static{}}).Handler())
+	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Library: svc, Metadata: &metadata.Static{}}).Handler())
 	t.Cleanup(srv.Close)
 	lib = t.TempDir()
 	for _, rel := range []string{"Lab Band/First Light (2020)/1 Song 1.flac", "Lab Band/First Light (2020)/2 Song 2.flac", "Lab Band/First Light (2020)/3 Song 3.flac",

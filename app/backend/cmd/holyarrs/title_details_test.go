@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -41,7 +42,7 @@ func detailsRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1})
 	lib := &library.Service{Store: s, Queue: q, Metadata: p}
-	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Metadata: p, Library: lib, Version: "test"}).Handler())
+	srv := httptest.NewServer(api.New(api.Server{Store: s, Queue: q, Metadata: p, Library: lib, Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s, lib
 }
@@ -50,7 +51,7 @@ func TestTitleViewCarriesDetailsOnAdd(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := detailsRig(t, &metadata.Static{Movies: []metadata.Movie{detailedMovie()}})
 	var resp struct {
-		Title TitleView `json:"title"`
+		Title api.TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:5"}`, 201), &resp)
 	b := string(do(t, "GET", srv.URL+"/api/v1/titles/"+itoa(resp.Title.ID), "", 200))
@@ -74,7 +75,7 @@ func TestTitleDetailsBackfilledOnRefresh(t *testing.T) {
 	p := &metadata.Static{Movies: []metadata.Movie{bare}}
 	srv, _, lib := detailsRig(t, p)
 	var resp struct {
-		Title TitleView `json:"title"`
+		Title api.TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:5"}`, 201), &resp)
 	b := string(do(t, "GET", srv.URL+"/api/v1/titles/"+itoa(resp.Title.ID), "", 200))
@@ -85,7 +86,7 @@ func TestTitleDetailsBackfilledOnRefresh(t *testing.T) {
 	if _, err := lib.RefreshTitle(context.Background(), resp.Title.ID, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}
-	var got TitleView
+	var got api.TitleView
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles/"+itoa(resp.Title.ID), "", 200), &got)
 	if got.Backdrop != "https://img.test/w1280/b.jpg" || got.Logo == "" || got.Rating != "PG-13" || got.RuntimeMinutes != 121 ||
 		!reflect.DeepEqual(got.Genres, []string{"Drama", "Adventure"}) || !reflect.DeepEqual(got.People, []string{"A1", "D1"}) {

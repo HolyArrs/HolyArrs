@@ -1,8 +1,10 @@
-package api
+package main
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 )
 
 // Roadmap #59: the movie lookup tells a member about the open 4K ask and
@@ -12,10 +14,10 @@ import (
 func TestLookupShowsFourKAsk(t *testing.T) {
 	t.Parallel()
 	r := newAskRig(t)
-	look := func(s *signedIn) LookupView {
+	look := func(s *signedIn) api.LookupView {
 		t.Helper()
 		var x struct {
-			Movies []LookupView `json:"movies"`
+			Movies []api.LookupView `json:"movies"`
 		}
 		_ = json.Unmarshal(s.call("GET", "/api/v1/titles/lookup?term=tmdb:693134", "", 200), &x)
 		if len(x.Movies) != 1 {
