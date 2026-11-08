@@ -269,7 +269,7 @@ func (h *ScheduleHandlers) runSchedule(w http.ResponseWriter, r *http.Request) {
 	if sc.LastRun != nil {
 		params["last_start"] = sc.LastRun.UTC().Format(time.RFC3339Nano)
 	}
-	id, created, err := h.Queue.Enqueue(r.Context(), sc.Kind, nil, params, "schedule:"+sc.Kind, actor(r))
+	id, created, err := h.Queue.Enqueue(r.Context(), sc.Kind, nil, params, "schedule:"+sc.Kind, webserver.RequestActor(r))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -313,7 +313,7 @@ func (h *ScheduleHandlers) putSchedule(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusServiceUnavailable, "the Job queue is not running")
 		return
 	}
-	err := h.Queue.UpdateSchedule(r.Context(), sc.Kind, in.EverySeconds, in.Enabled, actor(r), now)
+	err := h.Queue.UpdateSchedule(r.Context(), sc.Kind, in.EverySeconds, in.Enabled, webserver.RequestActor(r), now)
 	if errors.Is(err, sql.ErrNoRows) {
 		webserver.Fail(w, http.StatusNotFound, "no such schedule")
 		return

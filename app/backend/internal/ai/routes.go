@@ -19,7 +19,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -62,14 +61,6 @@ func (h *Handlers) SetClock(now func() time.Time) { h.now = now }
 
 func (h *Handlers) partOn(p parts.Part) bool { return h.PartOn == nil || h.PartOn(p) }
 
-// actor is the signed-in person; without sign-in (tests) it is the owner.
-func actor(r *http.Request) domain.Actor {
-	if _, ok := webserver.From(r.Context()); ok {
-		return webserver.Actor(r.Context())
-	}
-	return domain.Actor{Kind: "user", ID: 1}
-}
-
 func (h *Handlers) on(ctx context.Context) bool { return enabled(ctx, h.Store) }
 
 func (h *Handlers) getSettings(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +75,7 @@ func (h *Handlers) putSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Enabled != nil {
-		if err := saveEnabled(r.Context(), h.Store, actor(r), *in.Enabled); err != nil {
+		if err := saveEnabled(r.Context(), h.Store, webserver.RequestActor(r), *in.Enabled); err != nil {
 			webserver.Internal(w, "ai", err)
 			return
 		}

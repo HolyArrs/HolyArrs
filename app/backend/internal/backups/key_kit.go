@@ -72,11 +72,11 @@ func (m *Manager) keyKitRoute(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/system/key-kit", func(w http.ResponseWriter, r *http.Request) {
 		// A browser session only: never an API key or a trusted-network skip.
 		if who, ok := webserver.From(r.Context()); ok && who.Via != "session" {
-			fail(w, http.StatusForbidden, "sign in with your password in the browser to download the key kit")
+			webserver.Fail(w, http.StatusForbidden, "sign in with your password in the browser to download the key kit")
 			return
 		}
 		if len(m.Key) == 0 {
-			fail(w, http.StatusNotFound, "no master key is loaded")
+			webserver.Fail(w, http.StatusNotFound, "no master key is loaded")
 			return
 		}
 		fp := secrets.Fingerprint(m.Key)
