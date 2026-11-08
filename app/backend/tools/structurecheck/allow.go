@@ -140,7 +140,6 @@ var packageHome = map[string]string{
 	"compat":        "arrapi",
 	"doctor":        "health",
 	"backup":        "backups",
-	"updatelist":    "updates",
 }
 
 // tableOwner names the package that owns each table: a module, or the core

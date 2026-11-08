@@ -1,4 +1,4 @@
-package health
+package updates
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
 )
 
 // Update list settings in the this_app group.
@@ -27,35 +25,35 @@ const listFailuresForCopy = 3
 // signatureProblem is shown when the update list's signature fails.
 const signatureProblem = "We could not check the update info, so we are ignoring it. Your app is fine. We will try again later."
 
-func (e *Engine) listKeys() []updatelist.PublicKey {
+func (e *Checker) listKeys() []PublicKey {
 	if e.ListKeys != nil {
 		return e.ListKeys
 	}
-	return updatelist.Pinned()
+	return Pinned()
 }
 
-func (e *Engine) listURL() string {
+func (e *Checker) listURL() string {
 	if e.ListURL != "" {
 		return e.ListURL
 	}
-	return updatelist.DefaultURL
+	return DefaultURL
 }
 
-func (e *Engine) listCopyURL() string {
+func (e *Checker) listCopyURL() string {
 	if e.ListCopyURL != "" {
 		return e.ListCopyURL
 	}
-	return updatelist.PagesURL
+	return PagesURL
 }
 
 // listMode says the signed update list is used: a key is pinned and a list
 // address is set. Otherwise the GitHub releases check runs as before.
-func (e *Engine) listMode() bool {
+func (e *Checker) listMode() bool {
 	return len(e.listKeys()) > 0 && e.listURL() != ""
 }
 
 // bucket is this install's rollout number, made once and kept.
-func (e *Engine) bucket(ctx context.Context) int {
+func (e *Checker) bucket(ctx context.Context) int {
 	if n, err := strconv.Atoi(e.setting(ctx, settingListBucket)); err == nil && n >= 0 && n < 100 {
 		return n
 	}
@@ -71,7 +69,7 @@ func (e *Engine) bucket(ctx context.Context) int {
 // readList reads the signed update list from the server, and from the
 // Pages copy after listFailuresForCopy failures or a bad signature; when
 // both answer, the higher serial wins.
-func (e *Engine) readList(ctx context.Context) (latest, link, notes string, none bool, err error) {
+func (e *Checker) readList(ctx context.Context) (latest, link, notes string, none bool, err error) {
 	keys := e.listKeys()
 	minSerial, _ := strconv.ParseInt(e.setting(ctx, settingListSerial), 10, 64)
 	fails, _ := strconv.Atoi(e.setting(ctx, settingListFailures))
@@ -79,7 +77,7 @@ func (e *Engine) readList(ctx context.Context) (latest, link, notes string, none
 	best, serr := e.fetchList(ctx, e.listURL(), keys, minSerial)
 	// Once the server has failed often, the Pages copy is read too (until
 	// the server answers again), so a frozen server loses to a newer copy.
-	tryCopy := fails >= listFailuresForCopy || errors.Is(serr, updatelist.ErrSignature)
+	tryCopy := fails >= listFailuresForCopy || errors.Is(serr, ErrSignature)
 	if serr != nil {
 		fails++
 	} else {
@@ -92,7 +90,7 @@ func (e *Engine) readList(ctx context.Context) (latest, link, notes string, none
 		}
 	}
 	if best == nil {
-		if errors.Is(serr, updatelist.ErrSignature) {
+		if errors.Is(serr, ErrSignature) {
 			return "", "", "", false, errors.New(signatureProblem)
 		}
 		return "", "", "", false, serr
@@ -113,19 +111,19 @@ func (e *Engine) readList(ctx context.Context) (latest, link, notes string, none
 	return c.Version, c.ChangelogURL, c.NotesShort, false, nil
 }
 
-func (e *Engine) fetchList(ctx context.Context, link string, keys []updatelist.PublicKey, minSerial int64) (*updatelist.List, error) {
+func (e *Checker) fetchList(ctx context.Context, link string, keys []PublicKey, minSerial int64) (*List, error) {
 	data, err := e.fetch(ctx, link)
 	if err != nil {
 		return nil, err
 	}
-	sig, err := e.fetch(ctx, link+updatelist.SigSuffix)
+	sig, err := e.fetch(ctx, link+SigSuffix)
 	if err != nil {
 		return nil, err
 	}
-	return updatelist.Parse(data, sig, keys, e.now(), minSerial)
+	return Parse(data, sig, keys, e.now(), minSerial)
 }
 
-func (e *Engine) fetch(ctx context.Context, link string) ([]byte, error) {
+func (e *Checker) fetch(ctx context.Context, link string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, link, nil)

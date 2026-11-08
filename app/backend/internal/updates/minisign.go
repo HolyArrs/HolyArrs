@@ -1,7 +1,7 @@
 // Package updatelist reads the signed update list (manifest.json plus its
 // minisign signature, manifest.json.minisig) and applies the rules the app
 // enforces before it shows any update notice.
-package updatelist
+package updates
 
 import (
 	"bytes"

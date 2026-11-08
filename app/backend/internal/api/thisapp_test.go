@@ -15,8 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 )
 
 func logServer(t *testing.T) (*httptest.Server, *secrets.Vault, *logs.Log) {
@@ -159,7 +159,7 @@ func TestUpdateFeedHoldsNoSecret(t *testing.T) {
 	}
 	a := &API{}
 	r := httptest.NewRequest("GET", "/", nil)
-	in := health.UpdateInfo{Feed: "https://user:XXXX@x.example/feed?" + "to" + "ken=XXXX_T#f"}
+	in := updates.UpdateInfo{Feed: "https://user:XXXX@x.example/feed?" + "to" + "ken=XXXX_T#f"}
 	if got := a.updateView(r, in).Feed; got != "https://x.example/feed" {
 		t.Fatalf("owner sees %q", got)
 	}

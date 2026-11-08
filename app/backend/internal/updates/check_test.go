@@ -1,4 +1,4 @@
-package health
+package updates
 
 import (
 	"context"
@@ -49,7 +49,7 @@ func TestUpdateCheckDailyFromTheFeed(t *testing.T) {
 		t.Fatalf("asked %d times within a day", f.calls.Load())
 	}
 	// A restart reads the last answer and does not ask again.
-	e2 := &Engine{Store: w.s, Version: "v1.1.0", ReleaseFeed: f.srv.URL, Now: func() time.Time { return w.now }}
+	e2 := &Checker{Store: w.s, Version: "v1.1.0", ReleaseFeed: f.srv.URL, Now: func() time.Time { return w.now }}
 	if i := e2.Update(context.Background()); !i.Newer {
 		t.Fatalf("not kept: %+v", i)
 	}

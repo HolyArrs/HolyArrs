@@ -1,4 +1,4 @@
-package updatelist
+package updates
 
 import (
 	"encoding/json"

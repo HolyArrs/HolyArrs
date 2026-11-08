@@ -8,7 +8,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -16,7 +16,7 @@ import (
 type Key struct {
 	ID   [8]byte
 	Priv ed25519.PrivateKey
-	Pub  updatelist.PublicKey
+	Pub  updates.PublicKey
 }
 
 // New makes a fresh key.
@@ -30,7 +30,7 @@ func New(t testing.TB) Key {
 	if _, err := rand.Read(id[:]); err != nil {
 		t.Fatal(err)
 	}
-	return Key{ID: id, Priv: priv, Pub: updatelist.PublicKey{ID: id, Key: pub}}
+	return Key{ID: id, Priv: priv, Pub: updates.PublicKey{ID: id, Key: pub}}
 }
 
 // PublicLine is the key in minisign's public key format.

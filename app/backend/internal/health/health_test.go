@@ -11,6 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 )
 
 type world struct {
@@ -203,7 +204,7 @@ func TestNewer(t *testing.T) {
 		a, b  string
 		newer bool
 	}{{"v1.2.0", "v1.1.9", true}, {"1.10.0", "1.9.0", true}, {"v1.1.0", "v1.1.0", false}, {"v1.0.0", "v1.1.0", false}, {"dev", "v1.0.0", false}, {"v2.0.0", "dev", false}} {
-		if Newer(c.a, c.b) != c.newer {
+		if updates.Newer(c.a, c.b) != c.newer {
 			t.Errorf("Newer(%s, %s) != %v", c.a, c.b, c.newer)
 		}
 	}

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,9 +10,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
@@ -28,34 +26,12 @@ func (a *API) thisAppRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/logs", a.readLogs)
 	m.HandleFunc("GET /api/v1/logs/download", a.downloadLogs)
 	m.HandleFunc("GET /api/v1/support/bundle", a.supportBundle)
-	m.HandleFunc("GET /api/v1/app/update", a.getUpdate)
-	m.HandleFunc("POST /api/v1/app/update/check", a.checkUpdate)
+	(&updates.Handlers{Checker: a.s.Updates}).Routes(m)
 }
 
-// getUpdate answers the update check's state; it never asks the feed.
-func (a *API) getUpdate(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, a.updateView(r, a.s.Health.Update(r.Context())))
-}
-
-// updateView shows the feed only to people who may change settings, and
-// then as scheme, host and path only (never a name, password or query).
-func (a *API) updateView(r *http.Request, u health.UpdateInfo) health.UpdateInfo {
-	if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermSettings) {
-		u.Feed = ""
-		return u
-	}
-	if p, err := url.Parse(u.Feed); err == nil {
-		u.Feed = (&url.URL{Scheme: p.Scheme, Host: p.Host, Path: p.Path}).String()
-	} else {
-		u.Feed = ""
-	}
-	return u
-}
-
-// checkUpdate asks the release feed now (nothing when the check is off).
-// HolyArrs never updates itself.
-func (a *API) checkUpdate(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, a.updateView(r, a.s.Health.CheckUpdate(r.Context())))
+// updateView is the update state as the caller may see it.
+func (a *API) updateView(r *http.Request, u updates.UpdateInfo) updates.UpdateInfo {
+	return updates.ViewFor(r, u)
 }
 
 // PathInfo is one folder or file as HolyArrs sees it.

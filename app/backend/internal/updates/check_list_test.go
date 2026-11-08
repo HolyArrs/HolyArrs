@@ -1,4 +1,4 @@
-package health
+package updates_test
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist/signtest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates/signtest"
 )
 
 // listServer serves a signed update list at /manifest.json.
@@ -57,7 +57,7 @@ func listWorld(t *testing.T) (*world, signtest.Key, *listServer, *listServer) {
 	w := newWorld(t)
 	k := signtest.New(t)
 	srv, pages := newListServer(t), newListServer(t)
-	w.e.ListKeys = []updatelist.PublicKey{k.Pub}
+	w.e.ListKeys = []updates.PublicKey{k.Pub}
 	w.e.ListURL, w.e.ListCopyURL = srv.url(), pages.url()
 	return w, k, srv, pages
 }
@@ -69,7 +69,7 @@ func TestUpdateListGood(t *testing.T) {
 	if !i.Newer || i.Latest != "v1.2.0" || i.Notes != "Fixes" || i.Link != "https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0" {
 		t.Fatalf("info %+v", i)
 	}
-	if w.e.setting(context.Background(), settingListSerial) != "3" {
+	if w.e.Setting(context.Background(), updates.SettingListSerial) != "3" {
 		t.Fatal("serial not stored")
 	}
 	// A replayed older list is ignored; the last answer stays.
@@ -83,7 +83,7 @@ func TestUpdateListBadSignatureUsesPages(t *testing.T) {
 	w, k, srv, pages := listWorld(t)
 	other := signtest.New(t)
 	srv.set(other, 9, "v9.0.0", "")
-	if i := w.e.CheckUpdate(context.Background()); i.Latest != "" || i.Problem != signatureProblem {
+	if i := w.e.CheckUpdate(context.Background()); i.Latest != "" || i.Problem != updates.SignatureProblem {
 		t.Fatalf("bad signature: %+v", i)
 	}
 	pages.set(k, 4, "v1.2.0", "")
@@ -96,7 +96,7 @@ func TestUpdateListServerDownThenPages(t *testing.T) {
 	w, k, srv, pages := listWorld(t)
 	srv.down = true
 	pages.set(k, 4, "v1.2.0", "")
-	for n := 1; n < listFailuresForCopy; n++ {
+	for n := 1; n < updates.ListFailuresForCopy; n++ {
 		if i := w.e.CheckUpdate(context.Background()); i.Latest != "" {
 			t.Fatalf("pages read after %d failures", n)
 		}
@@ -108,13 +108,13 @@ func TestUpdateListServerDownThenPages(t *testing.T) {
 
 func TestUpdateListHigherSerialWins(t *testing.T) {
 	w, k, srv, pages := listWorld(t)
-	_ = w.e.saveSetting(context.Background(), settingListFailures, "5")
+	_ = w.e.SaveSetting(context.Background(), updates.SettingListFailures, "5")
 	srv.set(k, 5, "v1.2.0", "")
 	pages.set(k, 7, "v1.3.0", "")
 	if i := w.e.CheckUpdate(context.Background()); i.Latest != "v1.3.0" {
 		t.Fatalf("pages newer: %+v", i)
 	}
-	_ = w.e.saveSetting(context.Background(), settingListFailures, "5")
+	_ = w.e.SaveSetting(context.Background(), updates.SettingListFailures, "5")
 	srv.set(k, 8, "v1.4.0", "")
 	if i := w.e.CheckUpdate(context.Background()); i.Latest != "v1.4.0" {
 		t.Fatalf("server newer: %+v", i)
@@ -124,7 +124,7 @@ func TestUpdateListHigherSerialWins(t *testing.T) {
 func TestUpdateListRolloutHoldRevoked(t *testing.T) {
 	w, k, srv, _ := listWorld(t)
 	ctx := context.Background()
-	_ = w.e.saveSetting(ctx, settingListBucket, "40")
+	_ = w.e.SaveSetting(ctx, updates.SettingListBucket, "40")
 	srv.set(k, 1, "v1.2.0", `,"rollout_percent":40`)
 	if i := w.e.CheckUpdate(ctx); i.Newer {
 		t.Fatal("bucket 40 outside rollout 40")
@@ -149,8 +149,8 @@ func TestUpdateListRolloutHoldRevoked(t *testing.T) {
 func TestUpdateListBucketStoredOnce(t *testing.T) {
 	w := newWorld(t)
 	ctx := context.Background()
-	b := w.e.bucket(ctx)
-	if b < 0 || b > 99 || w.e.bucket(ctx) != b {
+	b := w.e.Bucket(ctx)
+	if b < 0 || b > 99 || w.e.Bucket(ctx) != b {
 		t.Fatalf("bucket %d not kept", b)
 	}
 }
@@ -161,7 +161,7 @@ func TestUpdateListEmptyPinnedKeysKeepsGitHub(t *testing.T) {
 	srv := newListServer(t)
 	w.e.ReleaseFeed, w.e.ListURL = f.srv.URL, srv.url()
 	f.body = `{"tag_name": "v1.2.0"}`
-	if w.e.listMode() {
+	if w.e.ListMode() {
 		t.Fatal("list mode without a pinned key")
 	}
 	if i := w.e.CheckUpdate(context.Background()); i.Latest != "v1.2.0" || f.calls.Load() != 1 {
@@ -175,7 +175,7 @@ func TestUpdateListCheckOffAsksNothing(t *testing.T) {
 	w, k, srv, pages := listWorld(t)
 	srv.set(k, 3, "v1.2.0", "")
 	ctx := context.Background()
-	if err := w.e.saveSetting(ctx, settingUpdateOn, "off"); err != nil {
+	if err := w.e.SaveSetting(ctx, updates.SettingUpdateOn, "off"); err != nil {
 		t.Fatal(err)
 	}
 	if i := w.e.CheckUpdate(ctx); i.On || i.Newer || i.Latest != "" {
@@ -184,7 +184,7 @@ func TestUpdateListCheckOffAsksNothing(t *testing.T) {
 	if srv.hits != 0 || pages.hits != 0 {
 		t.Fatalf("asked with the check off: %d + %d", srv.hits, pages.hits)
 	}
-	if err := w.e.saveSetting(ctx, settingUpdateOn, "on"); err != nil {
+	if err := w.e.SaveSetting(ctx, updates.SettingUpdateOn, "on"); err != nil {
 		t.Fatal(err)
 	}
 	if i := w.e.CheckUpdate(ctx); !i.Newer || i.Latest != "v1.2.0" || i.Link == "" {

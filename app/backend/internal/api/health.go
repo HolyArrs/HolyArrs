@@ -9,6 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 )
 
 // healthRoutes are the health check routes (5.1.13).
@@ -102,7 +103,7 @@ func (a *API) healthStates(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) getHealthSettings(w http.ResponseWriter, r *http.Request) {
-	s, err := health.ReadSettings(r.Context(), a.s.Store)
+	s, err := health.ReadSettings(r.Context(), a.s.Store, updates.DefaultReleaseFeed)
 	if err != nil {
 		internal(w, err)
 		return
@@ -123,7 +124,7 @@ func (a *API) putHealthSettings(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	a.s.Health.ResetUpdate(r.Context())
+	a.s.Updates.ResetUpdate(r.Context())
 	a.getHealthSettings(w, r)
 }
 

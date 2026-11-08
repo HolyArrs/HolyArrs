@@ -1,8 +1,7 @@
-package health
+package updates
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,9 +10,8 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"sync"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
@@ -21,14 +19,14 @@ import (
 
 // DefaultReleaseFeed is the HolyArrs project's newest-release address.
 // Nothing is published there yet: a 404 or no release is quiet.
-const DefaultReleaseFeed = "https://api.github.com/repos/" + ProjectRepo + "/releases/latest"
+const DefaultReleaseFeed = "https://api.github.com/repos/" + projectRepo + "/releases/latest"
 
-// ProjectRepo is the project's GitHub repository. A release's "what is new"
+// projectRepo is the project's GitHub repository. A release's "what is new"
 // link is kept only when it is a page under ReleasePages.
-const ProjectRepo = "CoderLuii/holyarrs"
+const projectRepo = "CoderLuii/holyarrs"
 
 // ReleasePages is the only prefix a "what is new" link may have.
-const ReleasePages = "https://github.com/" + ProjectRepo + "/releases/"
+const ReleasePages = "https://github.com/" + projectRepo + "/releases/"
 
 // maxRedirects caps the hops the update check follows.
 const maxRedirects = 3
@@ -40,13 +38,42 @@ const (
 	settingUpdateState = "update_state"            // the last answer, so a restart does not ask again
 	settingUpdatePre   = "update_prerelease"       // "true": a pre-release (v1.2.0-rc1) may give a notice; default off
 	settingUpdateDays  = "update_check_every_days" // days between checks, one of UpdateDays; default 1
+	settingUpdateURL   = "update_check_url"        // where the newest version is read; empty uses ReleaseFeed
 )
+
+// Checker asks the signed update list or the release feed whether a newer
+// HolyArrs is out, at most once per update_check_every_days, and keeps the
+// last answer so a restart does not ask again.
+type Checker struct {
+	Store *database.Store
+	// Version is this program's version.
+	Version string
+	// Client reads the release feed (tests); nil uses ClientFor.
+	Client *http.Client
+	// ClientFor makes the release feed's client: public addresses only, or
+	// the local network too when allowed (nil: a plain client, tests only).
+	ClientFor func(allowLocal bool) *http.Client
+	// ReleaseFeed is the release feed used when the setting is empty
+	// (main sets DefaultReleaseFeed; empty: no check without a setting).
+	ReleaseFeed string
+	// ListKeys are the trusted update list keys (tests); nil means Pinned().
+	// With no key the GitHub releases check is used.
+	ListKeys []PublicKey
+	// ListURL and ListCopyURL are the update list and its Pages copy
+	// (tests); empty means DefaultURL and PagesURL.
+	ListURL, ListCopyURL string
+	// Now is the clock (nil means time.Now).
+	Now func() time.Time
+
+	updMu sync.Mutex
+	upd   *UpdateInfo
+}
 
 // UpdateDays are the allowed values of update_check_every_days.
 var UpdateDays = []int{1, 3, 7, 14, 30}
 
 // updateEvery is the time between update checks: the setting, else UpdateEvery.
-func (e *Engine) updateEvery(ctx context.Context) time.Duration {
+func (e *Checker) updateEvery(ctx context.Context) time.Duration {
 	n := e.intSetting(ctx, settingUpdateDays, 1, 1, 30)
 	if !slices.Contains(UpdateDays, n) {
 		n = 1
@@ -83,12 +110,12 @@ type UpdateInfo struct {
 	Version string `json:"version"`
 }
 
-func (e *Engine) updateOn(ctx context.Context) bool {
+func (e *Checker) updateOn(ctx context.Context) bool {
 	return e.setting(ctx, settingUpdateOn) != "off"
 }
 
 // feed is the release feed to ask: the setting, else the engine's default.
-func (e *Engine) feed(ctx context.Context) string {
+func (e *Checker) feed(ctx context.Context) string {
 	if v := strings.TrimSpace(e.setting(ctx, settingUpdateURL)); v != "" {
 		return v
 	}
@@ -96,13 +123,13 @@ func (e *Engine) feed(ctx context.Context) string {
 }
 
 // Update answers the update check's state without asking the feed.
-func (e *Engine) Update(ctx context.Context) UpdateInfo {
+func (e *Checker) Update(ctx context.Context) UpdateInfo {
 	e.updMu.Lock()
 	defer e.updMu.Unlock()
 	return e.updateLocked(ctx)
 }
 
-func (e *Engine) updateLocked(ctx context.Context) UpdateInfo {
+func (e *Checker) updateLocked(ctx context.Context) UpdateInfo {
 	if e.upd == nil {
 		e.upd = &UpdateInfo{}
 		if raw := e.setting(ctx, settingUpdateState); raw != "" {
@@ -118,13 +145,13 @@ func (e *Engine) updateLocked(ctx context.Context) UpdateInfo {
 
 // CheckUpdate asks the feed now (when the check is on and has a feed),
 // whatever the last check's time.
-func (e *Engine) CheckUpdate(ctx context.Context) UpdateInfo {
+func (e *Checker) CheckUpdate(ctx context.Context) UpdateInfo {
 	e.updMu.Lock()
 	defer e.updMu.Unlock()
 	return e.checkLocked(ctx, true)
 }
 
-func (e *Engine) checkLocked(ctx context.Context, force bool) UpdateInfo {
+func (e *Checker) checkLocked(ctx context.Context, force bool) UpdateInfo {
 	cur := e.updateLocked(ctx)
 	listMode := e.listMode()
 	if !cur.On || (cur.Feed == "" && !listMode) {
@@ -161,43 +188,36 @@ func (e *Engine) checkLocked(ctx context.Context, force bool) UpdateInfo {
 
 // ResetUpdate forgets the last answer (the feed or its switches changed),
 // so the next check asks the feed again.
-func (e *Engine) ResetUpdate(ctx context.Context) {
+func (e *Checker) ResetUpdate(ctx context.Context) {
 	e.updMu.Lock()
 	defer e.updMu.Unlock()
 	e.upd = &UpdateInfo{}
 	_ = e.saveSetting(ctx, settingUpdateState, "")
 }
 
-func (e *Engine) saveSetting(ctx context.Context, key, value string) error {
-	now := database.FormatTime(time.Now())
-	by, _ := json.Marshal(domain.System)
-	return e.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-			key, value, now, string(by), now, string(by))
-		return err
-	})
-}
-
-// update is the health check's part: at most once per update_check_every_days
-// it asks the feed;
-// a newer release is a warning. No release yet, a failed check or the
-// check turned off are not.
-func (e *Engine) update(ctx context.Context) ([]Result, error) {
+// Scheduled is the regular check's part: it asks the feed when the last
+// answer is older than update_check_every_days. ran is false when the check
+// is off or has nowhere to ask, and then nothing is asked.
+func (e *Checker) Scheduled(ctx context.Context) (info UpdateInfo, ran bool) {
 	e.updMu.Lock()
 	defer e.updMu.Unlock()
 	if !e.updateOn(ctx) || (e.feed(ctx) == "" && !e.listMode()) {
-		return nil, nil
+		return UpdateInfo{}, false
 	}
-	info := e.checkLocked(ctx, false)
-	r := Result{Key: "update", Kind: "update", Subject: "HolyArrs " + e.Version, State: OK}
-	if info.Newer {
-		r.State, r.Message = Warning, "HolyArrs "+info.Latest+" is out (this is "+e.Version+")"
-	}
-	return []Result{r}, nil
+	return e.checkLocked(ctx, false), true
 }
 
-func (e *Engine) client(ctx context.Context) *http.Client {
+// Every is the time between update checks.
+func (e *Checker) Every(ctx context.Context) time.Duration { return e.updateEvery(ctx) }
+
+func (e *Checker) now() time.Time {
+	if e.Now != nil {
+		return e.Now().UTC()
+	}
+	return time.Now().UTC()
+}
+
+func (e *Checker) client(ctx context.Context) *http.Client {
 	if e.Client != nil {
 		return e.Client
 	}
@@ -210,7 +230,7 @@ func (e *Engine) client(ctx context.Context) *http.Client {
 // readLatest asks the feed for the newest release: GitHub's releases
 // answer (tag_name, html_url), any JSON with a version, or plain text. A
 // 404 or an empty list means nothing is published yet.
-func (e *Engine) readLatest(ctx context.Context, link string) (latest, page string, none bool, err error) {
+func (e *Checker) readLatest(ctx context.Context, link string) (latest, page string, none bool, err error) {
 	caller := ctx
 	op, err := outbound.Begin(ctx, outbound.Target{Kind: "update_feed", Identity: []string{link}})
 	if err != nil {

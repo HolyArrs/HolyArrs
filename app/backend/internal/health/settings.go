@@ -44,17 +44,33 @@ type Settings struct {
 	UpdateCheckDefault string `json:"update_check_default"`
 }
 
+// Update check settings in the this_app group, shown with the health
+// settings; the updates module reads them.
+const (
+	settingUpdateURL   = "update_check_url"
+	settingUpdateOn    = "update_check"
+	settingUpdateLocal = "update_check_local"
+	settingUpdatePre   = "update_prerelease"
+	settingUpdateDays  = "update_check_every_days"
+)
+
+// updateDays are the allowed values of update_check_every_days.
+var updateDays = []int{1, 3, 7, 14, 30}
+
 // ErrSettings refuses settings out of range.
 var ErrSettings = errors.New("every_minutes is 1 to 1440, flap_guard 1 to 20, low_space_mb 0 to 16777216, and update_check_url an http or https link without a name, password, query or fragment (it may hold no secret), or empty; update_check_every_days is 1, 3, 7, 14 or 30")
 
 // ReadSettings reads the health check settings.
-func ReadSettings(ctx context.Context, s *database.Store) (Settings, error) {
+func ReadSettings(ctx context.Context, s *database.Store, defaultFeed string) (Settings, error) {
 	e := &Engine{Store: s}
 	out := Settings{FlapGuard: e.intSetting(ctx, settingGuard, 2, 1, 20), LowSpaceMB: e.intSetting(ctx, settingLowMB, 1024, 0, 1<<24),
-		UpdateCheckURL: e.setting(ctx, settingUpdateURL), EveryMinutes: 5, UpdateCheckDefault: DefaultReleaseFeed}
-	on, local := e.updateOn(ctx), e.setting(ctx, settingUpdateLocal) == "true"
+		UpdateCheckURL: e.setting(ctx, settingUpdateURL), EveryMinutes: 5, UpdateCheckDefault: defaultFeed}
+	on, local := e.setting(ctx, settingUpdateOn) != "off", e.setting(ctx, settingUpdateLocal) == "true"
 	pre := e.setting(ctx, settingUpdatePre) == "true"
-	days := int(e.updateEvery(ctx) / UpdateEvery)
+	days := e.intSetting(ctx, settingUpdateDays, 1, 1, 30)
+	if !slices.Contains(updateDays, days) {
+		days = 1
+	}
 	out.UpdateCheck, out.UpdateCheckLocal, out.UpdatePrerelease, out.UpdateCheckEveryDays = &on, &local, &pre, &days
 	var every int
 	err := s.Read().QueryRowContext(ctx, "SELECT every_seconds FROM schedules WHERE kind = ?", KindCheck).Scan(&every)
@@ -72,7 +88,7 @@ func SaveSettings(ctx context.Context, s *database.Store, in Settings, by domain
 	if in.EveryMinutes < 1 || in.EveryMinutes > 1440 || in.FlapGuard < 1 || in.FlapGuard > 20 || in.LowSpaceMB < 0 || in.LowSpaceMB > 1<<24 {
 		return ErrSettings
 	}
-	if in.UpdateCheckEveryDays != nil && !slices.Contains(UpdateDays, *in.UpdateCheckEveryDays) {
+	if in.UpdateCheckEveryDays != nil && !slices.Contains(updateDays, *in.UpdateCheckEveryDays) {
 		return ErrSettings
 	}
 	if in.UpdateCheckURL != "" {

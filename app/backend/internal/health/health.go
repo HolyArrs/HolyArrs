@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -27,7 +26,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/updatelist"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
@@ -43,9 +41,8 @@ const (
 
 // Settings in the this_app group.
 const (
-	settingGuard     = "health_flap_guard"   // runs in a row before an Alert (default 2)
-	settingLowMB     = "health_low_space_mb" // warn under this much free space (default 1024)
-	settingUpdateURL = "update_check_url"    // where the newest version is read; empty turns the check off
+	settingGuard = "health_flap_guard"   // runs in a row before an Alert (default 2)
+	settingLowMB = "health_low_space_mb" // warn under this much free space (default 1024)
 )
 
 // Result is one check's answer about one thing.
@@ -72,6 +69,16 @@ type Backups struct {
 	KeyKitPrint string
 }
 
+// UpdateState is the update check's last answer as the checks need it.
+type UpdateState struct {
+	On        bool
+	Feed      string
+	CheckedAt *time.Time
+	Every     time.Duration
+	Latest    string
+	Newer     bool
+}
+
 // Engine runs the checks.
 type Engine struct {
 	Store *database.Store
@@ -79,20 +86,12 @@ type Engine struct {
 	Version string
 	// Backups reads the newest backup (nil skips the check).
 	Backups func(ctx context.Context) (Backups, error)
-	// Client reads the release feed (tests); nil uses ClientFor.
-	Client *http.Client
-	// ClientFor makes the release feed's client: public addresses only, or
-	// the local network too when allowed (nil: a plain client, tests only).
-	ClientFor func(allowLocal bool) *http.Client
-	// ReleaseFeed is the release feed used when the setting is empty
-	// (main sets DefaultReleaseFeed; empty: no check without a setting).
-	ReleaseFeed string
-	// ListKeys are the trusted update list keys (tests); nil means
-	// updatelist.Pinned(). With no key the GitHub releases check is used.
-	ListKeys []updatelist.PublicKey
-	// ListURL and ListCopyURL are the update list and its Pages copy
-	// (tests); empty means updatelist.DefaultURL and updatelist.PagesURL.
-	ListURL, ListCopyURL string
+	// UpdateState reads the update check's last answer without asking
+	// anywhere (nil: no update check).
+	UpdateState func(ctx context.Context) UpdateState
+	// UpdateCheck runs the update check when it is due; ran is false when
+	// the check is off or has nowhere to ask (nil: no update check).
+	UpdateCheck func(ctx context.Context) (latest string, newer, ran bool)
 	// FreeSpace reads free bytes (nil means importer.FreeSpace; -1 unknown).
 	FreeSpace func(dir string) int64
 	// Outside reads the outside-call breaker states (nil means the process
@@ -115,9 +114,6 @@ type Engine struct {
 	low map[string]int64 // folder -> bytes an import needed but could not get
 	run sync.Mutex       // one run at a time
 	wg  sync.WaitGroup   // runs started by LowSpace
-
-	updMu sync.Mutex
-	upd   *UpdateInfo
 }
 
 func (e *Engine) now() time.Time {
@@ -179,6 +175,23 @@ func (e *Engine) intSetting(ctx context.Context, key string, def, lo, hi int) in
 	return n
 }
 
+// update is the update check's row: a newer release is a warning; no
+// release yet, a failed check or the check turned off are not.
+func (e *Engine) update(ctx context.Context) ([]Result, error) {
+	if e.UpdateCheck == nil {
+		return nil, nil
+	}
+	latest, newer, ran := e.UpdateCheck(ctx)
+	if !ran {
+		return nil, nil
+	}
+	r := Result{Key: "update", Kind: "update", Subject: "HolyArrs " + e.Version, State: OK}
+	if newer {
+		r.State, r.Message = Warning, "HolyArrs "+latest+" is out (this is "+e.Version+")"
+	}
+	return []Result{r}, nil
+}
+
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
@@ -200,8 +213,11 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 	e.run.Lock()
 	defer e.run.Unlock()
 
-	info := e.Update(ctx)
-	if info.On && info.Feed != "" && (info.CheckedAt == nil || !now.UTC().Before(info.CheckedAt.Add(e.updateEvery(ctx)))) {
+	var info UpdateState
+	if e.UpdateState != nil {
+		info = e.UpdateState(ctx)
+	}
+	if info.On && info.Feed != "" && (info.CheckedAt == nil || !now.UTC().Before(info.CheckedAt.Add(info.Every))) {
 		return true, nil, nil
 	}
 	var rs []Result
@@ -675,43 +691,4 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 		k.State, k.Message = Warning, "Download your key kit: Backups don't include the master key"
 	}
 	return []Result{r, k}, nil
-}
-
-// Newer says whether version a is newer than b (v1.2.3 style; anything
-// else is never newer).
-func Newer(a, b string) bool {
-	pa, oka := parts(a)
-	pb, okb := parts(b)
-	if !oka || !okb {
-		return false
-	}
-	for i := range 3 {
-		if pa[i] != pb[i] {
-			return pa[i] > pb[i]
-		}
-	}
-	// Same numbers: a pre-release (v1.2.0-rc1) is older than the plain
-	// version, and two pre-releases are not ordered.
-	return !IsPreRelease(a) && IsPreRelease(b)
-}
-
-// IsPreRelease says a version carries a pre-release suffix (v1.2.0-rc1).
-func IsPreRelease(v string) bool { return strings.Contains(strings.TrimSpace(v), "-") }
-
-func parts(v string) ([3]int, bool) {
-	var out [3]int
-	v = strings.TrimPrefix(strings.TrimSpace(v), "v")
-	v, _, _ = strings.Cut(v, "-")
-	ps := strings.Split(v, ".")
-	if len(ps) == 0 || len(ps) > 3 {
-		return out, false
-	}
-	for i, p := range ps {
-		n, err := strconv.Atoi(p)
-		if err != nil || n < 0 {
-			return out, false
-		}
-		out[i] = n
-	}
-	return out, true
 }

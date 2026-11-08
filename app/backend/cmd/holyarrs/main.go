@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"io"
 	"log"
@@ -711,8 +712,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// network policy (public only unless the setting allows the local
 	// network; never cloud metadata addresses). HOLYARRS_RELEASE_FEED
 	// points it elsewhere (tests).
-	he.ReleaseFeed = env("HOLYARRS_RELEASE_FEED", health.DefaultReleaseFeed)
-	he.ClientFor = func(allowLocal bool) *http.Client {
+	uc := &updates.Checker{Store: s, Version: version}
+	uc.ReleaseFeed = env("HOLYARRS_RELEASE_FEED", updates.DefaultReleaseFeed)
+	uc.ClientFor = func(allowLocal bool) *http.Client {
 		allow := outbound.PublicOnly
 		if allowLocal {
 			allow = outbound.NotMetadata
@@ -722,6 +724,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
+	api.WireUpdateChecks(he, uc)
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
 	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
@@ -899,7 +902,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// "Count this install" rides on every request to the metadata server.
