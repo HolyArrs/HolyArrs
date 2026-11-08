@@ -65,6 +65,8 @@ type Deps struct {
 	AllowedTitleIDs func(ctx context.Context, max string, ids []int64) (map[int64]bool, error)
 	KnownGenres     func(mbid string) []string
 	ReadCardArt     func(ctx context.Context, keys [][2]string, lang string) map[string]CardArtRow
+	// AwardWinners are the titles of kind that won a major award.
+	AwardWinners func(ctx context.Context, kind string) (map[string]bool, bool)
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
@@ -79,6 +81,7 @@ type Lister interface {
 // zero-value ready, so &Handlers{Deps: d} works.
 type Handlers struct {
 	Deps
+	genreRows GenreRowCache
 }
 
 // ItemView is one discover item with what the Library knows of it.
@@ -115,6 +118,12 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/explore/head", h.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", h.exploreTail)
 	m.HandleFunc("POST /api/v1/explore/counts", h.exploreCounts)
+	m.HandleFunc("GET /api/v1/explore/top", h.exploreTop)
+	m.HandleFunc("GET /api/v1/explore/genre", h.exploreGenre)
+	m.HandleFunc("GET /api/v1/explore/genre-row", h.exploreGenreRow)
+	m.HandleFunc("GET /api/v1/explore/browse", h.searchBrowse)
+	m.HandleFunc("GET /api/v1/explore/browse/section", h.searchBrowseSection)
+	m.HandleFunc("GET /api/v1/explore/browse/category", h.searchBrowseCategory)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only

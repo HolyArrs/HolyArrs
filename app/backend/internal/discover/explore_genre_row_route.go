@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
@@ -57,7 +56,7 @@ func (h *Handlers) searchBrowse(w http.ResponseWriter, r *http.Request) {
 	if h.KidLimited(w, r) {
 		return
 	}
-	_, tiles, _, err := a.browsePage(r.Context(), r, sw)
+	_, tiles, _, err := h.browsePage(r.Context(), r, sw)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return

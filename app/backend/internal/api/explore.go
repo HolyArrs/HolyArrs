@@ -33,8 +33,8 @@ func (a *API) StartExplore(ctx context.Context) {
 	// breaker, so a restart's warm-up never makes a person's page fail.
 	warm := metadata.Ahead(ctx)
 	go jobs.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
-	go jobs.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
+	go jobs.Guard("explore-genre-warm", func() { a.disc.WarmGenres(warm) })
 	discover.StartBackdropDark(ctx)
 	a.mh().Start(ctx) // the music sync and catalog bundle warm
-	go jobs.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
+	go jobs.Guard("explore-browse-warm", func() { a.disc.WarmBrowse(warm) })
 }

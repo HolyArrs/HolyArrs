@@ -130,7 +130,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 	share := a.browseShare(sw, kid, max)
 	complete := true
 	for i, s := range engine.BrowseSections {
-		res, built, _ := share.get(s.ID)
+		res, built, _ := share.Get(s.ID)
 		if !built {
 			complete = false
 			missing := engine.BrowseSections[i:]
@@ -138,7 +138,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 			go jobs.Guard("explore-strip-build", func() {
 				defer cancel()
 				for _, x := range missing {
-					if _, have, _ := share.get(x.ID); !have {
+					if _, have, _ := share.Get(x.ID); !have {
 						a.buildShared(bg, share, sw, kid, max, x.ID, false)
 					}
 				}

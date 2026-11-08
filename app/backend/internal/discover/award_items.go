@@ -52,3 +52,8 @@ func AwardItems(ctx context.Context, list func(context.Context, engine.Request) 
 	}
 	return engine.MergeTop(lists, 80), true, nil
 }
+
+// awardItems builds the Award winners collection from src.
+func (h *Handlers) awardItems(ctx context.Context, src ExploreSource, c engine.Category, sw string, kid bool) ([]engine.Item, bool, error) {
+	return AwardItems(ctx, src.List, h.AwardWinners, c, sw, kid)
+}

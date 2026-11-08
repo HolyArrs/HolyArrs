@@ -23,7 +23,7 @@ func (a *API) cachedServiceTop(ctx context.Context, region string) (metadata.Ser
 func (a *API) warmServiceTop(ctx context.Context) { a.disc.WarmServiceTop(ctx) }
 
 func (a *API) keptServiceTop(region, sw string) []engine.Item {
-	return a.serviceTop.Kept(region, sw, topServicesMax)
+	return a.serviceTop.Kept(region, sw, discover.TopServicesMax)
 }
 
 type streamingMark = discover.StreamingMark
