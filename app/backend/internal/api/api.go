@@ -196,7 +196,7 @@ type API struct {
 	// lookups counts each person's music lookups in flight.
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
-	confirm confirms
+	confirm webserver.Confirms
 	// ai serves the AI connections (internal/ai).
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
@@ -350,7 +350,9 @@ func actor(r *http.Request) domain.Actor {
 func (a *API) Routes(rt *webserver.Router) {
 	m := rt.Mux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
-	(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
+	if a.s.Store != nil { // some tests build the API without a store
+		(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
+	}
 	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
