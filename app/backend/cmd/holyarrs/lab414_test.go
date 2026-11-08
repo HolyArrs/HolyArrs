@@ -1,11 +1,12 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -28,7 +29,7 @@ import (
 // research/lab/downloads at /data/downloads and research/lab/fake-indexer
 // (read-write) at HOLYARRS_LAB_INDEXER_DIR:
 //
-//	HOLYARRS_LAB_SELF=<container> HOLYARRS_LAB_INDEXER_DIR=/srv/fake-indexer-rw go test -tags lab -run 'TestLab(AlbumGrab|BrokenAlbum)' ./internal/api/
+//	HOLYARRS_LAB_SELF=<container> HOLYARRS_LAB_INDEXER_DIR=/srv/fake-indexer-rw go test -tags lab -run 'TestLab(AlbumGrab|BrokenAlbum)' ./cmd/holyarrs/
 //
 // The lab fake indexer lists "Lab Lanterns - Small Hours (2025)" as FLAC and
 // MP3 320 (research/lab/sample-library.json, albumListings). These tests
@@ -167,7 +168,7 @@ func newLabAlbum(t *testing.T) labAlbum {
 	}
 	t.Cleanup(func() { cancel(); q.Stop() })
 	t.Cleanup(func() { _ = os.RemoveAll(filepath.Join("/data/downloads/incomplete", lab414Cat)) })
-	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: x.m, Queue: q}).Handler())
+	x.srv = httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: x.m, Queue: q}), config{}))
 	t.Cleanup(x.srv.Close)
 	return x
 }
@@ -217,7 +218,7 @@ func serveAlbum(t *testing.T, slug, name, listed string, files []labFile, have b
 // albumSearch starts the album search as Search now on the album does.
 func (x labAlbum) albumSearch(t *testing.T) {
 	t.Helper()
-	do(t, "POST", x.srv.URL+"/api/v1/titles/"+itoa(x.title)+"/search", `{"album_id":`+itoa(x.album)+`}`, 202)
+	do(t, "POST", x.srv.URL+"/api/v1/titles/"+labItoa(x.title)+"/search", `{"album_id":`+labItoa(x.album)+`}`, 202)
 }
 
 // until syncs the Downloader every second until done says so.
@@ -332,7 +333,7 @@ func TestLabBrokenAlbumNextGrabbed(t *testing.T) {
 	if r := labRows(t, x.srv.URL)[0]; r.Progress >= 1 {
 		t.Fatalf("the broken album moved: %+v", r)
 	}
-	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(first.ID)+"/mark-failed", "", 200)
+	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+labItoa(first.ID)+"/mark-failed", "", 200)
 	var rs string
 	_ = x.s.Read().QueryRow("SELECT state FROM releases WHERE name = ?", smallFLAC).Scan(&rs)
 	if rs != "turned_down" {

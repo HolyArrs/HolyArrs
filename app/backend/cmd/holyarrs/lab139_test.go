@@ -1,6 +1,6 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -34,7 +35,7 @@ import (
 // Roadmap #139 on the lab, from a throwaway container in the lab network
 // with research/lab/downloads at /data/downloads:
 //
-//	HOLYARRS_LAB139_OUT=/src/web/app/src/lib/approvals/testdata/lab139.json go test -tags lab -run TestLabAskLiveProgress ./internal/api/
+//	HOLYARRS_LAB139_OUT=/src/web/app/src/lib/approvals/testdata/lab139.json go test -tags lab -run TestLabAskLiveProgress ./cmd/holyarrs/
 //
 // A member asks for Dune: Part Two, the owner approves it (no sign-in),
 // and the app does the rest as it does for real: add, search the lab fake
@@ -167,14 +168,14 @@ func TestLabAskLiveProgress(t *testing.T) {
 	} else {
 		t.Logf("no payload at %s: the lab qBittorrent must fetch it from qbt-seed", payload)
 	}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: md, Version: "lab", Downloads: m, Queue: q, Library: lib, Asks: svc}).Handler())
+	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: md, Version: "lab", Downloads: m, Queue: q, Library: lib, Asks: svc}), config{}))
 	t.Cleanup(srv.Close)
 
 	res, err := svc.Ask(ctx, requests.Person{UserID: ana, Name: "ana"}, "693134")
 	if err != nil || res.Ask.State != domain.AskAsked {
 		t.Fatalf("ask %+v %v", res.Ask, err)
 	}
-	do(t, "POST", srv.URL+"/api/v1/asks/"+itoa(res.Ask.ID)+"/approve", `{}`, 200)
+	do(t, "POST", srv.URL+"/api/v1/asks/"+labItoa(res.Ask.ID)+"/approve", `{}`, 200)
 
 	type snap struct {
 		At        string          `json:"at"`
@@ -199,7 +200,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 		}
 		_ = json.Unmarshal(x.Downloads, &dv)
 		x.search, x.rows = sv.Running, dv.Downloads
-		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/asks/"+itoa(res.Ask.ID), "", 200), &x.Ask)
+		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/asks/"+labItoa(res.Ask.ID), "", 200), &x.Ask)
 		return x
 	}
 	sawSearch, sawDownload, sawImport, needRest := false, false, false, false

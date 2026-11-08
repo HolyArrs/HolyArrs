@@ -1,6 +1,6 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"context"
@@ -158,8 +158,8 @@ func TestLabBeta43ForcedLossyRefusedAtImport(t *testing.T) {
 	var id int64
 	_ = x.s.Read().QueryRow("SELECT id FROM releases WHERE name = ? ORDER BY id DESC LIMIT 1", smallMP3).Scan(&id)
 	body := fmt.Sprintf(`{"slot_id":%d}`, x.slots[0])
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(id)+"/choose", body, 409)
-	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(id)+"/choose", fmt.Sprintf(`{"slot_id":%d,"force":true}`, x.slots[0]), 200)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(id)+"/choose", body, 409)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+labItoa(id)+"/choose", fmt.Sprintf(`{"slot_id":%d,"force":true}`, x.slots[0]), 200)
 	var plan string
 	x.until(t, "the forced MP3 copy's import to end", func() bool {
 		var st string

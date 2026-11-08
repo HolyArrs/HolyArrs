@@ -1,6 +1,6 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +37,7 @@ import (
 // Stage 4.2 on the lab, inside the lab network, from a container that the
 // lab qBittorrent can reach by name:
 //
-//	HOLYARRS_LAB_SELF=<this container's name> go test -tags lab -run 'TestLab(SeasonPack|BrokenEpisode)' ./internal/api/
+//	HOLYARRS_LAB_SELF=<this container's name> go test -tags lab -run 'TestLab(SeasonPack|BrokenEpisode)' ./cmd/holyarrs/
 //
 // Both tests make our own tiny torrents here (a season pack of three
 // episode files, and single episodes), serve them from this test, and put
@@ -317,7 +318,7 @@ func TestLabSeasonPackImports(t *testing.T) {
 	m := &downloads.Manager{Store: x.s, SavePath: save}
 	labRemove(t, m, qb, hash)
 	im := &importer.Importer{Store: x.s}
-	srv := httptest.NewServer(New(Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
+	srv := httptest.NewServer(routes(api.New(api.Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	// 5.2.5: a webhook Alert for grab and import, received here.
 	var hookMu sync.Mutex
@@ -405,7 +406,7 @@ func TestLabSeasonPackImports(t *testing.T) {
 		t.Fatalf("alerts %v", subjects)
 	}
 	var hist struct {
-		Events []EventView `json:"events"`
+		Events []api.EventView `json:"events"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/events?kind=download_sent,import_*", "", 200), &hist)
 	if len(hist.Events) != 2 || hist.Events[0].Episode != "S01E01-E03, 3 episodes" || hist.Events[1].Episode != "S01E01-E03, 3 episodes" {
@@ -467,7 +468,7 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 		}
 		nextDL = id
 	}
-	srv := httptest.NewServer(New(Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
+	srv := httptest.NewServer(routes(api.New(api.Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	first, err := m.Grab(ctx, ep, brokenID, domain.System)
 	if err != nil {
@@ -483,7 +484,7 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 	if d.Progress >= 1 || (d.State != "downloading" && d.State != "sent" && d.State != "queued" && d.State != "stalled") {
 		t.Fatalf("broken download %s %.2f", d.State, d.Progress)
 	}
-	do(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(first)+"/mark-failed", "", 200)
+	do(t, "POST", srv.URL+"/api/v1/downloads/"+labItoa(first)+"/mark-failed", "", 200)
 	if nextDL == 0 {
 		t.Fatal("the next Release was not grabbed")
 	}

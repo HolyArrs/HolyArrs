@@ -1,6 +1,6 @@
 //go:build lab && linux
 
-package api
+package main
 
 import (
 	"os"

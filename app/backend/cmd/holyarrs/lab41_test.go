@@ -1,11 +1,12 @@
 //go:build lab
 
-package api
+package main
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -22,7 +23,7 @@ import (
 
 // Stage 4.1: one real run from nothing to done, inside the lab network:
 //
-//	go test -tags lab -run TestLabMovieZeroToDone ./internal/api/
+//	go test -tags lab -run TestLabMovieZeroToDone ./cmd/holyarrs/
 //
 // The lab qBittorrent fetches our own Dune test torrent from the lab's
 // fake indexer and seeder; HolyArrs follows it on the Downloads screen
@@ -100,7 +101,7 @@ func TestLabMovieZeroToDone(t *testing.T) {
 	}
 	im := &importer.Importer{Store: s}
 	m := &downloads.Manager{Store: s, SavePath: "/data/downloads/incomplete/" + cat}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
+	srv := httptest.NewServer(routes(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}), config{}))
 	t.Cleanup(srv.Close)
 	view := func() downloads.DownloadRow {
 		var out struct {
