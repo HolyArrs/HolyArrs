@@ -23,9 +23,8 @@ import (
 
 // First-run setup through an outside account: the owner is made from a
 // Plex, Jellyfin or Emby account instead of a name and password. As with
-// setup(), whoever opens a fresh HolyArrs first makes the owner
-// (decisions/0009): no setup code. Every route here works only while there
-// is no owner, and the owner row is made under the same in-transaction count
+// setup(), whoever opens a fresh HolyArrs first makes the owner and there is
+// no setup code. Every route here works only while there is no owner, and the owner row is made under the same in-transaction count
 // and unique index as setup(), so two people cannot both become the owner.
 
 // pinSetup marks a Plex PIN started to make the owner on first run.

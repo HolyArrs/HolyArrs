@@ -19,8 +19,7 @@ const (
 	AuthMethodLocalPassword string = "local_password"
 	AuthMethodLocalSetup           = "local_setup"
 	localRecentFor                 = 10 * time.Minute
-	// INTENTIONAL (Luis, 2026-11-05 "No check during setup", widened
-	// 2026-11-06 "fix it"): first-run setup has no password re-check. The
+	// On purpose: first-run setup asks for no password re-check. The
 	// session the owner setup itself starts (setup() and the Plex, Jellyfin
 	// and Emby setup routes) counts as a recent local proof until the
 	// first-run wizard is finished (POST /api/v1/auth/setup/done), capped at
@@ -48,7 +47,7 @@ func RecentLocal(r *http.Request) bool {
 
 // riskyRoutes are the routes a browser session may use only with a local
 // password proof from the last localRecentFor. Opening pages and ordinary
-// settings never ask (Luis, 2026-11-04): passwords and two-factor, API and
+// settings never ask: passwords and two-factor, API and
 // AI keys, accounts and roles, backups, single sign-on and Plex links, the
 // trusted-network sign-in skip, and answers that carry a secret (the
 // backup file, a new key, invite link or backup codes) do.
