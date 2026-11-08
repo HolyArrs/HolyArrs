@@ -157,7 +157,7 @@ func buildHandlers(s services) *handlers {
 	if s.Media != nil {
 		a.controls.TestMediaServer = a.media.Test
 	}
-	a.dlh = &downloads.Handlers{Deps: downloads.Deps{Store: s.Store, Library: s.Library, Queue: s.Queue,
+	a.dlh = &downloads.Handlers{Deps: downloads.Deps{Store: s.Store, Library: s.Library, Queue: s.Queue, KidMax: a.kidMax,
 		TitleID: a.titleID, PublishTitle: a.publishTitle, LibraryError: library.WriteError,
 		VersionJSON: func(ctx context.Context, v mediafiles.Version) any {
 			return titleview.VersionViewOf(ctx, s.Store.Read(), v)
