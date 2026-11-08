@@ -37,7 +37,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -417,7 +416,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	defer s.Close()
 	pc.Store = s
-	unmapped := doctor.UnmappedConfig(c.ConfigDir)
+	unmapped := health.UnmappedConfig(c.ConfigDir)
 	if w := unmappedConfigWarning(c.ConfigDir, unmapped); w != "" {
 		log.Printf("holyarrs: %s", w)
 	}
@@ -1116,12 +1115,12 @@ func main() {
 // WARN line with the fix for each problem folder. It takes a few seconds at
 // most: a folder that is slower (a hung network share) is skipped with a note.
 func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
-	sum, warns := doctor.DoctorStartup(ctx, db, savePath, 3*time.Second)
+	sum, warns := health.DoctorStartup(ctx, db, savePath, 3*time.Second)
 	log.Printf("holyarrs: %s", sum)
 	for _, w := range warns {
 		log.Printf("holyarrs: %s", w)
 	}
-	if w := doctor.ProxyWarning(os.Getenv); w != "" {
+	if w := health.ProxyWarning(os.Getenv); w != "" {
 		log.Printf("holyarrs: warning: %s (%s)", w, "proxies for indexers can be set on each Source")
 	}
 }

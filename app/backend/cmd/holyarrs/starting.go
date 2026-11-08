@@ -22,7 +22,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small
@@ -154,14 +154,14 @@ func needsPerson(err error) bool {
 }
 
 // unmappedConfigWarning is the boxed start-up warning when /config is not
-// mapped to the host (kind from doctor.UnmappedConfig), or "" when it is.
+// mapped to the host (kind from health.UnmappedConfig), or "" when it is.
 // Start-up never refuses for it.
 func unmappedConfigWarning(dir, kind string) string {
 	if kind == "" {
 		return ""
 	}
 	line := strings.Repeat("=", 72)
-	return line + "\nWARNING: " + doctor.UnmappedText(dir, kind) + ".\nFix: " + doctor.UnmappedFix(dir) + ".\n" + line
+	return line + "\nWARNING: " + health.UnmappedText(dir, kind) + ".\nFix: " + health.UnmappedFix(dir) + ".\n" + line
 }
 
 // maxCodeTries is how many wrong codes the go-back form takes before it

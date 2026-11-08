@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // Extra masks for the support bundle, on top of the log's own masking:
@@ -56,7 +56,7 @@ func (a *API) supportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	rep := doctor.RunDoctor(ctx, doctor.DoctorOptions{Version: a.s.Version, ConfigDir: a.configDir(), DB: a.s.Store.Read(), SavePath: a.s.SavePath,
+	rep := health.RunDoctor(ctx, health.DoctorOptions{Version: a.s.Version, ConfigDir: a.configDir(), DB: a.s.Store.Read(), SavePath: a.s.SavePath,
 		FolderBudget: 10 * time.Second, NetTimeout: 5 * time.Second})
 	about, _ := json.MarshalIndent(a.aboutView(r.Context()), "", "  ")
 	health, _ := json.MarshalIndent(a.healthView(r.Context()), "", "  ")

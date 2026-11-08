@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // doctorCmd runs "holyarrs doctor [-config dir] [-save-path dir] [-json]":
@@ -30,7 +30,7 @@ func doctorCmd(args []string, out, errOut io.Writer) int {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	r := doctor.RunDoctor(ctx, doctor.DoctorOptions{Version: version, ConfigDir: *dir, SavePath: *save})
+	r := health.RunDoctor(ctx, health.DoctorOptions{Version: version, ConfigDir: *dir, SavePath: *save})
 	if *asJSON {
 		_, _ = out.Write(r.JSON())
 	} else {

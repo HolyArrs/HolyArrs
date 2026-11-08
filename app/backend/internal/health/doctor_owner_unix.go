@@ -1,6 +1,6 @@
 //go:build unix
 
-package doctor
+package health
 
 import (
 	"os"
