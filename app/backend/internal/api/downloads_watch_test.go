@@ -109,7 +109,7 @@ func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/mark-failed", "", 200)
 	// The search itself is the Manager's OnFailed (wired in main; covered in
-	// internal/downloader); here the Slot is handed to it as failed.
+	// internal/downloads); here the Slot is handed to it as failed.
 	if st := x.slotState(t); st != string(domain.SlotFailed) {
 		t.Fatalf("slot %s", st)
 	}

@@ -22,7 +22,7 @@ import (
 
 // TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy:
 //
-//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabReader -v ./internal/dlsync/
+//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabReader -v ./internal/downloads/
 //
 // It adds a test torrent from the lab indexer as a HolyArrs Download and times grab to finished, or to the first applied state (see the target below), then removes it. The Manager must not list the client at all.
 func TestLabReaderGrabToFinished(t *testing.T) {

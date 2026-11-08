@@ -18,7 +18,7 @@ import (
 
 // TestLabMaindata runs the change feed against the lab qBittorrent only, never a real client, behind a counting proxy. The key comes from labctl, which never prints it:
 //
-//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabMaindata -v ./internal/dlsync/
+//	python research\lab\labctl.py qbt-apikey -- go test -tags lab -run LabMaindata -v ./internal/downloads/
 //
 // It adds a test torrent from the lab indexer and polls the feed while it moves. Every merged answer must equal torrents/info. It logs bytes per full and delta answer, then removes the torrent.
 func TestLabMaindata(t *testing.T) {
