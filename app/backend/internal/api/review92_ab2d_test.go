@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -150,9 +151,9 @@ func TestExploreStripCountsCapPerDay(t *testing.T) {
 // the minute budget cache misses get 429 and TMDB is not asked; pictures
 // already kept are still served.
 func TestTMDBArtworkMissBudget(t *testing.T) {
-	old := artworkMissesPerMinute
-	artworkMissesPerMinute = 3
-	defer func() { artworkMissesPerMinute = old }()
+	old := discover.ArtworkMissesPerMinute
+	discover.ArtworkMissesPerMinute = 3
+	defer func() { discover.ArtworkMissesPerMinute = old }()
 	var hits atomic.Int32
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
