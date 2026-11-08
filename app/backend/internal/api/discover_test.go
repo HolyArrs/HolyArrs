@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -239,7 +240,7 @@ func TestDiscoverNotSetUpRateLimitedAndPerPersonLimit(t *testing.T) {
 	}
 	f.limited.Store(false)
 	limited := false
-	for i := 0; i <= discoverPerMinute; i++ {
+	for i := 0; i <= discover.PerMinute; i++ {
 		resp, err := http.Get(srv2.URL + "/api/v1/discover?row=popular&kind=movie")
 		if err != nil {
 			t.Fatal(err)
@@ -441,10 +442,10 @@ func TestDiscoverServicesRowAndServiceList(t *testing.T) {
 
 func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
 	t.Parallel()
-	if got := detailsTTL(discoverEntry{details: &metadata.Details{CollectionMissed: true}}); got != collectionRetry {
+	if got := detailsTTL(discoverEntry{Details: &metadata.Details{CollectionMissed: true}}); got != collectionRetry {
 		t.Fatalf("missed collection kept %v", got)
 	}
-	if got := detailsTTL(discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discoverTTL["details"] {
+	if got := detailsTTL(discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discoverTTL["details"] {
 		t.Fatalf("details kept %v", got)
 	}
 }
@@ -452,15 +453,15 @@ func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
 // Details cached before cast ids were kept are read again; ones with ids keep their TTL.
 func TestDetailsTTLRefreshesPeopleWithoutIDs(t *testing.T) {
 	t.Parallel()
-	old := discoverEntry{details: &metadata.Details{People: []metadata.DetailPerson{{Name: "Ann", Role: "actor"}}}}
+	old := discoverEntry{Details: &metadata.Details{People: []metadata.DetailPerson{{Name: "Ann", Role: "actor"}}}}
 	if got := detailsTTL(old); got != 0 {
 		t.Fatalf("no ids: ttl %v, want 0", got)
 	}
-	fresh := discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}, People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
+	fresh := discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}, People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
 	if got := detailsTTL(fresh); got != discoverTTL["details"] {
 		t.Fatalf("with ids: ttl %v", got)
 	}
-	if got := detailsTTL(discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discoverTTL["details"] {
+	if got := detailsTTL(discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discoverTTL["details"] {
 		t.Fatalf("no people: ttl %v", got)
 	}
 }

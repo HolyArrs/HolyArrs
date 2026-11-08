@@ -606,7 +606,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		webserver.WriteJSON(w, http.StatusOK, empty)
 		return
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return

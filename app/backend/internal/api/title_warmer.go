@@ -135,16 +135,16 @@ func (a *API) warmWorker() {
 func (a *API) warmOne(ctx context.Context, j warmJob) {
 	if d, ok := metadata.DiscovererFor(ctx, a.s.Metadata); ok {
 		key := "details|" + j.kind + "|" + j.id
-		e, cached := a.discover.get(key)
-		if !cached || e.details == nil {
+		e, cached := a.discover.Get(key)
+		if !cached || e.Details == nil {
 			if k, found := loadKept[metadata.Details](ctx, a, key); found {
-				e, cached = discoverEntry{at: k.at, details: &k.v}, true
-				a.discover.put(key, e)
+				e, cached = discoverEntry{At: k.at, Details: &k.v}, true
+				a.discover.Put(key, e)
 			}
 		}
-		if !cached || e.details == nil || time.Since(e.at) >= detailsTTL(e) {
+		if !cached || e.Details == nil || time.Since(e.At) >= detailsTTL(e) {
 			if det, err := d.Details(ctx, j.kind, j.id); err == nil {
-				a.discover.put(key, discoverEntry{at: time.Now(), details: &det})
+				a.discover.Put(key, discoverEntry{At: time.Now(), Details: &det})
 				keepOnDisk(ctx, a, key, det)
 			}
 		}

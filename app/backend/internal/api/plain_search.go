@@ -117,7 +117,7 @@ func (a *API) plainLibrary(ctx context.Context, r *http.Request, q discover.Plai
 func (a *API) plainMore(ctx context.Context, r *http.Request, q discover.PlainQuery) ([]discoverItemView, string) {
 	busy := "Titles outside your Library could not be looked up right now."
 	me := a.person(r).UserID
-	if a.kidMax(r) != "" && !a.discover.allow(me, time.Now()) {
+	if a.kidMax(r) != "" && !a.discover.Allow(me, time.Now()) {
 		return []discoverItemView{}, busy
 	}
 	var items []metadata.DiscoverItem

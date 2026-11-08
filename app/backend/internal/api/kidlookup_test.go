@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -89,7 +90,7 @@ func TestKidRatingLookupBudgetPerPerson(t *testing.T) {
 // not Details, and are kept apart from the Explore cache.
 func TestKidRatingLightLookupsOwnCache(t *testing.T) {
 	a, l := newRatingAPI(t)
-	a.discover.put("details|movie|1", discoverEntry{at: time.Now(), details: &metadata.Details{}})
+	a.discover.Put("details|movie|1", discoverEntry{At: time.Now(), Details: &metadata.Details{}})
 	a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 10), 0)
 	a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 10), 0)
 	if c := l.calls.Load(); c != 0 {
@@ -98,8 +99,8 @@ func TestKidRatingLightLookupsOwnCache(t *testing.T) {
 	if c := rateCalls.Load(); c != 10 {
 		t.Fatalf("%d rating lookups for 10 titles asked twice", c)
 	}
-	if len(a.discover.cache) != 1 {
-		t.Fatalf("Explore cache has %d entries, want the 1 it had", len(a.discover.cache))
+	if a.discover.Len() != 1 {
+		t.Fatalf("Explore cache has %d entries, want the 1 it had", a.discover.Len())
 	}
 }
 
@@ -117,7 +118,7 @@ func TestKidExploreUsesLightRatingLookups(t *testing.T) {
 // pages share the Explore limit of 30 a minute; others are not limited.
 func TestKidMetadataRoutesRateLimited(t *testing.T) {
 	k := newKidRig(t)
-	for range discoverPerMinute {
+	for range discover.PerMinute {
 		k.kai.call("GET", "/api/v1/metadata/search?q=any", "", 200)
 	}
 	for _, p := range []string{"/api/v1/metadata/search?q=any", "/api/v1/titles/lookup?term=any", "/api/v1/shows/lookup?term=any", "/api/v1/metadata/movie/4101"} {
@@ -130,7 +131,7 @@ func TestKidMetadataRoutesRateLimited(t *testing.T) {
 			t.Errorf("%s: %d, Retry-After %q", p, resp.StatusCode, resp.Header.Get("Retry-After"))
 		}
 	}
-	for range discoverPerMinute + 1 {
+	for range discover.PerMinute + 1 {
 		k.ana.call("GET", "/api/v1/metadata/search?q=any", "", 200)
 	}
 }

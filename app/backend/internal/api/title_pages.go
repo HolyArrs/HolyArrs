@@ -54,16 +54,16 @@ func (t titleExplore) Details(ctx context.Context, kind, id string) (metadata.De
 		return metadata.Details{}, metadata.ErrServiceUnavailable
 	}
 	key := "details|" + kind + "|" + id
-	e, cached := a.discover.get(key)
-	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+	e, cached := a.discover.Get(key)
+	if !cached || time.Since(e.At) >= discoverTTL["details"] {
 		det, err := d.Details(ctx, kind, id)
 		if err != nil {
 			return metadata.Details{}, err
 		}
-		e = discoverEntry{at: time.Now(), details: &det}
-		a.discover.put(key, e)
+		e = discoverEntry{At: time.Now(), Details: &det}
+		a.discover.Put(key, e)
 	}
-	return *e.details, nil
+	return *e.Details, nil
 }
 
 func (t titleExplore) Caching(w http.ResponseWriter, r *http.Request, cache string) {

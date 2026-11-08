@@ -349,7 +349,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "cold": false, "genres": []string{}, "genre": "", "hero": nil, "rows": []MusicRow{}})
 		return
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
