@@ -48,7 +48,7 @@ On/off variables accept `1`, `true`, `yes` or `on`.
 
 ## Single sign-on
 
-Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `false`, the environment owns single sign-on and Settings only shows it. These variables take only `true` or `false`.
+Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `false`, the environment owns single sign-on and Settings only shows it. The on/off ones here take only `true` or `false`; anything else stops the start.
 
 | Variable | What it does | Default |
 | --- | --- | --- |
