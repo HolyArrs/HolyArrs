@@ -79,9 +79,9 @@ type Stats struct {
 	Checked     int64  `json:"checked"`
 	Broken      int64  `json:"broken"`
 	Replaced    int64  `json:"replaced"`
-	ChecksToday     int64  `json:"checks_today"`
-	LastRun         string `json:"last_run"`
-	Titles          int64  `json:"titles"`
+	ChecksToday int64  `json:"checks_today"`
+	LastRun     string `json:"last_run"`
+	Titles      int64  `json:"titles"`
 }
 
 type candidate struct {

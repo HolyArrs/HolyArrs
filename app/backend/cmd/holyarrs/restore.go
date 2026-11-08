@@ -67,4 +67,3 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 	fmt.Fprintf(out, "restored %s\nthe data it replaced is kept in %s\nstart HolyArrs again (docker restart <container>)\n", name, kept)
 	return 0
 }
-

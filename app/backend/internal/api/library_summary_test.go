@@ -53,7 +53,7 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 	}
 	before := s.WriteCount()
 	var got struct {
-		Total   int                  `json:"total"`
+		Total   int                             `json:"total"`
 		Missing []mediafiles.LibraryMissingView `json:"missing"`
 	}
 	body := do(t, "GET", srv.URL+"/api/v1/library-summary", "", 200)
