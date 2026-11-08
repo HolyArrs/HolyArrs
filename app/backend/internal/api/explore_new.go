@@ -88,10 +88,6 @@ type newPageCache struct {
 
 var newPages newPageCache
 
-// heroShown is each member's latest Explore hero (member id -> []engine.Item),
-// so New & Popular's hero shows other titles. Entries expire after a day.
-var heroShown = discover.NewTTLMap(24*time.Hour, 10000)
-
 // newHeroMax is how many titles New & Popular's hero rotates through.
 const newHeroMax = 6
 
@@ -105,7 +101,7 @@ var newHeroKeys = discover.NewTTLMap(discover.ExplorePageTTL, 2000)
 // (a trailer, a logo and a backdrop), leaving out Explore's own hero.
 func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView, error) {
 	skip := map[string]bool{}
-	if v, ok := heroShown.Load(me); ok {
+	if v, ok := discover.HeroShown.Load(me); ok {
 		for _, it := range v.([]engine.Item) {
 			skip[it.Key()] = true
 		}
@@ -154,7 +150,7 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 	now := a.explore.Now().UTC()
 	out := []discoverItemView{}
 	for _, v := range vs {
-		if len(out) == newHeroMax || v.TrailerKey == "" || !heroArtReady(v) {
+		if len(out) == newHeroMax || v.TrailerKey == "" || !discover.HeroArtReady(v) {
 			continue
 		}
 		k := v.Kind + ":" + v.TMDBID

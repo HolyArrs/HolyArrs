@@ -32,16 +32,7 @@ func (a *API) readCardArt(ctx context.Context, keys [][2]string, lang string) ma
 func (a *API) fillCardArt(r *http.Request, items []discoverItemView) { a.cardArt().Fill(r, items) }
 
 func (a *API) fillRowsCardArt(r *http.Request, rows []exploreRowView) {
-	var all []discoverItemView
-	for _, row := range rows {
-		all = append(all, row.Items...)
-	}
-	a.fillCardArt(r, all)
-	n := 0
-	for i := range rows {
-		copy(rows[i].Items, all[n:n+len(rows[i].Items)])
-		n += len(rows[i].Items)
-	}
+	a.disc.FillRowsCardArt(r, rows)
 }
 
 func (a *API) noteCardLang(lang string) { a.cardArt().NoteLang(lang) }

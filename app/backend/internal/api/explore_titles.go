@@ -26,13 +26,7 @@ func (a *API) exploreTitleCount(ctx context.Context, member int64, field string,
 
 func validTitleLayer(l string) bool { return discover.ValidTitleLayer(l) }
 
-func rowLayers(rows []exploreRowView) []string {
-	out := make([]string, 0, len(rows))
-	for _, r := range rows {
-		out = append(out, r.TitleLayer)
-	}
-	return out
-}
+func rowLayers(rows []exploreRowView) []string { return discover.RowLayers(rows) }
 
 func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
 	discover.ExploreTitleStats(w, r, a.s.Store, a.explore.Now())

@@ -25,6 +25,8 @@ type Deps struct {
 	TraktBase string
 	// Cache is the Explore row and details cache shared with api.
 	Cache *Cache
+	// Explore is the pool job with its lists and pages.
+	Explore *Explore
 	// KidMax is the signed-in person's age-rating limit ("" for none).
 	KidMax func(*http.Request) string
 	UserID func(*http.Request) int64
@@ -110,6 +112,9 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/home", h.home)
 	m.HandleFunc("GET /api/v1/search", h.plainSearch)
 	m.HandleFunc("GET /api/v1/calendar", h.calendar)
+	m.HandleFunc("GET /api/v1/explore/head", h.exploreHead)
+	m.HandleFunc("GET /api/v1/explore/tail", h.exploreTail)
+	m.HandleFunc("POST /api/v1/explore/counts", h.exploreCounts)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only
