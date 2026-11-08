@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
@@ -124,7 +125,7 @@ func TestExploreMusicListRows(t *testing.T) {
 	}
 }
 
-func rowIDs(rows []MusicRow) []string {
+func rowIDs(rows []music.MusicRow) []string {
 	var out []string
 	for _, r := range rows {
 		out = append(out, r.ID)
@@ -146,7 +147,7 @@ func TestExploreMusicListRowsOffByDefault(t *testing.T) {
 func TestNewMusicListRowsLeadWithCharts(t *testing.T) {
 	r := listRig(t, "household_indie.json")
 	req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region=US", nil)
-	existing := []MusicRow{{ID: "old", Type: "old", Title: "Old", Reason: "r", Shape: "square", Items: []MusicCard{listCard(metadata.MusicShelfItem{Kind: "album", MBID: mid('7', 0), Title: "Album 0", Artist: "Artist 0"})}}}
+	existing := []music.MusicRow{{ID: "old", Type: "old", Title: "Old", Reason: "r", Shape: "square", Items: []music.MusicCard{listCard(metadata.MusicShelfItem{Kind: "album", MBID: mid('7', 0), Title: "Album 0", Artist: "Artist 0"})}}}
 	hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, existing, v7Fixed)
 	// The hero is the recent charting albums, momentum first (every
 	// fixture album is 4 days old).
@@ -432,7 +433,7 @@ func TestListKickerSaysTheRealReason(t *testing.T) {
 	if k := listKicker("albums_week", "", edge, now); strings.HasPrefix(k, "New") {
 		t.Fatalf("61 days old says %q", k)
 	}
-	cards := []MusicCard{
+	cards := []music.MusicCard{
 		{Kicker: "New album", Badge: "New album", Date: now.AddDate(0, 0, -5000).Format("2006-01-02"), Rank: 3},
 		{Badge: "New EP", Date: "2012"},
 		{Kicker: "New album", Date: now.AddDate(0, 0, -10).Format("2006-01-02")},
@@ -451,17 +452,17 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 		r := listRig(t, "household_indie.json")
 		r.api.s.MusicShelves = oldShelves
 		req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region="+region, nil)
-		own := []MusicRow{{ID: "np_music_top", Type: "np_music_top", Title: "Top albums", Reason: "r", Shape: "square",
-			Items: []MusicCard{{Key: "album:" + mid('8', 1), Kind: "album", MBID: mid('8', 1), Name: "Old", Artist: "Z", Badge: "New album", Date: "2012-05-01"}}}}
-		var songs []MusicCard
+		own := []music.MusicRow{{ID: "np_music_top", Type: "np_music_top", Title: "Top albums", Reason: "r", Shape: "square",
+			Items: []music.MusicCard{{Key: "album:" + mid('8', 1), Kind: "album", MBID: mid('8', 1), Name: "Old", Artist: "Z", Badge: "New album", Date: "2012-05-01"}}}}
+		var songs []music.MusicCard
 		for i := 0; i < 8; i++ {
 			d := v7Fixed.AddDate(0, 0, -10).Format("2006-01-02")
 			if i%2 == 0 {
 				d = "2025-03-01"
 			}
-			songs = append(songs, MusicCard{Key: fmt.Sprintf("track:%d", i), Kind: "album", MBID: mid('9', i), Name: fmt.Sprint("Song ", i), Artist: fmt.Sprint("S", i), Date: d})
+			songs = append(songs, music.MusicCard{Key: fmt.Sprintf("track:%d", i), Kind: "album", MBID: mid('9', i), Name: fmt.Sprint("Song ", i), Artist: fmt.Sprint("S", i), Date: d})
 		}
-		own = append(own, MusicRow{ID: "np_music_tracks", Type: "np_music_tracks", Title: "Best new songs", Reason: "r", Shape: "song", Items: songs})
+		own = append(own, music.MusicRow{ID: "np_music_tracks", Type: "np_music_tracks", Title: "Best new songs", Reason: "r", Shape: "song", Items: songs})
 		hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, own, v7Fixed)
 		if len(hero) < 3 {
 			t.Fatalf("%q: hero %d", region, len(hero))
@@ -471,7 +472,7 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 				t.Fatalf("%q: hero %s from %s", region, c.Name, c.Date)
 			}
 		}
-		check := func(where string, c MusicCard) {
+		check := func(where string, c music.MusicCard) {
 			d, ok := listAge(c.Date, v7Fixed)
 			if (strings.HasPrefix(c.Kicker, "New") || strings.HasPrefix(c.Badge, "New")) && (!ok || d > listRecentDays) {
 				t.Fatalf("%q: %s labelled New from %s (%s)", region, c.Name, c.Date, where)

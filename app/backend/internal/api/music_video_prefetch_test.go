@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/trailer/batch
@@ -45,7 +46,7 @@ func TestArtistVideoPrefetch(t *testing.T) {
 		t.Fatalf("batch %+v", b)
 	}
 	before := yt.runs.Load()
-	var got ArtistVideoView
+	var got music.ArtistVideoView
 	_ = json.Unmarshal(do(t, "GET", u, "", 200), &got)
 	if got.Key != "dQw4w9WgXcQ" || got.ProxyURL == "" || yt.runs.Load() != before {
 		t.Fatalf("page video %+v, lookups %d -> %d", got, before, yt.runs.Load())

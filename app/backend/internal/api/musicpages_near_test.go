@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/music/albums/{mbid}
@@ -32,7 +33,7 @@ func TestAlbumNearKeepsEmptyAnswer(t *testing.T) {
 	}
 	path := "/api/v1/music/albums/" + apiAlbum + "?part=near&artist=" + apiArtist
 	var near struct {
-		Near []PageCredit `json:"near"`
+		Near []music.PageCredit `json:"near"`
 	}
 	if err := json.Unmarshal(r.ana.call("GET", path, "", 200), &near); err != nil || near.Near == nil || len(near.Near) != 0 {
 		t.Fatalf("first %+v %v", near, err)

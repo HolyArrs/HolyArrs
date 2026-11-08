@@ -82,7 +82,7 @@ func TestMusicPagesSlowSourceIncomplete(t *testing.T) {
 
 	for range 2 {
 		resp, b, took := getTimed(t, u+"/artists/"+apiArtist)
-		var v ArtistPageView
+		var v music.ArtistPageView
 		_ = json.Unmarshal(b, &v)
 		if resp.StatusCode != 200 || !v.Incomplete || v.MBID != apiArtist || resp.Header.Get("Cache-Control") != "no-store" || took > 2*time.Second {
 			t.Fatalf("slow artist page: %d %+v %q in %v", resp.StatusCode, v, resp.Header.Get("Cache-Control"), took)
@@ -92,7 +92,7 @@ func TestMusicPagesSlowSourceIncomplete(t *testing.T) {
 		t.Fatalf("a re-ask started another artist lookup: %d", n)
 	}
 	resp, b, _ := getTimed(t, u+"/albums/"+apiAlbum+"?artist="+apiArtist)
-	var al AlbumPageView
+	var al music.AlbumPageView
 	_ = json.Unmarshal(b, &al)
 	if resp.StatusCode != 200 || !al.Incomplete || al.MBID != apiAlbum {
 		t.Fatalf("slow album page: %d %s", resp.StatusCode, b)
@@ -105,13 +105,13 @@ func TestMusicPagesSlowSourceIncomplete(t *testing.T) {
 	close(slow.release)
 	time.Sleep(50 * time.Millisecond)
 	resp, b, _ = getTimed(t, u+"/artists/"+apiArtist)
-	var v ArtistPageView
+	var v music.ArtistPageView
 	_ = json.Unmarshal(b, &v)
 	if resp.StatusCode != 200 || v.Incomplete || v.Name != "Lab Band" || len(v.Albums) != 3 || resp.Header.Get("Cache-Control") != "private, max-age=60" {
 		t.Fatalf("artist page after the lookup: %d %+v", resp.StatusCode, v)
 	}
 	resp, b, _ = getTimed(t, u+"/albums/"+apiAlbum+"?artist="+apiArtist)
-	al = AlbumPageView{}
+	al = music.AlbumPageView{}
 	_ = json.Unmarshal(b, &al)
 	if resp.StatusCode != 200 || al.Incomplete || al.Name != "First Light" || len(al.Tracks) != 2 {
 		t.Fatalf("album page after the lookup: %d %s", resp.StatusCode, b)
@@ -150,7 +150,7 @@ func TestArtistPageTopSongsCold(t *testing.T) {
 	}
 	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, Deps: music.Deps{MusicTopSongs: top}}).Handler())
 	t.Cleanup(srv.Close)
-	var v ArtistPageView
+	var v music.ArtistPageView
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/music/artists/"+apiArtist, "", 200), &v)
 	if len(v.Top) != 1 || v.Top[0].Title != "Glow" {
 		t.Fatalf("top songs %+v", v.Top)

@@ -53,15 +53,15 @@ func mid(prefix byte, n int) string {
 }
 
 type musicRowsAnswer struct {
-	Kid    bool        `json:"kid"`
-	Cold   bool        `json:"cold"`
-	Genres []string    `json:"genres"`
-	Hero   *MusicCard  `json:"hero"`
-	Alts   []MusicCard `json:"hero_alts"`
-	Rows   []MusicRow  `json:"rows"`
+	Kid    bool              `json:"kid"`
+	Cold   bool              `json:"cold"`
+	Genres []string          `json:"genres"`
+	Hero   *music.MusicCard  `json:"hero"`
+	Alts   []music.MusicCard `json:"hero_alts"`
+	Rows   []music.MusicRow  `json:"rows"`
 }
 
-func (m musicRowsAnswer) row(id string) *MusicRow {
+func (m musicRowsAnswer) row(id string) *music.MusicRow {
 	for i := range m.Rows {
 		if m.Rows[i].ID == id || m.Rows[i].Type == id {
 			return &m.Rows[i]

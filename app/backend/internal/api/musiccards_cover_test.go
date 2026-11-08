@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // Music pictures come only from our metadata server (Luis, 2026-10-24):
@@ -46,7 +47,7 @@ func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
 		resp.Body.Close()
 		return resp.StatusCode
 	}
-	rows := []MusicRow{{ID: "new_from", Items: []MusicCard{
+	rows := []music.MusicRow{{ID: "new_from", Items: []music.MusicCard{
 		{Kind: "album", MBID: fresh, Name: "No Bad Memories", Artist: "The Avalanches", Image: musicArtPrefix + "album/" + fresh},
 		{Kind: "album", MBID: soundtrack, Name: "Man’s Best Friend", Artist: "Sabrina Carpenter", Image: musicArtPrefix + "album/" + soundtrack},
 	}}}

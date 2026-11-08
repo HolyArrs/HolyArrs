@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 func waitPreload(t *testing.T, a *API) musicPreloadStatus {
@@ -56,7 +58,7 @@ func TestTplPreloadWarmsEveryShownCover(t *testing.T) {
 		defer mu.Unlock()
 		return warmed[kind+"|"+id]
 	}
-	check := func(where string, cards []MusicCard) {
+	check := func(where string, cards []music.MusicCard) {
 		t.Helper()
 		for _, c := range cards {
 			if !isWarm(c.Kind, c.MBID) {
@@ -99,7 +101,7 @@ func TestTplPreloadWarmsEveryShownCover(t *testing.T) {
 				t.Fatal(err)
 			}
 			if p.Hero != nil {
-				check(path+" spotlight", append([]MusicCard{*p.Hero}, p.Alts...))
+				check(path+" spotlight", append([]music.MusicCard{*p.Hero}, p.Alts...))
 			}
 			for _, row := range p.Rows {
 				check(path+" "+row.ID, row.Items)
@@ -108,8 +110,8 @@ func TestTplPreloadWarmsEveryShownCover(t *testing.T) {
 		}
 	}
 	var np struct {
-		Hero []MusicCard `json:"hero"`
-		Rows []MusicRow  `json:"rows"`
+		Hero []music.MusicCard `json:"hero"`
+		Rows []music.MusicRow  `json:"rows"`
 	}
 	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/explore/new/music?region=US", "", 200), &np); err != nil {
 		t.Fatal(err)

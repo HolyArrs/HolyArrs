@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/music/artists/{mbid}?part=similar
@@ -28,8 +29,8 @@ func TestArtistSimilarPendingAsksAgain(t *testing.T) {
 	}
 	path := "/api/v1/music/artists/" + apiArtist + "?part=similar"
 	var got struct {
-		Similar    []PageArtist `json:"similar"`
-		Incomplete bool         `json:"incomplete"`
+		Similar    []music.PageArtist `json:"similar"`
+		Incomplete bool               `json:"incomplete"`
 	}
 	if err := json.Unmarshal(r.ana.call("GET", path, "", 200), &got); err != nil || len(got.Similar) != 0 || !got.Incomplete {
 		t.Fatalf("first %+v %v", got, err)

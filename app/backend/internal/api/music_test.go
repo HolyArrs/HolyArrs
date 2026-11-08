@@ -148,8 +148,8 @@ func TestMusicAPI(t *testing.T) {
 
 	do(t, "GET", u+"/artists/lookup", "", 400)
 	var look struct {
-		Artists []ArtistResult `json:"artists"`
-		Source  string         `json:"source"`
+		Artists []music.ArtistResult `json:"artists"`
+		Source  string               `json:"source"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/artists/lookup?term=lab", "", 200), &look)
 	if look.Source != "musicbrainz" || len(look.Artists) != 1 || look.Artists[0].MBID != apiArtist || look.Artists[0].Albums != nil || look.Artists[0].TitleID != 0 ||
@@ -171,10 +171,10 @@ func TestMusicAPI(t *testing.T) {
 	do(t, "POST", u+"/artists", `{"id":"mbid:`+apiAlbum+`"}`, 404)
 	var added struct {
 		Title struct {
-			ID     int64       `json:"id"`
-			Kind   string      `json:"kind"`
-			Slots  []any       `json:"slots"`
-			Artist *ArtistInfo `json:"artist"`
+			ID     int64             `json:"id"`
+			Kind   string            `json:"kind"`
+			Slots  []any             `json:"slots"`
+			Artist *music.ArtistInfo `json:"artist"`
 		} `json:"title"`
 		JobID int64 `json:"job_id"`
 	}
@@ -268,7 +268,7 @@ func TestMusicAPI(t *testing.T) {
 	do(t, "PUT", fmt.Sprintf("%s/titles/%d/artist", u, id), `{"album_types":["mixtape"]}`, 400)
 	var changed struct {
 		Title struct {
-			Artist *ArtistInfo `json:"artist"`
+			Artist *music.ArtistInfo `json:"artist"`
 		} `json:"title"`
 		JobID int64 `json:"job_id"`
 	}
@@ -287,9 +287,9 @@ func TestMusicAPI(t *testing.T) {
 
 	// The title view and list carry the artist without listing track Slots.
 	var tv struct {
-		Kind   string      `json:"kind"`
-		Slots  []any       `json:"slots"`
-		Artist *ArtistInfo `json:"artist"`
+		Kind   string            `json:"kind"`
+		Slots  []any             `json:"slots"`
+		Artist *music.ArtistInfo `json:"artist"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/titles/%d", u, id), "", 200), &tv)
 	if tv.Kind != "artist" || len(tv.Slots) != 0 || tv.Artist == nil || tv.Artist.Tracks != 3 {

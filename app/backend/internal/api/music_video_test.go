@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -61,7 +62,7 @@ func TestArtistVideoStartPoints(t *testing.T) {
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ", MostReplayed: 42}}, nil
 	})
-	var v ArtistVideoView
+	var v music.ArtistVideoView
 	_ = json.Unmarshal(videoReady(t, u), &v)
 	if v.Key != "dQw4w9WgXcQ" || v.Start != 42 || !strings.Contains(v.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(v.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("video %+v", v)
@@ -103,7 +104,7 @@ func TestArtistVideoPicked(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	var v ArtistVideoView
+	var v music.ArtistVideoView
 	_ = json.Unmarshal(videoReady(t, u+"&id=9bZkp7q19f0"), &v)
 	if v.Key != "9bZkp7q19f0" || !strings.Contains(v.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(v.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("picked %+v", v)
@@ -120,7 +121,7 @@ func TestArtistVideoFallbacks(t *testing.T) {
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
 	})
-	var v ArtistVideoView
+	var v music.ArtistVideoView
 	_ = json.Unmarshal(videoReady(t, u), &v)
 	if v.Start != 60 {
 		t.Fatalf("no heatmap: start at 30%% of 200 s, got %+v", v)

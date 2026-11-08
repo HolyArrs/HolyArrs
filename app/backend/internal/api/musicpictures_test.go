@@ -17,6 +17,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 const (
@@ -53,7 +54,7 @@ func TestMusicAnswerCarriesPictureRecords(t *testing.T) {
 			Albums:  map[string]metadata.AlbumPictures{picAlbum: {Cover: &metadata.PictureRecord{V: "c1", W: 1200, H: 1200, Color: "#a0b0c0"}}},
 		}, nil
 	}
-	row := map[string]any{"rows": []MusicRow{{ID: "r", Items: []MusicCard{
+	row := map[string]any{"rows": []music.MusicRow{{ID: "r", Items: []music.MusicCard{
 		{Kind: "album", MBID: picAlbum, Image: musicArtPrefix + "album/" + picAlbum, ArtistImage: musicArtPrefix + "artist/" + picArtist},
 		{Kind: "album", MBID: picAlbum2, Image: musicArtPrefix + "album/" + picAlbum2},
 	}}}}
@@ -64,7 +65,7 @@ func TestMusicAnswerCarriesPictureRecords(t *testing.T) {
 	}
 	var got struct {
 		Pictures map[string]metadata.PictureRecord `json:"pictures"`
-		Rows     []MusicRow                        `json:"rows"`
+		Rows     []music.MusicRow                  `json:"rows"`
 	}
 	if err := json.Unmarshal(out, &got); err != nil || len(got.Rows) != 1 {
 		t.Fatalf("%v: %s", err, out)

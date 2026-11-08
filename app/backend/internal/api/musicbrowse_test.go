@@ -16,6 +16,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
@@ -39,12 +40,12 @@ type tplAnswer struct {
 		Key  string `json:"key"`
 		Href string `json:"href"`
 	} `json:"similar"`
-	Kind  string      `json:"kind"`
-	Tile  MusicCard   `json:"tile"`
-	Hero  *MusicCard  `json:"hero"`
-	Alts  []MusicCard `json:"hero_alts"`
-	Rows  []MusicRow  `json:"rows"`
-	Genre string      `json:"genre"`
+	Kind  string            `json:"kind"`
+	Tile  music.MusicCard   `json:"tile"`
+	Hero  *music.MusicCard  `json:"hero"`
+	Alts  []music.MusicCard `json:"hero_alts"`
+	Rows  []music.MusicRow  `json:"rows"`
+	Genre string            `json:"genre"`
 }
 
 func checkTplRows(t *testing.T, a tplAnswer, min int) {
@@ -341,7 +342,7 @@ func TestTplExploreAndNewMusic(t *testing.T) {
 		t.Fatalf("explore: %d engine rows, Browse row %d tiles", tpl, grid)
 	}
 	var n struct {
-		Rows []MusicRow `json:"rows"`
+		Rows []music.MusicRow `json:"rows"`
 	}
 	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/explore/new/music?region=US", "", 200), &n); err != nil {
 		t.Fatal(err)
@@ -568,7 +569,7 @@ func TestTplExploreBrowseRowTakesCoversOnlyFromStoredPictures(t *testing.T) {
 }
 
 func TestCoveredTilesKeepOnlyTilesWithACover(t *testing.T) {
-	cards := []MusicCard{{Key: "genre:a", Cover: "/c1", Image: "/photo", Images: []string{"/photo"}}, {Key: "genre:b", Image: "/photo2"}, {Key: "genre:c", Cover: "/c3"}}
+	cards := []music.MusicCard{{Key: "genre:a", Cover: "/c1", Image: "/photo", Images: []string{"/photo"}}, {Key: "genre:b", Image: "/photo2"}, {Key: "genre:c", Cover: "/c3"}}
 	sc := []musicscore.Scored{{}, {}, {}}
 	sc[0].Item.Key, sc[1].Item.Key, sc[2].Item.Key = "genre:a", "genre:b", "genre:c"
 	gotCards, gotSc := coveredTiles(cards, sc)

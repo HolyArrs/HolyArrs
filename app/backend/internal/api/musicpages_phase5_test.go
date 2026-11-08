@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // Music Phase 5: the artist and album pages.
@@ -19,7 +20,7 @@ import (
 func TestArtistAskAllMissing(t *testing.T) {
 	t.Parallel()
 	r := newMusicAskRig(t)
-	var ap ArtistPageView
+	var ap music.ArtistPageView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/music/artists/"+apiArtist, "", 200), &ap)
 	// First Light only: Live Night is on the live shelf and Soon is not out yet.
 	if ap.Missing.Count != 1 || len(ap.Missing.Albums) != 1 || ap.Missing.Albums[0] != apiAlbum || ap.Missing.SizeBytes != missingAlbumBytes {
@@ -78,7 +79,7 @@ func TestMusicPagesNoVideoAndEditionTracks(t *testing.T) {
 			t.Fatalf("%s answers a video: %s", path, b)
 		}
 	}
-	var ap ArtistPageView
+	var ap music.ArtistPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/artists/"+apiArtist, "", 200), &ap)
 	shelf := map[string]string{}
 	for _, a := range ap.Albums {
@@ -87,20 +88,20 @@ func TestMusicPagesNoVideoAndEditionTracks(t *testing.T) {
 	if shelf["Hits"] != "compilations" || shelf["Live Night"] != "live" {
 		t.Fatalf("shelves %v", shelf)
 	}
-	var al AlbumPageView
+	var al music.AlbumPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+"?artist="+apiArtist, "", 200), &al)
 	if len(al.Editions) != 2 || len(al.Editions[0].List)+len(al.Editions[1].List) != 5 {
 		t.Fatalf("editions %+v", al.Editions)
 	}
 	var more struct {
-		Essential []string     `json:"essential"`
-		AppearsOn []PageCredit `json:"appears_on"`
+		Essential []string           `json:"essential"`
+		AppearsOn []music.PageCredit `json:"appears_on"`
 	}
 	if err := json.Unmarshal(do(t, "GET", u+"/artists/"+apiArtist+"?part=more", "", 200), &more); err != nil || more.Essential == nil || more.AppearsOn == nil {
 		t.Fatalf("more %+v %v", more, err)
 	}
 	var near struct {
-		Near []PageCredit `json:"near"`
+		Near []music.PageCredit `json:"near"`
 	}
 	if err := json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+"?part=near&artist="+apiArtist, "", 200), &near); err != nil || near.Near == nil {
 		t.Fatalf("near %+v %v", near, err)
@@ -121,8 +122,8 @@ func TestArtistMoreFromArtistData(t *testing.T) {
 		}}}, nil
 	}
 	var more struct {
-		Essential []string     `json:"essential"`
-		AppearsOn []PageCredit `json:"appears_on"`
+		Essential []string           `json:"essential"`
+		AppearsOn []music.PageCredit `json:"appears_on"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/music/artists/"+apiArtist+"?part=more", "", 200), &more)
 	if strings.Join(more.Essential, ",") != apiAlbum+","+apiLive || len(more.AppearsOn) != 1 || more.AppearsOn[0].ArtistName != "Other" || more.AppearsOn[0].ArtistMBID != other {

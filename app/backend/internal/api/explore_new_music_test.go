@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 var musicNewNow = time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)
@@ -36,10 +37,10 @@ func TestMusicNewWindows(t *testing.T) {
 
 // Newer beats older at equal popularity; listens and a known artist lift a release.
 func TestMusicNewScore(t *testing.T) {
-	a := musicNewScore(MusicCard{Date: nday(-1)}, 0, musicNewNow)
-	b := musicNewScore(MusicCard{Date: nday(-20)}, 0, musicNewNow)
-	c := musicNewScore(MusicCard{Date: nday(-20), Listens: 100000}, 1, musicNewNow)
-	if !(a > b && c > a) || musicNewScore(MusicCard{Date: nday(5)}, 3, musicNewNow) != 0 {
+	a := musicNewScore(music.MusicCard{Date: nday(-1)}, 0, musicNewNow)
+	b := musicNewScore(music.MusicCard{Date: nday(-20)}, 0, musicNewNow)
+	c := musicNewScore(music.MusicCard{Date: nday(-20), Listens: 100000}, 1, musicNewNow)
+	if !(a > b && c > a) || musicNewScore(music.MusicCard{Date: nday(5)}, 3, musicNewNow) != 0 {
 		t.Fatalf("scores %v %v %v", a, b, c)
 	}
 }
@@ -82,7 +83,7 @@ func TestComposeMusicNew(t *testing.T) {
 			t.Fatalf("hero badge %q", c.Badge)
 		}
 	}
-	got := map[string]MusicRow{}
+	got := map[string]music.MusicRow{}
 	for _, r := range rows {
 		got[r.ID] = r
 		if len(r.Items) < musicNewRowMin || len(r.Items) > musicNewRowMax {
@@ -231,11 +232,11 @@ func TestComposeMusicNewFromServer(t *testing.T) {
 	srv["upcoming"] = []metadata.MusicNewItem{{MBID: tmbid(901), Title: "Soon", Artist: "Dz", ReleaseDate: nday(10), Type: "ep"}, {MBID: tmbid(902), Title: "Too far", Artist: "Dz", ReleaseDate: nday(80), Type: "album"}}
 	in.data.server = srv
 	hero, rows := composeMusicNew(in, musicNewNow)
-	all := map[string]MusicCard{}
+	all := map[string]music.MusicCard{}
 	for _, c := range hero {
 		all[c.MBID] = c
 	}
-	var tracks MusicRow
+	var tracks music.MusicRow
 	for _, r := range rows {
 		if r.ID == "np_music_tracks" {
 			tracks = r

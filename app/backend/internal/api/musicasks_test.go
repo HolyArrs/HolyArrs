@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -41,7 +42,7 @@ func TestMusicAskOverHTTP(t *testing.T) {
 
 	// The ask dialog lists the albums to ask for, oldest first.
 	var look struct {
-		Artists []ArtistResult `json:"artists"`
+		Artists []music.ArtistResult `json:"artists"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/artists/lookup?term=mbid:"+apiArtist+"&albums=true", "", 200), &look)
 	if len(look.Artists) != 1 || len(look.Artists[0].AskAlbums) != 3 || look.Artists[0].AskAlbums[0].Name != "First Light" || look.Artists[0].Ask != nil {
@@ -193,7 +194,7 @@ func TestArtistLookupListsEveryOpenAsk(t *testing.T) {
 	r.owner.call("POST", fmt.Sprintf("/api/v1/asks/%d/approve", first.ID), `{}`, 200)
 	second := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiAlbum+`"]}`, 201))
 	var look struct {
-		Artists []ArtistResult `json:"artists"`
+		Artists []music.ArtistResult `json:"artists"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/artists/lookup?term=mbid:"+apiArtist, "", 200), &look)
 	got := look.Artists[0]

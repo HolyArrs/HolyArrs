@@ -9,6 +9,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // Cache audit 2026-10-23, finding 2: a pending, failed or empty video
@@ -116,7 +117,7 @@ func TestFailedVideoDroppedAndAnotherPicked(t *testing.T) {
 		return []metadata.ArtistVideo{{ID: "badbadbad11"}, {ID: "badbadbad22"}, {ID: "dQw4w9WgXcQ"}}, nil
 	})
 	for i := 0; i < 4; i++ {
-		var v ArtistVideoView
+		var v music.ArtistVideoView
 		_ = json.Unmarshal(videoReady(t, u), &v)
 		if v.Key != "dQw4w9WgXcQ" {
 			t.Fatalf("picked %+v", v)

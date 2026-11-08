@@ -14,6 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // v7Fixed is the v7 tests' clock (2001-10-30 turns 25 within the window).
@@ -254,8 +255,8 @@ func v7Pages(t *testing.T, who *signedIn, region string) ([]v7Answer, [][]byte) 
 	return out, raws
 }
 
-func v7Rows(pages []v7Answer) []MusicRow {
-	var rows []MusicRow
+func v7Rows(pages []v7Answer) []music.MusicRow {
+	var rows []music.MusicRow
 	for _, p := range pages {
 		rows = append(rows, p.Rows...)
 	}
@@ -263,7 +264,7 @@ func v7Rows(pages []v7Answer) []MusicRow {
 }
 
 // noAlbumTwice fails when one album shows in two rows (or twice in one).
-func noAlbumTwice(t *testing.T, rows []MusicRow) {
+func noAlbumTwice(t *testing.T, rows []music.MusicRow) {
 	t.Helper()
 	seen := map[string]string{}
 	for _, r := range rows {
@@ -282,7 +283,7 @@ func noAlbumTwice(t *testing.T, rows []MusicRow) {
 	}
 }
 
-func v7Types(rows []MusicRow) map[string]int {
+func v7Types(rows []music.MusicRow) map[string]int {
 	out := map[string]int{}
 	for _, r := range rows {
 		out[r.Type]++
@@ -511,7 +512,7 @@ func TestExploreMusicV7Anniversary(t *testing.T) {
 func TestExploreMusicV7Households(t *testing.T) {
 	t.Parallel()
 	r, _, _ := v7Rig(t, "household_two_members.json")
-	look := func(who *signedIn) (mixes, because []string, rows []MusicRow) {
+	look := func(who *signedIn) (mixes, because []string, rows []music.MusicRow) {
 		pages, _ := v7Pages(t, who, "US")
 		rows = v7Rows(pages)
 		noAlbumTwice(t, rows)

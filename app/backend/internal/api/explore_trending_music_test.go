@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // trendChart is a 20-album region chart; with ranks, each album's rank 7
@@ -56,7 +57,7 @@ func trendInput(now time.Time, ranks bool) musicTrendingInput {
 	return in
 }
 
-func rowByID(rows []MusicRow, id string) *MusicRow {
+func rowByID(rows []music.MusicRow, id string) *music.MusicRow {
 	for i := range rows {
 		if rows[i].ID == id {
 			return &rows[i]
@@ -165,8 +166,8 @@ func TestExploreNewMusicV6(t *testing.T) {
 	musicNew = musicNewStore{data: &musicNewData{at: time.Now()}}
 	t.Cleanup(func() { musicNew = musicNewStore{} })
 	var m struct {
-		Kid  bool       `json:"kid"`
-		Rows []MusicRow `json:"rows"`
+		Kid  bool             `json:"kid"`
+		Rows []music.MusicRow `json:"rows"`
 	}
 	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/explore/new/music?region=US", "", 200), &m); err != nil {
 		t.Fatal(err)

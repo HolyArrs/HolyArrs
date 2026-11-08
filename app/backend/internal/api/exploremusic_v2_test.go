@@ -12,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 type householdFixture struct {
@@ -208,7 +209,7 @@ func TestExploreMusicV2Household(t *testing.T) {
 	if top == nil {
 		t.Fatal("no top albums")
 	}
-	var asked *MusicCard
+	var asked *music.MusicCard
 	for i := range top.Items {
 		if top.Items[i].MBID == apiAlbum {
 			asked = &top.Items[i]

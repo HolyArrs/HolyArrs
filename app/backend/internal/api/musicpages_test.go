@@ -25,7 +25,7 @@ func TestMusicPages(t *testing.T) {
 
 	do(t, "GET", u+"/artists/nope", "", 400)
 	do(t, "GET", u+"/artists/"+apiAlbum, "", 404)
-	var ap ArtistPageView
+	var ap music.ArtistPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/artists/"+apiArtist, "", 200), &ap)
 	if ap.Name != "Lab Band" || len(ap.Albums) != 3 || ap.TitleID != 0 || ap.Albums[0].Name != "Soon" || !ap.Albums[0].Upcoming ||
 		ap.Latest == nil || ap.Latest.MBID != apiAlbum || ap.Total != 2 || ap.Have != 0 {
@@ -51,7 +51,7 @@ func TestMusicPages(t *testing.T) {
 		t.Fatalf("artist core %+v", core)
 	}
 	var noSim struct {
-		Similar []PageArtist `json:"similar"`
+		Similar []music.PageArtist `json:"similar"`
 	}
 	if err := json.Unmarshal(do(t, "GET", u+"/artists/"+apiArtist+"?similar=0", "", 200), &noSim); err != nil || noSim.Similar == nil || len(noSim.Similar) != 0 {
 		t.Fatalf("similar=0 %+v %v", noSim, err)
@@ -67,7 +67,7 @@ func TestMusicPages(t *testing.T) {
 	}
 
 	// A bare album link finds its artist; an unknown album is not found.
-	var bare AlbumPageView
+	var bare music.AlbumPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum, "", 200), &bare)
 	if bare.Name != "First Light" || bare.Artist.MBID != apiArtist || bare.Artist.Name != "Lab Band" {
 		t.Fatalf("bare album page %+v", bare)
@@ -75,13 +75,13 @@ func TestMusicPages(t *testing.T) {
 	do(t, "GET", u+"/albums/f0000000-0000-0000-0000-0000000000ff", "", 404)
 	// A wrong, bad or missing ?artist= never blocks the page: the album names its own artist.
 	for _, q := range []string{"?artist=nope", "?artist=" + apiAlbum, "?artist=f0000000-0000-0000-0000-0000000000ee", ""} {
-		var m AlbumPageView
+		var m music.AlbumPageView
 		_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+q, "", 200), &m)
 		if m.Name != "First Light" || m.Artist.MBID != apiArtist {
 			t.Fatalf("mismatched link %q: %+v", q, m)
 		}
 	}
-	var al AlbumPageView
+	var al music.AlbumPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+"?artist="+apiArtist, "", 200), &al)
 	if al.Name != "First Light" || al.Artist.Name != "Lab Band" || len(al.Tracks) != 2 || al.LengthMS != 360000 || len(al.Editions) != 2 ||
 		len(al.MoreBy) != 1 || al.Tracks[0].Have != "" {
@@ -213,7 +213,7 @@ func TestCreditCoversPrefetched(t *testing.T) {
 		Library: &library.Service{Store: s, Artwork: art}, Version: "test"})
 	c := creditOf(metadata.MusicTopAlbum{MBID: al, Title: "OK Computer", Type: "album"})
 	c.ArtistName = "Radiohead"
-	a.warmCredits([]PageCredit{c})
+	a.warmCredits([]music.PageCredit{c})
 	a.music.prefetching.Wait()
 	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + al + "/500.webp")); !ok {
 		t.Fatal("credit cover not prefetched from the server")

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/music/genre/{slug}
@@ -25,7 +26,7 @@ func TestMusicGenrePage(t *testing.T) {
 	r.ana.call("GET", "/api/v1/music/genre/polka?region=US", "", 404)
 	var m struct {
 		musicRowsAnswer
-		Tile MusicCard `json:"tile"`
+		Tile music.MusicCard `json:"tile"`
 	}
 	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/music/genre/pop?region=US", "", 200), &m); err != nil {
 		t.Fatal(err)

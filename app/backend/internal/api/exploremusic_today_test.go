@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/explore/music/rising
@@ -22,7 +23,7 @@ func TestRisingTodayRow(t *testing.T) {
 		}}, nil
 	}
 	r.api.rising = risingCache{}
-	var row MusicRow
+	var row music.MusicRow
 	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/explore/music/rising", "", 200), &row); err != nil {
 		t.Fatal(err)
 	}
