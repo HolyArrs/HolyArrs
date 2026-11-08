@@ -233,14 +233,9 @@ type API struct {
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore   exploreState
 	genreRows genreRowCache
-	// trailers keeps resolved trailer addresses and each person's budget.
-	trailers trailerState
-	// trailerRelay holds the trailer streams HolyArrs relays (pass-through).
-	trailerRelay trailerProxy
-	// trailerKeys keeps each title's YouTube key (also in lookup_cache).
-	trailerKeys trailerKeyCache
-	// trailerAsked notes titles asked for that the next trailer pass covers.
-	trailerAsked trailerAsked
+	// trailers keeps resolved trailer addresses, serves the trailer routes
+	// and runs the trailer pass (metadata).
+	trailers *metadata.Trailers
 	// artistAsked notes artists whose music videos the pass keeps ready.
 	artistAsked artistAsked
 	// warm fills listed titles' details, extras and trailers ahead.
@@ -324,6 +319,7 @@ func New(s Server) *API {
 	}
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
 	a.titles = a.newTitlePages()
+	a.trailers = a.newTrailers()
 	return a
 }
 
@@ -458,10 +454,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", a.metadataReviews)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/anime", a.metadataAnime)
-	m.HandleFunc("GET /api/v1/trailer/batch", a.trailerBatch)
-	m.HandleFunc("GET /api/v1/trailer/{kind}/{tmdb_id}", a.trailerStream)
-	m.HandleFunc("GET /api/v1/trailer/stream/{id}/manifest.m3u8", a.trailerManifest)
-	m.HandleFunc("GET /api/v1/trailer/stream/{id}/seg/{n}", a.trailerSegment)
+	a.trailers.Routes(m)
 	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
 	a.signinArtRoutes(m)
 	m.HandleFunc("PUT /api/v1/settings/ui", a.putUISettings)

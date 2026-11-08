@@ -219,13 +219,13 @@ func TestExploreNewHeroNotesTrailers(t *testing.T) {
 	if _, err := a.newHero(kid, pg, 1); err != nil {
 		t.Fatal(err)
 	}
-	if got := a.trailerAsks(time.Now()); len(got) != 0 {
+	if got := a.trailers.Asks(time.Now()); len(got) != 0 {
 		t.Fatalf("a Kid's hero noted %v", got)
 	}
 	if _, err := a.newHero(r, pg, 1); err != nil {
 		t.Fatal(err)
 	}
-	got := a.trailerAsks(time.Now())
+	got := a.trailers.Asks(time.Now())
 	if len(got) == 0 || len(got) > 24 {
 		t.Fatalf("noted %d", len(got))
 	}

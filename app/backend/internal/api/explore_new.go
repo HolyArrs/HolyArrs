@@ -145,7 +145,7 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 	// The trailer pass reads only Explore's pools: the titles this hero
 	// picks from are noted for its next round (no lookup here).
 	if a.kidMax(r) == "" {
-		a.noteTrailerTitles(trailerLanguage(r), titles)
+		a.trailers.Note(metadata.TrailerLanguage(r), titles)
 	}
 	a.fillTrailerKeys(r, vs)
 	a.fillCardArt(r, vs)

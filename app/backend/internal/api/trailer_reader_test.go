@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"testing"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
@@ -23,17 +23,17 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
-	s, err := a.resolveTitle(ctx, "movie", "13", "en")
+	s, err := a.trailers.ResolveTitle(ctx, "movie", "13", "en")
 	if err != nil || s.Key != "secondKey01" || s.Type != "hls" {
 		t.Fatalf("%+v %v", s, err)
 	}
-	if k := a.knownTrailerKey(ctx, "movie", "13", "en"); k != "ageGated001" {
+	if k := a.trailers.KnownKey(ctx, "movie", "13", "en"); k != "ageGated001" {
 		t.Fatalf("kept key %q", k)
 	}
-	if st := a.TrailerReader(); st.Failed != 0 || st.LastGood.IsZero() {
+	if st := a.trailers.ReaderState(); st.Failed != 0 || st.LastGood.IsZero() {
 		t.Fatalf("a video reason is not a failure: %+v", st)
 	}
-	if s, err := a.resolveTitle(ctx, "movie", "13", "de"); err != nil || s.Key != "secondKey01" {
+	if s, err := a.trailers.ResolveTitle(ctx, "movie", "13", "de"); err != nil || s.Key != "secondKey01" {
 		t.Fatalf("de %+v %v", s, err)
 	}
 	if n := yt.count("ageGated001"); n != 1 {
@@ -41,7 +41,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	}
 	b := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}) // a restart
 	now := time.Now()
-	if why, bad := b.trailerBad(ctx, "ageGated001", now); !bad || why != youtube.AgeRestricted {
+	if why, bad := b.trailers.Bad(ctx, "ageGated001", now); !bad || why != youtube.AgeRestricted {
 		t.Fatalf("not kept across a restart: %q %v", why, bad)
 	}
 	lc := metadata.LookupCache{Store: st}
@@ -51,7 +51,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	if _, ok, _ := lc.Get(ctx, "trailerbad|test|ageGated001", now.Add(8*24*time.Hour)); ok {
 		t.Fatal("kept past 7 days")
 	}
-	if _, bad := b.trailerBad(ctx, "secondKey01", now); bad {
+	if _, bad := b.trailers.Bad(ctx, "secondKey01", now); bad {
 		t.Fatal("the key that played is marked bad")
 	}
 	// Past 7 days (the bad mark and the kept address over), and YouTube
@@ -59,7 +59,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	yt.set("ageGated001", "ok")
 	_ = lc.Put(ctx, "trailerbad|test|ageGated001", []byte(youtube.AgeRestricted), now, now)
 	_ = lc.Put(ctx, "trailer|movie|13|en", []byte("{}"), now, now)
-	if s, err := b.resolveTitle(ctx, "movie", "13", "en"); err != nil || s.Key != "ageGated001" {
+	if s, err := b.trailers.ResolveTitle(ctx, "movie", "13", "en"); err != nil || s.Key != "ageGated001" {
 		t.Fatalf("after the bad mark %+v %v", s, err)
 	}
 }
@@ -74,32 +74,32 @@ func TestTrailerShortRefusalsNotMarkedBad(t *testing.T) {
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	now := time.Now()
-	m := (*trailerMissed)(nil)
-	if _, err := a.resolveTitle(ctx, "movie", "13", "en"); !errors.As(err, &m) || m.reason != youtube.Unplayable {
+	m := (*metadata.TrailerMissed)(nil)
+	if _, err := a.trailers.ResolveTitle(ctx, "movie", "13", "en"); !errors.As(err, &m) || m.Reason != youtube.Unplayable {
 		t.Fatalf("premiere %v", err)
 	}
 	for _, k := range []string{"ageGated001", "secondKey01", "thirdKey001"} {
-		if _, bad := a.trailerBad(ctx, k, now); bad {
+		if _, bad := a.trailers.Bad(ctx, k, now); bad {
 			t.Fatalf("%s marked bad", k)
 		}
 	}
 	yt.set("ageGated001", "ok")
-	a.trailers.cache = nil // the miss is over
-	if s, err := a.resolveTitle(ctx, "movie", "13", "en"); err != nil || s.Key != "ageGated001" {
+	a.trailers.Forget() // the miss is over
+	if s, err := a.trailers.ResolveTitle(ctx, "movie", "13", "en"); err != nil || s.Key != "ageGated001" {
 		t.Fatalf("premiere on %+v %v", s, err)
 	}
 
 	yt = fakeReader(t, "later", "ageGated001", "secondKey01", "thirdKey001")
-	if _, err := a.resolveTitle(ctx, "movie", "14", "en"); !errors.As(err, &m) || m.reason != youtube.Refused || m.key != "ageGated001" {
+	if _, err := a.trailers.ResolveTitle(ctx, "movie", "14", "en"); !errors.As(err, &m) || m.Reason != youtube.Refused || m.Key != "ageGated001" {
 		t.Fatalf("try again later %v %+v", err, m)
 	}
 	if n := yt.runs.Load(); n != 1 {
 		t.Fatalf("lookups %d", n)
 	}
-	if _, bad := a.trailerBad(ctx, "ageGated001", now); bad {
+	if _, bad := a.trailers.Bad(ctx, "ageGated001", now); bad {
 		t.Fatal("marked bad on try again later")
 	}
-	if s := a.TrailerReader(); s.Failed != 1 || s.LastReason != youtube.Refused {
+	if s := a.trailers.ReaderState(); s.Failed != 1 || s.LastReason != youtube.Refused {
 		t.Fatalf("health %+v", s)
 	}
 	if _, err := a.resolveMusicVideo(ctx, "secondKey01"); err == nil || videoWontPlay(err) {
@@ -125,8 +125,8 @@ func TestTrailerAllUnplayableSaysWhy(t *testing.T) {
 	}
 	// The answer is the same while the miss is kept (2 hours: the pass does
 	// not ask again before).
-	if e, ok := a.trailers.get("movie|14|en", time.Now()); !ok || time.Until(e.miss) < trailerLongMiss-time.Minute {
-		t.Fatalf("miss kept until %v", e.miss)
+	if e, ok := a.trailers.Get("movie|14|en", time.Now()); !ok || time.Until(e.Miss) < 2*time.Hour-time.Minute {
+		t.Fatalf("miss kept until %v", e.Miss)
 	}
 	if err := lookUp(t, a, "movie", "14"); err == nil {
 		t.Fatal("no miss")
@@ -157,17 +157,17 @@ func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 	ctx := context.Background()
 	fakeReader(t, "bot")
 	for i := 1; i <= 2; i++ {
-		a.trailers.cache = nil
-		_, _ = a.resolveTitle(ctx, "movie", "11", "en")
-		if s := a.TrailerReader(); s.Failed != i || s.Videos != 1 || s.LastReason != youtube.BotCheck {
+		a.trailers.Forget()
+		_, _ = a.trailers.ResolveTitle(ctx, "movie", "11", "en")
+		if s := a.trailers.ReaderState(); s.Failed != i || s.Videos != 1 || s.LastReason != youtube.BotCheck {
 			t.Fatalf("bot check %d: %+v", i, s)
 		}
 	}
 	fakeReader(t, "age", "ageVideo001", "ageVideo002")
 	for _, k := range []string{"ageVideo001", "ageVideo002"} {
-		_, _ = a.readTrailer(ctx, k, k, time.Now(), false)
+		_, _ = a.trailers.Read(ctx, k, k, time.Now(), false)
 	}
-	if s := a.TrailerReader(); s.Failed != 2 || s.Videos != 1 || s.LastReason != youtube.BotCheck {
+	if s := a.trailers.ReaderState(); s.Failed != 2 || s.Videos != 1 || s.LastReason != youtube.BotCheck {
 		t.Fatalf("an age-restricted video counted: %+v", s)
 	}
 }
@@ -177,7 +177,7 @@ func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 func failVideos(a *API, from, n int) {
 	for i := from; i < from+n; i++ {
 		k := fmt.Sprintf("deadVideo%02d", i)
-		_, _ = a.readTrailer(renewing(context.Background()), k, k, time.Now(), false)
+		_, _ = a.trailers.Read(metadata.Renewing(context.Background()), k, k, time.Now(), false)
 	}
 }
 
@@ -189,28 +189,28 @@ func TestTrailerUpkeepCountsDifferentVideos(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
-	ctx := renewing(context.Background())
+	ctx := metadata.Renewing(context.Background())
 	for range health.TrailerFailLimit {
-		_, _ = a.readTrailer(ctx, "deadVideo00", "deadVideo00", time.Now(), false)
+		_, _ = a.trailers.Read(ctx, "deadVideo00", "deadVideo00", time.Now(), false)
 	}
-	if s := a.TrailerReader(); s.Videos != 1 || s.Failed != 0 || s.LastReason != youtube.Unavailable {
+	if s := a.trailers.ReaderState(); s.Videos != 1 || s.Failed != 0 || s.LastReason != youtube.Unavailable {
 		t.Fatalf("one video five times: %+v", s)
 	}
 	failVideos(a, 1, health.TrailerFailLimit-1)
-	if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit || s.LastReason != youtube.Unavailable || !s.LastGood.IsZero() {
+	if s := a.trailers.ReaderState(); s.Videos != health.TrailerFailLimit || s.LastReason != youtube.Unavailable || !s.LastGood.IsZero() {
 		t.Fatalf("five videos: %+v", s)
 	}
 	yt := fakeReader(t, "ok", "goodVideo01")
-	if _, err := a.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false); err != nil {
+	if _, err := a.trailers.Read(ctx, "goodVideo01", "goodVideo01", time.Now(), false); err != nil {
 		t.Fatal(err)
 	}
-	if s := a.TrailerReader(); s.Videos != 0 || s.Failed != 0 || time.Since(s.LastGood) > time.Minute {
+	if s := a.trailers.ReaderState(); s.Videos != 0 || s.Failed != 0 || time.Since(s.LastGood) > time.Minute {
 		t.Fatalf("not reset: %+v", s)
 	}
 	// After the reset, four more different failures stay below the limit.
 	yt.set("deadVideo00", "premiere") // unplayable
 	failVideos(a, 0, health.TrailerFailLimit-1)
-	if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit-1 {
+	if s := a.trailers.ReaderState(); s.Videos != health.TrailerFailLimit-1 {
 		t.Fatalf("after the reset: %+v", s)
 	}
 }
@@ -226,43 +226,41 @@ func TestTrailerUpkeepSurvivesARestart(t *testing.T) {
 	ctx := context.Background()
 	failVideos(a, 0, 3)
 	b := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
-	if s := b.TrailerReader(); s.Videos != 3 || s.LastReason != youtube.Unavailable {
+	if s := b.trailers.ReaderState(); s.Videos != 3 || s.LastReason != youtube.Unavailable {
 		t.Fatalf("after a restart: %+v", s)
 	}
 	failVideos(b, 1, 4) // deadVideo01..04: two of them new
-	if s := b.TrailerReader(); s.Videos != health.TrailerFailLimit {
+	if s := b.trailers.ReaderState(); s.Videos != health.TrailerFailLimit {
 		t.Fatalf("carried on: %+v", s)
 	}
 	lc := metadata.LookupCache{Store: st}
 	gone := func() bool {
-		_, ok, _ := lc.Get(ctx, trailerUpkeepKey, time.Now())
+		_, ok, _ := lc.Get(ctx, "trailerhealth|reader", time.Now())
 		return !ok
 	}
-	wipe := func() { _ = lc.Put(ctx, trailerUpkeepKey, []byte("{}"), time.Now(), time.Now()) }
+	wipe := func() { _ = lc.Put(ctx, "trailerhealth|reader", []byte("{}"), time.Now(), time.Now()) }
 	wipe()
 	failVideos(b, 2, 1)
 	if !gone() {
 		t.Fatal("written for a video that failed again")
 	}
 	fakeReader(t, "ok", "goodVideo01")
-	_, _ = b.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
+	_, _ = b.trailers.Read(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
 	if gone() {
 		t.Fatal("the reset is not written")
 	}
 	wipe()
-	_, _ = b.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
+	_, _ = b.trailers.Read(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
 	if !gone() {
 		t.Fatal("written on every good lookup")
 	}
-	b.trailers.mu.Lock()
-	b.trailers.saved = time.Now().Add(-2 * time.Minute)
-	b.trailers.mu.Unlock()
-	_, _ = b.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
+	b.trailers.SetHealthTimes(time.Time{}, time.Now().Add(-2*time.Minute))
+	_, _ = b.trailers.Read(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
 	if gone() {
 		t.Fatal("the last good lookup is not written after a minute")
 	}
 	c := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
-	if s := c.TrailerReader(); s.Videos != 0 || time.Since(s.LastGood) > time.Minute {
+	if s := c.trailers.ReaderState(); s.Videos != 0 || time.Since(s.LastGood) > time.Minute {
 		t.Fatalf("after the reset and a restart: %+v", s)
 	}
 }
@@ -275,7 +273,7 @@ func TestTrailerPeakSkipsOpening(t *testing.T) {
 	if err := lookUp(t, a, "movie", "11"); err != nil {
 		t.Fatal(err)
 	}
-	var s TrailerStream
+	var s metadata.TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Peak != 80 || s.Duration != 200 {
 		t.Fatalf("peak %v duration %v", s.Peak, s.Duration)
@@ -286,12 +284,12 @@ func TestTrailerPeakSkipsOpening(t *testing.T) {
 // not play that video, not when its door fails.
 func TestVideoWontPlay(t *testing.T) {
 	for err, want := range map[error]bool{
-		nil:                                      false,
-		errNoStream:                              false,
-		&trailerMissed{reason: youtube.BotCheck}: false,
-		&trailerMissed{reason: youtube.Network}:  false,
-		&trailerMissed{reason: youtube.Unavailable}:   true,
-		&trailerMissed{reason: youtube.AgeRestricted}: true,
+		nil:                  false,
+		metadata.ErrNoStream: false,
+		&metadata.TrailerMissed{Reason: youtube.BotCheck}:      false,
+		&metadata.TrailerMissed{Reason: youtube.Network}:       false,
+		&metadata.TrailerMissed{Reason: youtube.Unavailable}:   true,
+		&metadata.TrailerMissed{Reason: youtube.AgeRestricted}: true,
 	} {
 		if got := videoWontPlay(err); got != want {
 			t.Fatalf("%v: %v", err, got)
@@ -305,13 +303,13 @@ func TestVideoWontPlay(t *testing.T) {
 func TestTrailerSkipsTheWatchPage(t *testing.T) {
 	yt := fakeReader(t, "ok")
 	ctx := context.Background()
-	if _, err := resolveTrailer(ctx, "trailerKey1", time.Now(), false); err != nil || yt.pages.Load() != 1 {
+	if _, err := metadata.ResolveTrailer(ctx, "trailerKey1", time.Now(), false); err != nil || yt.pages.Load() != 1 {
 		t.Fatalf("first lookup (no visitor id yet) %v pages %d", err, yt.pages.Load())
 	}
-	if _, err := resolveTrailer(ctx, "trailerKey1", time.Now(), false); err != nil || yt.pages.Load() != 1 || yt.runs.Load() != 2 {
+	if _, err := metadata.ResolveTrailer(ctx, "trailerKey1", time.Now(), false); err != nil || yt.pages.Load() != 1 || yt.runs.Load() != 2 {
 		t.Fatalf("trailer read the page %v pages %d", err, yt.pages.Load())
 	}
-	if _, err := resolveTrailer(ctx, "trailerKey1", time.Now(), true); err != nil || yt.pages.Load() != 2 {
+	if _, err := metadata.ResolveTrailer(ctx, "trailerKey1", time.Now(), true); err != nil || yt.pages.Load() != 2 {
 		t.Fatalf("music video skipped the page %v pages %d", err, yt.pages.Load())
 	}
 }
@@ -326,19 +324,17 @@ func TestTrailerPremiereKeepsTheShortMiss(t *testing.T) {
 	yt.set("thirdKey001", "age")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
-	_, _ = a.resolveTitle(context.Background(), "movie", "13", "en")
-	e, ok := a.trailers.get("movie|13|en", time.Now())
-	if !ok || e.miss.IsZero() || time.Until(e.miss) > trailerUnplayableMiss+time.Minute || time.Until(e.miss) < trailerUnplayableMiss-time.Minute {
-		t.Fatalf("miss until %v (ok %v)", e.miss, ok)
+	_, _ = a.trailers.ResolveTitle(context.Background(), "movie", "13", "en")
+	e, ok := a.trailers.Get("movie|13|en", time.Now())
+	if !ok || e.Miss.IsZero() || time.Until(e.Miss) > time.Hour+time.Minute || time.Until(e.Miss) < time.Hour-time.Minute {
+		t.Fatalf("miss until %v (ok %v)", e.Miss, ok)
 	}
 	// YouTube's door failing is still asked again on the next pass.
 	yt.set("ageGated001", "later")
-	a.trailers.mu.Lock()
-	a.trailers.cache = nil
-	a.trailers.mu.Unlock()
-	_, _ = a.resolveTitle(context.Background(), "movie", "13", "en")
-	if e, ok := a.trailers.get("movie|13|en", time.Now()); !ok || time.Until(e.miss) > trailerMiss+time.Minute {
-		t.Fatalf("door miss until %v (ok %v)", e.miss, ok)
+	a.trailers.Forget()
+	_, _ = a.trailers.ResolveTitle(context.Background(), "movie", "13", "en")
+	if e, ok := a.trailers.Get("movie|13|en", time.Now()); !ok || time.Until(e.Miss) > metadata.TrailerMiss+time.Minute {
+		t.Fatalf("door miss until %v (ok %v)", e.Miss, ok)
 	}
 }
 
@@ -348,7 +344,7 @@ func TestTrailerUnknownTitleIsNoTrailer(t *testing.T) {
 	fakeReader(t, "ok")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
-	if _, err := a.resolveTitle(context.Background(), "movie", "987654", "en"); !errors.Is(err, errNoTrailer) {
+	if _, err := a.trailers.ResolveTitle(context.Background(), "movie", "987654", "en"); !errors.Is(err, metadata.ErrNoTrailer) {
 		t.Fatalf("unknown title: %v", err)
 	}
 }
@@ -364,14 +360,14 @@ func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
 	recentGood(a, time.Hour)
 	for i := range 2 * health.TrailerFailLimit {
 		k := fmt.Sprintf("deadVideo%02d", i)
-		_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
+		_, _ = a.trailers.Read(context.Background(), k, k, time.Now(), false)
 	}
-	if s := a.TrailerReader(); s.Videos != 0 {
+	if s := a.trailers.ReaderState(); s.Videos != 0 {
 		t.Fatalf("first lookups counted: %+v", s)
 	}
 	fakeReader(t, "bot", "doorVideo01")
-	_, _ = a.readTrailer(context.Background(), "doorVideo01", "doorVideo01", time.Now(), false)
-	if s := a.TrailerReader(); s.Videos != 1 || s.LastReason != youtube.BotCheck {
+	_, _ = a.trailers.Read(context.Background(), "doorVideo01", "doorVideo01", time.Now(), false)
+	if s := a.trailers.ReaderState(); s.Videos != 1 || s.LastReason != youtube.BotCheck {
 		t.Fatalf("door failure not counted: %+v", s)
 	}
 }
@@ -379,10 +375,8 @@ func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
 // recentGood sets the reader's last good lookup to ago before now (after
 // the kept state was read).
 func recentGood(a *API, ago time.Duration) {
-	a.TrailerReader()
-	a.trailers.mu.Lock()
-	a.trailers.lastGood = time.Now().Add(-ago)
-	a.trailers.mu.Unlock()
+	a.trailers.ReaderState()
+	a.trailers.SetHealthTimes(time.Now().Add(-ago), time.Time{})
 }
 
 // Nothing played for longer than an address lives (the machine was off
@@ -390,7 +384,7 @@ func recentGood(a *API, ago time.Duration) {
 // lookups that will not play count again, and a YouTube change that shows
 // only as removed videos still warns. Never a good lookup counts the same.
 func TestTrailerUpkeepCountsAfterALongGap(t *testing.T) {
-	for _, ago := range []time.Duration{trailerUpkeepStale + time.Minute, 0} {
+	for _, ago := range []time.Duration{7*time.Hour + time.Minute, 0} {
 		fakeReader(t, "unavailable")
 		_, st := discoverRig(t, trailerTMDB(t))
 		a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
@@ -399,9 +393,9 @@ func TestTrailerUpkeepCountsAfterALongGap(t *testing.T) {
 		}
 		for i := range health.TrailerFailLimit {
 			k := fmt.Sprintf("deadVideo%02d", i)
-			_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
+			_, _ = a.trailers.Read(context.Background(), k, k, time.Now(), false)
 		}
-		if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit {
+		if s := a.trailers.ReaderState(); s.Videos != health.TrailerFailLimit {
 			t.Fatalf("last good %v ago: %+v", ago, s)
 		}
 	}
@@ -414,11 +408,11 @@ func TestTrailerBadMarksPerVersion(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"})
-	a.markTrailerBad(ctx, "deadVideo00", youtube.Unavailable, now)
-	if _, bad := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"}).trailerBad(ctx, "deadVideo00", now); !bad {
+	a.trailers.MarkBad(ctx, "deadVideo00", youtube.Unavailable, now)
+	if _, bad := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"}).trailers.Bad(ctx, "deadVideo00", now); !bad {
 		t.Fatal("a restart of the same version forgot the mark")
 	}
-	if _, bad := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.1"}).trailerBad(ctx, "deadVideo00", now); bad {
+	if _, bad := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.1"}).trailers.Bad(ctx, "deadVideo00", now); bad {
 		t.Fatal("an update kept the old mark")
 	}
 }
@@ -434,21 +428,19 @@ func TestTrailerUncountedMissNotMarked(t *testing.T) {
 	recentGood(a, time.Hour)
 	ctx := context.Background()
 	now := time.Now()
-	_, _ = a.resolveTitle(ctx, "movie", "11", "en")
-	if _, bad := a.trailerBad(ctx, "trailerKey1", now); bad {
+	_, _ = a.trailers.ResolveTitle(ctx, "movie", "11", "en")
+	if _, bad := a.trailers.Bad(ctx, "trailerKey1", now); bad {
 		t.Fatal("an uncounted first-lookup miss marked the key bad")
 	}
-	a.trailers.mu.Lock()
-	a.trailers.cache = nil
-	a.trailers.mu.Unlock()
-	_, _ = a.resolveTitle(renewing(ctx), "movie", "11", "en")
-	if _, bad := a.trailerBad(ctx, "trailerKey1", now); !bad {
+	a.trailers.Forget()
+	_, _ = a.trailers.ResolveTitle(metadata.Renewing(ctx), "movie", "11", "en")
+	if _, bad := a.trailers.Bad(ctx, "trailerKey1", now); !bad {
 		t.Fatal("a renewal miss did not mark the key bad")
 	}
 	// Age-restricted is about the video, never counted, and marked either way.
 	yt.set("ageGated001", "age")
-	_, _ = a.resolveTitle(ctx, "movie", "13", "en")
-	if r, bad := a.trailerBad(ctx, "ageGated001", now); !bad || r != youtube.AgeRestricted {
+	_, _ = a.trailers.ResolveTitle(ctx, "movie", "13", "en")
+	if r, bad := a.trailers.Bad(ctx, "ageGated001", now); !bad || r != youtube.AgeRestricted {
 		t.Fatalf("age-restricted not marked: %v %v", r, bad)
 	}
 }

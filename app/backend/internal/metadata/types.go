@@ -167,3 +167,48 @@ type ServerReads struct {
 	// link, "" when it is not one.
 	ArtLink func(u string) string
 }
+
+// UISettings is the app look settings the trailer routes and pass read.
+type UISettings interface {
+	// AutoplayTrailers says whether heroes and cards may play trailers.
+	AutoplayTrailers(ctx context.Context) bool
+}
+
+// People tells who asks.
+type People interface {
+	// UserID is the signed-in person (the owner without sign-in).
+	UserID(r *http.Request) int64
+}
+
+// TrailerWants is what discover hands the trailer pass: the titles its
+// pages show and the languages they were asked in.
+type TrailerWants interface {
+	// PassTitles are the movies and shows (kind, TMDB id) the pass covers,
+	// in page order.
+	PassTitles(ctx context.Context) [][2]string
+	// PassLanguages are the languages the pass covers, at most
+	// TrailerPassLangs.
+	PassLanguages(ctx context.Context) []string
+	// Warm fills titles' details and extras ahead.
+	Warm(lang string, titles [][2]string)
+}
+
+// ArtistVideos is what music hands the trailer routes and pass: the
+// artists whose music videos are kept ready.
+type ArtistVideos interface {
+	// On says whether artist music videos can play here.
+	On() bool
+	// Asks are the artists the pass keeps a video ready for, ranked.
+	Asks(ctx context.Context, now time.Time) []string
+	// Due says whether the pass looks one of the artist's videos up, and
+	// whether that renews a ready one (urgent when it would lapse first).
+	Due(ctx context.Context, mbid string, now time.Time) (due, renew, urgent bool)
+	// Pass makes the artist's video ready, or renews the ready one.
+	Pass(ctx context.Context, mbid string, renew bool) error
+	// SaveAsks keeps the noted artists across restarts.
+	SaveAsks(ctx context.Context)
+	// Ready is the artist's ready video as the artist page answers it.
+	Ready(r *http.Request, mbid string) (view any, ok bool)
+	// Note notes artists for the pass.
+	Note(ctx context.Context, mbids []string)
+}

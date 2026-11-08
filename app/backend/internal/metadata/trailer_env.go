@@ -1,14 +1,13 @@
-package main
+package metadata
 
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 )
 
 // Stand-ins for the trailer reader, for the browser tests. Unset, nothing
@@ -24,15 +23,15 @@ const (
 	EnvTrailerPassEvery = "HOLYARRS_TRAILER_PASS_EVERY"
 )
 
-// trailerStandIns applies the stand-ins named in the environment; a value
+// TrailerStandIns applies the stand-ins named in the environment; a value
 // that does not fit stops the start with a message.
-func trailerStandIns() error {
+func TrailerStandIns() error {
 	if raw := strings.TrimSpace(os.Getenv(EnvYouTubeURL)); raw != "" {
 		base, err := youtubeStandIn(raw)
 		if err != nil {
 			return err
 		}
-		api.UseYouTube(base)
+		UseYouTube(base)
 	}
 	first, err := passDuration(EnvTrailerPassFirst)
 	if err != nil {
@@ -42,7 +41,7 @@ func trailerStandIns() error {
 	if err != nil {
 		return err
 	}
-	api.TrailerPassTiming(first, every)
+	TrailerPassTiming(first, every)
 	return nil
 }
 
@@ -53,7 +52,7 @@ func youtubeStandIn(raw string) (string, error) {
 	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Scheme != "http" && u.Scheme != "https") {
 		return "", fmt.Errorf("%s must look like https://host or http://127.0.0.1:port", EnvYouTubeURL)
 	}
-	if u.Scheme == "http" && !loopbackHost(strings.ToLower(u.Hostname())) {
+	if u.Scheme == "http" && !loopbackName(strings.ToLower(u.Hostname())) {
 		return "", fmt.Errorf("%s may use plain http only for this machine (127.0.0.1, ::1 or localhost)", EnvYouTubeURL)
 	}
 	return strings.TrimRight(raw, "/"), nil
@@ -70,4 +69,12 @@ func passDuration(name string) (time.Duration, error) {
 		return 0, errors.New(name + " must be a duration such as 2s or 5m")
 	}
 	return d, nil
+}
+
+// loopbackName says whether a host is this machine.
+func loopbackName(h string) bool {
+	if ip := net.ParseIP(h); ip != nil {
+		return ip.IsLoopback()
+	}
+	return h == "localhost"
 }

@@ -21,7 +21,7 @@ func TestTrailersCheckFollowsAutoplay(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 	he := &health.Engine{}
-	startTrailers(api.New(api.Server{Store: s, Version: "test"}), he)
+	startTrailers(api.New(api.Server{Store: s, Version: "test"}).Trailers(), he)
 	set := func(v string) {
 		t.Helper()
 		if err := s.Write(ctx, func(tx *sql.Tx) error {

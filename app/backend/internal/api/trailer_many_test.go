@@ -86,32 +86,28 @@ func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 	// reader (after a restart, known misses are looked up again).
 	recentGood(a, time.Hour)
 	_ = lookUp(t, a, "movie", "77")
-	if s := a.TrailerReader(); s.Videos != 0 {
+	if s := a.trailers.ReaderState(); s.Videos != 0 {
 		t.Fatalf("first lookup counted: %+v", s)
 	}
 	yt.runs.Store(0)
 	// The same title failing on its renewals (it played here before) counts,
 	// once.
 	for i := 1; i <= 3; i++ {
-		a.trailers.mu.Lock()
-		a.trailers.cache = nil
-		a.trailers.mu.Unlock()
-		if _, err := a.resolveTitle(renewing(context.Background()), "movie", "77", "en"); err == nil {
+		a.trailers.Forget()
+		if _, err := a.trailers.ResolveTitle(metadata.Renewing(context.Background()), "movie", "77", "en"); err == nil {
 			t.Fatal("played")
 		}
 		if n := yt.runs.Load(); n != int32(5*i) {
 			t.Fatalf("lookup %d: %d videos tried, want %d", i, n, 5*i)
 		}
-		if s := a.TrailerReader(); s.Videos != 1 || s.LastReason != youtube.Unplayable {
+		if s := a.trailers.ReaderState(); s.Videos != 1 || s.LastReason != youtube.Unplayable {
 			t.Fatalf("lookup %d: %+v", i, s)
 		}
 	}
 	// The same title in another language is still one title.
-	a.trailers.mu.Lock()
-	a.trailers.cache = nil
-	a.trailers.mu.Unlock()
-	_, _ = a.resolveTitle(renewing(context.Background()), "movie", "77", "de")
-	if s := a.TrailerReader(); s.Videos != 1 {
+	a.trailers.Forget()
+	_, _ = a.trailers.ResolveTitle(metadata.Renewing(context.Background()), "movie", "77", "de")
+	if s := a.trailers.ReaderState(); s.Videos != 1 {
 		t.Fatalf("another language counted again: %+v", s)
 	}
 }

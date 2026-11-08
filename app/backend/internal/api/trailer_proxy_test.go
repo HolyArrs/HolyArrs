@@ -13,10 +13,15 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // signedVariants is how many variants the fake's freshly signed manifest lists.
 const signedVariants = 400
+
+// relayMaxURLs is how many addresses the relay keeps for one stream.
+const relayMaxURLs = 5000
 
 // fakeYouTube plays YouTube's video servers for the relay: every
 // *.googlevideo.com address is sent to it. release holds the second half
@@ -75,9 +80,10 @@ func fakeYouTube(t *testing.T) (release chan struct{}) {
 		}
 		return (&net.Dialer{}).DialContext(ctx, network, yt.Listener.Addr().String())
 	}
-	old := trailerProxyClient
-	trailerProxyClient = &http.Client{Transport: tr, CheckRedirect: old.CheckRedirect}
-	t.Cleanup(func() { trailerProxyClient = old })
+	var old *http.Client
+	old = metadata.UseRelayClient(nil)
+	metadata.UseRelayClient(&http.Client{Transport: tr, CheckRedirect: old.CheckRedirect})
+	t.Cleanup(func() { metadata.UseRelayClient(old) })
 	return release
 }
 
@@ -99,7 +105,7 @@ func proxyRig(t *testing.T) (*httptest.Server, *API) {
 func TestTrailerPassThrough(t *testing.T) {
 	release := fakeYouTube(t)
 	srv, _ := proxyRig(t)
-	var s TrailerStream
+	var s metadata.TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if !strings.HasPrefix(s.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(s.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("proxy_url %q", s.ProxyURL)
@@ -112,7 +118,7 @@ func TestTrailerPassThrough(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := readAll(t, res)
-	if res.StatusCode != 200 || res.Header.Get("Content-Type") != m3u8Type || res.Header.Get("Cache-Control") != "private, no-store" ||
+	if res.StatusCode != 200 || res.Header.Get("Content-Type") != "application/vnd.apple.mpegurl" || res.Header.Get("Cache-Control") != "private, no-store" ||
 		strings.Contains(body, "googlevideo") || !strings.Contains(body, "\nseg/0\n") {
 		t.Fatalf("%d %v\n%s", res.StatusCode, res.Header, body)
 	}
@@ -155,7 +161,7 @@ func TestTrailerPassThrough(t *testing.T) {
 func TestTrailerPassThroughRefusals(t *testing.T) {
 	fakeYouTube(t)
 	srv, a := proxyRig(t)
-	var s TrailerStream
+	var s metadata.TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	base := srv.URL + strings.TrimSuffix(s.ProxyURL, "manifest.m3u8")
 
@@ -164,28 +170,28 @@ func TestTrailerPassThroughRefusals(t *testing.T) {
 	do(t, "GET", base+"seg/0", "", 404)
 	do(t, "GET", base+"seg/x", "", 404)
 	// Another person's stream.
-	other := a.trailerRelay.register(4242, "https://manifest.googlevideo.com/api/manifest/hls_variant/other/index.m3u8", time.Now().Add(time.Hour))
+	other := a.trailers.Relay(4242, "https://manifest.googlevideo.com/api/manifest/hls_variant/other/index.m3u8", time.Now().Add(time.Hour))
 	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+other+"/manifest.m3u8", "", 404)
 	// A foreign host is never taken in, and a playlist naming one is refused.
-	if id := a.trailerRelay.register(0, "https://evil.example.com/hls_variant/index.m3u8", time.Now().Add(time.Hour)); id != "" {
+	if id := a.trailers.Relay(0, "https://evil.example.com/hls_variant/index.m3u8", time.Now().Add(time.Hour)); id != "" {
 		t.Fatalf("foreign manifest registered as %s", id)
 	}
 	for _, raw := range []string{"http://manifest.googlevideo.com/x", "https://googlevideo.com.evil.example/x", "https://127.0.0.1/x"} {
-		if googlevideo(raw) {
+		if metadata.Googlevideo(raw) {
 			t.Fatalf("%s allowed", raw)
 		}
 	}
-	evil := a.trailerRelay.register(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/evil/index.m3u8", time.Now().Add(time.Hour))
+	evil := a.trailers.Relay(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/evil/index.m3u8", time.Now().Add(time.Hour))
 	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+evil+"/manifest.m3u8", "", 502)
 	base2, _ := url.Parse("https://manifest.googlevideo.com/a/b.m3u8")
-	if _, err := rewriteM3U8([]byte("#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,URI=\"https://evil.example.com/a.m3u8\"\n"), base2, "seg/", func(string) int { return 0 }); err == nil {
+	if _, err := metadata.RewriteM3U8([]byte("#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,URI=\"https://evil.example.com/a.m3u8\"\n"), base2, "seg/", func(string) int { return 0 }); err == nil {
 		t.Fatal("foreign URI attribute kept")
 	}
-	if _, err := rewriteM3U8([]byte("<html>"), base2, "seg/", func(string) int { return 0 }); err == nil {
+	if _, err := metadata.RewriteM3U8([]byte("<html>"), base2, "seg/", func(string) int { return 0 }); err == nil {
 		t.Fatal("not a playlist kept")
 	}
 	// Expired streams are gone.
-	old := a.trailerRelay.register(0, "https://manifest.googlevideo.com/api/manifest/hls_variant/old/index.m3u8", time.Now().Add(-time.Minute))
+	old := a.trailers.Relay(0, "https://manifest.googlevideo.com/api/manifest/hls_variant/old/index.m3u8", time.Now().Add(-time.Minute))
 	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+old+"/manifest.m3u8", "", 404)
 }
 
@@ -196,70 +202,21 @@ func TestTrailerPassThroughRefusals(t *testing.T) {
 func TestTrailerPassThroughReplays(t *testing.T) {
 	fakeYouTube(t)
 	srv, a := proxyRig(t)
-	id := a.trailerRelay.register(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/api/manifest/hls_variant/signed/index.m3u8", time.Now().Add(time.Hour))
+	id := a.trailers.Relay(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/api/manifest/hls_variant/signed/index.m3u8", time.Now().Add(time.Hour))
 	base := srv.URL + "/api/v1/trailer/stream/" + id + "/"
 	do(t, "GET", base+"manifest.m3u8", "", 200)
 	var last string
-	for range 2 * proxyMaxURLs / signedVariants {
+	for range 2 * relayMaxURLs / signedVariants {
 		list := strings.Split(strings.TrimSpace(string(do(t, "GET", base+"manifest.m3u8", "", 200))), "\n")
 		last = list[len(list)-1]
 		// The first play's first variant stays in use.
 		do(t, "GET", base+"seg/0", "", 200)
 	}
-	if n := len(a.trailerRelay.streams[id].index); n > proxyMaxURLs {
+	if n := a.trailers.RelayAddresses(id); n > relayMaxURLs {
 		t.Fatalf("stream holds %d addresses", n)
 	}
 	do(t, "GET", base+last, "", 200)
 	do(t, "GET", base+"seg/1", "", 404)
-}
-
-// A person may have proxyStreams streams going at once; an idle one frees
-// its place.
-func TestTrailerPassThroughCap(t *testing.T) {
-	var p trailerProxy
-	exp := time.Now().Add(time.Hour)
-	ids := []string{}
-	for _, m := range []string{"a", "b", "c", "d", "e"} {
-		ids = append(ids, p.register(7, "https://manifest.googlevideo.com/api/manifest/hls_variant/"+m+"/index.m3u8", exp))
-	}
-	now := time.Now()
-	for _, id := range ids[:proxyStreams] {
-		s, err := p.begin(7, id, now)
-		if err != nil {
-			t.Fatal(err)
-		}
-		p.done(7, s, 10)
-	}
-	// The stream past proxyStreams waits.
-	if _, err := p.begin(7, ids[len(ids)-1], now); err != errProxyBusy {
-		t.Fatalf("stream past the cap: %v", err)
-	}
-	if s, err := p.begin(8, p.register(8, "https://manifest.googlevideo.com/api/manifest/hls_variant/a/index.m3u8", exp), now); err != nil {
-		t.Fatalf("another person: %v", err)
-	} else {
-		p.done(8, s, 0)
-	}
-	// The others go quiet: the last may start.
-	if s, err := p.begin(7, ids[len(ids)-1], now.Add(proxyIdle+time.Second)); err != nil {
-		t.Fatalf("after idle: %v", err)
-	} else {
-		p.done(7, s, 0)
-	}
-	// In-flight requests on one stream are capped too.
-	var held []*proxyStream
-	for range proxyRequests {
-		s, err := p.begin(9, p.register(9, "https://manifest.googlevideo.com/api/manifest/hls_variant/z/index.m3u8", exp), now)
-		if err != nil {
-			t.Fatal(err)
-		}
-		held = append(held, s)
-	}
-	if _, err := p.begin(9, p.register(9, "https://manifest.googlevideo.com/api/manifest/hls_variant/z/index.m3u8", exp), now); err != errProxyBusy {
-		t.Fatalf("in flight: %v", err)
-	}
-	for _, s := range held {
-		p.done(9, s, 0)
-	}
 }
 
 // The trailer key is kept 30 days (memory and SQLite) and Explore cards
@@ -269,14 +226,14 @@ func TestTrailerKeyKept(t *testing.T) {
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
-	if k := a.knownTrailerKey(ctx, "movie", "11", "en"); k != "" {
+	if k := a.trailers.KnownKey(ctx, "movie", "11", "en"); k != "" {
 		t.Fatalf("known before lookup: %q", k)
 	}
-	if _, err := a.resolveTitle(ctx, "movie", "11", "en"); err != nil {
+	if _, err := a.trailers.ResolveTitle(ctx, "movie", "11", "en"); err != nil {
 		t.Fatal(err)
 	}
 	b := New(Server{Store: st, Version: "test"}) // a restart, and no metadata source at all
-	if k := b.knownTrailerKey(ctx, "movie", "11", "en"); k != "trailerKey1" {
+	if k := b.trailers.KnownKey(ctx, "movie", "11", "en"); k != "trailerKey1" {
 		t.Fatalf("after restart %q", k)
 	}
 	items := []discoverItemView{{}, {}}
@@ -294,83 +251,4 @@ func readAll(t *testing.T, res *http.Response) string {
 	var sb strings.Builder
 	_, _ = bufio.NewReader(res.Body).WriteTo(&sb)
 	return sb.String()
-}
-
-// The whole install has at most proxyMaxActive streams going, and one
-// stream relays for at most proxyLife.
-func TestTrailerPassThroughInstallCap(t *testing.T) {
-	var p trailerProxy
-	exp := time.Now().Add(time.Hour)
-	now := time.Now()
-	manifest := func(m string) string {
-		return "https://manifest.googlevideo.com/api/manifest/hls_variant/" + m + "/index.m3u8"
-	}
-	for u := int64(1); u <= proxyMaxActive; u++ {
-		s, err := p.begin(u, p.register(u, manifest("a"), exp), now)
-		if err != nil {
-			t.Fatalf("person %d: %v", u, err)
-		}
-		p.done(u, s, 0)
-	}
-	if _, err := p.begin(99, p.register(99, manifest("a"), exp), now); err != errProxyBusy {
-		t.Fatalf("over the install cap: %v", err)
-	}
-	// Relaying without a break past proxyLife is refused...
-	var q trailerProxy
-	id := q.register(1, manifest("a"), exp)
-	at := now
-	for ; at.Sub(now) <= proxyLife; at = at.Add(proxyIdle / 2) {
-		s, err := q.begin(1, id, at)
-		if err != nil {
-			t.Fatalf("at %v: %v", at.Sub(now), err)
-		}
-		q.done(1, s, 0)
-		s.last = at // done stamps the wall clock
-	}
-	if _, err := q.begin(1, id, at); err != errProxyBusy {
-		t.Fatalf("past the stream life: %v", err)
-	}
-	// ...but the same trailer played again later (same id) starts afresh.
-	if s, err := q.begin(1, id, at.Add(proxyIdle)); err != nil {
-		t.Fatalf("a new play of an old stream: %v", err)
-	} else {
-		q.done(1, s, 0)
-	}
-}
-
-// An idle restart clears a stream's own count, never the person's hourly bytes.
-func TestTrailerProxyPersonCapSurvivesIdle(t *testing.T) {
-	var p trailerProxy
-	now := time.Now()
-	id := p.register(1, "https://rr1---sn.googlevideo.com/m.m3u8", now.Add(time.Hour))
-	for i := 0; i < 5; i++ {
-		s, err := p.begin(1, id, now)
-		if err != nil {
-			if i >= 4 {
-				return
-			}
-			t.Fatalf("play %d refused early: %v", i, err)
-		}
-		p.done(1, s, proxyMaxStream)
-		now = now.Add(proxyIdle + time.Second)
-	}
-	t.Fatal("hourly cap never stopped the replays")
-}
-
-// A stream with a request still running is not idle, however long it has been quiet.
-func TestTrailerProxyBusyStreamNotFresh(t *testing.T) {
-	var p trailerProxy
-	now := time.Now()
-	id := p.register(1, "https://rr1---sn.googlevideo.com/m.m3u8", now.Add(time.Hour))
-	s, err := p.begin(1, id, now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	started := s.started
-	if _, err := p.begin(1, id, now.Add(proxyIdle+time.Second)); err != nil {
-		t.Fatal(err)
-	}
-	if !s.started.Equal(started) {
-		t.Fatal("a busy stream restarted its life")
-	}
 }

@@ -618,7 +618,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return fmt.Errorf("metadata server: %w", err)
 	}
 	// A stand-in YouTube and a quicker trailer pass (browser tests only).
-	if err := trailerStandIns(); err != nil {
+	if err := metadata.TrailerStandIns(); err != nil {
 		return err
 	}
 	hosted.Disk = metadata.LookupCache{Store: s}
@@ -918,10 +918,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	for _, l := range a.MusicLoops() {
 		optional(l)
 	}
-	for _, l := range a.TrailerLoops() {
+	for _, l := range a.Trailers().Loops() {
 		optional(l)
 	}
-	startTrailers(a, he)
+	startTrailers(a.Trailers(), he)
 	// Health starts once every check is wired (the trailers check comes
 	// from the API), so its first run sees them all.
 	reg.Set(jobs.StageKey("health"), "stage", "Health checks", jobs.Running, "")

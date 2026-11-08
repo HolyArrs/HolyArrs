@@ -1,4 +1,4 @@
-package api
+package metadata
 
 import (
 	"bytes"
@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Trailer pass-through: for a browser without native HLS (Chrome, Firefox,
@@ -43,11 +45,19 @@ const (
 // trailerProxyClient fetches from YouTube; tests point it at a fake.
 var trailerProxyClient = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		if len(via) >= 3 || !googlevideo(req.URL.String()) {
+		if len(via) >= 3 || !Googlevideo(req.URL.String()) {
 			return errors.New("redirect refused")
 		}
 		return nil
 	},
+}
+
+// UseRelayClient swaps the client the relay fetches with (for tests) and
+// answers the one it replaced.
+func UseRelayClient(c *http.Client) *http.Client {
+	old := trailerProxyClient
+	trailerProxyClient = c
+	return old
 }
 
 type proxyStream struct {
@@ -76,7 +86,7 @@ type proxyUse struct {
 	bytes int64
 }
 
-type trailerProxy struct {
+type trailerRelay struct {
 	mu       sync.Mutex
 	streams  map[string]*proxyStream
 	byKey    map[string]string
@@ -87,8 +97,8 @@ type trailerProxy struct {
 // register gives the person an opaque id for a manifest HolyArrs resolved
 // (the same id again for the same manifest). "" when the address is not
 // on YouTube's video servers.
-func (p *trailerProxy) register(user int64, manifest string, expires time.Time) string {
-	if !googlevideo(manifest) {
+func (p *trailerRelay) register(user int64, manifest string, expires time.Time) string {
+	if !Googlevideo(manifest) {
 		return ""
 	}
 	p.mu.Lock()
@@ -118,12 +128,12 @@ func (p *trailerProxy) register(user int64, manifest string, expires time.Time) 
 var errProxyBusy = errors.New("busy")
 
 // begin finds the person's stream and takes one in-flight slot; done frees it.
-func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream, error) {
+func (p *trailerRelay) begin(user int64, id string, now time.Time) (*proxyStream, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	s := p.streams[id]
 	if s == nil || s.user != user || now.After(s.expires) {
-		return nil, errNoStream
+		return nil, ErrNoStream
 	}
 	// A stream left idle starts a new play: its life and byte count start
 	// over (the same manifest keeps its id, so the hero, the full-screen
@@ -170,7 +180,7 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	return s, nil
 }
 
-func (p *trailerProxy) done(user int64, s *proxyStream, sent int64) {
+func (p *trailerRelay) done(user int64, s *proxyStream, sent int64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.inFlight[user]--
@@ -183,7 +193,7 @@ func (p *trailerProxy) done(user int64, s *proxyStream, sent int64) {
 }
 
 // address is the stream's n-th address; using it keeps it longer.
-func (p *trailerProxy) address(s *proxyStream, n int) (string, bool) {
+func (p *trailerRelay) address(s *proxyStream, n int) (string, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	e := s.addrs[n]
@@ -198,7 +208,7 @@ func (p *trailerProxy) address(s *proxyStream, n int) (string, bool) {
 // a playlist's addresses afresh on every fetch, so every play brings new
 // ones: past proxyMaxURLs the one used longest ago goes. A number is never
 // given twice, so one let go answers 404, never another address.
-func (p *trailerProxy) add(s *proxyStream, abs string) int {
+func (p *trailerRelay) add(s *proxyStream, abs string) int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if n, ok := s.index[abs]; ok {
@@ -219,18 +229,18 @@ func (p *trailerProxy) add(s *proxyStream, abs string) int {
 
 var m3u8URI = regexp.MustCompile(`URI="([^"]*)"`)
 
-// rewriteM3U8 points every address in a playlist at the relay: each one is
+// RewriteM3U8 points every address in a playlist at the relay: each one is
 // resolved against base, must be on YouTube's video servers, and becomes
 // prefix+<number>. A foreign address, or more than a stream keeps, refuses
 // the whole playlist.
-func rewriteM3U8(body []byte, base *url.URL, prefix string, add func(abs string) int) ([]byte, error) {
+func RewriteM3U8(body []byte, base *url.URL, prefix string, add func(abs string) int) ([]byte, error) {
 	if !bytes.HasPrefix(bytes.TrimSpace(body), []byte("#EXTM3U")) {
 		return nil, errors.New("not a playlist")
 	}
 	count := 0
 	swap := func(ref string) (string, error) {
 		u, err := base.Parse(strings.TrimSpace(ref))
-		if err != nil || !googlevideo(u.String()) {
+		if err != nil || !Googlevideo(u.String()) {
 			return "", errors.New("foreign address")
 		}
 		if count++; count > proxyMaxURLs {
@@ -271,32 +281,32 @@ func rewriteM3U8(body []byte, base *url.URL, prefix string, add func(abs string)
 }
 
 // proxyOpen checks the person and the stream, as both relay routes do.
-func (a *API) proxyOpen(w http.ResponseWriter, r *http.Request) (*proxyStream, int64, bool) {
-	if a.kidMax(r) != "" {
-		fail(w, http.StatusForbidden, "trailers do not play for Kid accounts")
+func (t *Trailers) proxyOpen(w http.ResponseWriter, r *http.Request) (*proxyStream, int64, bool) {
+	if t.Ages.Max(r) != "" {
+		webserver.Fail(w, http.StatusForbidden, "trailers do not play for Kid accounts")
 		return nil, 0, false
 	}
-	if len(a.kindsOn("")) == 0 {
-		fail(w, http.StatusConflict, "that part is off")
+	if len(t.KindsOn("")) == 0 {
+		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return nil, 0, false
 	}
-	user := a.person(r).UserID
-	s, err := a.trailerRelay.begin(user, r.PathValue("id"), time.Now())
+	user := t.People.UserID(r)
+	s, err := t.relay.begin(user, r.PathValue("id"), time.Now())
 	switch {
 	case errors.Is(err, errProxyBusy):
 		w.Header().Set("Retry-After", "15")
-		fail(w, http.StatusTooManyRequests, "too many trailer streams at once")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many trailer streams at once")
 		return nil, 0, false
 	case err != nil:
-		fail(w, http.StatusNotFound, "no such trailer stream")
+		webserver.Fail(w, http.StatusNotFound, "no such trailer stream")
 		return nil, 0, false
 	}
 	return s, user, true
 }
 
-func proxyFetch(ctx context.Context, raw string, rng string) (*http.Response, error) {
-	if !googlevideo(raw) {
-		return nil, errNoStream
+func (t *Trailers) proxyFetch(ctx context.Context, raw string, rng string) (*http.Response, error) {
+	if !Googlevideo(raw) {
+		return nil, ErrNoStream
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
 	if err != nil {
@@ -330,16 +340,16 @@ func isPlaylist(res *http.Response, raw string) bool {
 }
 
 // relayPlaylist reads, rewrites and sends one playlist.
-func (a *API) relayPlaylist(w http.ResponseWriter, s *proxyStream, res *http.Response, raw, prefix string) int64 {
+func (t *Trailers) relayPlaylist(w http.ResponseWriter, s *proxyStream, res *http.Response, raw, prefix string) int64 {
 	body, err := io.ReadAll(io.LimitReader(res.Body, proxyMaxList+1))
 	if err != nil || len(body) > proxyMaxList {
-		fail(w, http.StatusBadGateway, "trailer playlist unreadable")
+		webserver.Fail(w, http.StatusBadGateway, "trailer playlist unreadable")
 		return 0
 	}
 	base, _ := url.Parse(raw)
-	out, err := rewriteM3U8(body, base, prefix, func(abs string) int { return a.trailerRelay.add(s, abs) })
+	out, err := RewriteM3U8(body, base, prefix, func(abs string) int { return t.relay.add(s, abs) })
 	if err != nil {
-		fail(w, http.StatusBadGateway, "trailer playlist refused")
+		webserver.Fail(w, http.StatusBadGateway, "trailer playlist refused")
 		return 0
 	}
 	proxyHeaders(w, m3u8Type)
@@ -350,49 +360,49 @@ func (a *API) relayPlaylist(w http.ResponseWriter, s *proxyStream, res *http.Res
 }
 
 // trailerManifest answers GET /trailer/stream/{id}/manifest.m3u8.
-func (a *API) trailerManifest(w http.ResponseWriter, r *http.Request) {
-	s, user, ok := a.proxyOpen(w, r)
+func (t *Trailers) trailerManifest(w http.ResponseWriter, r *http.Request) {
+	s, user, ok := t.proxyOpen(w, r)
 	if !ok {
 		return
 	}
 	var sent int64
-	defer func() { a.trailerRelay.done(user, s, sent) }()
+	defer func() { t.relay.done(user, s, sent) }()
 	ctx, cancel := context.WithTimeout(r.Context(), proxyTimeout)
 	defer cancel()
-	res, err := proxyFetch(ctx, s.manifest, "")
+	res, err := t.proxyFetch(ctx, s.manifest, "")
 	if err != nil {
-		fail(w, http.StatusBadGateway, "The trailer could not be played")
+		webserver.Fail(w, http.StatusBadGateway, "The trailer could not be played")
 		return
 	}
 	defer res.Body.Close()
-	sent = a.relayPlaylist(w, s, res, s.manifest, "seg/")
+	sent = t.relayPlaylist(w, s, res, s.manifest, "seg/")
 }
 
 // trailerSegment answers GET /trailer/stream/{id}/seg/{n}: a variant
 // playlist (rewritten) or a segment (streamed as it arrives).
-func (a *API) trailerSegment(w http.ResponseWriter, r *http.Request) {
-	s, user, ok := a.proxyOpen(w, r)
+func (t *Trailers) trailerSegment(w http.ResponseWriter, r *http.Request) {
+	s, user, ok := t.proxyOpen(w, r)
 	if !ok {
 		return
 	}
 	var sent int64
-	defer func() { a.trailerRelay.done(user, s, sent) }()
+	defer func() { t.relay.done(user, s, sent) }()
 	n, err := strconv.Atoi(r.PathValue("n"))
-	raw, found := a.trailerRelay.address(s, n)
+	raw, found := t.relay.address(s, n)
 	if err != nil || !found {
-		fail(w, http.StatusNotFound, "no such trailer segment")
+		webserver.Fail(w, http.StatusNotFound, "no such trailer segment")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), proxyTimeout)
 	defer cancel()
-	res, err := proxyFetch(ctx, raw, r.Header.Get("Range"))
+	res, err := t.proxyFetch(ctx, raw, r.Header.Get("Range"))
 	if err != nil {
-		fail(w, http.StatusBadGateway, "The trailer could not be played")
+		webserver.Fail(w, http.StatusBadGateway, "The trailer could not be played")
 		return
 	}
 	defer res.Body.Close()
 	if isPlaylist(res, raw) {
-		sent = a.relayPlaylist(w, s, res, raw, "")
+		sent = t.relayPlaylist(w, s, res, raw, "")
 		return
 	}
 	ct := strings.ToLower(res.Header.Get("Content-Type"))
@@ -400,7 +410,7 @@ func (a *API) trailerSegment(w http.ResponseWriter, r *http.Request) {
 		ct = "application/octet-stream"
 	}
 	if res.ContentLength > proxyMaxBody {
-		fail(w, http.StatusBadGateway, "trailer segment too large")
+		webserver.Fail(w, http.StatusBadGateway, "trailer segment too large")
 		return
 	}
 	proxyHeaders(w, ct)
@@ -426,4 +436,19 @@ func (a *API) trailerSegment(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+// Relay gives the person an opaque relay id for a manifest HolyArrs
+// resolved; "" when the address is not on YouTube's video servers.
+func (t *Trailers) Relay(user int64, manifest string, expires time.Time) string {
+	return t.relay.register(user, manifest, expires)
+}
+
+// RelayURL is the relay address of an HLS stream for the person, "" when
+// it cannot be relayed.
+func (t *Trailers) RelayURL(r *http.Request, s TrailerStream) string {
+	if id := t.Relay(t.People.UserID(r), s.URL, s.ExpiresAt); id != "" {
+		return webserver.URLBaseFrom(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8"
+	}
+	return ""
 }

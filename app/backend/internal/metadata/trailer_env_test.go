@@ -1,11 +1,9 @@
-package main
+package metadata
 
 import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 )
 
 // A stand-in YouTube is http or https; plain http only on this machine.
@@ -71,10 +69,10 @@ func TestTrailerPassDurations(t *testing.T) {
 	}
 }
 
-// trailerStandIns stops the start on a value that does not fit, and takes
+// TrailerStandIns stops the start on a value that does not fit, and takes
 // good ones (nothing set changes nothing).
 func TestTrailerStandIns(t *testing.T) {
-	t.Cleanup(func() { api.UseYouTube("") })
+	t.Cleanup(func() { UseYouTube("") })
 	for _, c := range []struct {
 		url, first, every string
 		bad               string // the variable the refusal names ("" when none)
@@ -88,7 +86,7 @@ func TestTrailerStandIns(t *testing.T) {
 		t.Setenv(EnvYouTubeURL, c.url)
 		t.Setenv(EnvTrailerPassFirst, c.first)
 		t.Setenv(EnvTrailerPassEvery, c.every)
-		err := trailerStandIns()
+		err := TrailerStandIns()
 		switch {
 		case c.bad == "" && err != nil:
 			t.Errorf("%+v: %v", c, err)

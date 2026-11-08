@@ -32,9 +32,8 @@ func videoSetup(t *testing.T, vids func(context.Context, string) ([]metadata.Art
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"music","label":"Music"}`, t.TempDir()), 201)
-	gap := trailerPassGap
-	trailerPassGap = 0
-	t.Cleanup(func() { trailerPassGap = gap })
+	gap := metadata.SetTrailerPassGap(0)
+	t.Cleanup(func() { metadata.SetTrailerPassGap(gap) })
 	videoAPIs.Store(srv.URL, a)
 	t.Cleanup(func() { videoAPIs.Delete(srv.URL) })
 	return srv.URL + "/api/v1/music/artists/" + apiArtist + "?part=video"
@@ -52,7 +51,7 @@ func videoPass(t *testing.T, u string) int {
 	if !ok {
 		t.Fatalf("no API for %s", base)
 	}
-	return v.(*API).trailerPass(metadata.Ahead(context.Background()), trailerPassBudget)
+	return v.(*API).trailers.Pass(metadata.Ahead(context.Background()), metadata.TrailerPassBudget)
 }
 
 // route: GET /api/v1/music/artists/{mbid}?part=video
@@ -132,10 +131,10 @@ func TestArtistVideoFallbacks(t *testing.T) {
 }
 
 func TestVideoStart(t *testing.T) {
-	if got := videoStart(metadata.ArtistVideo{}, TrailerStream{}); got != 0 {
+	if got := videoStart(metadata.ArtistVideo{}, metadata.TrailerStream{}); got != 0 {
 		t.Fatalf("nothing known: %v", got)
 	}
-	if got := videoStart(metadata.ArtistVideo{Duration: 100}, TrailerStream{Peak: 150}); got != 30 {
+	if got := videoStart(metadata.ArtistVideo{Duration: 100}, metadata.TrailerStream{Peak: 150}); got != 30 {
 		t.Fatalf("a peak past the end is ignored: %v", got)
 	}
 }

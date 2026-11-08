@@ -35,10 +35,16 @@ const (
 // MusicBrainz id: when each was last asked for, and in which order.
 type artistAsked struct {
 	mu     sync.Mutex
-	m      map[string]trailerAsk
+	m      map[string]artistAsk
 	n      uint64
 	loaded bool
 	dirty  bool
+}
+
+// artistAsk is when an artist was last asked for, and in which order.
+type artistAsk struct {
+	at time.Time
+	n  uint64
 }
 
 type storedArtistAsk struct {
@@ -58,7 +64,7 @@ func (a *API) loadArtistAsks(ctx context.Context) {
 	}
 	t.loaded = true
 	if t.m == nil {
-		t.m = map[string]trailerAsk{}
+		t.m = map[string]artistAsk{}
 	}
 	if a.s.Store == nil {
 		return
@@ -70,7 +76,7 @@ func (a *API) loadArtistAsks(ctx context.Context) {
 	}
 	for _, k := range kept {
 		if metadata.ValidMBID(k.MBID) && len(t.m) < artistAskedMax {
-			t.m[k.MBID] = trailerAsk{at: k.At, n: k.N}
+			t.m[k.MBID] = artistAsk{at: k.At, n: k.N}
 			t.n = max(t.n, k.N)
 		}
 	}
@@ -132,7 +138,7 @@ func (a *API) noteArtistVideos(ctx context.Context, mbids []string) {
 			delete(t.m, oldest)
 		}
 		t.n++
-		t.m[id] = trailerAsk{at: now, n: t.n}
+		t.m[id] = artistAsk{at: now, n: t.n}
 	}
 	t.dirty = true
 }
@@ -180,14 +186,14 @@ func (a *API) artistVideoDue(ctx context.Context, mbid string, now time.Time) (d
 		return false, false, false
 	}
 	if v, s, ok := a.readyVideo(ctx, vids); ok {
-		if a.trailers.inFlight("musicvideo|" + v.ID) {
+		if a.trailers.InFlight("musicvideo|" + v.ID) {
 			return false, false, false
 		}
-		left := s.ExpiresAt.Add(-trailerEarly).Sub(now)
-		return left < trailerRenewAhead(), true, left < trailerRenewAhead()-trailerPassEvery
+		left := s.ExpiresAt.Add(-metadata.TrailerEarly).Sub(now)
+		return left < a.trailers.RenewAhead(), true, left < a.trailers.RenewAhead()-metadata.TrailerPassEvery()
 	}
 	for _, v := range vids {
-		if _, known := a.videoKnown(ctx, v.ID); !known && !a.trailers.inFlight("musicvideo|"+v.ID) {
+		if _, known := a.videoKnown(ctx, v.ID); !known && !a.trailers.InFlight("musicvideo|"+v.ID) {
 			return true, false, false
 		}
 	}
@@ -207,14 +213,14 @@ func (a *API) passArtistVideo(ctx context.Context, mbid string, renew bool) erro
 		}
 		ckey := "musicvideo|" + v.ID
 		now := time.Now()
-		s, err := a.readTrailer(renewing(ctx), v.ID, v.ID, now, true)
+		s, err := a.trailers.Read(metadata.Renewing(ctx), v.ID, v.ID, now, true)
 		if err != nil {
-			if videoWontPlay(missedFor(err)) {
+			if videoWontPlay(metadata.MissedFor(err)) {
 				a.dropVideo(ctx, mbid, v.ID)
 			}
-			return missedFor(err)
+			return metadata.MissedFor(err)
 		}
-		a.keepMusicVideo(ctx, ckey, s, now)
+		a.trailers.KeepStream(ctx, ckey, s, now)
 		return nil
 	}
 	for _, v := range vids {

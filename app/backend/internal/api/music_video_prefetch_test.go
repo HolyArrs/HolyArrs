@@ -57,8 +57,8 @@ func TestArtistVideoPrefetch(t *testing.T) {
 	// Near expiry: renewed. A renewal YouTube refuses keeps the address.
 	a := apiOf(t, u)
 	now := time.Now()
-	soon := now.Add(trailerEarly + time.Minute)
-	a.keepMusicVideo(context.Background(), "musicvideo|dQw4w9WgXcQ", TrailerStream{Type: "hls", URL: "https://manifest.googlevideo.com/api/manifest/hls_playlist/id/x", ExpiresAt: soon, Key: "dQw4w9WgXcQ"}, now)
+	soon := now.Add(metadata.TrailerEarly + time.Minute)
+	a.trailers.KeepStream(context.Background(), "musicvideo|dQw4w9WgXcQ", metadata.TrailerStream{Type: "hls", URL: "https://manifest.googlevideo.com/api/manifest/hls_playlist/id/x", ExpiresAt: soon, Key: "dQw4w9WgXcQ"}, now)
 	yt.set("dQw4w9WgXcQ", "bot")
 	if n := videoPass(t, u); n != 1 {
 		t.Fatalf("renewal pass %d", n)
@@ -67,7 +67,7 @@ func TestArtistVideoPrefetch(t *testing.T) {
 		t.Fatal("a refused renewal dropped the address")
 	}
 	yt.set("dQw4w9WgXcQ", "heat")
-	a.trailers.failed.Store(0)
+	a.trailers.ResetDoor()
 	if n := videoPass(t, u); n != 1 {
 		t.Fatalf("second renewal pass %d", n)
 	}

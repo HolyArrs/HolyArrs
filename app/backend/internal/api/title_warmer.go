@@ -154,5 +154,5 @@ func (a *API) warmOne(ctx context.Context, j warmJob) {
 	}
 	// The key only (the metadata server's pick, else TMDB's videos; no
 	// YouTube call), for the cards and the hero's gate.
-	_, _ = a.trailerKey(metadata.Ahead(ctx), j.kind, j.id, j.lang)
+	_, _ = a.trailers.Key(metadata.Ahead(ctx), j.kind, j.id, j.lang)
 }

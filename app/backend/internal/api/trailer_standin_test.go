@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // UseYouTube sends the reader's calls to the stand-in, and a lookup there
@@ -15,45 +17,21 @@ func TestUseYouTubeAsksTheStandIn(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(f.serve))
 	t.Cleanup(srv.Close)
 	t.Cleanup(func() { close(f.stop) })
-	old := trailerReader
-	t.Cleanup(func() { trailerReader = old })
+	old := metadata.Reader()
+	t.Cleanup(func() { metadata.UseReader(old) })
 
-	UseYouTube(srv.URL + "/")
-	if trailerReader.Base != srv.URL+"/" {
-		t.Fatalf("reader base = %q", trailerReader.Base)
+	metadata.UseYouTube(srv.URL + "/")
+	if metadata.Reader().Base != srv.URL+"/" {
+		t.Fatalf("reader base = %q", metadata.Reader().Base)
 	}
-	s, err := resolveTrailer(context.Background(), "standinKey1", time.Now(), false)
+	s, err := metadata.ResolveTrailer(context.Background(), "standinKey1", time.Now(), false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Type != "mp4" || !s.Audio || s.Key != "standinKey1" || !googlevideo(s.URL) {
+	if s.Type != "mp4" || !s.Audio || s.Key != "standinKey1" || !metadata.Googlevideo(s.URL) {
 		t.Fatalf("stream = %+v", s)
 	}
 	if f.count("standinKey1") != 1 || f.pages.Load() != 1 {
 		t.Fatalf("player calls %d, pages %d; want 1 and 1", f.count("standinKey1"), f.pages.Load())
 	}
-}
-
-// TrailerPassTiming sets the first wait and the gap between passes; zero
-// or negative keeps the one in use.
-func TestTrailerPassTiming(t *testing.T) {
-	first, every := trailerPassFirst, trailerPassEvery
-	t.Cleanup(func() { trailerPassFirst, trailerPassEvery = first, every })
-	if first != 3*time.Minute || every != 5*time.Minute {
-		t.Fatalf("defaults = %v and %v, want 3m and 5m", first, every)
-	}
-
-	TrailerPassTiming(2*time.Second, 4*time.Second)
-	if trailerPassFirst != 2*time.Second || trailerPassEvery != 4*time.Second {
-		t.Fatalf("after set: %v and %v", trailerPassFirst, trailerPassEvery)
-	}
-	TrailerPassTiming(0, -time.Second)
-	if trailerPassFirst != 2*time.Second || trailerPassEvery != 4*time.Second {
-		t.Fatalf("zero and negative changed them: %v and %v", trailerPassFirst, trailerPassEvery)
-	}
-	TrailerPassTiming(0, 6*time.Second)
-	if trailerPassFirst != 2*time.Second || trailerPassEvery != 6*time.Second {
-		t.Fatalf("every alone: %v and %v", trailerPassFirst, trailerPassEvery)
-	}
-
 }

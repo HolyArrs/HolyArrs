@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // TestMain fails a full run of this package when a route it registers was
@@ -25,6 +26,6 @@ func TestMain(m *testing.M) {
 	musicPreloadOn = false
 	// YouTube itself is never asked: a test that looks a video up points
 	// the reader at a fake (fakeReader); any other lookup fails at once.
-	trailerReader = &youtube.Reader{Base: "http://127.0.0.1:1"}
+	metadata.UseReader(&youtube.Reader{Base: "http://127.0.0.1:1"})
 	os.Exit(webserver.CheckRouteHits(m.Run(), "."))
 }

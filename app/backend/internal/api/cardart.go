@@ -98,7 +98,7 @@ func (a *API) readCardArt(ctx context.Context, keys [][2]string, lang string) ma
 // titles without a pick are left to the pool job, and the page falls back
 // to the backdrop and the name.
 func (a *API) fillCardArt(r *http.Request, items []discoverItemView) {
-	lang := trailerLanguage(r)
+	lang := metadata.TrailerLanguage(r)
 	a.noteCardLang(lang)
 	var keys [][2]string
 	for _, v := range items {
@@ -165,7 +165,7 @@ func (a *API) cardLangs() []string {
 // "kind:tmdb id". Titles without a pick are queued for the paced filler
 // (no outside call on the request).
 func (a *API) libraryCardArt(r *http.Request, titles []mediafiles.Title) map[string]metadata.CardArt {
-	lang := trailerLanguage(r)
+	lang := metadata.TrailerLanguage(r)
 	a.noteCardLang(lang)
 	var keys [][2]string
 	var items []explore.Item

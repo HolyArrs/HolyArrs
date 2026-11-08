@@ -238,7 +238,7 @@ func (a *API) dropVideo(ctx context.Context, mbid, id string) []metadata.ArtistV
 
 // videoStart picks the start point: the server's most replayed point,
 // else the heatmap peak, else 30% of the length.
-func videoStart(v metadata.ArtistVideo, s TrailerStream) float64 {
+func videoStart(v metadata.ArtistVideo, s metadata.TrailerStream) float64 {
 	dur := v.Duration
 	if dur <= 0 {
 		dur = s.Duration
@@ -353,8 +353,8 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 }
 
 // videoView relays the stream for this person and describes it.
-func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s TrailerStream) (ArtistVideoView, bool) {
-	id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt)
+func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s metadata.TrailerStream) (ArtistVideoView, bool) {
+	id := a.trailers.Relay(a.person(r).UserID, s.URL, s.ExpiresAt)
 	if id == "" {
 		return ArtistVideoView{}, false
 	}
@@ -368,27 +368,27 @@ func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s TrailerStream
 
 // videoKnown reads a video's stream from memory or SQLite only; known
 // with a zero stream means it has no direct stream (for now).
-func (a *API) videoKnown(ctx context.Context, id string) (TrailerStream, bool) {
+func (a *API) videoKnown(ctx context.Context, id string) (metadata.TrailerStream, bool) {
 	ckey := "musicvideo|" + id
 	now := time.Now()
-	e, ok := a.trailers.get(ckey, now)
-	if !ok && a.trailerStored(ctx, ckey, now) {
-		e, ok = a.trailers.get(ckey, now)
+	e, ok := a.trailers.Get(ckey, now)
+	if !ok && a.trailers.Stored(ctx, ckey, now) {
+		e, ok = a.trailers.Get(ckey, now)
 	}
-	if !ok || !e.miss.IsZero() || e.s.Type != "hls" {
-		return TrailerStream{}, ok
+	if !ok || !e.Miss.IsZero() || e.Stream.Type != "hls" {
+		return metadata.TrailerStream{}, ok
 	}
-	return e.s, true
+	return e.Stream, true
 }
 
 // readyVideo is the first of the videos whose stream is already known.
-func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (metadata.ArtistVideo, TrailerStream, bool) {
+func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (metadata.ArtistVideo, metadata.TrailerStream, bool) {
 	for _, v := range vids {
 		if s, _ := a.videoKnown(ctx, v.ID); s.URL != "" {
 			return v, s, true
 		}
 	}
-	return metadata.ArtistVideo{}, TrailerStream{}, false
+	return metadata.ArtistVideo{}, metadata.TrailerStream{}, false
 }
 
 // resolveVideoBehind looks one video's stream up after the answer: id, else
@@ -404,7 +404,7 @@ func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.A
 			}
 		}
 	}
-	if id == "" || a.trailers.inFlight("musicvideo|"+id) || !a.trailers.allow(a.person(r).UserID, time.Now()) {
+	if id == "" || a.trailers.InFlight("musicvideo|"+id) || !a.trailers.Allow(a.person(r).UserID, time.Now()) {
 		return
 	}
 	go func() {
@@ -420,92 +420,52 @@ func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.A
 // (removed, age, blocked): it is dropped. A failure at YouTube's door
 // (a bot check, say) is no reason to drop the artist's videos.
 func videoWontPlay(err error) bool {
-	m := (*trailerMissed)(nil)
-	return err != nil && errors.As(err, &m) && m.reason.VideoReason()
+	m := (*metadata.TrailerMissed)(nil)
+	return err != nil && errors.As(err, &m) && m.Reason.VideoReason()
 }
 
 // resolveMusicVideo resolves one YouTube video like a trailer: memory,
 // then SQLite, then one shared reader lookup in the trailer pool.
-func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream, error) {
+func (a *API) resolveMusicVideo(ctx context.Context, key string) (metadata.TrailerStream, error) {
 	ckey := "musicvideo|" + key
 	now := time.Now()
-	e, ok := a.trailers.get(ckey, now)
-	if !ok && a.trailerStored(ctx, ckey, now) {
-		e, ok = a.trailers.get(ckey, now)
+	e, ok := a.trailers.Get(ckey, now)
+	if !ok && a.trailers.Stored(ctx, ckey, now) {
+		e, ok = a.trailers.Get(ckey, now)
 	}
 	if ok {
-		if !e.miss.IsZero() {
-			return TrailerStream{}, e.missErr()
+		if !e.Miss.IsZero() {
+			return metadata.TrailerStream{}, e.MissErr()
 		}
-		return e.s, nil
+		return e.Stream, nil
 	}
-	t := &a.trailers
-	t.mu.Lock()
-	if t.flights == nil {
-		t.flights = map[string]*trailerFlight{}
+	f, err, done := a.trailers.Shared(ctx, ckey, func(lctx context.Context) (metadata.TrailerEntry, error) {
+		return a.lookupMusicVideo(lctx, key, ckey)
+	})
+	if !done {
+		return metadata.TrailerStream{}, ctx.Err()
 	}
-	f := t.flights[ckey]
-	if f == nil {
-		f = &trailerFlight{done: make(chan struct{})}
-		t.flights[ckey] = f
-		go func() {
-			lctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
-			defer cancel()
-			f.e, f.err = a.lookupMusicVideo(lctx, key, ckey)
-			t.mu.Lock()
-			delete(t.flights, ckey)
-			t.mu.Unlock()
-			close(f.done)
-		}()
+	if err != nil {
+		return metadata.TrailerStream{}, metadata.ErrNoStream
 	}
-	t.mu.Unlock()
-	select {
-	case <-ctx.Done():
-		return TrailerStream{}, ctx.Err()
-	case <-f.done:
+	if !f.Miss.IsZero() {
+		return metadata.TrailerStream{}, f.MissErr()
 	}
-	if f.err != nil {
-		return TrailerStream{}, errNoStream
-	}
-	if !f.e.miss.IsZero() {
-		return TrailerStream{}, f.e.missErr()
-	}
-	return f.e.s, nil
+	return f.Stream, nil
 }
 
-func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (trailerEntry, error) {
+func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (metadata.TrailerEntry, error) {
 	now := time.Now()
-	s, err := a.readTrailer(ctx, key, key, now, true)
+	s, err := a.trailers.Read(ctx, key, key, now, true)
 	if err != nil {
 		if youtube.ReasonOf(err) == "" {
-			return trailerEntry{}, err
+			return metadata.TrailerEntry{}, err
 		}
-		e := trailerEntry{miss: now.Add(trailerMiss), reason: trailerReason(err)}
-		a.trailers.put(ckey, e)
+		e := metadata.TrailerEntry{Miss: now.Add(metadata.TrailerMiss), Reason: metadata.TrailerReasonOf(err)}
+		a.trailers.Put(ckey, e)
 		return e, nil
 	}
-	return a.keepMusicVideo(ctx, ckey, s, now), nil
-}
-
-// keepMusicVideo keeps a music video's stream in memory and SQLite.
-func (a *API) keepMusicVideo(ctx context.Context, ckey string, s TrailerStream, now time.Time) trailerEntry {
-	e := trailerEntry{s: s}
-	a.trailers.put(ckey, e)
-	if a.s.Store != nil {
-		if b, err := json.Marshal(s); err == nil {
-			_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
-		}
-	}
-	return e
-}
-
-// missedFor turns a reader error with a reason into the miss callers
-// test with videoWontPlay; other errors pass as they are.
-func missedFor(err error) error {
-	if err == nil || youtube.ReasonOf(err) == "" {
-		return err
-	}
-	return trailerEntry{reason: trailerReason(err)}.missErr()
+	return a.trailers.KeepStream(ctx, ckey, s, now), nil
 }
 
 // withoutVideos drops the listed video ids (at most 50 are honoured).
