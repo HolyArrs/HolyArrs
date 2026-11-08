@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { createPersonArt } from '#lib/discover/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -115,38 +116,20 @@
 		const who = m.characters?.length ? m.characters.join(' / ') : m.roles?.includes('Director') ? 'Director' : '';
 		return [who, m.year ? String(m.year) : ''].filter(Boolean).join(' · ');
 	};
-
-	// A credit shows only with a real picture (poster or backdrop). Pictures that fail or hang are dropped too.
-	const ART_WAIT_MS = 8000;
-	let artState = $state<Record<string, 'ok' | 'bad'>>({});
-	const probing = new Set<string>();
-	const artOf = (m: PersonMovie) => m.backdrop || m.poster || '';
-	function probe(m: PersonMovie) {
-		const k = m.ids.tmdb, src = artOf(m);
-		if (!src || probing.has(k)) return;
-		probing.add(k);
-		const img = new Image();
-		let settled = false;
-		const end = (ok: boolean) => { if (settled) return; settled = true; clearTimeout(t); artState = { ...artState, [k]: ok ? 'ok' : 'bad' }; };
-		const t = setTimeout(() => end(false), ART_WAIT_MS);
-		img.onload = () => end(img.naturalWidth > 0);
-		img.onerror = () => end(false);
-		img.src = src;
-	}
-	const withArt = (list: PersonMovie[] | undefined) => (list ?? []).filter((m) => artOf(m) && artState[m.ids.tmdb] !== 'bad');
+	const personArt = createPersonArt();
 	$effect(() => {
-		for (const m of [...(data?.known_for ?? []), ...(data?.coming_soon ?? []), ...(data?.library ?? []), ...(data?.asked ?? []), ...movies]) probe(m);
+		for (const m of [...(data?.known_for ?? []), ...(data?.coming_soon ?? []), ...(data?.library ?? []), ...(data?.asked ?? []), ...movies]) personArt.probe(m);
 	});
-	const shownMovies = $derived(withArt(movies));
+	const shownMovies = $derived(personArt.withArt(movies));
 	const stats = $derived(data?.stats && role === 'all' && !busy ? { ...data.stats, films: shownMovies.length } : data?.stats);
 
-	const hero = $derived(withArt(data?.known_for).find((m) => m.backdrop)?.backdrop ?? null);
+	const hero = $derived(personArt.withArt(data?.known_for).find((m) => m.backdrop)?.backdrop ?? null);
 	let heroIn = $state(false);
 	$effect(() => {
 		void hero;
 		heroIn = false;
 	});
-	const chips = $derived(personChips(stats, withArt(data?.library).length, withArt(data?.asked).length));
+	const chips = $derived(personChips(stats, personArt.withArt(data?.library).length, personArt.withArt(data?.asked).length));
 	const facts = $derived.by(() => {
 		const p = data?.person;
 		if (!p) return [];
@@ -219,7 +202,7 @@
 		return st?.first_year ? `${st.first_year}–${st.active ? 'now' : st.last_year}` : '';
 	});
 	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
-	const top = $derived(withArt(data?.known_for).slice(0, 10));
+	const top = $derived(personArt.withArt(data?.known_for).slice(0, 10));
 	// Under the name: only what they do and since when; the rest lives in About.
 	const roleWords = $derived.by(() => {
 		const all = [...(data?.known_for ?? []), ...movies].flatMap((m) => m.roles ?? []);
@@ -230,10 +213,10 @@
 		return got.length ? got.join(' · ') : dept === 'Acting' ? 'Actor' : dept ?? '';
 	});
 	const quiet = $derived([roleWords, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
-	const reel = $derived(withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
+	const reel = $derived(personArt.withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
 	// About starts half way through the stills (more of them when there are), so it never shows the banner's picture.
 	const aboutStills = $derived.by(() => {
-		const all = withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
+		const all = personArt.withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
 		const rest = all.slice(reel.length);
 		if (rest.length) return rest;
 		const h = Math.ceil(reel.length / 2);
@@ -343,8 +326,8 @@
 {/snippet}
 
 {#snippet row(title: string, list: PersonMovie[] | undefined, anchor: string)}
-	{#if withArt(list).length}
-		<Shelf {title} {anchor} item="var(--title-item)" items={withArt(list)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
+	{#if personArt.withArt(list).length}
+		<Shelf {title} {anchor} item="var(--title-item)" items={personArt.withArt(list)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
 			{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
 		</Shelf>
 	{/if}
