@@ -431,7 +431,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
 	reviews := a.reviewHandlers()
 	reviews.Routes(m)
-	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/anime", a.metadataAnime)
+	a.animeHandlers().Routes(m)
 	a.trailers.Routes(m)
 	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
 	a.signinArtRoutes(m)
