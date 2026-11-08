@@ -232,9 +232,7 @@ type API struct {
 	// genreArt keeps genre tile pictures.
 	genreArt music.GenreArtCache
 	// signin keeps the sign-in page's art and its per-address budget.
-	signin signinArtState
-	// signinSeed keeps the first sign-in slide's tiny thumbnails.
-	signinSeed signinSeedState
+	signin discover.Signin
 	// artMisses is each person's budget of artwork cache misses.
 	artMisses discover.ArtworkBudget
 	// explore runs the Explore pool job and keeps its lists and pages.
@@ -318,6 +316,17 @@ func New(s Server) *API {
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
 	a.mf.CardArt = a.libraryCardArt
 	a.watchOn.Metadata = s.Metadata
+	a.signin.Store, a.signin.Metadata, a.signin.ServeArtwork = s.Store, s.Metadata, serveArtwork
+	a.signin.Artwork = func() *library.ArtworkCache {
+		if a.s.Library == nil {
+			return nil
+		}
+		return a.s.Library.Artwork
+	}
+	a.signin.LibraryArtOn = func(ctx context.Context) bool { return health.SigninLibraryArtOn(ctx, a.s.Store) }
+	if s.Auth != nil {
+		a.signin.ClientKey = s.Auth.ClientKey
+	}
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
@@ -483,7 +492,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.shows.AnimeRoutes(m)
 	a.trailers.Routes(m)
 	a.uiHandlers().Routes(m)
-	a.signinArtRoutes(m)
+	a.signin.Routes(m)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)

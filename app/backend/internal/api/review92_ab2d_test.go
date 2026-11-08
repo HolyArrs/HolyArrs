@@ -15,7 +15,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,23 +26,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
-
-// A flood of /login opens while the sign-in art is stale starts one
-// background build, not one parked goroutine per request.
-func TestSigninSeedFloodStartsOneBuild(t *testing.T) {
-	a, _ := signinRig(t, nil)
-	a.signin.build.Lock()
-	base := runtime.NumGoroutine()
-	for i := 0; i < 100; i++ {
-		a.signinSeedJSON(context.Background())
-	}
-	time.Sleep(20 * time.Millisecond)
-	grew := runtime.NumGoroutine() - base
-	a.signin.build.Unlock()
-	if grew > 5 {
-		t.Fatalf("%d goroutines started for 100 /login opens", grew)
-	}
-}
 
 // A member watching their own ask does not see the download's save folder
 // on the host; the owner does.

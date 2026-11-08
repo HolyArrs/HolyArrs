@@ -36,7 +36,7 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 	}
 	s := shots[0]
 	for _, x := range []string{s.Backdrop.URL, s.Logo, s.Poster.URL} {
-		if !strings.HasPrefix(x, signinPicPath) {
+		if !strings.HasPrefix(x, "/api/v1/public/signin-pic/t/p/") {
 			t.Fatalf("not same-origin: %s", x)
 		}
 	}
@@ -57,19 +57,19 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 	if c := get(s.Logo); c != 200 {
 		t.Fatalf("own logo: %d", c)
 	}
-	if c := get(signinPicPath + "original/" + filepath.Base(s.Backdrop.URL)); c != 200 {
+	if c := get("/api/v1/public/signin-pic/t/p/" + "original/" + filepath.Base(s.Backdrop.URL)); c != 200 {
 		t.Fatalf("own backdrop at original: %d", c)
 	}
-	if c := get(signinPicPath + "original/" + filepath.Base(s.Poster.URL)); c != 200 {
+	if c := get("/api/v1/public/signin-pic/t/p/" + "original/" + filepath.Base(s.Poster.URL)); c != 200 {
 		t.Fatalf("own poster at original: %d", c)
 	}
 	before := hits.Load()
 	for _, p := range []string{
-		signinPicPath + "w1280/notlisted.jpg",
-		signinPicPath + "original/" + filepath.Base(s.Logo),
-		signinPicPath + "w3840/" + filepath.Base(s.Backdrop.URL),
-		signinPicPath + "w1280/" + url.PathEscape("https://evil.example/x.jpg"),
-		signinPicPath + "w1280/..%2f..%2fetc%2fpasswd",
+		"/api/v1/public/signin-pic/t/p/" + "w1280/notlisted.jpg",
+		"/api/v1/public/signin-pic/t/p/" + "original/" + filepath.Base(s.Logo),
+		"/api/v1/public/signin-pic/t/p/" + "w3840/" + filepath.Base(s.Backdrop.URL),
+		"/api/v1/public/signin-pic/t/p/" + "w1280/" + url.PathEscape("https://evil.example/x.jpg"),
+		"/api/v1/public/signin-pic/t/p/" + "w1280/..%2f..%2fetc%2fpasswd",
 		"/api/v1/public/signin-pic/http://169.254.169.254/latest/x.jpg",
 	} {
 		if c := get(p); c == 200 {

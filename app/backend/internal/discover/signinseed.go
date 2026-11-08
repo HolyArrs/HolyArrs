@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"bytes"
@@ -50,22 +50,20 @@ type signinSeedState struct {
 	// rebuilding is set while a background art build started here runs,
 	// so a flood of /login opens starts one build, not one per request.
 	rebuilding atomic.Bool
-	// fetch is a test hook; nil downloads with a short timeout.
-	fetch func(ctx context.Context, url string) ([]byte, error)
 }
 
 // signinSeedJSON is what index.html carries for /login, or nil when the
 // art or its thumbnails are not ready yet (then their build starts in the
 // background and the page is served without waiting).
-func (a *API) signinSeedJSON(ctx context.Context) []byte {
-	if a.s.Store == nil {
+func (s *Signin) signinSeedJSON(ctx context.Context) []byte {
+	if s.Store == nil {
 		return nil
 	}
-	shots, ok := a.signinShotsCached(ctx)
-	if !ok && a.signinSeed.rebuilding.CompareAndSwap(false, true) {
+	shots, ok := s.signinShotsCached(ctx)
+	if !ok && s.seed.rebuilding.CompareAndSwap(false, true) {
 		go func() {
-			defer a.signinSeed.rebuilding.Store(false)
-			a.signinShots(context.WithoutCancel(ctx))
+			defer s.seed.rebuilding.Store(false)
+			s.signinShots(context.WithoutCancel(ctx))
 		}()
 	}
 	if len(shots) == 0 {
@@ -73,13 +71,13 @@ func (a *API) signinSeedJSON(ctx context.Context) []byte {
 	}
 	first := shots[0]
 	seed := map[string]any{}
-	back, ok := a.signinThumbFor(first.Backdrop.URL, 300)
+	back, ok := s.signinThumbFor(first.Backdrop.URL, 300)
 	if !ok {
 		return nil
 	}
 	seed["backdrop"] = back
 	if first.Poster != nil {
-		if p, ok := a.signinThumbFor(first.Poster.URL, 342); ok {
+		if p, ok := s.signinThumbFor(first.Poster.URL, 342); ok {
 			seed["poster"] = p
 		}
 	}
@@ -93,9 +91,9 @@ func (a *API) signinSeedJSON(ctx context.Context) []byte {
 
 // signinShotsCached is the cached answer without building; ok is false
 // when it is missing or stale.
-func (a *API) signinShotsCached(ctx context.Context) ([]signinShot, bool) {
-	st := &a.signin
-	lib := a.signinLibraryArt(ctx)
+func (s *Signin) signinShotsCached(ctx context.Context) ([]SigninShot, bool) {
+	st := &s.art
+	lib := s.signinLibraryArt(ctx)
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	c, ok := st.cache[lib]
@@ -104,9 +102,9 @@ func (a *API) signinShotsCached(ctx context.Context) ([]signinShot, bool) {
 
 // signinThumbFor returns the kept thumbnail of an original TMDB picture,
 // starting its build when it is not kept yet.
-func (a *API) signinThumbFor(original string, size int) (signinThumb, bool) {
-	ss := &a.signinSeed
-	now := a.signin.clock()
+func (s *Signin) signinThumbFor(original string, size int) (signinThumb, bool) {
+	ss := &s.seed
+	now := s.art.clock()
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 	if t, ok := ss.thumbs[original]; ok {
@@ -120,7 +118,7 @@ func (a *API) signinThumbFor(original string, size int) (signinThumb, bool) {
 	}
 	ss.tried[original] = now
 	go func() {
-		t, err := a.makeSigninThumb(original, size)
+		t, err := s.makeSigninThumb(original, size)
 		ss.mu.Lock()
 		defer ss.mu.Unlock()
 		if err != nil {
@@ -136,7 +134,7 @@ func (a *API) signinThumbFor(original string, size int) (signinThumb, bool) {
 }
 
 // makeSigninThumb downloads TMDB's small size of the picture and shrinks it.
-func (a *API) makeSigninThumb(original string, size int) (signinThumb, error) {
+func (s *Signin) makeSigninThumb(original string, size int) (signinThumb, error) {
 	file, ok := strings.CutPrefix(original, metadata.ImageBase+"/original/")
 	if !ok || file == "" || strings.ContainsAny(file, "/?#\\") {
 		return signinThumb{}, errors.New("not a TMDB original")
@@ -144,7 +142,7 @@ func (a *API) makeSigninThumb(original string, size int) (signinThumb, error) {
 	url := metadata.ImageBase + "/w" + strconv.Itoa(size) + "/" + file
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	fetch := a.signinSeed.fetch
+	fetch := s.Fetch
 	if fetch == nil {
 		fetch = fetchSmall
 	}
@@ -232,12 +230,12 @@ func shrink(src image.Image, w int) image.Image {
 
 // warmSigninSeed starts the first slide's thumbnails, so the next /login
 // already carries them.
-func (a *API) warmSigninSeed(shots []signinShot) {
+func (s *Signin) warmSigninSeed(shots []SigninShot) {
 	if len(shots) == 0 {
 		return
 	}
-	a.signinThumbFor(shots[0].Backdrop.URL, 300)
+	s.signinThumbFor(shots[0].Backdrop.URL, 300)
 	if p := shots[0].Poster; p != nil {
-		a.signinThumbFor(p.URL, 342)
+		s.signinThumbFor(p.URL, 342)
 	}
 }

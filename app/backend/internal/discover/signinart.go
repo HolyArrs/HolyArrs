@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"cmp"
@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -28,8 +28,8 @@ import (
 // rating filter on this page's art.
 
 const (
-	// signinArtMax is how many pictures one answer holds.
-	signinArtMax = 12
+	// SigninArtMax is how many pictures one answer holds.
+	SigninArtMax = 12
 	// signinArtLookups caps the image list calls one build makes.
 	signinArtLookups = 40
 	// signinArtTTL is how long a built answer is kept.
@@ -45,30 +45,28 @@ const (
 	signinPickTTL = 24 * time.Hour
 	// signinArtMinWidth is the smallest native backdrop width used at all.
 	signinArtMinWidth = 1920
-	// signinArtPerMinute is each address's calls a minute.
-	signinArtPerMinute = 20
+	// SigninArtPerMinute is each address's calls a minute.
+	SigninArtPerMinute = 20
 	// signinPicPerMinute is each address's picture loads a minute.
 	signinPicPerMinute = 240
 	// signinPicPath is where the sign-in pictures are served, same-origin,
 	// through the artwork cache (TMDB sends no CORS header, and the reveal
 	// draws the picture on a canvas).
 	signinPicPath = "/api/v1/public/signin-pic/t/p/"
-	// settingSigninLibraryArt is the this_app setting key.
-	settingSigninLibraryArt = health.SettingSigninLibraryArt
 )
 
-// signinImage is one picture at its original size.
-type signinImage struct {
+// SigninImage is one picture at its original size.
+type SigninImage struct {
 	URL string `json:"url"`
 	W   int    `json:"w"`
 	H   int    `json:"h"`
 }
 
-// signinShot is one slide: a textless backdrop, an optional textless
+// SigninShot is one slide: a textless backdrop, an optional textless
 // poster for tall screens, and the title's logo.
-type signinShot struct {
-	Backdrop signinImage  `json:"backdrop"`
-	Poster   *signinImage `json:"poster,omitempty"`
+type SigninShot struct {
+	Backdrop SigninImage  `json:"backdrop"`
+	Poster   *SigninImage `json:"poster,omitempty"`
 	Logo     string       `json:"logo"`
 }
 
@@ -82,26 +80,58 @@ type signinArtState struct {
 	hits   map[string][]time.Time
 	pics   map[string][]time.Time // picture loads, by address
 
-	// Test hooks; nil uses the metadata provider.
-	images   func(ctx context.Context, kind, tmdbID string) (metadata.CardImages, error)
-	trending func(ctx context.Context, kind string) ([]metadata.DiscoverItem, error)
-	now      func() time.Time
+	now func() time.Time // test hook; nil is time.Now
+}
+
+// Signin serves the sign-in page's art (/api/v1/public/signin-art and
+// signin-pic) and the /login seed. Fields are set once before Routes.
+type Signin struct {
+	Store    *database.Store
+	Metadata metadata.Provider
+	// Artwork is the artwork cache, read per request (nil: no pictures).
+	Artwork func() *library.ArtworkCache
+	// ClientKey keys the rate limits (nil: the peer address).
+	ClientKey func(*http.Request) string
+	// LibraryArtOn reads "Show Library art on the sign-in page".
+	LibraryArtOn func(context.Context) bool
+	// ServeArtwork writes one cached picture file.
+	ServeArtwork func(w http.ResponseWriter, r *http.Request, name, path string)
+
+	// Test hooks; nil uses the metadata provider / a short download.
+	Images   func(ctx context.Context, kind, tmdbID string) (metadata.CardImages, error)
+	Trending func(ctx context.Context, kind string) ([]metadata.DiscoverItem, error)
+	Fetch    func(ctx context.Context, url string) ([]byte, error)
+
+	art  signinArtState
+	seed signinSeedState
+}
+
+// SetNow replaces the clock (tests); call before any request.
+func (s *Signin) SetNow(f func() time.Time) { s.art.now = f }
+
+// HoldBuild blocks art builds until the returned func runs (tests).
+func (s *Signin) HoldBuild() func() {
+	s.art.build.Lock()
+	return s.art.build.Unlock
 }
 
 type signinPick struct {
-	shot  signinShot
+	shot  SigninShot
 	ok    bool
 	until time.Time
 }
 
 type signinArtCached struct {
-	shots []signinShot
+	shots []SigninShot
 	until time.Time
 }
 
 // signinLibraryArt reads "Show Library art on the sign-in page" (default off).
-func (a *API) signinLibraryArt(ctx context.Context) bool {
-	return health.SigninLibraryArtOn(ctx, a.s.Store)
+func (s *Signin) signinLibraryArt(ctx context.Context) bool {
+	if s.LibraryArtOn == nil {
+		return false
+	}
+	return s.LibraryArtOn(ctx)
 }
 
 func (st *signinArtState) clock() time.Time {
@@ -113,7 +143,7 @@ func (st *signinArtState) clock() time.Time {
 
 // allow counts one call from addr; false past the minute budget.
 func (st *signinArtState) allow(addr string) bool {
-	return st.allowIn(&st.hits, addr, signinArtPerMinute)
+	return st.allowIn(&st.hits, addr, SigninArtPerMinute)
 }
 
 // allowIn counts one call from addr in hits; false past limit a minute.
@@ -148,9 +178,9 @@ func (st *signinArtState) allowIn(hits *map[string][]time.Time, addr string, lim
 
 // signinClient keys the rate limit: the auth package's trusted-proxy
 // client key, or the peer address when no Auth is in front (tests).
-func (a *API) signinClient(r *http.Request) string {
-	if a.s.Auth != nil {
-		return a.s.Auth.ClientKey(r)
+func (s *Signin) signinClient(r *http.Request) string {
+	if s.ClientKey != nil {
+		return s.ClientKey(r)
 	}
 	return remoteHost(r)
 }
@@ -163,16 +193,24 @@ func remoteHost(r *http.Request) string {
 	return host
 }
 
-func (a *API) signinArtRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/public/signin-art", a.signinArt)
+func (s *Signin) artwork() *library.ArtworkCache {
+	if s.Artwork == nil {
+		return nil
+	}
+	return s.Artwork()
+}
+
+// Routes registers the sign-in art routes and the /login seed.
+func (s *Signin) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/public/signin-art", s.signinArt)
 	// A literal pattern (= signinPicPath + "{size}/{file}"): the route tests read it from the source.
-	m.HandleFunc("GET /api/v1/public/signin-pic/t/p/{size}/{file}", a.signinPic)
-	webserver.SetLoginSeed(func(r *http.Request) []byte { return a.signinSeedJSON(r.Context()) })
+	m.HandleFunc("GET /api/v1/public/signin-pic/t/p/{size}/{file}", s.signinPic)
+	webserver.SetLoginSeed(func(r *http.Request) []byte { return s.signinSeedJSON(r.Context()) })
 	// Warm the cache in the background so the first visitor sees art.
 	go func() {
 		for _, wait := range []time.Duration{3 * time.Second, 30 * time.Second, 2 * time.Minute} {
 			time.Sleep(wait)
-			if a.s.Store == nil || len(a.signinShots(context.Background())) > 0 {
+			if s.Store == nil || len(s.signinShots(context.Background())) > 0 {
 				return
 			}
 		}
@@ -180,14 +218,14 @@ func (a *API) signinArtRoutes(m *http.ServeMux) {
 }
 
 // signinArt answers the sign-in page's pictures.
-func (a *API) signinArt(w http.ResponseWriter, r *http.Request) {
-	st := &a.signin
-	if !st.allow(a.signinClient(r)) {
+func (s *Signin) signinArt(w http.ResponseWriter, r *http.Request) {
+	st := &s.art
+	if !st.allow(s.signinClient(r)) {
 		w.Header().Set("Retry-After", "60")
 		webserver.WriteJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests"})
 		return
 	}
-	shots := a.signinShots(r.Context())
+	shots := s.signinShots(r.Context())
 	w.Header().Set("Cache-Control", "private, max-age=600")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"shots": publicShots(shots)})
 }
@@ -216,10 +254,10 @@ func publicURL(u, largest string) string {
 }
 
 // publicShots is the answer as the browser sees it: same-origin addresses.
-func publicShots(shots []signinShot) []signinShot {
-	out := make([]signinShot, 0, len(shots))
+func publicShots(shots []SigninShot) []SigninShot {
+	out := make([]SigninShot, 0, len(shots))
 	for _, s := range shots {
-		x := signinShot{Backdrop: s.Backdrop, Logo: publicURL(s.Logo, "w500")}
+		x := SigninShot{Backdrop: s.Backdrop, Logo: publicURL(s.Logo, "w500")}
 		x.Backdrop.URL = publicURL(s.Backdrop.URL, "w1280")
 		if s.Poster != nil {
 			p := *s.Poster
@@ -261,15 +299,15 @@ func (st *signinArtState) signinPicFile(size, file string) bool {
 }
 
 // signinPic serves one sign-in picture through the artwork cache.
-func (a *API) signinPic(w http.ResponseWriter, r *http.Request) {
-	st := &a.signin
-	if !st.allowIn(&st.pics, a.signinClient(r), signinPicPerMinute) {
+func (s *Signin) signinPic(w http.ResponseWriter, r *http.Request) {
+	st := &s.art
+	if !st.allowIn(&st.pics, s.signinClient(r), signinPicPerMinute) {
 		w.Header().Set("Retry-After", "60")
 		http.Error(w, "too many requests", http.StatusTooManyRequests)
 		return
 	}
 	size, file := r.PathValue("size"), r.PathValue("file")
-	if !signinPicSizes[size] || !st.signinPicFile(size, file) || a.s.Library == nil || a.s.Library.Artwork == nil {
+	if !signinPicSizes[size] || !st.signinPicFile(size, file) || s.artwork() == nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -278,7 +316,7 @@ func (a *API) signinPic(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	c := a.s.Library.Artwork
+	c := s.artwork()
 	name := library.ArtworkName(src)
 	p, ok := c.Path(name)
 	if !ok {
@@ -291,49 +329,49 @@ func (a *API) signinPic(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	serveArtwork(w, r, name, p)
+	s.ServeArtwork(w, r, name, p)
 }
 
 // signinShots returns the cached answer, building it when stale.
-func (a *API) signinShots(ctx context.Context) []signinShot {
-	st := &a.signin
-	lib := a.signinLibraryArt(ctx)
-	read := func() ([]signinShot, bool) {
+func (s *Signin) signinShots(ctx context.Context) []SigninShot {
+	st := &s.art
+	lib := s.signinLibraryArt(ctx)
+	read := func() ([]SigninShot, bool) {
 		st.mu.Lock()
 		defer st.mu.Unlock()
 		c, ok := st.cache[lib]
 		return c.shots, ok && st.clock().Before(c.until)
 	}
-	if s, ok := read(); ok {
-		return s
+	if got, ok := read(); ok {
+		return got
 	}
 	st.build.Lock()
 	defer st.build.Unlock()
-	if s, ok := read(); ok {
-		return s
+	if got, ok := read(); ok {
+		return got
 	}
 	bctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 	defer cancel()
 	st.mu.Lock()
 	st.failed = false
 	st.mu.Unlock()
-	var shots []signinShot
+	var shots []SigninShot
 	if lib {
-		shots = a.librarySigninShots(bctx)
+		shots = s.librarySigninShots(bctx)
 	}
-	if len(shots) < signinArtMax {
+	if len(shots) < SigninArtMax {
 		seen := map[string]bool{}
 		for _, x := range shots {
 			seen[x.Backdrop.URL] = true
 		}
-		for _, x := range a.trendingSigninShots(bctx) {
-			if len(shots) < signinArtMax && !seen[x.Backdrop.URL] {
+		for _, x := range s.trendingSigninShots(bctx) {
+			if len(shots) < SigninArtMax && !seen[x.Backdrop.URL] {
 				shots = append(shots, x)
 			}
 		}
 	}
 	if shots == nil {
-		shots = []signinShot{}
+		shots = []SigninShot{}
 	}
 	ttl := signinArtTTL
 	st.mu.Lock()
@@ -351,18 +389,18 @@ func (a *API) signinShots(ctx context.Context) []signinShot {
 	}
 	st.cache[lib] = signinArtCached{shots: shots, until: st.clock().Add(ttl)}
 	st.mu.Unlock()
-	a.warmSigninSeed(shots)
+	s.warmSigninSeed(shots)
 	return shots
 }
 
 type signinRef struct{ kind, tmdbID string }
 
 // librarySigninShots picks Library movies and shows.
-func (a *API) librarySigninShots(ctx context.Context) []signinShot {
-	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT kind, COALESCE(json_extract(source_ids, '$.tmdb'), '')
+func (s *Signin) librarySigninShots(ctx context.Context) []SigninShot {
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT kind, COALESCE(json_extract(source_ids, '$.tmdb'), '')
 		FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' LIMIT 2000`)
 	if err != nil {
-		a.signin.fail()
+		s.art.fail()
 		return nil
 	}
 	var refs []signinRef
@@ -374,15 +412,15 @@ func (a *API) librarySigninShots(ctx context.Context) []signinShot {
 	}
 	_ = rows.Close()
 	rand.Shuffle(len(refs), func(i, j int) { refs[i], refs[j] = refs[j], refs[i] })
-	return a.shotsFor(ctx, refs)
+	return s.shotsFor(ctx, refs)
 }
 
 // trendingSigninShots picks trending movies and shows.
-func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
-	st := &a.signin
-	list := st.trending
+func (s *Signin) trendingSigninShots(ctx context.Context) []SigninShot {
+	st := &s.art
+	list := s.Trending
 	if list == nil {
-		d, ok := metadata.DiscovererFor(ctx, a.s.Metadata)
+		d, ok := metadata.DiscovererFor(ctx, s.Metadata)
 		if !ok {
 			st.fail()
 			return nil
@@ -411,23 +449,23 @@ func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 			cand = append(cand, signinRef{it.Kind, it.TMDBID})
 		}
 	}
-	return a.shotsFor(ctx, cand)
+	return s.shotsFor(ctx, cand)
 }
 
-// shotsFor looks up each title's images until signinArtMax slides qualify.
-func (a *API) shotsFor(ctx context.Context, refs []signinRef) []signinShot {
-	look := a.signin.images
+// shotsFor looks up each title's images until SigninArtMax slides qualify.
+func (s *Signin) shotsFor(ctx context.Context, refs []signinRef) []SigninShot {
+	look := s.Images
 	if look == nil {
-		src, ok := metadata.CardArterFor(ctx, a.s.Metadata)
+		src, ok := metadata.CardArterFor(ctx, s.Metadata)
 		if !ok {
-			a.signin.fail()
+			s.art.fail()
 			return nil
 		}
 		look = func(ctx context.Context, kind, id string) (metadata.CardImages, error) {
 			return src.CardImages(ctx, kind, id, "en")
 		}
 	}
-	st := &a.signin
+	st := &s.art
 	if len(refs) > signinArtLookups {
 		refs = refs[:signinArtLookups]
 	}
@@ -447,8 +485,8 @@ func (a *API) shotsFor(ctx context.Context, refs []signinRef) []signinShot {
 			st.fail()
 			return
 		}
-		s, ok := pickSigninShot(im)
-		p = signinPick{shot: s, ok: ok, until: now.Add(signinPickTTL)}
+		shot, ok := pickSigninShot(im)
+		p = signinPick{shot: shot, ok: ok, until: now.Add(signinPickTTL)}
 		picks[i] = p
 		st.mu.Lock()
 		if st.picks == nil || len(st.picks) > 4096 {
@@ -457,9 +495,9 @@ func (a *API) shotsFor(ctx context.Context, refs []signinRef) []signinShot {
 		st.picks[ref] = p
 		st.mu.Unlock()
 	})
-	var out []signinShot
+	var out []SigninShot
 	for _, p := range picks {
-		if p.ok && len(out) < signinArtMax {
+		if p.ok && len(out) < SigninArtMax {
 			out = append(out, p.shot)
 		}
 	}
@@ -511,13 +549,13 @@ func originalURL(p string) (string, bool) {
 // wide) closest to 16:9, then the widest, then the best voted; the widest textless poster and the logo (English,
 // else no language; PNG only). A title without a textless backdrop or a
 // logo does not qualify.
-func pickSigninShot(im metadata.CardImages) (signinShot, bool) {
+func pickSigninShot(im metadata.CardImages) (SigninShot, bool) {
 	// wide16x9 reports a 16:9 picture (within 2%).
 	wide16x9 := func(x *metadata.CardImage) bool {
 		d := float64(x.Width)/float64(x.Height) - 16.0/9.0
 		return d < 0.036 && d > -0.036
 	}
-	widest := func(list []metadata.CardImage, minW int, prefer16x9 bool) *signinImage {
+	widest := func(list []metadata.CardImage, minW int, prefer16x9 bool) *SigninImage {
 		var best *metadata.CardImage
 		for i := range list {
 			x := &list[i]
@@ -541,11 +579,11 @@ func pickSigninShot(im metadata.CardImages) (signinShot, bool) {
 		if !ok {
 			return nil
 		}
-		return &signinImage{URL: u, W: best.Width, H: best.Height}
+		return &SigninImage{URL: u, W: best.Width, H: best.Height}
 	}
 	back := widest(im.Backdrops, signinArtMinWidth, true)
 	if back == nil {
-		return signinShot{}, false
+		return SigninShot{}, false
 	}
 	logo := ""
 	for _, want := range []string{"en", ""} {
@@ -564,7 +602,7 @@ func pickSigninShot(im metadata.CardImages) (signinShot, bool) {
 		}
 	}
 	if logo == "" {
-		return signinShot{}, false
+		return SigninShot{}, false
 	}
-	return signinShot{Backdrop: *back, Poster: widest(im.Posters, 780, false), Logo: logo}, true
+	return SigninShot{Backdrop: *back, Poster: widest(im.Posters, 780, false), Logo: logo}, true
 }
