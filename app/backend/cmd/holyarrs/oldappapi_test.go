@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -116,15 +117,15 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	if err := pc.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	tmdb := &fakeShowSource{shows: map[string]metadata.Show{"tmdb:100": apiShow("tmdb", "100"), "tvdb:200": apiShow("tmdb", "100")}}
+	tmdb := &arrShowSource{shows: map[string]metadata.Show{"tmdb:100": arrShow("tmdb", "100"), "tvdb:200": arrShow("tmdb", "100")}}
 	// The artwork cache allows no address, so nothing is ever fetched.
 	art := &library.ArtworkCache{Dir: t.TempDir()}
-	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}, Artwork: art}
+	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &arrShowSource{err: metadata.ErrNoTVDBKey}}, Artwork: art}
 	vault, err := secrets.Open(context.Background(), s, make([]byte, secrets.KeySize))
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := New(Server{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
+	h := api.New(api.Server{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
 		Auth: accounts.New(s, accounts.Options{}), Parts: pc, Secrets: vault}).Handler()
 	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art, vault: vault}
 	if len(base) > 0 {
@@ -448,9 +449,9 @@ func TestOldAppServerTestFields(t *testing.T) {
 		if !found {
 			t.Errorf("tag %v not listed", tg)
 		}
-		f.arrOK(side.key, "PUT", p+"tag/"+itoa(num(tg["id"])), `{"id":1,"label":"1-`+side.name+`"}`, 202)
+		f.arrOK(side.key, "PUT", p+"tag/"+arrItoa(num(tg["id"])), `{"id":1,"label":"1-`+side.name+`"}`, 202)
 		// The id may come in the body alone.
-		if r := f.arrOK(side.key, "PUT", p+"tag", `{"id":`+itoa(num(tg["id"]))+`,"label":"1 - `+side.name+`"}`, 202).(map[string]any); r["label"] != "1 - "+side.name {
+		if r := f.arrOK(side.key, "PUT", p+"tag", `{"id":`+arrItoa(num(tg["id"]))+`,"label":"1 - `+side.name+`"}`, 202).(map[string]any); r["label"] != "1 - "+side.name {
 			t.Errorf("put tag: %v", r)
 		}
 		if st, _, _ := f.arr(side.key, "PUT", p+"tag/999", `{"label":"x"}`); st != 404 {
@@ -558,7 +559,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	_ = json.Unmarshal([]byte(b), &added)
 	fields(t, "added series", added, []string{"id", "titleSlug", "monitored", "seasons", "statistics", "path", "rootFolderPath", "qualityProfileId"})
 	showID := num(added["id"])
-	if !strings.HasSuffix(hd.Get("Location"), "/sonarr/api/v3/series/"+itoa(showID)) || added["titleSlug"] != itoa(showID) || num(added["qualityProfileId"]) != profile {
+	if !strings.HasSuffix(hd.Get("Location"), "/sonarr/api/v3/series/"+arrItoa(showID)) || added["titleSlug"] != arrItoa(showID) || num(added["qualityProfileId"]) != profile {
 		t.Fatalf("added: %v %v", hd.Get("Location"), added)
 	}
 	seasonOn := func(m map[string]any) map[int64]bool {
@@ -614,11 +615,11 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	if on := seasonOn(putAns); !on[1] || !on[2] {
 		t.Fatalf("seasons after put: %v", on)
 	}
-	f.arrOK(son, "PUT", s+"series/"+itoa(showID), string(put), 202)
+	f.arrOK(son, "PUT", s+"series/"+arrItoa(showID), string(put), 202)
 	if st, _, _ := f.arr(son, "GET", s+"episode", ""); st != 400 {
 		t.Fatalf("episodes without seriesId: %d", st)
 	}
-	eps := arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesid="+itoa(showID), "", 200), 5)
+	eps := arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesid="+arrItoa(showID), "", 200), 5)
 	var special int64
 	for _, x := range eps {
 		e := fields(t, "episode", x, []string{"id", "seriesId", "seasonNumber", "episodeNumber", "monitored", "hasFile", "episodeFileId"})
@@ -629,7 +630,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 			special = num(e["id"])
 		}
 	}
-	arrList(t, "season 1 episodes", f.arrOK(son, "GET", s+"episode?seriesId="+itoa(showID)+"&seasonNumber=1", "", 200), 2)
+	arrList(t, "season 1 episodes", f.arrOK(son, "GET", s+"episode?seriesId="+arrItoa(showID)+"&seasonNumber=1", "", 200), 2)
 	mon := arrList(t, "monitor", f.arrOK(son, "PUT", s+"episode/monitor", fmt.Sprintf(`{"episodeIds":[%d],"monitored":true}`, special), 202), 1)
 	if !mon[0].(map[string]any)["monitored"].(bool) {
 		t.Fatalf("monitor: %v", mon)
@@ -643,7 +644,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	if num(cmd["id"]) == 2147483647 || cmd["status"] != "queued" || cmd["commandName"] != "Missing Episode Search" {
 		t.Fatalf("command: %v", cmd)
 	}
-	poll := fields(t, "poll", f.arrOK(son, "GET", s+"command/"+itoa(num(cmd["id"])), "", 200), []string{"id", "status"})
+	poll := fields(t, "poll", f.arrOK(son, "GET", s+"command/"+arrItoa(num(cmd["id"])), "", 200), []string{"id", "status"})
 	if poll["status"] != "queued" {
 		t.Fatalf("poll: %v", poll)
 	}
@@ -676,7 +677,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	_ = json.Unmarshal([]byte(b), &mv)
 	fields(t, "added movie", mv, []string{"id", "hasFile", "monitored", "statistics", "sizeOnDisk", "movieFileId", "isAvailable"})
 	movieID := num(mv["id"])
-	if mv["hasFile"] != false || !strings.HasSuffix(hd.Get("Location"), "/radarr/api/v3/movie/"+itoa(movieID)) {
+	if mv["hasFile"] != false || !strings.HasSuffix(hd.Get("Location"), "/radarr/api/v3/movie/"+arrItoa(movieID)) {
 		t.Fatalf("added movie: %v", mv)
 	}
 	st, _, b = f.arr(rad, "POST", r+"movie", addMovie)
@@ -693,7 +694,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	}
 	ml["monitored"], ml["minimumAvailability"] = true, "inCinemas"
 	put, _ = json.Marshal(ml)
-	if a := f.arrOK(rad, "PUT", r+"movie/"+itoa(movieID), string(put), 202).(map[string]any); a["monitored"] != true || a["minimumAvailability"] != "inCinemas" {
+	if a := f.arrOK(rad, "PUT", r+"movie/"+arrItoa(movieID), string(put), 202).(map[string]any); a["monitored"] != true || a["minimumAvailability"] != "inCinemas" {
 		t.Fatalf("put movie on: %v", a)
 	}
 	f.arrOK(rad, "POST", r+"command", fmt.Sprintf(`{"name":"MoviesSearch","movieIds":[%d]}`, movieID), 201)
@@ -771,11 +772,11 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	if c := counts[2]; num(c["episodeFileCount"]) != 0 || num(c["totalEpisodeCount"]) != 2 {
 		t.Fatalf("season 2: %v", c)
 	}
-	one := fields(t, "one series", f.arrOK(son, "GET", s+"series/"+itoa(showID), "", 200), []string{"statistics"})
+	one := fields(t, "one series", f.arrOK(son, "GET", s+"series/"+arrItoa(showID), "", 200), []string{"statistics"})
 	if num(one["statistics"].(map[string]any)["episodeFileCount"]) != 2 {
 		t.Fatalf("series counts: %v", one["statistics"])
 	}
-	if e := arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesId="+itoa(showID)+"&seasonNumber=1", "", 200), 2)[0].(map[string]any); e["hasFile"] != true || num(e["episodeFileId"]) == 0 {
+	if e := arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesId="+arrItoa(showID)+"&seasonNumber=1", "", 200), 2)[0].(map[string]any); e["hasFile"] != true || num(e["episodeFileId"]) == 0 {
 		t.Fatalf("episode with file: %v", e)
 	}
 	f.putFile(f.slotsOf(movieID)[[2]int{0, 0}], "Dune Part Two (2024)/Dune.mkv", 2160)
@@ -789,13 +790,13 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	// original address of the wide picture.
 	const wide = "https://image.tmdb.org/t/p/w1280/lab-wide.jpg"
 	f.exec("UPDATE titles SET backdrop = ? WHERE id = ?", wide, movieID)
-	ims := fields(t, "movie", f.arrOK(rad, "GET", r+"movie/"+itoa(movieID), "", 200), []string{"images"})["images"].([]any)
+	ims := fields(t, "movie", f.arrOK(rad, "GET", r+"movie/"+arrItoa(movieID), "", 200), []string{"images"})["images"].([]any)
 	if len(ims) == 0 {
 		t.Fatal("no images")
 	}
 	for _, x := range ims {
 		im := fields(t, "image", x, []string{"coverType", "url", "remoteUrl"})
-		if !strings.HasPrefix(im["url"].(string), "/radarr/MediaCover/"+itoa(movieID)+"/") || (im["coverType"] == "fanart" && im["remoteUrl"] != wide) {
+		if !strings.HasPrefix(im["url"].(string), "/radarr/MediaCover/"+arrItoa(movieID)+"/") || (im["coverType"] == "fanart" && im["remoteUrl"] != wide) {
 			t.Errorf("image: %v", im)
 		}
 	}
@@ -804,7 +805,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 
 	// Seerr's remove: the title goes; with the delete-files switch off the
 	// files stay. A gone or wrong-kind id answers 404 everywhere.
-	if st, _, b := f.arr(son, "DELETE", s+"series/"+itoa(showID)+"?deleteFiles=true&addImportExclusion=false", ""); st != 200 {
+	if st, _, b := f.arr(son, "DELETE", s+"series/"+arrItoa(showID)+"?deleteFiles=true&addImportExclusion=false", ""); st != 200 {
 		t.Fatalf("delete show: %d %s", st, b)
 	}
 	var present int
@@ -813,13 +814,13 @@ func TestOldAppSeerrFlow(t *testing.T) {
 		t.Fatalf("files kept: %d, want 2", present)
 	}
 	for _, c := range []struct{ key, method, path, body string }{
-		{son, "DELETE", s + "series/" + itoa(showID), ""},
-		{son, "GET", s + "series/" + itoa(showID), ""},
+		{son, "DELETE", s + "series/" + arrItoa(showID), ""},
+		{son, "GET", s + "series/" + arrItoa(showID), ""},
 		{son, "PUT", s + "series", fmt.Sprintf(`{"id":%d,"monitored":true}`, showID)},
-		{son, "GET", s + "episode?seriesId=" + itoa(showID), ""},
-		{son, "GET", s + "series/" + itoa(movieID), ""},
-		{rad, "GET", r + "movie/" + itoa(showID), ""},
-		{rad, "DELETE", r + "movie/" + itoa(showID), ""},
+		{son, "GET", s + "episode?seriesId=" + arrItoa(showID), ""},
+		{son, "GET", s + "series/" + arrItoa(movieID), ""},
+		{rad, "GET", r + "movie/" + arrItoa(showID), ""},
+		{rad, "DELETE", r + "movie/" + arrItoa(showID), ""},
 	} {
 		if st, _, b := f.arr(c.key, c.method, c.path, c.body); st != 404 {
 			t.Errorf("%s %s: %d %s, want 404", c.method, c.path, st, b)
@@ -829,8 +830,8 @@ func TestOldAppSeerrFlow(t *testing.T) {
 		t.Fatalf("lookup after delete still has an id: %v", l)
 	}
 	arrList(t, "series after delete", f.arrOK(son, "GET", s+"series", "", 200), 0)
-	f.arrOK(rad, "DELETE", r+"movie/"+itoa(movieID)+"?deleteFiles=false&addImportExclusion=true", "", 200)
-	if st, _, _ := f.arr(rad, "GET", r+"movie/"+itoa(movieID), ""); st != 404 {
+	f.arrOK(rad, "DELETE", r+"movie/"+arrItoa(movieID)+"?deleteFiles=false&addImportExclusion=true", "", 200)
+	if st, _, _ := f.arr(rad, "GET", r+"movie/"+arrItoa(movieID), ""); st != 404 {
 		t.Fatalf("movie after delete: %d", st)
 	}
 	var never int

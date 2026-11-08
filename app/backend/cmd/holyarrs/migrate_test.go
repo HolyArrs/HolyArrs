@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -53,25 +53,25 @@ func readBody(key, url string) string {
 // route: DELETE /api/v1/migrate/snapshots/{id}
 func TestMigrateRoutes(t *testing.T) {
 	t.Parallel()
-	srv, _, _ := setup(t)
+	srv, _, _ := arrSetup(t)
 	key := "typed-radarr-key"
 	u := fakeRadarr(t, key)
 	base := srv.URL + "/api/v1/migrate/"
 
-	b := do(t, "POST", base+"probe", readBody(key, u), 200)
+	b := arrDo(t, "POST", base+"probe", readBody(key, u), 200)
 	if !strings.Contains(string(b), `"version":"6.4.4"`) || strings.Contains(string(b), key) {
 		t.Fatalf("probe %s", b)
 	}
-	do(t, "POST", base+"probe", readBody("wrong", u), 422)
-	do(t, "POST", base+"probe", `{"kind":"readarr","url":"http://x"}`, 400)
-	do(t, "POST", base+"probe", `{"kind":"radarr"}`, 400)
-	do(t, "POST", base+"probe", `{"kind":"radarr","path":"relative/backup.zip"}`, 400)
-	do(t, "POST", base+"probe", `not json`, 400)
-	do(t, "POST", base+"probe", `{"kind":"radarr","path":"`+filepath.ToSlash(filepath.Join(t.TempDir(), "none.zip"))+`"}`, 422)
+	arrDo(t, "POST", base+"probe", readBody("wrong", u), 422)
+	arrDo(t, "POST", base+"probe", `{"kind":"readarr","url":"http://x"}`, 400)
+	arrDo(t, "POST", base+"probe", `{"kind":"radarr"}`, 400)
+	arrDo(t, "POST", base+"probe", `{"kind":"radarr","path":"relative/backup.zip"}`, 400)
+	arrDo(t, "POST", base+"probe", `not json`, 400)
+	arrDo(t, "POST", base+"probe", `{"kind":"radarr","path":"`+filepath.ToSlash(filepath.Join(t.TempDir(), "none.zip"))+`"}`, 422)
 	// Without the local switch the fake (on this machine) is not dialled.
-	do(t, "POST", base+"probe", `{"kind":"radarr","url":"`+u+`","key":"`+key+`"}`, 502)
+	arrDo(t, "POST", base+"probe", `{"kind":"radarr","url":"`+u+`","key":"`+key+`"}`, 502)
 
-	b = do(t, "POST", base+"read", readBody(key, u), 201)
+	b = arrDo(t, "POST", base+"read", readBody(key, u), 201)
 	if strings.Contains(string(b), "SECRET_IN_RADARR") || strings.Contains(string(b), key) || !strings.Contains(string(b), `indexer \"Nyaa\": apiKey`) {
 		t.Fatalf("read %s", b)
 	}
@@ -85,20 +85,20 @@ func TestMigrateRoutes(t *testing.T) {
 	if made.Snapshot.ID == 0 || made.Snapshot.Counts["titles"] != 1 {
 		t.Fatalf("made %s", b)
 	}
-	id := itoa(made.Snapshot.ID)
-	if b := do(t, "GET", base+"snapshots", "", 200); !strings.Contains(string(b), `"kind":"radarr"`) {
+	id := arrItoa(made.Snapshot.ID)
+	if b := arrDo(t, "GET", base+"snapshots", "", 200); !strings.Contains(string(b), `"kind":"radarr"`) {
 		t.Fatalf("list %s", b)
 	}
-	b = do(t, "GET", base+"snapshots/"+id, "", 200)
+	b = arrDo(t, "GET", base+"snapshots/"+id, "", 200)
 	if !strings.Contains(string(b), `"The Matrix"`) || strings.Contains(string(b), "SECRET_IN_RADARR") {
 		t.Fatalf("get %s", b)
 	}
-	do(t, "GET", base+"snapshots/999", "", 404)
-	do(t, "GET", base+"snapshots/abc", "", 404)
-	do(t, "DELETE", base+"snapshots/"+id, "", 204)
-	do(t, "DELETE", base+"snapshots/"+id, "", 404)
-	do(t, "DELETE", base+"snapshots/x", "", 404)
-	if b := do(t, "GET", base+"snapshots", "", 200); strings.Contains(string(b), `"kind":"radarr"`) {
+	arrDo(t, "GET", base+"snapshots/999", "", 404)
+	arrDo(t, "GET", base+"snapshots/abc", "", 404)
+	arrDo(t, "DELETE", base+"snapshots/"+id, "", 204)
+	arrDo(t, "DELETE", base+"snapshots/"+id, "", 404)
+	arrDo(t, "DELETE", base+"snapshots/x", "", 404)
+	if b := arrDo(t, "GET", base+"snapshots", "", 200); strings.Contains(string(b), `"kind":"radarr"`) {
 		t.Fatalf("still listed %s", b)
 	}
 }
@@ -107,7 +107,7 @@ func TestMigrateRoutes(t *testing.T) {
 // with a password sign-in and, for keys, the admin scope.
 func TestMigratePermissions(t *testing.T) {
 	t.Parallel()
-	r := newAskRig(t)
+	r := newArrAskRig(t)
 	key := "typed-radarr-key"
 	u := fakeRadarr(t, key)
 	routes := []struct{ method, path, body string }{
@@ -126,7 +126,7 @@ func TestMigratePermissions(t *testing.T) {
 	// The local-network skip signs in without a password: no move routes.
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
-	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
+	bare := &arrSignedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
 	for _, rt := range routes {
 		if b := bare.call(rt.method, rt.path, rt.body, 403); !strings.Contains(string(b), "confirm your local password") {
 			t.Errorf("%s %s: %s", rt.method, rt.path, b)
