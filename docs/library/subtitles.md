@@ -115,5 +115,5 @@ Every subtitle route is in `http://your-server:6262/api/v1/openapi.json`, under 
 ## Related
 
 - [Subtitle scoring and sites](subtitle-scoring.md)
-- [Audio versions](audio-versions.md)
+- [Audio versions](../user/library/audio-versions.md)
 - [Held-back features](../run/updates.md#held-back-features)
