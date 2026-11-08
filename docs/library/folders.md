@@ -16,10 +16,10 @@ You need the **Change settings** permission. First-run setup adds one folder; ad
 ## Add a folder
 
 1. Open **Settings > Library folders**.
-2. Select **Add a folder**.
+2. Select **Add a folder**. The **Add a Library folder** card opens.
 3. Under **Holds**, pick **Movies**, **Shows** or **Music**.
 4. Enter the full path as HolyArrs sees it under **Folder path**.
-5. Enter a **Name**, or leave it empty to use the path.
+5. Enter a **Name**, or leave it empty to use the last part of the path, such as `movies`.
 6. Select **Add**. You should see the folder in its group with free space and a health state.
 
 :::tip

@@ -11,7 +11,7 @@ Get names, dates, posters and ids for your titles with no keys to set up. They c
 1. Open **Settings > Metadata**.
 2. Look at the **Metadata server** card. You should see **Connected** and **Answering**.
 
-If it says **Down**, select **Check again**.
+If it says **Not answering** and **Down**, select **Check again**.
 
 On its first lookup, your install registers once and gets its own credential. HolyArrs keeps it encrypted and never shows it.
 
