@@ -18,15 +18,15 @@ func TestCountInstallSetting(t *testing.T) {
 	var told []bool
 	a.s.CountryCount = func(on bool) { told = append(told, on) }
 	ctx := context.Background()
-	if !a.uiSettings(ctx).CountInstall {
+	if !health.UISettingsOf(ctx, a.s.Store).CountInstall {
 		t.Fatal("count_install is off by default")
 	}
 	a.ApplyCountryCount(ctx)
-	put := func(body string) UISettings {
+	put := func(body string) health.UISettings {
 		t.Helper()
 		w := httptest.NewRecorder()
 		a.Handler().ServeHTTP(w, httptest.NewRequest("PUT", "/api/v1/settings/ui", strings.NewReader(body)))
-		var s UISettings
+		var s health.UISettings
 		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &s) != nil {
 			t.Fatalf("put %s: %d %s", body, w.Code, w.Body.String())
 		}
@@ -35,7 +35,7 @@ func TestCountInstallSetting(t *testing.T) {
 	if !health.CountInstall(ctx, a.s.Store.Read()) {
 		t.Fatal("stored count_install is off by default (read before the Job queue starts)")
 	}
-	if s := put(`{"count_install": false}`); s.CountInstall || a.uiSettings(ctx).CountInstall {
+	if s := put(`{"count_install": false}`); s.CountInstall || health.UISettingsOf(ctx, a.s.Store).CountInstall {
 		t.Fatal("count_install off not kept")
 	}
 	if health.CountInstall(ctx, a.s.Store.Read()) {

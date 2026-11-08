@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -265,7 +266,7 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		a.pickedVideo(w, r, mbid, id, r.URL.Query().Get("play") == "1")
 		return
 	}
-	if !a.autoplayOn(r.Context()) {
+	if !health.AutoplayOn(r.Context(), a.s.Store) {
 		webserver.Fail(w, http.StatusNotFound, "trailers are turned off")
 		return
 	}

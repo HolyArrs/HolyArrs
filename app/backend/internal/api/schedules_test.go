@@ -8,16 +8,17 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 type schedulesAnswer struct {
-	Schedules []ScheduleView `json:"schedules"`
-	Loops     []LoopView     `json:"loops"`
-	SafeMode  bool           `json:"safe_mode"`
+	Schedules []health.ScheduleView `json:"schedules"`
+	Loops     []health.LoopView     `json:"loops"`
+	SafeMode  bool                  `json:"safe_mode"`
 }
 
-func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) ScheduleView {
+func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) health.ScheduleView {
 	t.Helper()
 	for _, s := range a.Schedules {
 		if s.Kind == kind {
@@ -25,7 +26,7 @@ func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) ScheduleView {
 		}
 	}
 	t.Fatalf("no schedule %s in %+v", kind, a.Schedules)
-	return ScheduleView{}
+	return health.ScheduleView{}
 }
 
 // route: GET /api/v1/schedules
@@ -80,7 +81,7 @@ func TestSchedules(t *testing.T) {
 
 	// Change the interval within bounds.
 	b = do(t, "PUT", f.srv.URL+"/api/v1/schedules/feed_check", `{"every_s": 1800}`, 200)
-	var v ScheduleView
+	var v health.ScheduleView
 	_ = json.Unmarshal(b, &v)
 	if v.EverySeconds != 1800 || v.NextRun == nil || time.Until(*v.NextRun) < 25*time.Minute {
 		t.Fatalf("put: %s", b)
@@ -130,7 +131,7 @@ func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 	}
 
 	b := do(t, "PUT", f.srv.URL+"/api/v1/schedules/refresh_titles", `{"enabled":false}`, 200)
-	var off ScheduleView
+	var off health.ScheduleView
 	decodeJSON(t, b, &off)
 	if off.Enabled || off.LastRun != nil {
 		t.Fatalf("off response %+v", off)
@@ -156,7 +157,7 @@ func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 
 	before := time.Now().UTC()
 	b = do(t, "PUT", f.srv.URL+"/api/v1/schedules/refresh_titles", `{"enabled":true}`, 200)
-	var on ScheduleView
+	var on health.ScheduleView
 	decodeJSON(t, b, &on)
 	if !on.Enabled || on.State != "waiting" || on.NextRun == nil {
 		t.Fatalf("on response %+v", on)
@@ -181,7 +182,7 @@ func TestOnlyMovieRefreshScheduleMayBeDisabled(t *testing.T) {
 func TestSpanWords(t *testing.T) {
 	t.Parallel()
 	for s, want := range map[int64]string{60: "1 minute", 600: "10 minutes", 3600: "1 hour", 7200: "2 hours", 86400: "1 day", 90: "90 seconds"} {
-		if got := span(s); got != want {
+		if got := health.Span(s); got != want {
 			t.Errorf("span(%d) = %q, want %q", s, got, want)
 		}
 	}
@@ -196,7 +197,7 @@ func TestActiveJobsOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got struct {
-		Jobs []ActiveJob `json:"jobs"`
+		Jobs []health.ActiveJob `json:"jobs"`
 	}
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/jobs/active", "", 200), &got); err != nil {
 		t.Fatal(err)

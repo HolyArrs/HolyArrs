@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // History keep times live in Settings > This app: routine 30 days and the
@@ -16,7 +17,7 @@ import (
 func TestHistoryKeepSetting(t *testing.T) {
 	t.Parallel()
 	a, _ := signinRig(t, nil)
-	if s := a.uiSettings(context.Background()); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 0 {
+	if s := health.UISettingsOf(context.Background(), a.s.Store); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 0 {
 		t.Fatalf("defaults %+v", s)
 	}
 	put := func(role, body string) int {
@@ -35,14 +36,14 @@ func TestHistoryKeepSetting(t *testing.T) {
 	if c := put(webserver.RoleOwner, `{"history_other_days": 365}`); c != 200 {
 		t.Fatalf("365 answered %d", c)
 	}
-	if s := a.uiSettings(context.Background()); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 365 {
+	if s := health.UISettingsOf(context.Background(), a.s.Store); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 365 {
 		t.Fatalf("after put %+v", s)
 	}
 	// Other this_app switches stay open to settings people.
 	if c := put(webserver.RoleAdmin, `{"autoplay_trailers": false}`); c != 200 {
 		t.Fatalf("admin autoplay answered %d", c)
 	}
-	es, _, err := a.s.Store.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := a.s.Store.Events(context.Background(), database.EventFilter{Kinds: []string{health.EventSettingsChanged}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -120,7 +120,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	e.started = true
 	e.wake = make(chan struct{}, 1)
 	e.mu.Unlock()
-	a.applyArtworkCap(ctx) // the picture cache size from Settings
+	a.uiHandlers().ApplyArtworkCap(ctx) // the picture cache size from Settings
 	a.s.Store.OnEvent(a.exploreOnEvent)
 	a.s.Store.OnEvent(a.musicOnEvent)
 	go jobs.Guard("explore", func() { a.exploreLoop(ctx) })
