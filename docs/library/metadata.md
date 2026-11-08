@@ -17,7 +17,7 @@ On its first lookup, your install registers once and gets its own credential. Ho
 
 ## When the server is down
 
-Home, Search and Explore say so. Your Library, downloads and everything already saved keep working. Searches and new artwork come back when the server answers. HolyArrs checks at most once a minute.
+Home, Search and Explore say so. Your Library, downloads and everything already saved keep working. Searches and new artwork come back when the server answers. HolyArrs checks once a minute, and every 10 s after a failed check.
 
 ## What your install sends
 

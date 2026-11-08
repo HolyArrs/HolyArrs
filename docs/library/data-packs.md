@@ -48,7 +48,9 @@ A naming set replaces your current naming patterns. Existing files are not renam
 
 - Each chosen Pick rule is created new. It is not assigned to any title.
 - A chosen naming set replaces only these settings:
-  - The movie, show, season, episode, anime and music naming patterns.
+  - Movie file and folder patterns.
+  - Show folder, season folder, specials folder, episode, daily and anime patterns.
+  - Artist folder, album folder, disc folder, track and multi-disc track patterns.
   - Colon and illegal-character formatting.
   - Multi-episode style, air-date style and absolute-number digits.
 - Rename on import, folder behavior, tag reading and scan limits are never in a pack.
