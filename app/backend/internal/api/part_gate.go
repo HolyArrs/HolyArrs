@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
@@ -107,4 +110,24 @@ func (a *API) controlEvent(r *http.Request, action, target, summary string) {
 	}
 	_ = a.s.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: actor(r), Kind: domain.EventControl,
 		Summary: whoName(r) + " " + summary, Data: data})
+}
+
+// reportTitleGate is the same title check as GET /titles/{id} for a report:
+// no such title and a title above a Kid's limit answer alike, and a title of
+// a part that is off waits.
+func (a *API) reportTitleGate(w http.ResponseWriter, r *http.Request, id int64) bool {
+	var t mediafiles.Title
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil || !a.titleAllowed(r, t) {
+		if err != nil && !errors.Is(err, database.ErrNotFound) {
+			webserver.Internal(w, "api", err)
+			return false
+		}
+		webserver.Fail(w, http.StatusNotFound, "no such Title")
+		return false
+	}
+	if p, known := parts.ForTitleKind(t.Kind); known && !a.partIsOn(p) {
+		webserver.WriteJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
+		return false
+	}
+	return true
 }

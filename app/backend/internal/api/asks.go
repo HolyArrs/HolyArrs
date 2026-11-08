@@ -500,7 +500,7 @@ func (a *API) listMessages(w http.ResponseWriter, r *http.Request) {
 		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM asks WHERE state = 'asked'").Scan(&n)
 		out["waiting"] = n
 	}
-	if mayManageReports(r) {
+	if requests.MayManageReports(r) {
 		out["reports_open"], _ = requests.OpenReports(r.Context(), a.s.Store.Read())
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)

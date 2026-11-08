@@ -483,7 +483,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	if startup.FeatureOn(features.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}
-	a.reportRoutes(m)
+	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.reportTitleGate}).Routes(m)
 	a.askedByRoutes(m)
 	a.followRoutes(m)
 	a.controlRoutes(m)
