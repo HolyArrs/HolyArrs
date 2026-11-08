@@ -4,7 +4,7 @@ Some apps only know how to talk to Sonarr and Radarr. HolyArrs can answer them i
 
 Pages in this section:
 
-- [Connect Seerr or Overseerr](seerr.md): send requests from Seerr or Overseerr into your HolyArrs Library.
+- [Connect Seerr or Overseerr](../../reference/old-app-api-clients.md#seerr-or-overseerr): send requests from Seerr or Overseerr into your HolyArrs Library.
 - [Connect Bazarr, Prowlarr, Unpackerr and Homepage](other-apps.md): the other apps that work this way.
 - [Limits and troubleshooting](limits.md): what these apps cannot do with HolyArrs, and how to fix common problems.
 

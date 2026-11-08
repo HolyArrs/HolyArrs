@@ -34,6 +34,7 @@ var commentSkip = []string{
 var aiNameAllowed = []string{
 	"app/frontend/src/lib/ai/**",
 	"docs/user/ai/**",
+	"docs/reference/ai.md",
 	"app/backend/internal/ai/**",
 	"app/backend/internal/accounts/ai_*.go",
 	"app/frontend/src/routes/settings/ai/**",

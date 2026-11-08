@@ -25,22 +25,20 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Downloads | [Downloaders](user/downloads/downloaders.md), [history](user/downloads/history.md) |
 | Subtitles | [Subtitles](user/subtitles/subtitles.md) |
 | Files and folders | [Library folders](user/mediafiles/library-folders.md), [codecs and media inspection](user/library/codecs-inspection.md), [audio versions](user/library/audio-versions.md), [protected copies](user/library/protected-copies.md) |
-| Media servers | [Plex, Jellyfin and Emby](user/mediaservers/media-servers.md) |
+| Media servers | [Plex, Jellyfin and Emby](library/media-servers.md) |
 | Metadata | [Metadata](user/metadata/metadata-service.md), [privacy](user/metadata/metadata-privacy.md), [trailers](library/trailers.md), [data packs](user/metadata/data-packs.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
 | Alerts | [Alerts](users/alerts.md) |
 | Moving from other apps | [Move from other apps](user/migrate/move-from-other-apps.md), [how HolyArrs reads them](user/migrate/move-reading.md) |
 | Older apps' API | [Connect Seerr, Overseerr, Bazarr and others](user/arrapi/README.md) |
-| AI apps (held back) | [Connect AI apps](user/ai/ai-connections.md) |
+| AI apps (held back) | [Connect AI apps](reference/ai.md) |
 | Backups | [Backups](run/backups.md) |
 | Health | [Health checks](run/health.md), [logs](run/logs.md), [schedules](run/schedules.md) |
 | Updates | [Updates](run/updates.md) |
 
 ## Platforms
 
-- [Unraid](user/platforms/unraid.md)
-- [Synology](user/platforms/synology.md)
-- [QNAP, TrueNAS and other NAS boxes](user/platforms/nas.md)
+- [NAS, Synology and Unraid](run/platforms.md)
 - [Portable archives (no Docker)](user/platforms/portable.md)
 - [Health companion](user/platforms/companion.md)
 
@@ -49,7 +47,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 - [Troubleshooting](user/help/troubleshooting.md): the log, the doctor check, the support bundle, the version
 - [FAQ](user/help/faq.md)
 - [Parts, safe mode, controls and API keys](user/help/parts-and-safe-mode.md)
-- [Held back in the first release](user/help/held-back.md)
+- [Held back in the first release](run/updates.md#held-back-features)
 
 ## Find a guide by page
 
@@ -78,16 +76,16 @@ A changing number or token is in square brackets.
 | Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
 | Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](user/subtitles/subtitles.md) |
-| Connect an AI app | `/ai` | [Connect AI apps](user/ai/ai-connections.md) (held back) |
+| Connect an AI app | `/ai` | [Connect AI apps](reference/ai.md) (held back) |
 | Settings | `/settings` | [Home and Settings](user/getting-started/home-and-settings.md#settings) |
 | Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
-| AI apps | `/settings/ai` | [Connect AI apps](user/ai/ai-connections.md) (held back) |
+| AI apps | `/settings/ai` | [Connect AI apps](reference/ai.md) (held back) |
 | Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
 | Backups | `/settings/backups` | [Backups](run/backups.md) |
 | Move from other apps | `/settings/move` | [Move from other apps](user/migrate/move-from-other-apps.md) |
 | Downloaders | `/settings/downloaders` | [Downloaders](user/downloads/downloaders.md) |
 | Library folders | `/settings/library-folders` | [Library folders](user/mediafiles/library-folders.md) |
-| Media servers | `/settings/media-servers` | [Media servers](user/mediaservers/media-servers.md) |
+| Media servers | `/settings/media-servers` | [Media servers](library/media-servers.md) |
 | Parts | `/settings/parts` | [Parts and safe mode](user/help/parts-and-safe-mode.md) |
 | Sign-in and security | `/settings/sign-in` | [Sign-in and passwords](users/sign-in.md) |
 | Sources | `/settings/sources` | [Sources](user/sources/sources-bridge.md) |

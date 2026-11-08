@@ -18,6 +18,8 @@ AI apps are held back in this release. You see them only when the `ai_apps` feat
 3. Under **Connect an AI app**, pick your app and follow its steps.
 4. Ask your app: "What's downloading in HolyArrs?" You should see it under **Linked AI apps** with a last used time.
 
+Or click **Or let your agent do it** and paste the short prompt into a coding agent. If the prompt holds a key, paste it only into your own agent.
+
 The AI address is your HolyArrs address plus `/api/v1/mcp`, such as `http://your-server:6262/api/v1/mcp`. `/mcp` works too. Under a URL base, put the base first.
 
 ## Choices
@@ -39,6 +41,25 @@ The AI address is your HolyArrs address plus `/api/v1/mcp`, such as `http://your
 The page can't tell whether an `https` name is open to the internet, so it may show cloud steps that won't work on a home-only name. Claude Desktop can reach a home address through the `mcp-remote` bridge, which needs Node.js.
 
 Keep an AI key out of links and chats; it belongs in the app's config. AI keys work only on the AI address, and ordinary API keys don't work there.
+
+### Where each app takes the address
+
+Settings > AI apps shows these steps with your address filled in. Any other app that adds a remote MCP server works too.
+
+| App | Where you add HolyArrs | On plain `http` |
+|---|---|---|
+| Claude app | **Connectors**, add custom connector | Can't reach it |
+| ChatGPT | Add custom MCP server | Can't reach it |
+| Gemini app | Custom connected app | Can't reach it |
+| Grok | **Connectors**, custom | Can't reach it |
+| Perplexity | Add MCP connector, remote | Can't reach it |
+| Claude Code | `claude mcp add` | AI key |
+| Codex | `codex mcp add` | AI key |
+| Cursor | `~/.cursor/mcp.json` | AI key |
+| VS Code | **MCP Servers**, **Add Server** | AI key |
+| Gemini CLI | `gemini mcp add` | AI key |
+| Claude Desktop at home | Developer config, through `mcp-remote` | AI key |
+| Open WebUI, LM Studio | The app's MCP settings | AI key |
 
 ### Getting an https address
 
@@ -78,6 +99,8 @@ Only `ask_for_title` changes anything. It counts as your own request. An app can
 | Sign-in fails behind a proxy | Set `HOLYARRS_TRUSTED_PROXIES` and send `X-Forwarded-Proto: https`. |
 | "request from another site or host name refused" | Add the name to `HOLYARRS_ALLOWED_HOSTS`. |
 | "This AI app is not registered with HolyArrs." | Remove HolyArrs from the app and add it again. |
+| "Sign in with your password to manage AI keys." | Sign out and back in with your password, or ask the owner. |
+| A tool is missing | Check the person's permissions and which parts are on. |
 | "too many calls from this key" | Wait the seconds shown. |
 | "that confirm_token is unknown, used or expired" | Ask the app again. |
 | The app never uses HolyArrs | The model may be too small for tools. Try a bigger one. |

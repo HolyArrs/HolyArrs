@@ -29,6 +29,14 @@ Every app uses the Sonarr-side key on `/sonarr` and the Radarr-side key on `/rad
 Add each side once. Don't also add `/radarr` as Seerr's 4K server. HolyArrs keeps every copy of a movie on one title, so removing the "4K" one in Seerr removes the whole movie.
 :::
 
+If it does not work:
+
+| Symptom | Fix |
+|---|---|
+| **Test** fails with 404 | The feature is off, or the URL base is wrong. Check the switch and copy the URL base from the card. |
+| **Test** fails with 401 or 403 | The key is wrong or replaced, or its owner lost permission to manage the Library. Make a new key. |
+| Changing the root folder in Seerr does nothing | Expected. Move titles in HolyArrs. |
+
 <details class="ha-more"><summary>What Seerr does in HolyArrs</summary>
 
 | Seerr action | In HolyArrs |
