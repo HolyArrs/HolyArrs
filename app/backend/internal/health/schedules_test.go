@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"context"
@@ -8,17 +8,16 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 type schedulesAnswer struct {
-	Schedules []health.ScheduleView `json:"schedules"`
-	Loops     []health.LoopView     `json:"loops"`
-	SafeMode  bool                  `json:"safe_mode"`
+	Schedules []ScheduleView `json:"schedules"`
+	Loops     []LoopView     `json:"loops"`
+	SafeMode  bool           `json:"safe_mode"`
 }
 
-func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) health.ScheduleView {
+func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) ScheduleView {
 	t.Helper()
 	for _, s := range a.Schedules {
 		if s.Kind == kind {
@@ -26,7 +25,7 @@ func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) health.Schedule
 		}
 	}
 	t.Fatalf("no schedule %s in %+v", kind, a.Schedules)
-	return health.ScheduleView{}
+	return ScheduleView{}
 }
 
 // route: GET /api/v1/schedules
@@ -34,7 +33,7 @@ func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) health.Schedule
 // route: PUT /api/v1/schedules/{kind}
 func TestSchedules(t *testing.T) {
 	t.Parallel()
-	f := newCtl(t, false)
+	f := newCtl(t)
 	// The periodic loops report their interval and passes.
 	deadline := time.Now().Add(5 * time.Second)
 	var got schedulesAnswer
@@ -81,7 +80,7 @@ func TestSchedules(t *testing.T) {
 
 	// Change the interval within bounds.
 	b = do(t, "PUT", f.srv.URL+"/api/v1/schedules/feed_check", `{"every_s": 1800}`, 200)
-	var v health.ScheduleView
+	var v ScheduleView
 	_ = json.Unmarshal(b, &v)
 	if v.EverySeconds != 1800 || v.NextRun == nil || time.Until(*v.NextRun) < 25*time.Minute {
 		t.Fatalf("put: %s", b)
@@ -106,7 +105,7 @@ func TestSchedules(t *testing.T) {
 
 func TestSchedulesInSafeMode(t *testing.T) {
 	t.Parallel()
-	f := newCtlMode(t, false, true)
+	f := newCtlMode(t, true)
 	var got schedulesAnswer
 	_ = json.Unmarshal(do(t, "GET", f.srv.URL+"/api/v1/schedules", "", 200), &got)
 	if !got.SafeMode || scheduleNamed(t, got, "feed_check").State != "safe_mode" || scheduleNamed(t, got, "health_check").State == "safe_mode" {
@@ -118,20 +117,20 @@ func TestSchedulesInSafeMode(t *testing.T) {
 
 func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 	t.Parallel()
-	f := newCtl(t, false)
+	f := newCtl(t)
 	ctx := context.Background()
 	future := time.Now().Add(time.Hour)
-	scheduled, _, err := f.api.s.Queue.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"scheduled": true}, "schedule:refresh_titles", domain.System, future)
+	scheduled, _, err := f.q.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"scheduled": true}, "schedule:refresh_titles", domain.System, future)
 	if err != nil {
 		t.Fatal(err)
 	}
-	manual, _, err := f.api.s.Queue.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"by_hand": true}, "refresh_titles:by_hand", domain.System, future)
+	manual, _, err := f.q.EnqueueAt(ctx, "refresh_titles", nil, map[string]any{"by_hand": true}, "refresh_titles:by_hand", domain.System, future)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	b := do(t, "PUT", f.srv.URL+"/api/v1/schedules/refresh_titles", `{"enabled":false}`, 200)
-	var off health.ScheduleView
+	var off ScheduleView
 	decodeJSON(t, b, &off)
 	if off.Enabled || off.LastRun != nil {
 		t.Fatalf("off response %+v", off)
@@ -146,7 +145,7 @@ func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 	if scheduledState != "cancelled" || manualState != "queued" {
 		t.Fatalf("scheduled=%s manual=%s", scheduledState, manualState)
 	}
-	if err := f.api.s.Queue.Cancel(ctx, manual); err != nil {
+	if err := f.q.Cancel(ctx, manual); err != nil {
 		t.Fatal(err)
 	}
 	var listed schedulesAnswer
@@ -157,7 +156,7 @@ func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 
 	before := time.Now().UTC()
 	b = do(t, "PUT", f.srv.URL+"/api/v1/schedules/refresh_titles", `{"enabled":true}`, 200)
-	var on health.ScheduleView
+	var on ScheduleView
 	decodeJSON(t, b, &on)
 	if !on.Enabled || on.State != "waiting" || on.NextRun == nil {
 		t.Fatalf("on response %+v", on)
@@ -170,7 +169,7 @@ func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 
 func TestOnlyMovieRefreshScheduleMayBeDisabled(t *testing.T) {
 	t.Parallel()
-	f := newCtl(t, false)
+	f := newCtl(t)
 	b := do(t, "PUT", f.srv.URL+"/api/v1/schedules/refresh_shows", `{"enabled":false}`, 409)
 	if !strings.Contains(string(b), "only scheduled movie details refresh") {
 		t.Fatalf("response %s", b)
@@ -182,7 +181,7 @@ func TestOnlyMovieRefreshScheduleMayBeDisabled(t *testing.T) {
 func TestSpanWords(t *testing.T) {
 	t.Parallel()
 	for s, want := range map[int64]string{60: "1 minute", 600: "10 minutes", 3600: "1 hour", 7200: "2 hours", 86400: "1 day", 90: "90 seconds"} {
-		if got := health.Span(s); got != want {
+		if got := Span(s); got != want {
 			t.Errorf("span(%d) = %q, want %q", s, got, want)
 		}
 	}
@@ -197,7 +196,7 @@ func TestActiveJobsOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got struct {
-		Jobs []health.ActiveJob `json:"jobs"`
+		Jobs []ActiveJob `json:"jobs"`
 	}
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/jobs/active", "", 200), &got); err != nil {
 		t.Fatal(err)

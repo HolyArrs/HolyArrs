@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"encoding/json"
@@ -13,14 +13,15 @@ import (
 // others with Settings rights read that the owner should do it.
 func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 	t.Parallel()
-	a, _ := signinRig(t, nil)
-	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
+	s := openStore(t)
+	mux := newRig(t, s, rigOpts{}).mux
+	execSQL(t, s, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
 		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
 	msg := func(who webserver.Caller) string {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/health/checks", nil)
 		r = r.WithContext(webserver.ContextWith(r.Context(), who))
-		a.Handler().ServeHTTP(w, r)
+		mux.ServeHTTP(w, r)
 		var out struct {
 			Checks []struct{ Key, Message string } `json:"checks"`
 		}
@@ -46,14 +47,15 @@ func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 // it is reworded per caller after the cache, without changing the cache.
 func TestKeyKitStatusNamesTheOwner(t *testing.T) {
 	t.Parallel()
-	a, _ := signinRig(t, nil)
-	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
+	s := openStore(t)
+	mux := newRig(t, s, rigOpts{}).mux
+	execSQL(t, s, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
 		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
 	text := func(who webserver.Caller) string {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/settings/status", nil)
 		r = r.WithContext(webserver.ContextWith(r.Context(), who))
-		a.Handler().ServeHTTP(w, r)
+		mux.ServeHTTP(w, r)
 		var out struct {
 			Items []struct{ Text string } `json:"items"`
 		}
