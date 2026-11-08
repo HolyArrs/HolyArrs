@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"slices"
 	"testing"
 	"time"
@@ -21,7 +22,7 @@ func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 	srv, _, _ := libSetup(t)
 	t.Cleanup(func() { mediafiles.SetOwnTraits(nil) })
 
-	var tr OwnTraitView
+	var tr downloads.OwnTraitView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/own-traits", `{"name":" Favourite group ","match":"group","terms":["HOLYARRS",""," /^lantern$/ "]}`, 201), &tr)
 	if tr.ID == 0 || tr.Key != mediafiles.OwnTraitKey(tr.ID) || tr.Name != "Favourite group" || !slices.Equal(tr.Terms, []string{"HOLYARRS", "/^lantern$/"}) {
 		t.Fatalf("create %+v", tr)
@@ -47,7 +48,7 @@ func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 	}
 
 	var list struct {
-		OwnTraits []OwnTraitView `json:"own_traits"`
+		OwnTraits []downloads.OwnTraitView `json:"own_traits"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/own-traits", "", 200), &list)
 	if len(list.OwnTraits) != 1 || list.OwnTraits[0].Terms[0] != "LANTERN" {
@@ -88,7 +89,7 @@ func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 
 	// A removed trait's id is never given again, so an old key cannot
 	// come back as another trait.
-	var next OwnTraitView
+	var next downloads.OwnTraitView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/own-traits", `{"name":"Next","match":"name","terms":["x"]}`, 201), &next)
 	if next.ID == tr.ID {
 		t.Fatalf("id %d given again", next.ID)

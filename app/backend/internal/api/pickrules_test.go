@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"strings"
 	"testing"
 
@@ -38,10 +39,10 @@ func ruleJSON(t *testing.T, name string, kinds []string, b mediafiles.PickRulesB
 	return string(raw)
 }
 
-func ruleByName(t *testing.T, base, name string) PickRulesView {
+func ruleByName(t *testing.T, base, name string) downloads.PickRulesView {
 	t.Helper()
 	var got struct {
-		PickRules []PickRulesView `json:"pick_rules"`
+		PickRules []downloads.PickRulesView `json:"pick_rules"`
 	}
 	_ = json.Unmarshal(do(t, "GET", base+"/api/v1/pick-rules", "", 200), &got)
 	for _, p := range got.PickRules {
@@ -50,7 +51,7 @@ func ruleByName(t *testing.T, base, name string) PickRulesView {
 		}
 	}
 	t.Fatalf("no Pick rules named %q in %+v", name, got)
-	return PickRulesView{}
+	return downloads.PickRulesView{}
 }
 
 // route: POST /api/v1/pick-rules

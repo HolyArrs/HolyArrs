@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"strings"
 	"testing"
 )
@@ -17,7 +18,7 @@ func TestVersionsAPI(t *testing.T) {
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"HD"}`, t.TempDir()), 201), &hd)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"4K"}`, t.TempDir()), 201), &uhd)
 	var rules struct {
-		PickRules []PickRulesView `json:"pick_rules"`
+		PickRules []downloads.PickRulesView `json:"pick_rules"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/pick-rules", "", 200), &rules)
 	var fourK, lossless int64

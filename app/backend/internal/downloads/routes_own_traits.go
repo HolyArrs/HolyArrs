@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
 
 const ownTraitHelp = `send {"name": "...", "match": "name" or "group", "terms": ["word", "/pattern/"]}`
 
-func (a *API) ownTraitID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+func (h *Handlers) ownTraitID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
 		webserver.Fail(w, http.StatusBadRequest, "the trait id must be a number")
@@ -50,14 +50,14 @@ func ownTraitError(w http.ResponseWriter, err error) {
 	case errors.Is(err, library.ErrOwnTraitName):
 		webserver.WriteJSON(w, http.StatusConflict, map[string]string{"error": "Another of your traits already has this name.", "field": "name"})
 	default:
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "downloads", err)
 	}
 }
 
-func (a *API) listOwnTraits(w http.ResponseWriter, r *http.Request) {
-	ts, err := library.OwnTraits(r.Context(), a.s.Store)
+func (h *Handlers) listOwnTraits(w http.ResponseWriter, r *http.Request) {
+	ts, err := library.OwnTraits(r.Context(), h.Store)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "downloads", err)
 		return
 	}
 	out := []OwnTraitView{}
@@ -67,12 +67,12 @@ func (a *API) listOwnTraits(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"own_traits": out})
 }
 
-func (a *API) addOwnTrait(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) addOwnTrait(w http.ResponseWriter, r *http.Request) {
 	var in library.OwnTraitInput
-	if !decode(w, r, &in, ownTraitHelp) {
+	if !webserver.Decode(w, r, &in, ownTraitHelp) {
 		return
 	}
-	t, err := library.CreateOwnTrait(r.Context(), a.s.Store, in, actor(r))
+	t, err := library.CreateOwnTrait(r.Context(), h.Store, in, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		ownTraitError(w, err)
 		return
@@ -80,16 +80,16 @@ func (a *API) addOwnTrait(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusCreated, viewOfOwnTrait(t))
 }
 
-func (a *API) editOwnTrait(w http.ResponseWriter, r *http.Request) {
-	id, ok := a.ownTraitID(w, r)
+func (h *Handlers) editOwnTrait(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.ownTraitID(w, r)
 	if !ok {
 		return
 	}
 	var in library.OwnTraitInput
-	if !decode(w, r, &in, ownTraitHelp) {
+	if !webserver.Decode(w, r, &in, ownTraitHelp) {
 		return
 	}
-	t, err := library.UpdateOwnTrait(r.Context(), a.s.Store, id, in, actor(r))
+	t, err := library.UpdateOwnTrait(r.Context(), h.Store, id, in, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		ownTraitError(w, err)
 		return
@@ -98,12 +98,12 @@ func (a *API) editOwnTrait(w http.ResponseWriter, r *http.Request) {
 }
 
 // deleteOwnTrait answers how many Pick rules lost the trait.
-func (a *API) deleteOwnTrait(w http.ResponseWriter, r *http.Request) {
-	id, ok := a.ownTraitID(w, r)
+func (h *Handlers) deleteOwnTrait(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.ownTraitID(w, r)
 	if !ok {
 		return
 	}
-	n, err := library.DeleteOwnTrait(r.Context(), a.s.Store, id, actor(r))
+	n, err := library.DeleteOwnTrait(r.Context(), h.Store, id, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		ownTraitError(w, err)
 		return

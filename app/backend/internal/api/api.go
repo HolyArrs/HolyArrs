@@ -189,7 +189,8 @@ type API struct {
 	sourceOnce sync.Once
 	sourceH    *sources.Handlers
 	// dl serves the Downloads routes (internal/downloads).
-	dl *downloads.Web
+	dl  *downloads.Web
+	dlh *downloads.Handlers
 	// mf serves the Library files routes (internal/mediafiles).
 	mf *mediafiles.Handlers
 	// interest limits each session's live interest calls (webserver.go).
@@ -328,6 +329,9 @@ func New(s Server) *API {
 	if s.Media != nil {
 		a.controls.TestMediaServer = a.media.Test
 	}
+	a.dlh = &downloads.Handlers{Deps: downloads.Deps{Store: s.Store, Library: s.Library, Queue: s.Queue,
+		TitleID: a.titleID, PublishTitle: a.publishTitle, LibraryError: libraryError,
+		VersionJSON: func(ctx context.Context, v mediafiles.Version) any { return versionView(ctx, s.Store.Read(), v) }}}
 	return a
 }
 
@@ -401,15 +405,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/artwork/img/{kind}/{id}/{file}", a.serverArtwork)
 	a.statusHandlers().Routes(m)
 	(&requests.TitleDefaultsHandlers{Store: a.s.Store, Actor: actor}).Routes(m)
-	m.HandleFunc("GET /api/v1/pick-rules", a.listPickRules)
-	m.HandleFunc("POST /api/v1/pick-rules", a.addPickRules)
-	m.HandleFunc("GET /api/v1/pick-rules/{id}", a.getPickRules)
-	m.HandleFunc("PUT /api/v1/pick-rules/{id}", a.editPickRules)
-	m.HandleFunc("DELETE /api/v1/pick-rules/{id}", a.deletePickRules)
-	m.HandleFunc("GET /api/v1/own-traits", a.listOwnTraits)
-	m.HandleFunc("POST /api/v1/own-traits", a.addOwnTrait)
-	m.HandleFunc("PUT /api/v1/own-traits/{id}", a.editOwnTrait)
-	m.HandleFunc("DELETE /api/v1/own-traits/{id}", a.deleteOwnTrait)
+	a.dlh.Routes(m)
 	m.HandleFunc("GET /api/v1/library-folders", a.listFolders)
 	m.HandleFunc("POST /api/v1/library-folders", a.addFolder)
 	m.HandleFunc("PUT /api/v1/library-folders/{id}", a.editFolder)
@@ -428,7 +424,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/events", a.listEvents)
 	m.HandleFunc("GET /api/v1/jobs", a.listJobs)
 	a.peopleRoutes(m)
-	a.copyRoutes(m)
+	a.dlh.CopyRoutes(m)
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	a.mf.Routes(m)
 	a.dl.Routes(m)

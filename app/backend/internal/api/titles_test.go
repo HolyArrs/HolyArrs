@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -278,7 +279,7 @@ func TestPickRulesListAPI(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var got struct {
-		PickRules []PickRulesView `json:"pick_rules"`
+		PickRules []downloads.PickRulesView `json:"pick_rules"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/pick-rules", "", 200), &got)
 	if len(got.PickRules) == 0 || got.PickRules[0].ID == 0 || got.PickRules[0].Name == "" {
