@@ -74,7 +74,7 @@ func ResetOwner(ctx context.Context, s *database.Store, name, password string) e
 		return err
 	}
 	now := database.FormatTime(time.Now())
-	var id int64
+	var id, invites, arrKeys int64
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		var err error
 		id, err = firstOwnerID(ctx, tx)
@@ -100,13 +100,21 @@ func ResetOwner(ctx context.Context, s *database.Store, name, password string) e
 		if err := endOutsideLinks(ctx, tx, nil, id); err != nil {
 			return err
 		}
+		// Invites and old-app keys made with the old login could let someone back in.
+		if invites, err = deleteOpenInvites(ctx, tx); err != nil {
+			return err
+		}
+		if arrKeys, err = deleteArrKeysOf(ctx, tx, id); err != nil {
+			return err
+		}
 		return deleteKeysOf(ctx, tx, id)
 	})
 	if err == nil && id != 0 {
 		// The reset is on the audit trail: someone with the server's shell took the owner account back.
 		_ = s.AddEvent(ctx, &domain.Event{Actor: domain.System, Kind: EventAccountChanged,
-			Summary: "Owner account reset from the server's command line: name and password set, two-factor off, signed out, API keys and outside sign-in links removed",
-			Data:    map[string]any{"user_id": id, "action": "owner_reset", "name": name}})
+			Summary: "Owner account reset from the server's command line: name and password set, two-factor off, signed out, API keys, open invites, old-app keys and outside sign-in links removed",
+			Data: map[string]any{"user_id": id, "action": "owner_reset", "name": name,
+				"invites_removed": invites, "old_app_keys_removed": arrKeys}})
 	}
 	return err
 }

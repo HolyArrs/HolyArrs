@@ -104,5 +104,6 @@ func resetOwner(args []string) int {
 		return 1
 	}
 	log.Printf("reset-owner: the owner is now %q; sign in again everywhere", name)
+	log.Printf("reset-owner: open invites and old-app API keys were removed; review allowed hosts and local networks in Settings")
 	return 0
 }
