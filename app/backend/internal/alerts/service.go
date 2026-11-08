@@ -241,8 +241,8 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 
 // Change saves an Alert; an empty URL or password keeps the stored one.
 func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Alert, error) {
-	var a domain.Alert
-	if err := database.Get(ctx, s.Read(), "alerts", id, &a); err != nil {
+	a, err := get(ctx, s.Read(), id)
+	if err != nil {
 		return a, err
 	}
 	old := a
@@ -272,7 +272,7 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 		return old, ErrTokenAgain
 	}
 	pass, passKind := secretFor(a.Kind, in)
-	err := s.Write(ctx, func(tx *sql.Tx) error {
+	err = s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, a.Name, a.ID); err != nil {
 			return err
 		}
@@ -324,8 +324,8 @@ func secretFor(kind string, in Input) (string, string) {
 // Remove deletes an Alert and its secrets.
 func Remove(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		var a domain.Alert
-		if err := database.Get(ctx, tx, "alerts", id, &a); err != nil {
+		a, err := get(ctx, tx, id)
+		if err != nil {
 			return err
 		}
 		for _, ref := range []*int64{a.URLSecretID, a.PasswordSecretID} {
