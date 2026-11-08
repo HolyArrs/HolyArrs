@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -39,7 +41,7 @@ func TestFourKAskAddsFourKVersion(t *testing.T) {
 	}
 	var n int
 	_ = r.st.Read().QueryRow(`SELECT count(*) FROM versions v JOIN pick_rules p ON p.id = v.pick_rules_id
-		WHERE v.title_id = ? AND v.label = '4K' AND p.name = ?`, *got.TitleID, domain.FourKName).Scan(&n)
+		WHERE v.title_id = ? AND v.label = '4K' AND p.name = ?`, *got.TitleID, mediafiles.FourKName).Scan(&n)
 	if n != 1 {
 		t.Fatalf("4K versions %d", n)
 	}

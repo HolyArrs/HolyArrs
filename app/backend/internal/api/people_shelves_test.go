@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -31,7 +33,7 @@ func shelfTitles(t *testing.T, s *database.Store, n int, people []string) {
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for i := 0; i < n; i++ {
 			year := 2020
-			title := domain.Title{Kind: "movie", Name: fmt.Sprint("T", i), SortName: fmt.Sprint("t", i), Year: &year, SourceIDs: map[string]string{"tmdb": fmt.Sprint(500 + i)},
+			title := mediafiles.Title{Kind: "movie", Name: fmt.Sprint("T", i), SortName: fmt.Sprint("t", i), Year: &year, SourceIDs: map[string]string{"tmdb": fmt.Sprint(500 + i)},
 				MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released", People: people}
 			if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 				return err

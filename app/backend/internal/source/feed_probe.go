@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 // feedProbeTimeout bounds one whole probe so a slow Source cannot stall the scheduler.
@@ -117,8 +117,8 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 	}
 	prepared := &feedPrepared{answers: answers, fingerprint: feedSourceFingerprint(srcs), showsWanted: showsWanted, musicWanted: musicWanted}
 
-	hasShow := slices.ContainsFunc(refs, func(r judge.TitleRef) bool { return r.Kind == "show" })
-	hasArtist := slices.ContainsFunc(refs, func(r judge.TitleRef) bool { return r.Kind == "artist" })
+	hasShow := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "show" })
+	hasArtist := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "artist" })
 	for _, answer := range answers {
 		if !answer.src.UseFor.Feed {
 			continue
@@ -137,14 +137,14 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 				continue
 			}
 			p := releasename.Parse(item.Title, releasename.Hints{Size: item.Size})
-			m := judge.MatchTitle(p, refs)
+			m := mediafiles.MatchTitle(p, refs)
 			if m.Title == nil && hasShow {
-				m = judge.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Show: true}), refs)
+				m = mediafiles.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Show: true}), refs)
 			}
 			if m.Title == nil && hasArtist {
-				m = judge.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
+				m = mediafiles.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
 			}
-			if m.Title != nil && tagset.SourceServes(answer.src.Tags, m.Title.Tags) {
+			if m.Title != nil && mediafiles.SourceServes(answer.src.Tags, m.Title.Tags) {
 				return true, prepared, nil
 			}
 		}

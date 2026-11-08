@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -24,7 +26,7 @@ type libCopies struct {
 	slots    map[[2]int64]int64
 }
 
-func addCopies(t *testing.T, st *database.Store, kind, name string, numbers []domain.Numbers, labels []string, withFiles bool) libCopies {
+func addCopies(t *testing.T, st *database.Store, kind, name string, numbers []mediafiles.Numbers, labels []string, withFiles bool) libCopies {
 	t.Helper()
 	c := libCopies{files: map[[2]int64]int64{}, slots: map[[2]int64]int64{}}
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
@@ -32,11 +34,11 @@ func addCopies(t *testing.T, st *database.Store, kind, name string, numbers []do
 		if err := tx.QueryRow("SELECT id FROM library_folders ORDER BY id LIMIT 1").Scan(&folder); err != nil {
 			return err
 		}
-		rules := &domain.PickRules{Name: "Rules " + name, Kinds: []string{kind}, Revision: 1}
+		rules := &mediafiles.PickRules{Name: "Rules " + name, Kinds: []string{kind}, Revision: 1}
 		if _, err := database.Insert(tx, "pick_rules", rules, domain.System); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: kind, GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
+		ti := &mediafiles.Title{Kind: kind, GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
@@ -44,27 +46,27 @@ func addCopies(t *testing.T, st *database.Store, kind, name string, numbers []do
 		c.title = ti.ID
 		itemKind := map[string]string{"movie": "movie", "show": "episode"}[kind]
 		for _, n := range numbers {
-			it := &domain.Item{TitleID: ti.ID, Kind: itemKind, Numbers: n, KeepUpToDate: true, SourceIDs: map[string]string{}}
+			it := &mediafiles.Item{TitleID: ti.ID, Kind: itemKind, Numbers: n, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			c.items = append(c.items, it.ID)
 		}
 		for i, l := range labels {
-			v := &domain.Version{TitleID: ti.ID, Label: l, PickRulesID: rules.ID, LibraryFolderID: folder, FolderName: name + " " + l, KeepUpToDate: true, IsMain: i == 0, AudioLanguages: []string{}}
+			v := &mediafiles.Version{TitleID: ti.ID, Label: l, PickRulesID: rules.ID, LibraryFolderID: folder, FolderName: name + " " + l, KeepUpToDate: true, IsMain: i == 0, AudioLanguages: []string{}}
 			if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 				return err
 			}
 			c.versions = append(c.versions, v.ID)
 			for _, it := range c.items {
-				sl := &domain.Slot{ItemID: it, VersionID: v.ID, State: domain.SlotWanted}
+				sl := &mediafiles.Slot{ItemID: it, VersionID: v.ID, State: mediafiles.SlotWanted}
 				if withFiles {
-					f := &domain.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: name + "/" + l + "/" + strconv.FormatInt(it, 10) + ".mkv", AddedAt: time.Now().UTC(),
+					f := &mediafiles.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: name + "/" + l + "/" + strconv.FormatInt(it, 10) + ".mkv", AddedAt: time.Now().UTC(),
 						Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
 					if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 						return err
 					}
-					sl.State, sl.FileID = domain.SlotInLibrary, &f.ID
+					sl.State, sl.FileID = mediafiles.SlotInLibrary, &f.ID
 					c.files[[2]int64{it, v.ID}] = f.ID
 				}
 				if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
@@ -92,7 +94,7 @@ func (f *fakeAlerts) all() []alerts.Message {
 func TestReportFixAndReopen(t *testing.T) {
 	r := newRig(t)
 	ctx := context.Background()
-	c := addCopies(t, r.st, "movie", "Arrival", []domain.Numbers{{}}, []string{"HD"}, true)
+	c := addCopies(t, r.st, "movie", "Arrival", []mediafiles.Numbers{{}}, []string{"HD"}, true)
 
 	v, err := r.svc.Report(ctx, r.ana, ReportInput{TitleID: c.title, Kind: "sound", Note: "  no sound after 20 minutes "})
 	if err != nil {
@@ -194,9 +196,9 @@ func TestReportFixAndReopen(t *testing.T) {
 func TestReportChecksAndEpisodes(t *testing.T) {
 	r := newRig(t)
 	ctx := context.Background()
-	movie := addCopies(t, r.st, "movie", "Arrival", []domain.Numbers{{}}, []string{"HD"}, true)
-	empty := addCopies(t, r.st, "movie", "Wanted Only", []domain.Numbers{{}}, []string{"HD"}, false)
-	show := addCopies(t, r.st, "show", "Severance", []domain.Numbers{{Season: intp(2), Episode: intp(3)}, {Season: intp(2), Episode: intp(4)}}, []string{"HD", "4K"}, true)
+	movie := addCopies(t, r.st, "movie", "Arrival", []mediafiles.Numbers{{}}, []string{"HD"}, true)
+	empty := addCopies(t, r.st, "movie", "Wanted Only", []mediafiles.Numbers{{}}, []string{"HD"}, false)
+	show := addCopies(t, r.st, "show", "Severance", []mediafiles.Numbers{{Season: intp(2), Episode: intp(3)}, {Season: intp(2), Episode: intp(4)}}, []string{"HD", "4K"}, true)
 
 	for _, tc := range []struct {
 		in   ReportInput
@@ -250,7 +252,7 @@ func TestReportChecksAndEpisodes(t *testing.T) {
 func TestReportOpenCap(t *testing.T) {
 	r := newRig(t)
 	ctx := context.Background()
-	show := addCopies(t, r.st, "show", "Severance", []domain.Numbers{{Season: intp(1), Episode: intp(1)}, {Season: intp(1), Episode: intp(2)}}, []string{"HD"}, true)
+	show := addCopies(t, r.st, "show", "Severance", []mediafiles.Numbers{{Season: intp(1), Episode: intp(1)}, {Season: intp(1), Episode: intp(2)}}, []string{"HD"}, true)
 	n := 0
 	for _, kind := range domain.ReportKinds {
 		for _, in := range []ReportInput{{}, {Season: intp(1)}, {ItemID: show.items[0]}, {ItemID: show.items[1]}} {

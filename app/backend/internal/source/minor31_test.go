@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -20,7 +22,7 @@ func TestBulkSearch_SkipGatePicks(t *testing.T) {
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'not_out_yet'")
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"bulk": true, "skip_gate": true})
-	if st := slotState(t, f).State; st != domain.SlotChosen {
+	if st := slotState(t, f).State; st != mediafiles.SlotChosen {
 		t.Fatalf("slot %s", st)
 	}
 	if r := relByName(t, f, web1080); !strings.Contains(fmt.Sprint(r.Verdict["reasons"]), "gate_skipped") {
@@ -37,7 +39,7 @@ func TestChoose_OnNeedsADecision(t *testing.T) {
 	if _, err := (&Searcher{Store: f.s}).Choose(context.Background(), id, 0, true, domain.System); err != nil {
 		t.Fatalf("err %v", err)
 	}
-	if st := slotState(t, f).State; st != domain.SlotChosen {
+	if st := slotState(t, f).State; st != mediafiles.SlotChosen {
 		t.Fatalf("slot %s", st)
 	}
 	exec(t, f, "UPDATE slots SET state = 'importing'")
@@ -53,11 +55,11 @@ func TestHandSearch_FromNeedsADecision(t *testing.T) {
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'needs_a_decision'")
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"bulk": true})
-	if st := slotState(t, f).State; st != domain.SlotNeedsADecision {
+	if st := slotState(t, f).State; st != mediafiles.SlotNeedsADecision {
 		t.Fatalf("a bulk search moved it: %s", st)
 	}
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
-	if st := slotState(t, f).State; st != domain.SlotChosen {
+	if st := slotState(t, f).State; st != mediafiles.SlotChosen {
 		t.Fatalf("slot %s", st)
 	}
 }
@@ -69,7 +71,7 @@ func TestHandSearch_FromNeedsADecisionFindsNothing(t *testing.T) {
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'needs_a_decision'")
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
-	if sl := slotState(t, f); sl.State != domain.SlotNeedsADecision || sl.LastReason == nil || !strings.HasPrefix(*sl.LastReason, "searched again") {
+	if sl := slotState(t, f); sl.State != mediafiles.SlotNeedsADecision || sl.LastReason == nil || !strings.HasPrefix(*sl.LastReason, "searched again") {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
 }

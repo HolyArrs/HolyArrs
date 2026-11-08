@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -34,7 +36,7 @@ func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
 	}
 	do(t, "POST", base+"/versions/"+itoa(v.ID)+"/adopt", `{"relative_path":"../escape.mkv"}`, 400)
 	do(t, "POST", base+"/versions/"+itoa(v.ID)+"/adopt", `{"relative_path":"Existing Directors Cut/Dune.2024.1080p.mkv"}`, 400)
-	var f domain.File
+	var f mediafiles.File
 	if err := json.Unmarshal(do(t, "POST", base+"/versions/"+itoa(v.ID)+"/adopt", `{"relative_path":"Existing Directors Cut/Dune.2024.1080p.mkv","confirmed_edition":"Directors Cut"}`, 201), &f); err != nil {
 		t.Fatal(err)
 	}
@@ -49,8 +51,8 @@ func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
 	do(t, "POST", choice+"/keep-and-add", `{"label":"Another"}`, 400)
 	do(t, "POST", choice+"/keep-and-add", `{"label":"Directors 4K","edition":"Directors Cut","pick_rules_id":`+itoa(v.PickRulesID)+`,"library_folder_id":`+itoa(v.LibraryFolderID)+`}`, 201)
 	var copies struct {
-		Files    []domain.File `json:"files"`
-		Versions []VersionView `json:"versions"`
+		Files    []mediafiles.File `json:"files"`
+		Versions []VersionView     `json:"versions"`
 	}
 	if err := json.Unmarshal(do(t, "GET", base+"/copies", "", 200), &copies); err != nil {
 		t.Fatal(err)

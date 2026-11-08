@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -86,39 +88,39 @@ func newLabAlbum(t *testing.T) labAlbum {
 	}
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.LosslessFirstName).Scan(&pr); err != nil {
+		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.LosslessFirstName).Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: x.music, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: x.music, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Lab Lanterns", SortName: "lab lanterns", Aliases: []string{},
+		ti := &mediafiles.Title{Kind: "artist", GateDriver: "none", Name: "Lab Lanterns", SortName: "lab lanterns", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": "lab"}, MetadataSource: "musicbrainz", KeepUpToDate: true, NewPartsPolicy: "all",
 			ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Lanterns", KeepUpToDate: true, IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Lanterns", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		date := time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)
 		album := "album"
-		p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: "Small Hours", ReleaseType: &album, ReleaseDate: &date, KeepUpToDate: true,
-			Included: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}}
+		p := &mediafiles.Part{TitleID: ti.ID, Kind: "album", Name: "Small Hours", ReleaseType: &album, ReleaseDate: &date, KeepUpToDate: true,
+			Included: true, SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}}
 		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
 		x.title, x.album = ti.ID, p.ID
 		for i, name := range smallSongs {
 			disc, num, name, length := 1, i+1, name, 4*60_000
-			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name,
+			it := &mediafiles.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, Name: &name,
 				AirDate: &date, LengthMS: &length, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotWanted}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}

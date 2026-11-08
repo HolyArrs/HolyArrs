@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -30,7 +32,7 @@ func TestEpisodeDownloadWaitsForEpisodeImport(t *testing.T) {
 	}
 	var st string
 	_ = w.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", w.slotID).Scan(&st)
-	if st != string(domain.SlotDownloading) {
+	if st != string(mediafiles.SlotDownloading) {
 		t.Fatalf("slot moved to %s", st)
 	}
 }

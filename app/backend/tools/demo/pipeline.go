@@ -16,12 +16,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // placeholderMark starts every file seed writes; reset deletes only files
@@ -228,10 +229,10 @@ func (w *world) releaseFor(ctx context.Context, slotIDs []int64, name string, si
 // the Slot goes through searching to chosen and the Release is chosen.
 func (w *world) chooseAuto(ctx context.Context, titleID, slotID, relID int64, name string, judged int) error {
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", w.by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotSearching, "searching", w.by); err != nil {
 			return err
 		}
-		if err := store.MoveSlotTx(tx, slotID, domain.SlotChosen, "chose "+name, w.by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotChosen, "chose "+name, w.by); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", relID, slotID); err != nil {
@@ -253,10 +254,10 @@ func (w *world) chooseAuto(ctx context.Context, titleID, slotID, relID int64, na
 // the Pick rules ask to wait for a better copy.
 func (w *world) hold(ctx context.Context, titleID, slotID, relID int64, name string, until time.Time) error {
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", w.by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotSearching, "searching", w.by); err != nil {
 			return err
 		}
-		if err := store.MoveSlotTx(tx, slotID, domain.SlotHeld, "holding "+name, w.by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotHeld, "holding "+name, w.by); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", relID, database.FormatTime(until), slotID); err != nil {
@@ -368,7 +369,7 @@ func (w *world) activity(ctx context.Context) error {
 		if id == 0 {
 			continue
 		}
-		var t domain.Title
+		var t mediafiles.Title
 		if err := database.Get(ctx, db, "titles", id, &t); err != nil {
 			return err
 		}
@@ -478,7 +479,7 @@ func (w *world) activity(ctx context.Context) error {
 		if id == 0 {
 			continue
 		}
-		var t domain.Title
+		var t mediafiles.Title
 		if err := database.Get(ctx, db, "titles", id, &t); err != nil {
 			return err
 		}

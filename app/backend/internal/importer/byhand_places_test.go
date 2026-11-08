@@ -13,6 +13,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -182,7 +184,7 @@ func TestByHandRefusesOutside(t *testing.T) {
 	if _, err := os.Stat(src); err != nil {
 		t.Fatal("the file outside was moved")
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
 	if sl.FileID != nil {
 		t.Fatalf("slot filled %+v", sl)

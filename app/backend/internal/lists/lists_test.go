@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -100,7 +102,7 @@ type env struct {
 	s     *database.Store
 	q     *jobs.Queue
 	svc   *Service
-	lf    domain.LibraryFolder
+	lf    mediafiles.LibraryFolder
 	hits  *atomic.Int32
 	clock *time.Time
 }
@@ -134,13 +136,13 @@ func setup(t *testing.T) *env {
 }
 
 // titles returns the Library titles by name.
-func titles(t *testing.T, s *database.Store) map[string]domain.Title {
+func titles(t *testing.T, s *database.Store) map[string]mediafiles.Title {
 	t.Helper()
-	ts, err := database.Select[domain.Title](context.Background(), s.Read(), "titles", "1=1")
+	ts, err := database.Select[mediafiles.Title](context.Background(), s.Read(), "titles", "1=1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := map[string]domain.Title{}
+	out := map[string]mediafiles.Title{}
 	for _, x := range ts {
 		out[x.Name] = x
 	}
@@ -207,7 +209,7 @@ func TestAdd_InputChecks(t *testing.T) {
 func TestSync_TMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
-	if _, err := library.AddNeverAdd(ctx, e.s, domain.NeverAdd{SourceIDs: map[string]string{"tmdb": "900003"}, Name: "Quiet Orchard"}, domain.System); err != nil {
+	if _, err := library.AddNeverAdd(ctx, e.s, mediafiles.NeverAdd{SourceIDs: map[string]string{"tmdb": "900003"}, Name: "Quiet Orchard"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	l, err := Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42"}, domain.System)

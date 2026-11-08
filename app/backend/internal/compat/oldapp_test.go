@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -60,8 +62,8 @@ func TestOutputPath_DownloadFolder(t *testing.T) {
 // read from the file).
 func TestFileShape_BazarrFields(t *testing.T) {
 	scene := "Lab.Show.S01E01.1080p.WEB-DL.H264-LAB"
-	f := domain.File{RelativePath: "Lab Show/Season 01/e1.mkv", Size: 5 << 20, AddedAt: time.Now(), ReleaseName: &scene,
-		Quality: domain.Quality{Resolution: 1080, Source: "web_dl", Audio: "AAC"}, Languages: []string{"en", "zz", "de"},
+	f := mediafiles.File{RelativePath: "Lab Show/Season 01/e1.mkv", Size: 5 << 20, AddedAt: time.Now(), ReleaseName: &scene,
+		Quality: mediafiles.Quality{Resolution: 1080, Source: "web_dl", Audio: "AAC"}, Languages: []string{"en", "zz", "de"},
 		MediaInfo: map[string]any{"video_codec": "h264"}}
 	f.ID = 7
 	mf := mediaFileOf(f, "/tv", "Lab Show")

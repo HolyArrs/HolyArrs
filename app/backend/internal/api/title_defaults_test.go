@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -68,7 +70,7 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 	srv, _, _ := libSetup(t)
 	movies := folder(t, srv.URL, "movie")
 	shows := folder(t, srv.URL, "show")
-	music := ruleByName(t, srv.URL, domain.LosslessFirstName)
+	music := ruleByName(t, srv.URL, mediafiles.LosslessFirstName)
 	path := srv.URL + "/api/v1/settings/title-defaults"
 	do(t, "PUT", path, fmt.Sprintf(`{"movie":{"library_folder_id":%d}}`, shows.ID), 400)
 	do(t, "PUT", path, fmt.Sprintf(`{"show":{"library_folder_id":%d}}`, movies.ID), 400)
@@ -102,7 +104,7 @@ func TestAddUsesSavedMovieDefaults(t *testing.T) {
 	folder(t, srv.URL, "movie")
 	second := folder(t, srv.URL, "movie")
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
 	do(t, "PUT", srv.URL+"/api/v1/settings/title-defaults", fmt.Sprintf(
 		`{"movie":{"library_folder_id":%d,"pick_rules_id":%d,"keep_up_to_date":false,"search_on_add":true}}`, second.ID, p.ID), 200)
 	a := addMovie(t, srv.URL, `{"id":"tmdb:693134"}`)
@@ -115,9 +117,9 @@ func TestRequestFieldsBeatDefaults(t *testing.T) {
 	srv, st, _ := libSetup(t)
 	first := folder(t, srv.URL, "movie")
 	second := folder(t, srv.URL, "movie")
-	ge := ruleByName(t, srv.URL, domain.GoodEverydayName)
+	ge := ruleByName(t, srv.URL, mediafiles.GoodEverydayName)
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
 	do(t, "PUT", srv.URL+"/api/v1/settings/title-defaults", fmt.Sprintf(
 		`{"movie":{"library_folder_id":%d,"pick_rules_id":%d,"keep_up_to_date":false,"search_on_add":true}}`, second.ID, p.ID), 200)
 	a := addMovie(t, srv.URL, fmt.Sprintf(`{"id":"tmdb:693134","library_folder_id":%d,"pick_rules_id":%d,"keep_up_to_date":true,"search_on_add":false}`, first.ID, ge.ID))
@@ -131,7 +133,7 @@ func TestTitleDefaultsIgnoreAGoneFolder(t *testing.T) {
 	first := folder(t, srv.URL, "movie")
 	second := folder(t, srv.URL, "movie")
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
 	do(t, "PUT", srv.URL+"/api/v1/settings/title-defaults", fmt.Sprintf(`{"movie":{"library_folder_id":%d}}`, second.ID), 200)
 	do(t, "DELETE", srv.URL+"/api/v1/library-folders/"+itoa(second.ID), "", 204)
 	a := addMovie(t, srv.URL, `{"id":"tmdb:693134"}`)
@@ -151,7 +153,7 @@ func TestAddShowUsesSavedShowDefaults(t *testing.T) {
 	srv, st, _, _ := showSetup(t)
 	second := folder(t, srv.URL, "show")
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"show"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"show"}, mediafiles.GoodEveryday()), 201), &p)
 	do(t, "PUT", srv.URL+"/api/v1/settings/title-defaults", fmt.Sprintf(
 		`{"show":{"library_folder_id":%d,"pick_rules_id":%d,"keep_up_to_date":false,"search_on_add":true}}`, second.ID, p.ID), 200)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/shows", `{"id":"tmdb:100"}`, 201), &a)

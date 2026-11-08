@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -17,7 +19,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -286,7 +287,7 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 	if n := l.count(t, "SELECT count(*) FROM never_add WHERE json_extract(source_ids, '$.tmdb') = '999'"); n != 1 {
 		t.Fatal("never add")
 	}
-	ns, _ := naming.Read(context.Background(), l.st.Read())
+	ns, _ := mediafiles.ReadNaming(context.Background(), l.st.Read())
 	if ns.RenameOnImport || ns.FilePattern != "{title} ({year}) {quality}" {
 		t.Fatalf("naming %+v", ns)
 	}
@@ -342,7 +343,7 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 	if n := l.count(t, "SELECT count(*) FROM users"); n != 1 {
 		t.Fatalf("undo left people: %d", n)
 	}
-	if ns, _ := naming.Read(ctx, l.st.Read()); !ns.RenameOnImport || ns.FilePattern != naming.DefaultFilePattern {
+	if ns, _ := mediafiles.ReadNaming(ctx, l.st.Read()); !ns.RenameOnImport || ns.FilePattern != mediafiles.DefaultFilePattern {
 		t.Fatalf("naming not back: %+v", ns)
 	}
 	if _, err := l.mv.StartUndo(ctx, mv.ID, domain.Actor{Kind: "user", ID: 1}); err != ErrUndone {
@@ -444,13 +445,13 @@ func TestMoveStampsReleaseGate(t *testing.T) {
 }
 
 // readWait reads the protocol block of the ready-made Pick rules name.
-func (l *moveLab) readWait(t *testing.T, name string) (int64, domain.ProtocolRule) {
+func (l *moveLab) readWait(t *testing.T, name string) (int64, mediafiles.ProtocolRule) {
 	t.Helper()
 	var id int64
 	if err := l.st.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ? AND preset = 1", name).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	var p domain.PickRules
+	var p mediafiles.PickRules
 	if err := database.Get(context.Background(), l.st.Read(), "pick_rules", id, &p); err != nil {
 		t.Fatal(err)
 	}
@@ -458,10 +459,10 @@ func (l *moveLab) readWait(t *testing.T, name string) (int64, domain.ProtocolRul
 }
 
 // setWait changes the protocol block of Pick rules id, as a person would.
-func (l *moveLab) setWait(t *testing.T, id int64, w domain.ProtocolRule) {
+func (l *moveLab) setWait(t *testing.T, id int64, w mediafiles.ProtocolRule) {
 	t.Helper()
 	ctx := context.Background()
-	var p domain.PickRules
+	var p mediafiles.PickRules
 	if err := database.Get(ctx, l.st.Read(), "pick_rules", id, &p); err != nil {
 		t.Fatal(err)
 	}
@@ -478,7 +479,7 @@ func TestMoveDefaultWait(t *testing.T) {
 	wait := func(radarr, _, _ *Snapshot) {
 		radarr.DelayProfiles = []DelayProfile{{ID: 1, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "usenet", TorrentDelay: 120, Order: 2147483647}}
 	}
-	moved := domain.ProtocolRule{Prefer: "usenet", WaitMinutesTorrent: 120}
+	moved := mediafiles.ProtocolRule{Prefer: "usenet", WaitMinutesTorrent: 120}
 	key := "pick_rules_protocol:4K"
 	l := newMoveLabWith(t, wait)
 	dry := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
@@ -516,7 +517,7 @@ func TestMoveDefaultWait(t *testing.T) {
 	l = newMoveLabWith(t, wait)
 	mv = l.move(t, Choices{})
 	id, _ = l.readWait(t, "4K")
-	mine := domain.ProtocolRule{Prefer: "torrent", WaitMinutesUsenet: 30}
+	mine := mediafiles.ProtocolRule{Prefer: "torrent", WaitMinutesUsenet: 30}
 	l.setWait(t, id, mine)
 	if u := l.undo(t, mv.ID); lineOf(t, u.Report, key).Result != ResKept || lineOf(t, u.Report, key).Detail != keptChanged {
 		t.Fatalf("undo after a change %+v", lineOf(t, u.Report, key))

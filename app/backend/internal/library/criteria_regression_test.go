@@ -8,17 +8,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func currentCriteriaCopy(t *testing.T, s *database.Store, titleID int64, facts map[string]any, protected bool) (domain.Version, domain.Slot, domain.File) {
+func currentCriteriaCopy(t *testing.T, s *database.Store, titleID int64, facts map[string]any, protected bool) (mediafiles.Version, mediafiles.Slot, mediafiles.File) {
 	t.Helper()
 	ctx := context.Background()
 	v := versionsOf(t, s, titleID)[0]
 	slot := slotsOf(t, s, titleID)[0]
 	release := "Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.264-GRP"
-	f := domain.File{Protected: protected, SlotIDs: []int64{slot.ID}, VersionID: v.ID, RelativePath: filepath.ToSlash(filepath.Join(v.FolderName, release+".mkv")),
+	f := mediafiles.File{Protected: protected, SlotIDs: []int64{slot.ID}, VersionID: v.ID, RelativePath: filepath.ToSlash(filepath.Join(v.FolderName, release+".mkv")),
 		AddedAt: now, Languages: []string{"en"}, MediaInfo: facts, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := database.Insert(tx, "files", &f, domain.System); err != nil {
@@ -56,7 +58,7 @@ func TestEditVersionReevaluatesActualCopyCriteria(t *testing.T) {
 			if err := database.Get(context.Background(), s.Read(), "slots", slot.ID, &slot); err != nil {
 				t.Fatal(err)
 			}
-			if slot.State != domain.SlotBetterWanted || slot.GoodEnough {
+			if slot.State != mediafiles.SlotBetterWanted || slot.GoodEnough {
 				t.Fatalf("mismatching protected copy stayed good enough: %+v", slot)
 			}
 			if err := database.Get(context.Background(), s.Read(), "files", file.ID, &file); err != nil || !file.Protected {
@@ -83,7 +85,7 @@ func TestEditVersionPreservesUnconstrainedQualityBehavior(t *testing.T) {
 	if err := database.Get(context.Background(), s.Read(), "slots", slot.ID, &slot); err != nil {
 		t.Fatal(err)
 	}
-	if slot.State != domain.SlotInLibrary || !slot.GoodEnough {
+	if slot.State != mediafiles.SlotInLibrary || !slot.GoodEnough {
 		t.Fatalf("unconstrained copy no longer follows quality rules: %+v", slot)
 	}
 }

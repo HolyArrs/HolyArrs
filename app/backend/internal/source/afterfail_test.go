@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -18,9 +20,9 @@ func TestQueueAfterFailure_PackSearchesSeasonAgain(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string {
 		return []string{failed, "Copper.Valley.S01.1080p.WEB-DL.H.264-OTHER", "Copper.Valley.S02E01.1080p.WEB-DL.H.264-QUILL"}
 	}}
-	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
+	f := seedShow(t, ts.start(t), func(label string, sl *mediafiles.Slot) {
 		if label[:3] == "S01" || label == "S02E01" {
-			sl.State = domain.SlotFailed
+			sl.State = mediafiles.SlotFailed
 		}
 	})
 	ctx := context.Background()

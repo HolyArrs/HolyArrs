@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -96,7 +98,7 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 	now := time.Now().UTC()
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr, lf int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.LosslessFirstName).Scan(&pr); err != nil {
+		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.LosslessFirstName).Scan(&pr); err != nil {
 			return err
 		}
 		if err := tx.QueryRow("SELECT id FROM library_folders LIMIT 1").Scan(&lf); err != nil {
@@ -105,14 +107,14 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 		if _, err := tx.Exec(`UPDATE sources SET kinds = '["movie","music"]', categories = '{"movie":[2000],"music":[3000]}', use_for = '{"auto_search":true,"hand_search":true,"feed":true}' WHERE id = ?`, f.srcID); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Velvet Cartography", SortName: "velvet cartography",
+		ti := &mediafiles.Title{Kind: "artist", GateDriver: "none", Name: "Velvet Cartography", SortName: "velvet cartography",
 			Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "mb-vc"}, MetadataSource: "musicbrainz",
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "running", State: "active"}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Velvet Cartography", KeepUpToDate: true, IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Velvet Cartography", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
@@ -123,22 +125,22 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 			discs []int
 		}{{lta, time.Date(2019, 5, 1, 0, 0, 0, 0, time.UTC), []int{3, 2}}, {hs, now.AddDate(0, 1, 0), []int{2}}} {
 			date := a.date
-			p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: a.name, ReleaseType: ptr("album"), ReleaseDate: &date, KeepUpToDate: true,
-				Included: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}}
+			p := &mediafiles.Part{TitleID: ti.ID, Kind: "album", Name: a.name, ReleaseType: ptr("album"), ReleaseDate: &date, KeepUpToDate: true,
+				Included: true, SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}}
 			if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 				return err
 			}
 			f.albums[a.name] = p.ID
 			for d, n := range a.discs {
 				for k := 1; k <= n; k++ {
-					it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: ptr(d + 1), Track: ptr(k)},
+					it := &mediafiles.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: ptr(d + 1), Track: ptr(k)},
 						Name: ptr(fmt.Sprintf("%s %d-%d", a.name, d+1, k)), AirDate: &date, LengthMS: ptr(9 * 60_000), KeepUpToDate: true, SourceIDs: map[string]string{}}
 					if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 						return err
 					}
-					sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
+					sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotWanted}
 					if date.After(now) {
-						sl.State = domain.SlotNotOutYet
+						sl.State = mediafiles.SlotNotOutYet
 					}
 					if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 						return err
@@ -156,13 +158,13 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 }
 
 // state returns the current state of the Slot for a track label such as "Low Tide Atlas 1-2".
-func (f artistFix) state(t *testing.T, label string) domain.SlotState {
+func (f artistFix) state(t *testing.T, label string) mediafiles.SlotState {
 	t.Helper()
 	var st string
 	if err := f.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", f.slots[label]).Scan(&st); err != nil {
 		t.Fatal(err)
 	}
-	return domain.SlotState(st)
+	return mediafiles.SlotState(st)
 }
 
 // ltaTracks are the labels of every Low Tide Atlas track.
@@ -202,7 +204,7 @@ func TestAlbumSearch_OneReleaseForEveryTrack(t *testing.T) {
 		t.Fatalf("query %v", q)
 	}
 	for _, l := range ltaTracks {
-		if st := f.state(t, l); st != domain.SlotChosen {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
 			t.Fatalf("%s is %s", l, st)
 		}
 	}
@@ -222,7 +224,7 @@ func TestAlbumSearch_OneReleaseForEveryTrack(t *testing.T) {
 			t.Errorf("%s: no %s in %v", name, code, reasonCodes(r))
 		}
 	}
-	if st := f.state(t, "Harbour Songs 1-1"); st != domain.SlotNotOutYet {
+	if st := f.state(t, "Harbour Songs 1-1"); st != mediafiles.SlotNotOutYet {
 		t.Fatalf("other album touched: %s", st)
 	}
 }
@@ -251,7 +253,7 @@ func TestAlbumSearch_NotOutOnlyByHand(t *testing.T) {
 		t.Fatalf("an album not out yet was searched: %+v", j.Result)
 	}
 	j = f.albumJob(t, sr, hs, map[string]any{"by_hand": true})
-	if j.State != "done" || f.state(t, "Harbour Songs 1-1") != domain.SlotChosen {
+	if j.State != "done" || f.state(t, "Harbour Songs 1-1") != mediafiles.SlotChosen {
 		t.Fatalf("hand search %s %+v, %s", j.State, j.Result, f.state(t, "Harbour Songs 1-1"))
 	}
 	if r := relByName(t, f.fixture, "Velvet Cartography - Harbour Songs (2026) [FLAC]"); !hasCode(r, "hard.gate_skipped") {
@@ -269,9 +271,9 @@ func TestAlbumSearch_OneDiscFillsOnlyItsTracks(t *testing.T) {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
 	for _, l := range ltaTracks {
-		want := domain.SlotWanted
+		want := mediafiles.SlotWanted
 		if strings.Contains(l, " 2-") {
-			want = domain.SlotChosen
+			want = mediafiles.SlotChosen
 		}
 		if st := f.state(t, l); st != want {
 			t.Fatalf("%s is %s, want %s", l, st, want)
@@ -287,7 +289,7 @@ func TestAlbumSearch_BetterCopy(t *testing.T) {
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, l := range ltaTracks {
 			name := "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]"
-			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".mp3", Size: 1, AddedAt: time.Now(),
+			fl := &mediafiles.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".mp3", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
 			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
@@ -305,7 +307,7 @@ func TestAlbumSearch_BetterCopy(t *testing.T) {
 	if j := f.albumJob(t, sr, lta, nil); j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
-	if st := f.state(t, ltaTracks[0]); st != domain.SlotChosen {
+	if st := f.state(t, ltaTracks[0]); st != mediafiles.SlotChosen {
 		t.Fatalf("not replaced: %s", st)
 	}
 	if r := relByName(t, f.fixture, "Velvet Cartography - Low Tide Atlas (2019) [MP3 V0]"); !hasCode(r, "match.album_gain") {
@@ -323,7 +325,7 @@ func TestAlbumSearch_TurnedDownNeverPickedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.albumJob(t, sr, lta, nil)
-	if st := f.state(t, ltaTracks[0]); st != domain.SlotWanted {
+	if st := f.state(t, ltaTracks[0]); st != mediafiles.SlotWanted {
 		t.Fatalf("turned-down Release picked: %s", st)
 	}
 	if r := relByName(t, f.fixture, flac); r.State != "turned_down" && !hasCode(r, "hard.turned_down") {
@@ -338,7 +340,7 @@ func TestAlbumSearch_DiscographySetting(t *testing.T) {
 		VALUES ('what_to_pick', ?, 'true', '2026-01-01', '{}', '2026-01-01', '{}')`, SettingDiscography)
 	sr := &Searcher{Store: f.s}
 	f.albumJob(t, sr, lta, nil)
-	if st := f.state(t, ltaTracks[0]); st != domain.SlotChosen {
+	if st := f.state(t, ltaTracks[0]); st != mediafiles.SlotChosen {
 		t.Fatalf("discography not taken with the setting: %s", st)
 	}
 }
@@ -355,7 +357,7 @@ func TestHandleFeed_PicksAlbum(t *testing.T) {
 		t.Fatalf("feed categories %v", q)
 	}
 	for _, l := range ltaTracks {
-		if st := f.state(t, l); st != domain.SlotChosen {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
 			t.Fatalf("%s is %s", l, st)
 		}
 	}
@@ -382,11 +384,11 @@ func TestHandleSearchMissing_QueuesAlbums(t *testing.T) {
 func TestAlbumSearch_HeldThenChosenAndPicksLimit(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac} }}
 	f := seedArtist(t, ms.start(t))
-	exec(t, f.fixture, `UPDATE pick_rules SET body = json_set(body, '$.protocol.wait_minutes_torrent', 100000) WHERE name = ?`, domain.LosslessFirstName)
+	exec(t, f.fixture, `UPDATE pick_rules SET body = json_set(body, '$.protocol.wait_minutes_torrent', 100000) WHERE name = ?`, mediafiles.LosslessFirstName)
 	sr := &Searcher{Store: f.s}
 	f.albumJob(t, sr, lta, nil)
 	for _, l := range ltaTracks {
-		if st := f.state(t, l); st != domain.SlotHeld {
+		if st := f.state(t, l); st != mediafiles.SlotHeld {
 			t.Fatalf("%s is %s", l, st)
 		}
 	}
@@ -395,7 +397,7 @@ func TestAlbumSearch_HeldThenChosenAndPicksLimit(t *testing.T) {
 		t.Fatalf("grab held %d %v", n, err)
 	}
 	for _, l := range ltaTracks {
-		if st := f.state(t, l); st != domain.SlotChosen {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
 			t.Fatalf("%s is %s after the wait", l, st)
 		}
 	}
@@ -405,7 +407,7 @@ func TestAlbumSearch_HeldThenChosenAndPicksLimit(t *testing.T) {
 	exec(t, g.fixture, `INSERT INTO releases (created_at, created_by, updated_at, updated_by, source_id, name, link_ref, protocol, size, flags, parsed, matched_slot_ids, verdict, found_by, state)
 		VALUES (strftime('%Y-%m-%dT%H:%M:%fZ','now'), '{}', strftime('%Y-%m-%dT%H:%M:%fZ','now'), '{}', ?, 'x', 'http://x', 'torrent', 1, '[]', '{}', '[]', '{}', 'auto_search', 'chosen')`, g.srcID)
 	g.albumJob(t, &Searcher{Store: g.s}, lta, nil)
-	if st := g.state(t, ltaTracks[0]); st != domain.SlotWanted {
+	if st := g.state(t, ltaTracks[0]); st != mediafiles.SlotWanted {
 		t.Fatalf("picked past the Source limit: %s", st)
 	}
 	if r := relByName(t, g.fixture, flac); !hasCode(r, "rank.source_limit") {
@@ -419,7 +421,7 @@ func TestChoose_LossyAlbumOverLosslessNeedsForce(t *testing.T) {
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, l := range ltaTracks {
 			name := flac
-			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
+			fl := &mediafiles.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
 			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
@@ -450,7 +452,7 @@ func TestChoose_LossyAlbumOverLosslessNeedsForce(t *testing.T) {
 	if _, err := sr.Choose(context.Background(), r.ID, f.slots[ltaTracks[0]], false, domain.System); !errors.As(err, &nf) {
 		t.Fatalf("picked over FLAC for one track without force: %v", err)
 	}
-	if st := f.state(t, ltaTracks[0]); st != domain.SlotBetterWanted {
+	if st := f.state(t, ltaTracks[0]); st != mediafiles.SlotBetterWanted {
 		t.Fatalf("slot moved: %s", st)
 	}
 	if ch, err := sr.Choose(context.Background(), r.ID, 0, true, domain.System); err != nil || !ch.Forced || len(ch.SlotIDs) != len(ltaTracks) {
@@ -464,7 +466,7 @@ func TestCurrentCopy_KnownByExtension(t *testing.T) {
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, l := range ltaTracks {
 			name := "Velvet Cartography - Low Tide Atlas (2019)"
-			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
+			fl := &mediafiles.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
 			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
@@ -480,7 +482,7 @@ func TestCurrentCopy_KnownByExtension(t *testing.T) {
 	}
 	sr := &Searcher{Store: f.s}
 	f.albumJob(t, sr, lta, nil)
-	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
+	if st := f.state(t, ltaTracks[0]); st == mediafiles.SlotChosen {
 		t.Fatalf("MP3 320 chosen over FLAC with a plain name: %s", st)
 	}
 
@@ -498,7 +500,7 @@ func TestCurrentCopy_TAKKnownAtSearch(t *testing.T) {
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, l := range ltaTracks {
 			name := "Velvet Cartography - Low Tide Atlas (2019)"
-			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".tak", Size: 1, AddedAt: time.Now(),
+			fl := &mediafiles.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".tak", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
 			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
@@ -513,7 +515,7 @@ func TestCurrentCopy_TAKKnownAtSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.albumJob(t, &Searcher{Store: f.s}, lta, nil)
-	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
+	if st := f.state(t, ltaTracks[0]); st == mediafiles.SlotChosen {
 		t.Fatalf("MP3 320 chosen over TAK: %s", st)
 	}
 }

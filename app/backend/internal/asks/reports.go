@@ -12,6 +12,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -128,7 +130,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 		return ReportView{}, ErrNoteLength
 	}
 	db := s.Store.Read()
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", in.TitleID, &t); err != nil {
 		return ReportView{}, err
 	}
@@ -145,7 +147,7 @@ func (s *Service) Report(ctx context.Context, p Person, in ReportInput) (ReportV
 		_ = db.QueryRowContext(ctx, "SELECT id FROM items WHERE title_id = ? AND kind = 'movie' ORDER BY id LIMIT 1", t.ID).Scan(&in.ItemID)
 	}
 	if in.ItemID != 0 {
-		var it domain.Item
+		var it mediafiles.Item
 		if err := database.Get(ctx, db, "items", in.ItemID, &it); errors.Is(err, database.ErrNotFound) || (err == nil && it.TitleID != t.ID) {
 			return ReportView{}, ErrReportPart
 		} else if err != nil {
@@ -411,7 +413,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 		return nil, err
 	}
 	out := []ReportView{}
-	titles := map[int64]domain.Title{}
+	titles := map[int64]mediafiles.Title{}
 	versions := map[int64]int{}
 	names := map[int64]string{}
 	who := func(id *int64) *Who {
@@ -444,7 +446,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 			_ = db.QueryRowContext(ctx, "SELECT name FROM parts WHERE id = ?", *r.AlbumID).Scan(&v.AlbumName)
 		}
 		if r.ItemID != nil {
-			var it domain.Item
+			var it mediafiles.Item
 			if database.Get(ctx, db, "items", *r.ItemID, &it) == nil {
 				v.Episode, v.Track = it.Numbers.Episode, it.Numbers.Track
 				if it.Name != nil {

@@ -3,8 +3,9 @@ package api
 import (
 	"context"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // trimForViewer leaves out what only people who manage the Library need:
@@ -38,7 +39,7 @@ func seesLibraryDetail(ctx context.Context) bool {
 
 // trimFile copies f without its path, release name, group, fingerprint and
 // who placed it.
-func trimFile(f *domain.File) *domain.File {
+func trimFile(f *mediafiles.File) *mediafiles.File {
 	if f == nil {
 		return nil
 	}

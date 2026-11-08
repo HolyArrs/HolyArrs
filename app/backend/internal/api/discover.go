@@ -11,7 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
@@ -324,7 +325,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	kinds := a.kindsOn(kind)
 	ref := services
 	if row == "similar" {
-		var t domain.Title
+		var t mediafiles.Title
 		if err := database.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" || !a.titleAllowed(r, t) {
 			fail(w, http.StatusNotFound, "no such Title")
 			return

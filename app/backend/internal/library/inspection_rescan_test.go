@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -73,8 +75,8 @@ func TestRescanInspectsMovieFilesAndSkipsUnchanged(t *testing.T) {
 	if err != nil || res[0].Error != "" {
 		t.Fatalf("adopt: %+v %v", res, err)
 	}
-	var adopted domain.File
-	files, _ := database.Select[domain.File](context.Background(), s.Read(), "files", "origin = 'adopted'")
+	var adopted mediafiles.File
+	files, _ := database.Select[mediafiles.File](context.Background(), s.Read(), "files", "origin = 'adopted'")
 	if len(files) != 1 {
 		t.Fatalf("adopted files: %+v", files)
 	}
@@ -101,7 +103,7 @@ func TestRescanInspectsMovieFilesAndSkipsUnchanged(t *testing.T) {
 	if fmt.Sprint(adopted.MediaInfo["audio_languages"]) != "[fr]" || adopted.MediaInfo["inspection_size"] == nil || adopted.MediaInfo["inspection_modified"] == nil {
 		t.Fatalf("existing inspection facts: %+v", adopted.MediaInfo)
 	}
-	var found domain.File
+	var found mediafiles.File
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", foundRel).Scan(&found.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +142,7 @@ func TestShowAdoptionAndFoundFilesUseInspectedHeaders(t *testing.T) {
 	if err != nil || res[0].Error != "" {
 		t.Fatalf("adopt show: %+v %v", res, err)
 	}
-	var adopted domain.File
+	var adopted mediafiles.File
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", adoptedRel).Scan(&adopted.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +158,7 @@ func TestShowAdoptionAndFoundFilesUseInspectedHeaders(t *testing.T) {
 	if _, err := svc.Rescan(context.Background(), domain.System); err != nil {
 		t.Fatal(err)
 	}
-	var found domain.File
+	var found mediafiles.File
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", foundRel).Scan(&found.ID); err != nil {
 		t.Fatal(err)
 	}

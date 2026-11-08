@@ -9,9 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -41,7 +42,7 @@ func (a *API) kidMax(r *http.Request) string {
 }
 
 // titleAllowed says the signed-in person may see the Library title t.
-func (a *API) titleAllowed(r *http.Request, t domain.Title) bool {
+func (a *API) titleAllowed(r *http.Request, t mediafiles.Title) bool {
 	return ratings.Allows(a.kidMax(r), t.Kind, t.Rating)
 }
 

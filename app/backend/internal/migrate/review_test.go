@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -161,9 +162,9 @@ func TestUndoKeepsLaterSettings(t *testing.T) {
 	l := newMoveLab(t)
 	mv := l.move(t, Choices{})
 	ctx := context.Background()
-	ns, _ := naming.Read(ctx, l.st.Read())
+	ns, _ := mediafiles.ReadNaming(ctx, l.st.Read())
 	ns.FilePattern = "{title} mine"
-	if err := naming.Save(ctx, l.st, ns, domain.System); err != nil {
+	if err := mediafiles.PutNamingSettings(ctx, l.st, ns, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	ss := subtitles.ReadSettings(ctx, l.st.Read())
@@ -172,7 +173,7 @@ func TestUndoKeepsLaterSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	u := l.undo(t, mv.ID)
-	if ns, _ := naming.Read(ctx, l.st.Read()); ns.FilePattern != "{title} mine" {
+	if ns, _ := mediafiles.ReadNaming(ctx, l.st.Read()); ns.FilePattern != "{title} mine" {
 		t.Fatalf("undo put naming back over a later change: %s", ns.FilePattern)
 	}
 	if langs := subtitles.ReadSettings(ctx, l.st.Read()).Languages; len(langs) != 1 || langs[0].Language != "fr" {

@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -20,21 +22,21 @@ func addUHD(t *testing.T, f showFix) (int64, map[string]int64) {
 	var vid int64
 	err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		var pr int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&pr); err != nil {
+		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&pr); err != nil {
 			return err
 		}
 		main := mustVersion(t, f)
-		v := &domain.Version{TitleID: f.titleID, Label: "4K", PickRulesID: pr, LibraryFolderID: main.LibraryFolderID, FolderName: main.FolderName + " [4K]", KeepUpToDate: true}
+		v := &mediafiles.Version{TitleID: f.titleID, Label: "4K", PickRulesID: pr, LibraryFolderID: main.LibraryFolderID, FolderName: main.FolderName + " [4K]", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		vid = v.ID
 		for label, id := range f.slots {
-			var hd domain.Slot
+			var hd mediafiles.Slot
 			if err := database.Get(ctx, tx, "slots", id, &hd); err != nil {
 				return err
 			}
-			sl := &domain.Slot{ItemID: hd.ItemID, VersionID: v.ID, State: hd.State}
+			sl := &mediafiles.Slot{ItemID: hd.ItemID, VersionID: v.ID, State: hd.State}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -48,13 +50,13 @@ func addUHD(t *testing.T, f showFix) (int64, map[string]int64) {
 	return vid, slots
 }
 
-func verSlotState(t *testing.T, f showFix, id int64) domain.SlotState {
+func verSlotState(t *testing.T, f showFix, id int64) mediafiles.SlotState {
 	t.Helper()
 	var st string
 	if err := f.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", id).Scan(&st); err != nil {
 		t.Fatal(err)
 	}
-	return domain.SlotState(st)
+	return mediafiles.SlotState(st)
 }
 
 // A season search runs per Version: the HD pack fills only HD Slots and the 4K
@@ -77,10 +79,10 @@ func TestHandleSeason_PerVersion(t *testing.T) {
 	}
 	hdPack := relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL")
 	for _, l := range []string{"S01E01", "S01E02", "S01E03"} {
-		if st := f.state(t, l); st != domain.SlotChosen {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
 			t.Fatalf("HD %s is %s", l, st)
 		}
-		if st := verSlotState(t, f, uhdSlots[l]); st != domain.SlotWanted {
+		if st := verSlotState(t, f, uhdSlots[l]); st != mediafiles.SlotWanted {
 			t.Fatalf("the HD search touched 4K %s: %s", l, st)
 		}
 		if slices.Contains(PickSlots(hdPack), uhdSlots[l]) {
@@ -99,7 +101,7 @@ func TestHandleSeason_PerVersion(t *testing.T) {
 	}
 	uhdPack = rs[0]
 	for _, l := range []string{"S01E01", "S01E02", "S01E03"} {
-		if st := verSlotState(t, f, uhdSlots[l]); st != domain.SlotChosen {
+		if st := verSlotState(t, f, uhdSlots[l]); st != mediafiles.SlotChosen {
 			t.Fatalf("4K %s is %s", l, st)
 		}
 		if !slices.Contains(PickSlots(uhdPack), uhdSlots[l]) || slices.Contains(PickSlots(uhdPack), f.slots[l]) {

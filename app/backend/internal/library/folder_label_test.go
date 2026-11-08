@@ -3,11 +3,11 @@ package library
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 func TestFreeLabel(t *testing.T) {
-	all := []domain.LibraryFolder{{ID: 1, Kind: "movie", Label: "Movies"}, {ID: 2, Kind: "movie", Label: "Movies 2"}, {ID: 3, Kind: "show", Label: "Shows"}}
+	all := []mediafiles.LibraryFolder{{ID: 1, Kind: "movie", Label: "Movies"}, {ID: 2, Kind: "movie", Label: "Movies 2"}, {ID: 3, Kind: "show", Label: "Shows"}}
 	if l, ok := freeLabel(all, "movie", "movies", 0, true); !ok || l != "movies 3" {
 		t.Fatalf("a taken name gets the next number: %q %v", l, ok)
 	}

@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -57,7 +59,7 @@ func TestPlanMatchesAndRefuses(t *testing.T) {
 	if len(steps) != 4 {
 		t.Fatalf("got %d steps: %+v", len(steps), steps)
 	}
-	by := map[string]domain.PlanStep{}
+	by := map[string]mediafiles.PlanStep{}
 	for _, s := range steps {
 		by[filepath.Base(s.SourceFile)] = s
 	}
@@ -166,8 +168,8 @@ func setup(t *testing.T) world {
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr)
-		lf := &domain.LibraryFolder{Path: w.lib, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
+		lf := &mediafiles.LibraryFolder{Path: w.lib, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
@@ -176,15 +178,15 @@ func setup(t *testing.T) world {
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: FolderName(ti.Name, 2024), IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: FolderName(ti.Name, 2024), IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotDownloading}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotDownloading}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -236,14 +238,14 @@ func TestImportPlacesAndRecords(t *testing.T) {
 	if imp.State != "done" || len(imp.Result) != 1 || imp.Result[0].PlacedBy != "hardlink" {
 		t.Fatalf("import %+v", imp)
 	}
-	files, _ := database.Select[domain.File](ctx, w.s.Read(), "files", "")
+	files, _ := database.Select[mediafiles.File](ctx, w.s.Read(), "files", "")
 	if len(files) != 1 || files[0].Origin != "imported" || files[0].PlacedBy != "hardlink" || files[0].VersionID != w.vID ||
 		files[0].RelativePath != filepath.ToSlash(filepath.Join("Dune - Part Two (2024)", "Dune - Part Two (2024) 1080p WEB.mkv")) {
 		t.Fatalf("files %+v", files)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
-	if sl.State != domain.SlotInLibrary || sl.FileID == nil || *sl.FileID != files[0].ID {
+	if sl.State != mediafiles.SlotInLibrary || sl.FileID == nil || *sl.FileID != files[0].ID {
 		t.Fatalf("slot %+v", sl)
 	}
 	var d domain.Download

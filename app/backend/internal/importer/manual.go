@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -112,7 +112,7 @@ func CleanByHandPath(p string, places ByHandPlaces) (string, error) {
 	return p, nil
 }
 
-func libraryFile(ctx context.Context, db *sql.DB, folders []domain.LibraryFolder, p string) bool {
+func libraryFile(ctx context.Context, db *sql.DB, folders []mediafiles.LibraryFolder, p string) bool {
 	for _, lf := range folders {
 		if !under(lf.Path, p) {
 			continue
@@ -131,10 +131,10 @@ func libraryFile(ctx context.Context, db *sql.DB, folders []domain.LibraryFolder
 }
 
 type byHandTitle struct {
-	t     domain.Title
+	t     mediafiles.Title
 	main  int64
-	slots map[int64]domain.Slot
-	refs  []judge.EpisodeRef
+	slots map[int64]mediafiles.Slot
+	refs  []mediafiles.EpisodeRef
 	movie int64
 }
 
@@ -142,12 +142,12 @@ func (im *Importer) byHandTitle(ctx context.Context, db *sql.DB, cache map[int64
 	if bt := cache[id]; bt != nil {
 		return bt, nil
 	}
-	bt := &byHandTitle{slots: map[int64]domain.Slot{}}
+	bt := &byHandTitle{slots: map[int64]mediafiles.Slot{}}
 	if err := database.Get(ctx, db, "titles", id, &bt.t); err != nil {
 		return nil, err
 	}
 	_ = db.QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1", id).Scan(&bt.main)
-	items, err := database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind IN ('movie', 'episode') AND dropped_at IS NULL", id)
+	items, err := database.Select[mediafiles.Item](ctx, db, "items", "title_id = ? AND kind IN ('movie', 'episode') AND dropped_at IS NULL", id)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (im *Importer) byHandTitle(ctx context.Context, db *sql.DB, cache map[int64
 		}
 		bt.refs = append(bt.refs, episodeRef(it))
 	}
-	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ?", bt.main)
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "version_id = ?", bt.main)
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +169,8 @@ func (im *Importer) byHandTitle(ctx context.Context, db *sql.DB, cache map[int64
 	return bt, nil
 }
 
-func episodeRef(it domain.Item) judge.EpisodeRef {
-	r := judge.EpisodeRef{ItemID: it.ID}
+func episodeRef(it mediafiles.Item) mediafiles.EpisodeRef {
+	r := mediafiles.EpisodeRef{ItemID: it.ID}
 	if it.Numbers.Season != nil {
 		r.Season = *it.Numbers.Season
 	}
@@ -190,7 +190,7 @@ func episodeRef(it domain.Item) judge.EpisodeRef {
 func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, error) {
 	out := ByHandScan{Path: root, Files: []ByHandFile{}}
 	db := im.Store.Read()
-	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
+	folders, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return out, err
 	}
@@ -202,17 +202,17 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 		return out, err
 	}
 	out.Path = root
-	titles, err := database.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed'")
+	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed'")
 	if err != nil {
 		return out, err
 	}
-	var refs []judge.TitleRef
+	var refs []mediafiles.TitleRef
 	for _, t := range titles {
 		year := 0
 		if t.Year != nil {
 			year = *t.Year
 		}
-		refs = append(refs, judge.TitleRef{ID: t.ID, Name: t.Name, Aliases: t.Aliases, Year: year, Kind: t.Kind})
+		refs = append(refs, mediafiles.TitleRef{ID: t.ID, Name: t.Name, Aliases: t.Aliases, Year: year, Kind: t.Kind})
 	}
 	cache := map[int64]*byHandTitle{}
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
@@ -265,22 +265,22 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 	return out, err
 }
 
-func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64]*byHandTitle, refs []judge.TitleRef, f *ByHandFile) error {
+func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64]*byHandTitle, refs []mediafiles.TitleRef, f *ByHandFile) error {
 	p := releasename.Parse(filepath.Base(f.Path), releasename.Hints{Size: f.Size})
 	if p.Title.Value == "" {
 		p = releasename.Parse(filepath.Base(filepath.Dir(f.Path)), releasename.Hints{Size: f.Size})
 	}
-	f.Quality = judge.StepFor(p)
+	f.Quality = mediafiles.StepFor(p)
 	if isSample(f.Path, p) {
 		f.Note = "a sample, not the full video"
 	}
 	if f.InLibrary {
 		f.Note = "already a file in the Library"
 	}
-	m := judge.MatchTitle(p, refs)
+	m := mediafiles.MatchTitle(p, refs)
 	if m.Title == nil {
 		if fp := releasename.Parse(filepath.Base(filepath.Dir(f.Path)), releasename.Hints{Size: f.Size}); fp.Title.Value != "" {
-			if fm := judge.MatchTitle(fp, refs); fm.Title != nil {
+			if fm := mediafiles.MatchTitle(fp, refs); fm.Title != nil {
 				m = fm
 			}
 		}
@@ -298,12 +298,12 @@ func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64
 	item := bt.movie
 	if bt.t.Kind == "show" {
 		item = 0
-		order := naming.OrderAired
+		order := mediafiles.OrderAired
 		if bt.t.EpisodeOrder != nil && *bt.t.EpisodeOrder != "" {
 			order = *bt.t.EpisodeOrder
 		}
 		sp := releasename.Parse(filepath.Base(f.Path), releasename.Hints{Size: f.Size, Show: true})
-		found, why := judge.MatchEpisodes(sp, order, bt.refs)
+		found, why := mediafiles.MatchEpisodes(sp, order, bt.refs)
 		if len(found) == 0 {
 			f.Guess.Detail = why
 			return nil
@@ -322,11 +322,11 @@ func (im *Importer) ImportByHand(ctx context.Context, items []ByHandItem, by dom
 	unlock := im.Store.LockFiles()
 	defer unlock()
 	db := im.Store.Read()
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
+	folders, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +378,7 @@ func byHandSlot(ctx context.Context, db *sql.DB, it ByHandItem) (int64, string) 
 	return id, ""
 }
 
-func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.Settings, folders []domain.LibraryFolder, places ByHandPlaces, it ByHandItem, by domain.Actor) (ByHandResult, error) {
+func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafiles.NamingSettings, folders []mediafiles.LibraryFolder, places ByHandPlaces, it ByHandItem, by domain.Actor) (ByHandResult, error) {
 	r := ByHandResult{Path: it.Path, Outcome: "refused"}
 	refuse := func(why string) (ByHandResult, error) { r.Error = why; return r, nil }
 	mode := it.Mode
@@ -408,11 +408,11 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 		return refuse(why)
 	}
 	r.SlotID = slotID
-	var sl domain.Slot
-	var item domain.Item
-	var ver domain.Version
-	var ti domain.Title
-	var lf domain.LibraryFolder
+	var sl mediafiles.Slot
+	var item mediafiles.Item
+	var ver mediafiles.Version
+	var ti mediafiles.Title
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "slots", slotID, &sl); err != nil {
 		return refuse("no such Slot")
 	}
@@ -435,11 +435,11 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	switch {
 	case it.TitleID > 0 && it.TitleID != ti.ID:
 		return refuse("the Slot belongs to another title")
-	case ti.State == "removed" || sl.State == domain.SlotRemoved:
+	case ti.State == "removed" || sl.State == mediafiles.SlotRemoved:
 		return refuse("the title was removed")
 	case item.Kind != "movie" && item.Kind != "episode":
 		return refuse("music is not imported by hand yet")
-	case sl.State == domain.SlotDownloading || sl.State == domain.SlotImporting || sl.State == domain.SlotChosen:
+	case sl.State == mediafiles.SlotDownloading || sl.State == mediafiles.SlotImporting || sl.State == mediafiles.SlotChosen:
 		return refuse("a download is on its way for this; wait for it or remove it first")
 	case sl.FileID != nil:
 		return refuse("this already has a file; delete it first or pick another Version")
@@ -459,9 +459,9 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 		target = filepath.Join(lf.Path, folder, t.fileName(p, src))
 	} else {
 		if folder == "" || folder == "." || folder == ".." {
-			folder = naming.ShowFolder(ns, naming.Facts{Title: ti.Name, Year: year})
+			folder = mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: ti.Name, Year: year})
 		}
-		t := ShowTarget{FolderName: folder, Show: judge.TitleRef{ID: ti.ID, Name: ti.Name, Year: year, Kind: "show"}, IDs: ti.SourceIDs, Order: naming.OrderAired, Naming: &ns}
+		t := ShowTarget{FolderName: folder, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Year: year, Kind: "show"}, IDs: ti.SourceIDs, Order: mediafiles.OrderAired, Naming: &ns}
 		if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 			t.Order = *ti.EpisodeOrder
 		}
@@ -487,7 +487,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 		if ops.Copy == nil {
 			ops.Copy = copyFile
 		}
-		res := place(domain.PlanStep{SourceFile: src, TargetPath: target, Method: "hardlink"}, ops, time.Time{})
+		res := place(mediafiles.PlanStep{SourceFile: src, TargetPath: target, Method: "hardlink"}, ops, time.Time{})
 		if res.Outcome != "placed" {
 			r.Outcome, r.Error = res.Outcome, res.Error
 			return r, nil
@@ -511,8 +511,8 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	return r, nil
 }
 
-func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, target string, lf domain.LibraryFolder, ver domain.Version, item domain.Item,
-	ti domain.Title, sl domain.Slot, p releasename.Result, by domain.Actor) error {
+func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, target string, lf mediafiles.LibraryFolder, ver mediafiles.Version, item mediafiles.Item,
+	ti mediafiles.Title, sl mediafiles.Slot, p releasename.Result, by domain.Actor) error {
 	rel, err := filepath.Rel(lf.Path, target)
 	if err != nil {
 		return err
@@ -522,30 +522,30 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		size = fi.Size()
 	}
 	facts := InspectFacts(target)
-	info := map[string]any{"step": judge.StepFor(p)}
+	info := map[string]any{"step": mediafiles.StepFor(p)}
 	for k, v := range facts {
 		info[k] = v
 	}
 	release := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	ge := false
 	if database.Get(ctx, im.Store.Read(), "pick_rules", ver.PickRulesID, &pr) == nil {
-		ge = judge.ReachesGoodEnough(release, pr.Body)
+		ge = mediafiles.ReachesGoodEnough(release, pr.Body)
 	}
-	state, why := domain.SlotInLibrary, "imported by hand"
+	state, why := mediafiles.SlotInLibrary, "imported by hand"
 	if !ge && ver.KeepUpToDate && item.KeepUpToDate {
-		state, why = domain.SlotBetterWanted, "imported by hand below good enough, so a better copy is sought"
+		state, why = mediafiles.SlotBetterWanted, "imported by hand below good enough, so a better copy is sought"
 	}
-	step := domain.PlanStep{SourceFile: src, TargetSlotIDs: []int64{sl.ID}, TargetPath: target, Method: "hardlink", Confidence: 1, Why: []string{"chosen by hand"}}
+	step := mediafiles.PlanStep{SourceFile: src, TargetSlotIDs: []int64{sl.ID}, TargetPath: target, Method: "hardlink", Confidence: 1, Why: []string{"chosen by hand"}}
 	kind := "movie"
 	if item.Kind == "episode" {
 		kind = "episodes"
 	}
-	imp := &domain.Import{FromPath: filepath.Dir(src), Kind: kind, Plan: []domain.PlanStep{step}, Mode: "by_hand", DecidedBy: &by, State: "done",
-		Result: []domain.PlaceResult{{SourceFile: src, Outcome: "placed", PlacedBy: r.PlacedBy}}}
+	imp := &mediafiles.Import{FromPath: filepath.Dir(src), Kind: kind, Plan: []mediafiles.PlanStep{step}, Mode: "by_hand", DecidedBy: &by, State: "done",
+		Result: []mediafiles.PlaceResult{{SourceFile: src, Outcome: "placed", PlacedBy: r.PlacedBy}}}
 	err = im.Store.Write(ctx, func(tx *sql.Tx) error {
-		f := &domain.File{SlotIDs: []int64{sl.ID}, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: time.Now().UTC(),
-			Quality:   domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
+		f := &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: time.Now().UTC(),
+			Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 			Languages: InspectedLanguages(facts), MediaInfo: info, ReleaseName: &release, Origin: "imported", PlacedBy: r.PlacedBy, Role: "main", State: "present"}
 		if g := p.Group.Value; g != "" {
 			f.Group = &g

@@ -12,8 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -630,12 +631,12 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	db := a.s.Store.Read()
 	in := musicNewInput{data: d, owned: map[string]int64{}, images: map[string]string{}, follows: map[string]bool{}}
-	titles, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	byTitle := map[int64]domain.Title{}
+	byTitle := map[int64]mediafiles.Title{}
 	for _, t := range titles {
 		byTitle[t.ID] = t
 		if id := strings.ToLower(t.SourceIDs["musicbrainz"]); id != "" {
@@ -643,7 +644,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 			in.images[id] = artistImage(t)
 		}
 	}
-	ps, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
+	ps, err := database.Select[mediafiles.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
 		AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') = 'day'
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 		now.AddDate(0, 0, -musicNewLibrary).Format("2006-01-02"), now.AddDate(0, 0, musicNewAhead).Format("2006-01-02T15:04:05Z"))

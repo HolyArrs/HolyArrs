@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // movieFromTitle rebuilds the name facts a release name needs.
-func movieFromTitle(t domain.Title) metadata.Movie {
+func movieFromTitle(t mediafiles.Title) metadata.Movie {
 	m := metadata.Movie{Name: t.Name}
 	if t.Year != nil {
 		m.Year = *t.Year

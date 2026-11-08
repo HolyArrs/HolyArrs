@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -65,7 +67,7 @@ func musicRig(t *testing.T) *rig {
 
 func albumKeeps(t *testing.T, st *database.Store, titleID int64) map[string]bool {
 	t.Helper()
-	ps, err := database.Select[domain.Part](context.Background(), st.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
+	ps, err := database.Select[mediafiles.Part](context.Background(), st.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +121,7 @@ func TestArtistAskAlbumsJoinApproveAndAskAgain(t *testing.T) {
 	if got.State != domain.AskApproved || got.TitleID == nil {
 		t.Fatalf("approved %+v", got)
 	}
-	var tt domain.Title
+	var tt mediafiles.Title
 	if err := database.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +194,7 @@ func TestArtistAskWholeArtistAndKindsLeftOut(t *testing.T) {
 }
 
 // addTracks gives an album n tracks with Slots in the main Version.
-func addTracks(t *testing.T, st *database.Store, titleID int64, album string, n int, state domain.SlotState) {
+func addTracks(t *testing.T, st *database.Store, titleID int64, album string, n int, state mediafiles.SlotState) {
 	t.Helper()
 	ctx := context.Background()
 	err := st.Write(ctx, func(tx *sql.Tx) error {
@@ -205,11 +207,11 @@ func addTracks(t *testing.T, st *database.Store, titleID int64, album string, n 
 		}
 		for i := 1; i <= n; i++ {
 			disc, num := 1, i
-			it := &domain.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, KeepUpToDate: true, SourceIDs: map[string]string{}}
+			it := &mediafiles.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: versionID, State: state}, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: versionID, State: state}, domain.System); err != nil {
 				return err
 			}
 		}
@@ -232,7 +234,7 @@ func TestArtistAskReadyWhenEveryTrackIsIn(t *testing.T) {
 	if n, _ := r.svc.CheckReady(ctx); n != 0 {
 		t.Fatalf("ready with no tracks: %d", n)
 	}
-	addTracks(t, r.st, *a.TitleID, "First Light", 2, domain.SlotWanted)
+	addTracks(t, r.st, *a.TitleID, "First Light", 2, mediafiles.SlotWanted)
 	if n, _ := r.svc.CheckReady(ctx); n != 0 {
 		t.Fatalf("ready with wanted tracks: %d", n)
 	}
@@ -416,7 +418,7 @@ func TestArtistApproveIncludesOnlyAskedAlbum(t *testing.T) {
 	if keeps := albumKeeps(t, r.st, *got.TitleID); !keeps["Live Night"] {
 		t.Fatalf("album keeps %v", keeps)
 	}
-	var tt domain.Title
+	var tt mediafiles.Title
 	if err := database.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +433,7 @@ func TestArtistApproveIncludesOnlyAskedAlbum(t *testing.T) {
 	if _, err := r.svc.Library.RefreshArtist(ctx, *got.TitleID, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}
-	ps, err := database.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album'", *got.TitleID)
+	ps, err := database.Select[mediafiles.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album'", *got.TitleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -458,7 +460,7 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps, err := database.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album' AND name = 'Live Night'", tid)
+	ps, err := database.Select[mediafiles.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album' AND name = 'Live Night'", tid)
 	if err != nil || len(ps) != 1 || ps[0].Included {
 		t.Fatalf("left-out album %v %v", ps, err)
 	}
@@ -468,7 +470,7 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 	if _, err := r.svc.Library.RefreshArtist(ctx, tid, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}
-	var p domain.Part
+	var p mediafiles.Part
 	if err := database.Get(ctx, r.st.Read(), "parts", ps[0].ID, &p); err != nil {
 		t.Fatal(err)
 	}

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -20,7 +22,7 @@ func TestProtectedCopyCannotBeReplaced(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	var old domain.File
+	var old mediafiles.File
 	if err := database.Get(ctx, w.s.Read(), "files", oldID, &old); err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +50,7 @@ func TestProtectedCopyCannotBeReplaced(t *testing.T) {
 	if err != nil || string(after) != string(before) {
 		t.Fatalf("protected bytes changed: %v", err)
 	}
-	if sl := slotOf(t, w); sl.State != domain.SlotNeedsADecision || sl.FileID == nil || *sl.FileID != oldID {
+	if sl := slotOf(t, w); sl.State != mediafiles.SlotNeedsADecision || sl.FileID == nil || *sl.FileID != oldID {
 		t.Fatalf("protected slot replaced: %+v", sl)
 	}
 }

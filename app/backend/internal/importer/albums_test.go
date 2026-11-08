@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -47,23 +49,23 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules WHERE name = 'Lossless first' ").Scan(&pr)
-		lf := &domain.LibraryFolder{Path: w.lib, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: w.lib, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Lab Band", SortName: "lab band", Aliases: []string{},
+		ti := &mediafiles.Title{Kind: "artist", GateDriver: "none", Name: "Lab Band", SortName: "lab band", Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Band", IsMain: true, KeepUpToDate: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Band", IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		rd := time.Date(2020, 5, 1, 0, 0, 0, 0, time.UTC)
-		p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: "First Light", ReleaseDate: &rd, KeepUpToDate: true, SourceIDs: map[string]string{},
-			Pressings: []domain.Pressing{}, SecondaryTypes: []string{}, Included: true}
+		p := &mediafiles.Part{TitleID: ti.ID, Kind: "album", Name: "First Light", ReleaseDate: &rd, KeepUpToDate: true, SourceIDs: map[string]string{},
+			Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}, Included: true}
 		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
@@ -77,12 +79,12 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 			if discs == 2 {
 				disc, num = i/2+1, i%2+1
 			}
-			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name,
+			it := &mediafiles.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, Name: &name,
 				KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotDownloading}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotDownloading}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -117,9 +119,9 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 	return w
 }
 
-func (w albumWorld) state(t *testing.T, i int) domain.SlotState {
+func (w albumWorld) state(t *testing.T, i int) mediafiles.SlotState {
 	t.Helper()
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slots[i], &sl); err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +149,7 @@ func TestAlbumImportPlacesEveryTrack(t *testing.T) {
 		t.Fatal("an extra file was placed")
 	}
 	for i := range w.slots {
-		if st := w.state(t, i); st != domain.SlotInLibrary {
+		if st := w.state(t, i); st != mediafiles.SlotInLibrary {
 			t.Fatalf("track %d: %s", i+1, st)
 		}
 	}
@@ -169,7 +171,7 @@ func TestPartialAlbumSettlesPerTrack(t *testing.T) {
 	if imp.State != "partly_done" {
 		t.Fatalf("state %s", imp.State)
 	}
-	if w.state(t, 0) != domain.SlotInLibrary || w.state(t, 2) != domain.SlotInLibrary || w.state(t, 1) != domain.SlotWanted {
+	if w.state(t, 0) != mediafiles.SlotInLibrary || w.state(t, 2) != mediafiles.SlotInLibrary || w.state(t, 1) != mediafiles.SlotWanted {
 		t.Fatalf("states %s %s %s", w.state(t, 0), w.state(t, 1), w.state(t, 2))
 	}
 	if len(again) != 1 || again[0] != w.slots[1] {
@@ -206,7 +208,7 @@ func TestAlbumImportNeedsSpaceForWholeAlbum(t *testing.T) {
 		t.Fatal("part of the album was placed")
 	}
 	for i := range w.slots {
-		if st := w.state(t, i); st != domain.SlotNeedsADecision {
+		if st := w.state(t, i); st != mediafiles.SlotNeedsADecision {
 			t.Fatalf("track %d: %s (%s)", i+1, st, imp.State)
 		}
 	}
@@ -294,7 +296,7 @@ func (w albumWorld) haveTracks(t *testing.T, ext, listing string) {
 			rel := fmt.Sprintf("Lab Band/First Light (2020)/%02d - %s.%s", i+1, n, ext)
 			write(t, filepath.Join(w.lib, filepath.FromSlash(rel)), 4096)
 			name := listing
-			f := &domain.File{SlotIDs: []int64{w.slots[i]}, VersionID: verID, RelativePath: rel, Size: 4096, AddedAt: time.Now(), Languages: []string{},
+			f := &mediafiles.File{SlotIDs: []int64{w.slots[i]}, VersionID: verID, RelativePath: rel, Size: 4096, AddedAt: time.Now(), Languages: []string{},
 				MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
 			if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 				return err
@@ -452,7 +454,7 @@ func TestAlbumImportReadsM4ACodec(t *testing.T) {
 	})
 }
 
-func lossyRefused(imp *domain.Import) int {
+func lossyRefused(imp *mediafiles.Import) int {
 	n := 0
 	for _, st := range imp.Plan {
 		if strings.Contains(strings.Join(st.Why, " "), "lossless copy in place") {

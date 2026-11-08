@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -12,7 +14,7 @@ import (
 // HolyArrs' own row names the Source it came from and who added its
 // Library title.
 func TestDownloadRowSourcePostedRequested(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, "UPDATE releases SET published_at = '2026-01-02T03:04:05Z'")
 	var out viewRows
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
@@ -33,7 +35,7 @@ func TestDownloadRowSourcePostedRequested(t *testing.T) {
 // Outside rows: no Source; a linked title nobody added reads "Added in
 // qBittorrent", one a person added names them; no title, nothing.
 func TestDownloadRowOutsideRequested(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	var titleID int64
@@ -78,7 +80,7 @@ func TestClientRowPostedAt(t *testing.T) {
 // Which Source and who asked stay with people who manage the Library: a
 // member watching their own ask sees neither; the owner sees both.
 func TestDownloadRowFieldsHiddenFromMember(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES
 		(1, 't', '{}', 't', '{}', 'owner', 'owner', 'x'), (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
 	exec41(t, x.s, `UPDATE titles SET created_by = '{"kind":"user","id":2}'`)

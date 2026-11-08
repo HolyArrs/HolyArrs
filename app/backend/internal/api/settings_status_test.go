@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -178,7 +180,7 @@ func TestStatusFlagsGoneDefaults(t *testing.T) {
 	var folderID int64
 	_ = r.st.Read().QueryRow("SELECT id FROM library_folders LIMIT 1").Scan(&folderID)
 	var p pickRulesDetail
-	_ = json.Unmarshal(r.owner.call("POST", "/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(r.owner.call("POST", "/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
 	r.owner.call("PUT", "/api/v1/settings/title-defaults", fmt.Sprintf(`{"movie":{"library_folder_id":%d,"pick_rules_id":%d}}`, folderID, p.ID), 200)
 	if b := string(r.owner.call("GET", "/api/v1/settings/status", "", 200)); strings.Contains(b, "/settings/title-defaults\",\"text") {
 		t.Fatalf("fine defaults flagged: %s", b)

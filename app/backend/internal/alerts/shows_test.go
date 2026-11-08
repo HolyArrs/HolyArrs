@@ -10,6 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -20,7 +22,7 @@ func showWorld(t *testing.T, s *database.Store) (titleID int64, slots []int64) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		y := 2025
-		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: &y, MetadataSource: "tmdb", NewPartsPolicy: "all",
+		ti := &mediafiles.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: &y, MetadataSource: "tmdb", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "running", State: "active", SourceIDs: map[string]string{"tmdb": "100", "tvdb": "200"},
 			Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		var err error
@@ -36,17 +38,17 @@ func showWorld(t *testing.T, s *database.Store) (titleID int64, slots []int64) {
 			return err
 		}
 		lf, _ = res.LastInsertId()
-		v := &domain.Version{TitleID: titleID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Copper Valley (2025)", KeepUpToDate: true, IsMain: true}
+		v := &mediafiles.Version{TitleID: titleID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Copper Valley (2025)", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		for n, name := range []string{"The Mill", "Flood", "TBA"} {
 			se, ep, nm := 1, n+1, name
-			it := &domain.Item{TitleID: titleID, Kind: "episode", Numbers: domain.Numbers{Season: &se, Episode: &ep}, Name: &nm, KeepUpToDate: true, SourceIDs: map[string]string{}}
+			it := &mediafiles.Item{TitleID: titleID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &se, Episode: &ep}, Name: &nm, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotDownloading}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotDownloading}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}

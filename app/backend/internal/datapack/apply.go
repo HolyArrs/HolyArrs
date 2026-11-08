@@ -12,9 +12,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 var ErrStaleApproval = errors.New("data pack preview is stale")
@@ -125,7 +126,7 @@ func buildPreview(ctx context.Context, q queryer, packID string, selection Selec
 			base.NamingValues[key] = value
 			np.Changes = append(np.Changes, NamingChange{Key: key, Current: currentPtr, Proposed: proposed[key]})
 		}
-		current, err := naming.Read(ctx, q)
+		current, err := mediafiles.ReadNaming(ctx, q)
 		if err != nil {
 			return ApplyPreview{}, err
 		}
@@ -168,12 +169,12 @@ func Apply(ctx context.Context, st *database.Store, packID string, selection Sel
 			return err
 		}
 		for _, rule := range rules {
-			if _, err := database.Insert(tx, "pick_rules", &domain.PickRules{Name: rule.Name, Kinds: slices.Clone(rule.Kinds), Revision: 1, Preset: false, Body: rule.Rules}, by); err != nil {
+			if _, err := database.Insert(tx, "pick_rules", &mediafiles.PickRules{Name: rule.Name, Kinds: slices.Clone(rule.Kinds), Revision: 1, Preset: false, Body: rule.Rules}, by); err != nil {
 				return err
 			}
 		}
 		if chosenNaming != nil {
-			current, err := naming.Read(ctx, tx)
+			current, err := mediafiles.ReadNaming(ctx, tx)
 			if err != nil {
 				return err
 			}
@@ -276,7 +277,7 @@ func namingValues(p NamingPatterns) map[string]string {
 	}
 }
 
-func overlayNaming(s naming.Settings, p NamingPatterns) naming.Settings {
+func overlayNaming(s mediafiles.NamingSettings, p NamingPatterns) mediafiles.NamingSettings {
 	s.FilePattern, s.FolderPattern = p.FilePattern, p.FolderPattern
 	s.ShowFolderPattern, s.SeasonFolderPattern, s.SpecialsFolder = p.ShowFolderPattern, p.SeasonFolderPattern, p.SpecialsFolder
 	s.EpisodePattern, s.DailyPattern, s.AnimePattern = p.EpisodePattern, p.DailyPattern, p.AnimePattern

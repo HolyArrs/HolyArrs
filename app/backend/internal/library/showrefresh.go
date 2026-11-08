@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -37,7 +39,7 @@ func (s *Service) SwitchSource(ctx context.Context, titleID int64, source string
 
 func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo string, by domain.Actor, jobID *int64) (ShowRefresh, error) {
 	var out ShowRefresh
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return out, err
 	}
@@ -136,13 +138,13 @@ func sourceName(source string) string {
 }
 
 // episodeGateEvents records each episode Slot that crossed the gate.
-func (s *Service) episodeGateEvents(ctx context.Context, t domain.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
+func (s *Service) episodeGateEvents(ctx context.Context, t mediafiles.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
 	for _, list := range []struct {
 		ids  []int64
 		kind string
-		to   domain.SlotState
+		to   mediafiles.SlotState
 		says string
-	}{{opened, domain.EventGateOpened, domain.SlotWanted, " has aired: it is wanted now"}, {closed, domain.EventGateClosed, domain.SlotNotOutYet, " has not aired yet: its air date moved"}} {
+	}{{opened, domain.EventGateOpened, mediafiles.SlotWanted, " has aired: it is wanted now"}, {closed, domain.EventGateClosed, mediafiles.SlotNotOutYet, " has not aired yet: its air date moved"}} {
 		for _, id := range list.ids {
 			slot := id
 			name := t.Name + " " + episodeLabel(ctx, s.Store.Read(), slot)

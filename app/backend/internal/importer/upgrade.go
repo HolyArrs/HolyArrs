@@ -12,21 +12,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // HoldingDir is the folder name where replaced files wait before removal.
 const HoldingDir = ".holyarrs-replaced"
 
 type upgrade struct {
-	rules   domain.PickRulesBody
-	old     *domain.File
+	rules   mediafiles.PickRulesBody
+	old     *mediafiles.File
 	oldName string
 	relName string
 	lie     string
@@ -36,9 +35,9 @@ type upgrade struct {
 
 func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 
-func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Version, d domain.Download, plan []domain.PlanStep, fakes fakeRules, minutes int) (upgrade, error) {
+func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, plan []mediafiles.PlanStep, fakes fakeRules, minutes int) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
 		return u, err
 	}
@@ -47,7 +46,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 		_ = db.QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *d.ReleaseID).Scan(&u.relName)
 	}
 	if sl.FileID != nil {
-		var f domain.File
+		var f mediafiles.File
 		if err := database.Get(ctx, db, "files", *sl.FileID, &f); err == nil && f.State == "present" {
 			u.old = &f
 			u.oldName = strings.TrimSuffix(filepath.Base(f.RelativePath), filepath.Ext(f.RelativePath))
@@ -121,10 +120,10 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 	return u, nil
 }
 
-func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickRulesBody, facts map[string]any) string {
-	fStep, fIdx := judge.StepOf(name, rules)
+func lieOf(name, relName string, hasOld bool, oldName string, rules mediafiles.PickRulesBody, facts map[string]any) string {
+	fStep, fIdx := mediafiles.StepOf(name, rules)
 	fp := releasename.Parse(name, releasename.Hints{}).Resolution
-	shown := mediainfo.Info{Width: factInt(facts, "width"), Height: factInt(facts, "height"), DisplayWidth: factInt(facts, "display_width")}
+	shown := mediafiles.Info{Width: factInt(facts, "width"), Height: factInt(facts, "height"), DisplayWidth: factInt(facts, "display_width")}
 	if real := shown.Resolution(); real > 0 {
 		claim := fp
 		if relName != "" {
@@ -144,14 +143,14 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickR
 	}
 	sure := releasename.Parse(name, releasename.Hints{}).Source.Conf == releasename.Sure
 	if fIdx >= 0 && sure && hasOld {
-		if oStep, oIdx := judge.StepOf(oldName, rules); oIdx > fIdx {
+		if oStep, oIdx := mediafiles.StepOf(oldName, rules); oIdx > fIdx {
 			return fmt.Sprintf("file is %s, lower than the copy in place (%s)", plainStep(fStep), plainStep(oStep))
 		}
 	}
 	return ""
 }
 
-func lossyOverLossless(newPath, relName string, old domain.File, oldPath string, rules domain.PickRulesBody) string {
+func lossyOverLossless(newPath, relName string, old mediafiles.File, oldPath string, rules mediafiles.PickRulesBody) string {
 	ext := strings.ToLower(filepath.Ext(newPath))
 	newKind := audioKind(ext, newPath)
 	if newKind == "lossless" {
@@ -162,7 +161,7 @@ func lossyOverLossless(newPath, relName string, old domain.File, oldPath string,
 	case "unknown":
 		oldKind = "lossless"
 	case "":
-		if step, _ := judge.StepOf(fileName(old), rules); step == "lossless" || step == "lossless_hires" {
+		if step, _ := mediafiles.StepOf(fileName(old), rules); step == "lossless" || step == "lossless_hires" {
 			oldKind = "lossless"
 		}
 	}
@@ -173,7 +172,7 @@ func lossyOverLossless(newPath, relName string, old domain.File, oldPath string,
 		return fmt.Sprintf("the format of the file (%s) could not be read, so it may not replace the lossless copy in place", strings.TrimPrefix(ext, "."))
 	}
 	if newKind == "" {
-		if step, _ := judge.StepOf(relName, rules); !strings.HasPrefix(step, "lossy_") {
+		if step, _ := mediafiles.StepOf(relName, rules); !strings.HasPrefix(step, "lossy_") {
 			return ""
 		}
 	}
@@ -202,7 +201,7 @@ func audioKind(ext, p string) string {
 }
 
 func fileLossless(p string) (lossless, known bool) {
-	info, err := mediainfo.Inspect(p)
+	info, err := mediafiles.Inspect(p)
 	if err != nil {
 		return false, false
 	}
@@ -265,11 +264,11 @@ func holdAside(libPath, rel string, now time.Time) (string, error) {
 	return to, nil
 }
 
-func (im *Importer) reject(ctx context.Context, imp *domain.Import, sl domain.Slot, d domain.Download, why string, by domain.Actor,
-	hasFile, keepLooking bool) (domain.SlotState, error) {
-	to := domain.SlotRejected
+func (im *Importer) reject(ctx context.Context, imp *mediafiles.Import, sl mediafiles.Slot, d domain.Download, why string, by domain.Actor,
+	hasFile, keepLooking bool) (mediafiles.SlotState, error) {
+	to := mediafiles.SlotRejected
 	if hasFile {
-		to = domain.SlotInLibrary
+		to = mediafiles.SlotInLibrary
 	}
 	imp.State, imp.Mode = "rejected", "auto"
 	err := im.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -285,17 +284,17 @@ func (im *Importer) reject(ctx context.Context, imp *domain.Import, sl domain.Sl
 		if _, err := tx.Exec("UPDATE slots SET active_download_id = NULL WHERE id = ?", sl.ID); err != nil {
 			return err
 		}
-		if sl.State == domain.SlotDownloading {
-			if err := store.MoveSlotTx(tx, sl.ID, domain.SlotImporting, "importing", by); err != nil {
+		if sl.State == mediafiles.SlotDownloading {
+			if err := mediafiles.MoveSlotTx(tx, sl.ID, mediafiles.SlotImporting, "importing", by); err != nil {
 				return err
 			}
 		}
-		if err := store.MoveSlotTx(tx, sl.ID, to, why, by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, sl.ID, to, why, by); err != nil {
 			return err
 		}
 		if hasFile && keepLooking && !sl.GoodEnough {
-			to = domain.SlotBetterWanted
-			return store.MoveSlotTx(tx, sl.ID, to, why+"; the copy in place stays and a better one is sought", by)
+			to = mediafiles.SlotBetterWanted
+			return mediafiles.MoveSlotTx(tx, sl.ID, to, why+"; the copy in place stays and a better one is sought", by)
 		}
 		return nil
 	})

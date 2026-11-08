@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -93,7 +95,7 @@ func countDownloads(t *testing.T, s *database.Store) int {
 // The Downloads view lists every torrent in the client, HolyArrs' own once.
 // The rest are read-only outside rows: no download records appear for them.
 func TestDownloadsViewListsEveryTorrent(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	before := countDownloads(t, x.s)
@@ -137,7 +139,7 @@ func TestDownloadsViewListsEveryTorrent(t *testing.T) {
 // A torrent HolyArrs knows by hash but that is off the list keeps its Title
 // and loses the outside mark.
 func TestDownloadsViewKnownHash(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	exec41(t, x.s, "UPDATE downloads SET external_id = ?", outHash)
@@ -189,7 +191,7 @@ func TestDownloadsViewKnownHash(t *testing.T) {
 // route: GET /api/v1/downloaders/{id}/items/{hash}/files
 // route: PUT /api/v1/downloaders/{id}/items/{hash}/files
 func TestClientItemControls(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	var did int64

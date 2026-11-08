@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -90,13 +92,13 @@ func TestReportsOverHTTP(t *testing.T) {
 	// A title with nothing in the Library yet, and one that does not exist.
 	var wanted int64
 	err := r.st.Write(ctx, func(tx *sql.Tx) error {
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Wanted Only", SortName: "wanted only", MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Wanted Only", SortName: "wanted only", MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		wanted = ti.ID
-		_, err := database.Insert(tx, "items", &domain.Item{TitleID: ti.ID, Kind: "movie", Numbers: domain.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
+		_, err := database.Insert(tx, "items", &mediafiles.Item{TitleID: ti.ID, Kind: "movie", Numbers: mediafiles.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
 		return err
 	})
 	if err != nil {

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -28,26 +30,26 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 		seen = append(seen, domain.SeenFile{Name: uhdPack + "/" + name, Size: 4096})
 	}
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var main domain.Version
+		var main mediafiles.Version
 		if err := database.Get(ctx, tx, "versions", w.vID, &main); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: main.TitleID, Label: "4K", PickRulesID: main.PickRulesID, LibraryFolderID: main.LibraryFolderID,
+		v := &mediafiles.Version{TitleID: main.TitleID, Label: "4K", PickRulesID: main.PickRulesID, LibraryFolderID: main.LibraryFolderID,
 			FolderName: w.folder + " [4K]", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		uhdVer = v.ID
 		for n := 1; n <= 4; n++ {
-			var hd domain.Slot
+			var hd mediafiles.Slot
 			if err := database.Get(ctx, tx, "slots", w.slots[n], &hd); err != nil {
 				return err
 			}
-			state := domain.SlotWanted
+			state := mediafiles.SlotWanted
 			if n <= 2 {
-				state = domain.SlotDownloading
+				state = mediafiles.SlotDownloading
 			}
-			sl := &domain.Slot{ItemID: hd.ItemID, VersionID: v.ID, State: state}
+			sl := &mediafiles.Slot{ItemID: hd.ItemID, VersionID: v.ID, State: state}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -79,9 +81,9 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 		t.Fatalf("HD import %+v %v", imp, err)
 	}
 	for n, id := range uhdSlots {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		_ = database.Get(ctx, w.s.Read(), "slots", id, &sl)
-		if sl.FileID != nil || (n <= 2 && sl.State != domain.SlotDownloading) || (n > 2 && sl.State != domain.SlotWanted) {
+		if sl.FileID != nil || (n <= 2 && sl.State != mediafiles.SlotDownloading) || (n > 2 && sl.State != mediafiles.SlotWanted) {
 			t.Fatalf("4K E%d touched by the HD pack: %+v", n, sl)
 		}
 	}
@@ -90,7 +92,7 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 	}
 	for _, n := range []int{1, 2} {
 		hd := w.file(t, *w.slot(t, n).FileID)
-		var usl domain.Slot
+		var usl mediafiles.Slot
 		_ = database.Get(ctx, w.s.Read(), "slots", uhdSlots[n], &usl)
 		if usl.FileID == nil {
 			t.Fatalf("4K E%d not placed: %+v", n, usl)
@@ -100,7 +102,7 @@ func TestShowVersionsImportSideBySide(t *testing.T) {
 			!strings.HasPrefix(hd.RelativePath, w.folder+"/") || !strings.HasPrefix(uhd.RelativePath, w.folder+" [4K]/") {
 			t.Fatalf("E%d files HD %+v 4K %+v", n, hd, uhd)
 		}
-		for _, f := range []domain.File{hd, uhd} {
+		for _, f := range []mediafiles.File{hd, uhd} {
 			if _, err := os.Stat(filepath.Join(w.lib, filepath.FromSlash(f.RelativePath))); err != nil {
 				t.Fatalf("E%d %s: %v", n, f.RelativePath, err)
 			}

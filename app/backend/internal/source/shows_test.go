@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -75,19 +77,19 @@ type showFix struct {
 	parts          map[int]int64
 	slots          map[string]int64
 	items          map[string]int64
-	states         map[string]domain.SlotState
+	states         map[string]mediafiles.SlotState
 }
 
 // seedShow adds a show with season 1 of three aired episodes and season 2 of
 // one aired and one airing next month. Every Slot is wanted or not out yet,
 // kept up to date, with one Source for shows. A movie is there too.
-func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slot)) showFix {
+func seedShow(t *testing.T, srcURL string, set func(label string, sl *mediafiles.Slot)) showFix {
 	t.Helper()
 	f := showFix{fixture: seed(t, srcURL), parts: map[int]int64{}, slots: map[string]int64{}, items: map[string]int64{}}
 	now := time.Now().UTC()
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr, lf int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&pr); err != nil {
+		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&pr); err != nil {
 			return err
 		}
 		if err := tx.QueryRow("SELECT id FROM library_folders LIMIT 1").Scan(&lf); err != nil {
@@ -96,14 +98,14 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 		if _, err := tx.Exec(`UPDATE sources SET kinds = '["movie","tv"]', categories = '{"movie":[2000],"tv":[5000]}', use_for = '{"auto_search":true,"hand_search":true,"feed":true}' WHERE id = ?`, f.srcID); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: ptr(2015),
+		ti := &mediafiles.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: ptr(2015),
 			Aliases: []string{}, SourceIDs: map[string]string{"tvdb": "4242"}, MetadataSource: "tvmaze", EpisodeOrder: ptr("aired"),
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "running", State: "active", OriginalLanguage: ptr("en")}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Copper Valley", KeepUpToDate: true, IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Copper Valley", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
@@ -113,8 +115,8 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 			2: {now.AddDate(0, 0, -7), now.AddDate(0, 1, 0)},
 		}
 		for season := 1; season <= 2; season++ {
-			p := &domain.Part{TitleID: ti.ID, Kind: "season", Number: ptr(season), Name: fmt.Sprintf("Season %d", season), KeepUpToDate: true,
-				SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
+			p := &mediafiles.Part{TitleID: ti.ID, Kind: "season", Number: ptr(season), Name: fmt.Sprintf("Season %d", season), KeepUpToDate: true,
+				SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{}}
 			if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 				return err
 			}
@@ -123,15 +125,15 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 				n := i + 1
 				air := air
 				day := air.Format("2006-01-02")
-				it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: ptr(season), Episode: ptr(n)},
+				it := &mediafiles.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: ptr(season), Episode: ptr(n)},
 					Name: ptr(fmt.Sprintf("Episode %d", n)), AirDate: &air, AirDay: &day, Runtime: ptr(45), KeepUpToDate: true, SourceIDs: map[string]string{}}
 				if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 					return err
 				}
 				label := fmt.Sprintf("S%02dE%02d", season, n)
-				sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
+				sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotWanted}
 				if air.After(now) {
-					sl.State = domain.SlotNotOutYet
+					sl.State = mediafiles.SlotNotOutYet
 				}
 				if set != nil {
 					set(label, sl)
@@ -150,13 +152,13 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 	return f
 }
 
-func (f showFix) state(t *testing.T, label string) domain.SlotState {
+func (f showFix) state(t *testing.T, label string) mediafiles.SlotState {
 	t.Helper()
 	var st string
 	if err := f.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", f.slots[label]).Scan(&st); err != nil {
 		t.Fatal(err)
 	}
-	return domain.SlotState(st)
+	return mediafiles.SlotState(st)
 }
 
 func reasonCodes(rel domain.Release) []string {
@@ -199,10 +201,10 @@ func TestSearch_Episode(t *testing.T) {
 	if q.Get("t") != "tvsearch" || q.Get("tvdbid") != "4242" || q.Get("season") != "1" || q.Get("ep") != "2" || q.Get("cat") != "5000" {
 		t.Fatalf("query %v", q)
 	}
-	if st := f.state(t, "S01E02"); st != domain.SlotChosen {
+	if st := f.state(t, "S01E02"); st != mediafiles.SlotChosen {
 		t.Fatalf("S01E02 is %s", st)
 	}
-	if st := f.state(t, "S01E03"); st != domain.SlotWanted {
+	if st := f.state(t, "S01E03"); st != mediafiles.SlotWanted {
 		t.Fatalf("S01E03 is %s: an episode search picks only its episode", st)
 	}
 	if r := relByName(t, f.fixture, "Copper.Valley.S01E02.1080p.WEB-DL.H.264-QUILL"); r.State != "chosen" {
@@ -231,7 +233,7 @@ func TestHandleSeason_EpisodeNotAiredSearchedOnlyByHand(t *testing.T) {
 		t.Fatalf("an episode not aired yet was searched: %+v", j.Result)
 	}
 	j = runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E02"]}, map[string]any{"by_hand": true})
-	if j.State != "done" || f.state(t, "S02E02") != domain.SlotChosen {
+	if j.State != "done" || f.state(t, "S02E02") != mediafiles.SlotChosen {
 		t.Fatalf("hand search %s %+v, slot %s", j.State, j.Result, f.state(t, "S02E02"))
 	}
 	r := relByName(t, f.fixture, "Copper.Valley.S02E02.1080p.WEB-DL.H.264-QUILL")
@@ -260,7 +262,7 @@ func TestHandleSeason_TakesPack(t *testing.T) {
 		t.Fatalf("season query %v", q)
 	}
 	for _, l := range []string{"S01E01", "S01E02", "S01E03"} {
-		if st := f.state(t, l); st != domain.SlotChosen {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
 			t.Fatalf("%s is %s; result %+v", l, st, j.Result)
 		}
 	}
@@ -284,9 +286,9 @@ func TestHandleSeason_TakesPack(t *testing.T) {
 
 func TestHandleSeason_FallsBackToEpisodes(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
-	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
+	f := seedShow(t, ts.start(t), func(label string, sl *mediafiles.Slot) {
 		if label == "S01E01" {
-			sl.State = domain.SlotInLibrary
+			sl.State = mediafiles.SlotInLibrary
 		}
 	})
 	sr := &Searcher{Store: f.s}
@@ -312,7 +314,7 @@ func TestHandleSeason_LeftoversSearchedAlone(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
 	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
-	if f.state(t, "S01E01") != domain.SlotChosen {
+	if f.state(t, "S01E01") != mediafiles.SlotChosen {
 		t.Fatalf("S01E01 %s %+v", f.state(t, "S01E01"), j.Result)
 	}
 	if n, _ := j.Result["episodes_queued"].(float64); n != 2 {
@@ -328,9 +330,9 @@ func TestFeedShow_PackRules(t *testing.T) {
 	}
 	ts := &tvServer{answer: func(url.Values) []string { return feed }}
 	var fileSlot int64
-	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
+	f := seedShow(t, ts.start(t), func(label string, sl *mediafiles.Slot) {
 		if label == "S01E01" {
-			sl.State = domain.SlotInLibrary
+			sl.State = mediafiles.SlotInLibrary
 		}
 	})
 	fileSlot = f.slots["S01E01"]
@@ -346,11 +348,11 @@ func TestFeedShow_PackRules(t *testing.T) {
 	if r := relByName(t, f.fixture, "Copper.Valley.S02.1080p.WEB-DL.H.264-QUILL"); !hasCode(r, "hard.gate") || r.State != "refused" {
 		t.Fatalf("airing season pack: %s %v", r.State, reasonCodes(r))
 	}
-	if st := f.state(t, "S02E01"); st != domain.SlotChosen {
+	if st := f.state(t, "S02E01"); st != mediafiles.SlotChosen {
 		t.Fatalf("S02E01 %s", st)
 	}
 	pack := relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL")
-	if !hasCode(pack, "match.pack_share") || pack.State != "refused" || f.state(t, "S01E02") != domain.SlotWanted {
+	if !hasCode(pack, "match.pack_share") || pack.State != "refused" || f.state(t, "S01E02") != mediafiles.SlotWanted {
 		t.Fatalf("pack over a copy as good: %s %v", pack.State, reasonCodes(pack))
 	}
 
@@ -358,10 +360,10 @@ func TestFeedShow_PackRules(t *testing.T) {
 	feed = []string{"Copper.Valley.S01.1080p.WEB-DL.H.265-LARKSPUR"}
 	j = runKind(t, f.fixture, sr, KindFeedCheck, nil, nil)
 	pack = relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.265-LARKSPUR")
-	if pack.State != "chosen" || f.state(t, "S01E02") != domain.SlotChosen || f.state(t, "S01E03") != domain.SlotChosen {
+	if pack.State != "chosen" || f.state(t, "S01E02") != mediafiles.SlotChosen || f.state(t, "S01E03") != mediafiles.SlotChosen {
 		t.Fatalf("partial pack: %s %v, %s %s", pack.State, reasonCodes(pack), f.state(t, "S01E02"), f.state(t, "S01E03"))
 	}
-	if f.state(t, "S01E01") != domain.SlotInLibrary || len(PickSlots(pack)) != 2 {
+	if f.state(t, "S01E01") != mediafiles.SlotInLibrary || len(PickSlots(pack)) != 2 {
 		t.Fatalf("the episode with a copy is left alone: %s %v", f.state(t, "S01E01"), PickSlots(pack))
 	}
 }
@@ -369,7 +371,7 @@ func TestFeedShow_PackRules(t *testing.T) {
 func addFile(t *testing.T, f showFix, slotID int64, name string) {
 	t.Helper()
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		fl := &domain.File{SlotIDs: []int64{slotID}, VersionID: f.verID, RelativePath: "Season 01/" + name + ".mkv", Size: 1200 << 20,
+		fl := &mediafiles.File{SlotIDs: []int64{slotID}, VersionID: f.verID, RelativePath: "Season 01/" + name + ".mkv", Size: 1200 << 20,
 			AddedAt: time.Now().Add(-48 * time.Hour), Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported",
 			PlacedBy: "move", State: "present", Role: "main"}
 		if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
@@ -443,16 +445,16 @@ func asNeedsForce(err error, nf **NeedsForceError) bool {
 	return ok
 }
 
-func mustTitle(t *testing.T, f showFix) domain.Title {
-	var ti domain.Title
+func mustTitle(t *testing.T, f showFix) mediafiles.Title {
+	var ti mediafiles.Title
 	if err := database.Get(context.Background(), f.s.Read(), "titles", f.titleID, &ti); err != nil {
 		t.Fatal(err)
 	}
 	return ti
 }
 
-func mustVersion(t *testing.T, f showFix) domain.Version {
-	var v domain.Version
+func mustVersion(t *testing.T, f showFix) mediafiles.Version {
+	var v mediafiles.Version
 	if err := database.Get(context.Background(), f.s.Read(), "versions", f.verID, &v); err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +473,7 @@ func TestChoose_PackByHandFillsSeason(t *testing.T) {
 		t.Fatalf("choose the pack: %+v %v %v", ch, err, grabs)
 	}
 	for _, l := range []string{"S01E01", "S01E02", "S01E03"} {
-		if f.state(t, l) != domain.SlotChosen {
+		if f.state(t, l) != mediafiles.SlotChosen {
 			t.Fatalf("%s %s", l, f.state(t, l))
 		}
 	}
@@ -553,7 +555,7 @@ func TestShowQuery_DailyEpisode(t *testing.T) {
 	if q.Get("season") != day.Format("2006") || q.Get("ep") != day.Format("01/02") {
 		t.Fatalf("daily query %v", q)
 	}
-	if f.state(t, "S02E01") != domain.SlotChosen {
+	if f.state(t, "S02E01") != mediafiles.SlotChosen {
 		t.Fatalf("daily episode %s", f.state(t, "S02E01"))
 	}
 }

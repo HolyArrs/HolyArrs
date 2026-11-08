@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -55,7 +57,7 @@ func TestChooseAlbum_MixNeedsConfirm(t *testing.T) {
 	var err error
 	err = f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		name := "Velvet Cartography - Low Tide Atlas (2019) [FLAC 24-96]"
-		fl := &domain.File{SlotIDs: []int64{f.slots[ltaTracks[0]]}, VersionID: f.verID, RelativePath: "1-1.flac", Size: 1, AddedAt: time.Now(),
+		fl := &mediafiles.File{SlotIDs: []int64{f.slots[ltaTracks[0]]}, VersionID: f.verID, RelativePath: "1-1.flac", Size: 1, AddedAt: time.Now(),
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 			return err
@@ -71,7 +73,7 @@ func TestChooseAlbum_MixNeedsConfirm(t *testing.T) {
 	if !errors.As(err, &nf) || !strings.Contains(err.Error(), "mix") || !strings.Contains(err.Error(), "already has a copy as good") {
 		t.Fatalf("mixed album not refused: %v", err)
 	}
-	if st := f.state(t, ltaTracks[1]); st == domain.SlotChosen {
+	if st := f.state(t, ltaTracks[1]); st == mediafiles.SlotChosen {
 		t.Fatal("chosen without confirming")
 	}
 	ch, err := sr.Choose(context.Background(), r.ID, 0, true, domain.System)

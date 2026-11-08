@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
 type fakeRules struct {
@@ -65,7 +66,7 @@ func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName str
 	if music {
 		least := fr.minTrack
 		if least == 0 && fr.floors {
-			least = judge.MinTrack
+			least = mediafiles.MinTrack
 		}
 		if size < least {
 			return fmt.Sprintf("the file is %d KB, too small to be a track; likely a fake", size>>10), nil
@@ -74,9 +75,9 @@ func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName str
 	}
 	least := fr.minVideo
 	if least == 0 && fr.floors {
-		least = judge.MinVideo
+		least = mediafiles.MinVideo
 		if minutes > 0 {
-			least = int64(minutes) * judge.MinVideoPerMinute
+			least = int64(minutes) * mediafiles.MinVideoPerMinute
 		}
 	}
 	if size < least {

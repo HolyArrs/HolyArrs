@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
@@ -456,7 +458,7 @@ func mb(n int64) string { return strconv.FormatInt(n>>20, 10) + " MB" }
 // folders checks each movie Library folder: it must be there, and its disk
 // must have room.
 func (e *Engine) folders(ctx context.Context) ([]Result, error) {
-	lfs, err := database.Select[domain.LibraryFolder](ctx, e.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[mediafiles.LibraryFolder](ctx, e.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}

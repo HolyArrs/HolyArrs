@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -24,7 +26,7 @@ func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
-		imp := &domain.Import{DownloadID: &dl.ID, FromPath: "/x", Kind: "movie", Plan: []domain.PlanStep{}, Result: []domain.PlaceResult{}, Mode: "auto", State: "done"}
+		imp := &mediafiles.Import{DownloadID: &dl.ID, FromPath: "/x", Kind: "movie", Plan: []mediafiles.PlanStep{}, Result: []mediafiles.PlaceResult{}, Mode: "auto", State: "done"}
 		_, err := database.Insert(tx, "imports", imp, domain.System)
 		return err
 	}); err != nil {
@@ -40,7 +42,7 @@ func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 	if d := w.download(t, id); d.State != "sent" || !slices.Equal(d.SlotIDs, []int64{w.slotID}) {
 		t.Fatalf("download %d is %s for %v", id, d.State, d.SlotIDs)
 	}
-	if s := w.slot(t); s.State != domain.SlotDownloading || s.ActiveDownloadID == nil || *s.ActiveDownloadID != id {
+	if s := w.slot(t); s.State != mediafiles.SlotDownloading || s.ActiveDownloadID == nil || *s.ActiveDownloadID != id {
 		t.Fatalf("slot %s on %v", s.State, s.ActiveDownloadID)
 	}
 	w.fake.set(hash, map[string]any{"name": "Dune", "state": "uploading", "progress": 1.0, "category": "holyarrs", "save_path": "/data/downloads/complete"})
@@ -65,7 +67,7 @@ func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 		t.Fatalf("sent to qBittorrent anyway: %v", w.fake.added)
 	}
 	s := w.slot(t)
-	if s.State != domain.SlotWanted || s.ChosenReleaseID != nil || s.LastReason == nil || !strings.Contains(*s.LastReason, "no such Release file") {
+	if s.State != mediafiles.SlotWanted || s.ChosenReleaseID != nil || s.LastReason == nil || !strings.Contains(*s.LastReason, "no such Release file") {
 		t.Fatalf("slot %s, chosen %v, reason %v", s.State, s.ChosenReleaseID, s.LastReason)
 	}
 	if st, why := w.releaseState(t); st != "turned_down" || !strings.HasPrefix(why, "could not be sent: ") {
@@ -122,7 +124,7 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 		if err := m.HandleGrab(context.Background(), grabRun(w, 1)); err == nil {
 			t.Fatal("a 401 should be tried again")
 		}
-		if st, _ := w.releaseState(t); st != "chosen" || w.slot(t).State != domain.SlotChosen || len(w.fake.added) != 0 {
+		if st, _ := w.releaseState(t); st != "chosen" || w.slot(t).State != mediafiles.SlotChosen || len(w.fake.added) != 0 {
 			t.Fatalf("release %s, slot %s, added %v", st, w.slot(t).State, w.fake.added)
 		}
 	})
@@ -167,13 +169,13 @@ func TestGrabLastTryFreesTheSlot(t *testing.T) {
 	if err := m.HandleGrab(ctx, grabRun(w, 1)); err == nil {
 		t.Fatal("an unanswered send should be tried again")
 	}
-	if s := w.slot(t); s.State != domain.SlotChosen {
+	if s := w.slot(t); s.State != mediafiles.SlotChosen {
 		t.Fatalf("slot %s after the first try", s.State)
 	}
 	if err := m.HandleGrab(ctx, grabRun(w, 5)); err == nil {
 		t.Fatal("the last try still fails the Job")
 	}
-	if s := w.slot(t); s.State != domain.SlotWanted || s.ChosenReleaseID != nil {
+	if s := w.slot(t); s.State != mediafiles.SlotWanted || s.ChosenReleaseID != nil {
 		t.Fatalf("slot %s, chosen %v after the last try", s.State, s.ChosenReleaseID)
 	}
 	if st, _ := w.releaseState(t); st != "chosen" {

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // fakeClient is a qBittorrent that records every action it is sent.
@@ -25,7 +25,7 @@ func (f *fakeClient) saw() string {
 
 func controlSeed(t *testing.T) (*dl41, *fakeClient) {
 	t.Helper()
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &fakeClient{}
 	qb := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()

@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
@@ -186,9 +187,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	}
 	keep := opt.KeepUpToDate == nil || *opt.KeepUpToDate
 
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if opt.LibraryFolderID == 0 {
-		fs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'show' ORDER BY id LIMIT 1")
+		fs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "kind = 'show' ORDER BY id LIMIT 1")
 		if err != nil {
 			return 0, 0, err
 		}
@@ -226,7 +227,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	}
 	s.addAirTimes(ctx, &sh)
 	aliases := s.animeAliases(ctx, "show", sh.IDs["tmdb"], sh.Name)
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -235,7 +236,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		adoptFiles = mapEpisodeFiles(listVideosN(lf.Path, opt.Adopt.FolderName, maxShowVideos), sh, opt.EpisodeOrder)
 	}
 	now := s.now()
-	var t domain.Title
+	var t mediafiles.Title
 	var sync ShowSync
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if existing, err := ShowByIDs(ctx, tx, sh.IDs); err != nil {
@@ -253,7 +254,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			prID = *lf.DefaultPickRules
 		}
 		if prID == 0 {
-			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&prID); err != nil {
+			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&prID); err != nil {
 				return fmt.Errorf("pick rules: %w", err)
 			}
 		} else if err := pickRulesFor(tx, &prID, "show"); err != nil {
@@ -266,7 +267,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			from = &f
 			opt.NewSeasons = "all" // new seasons air later: wanted
 		}
-		t = domain.Title{Kind: "show", Aliases: aliases, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
+		t = mediafiles.Title{Kind: "show", Aliases: aliases, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now}
 		applyShow(&t, sh)
@@ -277,11 +278,11 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		if t.Year != nil {
 			year = *t.Year
 		}
-		folder := naming.ShowFolder(ns, naming.Facts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
+		folder := mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folder = opt.Adopt.FolderName
 		}
-		v := &domain.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
+		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
@@ -416,7 +417,7 @@ func countWanted(ctx context.Context, db database.Querier, titleID int64) int {
 
 // SetSeason switches Keep up to date for one season and all its episodes.
 func (s *Service) SetSeason(ctx context.Context, titleID int64, number int, keep bool, by domain.Actor) error {
-	var t domain.Title
+	var t mediafiles.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
@@ -454,7 +455,7 @@ func (s *Service) KeepEpisodes(ctx context.Context, titleID int64, number int, e
 	if len(episodes) == 0 {
 		return nil
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
@@ -499,7 +500,7 @@ func (s *Service) KeepEpisodes(ctx context.Context, titleID int64, number int, e
 // keeps stays kept, episodes still to air (and their seasons) are kept up
 // to date, and seasons found later are wanted.
 func (s *Service) KeepFuture(ctx context.Context, titleID int64, by domain.Actor) error {
-	var t domain.Title
+	var t mediafiles.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
@@ -532,8 +533,8 @@ func (s *Service) KeepFuture(ctx context.Context, titleID int64, by domain.Actor
 }
 
 // SetEpisode switches Keep up to date for one episode.
-func (s *Service) SetEpisode(ctx context.Context, itemID int64, keep bool, by domain.Actor) (domain.Item, error) {
-	var it domain.Item
+func (s *Service) SetEpisode(ctx context.Context, itemID int64, keep bool, by domain.Actor) (mediafiles.Item, error) {
+	var it mediafiles.Item
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "items", itemID, &it); err != nil {
 			return err
@@ -584,7 +585,7 @@ type SeasonSummary struct {
 // Seasons summarises a show's seasons from its episodes and the main
 // Version's Slots.
 func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Time) ([]SeasonSummary, error) {
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'season' ORDER BY number", titleID)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'season' ORDER BY number", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -630,19 +631,19 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 				}
 			}
 		}
-		switch domain.SlotState(state) {
-		case domain.SlotInLibrary:
+		switch mediafiles.SlotState(state) {
+		case mediafiles.SlotInLibrary:
 			ss.InLibrary++
-		case domain.SlotBetterWanted:
+		case mediafiles.SlotBetterWanted:
 			ss.InLibrary++
 			ss.BetterWanted++
-		case domain.SlotNotOutYet:
+		case mediafiles.SlotNotOutYet:
 			ss.NotOutYet++
-		case domain.SlotChosen, domain.SlotDownloading, domain.SlotStalled, domain.SlotImporting:
+		case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
 			ss.Downloading++
-		case domain.SlotFailed, domain.SlotNeedsADecision:
+		case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
 			ss.Failed++
-		case domain.SlotWanted:
+		case mediafiles.SlotWanted:
 			if keep {
 				ss.Missing++
 			}

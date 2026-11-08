@@ -10,8 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -43,7 +44,7 @@ type musicCtx struct {
 	pool         map[string]MusicCard
 	top          []string
 	tag          func(MusicCard) MusicCard
-	albumCard    func(*musicArtist, domain.Part) MusicCard
+	albumCard    func(*musicArtist, mediafiles.Part) MusicCard
 	names        *[]nameKey
 	cold         bool
 }
@@ -247,7 +248,7 @@ func yearOf(d string) int {
 	return y
 }
 
-func studio(p domain.Part) bool {
+func studio(p mediafiles.Part) bool {
 	return strings.EqualFold(derefStr(p.ReleaseType), "album") && len(p.SecondaryTypes) == 0
 }
 
@@ -327,9 +328,9 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 	}
 
 	// The Library's albums, for anniversaries, live and EPs, debuts, decades.
-	var parts []domain.Part
+	var parts []mediafiles.Part
 	if len(m.artists) > 0 {
-		parts, _ = database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL
+		parts, _ = database.Select[mediafiles.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`)
 	}
 	partHas := map[int64]bool{}
@@ -408,7 +409,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 
 	// Debut albums missing from the Library.
 	{
-		first := map[int64]domain.Part{}
+		first := map[int64]mediafiles.Part{}
 		for _, p := range parts {
 			if studio(p) && !p.ReleaseDate.After(m.now) {
 				if f, ok := first[p.TitleID]; !ok || p.ReleaseDate.Before(*f.ReleaseDate) {
@@ -533,7 +534,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 
 	// Soundtracks for movies and shows in the Library.
 	{
-		ts, _ := database.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed' ORDER BY id DESC LIMIT 60")
+		ts, _ := database.Select[mediafiles.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed' ORDER BY id DESC LIMIT 60")
 		var jobs []soundtrackJob
 		for _, t := range ts {
 			y := 0

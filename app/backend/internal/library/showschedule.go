@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -34,7 +36,7 @@ var placeholderNames = map[string]bool{"": true, "TBA": true, "TBD": true, "To B
 // fetched, yes; over 30 days since the last fetch, yes; an aired regular
 // episode still without a real name, yes; under 6 hours, no; not ended,
 // yes; ended with the last episode in the last 30 days, yes; else no.
-func ShouldRefreshShow(t domain.Title, f ShowFacts, now time.Time) (yes bool, why string) {
+func ShouldRefreshShow(t mediafiles.Title, f ShowFacts, now time.Time) (yes bool, why string) {
 	if t.RefreshedAt == nil {
 		return true, "never fetched"
 	}
@@ -84,7 +86,7 @@ const KindRefreshShows = "refresh_shows"
 // ShowRefreshPlan picks the shows a refresh-all run covers.
 func (s *Service) ShowRefreshPlan(ctx context.Context, byHand bool) (ids []int64, why map[int64]string, err error) {
 	db := s.Store.Read()
-	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' ORDER BY sort_name, id")
+	ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' ORDER BY sort_name, id")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,7 +138,7 @@ func (s *Service) OpenEpisodeGates(ctx context.Context) (int, error) {
 	n := 0
 	for _, id := range titles {
 		var opened []int64
-		var t domain.Title
+		var t mediafiles.Title
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			if err := database.Get(ctx, tx, "titles", id, &t); err != nil {
 				return err

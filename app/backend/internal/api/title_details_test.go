@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -31,7 +33,7 @@ func detailsRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
 		return err
 	})
 	if err != nil {

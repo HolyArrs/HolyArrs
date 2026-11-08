@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -281,7 +283,7 @@ func (s *Service) RepairArtistStandIns(ctx context.Context, by domain.Actor) (St
 	if done != "" {
 		return out, nil
 	}
-	ts, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND NOT "+emptyArtwork+" ORDER BY sort_name, id")
+	ts, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND NOT "+emptyArtwork+" ORDER BY sort_name, id")
 	if err != nil {
 		return out, err
 	}

@@ -10,6 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -81,7 +83,7 @@ func TestAlbumImportRefusesTrackWithoutAlbum(t *testing.T) {
 		t.Fatal("files were placed")
 	}
 	for i := range w.slots {
-		if st := w.state(t, i); st != domain.SlotDownloading {
+		if st := w.state(t, i); st != mediafiles.SlotDownloading {
 			t.Fatalf("track %d moved to %s", i+1, st)
 		}
 	}
@@ -153,7 +155,7 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 					return err
 				}
 				old := "Lab Band - First Light (2020) [MP3 V0]"
-				f := &domain.File{SlotIDs: []int64{w.slots[0]}, VersionID: vID, RelativePath: rp, Size: 100, AddedAt: time.Now().Add(-time.Hour),
+				f := &mediafiles.File{SlotIDs: []int64{w.slots[0]}, VersionID: vID, RelativePath: rp, Size: 100, AddedAt: time.Now().Add(-time.Hour),
 					Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &old, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 				var err error
 				if oldID, err = database.Insert(tx, "files", f, domain.System); err != nil {
@@ -183,7 +185,7 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 				if fi, err := os.Stat(filepath.Join(w.lib, "Lab Band", "First Light (2020)", f)); err != nil || fi.Size() != 2048 {
 					t.Fatalf("%s not in place: %v", f, err)
 				}
-				if st := w.state(t, i); st != domain.SlotInLibrary {
+				if st := w.state(t, i); st != mediafiles.SlotInLibrary {
 					t.Fatalf("track %d: %s", i+1, st)
 				}
 			}
@@ -194,7 +196,7 @@ func TestAlbumTrackUpgradeSurvivesCrash(t *testing.T) {
 			if fi, _ := os.Stat(held[0]); fi == nil || fi.Size() != 100 {
 				t.Fatal("the held copy is not the old one")
 			}
-			var old domain.File
+			var old mediafiles.File
 			_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 			rel, _ := filepath.Rel(w.lib, held[0])
 			if old.State != "replaced" || old.RelativePath != filepath.ToSlash(rel) {

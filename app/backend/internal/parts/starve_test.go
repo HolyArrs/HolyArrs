@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -17,7 +19,7 @@ func TestHeldJobsDoNotStarveTheirPool(t *testing.T) {
 	f := newFix(t)
 	var music, movie int64
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Low Bells", SortName: "low bells", Aliases: []string{}, SourceIDs: map[string]string{},
+		ti := &mediafiles.Title{Kind: "artist", GateDriver: "none", Name: "Low Bells", SortName: "low bells", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		var err error
 		if music, err = database.Insert(tx, "titles", ti, domain.System); err != nil {

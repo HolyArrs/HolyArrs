@@ -10,14 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func addSummaryTitle(t *testing.T, s *database.Store, kind, name string, slotState domain.SlotState) {
+func addSummaryTitle(t *testing.T, s *database.Store, kind, name string, slotState mediafiles.SlotState) {
 	t.Helper()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		title := domain.Title{
+		title := mediafiles.Title{
 			Kind: kind, Name: name, SortName: strings.ToLower(name), MetadataSource: "local",
 			WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all",
 			ReleaseGate: "released", GateDriver: "none", Status: "released",
@@ -32,19 +34,19 @@ func addSummaryTitle(t *testing.T, s *database.Store, kind, name string, slotSta
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pickRulesID); err != nil {
 			return err
 		}
-		folder := domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: name, Health: "ok", SameDiskAs: []int64{}}
+		folder := mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: name, Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", &folder, domain.System); err != nil {
 			return err
 		}
-		item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
+		item := mediafiles.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
 		if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 			return err
 		}
-		version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: folder.ID, PickRulesID: pickRulesID}
+		version := mediafiles.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: folder.ID, PickRulesID: pickRulesID}
 		if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 			return err
 		}
-		_, err := database.Insert(tx, "slots", &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: slotState}, domain.System)
+		_, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: item.ID, VersionID: version.ID, State: slotState}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -67,7 +69,7 @@ func readLibrarySummary(t *testing.T, base string) struct {
 
 func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
 	f := newCtl(t, false)
-	addSummaryTitle(t, f.s, "movie", "Missing Movie", domain.SlotWanted)
+	addSummaryTitle(t, f.s, "movie", "Missing Movie", mediafiles.SlotWanted)
 	addSummaryTitle(t, f.s, "show", "Visible Show", "")
 	addSummaryTitle(t, f.s, "artist", "Visible Artist", "")
 
@@ -91,7 +93,7 @@ func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
 
 func TestLibrarySummaryKeepsAllKindsVisibleInSafeMode(t *testing.T) {
 	f := newCtlMode(t, false, true)
-	addSummaryTitle(t, f.s, "movie", "Safe Movie", domain.SlotSearching)
+	addSummaryTitle(t, f.s, "movie", "Safe Movie", mediafiles.SlotSearching)
 	addSummaryTitle(t, f.s, "show", "Safe Show", "")
 	addSummaryTitle(t, f.s, "artist", "Safe Artist", "")
 
@@ -104,7 +106,7 @@ func TestLibrarySummaryKeepsAllKindsVisibleInSafeMode(t *testing.T) {
 func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 	f := newCtl(t, false)
 	var pickRulesID int64
-	folder := domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Scale movies", Health: "ok", SameDiskAs: []int64{}}
+	folder := mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Scale movies", Health: "ok", SameDiskAs: []int64{}}
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pickRulesID); err != nil {
 			return err

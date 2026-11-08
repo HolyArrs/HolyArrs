@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
 // protectedChoiceErr is the error for choosing a Release into a Slot whose copy is protected. It wraps ErrBusy so callers treat it as a lost race.
@@ -18,7 +18,7 @@ func protectedChoiceErr() error {
 }
 
 // choiceStateTx reads a Slot's state inside the write that chooses for it, and refuses when its Title is not active or its copy is protected. Checking in the same transaction keeps a protection set meanwhile from being overwritten.
-func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
+func choiceStateTx(tx *sql.Tx, slotID int64) (mediafiles.SlotState, error) {
 	var slotState, titleState string
 	var protected bool
 	err := tx.QueryRow(`SELECT s.state, t.state, COALESCE(f.protected, 0)
@@ -28,12 +28,12 @@ func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
 		return "", err
 	}
 	if titleState != "active" {
-		return domain.SlotState(slotState), fmt.Errorf("%w: the Title is %s", ErrBusy, strings.ReplaceAll(titleState, "_", " "))
+		return mediafiles.SlotState(slotState), fmt.Errorf("%w: the Title is %s", ErrBusy, strings.ReplaceAll(titleState, "_", " "))
 	}
 	if protected {
-		return domain.SlotState(slotState), protectedChoiceErr()
+		return mediafiles.SlotState(slotState), protectedChoiceErr()
 	}
-	return domain.SlotState(slotState), nil
+	return mediafiles.SlotState(slotState), nil
 }
 
 // slotHasProtectedCopy reports whether the Slot's current file is protected.
@@ -47,14 +47,14 @@ func slotHasProtectedCopy(ctx context.Context, db interface {
 }
 
 // refuseCopyChoice turns a verdict into a refusal with one copy-step reason and clears everything that would let it win.
-func refuseCopyChoice(v judge.Verdict, rule, detail string) judge.Verdict {
-	v.Reasons = append(v.Reasons, judge.Reason{Step: "copy", Rule: rule, Effect: "fail", Detail: detail})
+func refuseCopyChoice(v mediafiles.Verdict, rule, detail string) mediafiles.Verdict {
+	v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: rule, Effect: "fail", Detail: detail})
 	v.Passed, v.Outcome, v.HoldUntil, v.Rank = false, "refused", nil, 0
 	return v
 }
 
 // copyChoiceVerdict adds the checks that depend on the Version a movie is chosen for. A wrong or unclear edition refuses the Release. A missing audio language only warns, because the media inspected at import decides.
-func copyChoiceVerdict(c slotCtx, rel judge.Release, v judge.Verdict) judge.Verdict {
+func copyChoiceVerdict(c slotCtx, rel mediafiles.ReleaseFacts, v mediafiles.Verdict) mediafiles.Verdict {
 	if c.ti.Kind != "" && c.ti.Kind != "movie" {
 		return v
 	}
@@ -66,7 +66,7 @@ func copyChoiceVerdict(c slotCtx, rel judge.Release, v judge.Verdict) judge.Verd
 		case len(editions) > 1:
 			return refuseCopyChoice(v, "edition_ambiguous", "edition is ambiguous for the selected Version")
 		case importer.EditionKey(editions[0]) == importer.EditionKey(wanted):
-			v.Reasons = append(v.Reasons, judge.Reason{Step: "copy", Rule: "edition", Effect: "pass", Detail: "edition matches this Version"})
+			v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "edition", Effect: "pass", Detail: "edition matches this Version"})
 		default:
 			return refuseCopyChoice(v, "edition_wrong", "edition does not match the selected Version")
 		}
@@ -80,7 +80,7 @@ func copyChoiceVerdict(c slotCtx, rel judge.Release, v judge.Verdict) judge.Verd
 			}
 		}
 		if missing {
-			v.Reasons = append(v.Reasons, judge.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
+			v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
 				Detail: "the Release name does not claim every requested audio language; inspected media decides at import"})
 		}
 	}

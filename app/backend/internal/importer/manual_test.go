@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -91,7 +93,7 @@ func TestByHandShow(t *testing.T) {
 	}
 	for _, n := range []int{1, 3} {
 		sl := w.slot(t, n)
-		if sl.FileID == nil || (sl.State != domain.SlotInLibrary && sl.State != domain.SlotBetterWanted) {
+		if sl.FileID == nil || (sl.State != mediafiles.SlotInLibrary && sl.State != mediafiles.SlotBetterWanted) {
 			t.Fatalf("slot %d %+v", n, sl)
 		}
 		f := w.file(t, *sl.FileID)
@@ -106,7 +108,7 @@ func TestByHandShow(t *testing.T) {
 	if len(es) != 2 || es[0].SlotID == nil || es[0].Data["by_hand"] != true {
 		t.Fatalf("events %+v", es)
 	}
-	imps, _ := database.Select[domain.Import](ctx, w.s.Read(), "imports", "mode = 'by_hand'")
+	imps, _ := database.Select[mediafiles.Import](ctx, w.s.Read(), "imports", "mode = 'by_hand'")
 	if len(imps) != 2 || imps[0].State != "done" {
 		t.Fatalf("imports %+v", imps)
 	}
@@ -146,7 +148,7 @@ func TestByHandMovie(t *testing.T) {
 	if !strings.HasPrefix(res[0].Target, filepath.Join(w.lib, "Dune - Part Two (2024)")+string(filepath.Separator)) {
 		t.Fatalf("target %s", res[0].Target)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
 	if sl.FileID == nil || *sl.FileID != res[0].FileID {
 		t.Fatalf("slot %+v", sl)

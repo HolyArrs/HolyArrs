@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -17,7 +19,7 @@ import (
 // and 3 need a decision.
 func seedAlbum(t *testing.T) (*dl41, []int64) {
 	t.Helper()
-	x := seed41(t, domain.SlotNeedsADecision, "finished")
+	x := seed41(t, mediafiles.SlotNeedsADecision, "finished")
 	ids := []int64{x.slotID}
 	err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var titleID, verID, itemID int64
@@ -28,8 +30,8 @@ func seedAlbum(t *testing.T) (*dl41, []int64) {
 			return err
 		}
 		rd := time.Date(2020, 5, 1, 0, 0, 0, 0, time.UTC)
-		p := &domain.Part{TitleID: titleID, Kind: "album", Name: "First Light", ReleaseDate: &rd, KeepUpToDate: true, SourceIDs: map[string]string{},
-			Pressings: []domain.Pressing{}, SecondaryTypes: []string{}, Included: true}
+		p := &mediafiles.Part{TitleID: titleID, Kind: "album", Name: "First Light", ReleaseDate: &rd, KeepUpToDate: true, SourceIDs: map[string]string{},
+			Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}, Included: true}
 		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
@@ -37,14 +39,14 @@ func seedAlbum(t *testing.T) (*dl41, []int64) {
 			return err
 		}
 		for _, n := range []int{2, 3} {
-			st := map[int]domain.SlotState{2: domain.SlotInLibrary, 3: domain.SlotNeedsADecision}[n]
+			st := map[int]mediafiles.SlotState{2: mediafiles.SlotInLibrary, 3: mediafiles.SlotNeedsADecision}[n]
 			disc, num, name := 1, n, map[int]string{2: "Glass River", 3: "Night Train"}[n]
-			it := &domain.Item{TitleID: titleID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
+			it := &mediafiles.Item{TitleID: titleID, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			reason := "the file could not be placed: not enough free space for the whole album"
-			sl := &domain.Slot{ItemID: it.ID, VersionID: verID, State: st, LastReason: &reason}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: verID, State: st, LastReason: &reason}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}

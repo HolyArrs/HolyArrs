@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -226,7 +228,7 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 			return err
 		}
 	}
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, tx, "library_folders", folder, &lf); errors.Is(err, database.ErrNotFound) {
 		return noFolder
 	} else if err != nil {
@@ -237,7 +239,7 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	}
 	var rules *int64
 	if in.PickRulesID != 0 {
-		var pr domain.PickRules
+		var pr mediafiles.PickRules
 		if err := database.Get(ctx, tx, "pick_rules", in.PickRulesID, &pr); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoPickRules
 		} else if err != nil {

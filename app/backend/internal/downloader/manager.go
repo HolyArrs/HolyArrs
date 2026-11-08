@@ -15,14 +15,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 // KindGrab is the Job kind that sends a chosen Release to a Downloader.
@@ -213,7 +213,7 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		// No Downloader takes the title's tags. Trying again changes nothing until a
 		// person changes tags, so the Slot waits on a decision. A Slot that moved on
 		// meanwhile refuses the change; nothing is left to do then.
-		_ = store.MoveSlot(ctx, m.Store, r.Job.Subject.ID, domain.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
+		_ = mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
 		r.SetResult(map[string]any{"not_sent": te.Error()})
 		return nil
 	}
@@ -269,7 +269,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if err := database.Get(ctx, db, "releases", releaseID, &rel); err != nil {
 		return 0, fmt.Errorf("release %d: %w", releaseID, err)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(ctx, db, "slots", slotID, &sl); err != nil {
 		return 0, fmt.Errorf("slot %d: %w", slotID, err)
 	}
@@ -282,8 +282,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if attempt != nil && attempt.State == "abandoned" {
 		return 0, ErrAttemptStopped
 	}
-	if sl.State != domain.SlotChosen {
-		if sl.ActiveDownloadID != nil && sl.State == domain.SlotDownloading {
+	if sl.State != mediafiles.SlotChosen {
+		if sl.ActiveDownloadID != nil && sl.State == mediafiles.SlotDownloading {
 			var prior domain.Download
 			if err := database.Get(ctx, db, "downloads", *sl.ActiveDownloadID, &prior); err == nil && prior.ReleaseID != nil && *prior.ReleaseID == releaseID && slices.Contains(prior.SlotIDs, slotID) && isActive(prior.State) {
 				return prior.ID, nil
@@ -342,7 +342,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			if err != nil {
 				return 0, err
 			}
-			fit := tagset.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
+			fit := mediafiles.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
 			if len(fit) == 0 && len(all) > 0 {
 				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
 			}
@@ -403,7 +403,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				if err := tx.QueryRowContext(ctx, "SELECT active_download_id, state FROM slots WHERE id = ?", slotID).Scan(&active, &state); err != nil {
 					return err
 				}
-				if active.Valid && active.Int64 == prior[0].ID && state == string(domain.SlotDownloading) {
+				if active.Valid && active.Int64 == prior[0].ID && state == string(mediafiles.SlotDownloading) {
 					dl = &prior[0]
 					adopted = true
 					return nil
@@ -436,11 +436,11 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				}
 			}
 		}
-		var current domain.Slot
+		var current mediafiles.Slot
 		if err := database.Get(ctx, tx, "slots", slotID, &current); err != nil {
 			return err
 		}
-		if current.State != domain.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != rel.ID ||
+		if current.State != mediafiles.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != rel.ID ||
 			!current.CreatedAt.Equal(sl.CreatedAt) || current.VersionID != sl.VersionID {
 			return errors.New("the Slot changed while sending this Release")
 		}
@@ -462,7 +462,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				if id == slotID || tx.QueryRow(`SELECT state, chosen_release_id, version_id FROM slots s WHERE id = ?
 					AND (? = 0 OR EXISTS (SELECT 1 FROM downloader_attempts a, json_each(a.slot_snapshots) j
 					WHERE a.id = ? AND json_extract(j.value, '$.id') = s.id AND json_extract(j.value, '$.created_at') = s.created_at))`, id, intentID, intentID).Scan(&st, &chosenFor, &versionOf) != nil ||
-					st != string(domain.SlotChosen) || chosenFor.Int64 != rel.ID || versionOf.Int64 != version {
+					st != string(mediafiles.SlotChosen) || chosenFor.Int64 != rel.ID || versionOf.Int64 != version {
 					continue
 				}
 				moved = append(moved, id)
@@ -498,7 +498,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			if _, err := tx.Exec("UPDATE slots SET active_download_id = ? WHERE id = ?", dl.ID, id); err != nil {
 				return err
 			}
-			if err := store.MoveSlotTx(tx, id, domain.SlotDownloading, "sent "+rel.Name+" to "+d.Name, by); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, id, mediafiles.SlotDownloading, "sent "+rel.Name+" to "+d.Name, by); err != nil {
 				return err
 			}
 		}
@@ -512,7 +512,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	}
 	m.event(ctx, dl, "download_sent", fmt.Sprintf("Sent %s to %s", rel.Name, d.Name))
 	for _, id := range moved {
-		m.publish("slot", map[string]any{"id": id, "state": domain.SlotDownloading})
+		m.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotDownloading})
 	}
 	m.publish("download", dl)
 	m.Poke()
@@ -806,12 +806,12 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 			}
 		}
 		freed = true
-		return store.MoveSlotTx(tx, slotID, domain.SlotWanted, "not sent: "+reason, by)
+		return mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotWanted, "not sent: "+reason, by)
 	})
 	if err != nil || !freed {
 		return
 	}
-	m.publish("slot", map[string]any{"id": slotID, "state": domain.SlotWanted, "reason": reason})
+	m.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotWanted, "reason": reason})
 	if turnDown && m.OnFailed != nil {
 		m.OnFailed(ctx, slotID)
 	}
@@ -1202,24 +1202,24 @@ func hours(d time.Duration) string {
 
 func (m *Manager) stateMoved(ctx context.Context, from string, d *domain.Download) {
 	m.event(ctx, d, "download_"+d.State, fmt.Sprintf("Download %s: %s", d.ExternalID[:min(8, len(d.ExternalID))], d.State))
-	var to domain.SlotState
+	var to mediafiles.SlotState
 	reason := ""
 	if d.StateReason != nil {
 		reason = *d.StateReason
 	}
 	switch d.State {
 	case "stalled":
-		to = domain.SlotStalled
+		to = mediafiles.SlotStalled
 	case "downloading", "finished":
 		// Back from stalled, or finished straight from stalled: the Slots wait for this
 		// download again, so the import finds them.
 		if from == "stalled" {
-			to = domain.SlotDownloading
+			to = mediafiles.SlotDownloading
 		}
 	}
 	for _, sid := range d.SlotIDs {
 		if to != "" {
-			if err := store.MoveSlot(ctx, m.Store, sid, to, reason, domain.System); err == nil {
+			if err := mediafiles.MoveSlot(ctx, m.Store, sid, to, reason, domain.System); err == nil {
 				m.publish("slot", map[string]any{"id": sid, "state": to, "reason": reason})
 			}
 		}

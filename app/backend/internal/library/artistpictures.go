@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -35,7 +37,7 @@ const emptyArtwork = "(artwork IS NULL OR artwork IN ('', '[]', 'null'))"
 // id. One it has not stored yet fills nothing now; the 6-hour pass asks
 // again. Artwork, backdrop or logo already set is never replaced.
 func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by domain.Actor) (string, error) {
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return "", err
 	}
@@ -162,7 +164,7 @@ func (s *Service) FillAllArtistPictures(ctx context.Context, by domain.Actor, r 
 		return out, err
 	}
 	out.StandIn = repair
-	ts, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND "+emptyArtwork+" ORDER BY sort_name, id")
+	ts, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND "+emptyArtwork+" ORDER BY sort_name, id")
 	if err != nil {
 		return out, err
 	}

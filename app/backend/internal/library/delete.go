@@ -13,12 +13,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 // KindCleanHolding empties old days out of the holding folders.
@@ -134,8 +135,8 @@ type RemovePlan struct {
 }
 
 // planRemove works out a delete. Nothing changes.
-func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, now time.Time) (RemovePlan, domain.Title, error) {
-	var t domain.Title
+func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, error) {
+	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return RemovePlan{}, t, err
 	}
@@ -147,14 +148,14 @@ func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, n
 		return RemovePlan{}, t, err
 	}
 	p := RemovePlan{TitleID: t.ID, Name: t.Name, Scope: "title", Choice: c, Held: []RemoveFile{}, Kept: []RemoveFile{}, HoldingDays: rules.HoldingDays}
-	files, err := database.Select[domain.File](ctx, db, "files",
+	files, err := database.Select[mediafiles.File](ctx, db, "files",
 		"state IN ('present', 'missing') AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
 		return p, t, err
 	}
 	for _, f := range files {
-		var v domain.Version
-		var lf domain.LibraryFolder
+		var v mediafiles.Version
+		var lf mediafiles.LibraryFolder
 		if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
 			return p, t, err
 		}
@@ -267,7 +268,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 				for k, v := range t.SourceIDs {
 					ids[k] = v
 				}
-				n := domain.NeverAdd{Kind: "show", SourceIDs: ids, Name: t.Name, Reason: "deleted from the Library"}
+				n := mediafiles.NeverAdd{Kind: "show", SourceIDs: ids, Name: t.Name, Reason: "deleted from the Library"}
 				if _, err := database.Insert(tx, "never_add", &n, by); err != nil {
 					return err
 				}
@@ -277,7 +278,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 			if on, err := ArtistOnNeverAdd(ctx, tx, t.SourceIDs["musicbrainz"]); err != nil {
 				return err
 			} else if !on {
-				n := domain.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": t.SourceIDs["musicbrainz"]}, Name: t.Name, Reason: "deleted from the Library"}
+				n := mediafiles.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": t.SourceIDs["musicbrainz"]}, Name: t.Name, Reason: "deleted from the Library"}
 				if _, err := database.Insert(tx, "never_add", &n, by); err != nil {
 					return err
 				}
@@ -287,7 +288,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 			if on, err := OnNeverAdd(ctx, tx, t.SourceIDs["tmdb"]); err != nil {
 				return err
 			} else if !on {
-				n := domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": t.SourceIDs["tmdb"]}, Name: t.Name, Reason: "deleted from the Library"}
+				n := mediafiles.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": t.SourceIDs["tmdb"]}, Name: t.Name, Reason: "deleted from the Library"}
 				if _, err := database.Insert(tx, "never_add", &n, by); err != nil {
 					return err
 				}
@@ -317,15 +318,15 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 // or a link stays.
 func (s *Service) removeEmptyFolders(ctx context.Context, titleID int64, held []RemoveFile, showFolder bool) {
 	db := s.Store.Read()
-	vs, _ := database.Select[domain.Version](ctx, db, "versions", "title_id = ?", titleID)
+	vs, _ := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ?", titleID)
 	names := map[string]bool{}
-	if st, err := naming.Read(ctx, db); err == nil {
+	if st, err := mediafiles.ReadNaming(ctx, db); err == nil {
 		rows, err := db.QueryContext(ctx, "SELECT DISTINCT json_extract(numbers, '$.season') FROM items WHERE title_id = ? AND json_extract(numbers, '$.season') IS NOT NULL", titleID)
 		if err == nil {
 			for rows.Next() {
 				var n int
 				if rows.Scan(&n) == nil {
-					for _, name := range []string{naming.SeasonFolder(st, n), fmt.Sprintf("Season %d", n), fmt.Sprintf("Season %02d", n)} {
+					for _, name := range []string{mediafiles.SeasonFolder(st, n), fmt.Sprintf("Season %d", n), fmt.Sprintf("Season %02d", n)} {
 						if name != "" {
 							names[strings.ToLower(name)] = true
 						}
@@ -513,7 +514,7 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 	}
 	today := s.now().Truncate(24 * time.Hour)
 	cutoff := today.AddDate(0, 0, -rules.HoldingDays)
-	lfs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return 0, err
 	}

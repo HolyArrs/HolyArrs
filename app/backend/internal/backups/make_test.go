@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -324,7 +326,7 @@ func TestRestoreSwapsOnRestart(t *testing.T) {
 	ctx := context.Background()
 	write := func(name string) {
 		err := s.Write(ctx, func(tx *sql.Tx) error {
-			_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: "/m/" + name, Kind: "movie", Label: name,
+			_, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: "/m/" + name, Kind: "movie", Label: name,
 				Health: "ok", SameDiskAs: []int64{}}, domain.System)
 			return err
 		})

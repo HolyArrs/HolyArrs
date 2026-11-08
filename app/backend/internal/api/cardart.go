@@ -10,9 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -163,7 +164,7 @@ func (a *API) cardLangs() []string {
 // libraryCardArt is Home's card pictures for Library titles, by
 // "kind:tmdb id". Titles without a pick are queued for the paced filler
 // (no outside call on the request).
-func (a *API) libraryCardArt(r *http.Request, titles []domain.Title) map[string]metadata.CardArt {
+func (a *API) libraryCardArt(r *http.Request, titles []mediafiles.Title) map[string]metadata.CardArt {
 	lang := trailerLanguage(r)
 	a.noteCardLang(lang)
 	var keys [][2]string

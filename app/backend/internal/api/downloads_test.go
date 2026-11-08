@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -31,7 +33,7 @@ type dl41 struct {
 
 // seed41 makes one movie with a Slot in slotState, its Release, a fake
 // qBittorrent and a Download in dlState.
-func seed41(t *testing.T, slotState domain.SlotState, dlState string) *dl41 {
+func seed41(t *testing.T, slotState mediafiles.SlotState, dlState string) *dl41 {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
@@ -53,9 +55,9 @@ func seed41(t *testing.T, slotState domain.SlotState, dlState string) *dl41 {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
 		y := 2020
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Year: &y, Aliases: []string{}, SourceIDs: map[string]string{},
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Year: &y, Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
@@ -63,16 +65,16 @@ func seed41(t *testing.T, slotState domain.SlotState, dlState string) *dl41 {
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		ver := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true, KeepUpToDate: true}
+		ver := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", ver, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: ver.ID, State: slotState}
-		if slotState == domain.SlotNeedsADecision {
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: ver.ID, State: slotState}
+		if slotState == mediafiles.SlotNeedsADecision {
 			r := "the download failed and no other Release passed the Pick rules (3 found, 3 refused)"
 			sl.LastReason = &r
 		}
@@ -136,7 +138,7 @@ func exec41(t *testing.T, s *database.Store, q string, args ...any) {
 
 // route: GET /api/v1/downloads/view
 func TestDownloadsView(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var out struct {
 		Downloads []DownloadRow `json:"downloads"`
 	}
@@ -181,7 +183,7 @@ func TestDownloadsView(t *testing.T) {
 
 // route: POST /api/v1/downloads/{id}/remove
 func TestRemoveDownloadRoute(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/remove", `{"delete_files":"yes"}`, 400)
 	// Defaults: delete files, keep the Release, the movie goes back to wanted.
 	var v DownloadView
@@ -199,7 +201,7 @@ func TestRemoveDownloadRoute(t *testing.T) {
 	do(t, "POST", x.srv.URL+"/api/v1/downloads/999/remove", "", 404)
 
 	// Choices given: keep the files, turn the Release down, no search.
-	y := seed41(t, domain.SlotDownloading, "stalled")
+	y := seed41(t, mediafiles.SlotDownloading, "stalled")
 	do(t, "POST", y.srv.URL+"/api/v1/downloads/"+itoa(y.dlID)+"/remove", `{"delete_files":false,"turn_down":true,"search_again":false}`, 200)
 	var rs string
 	_ = y.s.Read().QueryRow("SELECT state FROM releases WHERE id = ?", y.relID).Scan(&rs)
@@ -210,7 +212,7 @@ func TestRemoveDownloadRoute(t *testing.T) {
 
 // route: GET /api/v1/needs-decision
 func TestNeedsDecisionList(t *testing.T) {
-	x := seed41(t, domain.SlotNeedsADecision, "failed")
+	x := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	var out struct {
 		Items []DecisionView `json:"items"`
 		Count int            `json:"count"`
@@ -233,7 +235,7 @@ func TestNeedsDecisionList(t *testing.T) {
 
 // route: POST /api/v1/needs-decision/{id}/decide
 func TestDecideRoute(t *testing.T) {
-	x := seed41(t, domain.SlotNeedsADecision, "failed")
+	x := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	u := x.srv.URL + "/api/v1/needs-decision/" + itoa(x.slotID) + "/decide"
 	do(t, "POST", u, `{"action":"dance"}`, 400)
 	do(t, "POST", x.srv.URL+"/api/v1/needs-decision/999/decide", `{"action":"search"}`, 404)
@@ -262,7 +264,7 @@ func TestDecideRoute(t *testing.T) {
 	}
 	do(t, "POST", u, `{"action":"stop"}`, 404)
 	// No Release to turn down.
-	y := seed41(t, domain.SlotNeedsADecision, "failed")
+	y := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	exec41(t, y.s, "UPDATE downloads SET release_id = NULL")
 	do(t, "POST", y.srv.URL+"/api/v1/needs-decision/"+itoa(y.slotID)+"/decide", `{"action":"turn_down"}`, 409)
 }
@@ -270,7 +272,7 @@ func TestDecideRoute(t *testing.T) {
 // 4.1.3 minor 8: Stop looking on a Slot that moved on meanwhile is refused
 // and leaves Keep up to date as it was.
 func TestDecideStopRefusesSlotThatMovedOn(t *testing.T) {
-	x := seed41(t, domain.SlotNeedsADecision, "failed")
+	x := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	exec41(t, x.s, "UPDATE versions SET keep_up_to_date = 1")
 	beforeDecide = func() { exec41(t, x.s, "UPDATE slots SET state = 'searching'") }
 	t.Cleanup(func() { beforeDecide = nil })

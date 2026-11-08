@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -26,10 +28,10 @@ func TestFileReplacedKeepsOldAndNewQuality(t *testing.T) {
 }
 
 func TestQualityText(t *testing.T) {
-	if got := qualityText(domain.Quality{Resolution: 2160, Source: "web_dl", HDR: []string{"dv"}}); got != "2160p WEB-DL DV" {
+	if got := qualityText(mediafiles.Quality{Resolution: 2160, Source: "web_dl", HDR: []string{"dv"}}); got != "2160p WEB-DL DV" {
 		t.Fatal(got)
 	}
-	if got := qualityText(domain.Quality{}); got != "" {
+	if got := qualityText(mediafiles.Quality{}); got != "" {
 		t.Fatal(got)
 	}
 }

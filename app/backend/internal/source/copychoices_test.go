@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
 // protectSlotCopy gives the Slot a protected file and returns its ID.
@@ -19,13 +20,13 @@ func protectSlotCopy(t *testing.T, f fixture, slotID, versionID int64) int64 {
 	t.Helper()
 	var fileID int64
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		fl := &domain.File{Protected: true, SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: "protected.mkv",
+		fl := &mediafiles.File{Protected: true, SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: "protected.mkv",
 			Size: 1, AddedAt: time.Now(), Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 			return err
 		}
 		fileID = fl.ID
-		_, err := tx.Exec("UPDATE slots SET file_id = ?, state = ? WHERE id = ?", fl.ID, domain.SlotBetterWanted, slotID)
+		_, err := tx.Exec("UPDATE slots SET file_id = ?, state = ? WHERE id = ?", fl.ID, mediafiles.SlotBetterWanted, slotID)
 		return err
 	})
 	if err != nil {
@@ -47,7 +48,7 @@ func TestChoose_CannotForceProtectedCopy(t *testing.T) {
 	if !errors.Is(err, ErrBusy) || !strings.Contains(err.Error(), "protected") {
 		t.Fatalf("forced protected choice: %v", err)
 	}
-	if got := slotState(t, f).State; got != domain.SlotBetterWanted {
+	if got := slotState(t, f).State; got != mediafiles.SlotBetterWanted {
 		t.Fatalf("slot moved to %s", got)
 	}
 }
@@ -122,7 +123,7 @@ func TestChoose_MovieEditionConstrainsEachVersion(t *testing.T) {
 }
 
 // verdictHas reports whether any reason detail contains the word.
-func verdictHas(v judge.Verdict, word string) bool {
+func verdictHas(v mediafiles.Verdict, word string) bool {
 	for _, reason := range v.Reasons {
 		if strings.Contains(reason.Detail, word) {
 			return true
@@ -136,7 +137,7 @@ func TestChoose_ShowPackLeavesProtectedEpisode(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	addFile(t, f, f.slots["S01E02"], "protected-episode")
 	exec(t, f.fixture, `UPDATE files SET protected = 1 WHERE id = (SELECT file_id FROM slots WHERE id = ?)`, f.slots["S01E02"])
-	exec(t, f.fixture, `UPDATE slots SET state = ? WHERE id = ?`, domain.SlotInLibrary, f.slots["S01E02"])
+	exec(t, f.fixture, `UPDATE slots SET state = ? WHERE id = ?`, mediafiles.SlotInLibrary, f.slots["S01E02"])
 	sr := &Searcher{Store: f.s}
 	runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false, "by_hand": true})
 	pack := relByName(t, f.fixture, "Copper.Valley.S01.720p.HDTV.x264-OXBOW")
@@ -148,7 +149,7 @@ func TestChoose_ShowPackLeavesProtectedEpisode(t *testing.T) {
 	if len(choice.SlotIDs) != 2 || !strings.Contains(strings.Join(choice.Warnings, " "), "protected") {
 		t.Fatalf("choice did not leave out protected episode: %+v", choice)
 	}
-	if got := f.state(t, "S01E02"); got != domain.SlotInLibrary {
+	if got := f.state(t, "S01E02"); got != mediafiles.SlotInLibrary {
 		t.Fatalf("protected episode moved to %s", got)
 	}
 	var protected bool

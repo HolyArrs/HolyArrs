@@ -13,6 +13,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -122,7 +124,7 @@ func newAskRig(t *testing.T) *askRig {
 func insertFolder(t *testing.T) func(tx *sql.Tx) error {
 	dir := t.TempDir()
 	return func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: dir, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: dir, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
 		return err
 	}
 }

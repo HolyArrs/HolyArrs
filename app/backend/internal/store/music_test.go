@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -68,21 +70,21 @@ func TestMusicMigrationKeepsMoviesAndShows(t *testing.T) {
 		t.Fatalf("backups before 0024: %v", b)
 	}
 	for id, kind := range map[int64]string{1: "movie", 2: "show"} {
-		var back domain.Title
+		var back mediafiles.Title
 		if err := database.Get(ctx, s.Read(), "titles", id, &back); err != nil || back.Kind != kind || back.AlbumChoice != nil || len(back.MusicSecondary) != 0 || back.ArtistType != nil {
 			t.Fatalf("%s after the migration %+v %v", kind, back, err)
 		}
 	}
-	var season domain.Part
+	var season mediafiles.Part
 	if err := database.Get(ctx, s.Read(), "parts", 1, &season); err != nil || season.Name != "Season 1" || len(season.SecondaryTypes) != 0 {
 		t.Fatalf("season %+v %v", season, err)
 	}
 	for _, id := range []int64{1, 2} {
-		var bs domain.Slot
-		if err := database.Get(ctx, s.Read(), "slots", id, &bs); err != nil || bs.State != domain.SlotInLibrary {
+		var bs mediafiles.Slot
+		if err := database.Get(ctx, s.Read(), "slots", id, &bs); err != nil || bs.State != mediafiles.SlotInLibrary {
 			t.Fatalf("slot %d %+v %v", id, bs, err)
 		}
-		var bi domain.Item
+		var bi mediafiles.Item
 		if err := database.Get(ctx, s.Read(), "items", id, &bi); err != nil || bi.LengthMS != nil {
 			t.Fatalf("item %d %+v %v", id, bi, err)
 		}
@@ -117,17 +119,17 @@ func TestMusicRows(t *testing.T) {
 	s, dir := openTest(t, database.Options{})
 	ctx := context.Background()
 	rel := time.Date(2020, 3, 6, 0, 0, 0, 0, time.UTC)
-	var artist domain.Title
-	var album domain.Part
+	var artist mediafiles.Title
+	var album mediafiles.Part
 	var chosen, other domain.AlbumPressing
-	var tracks []domain.Item
+	var tracks []mediafiles.Item
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		lf := domain.LibraryFolder{Path: dir, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
+		lf := mediafiles.LibraryFolder{Path: dir, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", &lf, domain.System); err != nil {
 			return err
 		}
 		choice, kind := "latest", "group"
-		artist = domain.Title{Kind: "artist", Name: "Lab Band", SortName: "lab band", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "a-1"},
+		artist = mediafiles.Title{Kind: "artist", Name: "Lab Band", SortName: "lab band", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "a-1"},
 			MetadataSource: "musicbrainz", KeepUpToDate: true, NewPartsPolicy: "future_only", ReleaseGate: "released", MusicTypes: []string{"album", "ep"},
 			MusicSecondary: []string{"studio", "live"}, MusicStatuses: []string{"official"}, WhyAdded: "by_hand", Artwork: []string{},
 			Status: "running", State: "active", GateDriver: "none", AlbumChoice: &choice, ArtistType: &kind}
@@ -138,13 +140,13 @@ func TestMusicRows(t *testing.T) {
 		if err := tx.QueryRow("SELECT id FROM pick_rules ORDER BY id LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		v := domain.Version{TitleID: artist.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Band", KeepUpToDate: true, IsMain: true}
+		v := mediafiles.Version{TitleID: artist.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Band", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", &v, domain.System); err != nil {
 			return err
 		}
 		typ := "album"
-		album = domain.Part{TitleID: artist.ID, Kind: "album", Name: "First Light", ReleaseType: &typ, ReleaseDate: &rel, KeepUpToDate: true,
-			SourceIDs: map[string]string{"musicbrainz": "rg-1"}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{"live"}, Included: true}
+		album = mediafiles.Part{TitleID: artist.ID, Kind: "album", Name: "First Light", ReleaseType: &typ, ReleaseDate: &rel, KeepUpToDate: true,
+			SourceIDs: map[string]string{"musicbrainz": "rg-1"}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{"live"}, Included: true}
 		if _, err := database.Insert(tx, "parts", &album, domain.System); err != nil {
 			return err
 		}
@@ -161,13 +163,13 @@ func TestMusicRows(t *testing.T) {
 		}
 		for _, pt := range chosen.Tracks {
 			name, ln, rec := pt.Name, pt.LengthMS, pt.RecordingID
-			it := domain.Item{TitleID: artist.ID, PartID: &album.ID, Kind: "track", Numbers: domain.Numbers{Disc: intp(pt.Disc), Track: intp(pt.Number)},
+			it := mediafiles.Item{TitleID: artist.ID, PartID: &album.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: intp(pt.Disc), Track: intp(pt.Number)},
 				Name: &name, AirDate: &rel, KeepUpToDate: true, RecordingID: &rec, LengthMS: &ln, SourceIDs: map[string]string{"musicbrainz": pt.ID}}
 			if _, err := database.Insert(tx, "items", &it, domain.System); err != nil {
 				return err
 			}
 			tracks = append(tracks, it)
-			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotWanted}, domain.System); err != nil {
 				return err
 			}
 		}
@@ -176,11 +178,11 @@ func TestMusicRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var back domain.Title
+	var back mediafiles.Title
 	if err := database.Get(ctx, s.Read(), "titles", artist.ID, &back); err != nil || *back.AlbumChoice != "latest" || len(back.MusicSecondary) != 2 || back.MusicStatuses[0] != "official" || *back.ArtistType != "group" {
 		t.Fatalf("artist back %+v %v", back, err)
 	}
-	var ba domain.Part
+	var ba mediafiles.Part
 	if err := database.Get(ctx, s.Read(), "parts", album.ID, &ba); err != nil || !ba.Included || ba.SecondaryTypes[0] != "live" || !ba.ReleaseDate.Equal(rel) {
 		t.Fatalf("album back %+v %v", ba, err)
 	}
@@ -188,7 +190,7 @@ func TestMusicRows(t *testing.T) {
 	if err := database.Get(ctx, s.Read(), "pressings", chosen.ID, &bp); err != nil || !bp.Chosen || len(bp.Tracks) != 2 || bp.Tracks[1].RecordingID != "rec-2" || bp.Formats[0] != "Digital Media" {
 		t.Fatalf("pressing back %+v %v", bp, err)
 	}
-	var bt domain.Item
+	var bt mediafiles.Item
 	if err := database.Get(ctx, s.Read(), "items", tracks[1].ID, &bt); err != nil || *bt.Numbers.Track != 2 || *bt.LengthMS != 180000 || *bt.RecordingID != "rec-2" {
 		t.Fatalf("track back %+v %v", bt, err)
 	}

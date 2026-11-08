@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -16,7 +18,7 @@ import (
 func TestLibraryTitleSearch(t *testing.T) {
 	srv, s, _ := setup(t)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		for _, title := range []domain.Title{
+		for _, title := range []mediafiles.Title{
 			{Kind: "movie", Name: "Amélie", SortName: "amelie", Aliases: []string{"Le Fabuleux Destin"}, Year: intPtr(2001), MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active"},
 			{Kind: "movie", Name: "Other Film", SortName: "other film", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active"},
 			{Kind: "movie", Name: "Removed Amélie", SortName: "removed amelie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "removed"},

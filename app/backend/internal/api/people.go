@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -491,7 +492,7 @@ func (a *API) titlePeople(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var title domain.Title
+	var title mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &title); err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			fail(w, http.StatusNotFound, "not found")

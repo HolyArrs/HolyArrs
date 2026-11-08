@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -170,7 +171,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 			log.Printf("api: follow on add: %v", err)
 		}
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
 		internal(w, err)
 		return
@@ -187,7 +188,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 }
 
 // showID reads a show Title from the path.
-func (a *API) showID(w http.ResponseWriter, r *http.Request) (domain.Title, bool) {
+func (a *API) showID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	t, ok := a.titleID(w, r)
 	if ok && t.Kind != "show" {
 		fail(w, http.StatusNotFound, "that Title is not a show")
@@ -259,7 +260,7 @@ type EpisodeSlot struct {
 	Reason     string `json:"reason,omitempty"`
 	FileID     *int64 `json:"file_id,omitempty"`
 	// File is the episode's file (path, size, quality, media info), asked for with files=1.
-	File *domain.File `json:"file,omitempty"`
+	File *mediafiles.File `json:"file,omitempty"`
 }
 
 // EpisodeView is one episode with its Slots.
@@ -281,7 +282,7 @@ type EpisodeView struct {
 	Slots          []EpisodeSlot     `json:"slots"`
 }
 
-func episodeView(it domain.Item) EpisodeView {
+func episodeView(it mediafiles.Item) EpisodeView {
 	v := EpisodeView{ID: it.ID, Absolute: it.Numbers.Absolute, AirDate: it.AirDate, Runtime: it.Runtime, RuntimeMinutes: it.Runtime, Still: it.Still, KeepUpToDate: it.KeepUpToDate,
 		Dropped: it.DroppedAt != nil, IDs: it.SourceIDs, Slots: []EpisodeSlot{}}
 	if it.Numbers.Season != nil {
@@ -320,12 +321,12 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		where += " AND json_extract(numbers, '$.season') = ?"
 		args = append(args, n)
 	}
-	its, err := database.Select[domain.Item](r.Context(), db, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
+	its, err := database.Select[mediafiles.Item](r.Context(), db, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	vs, err := database.Select[domain.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
+	vs, err := database.Select[mediafiles.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -334,15 +335,15 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	for _, v := range vs {
 		label[v.ID] = v.Label
 	}
-	slots, err := database.Select[domain.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", t.ID)
+	slots, err := database.Select[mediafiles.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	// files=1 adds each episode's file, for the episode details on the title page.
-	files := map[int64]*domain.File{}
+	files := map[int64]*mediafiles.File{}
 	if r.URL.Query().Get("files") == "1" {
-		fs, err := database.Select[domain.File](r.Context(), db, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, t.ID)
+		fs, err := database.Select[mediafiles.File](r.Context(), db, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, t.ID)
 		if err != nil {
 			internal(w, err)
 			return

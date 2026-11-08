@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -219,7 +221,7 @@ func (a *API) warmMusic(ctx context.Context) {
 	if _, ok := a.genreProvider(); !ok {
 		return
 	}
-	titles, err := database.Select[domain.Title](ctx, a.s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[mediafiles.Title](ctx, a.s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		return
 	}

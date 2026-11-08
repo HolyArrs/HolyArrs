@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -23,7 +25,7 @@ import (
 // Slot (slot_id) or, with none of them, every album with a track kept up to
 // date and looking. version_id narrows to one Version. choose false only
 // lists the Releases, and needs an album.
-func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Title, in showSearchIn) {
+func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in showSearchIn) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	if in.Season != nil {
@@ -31,13 +33,13 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Titl
 		return
 	}
 	listOnly := in.Choose != nil && !*in.Choose
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	if in.VersionID != nil {
-		vs = slices.DeleteFunc(vs, func(v domain.Version) bool { return v.ID != *in.VersionID })
+		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != *in.VersionID })
 		if len(vs) == 0 {
 			fail(w, http.StatusNotFound, "no such Version on this artist")
 			return
@@ -48,12 +50,12 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Titl
 	case in.AlbumID != nil:
 		album = *in.AlbumID
 	case in.SlotID != nil:
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) {
 			fail(w, http.StatusNotFound, "no such Slot on this artist")
 			return
 		}
-		vs = slices.DeleteFunc(vs, func(v domain.Version) bool { return v.ID != sl.VersionID })
+		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != sl.VersionID })
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(part_id, 0) FROM items WHERE id = ?", sl.ItemID).Scan(&album)
 	case in.ItemID != nil:
 		if !a.slotOfTitle(ctx, *in.ItemID, t.ID) {
@@ -131,7 +133,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Titl
 	}
 	rows.Close()
 	list = slices.DeleteFunc(list, func(x pv) bool {
-		return !slices.ContainsFunc(vs, func(v domain.Version) bool { return v.ID == x.ver })
+		return !slices.ContainsFunc(vs, func(v mediafiles.Version) bool { return v.ID == x.ver })
 	})
 	// Every album × Version at once would ask the Sources hundreds of times
 	// in a burst: the searches are spread out like a bulk search, and one

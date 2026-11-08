@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Season choices: which seasons are kept up to date when a show is added.
@@ -244,7 +245,7 @@ func (s *Service) addAirTimes(ctx context.Context, sh *metadata.Show) {
 }
 
 // applyShow copies looked-up details onto a show Title.
-func applyShow(t *domain.Title, sh metadata.Show) {
+func applyShow(t *mediafiles.Title, sh metadata.Show) {
 	t.Name, t.SortName = sh.Name, sortName(sh.Name)
 	ids := map[string]string{}
 	for k, v := range t.SourceIDs {
@@ -326,7 +327,7 @@ type ShowSync struct {
 // seasonKeep says whether a season starts kept up to date. choice is the
 // add-time season choice; "" means a season a later refresh found, which
 // follows the show's new-seasons policy.
-func seasonKeep(t domain.Title, number, latest int, choice string, keepSpecials bool) bool {
+func seasonKeep(t mediafiles.Title, number, latest int, choice string, keepSpecials bool) bool {
 	if !t.KeepUpToDate {
 		return false
 	}
@@ -346,7 +347,7 @@ func seasonKeep(t domain.Title, number, latest int, choice string, keepSpecials 
 
 // futureCut is the moment before which an episode is not wanted: now when
 // a show is added with Future seasons only, else its stored future_from.
-func futureCut(t domain.Title, choice string, now time.Time) *time.Time {
+func futureCut(t mediafiles.Title, choice string, now time.Time) *time.Time {
 	if choice == SeasonsFuture {
 		return &now
 	}
@@ -364,13 +365,13 @@ const holdingSlots = `file_id IS NOT NULL OR active_download_id IS NOT NULL OR h
 // refresh. Episodes are matched by the source's own episode id first, then
 // by (season, episode), so rows, Slots and Files survive a refresh, a
 // renumbered special and a change of details source.
-func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Show, defs ShowDefaults, choice string, now time.Time, by domain.Actor) (ShowSync, error) {
+func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata.Show, defs ShowDefaults, choice string, now time.Time, by domain.Actor) (ShowSync, error) {
 	var out ShowSync
-	parts, err := database.Select[domain.Part](ctx, tx, "parts", "title_id = ? AND kind = 'season'", t.ID)
+	parts, err := database.Select[mediafiles.Part](ctx, tx, "parts", "title_id = ? AND kind = 'season'", t.ID)
 	if err != nil {
 		return out, err
 	}
-	partBy := map[int]*domain.Part{}
+	partBy := map[int]*mediafiles.Part{}
 	for i := range parts {
 		if parts[i].Number != nil {
 			partBy[*parts[i].Number] = &parts[i]
@@ -387,7 +388,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 	for _, se := range sh.Seasons {
 		seasonName[se.Number] = se.Name
 	}
-	ensurePart := func(n int) (*domain.Part, error) {
+	ensurePart := func(n int) (*mediafiles.Part, error) {
 		if p, ok := partBy[n]; ok {
 			changed := p.DroppedAt != nil
 			p.DroppedAt = nil
@@ -409,8 +410,8 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			}
 		}
 		num := n
-		p := &domain.Part{TitleID: t.ID, Kind: "season", Number: &num, Name: name, KeepUpToDate: seasonKeep(t, n, latest, choice, defs.KeepSpecials),
-			SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
+		p := &mediafiles.Part{TitleID: t.ID, Kind: "season", Number: &num, Name: name, KeepUpToDate: seasonKeep(t, n, latest, choice, defs.KeepSpecials),
+			SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{}}
 		if _, err := database.Insert(tx, "parts", p, by); err != nil {
 			return nil, err
 		}
@@ -423,18 +424,18 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			return out, err
 		}
 	}
-	items, err := database.Select[domain.Item](ctx, tx, "items", "title_id = ? AND kind = 'episode'", t.ID)
+	items, err := database.Select[mediafiles.Item](ctx, tx, "items", "title_id = ? AND kind = 'episode'", t.ID)
 	if err != nil {
 		return out, err
 	}
-	itemBy := map[[2]int]*domain.Item{}
+	itemBy := map[[2]int]*mediafiles.Item{}
 	for i := range items {
 		n := items[i].Numbers
 		if n.Season != nil && n.Episode != nil {
 			itemBy[[2]int{*n.Season, *n.Episode}] = &items[i]
 		}
 	}
-	versions, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ?", t.ID)
+	versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ?", t.ID)
 	if err != nil {
 		return out, err
 	}
@@ -458,13 +459,13 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 	// (specials are numbered by air day, so a new one shifts the others),
 	// then by (season, episode) for a row with no id from this source or
 	// one the source no longer lists.
-	idBy := map[string]*domain.Item{}
+	idBy := map[string]*mediafiles.Item{}
 	for i := range items {
 		if v := items[i].SourceIDs[sh.Source]; v != "" {
 			idBy[v] = &items[i]
 		}
 	}
-	match := map[[2]int]*domain.Item{}
+	match := map[[2]int]*mediafiles.Item{}
 	claimed := map[int64]bool{}
 	for _, e := range eps {
 		if it, ok := idBy[e.ID]; ok && e.ID != "" && !claimed[it.ID] {
@@ -582,7 +583,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		if cut := futureCut(t, choice, now); cut != nil && e.AirDate != nil && !e.AirDate.After(*cut) {
 			keep = false // future: only episodes still to air
 		}
-		it := &domain.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &number, Absolute: absolute},
+		it := &mediafiles.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &season, Episode: &number, Absolute: absolute},
 			Name: name, AirDate: e.AirDate, AirDay: day, AirTimed: e.Timed && e.AirDate != nil, Runtime: runtime, KeepUpToDate: keep, SourceIDs: map[string]string{}, Still: e.Still}
 		if e.ID != "" {
 			it.SourceIDs[sh.Source] = e.ID
@@ -592,13 +593,13 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		}
 		out.EpisodesAdded++
 		open, reason := EpisodeGate(e.AirDate, wait, now)
-		state := domain.SlotNotOutYet
+		state := mediafiles.SlotNotOutYet
 		if open {
-			state = domain.SlotWanted
+			state = mediafiles.SlotWanted
 		}
 		for _, v := range versions {
 			r := reason
-			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
+			if _, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
 				return out, err
 			}
 		}
@@ -705,17 +706,17 @@ func episodeGatesTx(ctx context.Context, tx *sql.Tx, titleID int64, wait time.Du
 	for _, r := range rs {
 		open, reason := EpisodeGate(r.air, wait, now)
 		switch {
-		case open && r.state == string(domain.SlotNotOutYet):
-			if err := store.MoveSlotTx(tx, r.id, domain.SlotWanted, reason, by); err != nil {
+		case open && r.state == string(mediafiles.SlotNotOutYet):
+			if err := mediafiles.MoveSlotTx(tx, r.id, mediafiles.SlotWanted, reason, by); err != nil {
 				return nil, nil, err
 			}
 			opened = append(opened, r.id)
-		case !open && r.state == string(domain.SlotWanted):
-			if err := store.MoveSlotTx(tx, r.id, domain.SlotNotOutYet, reason, by); err != nil {
+		case !open && r.state == string(mediafiles.SlotWanted):
+			if err := mediafiles.MoveSlotTx(tx, r.id, mediafiles.SlotNotOutYet, reason, by); err != nil {
 				return nil, nil, err
 			}
 			closed = append(closed, r.id)
-		case r.state == string(domain.SlotNotOutYet) && r.reason != reason:
+		case r.state == string(mediafiles.SlotNotOutYet) && r.reason != reason:
 			if _, err := tx.Exec("UPDATE slots SET last_reason = ? WHERE id = ?", reason, r.id); err != nil {
 				return nil, nil, err
 			}

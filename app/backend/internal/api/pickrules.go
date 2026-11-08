@@ -7,23 +7,24 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // PickRulesDetail is one Pick rule with its body and what uses it.
 type PickRulesDetail struct {
-	ID       int64                `json:"id"`
-	Name     string               `json:"name"`
-	Kinds    []string             `json:"kinds"`
-	Preset   bool                 `json:"preset"`
-	Revision int                  `json:"revision"`
-	Body     domain.PickRulesBody `json:"body"`
-	InUse    library.Use          `json:"in_use"`
+	ID       int64                    `json:"id"`
+	Name     string                   `json:"name"`
+	Kinds    []string                 `json:"kinds"`
+	Preset   bool                     `json:"preset"`
+	Revision int                      `json:"revision"`
+	Body     mediafiles.PickRulesBody `json:"body"`
+	InUse    library.Use              `json:"in_use"`
 }
 
-func detailOfPickRules(p domain.PickRules, u library.Use) PickRulesDetail {
+func detailOfPickRules(p mediafiles.PickRules, u library.Use) PickRulesDetail {
 	k := p.Kinds
 	if k == nil {
 		k = []string{}
@@ -67,7 +68,7 @@ func (a *API) pickRulesID(w http.ResponseWriter, r *http.Request) (int64, bool) 
 
 // pickRulesError answers a refusal from the Pick rules editing calls.
 func (a *API) pickRulesError(w http.ResponseWriter, r *http.Request, id int64, err error) {
-	var fe *domain.FieldError
+	var fe *mediafiles.FieldError
 	switch {
 	case errors.As(err, &fe):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
@@ -96,7 +97,7 @@ func (a *API) getPickRules(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var p domain.PickRules
+	var p mediafiles.PickRules
 	if err := database.Get(r.Context(), a.s.Store.Read(), "pick_rules", id, &p); err != nil {
 		a.pickRulesError(w, r, id, err)
 		return

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -23,7 +25,7 @@ func TestHandle_TaggedSourceSkippedForTitleWithoutTag(t *testing.T) {
 	if n := feedHits(lf); n != 0 {
 		t.Fatalf("the tagged Source was asked %d times", n)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}

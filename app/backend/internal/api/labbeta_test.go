@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -204,9 +206,9 @@ type labMovie struct {
 
 type labMovieOpts struct {
 	cat     string
-	movies  string                      // the Library folder; a temp folder when ""
-	feed    string                      // the Source (Torznab); none when ""
-	rules   func(*domain.PickRulesBody) // changes to Standard
+	movies  string                          // the Library folder; a temp folder when ""
+	feed    string                          // the Source (Torznab); none when ""
+	rules   func(*mediafiles.PickRulesBody) // changes to Standard
 	pathMap []domain.PathMap
 	notOut  bool // the digital release is a month away: the gate is closed
 }
@@ -234,40 +236,40 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 		t.Cleanup(func() { _ = os.RemoveAll(x.movies) })
 	}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		body := domain.GoodEveryday()
+		body := mediafiles.GoodEveryday()
 		if o.rules != nil {
 			o.rules(&body)
 		}
-		pr := &domain.PickRules{Name: "Lab " + t.Name(), Kinds: []string{"movie"}, Revision: 1, Body: body}
+		pr := &mediafiles.PickRules{Name: "Lab " + t.Name(), Kinds: []string{"movie"}, Revision: 1, Body: body}
 		if _, err := database.Insert(tx, "pick_rules", pr, domain.System); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: x.movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: x.movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		y := 2024
 		digital := time.Date(2024, 4, 16, 0, 0, 0, 0, time.UTC)
-		state, status := domain.SlotWanted, "released"
+		state, status := mediafiles.SlotWanted, "released"
 		if o.notOut {
-			digital, state, status = time.Now().UTC().AddDate(0, 1, 0), domain.SlotNotOutYet, "announced"
+			digital, state, status = time.Now().UTC().AddDate(0, 1, 0), mediafiles.SlotNotOutYet, "announced"
 		}
-		ti := &domain.Title{Kind: "movie", Name: "Dune: Part Two", SortName: "dune part two", Year: &y, Aliases: []string{},
+		ti := &mediafiles.Title{Kind: "movie", Name: "Dune: Part Two", SortName: "dune part two", Year: &y, Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: status, State: "active", KeepUpToDate: true,
 			DigitalDate: &digital, GateDriver: "digital", GateOpensAt: &digital}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr.ID, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true, KeepUpToDate: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr.ID, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -430,8 +432,8 @@ func (x *labMovie) slotState() string {
 }
 
 // placed is the Slot's File once it is in the Library.
-func (x *labMovie) placed() (domain.File, bool) {
-	var f domain.File
+func (x *labMovie) placed() (mediafiles.File, bool) {
+	var f mediafiles.File
 	var fid sql.NullInt64
 	_ = x.s.Read().QueryRow("SELECT file_id FROM slots WHERE id = ? AND state IN ('in_library', 'better_wanted')", x.slot).Scan(&fid)
 	if !fid.Valid {
@@ -445,7 +447,7 @@ func (x *labMovie) placed() (domain.File, bool) {
 
 // untilPlaced syncs the Downloader every second until the Slot's file is in
 // the Library and its row says Done.
-func (x *labMovie) untilPlaced(t *testing.T) (domain.File, DownloadRow) {
+func (x *labMovie) untilPlaced(t *testing.T) (mediafiles.File, DownloadRow) {
 	t.Helper()
 	deadline := time.Now().Add(4 * time.Minute)
 	var phases []string
@@ -560,7 +562,7 @@ func TestLabBeta41PickReleaseYourself(t *testing.T) {
 	if !ok || !okExe {
 		t.Fatalf("releases %v", rels)
 	}
-	if x.slotState() != string(domain.SlotWanted) || len(x.labDownloads()) != 0 {
+	if x.slotState() != string(mediafiles.SlotWanted) || len(x.labDownloads()) != 0 {
 		t.Fatalf("showing moved the Slot (%s) or sent %v", x.slotState(), x.labDownloads())
 	}
 	if dune.State != "judged" || dune.FoundBy != "hand_search" || dune.Rank != 1 {
@@ -652,7 +654,7 @@ func TestLabBeta46PickYourQuality(t *testing.T) {
 		t.Fatalf("Standard: 1080p %+v, 720p %+v", dr[labDune1080], dr[labDune720])
 	}
 
-	x := newLabMovie(t, labMovieOpts{cat: cat, feed: feed.URL, rules: func(b *domain.PickRulesBody) {
+	x := newLabMovie(t, labMovieOpts{cat: cat, feed: feed.URL, rules: func(b *mediafiles.PickRulesBody) {
 		for i := range b.Steps {
 			b.Steps[i].Allowed = b.Steps[i].Quality == "720p_web"
 		}
@@ -687,7 +689,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	feed.fresh = true
 	own := labOwnMovie(t, cat, labDune720, 48)
 	feed.set([]string{}, own)
-	x := newLabMovie(t, labMovieOpts{cat: cat, feed: feed.URL, rules: func(b *domain.PickRulesBody) {
+	x := newLabMovie(t, labMovieOpts{cat: cat, feed: feed.URL, rules: func(b *mediafiles.PickRulesBody) {
 		b.Protocol.WaitMinutesTorrent = 60
 		b.Protocol.SkipWaitAtGoodEnough = false
 	}})
@@ -753,7 +755,7 @@ func TestLabBeta52StartWhenOut(t *testing.T) {
 	feed.set([]string{labDune1080})
 	x := newLabMovie(t, labMovieOpts{cat: "holyarrs-lab-b52", feed: feed.URL, notOut: true})
 	x.remove(t, labDuneHash)
-	if st := x.slotState(); st != string(domain.SlotNotOutYet) {
+	if st := x.slotState(); st != string(mediafiles.SlotNotOutYet) {
 		t.Fatalf("slot %s", st)
 	}
 	res := x.autoSearch(t)
@@ -771,7 +773,7 @@ func TestLabBeta52StartWhenOut(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if n, err := x.lib.OpenGates(context.Background()); err != nil || n != 1 || x.slotState() != string(domain.SlotWanted) {
+	if n, err := x.lib.OpenGates(context.Background()); err != nil || n != 1 || x.slotState() != string(mediafiles.SlotWanted) {
 		t.Fatalf("gate: %d %v, slot %s", n, err, x.slotState())
 	}
 	x.autoSearch(t)

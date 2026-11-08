@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -199,7 +201,7 @@ func samePath(a, b string) bool {
 	return a == b
 }
 
-func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folders []domain.LibraryFolder) (ByHandPlaces, error) {
+func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folders []mediafiles.LibraryFolder) (ByHandPlaces, error) {
 	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}}
 	for _, lf := range folders {
 		if !wholeDisk(lf.Path) {
@@ -230,7 +232,7 @@ func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folder
 // ByHandPlaces returns the places a by-hand import may read from.
 func (im *Importer) ByHandPlaces(ctx context.Context) (ByHandPlaces, error) {
 	db := im.Store.Read()
-	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
+	folders, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return ByHandPlaces{}, err
 	}

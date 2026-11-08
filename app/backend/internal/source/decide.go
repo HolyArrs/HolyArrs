@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -36,16 +36,16 @@ const (
 var beforeSettle func(slotID int64)
 
 // pickStates are the Slot states a search may pick from. Anything else means another pick got there first.
-var pickStates = []domain.SlotState{domain.SlotSearching, domain.SlotWanted, domain.SlotBetterWanted, domain.SlotHeld}
+var pickStates = []mediafiles.SlotState{mediafiles.SlotSearching, mediafiles.SlotWanted, mediafiles.SlotBetterWanted, mediafiles.SlotHeld}
 
 // slotCtx is a Slot with the Version, Item, Title and pick rules it is judged against, and the copy it holds now.
 type slotCtx struct {
-	sl  domain.Slot
-	ver domain.Version
-	it  domain.Item
-	ti  domain.Title
-	pr  domain.PickRules
-	cur *judge.Current
+	sl  mediafiles.Slot
+	ver mediafiles.Version
+	it  mediafiles.Item
+	ti  mediafiles.Title
+	pr  mediafiles.PickRules
+	cur *mediafiles.Current
 }
 
 // loadSlot reads one Slot with everything judging needs.
@@ -73,8 +73,8 @@ func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) 
 }
 
 // ref describes the Slot's Title for matching release names.
-func (c slotCtx) ref() judge.TitleRef {
-	ref := judge.TitleRef{ID: c.ti.ID, Name: c.ti.Name, Aliases: c.ti.Aliases}
+func (c slotCtx) ref() mediafiles.TitleRef {
+	ref := mediafiles.TitleRef{ID: c.ti.ID, Name: c.ti.Name, Aliases: c.ti.Aliases}
 	if c.ti.Year != nil {
 		ref.Year = *c.ti.Year
 	}
@@ -112,7 +112,7 @@ func dedupe(all []found) []found {
 }
 
 // judgeAll judges and ranks every candidate for one Slot. out says the Slot's item is out, hand marks a person's search, and skipGate ignores the release gate.
-func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, hand, skipGate bool) ([]judge.Release, []judge.Verdict, error) {
+func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, hand, skipGate bool) ([]mediafiles.ReleaseFacts, []mediafiles.Verdict, error) {
 	bad := s.dangerousSeen(ctx)
 	turned, err := s.turnedDown(ctx, c.sl.ID)
 	if err != nil {
@@ -124,21 +124,21 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	if c.ti.Kind == "" || c.ti.Kind == "movie" {
 		outSince = movieOut(c.ti)
 	}
-	rels := make([]judge.Release, len(all))
-	vs := make([]judge.Verdict, len(all))
+	rels := make([]mediafiles.ReleaseFacts, len(all))
+	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size})
-		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
+		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		m := judge.MatchTitle(p, []judge.TitleRef{ref})
-		set := judge.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
+		m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
+		set := mediafiles.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
 			HandSearch: hand, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
 		if m.Title != nil {
 			set.SlotIDs = []int64{c.sl.ID}
 		}
-		vs[i] = copyChoiceVerdict(c, rels[i], judge.Judge(rels[i], set, c.pr.Body))
+		vs[i] = copyChoiceVerdict(c, rels[i], mediafiles.Judge(rels[i], set, c.pr.Body))
 	}
-	judge.Rank(rels, vs, c.pr.Body)
+	mediafiles.Rank(rels, vs, c.pr.Body)
 	return rels, vs, nil
 }
 
@@ -167,7 +167,7 @@ func (s *Searcher) overGrabLimit(ctx context.Context, src domain.Source, now tim
 }
 
 // pickWinner returns the index of the best Release whose Source is within its limit, or -1. Releases ranked above it that were skipped for a limit are marked passed over, and the winner is marked chosen or held when it was not the top rank.
-func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []judge.Verdict, now time.Time) int {
+func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []mediafiles.Verdict, now time.Time) int {
 	order := make([]int, 0, len(vs))
 	for r := 1; ; r++ {
 		i := -1
@@ -186,7 +186,7 @@ func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []judge.Verdi
 		if over {
 			vs[i].Outcome = "passed_over"
 			vs[i].HoldUntil = nil
-			vs[i].Reasons = append(vs[i].Reasons, judge.Reason{Step: "rank", Rule: "source_limit", Effect: "rank", Detail: why})
+			vs[i].Reasons = append(vs[i].Reasons, mediafiles.Reason{Step: "rank", Rule: "source_limit", Effect: "rank", Detail: why})
 			continue
 		}
 		if pos > 0 {
@@ -196,7 +196,7 @@ func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []judge.Verdi
 			} else {
 				vs[i].HoldUntil = nil
 			}
-			vs[i].Reasons = append(vs[i].Reasons, judge.Reason{Step: "rank", Rule: "first_within_limits", Effect: "rank",
+			vs[i].Reasons = append(vs[i].Reasons, mediafiles.Reason{Step: "rank", Rule: "first_within_limits", Effect: "rank",
 				Detail: "the best Release whose Source is within its picks limit"})
 		}
 		return i
@@ -205,8 +205,8 @@ func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []judge.Verdi
 }
 
 // storeAll saves every judged candidate in one write and returns the Release IDs in the same order. A candidate already stored is updated, never copied. A show Release held for a person to choose stays judged here, so each Slot keeps its own say.
-func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, foundBy string, slotID int64, all []found, rels []judge.Release,
-	vs []judge.Verdict, show bool) ([]int64, error) {
+func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, foundBy string, slotID int64, all []found, rels []mediafiles.ReleaseFacts,
+	vs []mediafiles.Verdict, show bool) ([]int64, error) {
 	ids := make([]int64, len(all))
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for i, f := range all {
@@ -272,20 +272,20 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 }
 
 // slotStateTx reads a Slot's state inside the caller's write.
-func slotStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
+func slotStateTx(tx *sql.Tx, slotID int64) (mediafiles.SlotState, error) {
 	var from string
 	err := tx.QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&from)
-	return domain.SlotState(from), err
+	return mediafiles.SlotState(from), err
 }
 
 // busyErr is the error for a Slot that is no longer in a state a pick can use.
-func busyErr(st domain.SlotState) error {
+func busyErr(st mediafiles.SlotState) error {
 	return fmt.Errorf("%w: it is %s", ErrBusy, strings.ReplaceAll(string(st), "_", " "))
 }
 
 // moveSlotTx moves a Slot to a new state and records why. Choosing a Release whose send was abandoned is refused, and a move that skips the searching state goes through it first.
-func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by domain.Actor, releaseID int64) error {
-	if to == domain.SlotChosen {
+func moveSlotTx(tx *sql.Tx, slotID int64, to mediafiles.SlotState, reason string, by domain.Actor, releaseID int64) error {
+	if to == mediafiles.SlotChosen {
 
 		var abandoned bool
 		if err := tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM downloader_attempts a
@@ -303,7 +303,7 @@ func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 		return err
 	}
 	if from == to {
-		if to == domain.SlotChosen {
+		if to == mediafiles.SlotChosen {
 			var st string
 			if err := tx.QueryRow("SELECT state FROM releases WHERE id = ?", releaseID).Scan(&st); err != nil || st != "chosen" {
 				return busyErr(from)
@@ -312,15 +312,15 @@ func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 		_, err := tx.Exec("UPDATE slots SET last_reason = ?, updated_at = ?, updated_by = ? WHERE id = ?", reason, database.FormatTime(time.Now()), actorText(by), slotID)
 		return err
 	}
-	if domain.Transition(from, to) != nil && from != domain.SlotSearching {
-		if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", by); err != nil {
+	if mediafiles.Transition(from, to) != nil && from != mediafiles.SlotSearching {
+		if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotSearching, "searching", by); err != nil {
 			return err
 		}
 	}
-	if err := store.MoveSlotTx(tx, slotID, to, reason, by); err != nil {
+	if err := mediafiles.MoveSlotTx(tx, slotID, to, reason, by); err != nil {
 		return err
 	}
-	if to == domain.SlotChosen {
+	if to == mediafiles.SlotChosen {
 
 		_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", releaseID, slotID)
 		return err
@@ -335,10 +335,10 @@ func (s *Searcher) settleChosen(ctx context.Context, slotID, releaseID int64, na
 		if err != nil {
 			return err
 		}
-		if from != domain.SlotChosen && !slices.Contains(pickStates, from) {
+		if from != mediafiles.SlotChosen && !slices.Contains(pickStates, from) {
 			return busyErr(from)
 		}
-		if err := moveSlotTx(tx, slotID, domain.SlotChosen, "chose "+name, by, releaseID); err != nil {
+		if err := moveSlotTx(tx, slotID, mediafiles.SlotChosen, "chose "+name, by, releaseID); err != nil {
 			return err
 		}
 		if err := passOverHeldTx(tx, slotID, releaseID, by); err != nil {
@@ -365,7 +365,7 @@ func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name
 		if err := passOverHeldTx(tx, slotID, releaseID, by); err != nil {
 			return err
 		}
-		if err := moveSlotTx(tx, slotID, domain.SlotHeld, "holding "+name, by, releaseID); err != nil {
+		if err := moveSlotTx(tx, slotID, mediafiles.SlotHeld, "holding "+name, by, releaseID); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, database.FormatTime(until), slotID); err != nil {
@@ -405,14 +405,14 @@ func passOverHeldTx(tx *sql.Tx, slotID, keep int64, by domain.Actor) error {
 }
 
 // restState returns the state a Slot goes back to when it stays unsettled.
-func restState(c slotCtx, from domain.SlotState) domain.SlotState {
+func restState(c slotCtx, from mediafiles.SlotState) mediafiles.SlotState {
 	switch {
-	case from == domain.SlotNotOutYet:
-		return domain.SlotNotOutYet
-	case c.cur != nil || from == domain.SlotBetterWanted:
-		return domain.SlotBetterWanted
+	case from == mediafiles.SlotNotOutYet:
+		return mediafiles.SlotNotOutYet
+	case c.cur != nil || from == mediafiles.SlotBetterWanted:
+		return mediafiles.SlotBetterWanted
 	}
-	return domain.SlotWanted
+	return mediafiles.SlotWanted
 }
 
 // addEvent writes an event and publishes it. A failed write is not published.

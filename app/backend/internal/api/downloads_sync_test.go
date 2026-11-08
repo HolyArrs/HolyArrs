@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -33,7 +35,7 @@ func (n noClient) Interval(a int) time.Duration                       { return n
 // client call, no database write, no matcher start; it carries the revs
 // and pages outside rows as before.
 func TestDownloadsViewFromStore(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var calls atomic.Int64
 	qb := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))
 	t.Cleanup(qb.Close)
@@ -157,7 +159,7 @@ func TestDownloadsViewFromStore(t *testing.T) {
 // Link-only matching never adds a title: a sure match missing from the
 // Library is only suggested.
 func TestMatchLinkOnlyNeverAdds(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	added := 0
 	x.api.match.addMovie = func(context.Context, string) (int64, error) { added++; return 0, nil }
 	x.api.match.addShow = func(context.Context, string) (int64, error) { added++; return 0, nil }
@@ -198,7 +200,7 @@ func TestMatchLinkOnlyNeverAdds(t *testing.T) {
 // even when matched again after a restart) and linked, with a log line;
 // not-media and unsure names never add.
 func TestMatchAutoAdd(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	ctx := context.Background()
 	exec41(t, x.s, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('links', 'downloads_auto_add', 'true', '', '{}', '', '{}')`)
 	var adds int

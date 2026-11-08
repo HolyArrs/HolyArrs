@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
@@ -45,7 +47,7 @@ func TestSigninSeedFloodStartsOneBuild(t *testing.T) {
 // A member watching their own ask does not see the download's save folder
 // on the host; the owner does.
 func TestDownloadRowPathHiddenFromMember(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `UPDATE downloads SET save_path = '/data/downloads/secret-layout'`)
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES
 		(1, 't', '{}', 't', '{}', 'owner', 'owner', 'x'), (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
@@ -76,10 +78,10 @@ func TestSecureSetsOpenerPolicy(t *testing.T) {
 // A member reading a title does not get the server folder, the Pick rules
 // or a Slot's reason; the owner does.
 func TestTitleViewTrimmedForMember(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `UPDATE slots SET last_reason = 'turned down: Secret.Release-GRP'`)
 	a := New(Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
-	ts, err := database.Select[domain.Title](context.Background(), x.s.Read(), "titles", "1=1 LIMIT 1")
+	ts, err := database.Select[mediafiles.Title](context.Background(), x.s.Read(), "titles", "1=1 LIMIT 1")
 	if err != nil || len(ts) != 1 {
 		t.Fatal(err)
 	}
@@ -103,7 +105,7 @@ func TestTitleViewTrimmedForMember(t *testing.T) {
 			t.Fatalf("member version %+v", ver)
 		}
 	}
-	f := domain.File{RelativePath: "Movies/Secret (2020)/x.mkv", Size: 9}
+	f := mediafiles.File{RelativePath: "Movies/Secret (2020)/x.mkv", Size: 9}
 	got := trimForViewer(webserver.ContextWith(context.Background(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Via: "session"}), TitleView{Slots: []SlotView{{File: &f}}})
 	if got.Slots[0].File.RelativePath != "" || got.Slots[0].File.Size != 9 || f.RelativePath == "" {
 		t.Fatalf("file %+v", got.Slots[0].File)
@@ -227,7 +229,7 @@ func TestMusicNewSendsNoLibraryArtists(t *testing.T) {
 	t.Cleanup(func() { _ = st.Close() })
 	lib := tmbid(4242)
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "titles", &domain.Title{Kind: "artist", GateDriver: "none", Name: "Mine", SortName: "mine", Aliases: []string{},
+		_, err := database.Insert(tx, "titles", &mediafiles.Title{Kind: "artist", GateDriver: "none", Name: "Mine", SortName: "mine", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": lib}, MetadataSource: "musicbrainz", NewPartsPolicy: "all",
 			ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}, domain.System)
 		return err

@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -30,7 +32,7 @@ type showSearchIn struct {
 // (season) or, with none of them, every season that has an episode
 // kept up to date and looking. version_id narrows to one Version.
 // choose false only lists the Releases, and needs an episode or a season.
-func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title, in showSearchIn) {
+func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in showSearchIn) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	listOnly := in.Choose != nil && !*in.Choose
@@ -38,13 +40,13 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 		fail(w, http.StatusBadRequest, "say which episode (slot_id or item_id) or season to list Releases for")
 		return
 	}
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	if in.VersionID != nil {
-		vs = slices.DeleteFunc(vs, func(v domain.Version) bool { return v.ID != *in.VersionID })
+		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != *in.VersionID })
 		if len(vs) == 0 {
 			fail(w, http.StatusNotFound, "no such Version on this show")
 			return
@@ -82,11 +84,11 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 		return err
 	}
 	verOK := func(id int64) bool {
-		return slices.ContainsFunc(vs, func(v domain.Version) bool { return v.ID == id })
+		return slices.ContainsFunc(vs, func(v mediafiles.Version) bool { return v.ID == id })
 	}
 	switch {
 	case in.SlotID != nil:
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) || !verOK(sl.VersionID) {
 			fail(w, http.StatusNotFound, "no such Slot on this show")
 			return
@@ -100,7 +102,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 			fail(w, http.StatusNotFound, "no such episode on this show")
 			return
 		}
-		slots, err := database.Select[domain.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", *in.ItemID)
+		slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", *in.ItemID)
 		if err != nil {
 			internal(w, err)
 			return
@@ -163,7 +165,7 @@ func (a *API) episodeLabels(ctx context.Context, slotIDs []int64) string {
 	var labels []string
 	seasons := map[int]int{}
 	for _, id := range slotIDs {
-		var it domain.Item
+		var it mediafiles.Item
 		var itemID int64
 		if db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", id).Scan(&itemID) != nil {
 			continue

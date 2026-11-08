@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -41,7 +43,7 @@ func TestFinishedFromStalledFreesTheSlots(t *testing.T) {
 	_, _ = m.SyncOnce(ctx)
 	w.clock = w.clock.Add(11 * time.Minute)
 	_, _ = m.SyncOnce(ctx)
-	if sl := w.slot(t); sl.State != domain.SlotStalled {
+	if sl := w.slot(t); sl.State != mediafiles.SlotStalled {
 		t.Fatalf("slot %s", sl.State)
 	}
 	w.fake.set(hash, map[string]any{"progress": 1.0, "state": "stalledUP"})
@@ -49,7 +51,7 @@ func TestFinishedFromStalledFreesTheSlots(t *testing.T) {
 	if d := w.download(t, id); d.State != "finished" {
 		t.Fatalf("download %s", d.State)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotDownloading {
+	if sl := w.slot(t); sl.State != mediafiles.SlotDownloading {
 		t.Fatalf("slot %s after finishing from stalled", sl.State)
 	}
 	if len(w.finshed) != 1 {

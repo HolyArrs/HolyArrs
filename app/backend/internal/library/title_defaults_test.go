@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -27,8 +29,8 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 	ctx := context.Background()
 	movies := addFolder(t, s)
 	shows := addShowFolder(t, s)
-	ge := presetID(t, s, domain.GoodEverydayName)
-	lossless := presetID(t, s, domain.LosslessFirstName)
+	ge := presetID(t, s, mediafiles.GoodEverydayName)
+	lossless := presetID(t, s, mediafiles.LosslessFirstName)
 	bad := []struct {
 		d    TitleDefaults
 		want error

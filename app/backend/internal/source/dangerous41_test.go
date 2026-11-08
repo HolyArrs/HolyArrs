@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -60,7 +62,7 @@ func TestDangerousFiles_StayRefused(t *testing.T) {
 	if r := relByName(t, f, br1080); r.State == "chosen" || !hasCode(r, "hard.safety:dangerous_files") {
 		t.Fatalf("same torrent under another name: %s %v", r.State, reasonCodes(r))
 	}
-	if st := slotState(t, f).State; st == domain.SlotChosen {
+	if st := slotState(t, f).State; st == mediafiles.SlotChosen {
 		t.Fatal("the known program file was chosen again")
 	}
 }
@@ -118,7 +120,7 @@ func TestHeldDangerous_NotSentAfterTheWait(t *testing.T) {
 	if r.State != "refused" || !RefusedByRules(r) {
 		t.Fatalf("held Release is %s", r.State)
 	}
-	if st := slotState(t, f).State; st != domain.SlotWanted {
+	if st := slotState(t, f).State; st != mediafiles.SlotWanted {
 		t.Fatalf("slot %s", st)
 	}
 }

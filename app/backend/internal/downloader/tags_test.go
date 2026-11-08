@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -59,11 +61,11 @@ func TestGrabWithNoDownloaderForTheTagsWaitsOnADecision(t *testing.T) {
 	if err := m.HandleGrab(context.Background(), run); err != nil {
 		t.Fatalf("the Job should end, not retry: %v", err)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
-	if sl.State != domain.SlotNeedsADecision || sl.LastReason == nil || !strings.HasPrefix(*sl.LastReason, "not sent: no torrent Downloader has this title's tags (anime)") {
+	if sl.State != mediafiles.SlotNeedsADecision || sl.LastReason == nil || !strings.HasPrefix(*sl.LastReason, "not sent: no torrent Downloader has this title's tags (anime)") {
 		t.Fatalf("slot %s, reason %v", sl.State, sl.LastReason)
 	}
 	var n int

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -118,22 +120,22 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 		t.Fatal("adopting moved, renamed or wrote a file")
 	}
 	id := res[0].TitleID
-	var v domain.Version
-	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", id)
+	var v mediafiles.Version
+	vs, _ := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ?", id)
 	v = vs[0]
 	if v.FolderName != "Lab Show (2025)" || v.LibraryFolderID != lf.ID {
 		t.Fatalf("version %+v", v)
 	}
 	eps := episodes(t, s, id)
 	for _, k := range []string{"S01E01", "S01E02", "S02E01", "S02E02"} {
-		if st := eps[k].State; st != domain.SlotInLibrary && st != domain.SlotBetterWanted {
+		if st := eps[k].State; st != mediafiles.SlotInLibrary && st != mediafiles.SlotBetterWanted {
 			t.Errorf("%s %s", k, st)
 		}
 	}
-	if eps["S02E03"].State == domain.SlotInLibrary || eps["S00E01"].State == domain.SlotInLibrary {
+	if eps["S02E03"].State == mediafiles.SlotInLibrary || eps["S00E01"].State == mediafiles.SlotInLibrary {
 		t.Error("an episode with no file is in the library")
 	}
-	files, _ := database.Select[domain.File](ctx, s.Read(), "files", "version_id = ? ORDER BY id", v.ID)
+	files, _ := database.Select[mediafiles.File](ctx, s.Read(), "files", "version_id = ? ORDER BY id", v.ID)
 	if len(files) != 3 {
 		t.Fatalf("files %+v", files)
 	}
@@ -196,7 +198,7 @@ func TestRescanShowFolder(t *testing.T) {
 		t.Fatalf("rescan %+v", r)
 	}
 	eps := episodes(t, s, res[0].TitleID)
-	var found domain.File
+	var found mediafiles.File
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path LIKE '%S02E03%'").Scan(&found.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +206,7 @@ func TestRescanShowFolder(t *testing.T) {
 	if found.Origin != "found" || len(found.SlotIDs) != 1 || found.SlotIDs[0] != eps["S02E03"].SlotID {
 		t.Errorf("found %+v", found)
 	}
-	if eps["S02E03"].State == domain.SlotInLibrary {
+	if eps["S02E03"].State == mediafiles.SlotInLibrary {
 		t.Error("a found file filled an episode")
 	}
 	if err := os.Rename(first+".away", first); err != nil {

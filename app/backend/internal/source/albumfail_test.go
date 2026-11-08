@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -70,7 +72,7 @@ func TestQueueAfterFailure_AlbumSearchesAlbumAgain(t *testing.T) {
 		t.Fatalf("next release %s, grabs %v", other.State, grabs)
 	}
 	for _, l := range ltaTracks {
-		if st := f.state(t, l); st != domain.SlotChosen {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
 			t.Fatalf("%s: %s", l, st)
 		}
 	}

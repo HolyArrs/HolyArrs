@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -137,7 +139,7 @@ func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by 
 	if err != nil {
 		return 0, 0, err
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	_ = database.Get(ctx, s.Store.Read(), "titles", id, &t)
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &id, Summary: "Added " + t.Name,
 		Data: map[string]any{"why_added": t.WhyAdded, "release_gate": t.ReleaseGate, "gate_delay_days": t.GateDelayDays,
@@ -185,7 +187,7 @@ func (s *Service) searchTitle(ctx context.Context, titleID int64, by domain.Acto
 	if kind == "artist" {
 		return nil // albums are searched from stage 3.3
 	}
-	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots",
+	slots, err := database.Select[mediafiles.Slot](ctx, s.Store.Read(), "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) AND state IN ('wanted', 'better_wanted') ORDER BY id", titleID)
 	if err != nil {
 		return err
@@ -200,8 +202,8 @@ func (s *Service) searchTitle(ctx context.Context, titleID int64, by domain.Acto
 }
 
 // versionFolder is a Version's folder on disk.
-func versionFolder(ctx context.Context, db database.Querier, v domain.Version) (string, domain.LibraryFolder, error) {
-	var lf domain.LibraryFolder
+func versionFolder(ctx context.Context, db database.Querier, v mediafiles.Version) (string, mediafiles.LibraryFolder, error) {
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
 		return "", lf, err
 	}
@@ -220,7 +222,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 	}
 	titleID := r.Job.Subject.ID
 	db := s.Store.Read()
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY id", titleID)
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY id", titleID)
 	if err != nil {
 		return err
 	}
@@ -247,7 +249,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 				return nil
 			})
 		}
-		files, err := database.Select[domain.File](ctx, db, "files", "version_id = ? AND state = 'present' AND role = 'main'", v.ID)
+		files, err := database.Select[mediafiles.File](ctx, db, "files", "version_id = ? AND state = 'present' AND role = 'main'", v.ID)
 		if err != nil {
 			return err
 		}
@@ -271,7 +273,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 
 // handleCheckFolders checks every Library folder and records changes.
 func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
-	fs, err := database.Select[domain.LibraryFolder](ctx, s.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, s.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -312,17 +314,17 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 }
 
 // NeverAddList returns the Never-add list, newest first.
-func NeverAddList(ctx context.Context, db database.Lister) ([]domain.NeverAdd, error) {
-	out, err := database.Select[domain.NeverAdd](ctx, db, "never_add", "1=1 ORDER BY id DESC")
+func NeverAddList(ctx context.Context, db database.Lister) ([]mediafiles.NeverAdd, error) {
+	out, err := database.Select[mediafiles.NeverAdd](ctx, db, "never_add", "1=1 ORDER BY id DESC")
 	if out == nil {
-		out = []domain.NeverAdd{}
+		out = []mediafiles.NeverAdd{}
 	}
 	return out, err
 }
 
 // AddNeverAdd puts a movie, or a show when n.Kind is show, on the
 // Never-add list by its TMDB id.
-func AddNeverAdd(ctx context.Context, s *database.Store, n domain.NeverAdd, by domain.Actor) (domain.NeverAdd, error) {
+func AddNeverAdd(ctx context.Context, s *database.Store, n mediafiles.NeverAdd, by domain.Actor) (mediafiles.NeverAdd, error) {
 	if n.SourceIDs["tmdb"] == "" {
 		return n, ErrNoMetadataIDs
 	}

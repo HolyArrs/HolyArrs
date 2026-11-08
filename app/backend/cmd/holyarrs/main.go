@@ -9,6 +9,8 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
@@ -152,7 +154,7 @@ func ensure(ctx context.Context, s *database.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
+				if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
 					Health: "unknown", SameDiskAs: []int64{}}, domain.System); err != nil {
 					return err
 				}

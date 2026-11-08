@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -22,7 +24,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 const labRelease = "HolyArrs.Lab.Signal.2026.1080p.WEB.H264-HOLYARRS"
@@ -149,8 +150,8 @@ func TestLiveJellyfinImporterRenameDelete(t *testing.T) {
 			return err
 		}
 		year := 2026
-		folder := &domain.LibraryFolder{Path: libraryRoot, Kind: "movie", Label: "HolyArrs Lab", Health: "ok", SameDiskAs: []int64{}}
-		title := &domain.Title{Kind: "movie", GateDriver: "none", Name: "HolyArrs Lab Signal", SortName: "holyarrs lab signal", Year: &year,
+		folder := &mediafiles.LibraryFolder{Path: libraryRoot, Kind: "movie", Label: "HolyArrs Lab", Health: "ok", SameDiskAs: []int64{}}
+		title := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "HolyArrs Lab Signal", SortName: "holyarrs lab signal", Year: &year,
 			Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		if _, err := database.Insert(tx, "library_folders", folder, domain.System); err != nil {
@@ -159,16 +160,16 @@ func TestLiveJellyfinImporterRenameDelete(t *testing.T) {
 		if _, err := database.Insert(tx, "titles", title, domain.System); err != nil {
 			return err
 		}
-		item := &domain.Item{TitleID: title.ID, Kind: "movie"}
+		item := &mediafiles.Item{TitleID: title.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
-		version := &domain.Version{TitleID: title.ID, Label: "HD", PickRulesID: pickRulesID, LibraryFolderID: folder.ID,
+		version := &mediafiles.Version{TitleID: title.ID, Label: "HD", PickRulesID: pickRulesID, LibraryFolderID: folder.ID,
 			FolderName: importer.FolderName(title.Name, year), IsMain: true}
 		if _, err := database.Insert(tx, "versions", version, domain.System); err != nil {
 			return err
 		}
-		slot := &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotDownloading}
+		slot := &mediafiles.Slot{ItemID: item.ID, VersionID: version.ID, State: mediafiles.SlotDownloading}
 		if _, err := database.Insert(tx, "slots", slot, domain.System); err != nil {
 			return err
 		}
@@ -198,9 +199,9 @@ func TestLiveJellyfinImporterRenameDelete(t *testing.T) {
 	imported := waitItems(t, base, token, 1, "HolyArrs Lab Signal (2026)")
 	t.Logf("import visible: name=%q path=%q", imported[0].Name, imported[0].Path)
 
-	settings := naming.Defaults()
+	settings := mediafiles.NamingDefaults()
 	settings.FilePattern = "{title} ({year}) [{quality}] {group} renamed"
-	if err := naming.Save(ctx, s, settings, domain.System); err != nil {
+	if err := mediafiles.PutNamingSettings(ctx, s, settings, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	plan, hash, err := library.PlanRenameHashed(ctx, s.Read(), []int64{titleID})

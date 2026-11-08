@@ -4,7 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
@@ -62,7 +63,7 @@ func TestPlanTracksTagsOnlyWhenNamesAreAmbiguous(t *testing.T) {
 }
 
 func TestPlanTracksNoTagReader(t *testing.T) {
-	at := AlbumTarget{LibraryPath: "/lib", ArtistFolder: "A", Album: "B", Naming: func() *naming.Settings { s := naming.Defaults(); return &s }(),
+	at := AlbumTarget{LibraryPath: "/lib", ArtistFolder: "A", Album: "B", Naming: func() *mediafiles.NamingSettings { s := mediafiles.NamingDefaults(); return &s }(),
 		Tracks: []Track{{ItemID: 1, Disc: 1, Number: 1, Name: "Intro", SlotID: 11, Wanted: true}}}
 	steps := PlanTracks([]Candidate{{Path: "/dl/track.flac", Size: 1}}, at)
 	if steps[0].Method != "skip" {

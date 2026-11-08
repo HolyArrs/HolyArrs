@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -81,7 +83,7 @@ func TestImportRefusesFakeEpisodes(t *testing.T) {
 		t.Fatalf("plan %s", all)
 	}
 	for _, n := range []int{1, 2} {
-		if sl := w.slot(t, n); sl.FileID != nil || sl.State == domain.SlotInLibrary {
+		if sl := w.slot(t, n); sl.FileID != nil || sl.State == mediafiles.SlotInLibrary {
 			t.Fatalf("E%d placed: %+v", n, sl)
 		}
 	}
@@ -97,7 +99,7 @@ func TestImportRefusesEmptyTrack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if w.state(t, 0) != domain.SlotInLibrary || w.state(t, 2) != domain.SlotInLibrary || w.state(t, 1) == domain.SlotInLibrary {
+	if w.state(t, 0) != mediafiles.SlotInLibrary || w.state(t, 2) != mediafiles.SlotInLibrary || w.state(t, 1) == mediafiles.SlotInLibrary {
 		t.Fatalf("states %s %s %s; import %s %+v", w.state(t, 0), w.state(t, 1), w.state(t, 2), imp.State, imp.Plan)
 	}
 	if exists(filepath.Join(w.lib, "Lab Band", "First Light (2020)", "02 - Glass River.flac")) {
@@ -201,7 +203,7 @@ func TestImportUnreadableFileIsNotFake(t *testing.T) {
 	if imp.State == "done" || state == "turned_down" {
 		t.Fatalf("import %s, release %s", imp.State, state)
 	}
-	if sl := slotOf(t, w); sl.State != domain.SlotNeedsADecision {
+	if sl := slotOf(t, w); sl.State != mediafiles.SlotNeedsADecision {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if !strings.Contains(strings.Join(imp.Plan[0].Why, ";"), "not in the download folder") {

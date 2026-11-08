@@ -7,15 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 func TestFactsOfStoresHeaderFacts(t *testing.T) {
-	i := mediainfo.Info{Status: "complete", Container: "matroska", VideoCodec: "hevc", AudioLanguages: []string{"en"}, AudioTracks: 1,
+	i := mediafiles.Info{Status: "complete", Container: "matroska", VideoCodec: "hevc", AudioLanguages: []string{"en"}, AudioTracks: 1,
 		AudioCodecs: []string{"eac3"}, AudioChannels: []int{6}, Width: 1920, Height: 800, FrameRate: 23.976023, BitDepth: 10, HDR: "HDR10",
 		Duration: 2*time.Hour + 500*time.Millisecond, Bitrate: 8_000_000,
-		SubtitleTracks: []mediainfo.SubtitleTrack{{Language: "en"}, {Language: "fr"}, {Language: "en", Forced: true}, {Language: ""}}}
+		SubtitleTracks: []mediafiles.SubtitleTrack{{Language: "en"}, {Language: "fr"}, {Language: "en", Forced: true}, {Language: ""}}}
 	f := factsOf(i)
 	want := map[string]any{"resolution": "1080p", "width": 1920, "height": 800, "runtime_seconds": 7201, "audio_channels": "5.1",
 		"audio_codec": "eac3", "hdr": "HDR10", "bit_depth": 10, "frame_rate": 23.976, "bitrate": int64(8_000_000),
@@ -28,7 +27,7 @@ func TestFactsOfStoresHeaderFacts(t *testing.T) {
 	if !reflect.DeepEqual(f["subtitle_languages"], []string{"en", "fr"}) {
 		t.Errorf("subtitles %#v", f["subtitle_languages"])
 	}
-	bare := factsOf(mediainfo.Info{Status: "unsupported"})
+	bare := factsOf(mediafiles.Info{Status: "unsupported"})
 	for _, k := range HeaderFactKeys {
 		if _, ok := bare[k]; ok {
 			t.Errorf("unknown %s stored as %#v", k, bare[k])
@@ -82,7 +81,7 @@ func TestLengthFloorFollowsSizeFloors(t *testing.T) {
 }
 
 func TestLieOfUsesRealPictureSize(t *testing.T) {
-	rules := domain.PickRulesBody{}
+	rules := mediafiles.PickRulesBody{}
 	name := "Harbor.of.Glass.2018.1080p.BluRay.x264-GRP"
 	if why := lieOf(name, name, false, "", rules, map[string]any{"width": 1280, "height": 720}); !strings.Contains(why, "file is 720p, name said 1080p") {
 		t.Fatalf("720p named 1080p: %q", why)
@@ -100,7 +99,7 @@ func TestLieOfUsesRealPictureSize(t *testing.T) {
 	if why := lieOf(dvd, dvd, false, "", rules, map[string]any{"width": 720, "height": 436, "display_width": 1018}); why != "" {
 		t.Fatal(why)
 	}
-	if f := factsOf(mediainfo.Info{Width: 720, Height: 436, DisplayWidth: 1018}); f["display_width"] != 1018 || f["resolution"] != "576p" {
+	if f := factsOf(mediafiles.Info{Width: 720, Height: 436, DisplayWidth: 1018}); f["display_width"] != 1018 || f["resolution"] != "576p" {
 		t.Errorf("anamorphic facts %#v", f)
 	}
 	if why := lieOf("Harbor.of.Glass.2018.720p.BluRay", name, false, "", rules, nil); !strings.Contains(why, "file is 720p, name said 1080p") {

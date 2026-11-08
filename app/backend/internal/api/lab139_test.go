@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -81,7 +83,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	movies := t.TempDir()
 	var ana int64
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
 		var err error

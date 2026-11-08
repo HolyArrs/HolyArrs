@@ -15,9 +15,9 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -59,10 +59,10 @@ type Pack struct {
 }
 
 type PickRule struct {
-	ID    string               `json:"id"`
-	Name  string               `json:"name"`
-	Kinds []string             `json:"kinds"`
-	Rules domain.PickRulesBody `json:"rules"`
+	ID    string                   `json:"id"`
+	Name  string                   `json:"name"`
+	Kinds []string                 `json:"kinds"`
+	Rules mediafiles.PickRulesBody `json:"rules"`
 }
 
 // NamingPatterns is the naming whitelist a pack may carry. It deliberately
@@ -227,8 +227,8 @@ func (r PickRule) validate() error {
 	if err := validID("pick rule", r.ID); err != nil {
 		return err
 	}
-	if err := domain.CheckPickRules(r.Name, r.Kinds, r.Rules); err != nil {
-		var fe *domain.FieldError
+	if err := mediafiles.CheckPickRules(r.Name, r.Kinds, r.Rules); err != nil {
+		var fe *mediafiles.FieldError
 		if errors.As(err, &fe) {
 			return fmt.Errorf("%s: %s", fe.Field, fe.Text)
 		}
@@ -240,7 +240,7 @@ func (r PickRule) validate() error {
 		keys = append(keys, tp.Trait)
 	}
 	for _, k := range keys {
-		if strings.HasPrefix(k, domain.OwnTraitPrefix) {
+		if strings.HasPrefix(k, mediafiles.OwnTraitPrefix) {
 			return fmt.Errorf("pick rule %q uses %s, a trait of one install's own; a data pack cannot carry it", r.Name, k)
 		}
 	}
@@ -262,7 +262,7 @@ func (n NamingSet) validate() error {
 			return errors.New("every naming pattern must hold 1 to 200 characters")
 		}
 	}
-	s := naming.Defaults()
+	s := mediafiles.NamingDefaults()
 	s.FilePattern, s.FolderPattern = p.FilePattern, p.FolderPattern
 	s.ShowFolderPattern, s.SeasonFolderPattern, s.SpecialsFolder = p.ShowFolderPattern, p.SeasonFolderPattern, p.SpecialsFolder
 	s.EpisodePattern, s.DailyPattern, s.AnimePattern = p.EpisodePattern, p.DailyPattern, p.AnimePattern
@@ -293,7 +293,7 @@ func (r ReleaseTest) validate() error {
 		return fmt.Errorf("expected quality %q is unknown", r.Expected.Quality)
 	}
 	p := releasename.Parse(r.ReleaseName, releasename.Hints{Show: r.Hints.Show, Music: r.Hints.Music})
-	actual := ExpectedFacts{Kind: p.Kind.Value, Quality: judge.StepFor(p), Resolution: p.Resolution.Value,
+	actual := ExpectedFacts{Kind: p.Kind.Value, Quality: mediafiles.StepFor(p), Resolution: p.Resolution.Value,
 		Source: p.Source.Value, Codec: p.Codec.Value, Flags: p.Flags}
 	if !equalFacts(actual, r.Expected) {
 		return fmt.Errorf("release facts mismatch: got %+v, expected %+v", actual, r.Expected)
@@ -306,7 +306,7 @@ func equalFacts(a, b ExpectedFacts) bool {
 }
 
 func knownQuality(q string) bool {
-	return slices.Contains(domain.Ladder, q) || slices.Contains(domain.MusicLadder, q)
+	return slices.Contains(mediafiles.Ladder, q) || slices.Contains(mediafiles.MusicLadder, q)
 }
 
 func validID(kind, id string) error {

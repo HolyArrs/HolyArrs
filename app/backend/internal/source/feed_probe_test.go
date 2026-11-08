@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -155,7 +157,7 @@ func TestHandleFeed_DiscardsPreparedAnswerAfterSourceEdit(t *testing.T) {
 	j := runScheduledFeed(t, f, &Searcher{Store: f.s}, func() {
 		exec(t, f, "UPDATE sources SET url = ?, updated_at = ? WHERE id = ?", second.url(t), database.FormatTime(time.Now()), f.srcID)
 	})
-	if first.hits != 1 || second.hits != 1 || j.Result["chosen"] != float64(0) || slotState(t, f).State != domain.SlotWanted {
+	if first.hits != 1 || second.hits != 1 || j.Result["chosen"] != float64(0) || slotState(t, f).State != mediafiles.SlotWanted {
 		t.Fatalf("requests first=%d second=%d result %+v", first.hits, second.hits, j.Result)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -16,7 +18,7 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 	srv, s, _ := setup(t)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for n := range 12 {
-			title := domain.Title{Kind: "movie", Name: fmt.Sprintf("Movie %02d", n), SortName: fmt.Sprintf("movie %02d", n),
+			title := mediafiles.Title{Kind: "movie", Name: fmt.Sprintf("Movie %02d", n), SortName: fmt.Sprintf("movie %02d", n),
 				MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 			if n == 11 {
 				title.State = "removed"
@@ -24,15 +26,15 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 			if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 				return err
 			}
-			item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
+			item := mediafiles.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
 			if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 				return err
 			}
-			version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1}
+			version := mediafiles.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1}
 			if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 				return err
 			}
-			slot := domain.Slot{ItemID: item.ID, VersionID: version.ID, State: "wanted"}
+			slot := mediafiles.Slot{ItemID: item.ID, VersionID: version.ID, State: "wanted"}
 			if n == 0 {
 				slot.State = "in_library"
 			}
@@ -60,7 +62,7 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 	if got.Total != 11 || len(got.Missing) != 8 || got.Missing[0].Name != "Movie 01" || got.Missing[7].Name != "Movie 08" {
 		t.Fatalf("summary: %s", body)
 	}
-	if got.Missing[0].StateLabel != StateLabels[domain.SlotSearching] {
+	if got.Missing[0].StateLabel != StateLabels[mediafiles.SlotSearching] {
 		t.Fatalf("missing title state: %+v", got.Missing[0])
 	}
 	if s.WriteCount() != before {

@@ -7,6 +7,8 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
@@ -45,7 +47,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -578,14 +579,14 @@ func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
 // SlotView is a Slot as the page shows it.
 type SlotView struct {
-	ID         int64        `json:"id"`
-	Version    string       `json:"version"`
-	VersionID  int64        `json:"version_id"`
-	State      string       `json:"state"`
-	StateLabel string       `json:"state_label"`
-	Reason     string       `json:"reason,omitempty"`
-	File       *domain.File `json:"file,omitempty"`
-	DownloadID *int64       `json:"active_download_id,omitempty"`
+	ID         int64            `json:"id"`
+	Version    string           `json:"version"`
+	VersionID  int64            `json:"version_id"`
+	State      string           `json:"state"`
+	StateLabel string           `json:"state_label"`
+	Reason     string           `json:"reason,omitempty"`
+	File       *mediafiles.File `json:"file,omitempty"`
+	DownloadID *int64           `json:"active_download_id,omitempty"`
 	// Download is the active (or last) Download in plain words.
 	Download *DownloadView `json:"download,omitempty"`
 }
@@ -635,7 +636,7 @@ type TitleView struct {
 	SizeBytes int64     `json:"size_bytes"`
 	// Copy is a movie's main file (codec, audio, ids for a copy search); only
 	// in the Library list, and only for people who manage the Library.
-	Copy *store.TitleCopy `json:"copy,omitempty"`
+	Copy *mediafiles.TitleCopy `json:"copy,omitempty"`
 	// LastActivity is the newest grab or import for the title, if any.
 	LastActivity *time.Time `json:"last_activity,omitempty"`
 	// Versions are the wanted copies (main first), such as HD and 4K.
@@ -683,7 +684,7 @@ func strOr(p *string) string {
 	return *p
 }
 
-func (a *API) showInfo(ctx context.Context, t domain.Title) (*ShowInfo, error) {
+func (a *API) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo, error) {
 	ss, err := library.Seasons(ctx, a.s.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		return nil, err
@@ -712,12 +713,12 @@ func (a *API) showInfo(ctx context.Context, t domain.Title) (*ShowInfo, error) {
 }
 
 // StateLabels are the words people see for Slot states.
-var StateLabels = map[domain.SlotState]string{
-	domain.SlotNotOutYet: "Not out yet", domain.SlotWanted: "Missing", domain.SlotSearching: "Searching",
-	domain.SlotHeld: "Held", domain.SlotChosen: "Chosen", domain.SlotDownloading: "Downloading",
-	domain.SlotStalled: "Stalled", domain.SlotFailed: "Failed", domain.SlotImporting: "Importing",
-	domain.SlotNeedsADecision: "Needs a decision", domain.SlotRejected: "Rejected", domain.SlotInLibrary: "In library",
-	domain.SlotBetterWanted: "Better copy sought", domain.SlotRemoved: "Removed",
+var StateLabels = map[mediafiles.SlotState]string{
+	mediafiles.SlotNotOutYet: "Not out yet", mediafiles.SlotWanted: "Missing", mediafiles.SlotSearching: "Searching",
+	mediafiles.SlotHeld: "Held", mediafiles.SlotChosen: "Chosen", mediafiles.SlotDownloading: "Downloading",
+	mediafiles.SlotStalled: "Stalled", mediafiles.SlotFailed: "Failed", mediafiles.SlotImporting: "Importing",
+	mediafiles.SlotNeedsADecision: "Needs a decision", mediafiles.SlotRejected: "Rejected", mediafiles.SlotInLibrary: "In library",
+	mediafiles.SlotBetterWanted: "Better copy sought", mediafiles.SlotRemoved: "Removed",
 }
 
 // artworkLinks turns stored artwork ("poster:<cache name>") into links the
@@ -740,7 +741,7 @@ func nonNil(s []string) []string {
 	return s
 }
 
-func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) {
+func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, error) {
 	db := a.s.Store.Read()
 	v := TitleView{ID: t.ID, Kind: t.Kind, Name: t.Name, Year: t.Year, Overview: t.Overview, OriginalLanguage: t.OriginalLanguage, IDs: t.SourceIDs, Slots: []SlotView{},
 		KeepUpToDate: t.KeepUpToDate, WhyAdded: t.WhyAdded, ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays,
@@ -785,10 +786,10 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		v.GateReason = gateReason(t, v.GateOpen)
 	}
 	v.Versions = []VersionView{}
-	var vs []domain.Version
+	var vs []mediafiles.Version
 	if facts != nil {
 		vs = facts.versions[t.ID]
-	} else if vs, err = database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
+	} else if vs, err = database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
 		return v, err
 	}
 	for _, ver := range vs {
@@ -819,15 +820,15 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		v.Asks, err = titleAsks()
 		return trimForViewer(ctx, v), err
 	}
-	var slots []domain.Slot
+	var slots []mediafiles.Slot
 	if batch != nil {
 		slots = batch.slots[t.ID]
-	} else if slots, err = database.Select[domain.Slot](ctx, db, "slots",
+	} else if slots, err = database.Select[mediafiles.Slot](ctx, db, "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID); err != nil {
 		return v, err
 	}
 	for _, s := range slots {
-		var ver domain.Version
+		var ver mediafiles.Version
 		if batch != nil {
 			ver = batch.labels[s.VersionID]
 		} else {
@@ -851,7 +852,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			}
 		}
 		if s.FileID != nil {
-			var f domain.File
+			var f mediafiles.File
 			var found bool
 			if batch != nil {
 				f, found = batch.files[*s.FileID]
@@ -871,7 +872,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 }
 
 // gateReason says in one sentence why a movie is or is not searched yet.
-func gateReason(t domain.Title, open bool) string {
+func gateReason(t mediafiles.Title, open bool) string {
 	date := func(at *time.Time) string { return at.Format("2006-01-02") }
 	var when string
 	switch t.GateDriver {
@@ -907,8 +908,8 @@ func gateReason(t domain.Title, open bool) string {
 }
 
 func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
-	ts, err := store.SearchTitles(r.Context(), a.s.Store, r.URL.Query().Get("q"))
-	if errors.Is(err, store.ErrTitleSearchQuery) {
+	ts, err := mediafiles.SearchTitles(r.Context(), a.s.Store, r.URL.Query().Get("q"))
+	if errors.Is(err, mediafiles.ErrTitleSearchQuery) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -954,9 +955,9 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 	writeTaggedJSON(w, r, map[string]any{"titles": out})
 }
 
-func (a *API) titleID(w http.ResponseWriter, r *http.Request) (domain.Title, bool) {
+func (a *API) titleID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	var t domain.Title
+	var t mediafiles.Title
 	if err == nil {
 		err = database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t)
 	}
@@ -988,13 +989,13 @@ func (a *API) listDownloads(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listImports(w http.ResponseWriter, r *http.Request) {
-	is, err := database.Select[domain.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
+	is, err := database.Select[mediafiles.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	if is == nil {
-		is = []domain.Import{}
+		is = []mediafiles.Import{}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"imports": is})
 }

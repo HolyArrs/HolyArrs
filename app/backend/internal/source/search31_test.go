@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -94,9 +96,9 @@ func runKind(t *testing.T, f fixture, sr *Searcher, kind string, subj *domain.Su
 	return domain.Job{}
 }
 
-func slotState(t *testing.T, f fixture) domain.Slot {
+func slotState(t *testing.T, f fixture) mediafiles.Slot {
 	t.Helper()
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +140,7 @@ func TestFeed_HitChooses(t *testing.T) {
 	if j.State != "done" {
 		t.Fatalf("feed job %s %v", j.State, j.Error)
 	}
-	if sl := slotState(t, f); sl.State != domain.SlotChosen {
+	if sl := slotState(t, f); sl.State != mediafiles.SlotChosen {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
 	rel := relByName(t, f, web1080)
@@ -162,7 +164,7 @@ func TestFeed_SkipsSourcesNotUsedForFeeds(t *testing.T) {
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
 	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
-	if lf.hits != 0 || slotState(t, f).State != domain.SlotWanted {
+	if lf.hits != 0 || slotState(t, f).State != mediafiles.SlotWanted {
 		t.Fatalf("hits %d", lf.hits)
 	}
 }
@@ -180,14 +182,14 @@ func TestFeed_HeldThenBetterThenWaitOver(t *testing.T) {
 	runKind(t, f, sr, KindFeedCheck, nil, nil)
 	sl := slotState(t, f)
 	first := relByName(t, f, tv720)
-	if sl.State != domain.SlotHeld || sl.HeldReleaseID == nil || *sl.HeldReleaseID != first.ID || first.State != "held" || first.HoldUntil == nil {
+	if sl.State != mediafiles.SlotHeld || sl.HeldReleaseID == nil || *sl.HeldReleaseID != first.ID || first.State != "held" || first.HoldUntil == nil {
 		t.Fatalf("slot %s, release %s", sl.State, first.State)
 	}
 	lf.set(feedOf(item(tv720, time.Now(), 50, ""), item(web1080, time.Now(), 50, "")))
 	runKind(t, f, sr, KindFeedCheck, nil, nil)
 	sl = slotState(t, f)
 	second := relByName(t, f, web1080)
-	if sl.State != domain.SlotHeld || *sl.HeldReleaseID != second.ID {
+	if sl.State != mediafiles.SlotHeld || *sl.HeldReleaseID != second.ID {
 		t.Fatalf("slot %s held %v, want %d", sl.State, sl.HeldReleaseID, second.ID)
 	}
 	if got := relByName(t, f, tv720); got.State != "passed_over" {
@@ -199,7 +201,7 @@ func TestFeed_HeldThenBetterThenWaitOver(t *testing.T) {
 	}
 	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
 	j := runKind(t, f, sr, KindGrabHeld, nil, nil)
-	if j.State != "done" || slotState(t, f).State != domain.SlotChosen || len(chosen) != 1 || chosen[0] != second.ID {
+	if j.State != "done" || slotState(t, f).State != mediafiles.SlotChosen || len(chosen) != 1 || chosen[0] != second.ID {
 		t.Fatalf("after the wait: job %s slot %s chosen %v", j.State, slotState(t, f).State, chosen)
 	}
 	if got := relByName(t, f, web1080); got.State != "chosen" {
@@ -214,18 +216,18 @@ func TestMissingSearch_SkipsNotOutYetAndBusy(t *testing.T) {
 	ctx := context.Background()
 	var extra []int64
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
-		for i, st := range []domain.SlotState{domain.SlotNotOutYet, domain.SlotDownloading, domain.SlotWanted} {
+		for i, st := range []mediafiles.SlotState{mediafiles.SlotNotOutYet, mediafiles.SlotDownloading, mediafiles.SlotWanted} {
 			var pr, lfID, tiID int64
 			_ = tx.QueryRow("SELECT pick_rules_id, library_folder_id, title_id FROM versions LIMIT 1").Scan(&pr, &lfID, &tiID)
-			it := &domain.Item{TitleID: tiID, Kind: "movie", KeepUpToDate: true}
+			it := &mediafiles.Item{TitleID: tiID, Kind: "movie", KeepUpToDate: true}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			v := &domain.Version{TitleID: tiID, Label: fmt.Sprintf("V%d", i), PickRulesID: pr, LibraryFolderID: lfID, FolderName: fmt.Sprintf("x%d", i), KeepUpToDate: true}
+			v := &mediafiles.Version{TitleID: tiID, Label: fmt.Sprintf("V%d", i), PickRulesID: pr, LibraryFolderID: lfID, FolderName: fmt.Sprintf("x%d", i), KeepUpToDate: true}
 			if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 				return err
 			}
-			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: st}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: st}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -297,7 +299,7 @@ func TestHandle_MergesSourcesAndDedupes(t *testing.T) {
 	if r := relByName(t, f, tv720); r.SourceID != f.srcID {
 		t.Fatal("the copy from the higher-priority Source should stay")
 	}
-	if slotState(t, f).State != domain.SlotWanted || relByName(t, f, br1080).State != "judged" {
+	if slotState(t, f).State != mediafiles.SlotWanted || relByName(t, f, br1080).State != "judged" {
 		t.Fatalf("show mode moved things: %s %s", slotState(t, f).State, relByName(t, f, br1080).State)
 	}
 }
@@ -326,7 +328,7 @@ func TestHandle_PicksLimitPerSource(t *testing.T) {
 	}
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	got := relByName(t, f, web1080)
-	if got.State != "passed_over" || !strings.Contains(fmt.Sprint(got.Verdict["reasons"]), "source_limit") || slotState(t, f).State != domain.SlotWanted {
+	if got.State != "passed_over" || !strings.Contains(fmt.Sprint(got.Verdict["reasons"]), "source_limit") || slotState(t, f).State != mediafiles.SlotWanted {
 		t.Fatalf("release %s slot %s", got.State, slotState(t, f).State)
 	}
 }

@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -41,7 +42,7 @@ func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []DownloadR
 // Everyone signed in may open Downloads; someone who may not manage the
 // Library sees only the downloads for titles they asked for, with no actions.
 func TestDownloadsViewOwnAsksOnly(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES
 		(1, 't', '{}', 't', '{}', 'owner', 'owner', 'x'), (2, 't', '{}', 't', '{}', 'ana', 'member', 'x'), (3, 't', '{}', 't', '{}', 'bo', 'member', 'x')`)
 	exec41(t, x.s, `INSERT INTO asks (id, created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
@@ -87,7 +88,7 @@ func TestDownloadsViewOwnAsksOnly(t *testing.T) {
 // A failed copy whose Slot moved on (searching again, or another copy on
 // its way) is no problem any more; one with nothing left still is.
 func TestDownloadsViewFailedReplaced(t *testing.T) {
-	x := seed41(t, domain.SlotSearching, "failed")
+	x := seed41(t, mediafiles.SlotSearching, "failed")
 	owner := webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "session"}
 	if r := viewAs(t, x, owner); len(r) != 1 || r[0].Phase != "failed" || !r[0].Replaced {
 		t.Fatalf("searching again: %+v", r)
@@ -106,11 +107,11 @@ func TestDownloadsViewFailedReplaced(t *testing.T) {
 // A failed download turns its copy down on its own; the
 // copy is on the Turned down list with why, and Undo lets it be picked again.
 func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/mark-failed", "", 200)
 	// The search itself is the Manager's OnFailed (wired in main; covered in
 	// internal/downloader); here the Slot is handed to it as failed.
-	if st := x.slotState(t); st != string(domain.SlotFailed) {
+	if st := x.slotState(t); st != string(mediafiles.SlotFailed) {
 		t.Fatalf("slot %s", st)
 	}
 	var list struct {
@@ -142,7 +143,7 @@ func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
 
 // route: GET /api/v1/downloads/speeds
 func TestDownloadsSpeedsRoute(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var out struct {
 		Samples []map[string]any `json:"samples"`
 	}

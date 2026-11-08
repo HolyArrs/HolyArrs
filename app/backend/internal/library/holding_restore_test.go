@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -45,12 +47,12 @@ func TestRestoreHeldBringsTheMovieBack(t *testing.T) {
 	if f := fileRow(t, s, fs[0].ID); f.State != "present" || f.RelativePath != fs[0].RelativePath {
 		t.Fatalf("row %+v", f)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.State != "active" {
 		t.Fatalf("title %s", ti.State)
 	}
-	if sl := slotsOf(t, s, id); sl[0].State != domain.SlotInLibrary {
+	if sl := slotsOf(t, s, id); sl[0].State != mediafiles.SlotInLibrary {
 		t.Fatalf("slot %s", sl[0].State)
 	}
 	if b, _ := os.ReadFile(filepath.Join(lf.Path, filepath.FromSlash(fs[1].RelativePath))); string(b) != "someone" {

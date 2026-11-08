@@ -11,14 +11,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 func manageBase(t *testing.T) (x *dl41, f *allClient, base string) {
 	t.Helper()
-	x = seed41(t, domain.SlotDownloading, "downloading")
+	x = seed41(t, mediafiles.SlotDownloading, "downloading")
 	f = &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	var did int64

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -126,11 +128,11 @@ func TestPersonFilmographyJoinsOwnedNeverAddAndAskWithStablePages(t *testing.T) 
 		if _, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (1, 't', '{}', 't', '{}', 'owner', 'owner', 'x')`); err != nil {
 			return err
 		}
-		title := domain.Title{Kind: "movie", Name: "Alpha", SortName: "alpha", Year: &year, SourceIDs: map[string]string{"tmdb": "101"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		title := mediafiles.Title{Kind: "movie", Name: "Alpha", SortName: "alpha", Year: &year, SourceIDs: map[string]string{"tmdb": "101"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
-		never := domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "102"}, Name: "Beta", Reason: "test", CreatedAt: time.Now()}
+		never := mediafiles.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "102"}, Name: "Beta", Reason: "test", CreatedAt: time.Now()}
 		if _, err := database.Insert(tx, "never_add", &never, domain.System); err != nil {
 			return err
 		}
@@ -174,9 +176,9 @@ func TestMoviePeopleUsesStoredTMDBIdentity(t *testing.T) {
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, s := peopleRig(t, p)
 	year := 2025
-	var title domain.Title
+	var title mediafiles.Title
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		title = domain.Title{Kind: "movie", Name: "Alpha", SortName: "alpha", Year: &year, SourceIDs: map[string]string{"tmdb": "101"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		title = mediafiles.Title{Kind: "movie", Name: "Alpha", SortName: "alpha", Year: &year, SourceIDs: map[string]string{"tmdb": "101"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 		_, err := database.Insert(tx, "titles", &title, domain.System)
 		return err
 	})
@@ -193,9 +195,9 @@ func TestMoviePeopleUsesStoredTMDBIdentity(t *testing.T) {
 func TestShowPeopleUsesStoredTMDBIdentity(t *testing.T) {
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, s := peopleRig(t, p)
-	var title domain.Title
+	var title mediafiles.Title
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		title = domain.Title{Kind: "show", Name: "Show", SortName: "show", SourceIDs: map[string]string{"tmdb": "201"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "running"}
+		title = mediafiles.Title{Kind: "show", Name: "Show", SortName: "show", SourceIDs: map[string]string{"tmdb": "201"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "running"}
 		_, err := database.Insert(tx, "titles", &title, domain.System)
 		return err
 	})

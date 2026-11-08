@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -61,7 +63,7 @@ func movieWorld(t *testing.T, s *database.Store) int64 {
 	var id int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		y := 2016
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", Year: &y, MetadataSource: "local", NewPartsPolicy: "all",
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", Year: &y, MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{"tmdb": "329865"},
 			Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		var err error

@@ -28,6 +28,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -193,7 +195,7 @@ func seed(args []string) {
 			year := 1980 + rng.Intn(46)
 			g := []string{allGenres[rng.Intn(len(allGenres))], allGenres[rng.Intn(len(allGenres))]}
 			ov := "Fake overview."
-			t := &domain.Title{Kind: kind, Name: fmt.Sprintf("Lab Title %04d", i), SortName: fmt.Sprintf("lab title %04d", i), Year: &year, Overview: &ov,
+			t := &mediafiles.Title{Kind: kind, Name: fmt.Sprintf("Lab Title %04d", i), SortName: fmt.Sprintf("lab title %04d", i), Year: &year, Overview: &ov,
 				Aliases: []string{}, SourceIDs: map[string]string{"tmdb": fmt.Sprint(1 + rng.Intn(6000))}, MetadataSource: "tmdb",
 				KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, Artwork: []string{},
 				Status: "released", State: "active", WhyAdded: "by_hand", GateDriver: "none", Genres: g, Rating: ratings[rng.Intn(len(ratings))],

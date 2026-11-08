@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -17,7 +19,7 @@ func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
 	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for n := range 25 {
-			title := domain.Title{Kind: "movie", Name: fmt.Sprintf("Movie %02d", n), SortName: fmt.Sprintf("movie %02d", n), Artwork: []string{"poster:p.jpg"},
+			title := mediafiles.Title{Kind: "movie", Name: fmt.Sprintf("Movie %02d", n), SortName: fmt.Sprintf("movie %02d", n), Artwork: []string{"poster:p.jpg"},
 				MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 			if n == 24 {
 				title.State = "removed"

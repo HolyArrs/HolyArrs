@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -466,9 +468,9 @@ func TestOldAppServerTestFields(t *testing.T) {
 
 // slotsOf lists a title's main-Version Slots by season and episode
 // (0, 0 for a movie).
-func (f *oldAppFix) slotsOf(titleID int64) map[[2]int]domain.Slot {
+func (f *oldAppFix) slotsOf(titleID int64) map[[2]int]mediafiles.Slot {
 	f.t.Helper()
-	out := map[[2]int]domain.Slot{}
+	out := map[[2]int]mediafiles.Slot{}
 	rows, err := f.s.Read().Query(`SELECT s.id, s.version_id, COALESCE(json_extract(i.numbers, '$.season'), 0), COALESCE(json_extract(i.numbers, '$.episode'), 0)
 		FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id AND v.is_main = 1 WHERE i.title_id = ?`, titleID)
 	if err != nil {
@@ -476,7 +478,7 @@ func (f *oldAppFix) slotsOf(titleID int64) map[[2]int]domain.Slot {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		var se, ep int
 		if err := rows.Scan(&sl.ID, &sl.VersionID, &se, &ep); err != nil {
 			f.t.Fatal(err)
@@ -487,11 +489,11 @@ func (f *oldAppFix) slotsOf(titleID int64) map[[2]int]domain.Slot {
 }
 
 // putFile puts a file in the Library for a Slot, as an import would.
-func (f *oldAppFix) putFile(sl domain.Slot, rel string, res int) {
+func (f *oldAppFix) putFile(sl mediafiles.Slot, rel string, res int) {
 	f.t.Helper()
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		fl := domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: rel, Size: 1000, AddedAt: time.Now().UTC(),
-			Quality: domain.Quality{Resolution: res, Source: "web_dl"}, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
+		fl := mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: rel, Size: 1000, AddedAt: time.Now().UTC(),
+			Quality: mediafiles.Quality{Resolution: res, Source: "web_dl"}, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
 			PlacedBy: "hardlink", Role: "main", State: "present"}
 		id, err := database.Insert(tx, "files", &fl, domain.System)
 		if err != nil {

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -121,8 +123,8 @@ func TestNeedsDecisionEvent(t *testing.T) {
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		var prID int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&prID)
-		lf := &domain.LibraryFolder{Path: "/m", Kind: "movie", Label: "M", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all",
+		lf := &mediafiles.LibraryFolder{Path: "/m", Kind: "movie", Label: "M", Health: "ok", SameDiskAs: []int64{}}
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active"}
 		if _, err := database.Insert(tx, "library_folders", lf, owner); err != nil {
 			return err
@@ -131,22 +133,22 @@ func TestNeedsDecisionEvent(t *testing.T) {
 			return err
 		}
 		titleID = ti.ID
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, owner); err != nil {
 			return err
 		}
-		ve := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: "A"}
+		ve := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: "A"}
 		if _, err := database.Insert(tx, "versions", ve, owner); err != nil {
 			return err
 		}
 		var err error
-		slotID, err = database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotImporting}, owner)
+		slotID, err = database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: ve.ID, State: mediafiles.SlotImporting}, owner)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := MoveSlot(ctx, s, slotID, domain.SlotNeedsADecision, "nothing could be placed", owner); err != nil {
+	if err := mediafiles.MoveSlot(ctx, s, slotID, mediafiles.SlotNeedsADecision, "nothing could be placed", owner); err != nil {
 		t.Fatal(err)
 	}
 	es, _, err := s.Events(ctx, database.EventFilter{Kinds: []string{domain.EventNeedsDecision}})

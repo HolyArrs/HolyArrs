@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -14,15 +16,15 @@ import (
 func fourKRules(t *testing.T, s *database.Store) int64 {
 	t.Helper()
 	var id int64
-	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&id); err != nil {
+	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	return id
 }
 
-func versionsOf(t *testing.T, s *database.Store, titleID int64) []domain.Version {
+func versionsOf(t *testing.T, s *database.Store, titleID int64) []mediafiles.Version {
 	t.Helper()
-	vs, err := database.Select[domain.Version](context.Background(), s.Read(), "versions", "title_id = ? ORDER BY id", titleID)
+	vs, err := database.Select[mediafiles.Version](context.Background(), s.Read(), "versions", "title_id = ? ORDER BY id", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +49,7 @@ func TestAddMovieWithHDAnd4KVersions(t *testing.T) {
 		vs[1].FolderName != vs[0].FolderName {
 		t.Fatalf("versions %+v", vs)
 	}
-	if sl[0].ItemID != sl[1].ItemID || sl[1].VersionID != vs[1].ID || sl[1].State != domain.SlotWanted {
+	if sl[0].ItemID != sl[1].ItemID || sl[1].VersionID != vs[1].ID || sl[1].State != mediafiles.SlotWanted {
 		t.Fatalf("slots %+v", sl)
 	}
 }
@@ -70,7 +72,7 @@ func TestAddVersionRules(t *testing.T) {
 		t.Fatalf("version %+v", v)
 	}
 	sl := slotsOf(t, s, id)
-	if len(sl) != 2 || sl[1].State != domain.SlotNotOutYet {
+	if len(sl) != 2 || sl[1].State != mediafiles.SlotNotOutYet {
 		t.Fatalf("slots %+v", sl) // the gate is the Title's, so the new Slot waits too
 	}
 	if _, err := AddVersion(ctx, s, id, VersionInput{Label: "4k", LibraryFolderID: lf.ID}, nil, now, domain.System); !errors.Is(err, ErrVersionLabel) {

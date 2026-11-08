@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -18,10 +20,10 @@ type FileChoice struct {
 	AcknowledgeProtection bool    `json:"acknowledge_protection"`
 }
 
-func ownedFile(ctx context.Context, q database.Querier, titleID, fileID int64) (domain.File, domain.Version, error) {
-	var f domain.File
+func ownedFile(ctx context.Context, q database.Querier, titleID, fileID int64) (mediafiles.File, mediafiles.Version, error) {
+	var f mediafiles.File
 	if err := database.Get(ctx, q, "files", fileID, &f); err != nil {
-		return f, domain.Version{}, err
+		return f, mediafiles.Version{}, err
 	}
 	v, err := versionOf(ctx, q, titleID, f.VersionID)
 	if err != nil {
@@ -30,7 +32,7 @@ func ownedFile(ctx context.Context, q database.Querier, titleID, fileID int64) (
 	if f.Role != "main" || f.State != "present" && f.State != "missing" {
 		return f, v, fmt.Errorf("%w: choose a current main copy", ErrCopyChoice)
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, q, "titles", titleID, &t); err != nil {
 		return f, v, err
 	}
@@ -42,10 +44,10 @@ func ownedFile(ctx context.Context, q database.Querier, titleID, fileID int64) (
 
 // SetFileChoice changes explicit choices while placement/removal is excluded.
 // Edition correction records a human decision; it does not move a file.
-func (s *Service) SetFileChoice(ctx context.Context, titleID, fileID int64, choice FileChoice, by domain.Actor) (domain.File, error) {
+func (s *Service) SetFileChoice(ctx context.Context, titleID, fileID int64, choice FileChoice, by domain.Actor) (mediafiles.File, error) {
 	unlock := s.Store.LockFiles()
 	defer unlock()
-	var f domain.File
+	var f mediafiles.File
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var err error
 		if f, _, err = ownedFile(ctx, tx, titleID, fileID); err != nil {
@@ -82,20 +84,20 @@ func (s *Service) SetFileChoice(ctx context.Context, titleID, fileID int64, choi
 
 // KeepAndAddVersion protects the owned copy and adds an explicitly chosen
 // separate destination atomically. It never searches or starts a download.
-func (s *Service) KeepAndAddVersion(ctx context.Context, titleID, fileID int64, in VersionInput, by domain.Actor) (domain.Version, error) {
+func (s *Service) KeepAndAddVersion(ctx context.Context, titleID, fileID int64, in VersionInput, by domain.Actor) (mediafiles.Version, error) {
 	if in.LibraryFolderID == 0 || in.PickRulesID == 0 {
-		return domain.Version{}, fmt.Errorf("%w: choose rules and a Library folder for the other copy", ErrCopyChoice)
+		return mediafiles.Version{}, fmt.Errorf("%w: choose rules and a Library folder for the other copy", ErrCopyChoice)
 	}
 	unlock := s.Store.LockFiles()
 	defer unlock()
-	var title domain.Title
+	var title mediafiles.Title
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &title); err != nil {
-		return domain.Version{}, err
+		return mediafiles.Version{}, err
 	}
 	if _, err := checkVersionFolder(ctx, s.Store.Read(), in.LibraryFolderID, title.Kind, s.downloadPaths(ctx)); err != nil {
-		return domain.Version{}, err
+		return mediafiles.Version{}, err
 	}
-	var v domain.Version
+	var v mediafiles.Version
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		f, _, err := ownedFile(ctx, tx, titleID, fileID)
 		if err != nil {

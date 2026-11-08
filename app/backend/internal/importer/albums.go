@@ -14,9 +14,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
@@ -40,7 +40,7 @@ type AlbumTarget struct {
 	Artist       string
 	AlbumType    string
 	Edition      string
-	Naming       *naming.Settings
+	Naming       *mediafiles.NamingSettings
 	KeepNames    bool
 	Tags         func(path string) (tags.Tags, error)
 }
@@ -68,20 +68,20 @@ func fold(s string) string {
 }
 
 func (t AlbumTarget) trackFile(tr Track, ext string, discs int, src string) string {
-	ns := naming.Defaults()
+	ns := mediafiles.NamingDefaults()
 	if t.Naming != nil {
 		ns = *t.Naming
 	}
-	f := naming.TrackFacts{Artist: t.Artist, Album: t.Album, AlbumType: t.AlbumType, Edition: t.Edition, Year: t.Year,
+	f := mediafiles.TrackFacts{Artist: t.Artist, Album: t.Album, AlbumType: t.AlbumType, Edition: t.Edition, Year: t.Year,
 		Disc: tr.Disc, Discs: discs, Track: tr.Number, Title: tr.Name, Ext: ext}
 	if t.KeepNames && src != "" {
 		base := filepath.Base(src)
-		own := cutName(naming.CleanWith(ns, strings.TrimSuffix(base, filepath.Ext(base))), maxNameBytes-len(ext))
+		own := cutName(mediafiles.CleanWith(ns, strings.TrimSuffix(base, filepath.Ext(base))), maxNameBytes-len(ext))
 		if own != "" {
-			return path.Join(t.ArtistFolder, naming.AlbumFolder(ns, f), naming.DiscFolder(ns, f), own+strings.ToLower(ext))
+			return path.Join(t.ArtistFolder, mediafiles.AlbumFolder(ns, f), mediafiles.DiscFolder(ns, f), own+strings.ToLower(ext))
 		}
 	}
-	return naming.TrackPath(ns, t.ArtistFolder, f)
+	return mediafiles.TrackPath(ns, t.ArtistFolder, f)
 }
 
 // maxNameBytes keeps a file name under the 255 byte limit of common filesystems, with room for a suffix.
@@ -128,7 +128,7 @@ func numberOf(base string, discs int) (disc, num int) {
 }
 
 // PlanTracks turns candidate files into copy steps for an album.
-func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
+func PlanTracks(cands []Candidate, t AlbumTarget) []mediafiles.PlanStep {
 	discs := 1
 	for _, tr := range t.Tracks {
 		discs = max(discs, tr.Disc)
@@ -164,11 +164,11 @@ func PlanTracks(cands []Candidate, t AlbumTarget) []domain.PlanStep {
 		}
 		return hit, nil
 	}
-	var steps []domain.PlanStep
+	var steps []mediafiles.PlanStep
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
 		base := strings.TrimSuffix(filepath.Base(c.Path), filepath.Ext(c.Path))
-		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
+		s := mediafiles.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
 		switch {
 		case programExt[ext]:
 			s.Method, s.Why = "refuse", []string{"a program file, not music"}
@@ -298,7 +298,7 @@ func trackLabel(disc, num, discs int) string {
 	return fmt.Sprintf("track %02d", num)
 }
 
-func wholeAlbumSpace(plan []domain.PlanStep, low *SpaceError) {
+func wholeAlbumSpace(plan []mediafiles.PlanStep, low *SpaceError) {
 	if low == nil {
 		return
 	}
@@ -311,9 +311,9 @@ func wholeAlbumSpace(plan []domain.PlanStep, low *SpaceError) {
 }
 
 // AlbumFacts loads the naming facts and track count for one album part.
-func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID int64) (naming.TrackFacts, int, error) {
-	f := naming.TrackFacts{Artist: artist}
-	var p domain.Part
+func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID int64) (mediafiles.TrackFacts, int, error) {
+	f := mediafiles.TrackFacts{Artist: artist}
+	var p mediafiles.Part
 	if err := database.Get(ctx, db, "parts", partID, &p); err != nil {
 		return f, 1, err
 	}
@@ -335,11 +335,11 @@ func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID 
 	return f, max(1, int(discs.Int64)), nil
 }
 
-func albumTarget(ctx context.Context, db database.Querier, lf domain.LibraryFolder, ver domain.Version, ti domain.Title, items []domain.Item,
-	slotOf map[int64]int64, slots map[int64]*showSlot, dryRun bool, ns naming.Settings) (AlbumTarget, error) {
+func albumTarget(ctx context.Context, db database.Querier, lf mediafiles.LibraryFolder, ver mediafiles.Version, ti mediafiles.Title, items []mediafiles.Item,
+	slotOf map[int64]int64, slots map[int64]*showSlot, dryRun bool, ns mediafiles.NamingSettings) (AlbumTarget, error) {
 	at := AlbumTarget{LibraryPath: lf.Path, ArtistFolder: safeName(ver.FolderName), Artist: ti.Name, Naming: &ns, KeepNames: !ns.RenameOnImport}
 	if at.ArtistFolder == "" || at.ArtistFolder == "." || at.ArtistFolder == ".." {
-		at.ArtistFolder = naming.ArtistFolder(ns, naming.TrackFacts{Artist: ti.Name})
+		at.ArtistFolder = mediafiles.ArtistFolder(ns, mediafiles.TrackFacts{Artist: ti.Name})
 	}
 	if ns.MusicReadTags {
 		at.Tags = tags.ReadFile

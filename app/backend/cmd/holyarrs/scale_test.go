@@ -18,13 +18,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The scale checks are intentionally opt-in: each one creates a large fresh
@@ -241,11 +242,11 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	if spec.Name == "combined" {
 		probe := scaleFullTextProbe(spec)
 		fullTextStarted := time.Now()
-		if err := store.RebuildTitleSearch(context.Background(), control.Store); err != nil {
+		if err := mediafiles.RebuildTitleSearch(context.Background(), control.Store); err != nil {
 			t.Fatalf("rebuild title search: %v", err)
 		}
 		fullTextRebuildMillis = time.Since(fullTextStarted).Milliseconds()
-		if matches, err := store.SearchTitles(context.Background(), control.Store, probe); err != nil || len(matches) != 1 || matches[0].Name != probe {
+		if matches, err := mediafiles.SearchTitles(context.Background(), control.Store, probe); err != nil || len(matches) != 1 || matches[0].Name != probe {
 			t.Fatalf("rebuilt title search returned %d matches (%v): %v", len(matches), matches, err)
 		}
 		fullTextStatus = "available: rebuilt and queried"

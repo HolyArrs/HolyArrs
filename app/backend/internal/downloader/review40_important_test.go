@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -75,7 +77,7 @@ func TestGrabNeverOverwritesAnActiveDownload(t *testing.T) {
 	if d.State != "downloading" || d.SavePath != "/other" || len(d.SlotIDs) != 1 || d.SlotIDs[0] != 999 || d.ReleaseID != nil {
 		t.Fatalf("active row overwritten: %+v", d)
 	}
-	if w.slot(t).State != domain.SlotChosen {
+	if w.slot(t).State != mediafiles.SlotChosen {
 		t.Fatalf("slot moved: %s", w.slot(t).State)
 	}
 }

@@ -7,12 +7,12 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // librarySearchMax bounds each list of a Library search: Search shows one row.
@@ -62,7 +62,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, out)
 		return
 	}
-	visible := func(t domain.Title) bool {
+	visible := func(t mediafiles.Title) bool {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
 			return false
 		}
@@ -70,8 +70,8 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := withLookupMemo(r.Context())
 	if kind != "people" {
-		ts, err := store.SearchTitles(ctx, a.s.Store, term)
-		if errors.Is(err, store.ErrTitleSearchQuery) {
+		ts, err := mediafiles.SearchTitles(ctx, a.s.Store, term)
+		if errors.Is(err, mediafiles.ErrTitleSearchQuery) {
 			fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -121,13 +121,13 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain.Title) bool) ([]LibraryAlbum, error) {
+func (a *API) libraryAlbums(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]LibraryAlbum, error) {
 	pre, args := foldPrefilter("name", words)
-	ps, err := database.Select[domain.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
+	ps, err := database.Select[mediafiles.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
 	if err != nil {
 		return nil, err
 	}
-	artists := map[int64]*domain.Title{}
+	artists := map[int64]*mediafiles.Title{}
 	out := []LibraryAlbum{}
 	var names []nameKey
 	for _, p := range ps {
@@ -139,7 +139,7 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 		}
 		t, seen := artists[p.TitleID]
 		if !seen {
-			var x domain.Title
+			var x mediafiles.Title
 			if err := database.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &x); err == nil && visible(x) {
 				t = &x
 			}
@@ -164,9 +164,9 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 	return out, nil
 }
 
-func (a *API) libraryPeople(r *http.Request, words []string, visible func(domain.Title) bool) ([]LibraryPerson, error) {
+func (a *API) libraryPeople(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]LibraryPerson, error) {
 	pre, args := foldPrefilter("people", words)
-	ts, err := database.Select[domain.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
+	ts, err := database.Select[mediafiles.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -40,7 +42,7 @@ func (x labAlbum) haveAlbum(t *testing.T, listing, ext string, files []labFile) 
 				return err
 			}
 			name := listing
-			fl := &domain.File{SlotIDs: []int64{x.slots[i]}, VersionID: verID, RelativePath: rel, Size: int64(len(files[i].data)), AddedAt: time.Now(),
+			fl := &mediafiles.File{SlotIDs: []int64{x.slots[i]}, VersionID: verID, RelativePath: rel, Size: int64(len(files[i].data)), AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
 			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err

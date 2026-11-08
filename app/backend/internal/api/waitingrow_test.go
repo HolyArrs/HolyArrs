@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -21,7 +23,7 @@ func TestPausedRowShowsWaitingReason(t *testing.T) {
 		t.Fatalf("paused by a person: %q", v.Text)
 	}
 
-	x := seed41(t, domain.SlotDownloading, "paused")
+	x := seed41(t, mediafiles.SlotDownloading, "paused")
 	exec41(t, x.s, "UPDATE downloads SET state_reason = ?", reason)
 	var out struct {
 		Downloads []DownloadRow `json:"downloads"`

@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 )
 
 // EditionFileName adds the edition to a file name.
@@ -35,9 +35,9 @@ func EditionFileName(name, edition string) string {
 
 // InspectFacts reads the media facts of a file.
 func InspectFacts(file string) map[string]any {
-	i, err := mediainfo.Inspect(file)
+	i, err := mediafiles.Inspect(file)
 	if err != nil {
-		i = mediainfo.Info{Status: "error", AudioUnknown: true}
+		i = mediafiles.Info{Status: "error", AudioUnknown: true}
 	}
 	if i.Status != "ok" && i.AudioTracks == 0 {
 		i.AudioUnknown = true
@@ -60,7 +60,7 @@ const FactsVersion = 2
 var HeaderFactKeys = []string{"resolution", "width", "height", "display_width", "runtime_seconds", "audio_channels", "audio_codec",
 	"hdr", "bit_depth", "frame_rate", "bitrate"}
 
-func factsOf(i mediainfo.Info) map[string]any {
+func factsOf(i mediafiles.Info) map[string]any {
 	facts := map[string]any{"inspection_status": i.Status, "container": i.Container, "video_codec": i.VideoCodec,
 		"audio_languages": i.AudioLanguages, "audio_tracks": i.AudioTracks, "audio_unknown": i.AudioUnknown,
 		"facts_version": FactsVersion}
@@ -181,7 +181,7 @@ func AudioMeets(facts map[string]any, wanted []string) bool {
 	return facts["inspection_status"] != "error" && facts["inspection_status"] != "unsupported"
 }
 
-func copyRefusal(v domain.Version, fileName, releaseName, confirmed string, facts map[string]any) string {
+func copyRefusal(v mediafiles.Version, fileName, releaseName, confirmed string, facts map[string]any) string {
 	fileEditions := releasename.Parse(fileName, releasename.Hints{}).Edition
 	releaseEditions := releasename.Parse(releaseName, releasename.Hints{}).Edition
 	edition, releaseEdition := "", ""

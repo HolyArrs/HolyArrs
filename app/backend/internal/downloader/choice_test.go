@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -144,15 +146,15 @@ func TestGrabsToOneHostAreSpaced(t *testing.T) {
 	}
 	var slot2, rel2 int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: 1, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: 1, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		s2 := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen}
+		s2 := &mediafiles.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: mediafiles.SlotChosen}
 		if _, err := database.Insert(tx, "slots", s2, domain.System); err != nil {
 			return err
 		}

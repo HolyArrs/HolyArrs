@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 // countMusic is a MusicBrainz stand-in for n artists ("Artist 0001" ...),
@@ -95,7 +96,7 @@ func TestMusicScanPagesAtItsOwnLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Limit != naming.DefaultMusicAdoptScanLimit || len(p.Folders) != 200 || !p.More || p.Next != "Artist 0200" || p.Counts["matched"] != 200 {
+	if p.Limit != mediafiles.DefaultMusicAdoptScanLimit || len(p.Folders) != 200 || !p.More || p.Next != "Artist 0200" || p.Counts["matched"] != 200 {
 		t.Fatalf("limit %d folders %d more %v next %q counts %v", p.Limit, len(p.Folders), p.More, p.Next, p.Counts)
 	}
 	if cm.search != 200 || cm.artist != 200 || cm.press != 200 || cm.bad != 0 {
@@ -106,7 +107,7 @@ func TestMusicScanPagesAtItsOwnLimit(t *testing.T) {
 		t.Fatalf("second part %v %d %+v", err, len(p2.Folders), p2.Next)
 	}
 	// The movie and show limit is not the music one.
-	ns := naming.Defaults()
+	ns := mediafiles.NamingDefaults()
 	if ns.AdoptScanLimit == ns.MusicAdoptScanLimit {
 		t.Fatal("music shares the folder limit")
 	}

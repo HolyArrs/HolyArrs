@@ -13,9 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Album choices: which albums are kept up to date when an artist is added
@@ -301,7 +302,7 @@ func musicDatePrecision(s string) *string {
 // artist's album kinds: the main kind is included (an album with none
 // counts as other), and every extra kind is included (an album with none
 // needs studio).
-func AlbumKindsOK(t domain.Title, primary string, secondary []string) bool {
+func AlbumKindsOK(t mediafiles.Title, primary string, secondary []string) bool {
 	if primary == "" {
 		primary = "other"
 	}
@@ -485,17 +486,17 @@ func trackGatesTx(ctx context.Context, tx *sql.Tx, titleID int64, now time.Time,
 	for _, r := range rs {
 		open, reason := AlbumGate(r.air, now)
 		switch {
-		case open && r.state == string(domain.SlotNotOutYet):
-			if err := store.MoveSlotTx(tx, r.id, domain.SlotWanted, reason, by); err != nil {
+		case open && r.state == string(mediafiles.SlotNotOutYet):
+			if err := mediafiles.MoveSlotTx(tx, r.id, mediafiles.SlotWanted, reason, by); err != nil {
 				return nil, nil, err
 			}
 			opened = append(opened, r.id)
-		case !open && r.state == string(domain.SlotWanted):
-			if err := store.MoveSlotTx(tx, r.id, domain.SlotNotOutYet, reason, by); err != nil {
+		case !open && r.state == string(mediafiles.SlotWanted):
+			if err := mediafiles.MoveSlotTx(tx, r.id, mediafiles.SlotNotOutYet, reason, by); err != nil {
 				return nil, nil, err
 			}
 			closed = append(closed, r.id)
-		case r.state == string(domain.SlotNotOutYet) && r.reason != reason:
+		case r.state == string(mediafiles.SlotNotOutYet) && r.reason != reason:
 			if _, err := tx.Exec("UPDATE slots SET last_reason = ? WHERE id = ?", reason, r.id); err != nil {
 				return nil, nil, err
 			}
@@ -525,7 +526,7 @@ func (s *Service) OpenTrackGates(ctx context.Context) (int, error) {
 	rows.Close()
 	n := 0
 	for _, id := range ids {
-		var t domain.Title
+		var t mediafiles.Title
 		var opened []int64
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			if err := database.Get(ctx, tx, "titles", id, &t); err != nil {
@@ -546,13 +547,13 @@ func (s *Service) OpenTrackGates(ctx context.Context) (int, error) {
 
 // trackGateEvents records each album whose track Slots crossed the gate:
 // one Event per album, not one per track.
-func (s *Service) trackGateEvents(ctx context.Context, t domain.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
+func (s *Service) trackGateEvents(ctx context.Context, t mediafiles.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
 	for _, list := range []struct {
 		ids  []int64
 		kind string
-		to   domain.SlotState
+		to   mediafiles.SlotState
 		says string
-	}{{opened, domain.EventGateOpened, domain.SlotWanted, " is out: its tracks are wanted now"}, {closed, domain.EventGateClosed, domain.SlotNotOutYet, " is not out yet: its release date moved"}} {
+	}{{opened, domain.EventGateOpened, mediafiles.SlotWanted, " is out: its tracks are wanted now"}, {closed, domain.EventGateClosed, mediafiles.SlotNotOutYet, " is not out yet: its release date moved"}} {
 		if len(list.ids) == 0 {
 			continue
 		}

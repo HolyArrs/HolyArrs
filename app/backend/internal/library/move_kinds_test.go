@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -60,7 +62,7 @@ func TestMoveShowAndArtistToTheirOwnFolderKind(t *testing.T) {
 			if _, err := os.Stat(filepath.Join(from.Path, "Dune - Part Two (2024)")); !os.IsNotExist(err) {
 				t.Fatalf("old folder left behind: %v", err)
 			}
-			vs, err := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ? AND is_main = 1", id)
+			vs, err := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ? AND is_main = 1", id)
 			if err != nil || len(vs) != 1 || vs[0].LibraryFolderID != to.ID {
 				t.Fatalf("version %+v %v, want folder %d", vs, err, to.ID)
 			}

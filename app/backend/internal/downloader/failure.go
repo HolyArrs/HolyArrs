@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -116,7 +116,7 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 	next.State, next.StateReason, next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = "cleaned", &reason, 0, 0, 0, 0, nil
 	search := c.TurnDown && c.SearchAgain
 	var moved []int64
-	rest := map[int64]domain.SlotState{}
+	rest := map[int64]mediafiles.SlotState{}
 	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		// Read the state again inside the write so an earlier sync that ended the download wins.
 		var cur string
@@ -145,18 +145,18 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 			if err := tx.QueryRow("SELECT state, active_download_id, file_id FROM slots WHERE id = ?", sid).Scan(&state, &active, &file); err != nil {
 				continue
 			}
-			if !active.Valid || active.Int64 != d.ID || (state != string(domain.SlotDownloading) && state != string(domain.SlotStalled)) {
+			if !active.Valid || active.Int64 != d.ID || (state != string(mediafiles.SlotDownloading) && state != string(mediafiles.SlotStalled)) {
 				continue
 			}
-			if err := store.MoveSlotTx(tx, sid, domain.SlotFailed, reason, by); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, sid, mediafiles.SlotFailed, reason, by); err != nil {
 				return err
 			}
 			if !search {
-				to := domain.SlotWanted
+				to := mediafiles.SlotWanted
 				if file.Valid {
-					to = domain.SlotBetterWanted
+					to = mediafiles.SlotBetterWanted
 				}
-				if err := store.MoveSlotTx(tx, sid, to, reason, by); err != nil {
+				if err := mediafiles.MoveSlotTx(tx, sid, to, reason, by); err != nil {
 					return err
 				}
 				rest[sid] = to
@@ -179,7 +179,7 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 	}
 	for _, sid := range moved {
 		if search {
-			m.publish("slot", map[string]any{"id": sid, "state": domain.SlotFailed, "reason": reason})
+			m.publish("slot", map[string]any{"id": sid, "state": mediafiles.SlotFailed, "reason": reason})
 			if m.OnFailed != nil {
 				m.OnFailed(ctx, sid)
 			}
@@ -222,9 +222,9 @@ func hasMedia(files []File) bool {
 		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
 		ext := path.Ext(strings.TrimRight(name, ". "))
 		switch {
-		case importer.IsAudio(ext) && f.Size >= judge.MinTrack:
+		case importer.IsAudio(ext) && f.Size >= mediafiles.MinTrack:
 			return true
-		case (importer.IsVideo(ext) || importer.IsMedia(ext) && !importer.IsAudio(ext)) && f.Size >= judge.MinVideo:
+		case (importer.IsVideo(ext) || importer.IsMedia(ext) && !importer.IsAudio(ext)) && f.Size >= mediafiles.MinVideo:
 			return true
 		}
 	}
@@ -246,7 +246,7 @@ func shortcuts(files []File) []string {
 func fakeFiles(files []File, protocol string) []string {
 	bad := dangerous(files)
 	media := hasMedia(files)
-	unpackable := archiveSetSize(files) >= judge.MinVideo
+	unpackable := archiveSetSize(files) >= mediafiles.MinVideo
 	var archives []string
 	for _, f := range files {
 		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
@@ -329,14 +329,14 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 			if err := tx.QueryRow("SELECT state, active_download_id FROM slots WHERE id = ?", sid).Scan(&state, &active); err != nil {
 				continue
 			}
-			if !active.Valid || active.Int64 != old.ID || (state != string(domain.SlotDownloading) && state != string(domain.SlotStalled)) {
+			if !active.Valid || active.Int64 != old.ID || (state != string(mediafiles.SlotDownloading) && state != string(mediafiles.SlotStalled)) {
 				continue
 			}
-			if err := store.MoveSlotTx(tx, sid, domain.SlotFailed, reason, by); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, sid, mediafiles.SlotFailed, reason, by); err != nil {
 				return err
 			}
 			if !replace {
-				if err := store.MoveSlotTx(tx, sid, domain.SlotNeedsADecision, reason+"; not replaced (setting)", by); err != nil {
+				if err := mediafiles.MoveSlotTx(tx, sid, mediafiles.SlotNeedsADecision, reason+"; not replaced (setting)", by); err != nil {
 					return err
 				}
 			}
@@ -363,9 +363,9 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 		}
 	}
 	for _, sid := range moved {
-		state := domain.SlotFailed
+		state := mediafiles.SlotFailed
 		if !replace {
-			state = domain.SlotNeedsADecision
+			state = mediafiles.SlotNeedsADecision
 		}
 		m.publish("slot", map[string]any{"id": sid, "state": state, "reason": reason})
 		if replace && m.OnFailed != nil {

@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -102,9 +104,9 @@ func crashThenRetry(t *testing.T, first, second Ops) {
 	if imp.State != "done" || count(t, w.s, "imports") != 1 || count(t, w.s, "files") != 1 {
 		t.Fatalf("import %+v, imports %d, files %d", imp, count(t, w.s, "imports"), count(t, w.s, "files"))
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
-	if sl.State != domain.SlotInLibrary {
+	if sl.State != mediafiles.SlotInLibrary {
 		t.Fatalf("slot %s", sl.State)
 	}
 }
@@ -153,10 +155,10 @@ func TestSlotAndImportStayConsistentOnFailure(t *testing.T) {
 	if _, err := (&Importer{Store: w.s}).Import(ctx, w.dlID, false, domain.System); err == nil {
 		t.Fatal("import should fail")
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
-	imps, _ := database.Select[domain.Import](ctx, w.s.Read(), "imports", "")
-	if sl.State != domain.SlotImporting || sl.FileID != nil || len(imps) != 1 || imps[0].State != "placing" || count(t, w.s, "files") != 0 {
+	imps, _ := database.Select[mediafiles.Import](ctx, w.s.Read(), "imports", "")
+	if sl.State != mediafiles.SlotImporting || sl.FileID != nil || len(imps) != 1 || imps[0].State != "placing" || count(t, w.s, "files") != 0 {
 		t.Fatalf("slot %+v imports %+v", sl, imps)
 	}
 }
@@ -197,7 +199,7 @@ func TestRetryIgnoresTargetOlderThanImport(t *testing.T) {
 	started := time.Now()
 	old := started.Add(-time.Hour)
 	_ = os.Chtimes(dst, old, old)
-	step := domain.PlanStep{SourceFile: src, TargetPath: dst, Method: "hardlink"}
+	step := mediafiles.PlanStep{SourceFile: src, TargetPath: dst, Method: "hardlink"}
 	if r := place(step, Ops{}, started); r.Outcome != "refused" {
 		t.Fatalf("older file adopted: %+v", r)
 	}

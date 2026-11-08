@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -156,7 +158,7 @@ func TestCompatibilitySkippedPeopleCannotOwnOrDecideLaterMoveRequest(t *testing.
 	oldAsker, oldDecider := first.people[asker.Key], first.people[decider.Key]
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		for _, tmdb := range []string{"700078", "700079", "700080"} {
-			if _, err := database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Numeric guard " + tmdb, SortName: "numeric guard " + tmdb,
+			if _, err := database.Insert(tx, "titles", &mediafiles.Title{Kind: "movie", Name: "Numeric guard " + tmdb, SortName: "numeric guard " + tmdb,
 				Aliases: []string{}, SourceIDs: map[string]string{"tmdb": tmdb}, MetadataSource: "tmdb", Artwork: []string{}, State: "active",
 				Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System); err != nil {
 				return err
@@ -296,7 +298,7 @@ func TestCompatibilityPersonChoicePrecedesPriorIdentityMarks(t *testing.T) {
 	addMovie := func(ref string) {
 		t.Helper()
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			_, err := database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Choice guard " + ref, SortName: "choice guard " + ref,
+			_, err := database.Insert(tx, "titles", &mediafiles.Title{Kind: "movie", Name: "Choice guard " + ref, SortName: "choice guard " + ref,
 				Aliases: []string{}, SourceIDs: map[string]string{"tmdb": ref}, MetadataSource: "tmdb", Artwork: []string{}, State: "active",
 				Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System)
 			return err
@@ -596,15 +598,15 @@ func TestCompatibilityAppliesArtistAlbumAndPressingPolicy(t *testing.T) {
 	var titleID, partID, oldPressing, wantedPressing int64
 	err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{},
+		titleID, err = database.Insert(tx, "titles", &mediafiles.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": "056e4f3e-d505-4dad-8ec1-d04f521cbb56"}, MetadataSource: "musicbrainz",
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{"album", "ep"}, WhyAdded: "migration",
 			Artwork: []string{}, Status: "running", State: "active", GateDriver: "none", MusicSecondary: []string{"studio"}, MusicStatuses: []string{"official"}}, domain.System)
 		if err != nil {
 			return err
 		}
-		partID, err = database.Insert(tx, "parts", &domain.Part{TitleID: titleID, Kind: "album", Name: "Album", KeepUpToDate: true,
-			SourceIDs: map[string]string{"musicbrainz": "11111111-1111-1111-1111-111111111111"}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}, Included: true}, domain.System)
+		partID, err = database.Insert(tx, "parts", &mediafiles.Part{TitleID: titleID, Kind: "album", Name: "Album", KeepUpToDate: true,
+			SourceIDs: map[string]string{"musicbrainz": "11111111-1111-1111-1111-111111111111"}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}, Included: true}, domain.System)
 		if err != nil {
 			return err
 		}
@@ -615,7 +617,7 @@ func TestCompatibilityAppliesArtistAlbumAndPressingPolicy(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		_, err = database.Insert(tx, "items", &domain.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: domain.Numbers{}, KeepUpToDate: true}, domain.System)
+		_, err = database.Insert(tx, "items", &mediafiles.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: mediafiles.Numbers{}, KeepUpToDate: true}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -1210,7 +1212,7 @@ func TestCompatibilityMusicUndoRejectsReplacedTitle(t *testing.T) {
 	var titleID, moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Original", SortName: "original", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
+		titleID, err = database.Insert(tx, "titles", &mediafiles.Title{Kind: "artist", Name: "Original", SortName: "original", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
 		if err != nil {
 			return err
 		}
@@ -1287,7 +1289,7 @@ func TestCompatibilityDecisionTimeGapsAndStaleTitleMarksAreExplicit(t *testing.T
 	var titleID, moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Removed", SortName: "removed", Aliases: []string{}, SourceIDs: map[string]string{"tmdb": "999999"}, MetadataSource: "tmdb", Artwork: []string{}, State: "removed", Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System)
+		titleID, err = database.Insert(tx, "titles", &mediafiles.Title{Kind: "movie", Name: "Removed", SortName: "removed", Aliases: []string{}, SourceIDs: map[string]string{"tmdb": "999999"}, MetadataSource: "tmdb", Artwork: []string{}, State: "removed", Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System)
 		if err != nil {
 			return err
 		}
@@ -1727,7 +1729,7 @@ func TestCompatibilityMusicRestoreRollsBackWhenExpectedRowDisappears(t *testing.
 	var titleID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
+		titleID, err = database.Insert(tx, "titles", &mediafiles.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

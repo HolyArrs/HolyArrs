@@ -8,9 +8,10 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
 // ErrOwnTraitName says another own trait already has this name.
@@ -24,8 +25,8 @@ type OwnTraitInput struct {
 }
 
 // OwnTraits lists every own trait by name.
-func OwnTraits(ctx context.Context, st *database.Store) ([]domain.OwnTrait, error) {
-	return database.Select[domain.OwnTrait](ctx, st.Read(), "own_traits", "1=1 ORDER BY lower(name), id")
+func OwnTraits(ctx context.Context, st *database.Store) ([]mediafiles.OwnTrait, error) {
+	return database.Select[mediafiles.OwnTrait](ctx, st.Read(), "own_traits", "1=1 ORDER BY lower(name), id")
 }
 
 // loadMu keeps two reloads from crossing: a slow one that read the table
@@ -41,7 +42,7 @@ func LoadOwnTraits(ctx context.Context, st *database.Store) error {
 	if err != nil {
 		return err
 	}
-	judge.SetOwnTraits(ts)
+	mediafiles.SetOwnTraits(ts)
 	return nil
 }
 
@@ -67,9 +68,9 @@ func ownNameTaken(tx *sql.Tx, name string, not int64) error {
 }
 
 // CreateOwnTrait checks and stores a new own trait.
-func CreateOwnTrait(ctx context.Context, st *database.Store, in OwnTraitInput, by domain.Actor) (domain.OwnTrait, error) {
-	t := domain.OwnTrait{Name: in.Name, Match: in.Match, Terms: in.Terms}
-	if err := domain.CheckOwnTrait(&t); err != nil {
+func CreateOwnTrait(ctx context.Context, st *database.Store, in OwnTraitInput, by domain.Actor) (mediafiles.OwnTrait, error) {
+	t := mediafiles.OwnTrait{Name: in.Name, Match: in.Match, Terms: in.Terms}
+	if err := mediafiles.CheckOwnTrait(&t); err != nil {
 		return t, err
 	}
 	err := st.Write(ctx, func(tx *sql.Tx) error {
@@ -88,12 +89,12 @@ func CreateOwnTrait(ctx context.Context, st *database.Store, in OwnTraitInput, b
 
 // UpdateOwnTrait changes an own trait; Pick rules that use it judge by the
 // new terms from then on.
-func UpdateOwnTrait(ctx context.Context, st *database.Store, id int64, in OwnTraitInput, by domain.Actor) (domain.OwnTrait, error) {
-	next := domain.OwnTrait{Name: in.Name, Match: in.Match, Terms: in.Terms}
-	if err := domain.CheckOwnTrait(&next); err != nil {
+func UpdateOwnTrait(ctx context.Context, st *database.Store, id int64, in OwnTraitInput, by domain.Actor) (mediafiles.OwnTrait, error) {
+	next := mediafiles.OwnTrait{Name: in.Name, Match: in.Match, Terms: in.Terms}
+	if err := mediafiles.CheckOwnTrait(&next); err != nil {
 		return next, err
 	}
-	var t domain.OwnTrait
+	var t mediafiles.OwnTrait
 	err := st.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "own_traits", id, &t); err != nil {
 			return err
@@ -115,21 +116,21 @@ func UpdateOwnTrait(ctx context.Context, st *database.Store, id int64, in OwnTra
 // points, must-have and never lists (a must-have nobody can meet would
 // otherwise turn every Release down). It answers how many Pick rules changed.
 func DeleteOwnTrait(ctx context.Context, st *database.Store, id int64, by domain.Actor) (int, error) {
-	key := domain.OwnTraitKey(id)
+	key := mediafiles.OwnTraitKey(id)
 	changed := 0
 	err := st.Write(ctx, func(tx *sql.Tx) error {
-		var t domain.OwnTrait
+		var t mediafiles.OwnTrait
 		if err := database.Get(ctx, tx, "own_traits", id, &t); err != nil {
 			return err
 		}
-		ps, err := database.Select[domain.PickRules](ctx, tx, "pick_rules", "body LIKE ?", "%\""+key+"\"%")
+		ps, err := database.Select[mediafiles.PickRules](ctx, tx, "pick_rules", "body LIKE ?", "%\""+key+"\"%")
 		if err != nil {
 			return err
 		}
 		for _, p := range ps {
 			b := p.Body
 			n := len(b.Traits) + len(b.MustHave) + len(b.Never)
-			b.Traits = slices.DeleteFunc(b.Traits, func(tp domain.TraitPoints) bool { return tp.Trait == key })
+			b.Traits = slices.DeleteFunc(b.Traits, func(tp mediafiles.TraitPoints) bool { return tp.Trait == key })
 			b.MustHave = slices.DeleteFunc(b.MustHave, func(s string) bool { return s == key })
 			b.Never = slices.DeleteFunc(b.Never, func(s string) bool { return s == key })
 			if len(b.Traits)+len(b.MustHave)+len(b.Never) == n {
@@ -154,7 +155,7 @@ func DeleteOwnTrait(ctx context.Context, st *database.Store, id int64, by domain
 
 // checkOwnKeys refuses Pick rules naming an own trait that does not exist,
 // on the field of the list that holds it.
-func checkOwnKeys(tx *sql.Tx, b domain.PickRulesBody) error {
+func checkOwnKeys(tx *sql.Tx, b mediafiles.PickRulesBody) error {
 	traits := make([]string, 0, len(b.Traits))
 	for _, tp := range b.Traits {
 		traits = append(traits, tp.Trait)
@@ -164,7 +165,7 @@ func checkOwnKeys(tx *sql.Tx, b domain.PickRulesBody) error {
 		keys  []string
 	}{{"body.traits", traits}, {"body.must_have", b.MustHave}, {"body.never", b.Never}} {
 		for _, k := range l.keys {
-			id, ok := domain.OwnTraitID(k)
+			id, ok := mediafiles.OwnTraitID(k)
 			if !ok {
 				continue
 			}
@@ -173,7 +174,7 @@ func checkOwnKeys(tx *sql.Tx, b domain.PickRulesBody) error {
 				return err
 			}
 			if n == 0 {
-				return &domain.FieldError{Field: l.field, Text: "A trait of yours that was removed (" + k + ") is still listed; take it out."}
+				return &mediafiles.FieldError{Field: l.field, Text: "A trait of yours that was removed (" + k + ") is still listed; take it out."}
 			}
 		}
 	}

@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -92,14 +94,14 @@ type AskableAlbum struct {
 // askableAlbums lists an artist's albums for asking, oldest first, with
 // what the Library keeps of them.
 func (a *API) askableAlbums(ctx context.Context, titleID int64, albums []metadata.Album) ([]AskableAlbum, error) {
-	byMBID := map[string]domain.Part{}
+	byMBID := map[string]mediafiles.Part{}
 	artistKeep := false
 	if titleID != 0 {
 		db := a.s.Store.Read()
 		if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&artistKeep); err != nil {
 			return nil, err
 		}
-		ps, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", titleID)
+		ps, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", titleID)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +259,7 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 			log.Printf("api: follow on add: %v", err)
 		}
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
 		internal(w, err)
 		return
@@ -274,7 +276,7 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 }
 
 // artistID reads an artist Title from the path.
-func (a *API) artistID(w http.ResponseWriter, r *http.Request) (domain.Title, bool) {
+func (a *API) artistID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	t, ok := a.titleID(w, r)
 	if ok && t.Kind != "artist" {
 		fail(w, http.StatusNotFound, "that Title is not an artist")
@@ -344,7 +346,7 @@ func listOr(v []string) []string {
 	return v
 }
 
-func (a *API) artistInfo(ctx context.Context, t domain.Title) (*ArtistInfo, error) {
+func (a *API) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, error) {
 	n, err := library.Totals(ctx, a.s.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		return nil, err
@@ -381,8 +383,8 @@ func (a *API) listAlbums(w http.ResponseWriter, r *http.Request) {
 }
 
 // albumID reads an album from the path.
-func (a *API) albumID(w http.ResponseWriter, r *http.Request) (domain.Part, bool) {
-	var p domain.Part
+func (a *API) albumID(w http.ResponseWriter, r *http.Request) (mediafiles.Part, bool) {
+	var p mediafiles.Part
 	id, ok := pathID(w, r)
 	if !ok {
 		return p, false
@@ -494,13 +496,13 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db := a.s.Store.Read()
-	its, err := database.Select[domain.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
+	its, err := database.Select[mediafiles.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
 		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track'), id`, p.ID)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	vs, err := database.Select[domain.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
+	vs, err := database.Select[mediafiles.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -509,7 +511,7 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 	for _, v := range vs {
 		label[v.ID] = v.Label
 	}
-	slots, err := database.Select[domain.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
+	slots, err := database.Select[mediafiles.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
 	if err != nil {
 		internal(w, err)
 		return

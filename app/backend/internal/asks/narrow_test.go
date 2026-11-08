@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -231,8 +233,8 @@ func TestApproveKeepsSomeSongsOnceTheTracksArrive(t *testing.T) {
 	if _, err := r.svc.CheckReady(ctx); err != nil {
 		t.Fatal(err)
 	}
-	addTracks(t, r.st, tid, "First Light", 3, domain.SlotWanted)
-	addTracks(t, r.st, tid, "Live Night", 2, domain.SlotWanted)
+	addTracks(t, r.st, tid, "First Light", 3, mediafiles.SlotWanted)
+	addTracks(t, r.st, tid, "Live Night", 2, mediafiles.SlotWanted)
 	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE items SET recording_id = 'r' || json_extract(numbers, '$.track') WHERE title_id = ? AND kind = 'track'", tid)
 		return err

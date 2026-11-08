@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // An anime's AniList titles are kept as aliases, so Library search finds
@@ -27,13 +28,13 @@ func TestAnimeAliasesKeptAndSearched(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if len(ti.Aliases) != 2 || ti.Aliases[0] != "Sen to Chihiro no Kamikakushi" || len(asked) != 1 || asked[0] != "movie:129:Spirited Away" {
 		t.Fatalf("aliases %v asked %v", ti.Aliases, asked)
 	}
 	for _, q := range []string{"chihiro", "Kamikakushi", "spirited"} {
-		ts, err := store.SearchTitles(ctx, s, q)
+		ts, err := mediafiles.SearchTitles(ctx, s, q)
 		if err != nil || len(ts) != 1 || ts[0].ID != id {
 			t.Fatalf("search %q: %v %v", q, ts, err)
 		}

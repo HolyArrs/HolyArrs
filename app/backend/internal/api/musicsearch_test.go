@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -55,7 +57,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	// The artist got music Pick rules.
 	var rules string
 	_ = s.Read().QueryRow("SELECT p.name FROM versions v JOIN pick_rules p ON p.id = v.pick_rules_id WHERE v.title_id = ?", id).Scan(&rules)
-	if rules != domain.LosslessFirstName {
+	if rules != mediafiles.LosslessFirstName {
 		t.Fatalf("artist Pick rules %q", rules)
 	}
 	jobOf := func(body []byte) []domain.Job {
@@ -227,7 +229,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 
 	// Movie Pick rules are refused for a new artist.
 	var good int64
-	_ = s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&good)
+	_ = s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&good)
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE titles SET state = 'removed' WHERE id = ?", id)
 		return err

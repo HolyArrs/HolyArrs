@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -106,7 +108,7 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		return Step{}, false
 	}
 	defer rows.Close()
-	seen := map[domain.SlotState]bool{}
+	seen := map[mediafiles.SlotState]bool{}
 	var slotIDs, partIDs []any
 	reason, missing := "", 0
 	var searched *time.Time
@@ -117,14 +119,14 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		if rows.Scan(&id, &state, &why, &part, &at) != nil {
 			continue
 		}
-		st := domain.SlotState(state)
+		st := mediafiles.SlotState(state)
 		seen[st] = true
 		slotIDs = append(slotIDs, id)
 		if part > 0 {
 			partIDs = append(partIDs, part)
 		}
 		switch st {
-		case domain.SlotWanted, domain.SlotBetterWanted, domain.SlotFailed, domain.SlotRejected:
+		case mediafiles.SlotWanted, mediafiles.SlotBetterWanted, mediafiles.SlotFailed, mediafiles.SlotRejected:
 			missing++
 			// Only a search's own words say why nothing came: a slot never
 			// looked for still has the reason it is wanted ("aired …").
@@ -142,15 +144,15 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		return Step{}, false
 	}
 	switch {
-	case seen[domain.SlotNeedsADecision]:
+	case seen[mediafiles.SlotNeedsADecision]:
 		return Step{Kind: "waiting_on_admin"}, true
-	case seen[domain.SlotImporting]:
+	case seen[mediafiles.SlotImporting]:
 		return Step{Kind: "importing"}, true
-	case seen[domain.SlotChosen] || seen[domain.SlotDownloading] || seen[domain.SlotStalled]:
+	case seen[mediafiles.SlotChosen] || seen[mediafiles.SlotDownloading] || seen[mediafiles.SlotStalled]:
 		return Step{Kind: "downloading"}, true
 	// Held: a release was found and waits out the Pick rules' delay; it is
 	// grabbed by itself, nobody has to act.
-	case seen[domain.SlotSearching] || seen[domain.SlotHeld] || searchQueued(ctx, db, titleID, slotIDs, partIDs):
+	case seen[mediafiles.SlotSearching] || seen[mediafiles.SlotHeld] || searchQueued(ctx, db, titleID, slotIDs, partIDs):
 		return Step{Kind: "searching"}, true
 	case missing > 0:
 		st := Step{Kind: "waiting", Text: reason, SearchedAt: searched}
@@ -164,7 +166,7 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 			}
 		}
 		return st, true
-	case seen[domain.SlotNotOutYet]:
+	case seen[mediafiles.SlotNotOutYet]:
 		return Step{Kind: "not_out"}, true
 	}
 	return Step{}, false

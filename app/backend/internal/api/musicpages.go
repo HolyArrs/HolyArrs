@@ -13,8 +13,9 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -420,8 +421,8 @@ func (a *API) artistTopSongs(ctx context.Context, mbid string) *metadata.MusicTo
 }
 
 // libraryArtist finds the Library's artist with this MusicBrainz id.
-func (a *API) libraryArtist(ctx context.Context, mbid string) (*domain.Title, error) {
-	ts, err := database.Select[domain.Title](ctx, a.s.Store.Read(), "titles",
+func (a *API) libraryArtist(ctx context.Context, mbid string) (*mediafiles.Title, error) {
+	ts, err := database.Select[mediafiles.Title](ctx, a.s.Store.Read(), "titles",
 		"kind = 'artist' AND state != 'removed' AND lower(json_extract(source_ids, '$.musicbrainz')) = ? LIMIT 1", mbid)
 	if err != nil || len(ts) == 0 {
 		return nil, err
@@ -487,7 +488,7 @@ func (a *API) albumFollows(ctx context.Context, user int64) map[string]bool {
 
 // pageAlbums builds the artist's album list (newest first) with Library
 // states, explicit marks and follows.
-func (a *API) pageAlbums(ctx context.Context, r *http.Request, art metadata.Artist, dz metadata.DeezerProfile) ([]PageAlbum, *domain.Title, error) {
+func (a *API) pageAlbums(ctx context.Context, r *http.Request, art metadata.Artist, dz metadata.DeezerProfile) ([]PageAlbum, *mediafiles.Title, error) {
 	t, err := a.libraryArtist(ctx, strings.ToLower(art.MBID))
 	if err != nil {
 		return nil, nil, err
@@ -1223,10 +1224,10 @@ func (a *API) trackStates(ctx context.Context, partID int64) map[string]string {
 			continue
 		}
 		h := "missing"
-		switch domain.SlotState(st) {
-		case domain.SlotInLibrary, domain.SlotBetterWanted:
+		switch mediafiles.SlotState(st) {
+		case mediafiles.SlotInLibrary, mediafiles.SlotBetterWanted:
 			h = "in_library"
-		case domain.SlotChosen, domain.SlotDownloading, domain.SlotImporting, domain.SlotSearching:
+		case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotImporting, mediafiles.SlotSearching:
 			h = "downloading"
 		}
 		if rec != "" {

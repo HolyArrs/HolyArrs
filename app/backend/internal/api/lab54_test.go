@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -47,8 +49,8 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 			return err
 		}
 		y := 2024
-		lf := &domain.LibraryFolder{Path: movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: &y, Aliases: []string{},
+		lf := &mediafiles.LibraryFolder{Path: movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: &y, Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
@@ -57,15 +59,15 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true, KeepUpToDate: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotChosen}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotChosen}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -147,7 +149,7 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 	seen = append(seen, r.Phase)
 	var st string
 	_ = s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&st)
-	if r.Phase != "done" || r.Label != "Done" || (st != string(domain.SlotInLibrary) && st != string(domain.SlotBetterWanted)) {
+	if r.Phase != "done" || r.Label != "Done" || (st != string(mediafiles.SlotInLibrary) && st != string(mediafiles.SlotBetterWanted)) {
 		t.Fatalf("after import %s: slot %s, row %+v, phases %v", imp.State, st, r, seen)
 	}
 	// The movie in the Library is the video from inside the RAR set, not the Sample.

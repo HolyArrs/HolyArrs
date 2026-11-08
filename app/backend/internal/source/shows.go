@@ -13,14 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 // KindSearchSeason is the job kind that searches one season of a show for one Version.
@@ -52,11 +50,11 @@ func (s *Searcher) showRules(ctx context.Context) showRules {
 
 // epSlot is one episode of a show with its Slot in one Version.
 type epSlot struct {
-	ref judge.EpisodeRef
-	it  domain.Item
+	ref mediafiles.EpisodeRef
+	it  mediafiles.Item
 	// sl is nil when the episode has no Slot in this Version.
-	sl  *domain.Slot
-	cur *judge.Current
+	sl  *mediafiles.Slot
+	cur *mediafiles.Current
 	// kept means the episode, its season, the Version and the show are all kept up to date.
 	kept bool
 	// soon means aired, or airing within a day, when season packs may be taken.
@@ -66,9 +64,9 @@ type epSlot struct {
 
 // showSet is a show search: the show's episodes in one Version and the Slots asked for.
 type showSet struct {
-	ti     domain.Title
-	ver    domain.Version
-	pr     domain.PickRules
+	ti     mediafiles.Title
+	ver    mediafiles.Version
+	pr     mediafiles.PickRules
 	eps    []epSlot
 	target map[int64]bool
 	// notOut holds target Slots that were not out yet; a hand search skips that gate.
@@ -78,7 +76,7 @@ type showSet struct {
 }
 
 // EpisodeLabel names an episode item: S01E02, or its air day for a daily show.
-func EpisodeLabel(it domain.Item) string {
+func EpisodeLabel(it mediafiles.Item) string {
 	s, e := 0, 0
 	if it.Numbers.Season != nil {
 		s = *it.Numbers.Season
@@ -91,11 +89,11 @@ func EpisodeLabel(it domain.Item) string {
 
 // currentOf describes the file a Slot holds for the better-than-what-we-have
 // step, or nil when it holds none.
-func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRules) *judge.Current {
+func currentOf(ctx context.Context, db *sql.DB, sl mediafiles.Slot, pr mediafiles.PickRules) *mediafiles.Current {
 	if sl.FileID == nil {
 		return nil
 	}
-	var f domain.File
+	var f mediafiles.File
 	if err := database.Get(ctx, db, "files", *sl.FileID, &f); err != nil || f.State != "present" {
 		return nil
 	}
@@ -103,12 +101,12 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		name = *f.ReleaseName
 	}
-	if cur := judge.CurrentOf(name, f.AddedAt, pr.Body); cur.Step != "" {
+	if cur := mediafiles.CurrentOf(name, f.AddedAt, pr.Body); cur.Step != "" {
 		return &cur
 	}
-	if domain.IsMusicRules(pr.Body) {
+	if mediafiles.IsMusicRules(pr.Body) {
 		if word := trackFormat(ctx, db, f); word != "" {
-			if cur := judge.CurrentOf(name+" ["+word+"]", f.AddedAt, pr.Body); cur.Step != "" {
+			if cur := mediafiles.CurrentOf(name+" ["+word+"]", f.AddedAt, pr.Body); cur.Step != "" {
 				return &cur
 			}
 		}
@@ -119,7 +117,7 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 // trackFormat is the format word of a track file: its extension, or for a file
 // that may hold either kind the codec read from its library folder. A lossless
 // copy must stay protected however it was named.
-func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
+func trackFormat(ctx context.Context, db *sql.DB, f mediafiles.File) string {
 	ext := strings.ToLower(path.Ext(f.RelativePath))
 	switch ext {
 	case "":
@@ -129,7 +127,7 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 		if db.QueryRowContext(ctx, "SELECT lf.path FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id WHERE v.id = ?", f.VersionID).Scan(&lib) != nil {
 			return ""
 		}
-		info, err := mediainfo.Inspect(filepath.Join(lib, filepath.FromSlash(f.RelativePath)))
+		info, err := mediafiles.Inspect(filepath.Join(lib, filepath.FromSlash(f.RelativePath)))
 		if err != nil {
 			return ""
 		}
@@ -144,13 +142,13 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 }
 
 // loadShow reads a show's episodes with their Slots in one Version.
-func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Version) (showSet, error) {
+func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediafiles.Version) (showSet, error) {
 	db := s.Store.Read()
 	set := showSet{ti: ti, ver: ver, target: map[int64]bool{}, notOut: map[int64]bool{}}
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
 		return set, err
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ?", ti.ID)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ?", ti.ID)
 	if err != nil {
 		return set, err
 	}
@@ -158,23 +156,23 @@ func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Ver
 	for _, p := range parts {
 		partKept[p.ID] = p.KeepUpToDate && p.DroppedAt == nil
 	}
-	its, err := database.Select[domain.Item](ctx, db, "items", `title_id = ? AND kind = 'episode' AND dropped_at IS NULL
+	its, err := database.Select[mediafiles.Item](ctx, db, "items", `title_id = ? AND kind = 'episode' AND dropped_at IS NULL
 		ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')`, ti.ID)
 	if err != nil {
 		return set, err
 	}
-	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", ver.ID, ti.ID)
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", ver.ID, ti.ID)
 	if err != nil {
 		return set, err
 	}
-	byItem := map[int64]*domain.Slot{}
+	byItem := map[int64]*mediafiles.Slot{}
 	for i := range slots {
 		byItem[slots[i].ItemID] = &slots[i]
 	}
 	soon := time.Now().Add(24 * time.Hour)
 	for _, it := range its {
 		e := epSlot{it: it, sl: byItem[it.ID]}
-		e.ref = judge.EpisodeRef{ItemID: it.ID}
+		e.ref = mediafiles.EpisodeRef{ItemID: it.ID}
 		if it.Numbers.Season != nil {
 			e.ref.Season = *it.Numbers.Season
 		}
@@ -200,8 +198,8 @@ func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Ver
 	return set, nil
 }
 
-func (set showSet) ref() judge.TitleRef {
-	r := judge.TitleRef{ID: set.ti.ID, Name: set.ti.Name, Aliases: set.ti.Aliases, Kind: "show"}
+func (set showSet) ref() mediafiles.TitleRef {
+	r := mediafiles.TitleRef{ID: set.ti.ID, Name: set.ti.Name, Aliases: set.ti.Aliases, Kind: "show"}
 	if set.ti.Year != nil {
 		r.Year = *set.ti.Year
 	}
@@ -251,12 +249,12 @@ func coverLabel(eps []*epSlot) string {
 	return strings.Join(ls, ", ")
 }
 
-var lookingNow = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted}
+var lookingNow = []mediafiles.SlotState{mediafiles.SlotWanted, mediafiles.SlotBetterWanted}
 
 // judgeShow judges every release for a show search and ranks them.
-func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand, skipGate bool, rules showRules) ([]judge.Release, []judge.Verdict, error) {
+func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand, skipGate bool, rules showRules) ([]mediafiles.ReleaseFacts, []mediafiles.Verdict, error) {
 	bad := s.dangerousSeen(ctx)
-	refs := make([]judge.EpisodeRef, len(set.eps))
+	refs := make([]mediafiles.EpisodeRef, len(set.eps))
 	byItem := map[int64]*epSlot{}
 	for i := range set.eps {
 		refs[i] = set.eps[i].ref
@@ -273,37 +271,37 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 	}
 	tref := set.ref()
 	checks := Checks(ctx, s.Store.Read())
-	rels := make([]judge.Release, len(all))
-	vs := make([]judge.Verdict, len(all))
+	rels := make([]mediafiles.ReleaseFacts, len(all))
+	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true})
-		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
+		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
+		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
 			Checks: checks}
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], refs, byItem, rules, turnedFor)
 		}
-		vs[i] = judge.Judge(rels[i], ss, set.pr.Body)
+		vs[i] = mediafiles.Judge(rels[i], ss, set.pr.Body)
 	}
 	if rules.packsFirst {
-		judge.RankPacksFirst(rels, vs, set.pr.Body)
+		mediafiles.RankPacksFirst(rels, vs, set.pr.Body)
 	} else {
-		judge.Rank(rels, vs, set.pr.Body)
+		mediafiles.Rank(rels, vs, set.pr.Body)
 	}
 	return rels, vs, nil
 }
 
-func matchFail(rule, detail string) judge.Reason {
-	return judge.Reason{Step: "match", Rule: rule, Effect: "fail", Detail: detail}
+func matchFail(rule, detail string) mediafiles.Reason {
+	return mediafiles.Reason{Step: "match", Rule: rule, Effect: "fail", Detail: detail}
 }
 
 // lines works out which episodes and Slots a show release covers and applies
 // the season pack rules.
-func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.EpisodeRef, byItem map[int64]*epSlot, rules showRules,
+func (set showSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, refs []mediafiles.EpisodeRef, byItem map[int64]*epSlot, rules showRules,
 	turnedFor func(int64) []string) {
 	p := rel.Parse
-	found, why := judge.MatchEpisodes(p, set.order(), refs)
+	found, why := mediafiles.MatchEpisodes(p, set.order(), refs)
 	if why != "" {
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("episode", why))
 		return
@@ -312,8 +310,8 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 	for _, r := range found {
 		covered = append(covered, byItem[r.ItemID])
 	}
-	ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: "episode", Effect: "pass", Detail: "holds " + coverLabel(covered)})
-	pack := judge.IsPack(p)
+	ss.MatchReasons = append(ss.MatchReasons, mediafiles.Reason{Step: "match", Rule: "episode", Effect: "pass", Detail: "holds " + coverLabel(covered)})
+	pack := mediafiles.IsPack(p)
 	if (p.Kind.Value == releasename.KindMultiSeason || p.Kind.Value == releasename.KindComplete) && !rules.multiSeason {
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("several_seasons", "holds more than one season; Releases with several seasons are not taken (Settings > Search)"))
 		return
@@ -379,7 +377,7 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 		}
 		isTarget := set.target[e.sl.ID]
 		if !isTarget && !(e.kept && slices.Contains(lookingNow, e.sl.State)) {
-			if e.kept && e.sl.State != domain.SlotNotOutYet {
+			if e.kept && e.sl.State != mediafiles.SlotNotOutYet {
 				noGain = append(noGain, e.ref.Label()+" is "+strings.ReplaceAll(string(e.sl.State), "_", " "))
 			}
 			continue
@@ -389,7 +387,7 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 			targetTurned = targetTurned || isTarget
 			continue
 		}
-		if !judge.Gains(rel, set.pr.Body, e.cur) {
+		if !mediafiles.Gains(rel, set.pr.Body, e.cur) {
 			noGain = append(noGain, e.ref.Label()+" already has a copy as good")
 			continue
 		}
@@ -400,11 +398,11 @@ func (set showSet) lines(ss *judge.SlotSet, rel judge.Release, refs []judge.Epis
 		ss.SlotIDs = append(ss.SlotIDs, e.sl.ID)
 	}
 	if len(turnedSome) > 0 {
-		ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: "turned_down_some", Effect: "warn",
+		ss.MatchReasons = append(ss.MatchReasons, mediafiles.Reason{Step: "match", Rule: "turned_down_some", Effect: "warn",
 			Detail: "turned down before for " + strings.Join(turnedSome, ", ") + "; not used for those"})
 	}
 	if len(noGain) > 0 {
-		r := judge.Reason{Step: "match", Rule: "pack_share", Effect: "warn", Detail: "not every episode would gain: " + strings.Join(noGain, "; ")}
+		r := mediafiles.Reason{Step: "match", Rule: "pack_share", Effect: "warn", Detail: "not every episode would gain: " + strings.Join(noGain, "; ")}
 		if !rules.packAny {
 			r.Effect = "fail"
 			r.Detail += " (Settings > Search: every episode must gain)"
@@ -432,7 +430,7 @@ type showPick struct {
 
 // pickShow takes the passing releases best first. A release holding an episode
 // already taken in this pass is skipped, so each Slot gets one pick.
-func (s *Searcher) pickShow(ctx context.Context, all []found, vs []judge.Verdict, now time.Time) []showPick {
+func (s *Searcher) pickShow(ctx context.Context, all []found, vs []mediafiles.Verdict, now time.Time) []showPick {
 	order := []int{}
 	for i := range vs {
 		if vs[i].Passed && vs[i].Rank > 0 && len(vs[i].SlotIDs) > 0 {
@@ -452,7 +450,7 @@ func (s *Searcher) pickShow(ctx context.Context, all []found, vs []judge.Verdict
 		}
 		if over, why := s.overGrabLimit(ctx, all[i].src, now); over {
 			vs[i].Outcome = "passed_over"
-			vs[i].Reasons = append(vs[i].Reasons, judge.Reason{Step: "rank", Rule: "source_limit", Effect: "rank", Detail: why})
+			vs[i].Reasons = append(vs[i].Reasons, mediafiles.Reason{Step: "rank", Rule: "source_limit", Effect: "rank", Detail: why})
 			continue
 		}
 		held := vs[i].HoldUntil != nil && now.Before(*vs[i].HoldUntil)
@@ -471,7 +469,7 @@ func (s *Searcher) pickShow(ctx context.Context, all []found, vs []judge.Verdict
 // settlePicks settles show picks, choosing or holding each release for all its
 // Slots in one write. It returns how many were chosen and held, and the Slots
 // they took.
-func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int64, titleID int64, labels map[int64]string, all []found, vs []judge.Verdict, ids []int64,
+func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int64, titleID int64, labels map[int64]string, all []found, vs []mediafiles.Verdict, ids []int64,
 	picks []showPick, how string) (int, int, map[int64]bool) {
 	chosen, held := 0, 0
 	took := map[int64]bool{}
@@ -497,10 +495,10 @@ func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int6
 		for _, id := range pk.slots {
 			if pk.held {
 				s.addEvent(ctx, by, jobID, titleID, id, EventReleaseHeld, fmt.Sprintf("%s holding %s for %s", how, name, strings.Join(eps, ", ")), data)
-				s.publish("slot", map[string]any{"id": id, "state": domain.SlotHeld, "reason": "holding " + name})
+				s.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotHeld, "reason": "holding " + name})
 			} else {
 				s.addEvent(ctx, by, jobID, titleID, id, EventReleaseChosen, fmt.Sprintf("%s chose %s for %s", how, name, strings.Join(eps, ", ")), data)
-				s.publish("slot", map[string]any{"id": id, "state": domain.SlotChosen, "reason": "chose " + name})
+				s.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotChosen, "reason": "chose " + name})
 			}
 		}
 		if pk.held {
@@ -537,7 +535,7 @@ func (s *Searcher) settleChosenMany(ctx context.Context, slotIDs []int64, releas
 			}
 		}
 		for _, id := range slotIDs {
-			if err := moveSlotTx(tx, id, domain.SlotChosen, "chose "+name, by, releaseID); err != nil {
+			if err := moveSlotTx(tx, id, mediafiles.SlotChosen, "chose "+name, by, releaseID); err != nil {
 				return err
 			}
 			if err := passOverHeldTx(tx, id, releaseID, by); err != nil {
@@ -571,7 +569,7 @@ func (s *Searcher) settleHeldMany(ctx context.Context, slotIDs []int64, releaseI
 			if err := passOverHeldTx(tx, id, releaseID, by); err != nil {
 				return err
 			}
-			if err := moveSlotTx(tx, id, domain.SlotHeld, "holding "+name, by, releaseID); err != nil {
+			if err := moveSlotTx(tx, id, mediafiles.SlotHeld, "holding "+name, by, releaseID); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, database.FormatTime(until), id); err != nil {
@@ -618,7 +616,7 @@ func PickSlots(rel domain.Release) []int64 {
 
 // showQuery is the search for one episode (daily: its air day; absolute: its
 // running number) or, with ep nil, one season.
-func showQuery(ti domain.Title, season int, ep *epSlot) Query {
+func showQuery(ti mediafiles.Title, season int, ep *epSlot) Query {
 	q := Query{Title: ti.Name, TV: true, Season: season}
 	q.TVDB, _ = strconv.Atoi(ti.SourceIDs["tvdb"])
 	q.TVMaze, _ = strconv.Atoi(ti.SourceIDs["tvmaze"])
@@ -672,16 +670,16 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	db := s.Store.Read()
 	by := jobActor(r)
 	jobID := r.Job.ID
-	var part domain.Part
+	var part mediafiles.Part
 	if err := database.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil {
 		return fmt.Errorf("season %d: %w", r.Job.Subject.ID, err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	if err := database.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
 		return err
 	}
 	vid, _ := r.Job.Params["version_id"].(float64)
-	var ver domain.Version
+	var ver mediafiles.Version
 	if err := database.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
 		return fmt.Errorf("search_season needs a version_id of the show")
 	}
@@ -716,11 +714,11 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		if e.sl == nil {
 			continue
 		}
-		ok := show || slices.Contains([]domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotFailed, domain.SlotRejected, domain.SlotStalled}, e.sl.State)
+		ok := show || slices.Contains([]mediafiles.SlotState{mediafiles.SlotWanted, mediafiles.SlotBetterWanted, mediafiles.SlotFailed, mediafiles.SlotRejected, mediafiles.SlotStalled}, e.sl.State)
 		if ok && (e.kept || anyEp || show) {
 			looking = append(looking, e)
 		}
-		missing := e.sl.State == domain.SlotWanted || e.cur == nil && (e.sl.State == domain.SlotFailed || e.sl.State == domain.SlotRejected)
+		missing := e.sl.State == mediafiles.SlotWanted || e.cur == nil && (e.sl.State == mediafiles.SlotFailed || e.sl.State == mediafiles.SlotRejected)
 		if e.kept && (!missing || !e.soon) {
 			whole = false
 		}
@@ -752,12 +750,12 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			if !set.target[e.sl.ID] {
 				continue
 			}
-			to := domain.SlotWanted
-			if e.cur != nil || e.sl.State == domain.SlotBetterWanted {
-				to = domain.SlotBetterWanted
+			to := mediafiles.SlotWanted
+			if e.cur != nil || e.sl.State == mediafiles.SlotBetterWanted {
+				to = mediafiles.SlotBetterWanted
 			}
-			if st := s.slotState(ctx, e.sl.ID); st == domain.SlotSearching {
-				_ = store.MoveSlot(ctx, s.Store, e.sl.ID, to, reason, by)
+			if st := s.slotState(ctx, e.sl.ID); st == mediafiles.SlotSearching {
+				_ = mediafiles.MoveSlot(ctx, s.Store, e.sl.ID, to, reason, by)
 				s.publish("slot", map[string]any{"id": e.sl.ID, "state": to, "reason": reason})
 			}
 		}
@@ -768,11 +766,11 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		set.target[e.sl.ID] = true
 		targets = append(targets, e.sl.ID)
 		if !show {
-			if err := store.MoveSlot(ctx, s.Store, e.sl.ID, domain.SlotSearching, "searching season "+strconv.Itoa(season), by); err != nil {
+			if err := mediafiles.MoveSlot(ctx, s.Store, e.sl.ID, mediafiles.SlotSearching, "searching season "+strconv.Itoa(season), by); err != nil {
 				delete(set.target, e.sl.ID)
 				continue
 			}
-			s.publish("slot", map[string]any{"id": e.sl.ID, "state": domain.SlotSearching})
+			s.publish("slot", map[string]any{"id": e.sl.ID, "state": mediafiles.SlotSearching})
 		}
 	}
 
@@ -866,10 +864,10 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-func (s *Searcher) slotState(ctx context.Context, id int64) domain.SlotState {
+func (s *Searcher) slotState(ctx context.Context, id int64) mediafiles.SlotState {
 	var st string
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st)
-	return domain.SlotState(st)
+	return mediafiles.SlotState(st)
 }
 
 // queueEpisodes queues an episode search for each Slot.
@@ -918,7 +916,7 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) {
 			continue
 		}
-		if !tagset.SourceServes(src.Tags, titleTags) {
+		if !mediafiles.SourceServes(src.Tags, titleTags) {
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
 			continue
 		}
@@ -1093,7 +1091,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 				continue
 			}
 			set.target[c.sl.ID] = true
-			if c.sl.State == domain.SlotHeld && c.sl.HeldReleaseID != nil {
+			if c.sl.State == mediafiles.SlotHeld && c.sl.HeldReleaseID != nil {
 				heldNow[c.sl.ID] = *c.sl.HeldReleaseID
 				dup := false
 				for _, f := range cands {

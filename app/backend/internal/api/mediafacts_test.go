@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -21,7 +23,7 @@ func TestTitleViewCarriesHeaderFacts(t *testing.T) {
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &resp)
 	slot := resp.Title.Slots[0]
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		f := &domain.File{SlotIDs: []int64{slot.ID}, VersionID: slot.VersionID, RelativePath: "Dune/Dune.mkv", Size: 10, AddedAt: time.Now(),
+		f := &mediafiles.File{SlotIDs: []int64{slot.ID}, VersionID: slot.VersionID, RelativePath: "Dune/Dune.mkv", Size: 10, AddedAt: time.Now(),
 			Languages: []string{"en"}, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present",
 			MediaInfo: map[string]any{"resolution": "1080p", "width": 1920, "height": 800, "audio_codec": "eac3",
 				"audio_channels": "5.1", "subtitle_languages": []string{"en", "fr"}, "runtime_seconds": 9960}}

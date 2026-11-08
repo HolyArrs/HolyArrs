@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -178,8 +180,8 @@ func TestMarkFailedRoute(t *testing.T) {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Aliases: []string{}, SourceIDs: map[string]string{},
+		lf := &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		for _, x := range []struct {
 			table string
@@ -189,15 +191,15 @@ func TestMarkFailedRoute(t *testing.T) {
 				return err
 			}
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		ver := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true}
+		ver := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true}
 		if _, err := database.Insert(tx, "versions", ver, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: ver.ID, State: domain.SlotDownloading}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: ver.ID, State: mediafiles.SlotDownloading}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -245,7 +247,7 @@ func TestMarkFailedRoute(t *testing.T) {
 	}
 	var st string
 	_ = s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&st)
-	if st != string(domain.SlotFailed) {
+	if st != string(mediafiles.SlotFailed) {
 		t.Fatalf("slot %s", st)
 	}
 	do(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(dlID)+"/mark-failed", "", 409)

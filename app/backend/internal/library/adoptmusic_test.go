@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -132,7 +134,7 @@ func TestAdoptMusicMovesNothing(t *testing.T) {
 	if chosen != relOldDx {
 		t.Fatalf("pressing %s", chosen)
 	}
-	files, _ := database.Select[domain.File](ctx, s.Read(), "files", "version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY relative_path", id)
+	files, _ := database.Select[mediafiles.File](ctx, s.Read(), "files", "version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY relative_path", id)
 	if len(files) != 6 {
 		t.Fatalf("files %d", len(files))
 	}
@@ -142,7 +144,7 @@ func TestAdoptMusicMovesNothing(t *testing.T) {
 		}
 		var state string
 		_ = s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", f.SlotIDs[0]).Scan(&state)
-		if state != string(domain.SlotInLibrary) && state != string(domain.SlotBetterWanted) {
+		if state != string(mediafiles.SlotInLibrary) && state != string(mediafiles.SlotBetterWanted) {
 			t.Fatalf("slot %s", state)
 		}
 	}

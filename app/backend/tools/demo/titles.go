@@ -13,10 +13,10 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -138,7 +138,7 @@ func (w *world) movies(ctx context.Context) error {
 		return err
 	}
 	var fourK int64
-	_ = w.s.Read().QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&fourK)
+	_ = w.s.Read().QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&fourK)
 	for i, e := range demoMovies {
 		key := "movie:" + e.TMDB
 		if w.m.Titles[key] != 0 {
@@ -196,14 +196,14 @@ func (w *world) skip(format string, a ...any) {
 // adoptMovie makes the movie's folder with a placeholder file named by the
 // app's naming pattern (or uses the lab's own folder when it is there) and
 // adopts it, as Library > Adopt does.
-func (w *world) adoptMovie(ctx context.Context, lf domain.LibraryFolder, m metadata.Movie, e movieEntry, seed int) (int64, error) {
+func (w *world) adoptMovie(ctx context.Context, lf mediafiles.LibraryFolder, m metadata.Movie, e movieEntry, seed int) (int64, error) {
 	release := movieRelease(m, e.Quality)
 	p := releasename.Parse(release, releasename.Hints{})
-	facts := naming.FactsFrom(m.Name, m.Year, m.IDs, p, release, ".mkv")
-	folder := naming.Folder(w.ns, facts)
+	facts := mediafiles.FactsFrom(m.Name, m.Year, m.IDs, p, release, ".mkv")
+	folder := mediafiles.Folder(w.ns, facts)
 	dir := filepath.Join(lf.Path, folder)
 	if !hasVideo(dir) {
-		if err := w.placeholder(filepath.Join(dir, naming.File(w.ns, facts)), seed); err != nil {
+		if err := w.placeholder(filepath.Join(dir, mediafiles.FileName(w.ns, facts)), seed); err != nil {
 			return 0, err
 		}
 	}
@@ -218,7 +218,7 @@ func (w *world) adoptMovie(ctx context.Context, lf domain.LibraryFolder, m metad
 }
 
 // upcoming adds the newest movie of that name that is not out yet.
-func (w *world) upcoming(ctx context.Context, lf domain.LibraryFolder, name string) error {
+func (w *world) upcoming(ctx context.Context, lf mediafiles.LibraryFolder, name string) error {
 	found, err := w.lib.Metadata.Search(ctx, name, 0)
 	if err != nil {
 		w.skip("upcoming %q: %v", name, err)
@@ -293,7 +293,7 @@ func (w *world) shows(ctx context.Context) error {
 			w.say("   %s: already in the Library (not added by seed), left alone", sh.Name)
 			continue
 		}
-		folder := naming.ShowFolder(w.ns, naming.Facts{Title: sh.Name, Year: sh.Year, TMDB: sh.IDs["tmdb"], IMDB: sh.IDs["imdb"]})
+		folder := mediafiles.ShowFolder(w.ns, mediafiles.NameFacts{Title: sh.Name, Year: sh.Year, TMDB: sh.IDs["tmdb"], IMDB: sh.IDs["imdb"]})
 		dir := filepath.Join(lf.Path, folder)
 		files := 0
 		if !hasVideo(dir) {
@@ -304,9 +304,9 @@ func (w *world) shows(ctx context.Context) error {
 				}
 				release := fmt.Sprintf("%s.S%02dE%02d.%s", dotted(sh.Name), ep.Season, ep.Number, qualityTags[q])
 				p := releasename.Parse(release, releasename.Hints{})
-				facts := naming.FactsFrom(sh.Name, sh.Year, sh.IDs, p, release, ".mkv")
-				ef := naming.EpisodeFacts{Facts: facts, Order: naming.OrderAired, Season: ep.Season, Episodes: []int{ep.Number}, Titles: []string{ep.Name}}
-				rel := naming.EpisodePath(w.ns, folder, ef)
+				facts := mediafiles.FactsFrom(sh.Name, sh.Year, sh.IDs, p, release, ".mkv")
+				ef := mediafiles.EpisodeFacts{NameFacts: facts, Order: mediafiles.OrderAired, Season: ep.Season, Episodes: []int{ep.Number}, Titles: []string{ep.Name}}
+				rel := mediafiles.EpisodePath(w.ns, folder, ef)
 				if err := w.placeholder(filepath.Join(lf.Path, filepath.FromSlash(rel)), i*1000+j); err != nil {
 					return err
 				}
@@ -417,7 +417,7 @@ func (w *world) artists(ctx context.Context) error {
 			return fmt.Errorf("%s: %w", e.Name, err)
 		}
 		w.m.Titles[key] = id
-		parts, err := database.Select[domain.Part](ctx, w.s.Read(), "parts",
+		parts, err := database.Select[mediafiles.Part](ctx, w.s.Read(), "parts",
 			"title_id = ? AND kind = 'album' AND included = 1 AND release_type = 'album' AND release_date IS NOT NULL AND release_date < ? ORDER BY release_date",
 			id, database.FormatTime(time.Now()))
 		if err != nil {
@@ -473,7 +473,7 @@ func spread(n, k int) []int {
 // posters refreshes every movie and show without a cached poster, which
 // fills the artwork cache through the app's own refresh.
 func (w *world) posters(ctx context.Context) error {
-	ts, err := database.Select[domain.Title](ctx, w.s.Read(), "titles", "kind IN ('movie', 'show') AND state != 'removed' AND artwork NOT LIKE '%poster:%' ORDER BY id")
+	ts, err := database.Select[mediafiles.Title](ctx, w.s.Read(), "titles", "kind IN ('movie', 'show') AND state != 'removed' AND artwork NOT LIKE '%poster:%' ORDER BY id")
 	if err != nil {
 		return err
 	}

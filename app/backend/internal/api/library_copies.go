@@ -10,21 +10,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type libraryCopySearchIn struct {
-	Selections  []store.LibraryCopySelection `json:"selections"`
-	ReviewToken string                       `json:"review_token,omitempty"`
+	Selections  []mediafiles.LibraryCopySelection `json:"selections"`
+	ReviewToken string                            `json:"review_token,omitempty"`
 }
 
 type libraryCopySearchPreview struct {
-	Copies      []store.LibraryCopy `json:"copies"`
-	SlotCount   int                 `json:"slot_count"`
-	ReviewToken string              `json:"review_token"`
+	Copies      []mediafiles.LibraryCopy `json:"copies"`
+	SlotCount   int                      `json:"slot_count"`
+	ReviewToken string                   `json:"review_token"`
 }
 
 type libraryCopySearchItem struct {
@@ -50,8 +51,8 @@ func (a *API) listLibraryCopies(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	page, err := store.LibraryCopies(r.Context(), a.s.Store, store.LibraryCopyFilter{Query: r.URL.Query().Get("q"), Codec: r.URL.Query().Get("codec"), Sort: r.URL.Query().Get("sort"), Limit: limit, Offset: offset})
-	if errors.Is(err, store.ErrLibraryCopyFilter) || errors.Is(err, store.ErrTitleSearchQuery) {
+	page, err := mediafiles.LibraryCopies(r.Context(), a.s.Store, mediafiles.LibraryCopyFilter{Query: r.URL.Query().Get("q"), Codec: r.URL.Query().Get("codec"), Sort: r.URL.Query().Get("sort"), Limit: limit, Offset: offset})
+	if errors.Is(err, mediafiles.ErrLibraryCopyFilter) || errors.Is(err, mediafiles.ErrTitleSearchQuery) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -80,11 +81,11 @@ func (a *API) previewLibraryCopySearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	preview, err := a.libraryCopyPreview(r, in.Selections)
-	if errors.Is(err, store.ErrLibraryCopyFilter) {
+	if errors.Is(err, mediafiles.ErrLibraryCopyFilter) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if errors.Is(err, store.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
+	if errors.Is(err, mediafiles.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
 		fail(w, http.StatusConflict, err.Error())
 		return
 	}
@@ -97,8 +98,8 @@ func (a *API) previewLibraryCopySearch(w http.ResponseWriter, r *http.Request) {
 
 var errProtectedLibraryCopy = errors.New("a selected Library copy is protected")
 
-func (a *API) libraryCopyPreview(r *http.Request, selections []store.LibraryCopySelection) (libraryCopySearchPreview, error) {
-	copies, err := store.SelectedLibraryCopies(r.Context(), a.s.Store, selections)
+func (a *API) libraryCopyPreview(r *http.Request, selections []mediafiles.LibraryCopySelection) (libraryCopySearchPreview, error) {
+	copies, err := mediafiles.SelectedLibraryCopies(r.Context(), a.s.Store, selections)
 	if err != nil {
 		return libraryCopySearchPreview{}, err
 	}
@@ -107,7 +108,7 @@ func (a *API) libraryCopyPreview(r *http.Request, selections []store.LibraryCopy
 		if copy.Protected {
 			return libraryCopySearchPreview{}, errProtectedLibraryCopy
 		}
-		slots, err := store.LibraryCopySlots(r.Context(), a.s.Store, store.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID})
+		slots, err := mediafiles.LibraryCopySlots(r.Context(), a.s.Store, mediafiles.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID})
 		if err != nil {
 			return libraryCopySearchPreview{}, err
 		}
@@ -116,7 +117,7 @@ func (a *API) libraryCopyPreview(r *http.Request, selections []store.LibraryCopy
 	return libraryCopySearchPreview{Copies: copies, SlotCount: count, ReviewToken: libraryCopyReviewToken(copies)}, nil
 }
 
-func libraryCopyReviewToken(copies []store.LibraryCopy) string {
+func libraryCopyReviewToken(copies []mediafiles.LibraryCopy) string {
 	h := sha256.New()
 	for _, c := range copies {
 		_, _ = fmt.Fprintf(h, "%d\x00%d\x00%d\x00%d\x00%d\x00%s\x00%s\x00%s\x00%t\n", c.FileID, c.VersionID, c.TitleID, c.PickRulesID, c.AudioTracks, c.FileUpdatedAt.UTC().Format(database.TimeLayout), c.VersionUpdatedAt.UTC().Format(database.TimeLayout), c.Codec, c.Protected)
@@ -134,11 +135,11 @@ func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	preview, err := a.libraryCopyPreview(r, in.Selections)
-	if errors.Is(err, store.ErrLibraryCopyFilter) {
+	if errors.Is(err, mediafiles.ErrLibraryCopyFilter) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if errors.Is(err, store.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
+	if errors.Is(err, mediafiles.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
 		fail(w, http.StatusConflict, err.Error())
 		return
 	}
@@ -156,10 +157,10 @@ func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
 	}
 	result := libraryCopySearchResult{Items: make([]libraryCopySearchItem, 0, len(preview.Copies)), JobIDs: []int64{}}
 	for _, copy := range preview.Copies {
-		sel := store.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID}
-		slots, err := store.LibraryCopySlots(r.Context(), a.s.Store, sel)
+		sel := mediafiles.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID}
+		slots, err := mediafiles.LibraryCopySlots(r.Context(), a.s.Store, sel)
 		if err != nil {
-			fail(w, http.StatusConflict, store.ErrLibraryCopyStale.Error())
+			fail(w, http.StatusConflict, mediafiles.ErrLibraryCopyStale.Error())
 			return
 		}
 		item := libraryCopySearchItem{FileID: copy.FileID, VersionID: copy.VersionID, SlotIDs: slots, JobIDs: []int64{}}

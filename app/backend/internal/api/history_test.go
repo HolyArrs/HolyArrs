@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -121,7 +123,7 @@ func addTitleFor(t *testing.T, s *database.Store, name string) int64 {
 	t.Helper()
 	var id int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all",
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{},
 			MusicTypes: []string{}, Artwork: []string{}}
 		var err error

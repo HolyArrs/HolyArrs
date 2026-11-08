@@ -15,13 +15,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
@@ -244,7 +243,7 @@ func pickPressing(ps []domain.AlbumPressing, files int, statuses []string, rule 
 // the album import's own matching (numbers, CD folders, names, and tags
 // when names do not settle it). Tracks carry their Slot (in a scan, a
 // stand-in id). The biggest file of a track wins it.
-func mapTrackFiles(lib string, files []AdoptVideo, tracks []importer.Track, ns naming.Settings) ([]AdoptTrackFile, int) {
+func mapTrackFiles(lib string, files []AdoptVideo, tracks []importer.Track, ns mediafiles.NamingSettings) ([]AdoptTrackFile, int) {
 	cands := make([]importer.Candidate, len(files))
 	for i, f := range files {
 		cands[i] = importer.Candidate{Path: filepath.Join(lib, filepath.FromSlash(f.Path)), Size: f.Size}
@@ -324,14 +323,14 @@ func PlanMusicAdoptFrom(ctx context.Context, db reader, artists metadata.ArtistP
 func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvider, folderID int64, after string, seed *AdoptPlan,
 	save func(AdoptPlan) error) (AdoptPlan, error) {
 	ctx = metadata.MemberLookup(ctx)
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
 		return AdoptPlan{}, ErrNoFolder
 	}
 	if lf.Kind != "music" {
 		return AdoptPlan{}, ErrNotMusicFolder
 	}
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return AdoptPlan{}, err
 	}
@@ -357,7 +356,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 		return p, fmt.Errorf("the Library folder cannot be read: %w", err)
 	}
 	known := map[string]int64{}
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
 	if err != nil {
 		return p, err
 	}
@@ -434,7 +433,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 			add(c)
 			continue
 		}
-		kinds := domain.Title{MusicTypes: defs.AlbumTypes, MusicSecondary: defs.SecondaryTypes}
+		kinds := mediafiles.Title{MusicTypes: defs.AlbumTypes, MusicSecondary: defs.SecondaryTypes}
 		var refs []albumRef
 		for _, al := range a.Albums {
 			r := albumRef{ID: al.MBID, Name: al.Name, Included: AlbumKindsOK(kinds, al.PrimaryType, al.SecondaryTypes)}
@@ -555,7 +554,7 @@ type MusicAdoption struct {
 // files as they are: the artist is added, its albums, Pressings and tracks
 // are fetched, each album folder is matched to an album (the Pressing its
 // files fit is chosen) and each file to a track. Nothing on disk changes.
-func (s *Service) adoptArtistOne(ctx context.Context, lf domain.LibraryFolder, c AdoptChoice, by domain.Actor) (AdoptResult, error) {
+func (s *Service) adoptArtistOne(ctx context.Context, lf mediafiles.LibraryFolder, c AdoptChoice, by domain.Actor) (AdoptResult, error) {
 	r := AdoptResult{Folder: c.Folder}
 	if c.Folder == "" || strings.ContainsAny(c.Folder, `/\`) || !filepath.IsLocal(c.Folder) || strings.HasPrefix(c.Folder, ".") || c.Folder == importer.HoldingDir {
 		return r, errors.New("the folder must be one folder directly in the Library folder")
@@ -596,24 +595,24 @@ func (s *Service) adoptArtistOne(ctx context.Context, lf domain.LibraryFolder, c
 // adoptAlbums matches an adopted artist folder's album folders to the
 // artist's albums in the Library and records each matched file as an
 // adopted File of its track.
-func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titleID int64, a *MusicAdoption, by domain.Actor) error {
+func (s *Service) adoptAlbums(ctx context.Context, lf mediafiles.LibraryFolder, titleID int64, a *MusicAdoption, by domain.Actor) error {
 	db := s.Store.Read()
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return err
 	}
-	var v domain.Version
+	var v mediafiles.Version
 	if err := db.QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", titleID).Scan(&v.ID); err != nil {
 		return err
 	}
 	if err := database.Get(ctx, db, "versions", v.ID, &v); err != nil {
 		return err
 	}
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", v.PickRulesID, &pr); err != nil {
 		return err
 	}
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -625,7 +624,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 	if len(statuses) == 0 {
 		statuses = defs.ReleaseStatuses
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", titleID)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", titleID)
 	if err != nil {
 		return err
 	}
@@ -664,7 +663,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 				return err
 			}
 		}
-		items, err := database.Select[domain.Item](ctx, db, "items", "part_id = ? AND kind = 'track' AND dropped_at IS NULL ORDER BY id", r.PartID)
+		items, err := database.Select[mediafiles.Item](ctx, db, "items", "part_id = ? AND kind = 'track' AND dropped_at IS NULL ORDER BY id", r.PartID)
 		if err != nil {
 			return err
 		}
@@ -702,17 +701,17 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 				}
 				ext := strings.ToLower(path.Ext(f.Path))
 				release := d.name + " [" + adoptedFormat(filepath.Join(lf.Path, filepath.FromSlash(f.Path)), ext) + "]"
-				file := &domain.File{SlotIDs: []int64{f.slot}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(),
-					Quality: domain.Quality{Source: strings.TrimPrefix(ext, ".")}, Languages: []string{}, MediaInfo: map[string]any{},
+				file := &mediafiles.File{SlotIDs: []int64{f.slot}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(),
+					Quality: mediafiles.Quality{Source: strings.TrimPrefix(ext, ".")}, Languages: []string{}, MediaInfo: map[string]any{},
 					ReleaseName: &release, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
 				fileID, err := database.Insert(tx, "files", file, by)
 				if err != nil {
 					return err
 				}
-				ge := judge.ReachesGoodEnough(release, pr.Body)
-				state, why := domain.SlotInLibrary, "adopted from "+a.FolderName
+				ge := mediafiles.ReachesGoodEnough(release, pr.Body)
+				state, why := mediafiles.SlotInLibrary, "adopted from "+a.FolderName
 				if !ge && v.KeepUpToDate && t.KeepUpToDate {
-					state, why = domain.SlotBetterWanted, "adopted below good enough, so a better copy is sought"
+					state, why = mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought"
 				}
 				if _, err := tx.Exec(`UPDATE slots SET file_id = ?, good_enough = ?, state = ?, last_reason = ?, held_release_id = NULL WHERE id = ? AND state != 'removed'`,
 					fileID, ge, string(state), why, f.slot); err != nil {
@@ -735,7 +734,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 
 // recordFoundTracks records unknown audio files in an artist's folder as
 // found Files: shown, never renamed, moved or deleted, filling no Slot.
-func (s *Service) recordFoundTracks(ctx context.Context, lf domain.LibraryFolder, v domain.Version, known map[string]bool, by domain.Actor) (int, error) {
+func (s *Service) recordFoundTracks(ctx context.Context, lf mediafiles.LibraryFolder, v mediafiles.Version, known map[string]bool, by domain.Actor) (int, error) {
 	db := s.Store.Read()
 	n := 0
 	for _, f := range listAudio(lf.Path, v.FolderName, maxArtistFiles) {
@@ -748,7 +747,7 @@ func (s *Service) recordFoundTracks(ctx context.Context, lf domain.LibraryFolder
 			continue
 		}
 		release := strings.TrimSuffix(path.Base(f.Path), path.Ext(f.Path))
-		file := &domain.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(), Languages: []string{},
+		file := &mediafiles.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(), Languages: []string{},
 			MediaInfo: map[string]any{}, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
 		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", file, by); return err }); err != nil {
 			return n, err
@@ -767,7 +766,7 @@ func adoptedFormat(abs, ext string) string {
 	word := strings.ToUpper(strings.TrimPrefix(ext, "."))
 	switch ext {
 	case ".m4a", ".mka", ".mp4":
-		if info, err := mediainfo.Inspect(abs); err == nil && info.AudioWord() != "" {
+		if info, err := mediafiles.Inspect(abs); err == nil && info.AudioWord() != "" {
 			return info.AudioWord()
 		}
 	}

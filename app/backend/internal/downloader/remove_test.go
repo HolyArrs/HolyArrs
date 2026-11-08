@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -29,7 +31,7 @@ func TestRemoveKeepsTheReleaseByDefault(t *testing.T) {
 	if r := w.release(t); r.State == "turned_down" {
 		t.Fatal("turned down without asking")
 	}
-	if sl := w.slot(t); sl.State != domain.SlotWanted {
+	if sl := w.slot(t); sl.State != mediafiles.SlotWanted {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if len(w.failedSlots) != 0 {
@@ -53,7 +55,7 @@ func TestRemoveTurnDownAndSearchAgain(t *testing.T) {
 	if r := w.release(t); r.State != "turned_down" || !strings.Contains(r.Verdict["turned_down_reason"].(string), "removed by luis") {
 		t.Fatalf("release %s %v", r.State, r.Verdict)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotFailed {
+	if sl := w.slot(t); sl.State != mediafiles.SlotFailed {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if len(w.failedSlots) != 1 || w.failedSlots[0] != w.slotID {
@@ -70,7 +72,7 @@ func TestRemoveTurnDownNoSearch(t *testing.T) {
 	if r := w.release(t); r.State != "turned_down" {
 		t.Fatalf("release %s", r.State)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotWanted || len(w.failedSlots) != 0 {
+	if sl := w.slot(t); sl.State != mediafiles.SlotWanted || len(w.failedSlots) != 0 {
 		t.Fatalf("slot %s searched %v", sl.State, w.failedSlots)
 	}
 }

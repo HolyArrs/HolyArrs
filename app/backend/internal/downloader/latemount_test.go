@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -70,7 +72,7 @@ func TestMissingFilesWaitsAndKeepsData(t *testing.T) {
 	if r := w.release(t); r.State == "turned_down" {
 		t.Fatalf("release turned down for a client error: %v", r.Verdict)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotDownloading {
+	if sl := w.slot(t); sl.State != mediafiles.SlotDownloading {
 		t.Fatalf("slot %s, want downloading", sl.State)
 	}
 	if len(w.failedSlots) != 0 || len(w.fake.deleted) != 0 {

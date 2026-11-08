@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -25,7 +27,7 @@ func TestProtectedMultiEpisodeCopyCannotBeReplaced(t *testing.T) {
 	}
 	var oldID int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		f := &domain.File{Protected: true, SlotIDs: []int64{w.slots[1], w.slots[2]}, VersionID: w.vID, RelativePath: rel, Size: int64(len(before)), AddedAt: time.Now().Add(-time.Hour), Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &oldName, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
+		f := &mediafiles.File{Protected: true, SlotIDs: []int64{w.slots[1], w.slots[2]}, VersionID: w.vID, RelativePath: rel, Size: int64(len(before)), AddedAt: time.Now().Add(-time.Hour), Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &oldName, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		id, err := database.Insert(tx, "files", f, domain.System)
 		oldID = id
 		if err != nil {
@@ -55,7 +57,7 @@ func TestProtectedMultiEpisodeCopyCannotBeReplaced(t *testing.T) {
 	}
 	for _, episode := range []int{1, 2} {
 		sl := w.slot(t, episode)
-		if sl.FileID == nil || *sl.FileID != oldID || sl.State != domain.SlotNeedsADecision || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != w.dlID {
+		if sl.FileID == nil || *sl.FileID != oldID || sl.State != mediafiles.SlotNeedsADecision || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != w.dlID {
 			t.Fatalf("episode %d slot %+v", episode, sl)
 		}
 	}

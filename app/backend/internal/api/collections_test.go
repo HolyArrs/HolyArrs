@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -25,7 +27,7 @@ func collectionAPI(t *testing.T) (*API, *database.Store, int64, int64) {
 	t.Cleanup(func() { _ = s.Close() })
 	var collectionID, titleID int64
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		lf := domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		lf := mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", &lf, domain.System); err != nil {
 			return err
 		}

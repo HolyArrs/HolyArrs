@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -29,7 +31,7 @@ import (
 func TestDownloadsViewRefetchCost(t *testing.T) {
 	const notice = 2 * time.Second // B-hybrid: at most one "changed" notice per 2 s
 	for _, rows := range []int{100, 500, 2000} {
-		x := seed41(t, domain.SlotDownloading, "downloading")
+		x := seed41(t, mediafiles.SlotDownloading, "downloading")
 		own := min(rows, 100)
 		err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
 			var did int64

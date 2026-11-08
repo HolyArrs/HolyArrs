@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -50,7 +52,7 @@ func TestGrabAndSyncToFinished(t *testing.T) {
 		t.Fatalf("download %+v", d)
 	}
 	sl := w.slot(t)
-	if sl.State != domain.SlotDownloading || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != id {
+	if sl.State != mediafiles.SlotDownloading || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != id {
 		t.Fatalf("slot %+v", sl)
 	}
 
@@ -104,7 +106,7 @@ func TestStalledAfterNoProgressThenBack(t *testing.T) {
 	if d.State != "stalled" || d.StateReason == nil {
 		t.Fatalf("want stalled, got %s", d.State)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotStalled {
+	if sl := w.slot(t); sl.State != mediafiles.SlotStalled {
 		t.Fatalf("slot %s", sl.State)
 	}
 	w.fake.set(hash, map[string]any{"progress": 0.3, "state": "downloading"})
@@ -112,7 +114,7 @@ func TestStalledAfterNoProgressThenBack(t *testing.T) {
 	if d := w.download(t, id); d.State != "downloading" {
 		t.Fatalf("want downloading again, got %s", d.State)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotDownloading {
+	if sl := w.slot(t); sl.State != mediafiles.SlotDownloading {
 		t.Fatalf("slot %s", sl.State)
 	}
 }
@@ -131,7 +133,7 @@ func TestVanishedAndFailed(t *testing.T) {
 	if d := w.download(t, id); d.State != "vanished" {
 		t.Fatalf("want vanished, got %s", d.State)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotFailed {
+	if sl := w.slot(t); sl.State != mediafiles.SlotFailed {
 		t.Fatalf("slot %s", sl.State)
 	}
 }
@@ -207,7 +209,7 @@ func TestGrabRetryAfterKillDoesNotDuplicate(t *testing.T) {
 	if n := w.countDownloads(t); n != 1 {
 		t.Fatalf("%d downloads", n)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotDownloading || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != dlID {
+	if sl := w.slot(t); sl.State != mediafiles.SlotDownloading || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != dlID {
 		t.Fatalf("slot %+v", sl)
 	}
 }
@@ -222,7 +224,7 @@ func TestGrabSkipsAddWhenDownloaderAlreadyHasTheHash(t *testing.T) {
 	if len(w.fake.added) != 0 {
 		t.Fatalf("add resent: %+v", w.fake.added)
 	}
-	if d := w.download(t, id); d.ExternalID != hash || w.slot(t).State != domain.SlotDownloading {
+	if d := w.download(t, id); d.ExternalID != hash || w.slot(t).State != mediafiles.SlotDownloading {
 		t.Fatalf("download %+v", d)
 	}
 }
@@ -304,7 +306,7 @@ func TestGrabDoesNotReuseRejectedDownload(t *testing.T) {
 			return err
 		}
 		oldID = dl.ID
-		imp := &domain.Import{DownloadID: &dl.ID, FromPath: "/x", Kind: "movie", Plan: []domain.PlanStep{}, Result: []domain.PlaceResult{}, Mode: "auto", State: "rejected"}
+		imp := &mediafiles.Import{DownloadID: &dl.ID, FromPath: "/x", Kind: "movie", Plan: []mediafiles.PlanStep{}, Result: []mediafiles.PlaceResult{}, Mode: "auto", State: "rejected"}
 		_, err := database.Insert(tx, "imports", imp, domain.System)
 		return err
 	}); err != nil {
@@ -317,7 +319,7 @@ func TestGrabDoesNotReuseRejectedDownload(t *testing.T) {
 	if d := w.download(t, id); d.State == "finished" {
 		t.Fatalf("reused the finished Download %d (old %d)", id, oldID)
 	}
-	if w.slot(t).State != domain.SlotDownloading {
+	if w.slot(t).State != mediafiles.SlotDownloading {
 		t.Fatal("slot not downloading")
 	}
 }
@@ -346,8 +348,8 @@ func setup(t *testing.T) (*world, *Manager) {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: "/data/media/movies", Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
+		lf := &mediafiles.LibraryFolder{Path: "/data/media/movies", Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024), Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		for _, x := range []struct {
@@ -358,15 +360,15 @@ func setup(t *testing.T) (*world, *Manager) {
 				return err
 			}
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotChosen}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotChosen}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -421,9 +423,9 @@ func (w *world) download(t *testing.T, id int64) domain.Download {
 	return d
 }
 
-func (w *world) slot(t *testing.T) domain.Slot {
+func (w *world) slot(t *testing.T) mediafiles.Slot {
 	t.Helper()
-	var s domain.Slot
+	var s mediafiles.Slot
 	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &s); err != nil {
 		t.Fatal(err)
 	}

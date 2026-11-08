@@ -13,12 +13,13 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Stage 4.1: the Downloads screen and Needs a decision.
@@ -243,12 +244,12 @@ func phaseOfMany(d domain.Download, eps []EpisodeLine) string {
 func showText(ph string, eps []EpisodeLine) string {
 	in, decide, again := 0, []string{}, []string{}
 	for _, e := range eps {
-		switch domain.SlotState(e.State) {
-		case domain.SlotInLibrary, domain.SlotBetterWanted:
+		switch mediafiles.SlotState(e.State) {
+		case mediafiles.SlotInLibrary, mediafiles.SlotBetterWanted:
 			in++
-		case domain.SlotNeedsADecision:
+		case mediafiles.SlotNeedsADecision:
 			decide = append(decide, e.Label)
-		case domain.SlotWanted, domain.SlotRejected, domain.SlotSearching, domain.SlotChosen, domain.SlotHeld, domain.SlotFailed:
+		case mediafiles.SlotWanted, mediafiles.SlotRejected, mediafiles.SlotSearching, mediafiles.SlotChosen, mediafiles.SlotHeld, mediafiles.SlotFailed:
 			again = append(again, e.Label)
 		}
 	}
@@ -290,14 +291,14 @@ func phase(d domain.Download, slot string) string {
 	case "cleaned":
 		return "removed"
 	}
-	switch domain.SlotState(slot) {
-	case domain.SlotImporting:
+	switch mediafiles.SlotState(slot) {
+	case mediafiles.SlotImporting:
 		return "importing"
-	case domain.SlotNeedsADecision:
+	case mediafiles.SlotNeedsADecision:
 		return "needs_a_decision"
-	case domain.SlotRejected:
+	case mediafiles.SlotRejected:
 		return "import_refused"
-	case domain.SlotDownloading, domain.SlotStalled, domain.SlotChosen:
+	case mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotChosen:
 		return "waiting_to_import"
 	}
 	return "done"
@@ -418,7 +419,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		row.Label = PhaseLabels[row.Phase]
 		row.CanAct = row.Active && manage
 		row.ClientLocked = downloader.ReadOnlyFor(n)
-		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(domain.SlotFailed) && row.SlotState != string(domain.SlotNeedsADecision) {
+		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(mediafiles.SlotFailed) && row.SlotState != string(mediafiles.SlotNeedsADecision) {
 			row.Replaced = true
 		}
 		if d.State == "cleaned" && d.StateReason != nil {
@@ -813,7 +814,7 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 				if database.Get(ctx, a.s.Store.Read(), "downloads", *out[i].DownloadID, &d) == nil && len(d.SlotIDs) > 1 {
 					out[i].Pack = episodeLines(ctx, a.s.Store.Read(), d.SlotIDs)
 					for _, e := range out[i].Pack {
-						if e.State == string(domain.SlotNeedsADecision) {
+						if e.State == string(mediafiles.SlotNeedsADecision) {
 							out[i].PackSlotIDs = append(out[i].PackSlotIDs, e.SlotID)
 						}
 					}
@@ -937,9 +938,9 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, http.StatusAccepted, map[string]any{"job_id": jobs[0], "job_ids": jobs, "action": in.Action})
 	case "stop":
-		to := domain.SlotWanted
+		to := mediafiles.SlotWanted
 		if dv.HasCopy {
-			to = domain.SlotBetterWanted
+			to = mediafiles.SlotBetterWanted
 		}
 		reason := "stopped looking (" + who + ")"
 		var stopped []DecisionView
@@ -952,7 +953,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 				if err := tx.QueryRow("SELECT state FROM slots WHERE id = ?", t.SlotID).Scan(&state); err != nil {
 					return err
 				}
-				if state != string(domain.SlotNeedsADecision) {
+				if state != string(mediafiles.SlotNeedsADecision) {
 					if t.SlotID == id {
 						return errMovedOn
 					}
@@ -967,11 +968,11 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 				if _, err := tx.Exec(q, database.FormatTime(time.Now()), t.SlotID); err != nil {
 					return err
 				}
-				st := domain.SlotWanted
+				st := mediafiles.SlotWanted
 				if t.HasCopy {
-					st = domain.SlotBetterWanted
+					st = mediafiles.SlotBetterWanted
 				}
-				if err := store.MoveSlotTx(tx, t.SlotID, st, reason, by); err != nil {
+				if err := mediafiles.MoveSlotTx(tx, t.SlotID, st, reason, by); err != nil {
 					return err
 				}
 				stopped = append(stopped, t)
@@ -996,9 +997,9 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 			if a.s.Store.AddEvent(r.Context(), e) == nil && a.s.Live != nil {
 				a.s.Live.Publish("event", e)
 			}
-			st := domain.SlotWanted
+			st := mediafiles.SlotWanted
 			if t.HasCopy {
-				st = domain.SlotBetterWanted
+				st = mediafiles.SlotBetterWanted
 			}
 			if a.s.Live != nil {
 				a.s.Live.Publish("slot", map[string]any{"id": sid, "state": st, "reason": reason})

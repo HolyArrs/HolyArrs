@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -85,10 +87,10 @@ func TestAddShowSeasonChoices(t *testing.T) {
 				}
 			}
 			// The gate does not depend on the choice: aired is wanted.
-			if eps["S01E01"].State != domain.SlotWanted || eps["S02E02"].State != domain.SlotNotOutYet {
+			if eps["S01E01"].State != mediafiles.SlotWanted || eps["S02E02"].State != mediafiles.SlotNotOutYet {
 				t.Errorf("states %s %s", eps["S01E01"].State, eps["S02E02"].State)
 			}
-			var ti domain.Title
+			var ti mediafiles.Title
 			_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 			if ti.Kind != "show" || *ti.SeasonChoice != c.choice || ti.NewPartsPolicy != "all" || *ti.EpisodeOrder != OrderAired ||
 				ti.MetadataSource != "tmdb" || ti.Status != "running" || ti.SourceIDs["tvdb"] != "200" || ti.RefreshedAt == nil {
@@ -111,12 +113,12 @@ func TestAddShowEpisodeOrders(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			var ti domain.Title
+			var ti mediafiles.Title
 			_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 			if *ti.EpisodeOrder != order {
 				t.Fatalf("order %s", *ti.EpisodeOrder)
 			}
-			its, _ := database.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", id)
+			its, _ := database.Select[mediafiles.Item](ctx, s.Read(), "items", "title_id = ? ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", id)
 			if len(its) != 6 {
 				t.Fatalf("items %d", len(its))
 			}
@@ -166,7 +168,7 @@ func TestAddShowRefusals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.MetadataSource != "tvmaze" || ti.SourceIDs["tvmaze"] != "300" || ti.SourceIDs["tmdb"] != "100" || ti.NewPartsPolicy != "none" {
 		t.Fatalf("tvmaze show %+v (asked %v)", ti, maze.calls)
@@ -219,10 +221,10 @@ func TestShowSwitchesAndEdit(t *testing.T) {
 	if _, err := svc.Edit(ctx, id, TitleChange{EpisodeOrder: &order, NewSeasons: &none, KeepUpToDate: &off}, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	after := episodes(t, s, id)
-	if *ti.EpisodeOrder != OrderAbsolute || ti.NewPartsPolicy != "none" || ti.KeepUpToDate || !after["S02E01"].Keep || after["S02E01"].State != domain.SlotWanted {
+	if *ti.EpisodeOrder != OrderAbsolute || ti.NewPartsPolicy != "none" || ti.KeepUpToDate || !after["S02E01"].Keep || after["S02E01"].State != mediafiles.SlotWanted {
 		t.Fatalf("after edit %+v %+v", ti, after["S02E01"])
 	}
 	// Edit on a movie refuses show choices.

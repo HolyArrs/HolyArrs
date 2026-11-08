@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // Track is one subtitle track inside a video.
@@ -28,9 +28,9 @@ type Track struct {
 
 // Errors.
 var (
-	ErrUnknownFormat = mediainfo.ErrUnsupported
-	ErrMalformed     = mediainfo.ErrMalformed
-	ErrLimit         = mediainfo.ErrLimit
+	ErrUnknownFormat = mediafiles.ErrUnsupported
+	ErrMalformed     = mediafiles.ErrMalformed
+	ErrLimit         = mediafiles.ErrLimit
 )
 
 // Probe lists the subtitle tracks of the file at path. Only regular files
@@ -62,7 +62,7 @@ func Read(r io.ReadSeeker, size int64) ([]Track, error) {
 		return nil, ErrUnknownFormat
 	}
 	matroska := string(head) == "\x1a\x45\xdf\xa3"
-	tracks, err := mediainfo.ReadTracks(ra, size)
+	tracks, err := mediafiles.ReadTracks(ra, size)
 	if err != nil {
 		return nil, err
 	}

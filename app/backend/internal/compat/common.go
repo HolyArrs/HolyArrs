@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
@@ -30,14 +30,14 @@ func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 // music ones) as the old apps' quality profiles: the callers read only id
 // and name.
 func (h *handler) qualityProfiles(w http.ResponseWriter, r *http.Request) {
-	ps, err := database.Select[domain.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
+	ps, err := database.Select[mediafiles.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 	out := []map[string]any{}
 	for _, p := range ps {
-		if domain.IsMusicRules(p.Body) {
+		if mediafiles.IsMusicRules(p.Body) {
 			continue
 		}
 		out = append(out, map[string]any{"id": p.ID, "name": p.Name})
@@ -55,7 +55,7 @@ func (h *handler) folderKind() string {
 
 // rootFolders lists this side's Library folders.
 func (h *handler) rootFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := database.Select[domain.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
+	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
 	if err != nil {
 		internalError(w, err)
 		return

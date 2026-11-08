@@ -5,13 +5,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func (im *Importer) upgradeFacts(ctx context.Context, data map[string]any, oldID, newID int64) {
 	for prefix, id := range map[string]int64{"old_": oldID, "new_": newID} {
-		var f domain.File
+		var f mediafiles.File
 		if database.Get(ctx, im.Store.Read(), "files", id, &f) != nil {
 			continue
 		}
@@ -24,7 +25,7 @@ func (im *Importer) upgradeFacts(ctx context.Context, data map[string]any, oldID
 	}
 }
 
-func qualityText(q domain.Quality) string {
+func qualityText(q mediafiles.Quality) string {
 	var parts []string
 	if q.Resolution > 0 {
 		parts = append(parts, strconv.Itoa(q.Resolution)+"p")

@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -150,7 +152,7 @@ func TestUsenetItemRetryAndTabs(t *testing.T) {
 // A job HolyArrs sent is not retried here (its failure path searched again
 // already), and its tabs read through the download.
 func TestUsenetOwnDownload(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &usenetFake{}
 	exec41(t, x.s, "UPDATE downloaders SET adapter = 'sabnzbd', protocol = 'usenet', url = ?", f.server(t))
 	exec41(t, x.s, "UPDATE downloads SET external_id = ?", sabFailed)

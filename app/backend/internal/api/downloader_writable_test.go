@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -28,7 +30,7 @@ func TestWritableNeedsSettingsPermission(t *testing.T) {
 // pause before the client, on lets it through; the environment list locks it.
 func TestWritableSwitchLive(t *testing.T) {
 	t.Setenv(downloader.ReadOnlyEnv, "")
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?, allow_local_network = 1", f.server(t).URL)
 	var did int64
@@ -65,7 +67,7 @@ func TestWritableSwitchLive(t *testing.T) {
 // Every change sent straight to a client is in History: who and what.
 func TestClientItemChangeEvents(t *testing.T) {
 	t.Setenv(downloader.ReadOnlyEnv, "")
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?, allow_local_network = 1, writable = 1", f.server(t).URL)
 	var did int64

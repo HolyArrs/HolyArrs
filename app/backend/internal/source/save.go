@@ -12,10 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 // Errors for a Source that cannot be saved. Each message is shown to the person as it is.
@@ -458,7 +459,7 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		src.Limits = l
 	}
 	if in.Tags != nil || isNew || src.Tags == nil {
-		src.Tags = tagset.Clean(in.Tags)
+		src.Tags = mediafiles.CleanTags(in.Tags)
 	}
 	if in.Priority != nil {
 		if *in.Priority < 1 || *in.Priority > 50 {

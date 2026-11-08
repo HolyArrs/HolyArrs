@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // route: POST /api/v1/downloaders/{id}/items/{hash}/up
@@ -11,7 +11,7 @@ import (
 // route: POST /api/v1/downloaders/{id}/items/{hash}/bottom
 // route: POST /api/v1/downloaders/{id}/items/{hash}/priority
 func TestUsenetQueueRoutesOnATorrentClient(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	var did int64
