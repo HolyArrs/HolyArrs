@@ -113,14 +113,16 @@ func (a *Auth) signInKeys(r *http.Request) (ipKey, altKey string, sure bool) {
 	return ipKey, altKey, sure
 }
 
-// sharedProxy says whether a loopback or private peer that is not a trusted
-// proxy sent forwarding headers.
+// sharedProxy says whether the peer is the untrusted loopback or private
+// proxy the warning saw, and it sent forwarding headers. The headers alone
+// prove nothing, since any device can write them: a home device forging
+// X-Forwarded-For keeps its own per-address limit.
 func (a *Auth) sharedProxy(r *http.Request) bool {
 	if !anyForwardHeader(r) {
 		return false
 	}
 	ip := parseHostIP(r.RemoteAddr)
-	return ip != nil && (ip.IsLoopback() || ip.IsPrivate()) && !a.trustedProxy(ip)
+	return ip != nil && (ip.IsLoopback() || ip.IsPrivate()) && !a.trustedProxy(ip) && a.seenProxy(ip)
 }
 
 // altWait is the address wait for altKey, if there is one; the caller holds a.mu.
