@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -15,9 +16,9 @@ import (
 )
 
 type suggestAnswer struct {
-	Q           string       `json:"q"`
-	Completions []string     `json:"completions"`
-	Items       []SuggestRow `json:"items"`
+	Q           string                `json:"q"`
+	Completions []string              `json:"completions"`
+	Items       []discover.SuggestRow `json:"items"`
 }
 
 func suggestOf(t *testing.T, b []byte) suggestAnswer {
@@ -65,7 +66,7 @@ func TestSearchSuggestMaxThreePerKind(t *testing.T) {
 	t.Parallel()
 	r, calls := suggestRig(t, 0)
 	got := suggestOf(t, r.owner.call("GET", "/api/v1/search/suggest?q=radi", "", 200))
-	if len(got.Items) == 0 || len(got.Items) > suggestRows {
+	if len(got.Items) == 0 || len(got.Items) > discover.SuggestRows {
 		t.Fatalf("items %d: %+v", len(got.Items), got.Items)
 	}
 	per := map[string]int{}
@@ -76,14 +77,14 @@ func TestSearchSuggestMaxThreePerKind(t *testing.T) {
 		}
 	}
 	for k, n := range per {
-		if n > suggestPerKind {
-			t.Fatalf("%d %s rows (max %d): %+v", n, k, suggestPerKind, got.Items)
+		if n > discover.SuggestPerKind {
+			t.Fatalf("%d %s rows (max %d): %+v", n, k, discover.SuggestPerKind, got.Items)
 		}
 	}
 	if per["movie"] == 0 || per["artist"] == 0 {
 		t.Fatalf("both sources must answer: %+v", per)
 	}
-	if len(got.Completions) == 0 || len(got.Completions) > suggestWords {
+	if len(got.Completions) == 0 || len(got.Completions) > discover.SuggestWords {
 		t.Fatalf("completions %v", got.Completions)
 	}
 	for _, c := range got.Completions {
@@ -157,13 +158,13 @@ func TestSearchSuggestSlowSourceLosesItsSlots(t *testing.T) {
 func TestSuggestMissingAlbumGetsCoverRoute(t *testing.T) {
 	t.Parallel()
 	r := newAskRig(t)
-	items := []SuggestRow{
+	items := []discover.SuggestRow{
 		{Kind: "album", Name: "Radial", Sub: "Lab Band", MBID: "abc", State: "missing"},
 		{Kind: "album", Name: "Kept", Sub: "Lab Band", MBID: "def", Art: "https://x/y.jpg"},
 		{Kind: "album", Name: "No id", Sub: "Lab Band"},
 		{Kind: "song", Name: "Song", MBID: "ghi"},
 	}
-	r.api.coverSuggestAlbums(items)
+	r.api.suggest().CoverAlbums(items)
 	if items[0].Art != music.ArtPrefix+"album/abc" {
 		t.Fatalf("missing album art %q", items[0].Art)
 	}

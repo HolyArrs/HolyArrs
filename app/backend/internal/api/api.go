@@ -336,7 +336,7 @@ func New(s Server) *API {
 			}
 			return v, nil
 		},
-		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: trimEpisodeSlots, LibraryError: libraryError})
+		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: titleview.TrimEpisodeSlots, LibraryError: libraryError})
 	// newTrailers built the music handlers before the trailers and shows existed.
 	mh := a.mh()
 	mh.Trailers, mh.SlotOfTitle, mh.SeasonLabel = a.trailers, a.shows.SlotOfTitle, a.shows.SeasonLabel
@@ -1081,7 +1081,7 @@ func (a *API) statusHandlers() *health.StatusHandlers {
 
 // settingsLog writes the settings_changed Events (health).
 func (a *API) settingsLog() *health.SettingsLog {
-	return &health.SettingsLog{Store: a.s.Store, Who: whoName, Actor: actor}
+	return &health.SettingsLog{Store: a.s.Store, Who: requests.WhoName, Actor: actor}
 }
 
 // scheduleHandlers build the health module's Schedules routes.

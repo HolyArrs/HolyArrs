@@ -9,17 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// SuggestRow is one rich row of the live search dropdown.
-type SuggestRow = discover.SuggestRow
-
-// The dropdown's limits (discover).
-const (
-	suggestRows    = discover.SuggestRows
-	suggestPerKind = discover.SuggestPerKind
-	suggestWords   = discover.SuggestWords
-)
-
-// suggest builds the live search handlers on this API (read per request).
+// suggest wires the live search handlers (discover.Suggest) over this API;
+// the Wiring phase moves it to cmd/holyarrs.
 func (a *API) suggest() *discover.Suggest {
 	return &discover.Suggest{
 		LiveSearch: func() bool { return a.s.LiveSearch },
@@ -36,6 +27,3 @@ func (a *API) suggest() *discover.Suggest {
 		OpenAsk: a.openAsk, OpenShowAsk: a.openShowAsk,
 	}
 }
-
-// coverSuggestAlbums gives album rows the music picture route (discover.Suggest.CoverAlbums).
-func (a *API) coverSuggestAlbums(items []SuggestRow) { a.suggest().CoverAlbums(items) }

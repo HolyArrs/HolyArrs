@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
@@ -18,13 +19,13 @@ func TestEpisodeSlotsTrimmedForMember(t *testing.T) {
 	}
 	member := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk}, Via: "session"})
 	got := mk()
-	trimEpisodeSlots(member, got)
+	titleview.TrimEpisodeSlots(member, got)
 	if s := got[1][0]; s.Reason != "" || s.File.RelativePath != "" || s.File.Size != 9 {
 		t.Fatalf("member slot %+v %+v", s, s.File)
 	}
 	manager := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 3, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermManageLibrary}, Via: "session"})
 	kept := mk()
-	trimEpisodeSlots(manager, kept)
+	titleview.TrimEpisodeSlots(manager, kept)
 	if s := kept[1][0]; s.Reason == "" || s.File.RelativePath == "" {
 		t.Fatalf("manager slot trimmed %+v", s)
 	}
