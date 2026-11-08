@@ -1,10 +1,21 @@
 """The install guides name only settings and files that exist."""
 import pathlib
 import re
+import textwrap
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-GUIDES = [ROOT / "docs" / "install.md", ROOT / "docs" / "nas.md"]
+INSTALL = ROOT / "docs" / "user" / "getting-started" / "install.md"
+PLATFORMS = ROOT / "docs" / "user" / "platforms"
+UNRAID = PLATFORMS / "unraid.md"
+SYNOLOGY = PLATFORMS / "synology.md"
+RELEASING = ROOT / "docs" / "dev" / "releasing.md"
+GUIDES = [INSTALL, PLATFORMS / "nas.md", UNRAID, SYNOLOGY]
+
+
+def section(text: str, heading: str) -> str:
+    m = re.search(r"^(#+)\s+" + re.escape(heading) + r"[^\n]*\n(.*?)(?=^#{1,6}\s|\Z)", text, re.M | re.S)
+    return m.group(2) if m else ""
 
 
 def go_source() -> str:
@@ -34,7 +45,7 @@ class InstallGuides(unittest.TestCase):
         def slugs(text):
             return {re.sub(r"[^a-z0-9 _-]", "", h.strip().lower()).replace(" ", "-")
                     for h in re.findall(r"^#+\s+(.+)$", text, re.M)} | set(re.findall(r'<a id="([^"]+)"', text))
-        for g in [*GUIDES, *sorted((ROOT / "docs").glob("*.md")), ROOT / "README.md"]:
+        for g in [*GUIDES, *sorted((ROOT / "docs" / "user").rglob("*.md")), ROOT / "README.md"]:
             text = g.read_text(encoding="utf-8")
             for target, anchor in re.findall(r"\]\(([^)#:]*)#([^)]+)\)", text):
                 page = (g.parent / target) if target else g
@@ -50,10 +61,10 @@ class InstallGuides(unittest.TestCase):
         self.assertNotRegex((ROOT / "deploy" / "Dockerfile").read_text(encoding="utf-8"), r"(?m)^USER\s")
 
     def test_linuxserver_style_setup(self):
-        text = (ROOT / "docs" / "install.md").read_text(encoding="utf-8")
+        text = INSTALL.read_text(encoding="utf-8")
         for old in ("There are no\n`PUID`", "no `PUID`", 'user: "1000:1000"\n    ports', "PAGID"):
             self.assertFalse(old in text, old)
-        compose = re.search(r"```yaml\n(services:\n  holyarrs:\n    image: .*?)```", text, re.S).group(1)
+        compose = textwrap.dedent(re.search(r"```yaml\n( *services:\n +holyarrs:\n +image: .*?)```", text, re.S).group(1))
         cli = re.search(r"```sh\n(docker run -d .*?)```", text, re.S).group(1)
         for block in (compose, cli):
             for want in ("ghcr.io/coderluii/holyarrs:beta", "holyarrs", "PUID=1000", "PGID=1000", "TZ=Etc/UTC",
@@ -64,28 +75,32 @@ class InstallGuides(unittest.TestCase):
                 with self.subTest(folder=folder):
                     self.assertRegex(block, re.escape(":" + folder) + r"`? *`?#optional")
             self.assertNotIn(":/data", block)
-        headings = re.findall(r"^## (.+)$", text, re.M)
-        order = ["Parameters", "Environment variables from files (FILE__)", "Umask",
-                 "User / Group identifiers", "Read-only operation", "Non-root operation", "Media folders"]
+        # Every port, folder and variable in the examples is explained.
+        self.assertLess(text.index("## Steps"), text.index("## Settings explained"))
+        headings = re.findall(r"^#+ (.+)$", text, re.M)
+        order = ["Steps", "Ports and folders", "Environment variables", "User and group", "Media folders",
+                 "Read-only root filesystem", "Start as a fixed user"]
         self.assertEqual([h for h in headings if h in order], order)
-        self.assertLess(text.index("### Docker Compose"), text.index("## Parameters"))
-        for row in ("PUID", "PGID", "UMASK", "TZ", "/config", "/movies", "/tv", "/music", "/downloads"):
+        for row in ("-p 6262:6262", "-v /config", "-v /movies", "-v /tv", "-v /music", "-v /downloads", "PUID", "PGID", "TZ", "UMASK"):
             with self.subTest(row=row):
-                self.assertRegex(text, r"\n\| `-[evp] " + re.escape(row))
-        for phrase in ("022", "002", "id youruser", "--read-only", "tmpfs", "--user", "hardlink"):
+                self.assertRegex(text, r"\n\| [^|\n]*`" + re.escape(row) + "`")
+        for heading in ("Media folders", "Read-only root filesystem", "Start as a fixed user", "User and group"):
+            with self.subTest(heading=heading):
+                self.assertRegex(text, r"(?m)^#+ " + re.escape(heading) + "$")
+        for phrase in ("022", "002", "id youruser", "--read-only", "tmpfs", "--user", "hardlink", "FILE__"):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, text)
 
     def test_nas_guides_match(self):
-        for name in ("nas.md", "nas-packages.md"):
-            text = (ROOT / "docs" / name).read_text(encoding="utf-8")
-            with self.subTest(guide=name):
+        for path in (*GUIDES[1:], UNRAID, SYNOLOGY, RELEASING):
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(guide=path.name):
                 self.assertIn("PUID", text)
                 self.assertNotIn("runs as `1000:1000`", text)
                 self.assertNotIn("No `PUID`", text)
-        packages = (ROOT / "docs" / "nas-packages.md").read_text(encoding="utf-8")
-        self.assertNotIn("--data ", packages)
-        self.assertIn("--movies", packages)
+        template = section(RELEASING.read_text(encoding="utf-8"), "Unraid test template")
+        self.assertNotIn("--data ", template)
+        self.assertIn("--movies", template)
 
 
 if __name__ == "__main__":

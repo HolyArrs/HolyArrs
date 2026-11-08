@@ -1,12 +1,13 @@
 name: Bug report
 description: Something in HolyArrs does not work as it should.
-labels: [bug]
+labels: ["type: bug"]
 body:
   - type: markdown
     attributes:
       value: |
         Search the open issues first, your bug may already be there.
-        Security problems go by email instead, see SECURITY.md.
+        Got a question? Ask on Discord. Got an idea? Post it on r/HolyArrs.
+        Security problems go to the Security tab, never here.
   - type: input
     id: version
     attributes:
@@ -18,7 +19,7 @@ body:
     id: install
     attributes:
       label: How you run HolyArrs
-      options: [Docker, Synology, QNAP, TrueNAS, Unraid, Other]
+      options: [Docker, Docker Compose, Synology, QNAP, TrueNAS, Unraid, Proxmox (Docker), Other]
     validations:
       required: true
   - type: textarea
@@ -38,5 +39,5 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: Settings > Logs > Download. Keys are masked, but read it through before you paste.
+      description: Settings > Logs > Download. Keys are masked, but read it through and remove any keys, passwords or addresses before you paste.
       render: text

@@ -2,7 +2,7 @@ name: promote
 # Moves the stable tags (stable, latest, X and X.Y) on GHCR and Docker Hub to
 # an image release.yml already pushed, by its digest, after the beta has been
 # tried. Started by hand only, and a dry run unless dry_run is switched off.
-# Like release.yml it stays inert until Luis authorizes a release: its only
+# Like release.yml it stays inert until the maintainer authorizes a release: its only
 # job is permanently skipped.
 on:
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
     if: ${{ false }}
     runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
     timeout-minutes: 30
-    # Luis approves each run in the release environment.
+    # The maintainer approves each run in the release environment.
     environment: release
     permissions:
       contents: read

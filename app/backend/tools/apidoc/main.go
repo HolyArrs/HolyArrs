@@ -1,4 +1,4 @@
-// Command apidoc writes docs/dev/api.md from the route-table snapshot used by
+// Command apidoc writes docs/dev/api-routes.md from the route-table snapshot used by
 // the structure check. Run it from anywhere inside the repo:
 //
 //	go run ./app/backend/tools/apidoc
@@ -17,7 +17,7 @@ import (
 
 const (
 	snapshotRel = "app/backend/tools/structurecheck/testdata/route-table.txt"
-	docRel      = "docs/dev/api.md"
+	docRel      = "docs/dev/api-routes.md"
 )
 
 type route struct {
@@ -64,7 +64,7 @@ func repoRoot() (string, error) {
 	}
 }
 
-// build returns the full text of docs/dev/api.md.
+// build returns the full text of docs/dev/api-routes.md.
 func build(root string) (string, error) {
 	routes, err := readSnapshot(filepath.Join(root, filepath.FromSlash(snapshotRel)))
 	if err != nil {

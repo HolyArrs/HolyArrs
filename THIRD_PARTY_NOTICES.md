@@ -1,6 +1,6 @@
 # Third-party notices
 
-HolyArrs is free software under the GPL-3.0 (see `LICENSE`). It shows information from outside services and is built with open-source parts. Each keeps its own rights.
+HolyArrs is free software under the AGPL-3.0-only (see `LICENSE`; a commercial licence is also offered, see `COMMERCIAL.md`). It shows information from outside services and is built with open-source parts. Each keeps its own rights.
 
 ## Data sources
 

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestAPIDocUpToDate fails when docs/dev/api.md no longer matches the
+// TestAPIDocUpToDate fails when docs/dev/api-routes.md no longer matches the
 // route-table snapshot. Fix it with: go run ./app/backend/tools/apidoc
 func TestAPIDocUpToDate(t *testing.T) {
 	root, err := repoRoot()

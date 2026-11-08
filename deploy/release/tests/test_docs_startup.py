@@ -5,8 +5,9 @@ import re
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-INSTALL = ROOT / "docs" / "install.md"
-NAS = ROOT / "docs" / "nas.md"
+INSTALL = ROOT / "docs" / "user" / "getting-started" / "install.md"
+UNRAID = ROOT / "docs" / "user" / "platforms" / "unraid.md"
+RELEASING = ROOT / "docs" / "dev" / "releasing.md"
 
 
 def read(p: pathlib.Path) -> str:
@@ -46,7 +47,7 @@ class DockerDesktop(unittest.TestCase):
         row = re.search(r"^\| Config folder is on a[^\n]*$", text, re.M)
         self.assertIsNotNone(row, "troubleshooting row for the config folder refusal")
         self.assertIn("named volume", row.group(0))
-        usage = section(text, "Usage")
+        usage = section(text, "Steps")
         self.assertIn("named volume", usage)
 
 
@@ -64,13 +65,13 @@ class ForgotToMapConfig(unittest.TestCase):
 
 class Unraid(unittest.TestCase):
     def test_pool_path_never_cache(self):
-        text = read(NAS)
+        text = read(UNRAID)
         self.assertIn("/mnt/<pool>/appdata", text)
         self.assertNotIn("/mnt/cache", text)
         self.assertIn("Exclusive", text)
 
     def test_package_guide_and_template_say_pool(self):
-        guide = read(ROOT / "docs" / "nas-packages.md")
+        guide = read(RELEASING)
         self.assertIn("/mnt/<pool>/appdata", guide)
         self.assertNotIn("/mnt/cache/appdata/holyarrs", guide)
         tool = read(ROOT / "deploy" / "release" / "nas-template.py")
