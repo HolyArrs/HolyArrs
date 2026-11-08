@@ -13,15 +13,15 @@ A codec is the way the video is compressed, such as H.264 or AV1. Newer codecs g
 1. Open **Library > Video codecs**.
 2. Type in **Search movies** to match the start of a title.
 3. Pick a codec in **Codec**.
-4. Pick an order in **Sort**: title, codec or recently added.
+4. Pick an order in **Sort**: **Title**, **Codec** or **Added**.
 
-The list shows main movie files that are present, with their Version, up to 100 rows a page. Your ticks stay while you change pages.
+The list shows main movie files that are present, with their Version, 50 rows a page. Your ticks stay while you change pages.
 
 ## Search again for better copies
 
 1. Tick the copies you want.
 2. Select **Review**. HolyArrs checks each copy again and shows what it will search.
-3. Confirm. You should see results saved for each Version.
+3. Select **Start**. You should see results saved for each Version.
 
 HolyArrs searches each Version with its current Pick rules. It does not pick, grab, replace or delete anything, and it does not change your rules. A better Release may not exist.
 

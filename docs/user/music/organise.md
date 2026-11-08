@@ -7,7 +7,7 @@ sidebar: { order: 3 }
 
 Bring your music on disk into HolyArrs, name tracks your way, and rename or delete artists, albums and tracks.
 
-Only the owner and admins see this. Movies and shows work much the same way, see [Organise movies](../movies/organise-movies.md) and [Organise shows](../shows/organise-shows.md).
+Only the owner and admins see this. Movies and shows work much the same way, see [Organise movies](../../movies/organise.md) and [Organise shows](../shows/organise-shows.md).
 
 ## Import the music you already have
 

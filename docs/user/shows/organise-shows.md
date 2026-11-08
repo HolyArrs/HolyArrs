@@ -4,7 +4,7 @@ description: Adopt shows you already have, rename episode files, delete safely a
 level: Setup
 ---
 
-Bring in shows already on disk, tidy names, delete what you no longer watch, and see what happened to an episode. Only the owner and admins see these screens. Movies work much the same way, see [Organise movies](../movies/organise-movies.md).
+Bring in shows already on disk, tidy names, delete what you no longer watch, and see what happened to an episode. Only the owner and admins see these screens. Movies work much the same way, see [Organise movies](../../movies/organise.md).
 
 ## Bring in shows you already have
 
@@ -109,4 +109,4 @@ With **Season packs** set to one Alert per episode, a big pack sends at most 25 
 
 - [Show downloads](downloads-shows.md)
 - [Search for shows](search-shows.md)
-- [Organise movies](../movies/organise-movies.md)
+- [Organise movies](../../movies/organise.md)

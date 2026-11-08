@@ -17,7 +17,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Area | Guides |
 |---|---|
 | Requests | [Asking](requests/asking.md), [approving](requests/approving.md), [reports](requests/reports.md), [limits and Request rules](requests/settings.md) |
-| Movies | [Searching](user/movies/search-movies.md), [downloads](user/movies/downloads-movies.md), [organising](user/movies/organise-movies.md), [editions](user/movies/movie-editions.md), [movie sets](user/movies/collections.md) |
+| Movies | [Searching](user/movies/search-movies.md), [downloads](user/movies/downloads-movies.md), [organising](movies/organise.md), [editions and collections](movies/editions-collections.md) |
 | Shows | [Searching](user/shows/search-shows.md), [downloads](user/shows/downloads-shows.md), [organising](user/shows/organise-shows.md) |
 | Music | [Searching](user/music/search.md), [downloads](user/music/downloads.md), [organising](user/music/organise.md) |
 | Explore and the calendar | [Explore](discover/explore.md), [people](discover/popular-people.md), [calendar](discover/calendar.md) |
@@ -72,9 +72,9 @@ A changing number or token is in square brackets.
 | History | `/downloads/history` | [History](downloads/history.md) |
 | Needs a decision | `/downloads/decide` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads.md) |
 | Library | `/library` | [Find titles in the Library](downloads/library-search.md) |
-| Movie, show or artist | `/library/[id]` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
+| Movie, show or artist | `/library/[id]` | Organising [movies](movies/organise.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
 | Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
-| Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
+| Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](user/subtitles/subtitles.md) |
 | Connect an AI app | `/ai` | [Connect AI apps](reference/ai.md) (held back) |
 | Settings | `/settings` | [Home and Settings](user/getting-started/home-and-settings.md#settings) |
@@ -95,7 +95,7 @@ A changing number or token is in square brackets.
 | API | `/settings/api` | [The HolyArrs API](dev/api.md) |
 | Metadata | `/settings/tmdb` | [Metadata](user/metadata/metadata-service.md) |
 | Users and roles | `/settings/users` | [Users and roles](users/roles.md), [kid accounts](users/kids.md) |
-| Naming and files | `/settings/naming` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
+| Naming and files | `/settings/naming` | Organising [movies](movies/organise.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
 | Outside lists | `/settings/outside-lists` | [Ask for a title](requests/asking.md) (no Outside lists guide yet) |
 | Search settings | `/settings/search` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
 | Music defaults | `/settings/music` | [Organising music](user/music/organise.md) |

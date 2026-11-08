@@ -66,7 +66,7 @@ A movie lands in **Review** when HolyArrs cannot go on alone: it ran out of rele
 | Add to Turned down | Turns down the last release, then searches again. |
 | Stop looking | Turns **Keep up to date** off for that Version. Files on disk stay. |
 
-When the import is unsure of the edition, you set it here. See [Movie editions](movie-editions.md).
+When the import is unsure of the edition, you set it here. See [Movie editions](../../movies/editions-collections.md).
 
 ## If it does not work
 
@@ -101,4 +101,4 @@ Fix: remove it with **Add its Release to Turned down** on.
 
 - [Search for movies](search-movies.md)
 - [Show downloads](../shows/downloads-shows.md)
-- [Organise movies](organise-movies.md)
+- [Organise movies](../../movies/organise.md)
