@@ -146,7 +146,7 @@ export function listPath(filter: ReportFilter, opts: { titleId?: number; mine?: 
 	if (opts.mine) q.set('mine', '1');
 	if (opts.limit) q.set('limit', String(opts.limit));
 	const s = q.toString();
-	return s ? `/reports?${s}` : '/reports';
+	return s ? `/reports?${s}` : '/reports'; // API path
 }
 
 /** Reads ?show= from the address; anything unknown is Open. */

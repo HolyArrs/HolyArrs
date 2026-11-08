@@ -208,7 +208,7 @@ describe('reported problems in History', () => {
 		expect(rowStep(one(ev('report_fixed'))).label).toBe('Fixed');
 		expect(stepKinds(['reported'])).toEqual(['report_*']);
 		expect(stepKinds([])).toContain('report_*');
-		expect(rowLinks(row(ev('report_fixed', { Data: { report_id: 4 } }))).map((l) => l.href)).toEqual(['/reports?show=all']);
+		expect(rowLinks(row(ev('report_fixed', { Data: { report_id: 4 } }))).map((l) => l.href)).toEqual(['/requests/reports?show=all']);
 		expect(rowLinks(row(ev('report_made'))).map((l) => l.label)).toEqual(['Problems']);
 		expect(searchSteps.find((s) => s.key === 'reported')?.label).toBe('Reported');
 	});

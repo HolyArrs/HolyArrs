@@ -388,6 +388,6 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
-	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', label: 'Problems', href: '/reports?show=all' });
+	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', label: 'Problems', href: '/requests/reports?show=all' });
 	return out;
 }
