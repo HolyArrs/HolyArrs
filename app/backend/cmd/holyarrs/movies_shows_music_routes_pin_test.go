@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"

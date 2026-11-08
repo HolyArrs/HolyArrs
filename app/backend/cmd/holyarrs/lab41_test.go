@@ -6,11 +6,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 

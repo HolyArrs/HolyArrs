@@ -14,7 +14,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 func showSetup(t *testing.T) (*httptest.Server, *database.Store, *fakeShowSource, *fakeShowSource) {
@@ -33,25 +32,6 @@ func showSetup(t *testing.T) (*httptest.Server, *database.Store, *fakeShowSource
 	t.Cleanup(srv.Close)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"show","label":"Shows"}`, t.TempDir()), 201)
 	return srv, s, tmdb, maze
-}
-
-type addedShow struct {
-	Title struct {
-		ID    int64  `json:"id"`
-		Kind  string `json:"kind"`
-		Slots []any  `json:"slots"`
-		Show  struct {
-			DetailsSource string                `json:"details_source"`
-			EpisodeOrder  string                `json:"episode_order"`
-			SeasonChoice  string                `json:"season_choice"`
-			NewSeasons    string                `json:"new_seasons"`
-			Seasons       []shows.SeasonSummary `json:"seasons"`
-			Episodes      int                   `json:"episodes"`
-			Missing       int                   `json:"missing"`
-			NotOutYet     int                   `json:"not_out_yet"`
-		} `json:"show"`
-	} `json:"title"`
-	JobID int64 `json:"job_id"`
 }
 
 func animeTMDB(t *testing.T) metadata.Provider {

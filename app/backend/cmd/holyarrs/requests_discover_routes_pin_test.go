@@ -1,12 +1,8 @@
 package main
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/cookiejar"
-	"sort"
-	"strings"
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -243,30 +239,6 @@ var rdpWrites = []rdpCall{
 	{"DELETE /api/v1/migrate/snapshots/999 ", 404, 403, "error", "error"},
 	{"DELETE /api/v1/migrate/saved-keys ", 200, 403, "forgotten", "error"},
 	{"POST /api/v1/settings/import-secrets {}", 400, 403, "error", "error"},
-}
-
-// rdpSend sends the call as one person and returns status and sorted JSON names.
-func (r *askRig) rdpSend(t *testing.T, who *signedIn, req string) (int, string) {
-	t.Helper()
-	m, rest, _ := strings.Cut(req, " ")
-	path, body, _ := strings.Cut(rest, " ")
-	hr, _ := http.NewRequest(m, r.srv.URL+path, strings.NewReader(body))
-	hr.Header.Set("Content-Type", "application/json")
-	hr.Header.Set(accounts.CSRFHeader, who.csrf)
-	resp, err := who.c.Do(hr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-	var x map[string]any
-	_ = json.Unmarshal(b, &x)
-	var ks []string
-	for k := range x {
-		ks = append(ks, k)
-	}
-	sort.Strings(ks)
-	return resp.StatusCode, strings.Join(ks, " ")
 }
 
 // Status, auth level and response shape of the routes that move out of

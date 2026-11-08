@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +18,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 

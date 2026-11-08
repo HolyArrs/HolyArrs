@@ -67,7 +67,7 @@ func newAskRig(t *testing.T) *askRig {
 	wl := &requests.Watchlists{}
 	a := api.New(api.Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: live,
 		Library: lib, Alerts: al, Asks: asks, Watchlists: wl})
-	srv := httptest.NewServer(a.Handler())
+	srv := httptest.NewServer(routes(a, config{}))
 	t.Cleanup(srv.Close)
 	r := &askRig{srv: srv, st: st, asks: asks, api: a, live: live, wl: wl, md: md}
 

@@ -23,15 +23,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// routePackages are the packages that register /api/v1 routes.
-var routePackages = func() []string {
-	ps := []string{"api", "accounts", "backups", "alerts", "health", "updates", "mediaservers", "metadata", "sources", "subtitles", "ai", "arrapi", "migrate", "movies", "shows", "library", "mediafiles", "datapack", "importer", "setup", "downloads", "requests", "music", "discover", "core/webserver"}
-	for i, p := range ps {
-		ps[i] = "../../internal/" + p
-	}
-	return ps
-}()
-
 // TestEveryRouteHasAPermission reads every route the program registers and
 // checks accounts.RoutePerms names what it needs (or that it is public). A route
 // missing from the table is owner-only, which is safe but usually a mistake.
