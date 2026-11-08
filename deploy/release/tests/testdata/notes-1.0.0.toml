@@ -157,12 +157,6 @@ Updates = [
   "Updates you can undo. (#57)",
 ]
 
-[before_you_update]
-breaking = ["Default port is now 6262. Map your old port to keep it."]
-manual_steps = ["Point HolyArrs at your old apps once in the Import step."]
-backup = "Back up your old apps' config folders before the move."
-rollback = "Open Settings > Updates and pick the version you had before."
-
 [stats]
 issues_done = 95
 still_building = 4

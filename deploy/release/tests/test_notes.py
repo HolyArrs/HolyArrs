@@ -48,7 +48,7 @@ class Golden(unittest.TestCase):
     def test_section_order(self):
         self.assertEqual(headings(notes.render_github(load(), {})), [
             "Highlights", "Requests", "Library", "Downloads", "Indexers", "Accounts", "Health",
-            "Setup", "Install", "Also new", "Security", "Before you update", "Get the image", "Thanks"])
+            "Setup", "Install", "Also new", "Security", "Get the image", "Thanks"])
         gh = notes.render_github(load(), {})
         self.assertTrue(gh.rstrip().endswith("_95 issues done, 4 still building, 48 people credited._"))
         self.assertTrue(gh.startswith(load()["theme"]))
@@ -113,15 +113,18 @@ class Hidden(unittest.TestCase):
     def test_known_issues_hidden(self):
         self.assertNotIn("Known issues", notes.render_github(load(), {}))
 
-    def test_empty_security_and_before_show_no_heading(self):
+    def test_empty_security_shows_no_heading(self):
         n = load()
         n["security"] = []
-        n["before_you_update"] = {"breaking": [], "manual_steps": [], "backup": "x", "rollback": "y"}
-        gh = notes.render_github(n, {})
-        self.assertNotIn("## Security", gh)
-        self.assertNotIn("Before you update", gh)
+        self.assertNotIn("## Security", notes.render_github(n, {}))
+
+    def test_no_before_you_update_anywhere(self):
+        n = load()
+        self.assertNotIn("Before you update", notes.render_github(n, {}))
+        self.assertNotIn("Before you update", notes.render_changelog(n, "2026-11-08"))
         self.assertNotIn("heads up", notes.render_reddit(n))
         self.assertNotIn("Before you update", notes.render_discord(n))
+        self.assertNotIn('"before"', notes.render_update_notes(n))
 
     def test_empty_group_dropped(self):
         n = load()
@@ -147,19 +150,16 @@ class Credits(unittest.TestCase):
 class Discord(unittest.TestCase):
     def test_long_dm_drops_theme_first_keeps_link(self):
         n = load()
-        n["theme"] = "word " * 150
+        n["theme"] = "word " * 200
         dm = notes.render_discord(n)
         self.assertLessEqual(len(dm), 1000)
         self.assertNotIn("word word", dm)
-        self.assertIn("Before you update:", dm)
         self.assertTrue(dm.rstrip().endswith("/releases/tag/1.0.0"))
 
-    def test_then_drops_before_line(self):
+    def test_link_and_bold_title(self):
         n = load()
-        n["theme"] = "word " * 150
-        n["before_you_update"]["breaking"] = ["b " * 450]
+        n["theme"] = "word " * 200
         dm = notes.render_discord(n)
-        self.assertNotIn("Before you update:", dm)
         self.assertIn("What changed: https://github.com/HolyArrs/holyarrs/releases/tag/1.0.0", dm)
         self.assertTrue(notes.render_discord(n, bold=True).startswith("**HolyArrs 1.0.0 is ready**"))
 
@@ -208,10 +208,10 @@ class Check(unittest.TestCase):
             self.assertTrue(any("banned word" in x and word in x for x in e), bad)
         self.assertTrue(any("em dash" in x for x in errors(self.add(load(), "A — B. (#75)"))))
 
-    def test_before_needs_backup_and_rollback(self):
+    def test_before_you_update_is_rejected(self):
         n = load()
-        n["before_you_update"]["rollback"] = ""
-        self.assertTrue(any("rollback" in x for x in errors(n)))
+        n["before_you_update"] = {"breaking": ["x"]}
+        self.assertTrue(any("before_you_update is no longer used" in x for x in errors(n)))
 
     def test_highlight_needs_issues(self):
         n = load()

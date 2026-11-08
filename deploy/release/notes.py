@@ -20,7 +20,7 @@ import tomllib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 ISSUES = "https://github.com/HolyArrs/holyarrs/issues/"
 RELEASES = "https://github.com/HolyArrs/holyarrs/releases/tag/"
-KNOWN = {"version", "theme", "image", "images", "docs_url", "highlights", "before_you_update", "groups",
+KNOWN = {"version", "theme", "image", "images", "docs_url", "highlights", "groups",
          "security", "known_issues", "credits", "stats"}
 # Old map format kinds -> the prefix the list format uses ("" = new).
 KINDS = {"added": "", "fixed": "Fixed: ", "changed": "Changed: ", "docs": "Docs: "}
@@ -73,16 +73,6 @@ def hl_issues(h):
 
 def hl_line(h):
     return h["line"] + "".join(" (#%d)" % i for i in hl_issues(h))
-
-
-def before_shows(n):
-    b = n.get("before_you_update") or {}
-    return bool(items(b.get("breaking")) or items(b.get("manual_steps")))
-
-
-def first_breaking(n):
-    b = items((n.get("before_you_update") or {}).get("breaking"))
-    return b[0] if b else None
 
 
 def stats_line(n):
@@ -193,14 +183,6 @@ def render_github(n, cmap):
         if lines:
             blocks.append("## %s\n%s" % (title, bullets(lines)))
     # Practical and credit parts sit at the bottom; assets stay in GitHub's own box.
-    if before_shows(n):
-        b = n["before_you_update"]
-        rows = ["- " + md_links(x) for x in items(b.get("breaking")) + items(b.get("manual_steps"))]
-        if not empty(b.get("backup")):
-            rows.append("- Backup: " + b["backup"])
-        if not empty(b.get("rollback")):
-            rows.append("- Rollback: " + b["rollback"])
-        blocks.append("## Before you update\n" + "\n".join(rows))
     imgs = images(n)
     if imgs:
         rows = ["%s:\n\n`%s:%s`\n\n`%s:latest`" % (i["registry"], i["name"], n["version"], i["name"])
@@ -222,7 +204,6 @@ def render_update_notes(n):
         "title": "HolyArrs %s is ready" % n["version"],
         "theme": n.get("theme"),
         "lines": [no_refs(h["line"]) for h in items(n.get("highlights"))],
-        "before": first_breaking(n),
         "link": release_link(n),
     }, indent=2, ensure_ascii=False) + "\n"
 
@@ -238,8 +219,6 @@ def render_reddit(n):
     hl = [_low(h["line"]).rstrip(".") for h in items(n.get("highlights"))]
     if hl:
         out += ["- " + h for h in hl] + [""]
-    if first_breaking(n):
-        out += ["heads up: " + _low(first_breaking(n)), ""]
     people = (n.get("stats") or {}).get("people_credited")
     if isinstance(people, int) and people > 0:
         out += ["thanks to the %d of you who asked for stuff, you're all named in the notes" % people, ""]
@@ -248,18 +227,16 @@ def render_reddit(n):
 
 
 def render_discord(n, bold=False):
-    def build(theme, before):
+    def build(theme):
         title = "HolyArrs %s is ready" % n["version"]
         out = ["**%s**" % title if bold else title]
         if theme and not empty(n.get("theme")):
             out.append(n["theme"])
         out += ["- " + no_refs(h["line"]) for h in items(n.get("highlights"))]
-        if before and first_breaking(n):
-            out.append("Before you update: " + first_breaking(n))
         out.append("What changed: " + release_link(n))
         return "\n".join(out) + "\n"
-    for theme, before in ((True, True), (False, True), (False, False)):
-        text = build(theme, before)
+    for theme in (True, False):
+        text = build(theme)
         if len(text) <= DM_LIMIT:
             return text
     return text
@@ -287,8 +264,10 @@ def render_all(n, cmap, today):
 
 def check(n, cmap):
     errors, warnings = [], []
+    if "before_you_update" in n:
+        errors.append("before_you_update is no longer used, remove that section from the notes file")
     for k in n:
-        if k not in KNOWN:
+        if k not in KNOWN and k != "before_you_update":
             warnings.append("unknown key ignored: %s" % k)
     for place, g in (n.get("groups") or {}).items():
         if isinstance(g, dict):
@@ -325,10 +304,8 @@ def check(n, cmap):
     for l in glines:
         if re.match(r"(added|new)\s*:", l, re.I):
             errors.append("new is the default, drop the prefix: %r" % l)
-    b = n.get("before_you_update") or {}
     every = [n.get("theme") or ""] + [h.get("line") or "" for h in hl] + glines + \
-        items(n.get("security")) + items(n.get("known_issues")) + items(b.get("breaking")) + \
-        items(b.get("manual_steps")) + [b.get("backup") or "", b.get("rollback") or ""]
+        items(n.get("security")) + items(n.get("known_issues"))
     for l in every:
         words = len(no_refs(l).split())
         if words > 12:
@@ -348,8 +325,6 @@ def check(n, cmap):
                 warnings.append("same issues on two lines: %r / %r" % (a, c))
             elif difflib.SequenceMatcher(None, no_refs(a).lower(), no_refs(c).lower()).ratio() > 0.8:
                 warnings.append("near-identical lines: %r / %r" % (a, c))
-    if before_shows(n) and (empty(b.get("backup")) or empty(b.get("rollback"))):
-        errors.append("before_you_update shows, so backup and rollback must be set")
     cs = items(n.get("credits"))
     names = {bare(c.get("name", "")).lower() for c in cs}
     people = (n.get("stats") or {}).get("people_credited")

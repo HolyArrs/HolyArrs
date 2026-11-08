@@ -71,12 +71,6 @@ One app for movies, shows and music, from asking to watching.
 - Locked down by default, password guessing slowed down. ([#85](https://github.com/HolyArrs/holyarrs/issues/85)) ([#86](https://github.com/HolyArrs/holyarrs/issues/86))
 - Tracker passkeys and server details stay out of logs and pages. ([#89](https://github.com/HolyArrs/holyarrs/issues/89)) ([#88](https://github.com/HolyArrs/holyarrs/issues/88))
 
-## Before you update
-- Default port is now 6262. Map your old port to keep it.
-- Point HolyArrs at your old apps once in the Import step.
-- Backup: Back up your old apps' config folders before the move.
-- Rollback: Open Settings > Updates and pick the version you had before.
-
 ## Get the image
 Docker Hub:
 
