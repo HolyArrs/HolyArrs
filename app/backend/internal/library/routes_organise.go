@@ -3,39 +3,55 @@ package library
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// organiseRoutes are the Organise routes (stage 5.1): naming and rename,
+// OrganiseDeps is what the Organise routes need.
+type OrganiseDeps struct {
+	Store *database.Store
+	Lib   *Service
+	Queue *jobs.Queue
+	// TitleID reads the {id} Title, answering 404 itself.
+	TitleID func(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool)
+	// Fail answers a library error.
+	Fail func(w http.ResponseWriter, err error)
+}
+
+// OrganiseHandlers serve the Organise routes (stage 5.1): naming and rename,
 // adopting an existing library, deleting a movie, and where files go.
-func (a *API) organiseRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/titles/{id}/rename", a.previewTitleRename)
-	m.HandleFunc("POST /api/v1/titles/{id}/rename", a.renameTitle)
-	m.HandleFunc("GET /api/v1/rename", a.previewRename)
-	m.HandleFunc("POST /api/v1/rename", a.renameAll)
-	m.HandleFunc("GET /api/v1/jobs/{id}", a.getJob)
-	m.HandleFunc("GET /api/v1/settings/naming", a.getNaming)
-	m.HandleFunc("PUT /api/v1/settings/naming", a.putNaming)
-	m.HandleFunc("POST /api/v1/settings/naming/example", a.namingExample)
-	m.HandleFunc("GET /api/v1/settings/files", a.getFileRules)
-	m.HandleFunc("PUT /api/v1/settings/files", a.putFileRules)
-	m.HandleFunc("POST /api/v1/titles/{id}/delete", a.deleteTitle)
-	m.HandleFunc("POST /api/v1/holding/clean", a.cleanHolding)
-	m.HandleFunc("POST /api/v1/library-folders/{id}/scan", a.scanFolder)
-	m.HandleFunc("POST /api/v1/library-folders/{id}/adopt", a.adoptFolders)
-	m.HandleFunc("POST /api/v1/library/rescan", a.rescanLibrary)
+type OrganiseHandlers struct {
+	OrganiseDeps
+}
+
+// Routes registers the Organise routes.
+func (h *OrganiseHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/titles/{id}/rename", h.previewTitleRename)
+	m.HandleFunc("POST /api/v1/titles/{id}/rename", h.renameTitle)
+	m.HandleFunc("GET /api/v1/rename", h.previewRename)
+	m.HandleFunc("POST /api/v1/rename", h.renameAll)
+	m.HandleFunc("GET /api/v1/jobs/{id}", h.getJob)
+	m.HandleFunc("GET /api/v1/settings/naming", h.getNaming)
+	m.HandleFunc("PUT /api/v1/settings/naming", h.putNaming)
+	m.HandleFunc("POST /api/v1/settings/naming/example", h.namingExample)
+	m.HandleFunc("GET /api/v1/settings/files", h.getFileRules)
+	m.HandleFunc("PUT /api/v1/settings/files", h.putFileRules)
+	m.HandleFunc("POST /api/v1/titles/{id}/delete", h.deleteTitle)
+	m.HandleFunc("POST /api/v1/holding/clean", h.cleanHolding)
+	m.HandleFunc("POST /api/v1/library-folders/{id}/scan", h.scanFolder)
+	m.HandleFunc("POST /api/v1/library-folders/{id}/adopt", h.adoptFolders)
+	m.HandleFunc("POST /api/v1/library/rescan", h.rescanLibrary)
 }
 
 // scanFolder queues the dry-run scan of a Library folder; GET
 // /api/v1/jobs/{id} gives its plan when done.
-func (a *API) scanFolder(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) scanFolder(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
@@ -43,27 +59,27 @@ func (a *API) scanFolder(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		After string `json:"after"`
 	}
-	if r.ContentLength != 0 && !decode(w, r, &body, `send nothing to scan from the start, or {"after": "<the plan's next>"} to scan the rest`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &body, `send nothing to scan from the start, or {"after": "<the plan's next>"} to scan the rest`) {
 		return
 	}
-	jobID, err := a.s.Library.ScanFolder(r.Context(), id, body.After, actor(r))
+	jobID, err := h.Lib.ScanFolder(r.Context(), id, body.After, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
-		libraryError(w, err)
+		h.Fail(w, err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID, "dry_run": true})
 }
 
-func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) adoptFolders(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
 	}
 	var body struct {
-		Folders []library.AdoptChoice `json:"folders"`
-		Follow  *bool                 `json:"follow"` // the importer follows what is brought in (default true)
+		Folders []AdoptChoice `json:"folders"`
+		Follow  *bool         `json:"follow"` // the importer follows what is brought in (default true)
 	}
-	if !decode(w, r, &body, `send {"folders": [{"folder": "<folder name>", "tmdb_id": "<id>"}, ...]}, or "id": "<source>:<id>" for a show folder`) {
+	if !webserver.Decode(w, r, &body, `send {"folders": [{"folder": "<folder name>", "tmdb_id": "<id>"}, ...]}, or "id": "<source>:<id>" for a show folder`) {
 		return
 	}
 	if len(body.Folders) == 0 || len(body.Folders) > 5000 {
@@ -76,16 +92,16 @@ func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	jobID, err := a.s.Library.AdoptLater(r.Context(), id, body.Folders, body.Follow == nil || *body.Follow, actor(r))
+	jobID, err := h.Lib.AdoptLater(r.Context(), id, body.Folders, body.Follow == nil || *body.Follow, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
-		libraryError(w, err)
+		h.Fail(w, err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID})
 }
 
-func (a *API) rescanLibrary(w http.ResponseWriter, r *http.Request) {
-	id, _, err := a.s.Queue.Enqueue(r.Context(), library.KindRescan, nil, nil, library.KindRescan, actor(r))
+func (h *OrganiseHandlers) rescanLibrary(w http.ResponseWriter, r *http.Request) {
+	id, _, err := h.Queue.Enqueue(r.Context(), KindRescan, nil, nil, KindRescan, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -95,17 +111,17 @@ func (a *API) rescanLibrary(w http.ResponseWriter, r *http.Request) {
 
 // deleteTitle answers with the plan of a delete (apply false, the default)
 // or carries it out (apply true).
-func (a *API) deleteTitle(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *OrganiseHandlers) deleteTitle(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
 	if !ok {
 		return
 	}
 	var body struct {
-		library.RemoveChoice
-		library.RemoveScope
+		RemoveChoice
+		RemoveScope
 		Apply bool `json:"apply"`
 	}
-	if r.ContentLength != 0 && !decode(w, r, &body, `send {"delete_files": false, "never_add": false, "apply": false} to see the plan, then "apply": true; for part of a show add "season": <n> or "episode_ids": [<id>, ...]; for part of an artist "album_id": <id> or "track_ids": [<id>, ...]`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &body, `send {"delete_files": false, "never_add": false, "apply": false} to see the plan, then "apply": true; for part of a show add "season": <n> or "episode_ids": [<id>, ...]; for part of an artist "album_id": <id> or "track_ids": [<id>, ...]`) {
 		return
 	}
 	if err := body.RemoveScope.Check(); err != nil {
@@ -116,19 +132,19 @@ func (a *API) deleteTitle(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "send at most 5000 episode_ids or track_ids")
 		return
 	}
-	var p library.RemovePlan
+	var p RemovePlan
 	var err error
 	if body.RemoveScope.Whole() {
-		p, err = a.s.Library.Remove(r.Context(), t.ID, body.RemoveChoice, body.Apply, actor(r))
+		p, err = h.Lib.Remove(r.Context(), t.ID, body.RemoveChoice, body.Apply, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	} else {
-		p, err = a.s.Library.RemoveEpisodes(r.Context(), t.ID, body.RemoveScope, body.RemoveChoice, body.Apply, actor(r))
+		p, err = h.Lib.RemoveEpisodes(r.Context(), t.ID, body.RemoveScope, body.RemoveChoice, body.Apply, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	}
 	switch {
-	case errors.Is(err, library.ErrNotShow), errors.Is(err, library.ErrNeverAddWholeShow), errors.Is(err, library.ErrNoEpisodesChosen),
-		errors.Is(err, library.ErrNoSuchEpisode), errors.Is(err, library.ErrNoSuchSeason), errors.Is(err, library.ErrNotArtist),
-		errors.Is(err, library.ErrNeverAddWholeArt), errors.Is(err, library.ErrNoSuchAlbumHere), errors.Is(err, library.ErrNoSuchTrack):
+	case errors.Is(err, ErrNotShow), errors.Is(err, ErrNeverAddWholeShow), errors.Is(err, ErrNoEpisodesChosen),
+		errors.Is(err, ErrNoSuchEpisode), errors.Is(err, ErrNoSuchSeason), errors.Is(err, ErrNotArtist),
+		errors.Is(err, ErrNeverAddWholeArt), errors.Is(err, ErrNoSuchAlbumHere), errors.Is(err, ErrNoSuchTrack):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, library.ErrAlreadyRemoved):
+	case errors.Is(err, ErrAlreadyRemoved):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil && p.TitleID != 0:
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "plan": p})
@@ -139,8 +155,8 @@ func (a *API) deleteTitle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *API) cleanHolding(w http.ResponseWriter, r *http.Request) {
-	id, _, err := a.s.Queue.Enqueue(r.Context(), library.KindCleanHolding, nil, nil, library.KindCleanHolding, actor(r))
+func (h *OrganiseHandlers) cleanHolding(w http.ResponseWriter, r *http.Request) {
+	id, _, err := h.Queue.Enqueue(r.Context(), KindCleanHolding, nil, nil, KindCleanHolding, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -148,12 +164,12 @@ func (a *API) cleanHolding(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
-func (a *API) previewTitleRename(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *OrganiseHandlers) previewTitleRename(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
 	if !ok {
 		return
 	}
-	steps, hash, err := library.PlanRenameHashed(r.Context(), a.s.Store.Read(), []int64{t.ID})
+	steps, hash, err := PlanRenameHashed(r.Context(), h.Store.Read(), []int64{t.ID})
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -161,8 +177,8 @@ func (a *API) previewTitleRename(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"steps": steps, "plan_hash": hash})
 }
 
-func (a *API) renameTitle(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *OrganiseHandlers) renameTitle(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
 	if !ok {
 		return
 	}
@@ -171,14 +187,14 @@ func (a *API) renameTitle(w http.ResponseWriter, r *http.Request) {
 		PlanHash string  `json:"plan_hash"`
 	}
 	const want = `send {"plan_hash": "<from the preview>"} to rename every file shown in the preview, with "file_ids": [<id>, ...] for some`
-	if !decode(w, r, &body, want) {
+	if !webserver.Decode(w, r, &body, want) {
 		return
 	}
 	if body.PlanHash == "" {
 		webserver.Fail(w, http.StatusBadRequest, want)
 		return
 	}
-	id, err := a.s.Library.Rename(r.Context(), []int64{t.ID}, body.FileIDs, body.PlanHash, actor(r))
+	id, err := h.Lib.Rename(r.Context(), []int64{t.ID}, body.FileIDs, body.PlanHash, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -186,8 +202,8 @@ func (a *API) renameTitle(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
-func (a *API) previewRename(w http.ResponseWriter, r *http.Request) {
-	steps, hash, err := library.PlanRenameHashed(r.Context(), a.s.Store.Read(), nil)
+func (h *OrganiseHandlers) previewRename(w http.ResponseWriter, r *http.Request) {
+	steps, hash, err := PlanRenameHashed(r.Context(), h.Store.Read(), nil)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -195,20 +211,20 @@ func (a *API) previewRename(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"steps": steps, "plan_hash": hash})
 }
 
-func (a *API) renameAll(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) renameAll(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		TitleIDs []int64 `json:"title_ids"`
 		PlanHash string  `json:"plan_hash"`
 	}
 	const want = `send {"plan_hash": "<from the preview>"} to rename what the whole-Library preview showed, or {"title_ids": [<id>, ...], "plan_hash": "<from the preview>"}`
-	if !decode(w, r, &body, want) {
+	if !webserver.Decode(w, r, &body, want) {
 		return
 	}
 	if body.PlanHash == "" {
 		webserver.Fail(w, http.StatusBadRequest, want)
 		return
 	}
-	id, err := a.s.Library.Rename(r.Context(), body.TitleIDs, nil, body.PlanHash, actor(r))
+	id, err := h.Lib.Rename(r.Context(), body.TitleIDs, nil, body.PlanHash, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -216,13 +232,13 @@ func (a *API) renameAll(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
-func (a *API) getJob(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) getJob(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
 	}
-	var j domain.Job
-	if err := database.Get(r.Context(), a.s.Store.Read(), "jobs", id, &j); errors.Is(err, database.ErrNotFound) {
+	var j jobs.Job
+	if err := database.Get(r.Context(), h.Store.Read(), "jobs", id, &j); errors.Is(err, database.ErrNotFound) {
 		webserver.Fail(w, http.StatusNotFound, "no such job")
 		return
 	} else if err != nil {
@@ -232,8 +248,8 @@ func (a *API) getJob(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, j)
 }
 
-func (a *API) getNaming(w http.ResponseWriter, r *http.Request) {
-	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
+func (h *OrganiseHandlers) getNaming(w http.ResponseWriter, r *http.Request) {
+	ns, err := mediafiles.ReadNaming(r.Context(), h.Store.Read())
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -290,14 +306,14 @@ func namingExamples(ns mediafiles.NamingSettings) (file, folder string) {
 
 // namingExample shows what unsaved settings would name the sample movie;
 // nothing is saved.
-func (a *API) namingExample(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) namingExample(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved value.
-	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
+	ns, err := mediafiles.ReadNaming(r.Context(), h.Store.Read())
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	if !decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal"}`) {
+	if !webserver.Decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal"}`) {
 		return
 	}
 	if err := ns.Validate(); err != nil {
@@ -308,25 +324,25 @@ func (a *API) namingExample(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"example": file, "example_folder": folder, "example_episodes": episodeExamples(ns), "example_music": musicExamples(ns)})
 }
 
-func (a *API) putNaming(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) putNaming(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved value.
-	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
+	ns, err := mediafiles.ReadNaming(r.Context(), h.Store.Read())
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	if !decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal","rename_on_import"}`) {
+	if !webserver.Decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal","rename_on_import"}`) {
 		return
 	}
-	if err := mediafiles.PutNamingSettings(r.Context(), a.s.Store, ns, actor(r)); err != nil {
+	if err := mediafiles.PutNamingSettings(r.Context(), h.Store, ns, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	a.getNaming(w, r)
+	h.getNaming(w, r)
 }
 
-func (a *API) getFileRules(w http.ResponseWriter, r *http.Request) {
-	fr, err := importer.ReadFileRules(r.Context(), a.s.Store.Read())
+func (h *OrganiseHandlers) getFileRules(w http.ResponseWriter, r *http.Request) {
+	fr, err := importer.ReadFileRules(r.Context(), h.Store.Read())
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -334,14 +350,23 @@ func (a *API) getFileRules(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, fr)
 }
 
-func (a *API) putFileRules(w http.ResponseWriter, r *http.Request) {
+func (h *OrganiseHandlers) putFileRules(w http.ResponseWriter, r *http.Request) {
 	var fr importer.FileRules
-	if !decode(w, r, &fr, `send {"holding_days","min_free_mb","skip_free_space_check"}`) {
+	if !webserver.Decode(w, r, &fr, `send {"holding_days","min_free_mb","skip_free_space_check"}`) {
 		return
 	}
-	if err := importer.SaveFileRules(r.Context(), a.s.Store, fr, actor(r)); err != nil {
+	if err := importer.SaveFileRules(r.Context(), h.Store, fr, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, fr)
+}
+
+func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		webserver.Fail(w, http.StatusNotFound, "not found")
+		return 0, false
+	}
+	return id, true
 }

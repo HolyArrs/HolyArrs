@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -316,6 +317,18 @@ func New(s Server) *API {
 	return a
 }
 
+// byHandRoutes registers the import-by-hand routes (internal/importer).
+func (a *API) byHandRoutes(m *http.ServeMux) {
+	h := &importer.Handlers{Deps: importer.Deps{Store: a.s.Store, SavePath: a.s.SavePath}}
+	if h.SavePath == "" && a.s.Library != nil {
+		h.SavePath = a.s.Library.SavePath
+	}
+	if a.s.Live != nil {
+		h.Live = a.s.Live // a nil hub must stay a nil Publisher
+	}
+	h.Routes(m)
+}
+
 // WireUpdateChecks hands the update check to the health checks: health
 // shows its row and its state, and never imports updates.
 func WireUpdateChecks(he *health.Engine, uc *updates.Checker) {
@@ -396,8 +409,8 @@ func (a *API) Routes(rt *webserver.Router) {
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	a.mf.Routes(m)
 	a.dl.Routes(m)
-	a.organiseRoutes(m)
-	a.manualImportRoutes(m)
+	(&library.OrganiseHandlers{OrganiseDeps: library.OrganiseDeps{Store: a.s.Store, Lib: a.s.Library, Queue: a.s.Queue, TitleID: a.titleID, Fail: libraryError}}).Routes(m)
+	a.byHandRoutes(m)
 	a.holding().Routes(m)
 	a.healthRoutes(m)
 	a.media.Routes(m)
