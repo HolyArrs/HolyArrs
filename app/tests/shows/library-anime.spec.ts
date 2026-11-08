@@ -1,9 +1,10 @@
-import { expect, test, type APIResponse, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { episodeAction, episodeState, openFromSearch, openSeasonNamed, owner, signIn } from '../helpers/helpers.ts';
 import { animeReleaseHash, qbitPort } from '../fakes/index.mjs';
+import { api, type Call } from '../helpers/api.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
@@ -15,22 +16,14 @@ test.describe.configure({ timeout: 90_000 });
 // to S02E01, the Release for 14 to S02E02, and the file of 13 must land on
 // S02E01 in the Library.
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 const qbit = `http://127.0.0.1:${qbitPort}`;
 const show = 'Hoshikage Relay';
 const want = `[Lab Fansub] ${show} - 13 [1080p]`;
 // The fake qBittorrent takes any key.
 const fakeClientKey = ['stand', 'in', 'qbit'].join('-');
 
-type Call = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) => Promise<APIResponse>;
 type Episode = { id: number; season: number; episode: number; absolute?: number; slots: { state: string; file_id?: number; file?: { RelativePath?: string; Quality?: { resolution?: number; source?: string } } }[] };
 type Release = { name: string; episode?: string; passed: boolean; reasons: { effect: string; text: string }[] };
-
-/** api signs requests with the session's CSRF token, as the app does. */
-async function api(page: Page): Promise<Call> {
-	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
-}
 
 /** showFolder returns the Library folder for shows, adding one under .tmp when the earlier projects made none. */
 async function showFolder(call: Call): Promise<string> {

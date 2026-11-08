@@ -1,15 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { noSidewaysScroll, signIn, finishFirstRun } from '../helpers/helpers.ts';
+import { dataDir } from '../helpers/data-folder.ts';
 
 // Status (#71, #78): every tab at desktop width and at
 // 390, the tabs work from the keyboard, and the Jobs table keeps its labels
 // on a phone. About hands an admin the support bundle; a member never gets it. Own fresh app: npx playwright test -c e2e/status.config.ts
 test.describe.configure({ mode: 'serial' });
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp-phone');
+const tmp = dataDir('phone');
 // A fresh password each run, as helpers.ts newOwner() makes.
 const pw = `e2e-${Math.random().toString(36).slice(2)}-pw`;
 const owner = () => ({ name: 'luis', password: pw });

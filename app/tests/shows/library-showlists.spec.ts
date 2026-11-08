@@ -1,14 +1,13 @@
-import { expect, test, type APIResponse, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { owner, signIn, inLibrary } from '../helpers/helpers.ts';
 import { traktKey } from '../fakes/index.mjs';
+import { api, type Call } from '../helpers/api.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
-
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #104 Auto-add shows from lists: an Outside list that adds shows, against
 // the fake TMDB list 104 and the fake Trakt list lab/tv-picks in fakes/.
@@ -19,13 +18,6 @@ const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 // entry, a show folder it had to make) is taken away in afterAll through the
 // API, so a failed test leaves nothing behind for the specs after it.
 test.describe.configure({ mode: 'serial' });
-
-type Call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<APIResponse>;
-
-async function api(page: Page): Promise<Call> {
-	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
-}
 
 type TitleRow = { id: number; name: string; kind: string; why_added: string; show?: { seasons: { number: number; keep_up_to_date: boolean }[] } };
 

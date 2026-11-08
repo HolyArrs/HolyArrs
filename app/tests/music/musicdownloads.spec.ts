@@ -1,10 +1,10 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 import { qbitPort } from '../fakes/index.mjs';
+import { axe } from '../helpers/axe.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Album downloads on the Downloads screen and Needs a decision (4.14.2).
 // Runs after musicsearch.spec.ts: the FLAC copy of Tin Lanterns – Harbour
@@ -14,18 +14,10 @@ test.describe.configure({ mode: 'serial' });
 
 let page: Page;
 const qbit = `http://127.0.0.1:${qbitPort}`;
-const dl = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'downloads');
+const dl = join(tmp, 'downloads');
 const name = 'Tin Lanterns - Harbour Songs (2019) [FLAC]';
 // The fake indexer's info hash for an album Release name (fakes/).
 const hashOf = (n: string) => [...n].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 11).toString(16).padStart(8, '0').repeat(5);
-
-async function axe(p: Page, where: string) {
-	await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
-	const r = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
-}
 
 test.beforeAll(async ({ browser }) => {
 	page = await (await browser.newContext()).newPage();

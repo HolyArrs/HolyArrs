@@ -1,17 +1,17 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { makeOldLibrary } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn, titleAction, libraryTool, openAdvanced } from '../helpers/helpers.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Organise (stage 5.1): import an existing library from the screen, rename
 // files after seeing the preview, delete a movie after seeing the plan, and
 // Settings > Naming and files. Runs last.
 test.describe.configure({ mode: 'serial' });
 
-const oldLib = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'old-library');
+const oldLib = join(tmp, 'old-library');
 let page: Page;
 
 async function fresh(browser: Browser, width = 1280) {

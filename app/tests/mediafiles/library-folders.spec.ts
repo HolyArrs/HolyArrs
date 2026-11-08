@@ -1,23 +1,14 @@
-import { expect, test, type APIResponse, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { openLibraryTab, owner, signIn } from '../helpers/helpers.ts';
-
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
+import { api, type Call } from '../helpers/api.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // #28 Library folders: a show and an artist move to a second Library folder
 // of their kind later on, from Edit on their Library page, files and all
 // (movies already move; library-tools.spec.ts). Each test sets up its own
 // folders under .tmp and adopts a fake title that only these tests use.
-
-type Call = (method: 'GET' | 'POST', path: string, data?: unknown) => Promise<APIResponse>;
-
-/** api signs requests with the session's CSRF token, as the app does. */
-async function api(page: Page): Promise<Call> {
-	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
-}
 
 type Folder = { id: number; path: string; kind: string; label: string };
 

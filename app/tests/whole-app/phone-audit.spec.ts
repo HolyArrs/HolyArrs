@@ -1,13 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { finishFirstRun } from '../helpers/helpers.ts';
+import { dataDir } from '../helpers/data-folder.ts';
 
 // Every page at 360 and 390 wide: no sideways scroll, the bottom menu shows,
 // its tabs are big enough to tap, and the Manage sheet fits.
 // Smaller tap targets inside pages are written to .tmp-phone/audit.json.
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp-phone');
+const tmp = dataDir('phone');
 const pages = [
 	'/', '/explore', '/new', '/search', '/library', '/library/copies', '/library/held',
 	'/library/import', '/library/missing-subtitles', '/library/rename', '/library/turned-down', '/calendar',

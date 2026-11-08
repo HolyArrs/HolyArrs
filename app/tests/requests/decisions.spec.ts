@@ -1,11 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { indexerKey, indexerPort, movieReleaseHash, qbitPort } from '../fakes/index.mjs';
 import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from '../helpers/helpers.ts';
 import { askButton, card, fresh, savedKim } from './support.ts';
+import { api, type Call } from '../helpers/api.ts';
 
 // Requests, after asking.spec.ts (files run in name order): kim is turned
 // down and hits the weekly limit, then, each with members of its own and
@@ -103,14 +104,6 @@ async function member(browser: Browser, name: string): Promise<Page> {
 	await p.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(p).toHaveURL(/\/$/);
 	return p;
-}
-
-type Call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<APIResponse>;
-
-/** api signs requests with the page's CSRF token, as the app does. */
-async function api(p: Page): Promise<Call> {
-	const me = (await (await p.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => p.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
 }
 
 /** inLibrary adds a fake-TMDB movie (no search, not kept up to date) unless it is there; it returns its id. */

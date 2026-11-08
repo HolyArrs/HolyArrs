@@ -1,8 +1,8 @@
 import type { Browser, Page } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { openFromSearch, type Owner } from '../helpers/helpers.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Shared by the Requests specs (asking, decisions, follows-library-artist).
 
@@ -24,7 +24,7 @@ export function card(p: Page, name: string) {
 
 // kim joins in asking.spec.ts; decisions.spec.ts signs in as kim again. Her
 // name and password are handed over in .tmp/requests.json, as owner.json is.
-const kimFile = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'requests.json');
+const kimFile = join(tmp, 'requests.json');
 
 export function saveKim(o: Owner) {
 	mkdirSync(dirname(kimFile), { recursive: true });

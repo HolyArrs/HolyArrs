@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openAdvanced, openInLibrary } from '../helpers/helpers.ts';
+import { axe } from '../helpers/axe.ts';
 
 // Organise for music (4.15.4): runs after musicdownloads.spec.ts, so Tin
 // Lanterns – Harbour Songs (2019) has three tracks in the music Library
@@ -24,14 +24,6 @@ const wrenFiles = {
 	single: join(wren, 'Wire (2019)', '01 - Song 2.1.mp3'),
 	loose: join(wren, 'intro.mp3')
 };
-
-async function axe(p: Page, where: string) {
-	await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
-	const r = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
-}
 
 /** artistSetting opens an artist's Library tab and presses one of its Settings rows. */
 async function artistSetting(p: Page, name: RegExp) {

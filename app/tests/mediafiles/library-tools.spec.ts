@@ -1,10 +1,8 @@
 import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { libraryTool, libraryView, noSidewaysScroll, owner, signIn, titleAction } from '../helpers/helpers.ts';
-
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
+import { tmp } from '../helpers/data-folder.ts';
 
 // Library tools land on their own page (Recently deleted opens from Sort & filter).
 test('Library tools open to their own page', async ({ page }) => {

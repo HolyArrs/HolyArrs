@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openSeasonNamed, episodeAction, seasonKept } from '../helpers/helpers.ts';
+import { axe as scan } from '../helpers/axe.ts';
 
 // Organise for shows (5.2): Quarry Bells sits on disk before HolyArrs knows
 // it. The owner imports it from the show Library folder (nothing moves),
@@ -22,14 +22,7 @@ const files = {
 	extra: join(folder, 'Extras', 'making of.mkv')
 };
 
-async function axe(p: Page, where: string) {
-	await p.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
-	const r = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
-}
-
+const axe = (p: Page, where: string) => scan(p, where, { waitAll: true });
 test.beforeAll(async ({ browser }) => {
 	for (const f of Object.values(files)) {
 		mkdirSync(dirname(f), { recursive: true });

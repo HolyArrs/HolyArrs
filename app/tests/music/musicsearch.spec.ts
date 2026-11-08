@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn, openAdvanced, openInLibrary } from '../helpers/helpers.ts';
+import { axe } from '../helpers/axe.ts';
 
 // Searching albums (3.3.3, 3.3.4) against the fake Torznab Source in
 // fakes/: an album search answers with a FLAC copy, an MP3 320 copy and
@@ -15,14 +15,6 @@ let page: Page;
 
 async function fresh(browser: Browser) {
 	return (await browser.newContext()).newPage();
-}
-
-async function axe(p: Page, where: string) {
-	await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
-	const r = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
 }
 
 const release = (scope: Locator, part: string) => scope.getByTestId('release').filter({ has: scope.page().locator('.rel-name', { hasText: part }) });

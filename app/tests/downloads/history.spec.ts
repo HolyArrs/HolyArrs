@@ -1,7 +1,7 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { discordPort, jellyKey, jellyfinPort } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn, openAdvanced } from '../helpers/helpers.ts';
+import { axe as scan } from '../helpers/axe.ts';
 
 // History, health, the calendar with its phone feed, webhook Alerts and
 // media servers (5.1.10 to 5.1.17). Runs after the Organise tests, so the
@@ -15,16 +15,7 @@ async function fresh(browser: Browser, width = 1280) {
 	return ctx.newPage();
 }
 
-async function axe(p: Page, where: string, only?: string[]) {
-	await p.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
-	let b = new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
-	if (only) b = b.withRules(only);
-	const r = await b.analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
-}
-
+const axe = (p: Page, where: string, only?: string[]) => scan(p, where, { only, waitAll: true });
 interface TitleRow {
 	id: number;
 	name: string;

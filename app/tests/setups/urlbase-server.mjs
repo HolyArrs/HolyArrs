@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
+// The specs reach this folder through helpers/data-folder.ts; keep both in step.
 const tmp = join(here, '..', '.tmp-base');
 const config = join(tmp, 'config');
 const bin = join(tmp, process.platform === 'win32' ? 'holyarrs.exe' : 'holyarrs');

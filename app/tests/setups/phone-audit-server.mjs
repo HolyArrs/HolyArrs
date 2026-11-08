@@ -8,6 +8,7 @@ import { deezerURL, mbPort, metadataEnv, plexPort, startFakes, subsPort, tmdbPor
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
+// The specs reach this folder through helpers/data-folder.ts; keep both in step.
 const tmp = join(here, "..", ".tmp-phone");
 const config = join(tmp, 'config');
 const movies = join(tmp, 'movies');

@@ -1,8 +1,9 @@
-import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { addFromSearch, noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
+import { api } from '../helpers/api.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Reported problems (#95): a member reports a problem with a movie from a
 // phone (the sheet is a bottom sheet there), the owner finds it from
@@ -11,7 +12,6 @@ import { addFromSearch, noSidewaysScroll, owner, signIn } from '../helpers/helpe
 // its own data: the movie, a file for it and the member.
 test.describe.configure({ mode: 'serial' });
 
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 const movie = 'Driftwood Moon';
 const memberName = `rep${Math.random().toString(36).slice(2, 7)}`;
 const memberPw = `e2e-${Math.random().toString(36).slice(2)}-rep`;
@@ -22,14 +22,6 @@ const phone = { width: 390, height: 844 };
 let own: Page;
 let member: Page;
 let titleId = 0;
-
-type Call = (method: 'GET' | 'POST', path: string, data?: unknown) => Promise<APIResponse>;
-
-/** api signs requests with the session's CSRF token, as the app does. */
-async function api(page: Page): Promise<Call> {
-	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
-}
 
 async function fresh(browser: Browser, viewport = { width: 1280, height: 900 }): Promise<Page> {
 	return (await browser.newContext({ viewport })).newPage();

@@ -1,9 +1,9 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from '../fakes/index.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from '../helpers/helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from '../helpers/helpers.ts';
+import { axe as scan } from '../helpers/axe.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
@@ -28,16 +28,7 @@ async function fresh(browser: Browser, width = 1280) {
 	return ctx.newPage();
 }
 
-async function axe(p: Page, where: string, include?: string) {
-	await p.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
-	let b = new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
-	if (include) b = b.include(include);
-	const r = await b.analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
-}
-
+const axe = (p: Page, where: string, include?: string) => scan(p, where, { include, waitAll: true });
 async function adopt(folderLabel: string, name: string, button: string, doneText: string) {
 	await page.goto('/library/import');
 	const lf = page.getByLabel('Library folder');

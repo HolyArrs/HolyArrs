@@ -3,11 +3,12 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openLibraryTab, openSeasonNamed, finishFirstRun } from '../helpers/helpers.ts';
+import { dataDir } from '../helpers/data-folder.ts';
 
 test.describe.configure({ mode: 'serial' });
 
 const here = dirname(fileURLToPath(import.meta.url));
-const tmp = join(here, '..', '.tmp-acceptance-library');
+const tmp = dataDir('acceptance-library');
 const moviesDir = join(tmp, 'movies');
 const showsDir = join(tmp, 'shows');
 const musicDir = join(tmp, 'music');

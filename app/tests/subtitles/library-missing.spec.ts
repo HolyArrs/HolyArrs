@@ -1,23 +1,15 @@
-import { expect, test, type APIResponse, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { libraryStatus, owner, signIn } from '../helpers/helpers.ts';
-
-const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
+import { api, type Call } from '../helpers/api.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // #27 Missing list: Search all missing (top of the Library's Missing list,
 // after a confirm) searches every missing title of the kind shown at once:
 // first movies only, then everything. The fake Source answers
 // the searches; the titles here use the 4K Pick rules, so every Release it
 // finds is turned away and nothing is downloaded.
-
-type Call = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) => Promise<APIResponse>;
-
-async function api(page: Page): Promise<Call> {
-	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
-}
 
 type TitleRow = {
 	id: number;

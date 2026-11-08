@@ -1,7 +1,7 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
 import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openRequests, openSeason, openSeasonNamed, seasonCount, episodeAction, episodeKept, episodeState, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from '../helpers/helpers.ts';
+import { axe } from '../helpers/axe.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -19,15 +19,6 @@ const maxPw = `e2e-${Math.random().toString(36).slice(2)}-max`;
 async function fresh(browser: Browser, width = 1280): Promise<Page> {
 	const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 915 : 900 } });
 	return ctx.newPage();
-}
-
-async function axe(p: Page, where: string) {
-	// Endless animations (a pulsing state dot) never finish; wait only for the ones that do.
-	await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
-	const r = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-	const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-	if (bad.length) console.log('AXE', where, bad.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')).join(' ;; '));
-	expect(bad.map((v) => v.id), where).toEqual([]);
 }
 
 
