@@ -3,6 +3,7 @@ package shows
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"sync"
 	"testing"
@@ -234,4 +235,82 @@ func TestShowRefreshScheduleJob(t *testing.T) {
 	if len(mids) != 0 {
 		t.Fatalf("movie plan took shows %v", mids)
 	}
+}
+
+func scheduleSvc(t *testing.T, s *database.Store, sources metadata.ShowSources) (*Service, *jobs.Queue) {
+	t.Helper()
+	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond, BaseBackoff: 10 * time.Millisecond})
+	svc := New(&library.Service{Store: s, Queue: q, Shows: sources, Now: func() time.Time { return now }})
+	svc.Register(q)
+	q.Handle(library.KindScanTitle, func(context.Context, *jobs.Run) error { return nil })
+	return svc, q
+}
+
+func runRefreshShows(t *testing.T, s *database.Store, q *jobs.Queue) domain.Job {
+	t.Helper()
+	ctx := context.Background()
+	if err := q.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(q.Stop)
+	if _, _, err := q.Enqueue(ctx, KindRefreshShows, nil, map[string]any{"by_hand": true}, "refresh_shows_test", domain.System); err != nil {
+		t.Fatal(err)
+	}
+	for _, j := range waitJobs(t, s, 1) {
+		if j.Kind == KindRefreshShows {
+			return j
+		}
+	}
+	t.Fatal("no refresh_shows job")
+	return domain.Job{}
+}
+
+// TestRefreshShowsJobStopsOnNoAccess: when every show follows TMDB and TMDB
+// refuses the key, the Job fails fast. With a show on another source the
+// run goes on and lists the one that failed.
+func TestRefreshShowsJobStopsOnNoAccess(t *testing.T) {
+	ctx := context.Background()
+	mk := func(svc *Service, src *fakeShows, source, id string) {
+		sh := labShow(source, id)
+		sh.Name = "Show " + id
+		sh.IDs = map[string]string{source: id}
+		src.set(sh, source+":"+id)
+		if _, _, err := svc.AddShow(ctx, source+":"+id, ShowAddOptions{Source: source}, domain.System); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Run("every show on tmdb is refused", func(t *testing.T) {
+		s := open(t)
+		tmdb := &fakeShows{}
+		svc, q := scheduleSvc(t, s, metadata.ShowSources{"tmdb": tmdb})
+		addShowFolder(t, s)
+		mk(svc, tmdb, "tmdb", "1")
+		mk(svc, tmdb, "tmdb", "2")
+		tmdb.mu.Lock()
+		tmdb.err = metadata.ErrNoAccess
+		tmdb.mu.Unlock()
+		job := runRefreshShows(t, s, q)
+		if job.State != "failed" || job.Error == nil {
+			t.Fatalf("job %+v", job)
+		}
+		if _, listed := job.Result["failed"]; listed {
+			t.Fatalf("the Job recorded per-show failures instead of aborting: %+v", job.Result)
+		}
+	})
+	t.Run("one show fails on a mixed set", func(t *testing.T) {
+		s := open(t)
+		tmdb, maze := &fakeShows{}, &fakeShows{}
+		svc, q := scheduleSvc(t, s, metadata.ShowSources{"tmdb": tmdb, "tvmaze": maze})
+		addShowFolder(t, s)
+		mk(svc, tmdb, "tmdb", "1")
+		mk(svc, maze, "tvmaze", "2")
+		maze.mu.Lock()
+		maze.err = errors.New("tvmaze is down")
+		maze.mu.Unlock()
+		job := runRefreshShows(t, s, q)
+		failed, _ := job.Result["failed"].([]any)
+		if job.State != "done" || job.Result["refreshed"] != float64(1) || len(failed) != 1 {
+			t.Fatalf("job %+v", job)
+		}
+	})
 }
