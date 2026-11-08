@@ -1,4 +1,4 @@
-package backup
+package backups
 
 import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"

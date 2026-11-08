@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
@@ -72,7 +72,7 @@ func copyConfig(from, to string) error {
 
 // diagnose returns the report lines.
 func diagnose(ctx context.Context, s *database.Store, dir string, now time.Time) ([]string, error) {
-	bm := &backup.Manager{Store: s, Dir: dir, Version: "doctor"}
+	bm := &backups.Manager{Store: s, Dir: dir, Version: "doctor"}
 	he := &health.Engine{Store: s, Version: "doctor", Now: func() time.Time { return now },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)

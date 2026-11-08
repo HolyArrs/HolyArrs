@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -50,7 +50,7 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 			for _, m := range re.FindAllStringSubmatch(string(b), -1) {
 				p := m[1]
 				if m[2] != "" {
-					p += backup.RestorePath
+					p += backups.RestorePath
 				}
 				seen++
 				if _, ok := accounts.RoutePerms[p]; !ok && !public[p] {
@@ -82,7 +82,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 	}
 	au := accounts.New(s, accounts.Options{Vault: v})
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
-		Backups: &backup.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}}).Handler())
+		Backups: &backups.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}}).Handler())
 	t.Cleanup(srv.Close)
 
 	signed := func(method, path, body string, c *http.Client, csrf string) (int, string) {

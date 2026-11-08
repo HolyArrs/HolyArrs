@@ -24,7 +24,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -68,7 +68,7 @@ type Server struct {
 	Auth *accounts.Auth
 	// Backups serves the backup routes when set; Restart is called after a
 	// restore is staged.
-	Backups *backup.Manager
+	Backups *backups.Manager
 	Restart func()
 	// Secrets stores the encrypted settings.
 	Secrets *secrets.Vault

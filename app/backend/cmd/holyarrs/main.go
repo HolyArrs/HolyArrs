@@ -32,7 +32,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
@@ -198,7 +198,7 @@ const maxBody = 1 << 20
 
 // limitBodies refuses API request bodies over maxBody with 413.
 func limitBodies(h http.Handler) http.Handler {
-	restoreZip := func(path string) bool { return path == backup.RestorePath } // has its own, larger limit
+	restoreZip := func(path string) bool { return path == backups.RestorePath } // has its own, larger limit
 	return webserver.LimitBodies(maxBody, restoreZip, h)
 }
 
@@ -384,12 +384,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}()
 	// A backup or restore upload cut off by a stop or kill left copies of
 	// the databases behind; none is valid after a restart.
-	if n, err := backup.CleanLeftovers(c.ConfigDir); err != nil {
+	if n, err := backups.CleanLeftovers(c.ConfigDir); err != nil {
 		log.Printf("backup: could not remove all of an unfinished backup: %v", err)
 	} else if n > 0 {
 		log.Printf("backup: removed what an unfinished backup or restore left behind, %d MB freed", (n+1<<20-1)>>20)
 	}
-	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
+	if _, err := backups.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
 	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
@@ -518,7 +518,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return fmt.Errorf("log masking: %w", err)
 	}
 	loop(jobs.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
-	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
+	bm := &backups.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
 		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != "", Stop: ctx}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
 		log.Printf("backup: %v", err)

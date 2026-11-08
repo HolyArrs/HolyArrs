@@ -2,7 +2,7 @@
 // with a safe copy of the databases (which hold the settings) and a small
 // version and date file. It never holds media, downloads, cached pictures or
 // the master key.
-package backup
+package backups
 
 import (
 	"archive/zip"

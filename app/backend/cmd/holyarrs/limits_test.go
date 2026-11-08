@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 )
 
 func TestLargeBodyGets413(t *testing.T) {
@@ -82,7 +82,7 @@ func TestRestoreUploadSkipsSmallBodyLimit(t *testing.T) {
 	}))
 	big := strings.Repeat("x", maxBody+10)
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("POST", backup.RestorePath, strings.NewReader(big)))
+	h.ServeHTTP(rec, httptest.NewRequest("POST", backups.RestorePath, strings.NewReader(big)))
 	if got != int64(len(big)) {
 		t.Fatalf("restore body cut to %d", got)
 	}

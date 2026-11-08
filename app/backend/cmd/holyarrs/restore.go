@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
@@ -77,7 +77,7 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 // openBackups takes the config folder's lock (refused while HolyArrs runs
 // on it) and turns raw copies left by an update into pre-update backups.
 // The caller calls unlock when done.
-func openBackups(dir string) (*backup.Manager, func(), error) {
+func openBackups(dir string) (*backups.Manager, func(), error) {
 	if _, err := os.Stat(dir); err != nil {
 		return nil, nil, fmt.Errorf("config folder: %w", err)
 	}
@@ -88,7 +88,7 @@ func openBackups(dir string) (*backup.Manager, func(), error) {
 		}
 		return nil, nil, err
 	}
-	bm := &backup.Manager{Dir: dir, Version: version}
+	bm := &backups.Manager{Dir: dir, Version: version}
 	if named := os.Getenv(secrets.EnvKeyFile); named != "" || exists(filepath.Join(dir, secrets.KeyFile)) {
 		key, err := secrets.LoadKey(dir, named)
 		if err != nil {
@@ -107,7 +107,7 @@ func openBackups(dir string) (*backup.Manager, func(), error) {
 // putBack checks the backup name (the newest pre-update backup this build
 // can read when name is "") and puts it in place. The data it replaces is
 // kept in backups/before-restore-<time>, returned as kept.
-func putBack(bm *backup.Manager, name string) (string, string, error) {
+func putBack(bm *backups.Manager, name string) (string, string, error) {
 	if name == "" {
 		b, err := bm.NewestPreUpdate()
 		if err != nil {
@@ -118,7 +118,7 @@ func putBack(bm *backup.Manager, name string) (string, string, error) {
 	if err := bm.StageNamed(context.Background(), name); err != nil {
 		return name, "", fmt.Errorf("%s: %w", name, err)
 	}
-	if _, err := backup.ApplyStaged(bm.Dir); err != nil {
+	if _, err := backups.ApplyStaged(bm.Dir); err != nil {
 		return name, "", fmt.Errorf("putting %s in place: %w (it stays staged and is tried again on the next start)", name, err)
 	}
 	kept := ""

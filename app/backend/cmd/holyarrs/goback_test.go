@@ -16,7 +16,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
@@ -223,7 +223,7 @@ func TestGoBackTwoUpdatesTakesTheFittingBackup(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer s.Close()
-		bm := &backup.Manager{Store: s, Dir: dir, Version: v}
+		bm := &backups.Manager{Store: s, Dir: dir, Version: v}
 		if _, err := bm.AdoptMigrationCopies(); err != nil {
 			t.Fatal(err)
 		}
@@ -236,11 +236,11 @@ func TestGoBackTwoUpdatesTakesTheFittingBackup(t *testing.T) {
 	want := start("1.0.0", nil)
 	start("1.1.0", map[string]string{"9998_one.sql": "CREATE TABLE one(x);"})
 	start("1.2.0", map[string]string{"9998_one.sql": "CREATE TABLE one(x);", "9999_two.sql": "CREATE TABLE two(x);"})
-	bm := &backup.Manager{Dir: dir}
+	bm := &backups.Manager{Dir: dir}
 	all, _ := bm.List()
 	var got []string
 	for _, b := range all {
-		if b.Kind == backup.KindPreUpdate {
+		if b.Kind == backups.KindPreUpdate {
 			got = append(got, b.FromVersion+">"+b.ToVersion)
 		}
 	}

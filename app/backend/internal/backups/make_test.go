@@ -1,4 +1,4 @@
-package backup
+package backups
 
 import (
 	"archive/zip"

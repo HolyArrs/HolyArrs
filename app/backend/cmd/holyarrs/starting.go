@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -198,16 +198,16 @@ func normCode(s string) string {
 // goBackBackup finds the pre-update backup this build can put back, under
 // the config folder's lock (raw copies an update left are made into
 // backups first). ok is false when there is none, or the folder is busy.
-func goBackBackup(dir string) (backup.Info, bool) {
+func goBackBackup(dir string) (backups.Info, bool) {
 	bm, unlock, err := openBackups(dir)
 	if err != nil {
 		log.Printf("holyarrs: cannot look for a pre-update backup: %v", err)
-		return backup.Info{}, false
+		return backups.Info{}, false
 	}
 	defer unlock()
 	b, err := bm.NewestPreUpdate()
 	if err != nil {
-		return backup.Info{}, false
+		return backups.Info{}, false
 	}
 	return b, true
 }
