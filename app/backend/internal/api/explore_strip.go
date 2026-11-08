@@ -2,15 +2,12 @@ package api
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -43,8 +41,8 @@ const stripKeywordFetches = 30
 
 // stripRowsMax and stripRowLen bound the row titles a request may pass.
 const (
-	stripRowsMax = 40
-	stripRowLen  = 80
+	stripRowsMax = discover.StripRowsMax
+	stripRowLen  = discover.StripRowLen
 )
 
 // stripEntry is a member's one kept strip per tab and limit; sig is the
@@ -79,36 +77,6 @@ func (a *API) forgetStrip(member int64) {
 			return true
 		})
 	}
-}
-
-// stripRows are the row titles passed with row=; false when there are
-// more than stripRowsMax or one is longer than stripRowLen.
-func stripRows(r *http.Request) ([]string, bool) {
-	raw := r.URL.Query()["row"]
-	if len(raw) > stripRowsMax {
-		return nil, false
-	}
-	var out []string
-	for _, v := range raw {
-		if len(v) > stripRowLen {
-			return nil, false
-		}
-		if v = strings.TrimSpace(v); v != "" {
-			out = append(out, v)
-		}
-	}
-	return out, true
-}
-
-// stripRowsHash is a short hash of the rows, normalised and sorted.
-func stripRowsHash(rows []string) string {
-	n := make([]string, len(rows))
-	for i, v := range rows {
-		n[i] = strings.ToLower(v)
-	}
-	sort.Strings(n)
-	sum := sha256.Sum256([]byte(strings.Join(n, "|")))
-	return hex.EncodeToString(sum[:])[:16]
 }
 
 // keepStrip stores a member's strip (replacing their earlier one for the
@@ -206,44 +174,6 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 	}
 	a.exploreCaching(w, r, "private, no-cache")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "partial": !complete})
-}
-
-// pageGenreItems are the member's page titles of a genre.
-func pageGenreItems(pg engine.Page, genre string) []engine.Item {
-	var out []engine.Item
-	seen := map[string]bool{}
-	for _, row := range append(append([]engine.Row{}, pg.Head...), pg.Tail...) {
-		for _, it := range row.Items {
-			if seen[it.Key()] {
-				continue
-			}
-			for _, g := range it.Genres {
-				if g == genre {
-					seen[it.Key()] = true
-					out = append(out, it)
-					break
-				}
-			}
-		}
-	}
-	return out
-}
-
-// stripStats reads the member's strip counts of the last StripCountDays.
-func (a *API) stripStats(ctx context.Context, member int64, now time.Time) (map[string]engine.StripStats, map[string]bool, error) {
-	got, err := accounts.CategoryCountsSince(ctx, a.s.Store.Read(), member, engine.Day(now.AddDate(0, 0, -engine.StripCountDays)))
-	if err != nil {
-		return nil, nil, err
-	}
-	var days []engine.CategoryDay
-	for _, c := range got {
-		d := engine.CategoryDay{Category: c.Key, Shown: c.Shown, Opened: c.Opened}
-		if d.Day, err = time.Parse("2006-01-02", c.Day); err == nil {
-			days = append(days, d)
-		}
-	}
-	stats, recent := engine.StripStatsFrom(days, now)
-	return stats, recent, nil
 }
 
 // tasteRef is one title of a member's taste before its keywords are known.
@@ -411,23 +341,6 @@ func (a *API) fetchStripKeywords(member int64, refs []tasteRef) {
 	})
 }
 
-// stripCategoryOK says id names a strip category: a Browse category or a
-// genre tile's lower-case name.
-func stripCategoryOK(id string) bool {
-	if _, ok := engine.CategoryByID(id); ok {
-		return true
-	}
-	if id == "" || len(id) > 32 {
-		return false
-	}
-	for _, c := range id {
-		if !(c >= 'a' && c <= 'z' || c == ' ' || c == '-' || c == '&') {
-			return false
-		}
-	}
-	return true
-}
-
 // stripDayCategoriesMax caps the categories one member counts in a day;
 // real use stays far below it.
 const stripDayCategoriesMax = 200
@@ -501,3 +414,19 @@ func (a *API) exploreStripReset(w http.ResponseWriter, r *http.Request) {
 	a.forgetStrip(member)
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// The strip's pure helpers live in internal/discover.
+
+func stripRows(r *http.Request) ([]string, bool) { return discover.StripRows(r) }
+
+func stripRowsHash(rows []string) string { return discover.StripRowsHash(rows) }
+
+func pageGenreItems(pg engine.Page, genre string) []engine.Item {
+	return discover.PageGenreItems(pg, genre)
+}
+
+func (a *API) stripStats(ctx context.Context, member int64, now time.Time) (map[string]engine.StripStats, map[string]bool, error) {
+	return discover.StripStats(ctx, a.s.Store.Read(), member, now)
+}
+
+func stripCategoryOK(id string) bool { return discover.StripCategoryOK(id) }
