@@ -85,9 +85,28 @@ func (a *API) kidGate(m *http.ServeMux, next http.Handler) http.Handler { return
 
 func kidSQL(max string) (string, []any) { return mediafiles.KidSQL(max) }
 
-// summaryKindShown says Home's Library summary counts a title kind: its
+// kindShown says the Library summary and search show a title kind: its
 // part is on, or safe mode shows every part.
-func (a *API) summaryKindShown(kind string) bool {
-	part, _ := parts.ForTitleKind(kind)
-	return a.partIsOn(part) || (a.s.Parts != nil && a.s.Parts.SafeMode)
+func (a *API) kindShown(kind string) bool {
+	part, ok := parts.ForTitleKind(kind)
+	return !ok || a.partIsOn(part) || (a.s.Parts != nil && a.s.Parts.SafeMode)
 }
+
+// albumNames hands the albums a Library search matched to the music
+// picture chain and prefetch, as Explore's rows do.
+func (a *API) albumNames(list []mediafiles.AlbumName) {
+	names := make([]nameKey, 0, len(list))
+	for _, n := range list {
+		names = append(names, nameKey{kind: "album", mbid: n.MBID, name: n.Name, artist: n.Artist})
+	}
+	a.rememberMusicNames(names)
+	a.warmMusicNames(names)
+}
+
+func (a *API) libraryPeople(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]mediafiles.LibraryPerson, error) {
+	return a.mf.LibraryPeople(r, words, visible)
+}
+
+func fold(s string) string                    { return mediafiles.Fold(s) }
+func foldWords(s string) []string             { return mediafiles.FoldWords(s) }
+func foldMatch(s string, words []string) bool { return mediafiles.FoldMatch(s, words) }

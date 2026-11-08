@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // Search's "In your Library" row: local matches by name, original name and
@@ -38,8 +40,8 @@ func TestLibrarySearch(t *testing.T) {
 			Name string `json:"name"`
 			Kind string `json:"kind"`
 		} `json:"titles"`
-		Albums []LibraryAlbum  `json:"albums"`
-		People []LibraryPerson `json:"people"`
+		Albums []mediafiles.LibraryAlbum  `json:"albums"`
+		People []mediafiles.LibraryPerson `json:"people"`
 	}
 	ask := func(s *signedIn, q string) answer {
 		t.Helper()

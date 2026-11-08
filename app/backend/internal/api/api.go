@@ -307,7 +307,9 @@ func New(s Server) *API {
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
 	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, KidMax: a.kidMax, RouteUsable: routeUsable}}
 	a.mf.DetailsRating = a.detailsRating
-	a.mf.KindShown = a.summaryKindShown
+	a.mf.KindShown = a.kindShown
+	a.mf.TitleBatch = withLookupMemo
+	a.mf.AlbumNames = a.albumNames
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
 	a.mf.CardArt = a.libraryCardArt
 	a.titles = a.newTitlePages()
@@ -358,7 +360,6 @@ func (a *API) Routes(rt *webserver.Router) {
 		(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
 	}
 	a.ownedHandlers().Routes(m)
-	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/search", a.plainSearch)
 	m.HandleFunc("GET /api/v1/home", a.home)

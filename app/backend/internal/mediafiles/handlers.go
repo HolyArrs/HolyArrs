@@ -28,6 +28,12 @@ type Deps struct {
 	// TitleView is how a Library title is shown (api's title view until
 	// the join step).
 	TitleView func(ctx context.Context, t Title) (any, error)
+	// TitleBatch readies ctx for many TitleView calls (api's lookup memo);
+	// nil for none.
+	TitleBatch func(ctx context.Context) context.Context
+	// AlbumNames hands the albums a search matched to the music picture
+	// warmer; nil for none.
+	AlbumNames func([]AlbumName)
 	// CardArt is the card pictures for the titles (discover).
 	CardArt func(r *http.Request, titles []Title) map[string]metadata.CardArt
 	// RouteUsable says the signed-in person may use the route pattern, so
@@ -45,6 +51,7 @@ type Handlers struct {
 
 // Routes registers the Library files routes.
 func (h *Handlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/library/search", h.librarySearch)
 	m.HandleFunc("GET /api/v1/library-summary", h.librarySummary)
 	m.HandleFunc("GET /api/v1/library/copies", h.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", h.previewLibraryCopySearch)

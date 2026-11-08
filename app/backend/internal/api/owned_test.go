@@ -55,7 +55,7 @@ func TestFoldPrefilterKeepsMatches(t *testing.T) {
 		name, q string
 	}{{"Amélie", "amel"}, {"The Dark Knight", "dark kni"}, {"Ünïcode Song", "unicode"}, {"AC/DC Live", "ac dc"}} {
 		words := foldWords(c.q)
-		pre, args := foldPrefilter("n", words)
+		pre, args := mediafiles.FoldPrefilter("n", words)
 		var n int
 		if err := db.QueryRow("SELECT count(*) FROM (SELECT ? AS n) WHERE 1 = 1"+pre, append([]any{c.name}, args...)...).Scan(&n); err != nil {
 			t.Fatal(err)
