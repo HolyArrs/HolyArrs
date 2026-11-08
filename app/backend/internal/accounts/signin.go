@@ -23,7 +23,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
-	ipKey, altKey, sure := a.clientKeys(r)
+	ipKey, altKey, sure := a.signInKeys(r)
 	userKey := "name:" + strings.ToLower(c.Name)
 	// Check and reserve in one locked step: the attempt counts as failed up
 	// front and is cleared on success, so parallel attempts cannot slip past.

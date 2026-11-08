@@ -58,7 +58,7 @@ func (a *Auth) checkMediaServer(w http.ResponseWriter, r *http.Request, kind str
 		fail(w, http.StatusBadRequest, "give your "+kind+" name and password")
 		return mediaMe{}, place{}, false
 	}
-	ipKey, altKey, sure := a.clientKeys(r)
+	ipKey, altKey, sure := a.signInKeys(r)
 	userKey := "name:" + kind + ":" + strings.ToLower(c.Name)
 	var marks []failMark
 	a.mu.Lock()

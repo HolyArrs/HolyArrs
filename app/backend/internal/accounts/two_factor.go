@@ -195,7 +195,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h := sum(b.Ticket)
-	ipKey, altKey, sure := a.clientKeys(r)
+	ipKey, altKey, sure := a.signInKeys(r)
 	// A ticket from single sign-on or the trusted proxy finishes like those
 	// sign-ins: a settings change or an unlink waits for it, or ends it first.
 	a.ssoMu.RLock()
