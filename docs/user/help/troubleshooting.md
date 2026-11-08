@@ -109,6 +109,6 @@ The helper runs as root. Use it to look, not to change things. A file written as
 
 **The metadata server can't be reached.** Check your DNS and firewall. Pages with names and pictures stay empty until it answers.
 
-**A feature is missing.** It may be [held back](held-back.md).
+**A feature is missing.** It may be [held back](../../run/updates.md#held-back-features).
 
 **HolyArrs won't start at all.** Start it in [safe mode](parts-and-safe-mode.md#start-in-safe-mode), fix the problem from the settings, then restart normally.

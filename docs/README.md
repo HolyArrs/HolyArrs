@@ -21,8 +21,8 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Shows | [Searching](user/shows/search-shows.md), [downloads](user/shows/downloads-shows.md), [organising](user/shows/organise-shows.md) |
 | Music | [Searching](user/music/search.md), [downloads](user/music/downloads.md), [organising](user/music/organise.md) |
 | Explore and the calendar | [Explore](discover/explore.md), [people](discover/popular-people.md), [calendar](discover/calendar.md) |
-| Sources | [Sources, Jackett and Prowlarr](user/sources/sources-bridge.md), [find titles in the Library](user/sources/library-search.md) |
-| Downloads | [Downloaders](user/downloads/downloaders.md), [history](user/downloads/history.md) |
+| Sources | [Sources, Jackett and Prowlarr](downloads/sources.md), [find titles in the Library](downloads/library-search.md) |
+| Downloads | [Downloaders](user/downloads/downloaders.md), [history](downloads/history.md) |
 | Subtitles | [Subtitles](user/subtitles/subtitles.md) |
 | Files and folders | [Library folders](user/mediafiles/library-folders.md), [codecs and media inspection](user/library/codecs-inspection.md), [audio versions](user/library/audio-versions.md), [protected copies](user/library/protected-copies.md) |
 | Media servers | [Plex, Jellyfin and Emby](library/media-servers.md) |
@@ -69,9 +69,9 @@ A changing number or token is in square brackets.
 | First run | `/login`, `/welcome` | [First run](user/setup/first-run.md) |
 | Join by invite | `/invite/[token]` | [Users and roles](users/roles.md) |
 | Downloads | `/downloads` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads.md) |
-| History | `/downloads/history` | [History](user/downloads/history.md) |
+| History | `/downloads/history` | [History](downloads/history.md) |
 | Needs a decision | `/downloads/decide` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads.md) |
-| Library | `/library` | [Find titles in the Library](user/sources/library-search.md) |
+| Library | `/library` | [Find titles in the Library](downloads/library-search.md) |
 | Movie, show or artist | `/library/[id]` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
 | Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search.md) |
 | Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise.md) |
@@ -88,7 +88,7 @@ A changing number or token is in square brackets.
 | Media servers | `/settings/media-servers` | [Media servers](library/media-servers.md) |
 | Parts | `/settings/parts` | [Parts and safe mode](user/help/parts-and-safe-mode.md) |
 | Sign-in and security | `/settings/sign-in` | [Sign-in and passwords](users/sign-in.md) |
-| Sources | `/settings/sources` | [Sources](user/sources/sources-bridge.md) |
+| Sources | `/settings/sources` | [Sources](downloads/sources.md) |
 | This app | `/settings/this-app` | [Logs](run/logs.md), [updates](run/updates.md), [URL base](user/getting-started/url-base.md) |
 | Logs | `/settings/logs` | [Logs](run/logs.md) |
 | Schedules | `/settings/schedules` | [Schedules](run/schedules.md) |

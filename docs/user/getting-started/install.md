@@ -3,8 +3,7 @@
 You want HolyArrs running on your server and open in your browser. This page
 walks you through it with Docker. It takes a few minutes.
 
-On a NAS, start with [Unraid](../platforms/unraid.md),
-[Synology](../platforms/synology.md) or [other NAS boxes](../platforms/nas.md).
+On a NAS, see [NAS, Synology and Unraid](../../run/platforms.md).
 Without Docker, see [Portable archives](../platforms/portable.md).
 
 ## Steps

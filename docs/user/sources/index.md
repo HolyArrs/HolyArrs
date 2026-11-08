@@ -6,5 +6,5 @@ level: Start
 
 Sources are the sites HolyArrs searches for Releases.
 
-- [Add Sources, and link Jackett or Prowlarr](sources-bridge.md)
-- [Find a title in the Library](library-search.md)
+- [Add Sources, and link Jackett or Prowlarr](../../downloads/sources.md)
+- [Find a title in the Library](../../downloads/library-search.md)

@@ -11,7 +11,7 @@ HolyArrs finds Releases through Sources and hands them to a Downloader. Set up b
 |---|---|---|
 | Downloaders | qBittorrent, Transmission, Deluge, SABnzbd and NZBGet fetch the files. HolyArrs follows each download and imports it | [Downloaders](downloaders/) |
 | Sources | Torznab, Newznab and RSS feeds that HolyArrs searches, or Jackett and Prowlarr linked in one go | [Sources](sources/) |
-| Library search | Look for a title across all Sources | [Library search](library-search/) |
+| Library search | Find a title you already added, from the Library page | [Library search](library-search/) |
 | History | What was grabbed, imported or failed | [History](history/) |
 
 New here? [Connect](../start/connect/) gets one of each working in a few minutes.

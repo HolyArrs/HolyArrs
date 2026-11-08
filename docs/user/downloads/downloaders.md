@@ -188,5 +188,5 @@ A listed Downloader stays read only whatever its switch says, even after remove 
 ## Related
 
 - [Sources](sources.md)
-- [History](history.md)
+- [History](../../downloads/history.md)
 - [Library folders](../library/folders.md)

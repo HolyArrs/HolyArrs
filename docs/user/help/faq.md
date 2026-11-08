@@ -38,7 +38,7 @@ The image holds only the HolyArrs program, so there is less for an attacker to u
 
 ## A feature I read about is missing.
 
-It may be held back in the first release. See [Features held back](held-back.md).
+It may be held back in the first release. See [Features held back](../../run/updates.md#held-back-features).
 
 ## Does HolyArrs send anything home?
 

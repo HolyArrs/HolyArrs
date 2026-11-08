@@ -30,7 +30,7 @@ What the server learns about your install is on [Metadata privacy](metadata-priv
 
 ### Trakt
 
-Trakt lists are held back in this release. They stay off until the `trakt_lists` switch is on, see [Held back](../help/held-back.md). With the switch on, open **Settings > Outside lists**, find **Trakt key**, and paste the Client ID of a Trakt app. After you save, you only see a masked value.
+Trakt lists are held back in this release. They stay off until the `trakt_lists` switch is on, see [Held back](../../run/updates.md#held-back-features). With the switch on, open **Settings > Outside lists**, find **Trakt key**, and paste the Client ID of a Trakt app. After you save, you only see a masked value.
 
 ### Keys from other apps
 

@@ -66,7 +66,7 @@ Headers sent: `Accept`, `Cache-Control`, `If-None-Match`, and `X-Fetch: ahead` w
 
 <details class="ha-more"><summary>Trakt lists (held back)</summary>
 
-Trakt lists stay off until the `trakt_lists` switch is on. See [Held back](../help/held-back.md). Then open **Settings > Outside lists**, find **Trakt key**, and paste the Client ID of a Trakt app. After saving you see a masked value.
+Trakt lists stay off until the `trakt_lists` switch is on. See [Held back](../../run/updates.md#held-back-features). Then open **Settings > Outside lists**, find **Trakt key**, and paste the Client ID of a Trakt app. After saving you see a masked value.
 
 Keys from other apps can come in through [Import secrets](../getting-started/import-secrets.md), which stores them in the encrypted vault.
 

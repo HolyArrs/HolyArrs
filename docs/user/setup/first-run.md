@@ -15,7 +15,7 @@ There is no default password and no setup code. Whoever opens a fresh HolyArrs f
 1. **Coming from other apps?** Pick **Bring my apps** to copy your shows, movies, folders and settings from Sonarr, Radarr, Lidarr, Overseerr and the others. HolyArrs only reads them. Your media files stay where they are, and your old apps keep running. Pick **Start fresh** to set things up by hand. See [Move from other apps](../migrate/move-from-other-apps.md).
 2. **Where's your media?** Turn on what you collect (movies, TV shows, music) and add a folder for each. On Docker, use the path inside the container, such as `/movies`, `/tv` or `/music`.
 3. **Which app downloads?** Connect your downloader: qBittorrent, SABnzbd, Transmission, NZBGet or Deluge. Enter its address, user name, and password or API key. See [Downloaders](../downloads/downloaders.md).
-4. **Where should we search?** Link Prowlarr or Jackett, and your sites come with it. See [Sources](../sources/sources-bridge.md).
+4. **Where should we search?** Link Prowlarr or Jackett, and your sites come with it. See [Sources](../../downloads/sources.md).
 5. **You're set.** Press **Open Home** to start, or **Invite family** to turn on Requests and add users.
 
 If you brought your apps, HolyArrs only asks for a downloader or a source when the move didn't bring one.

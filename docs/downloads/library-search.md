@@ -1,7 +1,8 @@
 ---
-title: Find a title in the Library
-description: Search the movies, shows and artists you already added, with the matching rules and limits.
-level: Setup
+title: Library search
+description: Find a movie, show or artist you already added, using the search box on the Library page.
+level: Start
+sidebar: { order: 3 }
 ---
 
 Find a movie, show or artist you already added. To find something new, use the **Search** page.
@@ -9,7 +10,10 @@ Find a movie, show or artist you already added. To find something new, use the *
 ## Search the Library
 
 1. Open **Library**.
-2. Type in the search box (**Search library**, or **Search movies**, **Search TV shows**, **Search music** when a kind is picked). The list updates as you type.
+2. Type in the search box. It says **Search library**, or **Search movies**, **Search TV shows** or **Search music** when you picked a kind.
+
+   You should see the list narrow as you type.
+3. Clear the box to see everything again.
 
 The kind and state buttons still apply. Pick **Shows** and **Missing**, then type part of a name.
 
@@ -28,7 +32,8 @@ It matches names, original names, other names from metadata, and years. `OR` and
 ## If it does not work
 
 **Symptom:** Nothing shows.
-**Fix:** Check the kind and state buttons, then try fewer words.
+**Cause:** The kind or state buttons hide the title.
+**Fix:** Check the buttons, then try fewer words.
 
 **Symptom:** An error shows on the page.
 **Cause:** The search is over 256 characters or 16 words.
@@ -36,13 +41,17 @@ It matches names, original names, other names from metadata, and years. `OR` and
 
 ## For experts
 
-<details class="ha-more"><summary>API</summary>
+<details class="ha-more"><summary>API and limits</summary>
 
-`GET /api/v1/titles?q=amelie` uses the same rules. An empty `q` lists the whole Library. Limits: 256 characters, 16 words.
+| What | Detail |
+|---|---|
+| Request | `GET /api/v1/titles?q=amelie` uses the same rules |
+| Empty `q` | Lists the whole Library |
+| Limits | 256 characters, 16 words |
 
 </details>
 
 ## Related
 
-- [Sources](sources.md)
-- [History](history.md)
+- [Sources](../sources/)
+- [History](../history/)

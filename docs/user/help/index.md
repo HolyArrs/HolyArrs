@@ -9,4 +9,4 @@ Start with Troubleshooting when something fails.
 - [Troubleshooting](troubleshooting.md)
 - [Questions people often ask](faq.md)
 - [Parts, safe mode and controls](parts-and-safe-mode.md)
-- [Held back in this release](held-back.md)
+- [Held back in this release](../../run/updates.md#held-back-features)

@@ -4,7 +4,7 @@ You want each movie and episode to have subtitles in the languages you watch. Yo
 
 Music has no subtitles. Only staff see subtitles. Members never do. To change settings or Subtitle sites, you need the settings permission.
 
-Subtitle sites and subtitle search are held back in the first release. They stay hidden unless the `subtitle_sites` switch is on. See [Held back](../help/held-back.md). Languages and the Missing subtitles list work without it.
+Subtitle sites and subtitle search are held back in the first release. They stay hidden unless the `subtitle_sites` switch is on. See [Held back](../../run/updates.md#held-back-features). Languages and the Missing subtitles list work without it.
 
 ## Set it up
 
@@ -125,7 +125,7 @@ The account sites have only been tested against stand-in servers. Use **Test** f
 
 **Nothing is listed as missing.** Check that you set at least one language and clicked **Save**. A title with an empty own list wants nothing.
 
-**I can't see Subtitle sites or Look for subtitles.** They are held back. See [Held back](../help/held-back.md).
+**I can't see Subtitle sites or Look for subtitles.** They are held back. See [Held back](../../run/updates.md#held-back-features).
 
 **A site says Resting until.** Here is how long it rests:
 

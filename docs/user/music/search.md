@@ -105,4 +105,4 @@ The artist is matched by name, or by another name the artist is known by. The al
 
 - [Downloads for music](downloads.md)
 - [Organise music](organise.md)
-- [Search your library](../downloads/library-search.md)
+- [Search your library](../../downloads/library-search.md)

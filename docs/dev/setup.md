@@ -63,7 +63,7 @@ The switches today:
 | `emby_signin` | sign in with Emby |
 | `go_back` | steps to go back to the previous version |
 
-To add one, register its name with `startup.RegisterFeature` and check `startup.FeatureOn` before you register its routes. The web app gets the list of switched-off features and hides them. Users read about them in [Held back](../user/help/held-back.md).
+To add one, register its name with `startup.RegisterFeature` and check `startup.FeatureOn` before you register its routes. The web app gets the list of switched-off features and hides them. Users read about them in [Held back](../run/updates.md#held-back-features).
 
 ## Build the image
 

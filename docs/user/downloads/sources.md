@@ -120,5 +120,5 @@ Calls that found something, failed or recovered are kept 90 days. Quiet checks t
 ## Related
 
 - [Downloaders](downloaders.md)
-- [Find a title in the Library](library-search.md)
-- [History](history.md)
+- [Find a title in the Library](../../downloads/library-search.md)
+- [History](../../downloads/history.md)
