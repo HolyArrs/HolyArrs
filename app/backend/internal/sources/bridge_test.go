@@ -16,6 +16,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -339,7 +340,8 @@ func TestProwlarrConnect_AddsOrUpdatesApp(t *testing.T) {
 		t.Fatalf("wrong key: %v", err)
 	}
 	f.appName = "Sonarr"
-	if _, err := p.Status(ctx); !strings.Contains(BridgeWords(err), "That is Sonarr") {
+	// The name the far side gives is never echoed back.
+	if _, err := p.Status(ctx); !strings.Contains(BridgeWords(err), "not like Prowlarr") || strings.Contains(BridgeWords(err), "Sonarr") {
 		t.Fatalf("sonarr: %v", err)
 	}
 }
@@ -506,5 +508,52 @@ func TestLocalAddress_Variants(t *testing.T) {
 	}
 	if _, ok := BridgeLocalAddress(ctx, "::bad"); ok {
 		t.Error("a bad address looked up")
+	}
+}
+
+// A bridge test answers short fixed words; what the far side says goes to the log only.
+func TestBridgeTestPlainError(t *testing.T) {
+	h := &Handlers{}
+	try := func(url string) (int, string) {
+		body := `{"kind":"jackett","url":"` + url + `","key":"k"}`
+		r := httptest.NewRequest("POST", "/api/v1/bridges/test", strings.NewReader(body))
+		r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1}))
+		w := httptest.NewRecorder()
+		h.testBridge(w, r)
+		return w.Code, w.Body.String()
+	}
+	secret := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`<error code="200" description="secret-x"/>`))
+	}))
+	defer secret.Close()
+	if _, out := try(secret.URL); strings.Contains(out, "secret-x") || !strings.Contains(out, "Jackett answered with an error.") {
+		t.Errorf("remote error text: %s", out)
+	}
+	wrongKey := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`<error code="100" description="secret-x"/>`))
+	}))
+	defer wrongKey.Close()
+	if _, out := try(wrongKey.URL); strings.Contains(out, "secret-x") || !strings.Contains(out, "turned down the key") {
+		t.Errorf("wrong key: %s", out)
+	}
+	broken := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(500)
+		_, _ = w.Write([]byte("secret-x stack trace"))
+	}))
+	defer broken.Close()
+	if _, out := try(broken.URL); strings.Contains(out, "secret-x") || !strings.Contains(out, "status 500") {
+		t.Errorf("status 500: %s", out)
+	}
+	closed := httptest.NewServer(http.NotFoundHandler())
+	addr := closed.URL
+	closed.Close()
+	if _, out := try(addr); !strings.Contains(out, "could not reach it") {
+		t.Errorf("closed port: %s", out)
+	}
+	for range bridgeTries {
+		try(addr)
+	}
+	if code, _ := try(addr); code != http.StatusTooManyRequests {
+		t.Errorf("many quick tests: %d", code)
 	}
 }

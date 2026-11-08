@@ -48,10 +48,7 @@ func (p *BridgeProwlarr) Status(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if !strings.EqualFold(st.AppName, "Prowlarr") {
-		if st.AppName != "" {
-			return "", fail("That is %s, not Prowlarr.", clip(st.AppName, 40))
-		}
-		return "", fail("That address answers, but not like Prowlarr.")
+		return "", &BridgeError{Words: "That address answers, but not like Prowlarr.", Detail: "app name " + clip(st.AppName, 40)}
 	}
 	return st.Version, nil
 }
@@ -171,7 +168,7 @@ func (p *BridgeProwlarr) do(ctx context.Context, method, path string, body any, 
 	case status == http.StatusBadRequest:
 		return fail("Prowlarr refused it: %s", validationWords(b))
 	case status >= 300:
-		return fail("Prowlarr answered with an error (%d).", status)
+		return fail("Prowlarr answered with status %d.", status)
 	}
 	if out != nil && json.Unmarshal(b, out) != nil {
 		return fail("That address answers, but not like Prowlarr.")

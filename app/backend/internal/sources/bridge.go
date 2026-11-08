@@ -25,6 +25,9 @@ const (
 // the key.
 type BridgeError struct {
 	Words string
+	// Detail is what the bridge itself said; it goes to the log only, never
+	// into a reply, since the remote side picks it.
+	Detail string
 }
 
 // Error returns the plain words of the failure.
@@ -39,7 +42,7 @@ func BridgeWords(err error) string {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return "It took too long to answer."
 	}
-	return "Something went wrong talking to it."
+	return "Couldn't connect."
 }
 
 // BridgeCleanURL checks a bridge address and drops its trailing slash. It must be
