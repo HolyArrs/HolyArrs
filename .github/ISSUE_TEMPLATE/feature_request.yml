@@ -1,6 +1,6 @@
 name: Idea
 description: Something HolyArrs could do.
-labels: ["type: idea"]
+type: Idea
 body:
   - type: markdown
     attributes:

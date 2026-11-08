@@ -1,6 +1,6 @@
 name: Bug report
 description: Something in HolyArrs does not work as it should.
-labels: ["type: bug"]
+type: Bug
 body:
   - type: markdown
     attributes:
