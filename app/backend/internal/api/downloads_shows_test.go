@@ -58,6 +58,7 @@ func seedPack(t *testing.T) (*dl41, []int64) {
 // 4.2.3: a pack row names the show and the episodes it covers, and says
 // where each one is.
 func TestDownloadsViewShowsEpisodes(t *testing.T) {
+	t.Parallel()
 	x, ids := seedPack(t)
 	var out struct {
 		Downloads []downloads.DownloadRow `json:"downloads"`
@@ -90,6 +91,7 @@ func TestDownloadsViewShowsEpisodes(t *testing.T) {
 // 4.2.4: stuck episodes list their episode and pack; a choice is made for
 // one episode or for every stuck episode of the pack.
 func TestNeedsDecisionEpisodesAndPacks(t *testing.T) {
+	t.Parallel()
 	x, ids := seedPack(t)
 	var out struct {
 		Items []downloads.DecisionView `json:"items"`

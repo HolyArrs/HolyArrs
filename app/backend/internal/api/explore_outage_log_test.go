@@ -32,6 +32,7 @@ func (s *syncBuf) lines(part string) int {
 // A failing list logs once until it answers, not on every ask; a key that
 // fails on its own stays quiet while other keys of its list answer.
 func TestExploreListFailureLoggedOncePerOutage(t *testing.T) {
+	t.Parallel()
 	a, _, f := exploreRig(t)
 	src := &downSource{}
 	src.down.Store(true)

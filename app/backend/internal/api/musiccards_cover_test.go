@@ -15,6 +15,7 @@ import (
 // a card's album the server stored is prefetched from it; one it has not
 // stored yet (it redirects) is a miss, and no outside source is ever asked.
 func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const fresh, soundtrack = "54be6365-1bc0-4825-b87e-505a2b48fade", "192a95dc-d993-4768-9f77-4496b6460400"
 	var outside atomic.Int32
@@ -68,6 +69,7 @@ func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
 // A top song without a MusicBrainz release has no server copy: its chart
 // cover link is never fetched, the picture route answers 404 (placeholder).
 func TestTopSongArtNotFetchedFromChart(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	var asked atomic.Int32
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

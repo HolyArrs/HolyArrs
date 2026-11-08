@@ -21,6 +21,7 @@ import (
 // Tags (#108) on Downloaders, Sources and titles: cleaned on save, kept
 // when not sent, cleared with an empty list, and listed by GET /tags.
 func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
+	t.Parallel()
 	srv, s := dlServer(t)
 	key := "0123456789abcdef0123456789abcdef"
 	sab := fakeSAB(t, key)

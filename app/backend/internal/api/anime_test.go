@@ -40,6 +40,7 @@ func animeTMDB(t *testing.T) metadata.Provider {
 
 // route: GET /api/v1/metadata/{kind}/{tmdb_id}/anime
 func TestMetadataAnime(t *testing.T) {
+	t.Parallel()
 	md := animeTMDB(t)
 	_, st := discoverRig(t, md)
 	one, two := 1, 2
@@ -85,6 +86,7 @@ func TestMetadataAnime(t *testing.T) {
 // A Kid sees anime answers only for titles under their limit; a title
 // above it, or with no rating, answers 403 before the server is asked.
 func TestMetadataAnimeKidGate(t *testing.T) {
+	t.Parallel()
 	md := animeTMDB(t)
 	_, st := discoverRig(t, md)
 	var asked []string

@@ -15,6 +15,7 @@ import (
 
 // Turning automatic work off does not change who may run it by hand.
 func TestRunScheduleTurnedOff(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE schedules SET enabled = 0 WHERE kind = 'feed_check'")
@@ -35,6 +36,7 @@ func TestRunScheduleTurnedOff(t *testing.T) {
 
 // A Job's error and a loop's reason are masked before they are shown.
 func TestScheduleErrorsMasked(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, state, params, error, ended_at, run_after, asked_by)

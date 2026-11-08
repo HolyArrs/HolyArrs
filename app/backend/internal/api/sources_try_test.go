@@ -18,6 +18,7 @@ import (
 
 // route: POST /api/v1/sources/{id}/try
 func TestSourceTryNow(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

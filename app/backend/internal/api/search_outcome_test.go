@@ -16,6 +16,7 @@ import (
 
 // route: GET /api/v1/titles/{id}/search-outcome
 func TestSearchOutcomeOwnerSeesSourcesMemberDoesNot(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	ctx := context.Background()
 	var titleID int64

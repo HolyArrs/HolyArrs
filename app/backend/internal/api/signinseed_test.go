@@ -34,6 +34,7 @@ func testJPEG(t *testing.T, w, h int) []byte {
 // /login carries the art list and tiny thumbnails of the first slide, built
 // from TMDB's small size only, capped, and nothing else.
 func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	var mu sync.Mutex
 	var asked []string
@@ -90,6 +91,7 @@ func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
 }
 
 func TestSigninThumbRefusesOthers(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	a.signinSeed.fetch = func(context.Context, string) ([]byte, error) { return nil, errors.New("must not fetch") }
 	if _, err := a.makeSigninThumb("https://evil.example/original/x.jpg", 300); err == nil {

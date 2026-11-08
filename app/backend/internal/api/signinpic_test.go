@@ -18,6 +18,7 @@ import (
 // The sign-in answer holds same-origin addresses at served sizes, those
 // pictures load through the artwork cache, and anything else is refused.
 func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
+	t.Parallel()
 	var hits atomic.Int32
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)

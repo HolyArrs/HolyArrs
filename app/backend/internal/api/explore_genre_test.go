@@ -42,6 +42,7 @@ func (f *recordingTMDB) asked(part string) int {
 // popularity (top 10, each once), one service (Netflix too) asks TMDB for
 // that service; lists are kept a week.
 func TestExploreTopOnYourServices(t *testing.T) {
+	t.Parallel()
 	a, _, f := exploreRig(t)
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()
@@ -102,6 +103,7 @@ func TestExploreTopOnYourServices(t *testing.T) {
 // the genre), Top-rated classics and mood rows, each from TMDB discover
 // with the genre; a title once per page; hero from the trending row.
 func TestExploreGenrePage(t *testing.T) {
+	t.Parallel()
 	a, s, f := exploreRig(t)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE titles SET genres = '["Drama"]' WHERE kind = 'movie'`)

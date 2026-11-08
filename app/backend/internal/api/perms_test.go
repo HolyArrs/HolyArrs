@@ -26,6 +26,7 @@ import (
 // checks accounts.RoutePerms names what it needs (or that it is public). A route
 // missing from the table is owner-only, which is safe but usually a mistake.
 func TestEveryRouteHasAPermission(t *testing.T) {
+	t.Parallel()
 	re := regexp.MustCompile(`m(?:ux)?\.Handle(?:Func)?\("([A-Z]+ [^"]*)"(\+RestorePath)?`)
 	public := map[string]bool{
 		"GET /healthz": true, "GET /readyz": true, "GET /api/v1/auth/state": true, "POST /api/v1/auth/setup": true, "POST /api/v1/auth/login": true,
@@ -70,6 +71,7 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 // route: POST /api/v1/auth/setup
 // route: POST /api/v1/auth/invites/{token}
 func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	s, err := database.Open(dir, database.Options{})
 	if err != nil {

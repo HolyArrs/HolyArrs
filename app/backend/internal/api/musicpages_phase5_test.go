@@ -17,6 +17,7 @@ import (
 // Ask for all missing: the page says N and about how big; asking with its
 // list makes one ask that carries exactly those N releases.
 func TestArtistAskAllMissing(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	var ap ArtistPageView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/music/artists/"+apiArtist, "", 200), &ap)
@@ -36,6 +37,7 @@ func TestArtistAskAllMissing(t *testing.T) {
 // The edition picked on the album page travels with the ask, and the
 // approval chooses that edition for the album.
 func TestAskEditionChangesTheRelease(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	// An edition for an album not asked, or a bad id, is refused.
 	r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiLive+`"],"editions":{"`+apiAlbum+`":"`+apiRelB+`"}}`, 400)
@@ -63,6 +65,7 @@ func TestAskEditionChangesTheRelease(t *testing.T) {
 // route: GET /api/v1/music/albums/{mbid}
 // No video kind in any page answer; each edition carries its own tracks.
 func TestMusicPagesNoVideoAndEditionTracks(t *testing.T) {
+	t.Parallel()
 	srv, _, _, fa := musicSetup(t)
 	ar := fa.artists[apiArtist]
 	ar.Albums = append(ar.Albums, metadata.Album{MBID: "10000000-0000-0000-0000-0000000000ad", Name: "The Clip", PrimaryType: "video", ReleaseDate: "2022-01-01"},
@@ -106,6 +109,7 @@ func TestMusicPagesNoVideoAndEditionTracks(t *testing.T) {
 
 // Essential and Appears on from the server's artist data.
 func TestArtistMoreFromArtistData(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	other := "a0000000-0000-0000-0000-0000000000bb"
 	r.api.s.MusicArtistData = func(_ context.Context, ids []string) ([]metadata.MusicArtistData, error) {

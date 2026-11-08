@@ -61,6 +61,7 @@ func (x liveSetup) waitClients(t *testing.T, n int) {
 // end it, and a stream opened again carries only the rights held now.
 // route: GET /live
 func TestLiveStreamEndsWhenItsRightsGo(t *testing.T) {
+	t.Parallel()
 	x := setupLive(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -111,6 +112,7 @@ func TestLiveStreamEndsWhenItsRightsGo(t *testing.T) {
 // note) to people who approve, as /live does; other managers read the rest.
 // route: GET /api/v1/events
 func TestEventsHideAsksFromManagersWhoDoNotApprove(t *testing.T) {
+	t.Parallel()
 	x := setupLive(t)
 	user := "/api/v1/users/" + strconv.FormatInt(x.mem.id, 10)
 	if st, out := x.call(t, x.own, "PUT", user, `{"perms":["ask","manage_library"]}`, true); st != 200 {
@@ -158,6 +160,7 @@ func TestEventsHideAsksFromManagersWhoDoNotApprove(t *testing.T) {
 // decline note): pages read the title again through its route, which shows
 // them to approvers only.
 func TestLiveTitleUpdateLeavesAsksOut(t *testing.T) {
+	t.Parallel()
 	hub := webserver.NewLiveHub(webserver.LiveOptions{})
 	srv := httptest.NewServer(hub.Handler(func(*http.Request) webserver.LiveViewer { return webserver.LiveViewer{All: true} }))
 	defer srv.Close()

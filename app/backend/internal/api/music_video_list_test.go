@@ -11,6 +11,7 @@ import (
 
 // route: GET /api/v1/music/artists/{mbid}?part=videos
 func TestArtistVideoList(t *testing.T) {
+	t.Parallel()
 	u := strings.Replace(videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ", Title: "First", Duration: 212}, {ID: "not-a-youtube-id"}, {ID: "9bZkp7q19f0", Title: "Second"}}, nil
 	}), "part=video", "part=videos", 1)

@@ -66,6 +66,7 @@ func noiseJPEG(t *testing.T) []byte {
 // hostile picture from the artwork host cannot make the decoder read (and
 // allocate for) an unbounded body. Over the cap the sample fails (-1).
 func TestBackdropSampleReadCap(t *testing.T) {
+	t.Parallel()
 	var read atomic.Int64
 	cl := &http.Client{Transport: bodyTransport{body: noiseJPEG(t), read: &read}}
 	got := sampleBackdrop(context.Background(), cl, metadata.ImageBase+"/original/big.jpg")
@@ -79,6 +80,7 @@ func TestBackdropSampleReadCap(t *testing.T) {
 
 // A normal small backdrop still samples.
 func TestBackdropSampleSmallStillWorks(t *testing.T) {
+	t.Parallel()
 	img := image.NewGray(image.Rect(0, 0, 300, 169))
 	for i := range img.Pix {
 		img.Pix[i] = 200

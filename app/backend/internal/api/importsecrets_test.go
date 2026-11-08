@@ -32,6 +32,7 @@ func keyCall(t *testing.T, base, key, method, path, body string) (int, string) {
 // route: GET /api/v1/migrate/saved-keys
 // route: DELETE /api/v1/migrate/saved-keys
 func TestImportSecretsRoutes(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	radarrKey := "your-radarr-key-1"
 	u := fakeRadarr(t, radarrKey)
@@ -139,11 +140,13 @@ func TestImportSecretsRoutes(t *testing.T) {
 // Without a signed-in owner (no sign-in in front at all) a saved key is
 // never used.
 func TestSavedKeyNeedsSignedInOwner(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	do(t, "POST", srv.URL+"/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true}`, 403)
 }
 
 func TestImportSecretsSameKeys(t *testing.T) {
+	t.Parallel()
 	pairs := [][2]string{{secretsfile.LinksGroup, metadata.TraktKeyGroup},
 		{secretsfile.TraktClientKey, metadata.TraktKeyName}, {secretsfile.LinksGroup, shows.TVDBKeyGroup}, {secretsfile.TVDBKeyKey, shows.TVDBKeyName}}
 	for _, p := range pairs {
@@ -154,6 +157,7 @@ func TestImportSecretsSameKeys(t *testing.T) {
 }
 
 func TestLocalSkipCannotReadSavedAddresses(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	for _, tc := range []struct{ method, path string }{

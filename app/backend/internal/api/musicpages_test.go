@@ -19,6 +19,7 @@ import (
 // route: GET /api/v1/music/artists/{mbid}
 // route: GET /api/v1/music/albums/{mbid}
 func TestMusicPages(t *testing.T) {
+	t.Parallel()
 	srv, _, lib, _ := musicSetup(t)
 	u := srv.URL + "/api/v1/music"
 
@@ -117,6 +118,7 @@ func TestMusicPages(t *testing.T) {
 }
 
 func TestExplicitAlbums(t *testing.T) {
+	t.Parallel()
 	is := explicitAlbums([]metadata.DeezerAlbum{
 		{Title: "Aerodynamic (Slum Village Remix)", Explicit: true},
 		{Title: "Aerodynamic", Explicit: false},
@@ -139,6 +141,7 @@ func TestExplicitAlbums(t *testing.T) {
 }
 
 func TestEditionsFoldPressings(t *testing.T) {
+	t.Parallel()
 	tr := func(n int) []metadata.Track { return make([]metadata.Track, n) }
 	got := editions([]metadata.Pressing{
 		{MBID: "a", Name: "OK Computer", Status: "official", Date: "1997-07-01", Tracks: tr(12)},
@@ -160,6 +163,7 @@ func TestEditionsFoldPressings(t *testing.T) {
 }
 
 func TestSimilarArtistArtPrefetched(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const seed, like = "33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -196,6 +200,7 @@ func TestSimilarArtistArtPrefetched(t *testing.T) {
 // albums come from no list the picture route knew: they are listed and
 // their covers prefetched from the server's stored copies.
 func TestCreditCoversPrefetched(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const al = "55555555-5555-4555-8555-555555555555"
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

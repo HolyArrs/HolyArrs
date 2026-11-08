@@ -16,6 +16,7 @@ import (
 // has not stored (a redirect) is a miss, never an outside fetch; any
 // catalog album is asked for at once, listed by a page or not.
 func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const stored, cold, stranger = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +59,7 @@ func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
 // is never remembered as missing (the next ask tries again), and a 429
 // holds the preload back.
 func TestTemporaryPictureErrorIsNotAMiss(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const busy = "44444444-4444-4444-8444-444444444444"
 	limited := true

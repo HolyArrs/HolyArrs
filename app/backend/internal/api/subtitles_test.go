@@ -88,6 +88,7 @@ func decodeJSON(t *testing.T, b []byte, v any) {
 // route: POST /api/v1/subtitles/{id}/sync
 // route: POST /api/v1/subtitles/{id}/turn-down
 func TestSubtitleRoutes(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	u := srv.URL + "/api/v1"
 	titleID, fileID, lib := subtitleMovie(t, s)

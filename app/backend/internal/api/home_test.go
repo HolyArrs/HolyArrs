@@ -16,6 +16,7 @@ import (
 )
 
 func TestHomeRowOrderPerRole(t *testing.T) {
+	t.Parallel()
 	full := homeHas{Attention: true, Arrived: true, NewSeason: true, Following: true, Soon: true}
 	cases := []struct {
 		name string
@@ -39,6 +40,7 @@ func TestHomeRowOrderPerRole(t *testing.T) {
 }
 
 func TestHomeShowLine(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		newShow                 bool
 		season, fresh, inSeason int
@@ -60,6 +62,7 @@ func TestHomeShowLine(t *testing.T) {
 
 // route: GET /api/v1/home
 func TestHomeRowsOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	type answer struct {
 		Rows       []string   `json:"rows"`
@@ -127,6 +130,7 @@ func TestHomeRowsOverHTTP(t *testing.T) {
 // left out of an artist are not counted; a kind that is on but empty is
 // all zeros.
 func TestHomeLibraryCounts(t *testing.T) {
+	t.Parallel()
 	_, s, _ := setup(t)
 	ctx := context.Background()
 	num := func(n int) *int { return &n }

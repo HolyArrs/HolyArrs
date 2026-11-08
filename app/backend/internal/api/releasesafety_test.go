@@ -11,6 +11,7 @@ import (
 // route: GET /api/v1/settings/search
 // route: PUT /api/v1/settings/search
 func TestReleaseSafetySettings(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	u := srv.URL + "/api/v1"
 	var st sources.SearchSettings

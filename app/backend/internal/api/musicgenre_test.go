@@ -14,6 +14,7 @@ import (
 
 // route: GET /api/v1/music/genre/{slug}
 func TestMusicGenrePage(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
 	loadHousehold(t, r.st, now)
@@ -74,6 +75,7 @@ func TestMusicGenrePage(t *testing.T) {
 // Tile art: the server's tile link becomes the app's picture route, and
 // with none the tile stays a flat hue.
 func TestMusicGenreArtLink(t *testing.T) {
+	t.Parallel()
 	if got := musicGenreArt(metadata.MusicGenre{Slug: "pop"}); got != "" {
 		t.Fatalf("flat: %q", got)
 	}
@@ -93,6 +95,7 @@ func TestMusicGenreArtLink(t *testing.T) {
 
 // route: GET /api/v1/music/genre-art/{slug}
 func TestMusicGenreArtRoute(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	calls := 0
 	r.api.s.MusicGenreTile = func(_ context.Context, slug, v string) ([]byte, error) {
@@ -113,6 +116,7 @@ func TestMusicGenreArtRoute(t *testing.T) {
 }
 
 func TestMusicGenreKidFirst(t *testing.T) {
+	t.Parallel()
 	b, _ := os.ReadFile("musicgenre.go")
 	s := string(b)
 	page := s[strings.Index(s, "func (a *API) musicGenrePage"):]
@@ -124,6 +128,7 @@ func TestMusicGenreKidFirst(t *testing.T) {
 // A genre page warms the art (photo, wide photo, logo) of every artist and
 // album it lists, like every other music row.
 func TestMusicGenrePageWarmsArt(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
 	loadHousehold(t, r.st, now)
@@ -174,6 +179,7 @@ func TestMusicGenrePageWarmsArt(t *testing.T) {
 // With music_lists_v1 a genre page adds the tile's editorial picks, its
 // artists and the region's charts filtered to the genre: 8 rows or more.
 func TestMusicGenrePageListRows(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
 	r.api.s.MusicRowsV2 = true

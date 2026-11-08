@@ -77,6 +77,7 @@ func count(t *testing.T, st *database.Store, q string, args ...any) int {
 // route: POST /api/v1/downloads/matches/run
 // route: POST /api/v1/downloads/matches/{id}/pick
 func TestClientMatchLinksAndConfirms(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	addQB(t, r.st, mediaClient(t).URL)
 	md := r.api.s.Metadata
@@ -163,6 +164,7 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 // route: POST /api/v1/downloaders/{id}/items/{hash}/remove
 // Removing a torrent HolyArrs did not send needs the settings permission.
 func TestOutsideRemoveNeedsSettings(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	dl := addQB(t, r.st, mediaClient(t).URL)
 	r.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", r.ana.id), `{"perms":["ask","manage_library"]}`, 200)
@@ -180,6 +182,7 @@ func TestOutsideRemoveNeedsSettings(t *testing.T) {
 // Changing a torrent HolyArrs did not send, beyond pause and the like, needs
 // the settings permission.
 func TestOutsideChangesNeedSettings(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	dl := addQB(t, r.st, mediaClient(t).URL)
 	r.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", r.ana.id), `{"perms":["ask","manage_library"]}`, 200)

@@ -12,6 +12,7 @@ import (
 // The brief list carries the same titles, names, posters, dates and slot
 // states as the full list, in the same order, and nothing else.
 func TestTitlesBriefMatchesFull(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
 	var full struct {

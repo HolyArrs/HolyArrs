@@ -50,6 +50,7 @@ func inGroup(a health.StatusAnswer, g string) int {
 // TestSettingsStatusRules carries each case of the web app's former
 // settings-status rules (settings-status.test.ts) over unchanged in meaning.
 func TestSettingsStatusRules(t *testing.T) {
+	t.Parallel()
 	t.Run("all set when every known check is fine", func(t *testing.T) {
 		a := health.SettingsStatus(health.StatusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "ok", "")},
 			Sources: []health.NamedState{{Name: "A", State: "working"}}, Downloaders: []health.NamedState{{Name: "Q", State: "working"}}, Now: statusNow})
@@ -133,6 +134,7 @@ func TestSettingsStatusRules(t *testing.T) {
 
 // route: GET /api/v1/settings/status
 func TestSettingsStatusRoute(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	b := string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	var a struct {
@@ -159,6 +161,7 @@ func TestSettingsStatusRoute(t *testing.T) {
 
 // route: GET /api/v1/metadata/health
 func TestMetadataHealthRoute(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	if b := string(r.ana.call("GET", "/api/v1/metadata/health", "", 200)); !strings.Contains(b, `"up":true`) {
 		t.Fatal(b)
@@ -178,6 +181,7 @@ func pagesOf(items []health.StatusItem) []string {
 }
 
 func TestStatusFlagsGoneDefaults(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	var folderID int64
 	_ = r.st.Read().QueryRow("SELECT id FROM library_folders LIMIT 1").Scan(&folderID)
@@ -214,6 +218,7 @@ func TestStatusFlagsGoneDefaults(t *testing.T) {
 }
 
 func TestSettingsStatusCached(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	at := statusNow
 	r.api.status.Now = func() time.Time { return at }
@@ -235,6 +240,7 @@ func TestSettingsStatusCached(t *testing.T) {
 // TestSettingsStatusForgetsAfterWrites: a write that can change what the
 // status looks at drops the kept answer, so Settings home is right at once.
 func TestSettingsStatusForgetsAfterWrites(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	if err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("DELETE FROM library_folders")
@@ -261,6 +267,7 @@ func TestSettingsStatusForgetsAfterWrites(t *testing.T) {
 // TestStatusFlagsKidWithLocalSkip: a Kid while sign-in is skipped at home
 // is an error on the sign-in page; either alone is not.
 func TestStatusFlagsKidWithLocalSkip(t *testing.T) {
+	t.Parallel()
 	on, off, one, none := true, false, 1, 0
 	const page = "/settings/sign-in"
 	for _, c := range []struct {
@@ -283,6 +290,7 @@ func TestStatusFlagsKidWithLocalSkip(t *testing.T) {
 // TestStatusWarnsKidWithOutsideJoin: with a Kid and outside sign-in open
 // to new people, the Users page warns that newcomers get no limit.
 func TestStatusWarnsKidWithOutsideJoin(t *testing.T) {
+	t.Parallel()
 	on, off, one, none := true, false, 1, 0
 	want := health.StatusItem{Group: "people", Page: "/settings/users", Severity: "warning",
 		Text: "New people who sign in with Plex, Jellyfin, Emby or single sign-on get no age limit; link a Kid's outside accounts to their Kid account."}

@@ -3,6 +3,7 @@ package downloads
 import "testing"
 
 func TestSpeedHistoryKeepsNewest(t *testing.T) {
+	t.Parallel()
 	var h SpeedHistory
 	for i := 0; i < speedKeep+30; i++ {
 		h.add(SpeedSample{Down: int64(i)})

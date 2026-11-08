@@ -10,6 +10,7 @@ import (
 
 // route: GET /api/v1/explore/music/rising
 func TestRisingTodayRow(t *testing.T) {
+	t.Parallel()
 	r, _ := v3Rig(t)
 	r.ana.call("GET", "/api/v1/explore/music/rising", "", 404) // no source: no row
 	asks := 0
@@ -41,6 +42,7 @@ func TestRisingTodayRow(t *testing.T) {
 }
 
 func TestShortCount(t *testing.T) {
+	t.Parallel()
 	for n, want := range map[int64]string{999: "999", 1234: "1.2K", 2_000_000: "2M", 250_400_000: "250M", 1_500_000_000: "1.5B"} {
 		if got := shortCount(n); got != want {
 			t.Errorf("%d: %s, want %s", n, got, want)

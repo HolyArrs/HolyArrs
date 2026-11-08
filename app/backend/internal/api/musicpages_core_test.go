@@ -7,6 +7,7 @@ import (
 )
 
 func TestCoreAlbumsCompleteListOnly(t *testing.T) {
+	t.Parallel()
 	art := metadata.Artist{Albums: []metadata.Album{
 		{MBID: "A0000000-0000-0000-0000-000000000001", Name: "Old", PrimaryType: "Album", ReleaseDate: "2015-01-01"},
 		{MBID: "a0000000-0000-0000-0000-000000000002", Name: "New", PrimaryType: "Single", ReleaseDate: "2024-05-01"},

@@ -8,6 +8,7 @@ import (
 )
 
 func TestStreamingMarks(t *testing.T) {
+	t.Parallel()
 	a := &API{}
 	a.serviceTop.regions = map[string]serviceTopEntry{"US": {at: time.Now(), list: metadata.ServiceTop{Services: []metadata.ServiceTopList{
 		{Service: "netflix", Name: "Netflix", Source: "streaming-availability", Items: []metadata.ServiceTopItem{{Rank: 3, TMDBID: 7, Kind: "tv"}}},

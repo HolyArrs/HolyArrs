@@ -70,6 +70,7 @@ func waitJob(t *testing.T, url string, id int64) domain.Job {
 // route: POST /api/v1/titles/{id}/rename
 // route: GET /api/v1/jobs/{id}
 func TestRenameTitleAPI(t *testing.T) {
+	t.Parallel()
 	url, s, lib, id, fid := organiseWorld(t)
 	b := string(do(t, "GET", url+"/api/v1/titles/"+itoa(id)+"/rename", "", 200))
 	want := "Dune - Part Two (2024)/Dune - Part Two (2024) 1080p BluRay.mkv"
@@ -101,6 +102,7 @@ func TestRenameTitleAPI(t *testing.T) {
 // route: GET /api/v1/rename
 // route: POST /api/v1/rename
 func TestRenameLibraryAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
 	b := string(do(t, "GET", url+"/api/v1/rename", "", 200))
 	if !strings.Contains(b, `"title_name":"Dune: Part Two"`) || !strings.Contains(b, `"from":"Dune - Part Two (2024)/Dune.Part.Two`) {
@@ -143,6 +145,7 @@ func planHashOf(t *testing.T, preview string) string {
 // route: GET /api/v1/settings/naming
 // route: PUT /api/v1/settings/naming
 func TestNamingSettingsAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, id, _ := organiseWorld(t)
 	b := string(do(t, "GET", url+"/api/v1/settings/naming", "", 200))
 	if !strings.Contains(b, `"file_pattern":"{title} ({year}) {quality}"`) || !strings.Contains(b, `"example":"Dune - Part Two (2024) 1080p BluRay.mkv"`) {
@@ -161,6 +164,7 @@ func TestNamingSettingsAPI(t *testing.T) {
 
 // route: POST /api/v1/settings/naming/example
 func TestNamingExampleAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
 	b := string(do(t, "POST", url+"/api/v1/settings/naming/example",
 		`{"file_pattern":"{title} [{year}]","folder_pattern":"{sort_title}","colon":"dash","illegal":"replace"}`, 200))
@@ -177,6 +181,7 @@ func TestNamingExampleAPI(t *testing.T) {
 // route: GET /api/v1/settings/files
 // route: PUT /api/v1/settings/files
 func TestFileRulesAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
 	if b := string(do(t, "GET", url+"/api/v1/settings/files", "", 200)); !strings.Contains(b, `"holding_days":7`) || !strings.Contains(b, `"min_free_mb":100`) {
 		t.Fatalf("get %s", b)
@@ -192,6 +197,7 @@ func TestFileRulesAPI(t *testing.T) {
 
 // route: POST /api/v1/titles/{id}/delete
 func TestDeleteTitleAPI(t *testing.T) {
+	t.Parallel()
 	url, s, lib, id, fid := organiseWorld(t)
 	path := url + "/api/v1/titles/" + itoa(id) + "/delete"
 	b := string(do(t, "POST", path, `{"delete_files":true}`, 200))
@@ -220,6 +226,7 @@ func TestDeleteTitleAPI(t *testing.T) {
 
 // route: POST /api/v1/holding/clean
 func TestCleanHoldingAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
 	var q struct {
 		JobID int64 `json:"job_id"`
@@ -234,6 +241,7 @@ func TestCleanHoldingAPI(t *testing.T) {
 // route: POST /api/v1/library-folders/{id}/adopt
 // route: POST /api/v1/library/rescan
 func TestScanAndAdoptAPI(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := libSetup(t)
 	url := srv.URL
 	lib := t.TempDir()
@@ -290,6 +298,7 @@ func TestScanAndAdoptAPI(t *testing.T) {
 // 4.2.1: the show patterns sit with the movie ones; fields left out keep
 // their value, and the examples name episodes.
 func TestNamingShowPatternsAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
 	b := string(do(t, "GET", url+"/api/v1/settings/naming", "", 200))
 	if !strings.Contains(b, `"episode_pattern":"{title} - {episode} - {episode_title} {quality}"`) ||

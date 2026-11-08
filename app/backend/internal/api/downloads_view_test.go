@@ -136,6 +136,7 @@ func view(t *testing.T, url string) viewAnswer {
 // calls a client): every answer comes in under 300 ms and the client is
 // marked as not read yet.
 func TestDownloadsViewHungClient(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	stop := make(chan struct{})
 	hang := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -170,6 +171,7 @@ func TestDownloadsViewHungClient(t *testing.T) {
 // A client that answered once and then stops shows its last list, marked
 // stale, instead of an empty client.
 func TestDownloadsViewStaleClient(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	pointQB(t, x, qbList(t, outsideTorrents(3, 0)).URL)
 	feedStore(t, x.api)
@@ -186,6 +188,7 @@ func TestDownloadsViewStaleClient(t *testing.T) {
 
 // The view reads each related table once, however many rows it shows.
 func TestDownloadsViewQueryCount(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var d domain.Download
@@ -240,6 +243,7 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 // Upload totals count every row that sends, seeding torrents included, and
 // cover outside rows past the page.
 func TestDownloadsViewTotalsIncludeSeeding(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotInLibrary, "seeding")
 	exec41(t, x.s, "UPDATE downloads SET up_speed = 100, speed = 0")
 	pointQB(t, x, qbList(t, outsideTorrents(250, 10)).URL)
@@ -252,6 +256,7 @@ func TestDownloadsViewTotalsIncludeSeeding(t *testing.T) {
 
 // Outside rows come 200 at a time with a cursor to the next page.
 func TestDownloadsViewPagesOutsideRows(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	pointQB(t, x, qbList(t, outsideTorrents(450, 0)).URL)
 	feedStore(t, x.api)
@@ -291,6 +296,7 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 // ?asked=1 reads only downloads for titles with an approved ask, past the
 // usual 500-row cap, so the Requests page can count failed asks exactly.
 func TestDownloadsViewAsked(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "failed")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
 	get := func() int {

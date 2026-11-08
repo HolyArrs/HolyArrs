@@ -65,6 +65,7 @@ func do(t *testing.T, method, url, body string, want int) []byte {
 // route: POST /api/v1/titles/{id}/search
 // route: GET /api/v1/titles/{id}/releases
 func TestAddListSearch(t *testing.T) {
+	t.Parallel()
 	srv, _, q := setup(t)
 	// Nothing yet.
 	var list struct {
@@ -118,6 +119,7 @@ func TestAddListSearch(t *testing.T) {
 // route: GET /api/v1/imports
 // route: GET /api/v1/jobs
 func TestReadEndpoints(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	for _, p := range []string{"/api/v1/downloads", "/api/v1/events", "/api/v1/jobs", "/api/v1/imports"} {
 		b := do(t, "GET", srv.URL+p, "", 200)
@@ -133,6 +135,7 @@ func TestReadEndpoints(t *testing.T) {
 }
 
 func TestWebApp(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	page := string(do(t, "GET", srv.URL+"/", "", 200))
 	if !strings.Contains(page, "/_app/immutable/") {
@@ -148,6 +151,7 @@ func TestWebApp(t *testing.T) {
 }
 
 func TestLiveStreamOpens(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -163,6 +167,7 @@ func TestLiveStreamOpens(t *testing.T) {
 }
 
 func TestSignInGuardsRoutes(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -191,6 +196,7 @@ func TestSignInGuardsRoutes(t *testing.T) {
 }
 
 func TestSourcesShowMaskedKey(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	ref := int64(42)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -209,6 +215,7 @@ func TestSourcesShowMaskedKey(t *testing.T) {
 
 // route: GET /api/v1/metadata/search
 func TestMetadataSearchAndAttribution(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/search?q=dune+part+two&year=2024", "", 200))
 	if !strings.Contains(b, `"tmdb":"693134"`) {
@@ -225,6 +232,7 @@ func TestMetadataSearchAndAttribution(t *testing.T) {
 // route: PUT /api/v1/settings/tmdb-token
 // route: GET /api/v1/settings/tmdb-token
 func TestNoTMDBKeyRoutes(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

@@ -34,6 +34,7 @@ func musicOffControl(t *testing.T, s *database.Store) *parts.Control {
 // starts: no music goroutine runs and the metadata server is never asked.
 // Turning Music on starts them.
 func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -96,6 +97,7 @@ func musicGoroutines() string {
 // With Music off, the music Job kinds (artist refresh, artist pictures,
 // album search) are not queued.
 func TestMusicJobKindsAreOffWhenMusicIsOff(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -112,6 +114,7 @@ func TestMusicJobKindsAreOffWhenMusicIsOff(t *testing.T) {
 // With Music off, the shared handlers' Music provider gives nothing and
 // starts no build; turned on, it answers again.
 func TestMusicProviderFollowsThePart(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

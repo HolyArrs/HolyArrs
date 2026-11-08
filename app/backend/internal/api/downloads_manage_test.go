@@ -29,6 +29,7 @@ func manageBase(t *testing.T) (x *dl41, f *allClient, base string) {
 
 // route: POST /api/v1/downloaders/{id}/torrents
 func TestAddTorrentsRoute(t *testing.T) {
+	t.Parallel()
 	_, f, base := manageBase(t)
 	var out struct{ Added, Duplicates, Pending int }
 	_ = json.Unmarshal(do(t, "POST", base+"/torrents", `{"links":["magnet:?xt=urn:btih:`+outHash+`","magnet:?xt=urn:btih:`+strings.Repeat("9", 40)+`"],"category":"linux","paused":true}`, 200), &out)
@@ -64,6 +65,7 @@ func TestAddTorrentsRoute(t *testing.T) {
 
 // route: POST /api/v1/downloaders/{id}/bulk
 func TestBulkRoute(t *testing.T) {
+	t.Parallel()
 	_, f, base := manageBase(t)
 	hs := `["` + outHash + `","` + strings.ToUpper(seedHash) + `"]`
 	for _, a := range []string{"start", "pause", "recheck", "reannounce", "top", "bottom", "up", "down", "force", "unforce"} {
@@ -81,6 +83,7 @@ func TestBulkRoute(t *testing.T) {
 // Without the settings permission a folder is only a subfolder of the
 // category's folder and the category must exist in the client.
 func TestClientFolderWithoutSettings(t *testing.T) {
+	t.Parallel()
 	x, _, _ := manageBase(t)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
@@ -109,6 +112,7 @@ func TestClientFolderWithoutSettings(t *testing.T) {
 // The route refuses CR/LF inside a link; a private http link is fetched by
 // HolyArrs under the Downloader's policy, refused, and never reaches the client.
 func TestAddTorrentsRouteRefusals(t *testing.T) {
+	t.Parallel()
 	x, f, base := manageBase(t)
 	do(t, "POST", base+"/torrents", `{"links":["magnet:?xt=urn:btih:`+outHash+`\r\nhttp://127.0.0.1/x"]}`, 400)
 	do(t, "POST", base+"/torrents", `{"links":["magnet:?xt=urn:btih:`+outHash+`\u0001"]}`, 400)
@@ -125,6 +129,7 @@ func TestAddTorrentsRouteRefusals(t *testing.T) {
 
 // route: POST /api/v1/downloaders/{id}/share-limits
 func TestShareLimitsRoute(t *testing.T) {
+	t.Parallel()
 	_, f, base := manageBase(t)
 	hs := `["` + outHash + `","` + seedHash + `"]`
 	do(t, "POST", base+"/share-limits", `{"hashes":`+hs+`,"ratio":2,"seeding_minutes":1440,"inactive_minutes":-1,"action":"stop"}`, 200)
@@ -143,6 +148,7 @@ func TestShareLimitsRoute(t *testing.T) {
 
 // route: POST /api/v1/downloaders/{id}/slow-mode
 func TestSlowModeRoute(t *testing.T) {
+	t.Parallel()
 	_, f, base := manageBase(t)
 	do(t, "POST", base+"/slow-mode", `{"on":true}`, 200)
 	if !strings.Contains(f.saw(), "transfer/speedLimitsMode") || !strings.Contains(f.saw(), "transfer/toggleSpeedLimitsMode") {
@@ -155,6 +161,7 @@ func TestSlowModeRoute(t *testing.T) {
 // torrent's own action, or the client's global one) need the settings
 // permission; an explicit stop on 5.2, or clearing every limit, does not.
 func TestShareLimitsOutsideNeedSettings(t *testing.T) {
+	t.Parallel()
 	x, f, _ := manageBase(t)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
@@ -200,6 +207,7 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 // route: PUT /api/v1/downloaders/{id}/items/{hash}/trackers
 // route: POST /api/v1/downloaders/{id}/items/{hash}/trackers/remove
 func TestTrackerRoutes(t *testing.T) {
+	t.Parallel()
 	x, f, base := manageBase(t)
 	item := base + "/items/" + outHash + "/trackers"
 	var sw struct{ Trackers []downloads.Tracker }
@@ -228,6 +236,7 @@ func TestTrackerRoutes(t *testing.T) {
 // route: POST /api/v1/downloaders/{id}/location
 // route: POST /api/v1/downloaders/{id}/speed-limits
 func TestLocationAndSpeedRoutes(t *testing.T) {
+	t.Parallel()
 	_, f, base := manageBase(t)
 	hs := `["` + outHash + `"]`
 	do(t, "POST", base+"/location", `{"hashes":`+hs+`,"folder":"/srv/elsewhere"}`, 200)
@@ -244,6 +253,7 @@ func TestLocationAndSpeedRoutes(t *testing.T) {
 // Without the settings permission a move of a HolyArrs-sent torrent stays
 // inside the Downloader's folders; one HolyArrs did not send cannot move.
 func TestLocationWithoutSettings(t *testing.T) {
+	t.Parallel()
 	x, f, _ := manageBase(t)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)

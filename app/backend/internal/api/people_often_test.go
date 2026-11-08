@@ -23,6 +23,7 @@ func (e *echoPeople) SearchPeople(_ context.Context, q string, page int) (metada
 func (e *echoPeople) PersonShowCount(context.Context, string) (int, error) { return 16, nil }
 
 func TestOftenWorksWithCountsLibraryShowsAndHidesUnderFour(t *testing.T) {
+	t.Parallel()
 	p := &echoPeople{fakePeople{Static: metadata.Lab()}}
 	srv, s := peopleRig(t, p)
 	add := func(kind, name, tmdb string, people ...string) {

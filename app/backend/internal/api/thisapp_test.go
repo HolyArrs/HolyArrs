@@ -46,6 +46,7 @@ func logServer(t *testing.T) (*httptest.Server, *secrets.Vault, *logs.Log) {
 
 // route: GET /api/v1/app/storage
 func TestStoragePaths(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := logServer(t)
 	var got struct {
 		App     []PathInfo `json:"app"`
@@ -78,6 +79,7 @@ func TestStoragePaths(t *testing.T) {
 // route: GET /api/v1/logs
 // route: GET /api/v1/logs/download
 func TestLogViewerNeverShowsAVaultSecret(t *testing.T) {
+	t.Parallel()
 	srv, v, lg := logServer(t)
 	const secret = "VAULT_ONLY_TEST_VALUE"
 	// Saved after the log last learned the vault's values: the line is
@@ -124,6 +126,7 @@ func TestLogViewerNeverShowsAVaultSecret(t *testing.T) {
 }
 
 func TestLogsWithoutALogFile(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	do(t, "GET", srv.URL+"/api/v1/logs", "", 503)
 	do(t, "GET", srv.URL+"/api/v1/logs/download", "", 503)
@@ -132,6 +135,7 @@ func TestLogsWithoutALogFile(t *testing.T) {
 // route: GET /api/v1/app/update
 // route: POST /api/v1/app/update/check
 func TestUpdateNoticeOverHTTP(t *testing.T) {
+	t.Parallel()
 	var calls int
 	feed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		calls++
@@ -153,6 +157,7 @@ func TestUpdateNoticeOverHTTP(t *testing.T) {
 }
 
 func TestUpdateFeedHoldsNoSecret(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	for _, bad := range []string{"https://x.example/feed?token=XXXX_T", "https://user:XXXX@x.example/feed", "https://x.example/feed#frag"} {
 		do(t, "PUT", srv.URL+"/api/v1/settings/health", `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"`+bad+`"}`, 400)
@@ -171,6 +176,7 @@ func TestUpdateFeedHoldsNoSecret(t *testing.T) {
 
 // route: GET /api/v1/app/about
 func TestAboutOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	b := string(do(t, "GET", srv.URL+"/api/v1/app/about", "", 200))
 	for _, want := range []string{`"go":"go`, `"sqlite":"3.`, `"migration":`, `"uptime_s":`} {

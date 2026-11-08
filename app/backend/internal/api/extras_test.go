@@ -16,6 +16,7 @@ import (
 
 // route: GET /api/v1/extras/{kind}/{id}
 func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
+	t.Parallel()
 	asked := 0
 	const img = "https://api.example.test/v1/img"
 	srv := httptest.NewServer(New(Server{Version: "test", ImageBase: img,
@@ -69,6 +70,7 @@ func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
 }
 
 func TestTitleExtrasEmptyWhenOff(t *testing.T) {
+	t.Parallel()
 	srv := httptest.NewServer(New(Server{Version: "test"}).Handler())
 	defer srv.Close()
 	b := string(do(t, "GET", srv.URL+"/api/v1/extras/movie/9", "", 200))
@@ -80,6 +82,7 @@ func TestTitleExtrasEmptyWhenOff(t *testing.T) {
 // A Kid gets extras only for titles under their limit, even when the answer
 // is already cached for someone else; music never passes a limit.
 func TestTitleExtrasKidGate(t *testing.T) {
+	t.Parallel()
 	md := animeTMDB(t)
 	_, st := discoverRig(t, md)
 	asked := 0
@@ -127,6 +130,7 @@ func TestTitleExtrasKidGate(t *testing.T) {
 // is empty and never cached; once stored, the next ask gets both. No
 // outside address is ever passed on.
 func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
+	t.Parallel()
 	const id = "c8b03190-306c-4120-bb0b-6f2ebfc06ea9"
 	var stored atomic.Bool
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

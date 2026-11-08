@@ -65,6 +65,7 @@ func seedAlbum(t *testing.T) (*dl41, []int64) {
 // 4.14.2: an album row names the artist and album and the tracks it
 // covers, and says where each one is.
 func TestDownloadsViewShowsAlbumTracks(t *testing.T) {
+	t.Parallel()
 	x, ids := seedAlbum(t)
 	var out struct {
 		Downloads []downloads.DownloadRow `json:"downloads"`
@@ -86,6 +87,7 @@ func TestDownloadsViewShowsAlbumTracks(t *testing.T) {
 // 4.14.2: stuck tracks list their track and album download; a choice is
 // made for one track or for every stuck track of the album.
 func TestNeedsDecisionAlbumTracks(t *testing.T) {
+	t.Parallel()
 	x, ids := seedAlbum(t)
 	var out struct {
 		Items []downloads.DecisionView `json:"items"`

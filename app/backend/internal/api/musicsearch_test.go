@@ -28,6 +28,7 @@ import (
 // route: GET /api/v1/settings/search
 // route: PUT /api/v1/settings/search
 func TestAlbumSearchOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, s, lib, _ := musicSetup(t)
 	u := srv.URL + "/api/v1"
 	ctx := context.Background()

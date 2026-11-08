@@ -19,6 +19,7 @@ import (
 // route: DELETE /api/v1/media-servers/{id}
 // route: POST /api/v1/media-servers/{id}/test
 func TestMediaServersOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	jelly := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.Header.Get("Authorization") != fmt.Sprintf(`MediaBrowser Client="HolyArrs", Device="HolyArrs", DeviceId="holyarrs", Version="1", Token=%q`, "tk-1234") ||

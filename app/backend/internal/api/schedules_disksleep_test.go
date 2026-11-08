@@ -9,6 +9,7 @@ import (
 // Disks that sleep: the daily Library rescan can be turned off like the
 // movie details refresh; other schedules still cannot.
 func TestRescanScheduleMayBeTurnedOff(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	b := do(t, "PUT", f.srv.URL+"/api/v1/schedules/rescan_library", `{"enabled":false}`, 200)
 	var off ScheduleView
@@ -36,6 +37,7 @@ func TestRescanScheduleMayBeTurnedOff(t *testing.T) {
 
 // The rescan is on and daily by default.
 func TestRescanScheduleDefaultsOnAndDaily(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	var got schedulesAnswer
 	if err := json.Unmarshal(do(t, "GET", f.srv.URL+"/api/v1/schedules", "", 200), &got); err != nil {
@@ -50,6 +52,7 @@ func TestRescanScheduleDefaultsOnAndDaily(t *testing.T) {
 // The folder check's About line says the write and hardlink test runs at
 // start-up, on Run now and when folders change, not on every timed run.
 func TestFolderCheckAboutSaysWhenTheWriteTestRuns(t *testing.T) {
+	t.Parallel()
 	about := strings.ToLower(scheduleInfos["check_library_folders"].About)
 	for _, want := range []string{"start-up", "run now", "hardlink"} {
 		if !strings.Contains(about, want) {

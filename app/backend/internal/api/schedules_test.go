@@ -32,6 +32,7 @@ func scheduleNamed(t *testing.T, a schedulesAnswer, kind string) ScheduleView {
 // route: POST /api/v1/schedules/{kind}/run
 // route: PUT /api/v1/schedules/{kind}
 func TestSchedules(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	// The periodic loops report their interval and passes.
 	deadline := time.Now().Add(5 * time.Second)
@@ -103,6 +104,7 @@ func TestSchedules(t *testing.T) {
 }
 
 func TestSchedulesInSafeMode(t *testing.T) {
+	t.Parallel()
 	f := newCtlMode(t, false, true)
 	var got schedulesAnswer
 	_ = json.Unmarshal(do(t, "GET", f.srv.URL+"/api/v1/schedules", "", 200), &got)
@@ -114,6 +116,7 @@ func TestSchedulesInSafeMode(t *testing.T) {
 }
 
 func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	ctx := context.Background()
 	future := time.Now().Add(time.Hour)
@@ -165,6 +168,7 @@ func TestMovieRefreshScheduleCanBeTurnedOffAndOn(t *testing.T) {
 }
 
 func TestOnlyMovieRefreshScheduleMayBeDisabled(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	b := do(t, "PUT", f.srv.URL+"/api/v1/schedules/refresh_shows", `{"enabled":false}`, 409)
 	if !strings.Contains(string(b), "only scheduled movie details refresh") {
@@ -175,6 +179,7 @@ func TestOnlyMovieRefreshScheduleMayBeDisabled(t *testing.T) {
 }
 
 func TestSpanWords(t *testing.T) {
+	t.Parallel()
 	for s, want := range map[int64]string{60: "1 minute", 600: "10 minutes", 3600: "1 hour", 7200: "2 hours", 86400: "1 day", 90: "90 seconds"} {
 		if got := span(s); got != want {
 			t.Errorf("span(%d) = %q, want %q", s, got, want)
@@ -184,6 +189,7 @@ func TestSpanWords(t *testing.T) {
 
 // route: GET /api/v1/jobs/active
 func TestActiveJobsOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, _, q := setup(t)
 	// A queued Job far in the future stays queued, so the list can be checked.
 	if _, _, err := q.EnqueueAt(context.Background(), "feed_check", nil, nil, "", domain.Actor{Kind: "user", ID: 1}, time.Now().Add(time.Hour)); err != nil {

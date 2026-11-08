@@ -12,6 +12,7 @@ import (
 )
 
 func TestTorrentLogStateLines(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		prev, cur torrentSnap
 		want      string
@@ -44,6 +45,7 @@ func TestTorrentLogStateLines(t *testing.T) {
 }
 
 func TestTorrentLogTrackerLinesNeverKeepPasskey(t *testing.T) {
+	t.Parallel()
 	first := []Tracker{{URL: "https://t.example:443", Status: "working", Message: ""}}
 	ls, seen := trackerLines(nil, first)
 	if len(ls) != 0 {
@@ -58,6 +60,7 @@ func TestTorrentLogTrackerLinesNeverKeepPasskey(t *testing.T) {
 }
 
 func TestTorrentLogDerivedLines(t *testing.T) {
+	t.Parallel()
 	now := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
 	added, done := now.Add(-15*24*time.Hour), now.Add(-15*24*time.Hour+42*time.Minute)
 	d := &TorrentDetail{AddedAt: &added, DoneAt: &done, SeedingTime: int64(14 * 24 * 3600), Uploaded: 1 << 30, Ratio: .09}
@@ -89,6 +92,7 @@ func TestTorrentLogDerivedLines(t *testing.T) {
 // State changes the reader sees become log lines; old lines prune; tracker
 // lines never keep a passkey.
 func TestTorrentLogRecordsAndPrunes(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -125,6 +129,7 @@ func TestTorrentLogRecordsAndPrunes(t *testing.T) {
 // A remove through HolyArrs and a Downloader delete drop a torrent's
 // tracker memory and rows.
 func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -156,6 +161,7 @@ func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
 
 // Removals match lower-case hashes in batches.
 func TestForgetTorrentsInBatches(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

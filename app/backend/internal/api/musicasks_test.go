@@ -28,6 +28,7 @@ func newMusicAskRig(t *testing.T) *askRig {
 // route: PUT /api/v1/settings/asks
 // route: GET /api/v1/asks/limit
 func TestMusicAskOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 
 	// Bad music asks are refused with the reason.
@@ -146,6 +147,7 @@ func TestMusicAskOverHTTP(t *testing.T) {
 // flight (a third is refused with 429), member lookups wait behind staff
 // at MusicBrainz, and staff lookups are not marked as members'.
 func TestMemberLookupsAreCapped(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	fa := r.asks.Library.Artists.(*fakeArtists)
 	fa.mu.Lock()
@@ -185,6 +187,7 @@ func TestMemberLookupsAreCapped(t *testing.T) {
 // TestArtistLookupListsEveryOpenAsk: with an approved ask and a waiting one
 // for the same artist, the lookup lists both, and ask is the member's own.
 func TestArtistLookupListsEveryOpenAsk(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	first := askOf(t, r.bo.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiLive+`"]}`, 201))
 	r.owner.call("POST", fmt.Sprintf("/api/v1/asks/%d/approve", first.ID), `{}`, 200)
@@ -201,6 +204,7 @@ func TestArtistLookupListsEveryOpenAsk(t *testing.T) {
 
 // Home's "Waiting for approval" shelf shows artist asks with a picture.
 func TestArtistAskListHasPicture(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`"}`, 201)
 	var out struct {

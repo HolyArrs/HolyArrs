@@ -10,6 +10,7 @@ import (
 // after a plain ask and on a movie already in the Library.
 // route: GET /api/v1/titles/lookup
 func TestLookupShowsFourKAsk(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	look := func(s *signedIn) LookupView {
 		t.Helper()

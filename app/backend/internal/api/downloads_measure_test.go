@@ -29,6 +29,7 @@ import (
 //
 //	go test -tags measure -run DownloadsViewRefetchCost -v ./internal/api/
 func TestDownloadsViewRefetchCost(t *testing.T) {
+	t.Parallel()
 	const notice = 2 * time.Second // B-hybrid: at most one "changed" notice per 2 s
 	for _, rows := range []int{100, 500, 2000} {
 		x := seed41(t, mediafiles.SlotDownloading, "downloading")

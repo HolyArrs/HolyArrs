@@ -120,6 +120,7 @@ func generateSpec(t *testing.T) []byte {
 // the code without regenerating (and committing) the spec fails here, and
 // every operation needs a summary and answers.
 func TestOpenAPIGenerated(t *testing.T) {
+	t.Parallel()
 	got := generateSpec(t)
 	if *updateSpec {
 		if err := os.WriteFile("openapi.json", got, 0o644); err != nil {
@@ -151,6 +152,7 @@ func TestOpenAPIGenerated(t *testing.T) {
 
 // route: GET /api/v1/openapi.json
 func TestOpenAPIServed(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	b := do(t, "GET", srv.URL+"/api/v1/openapi.json", "", 200)
 	var doc map[string]any

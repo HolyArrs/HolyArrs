@@ -68,6 +68,7 @@ func callCollection(t *testing.T, fn http.HandlerFunc, method, target, id, body 
 }
 
 func TestCollectionHandlersPreviewAndApply(t *testing.T) {
+	t.Parallel()
 	a, s, cid, titleID := collectionAPI(t)
 	id := itoa(cid)
 	srv := httptest.NewServer(a.Handler())
@@ -96,6 +97,7 @@ func TestCollectionHandlersPreviewAndApply(t *testing.T) {
 }
 
 func TestCollectionHandlerRejectsStaleReview(t *testing.T) {
+	t.Parallel()
 	a, _, cid, titleID := collectionAPI(t)
 	body := `{"title_ids":[` + itoa(titleID) + `],"review_token":"old"}`
 	mux := http.NewServeMux()

@@ -48,6 +48,7 @@ func shelfTitles(t *testing.T, s *database.Store, n int, people []string) {
 
 // route: GET /api/v1/people/shelves
 func TestPeopleShelvesListsSectionsWithEnoughPeople(t *testing.T) {
+	t.Parallel()
 	p := &shelfPeople{fakePeople{Static: metadata.Lab()}}
 	srv, s := peopleRig(t, p)
 	b := string(do(t, "GET", srv.URL+"/api/v1/people/shelves", "", 200))
@@ -70,6 +71,7 @@ func TestPeopleShelvesListsSectionsWithEnoughPeople(t *testing.T) {
 
 // route: GET /api/v1/people/shelves/{id}
 func TestPeopleShelfCountsLibraryTitlesAndLeavesWritersOut(t *testing.T) {
+	t.Parallel()
 	p := &shelfPeople{fakePeople{Static: metadata.Lab()}}
 	srv, s := peopleRig(t, p)
 	shelfTitles(t, s, 6, []string{"Actor 1", "Writer W", "Once Only"})

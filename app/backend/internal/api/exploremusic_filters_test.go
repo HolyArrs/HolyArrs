@@ -3,6 +3,7 @@ package api
 import "testing"
 
 func TestNonStudioTitle(t *testing.T) {
+	t.Parallel()
 	for name, want := range map[string]bool{
 		"Non-Album Demos":             true,
 		"Born to Die Demos":           true,
@@ -23,6 +24,7 @@ func TestNonStudioTitle(t *testing.T) {
 }
 
 func TestNearTasteOK(t *testing.T) {
+	t.Parallel()
 	const seed, inLib = "coldplay", "radiohead"
 	lib := map[string]int{seed: 0, inLib: 1}
 	related := map[string]bool{"chris-martin": true, "young-money": true}

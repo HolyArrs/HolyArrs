@@ -7,6 +7,7 @@ import (
 )
 
 func TestWithoutVideosSkipsPlayed(t *testing.T) {
+	t.Parallel()
 	vids := []metadata.ArtistVideo{{ID: "a"}, {ID: "b"}, {ID: "c"}}
 	got := withoutVideos(vids, []string{"a", " c", ""})
 	if len(got) != 1 || got[0].ID != "b" {

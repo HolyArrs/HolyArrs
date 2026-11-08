@@ -11,6 +11,7 @@ import (
 // route: PUT /api/v1/titles/{id}/versions/{vid}
 // route: DELETE /api/v1/titles/{id}/versions/{vid}
 func TestVersionsAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var hd, uhd FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"HD"}`, t.TempDir()), 201), &hd)

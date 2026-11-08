@@ -13,6 +13,7 @@ import (
 //
 // route: GET /api/v1/library/search
 func TestLibrarySearch(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	err := k.st.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, q := range []struct {

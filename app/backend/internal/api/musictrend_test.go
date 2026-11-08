@@ -20,6 +20,7 @@ import (
 const trendGroup = "21159e3f-172e-43f6-aa7d-8e06a81fea49"
 
 func TestMusicTrendingListsAndPictures(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	var calls atomic.Int32
 	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
@@ -102,6 +103,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 // A trending list's covers come only from the server's stored copies: an
 // album it has not stored is a miss.
 func TestMusicTrendArtServerOnly(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const none = "11111111-1111-4111-8111-111111111111"
 	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
@@ -149,6 +151,7 @@ func TestMusicTrendArtServerOnly(t *testing.T) {
 // A Kid gets no music trending list (it can hold explicit releases) and no
 // picture from one, like /explore/music.
 func TestMusicTrendingKidLimited(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	k.api.s.MusicTrending = func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
 		return metadata.MusicTrend{Kind: kind, Region: region, Source: "listenbrainz", Items: []metadata.MusicTrendItem{{Rank: 1, MBID: trendGroup, Title: "Explicit Record", Artist: "Loud"}}}, nil

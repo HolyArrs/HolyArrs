@@ -149,6 +149,7 @@ func (f *aiFix) toolNames(key string) []string {
 // AI connections are off by default (404), an AI key reaches only the AI
 // route, other keys and sessions never reach it, and only the owner turns it on.
 func TestMCPOffAndScopes(t *testing.T) {
+	t.Parallel()
 	f := newAIFix(t)
 	if st, _ := f.rpc(f.ownKey, "ping", ""); st != 404 {
 		t.Fatalf("off: %d", st)
@@ -191,6 +192,7 @@ func TestMCPOffAndScopes(t *testing.T) {
 }
 
 func TestMCPHandshake(t *testing.T) {
+	t.Parallel()
 	f := newAIFix(t)
 	f.turnOn(true)
 	st, v := f.rpc(f.ownKey, "initialize", `{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"Claude Code","version":"2"}}`)
@@ -225,6 +227,7 @@ func TestMCPHandshake(t *testing.T) {
 
 // Tools follow the parts and the person's permissions.
 func TestMCPToolsFollowPartsAndPerms(t *testing.T) {
+	t.Parallel()
 	f := newAIFix(t)
 	f.turnOn(true)
 	has := func(names []string, n string) bool {
@@ -265,6 +268,7 @@ func TestMCPToolsFollowPartsAndPerms(t *testing.T) {
 // An action takes a confirm token: single use, five minutes, only for
 // the key and person it was given to; the action lands in History.
 func TestMCPConfirmAndHistory(t *testing.T) {
+	t.Parallel()
 	f := newAIFix(t)
 	f.turnOn(true)
 	_, _ = f.rpc(f.memKey, "initialize", `{"protocolVersion":"2026-07-28","clientInfo":{"name":"Claude Desktop"}}`)
@@ -319,6 +323,7 @@ func aiEvents(t *testing.T, s *database.Store) []domain.Event {
 }
 
 func TestMCPRateLimit(t *testing.T) {
+	t.Parallel()
 	f := newAIFix(t)
 	f.turnOn(true)
 	got := 0
@@ -349,6 +354,7 @@ func TestMCPRateLimit(t *testing.T) {
 }
 
 func TestMCPTidy(t *testing.T) {
+	t.Parallel()
 	long := strings.Repeat("a", 400)
 	got := ai.Tidy(map[string]any{"name": "Du​ne\x07", "overview": long, "poster": "x.jpg", "items": make([]any, 40)}, 0).(map[string]any)
 	if got["name"] != "Dune" || got["poster"] != nil || len([]rune(got["overview"].(string))) != ai.TextMax+1 {

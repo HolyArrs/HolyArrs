@@ -38,6 +38,7 @@ func squareJPEG(t *testing.T, px int) []byte {
 // one batch call for the whole row and kept, so a second answer asks
 // nothing; the "pictures" map comes first in the answer.
 func TestMusicAnswerCarriesPictureRecords(t *testing.T) {
+	t.Parallel()
 	var calls atomic.Int32
 	var mu sync.Mutex
 	var asked [][2][]string
@@ -98,6 +99,7 @@ func TestMusicAnswerCarriesPictureRecords(t *testing.T) {
 // asked for 250); a big size not made yet (X-Metadata-Partial) is never
 // kept, and the 500 stands in briefly.
 func TestMusicPictureRouteVersionsSizes(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	var mu sync.Mutex
 	var paths []string
@@ -175,6 +177,7 @@ func TestMusicPictureRouteVersionsSizes(t *testing.T) {
 
 // artSize: covers and photos default to the card size; wide to the hero.
 func TestArtSize(t *testing.T) {
+	t.Parallel()
 	for _, c := range [][3]string{{"album", "", "500"}, {"album", "250", "250"}, {"artist", "1200", "1200"}, {"artist", "999", "500"},
 		{"wide", "", "1920"}, {"wide", "500", "960"}, {"wide", "960", "960"}, {"wide", "250", "1920"}, {"logo", "500", "1200"}} {
 		if got := artSize(c[0], c[1]); got != c[2] {
@@ -186,6 +189,7 @@ func TestArtSize(t *testing.T) {
 // A page's warm asks its records in one batch call, and each warmed item
 // waits for that answer instead of asking for itself.
 func TestWarmAsksRecordsOncePerRow(t *testing.T) {
+	t.Parallel()
 	var calls atomic.Int32
 	a := New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img"})
 	release := make(chan struct{})
@@ -221,6 +225,7 @@ func TestWarmAsksRecordsOncePerRow(t *testing.T) {
 // A music answer carries an ETag; the same answer asked with it is a 304
 // with no body.
 func TestMusicJSONETag(t *testing.T) {
+	t.Parallel()
 	a := New(Server{Version: "test"})
 	w := httptest.NewRecorder()
 	a.writeMusicJSON(w, httptest.NewRequest("GET", "/x", nil), map[string]any{"rows": []int{1, 2, 3}})

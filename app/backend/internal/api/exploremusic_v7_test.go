@@ -292,6 +292,7 @@ func v7Types(rows []MusicRow) map[string]int {
 
 // route: GET /api/v1/explore/music (music_rows_v7 paging)
 func TestExploreMusicV7PagingLarge(t *testing.T) {
+	t.Parallel()
 	r, calls, _ := v7Rig(t, "household_large.json")
 	start := time.Now()
 	pages, raws := v7Pages(t, r.owner, "US")
@@ -348,6 +349,7 @@ func TestExploreMusicV7PagingLarge(t *testing.T) {
 
 // route: GET /api/v1/explore/music (music_rows_v7 cursor)
 func TestExploreMusicV7Cursor(t *testing.T) {
+	t.Parallel()
 	r, _, _ := v7Rig(t, "household_large.json")
 	first, _ := v7Pages(t, r.owner, "US")
 	if first[0].Next == "" {
@@ -390,6 +392,7 @@ func TestExploreMusicV7Cursor(t *testing.T) {
 
 // route: GET /api/v1/explore/music (music_rows_v7 off)
 func TestExploreMusicV7FlagOffSameAsV3(t *testing.T) {
+	t.Parallel()
 	r, _ := v3Rig(t)
 	off := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	r2, _ := v3Rig(t)
@@ -428,6 +431,7 @@ func chipless(t *testing.T, b []byte) string {
 
 // route: GET /api/v1/explore/music (music_rows_v7 seeds)
 func TestExploreMusicV7Seeds(t *testing.T) {
+	t.Parallel()
 	r, _, fx := v7Rig(t, "household_ten.json")
 	byName := map[string]string{}
 	for _, a := range fx.Artists {
@@ -477,6 +481,7 @@ func TestExploreMusicV7Seeds(t *testing.T) {
 
 // route: GET /api/v1/explore/music (music_rows_v7 Turning N)
 func TestExploreMusicV7Anniversary(t *testing.T) {
+	t.Parallel()
 	notes := func(at time.Time) string {
 		r, _, _ := v7Rig(t, "household_large.json")
 		r.api.musicv2.now = func() time.Time { return at }
@@ -504,6 +509,7 @@ func TestExploreMusicV7Anniversary(t *testing.T) {
 
 // route: GET /api/v1/explore/music (music_rows_v7 households)
 func TestExploreMusicV7Households(t *testing.T) {
+	t.Parallel()
 	r, _, _ := v7Rig(t, "household_two_members.json")
 	look := func(who *signedIn) (mixes, because []string, rows []MusicRow) {
 		pages, _ := v7Pages(t, who, "US")

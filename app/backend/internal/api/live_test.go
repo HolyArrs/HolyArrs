@@ -200,6 +200,7 @@ func frames(ch <-chan liveFrame, wait time.Duration) []liveFrame {
 // live and when resuming with ?last=; managers keep receiving everything.
 // route: GET /live
 func TestLiveMembersSeeOnlyTheirOwn(t *testing.T) {
+	t.Parallel()
 	x := setupLive(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -238,6 +239,7 @@ func TestLiveMembersSeeOnlyTheirOwn(t *testing.T) {
 
 // route: POST /api/v1/live/interest
 func TestLiveInterest(t *testing.T) {
+	t.Parallel()
 	x := setupLive(t)
 	now := time.Now()
 	x.sy.Store.Now = func() time.Time { return now }

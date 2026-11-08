@@ -16,6 +16,7 @@ import (
 
 // route: GET /api/v1/titles
 func TestLibraryTitleSearch(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, title := range []mediafiles.Title{

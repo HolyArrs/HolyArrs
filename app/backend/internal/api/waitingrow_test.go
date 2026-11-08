@@ -15,6 +15,7 @@ import (
 // row, not that someone paused it (late-mounts-3). One a person paused
 // keeps the plain paused line.
 func TestPausedRowShowsWaitingReason(t *testing.T) {
+	t.Parallel()
 	reason := "the Downloader can't use the files (missingFiles): is the share mounted?"
 	v := downloads.DownloadViewOf(domain.Download{State: "paused", StateReason: &reason})
 	if !strings.HasPrefix(v.Text, "The Downloader can't use the files") || strings.Contains(v.Text, "Someone paused") {

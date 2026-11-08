@@ -100,6 +100,7 @@ func poolState(t *testing.T, s *database.Store, member int64, sw string) (bool, 
 // pool of that switch stale (debounced 10 minutes); a background rebuild
 // never uses the per-person Explore limit.
 func TestExplorePoolInvalidation(t *testing.T) {
+	t.Parallel()
 	a, s, _ := exploreRig(t)
 	ctx := context.Background()
 	for _, m := range []int64{1, 2} {
@@ -170,6 +171,7 @@ func TestExplorePoolInvalidation(t *testing.T) {
 // Criterion 6: the outside requests of a pool build carry no member id,
 // name, play or ask.
 func TestExplorePoolBuildPrivacy(t *testing.T) {
+	t.Parallel()
 	a, s, f := exploreRig(t)
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -201,6 +203,7 @@ func TestExplorePoolBuildPrivacy(t *testing.T) {
 // Criterion 5 (server side): a Kid's pool keeps only titles their limit
 // allows; unknown ratings stay hidden.
 func TestExploreKidPoolFiltered(t *testing.T) {
+	t.Parallel()
 	a, _, _ := exploreRig(t)
 	ctx := context.Background()
 	for i := 1000; i < 1900; i++ {
@@ -239,6 +242,7 @@ func TestExploreKidPoolFiltered(t *testing.T) {
 // The head answers in one request from the stored pool, and a missing
 // pool answers cold-start rows at once and queues a build.
 func TestExploreHeadAndTail(t *testing.T) {
+	t.Parallel()
 	a, _, _ := exploreRig(t)
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()
@@ -317,6 +321,7 @@ func TestExploreHeadAndTail(t *testing.T) {
 // Finish the collection (Movies): the released parts of a TMDB collection
 // the Library has some of, never the owned or unreleased ones.
 func TestExploreFinishCollection(t *testing.T) {
+	t.Parallel()
 	a, s, f := exploreRig(t)
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -368,6 +373,7 @@ func TestExploreFinishCollection(t *testing.T) {
 // route: POST /api/v1/explore/counts
 // Counts accept an open or ask from a known row type and refuse anything else.
 func TestExploreCountsRoute(t *testing.T) {
+	t.Parallel()
 	a, _, _ := exploreRig(t)
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()

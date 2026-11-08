@@ -13,6 +13,7 @@ import (
 // "Count this install" is on by default, round-trips through
 // /settings/ui and is passed on to the metadata server's requests.
 func TestCountInstallSetting(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	var told []bool
 	a.s.CountryCount = func(on bool) { told = append(told, on) }

@@ -16,6 +16,7 @@ import (
 // route: PUT /api/v1/my/plex-watchlist
 // route: POST /api/v1/my/plex-watchlist/check
 func TestPlexWatchlistOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	ctx := context.Background()
 	plex := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

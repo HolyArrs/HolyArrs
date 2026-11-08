@@ -5,6 +5,7 @@ import "testing"
 // An unpack that falls short (#54) is a stuck import on the Needs a decision
 // card, not "ran out of Releases".
 func TestWhyCountsUnpackReasonsAsAStuckImport(t *testing.T) {
+	t.Parallel()
 	for _, r := range []string{
 		"Packed in password-protected archive files; they cannot be unpacked",
 		"The archive files look damaged or incomplete, so they could not be unpacked",

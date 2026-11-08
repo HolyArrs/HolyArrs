@@ -133,6 +133,7 @@ func prowlarrGolden(t *testing.T, name string, v any, feed string) {
 
 // The whole sync for each side, in Prowlarr's order.
 func TestOldAppProwlarrFlow(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	feed := newProwlarrFeed(t)
@@ -265,6 +266,7 @@ func TestOldAppProwlarrFlow(t *testing.T) {
 // save unless Prowlarr forces it, and the key's maker must be allowed to
 // change Sources.
 func TestOldAppProwlarrRules(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	feed := newProwlarrFeed(t)

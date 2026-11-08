@@ -60,6 +60,7 @@ func controlSeed(t *testing.T) (*dl41, *fakeClient) {
 // route: POST /api/v1/downloads/{id}/recheck
 // route: POST /api/v1/downloads/{id}/reannounce
 func TestDownloadItemControls(t *testing.T) {
+	t.Parallel()
 	x, f := controlSeed(t)
 	base := x.srv.URL + "/api/v1/downloads/" + itoa(x.dlID)
 	for _, act := range []string{"pause", "resume", "top", "recheck", "reannounce"} {
@@ -77,6 +78,7 @@ func TestDownloadItemControls(t *testing.T) {
 
 // route: GET /api/v1/downloads/{id}/swarm
 func TestDownloadSwarm(t *testing.T) {
+	t.Parallel()
 	x, _ := controlSeed(t)
 	var out struct {
 		Trackers []map[string]any `json:"trackers"`
@@ -93,6 +95,7 @@ func TestDownloadSwarm(t *testing.T) {
 // route: POST /api/v1/downloads/resume-all
 // route: PUT /api/v1/downloaders/{id}/speed-limit
 func TestDownloadClientsAndAll(t *testing.T) {
+	t.Parallel()
 	x, f := controlSeed(t)
 	var out struct {
 		Clients []downloads.ClientView `json:"clients"`
@@ -120,6 +123,7 @@ func TestDownloadClientsAndAll(t *testing.T) {
 // route: GET /api/v1/downloads/{id}/files
 // route: PUT /api/v1/downloads/{id}/files
 func TestDownloadDetailAndFiles(t *testing.T) {
+	t.Parallel()
 	x, f := controlSeed(t)
 	base := x.srv.URL + "/api/v1/downloads/" + itoa(x.dlID)
 	var d downloads.DownloadDetailView

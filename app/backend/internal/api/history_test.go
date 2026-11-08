@@ -18,6 +18,7 @@ import (
 
 // route: GET /api/v1/events
 func TestEventsFilters(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	ctx := context.Background()
 	ti := addTitleFor(t, s, "Arrival")
@@ -75,6 +76,7 @@ func TestEventsFilters(t *testing.T) {
 // by the program (not only by tests). The behaviour of each kind is tested
 // in its own package; this keeps a step from silently losing its row.
 func TestEveryLoopStepLeavesAnEvent(t *testing.T) {
+	t.Parallel()
 	steps := map[string][]string{
 		"add":      {"domain.EventTitleAdded", "domain.EventAdopted"},
 		"search":   {"EventSearchDone", "EventSearchFailed"},

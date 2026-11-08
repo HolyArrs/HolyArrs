@@ -69,6 +69,7 @@ func searchWorld(t *testing.T) (srvURL string, s *database.Store, q *jobs.Queue,
 // route: POST /api/v1/releases/{id}/choose
 // route: POST /api/v1/releases/{id}/turn-down
 func TestReleasesListChooseAndForce(t *testing.T) {
+	t.Parallel()
 	u, s, q, titleID, slotID, rels := searchWorld(t)
 	grabs := make(chan int64, 4)
 	q.Handle(downloads.KindGrab, func(_ context.Context, r *jobs.Run) error { grabs <- r.Job.Subject.ID; return nil })
@@ -148,6 +149,7 @@ func TestReleasesListChooseAndForce(t *testing.T) {
 // route: DELETE /api/v1/turned-down/{id}
 // route: DELETE /api/v1/turned-down
 func TestHeldAndTurnedDownLists(t *testing.T) {
+	t.Parallel()
 	u, s, _, _, slotID, rels := searchWorld(t)
 	ctx := context.Background()
 	until := database.FormatTime(time.Now().Add(time.Hour))
@@ -208,6 +210,7 @@ func TestHeldAndTurnedDownLists(t *testing.T) {
 // route: POST /api/v1/search/better
 // route: POST /api/v1/search/feed-check
 func TestBulkSearchesQueueJobs(t *testing.T) {
+	t.Parallel()
 	u, s, _, titleID, slotID, _ := searchWorld(t)
 	// A search that only shows, for one Slot.
 	var shown struct {
@@ -247,6 +250,7 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 // route: GET /api/v1/settings/search
 // route: PUT /api/v1/settings/search
 func TestSearchSettings(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	var st sources.SearchSettings
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/settings/search", "", 200), &st)
@@ -298,6 +302,7 @@ func TestSearchSettings(t *testing.T) {
 
 // route: GET /api/v1/searches
 func TestSearchesRunningAndFound(t *testing.T) {
+	t.Parallel()
 	u, s, _, titleID, slotID, rels := searchWorld(t)
 	note := "searching Lab"
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -344,6 +349,7 @@ func TestSearchesRunningAndFound(t *testing.T) {
 // A Release from the newest search of a Slot that matched no Title is still
 // listed, so a person sees why it was turned away.
 func TestTitleReleasesListsUnmatched(t *testing.T) {
+	t.Parallel()
 	u, s, _, titleID, slotID, _ := searchWorld(t)
 	var unmatched int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -378,6 +384,7 @@ func TestTitleReleasesListsUnmatched(t *testing.T) {
 // M3: a hand search is its own Job even while a bulk search for the same
 // Slot is waiting; M4: choosing for a Slot that needs a decision is 409.
 func TestHandSearchNotDedupedByBulk(t *testing.T) {
+	t.Parallel()
 	u, s, _, titleID, slotID, rels := searchWorld(t)
 	var bulkID int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {

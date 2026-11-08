@@ -30,6 +30,7 @@ type reportList struct {
 }
 
 func TestReportsOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	ctx := context.Background()
 	f, v, _ := apiMovieCopy(t, r.st, false)

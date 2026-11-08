@@ -24,6 +24,7 @@ func (t toServer) RoundTrip(r *http.Request) (*http.Response, error) {
 
 // route: GET /api/v1/artwork/tmdb/{size}/{file}
 func TestTMDBArtworkFetchesOnceAndCaches(t *testing.T) {
+	t.Parallel()
 	var hits atomic.Int32
 	var asked string
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

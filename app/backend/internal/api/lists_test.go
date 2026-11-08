@@ -75,6 +75,7 @@ func listSetup(t *testing.T) (*httptest.Server, *database.Store) {
 // route: GET /api/v1/settings/trakt-key
 // route: PUT /api/v1/settings/trakt-key
 func TestOutsideListsAPI(t *testing.T) {
+	t.Parallel()
 	srv, s := listSetup(t)
 	ctx := context.Background()
 	movies := filepath.Join(t.TempDir(), "movies")

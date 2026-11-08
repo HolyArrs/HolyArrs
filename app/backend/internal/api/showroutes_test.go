@@ -115,6 +115,7 @@ type addedShow struct {
 // route: GET /api/v1/titles/{id}/episodes
 // route: PUT /api/v1/episodes/{id}
 func TestShowsAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 
@@ -190,6 +191,7 @@ func TestShowsAPI(t *testing.T) {
 // the API: the order is kept and the episodes carry what each order needs
 // (season and episode, the air day, the absolute number).
 func TestAddShowPerEpisodeOrder(t *testing.T) {
+	t.Parallel()
 	for _, order := range []string{"aired", "daily", "absolute"} {
 		t.Run(order, func(t *testing.T) {
 			srv, _, _, _ := showSetup(t)
@@ -221,6 +223,7 @@ func TestAddShowPerEpisodeOrder(t *testing.T) {
 // route: GET /api/v1/settings/shows
 // route: PUT /api/v1/settings/shows
 func TestShowSettingsAndEditAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 	var d library.ShowDefaults

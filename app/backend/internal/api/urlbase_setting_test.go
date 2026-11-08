@@ -14,6 +14,7 @@ import (
 // A base saved in Settings is cleaned, refused when it is not a plain path,
 // and waits for a restart; startup reads it back.
 func TestURLBaseSetting(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	u := srv.URL + "/api/v1/settings/url-base"
 	if b := string(do(t, "GET", u, "", 200)); !strings.Contains(b, `"saved":""`) || !strings.Contains(b, `"restart_needed":false`) {

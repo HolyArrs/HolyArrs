@@ -41,6 +41,7 @@ func risingRig(t *testing.T, ranks bool) *askRig {
 
 // route: GET /api/v1/explore/music (music_rows_v6 Rising)
 func TestExploreMusicV6Rising(t *testing.T) {
+	t.Parallel()
 	read := func(r *askRig) musicRowsAnswer {
 		var m musicRowsAnswer
 		if err := json.Unmarshal(r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200), &m); err != nil {

@@ -26,6 +26,7 @@ func pngHeader(w, h uint32) []byte {
 }
 
 func TestDecodeBackdropRefusesHugeClaimedSize(t *testing.T) {
+	t.Parallel()
 	_, err := decodeBackdrop(bytes.NewReader(pngHeader(60000, 60000)))
 	if !errors.Is(err, errBackdropTooLarge) {
 		t.Fatalf("want errBackdropTooLarge, got %v", err)
@@ -33,6 +34,7 @@ func TestDecodeBackdropRefusesHugeClaimedSize(t *testing.T) {
 }
 
 func TestDecodeBackdropReadsNormalPicture(t *testing.T) {
+	t.Parallel()
 	var b bytes.Buffer
 	if err := jpeg.Encode(&b, image.NewRGBA(image.Rect(0, 0, 64, 36)), nil); err != nil {
 		t.Fatal(err)

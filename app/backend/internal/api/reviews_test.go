@@ -38,6 +38,7 @@ type reviewsView struct {
 // route: GET /api/v1/settings/trakt-token
 // route: PUT /api/v1/settings/trakt-token
 func TestMetadataReviews(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	s, err := database.Open(dir, database.Options{})
 	if err != nil {
@@ -135,6 +136,7 @@ func TestMetadataReviews(t *testing.T) {
 
 // A Kid keeps the score but gets no reviews; a title above the limit is 403.
 func TestKidReviewsHidden(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	code, body := k.kai.get("/api/v1/metadata/movie/4101/reviews")
 	var g reviewsView

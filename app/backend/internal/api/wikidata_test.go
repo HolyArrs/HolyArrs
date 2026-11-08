@@ -12,6 +12,7 @@ import (
 )
 
 func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
+	t.Parallel()
 	asked := 0
 	srv := httptest.NewServer(New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img",
 		WikiTitle: func(_ context.Context, kind, id string) (metadata.WikiEntity, error) {
@@ -61,6 +62,7 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 // The Award winners collection keeps only titles on the server's
 // award-winner list, from lists spread over the decades.
 func TestAwardWinnersCollection(t *testing.T) {
+	t.Parallel()
 	a, _, f := exploreRig(t)
 	a.s.AwardWinners = func(_ context.Context, kind string) ([]metadata.AwardWinner, error) {
 		var out []metadata.AwardWinner

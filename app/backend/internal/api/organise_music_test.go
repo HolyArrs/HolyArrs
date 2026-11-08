@@ -72,6 +72,7 @@ func musicOrganiseSetup(t *testing.T) (url string, s *database.Store, lib string
 // tracks are renamed by the music patterns, per album; a track and an
 // album are deleted; the album's History and the Calendar list it.
 func TestMusicOrganiseAPI(t *testing.T) {
+	t.Parallel()
 	url, s, lib, folderID := musicOrganiseSetup(t)
 	u := url + "/api/v1"
 	var q struct {
@@ -205,6 +206,7 @@ func TestMusicOrganiseAPI(t *testing.T) {
 // 4.15.1: the naming settings carry the music patterns and examples; a bad
 // music pattern is refused with the reason.
 func TestMusicNamingAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _ := musicOrganiseSetup(t)
 	u := url + "/api/v1"
 	var v struct {

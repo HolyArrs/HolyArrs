@@ -10,6 +10,7 @@ import (
 // The picture cache is 5 GB unless Settings chose another size; a choice
 // outside 1, 2, 5, 10 and 20 GB is refused.
 func TestArtworkCacheSizeSetting(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	if gb := a.uiSettings(context.Background()).ArtworkCacheGB; gb != 5 {
 		t.Fatalf("default %d GB, want 5", gb)

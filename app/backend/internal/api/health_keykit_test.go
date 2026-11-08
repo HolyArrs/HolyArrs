@@ -12,6 +12,7 @@ import (
 // Only the owner can download the key kit, so only the owner is told to;
 // others with Settings rights read that the owner should do it.
 func TestKeyKitWarningNamesTheOwner(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
 		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
@@ -44,6 +45,7 @@ func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 // Settings home reads the same warning from a cache shared by everyone, so
 // it is reworded per caller after the cache, without changing the cache.
 func TestKeyKitStatusNamesTheOwner(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
 		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)

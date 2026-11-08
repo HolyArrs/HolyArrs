@@ -9,6 +9,7 @@ import (
 )
 
 func TestGapOfPassesQueueWordsThrough(t *testing.T) {
+	t.Parallel()
 	err := fmt.Errorf("x: %w", &metadata.PendingError{State: "queued", Position: 3, Message: "Queued, number 3 in line"})
 	g := gapOf(err)
 	if g == nil || g.State != "queued" || g.Position != 3 || g.Message != "Queued, number 3 in line" {

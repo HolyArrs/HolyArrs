@@ -26,6 +26,7 @@ func newShowAskRig(t *testing.T) *askRig {
 // route: GET /api/v1/shows/lookup
 // route: PUT /api/v1/settings/asks
 func TestShowAskOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newShowAskRig(t)
 
 	// Bad show asks are refused with the reason.
@@ -108,6 +109,7 @@ func TestShowAskOverHTTP(t *testing.T) {
 
 // route: POST /api/v1/asks
 func TestShowAskFutureOnlyOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newShowAskRig(t)
 	// Future seasons only takes no seasons list.
 	r.ana.call("POST", "/api/v1/asks", `{"kind":"show","id":"tmdb:100","seasons":[1],"future_only":true}`, 400)

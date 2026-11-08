@@ -68,6 +68,7 @@ func readLibrarySummary(t *testing.T, base string) struct {
 }
 
 func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	addSummaryTitle(t, f.s, "movie", "Missing Movie", mediafiles.SlotWanted)
 	addSummaryTitle(t, f.s, "show", "Visible Show", "")
@@ -92,6 +93,7 @@ func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
 }
 
 func TestLibrarySummaryKeepsAllKindsVisibleInSafeMode(t *testing.T) {
+	t.Parallel()
 	f := newCtlMode(t, false, true)
 	addSummaryTitle(t, f.s, "movie", "Safe Movie", mediafiles.SlotSearching)
 	addSummaryTitle(t, f.s, "show", "Safe Show", "")
@@ -104,6 +106,7 @@ func TestLibrarySummaryKeepsAllKindsVisibleInSafeMode(t *testing.T) {
 }
 
 func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	var pickRulesID int64
 	folder := mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Scale movies", Health: "ok", SameDiskAs: []int64{}}
@@ -179,6 +182,7 @@ func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 }
 
 func TestLibrarySummaryAuthAndReadScope(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	addSummaryTitle(t, r.st, "show", "Member Show", "")
 	do(t, http.MethodGet, r.srv.URL+"/api/v1/library-summary", "", http.StatusUnauthorized)

@@ -18,6 +18,7 @@ import (
 
 // route: POST /api/v1/sources/check
 func TestCheckAllSources(t *testing.T) {
+	t.Parallel()
 	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

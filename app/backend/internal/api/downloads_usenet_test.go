@@ -85,6 +85,7 @@ func addSab(t *testing.T, st *database.Store, url string) int64 {
 // Retry and remove need the settings permission. A retried job's log and
 // link follow it to its new id.
 func TestUsenetItemRetryAndTabs(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	f := &usenetFake{}
 	did := addSab(t, r.st, f.server(t))
@@ -153,6 +154,7 @@ func TestUsenetItemRetryAndTabs(t *testing.T) {
 // A job HolyArrs sent is not retried here (its failure path searched again
 // already), and its tabs read through the download.
 func TestUsenetOwnDownload(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &usenetFake{}
 	exec41(t, x.s, "UPDATE downloaders SET adapter = 'sabnzbd', protocol = 'usenet', url = ?", f.server(t))

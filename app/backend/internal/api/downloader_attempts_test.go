@@ -24,6 +24,7 @@ import (
 )
 
 func TestDownloaderAttemptRoutePolicy(t *testing.T) {
+	t.Parallel()
 	patterns := []string{
 		"GET /api/v1/downloaders/{id}/attempts",
 		"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon",
@@ -51,6 +52,7 @@ func TestDownloaderAttemptRoutePolicy(t *testing.T) {
 }
 
 func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	s, err := database.Open(dir, database.Options{})
 	if err != nil {
@@ -105,6 +107,7 @@ func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 // route: GET /api/v1/downloaders/{id}/attempts
 // route: POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon
 func TestDownloaderAttemptRoutesRedactAndAbandon(t *testing.T) {
+	t.Parallel()
 	srv, s := dlServer(t)
 	var downloaderID, otherDownloaderID, attemptID int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {

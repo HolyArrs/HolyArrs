@@ -52,6 +52,7 @@ func readBody(key, url string) string {
 // route: GET /api/v1/migrate/snapshots/{id}
 // route: DELETE /api/v1/migrate/snapshots/{id}
 func TestMigrateRoutes(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	key := "typed-radarr-key"
 	u := fakeRadarr(t, key)
@@ -105,6 +106,7 @@ func TestMigrateRoutes(t *testing.T) {
 // TestMigratePermissions: the move routes are for the owner and admins,
 // with a password sign-in and, for keys, the admin scope.
 func TestMigratePermissions(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	key := "typed-radarr-key"
 	u := fakeRadarr(t, key)

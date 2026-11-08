@@ -57,6 +57,7 @@ func folder(t *testing.T, base, kind string) FolderView {
 // route: GET /api/v1/settings/title-defaults
 // route: PUT /api/v1/settings/title-defaults
 func TestTitleDefaultsBuiltIn(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var d titleDefaultsAnswer
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/settings/title-defaults", "", 200), &d)
@@ -67,6 +68,7 @@ func TestTitleDefaultsBuiltIn(t *testing.T) {
 }
 
 func TestTitleDefaultsSaveAndValidate(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	movies := folder(t, srv.URL, "movie")
 	shows := folder(t, srv.URL, "show")
@@ -90,6 +92,7 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 }
 
 func TestAddWithoutSavedDefaultsKeepsOldBehaviour(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	first := folder(t, srv.URL, "movie")
 	folder(t, srv.URL, "movie")
@@ -100,6 +103,7 @@ func TestAddWithoutSavedDefaultsKeepsOldBehaviour(t *testing.T) {
 }
 
 func TestAddUsesSavedMovieDefaults(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	folder(t, srv.URL, "movie")
 	second := folder(t, srv.URL, "movie")
@@ -114,6 +118,7 @@ func TestAddUsesSavedMovieDefaults(t *testing.T) {
 }
 
 func TestRequestFieldsBeatDefaults(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	first := folder(t, srv.URL, "movie")
 	second := folder(t, srv.URL, "movie")
@@ -129,6 +134,7 @@ func TestRequestFieldsBeatDefaults(t *testing.T) {
 }
 
 func TestTitleDefaultsIgnoreAGoneFolder(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	first := folder(t, srv.URL, "movie")
 	second := folder(t, srv.URL, "movie")
@@ -143,6 +149,7 @@ func TestTitleDefaultsIgnoreAGoneFolder(t *testing.T) {
 }
 
 func TestAddShowUsesSavedShowDefaults(t *testing.T) {
+	t.Parallel()
 	// Asked for in the request, without saved defaults.
 	srv1, st1, _, _ := showSetup(t)
 	var a addAnswer
@@ -169,6 +176,7 @@ func TestAddShowUsesSavedShowDefaults(t *testing.T) {
 }
 
 func TestShowAddWithoutSearchOnAdd(t *testing.T) {
+	t.Parallel()
 	srv, st, _, _ := showSetup(t)
 	var a addAnswer
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/shows", `{"id":"tmdb:100"}`, 201), &a)
@@ -181,6 +189,7 @@ func TestShowAddWithoutSearchOnAdd(t *testing.T) {
 // marks no movie key saved, so a movie added without search_on_add still
 // gets no search, as before anything was saved.
 func TestSavingShowDefaultsLeavesMovieUnsaved(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	folder(t, srv.URL, "movie")
 	do(t, "PUT", srv.URL+"/api/v1/settings/title-defaults", `{"show":{"keep_up_to_date":false}}`, 200)

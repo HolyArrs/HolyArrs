@@ -102,6 +102,7 @@ func v3Rig(t *testing.T) (*askRig, *int) {
 
 // route: GET /api/v1/explore/music (music_rows_v3)
 func TestExploreMusicV3Household(t *testing.T) {
+	t.Parallel()
 	r, calls := v3Rig(t)
 	first := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	if string(r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)) != string(first) {
@@ -176,6 +177,7 @@ func TestExploreMusicV3Household(t *testing.T) {
 }
 
 func TestExploreMusicV3FlagOff(t *testing.T) {
+	t.Parallel()
 	// v3 off: the Phase 1 rows only, and no artist batches read.
 	r, calls := v3Rig(t)
 	r.api.s.MusicRowsV3 = false
@@ -193,6 +195,7 @@ func TestExploreMusicV3FlagOff(t *testing.T) {
 }
 
 func TestExploreMusicV3Since(t *testing.T) {
+	t.Parallel()
 	// Yesterday's seeds are not seeded again today.
 	r, _ := v3Rig(t)
 	var today musicRowsAnswer
@@ -219,6 +222,7 @@ func TestExploreMusicV3Since(t *testing.T) {
 // TestExploreMusicV3Cost is the cost metric: layer 2 for 50 members, layer
 // 1 warm, in at most 2 s.
 func TestExploreMusicV3Cost(t *testing.T) {
+	t.Parallel()
 	r, _ := v3Rig(t)
 	r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200) // warms layer 1
 	ctx := context.Background()

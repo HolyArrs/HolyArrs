@@ -14,6 +14,7 @@ import (
 // the details go to the vault, never back out, and the test says in plain
 // words whether the site took them.
 func TestSubtitleSiteAccountAndTest(t *testing.T) {
+	t.Parallel()
 	srv, s := dlServer(t)
 	u := srv.URL + "/api/v1"
 	site := fakesite.Lab()
@@ -96,6 +97,7 @@ func TestSubtitleSiteAccountAndTest(t *testing.T) {
 // The missing list narrows to one movie or show and names them for the
 // filter; Search all says which Jobs to follow; sync defaults are settings.
 func TestSubtitleMissingFiltersAndJobs(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	u := srv.URL + "/api/v1"
 	titleID, fileID, _ := subtitleMovie(t, s)

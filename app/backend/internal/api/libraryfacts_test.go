@@ -14,6 +14,7 @@ import (
 
 // The Library table reads size on disk and the last aired episode.
 func TestLibraryFacts(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -68,6 +69,7 @@ func TestLibraryFacts(t *testing.T) {
 // The extras answer carries the server's wide banner for the Library rows,
 // as an artwork cache link.
 func TestExtrasBanner(t *testing.T) {
+	t.Parallel()
 	a := New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img", ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
 		return metadata.ServerArt{Banner: "https://api.example.test/v1/img/title-banner/tv-1/1000.webp"}, nil
 	}})

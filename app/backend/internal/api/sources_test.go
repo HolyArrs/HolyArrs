@@ -44,6 +44,7 @@ func sourceServer(t *testing.T) (*httptest.Server, *secrets.Vault) {
 // route: POST /api/v1/sources/{id}/resume
 // route: GET /api/v1/sources/{id}/stats
 func TestSourcesAddTestPauseDelete(t *testing.T) {
+	t.Parallel()
 	srv, _ := sourceServer(t)
 	key := "fake-indexer-key"
 	idx := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -134,6 +135,7 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 }
 
 func TestSourceRSSKeepsPasskeyHidden(t *testing.T) {
+	t.Parallel()
 	srv, _ := sourceServer(t)
 	b := string(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Feed","format":"rss","url":"https://feed.example/rss?passkey=hidden-pk"}`, 201))
 	if strings.Contains(b, "hidden-pk") || !strings.Contains(b, `"url":"https://feed.example/rss"`) || !strings.Contains(b, secrets.Masked) {

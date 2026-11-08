@@ -9,6 +9,7 @@ import (
 // A good read with a typed key keeps it for "Read again" (owner only);
 // a read with the saved key keeps it too; forgetting the read forgets it.
 func TestMoveKeyKeptUntilMoved(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	key := "typed-kept-radarr-key"
 	u := fakeRadarr(t, key)

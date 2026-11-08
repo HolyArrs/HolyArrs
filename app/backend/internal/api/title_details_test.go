@@ -47,6 +47,7 @@ func detailsRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.
 }
 
 func TestTitleViewCarriesDetailsOnAdd(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := detailsRig(t, &metadata.Static{Movies: []metadata.Movie{detailedMovie()}})
 	var resp struct {
 		Title TitleView `json:"title"`
@@ -67,6 +68,7 @@ func TestTitleViewCarriesDetailsOnAdd(t *testing.T) {
 }
 
 func TestTitleDetailsBackfilledOnRefresh(t *testing.T) {
+	t.Parallel()
 	bare := detailedMovie()
 	bare.Backdrop, bare.Logo, bare.Genres, bare.Rating, bare.People, bare.Runtime = "", "", nil, "", nil, 0
 	p := &metadata.Static{Movies: []metadata.Movie{bare}}

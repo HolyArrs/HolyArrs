@@ -13,6 +13,7 @@ import (
 // Audit Events are left out of History, its count and its kind filters for
 // people without users or settings rights and for read-scope keys.
 func TestAuditEventsHiddenFromHistoryReaders(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	ctx := context.Background()
 	for _, k := range []string{"signed_in", "sign_in_failed", "settings_changed", "secrets_imported", "import_done"} {

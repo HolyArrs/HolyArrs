@@ -29,6 +29,7 @@ type calendarFollowAnswer struct {
 // title and who else does, and the answer says how many titles the viewer
 // follows and how many people use the server.
 func TestCalendarSaysWhoFollows(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	folder(t, srv.URL, "movie")
 	a := addMovie(t, srv.URL, `{"id":"tmdb:900001"}`)

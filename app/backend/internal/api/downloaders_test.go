@@ -69,6 +69,7 @@ func fakeSAB(t *testing.T, key string) *httptest.Server {
 // route: POST /api/v1/downloaders/{id}/pause
 // route: POST /api/v1/downloaders/{id}/resume
 func TestDownloadersAddTestPauseDelete(t *testing.T) {
+	t.Parallel()
 	srv, s := dlServer(t)
 	key := "0123456789abcdef0123456789abcdef"
 	sab := fakeSAB(t, key)
@@ -141,6 +142,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 }
 
 func TestDownloaderOnTheLocalNetworkNeedsTheSwitch(t *testing.T) {
+	t.Parallel()
 	srv, _ := dlServer(t)
 	key := "0123456789abcdef0123456789abcdef"
 	sab := fakeSAB(t, key)
@@ -164,6 +166,7 @@ type fakeQbitAPI struct {
 
 // route: POST /api/v1/downloads/{id}/mark-failed
 func TestMarkFailedRoute(t *testing.T) {
+	t.Parallel()
 	srv, s := dlServer(t)
 	f := &fakeQbitAPI{}
 	qb := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -258,6 +261,7 @@ func TestMarkFailedRoute(t *testing.T) {
 // route: GET /api/v1/settings/downloaders
 // route: PUT /api/v1/settings/downloaders
 func TestDownloaderSettings(t *testing.T) {
+	t.Parallel()
 	srv, _ := dlServer(t)
 	var st downloads.DownloaderSettings
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/settings/downloaders", "", 200), &st)

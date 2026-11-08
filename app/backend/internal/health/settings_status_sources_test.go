@@ -7,6 +7,7 @@ import (
 )
 
 func TestSettingsStatusSourceWarnings(t *testing.T) {
+	t.Parallel()
 	a := SettingsStatus(StatusInput{Sources: []NamedState{{"Down", "unreachable"}, {"Slow", "rate_limited"}, {"Lan", "blocked"}, {"Guarded", "bot_check"}, {"Banned", "site_ban"}, {"Off", "disabled"}, {"Ok", "working"}},
 		SourcesNear: []string{"The Source Ok is close to its search limit (8 of 10)"}, Now: time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)})
 	want := []StatusItem{

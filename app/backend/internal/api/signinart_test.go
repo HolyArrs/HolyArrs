@@ -88,6 +88,7 @@ func getSigninArt(t *testing.T, a *API, addr string) (*httptest.ResponseRecorder
 // By default the art is trending titles (no rating check, mature titles
 // included), at least 12 shots, and the answer holds picture addresses only.
 func TestSigninArtTrendingDefault(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, [][2]string{{"movie", "R"}, {"show", "TV-MA"}, {"movie", ""}})
 	w, shots := getSigninArt(t, a, "10.0.0.1")
 	if w.Code != 200 {
@@ -120,6 +121,7 @@ func TestSigninArtTrendingDefault(t *testing.T) {
 // With Library art on, Library titles (any rating) come first, topped up
 // with trending titles.
 func TestSigninArtLibraryOn(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, [][2]string{{"movie", "R"}, {"show", "TV-MA"}})
 	put := httptest.NewRequest("PUT", "/api/v1/settings/ui", strings.NewReader(`{"signin_library_art": true}`))
 	pw := httptest.NewRecorder()
@@ -141,6 +143,7 @@ func TestSigninArtLibraryOn(t *testing.T) {
 
 // The setting defaults to off.
 func TestSigninArtDefaultOff(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	if a.uiSettings(context.Background()).SigninLibraryArt {
 		t.Fatal("Library art should default to off")
@@ -149,6 +152,7 @@ func TestSigninArtDefaultOff(t *testing.T) {
 
 // The answer is cached; each address gets a budget a minute.
 func TestSigninArtCacheAndRateLimit(t *testing.T) {
+	t.Parallel()
 	a, calls := signinRig(t, nil)
 	now := time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)
 	a.signin.now = func() time.Time { return now }
@@ -175,6 +179,7 @@ func TestSigninArtCacheAndRateLimit(t *testing.T) {
 
 // A title qualifies only with a textless backdrop at least 1920 wide and a PNG logo.
 func TestPickSigninShot(t *testing.T) {
+	t.Parallel()
 	en := "en"
 	b := metadata.ImageBase + "/w780/"
 	logo := []metadata.CardImage{{Path: metadata.ImageBase + "/w500/l.png", Lang: &en}}

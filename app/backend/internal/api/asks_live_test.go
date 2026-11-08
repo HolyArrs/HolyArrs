@@ -13,6 +13,7 @@ import (
 // The asker's own live copy carries no also_declined and no sign-in name of
 // the decider.
 func TestAlsoDeclinedLiveForApproversOnly(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	first := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	r.owner.call("POST", "/api/v1/asks/"+itoa(first.ID)+"/turn-down", `{}`, 200)

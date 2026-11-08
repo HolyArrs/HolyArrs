@@ -16,6 +16,7 @@ import (
 //
 // route: GET /api/v1/search
 func TestPlainSearch(t *testing.T) {
+	t.Parallel()
 	setUp := func(k *kidRig) {
 		t.Helper()
 		err := k.st.Write(context.Background(), func(tx *sql.Tx) error {

@@ -71,6 +71,7 @@ func (m musicRowsAnswer) row(id string) *MusicRow {
 }
 
 func TestExploreMusicRows(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	now := time.Now().UTC()
 	day := func(d int) string { return database.FormatTime(now.AddDate(0, 0, d).Truncate(24 * time.Hour)) }
@@ -262,6 +263,7 @@ func TestExploreMusicRows(t *testing.T) {
 }
 
 func TestExploreMusicColdStart(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
 		l := metadata.MusicTrend{Kind: kind, Region: region, Source: "deezer"}

@@ -22,6 +22,7 @@ func (c *countingDB) QueryContext(ctx context.Context, q string, args ...any) (*
 // 4.8.11 review: a page of History rows is named with one query per kind
 // of row (titles, Slots, Items, Versions), however many rows it has.
 func TestEventPageQueriesDoNotGrowWithRows(t *testing.T) {
+	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	var add struct {
 		Title TitleView `json:"title"`

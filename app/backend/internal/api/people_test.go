@@ -103,6 +103,7 @@ func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.S
 }
 
 func TestPeopleSearchDisambiguatesAndProviderFailure(t *testing.T) {
+	t.Parallel()
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, _ := peopleRig(t, p)
 	b := string(do(t, "GET", srv.URL+"/api/v1/people/search?q=alex&page=2", "", 200))
@@ -121,6 +122,7 @@ func TestPeopleSearchDisambiguatesAndProviderFailure(t *testing.T) {
 }
 
 func TestPersonFilmographyJoinsOwnedNeverAddAndAskWithStablePages(t *testing.T) {
+	t.Parallel()
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, s := peopleRig(t, p)
 	year := 2025
@@ -173,6 +175,7 @@ func TestPersonFilmographyJoinsOwnedNeverAddAndAskWithStablePages(t *testing.T) 
 }
 
 func TestMoviePeopleUsesStoredTMDBIdentity(t *testing.T) {
+	t.Parallel()
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, s := peopleRig(t, p)
 	year := 2025
@@ -193,6 +196,7 @@ func TestMoviePeopleUsesStoredTMDBIdentity(t *testing.T) {
 }
 
 func TestShowPeopleUsesStoredTMDBIdentity(t *testing.T) {
+	t.Parallel()
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, s := peopleRig(t, p)
 	var title mediafiles.Title
@@ -211,6 +215,7 @@ func TestShowPeopleUsesStoredTMDBIdentity(t *testing.T) {
 }
 
 func TestPeopleErrorsStayBounded(t *testing.T) {
+	t.Parallel()
 	p := &fakePeople{Static: metadata.Lab(), fail: true}
 	srv, _ := peopleRig(t, p)
 	b := string(do(t, "GET", srv.URL+"/api/v1/people/11", "", 503))
@@ -222,6 +227,7 @@ func TestPeopleErrorsStayBounded(t *testing.T) {
 
 // route: GET /api/v1/people/popular
 func TestPopularPeople(t *testing.T) {
+	t.Parallel()
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, _ := peopleRig(t, p)
 	b := string(do(t, "GET", srv.URL+"/api/v1/people/popular", "", 200))

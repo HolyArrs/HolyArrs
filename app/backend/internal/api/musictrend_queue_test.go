@@ -16,6 +16,7 @@ import (
 // is a 204 at once while it is fetched behind the answer, and the next ask
 // serves it.
 func TestPictureRouteNeverWaitsOnFetch(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const id = "55555555-5555-4555-8555-555555555555"
 	var hits atomic.Int32
@@ -58,6 +59,7 @@ func TestPictureRouteNeverWaitsOnFetch(t *testing.T) {
 
 // A picture missed again and again is asked less and less often.
 func TestPictureMissRetrySchedule(t *testing.T) {
+	t.Parallel()
 	want := []time.Duration{10 * time.Minute, 10 * time.Minute, 30 * time.Minute, 2 * time.Hour, 6 * time.Hour, 6 * time.Hour}
 	for n, d := range want {
 		if got := artMissWait(n); got != d {

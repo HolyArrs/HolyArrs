@@ -16,6 +16,7 @@ import (
 // every /api/ route must sit in one of routePackages in the form the
 // generator reads.
 func TestNoHiddenRoutes(t *testing.T) {
+	t.Parallel()
 	root := filepath.Join("..", "..")
 	call := regexp.MustCompile(`\b(\w+)\.(HandleFunc|Handle)\(\s*([^,)]*)`)
 	read := regexp.MustCompile(`^"([A-Z]+ /api/v1/[^"]*)"$`)

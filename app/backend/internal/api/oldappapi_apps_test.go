@@ -134,6 +134,7 @@ func (f *oldAppFix) storeWide(titleID int64, from string) []byte {
 // it sends back after a subtitle change. Fields are the ones the Bazarr
 // manual says it copies.
 func TestOldAppBazarrSync(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	son, rad := f.sonarrKey, f.radarrKey
@@ -282,6 +283,7 @@ func TestOldAppBazarrSync(t *testing.T) {
 // TestOldAppMediaCover: the covers the Library answers point at, with the
 // key, in any case of the path, straight after the side or under /api/v3.
 func TestOldAppMediaCover(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	son, rad := f.sonarrKey, f.radarrKey
@@ -345,6 +347,7 @@ func TestOldAppMediaCover(t *testing.T) {
 // rows a page): a finished torrent waiting for its import says completed,
 // with its own folder as outputPath; once imported its rows are gone.
 func TestOldAppUnpackerrQueue(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	showID := f.addLabShow()
@@ -428,6 +431,7 @@ func idSQL(ids []int64) string {
 // list, the queue and its unpaged details, the missing list and the
 // calendar, with the paging rules of the Sonarr manual.
 func TestOldAppHomepageWidgets(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	son := f.sonarrKey

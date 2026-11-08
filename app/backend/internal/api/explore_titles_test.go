@@ -13,6 +13,7 @@ import (
 // Rows carry a title layer; shown rows, opens and asks are counted per
 // layer, the owner reads them back, and titles hold on a second load.
 func TestExploreTitleStatsRoute(t *testing.T) {
+	t.Parallel()
 	a, _, _ := exploreRig(t)
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()

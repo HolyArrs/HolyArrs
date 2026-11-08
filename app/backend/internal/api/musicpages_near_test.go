@@ -14,6 +14,7 @@ import (
 // "More like this" keeps an empty answer: the next visit answers at once
 // from the store and never asks the similar list again.
 func TestAlbumNearKeepsEmptyAnswer(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	var asked atomic.Int32
 	r.api.s.MusicSimilar = func(_ context.Context, _ string) ([]metadata.SimilarArtist, error) {

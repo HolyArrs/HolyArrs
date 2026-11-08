@@ -425,12 +425,14 @@ func sameNames(t *testing.T, what string, got []string, want ...string) {
 }
 
 func TestKidTitleList(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	sameNames(t, "kid titles", namesIn(t, string(k.kai.call("GET", "/api/v1/titles", "", 200)), "titles"), "Gentle Meadow", "Paper Kite", "Harbor Friends")
 	sameNames(t, "kid search", namesIn(t, string(k.kai.call("GET", "/api/v1/titles?q=Iron", "", 200)), "titles"))
 }
 
 func TestKidTitleDetailIs404(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	for _, id := range blockedIDs {
 		for _, sub := range []string{"", "/seasons", "/episodes", "/albums", "/people"} {
@@ -452,6 +454,7 @@ func TestKidTitleDetailIs404(t *testing.T) {
 
 // A part that is off does not tell a Kid that a blocked title exists.
 func TestKidBlockedTitleIs404WithItsPartOff(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t, parts.Music, parts.Shows)
 	for _, id := range []int64{9104, 9105} {
 		if code, body := k.kai.get(fmt.Sprintf("/api/v1/titles/%d", id)); code != 404 || strings.TrimSpace(body) != `{"error":"not found"}` {
@@ -464,6 +467,7 @@ func TestKidBlockedTitleIs404WithItsPartOff(t *testing.T) {
 }
 
 func TestKidLibrarySummaryRecent(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	var s struct {
 		Total   int `json:"total"`
@@ -493,6 +497,7 @@ func TestKidLibrarySummaryRecent(t *testing.T) {
 }
 
 func TestKidCalendar(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	// The API refuses manage_library on a Kid; an account from before that
 	// rule could still hold it, so it is written straight to the row here.
@@ -511,6 +516,7 @@ func TestKidCalendar(t *testing.T) {
 }
 
 func TestKidExploreRows(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	for _, q := range []string{"row=trending", "row=trending&kind=movie", "row=popular", "row=upcoming&kind=show",
 		fmt.Sprintf("row=similar&id=%d", k.ids["Gentle Meadow"]), "row=genre&g=Drama"} {
@@ -531,6 +537,7 @@ func TestKidExploreRows(t *testing.T) {
 // row; with 3 of them among the first allowed and 23 allowed in all, the
 // Kid still gets a full row of 20.
 func TestKidExploreRowFullAfterNeverAdd(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	var ids []string
 	for i := range 23 {
@@ -564,6 +571,7 @@ func TestKidExploreRowFullAfterNeverAdd(t *testing.T) {
 }
 
 func TestKidMetadataSearch(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	sameNames(t, "kid search", namesIn(t, string(k.kai.call("GET", "/api/v1/metadata/search?q=any", "", 200)), "movies"), "Sunny Pond", "Gentle Meadow")
 	sameNames(t, "kid lookup", namesIn(t, string(k.kai.call("GET", "/api/v1/titles/lookup?term=any", "", 200)), "movies"), "Sunny Pond", "Gentle Meadow")
@@ -573,6 +581,7 @@ func TestKidMetadataSearch(t *testing.T) {
 }
 
 func TestKidMetadataDetailsIs403(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	const above = `{"error":"This title is rated above what this account may see."}`
 	for _, p := range []string{"movie/4211", "movie/4212", "movie/4204", "movie/4205", "show/4231", "show/4221"} {
@@ -591,6 +600,7 @@ func TestKidMetadataDetailsIs403(t *testing.T) {
 // A Kid's More from row: the source title's rating is gated like its
 // details, on a cold request and on one the cache already holds.
 func TestKidMoreFromIs403(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	const above = `{"error":"This title is rated above what this account may see."}`
 	// Cold: nothing cached yet (R in the Library; R and unrated from TMDB).
@@ -610,6 +620,7 @@ func TestKidMoreFromIs403(t *testing.T) {
 }
 
 func TestKidAsksAboveLimitAre403(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	const upTo = `{"error":"This account can ask only for titles rated up to PG."}`
 	// Someone else's open ask is not joined either.
@@ -632,6 +643,7 @@ func TestKidAsksAboveLimitAre403(t *testing.T) {
 }
 
 func TestMemberWithoutLimitSeesEverything(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	sameNames(t, "member titles", namesIn(t, string(k.ana.call("GET", "/api/v1/titles", "", 200)), "titles"),
 		"Gentle Meadow", "Paper Kite", "Harbor Friends", "Night Courier", "Iron Verdict", "Quiet Unknown", "Cold Precinct", "Loud Static")
@@ -658,6 +670,7 @@ func TestMemberWithoutLimitSeesEverything(t *testing.T) {
 }
 
 func TestKidPeopleAndCollections(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	// Credits: only Library titles with an allowed rating.
 	b := string(k.kai.call("GET", "/api/v1/people/4901", "", 200))
@@ -690,6 +703,7 @@ func TestKidPeopleAndCollections(t *testing.T) {
 // plain routes with a query that would find them) and checks that no 2xx
 // answer names or numbers a blocked title.
 func TestKidCannotReachBlockedTitleAnywhere(t *testing.T) {
+	t.Parallel()
 	k := newKidRig(t)
 	queries := map[string][]string{
 		"/api/v1/titles":          {"", "?q=Iron", "?q=Cold", "?q=Loud"},
@@ -791,6 +805,7 @@ func (s *slowDetails) Details(_ context.Context, kind, id string) (metadata.Deta
 }
 
 func TestKidRatingLookupsAtMostFour(t *testing.T) {
+	t.Parallel()
 	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

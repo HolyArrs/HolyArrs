@@ -9,6 +9,7 @@ import (
 )
 
 func TestOptionalDownloaderSecretsRoundTrip(t *testing.T) {
+	t.Parallel()
 	srv, _ := dlServer(t)
 	for _, kind := range []string{"transmission", "nzbget", "deluge"} {
 		t.Run(kind, func(t *testing.T) {

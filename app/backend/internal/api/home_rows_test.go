@@ -96,6 +96,7 @@ func homeCardOf(cards []homeCard, id int64) *homeCard {
 // with one new file among old ones says one new episode, and titles with
 // nothing new stay on the row with a plain line.
 func TestHomeArrivalsCountsOnlyNewFiles(t *testing.T) {
+	t.Parallel()
 	_, s, _ := setup(t)
 	f := homeFixture{t, s}
 	now := time.Now()
@@ -176,6 +177,7 @@ func TestHomeArrivalsCountsOnlyNewFiles(t *testing.T) {
 // day late; a timed one is shown on the server's local day. A movie already
 // in the Library is not coming soon because of a later disc date.
 func TestHomeSoonDays(t *testing.T) {
+	t.Parallel()
 	_, s, _ := setup(t)
 	f := homeFixture{t, s}
 	zone := time.FixedZone("east-us", -5*3600)
@@ -238,6 +240,7 @@ func TestHomeSoonDays(t *testing.T) {
 }
 
 func TestHomeAirDay(t *testing.T) {
+	t.Parallel()
 	zone := time.FixedZone("east-us", -5*3600)
 	for _, c := range []struct {
 		at       string
@@ -262,6 +265,7 @@ func TestHomeAirDay(t *testing.T) {
 
 // Your asks tells a stuck or paused download apart from one waiting to start.
 func TestHomeAskProgressStates(t *testing.T) {
+	t.Parallel()
 	_, s, _ := setup(t)
 	f := homeFixture{t, s}
 	f.exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (1, 't', '{}', 't', '{}', 'member', 'member', 'x')`)

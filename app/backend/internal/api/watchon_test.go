@@ -11,6 +11,7 @@ import (
 )
 
 func TestWatchOnMarks(t *testing.T) {
+	t.Parallel()
 	a := &API{}
 	var calls atomic.Int32
 	done := make(chan struct{}, 4)

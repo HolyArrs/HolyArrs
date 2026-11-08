@@ -14,6 +14,7 @@ import (
 // every other music answer, so the first draw already asks the versioned
 // address and nothing is fetched twice.
 func TestExploreMusicV7CarriesPictureRecords(t *testing.T) {
+	t.Parallel()
 	r, _, _ := v7Rig(t, "household_large.json")
 	rec := &metadata.PictureRecord{V: "v1", W: 1200, H: 1200, Color: "#102030"}
 	r.api.s.MusicPictures = func(_ context.Context, artists, albums []string) (metadata.MusicPictures, error) {

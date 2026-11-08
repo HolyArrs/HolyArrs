@@ -23,6 +23,7 @@ import (
 // route: DELETE /api/v1/titles/{id}/versions/{vid}
 // route: GET /api/v1/events
 func TestShowVersionsAPI(t *testing.T) {
+	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 	var movies FolderView
@@ -84,6 +85,7 @@ func addEvent(t *testing.T, s *database.Store, titleID, slotID int64) {
 // route: POST /api/v1/titles/{id}/versions
 // route: PUT /api/v1/titles/{id}/versions/{vid}
 func TestShowVersionRulesLabelsAndFolders(t *testing.T) {
+	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 	var music, movie int64

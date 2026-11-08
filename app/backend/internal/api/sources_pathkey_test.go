@@ -15,6 +15,7 @@ import (
 // A feed with its passkey in the path (TorrentLeech style) is shown masked,
 // keeps working, and keeps its passkey when the masked address is sent back.
 func TestSourcePathPasskeyMasked(t *testing.T) {
+	t.Parallel()
 	srv, _ := sourceServer(t)
 	passkey := "0f3a9c2b7d1e4f5a8b6c0d9e2f1a3b4c"
 	feed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

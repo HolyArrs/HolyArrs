@@ -47,6 +47,7 @@ func fakeJackettServer(t *testing.T, sites ...string) *httptest.Server {
 // route: POST /api/v1/bridges/{id}/check
 // route: DELETE /api/v1/bridges/{id}
 func TestBridgeJackettConnectCheckDisconnect(t *testing.T) {
+	t.Parallel()
 	srv, _ := sourceServer(t)
 	j := fakeJackettServer(t, "alpha", "beta")
 	var res struct {
@@ -247,6 +248,7 @@ func pushIndexer(t *testing.T, base, key, feedURL string) int {
 }
 
 func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	feed := newProwlarrFeed(t)
 	p := newFakeProwlarrApps(t, feed.URL)
@@ -364,6 +366,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 // A connect Prowlarr refuses takes back what it made: the old-app keys and
 // the switch it turned on, and the entry it had written there.
 func TestBridgeProwlarrRefusedConnectTakesBackItsKeys(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	p := newFakeProwlarrApps(t, "")
 	p.refuseRadarr = true
@@ -391,6 +394,7 @@ func TestBridgeProwlarrRefusedConnectTakesBackItsKeys(t *testing.T) {
 
 // route: POST /api/v1/bridges/find
 func TestBridgeFindAnswersAList(t *testing.T) {
+	t.Parallel()
 	srv, _ := sourceServer(t)
 	var out struct {
 		Found []map[string]string `json:"found"`

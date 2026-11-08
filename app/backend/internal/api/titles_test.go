@@ -58,6 +58,7 @@ func libSetup(t *testing.T) (*httptest.Server, *database.Store, chan int64) {
 // route: DELETE /api/v1/library-folders/{id}
 // route: POST /api/v1/library-folders/{id}/check
 func TestLibraryFoldersAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	dir := t.TempDir()
 	do(t, "POST", srv.URL+"/api/v1/library-folders", `{"path":"movies","kind":"movie"}`, 400)
@@ -92,6 +93,7 @@ func TestLibraryFoldersAPI(t *testing.T) {
 // route: POST /api/v1/never-add
 // route: DELETE /api/v1/never-add/{id}
 func TestAddTitleAPI(t *testing.T) {
+	t.Parallel()
 	srv, s, searched := libSetup(t)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 409) // no folder yet
 	dir := t.TempDir()
@@ -152,6 +154,7 @@ func TestAddTitleAPI(t *testing.T) {
 // route: PUT /api/v1/titles/{id}
 // route: POST /api/v1/titles/{id}/move
 func TestEditTitleAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, t.TempDir()), 201)
 	var added struct {
@@ -182,6 +185,7 @@ func TestEditTitleAPI(t *testing.T) {
 
 // route: GET /api/v1/titles/lookup
 func TestLookupAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, t.TempDir()), 201)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
@@ -203,6 +207,7 @@ func TestLookupAPI(t *testing.T) {
 // route: GET /api/v1/settings/release-gate
 // route: PUT /api/v1/settings/release-gate
 func TestReleaseGateSettingAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	b := string(do(t, "GET", srv.URL+"/api/v1/settings/release-gate", "", 200))
 	if !strings.Contains(b, `"release_gate":"released"`) || !strings.Contains(b, `"gate_delay_days":0`) || !strings.Contains(b, `"bulk_search_respects_gate":true`) {
@@ -221,6 +226,7 @@ func TestReleaseGateSettingAPI(t *testing.T) {
 // route: GET /api/v1/calendar
 // route: GET /api/v1/artwork/{name}
 func TestRefreshAndCalendarAPI(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := libSetup(t)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, t.TempDir()), 201)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
@@ -269,6 +275,7 @@ func TestRefreshAndCalendarAPI(t *testing.T) {
 
 // route: GET /api/v1/pick-rules
 func TestPickRulesListAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var got struct {
 		PickRules []PickRulesView `json:"pick_rules"`
@@ -280,6 +287,7 @@ func TestPickRulesListAPI(t *testing.T) {
 }
 
 func TestTitleViewGateAndVersion(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var lf FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies"}`, t.TempDir()), 201), &lf)

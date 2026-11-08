@@ -12,6 +12,7 @@ import (
 // A cut list (the chosen edition of several) keeps its tracks through the
 // page flight, and the next ask joins it instead of asking again.
 func TestPageFlightKeepsCutList(t *testing.T) {
+	t.Parallel()
 	a := &API{}
 	ctx := context.Background()
 	asks := 0

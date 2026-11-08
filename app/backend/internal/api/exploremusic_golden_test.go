@@ -56,6 +56,7 @@ func musicShape(m musicRowsAnswer) string {
 // music_rows_v2 off, the cold-start answer matches the copy recorded
 // before the flag existed (HOLYARRS_WRITE_GOLDEN=1 rewrites it).
 func TestExploreMusicFlagOffGolden(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	genres := &genreArtists{fakeArtists: apiMusic()}
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artists: genres}, Version: "test", Deps: music.Deps{MusicTrending: coldTrend}}).Handler())

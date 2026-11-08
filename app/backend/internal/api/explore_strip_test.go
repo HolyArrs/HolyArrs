@@ -18,6 +18,7 @@ import (
 // then answers at most 18 categories within the section and near-duplicate
 // limits, and drops a category a row below already names.
 func TestExploreStripRoute(t *testing.T) {
+	t.Parallel()
 	a, _, _ := exploreRig(t)
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()
@@ -98,6 +99,7 @@ func TestExploreStripRoute(t *testing.T) {
 // Shown and opened counts add up per category and day; bad bodies are
 // refused; Reset my recommendations clears the member's rows.
 func TestExploreStripCountsRoute(t *testing.T) {
+	t.Parallel()
 	a, s, _ := exploreRig(t)
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()
@@ -147,6 +149,7 @@ func TestExploreStripCountsRoute(t *testing.T) {
 // Varying the rows never grows the strip cache past one entry per member,
 // tab and limit, and too many or too long rows are refused.
 func TestExploreStripCacheBounded(t *testing.T) {
+	t.Parallel()
 	a := &API{}
 	for i := 0; i < 1000; i++ {
 		rows := []string{"Row " + strconv.Itoa(i)}

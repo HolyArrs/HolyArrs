@@ -58,6 +58,7 @@ func ruleByName(t *testing.T, base, name string) PickRulesView {
 // route: PUT /api/v1/pick-rules/{id}
 // route: DELETE /api/v1/pick-rules/{id}
 func TestCreateEditDeletePickRules(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var p pickRulesDetail
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Small files", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
@@ -87,6 +88,7 @@ func TestCreateEditDeletePickRules(t *testing.T) {
 }
 
 func TestPickRulesFieldErrors(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	cases := []struct {
 		name  string
@@ -124,6 +126,7 @@ func TestPickRulesFieldErrors(t *testing.T) {
 }
 
 func TestPickRulesNameTaken(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	b := string(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "standARD", []string{"movie"}, mediafiles.GoodEveryday()), 409))
 	if !strings.Contains(b, `"field":"name"`) {
@@ -132,6 +135,7 @@ func TestPickRulesNameTaken(t *testing.T) {
 }
 
 func TestPresetKeepsNameAndKinds(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	ge := ruleByName(t, srv.URL, mediafiles.GoodEverydayName)
 	path := fmt.Sprintf("%s/api/v1/pick-rules/%d", srv.URL, ge.ID)
@@ -147,6 +151,7 @@ func TestPresetKeepsNameAndKinds(t *testing.T) {
 }
 
 func TestPresetCannotBeRemoved(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	ge := ruleByName(t, srv.URL, mediafiles.GoodEverydayName)
 	b := string(do(t, "DELETE", fmt.Sprintf("%s/api/v1/pick-rules/%d", srv.URL, ge.ID), "", 409))
@@ -156,6 +161,7 @@ func TestPresetCannotBeRemoved(t *testing.T) {
 }
 
 func TestPickRulesInUseCountsEveryReference(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	var p pickRulesDetail
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, mediafiles.GoodEveryday()), 201), &p)
@@ -191,6 +197,7 @@ func TestPickRulesInUseCountsEveryReference(t *testing.T) {
 }
 
 func TestInUseCannotDropAKindOrSwitchLadder(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	var p pickRulesDetail
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, mediafiles.GoodEveryday()), 201), &p)
@@ -203,6 +210,7 @@ func TestInUseCannotDropAKindOrSwitchLadder(t *testing.T) {
 }
 
 func TestPickRulesEditNeedsSettings(t *testing.T) {
+	t.Parallel()
 	k := newAskRig(t)
 	body := ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday())
 	k.ana.call("POST", "/api/v1/pick-rules", body, 403)

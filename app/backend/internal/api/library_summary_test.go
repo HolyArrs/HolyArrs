@@ -15,6 +15,7 @@ import (
 
 // route: GET /api/v1/library-summary
 func TestHomeLibrarySummaryIsBounded(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for n := range 12 {

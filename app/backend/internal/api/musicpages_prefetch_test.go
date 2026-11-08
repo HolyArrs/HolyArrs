@@ -29,6 +29,7 @@ func (f *tracklistArtists) Pressings(ctx context.Context, mbid string) ([]metada
 // An artist page asks its first albums' tracklists ahead (the one-call
 // answer only), the latest first, never upcoming ones.
 func TestArtistPagePrefetchesFirstTracklists(t *testing.T) {
+	t.Parallel()
 	f := &tracklistArtists{}
 	a := New(Server{Version: "test", Library: &library.Service{Artists: f}})
 	id := func(i int) string {

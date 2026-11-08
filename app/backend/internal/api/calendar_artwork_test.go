@@ -23,6 +23,7 @@ type calendarArt struct {
 // Calendar entries carry the title's poster and backdrop and, for an
 // episode with one, its still, so Home can show pictures.
 func TestCalendarEntriesCarryArtwork(t *testing.T) {
+	t.Parallel()
 	srv, st, _ := libSetup(t)
 	folder(t, srv.URL, "movie")
 	a := addMovie(t, srv.URL, `{"id":"tmdb:900001"}`)

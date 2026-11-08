@@ -141,6 +141,7 @@ func musicSetup(t *testing.T) (*httptest.Server, *database.Store, *library.Servi
 // route: GET /api/v1/albums/{id}/tracks
 // route: PUT /api/v1/titles/{id}/artist
 func TestMusicAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, lib, fa := musicSetup(t)
 	u := srv.URL + "/api/v1"
 	ctx := context.Background()
@@ -317,6 +318,7 @@ func TestMusicAPI(t *testing.T) {
 // route: GET /api/v1/settings/music
 // route: PUT /api/v1/settings/music
 func TestMusicSettingsAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _, _ := musicSetup(t)
 	u := srv.URL + "/api/v1/settings/music"
 	var d library.MusicDefaults
@@ -346,6 +348,7 @@ func TestMusicSettingsAPI(t *testing.T) {
 
 // TestMusicNotSetUp: without MusicBrainz the music routes say so.
 func TestMusicNotSetUp(t *testing.T) {
+	t.Parallel()
 	srv, _, lib, _ := musicSetup(t)
 	lib.Artists = nil
 	do(t, "GET", srv.URL+"/api/v1/artists/lookup?term=lab", "", 503)
@@ -354,6 +357,7 @@ func TestMusicNotSetUp(t *testing.T) {
 
 // TestRefreshAllQueuesArtists: Refresh all queues the artist refresh too.
 func TestRefreshAllQueuesArtists(t *testing.T) {
+	t.Parallel()
 	srv, s, _, _ := musicSetup(t)
 	var res struct {
 		JobIDs []int64 `json:"job_ids"`

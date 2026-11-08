@@ -59,6 +59,7 @@ func dlPatches(t *testing.T, fs []liveFrame) []downloads.Patch {
 // to their own asks: never another person's rows, never outside torrents
 // (new, changed or removed), and their rev chain has no holes.
 func TestPublishDLAudiences(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES
 		(1, 't', '{}', 't', '{}', 'owner', 'owner', 'x'), (2, 't', '{}', 't', '{}', 'ana', 'member', 'x'), (3, 't', '{}', 't', '{}', 'bo', 'member', 'x')`)

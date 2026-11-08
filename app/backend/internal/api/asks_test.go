@@ -149,6 +149,7 @@ func askOf(t *testing.T, b []byte) requests.View {
 // route: GET /api/v1/messages
 // route: POST /api/v1/messages/read
 func TestAskJoinApproveOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	if a.State != "asked" || a.AskedBy.Name != "ana" || !a.Mine {
@@ -266,6 +267,7 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 // route: GET /api/v1/ask-limits
 // route: PUT /api/v1/ask-limits/{id}
 func TestLimitTurnDownAndTakeBackOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	var set requests.Settings
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/settings/asks", "", 200), &set)
@@ -362,6 +364,7 @@ func TestLimitTurnDownAndTakeBackOverHTTP(t *testing.T) {
 // route: POST /api/v1/alerts/{id}/test
 // route: PUT /api/v1/auth/settings
 func TestAlertsPerMomentOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	var mu sync.Mutex
 	var posts []string
@@ -493,6 +496,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 // afterwards), refused on the local network without the choice, and the
 // test button posts a signed test message.
 func TestWebhookAlertOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	var mu sync.Mutex
 	var got []http.Header
@@ -653,6 +657,7 @@ func pushForm(call string) url.Values {
 // #136: who else declined the same title is told to people who approve
 // only. A member's list and their own ask carry no also_declined at all.
 func TestAlsoDeclinedForApproversOnly(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	first := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	r.owner.call("POST", "/api/v1/asks/"+itoa(first.ID)+"/turn-down", `{}`, 200)
@@ -708,6 +713,7 @@ func TestAlsoDeclinedForApproversOnly(t *testing.T) {
 // carries no sign-in name and their message says "an admin" until the
 // decider picks a display name (#136 follow-up).
 func TestDeciderSignInNameHiddenFromMembers(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/turn-down", `{}`, 200)
@@ -751,6 +757,7 @@ func TestDeciderSignInNameHiddenFromMembers(t *testing.T) {
 // #139: an approved ask says where it is. The person who asked reads the
 // step only; people who approve also read the search's words for why.
 func TestAskStepOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", `{}`, 200)

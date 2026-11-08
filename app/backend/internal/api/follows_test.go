@@ -16,6 +16,7 @@ import (
 // route: GET /api/v1/titles/{id}/follow
 // route: GET /api/v1/my/follows
 func TestFollowOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newShowAskRig(t)
 	tid, _, err := shows.New(r.asks.Library).AddShow(context.Background(), "tmdb:100", shows.ShowAddOptions{Seasons: "all"}, domain.System)
 	if err != nil {
@@ -57,6 +58,7 @@ func TestFollowOverHTTP(t *testing.T) {
 // route: DELETE /api/v1/metadata/show/{tmdb_id}/follow
 // route: GET /api/v1/metadata/show/{tmdb_id}/follow
 func TestFollowShowByTMDBOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newShowAskRig(t)
 	path := "/api/v1/metadata/show/100/follow"
 	state := func(s *signedIn) bool {
@@ -104,6 +106,7 @@ func TestFollowShowByTMDBOverHTTP(t *testing.T) {
 // route: DELETE /api/v1/metadata/movie/{tmdb_id}/follow
 // route: GET /api/v1/metadata/movie/{tmdb_id}/follow
 func TestFollowMovieByTMDBOverHTTP(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	path := "/api/v1/metadata/movie/900005/follow"
 	state := func(s *signedIn) bool {
@@ -152,6 +155,7 @@ func TestFollowMovieByTMDBOverHTTP(t *testing.T) {
 // Asking follows by default (once approved; the asker, not the approver);
 // "follow": false leaves it off. Adding by hand follows the adder.
 func TestAskAndAddFollowByDefault(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	ctx := context.Background()
 	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:900002"}`, 201))

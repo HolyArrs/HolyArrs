@@ -6,6 +6,7 @@ import (
 )
 
 func TestShortBio(t *testing.T) {
+	t.Parallel()
 	if got := shortBio("  Short   bio. "); got != "Short bio." {
 		t.Fatalf("short: %q", got)
 	}

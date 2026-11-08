@@ -16,6 +16,7 @@ import (
 // The title page reads the stored header facts (resolution, audio codec,
 // subtitle languages) from each Slot's file; the API passes them through.
 func TestTitleViewCarriesHeaderFacts(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	var resp struct {
 		Title TitleView `json:"title"`

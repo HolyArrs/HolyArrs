@@ -4,6 +4,7 @@ import "testing"
 
 // TestMemoReadOnce: a memo reads each id once, misses included; no memo reads every time.
 func TestMemoReadOnce(t *testing.T) {
+	t.Parallel()
 	calls := 0
 	get := func(v string, ok bool) func() (string, bool) {
 		return func() (string, bool) { calls++; return v, ok }

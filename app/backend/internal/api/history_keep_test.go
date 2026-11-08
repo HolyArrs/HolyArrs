@@ -14,6 +14,7 @@ import (
 // rest forever unless changed; negative or huge values are refused, only
 // the owner may change them, and each change is logged as settings_changed.
 func TestHistoryKeepSetting(t *testing.T) {
+	t.Parallel()
 	a, _ := signinRig(t, nil)
 	if s := a.uiSettings(context.Background()); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 0 {
 		t.Fatalf("defaults %+v", s)

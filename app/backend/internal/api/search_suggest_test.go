@@ -61,6 +61,7 @@ func suggestRig(t *testing.T, delay time.Duration) (*askRig, *atomic.Int32) {
 
 // route: GET /api/v1/search/suggest
 func TestSearchSuggestMaxThreePerKind(t *testing.T) {
+	t.Parallel()
 	r, calls := suggestRig(t, 0)
 	got := suggestOf(t, r.owner.call("GET", "/api/v1/search/suggest?q=radi", "", 200))
 	if len(got.Items) == 0 || len(got.Items) > suggestRows {
@@ -106,12 +107,14 @@ func TestSearchSuggestMaxThreePerKind(t *testing.T) {
 }
 
 func TestSearchSuggestFlagOff(t *testing.T) {
+	t.Parallel()
 	r, _ := suggestRig(t, 0)
 	r.api.s.LiveSearch = false
 	r.owner.call("GET", "/api/v1/search/suggest?q=radi", "", 404)
 }
 
 func TestSearchSuggestKidNoMusic(t *testing.T) {
+	t.Parallel()
 	r, calls := suggestRig(t, 0)
 	if err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE users SET max_rating = 'PG' WHERE id = ?`, r.ana.id)
@@ -131,6 +134,7 @@ func TestSearchSuggestKidNoMusic(t *testing.T) {
 }
 
 func TestSearchSuggestSlowSourceLosesItsSlots(t *testing.T) {
+	t.Parallel()
 	r, _ := suggestRig(t, 3*time.Second)
 	start := time.Now()
 	got := suggestOf(t, r.owner.call("GET", "/api/v1/search/suggest?q=radi", "", 200))
@@ -148,6 +152,7 @@ func TestSearchSuggestSlowSourceLosesItsSlots(t *testing.T) {
 }
 
 func TestSuggestScoreAndPick(t *testing.T) {
+	t.Parallel()
 	if s := suggestScore(1, 1, "have"); s != 1 {
 		t.Fatalf("score %v", s)
 	}
@@ -170,6 +175,7 @@ func TestSuggestScoreAndPick(t *testing.T) {
 // A missing album without a cover gets the music picture route, and the
 // route knows its names (the same chain as Explore's rows).
 func TestSuggestMissingAlbumGetsCoverRoute(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	items := []SuggestRow{
 		{Kind: "album", Name: "Radial", Sub: "Lab Band", MBID: "abc", State: "missing"},

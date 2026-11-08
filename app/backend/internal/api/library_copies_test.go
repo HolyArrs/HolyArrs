@@ -58,6 +58,7 @@ func apiMovieCopy(t *testing.T, s *database.Store, protected bool) (mediafiles.F
 }
 
 func TestLibraryCopiesListAndReviewedSearch(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	f, v, slot := apiMovieCopy(t, s, false)
 
@@ -91,6 +92,7 @@ func TestLibraryCopiesListAndReviewedSearch(t *testing.T) {
 }
 
 func TestLibraryCopySearchRevalidatesStaleAndProtected(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	f, v, _ := apiMovieCopy(t, s, false)
 	body := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}]}`

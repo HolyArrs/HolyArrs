@@ -17,6 +17,7 @@ import (
 // route: GET /api/v1/health/checks
 // route: POST /api/v1/health/checks/run
 func TestHealthChecksOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	if b := do(t, "GET", srv.URL+"/api/v1/health/checks", "", 200); !strings.Contains(string(b), `"checks":[]`) || !strings.Contains(string(b), `"worst":"ok"`) {
 		t.Fatalf("before a run: %s", b)
@@ -52,6 +53,7 @@ func TestHealthChecksOverHTTP(t *testing.T) {
 // route: GET /api/v1/settings/health
 // route: PUT /api/v1/settings/health
 func TestHealthSettingsOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	if b := do(t, "GET", srv.URL+"/api/v1/settings/health", "", 200); string(b) != `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"","update_check":true,"update_check_local":false,"update_prerelease":false,"update_check_every_days":1,"update_check_default":"https://api.github.com/repos/CoderLuii/holyarrs/releases/latest"}`+"\n" {
 		t.Fatalf("defaults %s", b)
@@ -71,6 +73,7 @@ func TestHealthSettingsOverHTTP(t *testing.T) {
 
 // route: GET /api/v1/health/states
 func TestHealthStatesOverHTTP(t *testing.T) {
+	t.Parallel()
 	reg := jobs.NewRegistry()
 	reg.Set(jobs.StageKey("backups"), "stage", "Backups", jobs.Retrying, "the disk is full")
 	s, err := database.Open(t.TempDir(), database.Options{})
@@ -116,6 +119,7 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 
 // route: GET /api/v1/health/disks
 func TestHealthDisksOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := setup(t)
 	if b := do(t, "GET", srv.URL+"/api/v1/health/disks", "", 200); !strings.Contains(string(b), `"total_bytes":`) || !strings.Contains(string(b), `"kind":"movie"`) {
 		t.Fatalf("disks: %s", b)

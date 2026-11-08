@@ -13,6 +13,7 @@ import (
 )
 
 func TestEpisodesCarryStillAndRuntime(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	var titleID int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {

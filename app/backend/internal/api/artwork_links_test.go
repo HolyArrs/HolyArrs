@@ -12,6 +12,7 @@ import (
 // title page must give the web app a link it can load, or every movie shows
 // its initials instead of its poster.
 func TestTitleArtworkIsALink(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := libSetup(t)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, t.TempDir()), 201)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)

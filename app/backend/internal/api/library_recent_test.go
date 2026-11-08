@@ -15,6 +15,7 @@ import (
 )
 
 func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {

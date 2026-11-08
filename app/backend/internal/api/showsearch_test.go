@@ -25,6 +25,7 @@ import (
 // route: DELETE /api/v1/turned-down/{id}
 // route: GET /api/v1/searches
 func TestShowSearchOverHTTP(t *testing.T) {
+	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 	var add addedShow
@@ -171,6 +172,7 @@ func TestShowSearchOverHTTP(t *testing.T) {
 //
 // route: POST /api/v1/titles/{id}/search
 func TestWholeShowSearchKeptOnly(t *testing.T) {
+	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 	var add addedShow

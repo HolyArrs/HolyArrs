@@ -67,6 +67,7 @@ func excepted(rel, line string) bool {
 // every name and description in openapi.json and, when the plans folder is
 // next to the repo (it is not in the repo, so CI skips that part), plans\.
 func TestNoBannedWords(t *testing.T) {
+	t.Parallel()
 	repo := filepath.Join("..", "..", "..", "..")
 	type root struct {
 		dir  string
@@ -158,6 +159,7 @@ func TestNoBannedWords(t *testing.T) {
 
 // TestBannedWordsAreCaught keeps the check honest.
 func TestBannedWordsAreCaught(t *testing.T) {
+	t.Parallel()
 	for _, s := range []string{"Go to Wanted", "the Root Folder", "Interactive Search", "TV Series"} {
 		if bannedRx.FindString(s) == "" {
 			t.Errorf("%q passed", s)

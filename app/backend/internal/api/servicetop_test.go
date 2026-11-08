@@ -15,6 +15,7 @@ import (
 // TMDB popularity is not ranked; services the app does not know and empty
 // lists are left out.
 func TestExploreServiceTop(t *testing.T) {
+	t.Parallel()
 	a, _, _ := exploreRig(t)
 	reads := 0
 	fail := false

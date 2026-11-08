@@ -75,6 +75,7 @@ func moveBodyHash(snap int64, to, hash string, skip ...string) string {
 // route: GET /api/v1/migrate/moves/{id}/report
 // route: POST /api/v1/migrate/moves/{id}/undo
 func TestMoveRoutes(t *testing.T) {
+	t.Parallel()
 	srv, st, snap, films := moveSetup(t, false)
 	base := srv.URL + "/api/v1/migrate/"
 
@@ -171,6 +172,7 @@ func TestMoveRoutes(t *testing.T) {
 
 // TestMoveSafeModeRefuses: safe mode keeps the Library still.
 func TestMoveSafeModeRefuses(t *testing.T) {
+	t.Parallel()
 	srv, _, snap, films := moveSetup(t, true)
 	base := srv.URL + "/api/v1/migrate/"
 	do(t, "POST", base+"dry-run", moveBody(snap, films), 200)

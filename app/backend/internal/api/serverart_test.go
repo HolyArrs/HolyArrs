@@ -17,6 +17,7 @@ import (
 // cache: fetched once, a versioned address kept a year, anything that is
 // not a stored picture refused before any request.
 func TestServerArtworkThroughTheCache(t *testing.T) {
+	t.Parallel()
 	var asked atomic.Int32
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		asked.Add(1)
@@ -80,6 +81,7 @@ func TestServerArtworkThroughTheCache(t *testing.T) {
 
 // serverArtLink turns only the server's own stored addresses into links.
 func TestServerArtLink(t *testing.T) {
+	t.Parallel()
 	a := New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img"})
 	for in, want := range map[string]string{
 		"https://api.example.test/v1/img/title-logo/movie-603/1200.png":      "/api/v1/artwork/img/title-logo/movie-603/1200.png",

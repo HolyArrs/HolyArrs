@@ -9,6 +9,7 @@ import (
 // A downloading torrent carries the swarm's full copies; a finished one or
 // a client that does not say carries none.
 func TestClientRowAvailability(t *testing.T) {
+	t.Parallel()
 	q := domain.Downloader{ID: 1, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent"}
 	a := 0.4
 	if r := clientRow(q, Job{ID: outHash, Progress: 0.5, Availability: &a}); r.Availability == nil || *r.Availability != 0.4 {

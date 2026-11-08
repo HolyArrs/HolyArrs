@@ -37,6 +37,7 @@ func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
 // route: GET /api/v1/data-packs
 // route: GET /api/v1/data-packs/{id}
 func TestDataPackValidateImportListExport(t *testing.T) {
+	t.Parallel()
 	srv, st, raw := dataPackServer(t)
 	before := st.WriteCount()
 	b := string(do(t, "POST", srv.URL+"/api/v1/data-packs/validate", raw, http.StatusOK))
@@ -58,6 +59,7 @@ func TestDataPackValidateImportListExport(t *testing.T) {
 }
 
 func TestDataPackAPIRejectsInvalidOversizedAndDuplicate(t *testing.T) {
+	t.Parallel()
 	srv, st, raw := dataPackServer(t)
 	before := st.WriteCount()
 	do(t, "POST", srv.URL+"/api/v1/data-packs", strings.Replace(raw, `"quality": "1080p_web"`, `"quality": "2160p_web"`, 1), http.StatusBadRequest)
@@ -72,6 +74,7 @@ func TestDataPackAPIRejectsInvalidOversizedAndDuplicate(t *testing.T) {
 }
 
 func TestDataPackExportIsContentTypedAndBounded(t *testing.T) {
+	t.Parallel()
 	srv, _, raw := dataPackServer(t)
 	do(t, "POST", srv.URL+"/api/v1/data-packs", raw, http.StatusCreated)
 	resp, err := http.Get(srv.URL + "/api/v1/data-packs/home-cinema")
@@ -88,6 +91,7 @@ func TestDataPackExportIsContentTypedAndBounded(t *testing.T) {
 // route: GET /api/v1/data-packs/{id}/preview
 // route: POST /api/v1/data-packs/{id}/apply
 func TestDataPackPreviewAndExplicitApply(t *testing.T) {
+	t.Parallel()
 	srv, st, raw := dataPackServer(t)
 	do(t, "POST", srv.URL+"/api/v1/data-packs", raw, http.StatusCreated)
 	b := do(t, "GET", srv.URL+"/api/v1/data-packs/home-cinema/preview?pick_rule_id=balanced-web&naming_id=readable", "", http.StatusOK)
@@ -111,6 +115,7 @@ func TestDataPackPreviewAndExplicitApply(t *testing.T) {
 }
 
 func TestDataPackApplyRejectsBadSelectionAndApproval(t *testing.T) {
+	t.Parallel()
 	srv, _, raw := dataPackServer(t)
 	do(t, "POST", srv.URL+"/api/v1/data-packs", raw, http.StatusCreated)
 	b := do(t, "GET", srv.URL+"/api/v1/data-packs/home-cinema/preview?pick_rule_id=missing", "", http.StatusBadRequest)
@@ -130,6 +135,7 @@ type failingDataPackBody struct{}
 func (failingDataPackBody) Read([]byte) (int, error) { return 0, io.ErrClosedPipe }
 
 func TestDataPackBodyReadFailuresAreInternal(t *testing.T) {
+	t.Parallel()
 	_, st, _ := dataPackServer(t)
 	a := New(Server{Store: st, Version: "test"})
 	for _, call := range []struct {
@@ -153,6 +159,7 @@ func TestDataPackBodyReadFailuresAreInternal(t *testing.T) {
 }
 
 func TestDataPackInternalErrorsAreGeneric(t *testing.T) {
+	t.Parallel()
 	t.Run("corrupt stored pack", func(t *testing.T) {
 		srv, st, raw := dataPackServer(t)
 		do(t, "POST", srv.URL+"/api/v1/data-packs", raw, http.StatusCreated)
@@ -222,6 +229,7 @@ func assertGenericDataPackError(t *testing.T, body []byte) {
 }
 
 func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	raw, err := os.ReadFile("../datapack/testdata/synthetic-pack.json")
 	if err != nil {

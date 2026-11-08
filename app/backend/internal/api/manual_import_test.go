@@ -16,6 +16,7 @@ import (
 // route: GET /api/v1/settings/import-folders
 // route: PUT /api/v1/settings/import-folders
 func TestImportByHandAPI(t *testing.T) {
+	t.Parallel()
 	srv, _, _ := libSetup(t)
 	url := srv.URL
 	lib := t.TempDir()
@@ -76,6 +77,7 @@ func TestImportByHandAPI(t *testing.T) {
 // owner or an admin signed in with a password may change them: not a member
 // with the settings permission, and not a request let in without signing in.
 func TestImportFoldersNeedOwnerOrAdmin(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	body := fmt.Sprintf(`{"extra_folders":[%q]}`, filepath.Join(t.TempDir(), "imports"))
 	r.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", r.ana.id), `{"perms":["ask","settings"]}`, 200)

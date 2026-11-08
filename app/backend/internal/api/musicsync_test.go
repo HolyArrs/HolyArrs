@@ -42,6 +42,7 @@ func (o *onePackage) WantMusicPackage(_ context.Context, mbid string) error {
 }
 
 func TestMusicPagesUsePackagePictures(t *testing.T) {
+	t.Parallel()
 	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

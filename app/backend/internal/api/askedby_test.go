@@ -48,6 +48,7 @@ func jarOf() http.CookieJar {
 
 // route: GET /api/v1/asked-by
 func TestAskedByEveryoneSees(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	join := func(name, invite string) *signedIn {
 		var inv struct {

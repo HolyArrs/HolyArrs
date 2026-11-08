@@ -20,6 +20,7 @@ import (
 // route: GET /api/v1/artwork/{name}
 // ?size=250 answers the stored Library picture's small copy (for thumbnails); without it, the picture as stored.
 func TestArtworkSmallCopy(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

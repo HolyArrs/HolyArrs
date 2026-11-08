@@ -11,6 +11,7 @@ import (
 
 // Episode and track lists leave out the same Slot details as a title does.
 func TestEpisodeSlotsTrimmedForMember(t *testing.T) {
+	t.Parallel()
 	mk := func() map[int64][]EpisodeSlot {
 		f := mediafiles.File{RelativePath: "Shows/Secret/S01E01.mkv", Size: 9}
 		return map[int64][]EpisodeSlot{1: {{Reason: "turned down: Secret.Release-GRP", File: &f}}}

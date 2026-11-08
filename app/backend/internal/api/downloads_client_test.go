@@ -96,6 +96,7 @@ func countDownloads(t *testing.T, s *database.Store) int {
 // The Downloads view lists every torrent in the client, HolyArrs' own once.
 // The rest are read-only outside rows: no download records appear for them.
 func TestDownloadsViewListsEveryTorrent(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
@@ -140,6 +141,7 @@ func TestDownloadsViewListsEveryTorrent(t *testing.T) {
 // A torrent HolyArrs knows by hash but that is off the list keeps its Title
 // and loses the outside mark.
 func TestDownloadsViewKnownHash(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
@@ -192,6 +194,7 @@ func TestDownloadsViewKnownHash(t *testing.T) {
 // route: GET /api/v1/downloaders/{id}/items/{hash}/files
 // route: PUT /api/v1/downloaders/{id}/items/{hash}/files
 func TestClientItemControls(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
@@ -250,6 +253,7 @@ func TestClientItemControls(t *testing.T) {
 // Members who may not manage the Library see no client items and may not
 // steer them.
 func TestClientItemsNeedManageLibrary(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	f := &allClient{}
 	qb := f.server(t)

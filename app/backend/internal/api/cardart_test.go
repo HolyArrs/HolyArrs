@@ -13,6 +13,7 @@ import (
 // Wide card art: picked once per title and language, kept in card_art,
 // read on page answers without going outside, and not fetched again while fresh.
 func TestCardArtCached(t *testing.T) {
+	t.Parallel()
 	a, _, f := exploreRig(t)
 	a.explore.cards.gap = time.Millisecond
 	ctx := context.Background()

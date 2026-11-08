@@ -172,6 +172,7 @@ func getDiscover(t *testing.T, url string, want int) (discoverAnswer, http.Heade
 
 // route: GET /api/v1/discover
 func TestDiscoverRowsJoinLibraryAndAsks(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, _ := discoverRig(t, f.provider())
 	a, h := getDiscover(t, srv.URL+"/api/v1/discover?row=trending&kind=movie", 200)
@@ -221,6 +222,7 @@ func TestDiscoverRowsJoinLibraryAndAsks(t *testing.T) {
 }
 
 func TestDiscoverNotSetUpRateLimitedAndPerPersonLimit(t *testing.T) {
+	t.Parallel()
 	srv, _ := discoverRig(t, metadata.Lab())
 	getDiscover(t, srv.URL+"/api/v1/discover?row=trending", 501)
 
@@ -254,6 +256,7 @@ func TestDiscoverNotSetUpRateLimitedAndPerPersonLimit(t *testing.T) {
 }
 
 func TestDiscoverFollowsParts(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, _ := discoverRig(t, f.provider(), parts.Shows)
 	a, _ := getDiscover(t, srv.URL+"/api/v1/discover?row=trending&kind=show", 200)
@@ -270,6 +273,7 @@ func TestDiscoverFollowsParts(t *testing.T) {
 
 // route: GET /api/v1/metadata/{kind}/{tmdb_id}
 func TestMetadataDetails(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, _ := discoverRig(t, f.provider())
 	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200))
@@ -313,6 +317,7 @@ func TestMetadataDetails(t *testing.T) {
 }
 
 func TestMetadataDetailsRowsCarryCardLogos(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, s := discoverRig(t, f.provider())
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -328,6 +333,7 @@ func TestMetadataDetailsRowsCarryCardLogos(t *testing.T) {
 }
 
 func TestQualityWord(t *testing.T) {
+	t.Parallel()
 	for res, want := range map[int64]string{0: "", 480: "", 720: "HD", 1080: "HD", 2160: "4K", 4320: "4K"} {
 		if got := qualityWord(res); got != want {
 			t.Errorf("%d: %q, want %q", res, got, want)
@@ -337,6 +343,7 @@ func TestQualityWord(t *testing.T) {
 
 // route: GET /api/v1/metadata/{kind}/{tmdb_id}/more-from
 func TestMetadataMoreFrom(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, _ := discoverRig(t, f.provider())
 	var m struct {
@@ -376,6 +383,7 @@ func TestMetadataMoreFrom(t *testing.T) {
 
 // route: GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}
 func TestMetadataSeason(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, _ := discoverRig(t, f.provider())
 	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/show/21/seasons/1", "", 200))
@@ -398,6 +406,7 @@ func TestMetadataSeason(t *testing.T) {
 
 // route: GET /api/v1/watch-services
 func TestDiscoverServicesRowAndServiceList(t *testing.T) {
+	t.Parallel()
 	f := newDiscoverTMDB(t)
 	srv, _ := discoverRig(t, f.provider())
 	a, _ := getDiscover(t, srv.URL+"/api/v1/discover?row=services&services=8%7C337&region=us&kind=movie", 200)
@@ -431,6 +440,7 @@ func TestDiscoverServicesRowAndServiceList(t *testing.T) {
 }
 
 func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
+	t.Parallel()
 	if got := detailsTTL(discoverEntry{details: &metadata.Details{CollectionMissed: true}}); got != collectionRetry {
 		t.Fatalf("missed collection kept %v", got)
 	}
@@ -441,6 +451,7 @@ func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
 
 // Details cached before cast ids were kept are read again; ones with ids keep their TTL.
 func TestDetailsTTLRefreshesPeopleWithoutIDs(t *testing.T) {
+	t.Parallel()
 	old := discoverEntry{details: &metadata.Details{People: []metadata.DetailPerson{{Name: "Ann", Role: "actor"}}}}
 	if got := detailsTTL(old); got != 0 {
 		t.Fatalf("no ids: ttl %v, want 0", got)

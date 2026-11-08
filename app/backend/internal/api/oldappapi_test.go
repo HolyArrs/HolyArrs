@@ -216,6 +216,7 @@ func num(v any) int64 { f, _ := v.(float64); return int64(f) }
 // route: POST /api/v1/settings/old-app-api/keys/{side}
 // route: DELETE /api/v1/settings/old-app-api/keys/{side}
 func TestOldAppSwitchAndKeys(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	// Off by default: both prefixes answer 404 whatever is sent.
 	if st, _, _ := f.arr("whatever", "GET", "/sonarr/api/v3/system/status", ""); st != 404 {
@@ -290,6 +291,7 @@ func TestOldAppSwitchAndKeys(t *testing.T) {
 // without Bearer); only the first place found counts. Wrong, missing,
 // other-side and HolyArrs keys get a bare 401.
 func TestOldAppKeyPlaces(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	const path = "/sonarr/api/v3/system/status"
@@ -347,6 +349,7 @@ func TestOldAppKeyPlaces(t *testing.T) {
 // A key made by someone who may no longer manage the Library is refused
 // (403), reads and writes alike; making a key needs that permission.
 func TestOldAppMemberKeyRefused(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	st, body := f.session("POST", "/api/v1/users/invites", `{}`)
@@ -391,6 +394,7 @@ func TestOldAppMemberKeyRefused(t *testing.T) {
 
 // A side whose part is off answers the part gate's 409; the other works.
 func TestOldAppPartOff(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	if err := f.pc.Set(context.Background(), parts.Shows, false, domain.System); err != nil {
@@ -404,6 +408,7 @@ func TestOldAppPartOff(t *testing.T) {
 
 // The calls of the server test, field by field, and paths in any case.
 func TestOldAppServerTestFields(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	for _, side := range []struct{ name, key, version, folder string }{
@@ -520,6 +525,7 @@ func (f *oldAppFix) jobs(kind string) []domain.Job {
 // movie, the queue poll, the daily scans seeing files arrive, and Seerr's
 // remove. Bodies follow the Seerr manual (C4, C5).
 func TestOldAppSeerrFlow(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t)
 	f.turnOn()
 	son, rad := f.sonarrKey, f.radarrKey
@@ -838,6 +844,7 @@ func TestOldAppSeerrFlow(t *testing.T) {
 // base path, and the Location of an add both carry it once.
 // Seerr's "open in" link for admins lands on the HolyArrs title page.
 func TestOldAppOpenLink(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t, "/holyarrs")
 	f.turnOn()
 	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -853,6 +860,7 @@ func TestOldAppOpenLink(t *testing.T) {
 }
 
 func TestOldAppUnderURLBase(t *testing.T) {
+	t.Parallel()
 	f := newOldAppFix(t, "/holyarrs")
 	f.turnOn()
 	if m := f.arrOK(f.radarrKey, "GET", "/radarr/api/v3/system/status", "", 200).(map[string]any); m["urlBase"] != "/holyarrs/radarr" {

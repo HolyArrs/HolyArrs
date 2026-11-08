@@ -16,6 +16,7 @@ import (
 // Cache audit 2026-10-23, finding 7: a genre tile without a content version
 // is not immutable for a week.
 func TestGenreArtImmutableOnlyWithVersion(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	r.api.s.MusicGenreTile = func(_ context.Context, slug, v string) ([]byte, error) { return []byte("\xff\xd8jpeg"), nil }
 	for v, want := range map[string]string{"ab12": "immutable", "": "max-age=3600"} {
@@ -32,6 +33,7 @@ func TestGenreArtImmutableOnlyWithVersion(t *testing.T) {
 
 // Finding 15: the genre picture cache drops its oldest entries at the cap.
 func TestGenreArtCacheEvictsOldest(t *testing.T) {
+	t.Parallel()
 	r := newMusicAskRig(t)
 	r.api.s.MusicGenreTile = func(_ context.Context, slug, v string) ([]byte, error) { return []byte("\xff\xd8jpeg"), nil }
 	for i := 0; i <= music.GenreArtMax; i++ {
@@ -46,6 +48,7 @@ func TestGenreArtCacheEvictsOldest(t *testing.T) {
 
 // Finding 5: a picture from a stable address is not immutable for a year.
 func TestServeArtworkStableRevalidates(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	name := "0123456789abcdef0123456789abcdef.jpg"
 	p := filepath.Join(dir, name)
@@ -66,6 +69,7 @@ func TestServeArtworkStableRevalidates(t *testing.T) {
 // Finding 10: an empty layer-1 value (no similar artists, 0 listeners, no
 // genres or albums) is not kept a week, on disk or in memory.
 func TestMusicBatchEmptyNotKeptLong(t *testing.T) {
+	t.Parallel()
 	a := videoAPI(t, nil, nil)
 	calls := 0
 	fetch := func(_ context.Context, ids []string) (map[string]any, error) {
@@ -85,6 +89,7 @@ func TestMusicBatchEmptyNotKeptLong(t *testing.T) {
 
 // Findings 12 and 14: card art 7 days; person and collection lists a day.
 func TestShorterListAndCardKeeps(t *testing.T) {
+	t.Parallel()
 	if cardArtTTL != 7*24*time.Hour {
 		t.Fatalf("card art %v", cardArtTTL)
 	}
@@ -96,6 +101,7 @@ func TestShorterListAndCardKeeps(t *testing.T) {
 // Details with no trailer are asked again within minutes (the server may
 // add a season trailer); full details keep the day.
 func TestDetailsWithoutVideosShort(t *testing.T) {
+	t.Parallel()
 	if d := detailsTTL(discoverEntry{details: &metadata.Details{}}); d > 15*time.Minute {
 		t.Fatalf("no videos kept %v", d)
 	}

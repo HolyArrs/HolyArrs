@@ -15,6 +15,7 @@ import (
 // route: GET /api/v1/settings/tvdb-key
 // route: PUT /api/v1/settings/tvdb-key
 func TestTVDBKeyAPI(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

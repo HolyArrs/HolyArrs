@@ -19,6 +19,7 @@ import (
 )
 
 func TestSettingsChangeAreas(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		method, path, area, action string
 		ok                         bool
@@ -47,6 +48,7 @@ func TestSettingsChangeAreas(t *testing.T) {
 // Removing an item straight in the Downloader is logged as download_removed
 // by the person who did it.
 func TestClientItemRemoveEvent(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
@@ -65,6 +67,7 @@ func TestClientItemRemoveEvent(t *testing.T) {
 // A change to a named item keeps its name (read before a delete, after a
 // change or add) in data.name and the summary.
 func TestSettingsChangedName(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
@@ -101,6 +104,7 @@ func TestSettingsChangedName(t *testing.T) {
 // Saving the search or Downloader settings leaves one audit Event (area and
 // who) and never the older setting_changed row that held the values sent.
 func TestSettingsSaveLeavesOnlyTheAuditEvent(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	for _, area := range []string{"search", "downloaders"} {
 		body := do(t, "GET", x.srv.URL+"/api/v1/settings/"+area, "", http.StatusOK)
@@ -131,6 +135,7 @@ func TestSettingsSaveLeavesOnlyTheAuditEvent(t *testing.T) {
 // History rows name the member who did them, so readers without the
 // member list still see who.
 func TestEventsNameTheMember(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (7, 't', '{}', 't', '{}', 'mara', 'member', 'x')`)
 	id, name := int64(7), "mara"
@@ -146,6 +151,7 @@ func TestEventsNameTheMember(t *testing.T) {
 // Changing the sign-in settings (local-network skip, two-factor rules) is
 // on the audit trail like any other settings page, and names no list item.
 func TestSignInSettingsAreAudited(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, true)
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{Jar: jar}

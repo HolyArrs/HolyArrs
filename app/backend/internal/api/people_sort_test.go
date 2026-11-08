@@ -8,6 +8,7 @@ import (
 )
 
 func TestSortPeopleMoviesOldestFirstUpcomingLast(t *testing.T) {
+	t.Parallel()
 	now := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
 	day := func(y int) *time.Time { d := time.Date(y, 3, 1, 0, 0, 0, 0, time.UTC); return &d }
 	c := func(id string, year int, date *time.Time, pop float64) metadata.PersonMovieCredit {

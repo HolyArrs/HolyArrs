@@ -13,6 +13,7 @@ type myProfile struct {
 }
 
 func TestMyProfileDisplayName(t *testing.T) {
+	t.Parallel()
 	r := newAskRig(t)
 	var p myProfile
 	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/my/profile", "", 200), &p); err != nil {

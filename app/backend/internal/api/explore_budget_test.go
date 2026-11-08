@@ -25,6 +25,7 @@ func (f *recordingTMDB) count(part string) int {
 // Concurrent builds asking for one list share one outside call, and the
 // list is kept in SQLite so a restarted server does not ask again.
 func TestExploreSourceSharesAndStoresLists(t *testing.T) {
+	t.Parallel()
 	a, s, f := exploreRig(t)
 	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: 30 * time.Millisecond}
 	q := engine.Request{List: "trending", Kind: "movie", Scope: engine.ScopeShared}
@@ -60,6 +61,7 @@ func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 // The pool job builds up to exploreWorkers pools at once, all through the
 // one paced limiter, and records each build's outside calls.
 func TestExploreBuildsInParallel(t *testing.T) {
+	t.Parallel()
 	a, _, f := exploreRig(t)
 	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: 5 * time.Millisecond}
 	now := time.Now()
@@ -106,6 +108,7 @@ func TestExploreBuildsInParallel(t *testing.T) {
 
 // A looked-up rating is kept in SQLite: a new server knows it.
 func TestKidRatingStored(t *testing.T) {
+	t.Parallel()
 	a, s, f := exploreRig(t)
 	ref := ratingRef{kind: "movie", tmdbID: "1234"}
 	r, ok := a.lookupRating(context.Background(), ref)

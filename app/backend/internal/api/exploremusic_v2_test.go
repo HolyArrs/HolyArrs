@@ -153,6 +153,7 @@ func stripState(t *testing.T, b []byte) string {
 
 // route: GET /api/v1/explore/music (music_rows_v2)
 func TestExploreMusicV2Household(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
 	ids := loadHousehold(t, r.st, now)
@@ -252,6 +253,7 @@ func TestExploreMusicV2Household(t *testing.T) {
 }
 
 func TestExploreMusicV2KidFirst(t *testing.T) {
+	t.Parallel()
 	// Music (and so every explicit card) stays off for age-limited
 	// accounts, flag on or off: the Kid answer comes before the flag.
 	b, err := os.ReadFile("exploremusic.go")

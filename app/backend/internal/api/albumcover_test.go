@@ -19,6 +19,7 @@ import (
 
 // route: GET /api/v1/albums/{id}/cover
 func TestAlbumCoverServesTheCachedCover(t *testing.T) {
+	t.Parallel()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)

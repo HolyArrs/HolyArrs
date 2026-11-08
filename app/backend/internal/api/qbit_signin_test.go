@@ -15,6 +15,7 @@ import (
 // saving with neither is refused, the secret is masked, and a masked value
 // sent back keeps it.
 func TestQbitDownloaderKeyOrPassword(t *testing.T) {
+	t.Parallel()
 	srv, _ := dlServer(t)
 	logins := 0
 	qb := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

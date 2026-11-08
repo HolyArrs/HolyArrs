@@ -78,6 +78,7 @@ func adoptLabShow(t *testing.T, url string, folderID int64) int64 {
 // 5.2.2: a show Library folder is scanned (a dry run listing each file's
 // episodes) and adopted with no file moved.
 func TestScanAndAdoptShowsAPI(t *testing.T) {
+	t.Parallel()
 	url, s, lib, folderID := showOrganiseSetup(t)
 	var q struct {
 		JobID  int64 `json:"job_id"`
@@ -130,6 +131,7 @@ func count41(t *testing.T, s *database.Store, table string) int {
 // 5.2.3: POST /titles/{id}/delete takes a season or episode_ids for part
 // of a show; the dry run is what the delete does.
 func TestDeleteShowPartsAPI(t *testing.T) {
+	t.Parallel()
 	url, _, lib, folderID := showOrganiseSetup(t)
 	id := adoptLabShow(t, url, folderID)
 	u := url + "/api/v1/titles/" + itoa(id) + "/delete"
@@ -163,6 +165,7 @@ func TestDeleteShowPartsAPI(t *testing.T) {
 // route: PUT /api/v1/settings/alerts
 // 5.2.5: one Alert per pack import by default, or one per episode.
 func TestAlertSettingsAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, _ := showOrganiseSetup(t)
 	u := url + "/api/v1/settings/alerts"
 	if b := string(do(t, "GET", u, "", 200)); !strings.Contains(b, `"pack_alerts":"one"`) || !strings.Contains(b, `"each_limit":25`) {
@@ -182,6 +185,7 @@ func TestAlertSettingsAPI(t *testing.T) {
 // 5.2.6: History of one episode: the Events of its Slots (its own, or a
 // pack's slot_ids) and those naming it; each show row names its episodes.
 func TestEpisodeHistoryAPI(t *testing.T) {
+	t.Parallel()
 	url, s, _, folderID := showOrganiseSetup(t)
 	id := adoptLabShow(t, url, folderID)
 	ctx := context.Background()
@@ -234,6 +238,7 @@ func TestEpisodeHistoryAPI(t *testing.T) {
 
 // 5.2.7: the calendar lists episodes with movies, or only one of them.
 func TestCalendarShowsAPI(t *testing.T) {
+	t.Parallel()
 	url, _, _, folderID := showOrganiseSetup(t)
 	adoptLabShow(t, url, folderID)
 	var c struct {

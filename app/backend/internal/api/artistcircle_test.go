@@ -27,6 +27,7 @@ func (f idArtists) ArtistIDs(_ context.Context, mbid string) (metadata.ArtistIDs
 // the server only. Two artists named "Drake" exist; the circle never shows
 // the other one, and with no stored picture it shows none (placeholder).
 func TestArtistCircleNameCollision(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const drake, linked, wide, none = "9fff2f8a-21e6-47de-a2b8-7f449929d43f", "11111111-1111-4111-8111-111111111111",
 		"22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333"

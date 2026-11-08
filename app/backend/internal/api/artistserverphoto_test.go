@@ -15,6 +15,7 @@ import (
 // over the chart's picture; a placeholder answer is refused, so the old
 // sources still run.
 func TestArtistServerPhotoFirst(t *testing.T) {
+	t.Parallel()
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const sharp, cold = "9fff2f8a-21e6-47de-a2b8-7f449929d43f", "44444444-4444-4444-8444-444444444444"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

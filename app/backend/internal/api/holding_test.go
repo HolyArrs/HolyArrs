@@ -11,6 +11,7 @@ import (
 // route: GET /api/v1/holding
 // route: POST /api/v1/holding/restore
 func TestHoldingRestoreAPI(t *testing.T) {
+	t.Parallel()
 	url, _, lib, id, fid := organiseWorld(t)
 	do(t, "POST", url+"/api/v1/titles/"+itoa(id)+"/delete", `{"delete_files":true,"apply":true}`, 200)
 	var list struct {

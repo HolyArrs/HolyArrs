@@ -8,6 +8,7 @@ import (
 // A New & Popular page's key carries its day: past days' pages are dropped
 // when a new one is kept, not left until 500 have piled up.
 func TestNewPagesDropPastDays(t *testing.T) {
+	t.Parallel()
 	c := &newPageCache{pages: map[string]newPageEntry{
 		"old":   {at: time.Now().Add(-newPageTTL - time.Minute)},
 		"fresh": {at: time.Now().Add(-time.Minute)},

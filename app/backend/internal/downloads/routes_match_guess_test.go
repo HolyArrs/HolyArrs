@@ -6,6 +6,7 @@ import (
 )
 
 func TestGuessOf(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, cat string
 		kind      string
@@ -35,6 +36,7 @@ func TestGuessOf(t *testing.T) {
 }
 
 func TestPickSure(t *testing.T) {
+	t.Parallel()
 	one := []Candidate{{ID: "tmdb:1", Name: "Paper Harbour", Year: 2023, Score: likeness("Paper Harbour", "Paper Harbour")}, {ID: "tmdb:2", Name: "Paper Moon", Year: 1973, Score: likeness("Paper Harbour", "Paper Moon")}}
 	if i := pickSure(one, 2023); i != 0 {
 		t.Fatalf("one exact: %d", i)
@@ -57,6 +59,7 @@ func TestPickSure(t *testing.T) {
 // An indexer-manager category like "prowlarr" says nothing about the kind: a
 // name with a year and a resolution is still a movie; other names stay out.
 func TestGuessNeutralCategory(t *testing.T) {
+	t.Parallel()
 	if g := guessOf("Root_Cause_2019_Bluray-1080p", "prowlarr"); g.kind != "movie" {
 		t.Fatalf("prowlarr movie: %+v", g)
 	}

@@ -12,6 +12,7 @@ import (
 // page that still sends it is answered as usual and the switch is ignored:
 // nothing is stored for it and the other fields still save.
 func TestUISettingsOldUpdateSwitchIgnored(t *testing.T) {
+	t.Parallel()
 	srv, st := discoverRig(t, trailerTMDB(t))
 	path := srv.URL + "/api/v1/settings/ui"
 	if b := string(do(t, "GET", path, "", 200)); strings.Contains(b, "keep_ytdlp_updated") {

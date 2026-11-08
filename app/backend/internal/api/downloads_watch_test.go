@@ -44,6 +44,7 @@ func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []downloads
 // Everyone signed in may open Downloads; someone who may not manage the
 // Library sees only the downloads for titles they asked for, with no actions.
 func TestDownloadsViewOwnAsksOnly(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES
 		(1, 't', '{}', 't', '{}', 'owner', 'owner', 'x'), (2, 't', '{}', 't', '{}', 'ana', 'member', 'x'), (3, 't', '{}', 't', '{}', 'bo', 'member', 'x')`)
@@ -90,6 +91,7 @@ func TestDownloadsViewOwnAsksOnly(t *testing.T) {
 // A failed copy whose Slot moved on (searching again, or another copy on
 // its way) is no problem any more; one with nothing left still is.
 func TestDownloadsViewFailedReplaced(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotSearching, "failed")
 	owner := webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "session"}
 	if r := viewAs(t, x, owner); len(r) != 1 || r[0].Phase != "failed" || !r[0].Replaced {
@@ -109,6 +111,7 @@ func TestDownloadsViewFailedReplaced(t *testing.T) {
 // A failed download turns its copy down on its own; the
 // copy is on the Turned down list with why, and Undo lets it be picked again.
 func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/mark-failed", "", 200)
 	// The search itself is the Manager's OnFailed (wired in main; covered in
@@ -145,6 +148,7 @@ func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
 
 // route: GET /api/v1/downloads/speeds
 func TestDownloadsSpeedsRoute(t *testing.T) {
+	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var out struct {
 		Samples []map[string]any `json:"samples"`

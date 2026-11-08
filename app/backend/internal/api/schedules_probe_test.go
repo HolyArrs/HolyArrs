@@ -9,6 +9,7 @@ import (
 )
 
 func TestSchedulesShowEffectiveProbeTimeWithoutChangingHistory(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	now := time.Now().UTC().Add(time.Second)
 	f.api.s.Queue.ProbeSchedule("feed_check", func(context.Context, time.Time) (bool, any, error) { return false, nil, nil })
@@ -36,6 +37,7 @@ func TestSchedulesShowEffectiveProbeTimeWithoutChangingHistory(t *testing.T) {
 }
 
 func TestRunScheduleBypassesProbeWithoutMovingClock(t *testing.T) {
+	t.Parallel()
 	f := newCtl(t, false)
 	var calls int
 	f.api.s.Queue.ProbeSchedule("feed_check", func(context.Context, time.Time) (bool, any, error) {

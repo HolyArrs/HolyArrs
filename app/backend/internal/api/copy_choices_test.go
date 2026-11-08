@@ -15,6 +15,7 @@ import (
 )
 
 func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	var added struct {
 		Title TitleView `json:"title"`
@@ -71,6 +72,7 @@ func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
 }
 
 func TestDownloadEditionConfirmationRetriesOnlyCurrentWaitingMovie(t *testing.T) {
+	t.Parallel()
 	srv, s, _ := setup(t)
 	var added struct {
 		Title TitleView `json:"title"`
