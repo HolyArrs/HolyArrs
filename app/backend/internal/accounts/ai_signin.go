@@ -318,7 +318,7 @@ func (a *Auth) aiRegister(w http.ResponseWriter, r *http.Request) {
 	a.mu.Unlock()
 	if wait > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
-		oauthFail(w, http.StatusTooManyRequests, "temporarily_unavailable", "too many registrations; wait a little and try again")
+		oauthFail(w, http.StatusTooManyRequests, "temporarily_unavailable", "Too many new apps from this address. Try again in a few minutes.")
 		return
 	}
 	var in struct {

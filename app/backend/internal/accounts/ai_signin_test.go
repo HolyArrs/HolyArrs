@@ -75,10 +75,13 @@ func TestAIRegisterLimited(t *testing.T) {
 	f.srv.Config.Handler = f.a.Middleware(m)
 	bare := &http.Client{}
 	for i := 0; i < 30; i++ {
-		resp, _ := call(t, bare, "POST", f.srv.URL+"/oauth/register", `{"client_name":"x","redirect_uris":["http://localhost:4567/callback"]}`, nil)
+		resp, body := call(t, bare, "POST", f.srv.URL+"/oauth/register", `{"client_name":"x","redirect_uris":["http://localhost:4567/callback"]}`, nil)
 		if resp.StatusCode == 429 {
 			if i < freeTries {
 				t.Fatalf("limited after %d", i)
+			}
+			if !strings.Contains(body, "Too many new apps from this address. Try again in a few minutes.") {
+				t.Fatalf("limit message: %s", body)
 			}
 			return
 		}
