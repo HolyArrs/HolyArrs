@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -21,6 +22,15 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
+
+// routePackages are the packages that register /api/v1 routes.
+var routePackages = func() []string {
+	ps := []string{"api", "accounts", "backups", "alerts", "health", "updates", "mediaservers", "metadata", "sources", "subtitles", "ai", "arrapi", "migrate", "movies", "shows", "library", "mediafiles", "datapack", "importer", "setup", "downloads", "requests", "music", "discover", "core/webserver"}
+	for i, p := range ps {
+		ps[i] = "../../internal/" + p
+	}
+	return ps
+}()
 
 // TestEveryRouteHasAPermission reads every route the program registers and
 // checks accounts.RoutePerms names what it needs (or that it is public). A route
@@ -41,7 +51,7 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 	for _, dir := range routePackages {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
-			if strings.HasSuffix(f, "_test.go") || (dir == "../arrapi" && filepath.Base(f) != "routes_settings.go") {
+			if strings.HasSuffix(f, "_test.go") || (dir == "../../internal/arrapi" && filepath.Base(f) != "routes_settings.go") {
 				continue
 			}
 			b, err := os.ReadFile(f)
@@ -83,7 +93,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 	au := accounts.New(s, accounts.Options{Vault: v})
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
+	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backups.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}}).Handler())
 	t.Cleanup(srv.Close)
 

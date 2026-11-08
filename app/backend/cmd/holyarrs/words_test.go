@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -125,7 +125,7 @@ func TestNoBannedWords(t *testing.T) {
 	}
 	// API names and descriptions.
 	var doc any
-	if err := json.Unmarshal(openapiJSON, &doc); err != nil {
+	if err := json.Unmarshal(mustRead(t, filepath.Join("..", "..", "internal", "api", "openapi.json")), &doc); err != nil {
 		t.Fatal(err)
 	}
 	var walk func(v any, at string)
@@ -173,4 +173,14 @@ func TestBannedWordsAreCaught(t *testing.T) {
 	if !excepted("plans/active/2026-10-13-m1-movies.md", "- Words: use glossary terms in code, API (Monitored)") || excepted("plans/active/x.md", "- Words: use glossary terms in code") {
 		t.Error("exceptions")
 	}
+}
+
+// mustRead reads a file the test needs.
+func mustRead(t *testing.T, p string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }

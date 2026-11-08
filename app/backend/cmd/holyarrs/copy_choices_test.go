@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -16,15 +17,15 @@ import (
 
 func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s := apiServer(t)
 	var added struct {
-		Title TitleView `json:"title"`
+		Title titleview.TitleView `json:"title"`
 	}
 	if err := json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &added); err != nil {
 		t.Fatal(err)
 	}
 	base := srv.URL + "/api/v1/titles/" + itoa(added.Title.ID)
-	var v VersionView
+	var v titleview.VersionView
 	if err := json.Unmarshal(do(t, "POST", base+"/versions", `{"label":"Directors HD","edition":"Directors Cut","folder_name":"Existing Directors Cut"}`, 201), &v); err != nil {
 		t.Fatal(err)
 	}
@@ -52,8 +53,8 @@ func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
 	do(t, "POST", choice+"/keep-and-add", `{"label":"Another"}`, 400)
 	do(t, "POST", choice+"/keep-and-add", `{"label":"Directors 4K","edition":"Directors Cut","pick_rules_id":`+itoa(v.PickRulesID)+`,"library_folder_id":`+itoa(v.LibraryFolderID)+`}`, 201)
 	var copies struct {
-		Files    []mediafiles.File `json:"files"`
-		Versions []VersionView     `json:"versions"`
+		Files    []mediafiles.File       `json:"files"`
+		Versions []titleview.VersionView `json:"versions"`
 	}
 	if err := json.Unmarshal(do(t, "GET", base+"/copies", "", 200), &copies); err != nil {
 		t.Fatal(err)
@@ -73,9 +74,9 @@ func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
 
 func TestDownloadEditionConfirmationRetriesOnlyCurrentWaitingMovie(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s := apiServer(t)
 	var added struct {
-		Title TitleView `json:"title"`
+		Title titleview.TitleView `json:"title"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &added)
 	sid := added.Title.Slots[0].ID
