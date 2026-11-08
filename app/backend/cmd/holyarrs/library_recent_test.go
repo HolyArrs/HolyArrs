@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -16,7 +17,7 @@ import (
 
 func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s, _ := lbSetup(t)
 	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for n := range 25 {
@@ -43,9 +44,9 @@ func TestLibrarySummaryRecentNewestFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got struct {
-		Recent []TitleView `json:"recent"`
+		Recent []api.TitleView `json:"recent"`
 	}
-	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/library-summary", "", 200), &got); err != nil {
+	if err := json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/library-summary", "", 200), &got); err != nil {
 		t.Fatal(err)
 	}
 	if len(got.Recent) != 20 || got.Recent[0].Name != "Movie 03" || got.Recent[1].Name != "Movie 23" || got.Recent[19].Name != "Movie 05" {

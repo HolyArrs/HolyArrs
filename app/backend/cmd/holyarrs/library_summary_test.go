@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -16,7 +17,7 @@ import (
 // route: GET /api/v1/library-summary
 func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s, _ := lbSetup(t)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		for n := range 12 {
 			title := mediafiles.Title{Kind: "movie", Name: fmt.Sprintf("Movie %02d", n), SortName: fmt.Sprintf("movie %02d", n),
@@ -56,14 +57,14 @@ func TestHomeLibrarySummaryIsBounded(t *testing.T) {
 		Total   int                             `json:"total"`
 		Missing []mediafiles.LibraryMissingView `json:"missing"`
 	}
-	body := do(t, "GET", srv.URL+"/api/v1/library-summary", "", 200)
+	body := lbDo(t, "GET", srv.URL+"/api/v1/library-summary", "", 200)
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatal(err)
 	}
 	if got.Total != 11 || len(got.Missing) != 8 || got.Missing[0].Name != "Movie 01" || got.Missing[7].Name != "Movie 08" {
 		t.Fatalf("summary: %s", body)
 	}
-	if got.Missing[0].StateLabel != StateLabels[mediafiles.SlotSearching] {
+	if got.Missing[0].StateLabel != api.StateLabels[mediafiles.SlotSearching] {
 		t.Fatalf("missing title state: %+v", got.Missing[0])
 	}
 	if s.WriteCount() != before {

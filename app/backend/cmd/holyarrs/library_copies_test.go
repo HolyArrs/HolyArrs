@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -59,25 +59,25 @@ func apiMovieCopy(t *testing.T, s *database.Store, protected bool) (mediafiles.F
 
 func TestLibraryCopiesListAndReviewedSearch(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s, _ := lbSetup(t)
 	f, v, slot := apiMovieCopy(t, s, false)
 
 	var page mediafiles.LibraryCopyPage
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/library/copies?codec=hevc&sort=codec", "", 200), &page)
+	_ = json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/library/copies?codec=hevc&sort=codec", "", 200), &page)
 	if page.Total != 1 || len(page.Copies) != 1 || page.Copies[0].Codec != "hevc" {
 		t.Fatalf("page %+v", page)
 	}
 
-	body := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}]}`
+	body := `{"selections":[{"file_id":` + lbItoa(f.ID) + `,"version_id":` + lbItoa(v.ID) + `}]}`
 	var preview mediafiles.LibraryCopySearchPreview
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 200), &preview)
+	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 200), &preview)
 	if preview.ReviewToken == "" || preview.SlotCount != 1 || len(preview.Copies) != 1 {
 		t.Fatalf("preview %+v", preview)
 	}
 
-	searchBody := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}],"review_token":"` + preview.ReviewToken + `"}`
+	searchBody := `{"selections":[{"file_id":` + lbItoa(f.ID) + `,"version_id":` + lbItoa(v.ID) + `}],"review_token":"` + preview.ReviewToken + `"}`
 	var searched mediafiles.LibraryCopySearchResult
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library/copies/search", searchBody, 202), &searched)
+	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search", searchBody, 202), &searched)
 	if len(searched.JobIDs) != 1 || len(searched.Items) != 1 || searched.Items[0].SlotIDs[0] != slot.ID {
 		t.Fatalf("search %+v", searched)
 	}
@@ -86,29 +86,29 @@ func TestLibraryCopiesListAndReviewedSearch(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT kind, params, subject FROM jobs WHERE id=?", searched.JobIDs[0]).Scan(&kind, &params, &subject); err != nil {
 		t.Fatal(err)
 	}
-	if kind != "search_slot" || !strings.Contains(params, `"by_hand":true`) || !strings.Contains(params, `"choose":false`) || !strings.Contains(subject, `"id":`+itoa(slot.ID)) {
+	if kind != "search_slot" || !strings.Contains(params, `"by_hand":true`) || !strings.Contains(params, `"choose":false`) || !strings.Contains(subject, `"id":`+lbItoa(slot.ID)) {
 		t.Fatalf("job kind=%s params=%s subject=%s", kind, params, subject)
 	}
 }
 
 func TestLibraryCopySearchRevalidatesStaleAndProtected(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s, _ := lbSetup(t)
 	f, v, _ := apiMovieCopy(t, s, false)
-	body := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}]}`
+	body := `{"selections":[{"file_id":` + lbItoa(f.ID) + `,"version_id":` + lbItoa(v.ID) + `}]}`
 	var preview mediafiles.LibraryCopySearchPreview
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 200), &preview)
+	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 200), &preview)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET protected=1 WHERE id=?", f.ID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
 	}
-	searchBody := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}],"review_token":"` + preview.ReviewToken + `"}`
-	do(t, "POST", srv.URL+"/api/v1/library/copies/search", searchBody, 409)
-	do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 409)
+	searchBody := `{"selections":[{"file_id":` + lbItoa(f.ID) + `,"version_id":` + lbItoa(v.ID) + `}],"review_token":"` + preview.ReviewToken + `"}`
+	lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search", searchBody, 409)
+	lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 409)
 
-	bad := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":999999}]}`
-	do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", bad, 409)
-	do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", `{"selections":[]}`, 400)
+	bad := `{"selections":[{"file_id":` + lbItoa(f.ID) + `,"version_id":999999}]}`
+	lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", bad, 409)
+	lbDo(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", `{"selections":[]}`, 400)
 }
