@@ -23,12 +23,13 @@ The release workflow builds one image for `linux/amd64`, `linux/arm64` and `linu
 
 ## Release notes
 
-Every release text is built from one file, `releases/notes-<version>.yml`. Write only that file; never hand-edit what it builds.
+Every release text is built from one file, `releases/notes-<version>.toml` (TOML, read with Python's built-in `tomllib`). Write only that file; never hand-edit what it builds.
 
-- `version` (plain `X.Y.Z`), `theme` (one line), and exactly 3 `highlights`, each with `line`, `issue` and `shot`.
-- `groups`: one entry per place (Setup, Library, Downloads...), each with `added`, `fixed` and `changed` lists. Every line ends with its issue, for example `(#46)`.
-- Optional: `before_you_update` (`breaking`, `manual_steps`, `backup`, `rollback`), `security`, `known_issues`, `credits` (`name`, `link`, `github`, `issues`) and `stats`. Leave anything empty that has nothing real in it; empty parts are hidden everywhere.
-- GitHub logins only when known, either in the yml or in `releases/credits-map.json`.
+- `version` (plain `X.Y.Z`), `theme` (one line), `image` (`ghcr.io/holyarrs/holyarrs`) and exactly 3 `[[highlights]]`, each with `line`, `issues` (list of issue numbers) and `shot`. A highlight shows once, at the top; its issues appear in no group line.
+- `[groups]`: one list of lines per place (Requests, Library, Downloads...). Lines are new by default; only non-new lines start `Changed: `, `Fixed: ` or `Docs: `. Every line ends with its issue, for example `(#46)`. Places with fewer than 3 lines are shown together under Also new.
+- Optional: `[before_you_update]` (`breaking`, `manual_steps`, `backup`, `rollback`), `security`, `known_issues`, `credits` (`name`, `link`, `github`, `issues`) and `[stats]`. Leave anything empty that has nothing real in it; empty parts are hidden everywhere.
+- GitHub logins only when known, either in the notes file or in `releases/credits-map.json` (keyed by the bare or the `u/` name).
+- Release body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, Accounts, Health, Setup, Install), Also new, Security, Known issues, Before you update, Image, Thanks, stats line. Assets stay in GitHub's own box below the body.
 
 Check it, then build:
 
@@ -37,7 +38,7 @@ python deploy/release/notes.py 1.0.0 --check
 python deploy/release/notes.py 1.0.0
 ```
 
-The second command writes `changelog.md`, `github.md`, `update-notes.json`, `reddit.txt`, `discord-dm.txt`, `discord-announce.md` and `roadmap-card.json` to `releases/out/1.0.0/`. `--check` exits 1 on any error and prints warnings for long lines and banned words.
+The second command writes `changelog.md`, `github.md`, `update-notes.json`, `reddit.txt`, `discord-dm.txt`, `discord-announce.md` and `roadmap-card.json` to `releases/out/1.0.0/`. `--check` exits 1 on any error (banned words, em dashes, dates or launch talk, a highlight issue repeated in a group, a Discord text over 1,000 characters) and prints warnings for long lines and near-repeats.
 
 ## Update list
 

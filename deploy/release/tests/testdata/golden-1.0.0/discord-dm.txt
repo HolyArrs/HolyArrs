@@ -3,5 +3,5 @@ One app for movies, shows and music, from asking to watching.
 - Move over from your old apps without starting over.
 - Browse and request like a streaming app.
 - Every download on one page, stuck ones swapped for you.
-Before you update: Default port is 6262. Map your old port if you want to keep it.
+Before you update: Default port is now 6262. Map your old port to keep it.
 What changed: https://github.com/HolyArrs/holyarrs/releases/tag/1.0.0
