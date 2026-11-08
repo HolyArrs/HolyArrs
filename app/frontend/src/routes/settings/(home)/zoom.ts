@@ -1,6 +1,4 @@
-// The card-to-page zoom (tablet and desktop). One flight at a time; a new
-// move, Back mid-way or a second click turns the current one around or
-// clears it, so nothing is ever left half-drawn. Transform and opacity only.
+// The card-to-page zoom (tablet and desktop). One flight at a time; a new move, Back mid-way or a second click turns the current one around or clears it, so nothing is ever left half-drawn. Transform and opacity only.
 
 import { EASE, MS, flip, phone, radiusFor, reduced, shift, type Box, type Move } from '#lib/core/motion.ts';
 
@@ -27,7 +25,7 @@ const boxOf = (el: Element): Box => {
 	return { left: r.left, top: r.top, width: r.width, height: r.height };
 };
 
-/** stage is the content column below the top bar, inside the screen. */
+/** The content column below the top bar, inside the screen. */
 function stage(): Box {
 	const col = document.querySelector('.ui-shell > .content') ?? document.body;
 	const r = col.getBoundingClientRect();
@@ -65,7 +63,7 @@ function artClone(card: HTMLElement, b: Box): HTMLElement | null {
 	return el;
 }
 
-/** clear ends any flight at once and puts every card back as it was. */
+/** Ends any flight at once and puts every card back as it was. */
 export function clearFlight() {
 	if (!flight) return;
 	for (const a of flight.anims) a.cancel();
@@ -87,12 +85,7 @@ function sheet(b: Box, radius: number): HTMLElement {
 	return el;
 }
 
-/**
- * zoomOpen grows the card into an opaque sheet the size of the page and
- * resolves true once it has landed, so the caller can then load the page
- * under it. Resolves false if the flight was turned around or replaced.
- * Returns null where it does not zoom (phones, less motion).
- */
+/** Grows the card into an opaque sheet the size of the page and resolves true once it has landed, so the caller can then load the page under it. Resolves false if the flight was turned around or replaced. Returns null where it does not zoom (phones, less motion). */
 export function zoomOpen(card: HTMLElement, group: string): Promise<boolean> | null {
 	clearFlight();
 	if (reduced() || phone()) return null;
@@ -119,10 +112,7 @@ export function zoomOpen(card: HTMLElement, group: string): Promise<boolean> | n
 	return f.landed;
 }
 
-/**
- * cancelOpen turns a zoom that has not landed back into its card (Escape,
- * or a second click elsewhere). Returns true if there was one to turn.
- */
+/** Turns a zoom that has not landed back into its card (Escape, or a second click elsewhere). Returns true if there was one to turn. */
 export function cancelOpen(): boolean {
 	const f = flight;
 	if (!f || f.dir !== 'open' || f.grown) return false;
@@ -134,12 +124,12 @@ export function cancelOpen(): boolean {
 	return true;
 }
 
-/** arrive is called by the page once it is on screen: the sheet clears to show it. */
+/** Called by the page once it is on screen: the sheet clears to show it. */
 export function arrive() {
 	const f = flight;
 	if (!f || f.dir !== 'open') return;
 	f.arrived = true;
-	f.hidden = null; // that card is gone with the Settings home
+	f.hidden = null; // That card is gone with the Settings home.
 	// Wait for the page's first paint, so the fade never shares a frame with mounting.
 	requestAnimationFrame(() => requestAnimationFrame(() => settle(f)));
 }
@@ -153,11 +143,7 @@ function settle(f: Flight) {
 	});
 }
 
-/**
- * coverPage fades a blank sheet over the open page before Back swaps it
- * for the Settings home, so the home mounts unseen and the sheet then
- * shrinks into its card. Resolves when covered (at once where it does not zoom).
- */
+/** Fades a blank sheet over the open page before Back swaps it for the Settings home, so the home mounts unseen and the sheet then shrinks into its card. Resolves when covered (at once where it does not zoom). */
 export function coverPage(group: string): Promise<void> {
 	clearFlight();
 	if (reduced() || phone()) return Promise.resolve();
@@ -171,7 +157,7 @@ export function coverPage(group: string): Promise<void> {
 	return Promise.race([f.landed, new Promise<boolean>((r) => setTimeout(() => r(true), MS.cover + 60))]).then(() => {});
 }
 
-/** zoomBack shrinks the page's sheet into its card on the Settings home. */
+/** Shrinks the page's sheet into its card on the Settings home. */
 export function zoomBack(card: HTMLElement, group: string): void {
 	const face = (card.querySelector('.sx-face') as HTMLElement | null) ?? card;
 	const rest = others(card);
@@ -207,16 +193,16 @@ export function zoomBack(card: HTMLElement, group: string): void {
 	});
 }
 
-/** push brings a screen in on a phone: a fade with a slight settle (never past the screen edge). */
+/** Brings a screen in on a phone: a fade with a slight settle (never past the screen edge). */
 export function push(el: HTMLElement, back: boolean): Animation | null {
 	if (reduced() || !phone()) return null;
 	return back
 		? el.animate([{ transform: 'scale(0.985)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: MS.pop, easing: EASE })
-		: // A fade with a slight settle: nothing ever sits past the screen edge, even mid-motion.
+		:
 		  el.animate([{ transform: 'scale(0.985)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: MS.push, easing: EASE });
 }
 
-/** swap is the quiet change between two pages of one group. */
+/** The quiet change between two pages of one group. */
 export function swap(el: HTMLElement): Animation | null {
 	if (reduced()) return null;
 	return el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MS.swap, easing: EASE });

@@ -1,7 +1,14 @@
 <script lang="ts">
-	// Status: is every linked part working, and did every background job run?
-	// Reads only the existing health, schedules, lists, alerts and metadata
-	// routes.
+	// Status: is every linked part working, and did every background job run? Reads only the existing health, schedules, lists, alerts and metadata routes.
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import PageLoader from '#lib/ui/PageLoader.svelte';
+	import { checkMetadata, metadataHealth } from '#lib/metadata/index.ts';
+	import type { HealthChecks, HealthStates, ScheduleRow } from '#lib/health/index.ts';
+	import type { OutsideList } from '#lib/requests/index.ts';
+	import { Updates } from '#lib/updates/index.ts';
+	import { HealthSections as Sections, buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { page } from '$app/state';
@@ -10,17 +17,8 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { checkMetadata, metadataHealth } from '#lib/metadata/index.ts';
 	import type { AlertView } from '#lib/core/types.ts';
-	import type { HealthChecks, HealthStates, ScheduleRow } from '#lib/health/index.ts';
-	import type { OutsideList } from '#lib/requests/index.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import Button from '#lib/ui/Button.svelte';
-	import LoadError from '#lib/ui/LoadError.svelte';
-	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { testLabel } from '#lib/core/test-tag.ts';
-	import { Updates } from '#lib/updates/index.ts';
-	import { HealthSections as Sections, buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/health/index.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);
@@ -44,8 +42,7 @@
 	const labelOf = (r: StatusRow) => groupOrder.find((g) => g.id === r.group)?.label ?? '';
 	const failedText = $derived(failed.length ? `Could not load ${failed.join(', ')}.` : '');
 
-	// Only the newest read may write the page; an older reply that lands late is dropped.
-	// load() is true when its answer was the one kept; latest is the newest read.
+	// Only the newest read may write the page; an older reply that lands late is dropped. load() is true when its answer was the one kept; `latest` is the newest read.
 	let seq = 0;
 	let latest: Promise<boolean> = Promise.resolve(true);
 	function load(force = false): Promise<boolean> {
@@ -224,8 +221,7 @@
 </div>
 
 <style>
-	/* Desktop: this page ends where its last plate ends, so the Jobs tab fits a screen.
-	   Phones keep the layout's room for the tab bar. */
+	/* Desktop: this page ends where its last plate ends, so the Jobs tab fits a screen. Phones keep the layout's room for the tab bar. */
 	@media (min-width: 768px) {
 		:global(main:has(> .status)) { padding-bottom: 12px; }
 	}

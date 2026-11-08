@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { testLabel } from '#lib/core/test-tag.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
@@ -7,7 +6,12 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import { refreshParts, partNeeds, partStops, type PartName, type PartsAnswer, type PartView } from '#lib/mediafiles/index.ts';
+	import { isConfirm, linkAction, linkTarget, type Confirm } from '#lib/setup/index.ts';
+	import { linkLabel, runTone, runWord, splitStates } from '#lib/health/index.ts';
+	import type { HealthStates, StageState } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
+	import { testLabel } from '#lib/core/test-tag.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -15,11 +19,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshParts, partNeeds, partStops, type PartName, type PartsAnswer, type PartView } from '#lib/mediafiles/index.ts';
-	import { isConfirm, linkAction, linkTarget, type Confirm } from '#lib/setup/index.ts';
-	import { linkLabel, runTone, runWord, splitStates } from '#lib/health/index.ts';
 	import type { EventRecord } from '#lib/core/types.ts';
-	import type { HealthStates, StageState } from '#lib/health/index.ts';
 
 	let parts = $state<PartsAnswer | null>(null);
 	let states = $state<HealthStates | null>(null);
@@ -60,7 +60,7 @@
 		};
 	});
 
-	/** run sends a control; one that asks first waits for the second step on this page. */
+	/** Sends a control; one that asks first waits for the second step on this page. */
 	async function run(key: string, label: string, path: string, then: (r: unknown) => void) {
 		busy = key;
 		try {

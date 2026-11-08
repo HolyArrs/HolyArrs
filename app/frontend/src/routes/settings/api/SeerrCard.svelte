@@ -9,9 +9,7 @@
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 
-	// Seerr and Overseerr send approved requests to Sonarr and Radarr; this
-	// card switches on HolyArrs's small API that answers them in their place
-	// (#85, decision 0008). Each side gets its own key, shown once.
+	// Seerr and Overseerr send approved requests to Sonarr and Radarr; this card switches on HolyArrs's small API that answers them in their place. Each side gets its own key, shown once.
 	type Side = 'sonarr' | 'radarr';
 	interface Key { side: Side; hint: string; owner: string; owner_active: boolean; created_at: string; last_used_at?: string }
 	interface SideView { side: Side; path: string; url: string; key?: Key }
@@ -23,7 +21,7 @@
 	};
 
 	let a = $state<Answer | null>(null);
-	let gone = $state(false); // an older server without this API: no card
+	let gone = $state(false); // An older server without this API: no card.
 	let error = $state('');
 	let busy = $state('');
 	let fresh = $state<{ side: Side; key: string } | null>(null);

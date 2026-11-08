@@ -1,9 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// The Metadata page and docs/metadata-privacy.md say the same thing about
-// what the metadata server gets; the headers named here are the ones
-// internal/metadata/privacy_test.go allows.
+// The Metadata page and the metadata privacy doc say the same thing about what the metadata server gets; the headers named here are the ones the backend privacy test allows.
 const page = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
 const doc = readFileSync(new URL('../../../../../../docs/metadata-privacy.md', import.meta.url), 'utf8');
 

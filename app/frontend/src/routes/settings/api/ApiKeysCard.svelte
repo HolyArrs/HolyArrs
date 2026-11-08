@@ -8,8 +8,7 @@
 	import { ago, date } from '#lib/core/format.ts';
 	import type { ApiKey } from '#lib/core/types.ts';
 
-	// API keys for other apps: make one (shown once), see when each was
-	// last used, revoke. Moved here from Sign-in and security; same calls.
+	// API keys for other apps: make one (shown once), see when each was last used, revoke.
 	let keys = $state<ApiKey[]>([]);
 	let keysNote = $state('');
 	let label = $state('');

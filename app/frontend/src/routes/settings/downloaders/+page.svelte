@@ -7,17 +7,17 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
-	import { onMount } from 'svelte';
-	import { api } from '#lib/core/api.ts';
-	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { ago } from '#lib/core/format.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { onMount } from 'svelte';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { live } from '#lib/core/live.svelte.ts';
-	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 
 	let list = $state<DownloaderView[]>([]);
 	let loaded = $state(false);
@@ -253,7 +253,7 @@
 			setBusy = false;
 		}
 	}
-	/** hostOf keeps the address short: host and port, no scheme. */
+	/** Keeps the address short: host and port, no scheme. */
 	function hostOf(url: string): string {
 		try {
 			return new URL(url).host || url;

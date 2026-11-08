@@ -1,6 +1,5 @@
 <script module lang="ts">
-	// Back to Search reuses what was on screen: the answers kept when Search was
-	// left, for that history entry and address only (a fresh visit loads anew).
+	// Back to Search reuses what was on screen: the answers kept when Search was left, for that history entry and address only (a fresh visit loads anew).
 	import { historyIndex, SearchField, BrowseTile, MusicBrowseSections, MosaicReveal, ENTER_DELAY, ENTER_SWEEP, passAt, browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTileData as Tile, type CategoryView, type MoodView, byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson, live, addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope, genrePath, type GenreAnswer, describes, found, plainPath, understood, type PlainAnswer } from '#lib/discover/index.ts';
 	let kept: { key: string; data: unknown } | null = null;
 	function entryKey(): string {
@@ -11,18 +10,7 @@
 </script>
 
 <script lang="ts">
-	import { to } from '#lib/core/paths.ts';
-	import { onMount, tick, untrack } from 'svelte';
-	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
-	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
-	import { page } from '$app/state';
-	import { api, message, ApiError } from '#lib/core/api.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
-	import { session } from '#lib/core/session.svelte.ts';
-	import { MusicTileGrid, appPicture, artistHref, fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData, albumWords } from '#lib/music/index.ts';
-	import { reducedMotion } from '#lib/core/motion.ts';
-	import { MetadataNotice, detailPath } from '#lib/metadata/index.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -30,25 +18,31 @@
 	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import { Orbit, SkRail, SkGrid } from '#lib/ui/sk/index.ts';
-	import { plainReason } from '#lib/core/plain.ts';
-	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
-	import type { LookupShow } from '#lib/core/types.ts';
 	import type { PersonSummary } from '#lib/ui/people.ts';
-	import { AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { createLatestOnly } from '#lib/downloads/index.ts';
-	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';
 	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
+	import { MusicTileGrid, appPicture, artistHref, fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData, albumWords } from '#lib/music/index.ts';
+	import { MetadataNotice, detailPath } from '#lib/metadata/index.ts';
+	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
+	import { AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
+	import { createLatestOnly } from '#lib/downloads/index.ts';
+	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';
+	import { onMount, tick, untrack } from 'svelte';
+	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
+	import { page } from '$app/state';
+	import { to } from '#lib/core/paths.ts';
+	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 
-	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;
-	// on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope
-	// live in the address (?q=, ?kind=). Before typing it shows recent searches
-	// (this device, per user) and the Browse grid (genres and their moods, per
-	// tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results
-	// come in as you type. Kid limits are applied by the server on every lookup.
+	// Search is a page; its one field is the top bar's (on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope live in the address (?q=, ?kind=). Before typing it shows recent searches (this device, per user) and the Browse grid (genres and their moods, per tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results come in as you type. Kid limits are applied by the server on every lookup.
 
 	type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: number; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number }; artist?: LookupArtist; subtitle?: string; /** A movie or show as an Explore card, for its Add or Ask. */ ec?: ExploreCard };
 
@@ -67,7 +61,7 @@
 	let musicGenres = $state<MusicCardData[]>([]);
 	/** The same genres as the shared Music tile: an album cover each, and none without one. */
 	const musicGenreTiles = $derived(musicGenres.filter((c) => c.cover).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), covers: [c.cover as string] })));
-	// music_lists_v1 row templates: the Browse sections (genres, moods, seasons, decades, activities).
+	// With music_lists_v1 row templates: the Browse sections (genres, moods, seasons, decades, activities).
 	let musicSections = $state<{ id: string; title: string; tiles: { key: string; name: string; href: string; hue: number; covers: string[] }[] }[]>([]);
 	let plainFor = '';
 	let mgenre = $state<string | null>(page.url.searchParams.get('mgenre')?.trim() || null);
@@ -77,22 +71,16 @@
 	let mood = $state<MoodView | null>(readMood(page.url.searchParams));
 	let moodItems = $state<ProviderItem[] | null>(null);
 	let moodGenre = $state('');
-	// Browse sections after the page's genre tiles (Moods, Stories…), each loaded as the grid nears it;
-	// a category tile opens a category view here (?cat=&type=).
+	// Browse sections after the page's genre tiles (Moods, Stories), each loaded as the grid nears it; a category tile opens a category view here (?cat=&type=).
 	let sections = $state<BrowseSection[]>([]);
 	let sectionTiles = $state<Record<string, Tile[] | null>>({});
 	let cat = $state<CategoryView | null>(readCategory(page.url.searchParams));
 	let catItems = $state<ProviderItem[] | null>(null);
 	let catName = $state('');
-	// The entry: a mosaic dissolve down the whole visible page, the tiles rising
-	// row by row behind it; under reduced motion the band alone. Timing: a
-	// 120 ms hold, the band builds to ~900 ms, the last visible row lands by
-	// ~1.1 s, the field's glow settles by ~1.4 s. Only transform and opacity move.
+	// The entry: a mosaic dissolve down the whole visible page, the tiles rising row by row behind it; under reduced motion the band alone. Timing: a 120 ms hold, the band builds to about 900 ms, the last visible row lands by about 1.1 s, the field's glow settles by about 1.4 s. Only transform and opacity move.
 	const calm = reducedMotion();
 	let revealing = $state(true);
-	// Search is a layer: Close, Escape on an empty field or Back returns to the
-	// page you came from, at its scroll. Typing replaces the address, so only
-	// links inside Search add history entries (counted in depth).
+	// Search is a layer: Close, Escape on an empty field or Back returns to the page you came from, at its scroll. Typing replaces the address, so only links inside Search add history entries (counted in depth).
 	let cameFrom = '';
 	let depth = 0;
 	let leaving = $state(false);
@@ -102,8 +90,7 @@
 		if (leaving) return;
 		revealing = false;
 		leaving = true;
-		// The tiles drop out quickly, last visible row first; the band then sweeps back up (ease-in).
-		// The page stays put and the pixels cover it, bottom up.
+		// The tiles drop out quickly, last visible row first; the band then sweeps back up (ease-in). The page stays put and the pixels cover it, bottom up.
 		covering = true;
 	}
 	function left() {
@@ -113,8 +100,7 @@
 		} else void goto(to('/'));
 	}
 	const t0 = typeof performance === 'undefined' ? 0 : performance.now();
-	// Each tile enters behind the band: rows ~70 ms apart, ~25 ms left to right
-	// within a row, starting as the band passes it, bounded so the last lands by ~1.1 s.
+	// Each tile enters behind the band: rows about 70 ms apart, about 25 ms left to right within a row, starting as the band passes it, bounded so the last lands by about 1.1 s.
 	function landing(node: HTMLElement, at: { row: number; col: number }) {
 		if (calm || restored) return;
 		const elapsed = performance.now() - t0;
@@ -124,9 +110,7 @@
 		const r = node.getBoundingClientRect();
 		if (r.top > innerHeight) return;
 		const f = (r.top - top) / Math.max(1, innerHeight - top);
-		// The pixels themselves reveal the tile (it is already there under the
-		// mosaic); as the band passes its row the tile only settles a hair, so the
-		// page comes through the pixelation instead of after it.
+		// The pixels themselves reveal the tile (it is already there under the mosaic); as the band passes its row the tile only settles a hair, so the page comes through the pixelation instead of after it.
 		const start = Math.min(ENTER_DELAY + ENTER_SWEEP - LAND_MS, passAt(Math.max(0, f)) + at.col * 18);
 		const delay = Math.max(0, start - elapsed);
 		node.style.willChange = 'transform';
@@ -151,13 +135,12 @@
 	const labels: Record<Card['type'], string> = { show: 'TV shows', movie: 'Movies', music: 'Music', people: 'People' };
 	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
 
-	// ── Library marking: one mark for every card, as on Explore ────────────
 	const inLibrary: CardOwned = { state: 'available', label: 'In your Library' };
 	function askMark(ask: { state: string; mine: boolean } | undefined | null): CardOwned | null {
 		if (!ask || ask.state === 'turned_down') return null;
 		return { state: 'requested', label: ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
 	}
-	/** asCard: a search result as an Explore card, so its + adds or asks the same way. */
+	/** A search result as an Explore card, so its + adds or asks the same way. */
 	const asCard = (key: string, kind: 'movie' | 'show', name: string, year: number | undefined, tmdb: string, titleId: number | undefined, ask: LookupMovie['ask']): ExploreCard =>
 		({ key, kind, name, year, titleId, ref: `tmdb:${tmdb}`, status: titleId ? 'in_library' : undefined, badges: [], mine: !!ask?.mine, ask: ask && ask.state !== 'turned_down' ? ask : undefined });
 	const movieCard = (m: LookupMovie): Card | null =>
@@ -171,7 +154,6 @@
 	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', titleId: a.title_id || undefined, name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, image: appPicture(a.image), href: artistHref(a.mbid), owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
 	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
 
-	// ── In your Library: local matches first, left out of the wider results ──
 	type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number; image?: string }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
 	let lib = $state<LibraryAnswer | null>(null);
 	// Search in plain words: asked only when the words describe a title.
@@ -185,15 +167,14 @@
 		try {
 			localStorage.setItem(ONLY_KEY, v ? '1' : '0');
 		} catch {
-			/* a private window: the choice just is not remembered */
+			/* A private window: the choice just is not remembered. */
 		}
 	}
 	const whereOptions: { value: 'everywhere' | 'library'; label: string }[] = [{ value: 'everywhere', label: 'Everywhere' }, { value: 'library', label: 'In your Library' }];
 	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
 	// While a search runs and nothing has come back yet, the page keeps what it showed before.
 	const freshTotal = $derived(order.reduce((n, t) => n + (groups[t]?.length ?? 0), 0) + (lib ? lib.titles.length + lib.albums.length + lib.people.length : 0));
-	// Results land together: the skeleton stays until every group answered, so rows never push
-	// each other down (loading audit #1). A slow group stops holding the rest after 2.5 s.
+	// Results land together: the skeleton stays until every group answered, so rows never push each other down. A slow group stops holding the rest after 2.5 s.
 	let settleCap = $state(false);
 	$effect(() => {
 		void searchField.term;
@@ -203,8 +184,7 @@
 	});
 	const waiting = $derived(!!searchField.term.trim() && (order.some((t) => groups[t] === null) || busy || lib === null) && (freshTotal === 0 || !settleCap));
 	const holding = $derived(waiting && !!stale);
-	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the
-	// request has been out 200 ms (the 250 ms typing pause doesn't count), so a quick answer swaps straight in.
+	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the request has been out 200 ms (the 250 ms typing pause does not count), so a quick answer swaps straight in.
 	let slow = $state(false);
 	$effect(() => {
 		if (!(waiting && !stale && busy)) return void (slow = false);
@@ -225,7 +205,6 @@
 	const total = $derived(lists.reduce((n, g) => n + g.length, 0) + libCards.length);
 	const pending = $derived(order.some((t) => groups[t] === null));
 
-	// ── Searching ──────────────────────────────────────────────────────────
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
 		const url = scopeAddress(page.url, scope, searchField.term);
@@ -250,10 +229,7 @@
 		timer = setTimeout(() => void run(undefined, false), 250);
 	}
 
-	// Typing never asks MusicBrainz while live search is on (or not known
-	// yet): the Music group waits for Enter (or a page opened with the
-	// words) and the dropdown shows the music matches meanwhile. Movies,
-	// shows and people follow typing as before.
+	// Typing never asks MusicBrainz while live search is on (or not known yet): the Music group waits for Enter (or a page opened with the words) and the dropdown shows the music matches meanwhile. Movies, shows and people follow typing as before.
 	async function run(e?: SubmitEvent, full = true) {
 		e?.preventDefault();
 		clearTimeout(timer);
@@ -333,7 +309,6 @@
 		void run();
 	}
 
-	// ── Recent searches (this device, per user) ────────────────────────────
 	const key = () => recentKey(session.s.name);
 	function loadRecent() {
 		try {
@@ -363,7 +338,6 @@
 		void run();
 	}
 
-	// ── Browse: the grid before typing, per tab (Movies and Shows only) ─────
 	const browseFor = $derived(browseType(scope));
 	async function loadTiles(t: ReturnType<typeof browseType>) {
 		if (tilesFor === t) return;
@@ -384,8 +358,7 @@
 			}
 		}
 	}
-	// A section loads once, in order (the server keeps backdrops unique across them).
-	// While the server is still building it, ghost tiles show and the page asks again.
+	// A section loads once, in order (the server keeps backdrops unique across them). While the server is still building it, ghost tiles show and the page asks again.
 	const sectionBusy = new Set<string>();
 	// Rows shown per section: BROWSE_ROWS first, more as its end nears the viewport.
 	let sectionRows = $state<Record<string, number>>({});
@@ -416,8 +389,7 @@
 			sectionBusy.delete(`${t}|${id}`);
 		}
 	}
-	// The sections shown: every loaded one, then the next to load (its sentinel)
-	// once the one before shows all its rows.
+	// The sections shown: every loaded one, then the next to load (its sentinel) once the one before shows all its rows.
 	const shownSections = $derived.by(() => {
 		const out: { s: BrowseSection; tiles: Tile[] | null }[] = [];
 		for (const s of sections) {
@@ -439,13 +411,11 @@
 		io.observe(node);
 		return { destroy: () => io.disconnect() };
 	}
-	// People: TMDB's popular people, 20 a page, up to 150, loaded as the grid nears the bottom.
-	// The Actors and Directors chips filter what is loaded, and keep loading until each has ~30.
+	// People: TMDB's popular people, 20 a page, up to 150, loaded as the grid nears the bottom. The Actors and Directors chips filter what is loaded, and keep loading until each has about 30.
 	const PEOPLE_MAX = 150;
 	const PEOPLE_PAGES = 8;
 	const PEOPLE_WANT = 30;
-	// Ahead of the popular list: From your Library and In what's hot right now, each loaded as it nears
-	// and shown a few rows at a time; a section or chip with fewer than eight people stays hidden.
+	// Ahead of the popular list: From your Library and In what's hot right now, each loaded as it nears and shown a few rows at a time; a section or chip with fewer than eight people stays hidden.
 	let shelves = $state<ShelfMeta[] | null>(null);
 	let shelfPeople = $state<Record<string, ShelfPerson[]>>({});
 	let shelfRows = $state<Record<string, number>>({});
@@ -586,7 +556,6 @@
 		if (mgenre && !searchField.term.trim()) void loadMgenre(mgenre);
 	});
 
-	// ── A mood view: that mood row of the genre page, as a grid ─────────────
 	let moodFor = '';
 	async function loadMood(m: MoodView) {
 		const k = `${m.type}|${m.genre}|${m.mood}`;
@@ -608,7 +577,6 @@
 	$effect(() => {
 		if (mood) void loadMood(mood);
 	});
-	// ── A category view: that Browse category's titles, as a grid ──────────
 	let catFor = '';
 	async function loadCat(c: CategoryView) {
 		const k = `${c.type}|${c.id}`;
@@ -633,10 +601,7 @@
 	const catCards = $derived((catItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-category') })));
 	const moodCards = $derived((moodItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-mood') })));
 
-	// ── Back restores Search exactly ───────────────────────────────────────
-	// The answers come from `kept` (no refetch, no entry animation); the
-	// snapshot holds the spot: scroll, loaded Browse sections and rows, people
-	// pages and the chip. The scroll comes back once the page is tall enough.
+	// Back restores Search exactly. The answers come from `kept` (no refetch, no entry animation); the snapshot holds the spot: scroll, loaded Browse sections and rows, people pages and the chip. The scroll comes back once the page is tall enough.
 	const kept0 = kept && kept.key === entryKey() ? (kept.data as ReturnType<typeof keep>) : null;
 	kept = null;
 	let restored = !!kept0;
@@ -719,7 +684,7 @@
 		try {
 			onlyLib = localStorage.getItem(ONLY_KEY) === '1';
 		} catch {
-			/* a private window: the chip starts off */
+			/* A private window: the chip starts off. */
 		}
 		loadRecent();
 		const sync = () => (cols = browseCols(innerWidth));
@@ -773,7 +738,6 @@
 		if (searched && searched === searchField.term.trim()) remember(searched);
 	}
 
-	// ── Music: artists are added or asked for here ─────────────────────────
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let musicDefaults = $state<MusicSettings | null>(null);
@@ -1160,7 +1124,7 @@
 	.browse-section { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 	.browse-section:first-of-type { margin-top: 0; }
 	.browse-section h3 { margin: 0; }
-	/* Ghost tiles use the shared Silhouette shimmer (tokens.css .sk), sized like BrowseTile. */
+	/* Ghost tiles use the shared skeleton shimmer (tokens.css .sk), sized like BrowseTile. */
 	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; }
 	.more .tiles { width: 100%; }
 	.grid-sk { min-width: 0; }

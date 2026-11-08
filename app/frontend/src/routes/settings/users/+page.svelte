@@ -4,22 +4,22 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '#lib/core/paths.ts';
-	import { onMount } from 'svelte';
-	import { afterNavigate } from '$app/navigation';
-	import { api, ApiError } from '#lib/core/api.ts';
-	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { session, type Perm, type Role } from '#lib/core/session.svelte.ts';
-	import { presetOf, presetPerms, presetsFor, type PresetId, Sessions, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { ago, date } from '#lib/core/format.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
-	import { kindAsks } from '#lib/requests/index.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import { presetOf, presetPerms, presetsFor, type PresetId, Sessions, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
+	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
+	import { kindAsks } from '#lib/requests/index.ts';
+	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
+	import { to } from '#lib/core/paths.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { session, type Perm, type Role } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, date } from '#lib/core/format.ts';
 
 	interface User {
 		id: number;
@@ -101,7 +101,7 @@
 	let error = $state('');
 	let hasData = $state(false);
 
-	// New invite
+	// New invite.
 	let role = $state<'admin' | 'member'>('member');
 	let perms = $state<Perm[]>([...defaults.member]);
 	let maxRating = $state('');
@@ -110,7 +110,7 @@
 	let making = $state(false);
 	let link = $state('');
 
-	// Editing one user
+	// Editing one user.
 	let editing = $state<User | null>(null);
 	let editRole = $state<'admin' | 'member'>('member');
 	let editPerms = $state<Perm[]>([]);
@@ -137,10 +137,7 @@
 			loaded = true;
 		}
 	}
-	// Settings search links to #inv-note: open the invite sheet so the
-	// layout can find and focus that field.
-	// The sheet moves focus to its first button when it opens, so put it on
-	// the note field once the dialog is showing.
+	// Settings search links to #inv-note: open the invite sheet so the layout can find and focus that field. The sheet moves focus to its first button when it opens, so put it on the note field once the dialog is showing.
 	function openInviteAtNote() {
 		inviteOpen = true;
 		let tries = 0;
@@ -173,7 +170,7 @@
 			.catch(() => {});
 	}
 
-	/** limitValue reads one box: '' is the default, otherwise 0 to 1000. */
+	/** Reads one box: '' is the default, otherwise 0 to 1000. */
 	function limitValue(v: string | number): number | null | undefined {
 		const t = String(v ?? '').trim();
 		if (t === '') return null;
@@ -229,8 +226,7 @@
 		}
 	}
 
-	// Signed-in devices: the owner sees everyone's, an admin members' (their
-	// own are in My account).
+	// Signed-in devices: the owner sees everyone's, an admin members' (their own are in My account).
 	let devicesOf = $state<User | null>(null);
 	let devDialog: HTMLDialogElement | undefined = $state();
 	function maySeeDevices(u: User): boolean {
@@ -335,8 +331,7 @@
 		}
 	}
 
-	// The owner unlinks someone's single sign-on or trusted proxy identity;
-	// the sessions it made end with it.
+	// The owner unlinks someone's single sign-on or trusted proxy identity; the sessions it made end with it.
 	const ssoWord = (k: string) => (k === 'oidc' ? 'single sign-on' : 'trusted proxy');
 	const hostOf = (u: string) => {
 		try {

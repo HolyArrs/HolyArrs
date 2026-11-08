@@ -4,29 +4,25 @@
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
 	import MoveFlow from '../settings/move/+page.svelte';
+	import { partsNow, refreshParts, needsProblem, type PartName } from '#lib/mediafiles/index.ts';
+	import { applyParts } from '#lib/setup/index.ts';
+	import { theme, SigninBackdrop } from '#lib/accounts/index.ts';
+	import { emptyForm, formBody, formFrom, kindWords, reachWords, type DownloaderForm, type DownloaderView } from '#lib/downloads/index.ts';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { onMount, setContext, tick, untrack } from 'svelte';
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/core/loader.ts';
 	import { api, message, ApiError } from '#lib/core/api.ts';
-	import LoadError from '#lib/ui/LoadError.svelte';
-	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { partsNow, refreshParts, needsProblem, type PartName } from '#lib/mediafiles/index.ts';
-	import { applyParts } from '#lib/setup/index.ts';
-	import { theme, SigninBackdrop } from '#lib/accounts/index.ts';
-	import { emptyForm, formBody, formFrom, kindWords, reachWords, type DownloaderForm, type DownloaderView } from '#lib/downloads/index.ts';
 	import type { LibraryFolder } from '#lib/core/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
-	// First run, right after the owner is made, forks once: bring the old apps
-	// (Import, then a Downloader or Source only if Import brought none), or
-	// start fresh (media and folders, a Downloader, a Source). Both end on a
-	// short done screen. A later visit to /welcome (no first=1) changes only
-	// the parts and returns to Home.
+	// First run, right after the owner is made, forks once: bring the old apps (Import, then a Downloader or Source only if Import brought none), or start fresh (media and folders, a Downloader, a Source). Both end on a short done screen. A later visit to /welcome (no first=1) changes only the parts and returns to Home.
 	type Step = 'start' | 'media' | 'downloader' | 'source' | 'import' | 'done';
 	const STEPS: Step[] = ['start', 'media', 'downloader', 'source', 'import', 'done'];
 	const firstRun = $derived(page.url.searchParams.get('first') === '1');
@@ -73,9 +69,7 @@
 		document.getElementById('welcome-title')?.focus();
 		announce = `Step ${stepNo} of ${order.length}: ${head.h}`;
 	}
-	// Back or Forward in the browser: show the step the address names.
-	// Set once the wizard is finished in this tab: a later Back, Forward or reload
-	// onto a step goes to Home instead (the step history may predate a reload).
+	// Back or Forward in the browser: show the step the address names. Set once the wizard is finished in this tab: a later Back, Forward or reload onto a step goes to Home instead (the step history may predate a reload).
 	const DONE_KEY = 'holyarrs.welcome.done';
 	function wizardDone(): boolean {
 		try {
@@ -127,15 +121,11 @@
 	const stepNo = $derived(order.indexOf(step) + 1);
 	const prev = $derived(step === 'done' ? undefined : order[order.indexOf(step) - 1]);
 
-	// Setup is done: a short Orbit while Home (or Users) opens.
-	// It also ends the setup sign-in's no-password-check window (server side).
-	// The step entries fold back into the first one, which Home then replaces,
-	// so the browser's Back after setup leaves the wizard.
+	// Setup is done: a short Orbit while Home (or Users) opens. It also ends the setup sign-in's no-password-check window (server side). The step entries fold back into the first one, which Home then replaces, so the browser's Back after setup leaves the wizard.
 	let leaving = false;
 	async function home(path = '/') {
 		playLoader('', SETUP_HOLD_MS);
-		// Finished: the rest of the app opens. A failed save keeps the owner on Done,
-		// before the step entries fold back.
+		// Finished: the rest of the app opens. A failed save keeps the owner on Done, before the step entries fold back.
 		error = '';
 		try {
 			await api.post('/auth/setup/done');
@@ -149,7 +139,7 @@
 		try {
 			sessionStorage.setItem(DONE_KEY, '1');
 		} catch {
-			// no storage: the depth fold below still covers this visit
+			// No storage: the depth fold below still covers this visit.
 		}
 		if (depth > 0) {
 			leaving = true;
@@ -163,7 +153,7 @@
 		await goto(to(path), { replace: true }).finally(loaderReady);
 	}
 
-	// ---- The fork ----
+	// The fork.
 	function pickPath(apps: boolean) {
 		fromApps = apps;
 		extra = [];
@@ -176,7 +166,7 @@
 		return { movies: on('movies'), shows: on('shows'), music: on('music'), subtitles: on('subtitles'), wishlist: on('wishlist') };
 	}
 
-	// ---- Parts: a later visit to /welcome, outside first run ----
+	// Parts: a later visit to /welcome, outside first run.
 	let want = $state<Record<'movies' | 'shows' | 'music' | 'subtitles', boolean>>({ movies: true, shows: true, music: false, subtitles: true });
 	let family = $state<'yes' | 'no'>('no');
 	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string; icon: IconName }[] = [
@@ -203,7 +193,7 @@
 		}
 	}
 
-	// ---- Media: a switch and a Library folder per part, on one screen ----
+	// Media: a switch and a Library folder per part, on one screen.
 	type MediaPart = 'movies' | 'shows' | 'music';
 	type Kind = 'movie' | 'show' | 'music';
 	// saved/id: the folder already made; editing reopens it to type a new path.
@@ -221,10 +211,9 @@
 		try {
 			have = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders ?? [];
 		} catch {
-			// show empty rows
+			// Show empty rows.
 		}
-		// Back or reload, once a folder is saved: show the parts as saved, so Continue
-		// doesn't switch one off. A fresh install keeps the defaults.
+		// Back or reload, once a folder is saved: show the parts as saved, so Continue does not switch one off. A fresh install keeps the defaults.
 		if (have.length) await refreshParts().catch(() => {});
 		const on = partsOn();
 		if (have.length && partsNow.answer && (on.movies || on.shows || on.music)) media = { movies: on.movies, shows: on.shows, music: on.music };
@@ -268,8 +257,7 @@
 			if (r.editing && r.path.trim() === r.saved) r.editing = false;
 			if ((r.saved && !r.editing) || !r.path.trim()) continue;
 			r.error = '';
-			// A changed folder is replaced: on first run it holds nothing yet.
-			// If the new path is refused, the old one is put back.
+			// A changed folder is replaced: on first run it holds nothing yet. If the new path is refused, the old one is put back.
 			const old = r.editing && r.id != null ? r.saved : '';
 			try {
 				if (old) {
@@ -296,7 +284,7 @@
 							continue;
 						}
 					} catch {
-						// fall through to the error
+						// Fall through to the error.
 					}
 				}
 				r.error = folderWords(message(err), r.kind);
@@ -320,18 +308,17 @@
 		}
 	}
 
-	// ---- Downloader ----
+	// Downloader.
 	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge'];
 	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112' };
 	let dl = $state<DownloaderForm>(emptyForm());
-	// Every connected downloader, each with its last test answer; the form shows
-	// when there is none yet or the owner adds another.
+	// Every connected downloader, each with its last test answer; the form shows when there is none yet or the owner adds another.
 	let dlList = $state<DownloaderView[]>([]);
 	let dlTests = $state<Record<number, { ok: boolean; text: string }>>({});
 	let dlAdding = $state(false);
 	// The downloader being edited (its form is open), or null when adding a new one.
 	let dlEditing = $state<number | null>(null);
-	// Connect's answer when the downloader didn't answer, shown under Address.
+	// Connect's answer when the downloader did not answer, shown under Address.
 	let dlError = $state('');
 	// Shown under User name when an app that signs in turned down a try without one.
 	let dlAuth = $state('');
@@ -351,7 +338,7 @@
 			return [];
 		}
 	}
-	// The list didn't load: shown like the Source step, with Try again.
+	// The list did not load: shown like the Source step, with Try again.
 	let dlLoadError = $state('');
 	async function loadDownloader() {
 		try {
@@ -406,7 +393,7 @@
 			const editing = dlEditing;
 			const v = editing != null ? await api.put<DownloaderView>(`/downloaders/${editing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
 			if (editing != null) dlList = dlList.map((x) => (x.id === v.id ? v : x));
-			// Only a downloader that answers becomes a row; a new one that doesn't is taken back and the form stays.
+			// Only a downloader that answers becomes a row; a new one that does not is taken back and the form stays.
 			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${v.id}/test`).catch((err) => ({ ok: false, text: message(err) }));
 			if (!t.ok) {
 				if (editing == null) await api.del(`/downloaders/${v.id}`).catch(() => {});
@@ -421,7 +408,7 @@
 			dlAdding = false;
 			dl = emptyForm();
 		} catch (err) {
-			// HolyArrs itself didn't answer: the Source step's wording.
+			// HolyArrs itself did not answer: the Source step's wording.
 			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) error = 'HolyArrs isn’t answering. Try again in a moment.';
 			else if (!askSignIn(reachWords(message(err)))) error = message(err);
 		} finally {
@@ -430,8 +417,7 @@
 			if (dlError || (error && dlForm)) void tick().then(() => document.getElementById(!dlError && /key|password/i.test(error) ? 'dl-secret' : 'dl-url')?.focus());
 		}
 	}
-	// An app that signs in, turned down with no user name typed: ask for both,
-	// under User name (the server's answer names an API key field the wizard doesn't have).
+	// An app that signs in, turned down with no user name typed: ask for both, under User name (the server's answer names an API key field the wizard does not have).
 	function askSignIn(words: string): boolean {
 		if (!dlUser || dl.username.trim() || words.startsWith("Can't reach")) return false;
 		dlAuth = 'Add the user name and password.';
@@ -450,9 +436,9 @@
 		}
 	}
 
-	// ---- Source ----
+	// Source.
 	let sources = $state(0);
-	// Sources plus linked Jackett/Prowlarr (a fresh link may not have synced its Sources yet).
+	// Sources plus linked Jackett or Prowlarr (a fresh link may not have synced its Sources yet).
 	async function sourceCount(): Promise<number> {
 		const n = async (path: string, key: string) => {
 			try {
@@ -468,15 +454,14 @@
 		sources = await sourceCount();
 	}
 
-	// ---- Import: the Settings move flow, right here in the panel ----
+	// Import: the Settings move flow, right here in the panel.
 	const IMPORT_QUERY = 'first=1&step=import';
-	// Import offers every app, except a downloader or Prowlarr that is already
-	// connected here. The list is filled before the Read sheet first opens.
+	// Import offers every app, except a downloader or Prowlarr that is already connected here. The list is filled before the Read sheet first opens.
 	const hideApps: string[] = [];
 	setContext('move-hide-apps', hideApps);
 	setContext('move-hide-count', true);
 	let moveStep = $state('read');
-	// After the move: ask only for what Import didn't bring.
+	// After the move: ask only for what Import did not bring.
 	async function afterImport() {
 		busy = true;
 		const [dls, srcs] = await Promise.all([listDownloaders(), sourceCount()]);
@@ -494,8 +479,7 @@
 		if (bridges.some((b) => b.kind === 'prowlarr')) hideApps.push('prowlarr');
 	}
 
-	// ---- Done ----
-	// What a skipped step left to do, each a Settings page.
+	// Done: what a skipped step left to do, each a Settings page.
 	type Todo = { label: string; path: string };
 	let todo = $state<Todo[]>([]);
 	// What is set: a short line each ("Movies · /data/movies", "qBittorrent", "Prowlarr").
@@ -556,9 +540,7 @@
 	onMount(() => {
 		if (firstRun && !wizardDone()) void enter(step);
 	});
-	// Moving asks for a recent password check (past the setup window): the
-	// move flow only signals it, so the wizard shows the confirm box itself
-	// (an owner with no password gets the move flow's set-a-password card).
+	// Moving asks for a recent password check (past the setup window): the move flow only signals it, so the wizard shows the confirm box itself (an owner with no password gets the move flow's set-a-password card).
 	let importCheck = $state(false);
 	onMount(() => {
 		const onReauth = () => {
@@ -835,7 +817,7 @@
 	.glass .head { margin-bottom: 22px; }
 	/* Inside the glass the step's card is just its content. */
 	.sheet.glass > :global(.card) { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
-	/* The Jackett/Prowlarr card on the Source step joins the glass too: no second box, edges lined up. */
+	/* The Jackett or Prowlarr card on the Source step joins the glass too: no second box, edges lined up. */
 	.sheet.glass :global(.ui-settings) { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
 	.sheet.glass :global(.ui-settings > header), .sheet.glass :global(.ui-settings > .body) { padding-left: 0; padding-right: 0; }
 	.sheet.glass :global(.ui-settings > header) { padding-top: 0; }
@@ -1030,8 +1012,7 @@
 		.seg label { min-height: 44px; }
 	}
 
-	/* One layer inside the glass card: lists are flat rows split by hairlines,
-	   choices are outlined, and only text fields keep a filled box. */
+	/* One layer inside the glass card: lists are flat rows split by hairlines, choices are outlined, and only text fields keep a filled box. */
 	.tile { background: transparent; }
 	@media (hover: hover) { .tile:hover { background: color-mix(in srgb, var(--text) 4%, transparent); } }
 	.media-list { background: none; border: 0; border-radius: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: visible; }

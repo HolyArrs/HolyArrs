@@ -6,17 +6,17 @@
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
-	import Icon from '#lib/ui/Icon.svelte';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import type { LibraryFolder } from '#lib/core/types.ts';
 
-	// Grouped list with a plain line icon per folder (Luis's picks, 2026-11-06).
+	// Grouped list with a plain line icon per folder.
 	const kindWord = (k: string) => (k === 'show' ? 'Shows' : k === 'music' ? 'Music' : 'Movies');
 	const kindIcon = (k: string) => (k === 'show' ? 'tv' : k === 'music' ? 'music' : 'film') as 'tv' | 'music' | 'film';
 	// The last two parts of a path: enough to tell folders apart; the full path is in the tooltip.
@@ -61,7 +61,7 @@
 			extraText = (await api.get<{ extra_folders: string[] }>('/settings/import-folders')).extra_folders.join('\n');
 			extraLoaded = true;
 		} catch {
-			extraLoaded = false; // no settings permission: the card stays hidden
+			extraLoaded = false; // No settings permission: the card stays hidden.
 		}
 	}
 	onMount(() => {
@@ -252,7 +252,7 @@
 		width: 100%;
 		min-width: 0;
 	}
-	/* ---------- The folder list: shared pieces ---------- */
+	/* The folder list: shared pieces. */
 	.fl { list-style: none; margin: 0; padding: 0; }
 	.folder { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto auto; align-items: center; column-gap: 16px; min-width: 0; }
 	/* Kind tiles: glossy, the same family as the Settings icons. */
@@ -276,7 +276,7 @@
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
-	/* Glass sheet shared by the looks that use one. */
+	/* Glass sheet shared by the folder rows. */
 	.fl {
 		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
 		background: color-mix(in srgb, var(--surface-1) 60%, transparent);

@@ -1,37 +1,35 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { beforeNavigate, goto } from '$app/navigation';
-	import { api, message } from '#lib/core/api.ts';
-	import { session } from '#lib/core/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { AskArtistDialog, AddArtistDialog } from '#lib/requests/index.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { to } from '#lib/core/paths.ts';
-	import { albumYear, GapNotice, gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView, albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack, paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
-	import { pictureOf } from '#lib/core/pictures.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow } from '#lib/ui/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import { AskArtistDialog, AddArtistDialog } from '#lib/requests/index.ts';
+	import { albumYear, GapNotice, gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView, albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack, paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { pictureOf } from '#lib/core/pictures.ts';
+	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
-	// An album's page: the cover beside its title and actions, the tracklist
-	// with what the Library has, its other editions, and where to go next.
+	// An album's page: the cover beside its title and actions, the tracklist with what the Library has, its other editions, and where to go next.
 	const mbid = $derived((page.params.mbid ?? '').toLowerCase());
 	const artist = $derived((page.url.searchParams.get('artist') ?? '').toLowerCase());
-	// Hero first: the core answer draws the cover, name and artist; the full
-	// answer (tracks, editions, more by) and the similar artists follow.
+	// Hero first: the core answer draws the cover, name and artist; the full answer (tracks, editions, more by) and the similar artists follow.
 	let core = $state<AlbumCoreData | null>(null);
 	let data = $state<AlbumPageData | null>(null);
 	let similar = $state<PageArtist[] | null>(null);
@@ -52,7 +50,7 @@
 	let asking = $state(false);
 	// A slow source: the answer came incomplete and is asked again quietly (lib/music/reask.ts).
 	let reasking = $state(false);
-	// The answer was already kept by the app (fetched ahead or seen within a minute): no loader hold.
+	// The answer was already kept by the app (fetched ahead or seen within a minute), so no loader hold.
 	let fromCache = $state(false);
 	let leave: AbortController | null = null;
 
@@ -94,8 +92,7 @@
 		}).finally(() => {
 			if (still()) busy = false;
 		});
-		// The quick core and nearby parts need the artist; a bare album link waits for the full answer instead.
-		// The full answer holds the core: it is asked only when the full one is slow.
+		// The quick core and nearby parts need the artist; a bare album link waits for the full answer instead. The full answer holds the core, so the quick core is asked only when the full one is slow.
 		if (artist) void coreIfSlow(fullRead, () => api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`)).then((c) => c && still() && !data && (core = c)).catch(() => {});
 		// A bare album link has no artist: skip the artist calls instead of asking for /music/artists/.
 		if (!artist) similar = [];
@@ -133,9 +130,7 @@
 	});
 
 	const hero = $derived<AlbumCoreData | null>(data ?? core);
-	// A cover the server has not stored yet is asked for again while the
-	// page is open (20 s, 70 s, 150 s) and swaps in once stored; until then
-	// the placeholder shows.
+	// A cover the server has not stored yet is asked for again while the page is open (20 s, 70 s, 150 s) and swaps in once stored; until then the placeholder shows.
 	const COVER_RETRY = [20000, 70000, 150000];
 	let coverTry = $state(0);
 	let coverFailed = $state(false);
@@ -143,18 +138,14 @@
 		const p = appPicture(hero?.image);
 		return p && coverTry ? `${p}${p.includes('?') ? '&' : '?'}fresh=${coverTry}` : p;
 	});
-	// The hero cover at its slot (the big size only on sharp screens), on
-	// its main colour until it arrives; the preload asks the same address.
+	// The hero cover at its slot (the big size only on sharp screens), on its main colour until it arrives; the preload asks the same address.
 	const heroCover = $derived(coverFor(cover, 260, undefined, true).src);
 	const coverTint = $derived(pictureOf(cover)?.color || null);
-	// The page colour: sampled from the cover once it shows (truer than the
-	// stored colour, which can miss a blue cover), else the stored one (lib/music/album-tint.ts).
+	// The page colour: sampled from the cover once it shows (truer than the stored colour, which can miss a blue cover), else the stored one (lib/music/album-tint.ts).
 	let sampled = $state<string | null>(null);
 	const tint = $derived(sampled || coverTint ? tintOf(sampled || coverTint) : null);
 	const tintStyle = $derived(tint ? `--al-bg:${tint.bg};--al-band:${tint.band};--al-soft:${tint.soft}` : '');
-	// The whole window (side menu, top bar, page) takes the colour while the
-	// album shows; between two albums it keeps the last colour until the next
-	// is known, and fades back to the normal look on leaving.
+	// The whole window (side menu, top bar, page) takes the colour while the album shows. Between two albums it keeps the last colour until the next is known, and fades back to the normal look on leaving.
 	$effect(() => {
 		if (tint) paintWindow(tint);
 	});

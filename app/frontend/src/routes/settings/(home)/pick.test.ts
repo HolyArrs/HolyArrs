@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { initials, pickPosters, wall } from './pick.ts';
+import { describe, expect, it } from 'vitest';
 import { flip, shift } from '#lib/core/motion.ts';
 
 describe('Settings home pictures', () => {

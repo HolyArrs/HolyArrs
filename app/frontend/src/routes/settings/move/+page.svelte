@@ -1,30 +1,25 @@
 <script lang="ts">
-	import { onDestroy, onMount, tick, untrack } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import { session } from '#lib/core/session.svelte.ts';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, buckets, countWords, extraProblems, folderProblem, moveTotal, OTHER, plural, rulesFrom, running, setChoice, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 
-	// Settings > Move from other apps: four steps, one at a time. The step and
-	// the reads in use live in the address (?step=choose&read=3,5, or ?move=7
-	// for one move), so Back and a reload land on the same step. Move on
-	// Choose runs a quiet test first; only problems open "Before you move".
+	// Settings > Move from other apps: four steps, one at a time. The step and the reads in use live in the address (?step=choose&read=3,5, or ?move=7 for one move), so Back and a reload land on the same step. Move on Choose runs a quiet test first; only problems open "Before you move".
 	type MoveAnswer = { move: Move; progress: number; progress_note: string };
 
-	// The first-run wizard shows this same flow inside its panel. There the
-	// address keeps the wizard's own query (query) and the step goes in
-	// mstep, since the wizard uses step; Done becomes Continue (ondone).
+	// The first-run wizard shows this same flow inside its panel. There the address keeps the wizard's own query (query) and the step goes in mstep, since the wizard uses step; Done becomes Continue (ondone).
 	let {
 		embedded
 	}: {
@@ -33,9 +28,7 @@
 	// svelte-ignore state_referenced_locally
 	const stepKey = embedded ? 'mstep' : 'step';
 
-	// What the page knows.
-	// An owner who signs in another way has no password to confirm: moving
-	// asks for one, so the step shows how to set it (Settings and the wizard).
+	// What the page knows. An owner who signs in another way has no password to confirm: moving asks for one, so the step shows how to set it (Settings and the wizard).
 	let mustSetPw = $state(false);
 	// Set it right here: the first password, then a fresh check with it, so Move works without leaving.
 	let pwA = $state('');
@@ -117,8 +110,7 @@
 	let forgetBusy = $state(false);
 	let forgetError = $state('');
 
-	// Step 2: the plan and the owner's choices. changes counts every change
-	// in steps 1 and 2 (and person choices), so a test run knows it is old.
+	// Step 2: the plan and the owner's choices. `changes` counts every change in steps 1 and 2 (and person choices), so a test run knows it is old.
 	let plan = $state.raw<Plan | null>(null);
 	let planning = $state(false);
 	let planError = $state('');
@@ -195,7 +187,6 @@
 		tryCtrl?.abort();
 	});
 
-	// Derived state.
 	const usedBy = $derived.by(() => {
 		const m = new Map<number, number>();
 		// Newest first: the newest done move that used a read names it.
@@ -249,8 +240,7 @@
 		return (err instanceof ApiError && err.body.code === 'reauth') || (err instanceof DOMException && err.name === 'AbortError');
 	}
 
-	// Loading: the reads first (the page needs them); the moves, saved keys
-	// and Library folders each fail on their own.
+	// Loading: the reads first (the page needs them); the moves, saved keys and Library folders each fail on their own.
 	async function load() {
 		loadError = '';
 		loaded = false;
@@ -296,7 +286,7 @@
 	}
 	onMount(() => void load());
 
-	/** defaultPicks switches on the newest read of each app, unless a move already used it. */
+	/** Switches on the newest read of each app, unless a move already used it. */
 	function defaultPicks(): number[] {
 		const out: number[] = [];
 		const kinds = new Set<string>();
@@ -332,7 +322,7 @@
 		});
 	});
 
-	/** arrive shows what the address names (a reload, a link, Back). */
+	/** Shows what the address names (a reload, a link, Back). */
 	async function arrive(q: { get(name: string): string | null }) {
 		const mv = Number(q.get('move'));
 		if (mv > 0) return openMove(mv, false);
@@ -354,7 +344,7 @@
 		void tick().then(() => document.getElementById('move-step')?.focus({ preventScroll: false }));
 	}
 
-	/** enter opens a step; a step that needs an earlier one falls back to it. */
+	/** Opens a step; a step that needs an earlier one falls back to it. */
 	function enter(want: Step, push = true) {
 		let s = want;
 		if (s === 'done' && !current) s = 'read';
@@ -444,8 +434,7 @@
 		changed();
 	}
 
-	// Step 2: every change plans again; switches wait 400ms, typed paths
-	// wait for blur or Enter. Older answers are dropped.
+	// Step 2: every change plans again; switches wait 400ms, typed paths wait for blur or Enter. Older answers are dropped.
 	function replan(wait: boolean) {
 		clearTimeout(planTimer);
 		if (wait) planTimer = setTimeout(() => void makePlan(), 400);
@@ -515,8 +504,7 @@
 	// The test run. A choice runs it again in place.
 	async function runTry() {
 		if (picked.length === 0 || ruleErrors > 0) return;
-		// No plan yet (a reload, a link): plan first, so the suggested
-		// folder matches are filled in before the test runs.
+		// No plan yet (a reload, a link): plan first, so the suggested folder matches are filled in before the test runs.
 		if (!plan) {
 			await makePlan();
 			if (destroyed) return;
@@ -554,8 +542,7 @@
 		void runTry();
 	}
 
-	/** moveNow is Choose's Move: a quiet test run, then the move (after a
-	 * confirm), or "Before you move" when the test found problems. */
+	/** Choose's Move: a quiet test run, then the move (after a confirm), or "Before you move" when the test found problems. */
 	async function moveNow() {
 		if (checking || starting) return;
 		checking = true;
@@ -596,8 +583,7 @@
 			progressNote = '';
 			lost = false;
 			moves = [r.move, ...moves.filter((m) => m.id !== r.move.id)];
-			// Choose starts the move now (there is no Move step before it): show
-			// the Move step before following, so finished() lands on Done.
+			// Choose starts the move now (there is no Move step before it): show the Move step before following, so finished() lands on Done.
 			step = 'move';
 			beforeOpen = false;
 			follower.follow(r.move.id);
@@ -622,7 +608,7 @@
 		if (recheck) void moveNow();
 	}
 
-	/** finished hears a move or an undo end. */
+	/** Hears a move or an undo end. */
 	function finished(m: Move) {
 		moves = [m, ...moves.filter((x) => x.id !== m.id)];
 		if (m.state === 'undone') toasts.push(`Move ${m.id} undone`, 'ok');
@@ -632,8 +618,7 @@
 		// A finished move forgets the kept keys.
 		if (m.state === 'done') void loadSaved();
 		if (m.state !== 'undone' && !m.undo_state) {
-			// A finished move needs a new test before another one: the reads
-			// it used are switched off.
+			// A finished move needs a new test before another one: the reads it used are switched off.
 			dry = null;
 			dryAt = -1;
 			planHash = '';

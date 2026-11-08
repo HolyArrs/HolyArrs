@@ -6,12 +6,12 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import { feedMinutesOk } from '#lib/mediafiles/index.ts';
+	import type { SearchSettings } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { feedMinutesOk } from '#lib/mediafiles/index.ts';
-	import type { SearchSettings } from '#lib/sources/index.ts';
 
 	let settings = $state<SearchSettings>({
 		feed_check_minutes: 15,

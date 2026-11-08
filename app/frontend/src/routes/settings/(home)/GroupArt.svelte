@@ -1,19 +1,12 @@
 <script lang="ts">
-	// One Settings home card's picture (design settings-views v4, view 1 "Real
-	// things"): this Library's posters, releases coming down, the people on
-	// this install, the apps it links to, a rack with a heartbeat. Where the
-	// install has no posters or people yet, the card draws the same idea in
-	// line art (view 2): one line weight, one red detail.
-	//
-	// Everything is sized from the art box itself (container units), and hover
-	// moves only the whole box (the card does that), never a piece inside it.
+	// One Settings home card's picture: this Library's posters, releases coming down, the people on this install, the apps it links to, a rack with a heartbeat. Where the install has no posters or people yet, the card draws the same idea in line art: one line weight, one red detail. Everything is sized from the art box itself (container units), and hover moves only the whole box (the card does that), never a piece inside it.
+	import { initials, type Person } from './pick.ts';
+	import { coverFor } from '#lib/music/index.ts';
 	import plex from 'simple-icons/icons/plex.svg?raw';
 	import jellyfin from 'simple-icons/icons/jellyfin.svg?raw';
 	import emby from 'simple-icons/icons/emby.svg?raw';
 	import discord from 'simple-icons/icons/discord.svg?raw';
 	import { to } from '#lib/core/paths.ts';
-	import { coverFor } from '#lib/music/index.ts';
-	import { initials, type Person } from './pick.ts';
 
 	let { group, posters = [], people = [] }: { group: string; posters?: string[]; people?: Person[] } = $props();
 
@@ -32,7 +25,7 @@
 	const crowd = $derived(people.length >= 2 ? people.slice(0, 5) : []);
 	const more = $derived(people.length - crowd.length);
 
-	// Line art (view 2) pieces.
+	// Line art pieces.
 	const poster = (x: number, y: number, w: number, h: number, ac = false) =>
 		`<g><rect class="o${ac ? ' ac' : ''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="4"/><path class="${ac ? 'ac' : ''}" d="M${x + 8} ${y + h - 14} l${w * 0.28} -${h * 0.26} l${w * 0.2} ${h * 0.16} l${w * 0.14} -${h * 0.1} l${w * 0.24} ${h * 0.2}"/><circle class="${ac ? 'ac' : ''}" cx="${x + w * 0.7}" cy="${y + h * 0.28}" r="${Math.max(5, w * 0.08)}"/></g>`;
 	const shelf = (y: number) => `<path d="M-40 ${y}H360"/>`;
@@ -120,14 +113,10 @@
 	/* Library: a poster wall turned a little, running past every edge. */
 	.shelf img { position: absolute; display: block; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 10px 28px var(--art-shadow); outline: 1px solid var(--tile-line); outline-offset: -1px; background: var(--surface-2); }
 
-
 	.shelf { inset: -30cqh -30cqw; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.4cqw; align-content: center; transform: rotate(-12deg); }
 	.shelf img { position: static; width: 100%; }
 	.shelf img:nth-child(odd) { transform: translateY(18%); }
 	@container (orientation: landscape) { .shelf { grid-template-columns: repeat(6, 1fr); } }
-
-
-
 
 	/* Downloads: three releases coming down, filling the box. */
 	.rel .r { position: absolute; overflow: hidden; background: var(--tile); border: 1px solid var(--tile-line); box-shadow: 0 1cqh 4cqh var(--art-shadow); border-radius: 12px; }
@@ -150,10 +139,7 @@
 	.rel .r:nth-child(1) { opacity: 0.7; }
 	.rel .r:nth-child(2) { opacity: 0.88; }
 
-
-
 	.rel .r:nth-child(3)::after { content: none; }
-
 
 	/* People: you in the middle, the others around you. */
 	.ppl .p { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 1.6cqh; min-width: 0; }
@@ -162,7 +148,6 @@
 	.ppl .me .av { box-shadow: 0 0 0 2px var(--accent), 0 4px 14px var(--art-shadow); }
 	.ppl .more .av { background: var(--surface-2); color: var(--text); font-size: calc(var(--s) * 0.3); }
 	.ppl .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
-
 
 	.ppl { --s: min(54cqh, 38cqw); --o: min(32cqh, 26cqw); }
 	.ppl .p { left: 50%; top: 47%; transform: translate(-50%, -50%); }
@@ -173,9 +158,6 @@
 	.ppl .p:nth-child(5), .ppl .more { left: calc(50% + var(--o) * 1.2); top: calc(47% + var(--o) * 0.7); }
 	.ppl .p:nth-child(5) ~ .more { display: none; }
 	.ppl .nm { display: none; }
-
-
-
 
 	@keyframes sweep { to { transform: translateX(100%); } }
 

@@ -1,15 +1,10 @@
-// The Settings home's own pictures: posters from this Library and the people
-// on this install. The first paint uses what this device kept from the last
-// visit (or nothing: the cards then show line art), and the shared Library
-// read the rest of the app already makes (libraryBrief, kept 60 s) fills it
-// in after. No new server work: people come from /users only for those who
-// may see Users, and only after the page is up.
+// The Settings home's own pictures: posters from this Library and the people on this install. The first paint uses what this device kept from the last visit (or nothing: the cards then show line art), and the shared Library read the rest of the app already makes (libraryBrief, kept 60 s) fills it in after. No new server work: people come from /users only for those who may see Users, and only after the page is up.
 
-import { api } from '#lib/core/api.ts';
+import { pickPosters, type Person } from './pick.ts';
 import { libraryBrief } from '#lib/mediafiles/index.ts';
+import { api } from '#lib/core/api.ts';
 import { proxied } from '#lib/core/tmdb-image.ts';
 import { to } from '#lib/core/paths.ts';
-import { pickPosters, type Person } from './pick.ts';
 
 const KEY = 'holyarrs-settings-art';
 
@@ -32,11 +27,11 @@ function save(member: number | undefined, k: Kept) {
 	try {
 		localStorage.setItem(`${KEY}:${member ?? 0}`, JSON.stringify(k));
 	} catch {
-		/* private window or full: the next visit just starts with line art */
+		/* Private window or full: the next visit just starts with line art. */
 	}
 }
 
-/** small is the 250 px copy of a Library picture (the wall is blurred, the cards are small). */
+/** The 250 px copy of a Library picture (the wall is blurred, the cards are small). */
 export function small(url: string): string {
 	const via = proxied(url);
 	if (via !== url) return via;
@@ -48,7 +43,7 @@ export const homeArt = $state<Kept & { member: number | undefined }>({ posters: 
 
 let started = 0;
 
-/** startArt fills homeArt: kept copy first, then the shared reads. */
+/** Fills homeArt: kept copy first, then the shared reads. */
 export function startArt(member: number | undefined, mayUsers: boolean, self: Person) {
 	if (homeArt.member !== member) Object.assign(homeArt, load(member), { member });
 	const mine = ++started;

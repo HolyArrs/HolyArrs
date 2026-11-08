@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { session } from '#lib/core/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { onMount } from 'svelte';
-	import { api } from '#lib/core/api.ts';
-	import { plainMessage as message } from '#lib/core/settings.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import { switchKind } from './kind.ts';
+	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
+	import { onMount } from 'svelte';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
 	import type { AlertView, Moment } from '#lib/core/types.ts';
-	import { switchKind } from './kind.ts';
 
 	type Kind = 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
@@ -63,8 +63,7 @@
 	// The last test of each Alert, shown as a tag on its card.
 	let results = $state<Record<number, { ok: boolean; text: string }>>({});
 
-	// How a pack of several episodes is told (5.2.5).
-	// Null until the stored value is loaded, so no made-up default shows.
+	// How a pack of several episodes is told. Null until the stored value is loaded, so no made-up default shows.
 	let pack = $state<'one' | 'each' | null>(null);
 	let packBusy = $state(false);
 	let packError = $state('');
@@ -130,16 +129,16 @@
 			smtp_security: a.smtp_security ?? 'starttls',
 			smtp_from: a.smtp_from ?? '',
 			smtp_user: a.smtp_user ?? '',
-			smtp_pass: '', // empty keeps the stored one
+			smtp_pass: '', // Empty keeps the stored one.
 			staff_to: a.staff_to ?? '',
-			secret: '', // empty keeps the stored one
+			secret: '', // Empty keeps the stored one.
 			webhook_auth: a.webhook_auth ?? 'sign',
-			bot_token: '', // empty keeps the stored one
+			bot_token: '', // Empty keeps the stored one.
 			chat_id: a.chat_id ?? '',
 			server_url: a.server_url ?? '',
 			topic: a.topic ?? '',
 			user_key: a.user_key ?? '',
-			app_token: '', // empty keeps the stored one
+			app_token: '', // Empty keeps the stored one.
 			clear_app_token: false,
 			allow_local_network: a.allow_local_network ?? false
 		};

@@ -1,35 +1,35 @@
 <script lang="ts">
-	import { proxied } from '#lib/core/tmdb-image.ts';
-	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, markRead, listReports, liveByTitle, liveFacts, stepFacts, type TitleLive, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
-	import { decided as decidedRaw } from '#lib/core/plain.ts';
-	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { glide } from '#lib/core/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '#lib/core/paths.ts';
-	import { goto } from '$app/navigation';
-	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { api, ApiError, message } from '#lib/core/api.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import { titleStatus } from '#lib/ui/title-status.ts';
+	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, markRead, listReports, liveByTitle, liveFacts, stepFacts, type TitleLive, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
+	import { loadProfile, profile, kidLabel, watchlistLine } from '#lib/accounts/index.ts';
+	import { partsNow } from '#lib/mediafiles/index.ts';
+	import type { AskLimit } from '#lib/requests/index.ts';
+	import { seasonWords } from '#lib/shows/index.ts';
+	import { albumWords } from '#lib/music/index.ts';
+	import { goto } from '$app/navigation';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
+	import { proxied } from '#lib/core/tmdb-image.ts';
+	import { decided as decidedRaw } from '#lib/core/plain.ts';
+	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { glide } from '#lib/core/transitions.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api, ApiError, message } from '#lib/core/api.ts';
 	import { ago, dateTime } from '#lib/core/format.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { loadProfile, profile, kidLabel, watchlistLine } from '#lib/accounts/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/core/plain.ts';
-	import { partsNow } from '#lib/mediafiles/index.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
-	import type { AskLimit } from '#lib/requests/index.ts';
 	import type { SearchView } from '#lib/core/types.ts';
 	import type { DownloadRow } from '#lib/core/types.ts';
-	import { seasonWords } from '#lib/shows/index.ts';
-	import { albumWords } from '#lib/music/index.ts';
-	import { titleStatus } from '#lib/ui/title-status.ts';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -43,7 +43,7 @@
 	// One line per kind whose part is on.
 	const onKinds = $derived(limitKinds.filter((k) => partsNow.answer?.parts.find((p) => p.part === k)?.on !== false));
 
-	// Asked by: one person's asks (0 is everyone's), for the Inbox looks' filter.
+	// Asked by: one person's asks (0 is everyone's), for the Inbox filter.
 	let person = $state(0);
 	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
@@ -93,8 +93,7 @@
 			const a = asks.find((x) => x.id === id);
 			const name = a?.name ?? 'the request';
 			if (err instanceof ApiError && err.status === 409 && /already decided/.test(err.message)) {
-				// Someone else answered it first (two approvers at once): show their answer, not "Try again".
-				// The one ask is read on its own, so a list load started meanwhile can't drop it.
+				// Someone else answered it first (two approvers at once): show their answer, not "Try again". The one ask is read on its own, so a list load started meanwhile cannot drop it.
 				const now = await api.get<Ask>(`/asks/${id}`).catch(() => undefined);
 				if (now) {
 					const i = asks.findIndex((x) => x.id === id);
@@ -110,7 +109,7 @@
 		}
 	}
 
-	/** act decides a set of asks after an Undo window; the toast's Undo cancels them all. */
+	/** Decides a set of asks after an Undo window; the toast's Undo cancels them all. */
 	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '', opt?: DecideOptions) {
 		// Waiting asks, and (to decline only) approved ones whose title never got added (Failed).
 		const open = (a: Ask) => a.state === 'asked' || (mode === 'turn_down' && a.state === 'approved' && !a.title_id);
@@ -142,8 +141,7 @@
 	}
 	// Each waiting decision's Undo toast, so leaving the page can take the Undo away.
 	const undoToast = new Map<number, number>();
-	// Leaving the page sends what is still waiting out its Undo time.
-	// Its Undo can't work after that, so the toast goes too.
+	// Leaving the page sends what is still waiting out its Undo time. Its Undo cannot work after that, so the toast goes too.
 	onDestroy(() =>
 		Object.keys(pending).forEach((id) => {
 			const t = undoToast.get(Number(id));
@@ -217,7 +215,7 @@
 	const kindRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes(pickKind)));
 
 	let loadGen = 0;
-	/** load reads the list; quiet (a poll) keeps a failed read to itself. */
+	/** Reads the list; quiet (a poll) keeps a failed read to itself. */
 	async function load(quiet = false) {
 		const gen = ++loadGen;
 		try {
@@ -226,8 +224,7 @@
 			asks = r.asks;
 			error = '';
 		} catch (e) {
-			// A background refresh that fails keeps the list on screen and says so once;
-			// a poll says nothing and tries again on its next turn.
+			// A background refresh that fails keeps the list on screen and says so once; a poll says nothing and tries again on its next turn.
 			if (quiet && asks.length) return;
 			if (asks.length) toasts.push("Couldn't refresh requests", 'fail', { body: message(e) });
 			error = message(e);
@@ -247,8 +244,7 @@
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
 			tab = approver ? 'waiting' : firstTab(asks);
-			// ?ask=<id> (History's "Go to Requests"): a member's cards open on that ask, ringed and scrolled to.
-			// Approvers get its window from the Cards (lib/requests/RequestsBoard.svelte).
+			// ?ask=<id> (History's "Go to Requests"): a member's cards open on that ask, ringed and scrolled to. Approvers get its window from the Cards (lib/requests/RequestsBoard.svelte).
 			const want = Number(new URLSearchParams(location.search).get('ask')) || 0;
 			const a = !approver && want ? asks.find((x) => x.id === want) : undefined;
 			if (!a) return;
@@ -290,7 +286,7 @@
 			}),
 			live.on('ask_removed', () => void load()),
 			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive())),
-			// Members get their own downloads as dl patches (#139): read again when one changes.
+			// Members get their own downloads as dl patches: read again when one changes.
 			live.on('dl', onDlPatch)
 		];
 		return () => offs.forEach((off) => off());
@@ -320,8 +316,7 @@
 	let liveBusy = false;
 	let liveAgain = false;
 	async function loadLive() {
-		// Members read only the downloads of their own asks (the server keeps it to those), so they
-		// see why one failed; the searches list is for people who manage the Library.
+		// Members read only the downloads of their own asks (the server keeps it to those), so they see why one failed; the searches list is for people who manage the Library.
 		const staff = session.can('manage_library');
 		// A live event during a read asks for one more read once it ends, so the last change is never lost.
 		if (liveBusy) return void (liveAgain = true);
@@ -334,7 +329,7 @@
 			]);
 			titleLive = liveByTitle(d.downloads, s.running ?? []);
 		} catch {
-			// keep the last answer
+			// Keep the last answer.
 		} finally {
 			liveBusy = false;
 			if (liveAgain) {
@@ -363,7 +358,7 @@
 		busy = false;
 	}
 
-	/** decideNow approves (with a Library folder and Pick rules) or turns down one ask straight away; '' when done, else the error. */
+	/** Approves (with a Library folder and Pick rules) or turns down one ask straight away; '' when done, else the error. */
 	async function decideNow(a: Ask, mode: 'approve' | 'turn_down', note: string, folderId: number, rulesId: number): Promise<string> {
 		try {
 			const path = `/asks/${a.id}/${mode === 'approve' ? 'approve' : 'turn-down'}`;
@@ -426,9 +421,7 @@
 		if (f) setTimeout(f, 0);
 	}
 
-	// Requests news (#92): no inbox card. Unread news about an ask marks its card New
-	// for this visit; other news (a fixed report, new albums, a followed title ready)
-	// shows once as a toast. Opening the page reads it all, so the badge clears.
+	// Requests news: no inbox card. Unread news about an ask marks its card New for this visit; other news (a fixed report, new albums, a followed title ready) shows once as a toast. Opening the page reads it all, so the badge clears.
 	let fresh = $state(new Set<number>());
 	let reading = false;
 	$effect(() => {
@@ -443,8 +436,7 @@
 			.finally(() => (reading = false));
 	});
 
-	// The member cards (people who cannot approve) speak the approvers' card language: the title's wide art
-	// (its backdrop, an artist's photo, else the poster blurred), then a glass panel with the status and its lines.
+	// The member cards (people who cannot approve) speak the approvers' card language: the title's wide art (its backdrop, an artist's photo, else the poster blurred), then a glass panel with the status and its lines.
 	$effect(() => {
 		if (!approver) for (const a of shown.slice(0, 16)) wantDetails(a);
 	});
@@ -475,13 +467,13 @@
 		return a.year ? ` (${a.year})` : '';
 	}
 
-	/** what says what a show or artist ask is for; '' for movies. */
+	/** What a show or artist ask is for; '' for movies. */
 	function what(a: Ask) {
 		if (a.kind === 'artist') return a.album_words ?? albumWords(a.albums);
 		return a.kind === 'show' ? (a.season_words ?? seasonWords(a.seasons)) : '';
 	}
 
-	/** whyFailed says why an approved ask is stuck (the server's reason when it has one); '' when nothing failed. */
+	/** Why an approved ask is stuck (the server's reason when it has one); '' when nothing failed. */
 	function whyFailed(a: Ask): string {
 		if (a.state !== 'approved') return '';
 		if (a.problem) return a.problem;
@@ -490,7 +482,7 @@
 		return f.phase === 'failed' ? `The download failed.${f.reason ? ` ${f.reason}` : ''}` : '';
 	}
 
-	/** stepLine says, in plain words, where the person's own approved ask is now (#139): no percent, no download names. */
+	/** Says, in plain words, where the person's own approved ask is now: no percent, no download names. */
 	function stepLine(a: Ask): string {
 		if (a.state !== 'approved' || !a.step) return '';
 		switch (a.step.kind) {
@@ -509,10 +501,7 @@
 		}
 		return '';
 	}
-	// While one of the person's own asks is on its way, read the list again now and then:
-	// a search starting or an import finishing reaches them only this way.
-	// Without "Run the Library" there are no download events: the downloads read here
-	// would freeze, so the poll reads them again too while any are on screen.
+	// While one of the person's own asks is on its way, read the list again now and then: a search starting or an import finishing reaches them only this way. Without "Run the Library" there are no download events, so the downloads read here would freeze; the poll reads them again too while any are on screen.
 	const noDlEvents = $derived(!session.can('manage_library'));
 	const inFlight = $derived(
 		asks.some((a) => a.state === 'approved' && ['searching', 'downloading', 'importing', 'waiting_on_admin'].includes(a.step?.kind ?? '')) || (noDlEvents && [...titleLive.values()].some((t) => t.download && t.download.phase !== 'failed'))
@@ -527,19 +516,18 @@
 		return () => clearInterval(t);
 	});
 
-	/** approvedLine says what happens after approval. */
+	/** What happens after approval. */
 	function approvedLine(a: Ask) {
 		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
 		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date and looks for the albums.`;
 		return 'HolyArrs is looking for it.';
 	}
 
-	// Who asked: picture and age limit, for the Inbox looks.
+	// Who asked: picture and age limit.
 	let members = $state<Record<number, Member>>({});
 	let membersAsked = false;
 	$effect(() => {
-		// The people list is an admin route: when it is refused, the rows show
-		// initials and no age-limit mark.
+		// The people list is an admin route: when it is refused, the rows show initials and no age-limit mark.
 		if (!approver || membersAsked) return;
 		membersAsked = true;
 		api
@@ -568,7 +556,7 @@
 		get shown() { return shown; },
 		live: (a) => {
 			if (a.problem) return { phase: 'failed', reason: a.problem };
-			// The page's own live search or download first, else the server's step (#139).
+			// The page's own live search or download first, else the server's step.
 			const f = liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined);
 			return f.phase ? f : { ...f, ...stepFacts(a.step) };
 		},
@@ -639,7 +627,7 @@
 
 <div class="ap-top" class:mem={!approver}>
 <h1 class="sr-only">Requests</h1>
-<!-- Reports (#36): approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
+<!-- Reports: approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
 {#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
 {#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
@@ -799,15 +787,13 @@
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
-					<!-- Approvers: Cards (every width) or the Stage (wide screens); design-notes/approvals-stage.md. -->
+					<!-- Approvers: Cards (every width). -->
 					<RequestsBoard {ctx} />
 				{/if}
 			</PageLoader>
 		{/if}
 			</div>
 {/if}
-
-
 
 <Sheet
 	bind:open={decideOpen}
@@ -911,7 +897,7 @@
 	.why-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.decide-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 	.variant { min-width: 0; }
-	/* Reported problems (#95): a small link for the owner and admins. */
+	/* Reported problems: a small link for the owner and admins. */
 	.rp-link { display: inline-flex; margin-bottom: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
 	.rp-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -969,7 +955,7 @@
 	.ban-t a:focus-visible { outline: none; }
 	.mc:has(.ban-t a:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	/* The glass panel: smoked glass, the art blurred through it; --text, --text-muted and --bg are redefined on it so the ink reads. */
+	/* The glass panel redefines --text, --text-muted and --bg so the ink reads on the blurred art. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; flex: 1; margin: 0 var(--gap) var(--gap); padding: 12px; border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); } }

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table } from '#lib/accounts/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/ui/rating-picks.svelte.ts';
+	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table } from '#lib/accounts/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -26,8 +26,7 @@
 		{ value: 'system', label: 'Automatic', icon: 'settings' }
 	];
 
-	// App-wide looks (settings people only; moved here from This app):
-	// trailers that play by themselves and the sign-in page art.
+	// App-wide looks (settings people only): trailers that play by themselves and the sign-in page art.
 	let autoplay = $state<boolean | null>(null);
 	let signinArt = $state(false);
 	let busy = $state(false);

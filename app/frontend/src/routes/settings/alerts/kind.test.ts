@@ -1,6 +1,6 @@
+import { switchKind } from './kind.ts';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { switchKind } from './kind.ts';
 
 const src = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
 

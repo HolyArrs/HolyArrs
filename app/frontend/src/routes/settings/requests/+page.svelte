@@ -5,14 +5,14 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/core/paths.ts';
+	import type { AskSettings } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
+	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
-	import type { AskSettings } from '#lib/requests/index.ts';
 
 	let settings = $state<AskSettings>({
 		movies_per_week: 10,

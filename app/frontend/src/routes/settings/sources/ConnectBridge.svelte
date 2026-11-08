@@ -1,15 +1,5 @@
 <script lang="ts">
-	// Connect Jackett or Prowlarr (#96): HolyArrs takes the address and key, tests them, and brings the sites in as
-	// Sources in one step. Jackett's sites stay in step on their own;
-	// Prowlarr writes its sites in through the old-app API.
-	import { onMount, tick, untrack } from 'svelte';
-	import { api, ApiError } from '#lib/core/api.ts';
-	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { session } from '#lib/core/session.svelte.ts';
-	import { ago } from '#lib/core/format.ts';
-	import { to } from '#lib/core/paths.ts';
-	import { reachWords } from '#lib/downloads/index.ts';
+	// Connect Jackett or Prowlarr: HolyArrs takes the address and key, tests them, and brings the sites in as Sources in one step. Jackett's sites stay in step on their own; Prowlarr writes its sites in through the old-app API.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -19,6 +9,14 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
+	import { reachWords } from '#lib/downloads/index.ts';
+	import { onMount, tick, untrack } from 'svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { to } from '#lib/core/paths.ts';
 
 	type Kind = 'jackett' | 'prowlarr';
 	interface Bridge {
@@ -53,22 +51,18 @@
 	// The connection being edited: the form starts filled in; a new address replaces it.
 	let editingId = $state<number | null>(null);
 	let callback = $state('');
-	// Filled from this page's address; it opens for typing only on Change, a
-	// server error on it, or when this page is on localhost (Prowlarr can't use that).
+	// Filled from this page's address; it opens for typing only on Change, a server error on it, or when this page is on localhost (Prowlarr cannot use that).
 	let callbackOpen = $state(false);
 	let testing = $state(false);
 	let connecting = $state(false);
-	// A test or connect answer; a good test shows as a short tag ("Prowlarr v2.0.5 · 12 sites").
-	// tested: the answer of Test, shown as a tag; otherwise a plain line (Connect's errors).
+	// A test or connect answer; a good test shows as a short tag ("Prowlarr v2.0.5 · 12 sites"). `tested` is the answer of Test, shown as a tag; otherwise a plain line (Connect's errors).
 	let result = $state<{ ok: boolean; text: string; tested?: boolean; extra?: string } | null>(null);
 	let errors = $state<Record<string, string>>({});
 	let keysNeeded = $state<string[]>([]);
 	let newKeys = $state(false);
 	let typedKeys = $state<Record<string, string>>({ sonarr: '', radarr: '' });
 	let checking = $state<number | null>(null);
-	// Old-app keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it).
-	// Making old-app keys wants a fresh password: the server answers "reauth".
-	// Ask inline instead of showing that answer, then run the step again.
+	// Old-app keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it). Making old-app keys wants a fresh password: the server answers "reauth". Ask inline instead of showing that answer, then run the step again.
 	let reauthFor = $state<'test' | 'connect' | null>(null);
 	const isReauth = (e: unknown) => e instanceof ApiError && e.status === 403 && e.body.code === 'reauth';
 	function askPassword(step: 'test' | 'connect') {
@@ -93,8 +87,7 @@
 		try {
 			const r = await api.get<{ bridges: Bridge[]; home_ip?: string }>('/bridges');
 			bridges = r.bridges;
-			// Opened over Tailscale or on this machine: Prowlarr usually can't use
-			// that address, so offer this machine's home-network one instead.
+			// Opened over Tailscale or on this machine: Prowlarr usually cannot use that address, so offer this machine's home-network one instead.
 			const odd = /^(localhost|127\.|\[::1\]|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)|\.ts\.net$/.test(location.hostname);
 			if (r.home_ip && odd && !callbackOpen) callback = `${location.protocol}//${r.home_ip}${location.port ? ':' + location.port : ''}${to('/').replace(/\/$/, '')}`;
 			loadError = '';
@@ -106,8 +99,7 @@
 	}
 	onMount(() => {
 		void load();
-		// How Prowlarr reaches HolyArrs: the address this page was opened at,
-		// unless that is this machine's own name, which Prowlarr's container can't reach.
+		// How Prowlarr reaches HolyArrs: the address this page was opened at, unless that is this machine's own name, which Prowlarr's container cannot reach.
 		if (!/^(localhost|127\.|\[::1\])/.test(location.hostname)) callback = location.origin + to('/').replace(/\/$/, '');
 	});
 

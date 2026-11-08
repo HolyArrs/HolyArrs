@@ -1,16 +1,14 @@
 <script lang="ts">
+	import { ownedIndex } from '#lib/ui/title-cards.ts';
 	import { artistSheets } from '../../../request-sheets.ts';
+	import { MusicTrendingRows } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { api } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { ownedIndex } from '#lib/ui/title-cards.ts';
-	import { MusicTrendingRows } from '#lib/music/index.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
-	// A Music genre page (Music only): the genre's band, then its rows —
-	// Spotlight, new and top albums in the genre, your artists in it, what
-	// is missing from them, its popular artists and what is coming.
+	// A Music genre page (Music only): the genre's band, then its rows: Spotlight, new and top albums in the genre, your artists in it, what is missing from them, its popular artists and what is coming.
 	const slug = $derived(page.params.slug ?? '');
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
@@ -35,7 +33,7 @@
 </div>
 
 <style>
-	/* The same card sizes as Explore → Music. */
+	/* The same card sizes as Explore > Music. */
 	.genre { --explore-item: 168px; display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 767px) { .genre { --explore-item: 54vw; } }
 </style>

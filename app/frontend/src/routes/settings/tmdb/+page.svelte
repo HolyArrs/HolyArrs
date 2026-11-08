@@ -3,10 +3,9 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
-	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata/index.ts';
-
 
 	let loaded = $state(false);
 	let checking = $state(false);
@@ -40,7 +39,7 @@
 		</div>
 	</SettingsCard>
 
-	<!-- Keep in step with docs/metadata-privacy.md (tmdb-privacy.test.ts checks both). -->
+	<!-- Keep in step with the metadata privacy doc (tmdb-privacy.test.ts checks both). -->
 	<SettingsCard id="metadata-sent" title="What we send" description="Your public IP address goes too, like any web request">
 		<ul class="sent">
 			<li><b>An install token.</b> Identifies this install, not you.</li>

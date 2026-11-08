@@ -1,12 +1,5 @@
 <script lang="ts">
-	// Your own traits (#97): words or release groups you name once, then give
-	// points, make a must-have or put in Never in any Pick rules. A sheet
-	// makes or changes one; removing one also takes it out of every Pick rule.
-	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/core/api.ts';
-	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { checkOwnTrait, ownTerms } from '#lib/downloads/index.ts';
+	// Your own traits: words or release groups you name once, then give points, make a must-have or put in Never in any Pick rules. A sheet makes or changes one; removing one also takes it out of every Pick rule.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -15,7 +8,12 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import { checkOwnTrait, ownTerms } from '#lib/downloads/index.ts';
 	import type { OwnTrait } from '#lib/downloads/index.ts';
+	import { onMount } from 'svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 
 	let { mayEdit }: { mayEdit: boolean } = $props();
 

@@ -1,29 +1,9 @@
 <script lang="ts">
-	import { artistSheets } from '../request-sheets.ts';
-	import { libraryTitles, ownedLibrary, partOff, partOn, savedDefaults } from '#lib/mediafiles/index.ts';
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { to } from '#lib/core/paths.ts';
-	import { proxied } from '#lib/core/tmdb-image.ts';
-	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
-	import { api, message } from '#lib/core/api.ts';
-	import { session } from '#lib/core/session.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { QuickAsk } from '#lib/requests/index.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
-	import { serverRow, serviceRegion, type WatchService, cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem, PopularRail as NewRail, ExploreHero, whyShown, type Why } from '#lib/discover/index.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
-	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { GateDefaults } from '#lib/mediafiles/index.ts';
-	import type { ShowSettings } from '#lib/shows/index.ts';
-	import type { LookupShow } from '#lib/core/types.ts';
-	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
-	import { MusicNewTab } from '#lib/music/index.ts';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
@@ -31,10 +11,30 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { buildingStatus } from '#lib/core/silhouette.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
+	import { artistSheets } from '../request-sheets.ts';
+	import { libraryTitles, ownedLibrary, partOff, partOn, savedDefaults } from '#lib/mediafiles/index.ts';
+	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
+	import { QuickAsk } from '#lib/requests/index.ts';
+	import { serverRow, serviceRegion, type WatchService, cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem, PopularRail as NewRail, ExploreHero, whyShown, type Why } from '#lib/discover/index.ts';
+	import type { GateDefaults } from '#lib/mediafiles/index.ts';
+	import type { ShowSettings } from '#lib/shows/index.ts';
+	import { seasonWords } from '#lib/shows/index.ts';
+	import { MusicNewTab } from '#lib/music/index.ts';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { to } from '#lib/core/paths.ts';
+	import { proxied } from '#lib/core/tmdb-image.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
+	import { buildingStatus } from '#lib/core/silhouette.ts';
 
 	type Row = ExploreRow & { wide: boolean; type: string };
 
@@ -67,7 +67,7 @@
 	let busy = false;
 	let ask = 0;
 	let poll: ReturnType<typeof setTimeout> | undefined;
-	/** The try number while the server says the lists are still building (0 = not building). */
+	/** The try number while the server says the lists are still building (0 means not building). */
 	let building = $state(0);
 	const gone = new AbortController();
 
@@ -95,7 +95,7 @@
 		if (t !== 'music') void loadFirst();
 	}
 
-	/** loadFirst reads page 0; while lists are still building it asks again every 3 s (at most a minute). */
+	/** Reads page 0; while lists are still building it asks again every 3 s (at most a minute). */
 	async function loadFirst(tries = 0) {
 		const n = ++ask;
 		clearTimeout(poll);
@@ -150,7 +150,7 @@
 	// Service chips on the services and hot and new rows: one service at a time, or all (per row).
 	let svcPicks = $state(new Map<string, number | null>());
 	const svcPick = (row: string) => svcPicks.get(row) ?? null;
-	// Each chip loads its service's own list (row type:service -> cards; null while loading).
+	// Each chip loads its service's own list (row type:service to cards; null while loading).
 	let svcLists = $state(new Map<string, ExploreCard[] | null>());
 	let svcGen = 0;
 	function setPick(row: Row, s: number | null) {
@@ -173,7 +173,7 @@
 	const ghosts = (n: number): ExploreCard[] => Array.from({ length: n }, (_, i) => ({ key: `ghost-${i}`, kind: 'movie', name: '', badges: [] }) as ExploreCard);
 	const region = serviceRegion(defaultRegion());
 	let services = $state<WatchService[]>([]);
-	const logo = (id: number | undefined) => proxied(services.find((s) => s.id === id)?.logo) || undefined; // through the artwork cache
+	const logo = (id: number | undefined) => proxied(services.find((s) => s.id === id)?.logo) || undefined; // Through the artwork cache.
 
 	let titles = $state<TitleView[]>([]);
 	const owned = $derived(ownedIndex(titles));
@@ -186,7 +186,7 @@
 		try {
 			titles = (await ownedLibrary()).titles;
 		} catch {
-			/* owned marks wait for the Library */
+			/* Owned marks wait for the Library. */
 		}
 	}
 
@@ -222,10 +222,10 @@
 		if (!got) return ghosts(isRanked(row.type) ? 6 : 8);
 		return isRanked(row.type) ? got.slice(0, 10) : got;
 	}
-	/** railCard is a rail title as a row card (the same card and hover preview as every row). */
+	/** A rail title as a row card (the same card and hover preview as every row). */
 	const railCard = (it: RailItem): ExploreCard => ({ ...discoverCard(it, 'np_rail'), wide: it.backdrop ?? null });
 
-	/** nextHero rotates the hero through its titles, one step a visit. */
+	/** Rotates the hero through its titles, one step a visit. */
 	function nextHero(n: number): number {
 		if (n < 2) return 0;
 		try {
@@ -236,7 +236,7 @@
 			return 0;
 		}
 	}
-	/** heroWhy: New season, the title's place on its service's chart, else New this week. */
+	/** New season, the title's place on its service's chart, else New this week. */
 	function heroWhy(h: ExploreCard): Why[] {
 		const out = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', fresh: h.fresh });
 		const rank = h.streaming?.rank;
@@ -365,7 +365,7 @@
 	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
 	.types :global(.ui-seg) { pointer-events: auto; border-radius: 999px; padding: 3px; transition: transform var(--bar-glide), box-shadow var(--bar-glide), background-color var(--bar-glide); transform-origin: top center; }
 	.types.stuck :global(.ui-seg) { transform: scale(0.9); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
-	/* Scaled to 0.9 while stuck: the segments' hit area grows to stay 44px on touch phones (#79). */
+	/* Scaled to 0.9 while stuck: the segments' hit area grows to stay 44px on touch phones. */
 	.types.stuck { --seg-hit: 49px; }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
 	.types :global(.ui-seg button) { min-height: 38px; padding: 0 16px; border-radius: 999px; font-size: 14px; }

@@ -1,6 +1,4 @@
-// Find one setting, not just a page. Built by hand: every entry names the page,
-// the element id the page gives that field or card, and the other words a
-// person might type for it.
+// Find one setting, not just a page. Built by hand: every entry names the page, the element id the page gives that field or card, and the other words a person might type for it.
 
 import { isHeld } from '#lib/core/settings.ts';
 
@@ -19,7 +17,6 @@ export interface SettingEntry {
 const e = (href: string, anchor: string, label: string, words = '', advanced = false): SettingEntry => ({ href, anchor, label, words, advanced });
 
 export const settingIndex: SettingEntry[] = [
-	// General
 	e('/settings/appearance', 'theme', 'Theme', 'appearance light dark automatic mode colours colors night'),
 	e('/settings/appearance', 'autoplay-trailers', 'Play trailers by themselves', 'autoplay trailers video explore muted'),
 	e('/settings/appearance', 'signin-art', 'Show Library art on the sign-in page', 'sign-in login page background posters art'),
@@ -35,7 +32,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/parts', 'links-card', 'Reconnect a linked app', 'reconnect downloader test source media server subtitle site'),
 	e('/settings/schedules', '', 'Schedules', 'timer every run now how often refresh jobs tasks interval'),
 
-	// Library
 	e('/settings/library-folders', '', 'Library folders', 'root folder path movies folder shows folder music folder where files live add folder'),
 	e('/settings/library-folders', 'import-folders', 'Extra import folders', 'import files by hand manual import allowed folders downloads loose files'),
 	e('/settings/title-defaults', 'td-movie-folder', 'Library folder for new movies', 'movies defaults root folder new movie add where'),
@@ -104,7 +100,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id vip access token reviews comments'),
 	e('/settings/outside-lists', 'never-card', 'Never-add list', 'never add exclusion block list'),
 
-	// Getting copies
 	e('/settings/sources', '', 'Sources', 'indexer torznab newznab rss tracker usenet add source'),
 	e('/settings/search', 'feed-minutes', 'Check Source feeds every', 'rss feed minutes interval', true),
 	e('/settings/search', 'missing-count', 'Titles to search each night', 'nightly search missing'),
@@ -145,7 +140,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/pick-rules', 'pick-rules-card', 'Release languages', 'pick rules language english french german spanish dubbed original audio'),
 	e('/settings/pick-rules', 'pick-rules-card', 'Fixed copies', 'pick rules proper repack fixed copy re-release'),
 
-	// People and sign-in
 	e('/settings/requests', 'per-week-movies', 'Movie requests each week', 'wishlist limit request quota movies'),
 	e('/settings/requests', 'per-week-shows', 'Show requests each week', 'wishlist limit request quota shows'),
 	e('/settings/requests', 'per-week-music', 'Music requests each week', 'wishlist limit request quota music'),
@@ -156,7 +150,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/users', 'people-card', 'Users and roles', 'users people roles permissions admin member kid preset devices'),
 	e('/settings/users', 'invites-card', 'Invite links', 'invites take back links'),
 
-	// Sign-in and security
 	e('/settings/sign-in', 'local-card', 'Skip sign-in on my local network', 'local network lan no password'),
 	e('/settings/sign-in', 'twofactor-card', 'Admins must use two-factor sign-in', '2fa two-factor otp totp rule'),
 	e('/settings/sign-in', 'min-pw', 'Shortest password allowed', 'password length minimum'),
@@ -168,7 +161,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/sign-in', 'proxy-card', 'Trusted proxies', 'reverse proxy forward auth', true),
 	e('/settings/api', 'keys-card', 'API keys', 'api key token make revoke'),
 
-	// Linked apps
 	e('/settings/media-servers', '', 'Media servers', 'plex jellyfin emby library update notify'),
 	e('/settings/alerts', '', 'Alerts', 'notifications discord telegram ntfy gotify pushover push email webhook notify'),
 	e('/settings/alerts', 'pack-alerts', 'Season pack Alerts', 'season pack one alert per episode'),
@@ -180,7 +172,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/api', 'seerr-card', 'Requests from Seerr and Overseerr', 'seerr overseerr jellyseerr sonarr radarr requests connect'),
 	e('/settings/move', '', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
-	// System
 	e('/settings/backups', 'backup-key', 'Master key', 'master key kit encryption secrets restore another server'),
 	e('/settings/backups', 'backup-often', 'How often backups are made', 'backup schedule'),
 	e('/settings/backups', 'backup-list', 'Restore from a backup', 'restore backup download delete'),
@@ -193,7 +184,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/health', 'hs-upd', 'Release feed', 'update feed url', true),
 	e('/settings/danger', 'danger-card', 'Restart or shut down HolyArrs', 'restart reboot shutdown safe mode stop danger'),
 
-	// My account
 	e('/settings/account', 'pw-current', 'Change my password', 'password my account change'),
 	e('/settings/account', 'twofactor-me', 'My two-factor sign-in', '2fa two-factor otp authenticator backup codes'),
 	e('/settings/account', 'alerts-me', 'Alerts for me', 'my email discord notifications'),
@@ -202,11 +192,7 @@ export const settingIndex: SettingEntry[] = [
 
 const norm = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
 
-/**
- * searchSettings finds settings whose label, words or group hold every typed
- * word. Labels that start with the query come first, then labels that hold
- * it, then matches on other words. Only pages in `allowed` are searched.
- */
+/** Finds settings whose label, words or group hold every typed word. Labels that start with the query come first, then labels that hold it, then matches on other words. Only pages in `allowed` are searched. */
 export function searchSettings(query: string, allowed: (href: string) => boolean, groupOf: (href: string) => string = () => '', index: SettingEntry[] = settingIndex): SettingEntry[] {
 	const q = norm(query.trim());
 	const words = q.split(/\s+/).filter(Boolean);
