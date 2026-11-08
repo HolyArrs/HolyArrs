@@ -20,6 +20,20 @@ export interface HistoryTab {
 	subs: HistorySubTab[];
 }
 
+/** One day of rows: key, label and a count of what mattered. */
+export interface DayGroup {
+	key: string;
+	rows: HistoryRow[];
+	/** Rows per big tab, for the day's summary line. */
+	tally: Record<string, number>;
+}
+
+/** One row that matters, or a fold of routine rows next to each other. */
+export type DayItem = { type: 'row'; key: string; row: HistoryRow; tier: Tier } | { type: 'quiet'; key: string; rows: HistoryRow[] };
+
+/** Poster size of the History rows: small log rows, medium, or large posters. */
+export type ArtSize = 's' | 'm' | 'l';
+
 export const ALL = 'all';
 
 const download = ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed', 'release_held', 'held_removed', 'download_sent', 'download_queued', 'download_downloading', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_removed', 'download_changed'];
@@ -109,14 +123,6 @@ export function tabOf(kind: string): string {
 	return '';
 }
 
-/** One day of rows: key, label and a count of what mattered. */
-export interface DayGroup {
-	key: string;
-	rows: HistoryRow[];
-	/** Rows per big tab, for the day's summary line. */
-	tally: Record<string, number>;
-}
-
 /** Folds a page of Events into download rows, then into local days (newest first, order kept). */
 export function byDay(events: EventRecord[]): DayGroup[] {
 	const out: DayGroup[] = [];
@@ -156,9 +162,6 @@ export function dayLine(tally: Record<string, number>): string {
 	if (n('routine')) parts.push(`${n('routine')} routine`);
 	return parts.join(' · ');
 }
-
-/** One row that matters, or a fold of routine rows next to each other. */
-export type DayItem = { type: 'row'; key: string; row: HistoryRow; tier: Tier } | { type: 'quiet'; key: string; rows: HistoryRow[] };
 
 /** Folds two or more adjacent routine rows into one quiet line. */
 export function dayItems(rows: HistoryRow[]): DayItem[] {
@@ -201,6 +204,3 @@ export function whenShort(at: string, now = new Date()): string {
 	const k = dayKey(at);
 	return k === dayKey(now.toISOString()) ? clock(at) : `${dayLabel(k, now)}, ${clock(at)}`;
 }
-
-/** Poster size of the History rows: small log rows, medium, or large posters. */
-export type ArtSize = 's' | 'm' | 'l';

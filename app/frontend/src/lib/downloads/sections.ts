@@ -9,13 +9,29 @@ import { dateTime } from '../core/format.ts';
 
 type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress'>;
 
+export type BarTone = 'go' | 'queued' | 'held' | 'bad';
+
+export interface Totals {
+	/** Bytes per second across every download. */
+	speed: number;
+	/** Bytes per second sent out across every download. */
+	up: number;
+	/** Seconds until the whole Queue is in at today's speed (0 means unknown). */
+	eta: number;
+	/** Bytes the Queue still has to fetch. */
+	left: number;
+}
+
+export interface Fact {
+	label: string;
+	value: string;
+}
+
 /** Done, seeding, failed and removed downloads; everything else is in the Queue. */
 export function inHistory(r: Bits): boolean {
 	const s = stageOf(r);
 	return s === 'done' || s === 'seeding' || s === 'failed';
 }
-
-export type BarTone = 'go' | 'queued' | 'held' | 'bad';
 
 /** Colours a Queue bar: green taking in data or importing, blue queued, amber paused or stalled, red a problem. */
 export function barTone(r: Bits): BarTone {
@@ -40,17 +56,6 @@ export function sizeLine(r: Pick<DownloadRow, 'size' | 'progress'>): string {
 
 /** Bytes a download still has to fetch. */
 const left = (r: Pick<DownloadRow, 'size' | 'progress'>) => Math.max(0, (r.size || 0) * (1 - Math.max(0, Math.min(1, r.progress || 0))));
-
-export interface Totals {
-	/** Bytes per second across every download. */
-	speed: number;
-	/** Bytes per second sent out across every download. */
-	up: number;
-	/** Seconds until the whole Queue is in at today's speed (0 means unknown). */
-	eta: number;
-	/** Bytes the Queue still has to fetch. */
-	left: number;
-}
 
 /** A row taking in data right now. A queued, paused, stalled or finished row has no speed of its own, whatever the Downloader last said. */
 export function moving(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'speed' | 'active'>): boolean {
@@ -100,11 +105,6 @@ export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { t
 	}
 	if (r.phase === 'removed') return { text: 'Removed', bad: false };
 	return { text: s === 'seeding' ? 'Done · seeding' : 'Done', bad: false };
-}
-
-export interface Fact {
-	label: string;
-	value: string;
 }
 
 /** The details panel as label and value pairs, only those with a value. */

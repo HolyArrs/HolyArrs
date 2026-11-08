@@ -8,6 +8,8 @@ export type ColumnsContext = {
 	list: () => DownloadRow[];
 };
 
+export type Columns = ReturnType<typeof createColumns>;
+
 export function createColumns(ctx: ColumnsContext) {
 	const isDone = $derived(ctx.isDone());
 	const list = $derived(ctx.list());
@@ -585,5 +587,3 @@ export function createColumns(ctx: ColumnsContext) {
 		get pickerKey() { return pickerKey; }
 	};
 }
-
-export type Columns = ReturnType<typeof createColumns>;

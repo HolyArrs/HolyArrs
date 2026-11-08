@@ -8,6 +8,27 @@ export interface KindGroup {
 	kinds: string[];
 }
 
+/** The steps of one download, in order. */
+export type StepKey = 'sent' | 'downloaded' | 'imported';
+
+export type StepState = 'done' | 'failed' | 'waiting';
+
+export interface Step {
+	key: StepKey;
+	label: string;
+	state: StepState;
+}
+
+/** One Event, or every step of one download folded together (newest first). */
+export interface HistoryRow {
+	key: string;
+	/** The newest Event; its title, time and kind lead the row. */
+	head: EventRecord;
+	events: EventRecord[];
+	/** A download's step line; empty for a single Event. */
+	steps: Step[];
+}
+
 /** The kinds a person can filter by, in the order of the loop. */
 export const kindGroups: KindGroup[] = [
 	{ key: 'add', label: 'Added', kinds: ['title_added', 'adopted', 'list_synced', 'version_changed'] },
@@ -33,6 +54,7 @@ export const kindGroups: KindGroup[] = [
 
 const exact: Record<string, string> = {};
 const prefixes: [string, string][] = [];
+
 for (const g of kindGroups) {
 	for (const k of g.kinds) {
 		if (k.endsWith('*')) prefixes.push([k.slice(0, -1), g.label]);
@@ -175,25 +197,6 @@ export function details(e: Pick<EventRecord, 'Data'>): [string, string][] {
 export function pageLine(total: number, offset: number, shown: number): string {
 	if (total === 0) return 'No Events';
 	return `${offset + 1} to ${offset + shown} of ${total}`;
-}
-
-/** The steps of one download, in order. */
-export type StepKey = 'sent' | 'downloaded' | 'imported';
-export type StepState = 'done' | 'failed' | 'waiting';
-export interface Step {
-	key: StepKey;
-	label: string;
-	state: StepState;
-}
-
-/** One Event, or every step of one download folded together (newest first). */
-export interface HistoryRow {
-	key: string;
-	/** The newest Event; its title, time and kind lead the row. */
-	head: EventRecord;
-	events: EventRecord[];
-	/** A download's step line; empty for a single Event. */
-	steps: Step[];
 }
 
 const downloadGroups = new Set(['grab', 'download', 'fail', 'import']);

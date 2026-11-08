@@ -62,6 +62,35 @@ export interface DownloaderAttempt {
 	updated_at: string;
 }
 
+export interface DownloaderForm {
+	name: string;
+	kind: DownloaderView['kind'];
+	url: string;
+	username: string;
+	secret: string;
+	category: string;
+	priority: number;
+	path_map: PathMap[];
+	allow_local_network: boolean;
+	writable: boolean;
+	tags: string[];
+}
+
+export interface RemoveChoice {
+	delete_files: boolean;
+	turn_down: boolean;
+	search_again: boolean;
+}
+
+/** DecisionGroup is one card on Needs a decision: a movie, an episode, or
+ *  the stuck episodes of one season pack together. */
+export interface DecisionGroup {
+	key: string;
+	lead: Decision;
+	items: Decision[];
+	pack: boolean;
+}
+
 /** Only sends that still need the owner's decision. */
 export function pendingAttempts(attempts: DownloaderAttempt[] | undefined): DownloaderAttempt[] {
 	return (attempts ?? []).filter((attempt) => attempt.state === 'pending');
@@ -106,20 +135,6 @@ export function timeLeft(s?: number): string {
 	const h = Math.floor(s / 3600);
 	const m = Math.round((s % 3600) / 60);
 	return m ? `${h} h ${m} min left` : `${h} h left`;
-}
-
-export interface DownloaderForm {
-	name: string;
-	kind: DownloaderView['kind'];
-	url: string;
-	username: string;
-	secret: string;
-	category: string;
-	priority: number;
-	path_map: PathMap[];
-	allow_local_network: boolean;
-	writable: boolean;
-	tags: string[];
 }
 
 /** Starts a new Downloader. Downloaders usually run at home, so the local-network switch starts on. */
@@ -250,12 +265,6 @@ export function split(rows: DownloadRow[]): { now: DownloadRow[]; past: Download
 	return { now: rows.filter((r) => nowPhases.has(r.phase)), past: rows.filter((r) => !nowPhases.has(r.phase)) };
 }
 
-export interface RemoveChoice {
-	delete_files: boolean;
-	turn_down: boolean;
-	search_again: boolean;
-}
-
 /** removeStart is where the Remove dialog starts, from the settings. */
 export function removeStart(s: Pick<DownloaderSettings, 'remove_delete_files' | 'remove_turn_down' | 'remove_search_again'> | null): RemoveChoice {
 	if (!s) return { delete_files: true, turn_down: false, search_again: true };
@@ -272,15 +281,6 @@ export function decisionName(d: Pick<Decision, 'title' | 'year' | 'episode' | 'a
 	if (d.episode && d.album) return `${d.title} – ${d.album} ${d.episode.label}${d.episode.name ? ` ${d.episode.name}` : ''}`;
 	if (d.episode) return `${d.title} ${d.episode.label}${d.episode.name ? ` ${d.episode.name}` : ''}`;
 	return `${d.title}${d.year ? ` (${d.year})` : ''}`;
-}
-
-/** DecisionGroup is one card on Needs a decision: a movie, an episode, or
- *  the stuck episodes of one season pack together. */
-export interface DecisionGroup {
-	key: string;
-	lead: Decision;
-	items: Decision[];
-	pack: boolean;
 }
 
 /** groupDecisions puts the stuck episodes of one pack on one card. */

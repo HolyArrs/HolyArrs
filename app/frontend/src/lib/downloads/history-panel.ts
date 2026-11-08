@@ -46,6 +46,9 @@ export interface PanelContext extends Omit<LineContext, 'titles'> {
 	titles: Map<number, Pick<TitleView, 'kind' | 'artwork'>>;
 }
 
+/** The facts each kind of row shows; When always comes first. */
+type Label = Fact['label'];
+
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
@@ -105,6 +108,87 @@ export function pathBits(p: string, max = 76): string[] {
 /** Keeps a path piece on one line: only separators may break it. */
 export const glue = (bit: string) => bit.replace(/ /g, ' ').replace(/-/g, '‑');
 
+const pathsOf = (d: Record<string, unknown>) => (Array.isArray(d.paths) ? (d.paths as unknown[]).filter((p): p is Record<string, unknown> => !!p && typeof p === 'object') : []);
+
+const SYSTEM_LINE: Record<string, string> = { signed_in: 'Signed in', signed_out: 'Signed out', sign_in_failed: 'Sign-in failed', api_key_created: 'Key made', api_key_deleted: 'Key deleted' };
+const DOWNLOAD: Label[] = ['Quality', 'Size', 'Source', 'Downloader', 'Release'];
+
+/** Names a health or alert row like title rows: what it is about, then what happened ("Discord" · "401 Unauthorized"). */
+const splitKinds = /^(health_broken|health_recovered|alert_failed|free_space_low|library_folder_unreachable)$/;
+
+export function sysSplit(row: HistoryRow, ctx: PanelContext): { name: string; line: string } | null {
+	const e = row.head;
+	if (e.title_name || row.steps.length || !splitKinds.test(e.Kind)) return null;
+	const name = subject(e);
+	if (!name) return null;
+	return { name, line: lineOf(row, ctx, '', '').line };
+}
+
+/** Everything the details panel shows for a row. */
+export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
+	const e = row.head;
+	const now = ctx.now ?? new Date();
+	const w = rowText(row, ctx);
+	const verb = filterVerb(row, w.tag);
+	const kind = e.TitleID ? ctx.titles.get(e.TitleID)?.kind : undefined;
+	const d = e.Data ?? {};
+
+	// The title's name, else what a system Event is about, else its own line.
+	const own = e.title_name || (w.name !== 'HolyArrs' ? w.name : '') || subject(e);
+	const title = own || w.line;
+
+	// Episode bits, a season, an album, or Artist and Album apart.
+	const eps = episodeBits(e.episode);
+	const season = /^Season (\d+):/.exec(e.Summary)?.[1];
+	const album = str(d.album) && !/^\d+$/.test(str(d.album)) ? str(d.album) : '';
+	const sort = kind === 'artist' || str(d.artist) ? 'Artist' : kind === 'album' ? 'Album' : '';
+	// The default Version ("Main") adds nothing, like "Movie" or "Show".
+	const version = e.version && !/^main$/i.test(e.version.trim()) ? e.version : '';
+	const meta = own ? join(eps.length ? eps.join(' · ') : season ? `Season ${season}` : album || sort, version) : '';
+
+	const src = e.TitleID && e.title_name ? artOf(e, ctx.titles) : undefined;
+	const art = src && e.title_name ? { src, name: e.title_name, square: kind === 'artist' || kind === 'album' } : null;
+
+	// A download's three steps; a decision waiting on an import shows where it stopped.
+	const waits = row.events.some((x) => x.Kind === 'needs_decision');
+	let steps: PanelStep[] = row.steps.map((s) => (waits && s.state === 'failed' ? { key: s.key, label: 'Needs you', state: 'needs' } : { key: s.key, label: s.label, state: s.state }));
+	if (!steps.length && e.Kind === 'needs_decision' && /plac|import/i.test(str(d.reason)))
+		steps = [{ key: 'sent', label: 'Sent', state: 'done' }, { key: 'downloaded', label: 'Downloaded', state: 'done' }, { key: 'imported', label: 'Needs you', state: 'needs' }];
+	const failedAt = row.steps.find((s) => s.state === 'failed')?.key ?? '';
+
+	const { line, long } = lineOf(row, ctx, failedAt, own ? w.line : '');
+
+	// Each fact only when the Events kept it, in one fixed order.
+	const wants = new Set(factSet(row, failedAt));
+	const facts: Fact[] = [];
+	const when = whenText(e.At, now);
+	facts.push({ label: 'When', value: when.text, ago: when.ago, at: e.At });
+	const add = (label: Label, value: string, extra: Partial<Fact> = {}) => {
+		if (value && wants.has(label)) facts.push({ label, value, ...extra });
+	};
+	const by = person(e, ctx);
+	if (!(own && /^sign/.test(e.Kind))) add('By', by);
+	const release = first(row, (x) => str(x.release));
+	const fromFile = first(row, (x) => str(pathsOf(x)[0]?.from));
+	add('Quality', first(row, (x) => str(x.quality)) || resolutionOf(release) || resolutionOf(fromFile));
+	const size = first(row, (x) => String(num(x.size_bytes) || num(x.size) || num(x.bytes) || ''));
+	add('Size', size ? bytes(Number(size)) : '');
+	add('Source', first(row, (x) => str(x.source_name) || str(x.indexer) || str(x.source) || str(x.provider)));
+	add('Downloader', first(row, (x) => str(x.downloader)));
+	add('Release', release, { mono: true });
+	const path = (label: Label, full: string) => add(label, shortPath(full, e.title_name ?? ''), { mono: true, full });
+	const isRename = /^(renamed|rename_planned)$/.test(e.Kind);
+	path('File', first(row, (x, ev) => str(pathsOf(x).find((p) => str(p.to))?.to) || (isRename || /^file_(missing|back)$/.test(ev.Kind) ? str(x.to) || str(x.path) : '') || str(x.file)));
+	path('From', isRename ? str(d.from) : fromFile || first(row, (x) => str(x.from)));
+	path('Folder', str(d.folder) || str(d.path) || str(d.save_path));
+	const why = str(d.reason) || str(d.error) || str(d.message);
+	// Say the reason once: no Why when the line or title already says it.
+	const wl = plainWhy(why).toLowerCase(), ll = line.toLowerCase();
+	if (why && !ll.includes(wl) && !(ll && wl.includes(ll)) && !title.toLowerCase().includes(wl)) add('Why', cap(plainWhy(why)));
+
+	return { verb, title, meta, art, steps, line, long, facts, find: canFind(row), actions: rowLinks(row, titleHref(e.TitleID, ctx.titles)) };
+}
+
 function first(row: HistoryRow, read: (d: Record<string, unknown>, e: EventRecord) => string): string {
 	for (const e of row.events) {
 		const v = read(e.Data ?? {}, e);
@@ -112,7 +196,6 @@ function first(row: HistoryRow, read: (d: Record<string, unknown>, e: EventRecor
 	}
 	return '';
 }
-const pathsOf = (d: Record<string, unknown>) => (Array.isArray(d.paths) ? (d.paths as unknown[]).filter((p): p is Record<string, unknown> => !!p && typeof p === 'object') : []);
 
 /** A person or an AI app; '' for HolyArrs, jobs and automatic actions. */
 function person(e: EventRecord, ctx: PanelContext): string {
@@ -150,11 +233,6 @@ function subject(e: EventRecord): string {
 	return '';
 }
 
-const SYSTEM_LINE: Record<string, string> = { signed_in: 'Signed in', signed_out: 'Signed out', sign_in_failed: 'Sign-in failed', api_key_created: 'Key made', api_key_deleted: 'Key deleted' };
-
-/** The facts each kind of row shows; When always comes first. */
-type Label = Fact['label'];
-const DOWNLOAD: Label[] = ['Quality', 'Size', 'Source', 'Downloader', 'Release'];
 function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
 	const k = row.head.Kind;
 	const has = (re: RegExp) => row.events.some((e) => re.test(e.Kind));
@@ -254,79 +332,4 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 		return { line: langs || fallback, long: false };
 	}
 	return { line: fallback, long: false };
-}
-
-/** Names a health or alert row like title rows: what it is about, then what happened ("Discord" · "401 Unauthorized"). */
-const splitKinds = /^(health_broken|health_recovered|alert_failed|free_space_low|library_folder_unreachable)$/;
-export function sysSplit(row: HistoryRow, ctx: PanelContext): { name: string; line: string } | null {
-	const e = row.head;
-	if (e.title_name || row.steps.length || !splitKinds.test(e.Kind)) return null;
-	const name = subject(e);
-	if (!name) return null;
-	return { name, line: lineOf(row, ctx, '', '').line };
-}
-
-/** Everything the details panel shows for a row. */
-export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
-	const e = row.head;
-	const now = ctx.now ?? new Date();
-	const w = rowText(row, ctx);
-	const verb = filterVerb(row, w.tag);
-	const kind = e.TitleID ? ctx.titles.get(e.TitleID)?.kind : undefined;
-	const d = e.Data ?? {};
-
-	// The title's name, else what a system Event is about, else its own line.
-	const own = e.title_name || (w.name !== 'HolyArrs' ? w.name : '') || subject(e);
-	const title = own || w.line;
-
-	// Episode bits, a season, an album, or Artist and Album apart.
-	const eps = episodeBits(e.episode);
-	const season = /^Season (\d+):/.exec(e.Summary)?.[1];
-	const album = str(d.album) && !/^\d+$/.test(str(d.album)) ? str(d.album) : '';
-	const sort = kind === 'artist' || str(d.artist) ? 'Artist' : kind === 'album' ? 'Album' : '';
-	// The default Version ("Main") adds nothing, like "Movie" or "Show".
-	const version = e.version && !/^main$/i.test(e.version.trim()) ? e.version : '';
-	const meta = own ? join(eps.length ? eps.join(' · ') : season ? `Season ${season}` : album || sort, version) : '';
-
-	const src = e.TitleID && e.title_name ? artOf(e, ctx.titles) : undefined;
-	const art = src && e.title_name ? { src, name: e.title_name, square: kind === 'artist' || kind === 'album' } : null;
-
-	// A download's three steps; a decision waiting on an import shows where it stopped.
-	const waits = row.events.some((x) => x.Kind === 'needs_decision');
-	let steps: PanelStep[] = row.steps.map((s) => (waits && s.state === 'failed' ? { key: s.key, label: 'Needs you', state: 'needs' } : { key: s.key, label: s.label, state: s.state }));
-	if (!steps.length && e.Kind === 'needs_decision' && /plac|import/i.test(str(d.reason)))
-		steps = [{ key: 'sent', label: 'Sent', state: 'done' }, { key: 'downloaded', label: 'Downloaded', state: 'done' }, { key: 'imported', label: 'Needs you', state: 'needs' }];
-	const failedAt = row.steps.find((s) => s.state === 'failed')?.key ?? '';
-
-	const { line, long } = lineOf(row, ctx, failedAt, own ? w.line : '');
-
-	// Each fact only when the Events kept it, in one fixed order.
-	const wants = new Set(factSet(row, failedAt));
-	const facts: Fact[] = [];
-	const when = whenText(e.At, now);
-	facts.push({ label: 'When', value: when.text, ago: when.ago, at: e.At });
-	const add = (label: Label, value: string, extra: Partial<Fact> = {}) => {
-		if (value && wants.has(label)) facts.push({ label, value, ...extra });
-	};
-	const by = person(e, ctx);
-	if (!(own && /^sign/.test(e.Kind))) add('By', by);
-	const release = first(row, (x) => str(x.release));
-	const fromFile = first(row, (x) => str(pathsOf(x)[0]?.from));
-	add('Quality', first(row, (x) => str(x.quality)) || resolutionOf(release) || resolutionOf(fromFile));
-	const size = first(row, (x) => String(num(x.size_bytes) || num(x.size) || num(x.bytes) || ''));
-	add('Size', size ? bytes(Number(size)) : '');
-	add('Source', first(row, (x) => str(x.source_name) || str(x.indexer) || str(x.source) || str(x.provider)));
-	add('Downloader', first(row, (x) => str(x.downloader)));
-	add('Release', release, { mono: true });
-	const path = (label: Label, full: string) => add(label, shortPath(full, e.title_name ?? ''), { mono: true, full });
-	const isRename = /^(renamed|rename_planned)$/.test(e.Kind);
-	path('File', first(row, (x, ev) => str(pathsOf(x).find((p) => str(p.to))?.to) || (isRename || /^file_(missing|back)$/.test(ev.Kind) ? str(x.to) || str(x.path) : '') || str(x.file)));
-	path('From', isRename ? str(d.from) : fromFile || first(row, (x) => str(x.from)));
-	path('Folder', str(d.folder) || str(d.path) || str(d.save_path));
-	const why = str(d.reason) || str(d.error) || str(d.message);
-	// Say the reason once: no Why when the line or title already says it.
-	const wl = plainWhy(why).toLowerCase(), ll = line.toLowerCase();
-	if (why && !ll.includes(wl) && !(ll && wl.includes(ll)) && !title.toLowerCase().includes(wl)) add('Why', cap(plainWhy(why)));
-
-	return { verb, title, meta, art, steps, line, long, facts, find: canFind(row), actions: rowLinks(row, titleHref(e.TitleID, ctx.titles)) };
 }

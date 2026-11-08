@@ -63,8 +63,10 @@ const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? o
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
+
 /** Capitalises the first letter but leaves names like "qBittorrent" and "iPhone" alone. */
 export const cap = (s: string) => (s && !/^[a-z][A-Z]/.test(s) ? s[0].toUpperCase() + s.slice(1) : s);
+
 const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
 const problem = (v: unknown) => problemWords[str(v)] ?? str(v);
 
@@ -107,23 +109,6 @@ export function resolutionOf(release: string): string {
 	return r === '2160p' || r === '4k' || r === 'uhd' ? '4K' : r;
 }
 
-function sizeOf(d: Record<string, unknown>): string {
-	const n = num(d.size_bytes) || num(d.size) || num(d.bytes);
-	return n > 0 ? bytes(n) : '';
-}
-
-function releaseOf(events: EventRecord[]): string {
-	for (const e of events) {
-		const r = str(e.Data?.release);
-		if (r) return r;
-	}
-	for (const e of events) {
-		const p = e.Data?.paths;
-		if (Array.isArray(p) && p[0] && typeof p[0] === 'object') return str((p[0] as { from?: unknown }).from);
-	}
-	return '';
-}
-
 export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
 	const dl = /^the downloader says (.+)$/i.exec(s);
@@ -131,38 +116,6 @@ export function plainWhy(reason: string): string {
 	s = s.replace(/[;,]?\s*look at the import plan$/i, '');
 	s = s.replace(/\bno Release passed the Pick rules\b/i, 'nothing good enough was found').replace(/\bRelease(s?)\b/g, 'download$1').replace(/\bPick rules\b/g, 'your quality rules');
 	return s;
-}
-
-function who(e: EventRecord, ctx: LineContext): string {
-	const d = e.Data ?? {};
-	const named = str(d.asked_by) || (Array.isArray(d.asked_by) ? str(d.asked_by[0]) : '');
-	if (e.Actor?.kind === 'user') {
-		const id = e.Actor.id;
-		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || e.actor_name || named || 'a member';
-	}
-	return '';
-}
-
-/** Takes the title off the front of a summary ("Dune: approved by Maya" becomes "approved by Maya"). */
-function withoutTitle(summary: string, name: string): string {
-	let s = summary.trim();
-	if (name) {
-		const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-		s = s.replace(new RegExp(`^${esc}(\\s*\\(\\d{4}\\))?(\\s+S\\d+E\\d+)?\\s*:?\\s*`, 'i'), '');
-		s = s.replace(new RegExp(`\\s*\\b${esc}\\b(\\s*\\(\\d{4}\\))?`, 'gi'), ' it').replace(/\s+/g, ' ').trim();
-	}
-	return cap(s);
-}
-
-/** Line 2 never repeats the title; a leftover mention becomes "it". */
-function scrub(line: string, name: string): string {
-	if (!name || name === 'HolyArrs') return cap(line);
-	const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	return cap(line.replace(new RegExp(`(^|[^\\w])${esc}(\\s*\\(\\d{4}\\))?(?=$|[^\\w])`, 'gi'), '$1it').replace(/\s+/g, ' ').trim());
-}
-
-function keepLine(d: Record<string, unknown>): string {
-	return d.keep_up_to_date === true ? 'Kept up to date' : d.keep_up_to_date === false ? 'No longer kept up to date' : '';
 }
 
 const count = (n: number) => n.toLocaleString('en-US');
@@ -186,19 +139,6 @@ export function missingLine(e: Pick<EventRecord, 'Data'>): string {
 export function folderName(e: EventRecord): string {
 	const n = /^Library folder (.+?):/.exec(e.Summary)?.[1];
 	return n ? `${n} folder` : '';
-}
-
-/** The title an ask is about, read from its summary when the title is not in the Library. */
-function askedName(e: EventRecord): string | undefined {
-	// An AI app's ask: "AI (Chat app, key home) asked for Dune for Maya".
-	if (e.Kind.startsWith('ai_ask_')) {
-		const t = /^AI \(.*?\) (?:asked for|approved|turned down) (.+) for [^\s].*$/.exec(e.Summary)?.[1]?.trim();
-		return t && t !== 'a title' ? t.replace(/\s*\(\d{4}\)$/, '') : undefined;
-	}
-	if (!e.Kind.startsWith('ask_')) return undefined;
-	const made = /asked for (.+?)(?:\s*\(\d{4}\))?(?:,\s.*)?$/.exec(e.Summary)?.[1];
-	if (e.Kind === 'ask_made') return made?.trim() || undefined;
-	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
 }
 
 /** The words of one Event. */
@@ -364,4 +304,66 @@ export function rowText(row: HistoryRow, ctx: LineContext = {}): RowText {
 	if (row.events.some((e) => e.Kind === 'file_replaced')) return { ...head, tag: TAG.came, line: join('A better copy came in', res, size, 'the old one is set aside') };
 	if (row.steps.find((s) => s.key === 'imported')?.state === 'done') return { ...head, tag: TAG.came, line: join(res, size) };
 	return head;
+}
+
+function sizeOf(d: Record<string, unknown>): string {
+	const n = num(d.size_bytes) || num(d.size) || num(d.bytes);
+	return n > 0 ? bytes(n) : '';
+}
+
+function releaseOf(events: EventRecord[]): string {
+	for (const e of events) {
+		const r = str(e.Data?.release);
+		if (r) return r;
+	}
+	for (const e of events) {
+		const p = e.Data?.paths;
+		if (Array.isArray(p) && p[0] && typeof p[0] === 'object') return str((p[0] as { from?: unknown }).from);
+	}
+	return '';
+}
+
+function who(e: EventRecord, ctx: LineContext): string {
+	const d = e.Data ?? {};
+	const named = str(d.asked_by) || (Array.isArray(d.asked_by) ? str(d.asked_by[0]) : '');
+	if (e.Actor?.kind === 'user') {
+		const id = e.Actor.id;
+		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || e.actor_name || named || 'a member';
+	}
+	return '';
+}
+
+/** Takes the title off the front of a summary ("Dune: approved by Maya" becomes "approved by Maya"). */
+function withoutTitle(summary: string, name: string): string {
+	let s = summary.trim();
+	if (name) {
+		const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		s = s.replace(new RegExp(`^${esc}(\\s*\\(\\d{4}\\))?(\\s+S\\d+E\\d+)?\\s*:?\\s*`, 'i'), '');
+		s = s.replace(new RegExp(`\\s*\\b${esc}\\b(\\s*\\(\\d{4}\\))?`, 'gi'), ' it').replace(/\s+/g, ' ').trim();
+	}
+	return cap(s);
+}
+
+/** Line 2 never repeats the title; a leftover mention becomes "it". */
+function scrub(line: string, name: string): string {
+	if (!name || name === 'HolyArrs') return cap(line);
+	const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return cap(line.replace(new RegExp(`(^|[^\\w])${esc}(\\s*\\(\\d{4}\\))?(?=$|[^\\w])`, 'gi'), '$1it').replace(/\s+/g, ' ').trim());
+}
+
+function keepLine(d: Record<string, unknown>): string {
+	return d.keep_up_to_date === true ? 'Kept up to date' : d.keep_up_to_date === false ? 'No longer kept up to date' : '';
+}
+
+/** The title an ask is about, read from its summary when the title is not in the Library. */
+function askedName(e: EventRecord): string | undefined {
+	// An AI app's ask: "AI (Chat app, key home) asked for Dune for Maya".
+	if (e.Kind.startsWith('ai_ask_')) {
+		const t = /^AI \(.*?\) (?:asked for|approved|turned down) (.+) for [^\s].*$/.exec(e.Summary)?.[1]?.trim();
+		return t && t !== 'a title' ? t.replace(/\s*\(\d{4}\)$/, '') : undefined;
+	}
+	if (!e.Kind.startsWith('ask_')) return undefined;
+	const made = /asked for (.+?)(?:\s*\(\d{4}\))?(?:,\s.*)?$/.exec(e.Summary)?.[1];
+	if (e.Kind === 'ask_made') return made?.trim() || undefined;
+	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
 }

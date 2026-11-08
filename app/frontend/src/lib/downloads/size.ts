@@ -1,5 +1,7 @@
 // Sizes in plain units with 1000-based steps: 999 KB, 1 MB, 1.7 GB, 18 GB, 1 TB.
 
+export type KindKey = '' | 'movie' | 'show' | 'artist';
+
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 
 /** Bytes as "553 MB", "1.7 GB", "18 GB" (one decimal under 10, none above). */
@@ -32,8 +34,8 @@ export function protocolOf(r: { protocol?: string; downloader_kind?: string }): 
 	return '';
 }
 
-export type KindKey = '' | 'movie' | 'show' | 'artist';
 export const KIND_WORD: Record<Exclude<KindKey, ''>, string> = { movie: 'Movie', show: 'TV show', artist: 'Music' };
+
 export const KIND_TABS: { key: KindKey; label: string }[] = [
 	{ key: '', label: 'All' },
 	{ key: 'movie', label: 'Movies' },

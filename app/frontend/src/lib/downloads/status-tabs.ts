@@ -5,6 +5,45 @@ export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled'
 
 type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint'] };
 
+export type TabKey = 'active' | 'waiting' | 'progress' | 'done' | 'problems';
+
+export interface Sub {
+	key: string;
+	label: string;
+	stages: Stage[];
+	/** One plain sentence: the tab's tooltip and its empty-state line. */
+	hint: string;
+	/** The empty-state title. */
+	empty: string;
+}
+
+export interface Tab {
+	key: TabKey;
+	label: string;
+	stages: Stage[];
+	hint: string;
+	empty: string;
+	/** The small toggle tabs under this one when it is picked. */
+	subs: Sub[];
+}
+
+export interface Counted {
+	key: string;
+	label: string;
+	count: number;
+	hint: string;
+}
+
+export type EmptyGlyph = 'down' | 'clock' | 'check' | 'done' | 'search' | 'filter';
+export type EmptyAction = { label: string; act: 'clear' | 'all' };
+
+export interface Empty {
+	title: string;
+	text: string;
+	glyph: EmptyGlyph;
+	action?: EmptyAction;
+}
+
 /** Places one row on its fine-grained stage. */
 export function stageOf(r: RowBits): Stage {
 	// A torrent checking its data or moving to a new folder is busy, not waiting.
@@ -37,30 +76,9 @@ export function stageOf(r: RowBits): Stage {
 	return 'done';
 }
 
-export type TabKey = 'active' | 'waiting' | 'progress' | 'done' | 'problems';
-
-export interface Sub {
-	key: string;
-	label: string;
-	stages: Stage[];
-	/** One plain sentence: the tab's tooltip and its empty-state line. */
-	hint: string;
-	/** The empty-state title. */
-	empty: string;
-}
-
-export interface Tab {
-	key: TabKey;
-	label: string;
-	stages: Stage[];
-	hint: string;
-	empty: string;
-	/** The small toggle tabs under this one when it is picked. */
-	subs: Sub[];
-}
-
 /** The default tab: every row, finished and seeding ones included. */
 export const ALL = 'active';
+
 export const ALL_HINT = 'Everything: waiting, on its way, needing you, or finished.';
 
 const SUBS: Record<string, Sub> = {
@@ -107,13 +125,6 @@ export function pick<T extends RowBits>(rows: T[], tabs: Tab[], show: string, su
 	const st = t.subs.find((x) => x.key === sub);
 	const stages = new Set<Stage>(st ? st.stages : t.stages);
 	return rows.filter((r) => stages.has(stageOf(r)));
-}
-
-export interface Counted {
-	key: string;
-	label: string;
-	count: number;
-	hint: string;
 }
 
 /** Every tab with its row count. */
@@ -224,15 +235,6 @@ export function showOf(v: string | null | undefined, tabs: Tab[] = TABS): { show
 	const t = tabs.find((x) => x.key === a);
 	if (!t) return { show: ALL, sub: '' };
 	return { show: t.key, sub: t.subs.some((x) => x.key === b) ? b : '' };
-}
-
-export type EmptyGlyph = 'down' | 'clock' | 'check' | 'done' | 'search' | 'filter';
-export type EmptyAction = { label: string; act: 'clear' | 'all' };
-export interface Empty {
-	title: string;
-	text: string;
-	glyph: EmptyGlyph;
-	action?: EmptyAction;
 }
 
 const EMPTY: Record<string, Omit<Empty, 'title'>> = {

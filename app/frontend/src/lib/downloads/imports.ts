@@ -3,6 +3,13 @@ import type { ImportRecord } from './types.ts';
 import { stageOf } from './status-tabs.ts';
 import type { DownloadRow } from '../core/types.ts';
 
+export interface ImportFacts {
+	/** "Placed by hardlink", "2 of 3 files placed by hardlink". */
+	how: string;
+	/** The Library folder it went to ("Se7en (1995)"), when known. */
+	where: string;
+}
+
 /** Keeps the newest import of every download. */
 export function byDownload(imports: ImportRecord[]): Map<number, ImportRecord> {
 	const out = new Map<number, ImportRecord>();
@@ -21,13 +28,6 @@ const methodWords: Record<string, string> = { hardlink: 'hardlink', move: 'movin
 export function folder(path: string | undefined): string {
 	const parts = (path ?? '').split(/[\\/]+/).filter(Boolean);
 	return parts.length > 1 ? parts[parts.length - 2] : '';
-}
-
-export interface ImportFacts {
-	/** "Placed by hardlink", "2 of 3 files placed by hardlink". */
-	how: string;
-	/** The Library folder it went to ("Se7en (1995)"), when known. */
-	where: string;
 }
 
 /** How and where an import put the files; null when nothing was placed. */

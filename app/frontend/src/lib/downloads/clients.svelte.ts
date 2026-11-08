@@ -3,6 +3,7 @@ import { toasts } from '../core/toasts.svelte.ts';
 
 // What each Downloader says about itself.
 export type ClientStatus = { paused: boolean; speed: number; up_speed: number; speed_limit?: number; up_limit?: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
+
 export type Client = { id: number; name: string; protocol?: string; status?: ClientStatus; error?: string };
 
 /** Polls the Downloaders' own status every 5 seconds. Managers only: watchers would get a 403 each time. */

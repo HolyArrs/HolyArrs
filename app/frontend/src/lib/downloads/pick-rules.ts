@@ -3,6 +3,11 @@ import type { OwnTrait, PickRulesBody, PickRulesSize, PickRulesUse } from './typ
 
 export type RulesKind = 'movie' | 'show' | 'music';
 
+export interface SizeFields {
+	min: number | '';
+	max: number | '';
+}
+
 /** The movie and show quality ladder, low to high. */
 export const videoLadder = [
 	'cam', 'telesync', 'sd_tv', 'sd_dvd',
@@ -16,6 +21,7 @@ export const musicLadder = ['lossy_low', 'lossy_mid', 'lossy_high', 'lossless', 
 
 const videoTraits = ['hevc', 'ddp_audio', 'web_dl', 'upscaled', 'dubbed_only', 'hardcoded_subs', '3d', 'cam', 'telesync', 'remux', 'av1', 'dv', 'hdr10', 'hdr10plus', 'atmos'];
 const musicTraits = ['cd_source', 'web_source', 'vinyl_source', 'log_cue', 'hires', 'mp3', 'aac', 'opus', 'vorbis', 'flac', 'alac', 'single_image', 'lossy_transcode', 'deluxe'];
+
 /** Traits that can only be in Never. */
 export const safetyTraits = ['sample', 'executable', 'password_protected', 'disc_image'];
 
@@ -209,10 +215,6 @@ const useWords: [keyof PickRulesUse, string, string][] = [
 	['title_defaults', 'Movies and TV default', 'Movies and TV defaults']
 ];
 
-function joinWords(parts: string[]): string {
-	return parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
-}
-
 /** Where Pick rules are used: the full counts from one rule, or the total from the list. */
 export function usedWords(use: PickRulesUse | number | undefined): string {
 	if (use === undefined) return '';
@@ -224,14 +226,6 @@ export function usedWords(use: PickRulesUse | number | undefined): string {
 const inPoints = (n: number) => Number.isInteger(n) && n >= -10000 && n <= 10000;
 const pointsText = 'Points go from -10000 to 10000.';
 const waitText = 'A wait can be 0 to 10080 minutes (7 days).';
-
-function listProblem(values: string[], allowed: string[], what: string): string | undefined {
-	if (new Set(values).size !== values.length) return 'Each trait can be listed once.';
-	const bad = values.find((v) => !allowed.includes(v));
-	if (bad === undefined) return undefined;
-	if (safetyTraits.includes(bad)) return `${traitLabel(bad)} cannot be ${what}.`;
-	return isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
-}
 
 /** Finds what the server would refuse, as field to words. Empty means it looks fine. */
 export function checkBody(name: string, kinds: string[], body: PickRulesBody, mine: OwnTrait[] = []): Record<string, string> {
@@ -325,11 +319,6 @@ export function bytesPerMinute(gbHour: number): number {
 	return Math.round((gbHour * gb) / 60);
 }
 
-export interface SizeFields {
-	min: number | '';
-	max: number | '';
-}
-
 /** The Every step limit as GB per hour; empty is no limit. */
 export function sizeFields(limits: Record<string, PickRulesSize>): SizeFields {
 	const l = limits['*'];
@@ -369,4 +358,16 @@ export function fieldKey(field: string): string {
 export function copyName(name: string): string {
 	const tail = ' copy';
 	return [...name].slice(0, 200 - tail.length).join('') + tail;
+}
+
+function joinWords(parts: string[]): string {
+	return parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+}
+
+function listProblem(values: string[], allowed: string[], what: string): string | undefined {
+	if (new Set(values).size !== values.length) return 'Each trait can be listed once.';
+	const bad = values.find((v) => !allowed.includes(v));
+	if (bad === undefined) return undefined;
+	if (safetyTraits.includes(bad)) return `${traitLabel(bad)} cannot be ${what}.`;
+	return isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
 }

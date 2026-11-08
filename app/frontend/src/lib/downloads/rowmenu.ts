@@ -4,22 +4,7 @@ import { protocolOf } from './size.ts';
 /** One entry in a row's ⋯ menu; the page maps each key to its handler. */
 export type RowItem = 'pause' | 'resume' | 'retry' | 'up' | 'down' | 'top' | 'bottom' | 'priority' | 'library' | 'remove';
 
-/** The Usenet priorities the server takes, in menu order. */
-export const PRIORITIES = [
-	{ key: 'low', label: 'Low' },
-	{ key: 'normal', label: 'Normal' },
-	{ key: 'high', label: 'High' },
-	{ key: 'force', label: 'Force' }
-] as const;
 export type Priority = (typeof PRIORITIES)[number]['key'];
-
-// A Usenet job still in a SABnzbd or NZBGet queue takes order and priority.
-const QUEUED = new Set(['waiting', 'downloading', 'paused', 'stalled']);
-
-/** Whether a row is a Usenet job still in its client's queue. */
-export function usenetQueued(r: { protocol?: string; downloader_kind?: string; phase?: string; downloader_id?: number; hash?: string }): boolean {
-	return r.protocol === 'usenet' && (r.downloader_kind === 'sabnzbd' || r.downloader_kind === 'nzbget') && !!r.downloader_id && !!r.hash && QUEUED.has(r.phase ?? '');
-}
 
 type RowBits = Parameters<typeof retryable>[0] & {
 	can_act?: boolean;
@@ -35,6 +20,25 @@ type RowBits = Parameters<typeof retryable>[0] & {
 	linked?: boolean;
 	outside?: boolean;
 };
+
+/** What the details pane's ⋯ adds beyond the row's list. */
+export type PaneExtra = 'recheck' | 'reannounce' | 'force' | 'steer' | 'fail';
+
+/** The Usenet priorities the server takes, in menu order. */
+export const PRIORITIES = [
+	{ key: 'low', label: 'Low' },
+	{ key: 'normal', label: 'Normal' },
+	{ key: 'high', label: 'High' },
+	{ key: 'force', label: 'Force' }
+] as const;
+
+// A Usenet job still in a SABnzbd or NZBGet queue takes order and priority.
+const QUEUED = new Set(['waiting', 'downloading', 'paused', 'stalled']);
+
+/** Whether a row is a Usenet job still in its client's queue. */
+export function usenetQueued(r: { protocol?: string; downloader_kind?: string; phase?: string; downloader_id?: number; hash?: string }): boolean {
+	return r.protocol === 'usenet' && (r.downloader_kind === 'sabnzbd' || r.downloader_kind === 'nzbget') && !!r.downloader_id && !!r.hash && QUEUED.has(r.phase ?? '');
+}
 
 /** Lists what a row's ⋯ menu offers, in order. A read-only row (can_act false) gets only Open in Library. Queue moves are qBittorrent torrents (the client bulk call) and SABnzbd or NZBGet jobs. */
 /** HolyArrs may change this row in its Downloader, not only its own records. */
@@ -53,9 +57,6 @@ export function rowItems(r: RowBits): RowItem[] {
 	if (r.can_act) out.push('remove');
 	return out;
 }
-
-/** What the details pane's ⋯ adds beyond the row's list. */
-export type PaneExtra = 'recheck' | 'reannounce' | 'force' | 'steer' | 'fail';
 
 /** A torrent's checks (Check again, Ask trackers again), force start and its sheets when the page can steer it, and Mark failed when the page allows it. A read-only row gets none. */
 export function paneExtras(r: RowBits, opts: { steer: boolean; fail: boolean }): PaneExtra[] {

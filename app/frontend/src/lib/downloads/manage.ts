@@ -11,6 +11,33 @@ export interface AddOutcome {
 	dropped?: number;
 }
 
+/** Actions the selection bar and row menu send in one call per Downloader. */
+export type BulkAction = 'start' | 'pause' | 'recheck' | 'reannounce' | 'top' | 'bottom' | 'up' | 'down' | 'force' | 'unforce';
+
+type Addressed = { downloader_id?: number; hash?: string; protocol?: string };
+
+/** A torrent's own seeding rules: -2 follows the Downloader's rule, -1 is no limit. */
+export interface ShareLimits {
+	ratio: number;
+	seeding_minutes: number;
+	inactive_minutes: number;
+	action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed';
+}
+
+/** One limit in the Seeding rules sheet: the Downloader's rule, none, or a value. */
+export type LimitMode = 'global' | 'none' | 'set';
+
+/** What the steering sheet edits. */
+export type SteerMode = 'seed' | 'location' | 'speed';
+
+/** Tracker filter: '' is all, host:<name> one tracker host, p:<problem> a problem. */
+export type TrackerProblem = 'error' | 'warning' | 'announce';
+
+type Tracked = { tracker?: string; tracker_problem?: TrackerProblem };
+
+/** What the toolbar's Start, Pause and Remove work on: the ticked rows if any, else the open row. */
+export type ToolTarget = { protocol?: string; downloader_kind?: string; state?: string; can_act: boolean; client_locked?: boolean; phase?: string };
+
 /** Reads the Add box, one link per line; blank lines are skipped. A line that is no magnet, http(s) link or info hash is bad. */
 export function splitLinks(text: string): { links: string[]; bad: string[] } {
 	const links: string[] = [];
@@ -45,9 +72,6 @@ const upper = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** Keeps dropped files that look like .torrent files. */
 export const isTorrentFile = (f: { name: string; type?: string }) => /\.torrent$/i.test(f.name) || f.type === 'application/x-bittorrent';
 
-/** Actions the selection bar and row menu send in one call per Downloader. */
-export type BulkAction = 'start' | 'pause' | 'recheck' | 'reannounce' | 'top' | 'bottom' | 'up' | 'down' | 'force' | 'unforce';
-
 /** Every id from a to b in list order, both ends included. */
 export function pickRange(ids: number[], a: number, b: number): number[] {
 	const i = ids.indexOf(a);
@@ -57,7 +81,6 @@ export function pickRange(ids: number[], a: number, b: number): number[] {
 	return ids.slice(Math.min(i, j), Math.max(i, j) + 1);
 }
 
-type Addressed = { downloader_id?: number; hash?: string; protocol?: string };
 /** Groups rows a torrent Downloader can act on by Downloader id; rows with no hash (Usenet, not sent yet) are left out. */
 export function byClient<T extends Addressed>(rows: T[]): Map<number, T[]> {
 	const m = new Map<number, T[]>();
@@ -74,16 +97,6 @@ export const BULK_DONE: Record<BulkAction, string> = {
 	up: 'moved up', down: 'moved down', force: 'force started', unforce: 'back in the queue'
 };
 
-/** A torrent's own seeding rules: -2 follows the Downloader's rule, -1 is no limit. */
-export interface ShareLimits {
-	ratio: number;
-	seeding_minutes: number;
-	inactive_minutes: number;
-	action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed';
-}
-
-/** One limit in the Seeding rules sheet: the Downloader's rule, none, or a value. */
-export type LimitMode = 'global' | 'none' | 'set';
 export const modeOf = (v: number): LimitMode => (v === -2 ? 'global' : v < 0 ? 'none' : 'set');
 export const valueOf = (mode: LimitMode, v: number) => (mode === 'global' ? -2 : mode === 'none' ? -1 : v);
 
@@ -112,21 +125,16 @@ export function checkLimits(l: ShareLimits): string {
 	return '';
 }
 
-/** What the steering sheet edits. */
-export type SteerMode = 'seed' | 'location' | 'speed';
-
 /** Bytes per second as whole KB/s for the speed boxes (0 is no cap), 1000-based like every speed the page shows. */
 export const kbOf = (b: number | undefined) => (b && b > 0 ? Math.round(b / 1000) : 0);
+
 /** Reads a KB/s box; blank, negative or not a number is no cap. */
 export const bytesOf = (kb: number | string) => {
 	const v = Number(kb);
 	return Number.isFinite(v) && v > 0 ? Math.round(v * 1000) : 0;
 };
 
-/** Tracker filter: '' is all, host:<name> one tracker host, p:<problem> a problem. */
-export type TrackerProblem = 'error' | 'warning' | 'announce';
 const PROBLEM_WORD: Record<TrackerProblem, string> = { error: 'Tracker error', warning: 'Tracker warning', announce: 'No tracker reply' };
-type Tracked = { tracker?: string; tracker_problem?: TrackerProblem };
 
 /** The tracker hosts and problems in these rows, with counts. */
 export function trackerOptions(rows: Tracked[]): { key: string; label: string; count: number }[] {
@@ -184,9 +192,6 @@ export function indexesUnder(files: { name: string; index: number }[], keys: Ite
 export function problemWords(n: number): string {
 	return n > 0 ? `${n} tracker ${n === 1 ? 'issue' : 'issues'}` : '';
 }
-
-/** What the toolbar's Start, Pause and Remove work on: the ticked rows if any, else the open row. */
-export type ToolTarget = { protocol?: string; downloader_kind?: string; state?: string; can_act: boolean; client_locked?: boolean; phase?: string };
 
 /** Picks the rows a toolbar button means and says why it is off: nothing picked, every pick read-only, or none in the right state. `want` is 'paused' for Start, 'running' for Pause, 'any' for Remove. */
 export function toolbarTargets<T extends ToolTarget>(picked: T[], open: T | undefined, want: 'paused' | 'running' | 'any', able: (r: T) => boolean = () => true): { rows: T[]; why: string } {

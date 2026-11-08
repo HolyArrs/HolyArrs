@@ -31,6 +31,27 @@ export interface ColDef {
 	fixed?: boolean;
 }
 
+export interface Layout {
+	/** Every column in the person's order, hidden ones included. */
+	order: ColId[];
+	hidden: ColId[];
+	widths: Record<ColId, number>;
+	/** Set once the person sizes the Title; until then it gives way when room is short. */
+	titleSet?: boolean;
+	/** The sorted column and direction; none keeps the tab's own order. */
+	sort?: Sort;
+}
+
+/** Which of the Swarm column's three numbers it sorts by. */
+export type SwarmFacet = 'seeds' | 'peers' | 'ratio';
+
+export interface Sort {
+	id: ColId;
+	desc: boolean;
+	/** Swarm only. */
+	facet?: SwarmFacet;
+}
+
 // Each default width is the widest usual content plus 14px, measured in the app font (12px cells, 11px second lines and headers), so a fresh table reads as auto-fitted. Poster, Type and Downloader snap to their own sizes.
 export const COLUMNS: ColDef[] = [
 	// Seven columns are on by default, each filled on nearly every row. Time left sits under the Progress bar and the finished date lives in the pane's Dates.
@@ -60,31 +81,13 @@ const isId = (v: unknown): v is ColId => typeof v === 'string' && v in COL;
 export const MAX_W = 3000;
 export const MIN_W = 40;
 
-export interface Layout {
-	/** Every column in the person's order, hidden ones included. */
-	order: ColId[];
-	hidden: ColId[];
-	widths: Record<ColId, number>;
-	/** Set once the person sizes the Title; until then it gives way when room is short. */
-	titleSet?: boolean;
-	/** The sorted column and direction; none keeps the tab's own order. */
-	sort?: Sort;
-}
-
-/** Which of the Swarm column's three numbers it sorts by. */
-export type SwarmFacet = 'seeds' | 'peers' | 'ratio';
-
-export interface Sort {
-	id: ColId;
-	desc: boolean;
-	/** Swarm only. */
-	facet?: SwarmFacet;
-}
-
 export const KEY = 'holyarrs.downloads.layout';
+
 /** The first saved shape: widths only. */
 export const OLD_KEY = 'holyarrs.downloads.columns';
+
 export const VERSION = 3;
+
 /** Widths version 2 gave by default; a saved width still at one of them takes the new default. */
 const V2_WIDTHS: Partial<Record<ColId, number>> = { poster: 52, kind: 84, proto: 60, progress: 120, status: 150, size: 100, requested: 130, quality: 90, added: 90, tracker: 140, source: 120, category: 100 };
 

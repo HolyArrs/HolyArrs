@@ -1,23 +1,9 @@
+export type TipSide = 'below' | 'right';
+
 // A tooltip in the browser's top layer (Popover API), so no list, frame or scroll box can hide it. One shared element, placed from the target's box and kept inside the viewport, styled like the app's other tooltips.
 let el: HTMLElement | null = null;
+
 let timer: ReturnType<typeof setTimeout> | undefined;
-
-function ensure(): HTMLElement {
-	if (el) return el;
-	el = document.createElement('div');
-	el.setAttribute('popover', 'manual');
-	el.setAttribute('role', 'tooltip');
-	el.setAttribute('data-testid', 'dl-tip');
-	Object.assign(el.style, {
-		position: 'fixed', margin: '0', inset: 'auto', padding: '4px 8px', border: '0', borderRadius: '6px',
-		background: 'var(--text)', color: 'var(--bg)', font: 'var(--t-footnote)', whiteSpace: 'nowrap',
-		pointerEvents: 'none', maxWidth: 'calc(100vw - 16px)', overflow: 'hidden', textOverflow: 'ellipsis'
-	});
-	document.body.appendChild(el);
-	return el;
-}
-
-export type TipSide = 'below' | 'right';
 
 /** Puts the tip beside `target`, below it or right of it, flipped and clamped to stay on screen. */
 export function place(tip: HTMLElement, target: DOMRect, side: TipSide) {
@@ -92,4 +78,19 @@ export function tip(node: HTMLElement, opts: string | { text: string; side?: Tip
 			node.removeEventListener('focusout', hideTip);
 		}
 	};
+}
+
+function ensure(): HTMLElement {
+	if (el) return el;
+	el = document.createElement('div');
+	el.setAttribute('popover', 'manual');
+	el.setAttribute('role', 'tooltip');
+	el.setAttribute('data-testid', 'dl-tip');
+	Object.assign(el.style, {
+		position: 'fixed', margin: '0', inset: 'auto', padding: '4px 8px', border: '0', borderRadius: '6px',
+		background: 'var(--text)', color: 'var(--bg)', font: 'var(--t-footnote)', whiteSpace: 'nowrap',
+		pointerEvents: 'none', maxWidth: 'calc(100vw - 16px)', overflow: 'hidden', textOverflow: 'ellipsis'
+	});
+	document.body.appendChild(el);
+	return el;
 }

@@ -15,6 +15,8 @@ export type HealthIn = {
 	seeding_time?: number;
 };
 
+export type LogLine = { at: string; kind: string; summary: string };
+
 /** One short line under the panel title: what the torrent is doing now. */
 export function healthLine(h: HealthIn, now = Date.now()): string {
 	const pc = `${Math.floor(percent(h.progress))}%`;
@@ -56,8 +58,6 @@ export function quietPeers(lastSeen: string | undefined, now = Date.now()): stri
 	const sec = Math.max(0, (now - new Date(lastSeen).getTime()) / 1000);
 	return `0 connected now · last activity ${sec < 60 ? 'just now' : daysWord(sec) + ' ago'}`;
 }
-
-export type LogLine = { at: string; kind: string; summary: string };
 
 /** Lines newest first, grouped under a day heading. */
 export function logDays(log: LogLine[], now = new Date()): { day: string; lines: LogLine[] }[] {

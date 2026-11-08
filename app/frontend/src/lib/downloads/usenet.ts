@@ -3,8 +3,10 @@ import type { DownloadRow } from '../core/types.ts';
 
 /** One step of a finished job, as /usenet answers it. */
 export type JobStage = { stage: string; lines: string[] };
+
 /** One news server's counters. */
 export type ServerStat = { name: string; total: number; month: number; week: number; day: number; articles_tried: number; articles_found: number };
+
 /** The Servers and Repair tabs of one Usenet job. */
 export type UsenetView = { stages: JobStage[]; job_servers: { name: string; amount: string }[]; servers?: { total: number; month: number; week: number; day: number; servers: ServerStat[] } };
 

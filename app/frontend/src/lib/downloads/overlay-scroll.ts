@@ -2,6 +2,9 @@
 import './overlay-scroll.css';
 
 export type OverlayScrollOpts = { header?: string };
+
+type Axis = 'v' | 'h';
+
 export const OSB_QUERY = '(min-width: 641px) and (pointer: fine)';
 const MIN = 32;
 
@@ -19,8 +22,6 @@ export function dragTo(start: number, d: number, track: number, len: number, cli
 	const free = track - len;
 	return free > 0 ? start + (d * (total - client)) / free : start;
 }
-
-type Axis = 'v' | 'h';
 
 export function overlayScroll(node: HTMLElement, opts: OverlayScrollOpts = {}) {
 	let header = opts.header ?? '';

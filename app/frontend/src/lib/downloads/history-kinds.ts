@@ -6,6 +6,12 @@ import type { EventRecord, TitleView } from '../core/types.ts';
 /** A result to look at, a change, or routine upkeep. */
 export type Tier = 'important' | 'changes' | 'routine';
 
+export interface Verb {
+	word: string;
+	icon: IconName;
+	tone: 'ok' | 'fail' | 'wait' | 'info' | 'idle';
+}
+
 const groupTier: Record<string, Tier> = {
 	import: 'important', fail: 'important', delete: 'important', decide: 'important', health: 'important',
 	add: 'changes', hold: 'changes', choose: 'changes', grab: 'changes', download: 'changes', rename: 'changes',
@@ -22,13 +28,6 @@ const looseKinds: Record<string, Tier> = {
 /** An upgrade is filed under Imported but is a change, not a result to look at. */
 const UPGRADE = 'file_replaced';
 
-function groupOf(kind: string): string {
-	for (const g of kindGroups) {
-		for (const k of g.kinds) if (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind) return g.key;
-	}
-	return '';
-}
-
 /** How much an Event kind matters. */
 export function tierOf(kind: string): Tier {
 	if (kind === UPGRADE) return 'changes';
@@ -40,12 +39,6 @@ export function eventsQuery(f: HistoryFilter, opts: { kinds?: string[]; limit?: 
 	const q = new URLSearchParams(historyQuery({ ...f, groups: opts.kinds ? [] : f.groups, limit: opts.limit ?? f.limit, offset: opts.offset ?? f.offset }));
 	if (opts.kinds) q.set('kind', opts.kinds.join(','));
 	return q.toString();
-}
-
-export interface Verb {
-	word: string;
-	icon: IconName;
-	tone: 'ok' | 'fail' | 'wait' | 'info' | 'idle';
 }
 
 /** Names what happened in a word or two ("Imported", "Failed"). */
@@ -165,11 +158,6 @@ export function clock(at: string): string {
 
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
-/** The source named at the end of a refresh ("... from MusicBrainz"). */
-function refreshSource(summary: string): string {
-	return /\bfrom ([A-Za-z.]+)\s*$/.exec(summary)?.[1] ?? '';
-}
-
 /** One line for what a run of Events did ("Refreshed 24 artists from MusicBrainz · 3 searches for Slow Horses"). */
 export function burstLine(events: EventRecord[], titles: Map<number, Pick<TitleView, 'kind'>>): string {
 	const parts: string[] = [];
@@ -226,4 +214,16 @@ export function settle(fn: () => void, ms = 1500): { poke: () => void; stop: () 
 		},
 		stop: () => clearTimeout(t)
 	};
+}
+
+function groupOf(kind: string): string {
+	for (const g of kindGroups) {
+		for (const k of g.kinds) if (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind) return g.key;
+	}
+	return '';
+}
+
+/** The source named at the end of a refresh ("... from MusicBrainz"). */
+function refreshSource(summary: string): string {
+	return /\bfrom ([A-Za-z.]+)\s*$/.exec(summary)?.[1] ?? '';
 }
