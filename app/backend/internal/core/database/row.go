@@ -25,18 +25,3 @@ type Subject struct {
 	Type string `json:"type"`
 	ID   int64  `json:"id"`
 }
-
-// Event is one line of history. Events live in the events database.
-type Event struct {
-	Meta
-	At         time.Time      `db:"at"`
-	Actor      Actor          `db:"actor,json"`
-	Kind       string         `db:"kind"`
-	TitleID    *int64         `db:"title_id"`
-	SlotID     *int64         `db:"slot_id"`
-	DownloadID *int64         `db:"download_id"`
-	JobID      *int64         `db:"job_id"`
-	Summary    string         `db:"summary"`
-	Data       map[string]any `db:"data,json"`
-	GroupKey   string         `db:"group_key"`
-}
