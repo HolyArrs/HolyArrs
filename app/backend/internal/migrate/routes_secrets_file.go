@@ -12,10 +12,10 @@ import (
 
 // secretsFileRoutes serves the owner's secrets file, sent by `holyarrs
 // import-secrets` while the app runs, and the move credentials it saves.
-func (h *Handlers) secretsFileRoutes(r *webserver.Router) {
-	r.Handle("POST /api/v1/settings/import-secrets", webserver.NeedOwner, http.HandlerFunc(h.importSecrets))
-	r.Handle("GET /api/v1/migrate/saved-keys", webserver.NeedOwner, http.HandlerFunc(h.savedMoveKeys))
-	r.Handle("DELETE /api/v1/migrate/saved-keys", webserver.NeedOwner, http.HandlerFunc(h.forgetMoveKeys))
+func (h *Handlers) secretsFileRoutes(m *webserver.Router) {
+	m.Handle("POST /api/v1/settings/import-secrets", webserver.NeedOwner, http.HandlerFunc(h.importSecrets))
+	m.Handle("GET /api/v1/migrate/saved-keys", webserver.NeedOwner, http.HandlerFunc(h.savedMoveKeys))
+	m.Handle("DELETE /api/v1/migrate/saved-keys", webserver.NeedOwner, http.HandlerFunc(h.forgetMoveKeys))
 }
 
 // importSecrets stores a parsed secrets file: {"dry_run": false, "file":

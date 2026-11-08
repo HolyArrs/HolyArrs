@@ -35,13 +35,13 @@ const settingMCP = "mcp_enabled"
 var Versions = []string{"2025-11-25", "2025-06-18", "2025-03-26"}
 
 // Routes registers the AI connection routes and their on/off setting.
-func (h *Handlers) Routes(r *webserver.Router) {
-	r.Handle("POST /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
-	r.Handle("GET /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
-	r.Handle("POST /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
-	r.Handle("GET /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
-	r.Handle("GET /api/v1/settings/ai", webserver.NeedSignedIn, http.HandlerFunc(h.getSettings))
-	r.Handle("PUT /api/v1/settings/ai", webserver.NeedOwner, http.HandlerFunc(h.putSettings))
+func (h *Handlers) Routes(m *webserver.Router) {
+	m.Handle("POST /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	m.Handle("GET /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	m.Handle("POST /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	m.Handle("GET /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	m.Handle("GET /api/v1/settings/ai", webserver.NeedSignedIn, http.HandlerFunc(h.getSettings))
+	m.Handle("PUT /api/v1/settings/ai", webserver.NeedOwner, http.HandlerFunc(h.putSettings))
 }
 
 // Handlers serves the AI connection routes. Tools call the rest of the app

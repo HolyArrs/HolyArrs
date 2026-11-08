@@ -31,21 +31,21 @@ type Handlers struct {
 
 // Routes registers the two prefixes and their settings. Each prefix has one
 // row per method so the permission, scope and part tables name it.
-func (h *Handlers) Routes(r *webserver.Router) {
+func (h *Handlers) Routes(m *webserver.Router) {
 	son := Sonarr(h.deps())
 	rad := Radarr(h.deps())
-	r.Handle("GET /sonarr/", webserver.PermManageLibrary, son)
-	r.Handle("POST /sonarr/", webserver.PermManageLibrary, son)
-	r.Handle("PUT /sonarr/", webserver.PermManageLibrary, son)
-	r.Handle("DELETE /sonarr/", webserver.PermManageLibrary, son)
-	r.Handle("GET /radarr/", webserver.PermManageLibrary, rad)
-	r.Handle("POST /radarr/", webserver.PermManageLibrary, rad)
-	r.Handle("PUT /radarr/", webserver.PermManageLibrary, rad)
-	r.Handle("DELETE /radarr/", webserver.PermManageLibrary, rad)
-	r.Handle("GET /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.getSettings))
-	r.Handle("PUT /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.putSettings))
-	r.Handle("POST /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.makeKey))
-	r.Handle("DELETE /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.deleteKey))
+	m.Handle("GET /sonarr/", webserver.PermManageLibrary, son)
+	m.Handle("POST /sonarr/", webserver.PermManageLibrary, son)
+	m.Handle("PUT /sonarr/", webserver.PermManageLibrary, son)
+	m.Handle("DELETE /sonarr/", webserver.PermManageLibrary, son)
+	m.Handle("GET /radarr/", webserver.PermManageLibrary, rad)
+	m.Handle("POST /radarr/", webserver.PermManageLibrary, rad)
+	m.Handle("PUT /radarr/", webserver.PermManageLibrary, rad)
+	m.Handle("DELETE /radarr/", webserver.PermManageLibrary, rad)
+	m.Handle("GET /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.getSettings))
+	m.Handle("PUT /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.putSettings))
+	m.Handle("POST /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.makeKey))
+	m.Handle("DELETE /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.deleteKey))
 }
 
 // deps is what the two adapters read and call; the delete-files switch is

@@ -10,14 +10,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-func (h *Handlers) moveRoutes(r *webserver.Router) {
-	r.Handle("POST /api/v1/migrate/plan", webserver.NeedUsers, http.HandlerFunc(h.movePlan))
-	r.Handle("POST /api/v1/migrate/dry-run", webserver.NeedUsers, http.HandlerFunc(h.moveDryRun))
-	r.Handle("GET /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.listMoves))
-	r.Handle("POST /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.startMove))
-	r.Handle("GET /api/v1/migrate/moves/{id}", webserver.NeedUsers, http.HandlerFunc(h.getMove))
-	r.Handle("GET /api/v1/migrate/moves/{id}/report", webserver.NeedUsers, http.HandlerFunc(h.moveReport))
-	r.Handle("POST /api/v1/migrate/moves/{id}/undo", webserver.NeedUsers, http.HandlerFunc(h.undoMove))
+func (h *Handlers) moveRoutes(m *webserver.Router) {
+	m.Handle("POST /api/v1/migrate/plan", webserver.NeedUsers, http.HandlerFunc(h.movePlan))
+	m.Handle("POST /api/v1/migrate/dry-run", webserver.NeedUsers, http.HandlerFunc(h.moveDryRun))
+	m.Handle("GET /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.listMoves))
+	m.Handle("POST /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.startMove))
+	m.Handle("GET /api/v1/migrate/moves/{id}", webserver.NeedUsers, http.HandlerFunc(h.getMove))
+	m.Handle("GET /api/v1/migrate/moves/{id}/report", webserver.NeedUsers, http.HandlerFunc(h.moveReport))
+	m.Handle("POST /api/v1/migrate/moves/{id}/undo", webserver.NeedUsers, http.HandlerFunc(h.undoMove))
 }
 
 // MoveInput picks the read apps (kept snapshots) and the owner's choices;

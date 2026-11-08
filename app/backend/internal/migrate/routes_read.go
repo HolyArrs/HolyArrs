@@ -16,12 +16,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 )
 
-func (h *Handlers) readRoutes(r *webserver.Router) {
-	r.Handle("POST /api/v1/migrate/probe", webserver.NeedUsers, http.HandlerFunc(h.probe))
-	r.Handle("POST /api/v1/migrate/read", webserver.NeedUsers, http.HandlerFunc(h.read))
-	r.Handle("GET /api/v1/migrate/snapshots", webserver.NeedUsers, http.HandlerFunc(h.listSnapshots))
-	r.Handle("GET /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.getSnapshot))
-	r.Handle("DELETE /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.deleteSnapshot))
+func (h *Handlers) readRoutes(m *webserver.Router) {
+	m.Handle("POST /api/v1/migrate/probe", webserver.NeedUsers, http.HandlerFunc(h.probe))
+	m.Handle("POST /api/v1/migrate/read", webserver.NeedUsers, http.HandlerFunc(h.read))
+	m.Handle("GET /api/v1/migrate/snapshots", webserver.NeedUsers, http.HandlerFunc(h.listSnapshots))
+	m.Handle("GET /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.getSnapshot))
+	m.Handle("DELETE /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.deleteSnapshot))
 }
 
 // MigrateSourceInput says which old app to read and how: an address with
