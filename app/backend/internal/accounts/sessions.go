@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -44,31 +43,13 @@ func (a *Auth) currentFamily(r *http.Request) string {
 	if err != nil || ck.Value == "" {
 		return ""
 	}
-	var f string
-	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT family FROM sessions WHERE hash = ?", sum(ck.Value)).Scan(&f)
+	f, _ := sessionFamily(r.Context(), a.s.Read(), sum(ck.Value))
 	return f
 }
 
 // listSessions lists a person's live sessions, newest use first.
 func (a *Auth) listSessions(ctx context.Context, userID int64, current string) ([]SessionView, error) {
-	now := a.now()
-	rows, err := a.s.Read().QueryContext(ctx, `SELECT family, created_at, last_seen_at, expires_at, user_agent FROM sessions
-		WHERE user_id = ? AND replaced = 0 AND expires_at > ? AND last_seen_at >= ? ORDER BY last_seen_at DESC, created_at DESC`,
-		userID, database.FormatTime(now), database.FormatTime(now.Add(-IdleTimeout)))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []SessionView{}
-	for rows.Next() {
-		var fam, created, seen, expires, ua string
-		if err := rows.Scan(&fam, &created, &seen, &expires, &ua); err != nil {
-			return nil, err
-		}
-		out = append(out, SessionView{ID: fam, Device: Device(ua), Created: parseTime(created), LastUsed: parseTime(seen),
-			Expires: parseTime(expires), Current: current != "" && fam == current})
-	}
-	return out, rows.Err()
+	return liveSessions(ctx, a.s.Read(), userID, a.now(), IdleTimeout, current)
 }
 
 // endSessions ends a person's sessions: one (sid), or every one but keep.
@@ -78,9 +59,9 @@ func (a *Auth) endSessions(ctx context.Context, userID int64, sid, keep string) 
 		var res sql.Result
 		var err error
 		if sid != "" {
-			res, err = tx.Exec("DELETE FROM sessions WHERE user_id = ? AND family = ?", userID, sid)
+			res, err = deleteUserSession(ctx, tx, userID, sid)
 		} else {
-			res, err = tx.Exec("DELETE FROM sessions WHERE user_id = ? AND family != ?", userID, keep)
+			res, err = deleteUserSessionsExcept(ctx, tx, userID, keep)
 		}
 		if err != nil {
 			return err
@@ -147,12 +128,11 @@ func (a *Auth) endMySession(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) otherUser(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	by, _ := webserver.From(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	var role string
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such user")
 		return 0, false
 	}
-	err = a.s.Read().QueryRowContext(r.Context(), "SELECT role FROM users WHERE id = ?", id).Scan(&role)
+	role, err := roleOfUser(r.Context(), a.s.Read(), id)
 	if errors.Is(err, sql.ErrNoRows) {
 		fail(w, http.StatusNotFound, "no such user")
 		return 0, false

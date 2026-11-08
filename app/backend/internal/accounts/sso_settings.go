@@ -167,11 +167,11 @@ func (a *Auth) ssoView(r *http.Request) SSOView {
 		v.On, v.Issuer, v.ClientID, v.SecretSet, v.RedirectURL, v.AllowJoin = s.On, s.Issuer, s.ClientID, s.SecretID != 0, s.RedirectURL, s.AllowJoin
 	}
 	if v.Issuer != "" {
-		_ = a.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM sso_links WHERE kind = 'oidc' AND issuer = ?", v.Issuer).Scan(&v.Links)
+		v.Links, _ = countOIDCLinks(ctx, a.s.Read(), v.Issuer)
 	}
 	if now.forward != nil {
 		v.Forward = ForwardStatus{On: true, Issuer: now.forward.opt.Issuer, AllowJoin: now.forward.opt.AllowJoin}
-		_ = a.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM sso_links WHERE kind = 'forward_auth' AND issuer = ?", v.Forward.Issuer).Scan(&v.Forward.Links)
+		v.Forward.Links, _ = countForwardLinks(ctx, a.s.Read(), v.Forward.Issuer)
 	}
 	return v
 }
@@ -199,8 +199,7 @@ func (a *Auth) checkOwnerProof(w http.ResponseWriter, r *http.Request, who webse
 		fail(w, http.StatusTooManyRequests, "too many wrong passwords; wait a little and try again")
 		return false
 	}
-	var hash string
-	err := a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash FROM users WHERE id = ? AND state = 'active'", who.UserID).Scan(&hash)
+	hash, err := activePasswordHash(r.Context(), a.s.Read(), who.UserID)
 	if err != nil || hash == "" {
 		hash, err = a.dummy, errors.Join(err, errNoLocalSignIn)
 	}
@@ -330,7 +329,7 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		if newSecret != "" || body.PublicClient {
 			if cur.SecretID != 0 {
-				if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", cur.SecretID); err != nil {
+				if err := a.vault.DeleteTx(ctx, tx, cur.SecretID); err != nil {
 					return err
 				}
 			}
@@ -354,18 +353,16 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if changed {
-			res, err := tx.Exec("DELETE FROM sso_links WHERE kind = 'oidc' AND issuer = ?", cur.Issuer)
-			if err != nil {
+			var err error
+			if linksGone, err = deleteOIDCLinks(ctx, tx, cur.Issuer); err != nil {
 				return err
 			}
-			linksGone, _ = res.RowsAffected()
 		}
 		if endAll {
-			res, err := tx.Exec("DELETE FROM sessions WHERE auth_method = 'oidc'")
-			if err != nil {
+			var err error
+			if sessionsGone, err = deleteOIDCSessions(ctx, tx); err != nil {
 				return err
 			}
-			sessionsGone, _ = res.RowsAffected()
 		}
 		return nil
 	})
@@ -456,19 +453,9 @@ type SSOLinkView struct {
 }
 
 func (a *Auth) ssoLinksOf(ctx context.Context, userID int64) []SSOLinkView {
-	out := []SSOLinkView{}
-	rows, err := a.s.Read().QueryContext(ctx, "SELECT kind, issuer, display_name, created_at FROM sso_links WHERE user_id = ? ORDER BY kind, issuer", userID)
+	out, err := ssoLinksOfUser(ctx, a.s.Read(), userID)
 	if err != nil {
-		return out
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var l SSOLinkView
-		var name sql.NullString
-		if rows.Scan(&l.Kind, &l.Issuer, &name, &l.CreatedAt) == nil {
-			l.Name = name.String
-			out = append(out, l)
-		}
+		return []SSOLinkView{}
 	}
 	return out
 }
@@ -504,31 +491,26 @@ func (a *Auth) unlinkSSO(w http.ResponseWriter, r *http.Request, userID int64, s
 	a.ssoMu.Lock() // no finish runs meanwhile: see ssoMu
 	defer a.ssoMu.Unlock()
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		var hash string
-		if err := tx.QueryRow("SELECT password_hash FROM users WHERE id = ?", userID).Scan(&hash); err != nil {
+		hash, err := passwordHashOf(r.Context(), tx, userID)
+		if err != nil {
 			return err
 		}
-		var others int
-		if err := tx.QueryRow(`SELECT (SELECT count(*) FROM user_links WHERE user_id = ?) +
-			(SELECT count(*) FROM sso_links WHERE user_id = ? AND NOT (kind = ? AND issuer = ?))`, userID, userID, body.Kind, body.Issuer).Scan(&others); err != nil {
+		others, err := waysInBesidesSSO(r.Context(), tx, userID, body.Kind, body.Issuer)
+		if err != nil {
 			return err
 		}
 		if hash == "" && others == 0 && (self || !body.NoWayIn) {
 			return errNoWayIn
 		}
-		res, err := tx.Exec("DELETE FROM sso_links WHERE user_id = ? AND kind = ? AND issuer = ?", userID, body.Kind, body.Issuer)
+		n, err := deleteSSOLink(r.Context(), tx, userID, body.Kind, body.Issuer)
 		if err != nil {
 			return err
 		}
-		if n, _ := res.RowsAffected(); n == 0 {
+		if n == 0 {
 			return sql.ErrNoRows
 		}
-		res, err = tx.Exec("DELETE FROM sessions WHERE user_id = ? AND auth_method = ?", userID, body.Kind)
-		if err != nil {
-			return err
-		}
-		ended, _ = res.RowsAffected()
-		return nil
+		ended, err = deleteSessionsByMethod(r.Context(), tx, userID, body.Kind)
+		return err
 	})
 	switch {
 	case errors.Is(err, sql.ErrNoRows):

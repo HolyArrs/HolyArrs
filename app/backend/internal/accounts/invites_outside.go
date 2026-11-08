@@ -129,8 +129,8 @@ func (a *Auth) inviteJoin(ctx context.Context, tok, provider, extID, extName str
 	var id int64
 	var name string
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM user_links WHERE provider = ? AND external_id = ?", provider, extID).Scan(&n); err != nil {
+		n, err := countLinksOf(ctx, tx, provider, extID)
+		if err != nil {
 			return err
 		}
 		if n > 0 {
@@ -144,11 +144,10 @@ func (a *Auth) inviteJoin(ctx context.Context, tok, provider, extID, extName str
 			return err
 		}
 		u.Name = name
-		if id, err = database.Insert(tx, "users", &u, domain.System); err != nil {
+		if id, err = insertUserTx(tx, &u, domain.System); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-			id, provider, extID, truncate(extName, 200), database.FormatTime(a.now())); err != nil {
+		if err := insertUserLink(ctx, tx, id, provider, extID, truncate(extName, 200), database.FormatTime(a.now())); err != nil {
 			return err
 		}
 		return a.useInvite(tx, tok, id)

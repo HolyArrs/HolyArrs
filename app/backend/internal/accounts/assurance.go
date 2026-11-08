@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -179,9 +180,7 @@ func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
 	case <-r.Context().Done():
 		return
 	}
-	var name, hash string
-	err := a.s.Read().QueryRowContext(r.Context(),
-		"SELECT name, password_hash FROM users WHERE id = ? AND state = 'active'", who.UserID).Scan(&name, &hash)
+	name, hash, err := reauthRow(r.Context(), a.s.Read(), who.UserID)
 	if err != nil || hash == "" {
 		hash = a.dummy
 		err = errors.Join(err, errNoLocalSignIn)
@@ -217,8 +216,7 @@ func deletePresentedFamily(tx *sql.Tx, rawCookie string) error {
 		return nil
 	}
 	h := sum(rawCookie)
-	var family string
-	err := tx.QueryRow("SELECT family FROM sessions WHERE hash = ?", h).Scan(&family)
+	family, err := sessionFamily(context.Background(), tx, h)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -226,11 +224,9 @@ func deletePresentedFamily(tx *sql.Tx, rawCookie string) error {
 		return err
 	}
 	if family == "" {
-		_, err = tx.Exec("DELETE FROM sessions WHERE hash = ?", h)
-		return err
+		return deleteSession(context.Background(), tx, h)
 	}
-	_, err = tx.Exec("DELETE FROM sessions WHERE family = ?", family)
-	return err
+	return deleteSessionFamily(context.Background(), tx, family)
 }
 
 // setupDone records that the first-run wizard is finished and ends the setup
@@ -256,9 +252,7 @@ func (a *Auth) setupDone(w http.ResponseWriter, r *http.Request) {
 		if err := database.PutSetting(tx, settingsGroup, settingFirstRunDone, "1", domain.Actor{Kind: "user", ID: who.UserID}, now); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`UPDATE sessions SET family = substr(family, ?) WHERE family LIKE 'setup.%' AND family = (SELECT family FROM sessions WHERE hash = ?)`,
-			len(setupFamily)+1, sum(ck.Value))
-		return err
+		return markSetupDone(r.Context(), tx, len(setupFamily)+1, sum(ck.Value))
 	})
 	if err != nil {
 		log.Printf("auth: setup done: %v", err)

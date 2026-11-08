@@ -18,8 +18,8 @@ func (a *Auth) WithSessionFamily(r *http.Request) *http.Request {
 	if err != nil || ck.Value == "" {
 		return r
 	}
-	var family string
-	if a.s.Read().QueryRowContext(r.Context(), "SELECT family FROM sessions WHERE hash = ?", sum(ck.Value)).Scan(&family) != nil || family == "" {
+	family, err := sessionFamily(r.Context(), a.s.Read(), sum(ck.Value))
+	if err != nil || family == "" {
 		return r
 	}
 	return r.WithContext(context.WithValue(r.Context(), familyKey{}, family))
@@ -41,17 +41,11 @@ func (a *Auth) Still(r *http.Request) (webserver.Caller, bool) {
 			return webserver.Caller{}, false
 		}
 		var fresh webserver.Caller
-		var perms, seen, expires string
 		// The newest session of the family the stream opened with, else the
 		// presented one. Signing out, ending sessions or disabling the
 		// account removes the whole family, so nothing is found then.
-		q, arg := `WHERE s.hash = ?`, any(sum(ck.Value))
-		if family, _ := r.Context().Value(familyKey{}).(string); family != "" {
-			q, arg = `WHERE s.family = ? ORDER BY s.replaced, s.rotated_at DESC LIMIT 1`, family
-		}
-		err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.last_seen_at, s.expires_at
-			FROM sessions s JOIN users u ON u.id = s.user_id AND u.state = 'active' `+q, arg).
-			Scan(&fresh.UserID, &fresh.Name, &fresh.Role, &perms, &fresh.TwoFactor, &fresh.MaxRating, &fresh.RatingCountry, &seen, &expires)
+		family, _ := r.Context().Value(familyKey{}).(string)
+		perms, seen, expires, err := sessionStill(r.Context(), a.s.Read(), sum(ck.Value), family, &fresh)
 		if err != nil {
 			return webserver.Caller{}, false
 		}

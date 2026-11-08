@@ -83,8 +83,8 @@ func (a *Auth) setupHost(w http.ResponseWriter, r *http.Request) (string, bool) 
 // makeOwnerTx makes the owner with no local password, named after the
 // outside account (made unique), and saves a home host name when one came.
 func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64, string, []string, error) {
-	var n int
-	if err := tx.QueryRow("SELECT count(*) FROM users WHERE role = 'owner'").Scan(&n); err != nil {
+	n, err := countOwners(context.Background(), tx)
+	if err != nil {
 		return 0, "", nil, err
 	}
 	if n > 0 {
@@ -97,8 +97,8 @@ func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64
 	base = truncate(base, 56)
 	name := base
 	for i := 2; ; i++ {
-		var c int
-		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", name).Scan(&c); err != nil {
+		c, err := countUsersNamed(context.Background(), tx, name)
+		if err != nil {
 			return 0, "", nil, err
 		}
 		if c == 0 {
@@ -106,7 +106,7 @@ func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64
 		}
 		name = fmt.Sprintf("%s-%d", base, i)
 	}
-	id, err := database.Insert(tx, "users", &domain.User{Name: name, Role: webserver.RoleOwner, State: "active", Perms: "[]"}, domain.System)
+	id, err := insertUserTx(tx, &domain.User{Name: name, Role: webserver.RoleOwner, State: "active", Perms: "[]"}, domain.System)
 	if err != nil || newHost == "" {
 		return id, name, nil, err
 	}
@@ -351,15 +351,13 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 		if id, name, saved, err = a.makeOwnerTx(tx, kind, got.User.Name, newHost); err != nil {
 			return err
 		}
-		var other int64
-		switch err := tx.QueryRow("SELECT user_id FROM user_links WHERE provider = ? AND external_id = ?", kind, got.User.ID).Scan(&other); {
+		switch _, err := linkOwner(ctx, tx, kind, got.User.ID); {
 		case err == nil:
 			return errTaken
 		case !errors.Is(err, sql.ErrNoRows):
 			return err
 		}
-		if _, err := tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-			id, kind, got.User.ID, truncate(got.User.Name, 200), database.FormatTime(a.now())); err != nil {
+		if err := insertUserLink(ctx, tx, id, kind, got.User.ID, truncate(got.User.Name, 200), database.FormatTime(a.now())); err != nil {
 			return err
 		}
 		// The same keys Settings > Sign-in saves, so it shows this way on.

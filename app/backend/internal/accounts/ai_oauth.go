@@ -505,8 +505,8 @@ func (a *Auth) aiToken(w http.ResponseWriter, r *http.Request) {
 // issueAIKey makes the signed-in app's AI key, owned by the person who
 // allowed it. It lasts until revoked, like an AI key made by hand.
 func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
-	var state string
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT state FROM users WHERE id = ?", c.user).Scan(&state); err != nil || state != "active" {
+	state, err := stateOfUser(r.Context(), a.s.Read(), c.user)
+	if err != nil || state != "active" {
 		if err == nil {
 			err = sql.ErrNoRows
 		}
@@ -518,13 +518,9 @@ func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
 	actor, _ := json.Marshal(by)
 	scopes, _ := json.Marshal([]string{webserver.ScopeMCP})
 	var id int64
-	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`INSERT INTO api_keys(created_at, created_by, updated_at, updated_by, owner_user_id, label, scope, hash, hint)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, now, string(actor), now, string(actor), c.user, c.client.Name, string(scopes), sum(k), k[len(k)-4:])
-		if err != nil {
-			return err
-		}
-		id, err = res.LastInsertId()
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		var err error
+		id, err = insertKey(r.Context(), tx, now, string(actor), c.user, c.client.Name, string(scopes), sum(k), k[len(k)-4:])
 		return err
 	})
 	if err != nil {

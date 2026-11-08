@@ -169,8 +169,8 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.SkipLocal != nil && *body.SkipLocal {
-		var kids int
-		if err := a.s.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM users WHERE max_rating != ''").Scan(&kids); err != nil {
+		kids, err := countKids(r.Context(), a.s.Read())
+		if err != nil {
 			serverError(w, "sign-in settings", err)
 			return
 		}
@@ -179,28 +179,16 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// An open invite with an age limit makes a Kid once it is used.
-		rows, err := a.s.Read().QueryContext(r.Context(), "SELECT expires_at FROM invites WHERE used_at IS NULL AND max_rating != ''")
+		expiries, err := kidInviteExpiries(r.Context(), a.s.Read())
 		if err != nil {
 			serverError(w, "sign-in settings", err)
 			return
 		}
 		open := false
-		for rows.Next() {
-			var expires string
-			if err := rows.Scan(&expires); err != nil {
-				rows.Close()
-				serverError(w, "sign-in settings", err)
-				return
-			}
+		for _, expires := range expiries {
 			if a.now().Before(parseTime(expires)) {
 				open = true
 			}
-		}
-		err = rows.Err()
-		rows.Close()
-		if err != nil {
-			serverError(w, "sign-in settings", err)
-			return
 		}
 		if open {
 			fail(w, http.StatusBadRequest, "Skipping sign-in on the local network cannot be on while an open invite has an age limit: the Kid it makes would sign in as the owner at home. Withdraw the invite or let it run out first.")
@@ -362,10 +350,7 @@ var errKidSkipLocal = errors.New("kid join while skipping local sign-in")
 // linkedUser finds or makes the user for an outside account. A new person
 // the server limits (kid) joins as a Kid, as an import would make them.
 func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin, kid bool) (int64, string, error) {
-	var id int64
-	var name, state string
-	err := a.s.Read().QueryRowContext(ctx, `SELECT u.id, u.name, u.state FROM user_links l JOIN users u ON u.id = l.user_id
-		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&id, &name, &state)
+	id, name, state, err := linkedUserRow(ctx, a.s.Read(), provider, extID)
 	if err == nil {
 		if state != "active" {
 			// The member's name goes with the refusal, for the audit row only.
@@ -395,13 +380,11 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 			return err
 		}
 		u.Name = name
-		id, err = database.Insert(tx, "users", &u, domain.System)
+		id, err = insertUserTx(tx, &u, domain.System)
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-			id, provider, extID, truncate(extName, 200), database.FormatTime(a.now()))
-		return err
+		return insertUserLink(ctx, tx, id, provider, extID, truncate(extName, 200), database.FormatTime(a.now()))
 	})
 	if err == nil {
 		log.Printf("auth: %s account joined as member %q (%d), kid %t", provider, name, id, kid)
@@ -422,8 +405,8 @@ func outsideBase(provider, extName string) string {
 func freeName(tx *sql.Tx, base string) (string, error) {
 	name := base
 	for i := 2; ; i++ {
-		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", name).Scan(&n); err != nil {
+		n, err := countUsersNamed(context.Background(), tx, name)
+		if err != nil {
 			return "", err
 		}
 		if n == 0 {
@@ -437,13 +420,12 @@ func freeName(tx *sql.Tx, base string) (string, error) {
 // link (by id, else by its name on that server), else the member with that
 // name, else unknownName. The typed name is only matched, never stored.
 func (a *Auth) linkedName(ctx context.Context, provider, extID, extName string) string {
-	var n string
-	if extID != "" && a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
-		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&n) == nil {
-		return n
+	if extID != "" {
+		if n, err := linkedUserName(ctx, a.s.Read(), provider, extID); err == nil {
+			return n
+		}
 	}
-	if a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
-		WHERE l.provider = ? AND l.external_name = ? ORDER BY l.user_id LIMIT 1`, provider, extName).Scan(&n) == nil {
+	if n, err := linkedUserNameByExternalName(ctx, a.s.Read(), provider, extName); err == nil {
 		return n
 	}
 	return a.knownName(ctx, extName)

@@ -225,3 +225,18 @@ func (s *Store) Events(ctx context.Context, f EventFilter) ([]Event, int, error)
 	}
 	return out, total, rows.Err()
 }
+
+// BumpFailedSignIn adds one to the newest failed sign-in row from the same
+// address, name and kind of failure that began within the last ten minutes,
+// and returns how many rows it changed. A repeated failure then stays one
+// row, and its first attempt keeps the time the ten minutes count from.
+func BumpFailedSignIn(ctx context.Context, tx *sql.Tx, now time.Time, ip, name, how string) (int64, error) {
+	res, err := tx.ExecContext(ctx, `UPDATE events SET data = json_set(data, '$.count', coalesce(json_extract(data, '$.count'), 1) + 1, '$.last_at', ?),
+			updated_at = ? WHERE id = (SELECT id FROM events WHERE kind = 'sign_in_failed' AND json_extract(data, '$.ip') = ? AND json_extract(data, '$.name') = ?
+			AND coalesce(json_extract(data, '$.how'), 'password') = ? AND at >= ? ORDER BY id DESC LIMIT 1)`,
+		FormatTime(now), FormatTime(now), ip, name, how, FormatTime(now.Add(-10*time.Minute)))
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}

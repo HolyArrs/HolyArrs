@@ -64,9 +64,7 @@ func (a *Auth) providerRoutes(m *http.ServeMux) {
 
 // plexOwner says whether the owner's Plex account is linked and as whom.
 func (a *Auth) plexOwner(ctx context.Context) map[string]any {
-	var name string
-	err := a.s.Read().QueryRowContext(ctx, `SELECT l.external_name FROM user_links l JOIN users u ON u.id = l.user_id
-		WHERE l.provider = 'plex' AND u.role = 'owner' LIMIT 1`).Scan(&name)
+	name, err := plexOwnerName(ctx, a.s.Read())
 	tok := false
 	if a.vault != nil {
 		v, _ := a.vault.Setting(ctx, settingsGroup, signInPrefix+keyPlexOwner)
@@ -162,10 +160,14 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	me := webserver.Actor(ctx)
 	if err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		if err := dropLinkTokensTx(tx, "provider = 'plex' AND user_id = ?", me.ID); err != nil {
+		ids, err := plexTokenIDsOfUser(ctx, tx, me.ID)
+		if err != nil {
 			return err
 		}
-		_, err := tx.Exec("DELETE FROM user_links WHERE provider = 'plex' AND user_id = ?", me.ID)
+		if err := a.vault.DeleteTx(ctx, tx, ids...); err != nil {
+			return err
+		}
+		_, err = deletePlexLink(ctx, tx, me.ID)
 		return err
 	}); err != nil {
 		serverError(w, "plex unlink", err)
@@ -290,9 +292,7 @@ func (a *Auth) importPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	offer := &importOffer{people: map[string]importPerson{}, expires: a.now().Add(importLife)}
 	for i, p := range people {
-		var name string
-		if err := a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
-			WHERE l.provider = ? AND l.external_id = ?`, kind, p.ID).Scan(&name); err == nil {
+		if name, err := linkedUserName(ctx, a.s.Read(), kind, p.ID); err == nil {
 			people[i].LinkedTo = name
 		}
 		offer.people[p.ID] = people[i]
@@ -478,8 +478,8 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				skipped++
 				continue
 			}
-			var n int
-			if err := tx.QueryRow("SELECT count(*) FROM user_links WHERE provider = ? AND external_id = ?", kind, p.ID).Scan(&n); err != nil {
+			n, err := countLinksOf(ctx, tx, kind, p.ID)
+			if err != nil {
 				return err
 			}
 			if n > 0 {
@@ -492,7 +492,8 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 			}
 			name := base
 			for i := 2; ; i++ {
-				if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", name).Scan(&n); err != nil {
+				var err error
+				if n, err = countUsersNamed(ctx, tx, name); err != nil {
 					return err
 				}
 				if n == 0 {
@@ -511,12 +512,11 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				}
 				u.Perms, u.MaxRating = kidPerms, "PG"
 			}
-			id, err := database.Insert(tx, "users", u, webserver.Actor(ctx))
+			id, err := insertUserTx(tx, u, webserver.Actor(ctx))
 			if err != nil {
 				return err
 			}
-			if _, err := tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-				id, kind, p.ID, truncate(p.Name, 200), database.FormatTime(a.now())); err != nil {
+			if err := insertUserLink(ctx, tx, id, kind, p.ID, truncate(p.Name, 200), database.FormatTime(a.now())); err != nil {
 				return err
 			}
 			made = append(made, name)

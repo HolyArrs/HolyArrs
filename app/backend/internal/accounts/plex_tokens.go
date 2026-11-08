@@ -16,8 +16,7 @@ import (
 // Each person's Plex token (#102): kept sealed in the vault on their Plex
 // link, from a Plex sign-in or a link made in My account, so Requests can read
 // their Plex watchlist. It never leaves the server. Whatever removes a link or
-// keeps a newer token removes the old vault row in the same write, through
-// dropLinkTokensTx.
+// keeps a newer token removes the old vault row in the same write.
 
 const plexTokenKind = "plex_token"
 
@@ -38,10 +37,7 @@ func (a *Auth) PlexToken(ctx context.Context, userID int64) (string, error) {
 	if a.vault == nil {
 		return "", nil
 	}
-	var ref sql.NullInt64
-	var role, state string
-	err := a.s.Read().QueryRowContext(ctx, `SELECT l.token_secret_id, u.role, u.state FROM user_links l JOIN users u ON u.id = l.user_id
-		WHERE l.provider = 'plex' AND l.user_id = ?`, userID).Scan(&ref, &role, &state)
+	ref, role, state, err := plexLinkRow(ctx, a.s.Read(), userID)
 	if errors.Is(err, sql.ErrNoRows) || err == nil && state != "active" {
 		return "", nil
 	}
@@ -63,9 +59,8 @@ func (a *Auth) keepPlexToken(ctx context.Context, userID int64, extID, tok strin
 	if a.vault == nil || tok == "" {
 		return
 	}
-	var ref sql.NullInt64
-	if err := a.s.Read().QueryRowContext(ctx, "SELECT token_secret_id FROM user_links WHERE provider = 'plex' AND external_id = ? AND user_id = ?",
-		extID, userID).Scan(&ref); err != nil {
+	ref, err := plexTokenRef(ctx, a.s.Read(), extID, userID)
+	if err != nil {
 		return
 	}
 	if ref.Valid {
@@ -74,19 +69,22 @@ func (a *Auth) keepPlexToken(ctx context.Context, userID int64, extID, tok strin
 		}
 	}
 	if err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		where := "provider = 'plex' AND external_id = ? AND user_id = ?"
-		if err := dropLinkTokensTx(tx, where, extID, userID); err != nil {
+		ids, err := plexTokenIDsOfLink(ctx, tx, extID, userID)
+		if err != nil {
+			return err
+		}
+		if err := a.vault.DeleteTx(ctx, tx, ids...); err != nil {
 			return err
 		}
 		id, err := a.vault.PutTx(tx, plexTokenKind, tok, domain.System)
 		if err != nil {
 			return err
 		}
-		res, err := tx.Exec("UPDATE user_links SET token_secret_id = ? WHERE "+where, id, extID, userID)
+		n, err := setPlexTokenRef(ctx, tx, id, extID, userID)
 		if err != nil {
 			return err
 		}
-		if n, _ := res.RowsAffected(); n == 0 {
+		if n == 0 {
 			return sql.ErrNoRows // the link went meanwhile: keep nothing
 		}
 		return nil
@@ -95,39 +93,36 @@ func (a *Auth) keepPlexToken(ctx context.Context, userID int64, extID, tok strin
 	}
 }
 
-// dropLinkTokensTx removes from the vault the tokens kept on the links that
-// where matches, before those links are removed or given a newer token.
-func dropLinkTokensTx(tx *sql.Tx, where string, args ...any) error {
-	_, err := tx.Exec("DELETE FROM secrets WHERE id IN (SELECT token_secret_id FROM user_links WHERE token_secret_id IS NOT NULL AND "+where+")", args...)
-	return err
-}
-
 // linkPlexTx links Plex account extID to userID with its token, replacing the
 // person's earlier Plex link. errTaken: the account belongs to someone else.
 // moved says an earlier, different Plex account was replaced: the devices it
 // signed in are signed out here, and the caller drops its two-factor steps.
 func (a *Auth) linkPlexTx(tx *sql.Tx, userID int64, extID, name, tok string, by domain.Actor) (moved bool, err error) {
-	var other int64
-	err = tx.QueryRow("SELECT user_id FROM user_links WHERE provider = 'plex' AND external_id = ?", extID).Scan(&other)
+	ctx := context.Background()
+	other, err := plexLinkOwner(ctx, tx, extID)
 	if err == nil && other != userID {
 		return false, errTaken
 	}
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
-	var before string
-	if err := tx.QueryRow("SELECT external_id FROM user_links WHERE provider = 'plex' AND user_id = ?", userID).Scan(&before); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	before, err := plexExternalID(ctx, tx, userID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 	if moved = before != "" && before != extID; moved {
-		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND auth_method = ?", userID, ProviderPlex); err != nil {
+		if _, err := deleteSessionsByMethod(ctx, tx, userID, ProviderPlex); err != nil {
 			return false, err
 		}
 	}
-	if err := dropLinkTokensTx(tx, "provider = 'plex' AND user_id = ?", userID); err != nil {
+	ids, err := plexTokenIDsOfUser(ctx, tx, userID)
+	if err != nil {
 		return false, err
 	}
-	if _, err := tx.Exec("DELETE FROM user_links WHERE provider = 'plex' AND user_id = ?", userID); err != nil {
+	if err := a.vault.DeleteTx(ctx, tx, ids...); err != nil {
+		return false, err
+	}
+	if _, err := deletePlexLink(ctx, tx, userID); err != nil {
 		return false, err
 	}
 	var ref any
@@ -138,8 +133,7 @@ func (a *Auth) linkPlexTx(tx *sql.Tx, userID int64, extID, name, tok string, by 
 		}
 		ref = id
 	}
-	_, err = tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at, token_secret_id) VALUES (?, 'plex', ?, ?, ?, ?)",
-		userID, extID, truncate(name, 200), database.FormatTime(a.now()), ref)
+	err = insertPlexLink(ctx, tx, userID, extID, truncate(name, 200), database.FormatTime(a.now()), ref)
 	return moved, err
 }
 
@@ -151,10 +145,7 @@ func (a *Auth) myPlexLink(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, "sign in first")
 		return
 	}
-	var name string
-	var ref sql.NullInt64
-	err := a.s.Read().QueryRowContext(r.Context(), "SELECT external_name, token_secret_id FROM user_links WHERE provider = 'plex' AND user_id = ?",
-		who.UserID).Scan(&name, &ref)
+	name, ref, err := plexLinkName(r.Context(), a.s.Read(), who.UserID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		serverError(w, "plex link", err)
 		return
@@ -261,34 +252,33 @@ func (a *Auth) myPlexUnlink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var ended int64
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		var hash string
-		if err := tx.QueryRow("SELECT password_hash FROM users WHERE id = ?", who.UserID).Scan(&hash); err != nil {
+		hash, err := passwordHashOf(ctx, tx, who.UserID)
+		if err != nil {
 			return err
 		}
-		var others int
-		if err := tx.QueryRow(`SELECT (SELECT count(*) FROM user_links WHERE user_id = ? AND provider <> 'plex') +
-			(SELECT count(*) FROM sso_links WHERE user_id = ?)`, who.UserID, who.UserID).Scan(&others); err != nil {
+		others, err := otherWaysIn(ctx, tx, who.UserID)
+		if err != nil {
 			return err
 		}
 		if hash == "" && others == 0 {
 			return errNoWayIn
 		}
-		if err := dropLinkTokensTx(tx, "provider = 'plex' AND user_id = ?", who.UserID); err != nil {
-			return err
-		}
-		res, err := tx.Exec("DELETE FROM user_links WHERE provider = 'plex' AND user_id = ?", who.UserID)
+		ids, err := plexTokenIDsOfUser(ctx, tx, who.UserID)
 		if err != nil {
 			return err
 		}
-		if n, _ := res.RowsAffected(); n == 0 {
+		if err := a.vault.DeleteTx(ctx, tx, ids...); err != nil {
+			return err
+		}
+		n, err := deletePlexLink(ctx, tx, who.UserID)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
 			return sql.ErrNoRows
 		}
-		res, err = tx.Exec("DELETE FROM sessions WHERE user_id = ? AND auth_method = ?", who.UserID, ProviderPlex)
-		if err != nil {
-			return err
-		}
-		ended, _ = res.RowsAffected()
-		return nil
+		ended, err = deleteSessionsByMethod(ctx, tx, who.UserID, ProviderPlex)
+		return err
 	})
 	switch {
 	case errors.Is(err, sql.ErrNoRows):

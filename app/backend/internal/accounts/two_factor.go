@@ -21,6 +21,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts/qr"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -96,8 +97,8 @@ func (a *Auth) passedAs(w http.ResponseWriter, r *http.Request, userID int64, na
 // passedPlace is passedAs that also records the place as known once the
 // sign-in is complete: now when there is no second step, else after it.
 func (a *Auth) passedPlace(w http.ResponseWriter, r *http.Request, userID int64, name, method string, pl place) {
-	var on bool
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT totp_secret_id IS NOT NULL FROM users WHERE id = ?", userID).Scan(&on); err != nil {
+	on, err := twoFactorOn(r.Context(), a.s.Read(), userID)
+	if err != nil {
 		log.Printf("auth: sign-in: %v", err)
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
@@ -151,9 +152,8 @@ func (a *Auth) checkCode(ctx context.Context, userID int64, code string) (bool, 
 	if a.vault == nil {
 		return false, errors.New("no secrets vault")
 	}
-	var sid sql.NullInt64
-	var last int64
-	if err := a.s.Read().QueryRowContext(ctx, "SELECT totp_secret_id, totp_last_step FROM users WHERE id = ?", userID).Scan(&sid, &last); err != nil {
+	sid, last, err := totpState(ctx, a.s.Read(), userID)
+	if err != nil {
 		return false, err
 	}
 	if !sid.Valid {
@@ -170,10 +170,8 @@ func (a *Auth) checkCode(ctx context.Context, userID int64, code string) (bool, 
 	if st := totpMatch(key, code, a.now(), last); st > 0 {
 		var n int64
 		err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("UPDATE users SET totp_last_step = ? WHERE id = ? AND totp_last_step < ?", st, userID, st)
-			if err == nil {
-				n, err = res.RowsAffected()
-			}
+			var err error
+			n, err = useTotpStep(ctx, tx, st, userID)
 			return err
 		})
 		return n == 1, err
@@ -184,11 +182,8 @@ func (a *Auth) checkCode(ctx context.Context, userID int64, code string) (bool, 
 	}
 	var n int64
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		res, err := tx.Exec("UPDATE backup_codes SET used_at = ? WHERE user_id = ? AND hash = ? AND used_at IS NULL",
-			database.FormatTime(a.now()), userID, sum(bc))
-		if err == nil {
-			n, err = res.RowsAffected()
-		}
+		var err error
+		n, err = useBackupCode(ctx, tx, database.FormatTime(a.now()), userID, sum(bc))
 		return err
 	})
 	return n == 1, err
@@ -282,12 +277,12 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 	_, _ = rand.Read(raw)
 	secret := b32.EncodeToString(raw)
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		var old sql.NullInt64
-		if err := tx.QueryRow("SELECT totp_pending_id FROM users WHERE id = ?", who.UserID).Scan(&old); err != nil {
+		old, err := pendingTotpID(r.Context(), tx, who.UserID)
+		if err != nil {
 			return err
 		}
 		if old.Valid {
-			if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", old.Int64); err != nil {
+			if err := a.vault.DeleteTx(r.Context(), tx, old.Int64); err != nil {
 				return err
 			}
 		}
@@ -295,8 +290,7 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec("UPDATE users SET totp_pending_id = ? WHERE id = ?", id, who.UserID)
-		return err
+		return setPendingTotp(r.Context(), tx, id, who.UserID)
 	})
 	if err != nil {
 		log.Printf("auth: two-factor setup: %v", err)
@@ -327,7 +321,7 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 
 // newBackupCodes replaces a user's backup codes inside tx and returns them.
 func newBackupCodes(tx *sql.Tx, userID int64) ([]string, error) {
-	if _, err := tx.Exec("DELETE FROM backup_codes WHERE user_id = ?", userID); err != nil {
+	if err := deleteBackupCodes(context.Background(), tx, userID); err != nil {
 		return nil, err
 	}
 	const alpha = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -342,7 +336,7 @@ func newBackupCodes(tx *sql.Tx, userID int64) ([]string, error) {
 			}
 		}
 		code := string(c)
-		if _, err := tx.Exec("INSERT INTO backup_codes(user_id, hash) VALUES (?, ?)", userID, sum(code)); err != nil {
+		if err := insertBackupCode(context.Background(), tx, userID, sum(code)); err != nil {
 			return nil, err
 		}
 		out = append(out, code[:5]+"-"+code[5:])
@@ -363,8 +357,8 @@ func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	who, _ := webserver.From(r.Context())
-	var pid sql.NullInt64
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT totp_pending_id FROM users WHERE id = ?", who.UserID).Scan(&pid); err != nil || !pid.Valid {
+	pid, err := pendingTotpID(r.Context(), a.s.Read(), who.UserID)
+	if err != nil || !pid.Valid {
 		fail(w, http.StatusConflict, "start two-factor setup first")
 		return
 	}
@@ -381,7 +375,7 @@ func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
 	}
 	var codes []string
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET totp_secret_id = totp_pending_id, totp_pending_id = NULL, totp_last_step = ? WHERE id = ?", st, who.UserID); err != nil {
+		if err := confirmTotp(r.Context(), tx, st, who.UserID); err != nil {
 			return err
 		}
 		var err error
@@ -399,16 +393,18 @@ func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
 }
 
 // clearTwoFactor turns two-factor sign-in off for a user inside tx.
-func clearTwoFactor(tx *sql.Tx, userID int64) error {
-	if _, err := tx.Exec(`DELETE FROM secrets WHERE id IN (SELECT totp_secret_id FROM users WHERE id = ? UNION SELECT totp_pending_id FROM users WHERE id = ?)`,
-		userID, userID); err != nil {
+func clearTwoFactor(ctx context.Context, tx *sql.Tx, vault *secrets.Vault, userID int64) error {
+	ids, err := totpSecretIDs(ctx, tx, userID)
+	if err != nil {
 		return err
 	}
-	if _, err := tx.Exec("UPDATE users SET totp_secret_id = NULL, totp_pending_id = NULL, totp_last_step = 0 WHERE id = ?", userID); err != nil {
+	if err := vault.DeleteTx(ctx, tx, ids...); err != nil {
 		return err
 	}
-	_, err := tx.Exec("DELETE FROM backup_codes WHERE user_id = ?", userID)
-	return err
+	if err := resetTotpColumns(ctx, tx, userID); err != nil {
+		return err
+	}
+	return deleteBackupCodes(ctx, tx, userID)
 }
 
 func (a *Auth) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
@@ -423,7 +419,7 @@ func (a *Auth) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
 	if !a.codeOrFail(w, r, who, b.Code) {
 		return
 	}
-	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error { return clearTwoFactor(tx, who.UserID) })
+	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error { return clearTwoFactor(r.Context(), tx, a.vault, who.UserID) })
 	if err != nil {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return

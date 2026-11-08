@@ -49,8 +49,8 @@ func avatarURL(id int64, etag sql.NullString) *string {
 }
 
 func (a *Auth) avatarOf(ctx context.Context, id int64) *string {
-	var etag sql.NullString
-	if err := a.s.Read().QueryRowContext(ctx, "SELECT etag FROM user_avatars WHERE user_id = ?", id).Scan(&etag); err != nil {
+	etag, err := avatarTag(ctx, a.s.Read(), id)
+	if err != nil {
 		return nil
 	}
 	return avatarURL(id, etag)
@@ -115,10 +115,7 @@ func (a *Auth) putAvatar(w http.ResponseWriter, r *http.Request) {
 	sum := sha256.Sum256(jpg)
 	etag := hex.EncodeToString(sum[:6])
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO user_avatars(user_id, jpeg, etag, updated_at) VALUES (?, ?, ?, ?)
-			ON CONFLICT(user_id) DO UPDATE SET jpeg = excluded.jpeg, etag = excluded.etag, updated_at = excluded.updated_at`,
-			who.UserID, jpg, etag, database.FormatTime(a.now()))
-		return err
+		return putAvatar(r.Context(), tx, who.UserID, jpg, etag, database.FormatTime(a.now()))
 	})
 	if err != nil {
 		serverError(w, "avatar", err)
@@ -130,8 +127,7 @@ func (a *Auth) putAvatar(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) deleteAvatar(w http.ResponseWriter, r *http.Request) {
 	who, _ := webserver.From(r.Context())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM user_avatars WHERE user_id = ?", who.UserID)
-		return err
+		return deleteAvatarOf(r.Context(), tx, who.UserID)
 	})
 	if err != nil {
 		serverError(w, "avatar", err)
@@ -146,10 +142,7 @@ func (a *Auth) getAvatar(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no picture")
 		return
 	}
-	var jpg []byte
-	var etag string
-	err = a.s.Read().QueryRowContext(r.Context(), `SELECT a.jpeg, a.etag FROM user_avatars a JOIN users u ON u.id = a.user_id
-		WHERE a.user_id = ? AND u.state = 'active'`, id).Scan(&jpg, &etag)
+	jpg, etag, err := avatarOfActive(r.Context(), a.s.Read(), id)
 	if err != nil {
 		fail(w, http.StatusNotFound, "no picture")
 		return

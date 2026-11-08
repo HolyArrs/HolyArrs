@@ -47,7 +47,8 @@ func (a *Auth) getProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := myProfile{Username: who.Name}
-	err := a.s.Read().QueryRowContext(r.Context(), "SELECT display_name FROM user_profiles WHERE user_id = ?", who.UserID).Scan(&p.DisplayName)
+	var err error
+	p.DisplayName, err = displayName(r.Context(), a.s.Read(), who.UserID)
 	if err != nil && err != sql.ErrNoRows {
 		webserver.Internal(w, "accounts", err)
 		return
@@ -69,9 +70,7 @@ func (a *Auth) putProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	me, _ := webserver.From(r.Context())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO user_profiles (user_id, display_name) VALUES (?, ?)
-			ON CONFLICT (user_id) DO UPDATE SET display_name = excluded.display_name`, me.UserID, name)
-		return err
+		return putDisplayName(r.Context(), tx, me.UserID, name)
 	})
 	if err != nil {
 		webserver.Internal(w, "accounts", err)

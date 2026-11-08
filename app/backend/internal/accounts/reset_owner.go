@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -83,31 +84,31 @@ func ResetOwner(ctx context.Context, s *database.Store, name, password string) e
 	now := database.FormatTime(time.Now())
 	var id int64
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		err := tx.QueryRow("SELECT id FROM users WHERE role = 'owner' ORDER BY id LIMIT 1").Scan(&id)
+		var err error
+		id, err = firstOwnerID(ctx, tx)
 		if errors.Is(err, sql.ErrNoRows) {
-			_, err = database.Insert(tx, "users", &domain.User{Name: name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
+			_, err = insertUserTx(tx, &domain.User{Name: name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
 			return err
 		}
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`UPDATE users SET name = ?, password_hash = ?, state = 'active', updated_at = ?, updated_by = ? WHERE id = ?`,
-			name, h, now, string(by), id); err != nil {
+		if err := resetOwnerRow(ctx, tx, name, h, now, string(by), id); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
+		if err := deleteSessionsOf(ctx, tx, id); err != nil {
 			return err
 		}
 		// Resetting is also the way back in for an owner who lost their
 		// authenticator, so two-factor sign-in is turned off.
-		if err := clearTwoFactor(tx, id); err != nil {
+		if err := clearTwoFactor(ctx, tx, nil, id); err != nil {
 			return err
 		}
-		if err := endOutsideLinks(tx, id); err != nil {
+		// No vault is open here; deleting a secret row needs no key.
+		if err := endOutsideLinks(ctx, tx, nil, id); err != nil {
 			return err
 		}
-		_, err = tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
-		return err
+		return deleteKeysOf(ctx, tx, id)
 	})
 	if err == nil && id != 0 {
 		// The reset is on the audit trail: someone with the server's shell took the owner account back.
@@ -122,13 +123,16 @@ func ResetOwner(ctx context.Context, s *database.Store, name, password string) e
 // identities linked to a person, so whoever linked one while knowing the old
 // password cannot keep signing in with it after a password change or reset.
 // The person links them again from My account.
-func endOutsideLinks(tx *sql.Tx, id int64) error {
-	if err := dropLinkTokensTx(tx, "user_id = ?", id); err != nil {
+func endOutsideLinks(ctx context.Context, tx *sql.Tx, vault *secrets.Vault, id int64) error {
+	ids, err := tokenIDsOfUser(ctx, tx, id)
+	if err != nil {
 		return err
 	}
-	if _, err := tx.Exec("DELETE FROM user_links WHERE user_id = ?", id); err != nil {
+	if err := vault.DeleteTx(ctx, tx, ids...); err != nil {
 		return err
 	}
-	_, err := tx.Exec("DELETE FROM sso_links WHERE user_id = ?", id)
-	return err
+	if err := deleteLinksOf(ctx, tx, id); err != nil {
+		return err
+	}
+	return deleteSSOLinksOf(ctx, tx, id)
 }

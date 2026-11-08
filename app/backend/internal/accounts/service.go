@@ -452,9 +452,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 func mcpPath(p string) bool { return p == "/api/v1/mcp" || p == "/mcp" }
 
 func (a *Auth) owner(ctx context.Context) (int64, string, bool) {
-	var id int64
-	var name string
-	err := a.s.Read().QueryRowContext(ctx, "SELECT id, name FROM users WHERE role = 'owner' AND state = 'active'").Scan(&id, &name)
+	id, name, err := ownerIdentity(ctx, a.s.Read())
 	return id, name, err == nil
 }
 
@@ -559,15 +557,14 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	var id int64
 	var saved []string
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM users WHERE role = 'owner'").Scan(&n); err != nil {
+		n, err := countOwners(r.Context(), tx)
+		if err != nil {
 			return err
 		}
 		if n > 0 {
 			return errOwnerExists
 		}
-		var err error
-		id, err = database.Insert(tx, "users", &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
+		id, err = insertUserTx(tx, &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
 		if err != nil || newHost == "" {
 			return err
 		}
@@ -797,21 +794,14 @@ func (a *Auth) saveKnown(ch *knownChange) {
 	defer cancel()
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		for _, g := range ch.gone {
-			q, args := "DELETE FROM known_places WHERE user_key = ? AND ip_key = ?", []any{g[0], g[1]}
-			if g[1] == "" {
-				q, args = "DELETE FROM known_places WHERE user_key = ?", []any{g[0]}
-			}
-			if _, err := tx.Exec(q, args...); err != nil {
+			if err := deleteKnownPlace(ctx, tx, g[0], g[1]); err != nil {
 				return err
 			}
 		}
-		if _, err := tx.Exec("DELETE FROM known_places WHERE user_key = ? AND last_at < ?",
-			ch.put.userKey, database.FormatTime(ch.at.Add(-knownPlaceFor))); err != nil {
+		if err := deleteOldKnownPlaces(ctx, tx, ch.put.userKey, database.FormatTime(ch.at.Add(-knownPlaceFor))); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`INSERT INTO known_places(user_key, ip_key, last_at) VALUES (?, ?, ?)
-			ON CONFLICT(user_key, ip_key) DO UPDATE SET last_at = excluded.last_at`, ch.put.userKey, ch.put.ipKey, database.FormatTime(ch.at))
-		return err
+		return putKnownPlace(ctx, tx, ch.put.userKey, ch.put.ipKey, database.FormatTime(ch.at))
 	})
 	if err != nil {
 		log.Printf("auth: could not save a known sign-in place: %v", err)
@@ -821,8 +811,7 @@ func (a *Auth) saveKnown(ch *knownChange) {
 // loadKnown reads the known places of the last 30 days at start, oldest
 // first, under the same limits as noteKnown.
 func (a *Auth) loadKnown(ctx context.Context) {
-	rows, err := a.s.Read().QueryContext(ctx, "SELECT user_key, ip_key, last_at FROM known_places WHERE last_at >= ? ORDER BY last_at",
-		database.FormatTime(a.now().Add(-knownPlaceFor)))
+	rows, err := knownPlacesSince(ctx, a.s.Read(), database.FormatTime(a.now().Add(-knownPlaceFor)))
 	if err != nil {
 		log.Printf("auth: could not read known sign-in places: %v", err)
 		return
@@ -919,8 +908,7 @@ func (a *Auth) isRealName(k string, now time.Time) bool {
 		defer cancel()
 		// A Jellyfin or Emby account linked to a member under another name
 		// (taken, or renamed since) counts as real too, as "<kind>:<name>".
-		if rows, err := a.s.Read().QueryContext(ctx, `SELECT name FROM users UNION
-			SELECT provider || ':' || external_name FROM user_links WHERE provider IN ('jellyfin', 'emby') AND external_name != ''`); err == nil {
+		if rows, err := realNameRows(ctx, a.s.Read()); err == nil {
 			for rows.Next() {
 				var n string
 				if rows.Scan(&n) == nil {
@@ -1087,12 +1075,9 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	case <-r.Context().Done():
 		return
 	}
-	var id int64
-	var name, hash, state string
 	// One lookup in every case (no extra query on a failure path), so the
 	// time taken does not tell an unknown name from a turned-off member.
-	err := a.s.Read().QueryRowContext(r.Context(), "SELECT id, name, password_hash, state FROM users WHERE name = ?", c.Name).
-		Scan(&id, &name, &hash, &state)
+	id, name, hash, state, err := loginRow(r.Context(), a.s.Read(), c.Name)
 	known := err == nil // a typed name that is no user may be a password typed in the wrong box
 	turnedOff := known && state != "active"
 	if turnedOff {
@@ -1165,10 +1150,8 @@ func (a *Auth) startSessionIn(w http.ResponseWriter, r *http.Request, userID int
 		if method == AuthMethodLocalPassword || method == AuthMethodLocalSetup {
 			localAt = t
 		}
-		_, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, sum(tok), userID, csrf, t, t, t, database.FormatTime(now.Add(AbsoluteTimeout)),
+		return insertSession(r.Context(), tx, sum(tok), userID, csrf, t, database.FormatTime(now.Add(AbsoluteTimeout)),
 			truncate(r.UserAgent(), 200), family, method, localAt)
-		return err
 	})
 	if err != nil {
 		log.Printf("auth: session: %v", err)
@@ -1201,14 +1184,12 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller
 	}
 	h := sum(ck.Value)
 	var who webserver.Caller
-	var created, rotated, seen, expires, perms, localAuthAt, family string
-	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at, s.auth_method, s.local_auth_at, s.family
-		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND u.state = 'active'`, h).
-		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt, &family)
+	row, err := sessionBy(r.Context(), a.s.Read(), h, &who)
 	if err != nil {
 		return webserver.Caller{}, false
 	}
-	a.fill(&who, perms)
+	created, rotated, seen, expires, localAuthAt, family := row.created, row.rotated, row.seen, row.expires, row.localAuthAt, row.family
+	a.fill(&who, row.perms)
 	now := a.now()
 	localAt := parseTime(localAuthAt)
 	localMethod := who.AuthMethod == AuthMethodLocalPassword || who.AuthMethod == AuthMethodLocalSetup
@@ -1224,8 +1205,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller
 	}
 	if !now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) > IdleTimeout {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-			_, err := tx.Exec("DELETE FROM sessions WHERE hash = ?", h)
-			return err
+			return deleteSession(r.Context(), tx, h)
 		})
 		a.setCookie(w, r, "", -1)
 		return webserver.Caller{}, false
@@ -1237,8 +1217,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller
 		tok := token(32)
 		abs := parseTime(created).Add(AbsoluteTimeout)
 		err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-			if _, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
-				SELECT ?, user_id, csrf, created_at, ?, ?, expires_at, user_agent, family, auth_method, local_auth_at FROM sessions WHERE hash = ?`, sum(tok), t, t, h); err != nil {
+			if err := copySessionRotated(r.Context(), tx, sum(tok), t, h); err != nil {
 				return err
 			}
 			// The old id lives on briefly for requests already in flight.
@@ -1246,16 +1225,14 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller
 			if grace.After(abs) {
 				grace = abs
 			}
-			_, err := tx.Exec("UPDATE sessions SET expires_at = ?, rotated_at = ?, replaced = 1 WHERE hash = ?", database.FormatTime(grace), t, h)
-			return err
+			return retireSession(r.Context(), tx, database.FormatTime(grace), t, h)
 		})
 		if err == nil {
 			a.setCookie(w, r, tok, int(abs.Sub(now).Seconds()))
 		}
 	case now.Sub(parseTime(seen)) > touchEvery:
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE sessions SET last_seen_at = ? WHERE hash = ?", t, h)
-			return err
+			return touchSession(r.Context(), tx, t, h)
 		})
 	}
 	return who, true
@@ -1279,8 +1256,10 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	who, _ := webserver.From(r.Context())
 	// People who joined through a media server have no password until they set one.
-	hasPassword := true
-	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash != '' FROM users WHERE id = ?", who.UserID).Scan(&hasPassword)
+	hasPw := true
+	if has, err := hasPassword(r.Context(), a.s.Read(), who.UserID); err == nil {
+		hasPw = has
+	}
 	// The owner stays in the first-run wizard until it is finished.
 	setupOpen := false
 	if who.Role == webserver.RoleOwner {
@@ -1288,7 +1267,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "setup_open": setupOpen, "has_password": hasPassword,
+		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "setup_open": setupOpen, "has_password": hasPw,
 		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "held": startup.FeaturesOff(), "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
@@ -1297,19 +1276,15 @@ func (a *Auth) Cleanup(ctx context.Context) error {
 	now := a.now()
 	expiresAt := database.FormatTime(now)
 	idleBefore := database.FormatTime(now.Add(-IdleTimeout))
-	var needed bool
-	if err := a.s.Read().QueryRowContext(ctx, `SELECT EXISTS(
-		SELECT 1 FROM sessions WHERE expires_at <= ? OR last_seen_at < ?
-	)`, expiresAt, idleBefore).Scan(&needed); err != nil {
+	needed, err := endedSessionsExist(ctx, a.s.Read(), expiresAt, idleBefore)
+	if err != nil {
 		return err
 	}
 	if !needed {
 		return nil
 	}
 	return a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM sessions WHERE expires_at <= ? OR last_seen_at < ?",
-			expiresAt, idleBefore)
-		return err
+		return deleteEndedSessions(ctx, tx, expiresAt, idleBefore)
 	})
 }
 
@@ -1318,11 +1293,7 @@ func (a *Auth) checkKey(ctx context.Context, k string) (webserver.Caller, bool) 
 		return webserver.Caller{}, false
 	}
 	var who webserver.Caller
-	var keyID int64
-	var used sql.NullString
-	var perms, scope string
-	err := a.s.Read().QueryRowContext(ctx, `SELECT k.id, k.label, k.last_used_at, k.scope, `+userCols+` FROM api_keys k JOIN users u ON u.id = k.owner_user_id
-		WHERE k.hash = ? AND u.state = 'active'`, sum(k)).Scan(&keyID, &who.KeyLabel, &used, &scope, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
+	keyID, used, scope, perms, err := keyBy(ctx, a.s.Read(), sum(k), &who)
 	if err != nil {
 		return webserver.Caller{}, false
 	}
@@ -1331,8 +1302,7 @@ func (a *Auth) checkKey(ctx context.Context, k string) (webserver.Caller, bool) 
 	now := a.now()
 	if !used.Valid || now.Sub(parseTime(used.String)) > touchEvery {
 		_ = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE api_keys SET last_used_at = ? WHERE id = ?", database.FormatTime(now), keyID)
-			return err
+			return touchKey(ctx, tx, database.FormatTime(now), keyID)
 		})
 	}
 	who.Via = "api_key"
@@ -1390,12 +1360,8 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	actor, _ := json.Marshal(webserver.Actor(r.Context()))
 	var id int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		res, err := tx.Exec(`INSERT INTO api_keys(created_at, created_by, updated_at, updated_by, owner_user_id, label, scope, hash, hint)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, now, string(actor), now, string(actor), who.UserID, body.Label, string(scopeJSON), sum(k), k[len(k)-4:])
-		if err != nil {
-			return err
-		}
-		id, err = res.LastInsertId()
+		var err error
+		id, err = insertKey(r.Context(), tx, now, string(actor), who.UserID, body.Label, string(scopeJSON), sum(k), k[len(k)-4:])
 		return err
 	})
 	if err != nil {
@@ -1437,8 +1403,7 @@ func (a *Auth) listKeys(w http.ResponseWriter, r *http.Request) {
 	}
 	// The owner sees every key; others see their own.
 	who, _ := webserver.From(r.Context())
-	rows, err := a.s.Read().QueryContext(r.Context(), "SELECT id, label, hint, created_at, last_used_at, scope FROM api_keys WHERE ? OR owner_user_id = ? ORDER BY id",
-		who.Role == webserver.RoleOwner, who.UserID)
+	rows, err := listKeyRows(r.Context(), a.s.Read(), who.Role == webserver.RoleOwner, who.UserID)
 	if err != nil {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
@@ -1476,11 +1441,9 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 	var label string
 	who, _ := webserver.From(r.Context())
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_ = tx.QueryRow("SELECT label FROM api_keys WHERE id = ?", id).Scan(&label)
-		res, err := tx.Exec("DELETE FROM api_keys WHERE id = ? AND (? OR owner_user_id = ?)", id, who.Role == webserver.RoleOwner, who.UserID)
-		if err == nil {
-			n, err = res.RowsAffected()
-		}
+		label = keyLabel(r.Context(), tx, id)
+		var err error
+		n, err = deleteKey(r.Context(), tx, id, who.Role == webserver.RoleOwner, who.UserID)
 		return err
 	})
 	if err != nil {
@@ -1508,8 +1471,8 @@ const unknownName = "unknown name"
 // knownName is the member (in any state) a typed sign-in name belongs to,
 // or unknownName.
 func (a *Auth) knownName(ctx context.Context, typed string) string {
-	var n string
-	if a.s.Read().QueryRowContext(ctx, "SELECT name FROM users WHERE name = ?", typed).Scan(&n) != nil {
+	n, err := nameOfTyped(ctx, a.s.Read(), typed)
+	if err != nil {
 		return unknownName
 	}
 	return n
@@ -1538,15 +1501,8 @@ func (a *Auth) failedEvent(r *http.Request, name, how string) {
 	ctx := context.WithoutCancel(r.Context())
 	var n int64
 	_ = a.s.WriteEvents(ctx, func(tx *sql.Tx) error {
-		// One row per address and name; at stays the first attempt, so the
-		// 10 minutes count from it.
-		res, err := tx.Exec(`UPDATE events SET data = json_set(data, '$.count', coalesce(json_extract(data, '$.count'), 1) + 1, '$.last_at', ?),
-			updated_at = ? WHERE id = (SELECT id FROM events WHERE kind = 'sign_in_failed' AND json_extract(data, '$.ip') = ? AND json_extract(data, '$.name') = ?
-			AND coalesce(json_extract(data, '$.how'), 'password') = ? AND at >= ? ORDER BY id DESC LIMIT 1)`,
-			database.FormatTime(now), database.FormatTime(now), ip, name, how, database.FormatTime(now.Add(-10*time.Minute)))
-		if err == nil {
-			n, err = res.RowsAffected()
-		}
+		var err error
+		n, err = database.BumpFailedSignIn(ctx, tx, now, ip, name, how)
 		return err
 	})
 	if n > 0 {
@@ -1583,8 +1539,8 @@ func (a *Auth) accountEvent(r *http.Request, userID int64, action, summary strin
 
 // userName is a member's name ("member <id>" when it cannot be read).
 func (a *Auth) userName(ctx context.Context, id int64) string {
-	var n string
-	if a.s.Read().QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&n) != nil || n == "" {
+	n, err := nameOfUser(ctx, a.s.Read(), id)
+	if err != nil || n == "" {
 		return "member " + itoa(id)
 	}
 	return n

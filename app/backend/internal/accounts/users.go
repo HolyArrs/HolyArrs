@@ -135,68 +135,30 @@ func serverError(w http.ResponseWriter, what string, err error) {
 }
 
 func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
-	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT u.id, u.name, u.role, u.state, u.perms, u.totp_secret_id IS NOT NULL,
-		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id), u.max_rating, u.rating_country,
-		(SELECT etag FROM user_avatars WHERE user_id = u.id)
-		FROM users u ORDER BY CASE u.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name`)
+	out, err := listUserViews(r.Context(), a.s.Read())
 	if err != nil {
 		serverError(w, "users", err)
 		return
 	}
-	out := []UserView{}
 	byID := map[int64]int{}
-	for rows.Next() {
-		var u UserView
-		var perms string
-		var seen, tag sql.NullString
-		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen, &u.MaxRating, &u.RatingCountry, &tag); err != nil {
-			rows.Close()
-			serverError(w, "users", err)
-			return
-		}
-		u.Perms = webserver.Caller{Role: u.Role, Perms: parsePerms(perms)}.Effective()
-		u.RatingCountry = countryOr(u.RatingCountry)
-		u.Links = []LinkView{}
-		u.SSOLinks = []SSOLinkView{}
-		u.Avatar = avatarURL(u.ID, tag)
-		if seen.Valid {
-			u.LastSeen = &seen.String
-		}
-		byID[u.ID] = len(out)
-		out = append(out, u)
+	for i, u := range out {
+		byID[u.ID] = i
 	}
-	rows.Close()
-	links, err := a.s.Read().QueryContext(r.Context(), "SELECT user_id, provider, external_name FROM user_links ORDER BY provider")
-	if err != nil {
+	if err := eachUserLink(r.Context(), a.s.Read(), func(id int64, l LinkView) {
+		if i, ok := byID[id]; ok {
+			out[i].Links = append(out[i].Links, l)
+		}
+	}); err != nil {
 		serverError(w, "users", err)
 		return
 	}
-	defer links.Close()
-	for links.Next() {
-		var id int64
-		var l LinkView
-		if links.Scan(&id, &l.Provider, &l.Name) == nil {
-			if i, ok := byID[id]; ok {
-				out[i].Links = append(out[i].Links, l)
-			}
+	if err := eachSSOLink(r.Context(), a.s.Read(), func(id int64, l SSOLinkView) {
+		if i, ok := byID[id]; ok {
+			out[i].SSOLinks = append(out[i].SSOLinks, l)
 		}
-	}
-	sso, err := a.s.Read().QueryContext(r.Context(), "SELECT user_id, kind, issuer, display_name, created_at FROM sso_links ORDER BY kind, issuer")
-	if err != nil {
+	}); err != nil {
 		serverError(w, "users", err)
 		return
-	}
-	defer sso.Close()
-	for sso.Next() {
-		var id int64
-		var l SSOLinkView
-		var name sql.NullString
-		if sso.Scan(&id, &l.Kind, &l.Issuer, &name, &l.CreatedAt) == nil {
-			l.Name = name.String
-			if i, ok := byID[id]; ok {
-				out[i].SSOLinks = append(out[i].SSOLinks, l)
-			}
-		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": webserver.AllPerms})
 }
@@ -265,9 +227,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, `send {"role": "...", "perms": [...], "state": "active|disabled"}`)
 		return
 	}
-	var role, state, permsRaw, maxRating, country string
-	err = a.s.Read().QueryRowContext(r.Context(), "SELECT role, state, perms, max_rating, rating_country FROM users WHERE id = ?", id).
-		Scan(&role, &state, &permsRaw, &maxRating, &country)
+	role, state, permsRaw, maxRating, country, err := userForEdit(r.Context(), a.s.Read(), id)
 	if errors.Is(err, sql.ErrNoRows) {
 		fail(w, http.StatusNotFound, "no such user")
 		return
@@ -334,17 +294,15 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	}
 	actor, _ := json.Marshal(webserver.Actor(r.Context()))
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET role = ?, perms = ?, state = ?, max_rating = ?, rating_country = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			newRole, permsJSON(perms), newState, maxRating, country, database.FormatTime(a.now()), string(actor), id); err != nil {
+		if err := updateUserRow(r.Context(), tx, newRole, permsJSON(perms), newState, maxRating, country, database.FormatTime(a.now()), string(actor), id); err != nil {
 			return err
 		}
 		if newState != "active" {
 			// A disabled person is signed out everywhere and their keys stop.
-			if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
+			if err := deleteSessionsOf(r.Context(), tx, id); err != nil {
 				return err
 			}
-			_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
-			return err
+			return deleteKeysOf(r.Context(), tx, id)
 		}
 		return nil
 	})
@@ -388,8 +346,8 @@ func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such user")
 		return
 	}
-	var role string
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT role FROM users WHERE id = ?", id).Scan(&role); err != nil {
+	role, err := roleOfUser(r.Context(), a.s.Read(), id)
+	if err != nil {
 		fail(w, http.StatusNotFound, "no such user")
 		return
 	}
@@ -398,11 +356,10 @@ func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if err := clearTwoFactor(tx, id); err != nil {
+		if err := clearTwoFactor(r.Context(), tx, a.vault, id); err != nil {
 			return err
 		}
-		_, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id)
-		return err
+		return deleteSessionsOf(r.Context(), tx, id)
 	})
 	if err != nil {
 		serverError(w, "reset two-factor", err)
@@ -433,8 +390,8 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, `send {"password": "..."}`)
 		return
 	}
-	var role, permsRaw string
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT role, perms FROM users WHERE id = ?", id).Scan(&role, &permsRaw); err != nil {
+	role, permsRaw, err := roleAndPerms(r.Context(), a.s.Read(), id)
+	if err != nil {
 		fail(w, http.StatusNotFound, "no such user")
 		return
 	}
@@ -461,17 +418,16 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, database.FormatTime(a.now()), id); err != nil {
+		if err := setPasswordHash(r.Context(), tx, h, database.FormatTime(a.now()), id); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
+		if err := deleteSessionsOf(r.Context(), tx, id); err != nil {
 			return err
 		}
-		if err := endOutsideLinks(tx, id); err != nil {
+		if err := endOutsideLinks(r.Context(), tx, a.vault, id); err != nil {
 			return err
 		}
-		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
-		return err
+		return deleteKeysOf(r.Context(), tx, id)
 	})
 	if err != nil {
 		serverError(w, "set password", err)
@@ -499,32 +455,10 @@ type InviteView struct {
 }
 
 func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
-	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT i.hash, i.role, i.perms, i.note, c.name, i.created_at, i.expires_at, i.used_at, u.name,
-		i.max_rating, i.rating_country
-		FROM invites i JOIN users c ON c.id = i.created_by LEFT JOIN users u ON u.id = i.used_by ORDER BY i.created_at DESC LIMIT 200`)
+	out, err := listInviteViews(r.Context(), a.s.Read())
 	if err != nil {
 		serverError(w, "invites", err)
 		return
-	}
-	defer rows.Close()
-	out := []InviteView{}
-	for rows.Next() {
-		var v InviteView
-		var perms string
-		var usedAt, usedBy sql.NullString
-		if err := rows.Scan(&v.ID, &v.Role, &perms, &v.Note, &v.CreatedBy, &v.CreatedAt, &v.ExpiresAt, &usedAt, &usedBy, &v.MaxRating, &v.RatingCountry); err != nil {
-			serverError(w, "invites", err)
-			return
-		}
-		v.Perms = parsePerms(perms)
-		v.RatingCountry = countryOr(v.RatingCountry)
-		if usedAt.Valid {
-			v.UsedAt = &usedAt.String
-		}
-		if usedBy.Valid {
-			v.UsedBy = &usedBy.String
-		}
-		out = append(out, v)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"invites": out})
 }
@@ -585,10 +519,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	now := a.now()
 	expires := now.Add(time.Duration(body.Days) * 24 * time.Hour)
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO invites(hash, created_at, created_by, role, perms, note, expires_at, max_rating, rating_country)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			sum(tok), database.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, database.FormatTime(expires), maxRating, country)
-		return err
+		return insertInvite(r.Context(), tx, sum(tok), database.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, database.FormatTime(expires), maxRating, country)
 	})
 	if err != nil {
 		serverError(w, "invite", err)
@@ -609,11 +540,8 @@ func (a *Auth) deleteInvite(w http.ResponseWriter, r *http.Request) {
 	var n int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		// Admins may take back only their own invites.
-		res, err := tx.Exec("DELETE FROM invites WHERE hash = ? AND used_at IS NULL AND (? OR created_by = ?)",
-			r.PathValue("id"), by.Role == webserver.RoleOwner, by.UserID)
-		if err == nil {
-			n, err = res.RowsAffected()
-		}
+		var err error
+		n, err = deleteOpenInvite(r.Context(), tx, r.PathValue("id"), by.Role == webserver.RoleOwner, by.UserID)
 		return err
 	})
 	if err != nil {
@@ -642,15 +570,9 @@ func (a *Auth) inviteGate(w http.ResponseWriter, r *http.Request) (string, bool)
 	return key, true
 }
 
-func (a *Auth) openInvite(ctx context.Context, q interface {
-	QueryRowContext(context.Context, string, ...any) *sql.Row
-}, tok string) (role, perms, note, maxRating, country string, ok bool) {
-	var expires string
+func (a *Auth) openInvite(ctx context.Context, q database.Querier, tok string) (role, perms, note, maxRating, country string, ok bool) {
 	// The person who made the invite must still be an active owner or admin.
-	err := q.QueryRowContext(ctx, `SELECT i.role, i.perms, i.note, i.expires_at, i.max_rating, i.rating_country FROM invites i
-		JOIN users c ON c.id = i.created_by
-		WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
-		Scan(&role, &perms, &note, &expires, &maxRating, &country)
+	role, perms, note, expires, maxRating, country, err := openInviteRow(ctx, q, sum(tok))
 	if err != nil || !a.now().Before(parseTime(expires)) {
 		return "", "", "", "", "", false
 	}
@@ -679,10 +601,7 @@ var errNameTaken = errors.New("name taken")
 // inviteUser reads an open invite inside a write and returns the new user it
 // makes (no name or password yet), or errInviteGone.
 func (a *Auth) inviteUser(tx *sql.Tx, tok string) (domain.User, error) {
-	var role, perms, expires, maxRating, country, byRole, byPerms string
-	err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at, i.max_rating, i.rating_country, c.role, c.perms FROM invites i JOIN users c ON c.id = i.created_by
-		WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
-		Scan(&role, &perms, &expires, &maxRating, &country, &byRole, &byPerms)
+	role, perms, expires, maxRating, country, byRole, byPerms, err := inviteMakerRow(context.Background(), tx, sum(tok))
 	if err != nil || !a.now().Before(parseTime(expires)) {
 		return domain.User{}, errInviteGone
 	}
@@ -695,11 +614,11 @@ func (a *Auth) inviteUser(tx *sql.Tx, tok string) (domain.User, error) {
 
 // useInvite marks an invite used by the new user id, inside the same write.
 func (a *Auth) useInvite(tx *sql.Tx, tok string, id int64) error {
-	res, err := tx.Exec("UPDATE invites SET used_at = ?, used_by = ? WHERE hash = ? AND used_at IS NULL", database.FormatTime(a.now()), id, sum(tok))
+	n, err := markInviteUsed(context.Background(), tx, database.FormatTime(a.now()), id, sum(tok))
 	if err != nil {
 		return err
 	}
-	if n, _ := res.RowsAffected(); n != 1 {
+	if n != 1 {
 		return errInviteGone
 	}
 	return nil
@@ -741,15 +660,15 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", c.Name).Scan(&n); err != nil {
+		n, err := countUsersNamed(r.Context(), tx, c.Name)
+		if err != nil {
 			return err
 		}
 		if n > 0 {
 			return errNameTaken
 		}
 		u.Name, u.PasswordHash = c.Name, h
-		if id, err = database.Insert(tx, "users", &u, domain.System); err != nil {
+		if id, err = insertUserTx(tx, &u, domain.System); err != nil {
 			return err
 		}
 		return a.useInvite(tx, tok, id)
@@ -800,8 +719,8 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusTooManyRequests, "too many wrong passwords; wait a little and try again")
 		return
 	}
-	var cur string
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash FROM users WHERE id = ?", who.UserID).Scan(&cur); err != nil {
+	cur, err := passwordHashOf(r.Context(), a.s.Read(), who.UserID)
+	if err != nil {
 		serverError(w, "password", err)
 		return
 	}
@@ -832,22 +751,21 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		keep = sum(ck.Value)
 	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, database.FormatTime(a.now()), who.UserID); err != nil {
+		if err := setPasswordHash(r.Context(), tx, h, database.FormatTime(a.now()), who.UserID); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep); err != nil {
+		if err := deleteSessionsExceptHash(r.Context(), tx, who.UserID, keep); err != nil {
 			return err
 		}
 		// A key or outside sign-in linked by someone who knew the old
 		// password must stop too. A first password has no old one: the
 		// media server sign-in they joined with stays.
 		if !first {
-			if err := endOutsideLinks(tx, who.UserID); err != nil {
+			if err := endOutsideLinks(r.Context(), tx, a.vault, who.UserID); err != nil {
 				return err
 			}
 		}
-		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", who.UserID)
-		return err
+		return deleteKeysOf(r.Context(), tx, who.UserID)
 	})
 	if err != nil {
 		serverError(w, "password", err)
