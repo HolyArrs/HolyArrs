@@ -79,7 +79,7 @@ app/backend/internal/asks/steps.go
 app/backend/internal/asks/tmdbfollows.go
 app/backend/internal/asks/views.go
 app/backend/internal/asks/watchlist.go
-app/backend/internal/auth/aioauth.go
+app/backend/internal/auth/ai_signin.go
 app/backend/internal/auth/assurance.go
 app/backend/internal/auth/auth.go
 app/backend/internal/auth/avatar.go
