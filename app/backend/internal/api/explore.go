@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -130,7 +131,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	warm := metadata.Ahead(ctx)
 	go jobs.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
 	go jobs.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
-	startBackdropDark(ctx)
+	discover.StartBackdropDark(ctx)
 	a.startMusicSync(ctx)
 	go jobs.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
 	if a.musicTplOn() {
