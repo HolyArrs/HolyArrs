@@ -74,3 +74,11 @@ func (a *API) albumLabels(ctx context.Context, slotIDs []int64) string {
 func (a *API) partLabel(ctx context.Context, partID int64) (titleID int64, title, season, album string) {
 	return a.mh().PartLabel(ctx, partID)
 }
+
+var standIn = music.StandIn
+
+func noPicture(w http.ResponseWriter)      { music.NoPicture(w) }
+func artSize(kind, size string) string     { return music.ArtSize(kind, size) }
+func serverPlaceholder(h http.Header) bool { return music.ServerPlaceholder(h) }
+func serverStandIn(h http.Header) bool     { return music.ServerStandIn(h) }
+func coverSize(r *http.Request) string     { return music.CoverSize(r) }

@@ -229,12 +229,6 @@ func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 // is the slot (250, 500 or 1200 for covers and photos; 960 or 1920 for
 // wide); pv is the stored version from the answer's picture records, which
 // makes the answer keep a year. 250 is made here from the 500.
-// noPicture answers a picture route that has nothing to show: 204, kept briefly.
-func noPicture(w http.ResponseWriter) {
-	w.Header().Set("Cache-Control", "private, max-age=300")
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
 		noPicture(w)
@@ -418,42 +412,6 @@ func heroArtistImage(mbid string) string {
 	return "/api/v1/music-trending/art/artist/" + mbid + "?size=1200"
 }
 
-// artSize is the slot size asked for a kind: covers and photos 250, 500
-// (the default, every card) or 1200 (heroes); wide backgrounds 960 (rows) or
-// 1920 (heroes, the default); logos as stored.
-func artSize(kind, size string) string {
-	switch kind {
-	case "wide":
-		if size == "500" || size == "960" {
-			return "960"
-		}
-		return "1920"
-	case "logo":
-		return "1200"
-	}
-	if size == "250" || size == "1200" {
-		return size
-	}
-	return "500"
-}
-
-// standIn is the smaller stored size that stands in for a big one not made
-// yet.
-var standIn = map[string]string{"1200": "500", "1920": "960"}
-
-// serverPlaceholder says a metadata server picture answer is only its
-// stand-in for a photo it does not have yet.
-func serverPlaceholder(h http.Header) bool {
-	return h.Get("X-Metadata-Placeholder") != ""
-}
-
-// serverStandIn says a picture answer is not the picture asked for: the
-// server's placeholder, or a smaller size sent until the big one is made
-// (X-Metadata-Partial); neither is ever kept.
-func serverStandIn(h http.Header) bool {
-	return serverPlaceholder(h) || h.Get("X-Metadata-Partial") != ""
-}
-
 // musicArtSrc is the metadata server's address of a stored music picture
 // (WebP covers and photos at 500 or 1200, wide at 960 or 1920, PNG logos)
 // at version v ("" when not known: the address then answers a copy kept a
@@ -588,7 +546,3 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string, fet
 	}
 	return artFile{}
 }
-
-// coverSize reads the ?size= a cover is asked at: 500 (the default, every
-// card), 250 for small thumbnails, 1200 for heroes.
-func coverSize(r *http.Request) string { return artSize("album", r.URL.Query().Get("size")) }
