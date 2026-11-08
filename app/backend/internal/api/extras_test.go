@@ -16,7 +16,6 @@ import (
 
 // route: GET /api/v1/extras/{kind}/{id}
 func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
-	titleExtrasCache.seen = map[string]extrasEntry{}
 	asked := 0
 	const img = "https://api.example.test/v1/img"
 	srv := httptest.NewServer(New(Server{Version: "test", ImageBase: img,
@@ -40,7 +39,7 @@ func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
 			}}, nil
 		}}).Handler())
 	defer srv.Close()
-	var v TitleExtras
+	var v metadata.TitleExtras
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/extras/movie/1", "", 200), &v)
 	// The server's pictures come back as artwork cache links; others are dropped.
 	if v.Logo != "/api/v1/artwork/img/title-logo/movie-1/1200.png" || len(v.Backgrounds) != 1 || v.Backgrounds[0] != "/api/v1/artwork/img/title-wide/movie-1/1600.webp?v=a1" {
@@ -53,7 +52,7 @@ func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
 	if asked != 1 {
 		t.Fatalf("not cached: %d", asked)
 	}
-	v = TitleExtras{}
+	v = metadata.TitleExtras{}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/extras/show/2", "", 200), &v)
 	if v.Logo != "" || len(v.Scores) != 2 {
 		t.Fatalf("show %+v", v)
@@ -81,7 +80,6 @@ func TestTitleExtrasEmptyWhenOff(t *testing.T) {
 // A Kid gets extras only for titles under their limit, even when the answer
 // is already cached for someone else; music never passes a limit.
 func TestTitleExtrasKidGate(t *testing.T) {
-	titleExtrasCache.seen = map[string]extrasEntry{}
 	md := animeTMDB(t)
 	_, st := discoverRig(t, md)
 	asked := 0
@@ -98,7 +96,7 @@ func TestTitleExtrasKidGate(t *testing.T) {
 			r = r.WithContext(webserver.ContextWith(r.Context(), *who))
 		}
 		w := httptest.NewRecorder()
-		a.titleExtras(w, r)
+		titleRoute(a, w, r)
 		return w.Code
 	}
 	kid := &webserver.Caller{UserID: 7, Role: webserver.RoleMember, MaxRating: "TV-Y7"}
@@ -129,7 +127,6 @@ func TestTitleExtrasKidGate(t *testing.T) {
 // is empty and never cached; once stored, the next ask gets both. No
 // outside address is ever passed on.
 func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
-	titleExtrasCache.seen = map[string]extrasEntry{}
 	const id = "c8b03190-306c-4120-bb0b-6f2ebfc06ea9"
 	var stored atomic.Bool
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -155,7 +152,7 @@ func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var v TitleExtras
+	var v metadata.TitleExtras
 	_ = json.NewDecoder(res.Body).Decode(&v)
 	res.Body.Close()
 	if len(v.Backgrounds) != 0 || v.Logo != "" || res.Header.Get("Cache-Control") != "private, no-cache" {
@@ -165,9 +162,16 @@ func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 	a.music.mu.Lock()
 	a.music.artMiss = nil // the miss time has passed
 	a.music.mu.Unlock()
-	v = TitleExtras{}
+	v = metadata.TitleExtras{}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+p, "", 200), &v)
 	if v.Logo != musicArtPrefix+"logo/"+id || len(v.Backgrounds) != 1 || v.Backgrounds[0] != musicArtPrefix+"wide/"+id {
 		t.Fatalf("stored: %+v", v)
 	}
+}
+
+// titleRoute serves one request through the title-page routes.
+func titleRoute(a *API, w http.ResponseWriter, r *http.Request) {
+	m := http.NewServeMux()
+	a.titles.Routes(m)
+	m.ServeHTTP(w, r)
 }

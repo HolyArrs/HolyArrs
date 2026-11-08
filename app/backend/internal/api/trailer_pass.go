@@ -260,7 +260,7 @@ func (a *API) noteTrailerTitles(lang string, titles [][2]string) {
 	// making room for a new one in the same call never drops one of them.
 	var fresh []string
 	for _, ti := range titles {
-		if (ti[0] != "movie" && ti[0] != "show") || !digitsOnly(ti[1]) || !trailerLangRe.MatchString(lang) {
+		if (ti[0] != "movie" && ti[0] != "show") || !metadata.DigitsOnly(ti[1]) || !trailerLangRe.MatchString(lang) {
 			continue
 		}
 		k := ti[0] + "|" + ti[1] + "|" + lang

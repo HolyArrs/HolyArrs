@@ -412,7 +412,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	if cached && e.details != nil && time.Since(e.at) >= detailsTTL(e) {
 		// Stale but kept: served now, refreshed in the background.
-		refreshOnce(key, func(ctx context.Context) {
+		metadata.RefreshOnce(key, func(ctx context.Context) {
 			if det, err := d.Details(ctx, kind, id); err == nil {
 				a.discover.put(key, discoverEntry{at: time.Now(), details: &det})
 				keepOnDisk(ctx, a, key, det)

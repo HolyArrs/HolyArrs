@@ -179,6 +179,8 @@ type API struct {
 	s Server
 	// media serves the media server routes (mediaservers).
 	media *mediaservers.Handlers
+	// titles serves the extras and wiki routes (metadata).
+	titles *metadata.TitlePages
 	// bridgeSvc keeps the connected Jackett and Prowlarr (bridges.go, #96).
 	bridgeOnce sync.Once
 	bridgeSvc  *bridge.Service
@@ -320,7 +322,9 @@ func New(s Server) *API {
 				}
 			}}
 	}
-	return &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
+	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
+	a.titles = a.newTitlePages()
+	return a
 }
 
 // WireUpdateChecks hands the update check to the health checks: health
@@ -494,8 +498,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/music/browse/{kind}/{slug}", a.musicBrowsePage)
 	m.HandleFunc("GET /api/v1/music/browse-tiles", a.musicBrowseTiles)
 	m.HandleFunc("GET /api/v1/music/genre-art/{slug}", a.musicGenreArt)
-	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
-	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
+	a.titles.Routes(m)
 	if a.s.Secrets != nil {
 		if startup.FeatureOn(features.TraktLists) {
 			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)

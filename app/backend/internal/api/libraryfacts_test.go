@@ -68,7 +68,6 @@ func TestLibraryFacts(t *testing.T) {
 // The extras answer carries the server's wide banner for the Library rows,
 // as an artwork cache link.
 func TestExtrasBanner(t *testing.T) {
-	titleExtrasCache.seen = map[string]extrasEntry{}
 	a := New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img", ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
 		return metadata.ServerArt{Banner: "https://api.example.test/v1/img/title-banner/tv-1/1000.webp"}, nil
 	}})
@@ -76,8 +75,8 @@ func TestExtrasBanner(t *testing.T) {
 	r.SetPathValue("kind", "show")
 	r.SetPathValue("id", "1")
 	w := httptest.NewRecorder()
-	a.titleExtras(w, r)
-	var got TitleExtras
+	titleRoute(a, w, r)
+	var got metadata.TitleExtras
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || got.Banner != "/api/v1/artwork/img/title-banner/tv-1/1000.webp" {
 		t.Fatalf("banner = %q, %v (%s)", got.Banner, err, w.Body.String())
 	}

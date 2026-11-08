@@ -12,7 +12,6 @@ import (
 )
 
 func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
-	wikiFactsCache.seen = map[string]wikiEntry{}
 	asked := 0
 	srv := httptest.NewServer(New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img",
 		WikiTitle: func(_ context.Context, kind, id string) (metadata.WikiEntity, error) {
@@ -33,7 +32,7 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 				Summary: &metadata.WikiSummary{Extract: "An actor.", URL: "https://en.wikipedia.org/wiki/A", License: "CC BY-SA 4.0"}}, nil
 		}}).Handler())
 	defer srv.Close()
-	var v WikiFacts
+	var v metadata.WikiFacts
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/wiki/movie/1", "", 200), &v)
 	if len(v.Badges) != 3 || v.Badges[0] != "Oscar winner" || v.Badges[1] != "3 Emmys" || v.Badges[2] != "Golden Globe nominee" || len(v.Awards) != 1 || v.Bio != nil {
 		t.Fatalf("title %+v", v)
@@ -63,7 +62,6 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 // award-winner list, from lists spread over the decades.
 func TestAwardWinnersCollection(t *testing.T) {
 	a, _, f := exploreRig(t)
-	awardSets.kinds = map[string]awardSet{}
 	a.s.AwardWinners = func(_ context.Context, kind string) ([]metadata.AwardWinner, error) {
 		var out []metadata.AwardWinner
 		for id := int64(1000); id < 1900; id += 2 {
@@ -95,7 +93,6 @@ func TestAwardWinnersCollection(t *testing.T) {
 		t.Fatal("decade lists not asked")
 	}
 	// Without the server's list the keyword lists stay.
-	awardSets.kinds = map[string]awardSet{}
 	a.s.AwardWinners = nil
 	if _, ok, _ := a.awardItems(context.Background(), src, c, "all", false); ok {
 		t.Fatal("award list used without the server")

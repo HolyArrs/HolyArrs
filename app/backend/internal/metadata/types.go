@@ -3,9 +3,11 @@ package metadata
 import (
 	"context"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
+	"net/http"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 // ErrNotFound is returned when no movie has the id.
@@ -116,4 +118,52 @@ func (s *Static) Movie(_ context.Context, id string) (Movie, error) {
 		}
 	}
 	return Movie{}, ErrNotFound
+}
+
+// AboveLimit is the answer to a title above the asker's age-rating limit.
+const AboveLimit = "This title is rated above what this account may see."
+
+// AgeLimits is what the title-page routes need to know about the asker's
+// age-rating limit; the owners of accounts and the Library provide it.
+type AgeLimits interface {
+	// Max is the asker's age-rating limit, "" for none.
+	Max(r *http.Request) string
+	// Limited answers 429 and returns true when a limited asker has made
+	// too many lookups this minute.
+	Limited(w http.ResponseWriter, r *http.Request) bool
+	// LibraryRating is the stored rating of a Library title by TMDB id;
+	// ok is false when the title is not in the Library.
+	LibraryRating(ctx context.Context, kind, tmdbID string) (rating string, ok bool)
+}
+
+// ExploreCache is the shared Explore answer cache the title pages read
+// through, so a title's details are fetched once for every page.
+type ExploreCache interface {
+	// Details is a title's details, from the cache while fresh.
+	Details(ctx context.Context, kind, id string) (Details, error)
+	// Caching sets the cache headers of an answer that depends on who asks
+	// ("" for no shared cache).
+	Caching(w http.ResponseWriter, r *http.Request, cache string)
+}
+
+// MusicAnswers is what an artist's title-page answer needs from music.
+type MusicAnswers interface {
+	// WriteJSON writes a music answer with its pictures' records.
+	WriteJSON(w http.ResponseWriter, r *http.Request, v any)
+	// ArtistPicture is the link of an artist picture (kind wide, logo or
+	// artist) when the metadata server has one at size.
+	ArtistPicture(ctx context.Context, kind, mbid, size string) (link string, ok bool)
+}
+
+// ServerReads are the metadata server's per-title reads; a nil func is a
+// read the server does not offer.
+type ServerReads struct {
+	Art          func(ctx context.Context, kind, id string) (ServerArt, error)
+	Ratings      func(ctx context.Context, kind, id string) (ServerRatings, error)
+	WikiTitle    func(ctx context.Context, kind, id string) (WikiEntity, error)
+	WikiPerson   func(ctx context.Context, id, name string) (WikiEntity, error)
+	AwardWinners func(ctx context.Context, kind string) ([]AwardWinner, error)
+	// ArtLink turns a server picture address into the app's artwork cache
+	// link, "" when it is not one.
+	ArtLink func(u string) string
 }

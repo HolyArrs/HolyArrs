@@ -69,9 +69,9 @@ func TestFoldPrefilterKeepsMatches(t *testing.T) {
 func TestKeptOnDisk(t *testing.T) {
 	_, st, _ := setup(t)
 	a := New(Server{Store: st, Version: "test"})
-	keepOnDisk(context.Background(), a, "extras|movie:1", TitleExtras{Logo: "x", Scores: []OutsideScore{}})
+	keepOnDisk(context.Background(), a, "extras|movie:1", metadata.TitleExtras{Logo: "x", Scores: []metadata.OutsideScore{}})
 	b := New(Server{Store: st, Version: "test"})
-	k, ok := loadKept[TitleExtras](context.Background(), b, "extras|movie:1")
+	k, ok := loadKept[metadata.TitleExtras](context.Background(), b, "extras|movie:1")
 	if !ok || k.v.Logo != "x" || time.Since(k.at) > time.Minute {
 		t.Fatalf("%+v %v", k, ok)
 	}
@@ -114,16 +114,16 @@ func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
 // of kept answer is capped.
 func TestKeptKeysBounded(t *testing.T) {
 	_, st, _ := setup(t)
-	old := keptPerPrefix
-	keptPerPrefix = 40
-	t.Cleanup(func() { keptPerPrefix = old })
+	old := metadata.KeptPerPrefix
+	metadata.KeptPerPrefix = 40
+	t.Cleanup(func() { metadata.KeptPerPrefix = old })
 	a := New(Server{Store: st, Version: "test"})
 	ctx := context.Background()
-	for i := range keptPerPrefix + 5 {
-		keepOnDisk(ctx, a, "extras|movie:"+itoa(int64(i+1)), TitleExtras{Scores: []OutsideScore{}})
+	for i := range metadata.KeptPerPrefix + 5 {
+		keepOnDisk(ctx, a, "extras|movie:"+itoa(int64(i+1)), metadata.TitleExtras{Scores: []metadata.OutsideScore{}})
 	}
 	var n int
-	if err := st.Read().QueryRow("SELECT count(*) FROM lookup_cache WHERE key LIKE 'extras|%'").Scan(&n); err != nil || n != keptPerPrefix {
+	if err := st.Read().QueryRow("SELECT count(*) FROM lookup_cache WHERE key LIKE 'extras|%'").Scan(&n); err != nil || n != metadata.KeptPerPrefix {
 		t.Fatalf("kept %d %v", n, err)
 	}
 }
@@ -134,13 +134,13 @@ func TestWikiNameCannotPoison(t *testing.T) {
 	a := New(Server{Store: st, Version: "test", WikiPerson: func(_ context.Context, id, name string) (metadata.WikiEntity, error) {
 		return metadata.WikiEntity{Born: "by " + name}, nil
 	}})
-	get := func(q string) WikiFacts {
+	get := func(q string) metadata.WikiFacts {
 		req := httptest.NewRequest("GET", "/api/v1/wiki/person/5"+q, nil)
 		req.SetPathValue("kind", "person")
 		req.SetPathValue("id", "5")
 		rec := httptest.NewRecorder()
-		a.wikiFacts(rec, req)
-		var v WikiFacts
+		titleRoute(a, rec, req)
+		var v metadata.WikiFacts
 		_ = json.Unmarshal(rec.Body.Bytes(), &v)
 		return v
 	}
@@ -151,11 +151,8 @@ func TestWikiNameCannotPoison(t *testing.T) {
 		t.Fatalf("shared answer poisoned: %+v", v)
 	}
 	// A fresh process reads the disk copy: still the name-free one.
-	wikiFactsCache.mu.Lock()
-	wikiFactsCache.seen = map[string]wikiEntry{}
-	wikiFactsCache.mu.Unlock()
 	b := New(Server{Store: st, Version: "test"})
-	if k, ok := loadKept[WikiFacts](context.Background(), b, "wiki|person:5"); !ok || k.v.Born != "by " {
+	if k, ok := loadKept[metadata.WikiFacts](context.Background(), b, "wiki|person:5"); !ok || k.v.Born != "by " {
 		t.Fatalf("disk %+v %v", k, ok)
 	}
 }

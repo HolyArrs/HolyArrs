@@ -27,7 +27,7 @@ const ratingLookups = 4
 var ratingSlots = make(chan struct{}, ratingLookups)
 
 // aboveLimit is the answer to a TMDB title above the limit.
-const aboveLimit = "This title is rated above what this account may see."
+const aboveLimit = metadata.AboveLimit
 
 // kidMax is the signed-in person's age-rating limit: "" for no limit, for
 // owners and admins, and without sign-in.

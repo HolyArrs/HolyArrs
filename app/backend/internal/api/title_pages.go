@@ -1,0 +1,85 @@
+package api
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+)
+
+// newTitlePages builds the metadata title-page routes on this API's age
+// limits, Explore cache and music answers.
+func (a *API) newTitlePages() *metadata.TitlePages {
+	return &metadata.TitlePages{
+		Store: a.s.Store,
+		Server: func() metadata.ServerReads {
+			return metadata.ServerReads{Art: a.s.ExtraArt, Ratings: a.s.ExtraRatings, WikiTitle: a.s.WikiTitle,
+				WikiPerson: a.s.WikiPerson, AwardWinners: a.s.AwardWinners, ArtLink: a.serverArtLink}
+		},
+		Ages:    titleAges{a},
+		Explore: titleExplore{a},
+		Music:   titleMusic{a},
+		PartOn: func(kind string) bool {
+			p, _ := parts.ForTitleKind(kind)
+			return a.partIsOn(p)
+		},
+	}
+}
+
+// titleAges gives the title pages the asker's Kid limit and the Library's
+// ratings.
+type titleAges struct{ a *API }
+
+func (t titleAges) Max(r *http.Request) string { return t.a.kidMax(r) }
+
+func (t titleAges) Limited(w http.ResponseWriter, r *http.Request) bool {
+	return t.a.kidLimited(w, r)
+}
+
+func (t titleAges) LibraryRating(ctx context.Context, kind, tmdbID string) (string, bool) {
+	return t.a.libraryRating(ctx, kind, tmdbID)
+}
+
+// titleExplore gives the title pages the shared Explore cache.
+type titleExplore struct{ a *API }
+
+// Details reads a title's details through the discover cache, fetching
+// them when missing or old.
+func (t titleExplore) Details(ctx context.Context, kind, id string) (metadata.Details, error) {
+	a := t.a
+	d, ok := metadata.DiscovererFor(ctx, a.s.Metadata)
+	if !ok {
+		return metadata.Details{}, metadata.ErrServiceUnavailable
+	}
+	key := "details|" + kind + "|" + id
+	e, cached := a.discover.get(key)
+	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+		det, err := d.Details(ctx, kind, id)
+		if err != nil {
+			return metadata.Details{}, err
+		}
+		e = discoverEntry{at: time.Now(), details: &det}
+		a.discover.put(key, e)
+	}
+	return *e.details, nil
+}
+
+func (t titleExplore) Caching(w http.ResponseWriter, r *http.Request, cache string) {
+	t.a.exploreCaching(w, r, cache)
+}
+
+// titleMusic gives the title pages the music answers and artist pictures.
+type titleMusic struct{ a *API }
+
+func (t titleMusic) WriteJSON(w http.ResponseWriter, r *http.Request, v any) {
+	t.a.writeMusicJSON(w, r, v)
+}
+
+func (t titleMusic) ArtistPicture(ctx context.Context, kind, mbid, size string) (string, bool) {
+	if _, _, ok := t.a.musicTrendArtFile(ctx, kind, mbid, size); ok {
+		return musicArtPrefix + kind + "/" + mbid, true
+	}
+	return "", false
+}

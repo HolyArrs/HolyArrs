@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -41,25 +40,6 @@ func TestGenreArtCacheEvictsOldest(t *testing.T) {
 	}
 	if n := len(r.api.genreArt.pics); n < genreArtMax*8/10 || n > genreArtMax {
 		t.Fatalf("size %d", n)
-	}
-}
-
-// Finding 15: the extras cache drops its oldest entries at the cap.
-func TestExtrasCacheEvictsOldest(t *testing.T) {
-	m := map[string]extrasEntry{}
-	base := time.Now()
-	for i := 0; i < 5001; i++ {
-		keepUnder(m, 5000, func(e extrasEntry) time.Time { return e.at })
-		m[strconv.Itoa(i)] = extrasEntry{at: base.Add(time.Duration(i) * time.Second)}
-	}
-	if len(m) < 4000 || len(m) > 5000 {
-		t.Fatalf("size %d", len(m))
-	}
-	if _, ok := m["5"]; ok {
-		t.Fatal("oldest kept")
-	}
-	if _, ok := m["5000"]; !ok {
-		t.Fatal("newest dropped")
 	}
 }
 
