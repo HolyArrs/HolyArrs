@@ -74,7 +74,7 @@ type memResult struct {
 }
 
 // memModes are measured in turn: all parts, Movies and Shows only, and all
-// parts in low-memory mode (#131).
+// parts in low-memory mode.
 var memModes = []string{"all", "movies-shows", "all-low"}
 
 // TestMemoryPartsRuns runs the child three times per mode, alternating,
