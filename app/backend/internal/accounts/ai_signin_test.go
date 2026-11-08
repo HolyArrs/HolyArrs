@@ -238,7 +238,7 @@ func TestAIRedirectRules(t *testing.T) {
 		"http://[::1]:9/cb":                true,
 		"https://claude.ai/api/mcp/cb":     true,
 		"cursor://anysphere.cursor-mcp/cb": true,
-		"http://10.10.25.25/cb":            false,
+		"http://192.168.1.10/cb":            false,
 		"javascript:alert(1)":              false,
 		"data:text/html,x":                 false,
 		"https://a/cb#frag":                false,
@@ -340,7 +340,7 @@ func TestAIAppSignsInWithAMetadataDocument(t *testing.T) {
 
 func TestAIMetadataDocumentsOnlyFromPublicAddresses(t *testing.T) {
 	var c aiCIMD
-	for _, id := range []string{"https://127.0.0.1/client.json", "https://10.10.25.75/c.json", "http://example.com/c.json", "https://example.com/"} {
+	for _, id := range []string{"https://127.0.0.1/client.json", "https://192.168.1.75/c.json", "http://example.com/c.json", "https://example.com/"} {
 		if _, ok := c.client(context.Background(), id); ok {
 			t.Errorf("%s accepted", id)
 		}

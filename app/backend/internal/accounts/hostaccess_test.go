@@ -43,7 +43,7 @@ func hostDo(t *testing.T, c *http.Client, method, rawURL, host, body string, hdr
 	return resp, string(b)
 }
 
-// First run has no setup code (decisions/0009).
+// First run has no setup code.
 const setupBody = `{"name":"luis","password":"` + pw + `"}`
 
 // setupOn runs first-run setup with the Host header set to host.

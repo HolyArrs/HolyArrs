@@ -30,7 +30,7 @@ func TestAcceptanceLabJellyfinSignInMakesMemberAndEndsOutsideSession(t *testing.
 	if err != nil || target.Scheme != "http" || target.Host == "" {
 		t.Fatal("the Jellyfin lab address is invalid")
 	}
-	if host := target.Hostname(); host != "127.0.0.1" && host != "10.10.25.25" {
+	if host := target.Hostname(); host != "127.0.0.1" && host != os.Getenv("HOLYARRS_LAB_HOST") {
 		t.Fatalf("the Jellyfin acceptance target is not an allowed lab host: %q", host)
 	}
 	logOutput := log.Writer()

@@ -138,7 +138,7 @@ func gateCode(pattern string, who webserver.Caller) (int, string) {
 	return w.Code, w.Body.String()
 }
 
-// Luis, 2026-11-04: a browser session is asked for its password again only
+// A browser session is asked for its password again only
 // for risky actions; opening any page or saving an ordinary setting never.
 func TestGateAsksStaleBrowserSessionOnlyOnRiskyRoutes(t *testing.T) {
 	var all []string
