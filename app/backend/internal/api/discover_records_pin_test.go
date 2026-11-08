@@ -90,6 +90,6 @@ func TestRDPRecordJSON(t *testing.T) {
 	t.Run("discover_item_view", func(t *testing.T) { rdpGolden[discoverItemView](t, "rdp_discover_item_view") })
 	t.Run("ask_brief", func(t *testing.T) { rdpGolden[askBrief](t, "rdp_ask_brief") })
 	t.Run("asked_by_entry", func(t *testing.T) { rdpGolden[requests.AskedByEntry](t, "rdp_asked_by_entry") })
-	t.Run("ask_limit_view", func(t *testing.T) { rdpGolden[askLimitView](t, "rdp_ask_limit_view") })
+	t.Run("ask_limit_view", func(t *testing.T) { rdpGolden[requests.AskLimitView](t, "rdp_ask_limit_view") })
 	t.Run("ask_view", func(t *testing.T) { rdpGolden[requests.View](t, "rdp_ask_view") })
 }

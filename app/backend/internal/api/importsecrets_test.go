@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
@@ -143,8 +144,8 @@ func TestSavedKeyNeedsSignedInOwner(t *testing.T) {
 }
 
 func TestImportSecretsSameKeys(t *testing.T) {
-	pairs := [][2]string{{secretsfile.LinksGroup, traktKeyGroup},
-		{secretsfile.TraktClientKey, traktKeyName}, {secretsfile.LinksGroup, shows.TVDBKeyGroup}, {secretsfile.TVDBKeyKey, shows.TVDBKeyName}}
+	pairs := [][2]string{{secretsfile.LinksGroup, metadata.TraktKeyGroup},
+		{secretsfile.TraktClientKey, metadata.TraktKeyName}, {secretsfile.LinksGroup, shows.TVDBKeyGroup}, {secretsfile.TVDBKeyKey, shows.TVDBKeyName}}
 	for _, p := range pairs {
 		if p[0] != p[1] {
 			t.Errorf("the import writes %q where the Settings screen reads %q", p[0], p[1])
