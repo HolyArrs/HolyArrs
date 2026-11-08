@@ -28,7 +28,7 @@ import (
 // (scope mcp) that shows and can be revoked under Settings > AI connections.
 // This is the MCP authorization flow: OAuth 2.1 with PKCE (S256), public
 // clients only, with open client registration (RFC 7591) or a client ID
-// metadata document: an https client_id whose JSON names the app (aicimd.go).
+// metadata document: an https client_id whose JSON names the app (ai_client_docs.go).
 
 const (
 	aiCodeFor     = 5 * time.Minute

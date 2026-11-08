@@ -238,7 +238,7 @@ var RoutePerms = map[string]Perm{
 	"GET /mcp":                needSignedIn,
 	"GET /api/v1/settings/ai": needSignedIn,
 	"PUT /api/v1/settings/ai": needOwner,
-	// AI app sign-in (aioauth.go): the app's own calls are public; allowing it
+	// AI app sign-in (ai_signin.go): the app's own calls are public; allowing it
 	// needs the person's browser session.
 	"GET /.well-known/oauth-protected-resource":           NeedPublic,
 	"GET /.well-known/oauth-protected-resource/{path...}": NeedPublic,
