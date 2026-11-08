@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -39,26 +39,26 @@ func exploreSwitch(v string) (string, bool) {
 // explorePageFor assembles the member's page: today's pool, else the
 // newest older one, else cold-start rows from the list cache. It never
 // waits for outside calls; a missing or stale pool is queued instead.
-func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw string) (explore.Page, bool, error) {
+func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw string) (engine.Page, bool, error) {
 	now := a.exploreNow()
-	day := explore.Day(now)
+	day := engine.Day(now)
 	moment, tz := exploreMoment(r, now)
 	region := r.URL.Query().Get("region")
 	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + tz
 	e := &a.explore
 	pool, stale, err := a.readPool(ctx, member, sw, day, false)
 	if err != nil {
-		return explore.Page{}, false, err
+		return engine.Page{}, false, err
 	}
 	building := false
-	if pool == nil || stale || pool.Version != explore.PoolVersion {
+	if pool == nil || stale || pool.Version != engine.PoolVersion {
 		// A pool from an older build has other rows: build it again.
 		building = true
 		a.queuePool(poolKey{member, sw}, now, false)
 	}
 	if pool == nil {
 		if pool, _, err = a.readPool(ctx, member, sw, day, true); err != nil {
-			return explore.Page{}, false, err
+			return engine.Page{}, false, err
 		}
 	}
 	if pool != nil {
@@ -73,11 +73,11 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	if pool == nil {
 		m, err := a.loadMember(ctx, member)
 		if err != nil && err != sql.ErrNoRows {
-			return explore.Page{}, false, err
+			return engine.Page{}, false, err
 		}
 		// The cold head is built from the Library, the asks and whatever
 		// lists are cached (memory or SQLite), with no outside call.
-		in := explore.Input{Member: member, Kid: m.kid, Switch: sw, Now: now, Services: m.services, Region: m.region}
+		in := engine.Input{Member: member, Kid: m.kid, Switch: sw, Now: now, Services: m.services, Region: m.region}
 		if err == nil {
 			if full, ierr := a.exploreInput(ctx, m, sw, now); ierr == nil {
 				in = full
@@ -86,9 +86,9 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		if m.kid {
 			in.Allow = a.kidAllow(ctx, m.maxRating)
 		}
-		cold, err := explore.Build(ctx, exploreSource{a: a, cacheOnly: true}, in)
+		cold, err := engine.Build(ctx, exploreSource{a: a, cacheOnly: true}, in)
 		if err != nil {
-			return explore.Page{}, false, err
+			return engine.Page{}, false, err
 		}
 		pool = &cold
 	}
@@ -108,14 +108,14 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 // poolPage assembles the member's page from a pool for a moment, with no
 // request: Trending on streaming as kept (never fetched here; warmed at
 // start), so the rows under it skip its titles.
-func (a *API) poolPage(p explore.Pool, member int64, sw, region string, m explore.Moment) explore.Page {
-	return explore.AssembleTabAt(p, a.keptServiceTop(strings.ToUpper(region), sw), member, m)
+func (a *API) poolPage(p engine.Pool, member int64, sw, region string, m engine.Moment) engine.Page {
+	return engine.AssembleTabAt(p, a.keptServiceTop(strings.ToUpper(region), sw), member, m)
 }
 
 // exploreViews joins rows with the Library; a Kid's rows are filtered
 // again here (the response-stage Kid limit), and rows that fall under
 // their minimum go.
-func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.Row) ([]exploreRowView, error) {
+func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []engine.Row) ([]exploreRowView, error) {
 	if max := a.kidMax(r); max != "" {
 		var all []metadata.DiscoverItem
 		for _, row := range rows {
@@ -127,7 +127,7 @@ func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.
 		for _, it := range a.kidItems(ctx, max, all, 0) {
 			ok[it.Kind+":"+it.TMDBID] = true
 		}
-		rows = explore.Page{Head: rows}.Filter(func(it explore.Item) bool { return ok[it.Key()] }).Head
+		rows = engine.Page{Head: rows}.Filter(func(it engine.Item) bool { return ok[it.Key()] }).Head
 	}
 	me := a.person(r).UserID
 	out := []exploreRowView{}
@@ -145,16 +145,16 @@ func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.
 		if err != nil {
 			return nil, err
 		}
-		joined, err := a.joinItems(withFreshRow(ctx, row.Type), items, me, explore.RowMax)
+		joined, err := a.joinItems(withFreshRow(ctx, row.Type), items, me, engine.RowMax)
 		if err != nil {
 			return nil, err
 		}
-		if len(joined) < explore.MinItems(row.Type) {
+		if len(joined) < engine.MinItems(row.Type) {
 			continue
 		}
 		if row.Counted > 0 && len(joined) != row.Counted {
 			// A {count} title must state the count the row shows.
-			row.Title, row.Subtitle, row.Layer = row.Plain, "", explore.LayerPlain
+			row.Title, row.Subtitle, row.Layer = row.Plain, "", engine.LayerPlain
 		}
 		out = append(out, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Subtitle: row.Subtitle, TitleLayer: row.Layer, Wide: row.Wide, Items: joined})
 	}
@@ -166,7 +166,7 @@ func (a *API) exploreCount(ctx context.Context, member int64, field string, type
 	if len(types) == 0 {
 		return
 	}
-	day := explore.Day(a.exploreNow())
+	day := engine.Day(a.exploreNow())
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, t := range types {
 			if _, err := tx.Exec(`INSERT INTO explore_counts (member_id, row_type, day, `+field+`) VALUES (?, ?, ?, 1)
@@ -243,12 +243,12 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	// as its action.
 	head := []exploreRowView{}
 	for _, row := range pg.Head {
-		if row.Type == explore.TypeTopServices {
+		if row.Type == engine.TypeTopServices {
 			// The page fills this row itself (GET /explore/service-top).
 			head = append(head, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Subtitle: row.Subtitle, TitleLayer: row.Layer, Items: []discoverItemView{}})
 			continue
 		}
-		views, err := a.exploreViews(r.Context(), r, []explore.Row{row})
+		views, err := a.exploreViews(r.Context(), r, []engine.Row{row})
 		if err != nil {
 			internal(w, err)
 			return
@@ -330,11 +330,11 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	field := map[string]string{"open": "opens", "ask": "asks"}[body.Event]
-	if field == "" || (explore.MinItems(body.RowType) == 0 && body.RowType != "hero") {
+	if field == "" || (engine.MinItems(body.RowType) == 0 && body.RowType != "hero") {
 		fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
 		return
 	}
-	if body.TitleLayer != "" && !validTitleLayer(body.TitleLayer) && body.TitleLayer != explore.LayerFixed {
+	if body.TitleLayer != "" && !validTitleLayer(body.TitleLayer) && body.TitleLayer != engine.LayerFixed {
 		fail(w, http.StatusBadRequest, "title_layer must be an Explore title layer")
 		return
 	}
@@ -345,21 +345,21 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 
 // heroCandidates are the titles the hero picks from (before its quality
 // gate), best first; All takes 2 x HeroShuffleTop more (the tabs' share).
-func heroCandidates(pg explore.Page, all bool) []explore.Item {
-	n := explore.HeroPool
+func heroCandidates(pg engine.Page, all bool) []engine.Item {
+	n := engine.HeroPool
 	if all {
-		n += 2 * explore.HeroShuffleTop
+		n += 2 * engine.HeroShuffleTop
 	}
-	return explore.HeroRank(explore.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
+	return engine.HeroRank(engine.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
 }
 
 // exploreTrailerTitles are the movies and shows a page shows first, each
 // once: the hero's candidates, then the first 4 cards of the first 3 rows
 // that have cards (the trailer pass hands it the hero's candidates only).
-func exploreTrailerTitles(hero []explore.Item, head []explore.Row) [][2]string {
+func exploreTrailerTitles(hero []engine.Item, head []engine.Row) [][2]string {
 	var out [][2]string
 	seen := map[string]bool{}
-	add := func(v explore.Item) {
+	add := func(v engine.Item) {
 		if (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" && !seen[v.Kind+v.TMDBID] {
 			seen[v.Kind+v.TMDBID] = true
 			out = append(out, [2]string{v.Kind, v.TMDBID})
@@ -384,12 +384,12 @@ func exploreTrailerTitles(hero []explore.Item, head []explore.Row) [][2]string {
 	return out
 }
 
-// exploreHero picks the hero (explore.PickHero) from a pool of candidates
+// exploreHero picks the hero (engine.PickHero) from a pool of candidates
 // that pass the quality gate: a known trailer, a logo and a backdrop. When
 // trailers are off or too few are known yet, art-only titles top it up.
-func (a *API) exploreHero(r *http.Request, pg explore.Page, all bool, me int64) ([]discoverItemView, error) {
+func (a *API) exploreHero(r *http.Request, pg engine.Page, all bool, me int64) ([]discoverItemView, error) {
 	cands := heroCandidates(pg, all)
-	views, err := a.exploreViews(r.Context(), r, []explore.Row{{Items: cands}})
+	views, err := a.exploreViews(r.Context(), r, []engine.Row{{Items: cands}})
 	if err != nil || len(views) != 1 {
 		return []discoverItemView{}, err
 	}
@@ -407,11 +407,11 @@ func (a *API) exploreHero(r *http.Request, pg explore.Page, all bool, me int64) 
 	}
 	a.fillTrailerKeys(r, vs)
 	a.fillCardArt(r, vs)
-	items := map[string]explore.Item{}
+	items := map[string]engine.Item{}
 	for _, it := range cands {
 		items[it.Key()] = it
 	}
-	var ready, artOnly []explore.Item
+	var ready, artOnly []engine.Item
 	for _, v := range vs {
 		it := items[v.Kind+":"+v.TMDBID]
 		switch {
@@ -422,11 +422,11 @@ func (a *API) exploreHero(r *http.Request, pg explore.Page, all bool, me int64) 
 			artOnly = append(artOnly, it)
 		}
 	}
-	if len(ready) < explore.HeroCount/2 {
+	if len(ready) < engine.HeroCount/2 {
 		ready = append(ready, artOnly...)
 	}
-	day := explore.Day(a.exploreNow())
-	picked := explore.PickHero(ready, all, me, day)
+	day := engine.Day(a.exploreNow())
+	picked := engine.PickHero(ready, all, me, day)
 	heroShown.Store(me, picked) // New & Popular's hero leaves these out
 	out := make([]discoverItemView, 0, len(picked))
 	for _, it := range picked {

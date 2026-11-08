@@ -5,14 +5,14 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 type freshRowKey struct{}
 
 // withFreshRow names the row type the cards are joined for, so their strip
-// never repeats the row's own meaning (explore.RowSuppress).
+// never repeats the row's own meaning (engine.RowSuppress).
 func withFreshRow(ctx context.Context, row string) context.Context {
 	return context.WithValue(ctx, freshRowKey{}, row)
 }
@@ -24,8 +24,8 @@ func freshRowOf(ctx context.Context) string {
 
 // cardFresh is the card's one freshness strip: the Library's dates when
 // the title is in it, else the release date the list gave.
-func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID int64) (*explore.Fresh, error) {
-	f := explore.FreshFacts{Kind: it.Kind, InLibrary: titleID != 0, Released: explore.ParseDay(it.Released)}
+func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID int64) (*engine.Fresh, error) {
+	f := engine.FreshFacts{Kind: it.Kind, InLibrary: titleID != 0, Released: engine.ParseDay(it.Released)}
 	now := a.exploreNow()
 	if titleID != 0 {
 		db := a.s.Store.Read()
@@ -33,8 +33,8 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 		if err := db.QueryRowContext(ctx, "SELECT created_at, COALESCE(digital_date, cinema_date, '') FROM titles WHERE id = ?", titleID).Scan(&added, &release); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
-		f.Added = explore.ParseDay(added)
-		if r := explore.ParseDay(release); !r.IsZero() {
+		f.Added = engine.ParseDay(added)
+		if r := engine.ParseDay(release); !r.IsZero() {
 			f.Released = r
 		}
 		if it.Kind == "show" {
@@ -44,7 +44,7 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 				titleID, today).Scan(&last); err != nil {
 				return nil, err
 			}
-			f.LastEpisode = explore.ParseDay(last)
+			f.LastEpisode = engine.ParseDay(last)
 			rows, err := db.QueryContext(ctx, `SELECT p.number, COALESCE(min(i.air_date), p.release_date, '') FROM parts p LEFT JOIN items i ON i.part_id = p.id AND i.kind = 'episode' AND i.air_date != ''
 				WHERE p.title_id = ? AND p.kind = 'season' AND p.number > 0 GROUP BY p.id ORDER BY p.number`, titleID)
 			if err != nil {
@@ -58,7 +58,7 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 					rows.Close()
 					return nil, err
 				}
-				d := explore.ParseDay(start)
+				d := engine.ParseDay(start)
 				if d.IsZero() {
 					continue
 				}
@@ -80,20 +80,20 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 			}
 		}
 	}
-	return explore.PickFreshIn(f, now, freshRowOf(ctx)), nil
+	return engine.PickFreshIn(f, now, freshRowOf(ctx)), nil
 }
 
 // musicFresh is a music card's strip: New release on New from artists you
 // have.
-func (a *API) musicFresh(row string, c MusicCard) *explore.Fresh {
-	f := explore.FreshFacts{Kind: c.Kind, Music: true}
+func (a *API) musicFresh(row string, c MusicCard) *engine.Fresh {
+	f := engine.FreshFacts{Kind: c.Kind, Music: true}
 	switch row {
 	case "new_from":
 		if !c.Upcoming {
-			f.Released = explore.ParseDay(c.Date)
+			f.Released = engine.ParseDay(c.Date)
 		}
 	default:
 		return nil
 	}
-	return explore.PickFreshIn(f, a.exploreNow(), row)
+	return engine.PickFreshIn(f, a.exploreNow(), row)
 }

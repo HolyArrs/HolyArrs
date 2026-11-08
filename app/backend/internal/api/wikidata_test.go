@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -24,7 +24,7 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 				return metadata.WikiEntity{}, metadata.ErrNotFound
 			}
 			return metadata.WikiEntity{Tallies: []metadata.WikiTally{{Family: "golden_globe", Nominations: 2}, {Family: "oscar", Wins: 1}, {Family: "emmy", Wins: 3}},
-				Awards: []metadata.WikiAward{{Name: "Academy Award for Best Picture", Family: "oscar", Won: true, Year: 1995}},
+				Awards:  []metadata.WikiAward{{Name: "Academy Award for Best Picture", Family: "oscar", Won: true, Year: 1995}},
 				Summary: &metadata.WikiSummary{Extract: "x", URL: "https://en.wikipedia.org/wiki/X"}}, nil
 		},
 		WikiPerson: func(_ context.Context, id, _ string) (metadata.WikiEntity, error) {
@@ -71,13 +71,13 @@ func TestAwardWinnersCollection(t *testing.T) {
 		}
 		return out, nil
 	}
-	c, ok := explore.CategoryByID("awards")
+	c, ok := engine.CategoryByID("awards")
 	if !ok {
 		t.Fatal("no awards category")
 	}
 	src := exploreSource{a: a, lister: f.provider()}
 	items, err := a.browseItems(context.Background(), src, c, "all", false, "")
-	if err != nil || len(items) < explore.BrowseMin {
+	if err != nil || len(items) < engine.BrowseMin {
 		t.Fatalf("%d items, %v", len(items), err)
 	}
 	kinds := map[string]bool{}

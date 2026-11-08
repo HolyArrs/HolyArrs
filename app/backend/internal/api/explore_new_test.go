@@ -12,7 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -168,7 +168,7 @@ func TestExploreNewAcceptance(t *testing.T) {
 			places[it.Key()]++
 			top = append(top, it.Key())
 			f := pg.facts[it.Key()]
-			if f.Kind == explore.NewUpcoming || !explore.InWindow(f, newNow) {
+			if f.Kind == engine.NewUpcoming || !engine.InWindow(f, newNow) {
 				t.Fatalf("%s in %s outside its window: %+v", it.Key(), row.Type, f)
 			}
 		}
@@ -187,7 +187,7 @@ func TestExploreNewAcceptance(t *testing.T) {
 	fresh := 0
 	for _, k := range top {
 		f := pg.facts[k]
-		if f.Kind == explore.NewUpcoming || newNow.Sub(f.At) <= 30*24*time.Hour {
+		if f.Kind == engine.NewUpcoming || newNow.Sub(f.At) <= 30*24*time.Hour {
 			fresh++
 		}
 	}
@@ -264,21 +264,21 @@ func TestExploreNewServicesRow(t *testing.T) {
 
 func TestNewFreshText(t *testing.T) {
 	now := time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC) // a Wednesday
-	cases := map[string]explore.NewFact{
-		"Added 2d ago":    {Kind: explore.NewService, At: now.AddDate(0, 0, -2)},
-		"Added today":     {Kind: explore.NewService, At: now.Add(-time.Hour)},
-		"Out Nov 4":       {Kind: explore.NewUpcoming, At: time.Date(2026, 11, 4, 0, 0, 0, 0, time.UTC)},
-		"Season 3":        {Kind: explore.NewSeason, At: now.AddDate(0, 0, -4), Season: 3},
-		"New episode Fri": {Kind: explore.NewEpisode, At: time.Date(2026, 10, 16, 0, 0, 0, 0, time.UTC)},
-		"New series":      {Kind: explore.NewSeries, At: now.AddDate(0, 0, -9)},
-		"Out Oct 14":      {Kind: explore.NewRelease, At: time.Date(2026, 10, 14, 0, 0, 0, 0, time.UTC)},
+	cases := map[string]engine.NewFact{
+		"Added 2d ago":    {Kind: engine.NewService, At: now.AddDate(0, 0, -2)},
+		"Added today":     {Kind: engine.NewService, At: now.Add(-time.Hour)},
+		"Out Nov 4":       {Kind: engine.NewUpcoming, At: time.Date(2026, 11, 4, 0, 0, 0, 0, time.UTC)},
+		"Season 3":        {Kind: engine.NewSeason, At: now.AddDate(0, 0, -4), Season: 3},
+		"New episode Fri": {Kind: engine.NewEpisode, At: time.Date(2026, 10, 16, 0, 0, 0, 0, time.UTC)},
+		"New series":      {Kind: engine.NewSeries, At: now.AddDate(0, 0, -9)},
+		"Out Oct 14":      {Kind: engine.NewRelease, At: time.Date(2026, 10, 14, 0, 0, 0, 0, time.UTC)},
 	}
 	for want, f := range cases {
 		if got := newFresh(f, now); got == nil || got.Text != want {
 			t.Fatalf("%+v: %v, want %s", f, got, want)
 		}
 	}
-	if newFresh(explore.NewFact{}, now) != nil {
+	if newFresh(engine.NewFact{}, now) != nil {
 		t.Fatal("no fact, no strip")
 	}
 }

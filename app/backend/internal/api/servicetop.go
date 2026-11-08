@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -103,7 +103,7 @@ func (a *API) warmServiceTop(ctx context.Context) {
 
 // keptServiceTop is every service's titles for region and the switch's
 // kinds, from the kept lists only (no outside call); nil when none is kept.
-func (a *API) keptServiceTop(region, sw string) []explore.Item {
+func (a *API) keptServiceTop(region, sw string) []engine.Item {
 	c := &a.serviceTop
 	c.mu.Lock()
 	e, ok := c.regions[region]
@@ -112,14 +112,14 @@ func (a *API) keptServiceTop(region, sw string) []explore.Item {
 		return nil
 	}
 	kinds := map[string]bool{}
-	for _, k := range explore.Kinds(sw) {
+	for _, k := range engine.Kinds(sw) {
 		kinds[k] = true
 	}
-	var out []explore.Item
+	var out []engine.Item
 	for _, sv := range e.list.Services {
 		for i, it := range sv.Items {
 			if kind := serviceKind(it.Kind); i < topServicesMax && it.TMDBID > 0 && kinds[kind] {
-				out = append(out, explore.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind})
+				out = append(out, engine.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind})
 			}
 		}
 	}
@@ -139,7 +139,7 @@ type serviceTopView struct {
 	Stale      bool  `json:"stale"`
 	// Ranked is true for the service's own top list; TMDB popularity is
 	// not a ranking.
-	Ranked bool        `json:"ranked"`
+	Ranked bool         `json:"ranked"`
 	Items  []rankedView `json:"items"`
 }
 
@@ -175,7 +175,7 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	kinds := map[string]bool{}
-	for _, k := range explore.Kinds(sw) {
+	for _, k := range engine.Kinds(sw) {
 		if len(a.kindsOn(k)) > 0 {
 			kinds[k] = true
 		}

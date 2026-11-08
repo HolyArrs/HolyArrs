@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -33,16 +33,16 @@ func (a *API) exploreGenreRow(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	cards := explore.BrowseGenres(pg, sw, pg.Taste, pg.Kid || a.kidMax(r) != "")
+	cards := engine.BrowseGenres(pg, sw, pg.Taste, pg.Kid || a.kidMax(r) != "")
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "genres": cards})
 }
 
 // genreRowPage drops the titles a row would not show this person: above a
 // Kid's rating limit, or marked never-add.
-func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg explore.Page) (explore.Page, error) {
+func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg engine.Page) (engine.Page, error) {
 	var all []metadata.DiscoverItem
-	for _, rows := range [][]explore.Row{pg.Head, pg.Tail} {
+	for _, rows := range [][]engine.Row{pg.Head, pg.Tail} {
 		for _, row := range rows {
 			for _, it := range row.Items {
 				all = append(all, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind})
@@ -60,7 +60,7 @@ func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg explore.Page
 	for _, it := range all {
 		ok[it.Kind+":"+it.TMDBID] = true
 	}
-	return pg.Filter(func(it explore.Item) bool { return ok[it.Key()] }), nil
+	return pg.Filter(func(it engine.Item) bool { return ok[it.Key()] }), nil
 }
 
 // searchBrowse answers GET /api/v1/explore/browse?type=all|movies|shows:
@@ -82,5 +82,5 @@ func (a *API) searchBrowse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "sections": explore.BrowseSections})
+	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "sections": engine.BrowseSections})
 }

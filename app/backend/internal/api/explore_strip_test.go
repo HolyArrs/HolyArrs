@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
 
 // route: GET /api/v1/explore/strip
@@ -44,15 +44,15 @@ func TestExploreStripRoute(t *testing.T) {
 	share := a.browseShare("shows", false, "")
 	share.mu.Lock()
 	n := 0
-	for _, s := range explore.BrowseSections {
-		var res []explore.CategoryResult
-		for _, c := range explore.SectionCategories(s.ID, "shows", false, time.Now()) {
-			var items []explore.Item
-			for i := 0; i < explore.BrowseMin+2; i++ {
+	for _, s := range engine.BrowseSections {
+		var res []engine.CategoryResult
+		for _, c := range engine.SectionCategories(s.ID, "shows", false, time.Now()) {
+			var items []engine.Item
+			for i := 0; i < engine.BrowseMin+2; i++ {
 				n++
-				items = append(items, explore.Item{TMDBID: strconv.Itoa(n), Kind: "show", Backdrop: "/s" + strconv.Itoa(n), Pop: float64(1000 - n%997), Genres: []string{"Drama"}})
+				items = append(items, engine.Item{TMDBID: strconv.Itoa(n), Kind: "show", Backdrop: "/s" + strconv.Itoa(n), Pop: float64(1000 - n%997), Genres: []string{"Drama"}})
 			}
-			res = append(res, explore.CategoryResult{Cat: c, Items: items})
+			res = append(res, engine.CategoryResult{Cat: c, Items: items})
 		}
 		share.res[s.ID], share.at[s.ID] = res, time.Now()
 	}
@@ -62,7 +62,7 @@ func TestExploreStripRoute(t *testing.T) {
 		t.Fatalf("partial after build: %v", got["partial"])
 	}
 	tiles := got["tiles"].([]any)
-	if len(tiles) == 0 || len(tiles) > explore.StripMax {
+	if len(tiles) == 0 || len(tiles) > engine.StripMax {
 		t.Fatalf("%d tiles", len(tiles))
 	}
 	per := map[string]int{}

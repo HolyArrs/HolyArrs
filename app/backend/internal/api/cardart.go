@@ -12,8 +12,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -167,11 +167,11 @@ func (a *API) libraryCardArt(r *http.Request, titles []domain.Title) map[string]
 	lang := trailerLanguage(r)
 	a.noteCardLang(lang)
 	var keys [][2]string
-	var items []explore.Item
+	var items []engine.Item
 	for _, t := range titles {
 		if id := t.SourceIDs["tmdb"]; id != "" && (t.Kind == "movie" || t.Kind == "show") {
 			keys = append(keys, [2]string{t.Kind, id})
-			items = append(items, explore.Item{Kind: t.Kind, TMDBID: id, Backdrop: t.Backdrop})
+			items = append(items, engine.Item{Kind: t.Kind, TMDBID: id, Backdrop: t.Backdrop})
 		}
 	}
 	got := a.readCardArt(r.Context(), keys, lang)
@@ -193,23 +193,23 @@ func (a *API) libraryCardArt(r *http.Request, titles []domain.Title) map[string]
 
 // queueCardArt queues the pool's movies and shows that have no fresh pick
 // and starts the paced filler (the pool job's background work).
-func (a *API) queueCardArt(ctx context.Context, pool *explore.Pool) {
+func (a *API) queueCardArt(ctx context.Context, pool *engine.Pool) {
 	if pool == nil {
 		return
 	}
-	var items []explore.Item
+	var items []engine.Item
 	for _, row := range pool.Rows {
 		items = append(items, row.Items...)
 	}
 	a.queueCardItems(ctx, items)
 }
 
-func (a *API) queueCardItems(ctx context.Context, all []explore.Item) {
+func (a *API) queueCardItems(ctx context.Context, all []engine.Item) {
 	if a.s.Store == nil {
 		return
 	}
 	seen := map[string]bool{}
-	var items []explore.Item
+	var items []engine.Item
 	for _, it := range all {
 		if (it.Kind == "movie" || it.Kind == "show") && it.TMDBID != "" && !seen[it.Key()] {
 			seen[it.Key()] = true

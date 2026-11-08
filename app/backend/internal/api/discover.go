@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -125,7 +125,7 @@ type discoverItemView struct {
 	TitleID   int64     `json:"title_id,omitempty"`
 	Ask       *askBrief `json:"ask"`
 	// Fresh is the card's one freshness strip (New Episode, Top 10...).
-	Fresh *explore.Fresh `json:"fresh,omitempty"`
+	Fresh *engine.Fresh `json:"fresh,omitempty"`
 	// TrailerKey is the title's YouTube trailer when HolyArrs already knows
 	// it (Explore only; never looked up for this answer).
 	TrailerKey string `json:"trailer_key,omitempty"`
@@ -513,10 +513,10 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 // titles without a pick for the paced filler.
 func (a *API) rowCardArt(r *http.Request, items []discoverItemView) {
 	a.fillCardArt(r, items)
-	var missing []explore.Item
+	var missing []engine.Item
 	for _, v := range items {
 		if v.CardArt.Logo == "" && v.CardArt.Art == "" {
-			missing = append(missing, explore.Item{Kind: v.Kind, TMDBID: v.TMDBID, Backdrop: v.Backdrop})
+			missing = append(missing, engine.Item{Kind: v.Kind, TMDBID: v.TMDBID, Backdrop: v.Backdrop})
 		}
 	}
 	if len(missing) > 0 {

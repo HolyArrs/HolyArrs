@@ -16,8 +16,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -25,19 +25,19 @@ import (
 
 // passPool is a stored pool: Trending (the hero's source) and two more
 // head rows, eight movies each (ids base..base+7).
-func passPool(member int64, sw string, kid bool) explore.Pool {
-	items := func(base int) []explore.Item {
-		var out []explore.Item
+func passPool(member int64, sw string, kid bool) engine.Pool {
+	items := func(base int) []engine.Item {
+		var out []engine.Item
 		for i := range 8 {
-			out = append(out, explore.Item{TMDBID: strconv.Itoa(base + i), Kind: "movie", Name: "T" + strconv.Itoa(base+i), Genres: []string{"Drama"}})
+			out = append(out, engine.Item{TMDBID: strconv.Itoa(base + i), Kind: "movie", Name: "T" + strconv.Itoa(base+i), Genres: []string{"Drama"}})
 		}
 		return out
 	}
-	return explore.Pool{Version: explore.PoolVersion, Member: member, Switch: sw, Date: explore.Day(time.Now()), Kid: kid, Built: time.Now(),
-		Rows: []explore.Row{{ID: "trending", Type: explore.TypeTrending, Items: items(100)}, {ID: "best", Type: explore.TypeBest, Items: items(200)}, {ID: "classics", Type: explore.TypeClassics, Items: items(300)}}}
+	return engine.Pool{Version: engine.PoolVersion, Member: member, Switch: sw, Date: engine.Day(time.Now()), Kid: kid, Built: time.Now(),
+		Rows: []engine.Row{{ID: "trending", Type: engine.TypeTrending, Items: items(100)}, {ID: "best", Type: engine.TypeBest, Items: items(200)}, {ID: "classics", Type: engine.TypeClassics, Items: items(300)}}}
 }
 
-func storePool(t *testing.T, st *database.Store, p explore.Pool) {
+func storePool(t *testing.T, st *database.Store, p engine.Pool) {
 	t.Helper()
 	raw, _ := json.Marshal(p)
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
@@ -52,19 +52,19 @@ func storePool(t *testing.T, st *database.Store, p explore.Pool) {
 
 // widePool is a stored pool with Trending (ids 100..107) and 14 more rows
 // of eight movies (row i: ids 200+100i..), so some rows land in the tail.
-func widePool(member int64) explore.Pool {
-	items := func(base int) []explore.Item {
-		var out []explore.Item
+func widePool(member int64) engine.Pool {
+	items := func(base int) []engine.Item {
+		var out []engine.Item
 		for i := range 8 {
-			out = append(out, explore.Item{TMDBID: strconv.Itoa(base + i), Kind: "movie", Name: "T" + strconv.Itoa(base+i), Genres: []string{"Drama"}})
+			out = append(out, engine.Item{TMDBID: strconv.Itoa(base + i), Kind: "movie", Name: "T" + strconv.Itoa(base+i), Genres: []string{"Drama"}})
 		}
 		return out
 	}
-	rows := []explore.Row{{ID: "trending", Type: explore.TypeTrending, Items: items(100)}}
+	rows := []engine.Row{{ID: "trending", Type: engine.TypeTrending, Items: items(100)}}
 	for i := range 14 {
-		rows = append(rows, explore.Row{ID: "mood" + strconv.Itoa(i), Type: explore.TypeMood, Items: items(200 + 100*i)})
+		rows = append(rows, engine.Row{ID: "mood" + strconv.Itoa(i), Type: engine.TypeMood, Items: items(200 + 100*i)})
 	}
-	return explore.Pool{Version: explore.PoolVersion, Member: member, Switch: "all", Date: explore.Day(time.Now()), Built: time.Now(), Rows: rows}
+	return engine.Pool{Version: engine.PoolVersion, Member: member, Switch: "all", Date: engine.Day(time.Now()), Built: time.Now(), Rows: rows}
 }
 
 // syncBuf is a log output safe for the loops logging next to a test.
@@ -157,8 +157,8 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 		{Service: "netflix", Items: []metadata.ServiceTopItem{{TMDBID: 9001, Kind: "movie"}, {TMDBID: 100, Kind: "movie"}, {TMDBID: 9002, Kind: "tv"}}}}}}}
 
 	// What the page shows, in its order.
-	pg := a.poolPage(pool, 1, "all", "US", explore.Moment{Local: a.exploreNow().Local()})
-	if len(pg.Tail) == 0 || pg.Head[0].Type != explore.TypeTopServices {
+	pg := a.poolPage(pool, 1, "all", "US", engine.Moment{Local: a.exploreNow().Local()})
+	if len(pg.Tail) == 0 || pg.Head[0].Type != engine.TypeTopServices {
 		t.Fatalf("pool lays out %d head, %d tail rows", len(pg.Head), len(pg.Tail))
 	}
 	var want []string
@@ -175,8 +175,8 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	if len(want) != 8 {
 		t.Fatalf("%d hero candidates", len(want))
 	}
-	for _, row := range append(append([]explore.Row{}, pg.Head...), pg.Tail...) {
-		if row.Type == explore.TypeTopServices {
+	for _, row := range append(append([]engine.Row{}, pg.Head...), pg.Tail...) {
+		if row.Type == engine.TypeTopServices {
 			add("movie", "9001")
 			add("show", "9002")
 		}

@@ -1,4 +1,4 @@
-package plainwords
+package discover
 
 import (
 	"slices"
@@ -40,7 +40,7 @@ func TestParse_Described(t *testing.T) {
 		{in: "Amélie film", name: "Amélie", kind: "movie"},
 		{in: "映画 movie 2001", name: "映画", kind: "movie", from: 2001, to: 2001},
 	} {
-		q := Parse(c.in)
+		q := ParsePlainWords(c.in)
 		if q.Plain != c.plain || q.Name != strings.TrimSpace(c.name) || q.Kind != c.kind || q.YearFrom != c.from || q.YearTo != c.to {
 			t.Errorf("%q: got %+v", c.in, q)
 			continue
@@ -61,12 +61,12 @@ func TestParse_Described(t *testing.T) {
 
 func TestParse_OddInput(t *testing.T) {
 	long := strings.Repeat("space movie with the robot ", 40)
-	q := Parse(long)
+	q := ParsePlainWords(long)
 	if len([]rune(q.Text)) > maxRunes || q.Kind != "movie" {
 		t.Fatalf("long input: %+v", q)
 	}
 	for _, s := range []string{"'", "-", "with", "from", "with the", "90s", "'s", "0000s", "with ́", "\x00\xff", "movie with -"} {
-		q := Parse(s)
+		q := ParsePlainWords(s)
 		if q.Genres == nil || q.People == nil || q.Words == nil {
 			t.Fatalf("%q: nil lists %+v", s, q)
 		}

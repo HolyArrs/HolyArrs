@@ -1,7 +1,7 @@
 // Package plainwords turns a search typed in plain words, like "that space
 // movie with the robot from 2014", into a name plus filters. It never fails:
 // words it does not know stay in the name.
-package plainwords
+package discover
 
 import (
 	"strconv"
@@ -70,8 +70,8 @@ var decadeWords = map[string]int{
 	"seventies": 1970, "eighties": 1980, "nineties": 1990,
 }
 
-// Query is what a plain-words search was understood as.
-type Query struct {
+// PlainQuery is what a plain-words search was understood as.
+type PlainQuery struct {
 	// Text is the search as typed, trimmed and cut to a safe length.
 	Text string `json:"text"`
 	// Plain is true when nothing was understood and the whole text is a name.
@@ -88,13 +88,13 @@ type Query struct {
 	Words []string `json:"words"`
 }
 
-// Parse reads text into a Query. It never fails and never panics.
-func Parse(text string) Query {
+// ParsePlainWords reads text into a PlainQuery. It never fails and never panics.
+func ParsePlainWords(text string) PlainQuery {
 	text = strings.TrimSpace(text)
 	if r := []rune(text); len(r) > maxRunes {
 		text = strings.TrimSpace(string(r[:maxRunes]))
 	}
-	q := Query{Text: text, Plain: true, Name: text, Genres: []string{}, People: []string{}, Words: []string{}}
+	q := PlainQuery{Text: text, Plain: true, Name: text, Genres: []string{}, People: []string{}, Words: []string{}}
 	raw := tokens(text)
 	if len(raw) > maxTokens {
 		raw = raw[:maxTokens]
@@ -180,7 +180,7 @@ func Parse(text string) Query {
 
 // with files the words that follow "with", "starring", "featuring" or "about"
 // as a person, a genre or an overview word.
-func (q *Query) with(lead string, got, gotLow []string) {
+func (q *PlainQuery) with(lead string, got, gotLow []string) {
 	if len(got) == 0 {
 		return
 	}
@@ -208,7 +208,7 @@ func (q *Query) with(lead string, got, gotLow []string) {
 }
 
 // addGenre adds g once.
-func (q *Query) addGenre(g string) {
+func (q *PlainQuery) addGenre(g string) {
 	for _, x := range q.Genres {
 		if x == g {
 			return
@@ -218,7 +218,7 @@ func (q *Query) addGenre(g string) {
 }
 
 // addWord adds w once.
-func (q *Query) addWord(w string) {
+func (q *PlainQuery) addWord(w string) {
 	for _, x := range q.Words {
 		if x == w {
 			return

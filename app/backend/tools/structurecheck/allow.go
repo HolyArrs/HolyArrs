@@ -133,8 +133,6 @@ var packageHome = map[string]string{
 	"dlsync":        "downloads",
 	"mediaserver":   "mediaservers",
 	"musicsync":     "music",
-	"explore":       "discover",
-	"search":        "discover",
 	"importsecrets": "migrate",
 	"compat":        "arrapi",
 	"doctor":        "health",

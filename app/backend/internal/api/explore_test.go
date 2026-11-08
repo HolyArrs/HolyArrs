@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -69,7 +69,7 @@ func exploreRig(t *testing.T) (*API, *database.Store, *recordingTMDB) {
 	f := newRecordingTMDB(t)
 	_, s := discoverRig(t, f.provider())
 	a := New(Server{Store: s, Metadata: f.provider(), Version: "test"})
-	a.explore.paced = &explore.Paced{Source: listerSource{f.provider()}, Gap: time.Millisecond}
+	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: time.Millisecond}
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash, max_rating) VALUES
 			(2, 't', '{}', 't', '{}', 'zelda-member', 'member', 'x', ''), (3, 't', '{}', 't', '{}', 'kiddo', 'member', 'x', 'PG')`)
@@ -211,7 +211,7 @@ func TestExploreKidPoolFiltered(t *testing.T) {
 	if err := a.buildPool(ctx, 3, "movies"); err != nil {
 		t.Fatal(err)
 	}
-	p, _, err := a.readPool(ctx, 3, "movies", explore.Day(time.Now()), false)
+	p, _, err := a.readPool(ctx, 3, "movies", engine.Day(time.Now()), false)
 	if err != nil || p == nil {
 		t.Fatalf("pool %v %v", p, err)
 	}
@@ -264,10 +264,10 @@ func TestExploreHeadAndTail(t *testing.T) {
 	if h["building"] != false || len(h["head"].([]any)) == 0 {
 		t.Fatalf("head %v", h)
 	}
-	// A title at most once in the first explore.HeadDedupe rows.
+	// A title at most once in the first engine.HeadDedupe rows.
 	seen := map[string]bool{}
 	for i, r := range h["head"].([]any) {
-		if i == explore.HeadDedupe {
+		if i == engine.HeadDedupe {
 			break
 		}
 		for _, it := range r.(map[string]any)["items"].([]any) {
@@ -336,12 +336,12 @@ func TestExploreFinishCollection(t *testing.T) {
 	if err := a.buildPool(ctx, 1, "movies"); err != nil {
 		t.Fatal(err)
 	}
-	p, _, _ := a.readPool(ctx, 1, "movies", explore.Day(time.Now()), false)
-	if p.Version != explore.PoolVersion {
+	p, _, _ := a.readPool(ctx, 1, "movies", engine.Day(time.Now()), false)
+	if p.Version != engine.PoolVersion {
 		t.Fatalf("pool version %d", p.Version)
 	}
 	for _, r := range p.Rows {
-		if r.Type != explore.TypeCollection {
+		if r.Type != engine.TypeCollection {
 			continue
 		}
 		var got []string

@@ -9,32 +9,32 @@ import (
 	_ "time/tzdata" // viewers' time zones, on hosts without a zone database
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // exploreMoment is the viewer's local time: the tz query value or the
 // X-Timezone header (an IANA zone such as Europe/Paris), else the
 // server's own zone.
-func exploreMoment(r *http.Request, now time.Time) (explore.Moment, string) {
+func exploreMoment(r *http.Request, now time.Time) (engine.Moment, string) {
 	tz := r.URL.Query().Get("tz")
 	if tz == "" {
 		tz = r.Header.Get("X-Timezone")
 	}
 	if tz != "" && len(tz) <= 64 {
 		if loc, err := time.LoadLocation(tz); err == nil {
-			return explore.Moment{Local: now.In(loc)}, loc.String()
+			return engine.Moment{Local: now.In(loc)}, loc.String()
 		}
 	}
-	return explore.Moment{Local: now.Local()}, ""
+	return engine.Moment{Local: now.Local()}, ""
 }
 
 // titleExplore gives the page's rows their titles from the member's
 // title memory, and remembers the templates it showed today.
-func (a *API) titleExplore(ctx context.Context, member int64, pg explore.Page, m explore.Moment) (explore.Page, error) {
+func (a *API) titleExplore(ctx context.Context, member int64, pg engine.Page, m engine.Moment) (engine.Page, error) {
 	day := m.Local.Format("2006-01-02")
-	from := m.Local.AddDate(0, 0, -(explore.NoRepeatDays - 1)).Format("2006-01-02")
-	c := explore.TitleContext{Member: member, Kid: pg.Kid, Moment: m, Day: day, Taste: pg.Taste,
+	from := m.Local.AddDate(0, 0, -(engine.NoRepeatDays - 1)).Format("2006-01-02")
+	c := engine.TitleContext{Member: member, Kid: pg.Kid, Moment: m, Day: day, Taste: pg.Taste,
 		Recent: map[string]string{}, Today: map[string]string{}}
 	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT row_id, template_id, day FROM explore_titles WHERE member_id = ? AND day >= ?", member, from)
 	if err != nil {
@@ -57,8 +57,8 @@ func (a *API) titleExplore(ctx context.Context, member int64, pg explore.Page, m
 	if err := rows.Err(); err != nil {
 		return pg, err
 	}
-	out, shown := explore.TitlePage(pg, c)
-	var fresh []explore.Shown
+	out, shown := engine.TitlePage(pg, c)
+	var fresh []engine.Shown
 	for _, s := range shown {
 		if c.Today[s.RowID] != s.TemplateID {
 			fresh = append(fresh, s)
@@ -90,7 +90,7 @@ func (a *API) exploreTitleCount(ctx context.Context, member int64, field string,
 	if len(keep) == 0 || !startup.FeatureOn(features.RowTitleStats) {
 		return
 	}
-	day := explore.Day(a.exploreNow())
+	day := engine.Day(a.exploreNow())
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, l := range keep {
 			if _, err := tx.Exec(`INSERT INTO explore_title_counts (member_id, layer, day, `+field+`) VALUES (?, ?, ?, 1)
@@ -103,7 +103,7 @@ func (a *API) exploreTitleCount(ctx context.Context, member int64, field string,
 }
 
 func validTitleLayer(l string) bool {
-	return l == explore.LayerPlain || slices.Contains(explore.Layers, l)
+	return l == engine.LayerPlain || slices.Contains(engine.Layers, l)
 }
 
 func rowLayers(rows []exploreRowView) []string {
@@ -119,7 +119,7 @@ func rowLayers(rows []exploreRowView) []string {
 // title layer, so smart titles can be compared with plain ones. Counts
 // stay on this server and never change what Explore shows.
 func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
-	from := explore.Day(a.exploreNow().AddDate(0, 0, -30))
+	from := engine.Day(a.exploreNow().AddDate(0, 0, -30))
 	rows, err := a.s.Store.Read().QueryContext(r.Context(), `SELECT layer, SUM(shown), SUM(opens), SUM(asks) FROM explore_title_counts
 		WHERE day >= ? GROUP BY layer ORDER BY layer`, from)
 	if err != nil {
@@ -146,5 +146,5 @@ func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"days": 30, "templates": len(explore.Templates), "layers": out})
+	writeJSON(w, http.StatusOK, map[string]any{"days": 30, "templates": len(engine.Templates), "layers": out})
 }

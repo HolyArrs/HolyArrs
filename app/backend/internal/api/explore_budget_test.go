@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
 
 func (f *recordingTMDB) count(part string) int {
@@ -26,10 +26,10 @@ func (f *recordingTMDB) count(part string) int {
 // list is kept in SQLite so a restarted server does not ask again.
 func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 	a, s, f := exploreRig(t)
-	a.explore.paced = &explore.Paced{Source: listerSource{f.provider()}, Gap: 30 * time.Millisecond}
-	q := explore.Request{List: "trending", Kind: "movie", Scope: explore.ScopeShared}
+	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: 30 * time.Millisecond}
+	q := engine.Request{List: "trending", Kind: "movie", Scope: engine.ScopeShared}
 	var wg sync.WaitGroup
-	calls := &explore.Calls{}
+	calls := &engine.Calls{}
 	for i := 0; i < 6; i++ {
 		wg.Add(1)
 		go func() {
@@ -61,7 +61,7 @@ func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 // one paced limiter, and records each build's outside calls.
 func TestExploreBuildsInParallel(t *testing.T) {
 	a, _, f := exploreRig(t)
-	a.explore.paced = &explore.Paced{Source: listerSource{f.provider()}, Gap: 5 * time.Millisecond}
+	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: 5 * time.Millisecond}
 	now := time.Now()
 	for _, m := range []int64{1, 2, 3} {
 		a.queuePool(poolKey{m, "all"}, now, false)
@@ -92,7 +92,7 @@ func TestExploreBuildsInParallel(t *testing.T) {
 	a.explore.mu.Lock()
 	defer a.explore.mu.Unlock()
 	for k, c := range a.explore.calls {
-		if c.Member > explore.MemberBudget {
+		if c.Member > engine.MemberBudget {
 			t.Errorf("pool %v: %s over the budget", k, c)
 		}
 	}

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
@@ -238,8 +238,8 @@ var awardWindows = [][2]string{{"", ""}, {"1960-01-01", "1989-12-31"}, {"1990-01
 // decade (and the best rated), kept when Wikidata lists a major award
 // win for them. ok is false when the winner lists are not available, so
 // the caller keeps the keyword lists.
-func (a *API) awardItems(ctx context.Context, src exploreSource, c explore.Category, sw string, kid bool) ([]explore.Item, bool, error) {
-	var lists [][]explore.Item
+func (a *API) awardItems(ctx context.Context, src exploreSource, c engine.Category, sw string, kid bool) ([]engine.Item, bool, error) {
+	var lists [][]engine.Item
 	found := false
 	for _, base := range c.Requests(sw, kid) {
 		ids, ok := a.awardWinners(ctx, base.Kind)
@@ -248,7 +248,7 @@ func (a *API) awardItems(ctx context.Context, src exploreSource, c explore.Categ
 		}
 		found = true
 		base.Keywords, base.MinVotes = "", 300
-		var reqs []explore.Request
+		var reqs []engine.Request
 		for _, win := range awardWindows {
 			r := base
 			r.From, r.To = win[0], win[1]
@@ -262,7 +262,7 @@ func (a *API) awardItems(ctx context.Context, src exploreSource, c explore.Categ
 			if err != nil {
 				return nil, true, err
 			}
-			kept := []explore.Item{}
+			kept := []engine.Item{}
 			for _, it := range items {
 				if ids[it.TMDBID] {
 					kept = append(kept, it)
@@ -274,5 +274,5 @@ func (a *API) awardItems(ctx context.Context, src exploreSource, c explore.Categ
 	if !found {
 		return nil, false, nil
 	}
-	return explore.MergeTop(lists, 80), true, nil
+	return engine.MergeTop(lists, 80), true, nil
 }

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/search/plainwords"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -30,7 +30,7 @@ var showGenres = map[string]string{
 // the movie and show details (more). Kid limits and parts that are off
 // hide titles, as in the Library search.
 func (a *API) plainSearch(w http.ResponseWriter, r *http.Request) {
-	q := plainwords.Parse(r.URL.Query().Get("q"))
+	q := discover.ParsePlainWords(r.URL.Query().Get("q"))
 	out := map[string]any{"query": q, "titles": []TitleView{}, "more": []discoverItemView{}}
 	if q.Text == "" {
 		writeJSON(w, http.StatusOK, out)
@@ -56,7 +56,7 @@ func (a *API) plainSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 // plainLibrary are the Library titles that fit q, those about q.Words first.
-func (a *API) plainLibrary(ctx context.Context, r *http.Request, q plainwords.Query) ([]TitleView, error) {
+func (a *API) plainLibrary(ctx context.Context, r *http.Request, q discover.PlainQuery) ([]TitleView, error) {
 	name := q.Name
 	if q.Plain {
 		name = q.Text
@@ -113,7 +113,7 @@ func (a *API) plainLibrary(ctx context.Context, r *http.Request, q plainwords.Qu
 
 // plainMore are movies and shows not in the Library that fit q. Outside
 // trouble never fails the answer: note says why the list is empty.
-func (a *API) plainMore(ctx context.Context, r *http.Request, q plainwords.Query) ([]discoverItemView, string) {
+func (a *API) plainMore(ctx context.Context, r *http.Request, q discover.PlainQuery) ([]discoverItemView, string) {
 	busy := "Titles outside your Library could not be looked up right now."
 	me := a.person(r).UserID
 	if a.kidMax(r) != "" && !a.discover.allow(me, time.Now()) {
@@ -176,7 +176,7 @@ func (a *API) plainMore(ctx context.Context, r *http.Request, q plainwords.Query
 }
 
 // inYears: year is inside q's years (an unknown year only fits no years).
-func inYears(q plainwords.Query, year int) bool {
+func inYears(q discover.PlainQuery, year int) bool {
 	if q.YearFrom == 0 && q.YearTo == 0 {
 		return true
 	}

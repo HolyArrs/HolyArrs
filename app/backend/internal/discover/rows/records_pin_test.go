@@ -1,4 +1,4 @@
-package explore
+package rows
 
 import (
 	"encoding/json"

@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -219,7 +219,7 @@ func (a *API) hotShelf(ctx context.Context, missed *atomic.Int32) []shelfPerson 
 	src := a.liveSource(context.WithoutCancel(ctx))
 	for _, kind := range []string{"movie", "show"} {
 		var l []hot
-		if items, err := src.List(ctx, explore.Request{List: "trending", Kind: kind, Scope: explore.ScopeShared}); err == nil {
+		if items, err := src.List(ctx, engine.Request{List: "trending", Kind: kind, Scope: engine.ScopeShared}); err == nil {
 			for _, it := range items {
 				l = append(l, hot{it.Kind, it.TMDBID, it.Name})
 			}
