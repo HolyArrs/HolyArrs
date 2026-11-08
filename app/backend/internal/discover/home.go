@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -12,7 +12,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // Home rows, in the words the web app keys on.
@@ -85,8 +87,8 @@ type homeAlbum struct {
 	Cover string `json:"cover"`
 }
 
-// homeCard is one card on a Home row the server fills.
-type homeCard struct {
+// HomeCard is one card on a Home row the server fills.
+type HomeCard struct {
 	Key      string      `json:"key"`
 	Kind     string      `json:"kind"`
 	TitleID  int64       `json:"title_id"`
@@ -110,7 +112,7 @@ func homeArtOf(backdrop, logo string, artwork sql.NullString) homeArt {
 	a := homeArt{backdrop: backdrop, logo: logo}
 	var posters []string
 	if artwork.Valid && json.Unmarshal([]byte(artwork.String), &posters) == nil {
-		if links := artworkLinks(posters); len(links) > 0 {
+		if links := titleview.ArtworkLinks(posters); len(links) > 0 {
 			a.poster = links[0]
 		}
 	}
@@ -120,19 +122,19 @@ func homeArtOf(backdrop, logo string, artwork sql.NullString) homeArt {
 // home answers GET /api/v1/home: the row order for the signed-in person
 // and the rows only the server can fill (Just arrived, New season,
 // Following, Coming soon).
-func (a *API) home(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) home(w http.ResponseWriter, r *http.Request) {
 	who, signed := webserver.From(r.Context())
-	v := homeViewer{Owner: !signed || who.Has(webserver.PermManageLibrary), Approver: !signed || who.Has(webserver.PermApprove), Kid: a.kidMax(r) != ""}
+	v := homeViewer{Owner: !signed || who.Has(webserver.PermManageLibrary), Approver: !signed || who.Has(webserver.PermApprove), Kid: h.KidMax(r) != ""}
 	if v.Kid {
 		v.Owner, v.Approver = false, false
 	}
-	ctx, db := r.Context(), a.s.Store.Read()
-	where, args := a.homeWhere(r)
+	ctx, db := r.Context(), h.Store.Read()
+	where, args := h.homeWhere(r)
 	// The reads do not depend on each other: they run together.
 	var (
 		titles, asked, failed, sick int
-		arrived, seasons            []homeCard
-		following, soon             = []homeCard{}, []homeCard{}
+		arrived, seasons            []HomeCard
+		following, soon             = []HomeCard{}, []HomeCard{}
 		progress                    map[string]homeProgress
 		library                     map[string]homeLibraryKind
 		wg                          sync.WaitGroup
@@ -140,8 +142,8 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 		firstErr                    error
 	)
 	now := time.Now()
-	me := a.person(r).UserID
-	kinds := a.homeKinds()
+	me := h.UserID(r)
+	kinds := h.homeKinds()
 	run := func(f func() error) {
 		wg.Add(1)
 		go func() {
@@ -179,7 +181,7 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 	run(func() (err error) { library, err = homeLibraryCounts(ctx, db, where, args, kinds); return })
 	wg.Wait()
 	if firstErr != nil {
-		webserver.Internal(w, "api", firstErr)
+		webserver.Internal(w, "discover", firstErr)
 		return
 	}
 	failed += sick
@@ -205,10 +207,10 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 
 // homeWhere limits Home to the titles of the parts that are on and, for a
 // Kid, to the titles their limit allows (columns on alias t).
-func (a *API) homeWhere(r *http.Request) (string, []any) {
+func (h *Handlers) homeWhere(r *http.Request) (string, []any) {
 	var marks []string
 	var args []any
-	for _, kind := range a.homeKinds() {
+	for _, kind := range h.homeKinds() {
 		marks = append(marks, "?")
 		args = append(args, kind)
 	}
@@ -216,7 +218,7 @@ func (a *API) homeWhere(r *http.Request) (string, []any) {
 		return "0", nil
 	}
 	where := "t.state != 'removed' AND t.kind IN (" + strings.Join(marks, ",") + ")"
-	if kid, kidArgs := kidSQL(a.kidMax(r)); kid != "" {
+	if kid, kidArgs := mediafiles.KidSQL(h.KidMax(r)); kid != "" {
 		where += " AND " + kid
 		args = append(args, kidArgs...)
 	}
@@ -224,11 +226,11 @@ func (a *API) homeWhere(r *http.Request) (string, []any) {
 }
 
 // homeKinds are the title kinds whose part is on (every kind in safe mode).
-func (a *API) homeKinds() []string {
+func (h *Handlers) homeKinds() []string {
 	var out []string
 	for _, kind := range []string{"movie", "show", "artist"} {
 		part, _ := parts.ForTitleKind(kind)
-		if a.partIsOn(part) || (a.s.Parts != nil && a.s.Parts.SafeMode) {
+		if h.PartOn(part) || (h.Parts != nil && h.Parts.SafeMode) {
 			out = append(out, kind)
 		}
 	}
@@ -304,7 +306,7 @@ func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any
 // artist is one card with its new albums, a movie is one card. Only files
 // from the last two weeks count as new; an older title still fills the row
 // with a plain line (Movie, Show, Music).
-func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
+func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]HomeCard, error) {
 	cut := database.FormatTime(now.AddDate(0, 0, -homeArrivedDays))
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, t.created_at,
 			i.id, COALESCE(p.id, 0), COALESCE(p.number, 0), COALESCE(p.name, ''), f.added_at
@@ -322,7 +324,7 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 		items  map[int64]bool
 	}
 	type group struct {
-		card    homeCard
+		card    HomeCard
 		created string
 		parts   map[int64]*part
 		order   []int64
@@ -330,7 +332,7 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 	groups := map[int64]*group{}
 	var order []int64
 	for rows.Next() {
-		var c homeCard
+		var c HomeCard
 		var backdrop, logo, created, at, partName string
 		var art sql.NullString
 		var itemID, partID int64
@@ -361,7 +363,7 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 		return nil, err
 	}
 	rows.Close()
-	out := []homeCard{}
+	out := []HomeCard{}
 	for _, id := range order {
 		if len(out) == homeCardsMax {
 			break
@@ -445,7 +447,7 @@ func homeArtistLine(n int, albums []homeAlbum) string {
 // homeNewSeasons is New season of a show you have: a later season of a
 // Library show whose first episode aired in the last month or airs in the
 // next one, newest first, one card per show.
-func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
+func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]HomeCard, error) {
 	from, until := database.FormatTime(now.AddDate(0, 0, -homeSeasonDays)), database.FormatTime(now.AddDate(0, 0, homeSeasonDays))
 	// The bare air_timed and air_day come from the first episode's row (the one min picks).
 	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year, t.backdrop, t.logo, t.artwork, p.number, min(i.air_date) AS first, i.air_timed, i.air_day
@@ -458,9 +460,9 @@ func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, n
 	}
 	defer rows.Close()
 	seen := map[int64]bool{}
-	out := []homeCard{}
+	out := []HomeCard{}
 	for rows.Next() {
-		var c homeCard
+		var c HomeCard
 		var backdrop, logo, first string
 		var art, airDay sql.NullString
 		var timed sql.NullBool
@@ -487,7 +489,7 @@ func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, n
 
 // homeFollows is Following: the shows and artists the person follows,
 // most recently followed first.
-func homeFollows(ctx context.Context, db *sql.DB, where string, args []any, userID int64) ([]homeCard, error) {
+func homeFollows(ctx context.Context, db *sql.DB, where string, args []any, userID int64) ([]HomeCard, error) {
 	rows, err := db.QueryContext(ctx, `SELECT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork
 		FROM follows f JOIN titles t ON t.id = f.title_id
 		WHERE f.user_id = ? AND `+where+` ORDER BY f.created_at DESC, t.id LIMIT ?`, append(append([]any{userID}, args...), homeCardsMax)...)
@@ -495,9 +497,9 @@ func homeFollows(ctx context.Context, db *sql.DB, where string, args []any, user
 		return nil, err
 	}
 	defer rows.Close()
-	out := []homeCard{}
+	out := []HomeCard{}
 	for rows.Next() {
-		var c homeCard
+		var c HomeCard
 		var backdrop, logo string
 		var art sql.NullString
 		if err := rows.Scan(&c.TitleID, &c.Kind, &c.Name, &c.Year, &backdrop, &logo, &art); err != nil {
@@ -564,7 +566,7 @@ func homeAskProgress(ctx context.Context, db *sql.DB, userID int64) (map[string]
 // homeComingSoon is Coming soon: the next episode of each Library show and
 // the next date of each Library movie in the coming month, soonest first.
 // A movie already in the Library is out, so its later dates are left out.
-func homeComingSoon(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
+func homeComingSoon(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]HomeCard, error) {
 	from, until := database.FormatTime(now), database.FormatTime(now.AddDate(0, 0, homeSeasonDays))
 	day := func(v string) string { return v[:min(len(v), 10)] }
 	rows, err := db.QueryContext(ctx, `SELECT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, min(x.at), x.season, x.episode, x.timed, x.air_day FROM (
@@ -581,9 +583,9 @@ func homeComingSoon(ctx context.Context, db *sql.DB, where string, args []any, n
 		return nil, err
 	}
 	defer rows.Close()
-	out := []homeCard{}
+	out := []HomeCard{}
 	for rows.Next() {
-		var c homeCard
+		var c HomeCard
 		var backdrop, logo, at string
 		var art, airDay sql.NullString
 		var season, episode sql.NullInt64

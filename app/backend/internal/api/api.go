@@ -411,7 +411,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.ownedHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/search", a.plainSearch)
-	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)
 	m.HandleFunc("GET /api/v1/titles/lookup", a.lookupTitles)
 	m.HandleFunc("GET /api/v1/titles/{id}", a.getTitle)

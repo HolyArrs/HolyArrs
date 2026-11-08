@@ -25,10 +25,12 @@ type Deps struct {
 	// Cache is the Explore row and details cache shared with api.
 	Cache *Cache
 	// KidMax is the signed-in person's age-rating limit ("" for none).
-	KidMax         func(*http.Request) string
-	UserID         func(*http.Request) int64
-	Actor          func(*http.Request) domain.Actor
-	PartOn         func(parts.Part) bool
+	KidMax func(*http.Request) string
+	UserID func(*http.Request) int64
+	Actor  func(*http.Request) domain.Actor
+	PartOn func(parts.Part) bool
+	// Parts says whether safe mode is on (every part shown on Home).
+	Parts          *parts.Control
 	TitleAllowed   func(*http.Request, mediafiles.Title) bool
 	LibraryRating  func(ctx context.Context, kind, tmdbID string) (string, bool)
 	KidItems       func(ctx context.Context, max string, items []metadata.DiscoverItem, n int) []metadata.DiscoverItem
@@ -94,6 +96,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/discover", h.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", h.watchServices)
 	m.HandleFunc("GET /api/v1/explore/service-top", h.exploreServiceTop)
+	m.HandleFunc("GET /api/v1/home", h.home)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only

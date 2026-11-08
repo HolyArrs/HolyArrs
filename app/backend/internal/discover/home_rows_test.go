@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -82,7 +82,7 @@ func (f homeFixture) exec(q string, args ...any) {
 
 func homeNum(n int) *int { return &n }
 
-func homeCardOf(cards []homeCard, id int64) *homeCard {
+func homeCardOf(cards []HomeCard, id int64) *HomeCard {
 	for i := range cards {
 		if cards[i].TitleID == id {
 			return &cards[i]
@@ -97,7 +97,7 @@ func homeCardOf(cards []homeCard, id int64) *homeCard {
 // nothing new stay on the row with a plain line.
 func TestHomeArrivalsCountsOnlyNewFiles(t *testing.T) {
 	t.Parallel()
-	_, s, _ := setup(t)
+	s := homeStore(t)
 	f := homeFixture{t, s}
 	now := time.Now()
 	old, fresh := now.AddDate(0, 0, -90), now.Add(-time.Hour)
@@ -178,7 +178,7 @@ func TestHomeArrivalsCountsOnlyNewFiles(t *testing.T) {
 // in the Library is not coming soon because of a later disc date.
 func TestHomeSoonDays(t *testing.T) {
 	t.Parallel()
-	_, s, _ := setup(t)
+	s := homeStore(t)
 	f := homeFixture{t, s}
 	zone := time.FixedZone("east-us", -5*3600)
 	now := time.Now().In(zone)
@@ -266,7 +266,7 @@ func TestHomeAirDay(t *testing.T) {
 // Your asks tells a stuck or paused download apart from one waiting to start.
 func TestHomeAskProgressStates(t *testing.T) {
 	t.Parallel()
-	_, s, _ := setup(t)
+	s := homeStore(t)
 	f := homeFixture{t, s}
 	f.exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (1, 't', '{}', 't', '{}', 'member', 'member', 'x')`)
 	states := map[string]float64{"downloading": 0.5, "stalled": 0.7, "paused": 0.3, "queued": 0}
