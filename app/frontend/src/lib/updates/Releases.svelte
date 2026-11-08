@@ -3,6 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { ago } from '../core/format.ts';
+	import { plainVersion } from './update-notice.ts';
 
 	type Update = { on: boolean; version: string; latest?: string; newer: boolean; link?: string; notes?: string; checked_at?: string; problem?: string; no_release?: boolean };
 	type Rel = { version: string; date?: string; notes?: string; link?: string };
@@ -43,7 +44,7 @@
 
 {#snippet head(r: Rel, i: number, notes: boolean)}
 	<span class="chev" aria-hidden="true">{#if notes}<svg viewBox="0 0 20 20"><path d="M7 5l5 5-5 5" /></svg>{/if}</span>
-	<span class="rv">v{r.version}</span>
+	<span class="rv">{plainVersion(r.version)}</span>
 	{#if i === 0 && known}<span class="chip ok">Newest</span>{/if}
 	{#if r.version === current}<span class="chip red">Yours</span>{/if}
 	{#if r.date}<span class="rd">{ago(r.date)}</span>{/if}
