@@ -164,7 +164,7 @@ These settings sit under **When downloads go wrong** on **Settings > Downloaders
 | When you remove a download: **Turn down its Release** | off | You never want that Release picked again for the title |
 | When you remove a download: **Search again** | on | Off if you pick the next Release yourself. Needs **Turn down its Release** |
 | Stalled after (hours) | 6 | Your downloads are slow by nature. Range 1 to 168 |
-| Try the next Release after (hours) | 24 | You prefer waiting over replacing. Counted from the last progress. Range 1 to 720 |
+| Try the next Release after (hours) | 24 | You prefer waiting over replacing. Counted from the last progress. Range: the stalled time up to 720 |
 | Fail downloads that hold programs or fakes | on | Rarely. Off lets them reach the import |
 | Replace downloads removed outside HolyArrs | on | You remove downloads on purpose. Off makes the title wait for you |
 | Try the next Downloader | on | You want one Downloader only |
