@@ -213,7 +213,7 @@ type API struct {
 	// status keeps the Settings status answer for 30 seconds.
 	status health.StatusCache
 	// serviceTop keeps the per-service top lists for 12 hours.
-	serviceTop serviceTopCache
+	serviceTop discover.ServiceTopCache
 	// watchOn keeps each title's TMDB watch providers per region a day.
 	watchOn discover.WatchOn
 	// music keeps the music trending lists for an hour.

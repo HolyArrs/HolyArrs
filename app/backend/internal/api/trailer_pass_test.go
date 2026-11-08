@@ -153,8 +153,8 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	a.serviceTop.regions = map[string]serviceTopEntry{"US": {at: time.Now(), list: metadata.ServiceTop{Region: "US", Services: []metadata.ServiceTopList{
-		{Service: "netflix", Items: []metadata.ServiceTopItem{{TMDBID: 9001, Kind: "movie"}, {TMDBID: 100, Kind: "movie"}, {TMDBID: 9002, Kind: "tv"}}}}}}}
+	a.serviceTop.Put("US", metadata.ServiceTop{Region: "US", Services: []metadata.ServiceTopList{
+		{Service: "netflix", Items: []metadata.ServiceTopItem{{TMDBID: 9001, Kind: "movie"}, {TMDBID: 100, Kind: "movie"}, {TMDBID: 9002, Kind: "tv"}}}}})
 
 	// What the page shows, in its order.
 	pg := a.poolPage(pool, 1, "all", "US", engine.Moment{Local: a.exploreNow().Local()})
