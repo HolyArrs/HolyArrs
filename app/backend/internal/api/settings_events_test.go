@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -36,7 +37,7 @@ func TestSettingsChangeAreas(t *testing.T) {
 		{"GET", "/api/v1/settings/search", "", "", false},
 		{"PUT", "/api/v1/titles/1", "", "", false},
 	} {
-		area, _, action, _, ok := settingsChange(c.method, c.path)
+		area, _, action, _, ok := health.SettingsChange(c.method, c.path)
 		if ok != c.ok || area != c.area || action != c.action {
 			t.Errorf("%s %s: %q %q %v", c.method, c.path, area, action, ok)
 		}
@@ -67,7 +68,7 @@ func TestSettingsChangedName(t *testing.T) {
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
-	h := x.api.logSettingsChanges(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := x.api.settingsLog().Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
 			exec41(t, x.s, "UPDATE downloaders SET name = 'Q2' WHERE id = ?", did)
 		} else {
@@ -92,7 +93,7 @@ func TestSettingsChangedName(t *testing.T) {
 	if !sums[`Downloader "Q2" changed by The owner`] || !sums[`Downloader "Q2" deleted by The owner`] {
 		t.Fatalf("summaries %v", sums)
 	}
-	if x.api.settingsName(context.Background(), "settings", 0) != "" {
+	if x.api.settingsLog().Name(context.Background(), "settings", 0) != "" {
 		t.Fatal("plain settings have no name")
 	}
 }

@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -37,9 +38,17 @@ var settingsItems = map[string]struct{ table, name, one string }{
 	"own-traits":      {"own_traits", "name", "trait"},
 }
 
-// settingsName is an item's name, or the newest item's when id is 0 (just
+// SettingsLog writes the settings_changed Events. Who names the person for
+// a summary and Actor is who did it; both come from the caller.
+type SettingsLog struct {
+	Store *database.Store
+	Who   func(*http.Request) string
+	Actor func(*http.Request) domain.Actor
+}
+
+// Name is an item's name, or the newest item's when id is 0 (just
 // added); "" when it is not known.
-func (a *API) settingsName(ctx context.Context, area string, id int64) string {
+func (a *SettingsLog) Name(ctx context.Context, area string, id int64) string {
 	it, ok := settingsItems[area]
 	if !ok {
 		return ""
@@ -50,13 +59,13 @@ func (a *API) settingsName(ctx context.Context, area string, id int64) string {
 		q, args = "SELECT "+it.name+" FROM "+it.table+" ORDER BY id DESC LIMIT 1", nil
 	}
 	var name string
-	_ = a.s.Store.Read().QueryRowContext(ctx, q, args...).Scan(&name)
+	_ = a.Store.Read().QueryRowContext(ctx, q, args...).Scan(&name)
 	return name
 }
 
-// settingsChange names the area and action of a request that changes
+// SettingsChange names the area and action of a request that changes
 // setup, or ok false for any other request.
-func settingsChange(method, path string) (area, label, action string, id int64, ok bool) {
+func SettingsChange(method, path string) (area, label, action string, id int64, ok bool) {
 	rest, found := strings.CutPrefix(path, "/api/v1/")
 	if !found {
 		return "", "", "", 0, false
@@ -91,11 +100,11 @@ func settingsChange(method, path string) (area, label, action string, id int64, 
 	return seg[0], label, action, id, true
 }
 
-// logSettingsChanges writes a settings_changed Event after each setup
-// change that succeeded.
-func (a *API) logSettingsChanges(h http.Handler) http.Handler {
+// Wrap writes a settings_changed Event after each setup change that
+// succeeded.
+func (a *SettingsLog) Wrap(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		area, label, action, id, ok := settingsChange(r.Method, r.URL.Path)
+		area, label, action, id, ok := SettingsChange(r.Method, r.URL.Path)
 		if !ok {
 			h.ServeHTTP(w, r)
 			return
@@ -105,7 +114,7 @@ func (a *API) logSettingsChanges(h http.Handler) http.Handler {
 		item := !strings.HasPrefix(label, "Settings: ") && area != "sign-in"
 		name := ""
 		if item && action == "deleted" {
-			name = a.settingsName(r.Context(), area, id)
+			name = a.Name(r.Context(), area, id)
 		}
 		sw := &webserver.StatusWriter{ResponseWriter: w}
 		h.ServeHTTP(sw, r)
@@ -114,17 +123,17 @@ func (a *API) logSettingsChanges(h http.Handler) http.Handler {
 		}
 		ctx := context.WithoutCancel(r.Context())
 		if item && action != "deleted" {
-			name = a.settingsName(ctx, area, id)
+			name = a.Name(ctx, area, id)
 		}
 		data := map[string]any{"area": area, "action": action}
 		if id != 0 {
 			data["id"] = id
 		}
-		summary := whoName(r) + " " + action + " " + label
+		summary := a.Who(r) + " " + action + " " + label
 		if name != "" {
 			data["name"] = name
-			summary = settingsItems[area].one + " \"" + name + "\" " + action + " by " + whoName(r)
+			summary = settingsItems[area].one + " \"" + name + "\" " + action + " by " + a.Who(r)
 		}
-		_ = a.s.Store.AddEvent(ctx, &domain.Event{Actor: actor(r), Kind: EventSettingsChanged, Summary: summary, Data: data})
+		_ = a.Store.AddEvent(ctx, &domain.Event{Actor: a.Actor(r), Kind: EventSettingsChanged, Summary: summary, Data: data})
 	})
 }

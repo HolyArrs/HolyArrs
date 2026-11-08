@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"context"
@@ -13,25 +13,24 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// statusItem is one thing in Settings that needs attention. Group is one of
+// StatusItem is one thing in Settings that needs attention. Group is one of
 // general, library, copies, people, security, linked, maintenance, account;
 // Severity is info, warning or error.
-type statusItem struct {
+type StatusItem struct {
 	Group    string `json:"group"`
 	Page     string `json:"page"`
 	Text     string `json:"text"`
 	Severity string `json:"severity"`
 }
 
-// statusAnswer is the answer of GET /settings/status.
-type statusAnswer struct {
-	Items []statusItem `json:"items"`
+// StatusAnswer is the answer of GET /settings/status.
+type StatusAnswer struct {
+	Items []StatusItem `json:"items"`
 	// Unset lists, per group, the pages not set up yet.
 	Unset map[string][]string `json:"unset"`
 	// Known lists the pages whose status is known.
@@ -40,17 +39,17 @@ type statusAnswer struct {
 	MetadataUp bool `json:"metadata_up"`
 }
 
-type namedState struct{ Name, State string }
+type NamedState struct{ Name, State string }
 
-// statusInput is what the status rules look at. A nil field is not known.
-type statusInput struct {
+// StatusInput is what the status rules look at. A nil field is not known.
+type StatusInput struct {
 	Checks  []domain.HealthCheck
 	States  []jobs.Status
 	Folders *int
-	Sources []namedState
+	Sources []NamedState
 	// SourcesNear are the words for Sources close to a search or pick limit.
 	SourcesNear []string
-	Downloaders []namedState
+	Downloaders []NamedState
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
 	MetadataUp   *bool
@@ -88,15 +87,15 @@ var stateTarget = map[string]statusTarget{
 }
 
 // settingsStatus lists what needs a fix and which groups are not set up yet.
-func settingsStatus(in statusInput) statusAnswer {
-	a := statusAnswer{Items: []statusItem{}, Unset: map[string][]string{}, Known: []string{}}
+func SettingsStatus(in StatusInput) StatusAnswer {
+	a := StatusAnswer{Items: []StatusItem{}, Unset: map[string][]string{}, Known: []string{}}
 	seen := map[string]bool{}
 	known := func(p string) {
 		if !slices.Contains(a.Known, p) {
 			a.Known = append(a.Known, p)
 		}
 	}
-	add := func(i statusItem, key string) {
+	add := func(i StatusItem, key string) {
 		if seen[key] {
 			return
 		}
@@ -109,7 +108,7 @@ func settingsStatus(in statusInput) statusAnswer {
 			continue
 		}
 		known(to.page)
-		if c.State == health.OK {
+		if c.State == OK {
 			continue
 		}
 		text := c.Message
@@ -123,7 +122,7 @@ func settingsStatus(in statusInput) statusAnswer {
 		if c.State == "error" {
 			sev = "error"
 		}
-		add(statusItem{to.group, to.page, text, sev}, c.Kind+":"+c.Subject)
+		add(StatusItem{to.group, to.page, text, sev}, c.Kind+":"+c.Subject)
 	}
 	for _, s := range in.States {
 		to, ok := stateTarget[s.Kind]
@@ -138,33 +137,33 @@ func settingsStatus(in statusInput) statusAnswer {
 		if s.Stuck {
 			text, sev = "The "+to.what+" "+s.Name+" is stuck", "warning"
 		}
-		add(statusItem{to.group, to.page, text, sev}, "state:"+s.Key)
+		add(StatusItem{to.group, to.page, text, sev}, "state:"+s.Key)
 	}
 	if in.Sources != nil {
 		known("/settings/sources")
 		for _, s := range in.Sources {
 			switch s.State {
 			case sources.StateUnreachable, sources.StateAuthFailed:
-				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is not answering", "error"}, "source:"+s.Name)
+				add(StatusItem{"copies", "/settings/sources", "The Source " + s.Name + " is not answering", "error"}, "source:"+s.Name)
 			case sources.KindRateLimited:
-				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " asked HolyArrs to slow down, so it waits a while", "warning"}, "source:"+s.Name)
+				add(StatusItem{"copies", "/settings/sources", "The Source " + s.Name + " asked HolyArrs to slow down, so it waits a while", "warning"}, "source:"+s.Name)
 			case sources.KindBlocked:
-				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is blocked from the local network", "warning"}, "source:"+s.Name)
+				add(StatusItem{"copies", "/settings/sources", "The Source " + s.Name + " is blocked from the local network", "warning"}, "source:"+s.Name)
 			case sources.BlockBotCheck:
-				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is behind a bot check HolyArrs cannot pass", "warning"}, "source:"+s.Name)
+				add(StatusItem{"copies", "/settings/sources", "The Source " + s.Name + " is behind a bot check HolyArrs cannot pass", "warning"}, "source:"+s.Name)
 			case sources.BlockSiteBan:
-				add(statusItem{"copies", "/settings/sources", "The site behind the Source " + s.Name + " refuses HolyArrs's address", "warning"}, "source:"+s.Name)
+				add(StatusItem{"copies", "/settings/sources", "The site behind the Source " + s.Name + " refuses HolyArrs's address", "warning"}, "source:"+s.Name)
 			}
 		}
 		for _, text := range in.SourcesNear {
-			add(statusItem{"copies", "/settings/sources", text, "warning"}, "source-near:"+text)
+			add(StatusItem{"copies", "/settings/sources", text, "warning"}, "source-near:"+text)
 		}
 	}
 	if in.Downloaders != nil {
 		known("/settings/downloaders")
 		for _, d := range in.Downloaders {
 			if d.State == "not_answering" || d.State == "sign_in_refused" {
-				add(statusItem{"copies", "/settings/downloaders", "The Downloader " + d.Name + " is not answering", "error"}, "downloader:"+d.Name)
+				add(StatusItem{"copies", "/settings/downloaders", "The Downloader " + d.Name + " is not answering", "error"}, "downloader:"+d.Name)
 			}
 		}
 	}
@@ -172,37 +171,37 @@ func settingsStatus(in statusInput) statusAnswer {
 	if in.MetadataUp != nil {
 		known("/settings/tmdb")
 		if !*in.MetadataUp {
-			add(statusItem{"library", "/settings/tmdb", metadata.Down, "warning"}, "metadata")
+			add(StatusItem{"library", "/settings/tmdb", metadata.Down, "warning"}, "metadata")
 		}
 	}
 	if in.NewestBackup != nil {
 		known("/settings/backups")
 		if *in.NewestBackup == "" {
-			add(statusItem{"maintenance", "/settings/backups", "No backup yet", "warning"}, "backup-age")
+			add(StatusItem{"maintenance", "/settings/backups", "No backup yet", "warning"}, "backup-age")
 		} else if at, err := time.Parse(time.RFC3339, *in.NewestBackup); err == nil && in.Now.Sub(at) > 7*24*time.Hour {
-			add(statusItem{"maintenance", "/settings/backups", "No backup in the last 7 days", "warning"}, "backup-age")
+			add(StatusItem{"maintenance", "/settings/backups", "No backup in the last 7 days", "warning"}, "backup-age")
 		}
 	}
 	if in.UpdateNewer != nil && *in.UpdateNewer {
 		known("/settings/this-app")
-		add(statusItem{"general", "/settings/this-app", "A newer HolyArrs is out", "info"}, "update:")
+		add(StatusItem{"general", "/settings/this-app", "A newer HolyArrs is out", "info"}, "update:")
 	}
 	if in.DefaultsKnown {
 		known("/settings/title-defaults")
 		for _, text := range in.GoneDefaults {
-			add(statusItem{"library", "/settings/title-defaults", text, "warning"}, "title-defaults:"+text)
+			add(StatusItem{"library", "/settings/title-defaults", text, "warning"}, "title-defaults:"+text)
 		}
 	}
 	if in.SkipLocal != nil && in.Kids != nil {
 		known("/settings/sign-in")
 		if *in.SkipLocal && *in.Kids > 0 {
-			add(statusItem{"security", "/settings/sign-in", "Sign-in is skipped on the local network while a Kid account exists, so anyone at home is the owner and the age limit means nothing; turn skipping off", "error"}, "kid-skip-local")
+			add(StatusItem{"security", "/settings/sign-in", "Sign-in is skipped on the local network while a Kid account exists, so anyone at home is the owner and the age limit means nothing; turn skipping off", "error"}, "kid-skip-local")
 		}
 	}
 	if in.OutsideJoin != nil && in.Kids != nil {
 		known("/settings/users")
 		if *in.OutsideJoin && *in.Kids > 0 {
-			add(statusItem{"people", "/settings/users", "New people who sign in with Plex, Jellyfin, Emby or single sign-on get no age limit; link a Kid's outside accounts to their Kid account.", "warning"}, "kid-outside-join")
+			add(StatusItem{"people", "/settings/users", "New people who sign in with Plex, Jellyfin, Emby or single sign-on get no age limit; link a Kid's outside accounts to their Kid account.", "warning"}, "kid-outside-join")
 		}
 	}
 	if in.Folders != nil {
@@ -224,25 +223,25 @@ func settingsStatus(in statusInput) statusAnswer {
 	return a
 }
 
-// statusCache keeps the status answer for 30 seconds, for everyone.
-type statusCache struct {
+// StatusCache keeps the status answer for 30 seconds, for everyone.
+type StatusCache struct {
 	mu     sync.Mutex
 	at     time.Time
-	answer *statusAnswer
-	now    func() time.Time // nil: time.Now
+	answer *StatusAnswer
+	Now    func() time.Time // nil: time.Now
 }
 
 const statusFor = 30 * time.Second
 
-func (c *statusCache) clock() time.Time {
-	if c.now != nil {
-		return c.now()
+func (c *StatusCache) clock() time.Time {
+	if c.Now != nil {
+		return c.Now()
 	}
 	return time.Now()
 }
 
-// forget drops the kept answer.
-func (c *statusCache) forget() {
+// Forget drops the kept answer.
+func (c *StatusCache) Forget() {
 	c.mu.Lock()
 	c.answer = nil
 	c.mu.Unlock()
@@ -254,9 +253,9 @@ func (c *statusCache) forget() {
 var statusWrites = []string{"/api/v1/settings/", "/api/v1/library-folders", "/api/v1/sources", "/api/v1/downloaders",
 	"/api/v1/backups", "/api/v1/health/", "/api/v1/pick-rules"}
 
-// forgetStatusOnWrite drops the kept status answer after each successful
-// write to a statusWrites path, so Settings home shows the change at once.
-func (a *API) forgetStatusOnWrite(h http.Handler) http.Handler {
+// ForgetOnWrite drops the kept status answer after each successful write
+// to a statusWrites path, so Settings home shows the change at once.
+func (c *StatusCache) ForgetOnWrite(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet || r.Method == http.MethodHead || !slices.ContainsFunc(statusWrites, func(p string) bool { return strings.HasPrefix(r.URL.Path, p) }) {
 			h.ServeHTTP(w, r)
@@ -265,13 +264,40 @@ func (a *API) forgetStatusOnWrite(h http.Handler) http.Handler {
 		sw := &webserver.StatusWriter{ResponseWriter: w}
 		h.ServeHTTP(sw, r)
 		if sw.Code < 400 { // 0: nothing written, a plain 200
-			a.status.forget()
+			c.Forget()
 		}
 	})
 }
 
-func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
-	c := &a.status
+// StatusHandlers serve GET /settings/status. Its reads of other modules
+// (backups, the update check, sign-in) come in as funcs; a nil one is not
+// known.
+type StatusHandlers struct {
+	Store  *database.Store
+	Engine *Engine
+	States *jobs.Registry
+	// PartStatuses lists the parts' switches (nil: none).
+	PartStatuses func() []jobs.Status
+	// NewestBackup is the newest backup's time ("" none); ok false when
+	// backups are not known.
+	NewestBackup func() (newest string, ok bool)
+	// MetadataUp says whether the metadata server answers; known false
+	// when that is not known.
+	MetadataUp  func(context.Context) (up, known bool)
+	UpdateNewer func(context.Context) bool
+	// SkipLocal and OutsideJoin are the sign-in settings (nil: no sign-in).
+	SkipLocal   func() bool
+	OutsideJoin func(context.Context) bool
+	Cache       *StatusCache
+}
+
+// Routes mounts GET /api/v1/settings/status.
+func (a *StatusHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/settings/status", a.settingsStatusRoute)
+}
+
+func (a *StatusHandlers) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
+	c := a.Cache
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	now := c.clock()
@@ -281,41 +307,41 @@ func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
 			webserver.Internal(w, "api", err)
 			return
 		}
-		ans := settingsStatus(in)
+		ans := SettingsStatus(in)
 		c.answer, c.at = &ans, now
 	}
 	out := *c.answer
-	if notOwner(r) {
+	if NotOwner(r) {
 		// The answer is shared; reword the key kit warning on a copy:
 		// only the owner can download the kit.
 		out.Items = slices.Clone(out.Items)
 		for i := range out.Items {
 			if strings.Contains(out.Items[i].Text, "Download your key kit") {
-				out.Items[i].Text = "Backups: " + keyKitForOthers
+				out.Items[i].Text = "Backups: " + KeyKitForOthers
 			}
 		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
-// statusInput gathers what the rules look at, including whether the
+// StatusInput gathers what the rules look at, including whether the
 // metadata server answers.
-func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, error) {
-	in := statusInput{Now: now}
-	db := a.s.Store.Read()
-	checks, err := health.List(ctx, a.s.Store)
+func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (StatusInput, error) {
+	in := StatusInput{Now: now}
+	db := a.Store.Read()
+	checks, err := List(ctx, a.Store)
 	if err != nil {
 		return in, err
 	}
 	in.Checks = checks
 	var states []jobs.Status
-	if a.s.States != nil {
-		states = a.s.States.List()
+	if a.States != nil {
+		states = a.States.List()
 	}
-	if a.s.Parts != nil {
-		states = append(states, a.s.Parts.Statuses()...)
+	if a.PartStatuses != nil {
+		states = append(states, a.PartStatuses()...)
 	}
-	links, err := a.s.Health.Links(ctx)
+	links, err := a.Engine.Links(ctx)
 	if err != nil {
 		return in, err
 	}
@@ -329,7 +355,7 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 	if err != nil {
 		return in, err
 	}
-	in.Sources = []namedState{}
+	in.Sources = []NamedState{}
 	for _, s := range srcs {
 		state := sources.HealthOf(s).State
 		// Its own backoff for slowing down or a blocked address is a warning,
@@ -340,9 +366,9 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 		if b := sources.BlockOf(s); b != "" {
 			state = b // a site's bot check or ban (#106), not the local network
 		}
-		in.Sources = append(in.Sources, namedState{s.Name, state})
+		in.Sources = append(in.Sources, NamedState{s.Name, state})
 		if s.State != "disabled" {
-			if near, text := sources.NearCap(ctx, a.s.Store, s, now); near {
+			if near, text := sources.NearCap(ctx, a.Store, s, now); near {
 				in.SourcesNear = append(in.SourcesNear, text)
 			}
 		}
@@ -351,30 +377,25 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 	if err != nil {
 		return in, err
 	}
-	in.Downloaders = []namedState{}
+	in.Downloaders = []NamedState{}
 	for _, d := range dls {
-		in.Downloaders = append(in.Downloaders, namedState{d.Name, downloads.HealthOf(d, now).State})
+		in.Downloaders = append(in.Downloaders, NamedState{d.Name, downloads.HealthOf(d, now).State})
 	}
-	if a.s.Backups != nil {
-		if bs, err := a.s.Backups.List(); err == nil {
-			newest := ""
-			var at time.Time
-			for _, b := range bs {
-				if b.CreatedAt.After(at) {
-					at = b.CreatedAt
-					newest = b.CreatedAt.UTC().Format(time.RFC3339)
-				}
-			}
+	if a.NewestBackup != nil {
+		if newest, ok := a.NewestBackup(); ok {
 			in.NewestBackup = &newest
 		}
 	}
-	if a.s.MetadataUp != nil {
-		up := a.s.MetadataUp(ctx)
-		in.MetadataUp = &up
+	if a.MetadataUp != nil {
+		if up, known := a.MetadataUp(ctx); known {
+			in.MetadataUp = &up
+		}
 	}
-	newer := a.s.Updates.Update(ctx).Newer
-	in.UpdateNewer = &newer
-	gone, err := goneDefaults(ctx, a.s.Store)
+	if a.UpdateNewer != nil {
+		newer := a.UpdateNewer(ctx)
+		in.UpdateNewer = &newer
+	}
+	gone, err := goneDefaults(ctx, a.Store)
 	if err != nil {
 		return in, err
 	}
@@ -384,10 +405,12 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 		return in, err
 	}
 	in.Kids = &kids
-	if a.s.Auth != nil {
-		skip := a.s.Auth.SkipLocal()
+	if a.SkipLocal != nil {
+		skip := a.SkipLocal()
 		in.SkipLocal = &skip
-		join := a.s.Auth.OutsideJoinOpen(ctx)
+	}
+	if a.OutsideJoin != nil {
+		join := a.OutsideJoin(ctx)
 		in.OutsideJoin = &join
 	}
 	return in, nil
