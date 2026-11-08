@@ -10,7 +10,7 @@ const ev = (Kind: string, extra: Partial<EventRecord> = {}): EventRecord => ({ I
 const one = (e: EventRecord): HistoryRow => ({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
 const ctx: PanelContext = { now, titles: new Map([[1, { kind: 'show', artwork: ['p.jpg'] }], [2, { kind: 'movie', artwork: [] }], [3, { kind: 'artist', artwork: ['a.jpg'] }]]), people: new Map([[2, 'home'], [3, 'Maya'], [5, 'agent-check']]) };
 const facts = (v: ReturnType<typeof panelView>) => v.facts.map((f) => [f.label, f.value]);
-const root = 'C:\\Users\\x\\showcase';
+const root = 'D:\\media';
 
 describe('when', () => {
 	it('says the day and clock, relative only on the same day', () => {

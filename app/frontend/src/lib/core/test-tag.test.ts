@@ -6,7 +6,7 @@ describe('test tag words', () => {
 		expect(testVersion('Radarr 6.0.4.10291')).toBe('v6.0.4');
 		expect(testVersion('It answered: qbittorrent v5.1.2.')).toBe('v5.1.2');
 		expect(testVersion('The Source answered.')).toBe('');
-		expect(testVersion('reached http://10.10.25.25:8080')).toBe('');
+		expect(testVersion('reached http://192.0.2.10:8080')).toBe('');
 	});
 	it('names the app and adds a count', () => {
 		expect(testLabel('It answered: qbittorrent 5.1.2.')).toBe('qBittorrent v5.1.2');

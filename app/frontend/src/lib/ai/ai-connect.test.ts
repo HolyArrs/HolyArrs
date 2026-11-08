@@ -3,7 +3,7 @@ import { GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, canSignIn, codeParts, dee
 import { APP_DATA } from './ai-apps.ts';
 
 const https = { url: 'https://m.example/api/v1/mcp', signIn: true };
-const home = { url: 'http://10.10.25.25:18730/api/v1/mcp', key: 'hak_test', signIn: false };
+const home = { url: 'http://192.0.2.10:18730/api/v1/mcp', key: 'hak_test', signIn: false };
 const app = (id: string) => ROWS.find((r) => r.id === id)!.app;
 const all = (steps: { text: string; code?: string }[]) => steps.map((s) => s.text + '\n' + (s.code ?? '')).join('\n');
 const PAGES = ['claude-app', 'chatgpt', 'gemini-app', 'claude-code', 'codex', 'cursor', 'claude-desktop-home', 'local-ai'];
@@ -16,17 +16,17 @@ describe('ai-connect', () => {
 		expect(isAIKey(base)).toBe(false);
 	});
 	it('builds the address with or without a base path', () => {
-		expect(aiURL('http://10.10.25.25:18730')).toBe('http://10.10.25.25:18730/api/v1/mcp');
+		expect(aiURL('http://192.0.2.10:18730')).toBe('http://192.0.2.10:18730/api/v1/mcp');
 		expect(aiURL('https://media.example/', '/holyarrs/')).toBe('https://media.example/holyarrs/api/v1/mcp');
 	});
 	it('offers browser sign-in only where AI apps accept it', () => {
 		expect(canSignIn('https://media.example/api/v1/mcp')).toBe(true);
 		expect(canSignIn('http://localhost:18730/api/v1/mcp')).toBe(true);
-		expect(canSignIn('http://10.10.25.25:18729/api/v1/mcp')).toBe(false);
+		expect(canSignIn('http://192.0.2.10:18729/api/v1/mcp')).toBe(false);
 	});
 	it('knows which addresses the internet cannot reach', () => {
 		expect(onlyLocal('http://media.example/api/v1/mcp')).toBe(true);
-		expect(onlyLocal('https://100.87.70.86/api/v1/mcp')).toBe(true);
+		expect(onlyLocal('https://100.64.0.10/api/v1/mcp')).toBe(true);
 		expect(onlyLocal('https://media.example/api/v1/mcp')).toBe(false);
 	});
 	it('lays out the table like the website: three groups, then Any other app', () => {
@@ -79,7 +79,7 @@ describe('ai-connect', () => {
 	});
 	it('fills the address into a row and marks its code', () => {
 		const gemini = whereText(rowFor('gemini-cli')!, home.url);
-		expect(gemini).toContain('holyarrs http://10.10.25.25:18730/api/v1/mcp');
+		expect(gemini).toContain('holyarrs http://192.0.2.10:18730/api/v1/mcp');
 		expect(codeParts(gemini)).toEqual([{ text: gemini.replaceAll('`', ''), code: true }]);
 		expect(codeParts('Add to Cursor, or `~/.cursor/mcp.json`')).toEqual([{ text: 'Add to Cursor, or ' }, { text: '~/.cursor/mcp.json', code: true }]);
 	});
@@ -89,7 +89,7 @@ describe('ai-connect', () => {
 		expect(whereText(cursor, home.url, false)).toBe('`~/.cursor/mcp.json`');
 		expect(rowFor('vs-code-copilot')!.deeplink).toBe('vscode');
 		const g = whereText(rowFor('gemini-cli')!, home.url, false);
-		expect(g).toBe('`gemini mcp add --scope user --transport http --header "Authorization: Bearer <your AI key>" holyarrs http://10.10.25.25:18730/api/v1/mcp`');
+		expect(g).toBe('`gemini mcp add --scope user --transport http --header "Authorization: Bearer <your AI key>" holyarrs http://192.0.2.10:18730/api/v1/mcp`');
 		expect(whereText(rowFor('gemini-cli')!, https.url, true)).not.toContain('Authorization');
 		for (const r of ROWS) expect(whereText(r, home.url, false), r.id).not.toMatch(/hak_|<address>/);
 	});
