@@ -11,6 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -23,7 +24,7 @@ func TestMain(m *testing.M) {
 	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))
 	wrapMux = webserver.RecordRouteHits
 	// The music cover preload runs only in the tests that ask for it.
-	musicPreloadOn = false
+	music.SetPreloadOn(false)
 	// YouTube itself is never asked: a test that looks a video up points
 	// the reader at a fake (fakeReader); any other lookup fails at once.
 	metadata.UseReader(&youtube.Reader{Base: "http://127.0.0.1:1"})

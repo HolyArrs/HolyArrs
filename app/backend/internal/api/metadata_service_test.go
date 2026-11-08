@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -397,8 +398,8 @@ func TestMetadataServiceAuthenticatedAppPersistsProviderIdentities(t *testing.T)
 	}
 
 	var artists struct {
-		Artists []ArtistResult `json:"artists"`
-		Source  string         `json:"source"`
+		Artists []music.ArtistResult `json:"artists"`
+		Source  string               `json:"source"`
 	}
 	if err := json.Unmarshal(r.member.call("GET", "/api/v1/artists/lookup?term=synthetic", "", http.StatusOK), &artists); err != nil {
 		t.Fatal(err)
@@ -562,8 +563,8 @@ func TestMetadataServicePrivateBuild7AuthenticatedApp(t *testing.T) {
 	}
 
 	var artists struct {
-		Artists []ArtistResult `json:"artists"`
-		Source  string         `json:"source"`
+		Artists []music.ArtistResult `json:"artists"`
+		Source  string               `json:"source"`
 	}
 	if err := json.Unmarshal(r.member.call("GET", "/api/v1/artists/lookup?term=synthetic", "", http.StatusOK), &artists); err != nil {
 		t.Fatal(err)

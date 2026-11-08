@@ -11,6 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // idArtists links each artist to a Deezer id, as MusicBrainz's links do.
@@ -63,8 +64,8 @@ func TestArtistCircleNameCollision(t *testing.T) {
 		ArtistImages: &metadata.ArtistImages{BaseURL: srv.URL, Gap: time.Millisecond, Timeout: time.Second},
 		Artists:      idArtists{ids: map[string]metadata.ArtistIDs{drake: {Deezer: 246791}}}}
 	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), ExtraArt: extra, Library: lib, ImageBase: srv.URL + "/v1/img", Version: "test"})
-	a.rememberMusicNames([]nameKey{{kind: "artist", mbid: drake, name: "Drake"}, {kind: "artist", mbid: linked, name: "Drake"},
-		{kind: "artist", mbid: wide, name: "Drake"}, {kind: "artist", mbid: none, name: "Drake"}})
+	a.mh().RememberNames([]music.NameKey{music.NewNameKey("artist", drake, "Drake", ""), music.NewNameKey("artist", linked, "Drake", ""),
+		music.NewNameKey("artist", wide, "Drake", ""), music.NewNameKey("artist", none, "Drake", "")})
 	ctx := context.Background()
 	for _, tc := range []struct{ mbid, want string }{
 		{drake, srv.URL + "/v1/img/artist/" + drake + "/500.webp"},

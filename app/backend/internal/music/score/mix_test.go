@@ -123,7 +123,7 @@ func TestAnniversary_Window(t *testing.T) {
 // and the ids.
 func mixSet(t *testing.T, name string) ([]MixArtist, func(a, b string) float64, map[string]string, []string) {
 	t.Helper()
-	raw, err := os.ReadFile("../../api/testdata/explore_v7/" + name)
+	raw, err := os.ReadFile("../testdata/explore_v7/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -79,7 +80,7 @@ func (t titleMusic) WriteJSON(w http.ResponseWriter, r *http.Request, v any) {
 
 func (t titleMusic) ArtistPicture(ctx context.Context, kind, mbid, size string) (string, bool) {
 	if _, _, ok := t.a.musicTrendArtFile(ctx, kind, mbid, size); ok {
-		return musicArtPrefix + kind + "/" + mbid, true
+		return music.ArtPrefix + kind + "/" + mbid, true
 	}
 	return "", false
 }

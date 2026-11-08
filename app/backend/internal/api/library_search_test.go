@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // Search's "In your Library" row: local matches by name, original name and
@@ -70,7 +71,7 @@ func TestLibrarySearch(t *testing.T) {
 	sameNames(t, "music scope", names(ask(k.owner, "q=static&kind=music")), "Loud Static")
 	if a := ask(k.owner, "q=under&kind=music"); len(a.Albums) != 1 || a.Albums[0].Artist != "Loud Static" {
 		t.Fatalf("album by folded name: %+v", a.Albums)
-	} else if a.Albums[0].Image != musicArtPrefix+"album/abc-1" {
+	} else if a.Albums[0].Image != music.ArtPrefix+"album/abc-1" {
 		t.Fatalf("album cover route %q", a.Albums[0].Image)
 	}
 	if a := ask(k.owner, "q=under&kind=movie"); len(a.Albums) != 0 {

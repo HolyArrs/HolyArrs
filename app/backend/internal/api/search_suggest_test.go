@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 type suggestAnswer struct {
@@ -184,17 +185,15 @@ func TestSuggestMissingAlbumGetsCoverRoute(t *testing.T) {
 		{Kind: "song", Name: "Song", MBID: "ghi"},
 	}
 	r.api.coverSuggestAlbums(items)
-	if items[0].Art != musicArtPrefix+"album/abc" {
+	if items[0].Art != music.ArtPrefix+"album/abc" {
 		t.Fatalf("missing album art %q", items[0].Art)
 	}
 	if items[1].Art != "https://x/y.jpg" || items[2].Art != "" || items[3].Art != "" {
 		t.Fatalf("other rows changed: %+v", items[1:])
 	}
-	r.api.music.mu.Lock()
-	n := r.api.music.names["album|abc"]
-	r.api.music.mu.Unlock()
+	n := r.api.mh().TestHooks().Name("album|abc")
 	if n.Title != "Radial" || n.Artist != "Lab Band" {
 		t.Fatalf("route names %+v", n)
 	}
-	r.api.music.prefetching.Wait()
+	r.api.mh().TestHooks().WaitPrefetch()
 }

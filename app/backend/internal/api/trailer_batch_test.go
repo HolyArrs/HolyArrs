@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/trailer/batch
@@ -60,6 +61,6 @@ func TestTrailerBatch(t *testing.T) {
 // trailerBatchView is the answer of GET /trailer/batch as the tests read it.
 type trailerBatchView struct {
 	Streams map[string]metadata.TrailerStream `json:"streams"`
-	Videos  map[string]ArtistVideoView        `json:"videos"`
+	Videos  map[string]music.ArtistVideoView  `json:"videos"`
 	Pending []string                          `json:"pending"`
 }

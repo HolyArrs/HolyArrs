@@ -3,9 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
-	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 	"net/http"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -46,13 +48,13 @@ func (a *API) askHandlers() *requests.AskHandlers {
 			return false
 		},
 		SeenArtists: func(vs []requests.View) {
-			var names []nameKey
+			var names []music.NameKey
 			for _, v := range vs {
 				if v.Kind == "artist" && v.ArtistID != "" {
-					names = append(names, nameKey{kind: "artist", mbid: strings.ToLower(v.ArtistID), name: v.Name})
+					names = append(names, music.NewNameKey("artist", strings.ToLower(v.ArtistID), v.Name, ""))
 				}
 			}
-			a.rememberMusicNames(names)
+			a.mh().RememberNames(names)
 		},
 		MusicError: musicError, ShowError: showError}
 }

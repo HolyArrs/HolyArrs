@@ -7,6 +7,7 @@ import (
 
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 type freshRowKey struct{}
@@ -85,7 +86,7 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 
 // musicFresh is a music card's strip: New release on New from artists you
 // have.
-func (a *API) musicFresh(row string, c MusicCard) *engine.Fresh {
+func (a *API) musicFresh(row string, c music.MusicCard) *engine.Fresh {
 	f := engine.FreshFacts{Kind: c.Kind, Music: true}
 	switch row {
 	case "new_from":

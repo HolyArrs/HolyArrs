@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 	"net/http"
 	"slices"
 	"sort"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -134,7 +135,7 @@ func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 	kid := a.kidMax(r) != ""
 	// Music has no ratings, so a Kid limit shows none of it (as Explore does).
 	mp := a.musicProvider()
-	music := want("music") && mp.On() && !kid
+	withMusic := want("music") && mp.On() && !kid
 	ctx, cancel := context.WithTimeout(r.Context(), suggestWait)
 	defer cancel()
 	results := make(chan []SuggestRow, 4)
@@ -143,7 +144,7 @@ func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 		jobs++
 		go func() { results <- f(ctx) }()
 	}
-	if music && a.s.MusicSuggest != nil {
+	if withMusic && a.s.MusicSuggest != nil {
 		run(func(ctx context.Context) []SuggestRow { return mp.Suggest(ctx, r, q) })
 	}
 	// TMDB is the existing search's source. A Kid's lookups stay on the full
@@ -159,7 +160,7 @@ func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 			run(func(ctx context.Context) []SuggestRow { return a.suggestPeople(ctx, q) })
 		}
 	}
-	rows := a.suggestLocal(r, q, kind, music)
+	rows := a.suggestLocal(r, q, kind, withMusic)
 wait:
 	for i := 0; i < jobs; i++ {
 		select {
@@ -178,18 +179,18 @@ wait:
 // picture route, registers it there with its names and prefetches it, so a
 // missing album gets a cover from the same chain as Explore's rows.
 func (a *API) coverSuggestAlbums(items []SuggestRow) {
-	var names []nameKey
+	var names []music.NameKey
 	for i := range items {
 		r := &items[i]
 		if r.Kind != "album" || r.Art != "" || r.MBID == "" {
 			continue
 		}
-		r.Art = musicArtPrefix + "album/" + r.MBID
-		names = append(names, nameKey{kind: "album", mbid: r.MBID, name: r.Name, artist: r.Sub})
+		r.Art = music.ArtPrefix + "album/" + r.MBID
+		names = append(names, music.NewNameKey("album", r.MBID, r.Name, r.Sub))
 	}
 	if len(names) > 0 {
-		a.rememberMusicNames(names)
-		a.warmMusicNames(names)
+		a.mh().RememberNames(names)
+		a.mh().WarmNames(names)
 	}
 }
 
@@ -226,7 +227,7 @@ func mergeSuggest(rows []SuggestRow) []SuggestRow {
 
 // suggestLocal reads the Library: titles (Kid limits and parts apply),
 // album parts of Library artists, people credited in Library titles.
-func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []SuggestRow {
+func (a *API) suggestLocal(r *http.Request, q, kind string, withMusic bool) []SuggestRow {
 	ctx := titleview.WithLookupMemo(r.Context())
 	out := []SuggestRow{}
 	visible := func(t mediafiles.Title) bool {
@@ -244,7 +245,7 @@ func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []Sugges
 					break
 				}
 				sc, ok := scopeOf[t.Kind]
-				if !ok || !visible(t) || (t.Kind == "artist" && !music) || (kind != "all" && sc != kind) {
+				if !ok || !visible(t) || (t.Kind == "artist" && !withMusic) || (kind != "all" && sc != kind) {
 					continue
 				}
 				v, err := a.titleView(ctx, t)
@@ -275,27 +276,27 @@ func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []Sugges
 	if len(words) == 0 {
 		return out
 	}
-	if music {
-		if lib, err := a.musicLibrary(ctx, time.Now()); err == nil {
-			names := map[int64]musicLibArtist{}
-			for _, ar := range lib.artists {
-				names[ar.id] = ar
+	if withMusic {
+		if lib, err := a.mh().LibrarySnapshot(ctx, time.Now()); err == nil && lib != nil {
+			names := map[int64]music.LibArtist{}
+			for _, ar := range lib.Artists {
+				names[ar.ID] = ar
 			}
 			n := 0
-			for _, al := range lib.albums {
+			for _, al := range lib.Albums {
 				if n == suggestFromEach {
 					break
 				}
-				ar, ok := names[al.titleID]
-				if !ok || !foldMatch(al.name, words) {
+				ar, ok := names[al.TitleID]
+				if !ok || !foldMatch(al.Name, words) {
 					continue
 				}
 				n++
-				row := SuggestRow{Kind: "album", Name: al.name, Sub: ar.name, TitleID: al.titleID, MBID: al.mbid, Artist: ar.mbid, State: "missing"}
-				if lib.hadParts[al.partID] {
+				row := SuggestRow{Kind: "album", Name: al.Name, Sub: ar.Name, TitleID: al.TitleID, MBID: al.MBID, Artist: ar.MBID, State: "missing"}
+				if lib.HadParts[al.PartID] {
 					row.State = "have"
 				}
-				row.score = suggestScore(suggestText(al.name, q), 0.5, row.State)
+				row.score = suggestScore(suggestText(al.Name, q), 0.5, row.State)
 				out = append(out, row)
 			}
 		}
@@ -326,18 +327,18 @@ func (a *API) suggestMusicServer(ctx context.Context, r *http.Request, q string)
 	if err != nil {
 		return nil
 	}
-	lib, _ := a.musicLibrary(ctx, time.Now())
-	acts, _ := a.musicActsOf(ctx, a.person(r).UserID)
-	artists := map[string]musicLibArtist{}
-	albums := map[string]musicLibAlbum{}
+	lib, _ := a.mh().LibrarySnapshot(ctx, time.Now())
+	acts, _ := a.mh().AskStatesOf(ctx, a.person(r).UserID)
+	artists := map[string]music.LibArtist{}
+	albums := map[string]music.LibAlbum{}
 	if lib != nil {
 		byID := map[int64]string{}
-		for _, ar := range lib.artists {
-			artists[fold(ar.name)] = ar
-			byID[ar.id] = ar.name
+		for _, ar := range lib.Artists {
+			artists[fold(ar.Name)] = ar
+			byID[ar.ID] = ar.Name
 		}
-		for _, al := range lib.albums {
-			albums[fold(al.name)+"|"+fold(byID[al.titleID])] = al
+		for _, al := range lib.Albums {
+			albums[fold(al.Name)+"|"+fold(byID[al.TitleID])] = al
 		}
 	}
 	out := []SuggestRow{}
@@ -347,27 +348,27 @@ func (a *API) suggestMusicServer(ctx context.Context, r *http.Request, q string)
 		case "artist":
 			row.Sub = "Artist"
 			if ar, ok := artists[fold(it.Name)]; ok {
-				row.TitleID, row.MBID, row.State = ar.id, ar.mbid, "missing"
-				if ar.hadAny {
+				row.TitleID, row.MBID, row.State = ar.ID, ar.MBID, "missing"
+				if ar.HadAny {
 					row.State = "have"
 				}
-				if ar.image != "" {
-					row.Art = ar.image
+				if ar.Image != "" {
+					row.Art = ar.Image
 				}
-			} else if acts != nil && row.MBID != "" && acts.artistState[row.MBID] != "" {
+			} else if acts != nil && row.MBID != "" && acts.Artists[row.MBID] != "" {
 				row.State = "asked"
 			}
 		case "album":
 			row.Sub = it.Artist
 			if al, ok := albums[fold(it.Name)+"|"+fold(it.Artist)]; ok {
-				row.TitleID, row.State = al.titleID, "missing"
-				if lib.hadParts[al.partID] {
+				row.TitleID, row.State = al.TitleID, "missing"
+				if lib.HadParts[al.PartID] {
 					row.State = "have"
 				}
 				if row.MBID == "" {
-					row.MBID = al.mbid
+					row.MBID = al.MBID
 				}
-			} else if acts != nil && row.MBID != "" && acts.albumState[row.MBID] != "" {
+			} else if acts != nil && row.MBID != "" && acts.Albums[row.MBID] != "" {
 				row.State = "asked"
 			}
 		case "song":

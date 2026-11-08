@@ -15,6 +15,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -609,10 +610,7 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 // knownGenres is an artist's genres from the music genre cache, without
 // queueing a lookup (nil when not known).
 func (a *API) knownGenres(mbid string) []string {
-	c := &a.musicx
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.genres[mbid].genres
+	return a.mh().KnownGenres(mbid)
 }
 
 // calendarRow is a calendar date with who follows its title: following
@@ -674,8 +672,8 @@ func (a *API) calendarArt(r *http.Request, rows []calendarRow) {
 		e := &rows[i]
 		if e.Kind == "album" {
 			if e.ArtistMBID != "" {
-				e.Banner = musicArtPrefix + "wide/" + e.ArtistMBID
-				e.Logo = musicArtPrefix + "logo/" + e.ArtistMBID
+				e.Banner = music.ArtPrefix + "wide/" + e.ArtistMBID
+				e.Logo = music.ArtPrefix + "logo/" + e.ArtistMBID
 			}
 			continue
 		}
