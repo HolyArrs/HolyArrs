@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -16,6 +18,9 @@ import (
 func (a *API) ModuleRoutes(rt *webserver.Router) {
 	a.migrateHandlers().Routes(rt)
 	a.arr().Routes(rt)
+	if startup.FeatureOn(features.AIApps) {
+		a.ai.Routes(rt)
+	}
 }
 
 // arr is the old-app API: the Sonarr and Radarr prefixes and their settings.

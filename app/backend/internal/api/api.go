@@ -6,9 +6,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ai"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 
@@ -186,8 +189,8 @@ type API struct {
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
 	confirm confirms
-	// ai holds the AI connections' limits and confirm tokens (mcp.go).
-	ai aiState
+	// ai serves the AI connections (internal/ai).
+	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
 	// rated keeps TMDB ratings looked up for Kid limits.
@@ -304,7 +307,9 @@ func New(s Server) *API {
 				}
 			}}
 	}
-	return &API{s: s}
+	a := &API{s: s}
+	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
+	return a
 }
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.
@@ -492,9 +497,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
-	if startup.FeatureOn(features.AIApps) {
-		a.mcpRoutes(m)
-	}
 	m.Handle("GET /", webserver.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
@@ -518,10 +520,10 @@ func (a *API) Handler() http.Handler {
 func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
-		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
+		a.ai.Inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
 		return secure(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))))
 	}
-	a.ai.inner = a.partGate(m, m)
+	a.ai.Inner = a.partGate(m, m)
 	return secure(a.arr().Gate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
 }
 
