@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"strconv"
 	"strings"
@@ -183,14 +184,14 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
-	st := newServerTiming()
+	st := webserver.NewServerTiming()
 	ctx := r.Context()
 	rows, partial := a.genreBuild(ctx, r, kind, genre)
 	if sw == "all" {
 		more, p2 := a.genreBuild(ctx, r, "show", engine.ShowGenreFor(genre))
 		rows, partial = mergeGenreRows(rows, more), partial || p2
 	}
-	st.mark("lists")
+	st.Mark("lists")
 	// A title once per page, first row wins.
 	seen := map[string]bool{}
 	for i := range rows {
@@ -210,7 +211,7 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	st.mark("views")
+	st.Mark("views")
 	hero := []discoverItemView{}
 	if len(views) > 0 && views[0].ID == "genre_trending" {
 		for _, v := range views[0].Items {
@@ -224,10 +225,10 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	for i := range views {
 		a.fillTrailerKeys(r, views[i].Items)
 	}
-	st.mark("trailers")
+	st.Mark("trailers")
 	a.fillRowsCardArt(r, views)
-	st.mark("cardart")
-	st.write(w)
+	st.Mark("cardart")
+	st.Write(w)
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "genre": map[string]any{"id": id, "name": genre, "kind": kind}, "hero": hero, "rows": views, "partial": partial})
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/url"
 	"sort"
@@ -432,9 +433,9 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			seedIDs = append(seedIDs, s.mbid)
 		}
 	}
-	st := newServerTiming()
+	st := webserver.NewServerTiming()
 	similar := a.similarTo(seedIDs, musicSimilarWait)
-	st.mark("similar")
+	st.Mark("similar")
 
 	// Charts, from the cached trending lists.
 	var trendArtists, trendAlbums []MusicCard
@@ -473,9 +474,9 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			ids = append(ids, s.MBID)
 		}
 	}
-	st.mark("charts")
+	st.Mark("charts")
 	genres, genresDone := a.genresWaiting(ids, musicGenreWait)
-	st.mark("genres")
+	st.Mark("genres")
 	for _, m := range artists {
 		m.genres = genres[m.mbid]
 	}
@@ -677,7 +678,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 	out = a.moreMusicRows(ctx, &musicCtx{now: now, hour: musicHour(q.Get("hour"), now), region: region, artists: artists, byTitle: byTitle, owned: owned,
 		genres: genres, trendAlbums: trendAlbums, trendArtists: trendArtists, pool: pool, top: top, tag: tag, albumCard: albumCard, names: &names, cold: cold}, out)
-	st.mark("more")
+	st.Mark("more")
 
 	// Cold start: only rows that need no Library.
 	final := []MusicRow{}
@@ -757,7 +758,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	a.rememberMusicNames(names)
 	a.exploreCaching(w, r, "private, max-age=60")
 	complete := genresDone && len(similar) == len(seedIDs)
-	st.write(w)
+	st.Write(w)
 	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "hero_alts": heroAlts, "rows": final}, complete, now)
 }
 
