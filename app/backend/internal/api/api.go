@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -194,8 +195,8 @@ type API struct {
 	listSeen map[string]string
 	// lookups counts each person's music lookups in flight.
 	lookups inFlight
-	// confirm holds the two-step controls' confirmation ids.
-	confirm webserver.Confirms
+	// setupH serves the control routes and the part and report gates.
+	setupH *setupmod.Handlers
 	// ai serves the AI connections (internal/ai).
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
@@ -465,10 +466,10 @@ func (a *API) Routes(rt *webserver.Router) {
 	if startup.FeatureOn(features.PlexWatchlists) {
 		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
-	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.reportTitleGate}).Routes(m)
+	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.setupHandlers().ReportTitleGate}).Routes(m)
 	(&requests.AskedByHandlers{Store: a.s.Store, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.followsChanged}).Routes(m)
-	a.controlRoutes(m)
+	a.setupHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
@@ -499,11 +500,11 @@ func (a *API) Handler() http.Handler {
 func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
-		a.ai.Inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
-		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
+		a.ai.Inner = a.kidGate(m, setupmod.PartGate(a.s.Parts, a.s.Store, m, accounts.Gate(m)))
+		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, setupmod.PartGate(a.s.Parts, a.s.Store, m, accounts.Gate(m))))))))))
 	}
-	a.ai.Inner = a.partGate(m, m)
-	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.partGate(m, m))))))
+	a.ai.Inner = setupmod.PartGate(a.s.Parts, a.s.Store, m, m)
+	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(setupmod.PartGate(a.s.Parts, a.s.Store, m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.
