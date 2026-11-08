@@ -4,9 +4,12 @@
 </script>
 
 <script lang="ts">
-	import { cardAction, followsByTmdb, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
+	import { createExploreGenre } from '#lib/discover/index.ts';
+	import { createExploreStrip } from '#lib/discover/index.ts';
+	import { createExploreBanner } from '#lib/discover/index.ts';
+	import { createExploreServices } from '#lib/discover/index.ts';
+	import { cardAction, followsByTmdb, cardTmdb, discoverCard, matchOwned, ownedIndex, ownedMark, ownedTitle, cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
-	import { defaultRegion } from '#lib/ui/region.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import Popover from '#lib/ui/Popover.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -21,27 +24,19 @@
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { EAGER_ROWS, stableRows } from '#lib/ui/row-window.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { whenIdle } from '#lib/ui/lazy-art.ts';
 	import { artistSheets } from '../request-sheets.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
-	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, genrePath, genresFor, parseGenre, type GenreAnswer, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, pickerServices, readServices, serviceRegion, SERVICES_KEY, SERVICES_SHOWN, type WatchService, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, GENRES, leaveOut, newHref, newServicesPath, type NewServicesAnswer, browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTileData as BrowseTile, fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer, whyShown } from '#lib/discover/index.ts';
-	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
+	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, leaveOut, newHref, newServicesPath, type NewServicesAnswer, whyShown } from '#lib/discover/index.ts';
+	import { detailPath, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { QuickAsk } from '#lib/requests/index.ts';
-	import type { GateDefaults } from '#lib/mediafiles/index.ts';
-	import type { ShowSettings } from '#lib/shows/index.ts';
-	import { seasonWords } from '#lib/shows/index.ts';
-	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
-	import { onMount, tick, untrack } from 'svelte';
+	import { MusicTrendingRows, musicCardHref, MusicGenreTiles } from '#lib/music/index.ts';
+	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
-	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { LookupShow } from '#lib/core/types.ts';
-	import { fitTile } from '#lib/core/tmdb-image.ts';
+	import type { Ask, TitleView } from '#lib/core/types.ts';
 	import { onTheaterExit } from '#lib/core/trailer/theater.svelte.ts';
 
 	let loaded = $state(false);
@@ -173,127 +168,40 @@
 	$effect(() => onTheaterExit((o) => (o.kind === 'artist' ? undefined : goto(to(detailPath(o.kind, o.tmdb))))));
 
 	// Music shows only music rows: the movie and show rows (services, Best new releases) never appear there. A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
-	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
-	const genres = $derived(genresFor(type));
-	let musicGenres = $state<{ key: string; name: string; href: string; art: string; images?: string[]; hue: number }[]>([]);
-	let genreRows = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
-	let genreHero = $state<ExploreCard[]>([]);
-	let genreLoaded = $state<number | null>(null);
-	let genreFailed = $state(false);
-	let genreAsk = 0;
-	async function loadGenre(id: number, again = 0) {
-		const n = again ? genreAsk : ++genreAsk;
-		genreFailed = false;
-		try {
-			const a = await api.get<GenreAnswer>(genrePath(type, id), gone.signal);
-			if (n !== genreAsk) return;
-			const got = a.rows.map(serverRow);
-			// Top on your services, in the genre, is the second row.
-			const marker = { id: 'top_services', type: 'top_services', title: 'Trending on streaming', cards: [], keep: true, wide: false };
-			genreRows = [...got.slice(0, 1), marker, ...got.slice(1)];
-			genreHero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
-			if (!again) heroAt = 0;
-			genreLoaded = id;
-			// A cold page answers with its first rows; the lower ones follow on the next ask.
-			if (a.partial && again < 6) setTimeout(() => n === genreAsk && void loadGenre(id, again + 1), 1000);
-		} catch {
-			if (n === genreAsk && !again) genreFailed = true;
-		}
-	}
-	$effect(() => {
-		const g = genre;
-		if (g && genreLoaded !== g.id) void loadGenre(g.id);
-	});
-	// Back from a genre page lands on the tab and the spot it was opened from: the address (tab included) maps to where the page stood when a genre was opened from it.
-	const spots = new Map<string, ExploreReturn>();
-	function rememberSpot() {
-		spots.set(new URL((page.shallow?.url ?? page.url).href).href, {
-			y: Math.round(scrollY),
-			rows: readOffsets(document),
-			anchor: readAnchor(document, document.querySelector('main')?.getBoundingClientRect().top ?? 0)
-		});
-	}
-	$effect(() => {
-		const u = page.shallow?.url ?? page.url;
-		untrack(() => {
-			const t = parseType(u.searchParams.get('type'), musicKept);
-			if (t !== type) {
-				type = t;
-				try {
-					localStorage.setItem(TYPE_KEY, t);
-				} catch {
-					/* The choice is a convenience. */
-				}
-				void loadHead();
-			}
-			const spot = spots.get(u.href);
-			if (spot && !u.searchParams.has('genre')) {
-				spots.delete(u.href);
-				back = spot;
-			}
-		});
-	});
-	/** Opens a genre page (a new history entry, so Back returns); null clears it. */
-	function pickGenre(id: number | null, close?: () => void) {
-		close?.();
-		const url = new URL((page.shallow?.url ?? page.url).href);
-		if (id !== null) rememberSpot();
-		if (id === null) url.searchParams.delete('genre');
-		else url.searchParams.set('genre', String(id));
-		genreLoaded = null;
-		void goto(url, { shallow: true, reset: false });
-		scrollTo({ top: 0, behavior: 'instant' });
-	}
-	const genreOn = $derived(!!genre && type !== 'music');
-
-	// The Genres picker for Movies and TV: the Music tile look, each genre over the backdrop Search's Browse grid uses for it (read when the picker first opens).
-	let browseArt = $state<Record<string, Record<string, string>>>({});
-	async function loadBrowseArt(t: typeof type) {
-		if (t !== 'movies' && t !== 'shows') return;
-		if (browseArt[t]) return;
-		browseArt = { ...browseArt, [t]: {} };
-		try {
-			// The same tiles Search's Browse grid shows: its first answer, then its Genres section. Worlds is read too: it holds the pictures the combined TV genres fall back on.
-			const [a, more, worlds] = await Promise.all([api.get<BrowseAnswer>(browsePath(t)), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'genres')).catch(() => null), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'worlds')).catch(() => null)]);
-			const art: Record<string, string> = {};
-			for (const x of [...(a.tiles ?? []), ...(more?.tiles ?? []), ...(worlds?.tiles ?? [])]) {
-				if (x.mood || !x.backdrop) continue;
-				const src = fitTile(x.backdrop, 130, false);
-				art[`id:${x.genre}`] ??= src;
-				art[`name:${x.genre_name.toLowerCase()}`] ??= src;
-				art[`name:${x.name.toLowerCase()}`] ??= src;
-			}
-			browseArt = { ...browseArt, [t]: art };
-			// Fetched ahead into the browser's cache, so the tiles are filled the first time the picker opens.
-			for (const src of new Set(Object.values(art))) new Image().src = src;
-		} catch {
-			// No art: the tiles keep their colour.
-		}
-	}
-	// The picker's art is read ahead (once the head is in, when the browser is idle), not on first open.
-	$effect(() => {
-		const t = type;
-		if (!headLoaded || (t !== 'movies' && t !== 'shows')) return;
-		return whenIdle(() => void loadBrowseArt(t), 300);
-	});
-	// Genres Browse has no tile of their own (TMDB's combined TV genres) borrow a picture from the closest Browse tiles, tried in order.
-	const genreArtAlias: Record<string, string[]> = {
-		'action & adventure': ['action', 'adventure', 'treasure hunts'],
-		'sci-fi & fantasy': ['sci-fi', 'science fiction', 'fantasy', 'space', 'fantasy worlds', 'parallel worlds'],
-		'science fiction': ['sci-fi', 'space'],
-		fantasy: ['fantasy worlds', 'medieval'],
-		'war & politics': ['war', 'politics', 'world war ii', 'cold war'],
-		war: ['world war ii', 'cold war'],
-		'tv movie': ['drama'],
-		history: ['victorian era', 'ancient worlds', 'medieval'],
+	const genreViewCtx = {
+		get type() {
+			return type;
+		},
+		set type(v) {
+			type = v;
+		},
+		get gone() {
+			return gone;
+		},
+		get heroAt() {
+			return heroAt;
+		},
+		set heroAt(v) {
+			heroAt = v;
+		},
+		get musicKept() {
+			return musicKept;
+		},
+		get TYPE_KEY() {
+			return TYPE_KEY;
+		},
+		loadHead,
+		get back() {
+			return back;
+		},
+		set back(v) {
+			back = v;
+		},
+		get headLoaded() {
+			return headLoaded;
+		},
 	};
-	function genreArt(art: Record<string, string> | undefined, id: number, name: string): string {
-		if (!art) return '';
-		const n = name.toLowerCase();
-		for (const k of [`id:${id}`, `name:${n}`, ...(genreArtAlias[n] ?? []).map((a) => `name:${a}`)]) if (art[k]) return art[k];
-		return '';
-	}
-	const genreTiles = $derived(genres.map((g) => ({ key: String(g.id), name: g.name, href: '', art: genreArt(browseArt[type], g.id, g.name), hue: 0, tint: tileHue(g.name) })));
+	const genreView = createExploreGenre(genreViewCtx);
 	// The picker spans from the left edge of the type pills to the Genres button's right edge.
 	let typesBox = $state<HTMLElement>();
 	let pickW = $state(340);
@@ -317,146 +225,59 @@
 	});
 
 	// The category strip under the hero: the household's top Browse categories, from the Browse answers the server keeps warm. Hidden until they are ready (no ghosts).
-	let strip = $state<(BrowseTile & { section: string })[]>([]);
-	let stripFor = '';
-	async function loadStrip(t: ExploreType) {
-		if (t === 'music' || stripFor === t) return;
-		stripFor = t;
-		strip = [];
-		try {
-			// Picked for this member on the server from the Browse sections it has ready; the rows below are passed so it skips what they show.
-			const a = await api.get<StripAnswer>(stripPath(t, stripRowNames(head), viewerZone), gone.signal);
-			if (stripFor !== t) return;
-			strip = fromStrip(a.tiles ?? []);
-			stripShown.add(strip.map(stripKey));
-		} catch {
-			if (stripFor === t) stripFor = '';
-		}
-	}
-	$effect(() => {
-		const t = type;
-		if (!headLoaded || genreOn || t === 'music') return;
-		const id = setTimeout(() => void loadStrip(t), 200);
-		return () => clearTimeout(id);
-	});
-	// The strip learns from its own counts: the tiles shown (batched) and the one opened.
-	const stripShown = shownBatcher((categories) => void api.post('/explore/strip/counts', { event: 'shown', categories }).catch(() => {}));
-	function stripOpened(t: BrowseTile) {
-		stripShown.flush();
-		void api.post('/explore/strip/counts', { event: 'open', categories: [stripKey(t)] }).catch(() => {});
-	}
-
-	// The genre banner: the words on the left, the picks in a row on the right.
-	const bannerLayout: number = 2;
-	const bannerNorm = (n: string) => n.toLowerCase().replace(/\s*&\s*/g, ' & ');
-	/** The household's favourite genre: the most common among Library titles (asked for ones included). */
-	const favourite = $derived.by(() => {
-		if (type === 'music') return null;
-		const tally = new Map<string, { n: number; kind: 'movies' | 'shows'; id: number; name: string }>();
-		for (const t of titles) {
-			const k = t.kind === 'movie' ? 'movies' : t.kind === 'show' ? 'shows' : null;
-			if (!k || (type !== 'all' && type !== k)) continue;
-			const list = GENRES[k === 'movies' ? 'movie' : 'show'];
-			for (const gn of t.genres ?? []) {
-				const g = list.find((x) => bannerNorm(x.name) === bannerNorm(gn) || bannerNorm(x.name).split(' & ').includes(bannerNorm(gn)));
-				if (!g) continue;
-				const key = `${k}:${g.id}`;
-				const e = tally.get(key) ?? { n: 0, kind: k, id: g.id, name: g.name };
-				e.n++;
-				tally.set(key, e);
-			}
-		}
-		// Movies and shows count as one genre by name: the larger side opens its page.
-		const byName = new Map<string, { n: number; best: { n: number; kind: 'movies' | 'shows'; id: number; name: string } }>();
-		for (const e of tally.values()) {
-			const cur = byName.get(e.name) ?? { n: 0, best: e };
-			cur.n += e.n;
-			if (e.n > cur.best.n) cur.best = e;
-			byName.set(e.name, cur);
-		}
-		const top = [...byName.values()].sort((a, b) => b.n - a.n)[0];
-		return top && top.n >= 2 ? { ...top.best, count: top.n } : null;
-	});
-	let bannerCards = $state<ExploreCard[]>([]);
-	let bannerFor = '';
-	$effect(() => {
-		const f = favourite;
-		if (bannerLayout === 0 || !f || !headLoaded) return;
-		const key = `${f.kind}:${f.id}`;
-		if (bannerFor === key) return;
-		bannerFor = key;
-		bannerCards = [];
-		// The app's own genre answer (the genre page's), never an outside call.
-		api.get<GenreAnswer>(genrePath(f.kind, f.id), gone.signal).then(
-			(a) => {
-				if (bannerFor !== key) return;
-				const got = [...(a.hero ?? []).map((d) => ({ ...discoverCard(d, 'banner'), wide: d.backdrop ?? null })), ...a.rows.flatMap((r) => serverRow(r).cards)];
-				const seen = new Set<string>();
-				bannerCards = got.filter((c) => (seen.has(cardIdentity(c)) ? false : (seen.add(cardIdentity(c)), true)));
-			},
-			() => {}
-		);
-	});
-	const bannerPicks = $derived(bannerCards.map(live).filter((c) => (c.kind === 'movie' || c.kind === 'show') && c.image && !ownedMark(c, ownedTitle(c, owned), who) && c.titleId === undefined).slice(0, 7));
-	// Music: the household's top music genre (first of the genre tiles the music rows answer, built from the Library's artists) and its albums and artists not in the Library yet, from the app's own genre page answer.
-	let musicPicks = $state<MusicCardData[]>([]);
-	/** The picks are on their way: the banner keeps its place (placeholders) so the rows below never jump. */
-	let musicPicksPending = $state(false);
-	let musicPicksFor = '';
-	const musicFav = $derived(type === 'music' ? (musicGenres[0] ?? null) : null);
-	/** The music rows' first answer is in (musicGenres says all it will). */
-	let musicReady = $state(false);
-	/** Until the music rows answer, the "Your genre" banner's place is held (the same banner with placeholders, so the exact height) when the last visit showed it, so the rows never jump down when it arrives. Remembered per browser. */
-	let musicBannerHint = $state(true);
-	/** The last banner's genre name: the held banner's name wraps the same, so the same height. */
-	let musicBannerName = $state('');
-	try {
-		const kept = localStorage.getItem('holyarrs-music-banner');
-		musicBannerHint = kept !== '0';
-		musicBannerName = kept && kept !== '0' && kept !== '1' ? kept : '';
-	} catch {
-		/* Storage off: hold the place. */
-	}
-	$effect(() => {
-		if (type !== 'music') musicReady = false;
-	});
-	const musicBannerShown = $derived(type === 'music' && !!musicFav && (musicPicksPending || musicPicks.length >= 4));
-	const musicBannerHold = $derived(type === 'music' && !musicFav && !musicReady && musicBannerHint);
-	$effect(() => {
-		if (type !== 'music' || !musicReady || musicPicksPending) return;
-		try {
-			localStorage.setItem('holyarrs-music-banner', musicBannerShown && musicFav ? musicFav.name : '0');
-		} catch {
-			/* Storage off. */
-		}
-	});
-	$effect(() => {
-		const g = musicFav;
-		if (!g) return;
-		const slug = g.href.split('/music/genre/')[1]?.split('?')[0] ?? '';
-		if (!slug || musicPicksFor === slug) return;
-		musicPicksFor = slug;
-		musicPicks = [];
-		musicPicksPending = true;
-		void fetchMusicGenre(decodeURIComponent(slug), 'US', api, gone.signal).then(
-			(a) => {
-				if (musicPicksFor !== slug) return;
-				const seen = new Set<string>();
-				musicPicks = [...(a.hero ? [a.hero] : []), ...a.rows.flatMap((r) => r.items ?? [])]
-					.filter((c) => (c.kind === 'album' || c.kind === 'artist') && c.image && !c.title_id && !seen.has(c.key) && (seen.add(c.key), true))
-					.slice(0, 7)
-					// The rows' own address (versioned, card size), so each cover downloads once.
-					.map((c) => ({ ...c, image: coverFor(musicImage(c), 150).src ?? c.image }));
-			},
-			() => {}
-		).finally(() => musicPicksFor === slug && (musicPicksPending = false));
-	});
-	const bannerOn = $derived(bannerLayout > 0 && !genreOn && type !== 'music' && !!favourite && bannerPicks.length >= 5);
-
+	const stripViewCtx = {
+		get head() {
+			return head;
+		},
+		get viewerZone() {
+			return viewerZone;
+		},
+		get gone() {
+			return gone;
+		},
+		get type() {
+			return type;
+		},
+		get headLoaded() {
+			return headLoaded;
+		},
+		get genreOn() {
+			return genreView.genreOn;
+		},
+	};
+	const stripView = createExploreStrip(stripViewCtx);
+	const bannerViewCtx = {
+		get type() {
+			return type;
+		},
+		get titles() {
+			return titles;
+		},
+		get headLoaded() {
+			return headLoaded;
+		},
+		get gone() {
+			return gone;
+		},
+		live,
+		get owned() {
+			return owned;
+		},
+		get who() {
+			return who;
+		},
+		get musicGenres() {
+			return genreView.musicGenres;
+		},
+		get genreOn() {
+			return genreView.genreOn;
+		},
+	};
+	const bannerView = createExploreBanner(bannerViewCtx);
 	// Hero badges: why the featured title shows (New season, Picked for you).
 	let heroGenres = $state<Record<string, string[]>>({});
 	let taste = $state<string[]>([]);
-	const heroCards = $derived(genreOn ? genreHero : hero);
+	const heroCards = $derived(genreView.genreOn ? genreView.genreHero : hero);
 	/** The titles of Trending on streaming, as that row shows them now. */
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
@@ -475,12 +296,12 @@
 		);
 	});
 	const newCards = $derived.by(() => {
-		const c = newServices && !genreOn ? leaveOut(newServices.cards, taken) : [];
+		const c = newServices && !genreView.genreOn ? leaveOut(newServices.cards, taken) : [];
 		return c.length >= ROW_MIN ? c : [];
 	});
-	const rows = $derived(type === 'music' ? [] : markTransitions(enoughCards(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken))));
+	const rows = $derived(type === 'music' ? [] : markTransitions(enoughCards(dedupeTop(genreView.genreOn ? (genreView.genreLoaded === genreView.genre?.id ? genreView.genreRows : []) : filterRows([...head, ...tail], type), taken))));
 	/** Where Browse by genre goes: after this row index (-1: not shown). */
-	const genreAt = $derived(genreOn ? -1 : genreRowAfter(rows));
+	const genreAt = $derived(genreView.genreOn ? -1 : genreRowAfter(rows));
 	// Browse by genre: read once per tab after the head (the page the server already built).
 	let genreCards = $state<GenreRowCard[]>([]);
 	let genreCardsFor = '';
@@ -503,7 +324,7 @@
 			return undefined;
 		}
 	})();
-	const query = () => ({ type, services: picked ?? [], region, tz: viewerZone });
+	const query = () => ({ type, services: servicesView.picked ?? [], region: servicesView.region, tz: viewerZone });
 
 	let headAsk = 0;
 	/** The head rows' order as first shown for this query; a rebuilt pool never moves them. */
@@ -640,31 +461,12 @@
 	}
 
 	// "On your services": the streaming services this person has, picked from the region's best known ones; remembered on this device.
-	const region = serviceRegion(defaultRegion());
-	let services = $state<WatchService[]>([]);
-	/** null until the person picks once (the row then asks them to). */
-	let picked = $state<number[] | null>(null);
-	const shownServices = $derived(pickerServices(services, picked ?? []));
-	/** The ids the row is filled from: the picked ones, else the region's top few. */
-	const usedServices = $derived(picked ?? shownServices.slice(0, SERVICES_SHOWN).map((s) => s.id));
-
-	function readPicked() {
-		try {
-			picked = readServices(region, localStorage.getItem(SERVICES_KEY));
-		} catch {
-			/* Nothing saved. */
-		}
-	}
-
-	async function loadServices() {
-		try {
-			services = (await api.get<{ services: WatchService[] }>(`/watch-services?region=${region}`, gone.signal)).services ?? [];
-		} catch {
-			services = [];
-		}
-	}
-
-	// Leaving Explore stops the TMDB-backed asks still on their way.
+	const servicesViewCtx = {
+		get gone() {
+			return gone;
+		},
+	};
+	const servicesView = createExploreServices(servicesViewCtx);
 	const gone = new AbortController();
 	onMount(() => {
 		if (!page.url.searchParams.has('type')) {
@@ -677,12 +479,12 @@
 		}
 		void load();
 		// The head only needs the saved picks, not the service list: both go at once.
-		readPicked();
+		servicesView.readPicked();
 		if (!reuseKept()) void loadHead();
-		void loadServices();
+		void servicesView.loadServices();
 		return () => {
 			clearTimeout(poll);
-			stripShown.flush();
+			stripView.stripShown.flush();
 			gone.abort();
 			if (headLoaded && !failed && type !== 'music') kept = { key: JSON.stringify(query()), at: Date.now(), rows: $state.snapshot({ head, tail, hero, heroAt, tailPageNext, tailMore, headOrder }) };
 		};
@@ -699,7 +501,7 @@
 				{@const act = cardAction(c, { manage, ask: mayAsk })}
 				{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 				<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) ? { kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}
-					growService={c.streaming ? { name: c.streaming.name, logo: services.find((s) => s.id === c.streaming?.service)?.logo } : null}
+					growService={c.streaming ? { name: c.streaming.name, logo: servicesView.services.find((s) => s.id === c.streaming?.service)?.logo } : null}
 					growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType: row.type, rowTitle: row.title, fresh: c.fresh, streaming: c.streaming })}
 					followTmdb={!c.titleId && c.kind === 'show'}>
 					{#snippet growAction()}
@@ -731,23 +533,23 @@
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck} data-pin-pills bind:this={typesBox} onpointerdowncapture={measurePick} onkeydowncapture={measurePick}>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
-		{#if type === 'music' && musicGenres.length}
+		{#if type === 'music' && genreView.musicGenres.length}
 			<!-- Music: the same Genres button; a genre opens its page. -->
 			<div class="genre-pick" data-testid="genre-picker">
 				<Popover label="Genres" text="Genres" variant="button" align="end" width={pickW}>
 					{#snippet children(close)}
 						<div class="genre-tiles" role="group" aria-label="Genres">
-							<MusicGenreTiles genres={musicGenres} allHref={to('/search?kind=music')} compact all={false} onopen={close} />
+							<MusicGenreTiles genres={genreView.musicGenres} allHref={to('/search?kind=music')} compact all={false} onopen={close} />
 						</div>
 					{/snippet}
 				</Popover>
 			</div>
-		{:else if genres.length}
+		{:else if genreView.genres.length}
 			<div class="genre-pick" data-testid="genre-picker">
-				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={pickW} onopen={() => void loadBrowseArt(type)}>
+				<Popover label="Genres" text={genreView.genre ? genreView.genre.name : 'Genres'} variant="button" align="end" width={pickW} onopen={() => void genreView.loadBrowseArt(type)}>
 					{#snippet children(close)}
 						<div class="genre-tiles" role="group" aria-label="Genres">
-							<MusicGenreTiles genres={genreTiles} allHref="" compact all={false} selected={genre ? String(genre.id) : ''} onpick={(k) => pickGenre(k === null ? null : Number(k), close)} />
+							<MusicGenreTiles genres={genreView.genreTiles} allHref="" compact all={false} selected={genreView.genre ? String(genreView.genre.id) : ''} onpick={(k) => genreView.pickGenre(k === null ? null : Number(k), close)} />
 						</div>
 					{/snippet}
 				</Popover>
@@ -755,29 +557,29 @@
 		{/if}
 	</div>
 	<MetadataNotice />
-	{#if musicBannerHold}
+	{#if bannerView.musicBannerHold}
 		<div class="music-banner hold" aria-hidden="true" data-testid="music-banner-hold">
-			<GenreBanner layout={2} name={`Your ${musicBannerName || 'Music'}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to('/explore?type=music')} art={[]} square>
+			<GenreBanner layout={2} name={`Your ${bannerView.musicBannerName || 'Music'}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to('/explore?type=music')} art={[]} square>
 				{#snippet picks()}
 					{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
 				{/snippet}
 			</GenreBanner>
 		</div>
-	{:else if musicBannerShown && musicFav}
+	{:else if bannerView.musicBannerShown && bannerView.musicFav}
 		<div class="music-banner">
-			<GenreBanner layout={2} name={`Your ${musicFav.name}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to(musicFav.href)} art={[musicPicks[0]?.image ?? musicFav.art].filter(Boolean)} square>
+			<GenreBanner layout={2} name={`Your ${bannerView.musicFav.name}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to(bannerView.musicFav.href)} art={[bannerView.musicPicks[0]?.image ?? bannerView.musicFav.art].filter(Boolean)} square>
 				{#snippet picks()}
-					{#if musicPicksPending && musicPicks.length === 0}
+					{#if bannerView.musicPicksPending && bannerView.musicPicks.length === 0}
 						{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
 					{/if}
-					{#each musicPicks as c (c.key)}
+					{#each bannerView.musicPicks as c (c.key)}
 						<PosterCard title={c.name} href={to(musicCardHref(c))} image={c.image} kind={c.kind === 'artist' ? 'artist' : undefined} subtitle={c.artist} shape={c.kind === 'artist' ? 'round' : 'square'} />
 					{/each}
 				{/snippet}
 			</GenreBanner>
 		</div>
 	{/if}
-	{#if type === 'music'}<MusicTrendingRows sheets={artistSheets} bind:genres={musicGenres} bind:ready={musicReady} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
+	{#if type === 'music'}<MusicTrendingRows sheets={artistSheets} bind:genres={genreView.musicGenres} bind:ready={bannerView.musicReady} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
 
 	{#if type === 'music'}
 		<!-- Music: the music rows above only. -->
@@ -786,16 +588,16 @@
 	{:else}
 		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
 		<PageLoader loading={!headLoaded} label="Loading Explore" onretry={load}>
-		{#if genreOn && genreFailed}
-			<LoadError hasData={false} message="Could not load this genre." onretry={() => genre && void loadGenre(genre.id)} {busy} />
-		{:else if genreOn && rows.length === 0}
+		{#if genreView.genreOn && genreView.genreFailed}
+			<LoadError hasData={false} message="Could not load this genre." onretry={() => genreView.genre && void genreView.loadGenre(genreView.genre.id)} {busy} />
+		{:else if genreView.genreOn && rows.length === 0}
 			<div class="loading" aria-busy="true" aria-label="Loading Explore" data-testid="explore-skeleton">
 				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
 				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
 				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="180px" />
 			</div>
 		{:else if rows.length === 0}
-			<TopServicesRow {type} {region} {owned} {who} used={usedServices} ask={rowAsk} />
+			<TopServicesRow {type} region={servicesView.region} {owned} {who} used={servicesView.usedServices} ask={rowAsk} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
 			{#if heroCards.length}
@@ -808,18 +610,18 @@
 					{/snippet}
 				</ExploreHero>
 			{/if}
-			{#if bannerOn && favourite}
+			{#if bannerView.bannerOn && bannerView.favourite}
 				<GenreBanner
-					layout={bannerLayout === 2 ? 2 : 1}
-					name={`Your ${favourite.name}`}
+					layout={bannerView.bannerLayout === 2 ? 2 : 1}
+					name={`Your ${bannerView.favourite.name}`}
 					eyebrow="Picked from your library"
-					line={`${favourite.count} in your library so far. ${bannerPicks.length} more you could ask for.`}
-					count={favourite.count}
-					href={to(`/explore?type=${favourite.kind}&genre=${favourite.id}`)}
-					art={bannerPicks.map((c) => c.wide ?? c.image ?? '').filter(Boolean)}
+					line={`${bannerView.favourite.count} in your library so far. ${bannerView.bannerPicks.length} more you could ask for.`}
+					count={bannerView.favourite.count}
+					href={to(`/explore?type=${bannerView.favourite.kind}&genre=${bannerView.favourite.id}`)}
+					art={bannerView.bannerPicks.map((c) => c.wide ?? c.image ?? '').filter(Boolean)}
 				>
 					{#snippet picks()}
-						{#each bannerPicks as c (c.key)}
+						{#each bannerView.bannerPicks as c (c.key)}
 							{@const act = cardAction(c, { manage, ask: mayAsk })}
 							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row="banner" fresh={c.fresh} actionOnHover vtName={undefined}
 								preview={cardTmdb(c) ? { kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined} followTmdb={followsByTmdb(c)}>
@@ -831,10 +633,10 @@
 					{/snippet}
 				</GenreBanner>
 			{/if}
-			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} onopen={stripOpened} />{/if}
+			{#if !genreView.genreOn && stripView.strip.length}<CategoryStrip tiles={stripView.strip} {type} onopen={stripView.stripOpened} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
-					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} ask={rowAsk} />
+					<TopServicesRow {type} region={servicesView.region} genre={genreView.genreOn ? genreView.genre : null} {owned} {who} used={servicesView.usedServices} bind:shown={servicesShown} seeAll={genreView.genreOn ? undefined : to(newHref(type))} ask={rowAsk} />
 					{#if newServices && newCards.length}{@render newServicesRow(newServices, newCards)}{/if}
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
@@ -846,7 +648,7 @@
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
 							<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}
-									growService={c.streaming ? { name: c.streaming.name, logo: services.find((s) => s.id === c.streaming?.service)?.logo } : null}
+									growService={c.streaming ? { name: c.streaming.name, logo: servicesView.services.find((s) => s.id === c.streaming?.service)?.logo } : null}
 									growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType: row.type, rowTitle: row.title, fresh: c.fresh, streaming: c.streaming })}
 									followTmdb={followsByTmdb(c)}>
 								{#snippet growAction()}
@@ -896,7 +698,7 @@
 					</div>
 				{/if}
 			{/each}
-			{#if tailMore && !genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
+			{#if tailMore && !genreView.genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
 		</PageLoader>
 	{/if}

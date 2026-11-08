@@ -170,3 +170,7 @@ export { createSearchArtists } from './search-artists.svelte.ts';
 export { artistCard, inLibrary, movieCard, personCard, showCard } from './search-cards.svelte.ts';
 export type { Card, LibraryAnswer } from './search-cards.svelte.ts';
 export { createSearchEntry } from './search-entry.svelte.ts';
+export { createExploreServices } from './explore-services.svelte.ts';
+export { createExploreBanner } from './explore-banner.svelte.ts';
+export { createExploreStrip } from './explore-strip.svelte.ts';
+export { createExploreGenre } from './explore-genre.svelte.ts';

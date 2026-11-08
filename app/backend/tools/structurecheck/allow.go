@@ -53,7 +53,6 @@ var oversized = map[string]bool{
 	"app/frontend/src/routes/+page.svelte":                   true,
 	"app/frontend/src/routes/calendar/+page.svelte":          true,
 	"app/frontend/src/routes/welcome/+page.svelte":           true,
-	"app/frontend/src/routes/explore/+page.svelte":           true,
 	"app/frontend/src/routes/requests/+page.svelte":          true,
 	"app/frontend/src/routes/library/[id]/+page.svelte":      true,
 	"app/frontend/src/routes/settings/move/+page.svelte":     true,
