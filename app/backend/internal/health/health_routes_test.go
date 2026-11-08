@@ -1,17 +1,13 @@
-package api
+package health
 
 import (
 	"encoding/json"
-	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // route: GET /api/v1/health/checks
@@ -22,7 +18,7 @@ func TestHealthChecksOverHTTP(t *testing.T) {
 	if b := do(t, "GET", srv.URL+"/api/v1/health/checks", "", 200); !strings.Contains(string(b), `"checks":[]`) || !strings.Contains(string(b), `"worst":"ok"`) {
 		t.Fatalf("before a run: %s", b)
 	}
-	exec41(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
+	execSQL(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
 		VALUES ('2026-10-01T00:00:00Z', '{}', '2026-10-01T00:00:00Z', '{}', 'Lab qBittorrent', 'qbittorrent', 'torrent', 'http://qb', 'holyarrs', 1, '[]', 'leave', 'unreachable')`)
 	var got struct {
 		Checks []struct {
@@ -83,10 +79,9 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	// Other tests in this package trip breakers in the process-wide outside
 	// registry; read an empty one so only this fixture's states show.
-	eng := &health.Engine{Store: s, Version: "test", Outside: func() []outbound.State { return nil }}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", States: reg, SafeMode: true, Health: eng}).Handler())
-	t.Cleanup(srv.Close)
-	exec41(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
+	eng := &Engine{Store: s, Version: "test", Outside: func() []outbound.State { return nil }}
+	srv := newRig(t, s, rigOpts{Engine: eng, States: reg, SafeMode: true}).srv
+	execSQL(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
 		VALUES ('2026-10-01T00:00:00Z', '{}', '2026-10-01T00:00:00Z', '{}', 'Lab qBittorrent', 'qbittorrent', 'torrent', 'http://qb', 'holyarrs', 1, '[]', 'leave', 'auth_failed')`)
 	var got struct {
 		SafeMode bool          `json:"safe_mode"`
@@ -110,8 +105,7 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s2.Close() })
-	srv2 := httptest.NewServer(New(Server{Store: s2, Metadata: metadata.Lab(), Version: "test", Health: &health.Engine{Store: s2, Version: "test", Outside: func() []outbound.State { return nil }}}).Handler())
-	t.Cleanup(srv2.Close)
+	srv2 := newRig(t, s2, rigOpts{Engine: &Engine{Store: s2, Version: "test", Outside: func() []outbound.State { return nil }}}).srv
 	if b := do(t, "GET", srv2.URL+"/api/v1/health/states", "", 200); string(b) != `{"safe_mode":false,"states":[]}`+"\n" {
 		t.Fatalf("empty: %s", b)
 	}

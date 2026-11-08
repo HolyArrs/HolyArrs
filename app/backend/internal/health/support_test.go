@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"archive/zip"
@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -92,11 +91,11 @@ func TestSupportBundleRedactsAgain(t *testing.T) {
 		{"x-plex-token: PLEXTOK", "PLEXTOK"},
 		{"refresh_token=RTOK&x=1", "RTOK"},
 	} {
-		if got := health.RedactBundle(c.in); strings.Contains(got, c.gone) {
+		if got := RedactBundle(c.in); strings.Contains(got, c.gone) {
 			t.Errorf("%q -> %q", c.in, got)
 		}
 	}
-	if got := health.RedactBundle("folders: 4 ok\nfix: run chown"); got != "folders: 4 ok\nfix: run chown" {
+	if got := RedactBundle("folders: 4 ok\nfix: run chown"); got != "folders: 4 ok\nfix: run chown" {
 		t.Fatalf("plain text changed: %q", got)
 	}
 }

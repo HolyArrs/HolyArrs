@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"context"
@@ -6,53 +6,23 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 )
-
-func logServer(t *testing.T) (*httptest.Server, *secrets.Vault, *logs.Log) {
-	t.Helper()
-	dir := t.TempDir()
-	s, err := database.Open(dir, database.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = s.Close() })
-	key, _ := secrets.LoadKey(dir, "")
-	v, err := secrets.Open(context.Background(), s, key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	lg, err := logs.Open(filepath.Join(dir, "logs"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = lg.Close() })
-	exec41(t, s, `INSERT INTO library_folders (created_at, created_by, updated_at, updated_by, path, kind, label, health, same_disk_as)
-		VALUES ('t', '{}', 't', '{}', ?, 'movie', 'Movies', 'ok', '[]')`, t.TempDir())
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v, Log: lg, ConfigDir: dir, SavePath: "/downloads"}).Handler())
-	t.Cleanup(srv.Close)
-	return srv, v, lg
-}
 
 // route: GET /api/v1/app/storage
 func TestStoragePaths(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := logServer(t)
 	var got struct {
-		App     []health.PathInfo `json:"app"`
-		Folders []health.PathInfo `json:"library_folders"`
-		Save    string            `json:"save_path"`
+		App     []PathInfo `json:"app"`
+		Folders []PathInfo `json:"library_folders"`
+		Save    string     `json:"save_path"`
 	}
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/app/storage", "", 200), &got); err != nil {
 		t.Fatal(err)
