@@ -112,7 +112,7 @@ func (h *Handlers) tplPreload(b *rowtpl.Bundle, region string) {
 	if b == nil || !musicPreloadOn || !h.musicTplOn() || !h.PartIsOn(parts.Music) {
 		return
 	}
-	if h.musicPre.warm == nil && (h.Library == nil || h.Library.Artwork == nil) {
+	if h.musicPre.warm == nil && (h.lib() == nil || h.lib().Artwork == nil) {
 		return
 	}
 	p := &h.musicPre
@@ -222,7 +222,7 @@ func (h *Handlers) albumHasArt() func(mbid string) bool {
 // localArt reports a picture already in the artwork store (the server's
 // copy, at a card size).
 func (h *Handlers) localArt(k preloadKey) bool {
-	lib := h.Library
+	lib := h.lib()
 	if lib == nil || lib.Artwork == nil {
 		return false
 	}

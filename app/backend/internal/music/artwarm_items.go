@@ -17,7 +17,7 @@ func (h *Handlers) warmArtItems(list []nameKey) {
 	}
 	h.warmPictureRecords(list)
 	h.wantPackages(list)
-	if !h.HasArtWarmDo() && (h.Library == nil || h.Library.Artwork == nil) {
+	if !h.HasArtWarmDo() && (h.lib() == nil || h.lib().Artwork == nil) {
 		return
 	}
 	keys := make([]ArtWarmKey, 0, len(list))

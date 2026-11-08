@@ -240,7 +240,7 @@ func (h *Handlers) keepAhead(ctx context.Context, it aheadItem, now time.Time) {
 // aheadDetails fetches what the item's page reads first: the artist (its
 // full album list lands in the lookup cache) or the album's pressings.
 func (h *Handlers) aheadDetails(ctx context.Context, it aheadItem) error {
-	ar := h.Library.Artists
+	ar := h.lib().Artists
 	switch it.kind {
 	case "artist":
 		_, err := ar.Artist(metadata.QuickArtist(ctx, aheadArtistWait), it.mbid)
@@ -292,7 +292,7 @@ func (h *Handlers) fetchAhead(ctx context.Context, items []aheadItem) {
 	defer hv.run.Unlock()
 	ctx = metadata.Ahead(ctx)
 	details, fails := 0, 0
-	canDetail := h.Library != nil && h.Library.Artists != nil
+	canDetail := h.lib() != nil && h.lib().Artists != nil
 	for _, it := range items {
 		if ctx.Err() != nil {
 			return

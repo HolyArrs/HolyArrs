@@ -37,7 +37,7 @@ func (h *Handlers) musicError(w http.ResponseWriter, err error) { Error(w, err, 
 
 // libraryHandlers serves albums and the music settings.
 func (h *Handlers) libraryHandlers() LibraryHandlers {
-	return LibraryHandlers{Store: h.Store, Library: h.Library, ArtistID: h.artistID, Actor: actor, Fallback: h.LibraryError}
+	return LibraryHandlers{Store: h.Store, Library: h.lib(), ArtistID: h.artistID, Actor: actor, Fallback: h.LibraryError}
 }
 
 // ArtistResult is a looked-up artist (without its albums) with what the
@@ -160,7 +160,7 @@ func (h *Handlers) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		// Members wait behind the scheduled refresh and staff at MusicBrainz.
 		ctx = metadata.MemberLookup(ctx)
 	}
-	found, err := h.Library.LookupArtists(ctx, term)
+	found, err := h.lib().LookupArtists(ctx, term)
 	if errors.Is(err, library.ErrSearchFilling) {
 		// An unseen name: the search keeps running behind and is kept, so
 		// the next ask is answered from the store.
@@ -229,7 +229,7 @@ func (h *Handlers) addArtist(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, addArtistHelp)
 		return
 	}
-	id, jobID, err := h.Library.AddArtist(r.Context(), body.ID, body.ArtistAddOptions, actor(r))
+	id, jobID, err := h.lib().AddArtist(r.Context(), body.ID, body.ArtistAddOptions, actor(r))
 	if err != nil {
 		h.musicError(w, err)
 		return
@@ -280,7 +280,7 @@ func (h *Handlers) setArtist(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, artistHelp)
 		return
 	}
-	t, jobID, err := h.Library.SetArtistChoices(r.Context(), t.ID, body, actor(r))
+	t, jobID, err := h.lib().SetArtistChoices(r.Context(), t.ID, body, actor(r))
 	if err != nil {
 		h.musicError(w, err)
 		return

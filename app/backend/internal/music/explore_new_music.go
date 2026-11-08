@@ -103,8 +103,8 @@ func (h *Handlers) buildMusicNew(ctx context.Context, now time.Time) *musicNewDa
 		}
 	}
 	var src releaseSource
-	if h.Library != nil && h.Library.Artists != nil {
-		src, _ = h.Library.Artists.(releaseSource)
+	if h.lib() != nil && h.lib().Artists != nil {
+		src, _ = h.lib().Artists.(releaseSource)
 	}
 	if src == nil {
 		return d

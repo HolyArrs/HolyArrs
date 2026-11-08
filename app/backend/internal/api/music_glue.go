@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
@@ -26,8 +27,8 @@ func (a *API) mh() *music.Handlers {
 	a.musOnce.Do(func() {
 		h := &music.Handlers{Deps: &a.s.Deps, Services: music.Services{
 			Store: a.s.Store, Packages: a.s.Packages, Queue: a.s.Queue,
-			Library: a.s.Library, Live: a.s.Live, Parts: a.s.Parts, Asks: a.s.Asks, Trailers: a.trailers,
-			ImageBase: a.s.ImageBase, MusicControl: a.s.MusicControl, ArtistVideos: a.s.ArtistVideos,
+			Library: func() *library.Service { return a.s.Library }, Live: a.s.Live, Parts: a.s.Parts, Asks: a.s.Asks, Trailers: a.trailers,
+			ImageBase: func() string { return a.s.ImageBase }, MusicControl: a.s.MusicControl, ArtistVideos: a.s.ArtistVideos,
 			PartIsOn: a.partIsOn, KidMax: a.kidMax, Person: a.person, OpenArtistAsks: a.openArtistAsks,
 			ArtistVideosOn: a.artistVideosOn, MusicFresh: a.musicFresh, ExploreCaching: a.exploreCaching,
 			TitleID: a.titleID, LibraryError: libraryError,

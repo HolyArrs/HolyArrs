@@ -175,10 +175,10 @@ func (h *Handlers) genresOf(ids []string) map[string][]string {
 }
 
 func (h *Handlers) genreProvider() (genreSource, bool) {
-	if h.Library == nil || h.Library.Artists == nil {
+	if h.lib() == nil || h.lib().Artists == nil {
 		return nil, false
 	}
-	g, ok := h.Library.Artists.(genreSource)
+	g, ok := h.lib().Artists.(genreSource)
 	return g, ok
 }
 
@@ -860,7 +860,7 @@ const musicWarmTTL = 10 * time.Minute
 // warmMusicNames fetches the pictures of these names into the artwork cache
 // in the background (albums at 250 and 500, artists at 250), two at a time.
 func (h *Handlers) warmMusicNames(list []nameKey) {
-	if !h.PartIsOn(parts.Music) || h.Library == nil || h.Library.Artwork == nil {
+	if !h.PartIsOn(parts.Music) || h.lib() == nil || h.lib().Artwork == nil {
 		return
 	}
 	c := &h.music

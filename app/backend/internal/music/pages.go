@@ -295,7 +295,7 @@ func (h *Handlers) musicPageOpen(w http.ResponseWriter) bool {
 		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return false
 	}
-	if h.Library == nil || h.Library.Artists == nil {
+	if h.lib() == nil || h.lib().Artists == nil {
 		webserver.Fail(w, http.StatusServiceUnavailable, "no music source is set up")
 		return false
 	}
@@ -306,10 +306,10 @@ func (h *Handlers) musicPageOpen(w http.ResponseWriter) bool {
 // links, fresh a day (misses an hour).
 func (h *Handlers) artistIDs(ctx context.Context, mbid string) metadata.ArtistIDs {
 	mbid = strings.ToLower(mbid)
-	if h.Library == nil {
+	if h.lib() == nil {
 		return metadata.ArtistIDs{}
 	}
-	src, ok := h.Library.Artists.(metadata.ArtistIDSource)
+	src, ok := h.lib().Artists.(metadata.ArtistIDSource)
 	if !ok {
 		return metadata.ArtistIDs{}
 	}
@@ -337,7 +337,7 @@ func (h *Handlers) deezerProfile(ctx context.Context, mbid string, art metadata.
 		})
 		return p
 	}
-	if h.Library == nil || h.Library.ArtistImages == nil {
+	if h.lib() == nil || h.lib().ArtistImages == nil {
 		return metadata.DeezerProfile{}
 	}
 	name := art.Name
@@ -349,7 +349,7 @@ func (h *Handlers) deezerProfile(ctx context.Context, mbid string, art metadata.
 		if name == "" {
 			return metadata.DeezerProfile{}, false, errors.New("no artist name yet")
 		}
-		p, err := h.Library.ArtistImages.ProfileFor(ctx, name, h.artistIDs(ctx, mbid).Deezer, albums)
+		p, err := h.lib().ArtistImages.ProfileFor(ctx, name, h.artistIDs(ctx, mbid).Deezer, albums)
 		return p, err == nil && p.ID != 0, err
 	})
 	return p
@@ -366,11 +366,11 @@ func (h *Handlers) artistBio(ctx context.Context, mbid, name string) *metadata.W
 		})
 		return b
 	}
-	if h.Library == nil || h.Library.ArtistImages == nil || strings.TrimSpace(name) == "" {
+	if h.lib() == nil || h.lib().ArtistImages == nil || strings.TrimSpace(name) == "" {
 		return nil
 	}
 	b, _ := SideGet(h, ctx, "bio", strings.ToLower(name), 24*time.Hour, func(ctx context.Context) (*metadata.WikiSummary, bool, error) {
-		b, err := h.Library.ArtistImages.ArtistBio(ctx, name)
+		b, err := h.lib().ArtistImages.ArtistBio(ctx, name)
 		return b, err == nil && b != nil, err
 	})
 	return b
@@ -398,10 +398,10 @@ func (h *Handlers) deezerAlbum(ctx context.Context, id int64) metadata.DeezerAlb
 		}
 		return metadata.DeezerAlbumInfo{Label: k.Label, Explicit: k.Explicit, Tracks: k.Tracks}
 	}
-	if h.Library == nil || h.Library.ArtistImages == nil {
+	if h.lib() == nil || h.lib().ArtistImages == nil {
 		return metadata.DeezerAlbumInfo{Tracks: map[string]bool{}}
 	}
-	info, _ := h.Library.ArtistImages.AlbumInfo(ctx, id)
+	info, _ := h.lib().ArtistImages.AlbumInfo(ctx, id)
 	return info
 }
 
@@ -595,7 +595,7 @@ func (h *Handlers) similarArtistsWait(ctx context.Context, mbid string, n int, w
 // artwork cache in the background, through the same chain as the other
 // music covers, so "Fans also like" arrives without placeholders.
 func (h *Handlers) prefetchSimilarArt(list []PageArtist) {
-	if len(list) == 0 || !h.PartIsOn(parts.Music) || h.Library == nil || h.Library.Artwork == nil {
+	if len(list) == 0 || !h.PartIsOn(parts.Music) || h.lib() == nil || h.lib().Artwork == nil {
 		return
 	}
 	items := make([]metadata.MusicTrendItem, 0, len(list))
@@ -665,7 +665,7 @@ func (h *Handlers) artistPage(w http.ResponseWriter, r *http.Request) {
 		top = h.artistTopSongs(side, mbid)
 	}()
 	art, err, answered := WaitFlight[metadata.Artist](ctx, PageFlight(h, ctx, "artist:"+mbid, func(ctx context.Context) (metadata.Artist, error) {
-		return h.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), mbid)
+		return h.lib().Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), mbid)
 	}), by)
 	if errors.Is(err, metadata.ErrArtistNotFound) {
 		wg.Wait()
@@ -848,7 +848,7 @@ func firstAlbums(v ArtistPageView) []string {
 // background (the metadata server's one-call answer only), under the same
 // flight an album page joins, so a click finds the list kept or on its way.
 func (h *Handlers) prefetchTracklists(ctx context.Context, ids []string) {
-	if len(ids) == 0 || h.Library == nil || h.Library.Artists == nil {
+	if len(ids) == 0 || h.lib() == nil || h.lib().Artists == nil {
 		return
 	}
 	base := metadata.TracklistOnly(context.WithoutCancel(ctx))
@@ -861,7 +861,7 @@ func (h *Handlers) prefetchTracklists(ctx context.Context, ids []string) {
 			go func() {
 				defer func() { <-sem; wg.Done() }()
 				fl := PageFlight(h, base, "pressings:"+id, func(ctx context.Context) ([]metadata.Pressing, error) {
-					return h.Library.Artists.Pressings(ctx, id)
+					return h.lib().Artists.Pressings(ctx, id)
 				})
 				<-fl.Done()
 			}()
@@ -951,7 +951,7 @@ func (h *Handlers) warmMusicArt(v ArtistPageView) {
 			add(p.Image)
 		}
 	}
-	if len(keys) == 0 || h.Library == nil || h.Library.Artwork == nil {
+	if len(keys) == 0 || h.lib() == nil || h.lib().Artwork == nil {
 		return
 	}
 	go func() {
@@ -1007,7 +1007,7 @@ func (h *Handlers) albumPage(w http.ResponseWriter, r *http.Request) {
 	// looked up (a bare link's artist too). Both go on after the page stopped waiting (kept for the
 	// next ask).
 	psFlight := PageFlight(h, ctx, "pressings:"+mbid, func(ctx context.Context) ([]metadata.Pressing, error) {
-		return h.Library.Artists.Pressings(ctx, mbid)
+		return h.lib().Artists.Pressings(ctx, mbid)
 	})
 	if artist == "" {
 		// A bare album link: find the artist from the album itself.
@@ -1026,9 +1026,9 @@ func (h *Handlers) albumPage(w http.ResponseWriter, r *http.Request) {
 		simDone <- h.similarArtists(ctx, artist, 14)
 	}()
 	art, err, answered := WaitFlight[metadata.Artist](ctx, PageFlight(h, ctx, "album-artist:"+artist+"|"+mbid, func(ctx context.Context) (metadata.Artist, error) {
-		art, err := h.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
+		art, err := h.lib().Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
 		if err == nil && art.Partial && !hasAlbum(art, mbid) {
-			art, err = h.Library.Artists.Artist(metadata.WholeArtist(ctx), artist)
+			art, err = h.lib().Artists.Artist(metadata.WholeArtist(ctx), artist)
 		}
 		return art, err
 	}), by)
@@ -1356,7 +1356,7 @@ func (h *Handlers) albumArtistOf(ctx context.Context, mbid string) string {
 	if metadata.ValidMBID(id) {
 		return id
 	}
-	if f, ok := h.Library.Artists.(metadata.AlbumArtistFinder); ok {
+	if f, ok := h.lib().Artists.(metadata.AlbumArtistFinder); ok {
 		if id, err := f.AlbumArtist(ctx, mbid); err == nil {
 			return id
 		}
@@ -1439,7 +1439,7 @@ func (h *Handlers) artistCore(w http.ResponseWriter, r *http.Request) {
 	}
 	quick, cancel := context.WithTimeout(metadata.QuickArtist(ctx, 0), wait)
 	defer cancel()
-	art, err := h.Library.Artists.Artist(quick, mbid)
+	art, err := h.lib().Artists.Artist(quick, mbid)
 	switch {
 	case errors.Is(err, metadata.ErrArtistNotFound):
 		webserver.Fail(w, http.StatusNotFound, "no artist with that id")
@@ -1562,7 +1562,7 @@ func (h *Handlers) albumCore(w http.ResponseWriter, r *http.Request) {
 	// metadata server adds the kind and date when it answers quickly, and
 	// a lookup past that goes on behind the answer (the next ask joins it).
 	art, err, answered := WaitFlight[metadata.Artist](ctx, PageFlight(h, ctx, "core-artist:"+artist, func(ctx context.Context) (metadata.Artist, error) {
-		return h.Library.Artists.Artist(metadata.QuickArtist(ctx, 0), artist)
+		return h.lib().Artists.Artist(metadata.QuickArtist(ctx, 0), artist)
 	}), time.Now().Add(albumCoreWait))
 	if answered && err == nil {
 		if v.Artist.Name == "" {
@@ -1696,7 +1696,7 @@ func (h *Handlers) warmCredits(list []PageCredit) {
 		items = append(items, metadata.MusicTrendItem{MBID: c.MBID, Name: c.Name, Title: c.Name, Artist: c.ArtistName})
 	}
 	h.rememberMusicNames(names)
-	if !h.PartIsOn(parts.Music) || h.Library == nil || h.Library.Artwork == nil {
+	if !h.PartIsOn(parts.Music) || h.lib() == nil || h.lib().Artwork == nil {
 		return
 	}
 	h.music.prefetching.Add(1)

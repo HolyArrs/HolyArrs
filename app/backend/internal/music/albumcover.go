@@ -22,7 +22,7 @@ func (h *Handlers) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	lib := h.Library
+	lib := h.lib()
 	mbid := strings.ToLower(p.SourceIDs["musicbrainz"])
 	if lib == nil || lib.Artwork == nil {
 		http.NotFound(w, r)

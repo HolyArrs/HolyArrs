@@ -23,15 +23,16 @@ type Services struct {
 	// Packages are the kept artist packages; nil: none.
 	Packages *PackageSync
 	Queue    *jobs.Queue
-	Library  *library.Service
-	Live     *webserver.LiveHub
-	Parts    *parts.Control
-	Asks     *requests.Service
+	// Library and ImageBase are read on each use (tests swap them).
+	Library func() *library.Service
+	Live    *webserver.LiveHub
+	Parts   *parts.Control
+	Asks    *requests.Service
 	// Trailers keeps trailer addresses and the relay the artist videos use.
 	Trailers *metadata.Trailers
 	// ImageBase is the outside picture address; MusicControl reads the
 	// server's music switch; ArtistVideos lists an artist's music videos.
-	ImageBase    string
+	ImageBase    func() string
 	MusicControl func(ctx context.Context) (metadata.Control, error)
 	ArtistVideos func(ctx context.Context, mbid string) ([]metadata.ArtistVideo, error)
 
@@ -91,3 +92,17 @@ type Handlers struct {
 
 // Routes registers the Music routes; empty until they move here.
 func (h *Handlers) Routes(m *http.ServeMux) {}
+
+func (h *Handlers) lib() *library.Service {
+	if h.Library == nil {
+		return nil
+	}
+	return h.Library()
+}
+
+func (h *Handlers) imageBase() string {
+	if h.ImageBase == nil {
+		return ""
+	}
+	return h.ImageBase()
+}

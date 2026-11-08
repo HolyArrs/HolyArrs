@@ -173,8 +173,8 @@ func (h *Handlers) soundtracks() *soundtrackCache {
 func (h *Handlers) soundtracksFor(jobs []soundtrackJob) map[int64][]metadata.Album {
 	out := map[int64][]metadata.Album{}
 	var src soundtrackSource
-	if h.Library != nil && h.Library.Artists != nil {
-		src, _ = h.Library.Artists.(soundtrackSource)
+	if h.lib() != nil && h.lib().Artists != nil {
+		src, _ = h.lib().Artists.(soundtrackSource)
 	}
 	c := h.soundtracks()
 	c.mu.Lock()

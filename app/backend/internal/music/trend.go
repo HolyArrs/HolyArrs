@@ -192,7 +192,7 @@ func (h *Handlers) cachedMusicTrend(ctx context.Context, kind, region string) (m
 // records (one batch call), so the versioned copies the cards ask for are
 // the ones stored.
 func (h *Handlers) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
-	if !h.PartIsOn(parts.Music) || h.Library == nil || h.Library.Artwork == nil {
+	if !h.PartIsOn(parts.Music) || h.lib() == nil || h.lib().Artwork == nil {
 		return
 	}
 	// Nobody waits on a prefetch: marked ahead, never urgent at the server.
@@ -321,7 +321,7 @@ var artQueueSem = make(chan struct{}, artQueueWorkers)
 // few at a time, at most artQueueMax waiting); false when it is already
 // queued, remembered missing, unknown or the queue is full.
 func (h *Handlers) queueMusicArt(kind, mbid, size, v string) bool {
-	if h.Library == nil || h.Library.Artwork == nil || !metadata.ValidMBID(mbid) {
+	if h.lib() == nil || h.lib().Artwork == nil || !metadata.ValidMBID(mbid) {
 		return false
 	}
 	size = ArtSize(kind, size)
@@ -417,7 +417,7 @@ func heroArtistImage(mbid string) string {
 // at version v ("" when not known: the address then answers a copy kept a
 // day). There is no stored 250: it is made here from the 500.
 func (h *Handlers) musicArtSrc(kind, mbid, size, v string) string {
-	if h.ImageBase == "" || !metadata.ValidMBID(mbid) {
+	if h.imageBase() == "" || !metadata.ValidMBID(mbid) {
 		return ""
 	}
 	var file string
@@ -434,7 +434,7 @@ func (h *Handlers) musicArtSrc(kind, mbid, size, v string) string {
 	default:
 		return ""
 	}
-	u := strings.TrimRight(h.ImageBase, "/") + "/" + kind + "/" + mbid + "/" + file
+	u := strings.TrimRight(h.imageBase(), "/") + "/" + kind + "/" + mbid + "/" + file
 	if v != "" {
 		u += "?v=" + v
 	}
@@ -482,7 +482,7 @@ func (h *Handlers) fetchMusicArt(ctx context.Context, kind, mbid, size, v string
 		// Every artist and album a kept package lists is known.
 		known = kind == "album" && h.Packages.HasAlbum(mbid) || kind != "album" && h.Packages.Covers(mbid)
 	}
-	lib := h.Library
+	lib := h.lib()
 	if !known || lib == nil || lib.Artwork == nil || (fetch && missed && time.Since(miss.at) < artMissWait(miss.n)) {
 		return artFile{}
 	}
