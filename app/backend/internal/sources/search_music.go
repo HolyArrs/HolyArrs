@@ -66,9 +66,6 @@ type musicRules struct {
 	extraFiles  int
 }
 
-// AlbumLabel names an album as "artist – album".
-func AlbumLabel(artist, album string) string { return artist + " – " + album }
-
 // HandleAlbum searches Sources for one album and picks a single Release for every track that is looking. With the "choose" param off, it only stores and shows the results. Tracks go back to looking if the search stops or nothing passes.
 func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "part" {

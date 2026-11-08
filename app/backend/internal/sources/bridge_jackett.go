@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -141,12 +140,4 @@ func clipRunes(s string, n int) string {
 		return s
 	}
 	return strings.TrimSpace(string(r[:n-1])) + "…"
-}
-
-// siteWords words a site count for the person.
-func siteWords(n int) string {
-	if n == 1 {
-		return "1 site"
-	}
-	return strconv.Itoa(n) + " sites"
 }
