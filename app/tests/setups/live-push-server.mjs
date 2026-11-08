@@ -8,7 +8,7 @@ import { createReadStream, existsSync, mkdirSync, rmSync, statSync } from 'node:
 import { createServer, request } from 'node:http';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { metadataEnv, startFakes } from '../fakes/fakes.mjs';
+import { metadataEnv, startFakes } from '../fakes/index.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');

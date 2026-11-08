@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { oldKey, oldRadarrPort, oldSeerrPort } from "../fakes/fakes.mjs";
+import { oldKey, oldRadarrPort, oldSeerrPort } from "../fakes/index.mjs";
 import { moviesDir, noSidewaysScroll, owner, signIn } from "../helpers/helpers.ts";
 
 // Move from other apps (6.2.2), in four steps: read a fake old Radarr and

@@ -10,7 +10,7 @@ test.describe.configure({ timeout: 90_000 });
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #35 Change many titles at once: the Library's select bar. Each test ticks
-// the same two movies and one show (fakes.mjs keeps them for this file only),
+// the same two movies and one show (fakes/ keeps them for this file only),
 // first taken out of the Library and added again so every test starts clean.
 
 type Call = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) => Promise<APIResponse>;

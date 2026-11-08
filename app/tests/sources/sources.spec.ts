@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { owner, signIn } from '../helpers/helpers.ts';
-import { indexerKey, indexerPort } from '../fakes/fakes.mjs';
+import { indexerKey, indexerPort } from '../fakes/index.mjs';
 
-// Sources against the fake Torznab Source and rss feed in fakes.mjs.
+// Sources against the fake Torznab Source and rss feed in fakes/.
 test.describe.configure({ mode: 'serial' });
 
 let page: Page;

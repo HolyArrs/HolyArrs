@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { subsPort } from '../fakes/fakes.mjs';
+import { subsPort } from '../fakes/index.mjs';
 import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from '../helpers/helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default

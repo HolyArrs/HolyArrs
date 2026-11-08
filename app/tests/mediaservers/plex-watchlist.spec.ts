@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { plexPort } from '../fakes/fakes.mjs';
+import { plexPort } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
-// Plex watchlist sync (#102), with the fake Plex only (fakes.mjs): the
+// Plex watchlist sync (#102), with the fake Plex only (fakes/): the
 // owner links their Plex account, allows watchlists in Request rules and
 // turns on Movies and Shows in My account. The fake watchlist holds a
 // movie, a show, a movie already in the Library and a song: the movie and
@@ -16,7 +16,7 @@ import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 // nothing new, and the approver sees the member's ask from the watchlist.
 // The card is checked at 390 wide and in dark mode. Cleans up: the asks are
 // taken back or their titles deleted, and both Plex accounts unlinked.
-// Titles only this spec uses (fakes.mjs): Rowan Semaphore, Flint Gazebo,
+// Titles only this spec uses (fakes/): Rowan Semaphore, Flint Gazebo,
 // Nettle Observatory, Larch Ferrymen, Juniper Lantern, Quill Aqueduct.
 test.describe.configure({ mode: 'serial' });
 

@@ -4,7 +4,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
-import { qbitPort } from '../fakes/fakes.mjs';
+import { qbitPort } from '../fakes/index.mjs';
 
 // Album downloads on the Downloads screen and Needs a decision (4.14.2).
 // Runs after musicsearch.spec.ts: the FLAC copy of Tin Lanterns – Harbour
@@ -16,7 +16,7 @@ let page: Page;
 const qbit = `http://127.0.0.1:${qbitPort}`;
 const dl = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'downloads');
 const name = 'Tin Lanterns - Harbour Songs (2019) [FLAC]';
-// The fake indexer's info hash for an album Release name (fakes.mjs).
+// The fake indexer's info hash for an album Release name (fakes/).
 const hashOf = (n: string) => [...n].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 11).toString(16).padStart(8, '0').repeat(5);
 
 async function axe(p: Page, where: string) {

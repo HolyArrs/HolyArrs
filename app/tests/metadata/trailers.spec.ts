@@ -1,8 +1,8 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { fakeYouTube, tmdbPort, videoArtist } from '../fakes/fakes.mjs';
+import { fakeYouTube, tmdbPort, videoArtist } from '../fakes/index.mjs';
 import { owner, signIn } from '../helpers/helpers.ts';
 
-// Trailers from HolyArrs's own reader, against the fake YouTube (fakes.mjs):
+// Trailers from HolyArrs's own reader, against the fake YouTube (fakes/):
 // a page only notes a title, the trailer pass (every few seconds here)
 // looks it up and keeps the address, and the players use what was kept.
 // Lumen Cistern plays; Aster Funicular's first trailer is behind YouTube's

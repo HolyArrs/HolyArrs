@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Locator, type Page } from '@playwright
 import { noSidewaysScroll, owner, signIn, openFromSearch, openSeasonNamed, episodeAction, episodeState, inLibrary } from '../helpers/helpers.ts';
 
 // Searching shows (3.2.2 to 3.2.5) against the fake Torznab Source in
-// fakes.mjs: a show search answers per episode (a 1080p and a 720p web
+// fakes/: a show search answers per episode (a 1080p and a 720p web
 // copy) or per season (a 1080p season pack and each aired episode).
 // Choose a release for a season takes the pack for every episode with one
 // download; an episode's Release turned down is never picked again for it;

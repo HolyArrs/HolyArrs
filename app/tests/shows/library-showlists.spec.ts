@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { owner, signIn, inLibrary } from '../helpers/helpers.ts';
-import { traktKey } from '../fakes/fakes.mjs';
+import { traktKey } from '../fakes/index.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
@@ -11,7 +11,7 @@ test.describe.configure({ timeout: 90_000 });
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp');
 
 // #104 Auto-add shows from lists: an Outside list that adds shows, against
-// the fake TMDB list 104 and the fake Trakt list lab/tv-picks in fakes.mjs.
+// the fake TMDB list 104 and the fake Trakt list lab/tv-picks in fakes/.
 // Each list keeps its own season choice; Never-add shows are skipped; a list
 // with Search when added looks for the new show's episodes. The lists use
 // the 4K Quality rules, so the fake Source's Releases are all turned away and

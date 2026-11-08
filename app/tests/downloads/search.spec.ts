@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn, openAdvanced, openLibraryTab, libraryTool } from '../helpers/helpers.ts';
 
-// Search for movies against the fake Torznab Source in fakes.mjs (added by
+// Search for movies against the fake Torznab Source in fakes/ (added by
 // sources.spec.ts): Choose a release on the Movie page, the Held and
 // Turned down lists, searches on Home, and Settings > Search. Each movie
 // search finds three made-up Releases: 1080p and 720p web copies and a cam

@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeOldLibrary } from '../fakes/fakes.mjs';
+import { makeOldLibrary } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn, titleAction, libraryTool, openAdvanced } from '../helpers/helpers.ts';
 
 // Organise (stage 5.1): import an existing library from the screen, rename

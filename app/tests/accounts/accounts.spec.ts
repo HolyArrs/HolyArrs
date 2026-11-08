@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Dialog, type Locator, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
 import { owner, signIn, signOut } from '../helpers/helpers.ts';
-import { embyUser, jellyfinPort, mediaUser } from '../fakes/fakes.mjs';
+import { embyUser, jellyfinPort, mediaUser } from '../fakes/index.mjs';
 
 test.describe.configure({ mode: 'serial' });
 

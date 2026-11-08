@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
-import { qbitPort } from '../fakes/fakes.mjs';
+import { qbitPort } from '../fakes/index.mjs';
 
 // The Downloads screen and Needs a decision (stage 4.1). Runs after
 // downloaders.spec.ts: Iron Lullaby's 720p copy is downloading at 40% in

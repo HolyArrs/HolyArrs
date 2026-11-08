@@ -5,7 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deezerURL, mbPort, metadataEnv, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from '../fakes/fakes.mjs';
+import { deezerURL, mbPort, metadataEnv, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from '../fakes/index.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');

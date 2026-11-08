@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { discordPort, jellyKey, jellyfinPort } from '../fakes/fakes.mjs';
+import { discordPort, jellyKey, jellyfinPort } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn, openAdvanced } from '../helpers/helpers.ts';
 
 // History, health, the calendar with its phone feed, webhook Alerts and

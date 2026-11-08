@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { noSidewaysScroll, openLibraryTab, owner, signIn, titleAction } from '../helpers/helpers.ts';
-import { plexPort, plexServerToken } from '../fakes/fakes.mjs';
+import { plexPort, plexServerToken } from '../fakes/index.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });

@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearch, openLibraryTab, ensureInLibrary } from '../helpers/helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
-// fakes.mjs. Runs after the other projects, so the owner and the Movies
+// fakes/. Runs after the other projects, so the owner and the Movies
 // folder exist and Driftwood Moon is already in the Library.
 test.describe.configure({ mode: 'serial' });
 

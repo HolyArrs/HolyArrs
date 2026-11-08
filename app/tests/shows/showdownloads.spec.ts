@@ -4,7 +4,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
-import { qbitPort } from '../fakes/fakes.mjs';
+import { qbitPort } from '../fakes/index.mjs';
 
 // Show downloads on the Downloads screen and Needs a decision (4.2.3,
 // 4.2.4). Runs after showsearch.spec.ts: the Moss Parade season pack fills
@@ -16,7 +16,7 @@ let page: Page;
 const qbit = `http://127.0.0.1:${qbitPort}`;
 const dl = join(dirname(fileURLToPath(import.meta.url)), '..', '.tmp', 'downloads');
 
-// The fake indexer's info hash for a Release name (fakes.mjs).
+// The fake indexer's info hash for a Release name (fakes/).
 const hashOf = (name: string) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(16).padStart(8, '0').repeat(5);
 
 async function axe(p: Page, where: string) {

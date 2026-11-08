@@ -3,12 +3,12 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { episodeAction, episodeState, openFromSearch, openSeasonNamed, owner, signIn } from '../helpers/helpers.ts';
-import { animeReleaseHash, qbitPort } from '../fakes/fakes.mjs';
+import { animeReleaseHash, qbitPort } from '../fakes/index.mjs';
 
 // Steps here wait up to 30 s each; under a full chain the default 30 s for the whole test runs out first.
 test.describe.configure({ timeout: 90_000 });
 
-// #32 Anime episode matching. Hoshikage Relay (fakes.mjs) has 12 episodes
+// #32 Anime episode matching. Hoshikage Relay (fakes/) has 12 episodes
 // in season 1 and 2 in season 2; the fake Source names its Releases by
 // running number only ("[Lab Fansub] Hoshikage Relay - 13 [1080p]"). Added
 // with the running-number episode order, running number 13 must be matched

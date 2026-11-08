@@ -3,12 +3,12 @@ import { expect, test, type APIResponse, type Browser, type Page } from '@playwr
 import { mkdirSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discordPort, indexerKey, indexerPort, movieReleaseHash, qbitPort } from '../fakes/fakes.mjs';
+import { discordPort, indexerKey, indexerPort, movieReleaseHash, qbitPort } from '../fakes/index.mjs';
 import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from '../helpers/helpers.ts';
 
 // Requests at phone width (Pixel 7): a member asks for movies, the owner
 // approves and turns down from a phone, a Discord Alert (the fake one in
-// fakes.mjs) names the member, and the weekly limit says when to try again.
+// fakes/) names the member, and the weekly limit says when to try again.
 // Then, each with members of its own and titles only these tests use: two
 // members ask for different seasons of a show and share one ask, an album
 // ask, 4K asks (not in the Library and in it), a failed ask says why (also
@@ -258,7 +258,7 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 // They sit after the tests above, which count the waiting asks.
 
 const slow = { timeout: 45_000 };
-// Wicker Owls in the fake MusicBrainz (fakes.mjs): two albums out and an EP in 2099.
+// Wicker Owls in the fake MusicBrainz (fakes/): two albums out and an EP in 2099.
 const owls = 'a4444444-0000-4000-8000-000000000004';
 
 /** member makes an invite link as the owner and joins with it on a phone. */
@@ -509,7 +509,7 @@ test('a failed ask says why: the member and the approver read the reason', async
 test('an approved ask whose download failed tells the member why', async ({ browser }) => {
 	test.setTimeout(180_000);
 	const call = await api(own);
-	// A Source and a qBittorrent, the fakes in fakes.mjs, unless earlier projects added them; this
+	// A Source and a qBittorrent, the fakes in fakes/, unless earlier projects added them; this
 	// test takes its own away at the end, so the Sources and Downloaders tests start as before.
 	const mine: string[] = [];
 	const { sources } = (await (await call('GET', '/sources')).json()) as { sources: { id: number; url: string }[] };
@@ -664,7 +664,7 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await noSidewaysScroll(dot);
 });
 
-// Quartz Gulls in the fake MusicBrainz (fakes.mjs): only the artist follow test uses it.
+// Quartz Gulls in the fake MusicBrainz (fakes/): only the artist follow test uses it.
 const gulls = 'a6666666-0000-4000-8000-000000000006';
 
 /** musicFolder is a music Library folder's id: music.spec's when it ran first, else one of its own under .tmp. */
