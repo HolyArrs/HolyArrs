@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // route: GET /api/v1/artwork/{name}
@@ -40,7 +39,7 @@ func TestArtworkSmallCopy(t *testing.T) {
 	}
 	q := jobs.New(s, jobs.Options{})
 	lib := &library.Service{Store: s, Queue: q, Artwork: art}
-	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}).Handler())
+	srv := httptest.NewServer(artworkMux(lib.Artwork))
 	defer srv.Close()
 	get := func(path string) (int, int, string) {
 		resp, err := http.Get(srv.URL + path)
