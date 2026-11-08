@@ -42,4 +42,4 @@ It may be held back in the first release. See [Features held back](../../run/upd
 
 ## Does HolyArrs send anything home?
 
-Only what the metadata server needs to answer a lookup. See [Metadata](../../library/metadata.md.
+Only what the metadata server needs to answer a lookup. See [Metadata](../../library/metadata.md#what-your-install-sends).
