@@ -18,7 +18,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/api/exploremusic_v3.go":            true,
 	"app/backend/internal/asks/asks.go":                      true,
 	"app/backend/cmd/holyarrs/main.go":                       true,
-	"app/backend/internal/sources/shows.go":                  true,
 	"app/backend/internal/api/explore_new.go":                true,
 	"app/frontend/src/lib/types.ts":                          true,
 	"app/backend/internal/importer/shows.go":                 true,
