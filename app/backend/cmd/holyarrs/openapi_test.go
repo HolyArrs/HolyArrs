@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ import (
 // server's mux. Every such route must be in openapi.json; that each one is
 // served to at least one test request is checked by each package's
 // TestMain (internal/routehits), not by comments.
-var routePackages = []string{".", "../accounts", "../backups", "../alerts", "../health", "../updates", "../mediaservers", "../metadata", "../sources", "../subtitles", "../ai", "../arrapi", "../migrate", "../movies", "../shows", "../library", "../mediafiles", "../datapack", "../importer", "../setup", "../downloads", "../requests", "../music", "../discover", "../core/webserver"}
+var routePackages = []string{".", "../../internal/api", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
 
 type openapiOp struct {
 	Summary    string         `json:"summary"`
@@ -41,6 +41,7 @@ var updateSpec = flag.Bool("update", false, "rewrite openapi.json from the code 
 // it is described.
 func generateSpec(t *testing.T) []byte {
 	t.Helper()
+	openapiJSON := readSpec(t)
 	dec := json.NewDecoder(bytes.NewReader(openapiJSON))
 	dec.UseNumber()
 	var doc map[string]any
@@ -122,8 +123,9 @@ func generateSpec(t *testing.T) []byte {
 func TestOpenAPIGenerated(t *testing.T) {
 	t.Parallel()
 	got := generateSpec(t)
+	openapiJSON := readSpec(t)
 	if *updateSpec {
-		if err := os.WriteFile("openapi.json", got, 0o644); err != nil {
+		if err := os.WriteFile(specFile, got, 0o644); err != nil {
 			t.Fatal(err)
 		}
 		return
@@ -159,4 +161,16 @@ func TestOpenAPIServed(t *testing.T) {
 	if err := json.Unmarshal(b, &doc); err != nil || doc["paths"] == nil {
 		t.Fatalf("served %s", b[:min(len(b), 200)])
 	}
+}
+
+// specFile is the spec api embeds and serves.
+const specFile = "../../internal/api/openapi.json"
+
+func readSpec(t *testing.T) []byte {
+	t.Helper()
+	b, err := os.ReadFile(specFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }

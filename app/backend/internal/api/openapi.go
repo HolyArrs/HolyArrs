@@ -12,7 +12,7 @@ import (
 // (routes, permissions, scopes, parts) by TestOpenAPIGenerated, which also
 // fails when the committed file and the code disagree.
 //
-//go:generate go test -run TestOpenAPIGenerated -update .
+//go:generate go test -run TestOpenAPIGenerated -update ../../cmd/holyarrs
 //go:embed openapi.json
 var openapiJSON []byte
 
