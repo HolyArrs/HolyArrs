@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func (f *tracklistArtists) Pressings(ctx context.Context, mbid string) ([]metada
 func TestArtistPagePrefetchesFirstTracklists(t *testing.T) {
 	t.Parallel()
 	f := &tracklistArtists{}
-	a := New(Server{Version: "test", Library: &library.Service{Artists: f}})
+	a := newTestAPI(Server{Version: "test", Library: &library.Service{Artists: f}})
 	id := func(i int) string {
 		return "10000000-0000-0000-0000-0000000000" + string(rune('a'+i/16)) + string("0123456789abcdef"[i%16])
 	}

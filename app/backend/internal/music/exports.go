@@ -178,3 +178,7 @@ func (h *Handlers) KnownGenres(mbid string) []string {
 	defer c.mu.Unlock()
 	return c.genres[mbid].genres
 }
+
+// SetPreloadOn turns the music cover preload on or off (tests keep it off
+// unless they ask for it).
+func SetPreloadOn(on bool) { musicPreloadOn = on }

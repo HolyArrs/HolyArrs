@@ -65,11 +65,7 @@ func (p musicProvider) Suggest(ctx context.Context, r *http.Request, q string) [
 	return p.a.suggestMusicServer(ctx, r, q)
 }
 
-func (p musicProvider) WarmNew() {
-	if p.On() {
-		p.a.mh().WarmNew()
-	}
-}
+func (p musicProvider) WarmNew() { p.a.mh().WarmNew() }
 
 func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	return a.mh().TrendArtFile(ctx, kind, mbid, size)

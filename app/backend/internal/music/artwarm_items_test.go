@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -7,21 +7,19 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 func warmID(n int) string { return fmt.Sprintf("00000000-0000-4000-8000-%012d", n) }
 
 func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
-	old := music.ArtWarmGap
-	music.ArtWarmGap = time.Millisecond
-	defer func() { music.ArtWarmGap = old }()
-	a := &API{}
+	old := ArtWarmGap
+	ArtWarmGap = time.Millisecond
+	defer func() { ArtWarmGap = old }()
+	a := newTestAPI(Server{})
 	var mu sync.Mutex
-	seen := map[artWarmKey]int{}
+	seen := map[ArtWarmKey]int{}
 	var cur, peak atomic.Int32
-	a.mh().SetArtWarmDo(func(_ context.Context, k artWarmKey) {
+	a.SetArtWarmDo(func(_ context.Context, k ArtWarmKey) {
 		n := cur.Add(1)
 		for p := peak.Load(); n > p && !peak.CompareAndSwap(p, n); p = peak.Load() {
 		}
@@ -39,7 +37,7 @@ func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
 	a.rememberMusicNames(list[:10]) // listed again while queued or done
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		if a.mh().ArtWarmIdle() {
+		if a.ArtWarmIdle() {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -54,12 +52,12 @@ func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
 			t.Fatalf("%v warmed %d times", k, n)
 		}
 	}
-	if p := peak.Load(); p > music.ArtWarmWorkers || p < 2 {
+	if p := peak.Load(); p > ArtWarmWorkers || p < 2 {
 		t.Fatalf("peak concurrency %d", p)
 	}
 	// A fresh item is not queued again.
 	a.warmArtItems(list[:2])
-	if !a.mh().ArtWarmIdle() {
+	if !a.ArtWarmIdle() {
 		t.Fatal("fresh item queued again")
 	}
 }

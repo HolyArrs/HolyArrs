@@ -8,5 +8,9 @@ func (h *Handlers) MusicOn() bool {
 	return h.PartIsOn(parts.Music) || h.Parts.SafeMode
 }
 
-// WarmNew starts New & Popular's Music lists building in the background.
-func (h *Handlers) WarmNew() { h.warmMusicNew() }
+// WarmNew starts New & Popular's Music lists building in the background (Music on).
+func (h *Handlers) WarmNew() {
+	if h.MusicOn() {
+		h.warmMusicNew()
+	}
+}

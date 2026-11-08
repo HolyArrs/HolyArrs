@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 const (
@@ -49,25 +48,25 @@ func TestMusicPagesUsePackagePictures(t *testing.T) {
 	}
 	defer st.Close()
 	src := &onePackage{}
-	p := &music.PackageSync{Store: st, Source: src}
+	p := &PackageSync{Store: st, Source: src}
 	if _, err := p.SyncOnce(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	a := &API{s: Server{Packages: p}}
+	a := newTestAPI(Server{Packages: p})
 	a.s.MusicPictures = func(context.Context, []string, []string) (metadata.MusicPictures, error) {
 		t.Error("a kept package's pictures must not be asked of the server")
 		return metadata.MusicPictures{}, nil
 	}
-	if v := a.pictureVersion("artist", syncArtist); v != "ph0to" {
+	if v := a.PictureVersion("artist", syncArtist); v != "ph0to" {
 		t.Fatalf("photo version %q", v)
 	}
-	if v := a.pictureVersion("wide", syncArtist); v != "w1de" {
+	if v := a.PictureVersion("wide", syncArtist); v != "w1de" {
 		t.Fatalf("wide version %q", v)
 	}
-	if v := a.pictureVersion("album", syncAlbum); v != "c0ver" {
+	if v := a.PictureVersion("album", syncAlbum); v != "c0ver" {
 		t.Fatalf("cover version %q", v)
 	}
-	got := a.pictureRecords(context.Background(), []string{syncArtist}, []string{syncAlbum}, time.Second)
+	got := a.PictureRecords(context.Background(), []string{syncArtist}, []string{syncAlbum}, time.Second)
 	if got["album|"+syncAlbum].Album.Cover == nil || got["artist|"+syncArtist].Artist.Photo == nil {
 		t.Fatalf("records %+v", got)
 	}

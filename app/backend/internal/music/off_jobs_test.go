@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -41,9 +39,9 @@ func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	var calls atomic.Int32
-	a := New(Server{Store: s, Parts: musicOffControl(t, s), Version: "test",
+	a := newTestAPI(Server{Store: s, Parts: musicOffControl(t, s), Version: "test",
 
-		Deps: music.Deps{MusicTrending: func(context.Context, string, string) (metadata.MusicTrend, error) {
+		Deps: Deps{MusicTrending: func(context.Context, string, string) (metadata.MusicTrend, error) {
 			calls.Add(1)
 			return metadata.MusicTrend{}, nil
 		}, MusicCharts: func(context.Context, string, string, string) (metadata.MusicChart, error) {
@@ -120,19 +118,18 @@ func TestMusicProviderFollowsThePart(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	a := New(Server{Store: s, Parts: musicOffControl(t, s), Version: "test"})
-	mp := a.musicProvider()
-	if mp.On() || mp.Suggest(context.Background(), nil, "salt") != nil {
+	a := newTestAPI(Server{Store: s, Parts: musicOffControl(t, s), Version: "test"})
+	if a.MusicOn() {
 		t.Fatal("the Music provider answers with Music off")
 	}
-	mp.WarmNew()
+	a.WarmNew()
 	if g := musicGoroutines(); g != "" {
 		t.Fatalf("WarmNew started music work with Music off:\n%s", g)
 	}
 	if err := a.s.Parts.Set(context.Background(), parts.Music, true, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if !a.musicProvider().On() {
+	if !a.MusicOn() {
 		t.Fatal("the Music provider stays off with Music on")
 	}
 }

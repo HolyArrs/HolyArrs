@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"net/http/httptest"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestMusicAnswerCache(t *testing.T) {
-	a := &API{}
+	a := newTestAPI(Server{})
 	now := time.Now()
 	k := musicAnswerKey(7, "rock", "global", 21)
 	if k != "7|rock|global|21" {
@@ -53,7 +53,7 @@ func TestMusicTitleChangeClearsDays(t *testing.T) {
 	old := musicDayDebounce
 	musicDayDebounce = 20 * time.Millisecond
 	defer func() { musicDayDebounce = old }()
-	a := &API{}
+	a := newTestAPI(Server{})
 	k1 := musicscore.DayKey{Member: 1, Date: "2026-10-22"}
 	k2 := musicscore.DayKey{Member: 2, Date: "2026-10-22"}
 	a.musicv2.days.Put(k1, 1)

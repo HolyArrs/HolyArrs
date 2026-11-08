@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func fastAhead(t *testing.T) {
 func TestFetchAheadOnceThenRebuildMakesNoFetch(t *testing.T) {
 	fastAhead(t)
 	f := &aheadArtists{}
-	a := New(Server{Version: "test", Library: &library.Service{Artists: f}})
+	a := newTestAPI(Server{Version: "test", Library: &library.Service{Artists: f}})
 	items := aheadOf([][2]string{{"artist", aheadArtistA}, {"album", aheadAlbumB}, {"artist", aheadArtistA}, {"album", "not-an-id"}})
 	if len(items) != 2 {
 		t.Fatalf("items = %v", items)
@@ -83,7 +83,7 @@ func TestFetchAheadFollowsSwitch(t *testing.T) {
 	f := &aheadArtists{}
 	var reads int
 	sw := metadata.Control{Prefetch: "off"}
-	a := New(Server{Version: "test", Library: &library.Service{Artists: f}, MusicControl: func(context.Context) (metadata.Control, error) {
+	a := newTestAPI(Server{Version: "test", Library: &library.Service{Artists: f}, MusicControl: func(context.Context) (metadata.Control, error) {
 		reads++
 		return sw, nil
 	}})
@@ -102,12 +102,12 @@ func TestFetchAheadFollowsSwitch(t *testing.T) {
 }
 
 func TestMusicSwitchOldServerAndStale(t *testing.T) {
-	old := New(Server{Version: "test", MusicControl: func(context.Context) (metadata.Control, error) { return metadata.Control{}, metadata.ErrNotFound }})
+	old := newTestAPI(Server{Version: "test", MusicControl: func(context.Context) (metadata.Control, error) { return metadata.Control{}, metadata.ErrNotFound }})
 	if c := old.musicSwitch(context.Background(), time.Now()); c.Prefetch != "on" {
 		t.Fatalf("an older server without the switch is on: %+v", c)
 	}
 	var fail bool
-	a := New(Server{Version: "test", MusicControl: func(context.Context) (metadata.Control, error) {
+	a := newTestAPI(Server{Version: "test", MusicControl: func(context.Context) (metadata.Control, error) {
 		if fail {
 			return metadata.Control{}, metadata.ErrServiceUnavailable
 		}
@@ -127,7 +127,7 @@ func TestMusicSwitchOldServerAndStale(t *testing.T) {
 func TestFetchAheadBacksOffAndStops(t *testing.T) {
 	fastAhead(t)
 	f := &aheadArtists{err: metadata.ErrServiceBusy}
-	a := New(Server{Version: "test", Library: &library.Service{Artists: f}})
+	a := newTestAPI(Server{Version: "test", Library: &library.Service{Artists: f}})
 	var pairs [][2]string
 	for _, id := range []string{aheadArtistA, "6b11f4ce-a62d-471e-81fc-a69a8278c7da", "7b11f4ce-a62d-471e-81fc-a69a8278c7da", "8b11f4ce-a62d-471e-81fc-a69a8278c7da", "9b11f4ce-a62d-471e-81fc-a69a8278c7da"} {
 		pairs = append(pairs, [2]string{"artist", id})
@@ -172,7 +172,7 @@ func TestMusicPrebuildGapJitter(t *testing.T) {
 func TestQueueAheadNeedsMusicLoop(t *testing.T) {
 	fastAhead(t)
 	f := &aheadArtists{}
-	a := New(Server{Version: "test", Library: &library.Service{Artists: f}})
+	a := newTestAPI(Server{Version: "test", Library: &library.Service{Artists: f}})
 	a.queueAhead(aheadOf([][2]string{{"artist", aheadArtistA}}))
 	time.Sleep(20 * time.Millisecond)
 	if f.calls() != 0 {
