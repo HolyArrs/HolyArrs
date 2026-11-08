@@ -14,8 +14,7 @@
 </script>
 
 <script lang="ts">
-	// A member asks for a movie: one confirm step, so a card or result button
-	// never asks in a single click.
+	// A member asks for a movie in one confirm step, so a card or result button never asks in a single click.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
@@ -31,14 +30,14 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<AskMovie | null>(null);
-	// Follow: put it on my calendar (ticked by default).
+	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
-	// 4K: ask for a 4K copy instead; it is its own ask, approved on its own.
+	// Ask for a 4K copy instead; it is its own ask, approved on its own.
 	let fourK = $state(false);
 	let busy = $state(false);
 	let error = $state('');
 
-	/** open shows the dialog for one movie. */
+	/** Shows the dialog for one movie. */
 	export function open(m: AskMovie) {
 		follow = true;
 		fourK = !!m.fourKOnly;

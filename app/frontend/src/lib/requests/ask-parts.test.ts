@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, songsHead, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptWords, kindOf, type ArtistAlbum } from './ask-parts.ts';
+import { describe, expect, it } from 'vitest';
 
 const al = (mbid: string, name: string, date: string, extra: Partial<ArtistAlbum> = {}): ArtistAlbum => ({ mbid, name, type: 'album', secondary_types: [], release_date: date, shelf: 'albums', image: `/art/${mbid}`, ...extra });
 
@@ -24,7 +24,6 @@ describe('album rows', () => {
 		expect(rows[0].ids).toEqual(['a', 'b', 'c']);
 		expect(rows[0].editions.map((e) => e.year)).toEqual([2013, 2022]);
 		expect(albumCounts(rows)).toBe('2 albums · 1 single or EP · 1 live album');
-		// A live recording without the live mark still counts as live.
 		expect(albumCounts(albumGroups([al('g', 'Live at Lowlands, 2015', '2016'), al('h', 'Night (Live)', '2017')]))).toBe('2 live albums');
 	});
 	it('takes what the music defaults take for a whole-artist ask', () => {

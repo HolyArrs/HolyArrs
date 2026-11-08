@@ -1,11 +1,9 @@
 <script lang="ts">
+	import { outcomeLine, whyWords, type SearchOutcome } from './search-outcome.ts';
 	import { api } from '../core/api.ts';
 	import { to } from '../core/paths.ts';
-	import { outcomeLine, whyWords, type SearchOutcome } from './search-outcome.ts';
 
-	// One line when a Title's newest search found nothing. Owners and admins
-	// see which Sources were paused or failed, each a link to that Source;
-	// everyone else sees "No results yet".
+	// One line when a Title's newest search found nothing. Owners and admins see which Sources were paused or failed, each a link to that Source; everyone else sees "No results yet".
 	let { titleId }: { titleId: number } = $props();
 	let o = $state<SearchOutcome | null>(null);
 

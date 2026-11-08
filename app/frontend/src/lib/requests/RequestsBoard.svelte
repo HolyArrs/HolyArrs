@@ -1,30 +1,25 @@
 <script lang="ts">
-	// The Requests page for approvers. One toolbar the Downloads way: the status tabs as a
-	// pill group on the left, the Filter button (status and type) on the right. Each card is
-	// a small window: a dark card with the title's wide art, the title and its facts
-	// on the art, then a frosted sheet over the art's foot with who asked and the
-	// answers (Approve, Decline). A card opens the full window with that ask
-	// (trailer banner, What to get).
-	import { onDestroy, tick } from 'svelte';
-	import { flip } from 'svelte/animate';
-	import { fade, fly, slide } from 'svelte/transition';
-	import { cubicIn, cubicOut } from 'svelte/easing';
+	// The Requests page for approvers. One toolbar like Downloads: the status tabs as a pill group on the left, the Filter button (status and type) on the right. Each card is a small window: a dark card with the title's wide art and a frosted sheet holding who asked and the answers.
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
-	import KidMark from './KidMark.svelte';
 	import StatusIcon, { statusKey, type StatusKey } from '#lib/ui/StatusIcon.svelte';
+	import KidMark from './KidMark.svelte';
 	import RequestsFilter from './RequestsFilter.svelte';
 	import RequestWindow from './RequestWindow.svelte';
-	import { agoLong, dateTime } from '../core/format.ts';
 	import { askHref, type BoardCtx } from './board.ts';
 	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
-	import { to } from '../core/paths.ts';
-	import { proxied } from '../core/tmdb-image.ts';
 	import { shortDate, whenDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from './ask-words.ts';
 	import { askedFor } from './asked-for.ts';
 	import { watchlistLine } from '../accounts/index.ts';
+	import { onDestroy, tick } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { fade, fly, slide } from 'svelte/transition';
+	import { cubicIn, cubicOut } from 'svelte/easing';
+	import { agoLong, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
+	import { proxied } from '../core/tmdb-image.ts';
 	import type { Ask } from '../core/types.ts';
 
 	let { ctx }: { ctx: BoardCtx } = $props();
@@ -57,9 +52,7 @@
 		done: { title: 'Nothing done yet.', text: 'Ready and declined requests end up here.' }
 	};
 
-	// The status line, with what the page knows: not out yet (from the release and air dates).
-	// Partly in the Library ("1 of 2 ready") needs which asked seasons and albums are in the
-	// Library, which the asks list doesn't carry yet, so it isn't said (Processing instead).
+	// The status line with what the page knows: not out yet (from the release and air dates). Partly in the Library ("1 of 2 ready") needs which asked seasons and albums are in the Library, which the asks list does not carry yet.
 	const firstAir = (a: Ask) => (season: number) => {
 		const eps = ctx.episodes(a.tmdb_id, season);
 		if (!eps) return null;
@@ -77,18 +70,17 @@
 	const lives = $derived(new Map(ctx.viewed.map((a) => [a.id, lifeNow(a)])));
 	const lifeOf = (a: Ask): Life => lives.get(a.id) ?? lifeNow(a);
 
-	// The status row of answered cards. Processing and Failed: a button-shaped capsule that fills in its tone
-	// (the live download share when known, else the stage's place on the line). Done: an icon chip like the who row.
+	// The status row of answered cards. Processing and Failed: a button-shaped capsule that fills in its tone (the live download share when known, else the stage's place on the line). Done: an icon chip like the who row.
 	const stTone = (t: Life['tone']) => (t === 'bad' ? 'bad' : t === 'go' ? 'go' : t === 'ok' ? 'ok' : 'soft');
 	const stKey = (l: Life): StatusKey => (l.stage === 'asked' ? 'pending' : l.stage === 'getting' ? 'processing' : l.stage);
-	/** The status word: "Downloading · 48%" → "Downloading". */
+	/** The status word: "Downloading · 48%" becomes "Downloading". */
 	const stWord = (l: Life) => l.label.split(' · ')[0];
 	/** The live download share, only when the label carries one. */
 	const stPct = (l: Life) => {
 		const m = /(\d+)%$/.exec(l.label);
 		return m ? Number(m[1]) : null;
 	};
-	/** Declined by whom, only when the page knows a display name (an account name alone isn't said). */
+	/** Declined by whom, only when the page knows a display name (an account name alone is not said). */
 	const stDeclinedBy = (a: Ask) => {
 		if (!a.decided_by) return '';
 		const name = ctx.decided(a).replace(/^Declined by\s*/, '').trim();
@@ -105,14 +97,13 @@
 		if (l.stage === 'failed') return (l.reason ?? '').replace(/\.$/, '');
 		return l.label.split(' · ').slice(1).join(' · ');
 	};
-	/** How full the capsule is, 0..1: the live share when known, else the stage's place (failed stops where it failed). */
+	/** How full the capsule is, 0 to 1: the live share when known, else the stage's place (failed stops where it failed). */
 	const stFill = (l: Life) => Math.max(0, Math.min(100, stPct(l) ?? l.pct)) / 100;
 	const stChip = (l: Life) => l.stage === 'ready' || l.stage === 'declined';
 
-	// Filter by status within the tab: the status word without its detail (Downloading · 40% → Downloading).
+	// Filter by status within the tab: the status word without its detail.
 	const statusOf = (a: Ask) => lifeOf(a).label.split(' · ')[0];
-	// The picked status belongs to one tab: it clears when the tab changes by any path,
-	// and when it no longer exists in that tab.
+	// The picked status belongs to one tab: it clears when the tab changes by any path, and when it no longer exists in that tab.
 	let statusPick = $state<{ tab: ApproverTab | ''; word: string }>({ tab: '', word: '' });
 	/** The statuses in one tab, in the page's order (Processing: failed first). */
 	const FLOW = ['Waiting', 'Upcoming', 'Searching', 'Downloading', 'Importing', 'Processing', 'Ready'];
@@ -128,8 +119,7 @@
 		const rank = (x: { word: string; tone: Life['tone'] }) => (x.tone === 'bad' ? 0 : x.tone === 'off' ? 100 : FLOW.indexOf(x.word) + 1 || 50);
 		return [...n].map(([word, x]) => ({ word, ...x })).sort((x, y) => rank(x) - rank(y));
 	};
-	// Kept even when a Type pick leaves no match: the empty state says so and offers Show all,
-	// so the user's filter never changes by itself.
+	// Kept even when a Type pick leaves no match: the empty state says so and offers Show all, so the user's filter never changes by itself.
 	const status = $derived(statusPick.word && statusPick.tab === ctx.approverTab ? statusPick.word : '');
 	function showAll() {
 		statusPick = { tab: '', word: '' };
@@ -176,8 +166,7 @@
 	// Approving shows its answer on the card for a beat, then the card leaves (Undo stays in the toast).
 	let approving = $state(new Set<number>());
 	const beats = new Map<ReturnType<typeof setTimeout>, Ask>();
-	// Leaving mid-beat still approves: hand the ask on now, and the page's own
-	// leave step sends it (a child is torn down before its page).
+	// Leaving mid-beat still approves: hand the ask on now, and the page's own leave step sends it (a child is torn down before its page).
 	onDestroy(() => {
 		for (const [t, a] of beats) {
 			clearTimeout(t);
@@ -198,7 +187,7 @@
 				approving = next;
 				return;
 			}
-			// Focus goes on to the next card, so the keyboard doesn't fall back to the page top.
+			// Focus goes on to the next card, so the keyboard does not fall back to the page top.
 			const card = document.querySelector<HTMLElement>(`.bc[data-ask="${a.id}"]`);
 			const after = card?.nextElementSibling?.querySelector<HTMLElement>('.open') ?? null;
 			ctx.approve([a]);
@@ -294,16 +283,16 @@
 		const el = document.querySelector<HTMLElement>(`.bc[data-ask="${r.id}"] .open`);
 		if (el) void show(a, el);
 	});
-	// The ask left the list (filter, tab or a refresh): don't leave an empty window open.
+	// The ask left the list (filter, tab or a refresh): do not leave an empty window open.
 	$effect(() => {
 		if (openId && !openAsk && win?.open) hide();
 	});
-	// ← and → (or the arrows) move to the ask before or after, without closing the window.
+	// Arrow keys move to the ask before or after, without closing the window.
 	const at = $derived(cardsShown.findIndex((a) => a.id === openId));
 	// "2 of 9: Name", read out when stepping.
 	let said = $state('');
 	function step(by: number) {
-		// The open ask isn't listed (it was just answered): stay put until the window moves on.
+		// The open ask is not listed (it was just answered): stay put until the window moves on.
 		if (at < 0) return;
 		const next = cardsShown[at + by];
 		if (!next) return;
@@ -319,7 +308,7 @@
 		e.preventDefault();
 		step(e.key === 'ArrowRight' ? 1 : -1);
 	}
-	// Esc closes the whole window in one press (with the closing motion).
+	// Esc closes the whole window in one press, with the closing motion.
 	function cancel(e: Event) {
 		e.preventDefault();
 		hide();
@@ -453,10 +442,8 @@
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	/* The toolbar: tabs left, the Filter button right. */
 	.tcap { position: relative; z-index: 6; }
-	/* Status bar: slim pills. Bar 40 = 1 border + 3 inset + 32 pill + 3 + 1; pill radius 9 = bar radius 12 - inset 3.
-	   Only the picked tab is raised; its statuses reveal out from behind it onto the track (clip + width + x + fade). */
+	/* Status bar: slim pills. Bar 40 = 1 border + 3 inset + 32 pill + 3 + 1; pill radius 9 = bar radius 12 - inset 3. Only the picked tab is raised; its statuses reveal out from behind it onto the track. */
 	.pw { position: relative; display: flex; align-items: center; flex: none; height: 32px; }
 	.pw .tab { height: 32px; }
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
@@ -465,7 +452,6 @@
 	/* Phones: the tab track grows so each tab's hit area (::after, inset -6px 0) reaches 44px. */
 	@media (max-width: 767px) and (pointer: coarse) { .toolbar .tabs { height: 46px; padding-block: 6px; border-radius: 15px; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
-	/* One row that never wraps: tabs left, the status control and the type filter right. */
 	.toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; }
 	.toolbar .tcap { flex: 0 1 auto; min-width: 0; }
 	.toolbar .tabs { max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
@@ -485,7 +471,6 @@
 	.tab .fail-dot { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
 	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
 	.approve-all:hover { background: var(--surface-2); }
-	/* Reports: reported problems, a toolbar button like Filter with a red count when open. */
 	.rp-btn { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; text-decoration: none; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.rp-btn:hover { background: var(--surface-2); }
 	.rp-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -500,9 +485,6 @@
 	.calm-all { margin-top: 8px; min-height: 36px; padding: 0 16px; border: 0; border-radius: var(--r-pill, 999px); background: var(--surface-2); color: var(--text); box-shadow: 0 0 0 1px var(--line); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	@media (pointer: coarse) { .calm-all { min-height: 44px; } }
 
-	/* Window cards: a dark card (in both themes, it is led by the art), the title's wide art
-	   with the title and its facts on it, then a frosted sheet over the art's foot holding
-	   who asked and the answers. The life-cycle line runs along the bottom edge. */
 	.cards { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	/* The card takes the sheet's own colour (dark in dark mode, pale in light), so no band shows under the sheet. */
 	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: box-shadow 380ms cubic-bezier(0.4, 0, 0.2, 1); }
@@ -573,7 +555,6 @@
 	.calm-ic { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: var(--surface-2); color: var(--text); }
 	.calm h2 { color: var(--text); font: var(--t-title3); }
 
-	/* The window: one ask on the Stage. */
 	.win { width: min(1180px, calc(100vw - 48px)); max-width: none; height: min(760px, calc(100dvh - 48px)); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 24px; background: #0b0b0c; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 50px 120px -30px rgb(0 0 0 / 0.85); }
 	.win[open] { animation: win-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 	.win::backdrop { background: rgb(0 0 0 / 0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade-in 300ms var(--ease-out) both; }
@@ -590,7 +571,6 @@
 	/* One close at a time: while the sheet is up, its own header closes it. */
 	.win:has(:global(.frame.choosing)) .close { display: none; }
 	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-	/* Touch screens: every control gets a full finger-sized target, at any width. */
 	@media (pointer: coarse) { .nav, .close { width: 44px; height: 44px; } .b { height: 44px; } }
 	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.85); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
@@ -598,7 +578,6 @@
 	.win[open]:global(.win-out)::backdrop { animation: fade-out 320ms var(--ease-out) both; }
 	@keyframes win-out { to { opacity: 0; transform: translateY(10px) scale(0.96); } }
 	@keyframes fade-out { to { opacity: 0; } }
-	/* Phones: the tabs swipe, the filter fills the width, two cards per row, the window fills the screen. */
 	@media (max-width: 767px) {
 		.desktop { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
 		.toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -606,7 +585,6 @@
 		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 12px; }
-		/* Approve all and Filter share one row, equal halves, so the art starts sooner. */
 		.right { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin-left: 0; }
 		.approve-all, .rp-btn { justify-content: center; }
 		/* Three buttons share the phone row: the count is on the Pending tab already. */
@@ -624,7 +602,6 @@
 		.gl-when { font-size: 12px; white-space: normal; text-overflow: clip; }
 		.body { padding: 10px 10px 0; }
 		.who { gap: 7px; font: var(--t-caption); }
-		/* Decline and Approve: equal halves, icons only (each has its full name for screen readers). */
 		.foot { gap: 6px; padding: 10px; }
 		.b { padding: 0 8px; font: var(--t-footnote); font-weight: 600; }
 		.b .bl { display: none; }
@@ -638,11 +615,8 @@
 		.b:active, .approve-all:active { transform: none; }
 	}
 
-	/* The glass panel: smoked glass. Dark: deep smoke with a soft inner highlight. Light: a pale grey-blue smoke,
-	   dark ink. The full-frame art shows around it and, blurred, through it. --text, --text-muted and --bg are
-	   redefined on the panel so the answers and the status read on it. */
+	/* The glass panel redefines --text, --text-muted and --bg so the ink reads on the blurred art. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)), inset 0 14px 22px -16px light-dark(rgb(255 255 255 / 0.6), transparent), 0 18px 34px -14px light-dark(rgb(10 14 30 / 0.32), rgb(0 0 0 / 0.8)); }
-	/* Light: white smoke. Milky and see-through, the art blurred and lifted behind it; dense enough behind the ink to keep it readable without any halo. */
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	@media (prefers-color-scheme: light) {
 		:global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
@@ -651,8 +625,7 @@
 	.b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
 	.b:focus-visible { box-shadow: var(--focus-ring); }
 
-	/* Hover (mouse only; touch screens and reduced motion get none): the art slowly pushes in ~4% over 5s while a soft glint
-	   crosses once, then shimmers. It lives in the art layer, under the glass and the title. Leaving eases back from wherever it is. */
+	/* Hover (mouse only; touch screens and reduced motion get none): the art slowly pushes in about 4% over 5s while a soft glint crosses once. It lives in the art layer, under the glass and the title. */
 	.ban::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.22) 47%, rgb(255 250 235 / 0.34) 50%, rgb(255 255 255 / 0.22) 53%, transparent 65%) no-repeat; background-size: 250% 100%; background-position: 130% 0; transition: opacity 350ms ease-out; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.bc .ban-img:not(.soft) { transition: transform 350ms cubic-bezier(0.25, 0.1, 0.25, 1), opacity 500ms var(--ease-out); }
@@ -661,7 +634,7 @@
 	}
 	@keyframes fx-sweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
 	@keyframes fx-shimmer { from { background-position: -30% 0; opacity: 1; } 50% { opacity: 0.35; } to { background-position: -10% 0; opacity: 0.55; } }
-	/* The status row: fills the same foot as Decline/Approve (40px in 12px padding: 64 desktop, 60 phone), so every tab lines up. */
+	/* The status row fills the same foot as Decline and Approve (40px in 12px padding: 64 desktop, 60 phone), so every tab lines up. */
 	.sheet-b { --st-h: 40px; --st-r: 12px; --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); }
 	.st-bad { --st-c: var(--st-bad); --st-ink: var(--st-bad-ink); }
 	.st-go { --st-c: var(--st-go); --st-ink: var(--st-go-ink); }
@@ -671,7 +644,6 @@
 	.bc.st-row .life { display: none; }
 	.st-i { display: inline-grid; place-items: center; flex: none; }
 	.st-d { min-width: 0; font-weight: 500; }
-	/* Processing and Failed: one button-shaped capsule over the whole row (half, beside Decline, when failed); it is the meter. */
 	.st-cap { grid-column: 1 / -1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; height: var(--st-h); padding: 0 12px; border-radius: var(--st-r); background: light-dark(color-mix(in srgb, var(--st-c) 8%, rgb(255 255 255 / 0.5)), color-mix(in srgb, var(--st-c) 9%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; }
 	.st-cap.st-half { grid-column: 1; }
 	.st-tx { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 6px; min-width: 0; line-height: 1.15; text-align: center; }
@@ -683,12 +655,9 @@
 	.st-cap > .st-i { position: relative; }
 	.st-meter { position: absolute; inset: 0; overflow: hidden; background: light-dark(color-mix(in srgb, var(--st-c) 15%, transparent), color-mix(in srgb, var(--st-c) 30%, transparent)); transform: scaleX(var(--st-fill, 0)); transform-origin: left; transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.st-soft .st-meter { background: light-dark(color-mix(in srgb, var(--st-c) 14%, transparent), color-mix(in srgb, var(--st-c) 22%, transparent)); }
-	/* A soft light passes along the fill while it searches or downloads. */
 	.st-live .st-meter::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent) no-repeat; background-size: 40% 100%; animation: st-shim 2.2s ease-in-out infinite; }
 	@keyframes st-shim { from { background-position: -60% 0; } to { background-position: 160% 0; } }
-	/* Done: an icon chip + word + detail, built like the who row (26px, same gap and type). */
 	.st-chip { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; min-width: 0; height: var(--st-h); }
-	/* 28px tile, 16px duotone glyph; a faint top highlight matches the glass. */
 	.st-sq { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 60%), color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--st-c) 42%, transparent); color: var(--st-ink); }
 	.st-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st-id > b { color: var(--st-ink); font: 700 13.5px/1.3 var(--font-ui); }

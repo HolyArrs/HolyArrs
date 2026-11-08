@@ -1,21 +1,15 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import { episodeWord, hasFile, kindHint, kindIcon, makeReport, noteMax, partWords, reportKinds, type ReportKind, type ReportView } from './reports.ts';
+	import { seasonName } from '#lib/shows/index.ts';
+	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { api, message } from '#lib/core/api.ts';
 	import { to } from '#lib/core/paths.ts';
-	import { seasonName } from '#lib/shows/index.ts';
-	import { episodeWord, hasFile, kindHint, kindIcon, makeReport, noteMax, partWords, reportKinds, type ReportKind, type ReportView } from './reports.ts';
 
-	// Report a problem with a title in the Library: what is wrong, and
-	// for a show the season or episode, for an album the track, and the
-	// Version when there is more than one. Centred on wide screens, a bottom
-	// sheet on phones. The owner and admins see it on /reports. The five
-	// kinds are one row of tiles, each with the picture its report carries
-	// on Reports; the line under them explains the picked one in its own
-	// reserved space, so the form never jumps.
+	// Report a problem with a title in the Library: what is wrong, and for a show the season or episode, for an album the track, and the Version when there is more than one. Centred on wide screens, a bottom sheet on phones.
 	type Part = { id: number; episode?: number; number?: number; disc?: number; name?: string; slots?: { file?: unknown; file_id?: number; state?: string }[] };
 	let {
 		open = $bindable(false),
@@ -207,7 +201,6 @@
 	.rs { display: grid; gap: 14px; min-width: 0; }
 	.rs-kinds { margin: 0; padding: 0; border: 0; min-width: 0; }
 	.rs-kinds legend { margin-bottom: 8px; padding: 0; font: 600 15px/1.2 var(--font-ui); }
-	/* Five equal tiles in one row: picture over name. The picked one fills with ink. */
 	.rs-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 	.rs-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; min-height: 74px; padding: 10px 2px 9px; border-radius: 14px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-muted); font: 600 12px/1.15 var(--font-ui); text-align: center; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 200ms var(--ease-out), color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.rs-tile input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
@@ -227,7 +220,6 @@
 	.rs-field textarea { padding: 10px 12px; resize: vertical; min-height: 76px; }
 	.rs-count { justify-self: end; }
 	.rs-err { margin: 0; color: var(--fail-text, #e5484d); font: 500 14px/1.4 var(--font-ui); }
-	/* Sent: the tick lands first, then what was sent, then what happens next. */
 	.rs-done { display: grid; justify-items: center; gap: 12px; padding: 6px 0 2px; text-align: center; }
 	.rs-done p { margin: 0; max-width: 40ch; font: var(--t-callout); }
 	.rs-ok { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--ok) 85%, transparent); animation: rs-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }

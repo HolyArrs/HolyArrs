@@ -1,31 +1,26 @@
 // Words and small rules for Requests screens.
 
-import type { Ask, AskState } from '../core/types.ts';
 import type { AskLimit, LimitKind } from './types.ts';
+import type { Ask, AskState } from '../core/types.ts';
 
-/** askTone is the chip colour for an ask state. */
+/** The chip colour for an ask state. */
 export function askTone(state: AskState): 'wait' | 'ok' | 'fail' | '' {
 	return ({ asked: 'wait', approved: '', turned_down: 'fail', available: 'ok' } as const)[state] ?? '';
 }
 
-/** names joins people: "ana", "ana and bo", "ana, bo and cy". */
+/** Joins people: "ana", "ana and bo", "ana, bo and cy". */
 export function names(list: string[]): string {
 	if (list.length <= 1) return list[0] ?? '';
 	return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
 }
 
-/** askedBy says who asked: "Asked by ana and bo". */
+/** Who asked: "Asked by ana and bo". */
 export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
 	const list = a.people.length ? a.people.map((p) => p.name) : [a.asked_by.name];
 	return `Asked by ${names(list)}`;
 }
 
-/**
- * alsoDeclined names the others who declined the same title on earlier
- * requests (approvers only get the list): "Bo and Cy declined it before.",
- * or '' when nobody did. Display names only (mine freshest); a sign-in name
- * is never said, those people are counted ("Bo and 1 other declined it before.").
- */
+/** Names the others who declined the same title on earlier requests (approvers only get the list): "Bo and Cy declined it before."; '' when nobody did. Display names only, mine freshest; a sign-in name is never shown. */
 export function alsoDeclined(a: Pick<Ask, 'also_declined'>, me?: { id: number; displayName: string }): string {
 	const list = a.also_declined ?? [];
 	if (!list.length) return '';
@@ -40,7 +35,7 @@ export function alsoDeclined(a: Pick<Ask, 'also_declined'>, me?: { id: number; d
 	return `${names(said)} declined it before.`;
 }
 
-/** waitWords says a wait in words, like the server: "2 days and 3 hours". */
+/** A wait in words, like the server: "2 days and 3 hours". */
 export function waitWords(ms: number): string {
 	if (ms <= 60000) return 'a minute';
 	// Rounded up to the unit shown, never said shorter than it is (as the server does).
@@ -58,16 +53,13 @@ export function waitWords(ms: number): string {
 
 export const limitKinds: LimitKind[] = ['movies', 'shows', 'music'];
 
-/** kindAsks names asks of one kind: "1 movie ask", "3 show asks". */
+/** Names asks of one kind: "1 movie ask", "3 show asks". */
 export function kindAsks(kind: LimitKind, n: number): string {
 	const word = { movies: 'movie', shows: 'show', music: 'music' }[kind];
 	return `${n} ${word} request${n === 1 ? '' : 's'}`;
 }
 
-/**
- * limitLine says how many asks of one kind are left this week, or when to
- * try again; '' when no limit applies.
- */
+/** How many asks of one kind are left this week, or when to try again; '' when no limit applies. */
 export function limitLine(l: AskLimit | null, kind: LimitKind, now = Date.now()): string {
 	if (!l || l.no_limit) return '';
 	const k = l[kind];
@@ -77,7 +69,7 @@ export function limitLine(l: AskLimit | null, kind: LimitKind, now = Date.now())
 	return `You have used your ${kindAsks(kind, k.per_week)} this week. Try again in ${wait}.`;
 }
 
-/** limitLines is limitLine for each of the kinds, leaving out kinds with no limit. */
+/** limitLine for each of the kinds, leaving out kinds with no limit. */
 export function limitLines(l: AskLimit | null, kinds: LimitKind[] = limitKinds, now = Date.now()): { kind: LimitKind; text: string }[] {
 	return kinds.map((kind) => ({ kind, text: limitLine(l, kind, now) })).filter((x) => x.text);
 }
@@ -100,19 +92,19 @@ export const momentWords: Record<string, [string, string]> = {
 	needs_decision: ['Needs a decision', 'To the staff: a download or import needs you.']
 };
 
-/** askMoments go to the people who asked (and the staff for a new ask). */
+/** Go to the people who asked (and the staff for a new ask). */
 export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes', 'new_albums', 'report_made', 'report_fixed'] as const;
-/** libraryMoments go to the staff. */
+/** Go to the staff. */
 export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
 
 export type RequestsView = 'waiting' | 'all' | 'mine';
 
-/** viewCounts counts the asks in each Requests view. */
+/** Counts the asks in each Requests view. */
 export function viewCounts(asks: Pick<Ask, 'state' | 'mine'>[]): Record<RequestsView, number> {
 	return { waiting: asks.filter((a) => a.state === 'asked').length, all: asks.length, mine: asks.filter((a) => a.mine).length };
 }
 
-/** firstView is the first view with items: Waiting, else Everyone's, else Mine. */
+/** The first view with items: Waiting, else Everyone's, else Mine. */
 export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): RequestsView {
 	const n = viewCounts(asks);
 	return n.waiting ? 'waiting' : n.all ? 'all' : 'mine';
@@ -128,7 +120,7 @@ export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'failed', label: 'Failed' }
 ];
 
-/** askTab says which tab an ask sits in. */
+/** Which tab an ask sits in. */
 export function askTab(a: Pick<Ask, 'state' | 'title_id'>): AskTab {
 	if (a.state === 'asked') return 'waiting';
 	if (a.state === 'turned_down') return 'declined';
@@ -136,24 +128,20 @@ export function askTab(a: Pick<Ask, 'state' | 'title_id'>): AskTab {
 	return a.title_id ? 'approved' : 'failed';
 }
 
-/** tabCounts counts the asks in each tab. */
+/** Counts the asks in each tab. */
 export function tabCounts(asks: Pick<Ask, 'state' | 'title_id'>[]): Record<AskTab, number> {
 	const n: Record<AskTab, number> = { waiting: 0, approved: 0, declined: 0, done: 0, failed: 0 };
 	for (const a of asks) n[askTab(a)]++;
 	return n;
 }
 
-/** firstTab is Waiting when anything waits, else the first tab with asks. */
+/** Waiting when anything waits, else the first tab with asks. */
 export function firstTab(asks: Pick<Ask, 'state' | 'title_id'>[]): AskTab {
 	const n = tabCounts(asks);
 	return askTabs.find((t) => n[t.tab] > 0)?.tab ?? 'waiting';
 }
 
-/**
- * The approvers' tabs, simpler than the members' five: Pending waits for an
- * answer, Processing is approved and not in the Library yet (failed ones too),
- * Done is in the Library or declined.
- */
+/** The approvers' tabs, simpler than the members' five: Pending waits for an answer, Processing is approved and not in the Library yet (failed ones too), Done is in the Library or declined. */
 export type ApproverTab = 'pending' | 'processing' | 'done';
 export const approverTabs: { tab: ApproverTab; label: string }[] = [
 	{ tab: 'pending', label: 'Waiting' },
@@ -161,14 +149,14 @@ export const approverTabs: { tab: ApproverTab; label: string }[] = [
 	{ tab: 'done', label: 'Done' }
 ];
 
-/** approverTab says which approver tab an ask sits in. */
+/** Which approver tab an ask sits in. */
 export function approverTab(a: Pick<Ask, 'state'>): ApproverTab {
 	if (a.state === 'asked') return 'pending';
 	if (a.state === 'approved') return 'processing';
 	return 'done';
 }
 
-/** approverCounts counts the asks in each approver tab, and the failed ones among Processing. */
+/** Counts the asks in each approver tab, and the failed ones among Processing. */
 export function approverCounts(asks: Pick<Ask, 'state' | 'title_id'>[]): Record<ApproverTab, number> & { failed: number } {
 	const n = { pending: 0, processing: 0, done: 0, failed: 0 };
 	for (const a of asks) {
@@ -180,10 +168,7 @@ export function approverCounts(asks: Pick<Ask, 'state' | 'title_id'>[]): Record<
 
 const when = (iso?: string) => (iso ? Date.parse(iso) || 0 : 0);
 
-/**
- * approverSort orders one approver tab: Pending newest ask first; Processing
- * failed first, then newest approved; Done newest decision first.
- */
+/** Orders one approver tab: Pending newest ask first; Processing failed first, then newest approved; Done newest decision first. */
 export function approverSort<T extends Pick<Ask, 'state' | 'title_id' | 'asked_at' | 'decided_at' | 'available_at'>>(tab: ApproverTab, list: T[]): T[] {
 	const out = [...list];
 	if (tab === 'pending') return out.sort((x, y) => when(y.asked_at) - when(x.asked_at));

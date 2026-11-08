@@ -1,7 +1,7 @@
 import { api } from '../core/api.ts';
 import { inbox } from '../core/inbox.svelte.ts';
 
-/** markRead marks every message read. */
+/** Marks every message read. */
 export async function markRead(): Promise<void> {
 	await api.post('/messages/read');
 	inbox.unread = 0;

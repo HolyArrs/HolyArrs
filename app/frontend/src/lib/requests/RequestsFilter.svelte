@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { tick } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
-	import { cubicIn, cubicOut } from 'svelte/easing';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import StatusIcon, { statusKey } from '#lib/ui/StatusIcon.svelte';
 	import type { Life } from './lifecycle.ts';
 	import type { BoardCtx } from './board.ts';
+	import { tick } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicIn, cubicOut } from 'svelte/easing';
 
 	// The Filter button of the Requests page: Status for this tab, then Type. On phones it opens as a bottom sheet.
 	let { ctx, types, subs, hasSubs, subsTotal, filterCount, status, toneOf, setStatus, ms, open = $bindable(false), btn = $bindable() }: {
@@ -22,7 +22,6 @@
 		open?: boolean;
 		btn?: HTMLButtonElement;
 	} = $props();
-	// The Filter menu (Status for this tab, then Type). On phones it opens as a bottom sheet.
 	let phone = $state(false);
 	$effect(() => {
 		const mq = window.matchMedia('(max-width: 767px)');
@@ -63,7 +62,7 @@
 		if (!open) return;
 		const out = (e: PointerEvent) => {
 			const t = e.target as Node;
-			// The phone sheet closes on its scrim's own click instead, so the tap can't land on a card below.
+			// The phone sheet closes on its scrim's own click instead, so the tap cannot land on a card below.
 			if (!phone && !sfPop?.contains(t) && !btn?.contains(t)) sfClose(false);
 		};
 		document.addEventListener('pointerdown', out, true);
@@ -114,7 +113,7 @@
 {/if}
 
 <style>
-	/* The Filter button and its menu (Status for this tab, then Type). Tones: failed red, live steps blue, ready green, waiting amber, the rest muted. */
+	/* Tones: failed red, live steps blue, ready green, waiting amber, the rest muted. */
 	.sf-t-fail { --sc: var(--fail, #ff6961); --st: var(--fail-text, var(--fail, #ff6961)); }
 	.sf-t-info { --sc: var(--info, #409cff); --st: var(--info-text, var(--info, #409cff)); }
 	.sf-t-ok { --sc: var(--ok, #30d158); --st: var(--ok-text, var(--ok, #30d158)); }
@@ -142,7 +141,6 @@
 	.sf-mi[aria-checked='true'] .sf-tick { visibility: visible; }
 	.sf-ti { display: grid; place-items: center; color: var(--text-muted); }
 	.sf-c { margin-left: auto; padding-left: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	/* 5 on phones: a bottom sheet above the tab bar. */
 	.sf-scrim { position: fixed; inset: 0; z-index: 96; background: rgb(0 0 0 / 0.45); }
 	.sf-sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 64px) + 14px + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar, 64px) - env(safe-area-inset-bottom, 0px) - 62px); overflow-y: auto; box-sizing: border-box; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface-2); box-shadow: 0 -20px 50px rgb(0 0 0 / 0.45); }
 	.sf-sheet:focus { outline: none; }

@@ -1,17 +1,16 @@
-// Why a Title's newest search came back empty. Owners and admins get the
-// Sources that were paused or failed; everyone else only "No results yet".
+// Why a Title's newest search came back empty. Owners and admins get the Sources that were paused or failed; everyone else only "No results yet".
 import { reasonWords } from '../sources/index.ts';
 
 export interface SkippedSource {
 	id: number;
 	name: string;
-	why: string; // pause reason: rate_limited, down, blocked, login_refused, broken_definition, paused; or bot_check, site_ban
+	why: string; // Pause reason: rate_limited, down, blocked, login_refused, broken_definition, paused; or bot_check, site_ban.
 }
 
 export interface SearchOutcome {
 	empty: boolean;
 	at?: string;
-	sources?: SkippedSource[]; // only for people who manage Settings
+	sources?: SkippedSource[]; // Only for people who manage Settings.
 }
 
 export const MEMBER_LINE = 'No results yet';
@@ -20,7 +19,7 @@ export const MEMBER_LINE = 'No results yet';
 const reasonOf: Record<string, string> = { rate_limited: 'slowed', down: 'down', blocked: 'blocked', login_refused: 'key' };
 const fallback: Record<string, string> = { slowed: 'Slowed down', down: 'Down', blocked: 'Blocked', key: 'Key refused' };
 
-/** whyWords says why one Source gave nothing, in lower case. */
+/** Why one Source gave nothing, in lower case. */
 export function whyWords(why: string): string {
 	const r = reasonOf[why];
 	if (r === 'slowed') return 'was paused (slowed down)';
@@ -32,7 +31,7 @@ export function whyWords(why: string): string {
 	return 'was paused';
 }
 
-/** outcomeLine is the text before the Source links, or '' when nothing to say. */
+/** The text before the Source links, or '' when there is nothing to say. */
 export function outcomeLine(o: SearchOutcome | null | undefined): string {
 	if (!o?.empty) return '';
 	return o.sources?.length ? 'Nothing found:' : MEMBER_LINE;

@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './ask-words.ts';
-import type { AskState } from '../core/types.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
+import { describe, expect, it } from 'vitest';
+import type { AskState } from '../core/types.ts';
 
 describe('requests words', () => {
 	it('joins names', () => {
@@ -29,7 +29,6 @@ describe('requests words', () => {
 		expect(waitWords(90 * min)).toBe('1 hour and 30 minutes');
 		expect(waitWords(26 * 60 * min)).toBe('1 day and 2 hours');
 		expect(waitWords(48 * 60 * min)).toBe('2 days');
-		// Rounded up, never shorter than it is.
 		expect(waitWords(7 * 1440 * min - 1)).toBe('7 days');
 		expect(waitWords(90 * min + 1000)).toBe('1 hour and 31 minutes');
 	});
@@ -45,7 +44,6 @@ describe('requests words', () => {
 		expect(limitLine(lim(k(10, 8), k(1, 0), k(5, 0)), 'shows')).toBe('You have 1 show request left this week (your limit is 1).');
 		expect(limitLine(lim(k(10, 8), k(1, 0), k(5, 0)), 'music')).toBe('You have 5 music requests left this week (your limit is 5).');
 		expect(limitLine(l, 'shows', now)).toBe('You have used your 3 show requests this week. Try again in 2 days and 3 hours.');
-		// 0 is no limit for that kind: no line.
 		expect(limitLine(l, 'music')).toBe('');
 		expect(limitLines(l, undefined, now).map((x) => x.kind)).toEqual(['movies', 'shows']);
 		expect(limitLines(l, ['music'], now)).toEqual([]);

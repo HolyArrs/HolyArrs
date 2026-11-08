@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { MEMBER_LINE, outcomeLine, whyWords } from './search-outcome.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('search outcome', () => {
 	it('tells pause reasons apart', () => {

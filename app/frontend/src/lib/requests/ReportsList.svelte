@@ -1,4 +1,10 @@
 <script lang="ts">
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { factsLine, filterOf, fixReport, kindHint, kindIcon, listReports, noteMax, quickReplies, reopenReport, reportFilters, reportHref, searchBody, sortReports, stateCounts, titleLine, whoName, type ReportFilter, type ReportView } from './reports.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, fly } from 'svelte/transition';
@@ -13,21 +19,9 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { refreshInbox } from '../core/inbox.svelte.ts';
 	import { ago, dateTime } from '#lib/core/format.ts';
-	import Sheet from '#lib/ui/Sheet.svelte';
-	import Button from '#lib/ui/Button.svelte';
-	import Avatar from '#lib/ui/Avatar.svelte';
-	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/ui/Icon.svelte';
 	import type { SearchView } from '#lib/core/types.ts';
-	import { factsLine, filterOf, fixReport, kindHint, kindIcon, listReports, noteMax, quickReplies, reopenReport, reportFilters, reportHref, searchBody, sortReports, stateCounts, titleLine, whoName, type ReportFilter, type ReportView } from './reports.ts';
 
-	// Reports: the Requests page's sibling, in the same language. One toolbar
-	// (the tabs as a pill track, the way back to Requests where Requests has its
-	// Reports button), then window cards: the title's wide art with the problem's
-	// tag, the title and its facts on it, and a smoked-glass panel with who
-	// reported it, their note and the answers. A card opens the report as a short
-	// conversation: their note, then the reply. The owner and admins see every
-	// report and answer it; everyone else sees their own.
+	// Reports, the Requests page's sibling: one toolbar (the tabs as a pill track, the way back to Requests), then window cards with the title's wide art, the problem's tag, the title and its facts, and a glass panel for answering.
 	const manage = $derived(session.can('manage_library'));
 	let reports = $state<ReportView[]>([]);
 	let loaded = $state(false);
@@ -71,9 +65,7 @@
 		return () => (offs.forEach((off) => off()), clearTimeout(searchTimer));
 	});
 
-	// Better copy: the card says Searching while that title's search runs (people who manage the Library
-	// read the searches list), then a toast gives that search's own outcome. Read once on opening, and
-	// again every few seconds only while a search is running.
+	// Better copy: the card says Searching while that title's search runs (people who manage the Library read the searches list), then a toast gives that search's own outcome. Read once on opening, and again every few seconds only while a search runs.
 	let searching = $state(new Set<number>());
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	// The searches started from this page: only those get an outcome toast.
@@ -88,7 +80,7 @@
 			searching = new Set((r.running ?? []).filter((x) => x.title_id && x.kind !== 'feed_check' && (x.state === 'running' || x.state === 'queued')).map((x) => x.title_id as number));
 			recent = r.recent ?? [];
 		} catch {
-			return; // keep the last answer
+			return; // Keep the last answer.
 		}
 		// Every search that ended in this read becomes one toast, however many there are.
 		const ended: NonNullable<ReturnType<typeof searchEnded>>[] = [];
@@ -119,8 +111,7 @@
 		if (job.outcome === 'chosen' || job.outcome === 'held' || job.outcome === 'episodes' || job.outcome === 'album') return { name, kind: 'found' };
 	}
 
-	// The wide art comes from each title (a report carries only its poster); a title that gives none keeps the poster,
-	// blurred for a movie or show (a tall poster) and as it is for an artist (their photo, as on Requests).
+	// The wide art comes from each title (a report carries only its poster). A title that gives none keeps the poster, blurred for a movie or show and as it is for an artist.
 	let wides = $state<Record<number, string>>({});
 	const asked = new Set<number>();
 	$effect(() => {
@@ -379,13 +370,11 @@
 </Sheet>
 
 <style>
-	/* The same language as Requests (RequestsBoard.svelte): its toolbar, its window cards, its glass panel. */
 	.rp { --ez: cubic-bezier(0.32, 0.72, 0, 1); display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-	/* The toolbar: the page's name and its tabs left, the way back to Requests right (where Requests keeps its Reports button). */
 	.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.lead { display: flex; align-items: center; gap: 16px; min-width: 0; }
 	.rp-h { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; white-space: nowrap; }
@@ -407,7 +396,6 @@
 	.back:hover :global(svg) { transform: translateX(-2px); }
 	@media (pointer: coarse) { .tab::after { content: ''; position: absolute; inset: -6px 0; } .back { height: 44px; } }
 
-	/* Window cards: a dark card led by the title's wide art, the problem's tag, the title and its facts on it, then the glass panel. */
 	.cards { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
 	.bc.ghost { height: 318px; background: var(--surface-1); animation: ghost 1.4s ease-in-out calc(var(--i) * 140ms) infinite alternate; }
@@ -427,18 +415,16 @@
 	@keyframes ban-in { from { opacity: 0; } }
 	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
 	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.22), transparent calc(var(--top) * 0.22), rgb(0 0 0 / 0.6) calc(var(--top) * 0.6), rgb(0 0 0 / 0.8) var(--top), rgb(0 0 0 / 0.4)); }
-	/* A fixed report steps back: its art loses some colour. */
 	.answered .ban-img:not(.soft) { filter: saturate(0.6); }
 	.top { flex: none; height: var(--top); display: flex; align-items: flex-end; box-sizing: border-box; padding: 0 14px 10px; }
 	.ban-cap { min-width: 0; display: flex; flex-direction: column; gap: 3px; color: #fff; }
-	/* The problem's tag: a small glass capsule on the art, the first thing read. */
 	.tag { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; height: 24px; margin-bottom: 5px; padding: 0 10px 0 8px; border-radius: 999px; background: rgb(20 20 24 / 0.5); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 0 0 1px rgb(255 255 255 / 0.16); color: #fff; font: 600 12px/1 var(--font-ui); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); }
 	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	/* Clicks pass through the panel to the card's open layer; only its buttons take their own. */
 	.sheet-b, .top { pointer-events: none; }
 	.sheet-b button { pointer-events: auto; }
-	/* The glass panel: smoked glass, the art blurred through it. --text, --text-muted and --bg are redefined on it so the ink reads. */
+	/* The glass panel redefines --text, --text-muted and --bg so the ink reads on the blurred art. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-h: 40px; --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: 0 var(--gap) var(--gap); border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); } }
@@ -449,7 +435,7 @@
 	.gl-n { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text); font: 600 13.5px/1.3 var(--font-ui); }
 	.gl-n > b { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.gl-when { overflow: hidden; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
-	/* Their words: two lines on the card (kept two lines tall, so a row of cards lines up), all of them in the window. */
+	/* Two lines on the card (kept two lines tall so a row of cards lines up), all of it in the window. */
 	.note { margin: 0; min-height: calc(2 * 1.38em); color: var(--text); font: 500 13px/1.38 var(--font-ui); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.note.none, .rw-text.none { color: var(--text-muted); font-style: italic; }
 	.re { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--st-ok-ink); font: 500 12.5px/1.35 var(--font-ui); }
@@ -466,11 +452,9 @@
 	.b.yes { background: var(--text); color: var(--bg); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
 	.b:focus-visible { box-shadow: var(--focus-ring); }
 	.re-b { width: 40px; padding: 0; }
-	/* The status: an icon tile, the word and its detail, built like the who row (as on Requests' Done cards). */
 	.st-wait { --st-c: var(--st-wait); --st-ink: var(--st-wait-ink); }
 	.st-ok { --st-c: var(--st-ok); --st-ink: var(--st-ok-ink); }
 	.st-go { --st-c: var(--st-go); --st-ink: var(--st-go-ink); }
-	/* Searching: a button-shaped capsule where Better copy was, a soft light passing along it (Requests' Processing capsule). */
 	.st-cap { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; height: var(--st-h); padding: 0 12px; border-radius: 12px; background: light-dark(color-mix(in srgb, var(--st-c) 14%, rgb(255 255 255 / 0.5)), color-mix(in srgb, var(--st-c) 22%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; white-space: nowrap; }
 	.st-cap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent) no-repeat; background-size: 40% 100%; animation: st-shim 2.2s ease-in-out infinite; }
 	@keyframes st-shim { from { background-position: -60% 0; } to { background-position: 160% 0; } }
@@ -479,7 +463,6 @@
 	.st-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st-id > b { color: var(--st-ink); font: 700 13.5px/1.3 var(--font-ui); }
 	.st-id > .st-d { overflow: hidden; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
-	/* The Fixed beat: the card says so before it leaves the Open tab. */
 	.done { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--surface-1) 78%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); font: var(--t-headline); }
 	.done-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent); }
 	.calm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 64px 20px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); color: var(--text-muted); text-align: center; }
@@ -487,7 +470,6 @@
 	.calm h2 { margin: 0; color: var(--text); font: var(--t-title3); }
 	.calm p { margin: 0; max-width: 46ch; }
 
-	/* Hover (mouse only): the art slowly pushes in while a soft glint crosses once, as on Requests. */
 	.ban::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.22) 47%, rgb(255 250 235 / 0.34) 50%, rgb(255 255 255 / 0.22) 53%, transparent 65%) no-repeat; background-size: 250% 100%; background-position: 130% 0; transition: opacity 350ms ease-out; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.bc:hover .ban-img:not(.soft) { transform: scale(1.0608); transition: transform 5s cubic-bezier(0.42, 0, 0.3, 1), filter 500ms var(--ease-out); }
@@ -495,7 +477,6 @@
 	}
 	@keyframes fx-sweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
 
-	/* The window: the report as a short conversation. Their note, then the reply. */
 	.rw { display: grid; gap: 14px; min-width: 0; }
 	.rw-art { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: 148px; padding: 14px; border-radius: 16px; background: #17181d; box-shadow: 0 0 0 1px var(--line); }
 	.rw-art.noart { background: radial-gradient(120% 90% at 15% 0%, #3b4263 0%, transparent 60%), radial-gradient(90% 80% at 100% 100%, #583a58 0%, transparent 58%), #17181d; }
@@ -538,7 +519,6 @@
 	.rw-acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 	@media (pointer: coarse) { .b, .sheet-b { --st-h: 44px; } .b { height: 44px; } .re-b { width: 44px; } .rw-q { min-height: 40px; } .rw-go { width: 44px; height: 44px; border-radius: 13px; } }
 
-	/* Phones: the name and the way back share the first row, the tabs fill the second, two cards per row. */
 	@media (max-width: 767px) {
 		.rp { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
 		.toolbar { align-items: flex-start; }
@@ -563,7 +543,7 @@
 		.gl-when { white-space: normal; text-overflow: clip; }
 		.note { font-size: 12.5px; min-height: calc(3 * 1.38em); -webkit-line-clamp: 3; line-clamp: 3; }
 		.foot { gap: 6px; padding: 10px; }
-		/* Better copy and Mark fixed: equal halves, icons only (each has its full name for screen readers), as on Requests. */
+		/* Better copy and Mark fixed: equal halves, icons only (each has its full name for screen readers). */
 		.b { padding: 0 8px; }
 		.b .bl, .st-cap .bl { display: none; }
 		.st-cap { padding: 0 8px; }

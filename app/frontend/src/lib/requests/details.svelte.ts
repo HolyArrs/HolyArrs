@@ -1,17 +1,12 @@
-// Title details (backdrop, story, runtime, rating) for asks shown big on the
-// Requests looks. Asked once per title while the app is open, from the
-// install's own metadata endpoint (the same answer the title page uses).
-// The same answer also gives the seasons and release dates the Inbox
-// summary reads, and a season's episodes are asked once when a pill opens
-// or a recent season may still be airing.
+// Title details (backdrop, story, runtime, rating) for asks shown big on the Requests page. Asked once per title while the app is open, from the install's own metadata endpoint (the same answer the title page uses).
 
-import { api } from '../core/api.ts';
-import { fromMetadata, type TitleDetails } from '../metadata/index.ts';
-import type { Ask } from '../core/types.ts';
 import { detailKey } from './board.ts';
 import { readInfo, type AskInfo, type EpisodeInfo } from './inbox.ts';
 import { musicDefaults, type ArtistAlbum, type MusicKinds } from './ask-parts.ts';
+import { fromMetadata, type TitleDetails } from '../metadata/index.ts';
 import { appPicture, type ArtistCoreData } from '../music/index.ts';
+import { api } from '../core/api.ts';
+import type { Ask } from '../core/types.ts';
 
 const got = $state<Record<string, TitleDetails | null>>({});
 const info = $state<Record<string, AskInfo | null>>({});
@@ -19,19 +14,19 @@ const eps = $state<Record<string, EpisodeInfo[] | null>>({});
 const asked = new Set<string>();
 const askedEps = new Set<string>();
 
-/** askDetails is what is known for an ask: details, null (none, or not yet), undefined (music or no id). */
+/** What is known for an ask: details, null (none, or not yet), undefined (music or no id). */
 export function askDetails(a: Pick<Ask, 'kind' | 'tmdb_id'>): TitleDetails | null | undefined {
 	const k = detailKey(a);
 	return k ? (got[k] ?? null) : undefined;
 }
 
-/** askInfo is the seasons and release dates for an ask's summary (null until known or for music). */
+/** The seasons and release dates for an ask's summary (null until known or for music). */
 export function askInfo(a: Pick<Ask, 'kind' | 'tmdb_id'>): AskInfo | null {
 	const k = detailKey(a);
 	return k ? (info[k] ?? null) : null;
 }
 
-/** wantDetails asks for an ask's details once. */
+/** Asks for an ask's details once. */
 export function wantDetails(a: Pick<Ask, 'kind' | 'tmdb_id'>): void {
 	const k = detailKey(a);
 	if (!k || asked.has(k)) return;
@@ -49,7 +44,7 @@ export function wantDetails(a: Pick<Ask, 'kind' | 'tmdb_id'>): void {
 		});
 }
 
-/** seasonEpisodes is one season's episodes (null until known), asked once. */
+/** One season's episodes (null until known), asked once. */
 export function seasonEpisodes(tmdb: string, season: number): EpisodeInfo[] | null {
 	const k = `${tmdb}:${season}`;
 	if (!askedEps.has(k) && tmdb && season > 0) {
@@ -70,7 +65,7 @@ export interface StoredParts {
 const stored = $state<Record<number, StoredParts | null>>({});
 const askedStored = new Set<number>();
 
-/** storedParts is an ask's stored lists (null until known), asked once from the install; TV and music asks only. */
+/** An ask's stored lists (null until known), asked once from the install; TV and music asks only. */
 export function storedParts(a: Pick<Ask, 'id' | 'kind'> | null | undefined): StoredParts | null {
 	if (!a || (a.kind !== 'show' && a.kind !== 'artist')) return null;
 	if (!askedStored.has(a.id)) {
@@ -91,7 +86,7 @@ export interface AlbumSong {
 	length_ms?: number;
 	recording_id?: string;
 }
-/** songKey is a song's id for ticks: its recording, else disc and number. */
+/** A song's id for ticks: its recording, else disc and number. */
 export const songKey = (t: AlbumSong) => t.recording_id || `${t.disc}-${t.number}`;
 const songs = $state<Record<string, AlbumSong[] | null>>({});
 const askedSongs = new Set<string>();
@@ -108,7 +103,7 @@ function nextSongs() {
 	}
 }
 
-/** albumSongs is an album's songs (null until known), asked once through the album page's answer, at most 3 albums at a time. */
+/** An album's songs (null until known), asked once through the album page's answer, at most 3 albums at a time. */
 export function albumSongs(album: string, artist: string): AlbumSong[] | null {
 	if (album && artist && !askedSongs.has(album)) {
 		askedSongs.add(album);
@@ -145,19 +140,19 @@ const empty: AskArtist = { image: null, backgrounds: [], albums: null };
 let kinds = $state<MusicKinds>(musicDefaults);
 let kindsAsked = false;
 
-/** artistIdOf is an artist ask's MusicBrainz id. */
+/** An artist ask's MusicBrainz id. */
 export function artistIdOf(a: Pick<Ask, 'kind' | 'ref' | 'artist_id'>): string {
 	if (a.kind !== 'artist') return '';
 	return a.artist_id || (a.ref?.startsWith('mbid:') ? a.ref.slice(5) : '');
 }
 
-/** artistPhoto is an artist ask's round photo (the artist's own picture, never an album cover). */
+/** An artist ask's round photo (the artist's own picture, never an album cover). */
 export function artistPhoto(a: Pick<Ask, 'kind' | 'ref' | 'artist_id' | 'poster'>): string | null {
 	const id = artistIdOf(a);
 	return artists[id]?.image ?? (id ? appPicture(`/api/v1/music-trending/art/artist/${id}`) : appPicture(a.poster));
 }
 
-/** askArtist is what is known of an ask's artist (null until asked); asks once, the same answers the artist page uses. */
+/** What is known of an ask's artist (null until asked); asks once, the same answers the artist page uses. */
 export function askArtist(a: Pick<Ask, 'kind' | 'ref' | 'artist_id'>): AskArtist | null {
 	const id = artistIdOf(a);
 	if (!id) return null;
@@ -177,7 +172,7 @@ export function askArtist(a: Pick<Ask, 'kind' | 'ref' | 'artist_id'>): AskArtist
 	return artists[id] ?? empty;
 }
 
-/** musicKinds is the album kinds a whole-artist ask takes (the music add defaults; the built-in ones until known). */
+/** The album kinds a whole-artist ask takes (the music add defaults; the built-in ones until known). */
 export function musicKinds(): MusicKinds {
 	if (!kindsAsked) {
 		kindsAsked = true;

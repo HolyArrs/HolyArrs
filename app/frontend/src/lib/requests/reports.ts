@@ -1,6 +1,4 @@
-// Reported problems: anyone signed in reports a problem with a title
-// in the Library; the owner and admins see every report on /reports and mark
-// it fixed (with an optional reply) or open it again. Members see their own.
+// Reported problems: anyone signed in reports a problem with a title in the Library; the owner and admins see every report on /requests/reports and mark it fixed (with an optional reply) or open it again. Members see their own.
 
 import { api } from '../core/api.ts';
 
@@ -74,22 +72,22 @@ export interface ReportInput {
 	version_id?: number | null;
 }
 
-/** kindLabel names a problem kind; unknown kinds keep their own word. */
+/** Names a problem kind; unknown kinds keep their own word. */
 export function kindLabel(kind: string): string {
 	return reportKinds.find((k) => k.kind === kind)?.label ?? kind;
 }
 
-/** whoName is the name a person chose, else their sign-in name. */
+/** The name a person chose, else their sign-in name. */
 export function whoName(w: ReportWho | undefined): string {
 	return w ? w.display_name || w.name : '';
 }
 
-/** titleLine names the title with its year: "Driftwood Moon (2024)". */
+/** The title with its year: "Driftwood Moon (2024)". */
 export function titleLine(r: Pick<ReportView, 'title_name' | 'year'>): string {
 	return r.year ? `${r.title_name} (${r.year})` : r.title_name;
 }
 
-/** partLine says which part a report is about: "S02E03 · The Mill", "Season 2", "Album name · Track 4", or "" for the whole title. */
+/** Which part a report is about: "S02E03 · The Mill", "Season 2", "Album name · Track 4", or "" for the whole title. */
 export function partLine(r: Pick<ReportView, 'where' | 'item_name' | 'album_name' | 'track'>): string {
 	const where = r.where?.trim() ?? '';
 	const name = r.item_name?.trim() ?? '';
@@ -98,36 +96,36 @@ export function partLine(r: Pick<ReportView, 'where' | 'item_name' | 'album_name
 	return where ? `${where} · ${name}` : name;
 }
 
-/** kindIcon is the picture for a problem kind (the report sheet's tiles, the cards' tag, the window). */
+/** The picture for a problem kind (the report sheet's tiles, the cards' tag, the window). */
 export function kindIcon(kind: string): 'image' | 'sound' | 'subtitle' | 'play' | 'info' {
 	return kind === 'picture' ? 'image' : kind === 'sound' ? 'sound' : kind === 'subtitles' ? 'subtitle' : kind === 'wont_play' ? 'play' : 'info';
 }
 
-/** kindHint says what a problem kind covers, or '' for a kind this app does not know. */
+/** What a problem kind covers, or '' for a kind this app does not know. */
 export function kindHint(kind: string): string {
 	return reportKinds.find((k) => k.kind === kind)?.hint ?? '';
 }
 
-/** partWords is partLine for a card: a Version that came in brackets ("(Main)") reads "Main version". */
+/** partLine for a card: a Version that came in brackets ("(Main)") reads "Main version". */
 export function partWords(r: Pick<ReportView, 'where' | 'item_name' | 'album_name' | 'track'>): string {
 	const part = partLine(r);
 	const m = /^\((.+)\)$/.exec(part);
 	return m ? `${m[1]} version` : part;
 }
 
-/** factsLine is the line under a report's title: what it is, its year and the part: "TV show · 2008 · Season 2". */
+/** The line under a report's title: what it is, its year and the part: "TV show · 2008 · Season 2". */
 export function factsLine(r: Pick<ReportView, 'title_kind' | 'year' | 'where' | 'item_name' | 'album_name' | 'track'>): string {
 	const what = r.title_kind === 'artist' ? 'Music' : r.title_kind === 'show' ? 'TV show' : 'Movie';
 	return [what, r.year, partWords(r)].filter(Boolean).join(' · ');
 }
 
-/** quickReplies are one-tap replies for Mark fixed, the kind's own first. */
+/** One-tap replies for Mark fixed, the kind's own first. */
 export function quickReplies(kind: string): string[] {
 	const own = kind === 'subtitles' ? ['Added new subtitles'] : kind === 'sound' ? ['Got a copy with better sound'] : kind === 'picture' ? ['Got a sharper copy'] : [];
 	return [...own, 'Swapped in a better copy', 'Try again now', "Couldn't find anything wrong"];
 }
 
-/** reportBody is what the server is sent: the note trimmed, parts that were not picked left out. */
+/** What the server is sent: the note trimmed, parts that were not picked left out. */
 export function reportBody(input: ReportInput): Record<string, unknown> {
 	const out: Record<string, unknown> = { title_id: input.title_id, kind: input.kind };
 	const note = (input.note ?? '').trim();
@@ -140,7 +138,7 @@ export function reportBody(input: ReportInput): Record<string, unknown> {
 	return out;
 }
 
-/** listPath asks for one filter's reports; managers can narrow to their own. */
+/** Asks for one filter's reports; managers can narrow to their own. */
 export function listPath(filter: ReportFilter, opts: { titleId?: number; mine?: boolean; limit?: number } = {}): string {
 	const q = new URLSearchParams();
 	if (filter !== 'all') q.set('state', filter);
@@ -151,30 +149,30 @@ export function listPath(filter: ReportFilter, opts: { titleId?: number; mine?: 
 	return s ? `/reports?${s}` : '/reports';
 }
 
-/** filterOf reads ?show= from the address; anything unknown is Open. */
+/** Reads ?show= from the address; anything unknown is Open. */
 export function filterOf(v: string | null | undefined): ReportFilter {
 	return v === 'fixed' || v === 'all' ? v : 'open';
 }
 
-/** stateCounts counts the reports in each filter. */
+/** Counts the reports in each filter. */
 export function stateCounts(reports: Pick<ReportView, 'state'>[]): Record<ReportFilter, number> {
 	const open = reports.filter((r) => r.state === 'open').length;
 	return { open, fixed: reports.length - open, all: reports.length };
 }
 
-/** sortReports puts open reports first, then the newest. */
+/** Puts open reports first, then the newest. */
 export function sortReports<T extends Pick<ReportView, 'state' | 'created_at' | 'id'>>(reports: T[]): T[] {
 	return [...reports].sort((a, b) => (a.state === b.state ? 0 : a.state === 'open' ? -1 : 1) || b.created_at.localeCompare(a.created_at) || b.id - a.id);
 }
 
-/** reportHref is the page a report's title opens on. */
+/** The page a report's title opens on. */
 export function reportHref(r: Pick<ReportView, 'title_id' | 'album_id' | 'title_kind' | 'season'>): string {
 	if (r.album_id) return `/library/${r.title_id}/albums/${r.album_id}`;
 	if (r.title_kind === 'show') return `/library/${r.title_id}?tab=library`;
 	return `/library/${r.title_id}`;
 }
 
-/** searchBody narrows "Find a better copy" to the reported part: a show's season or episode, an artist's album or track (a movie searches all of it). */
+/** Narrows "Find a better copy" to the reported part: a show's season or episode, an artist's album or track (a movie searches all of it). */
 export function searchBody(r: Pick<ReportView, 'title_kind' | 'season' | 'item_id' | 'album_id' | 'version_id'>): Record<string, number> {
 	const out: Record<string, number> = {};
 	if (r.title_kind === 'show') {
@@ -188,13 +186,13 @@ export function searchBody(r: Pick<ReportView, 'title_kind' | 'season' | 'item_i
 	return out;
 }
 
-/** episodeWord is an episode as the sheet's picker shows it: "E03 · The Mill". */
+/** An episode as the sheet's picker shows it: "E03 · The Mill". */
 export function episodeWord(e: { episode: number; name?: string }): string {
 	const n = `E${String(e.episode).padStart(2, '0')}`;
 	return e.name ? `${n} · ${e.name}` : n;
 }
 
-/** hasFile says whether an episode or track has a file in the Library. */
+/** Whether an episode or track has a file in the Library. */
 export function hasFile(x: { slots?: { file?: unknown; file_id?: number; state?: string }[] }): boolean {
 	return (x.slots ?? []).some((s) => !!s.file || !!s.file_id || s.state === 'in_library' || s.state === 'better_wanted');
 }

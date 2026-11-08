@@ -1,10 +1,7 @@
-// What a music or TV ask is made of, for the Requests panel's lists: an
-// artist ask's albums (one row per album, its other editions folded under
-// it, singles and EPs, live albums and compilations counted apart), and a
-// show ask's seasons. The approver can leave some out before approving.
+// What a music or TV ask is made of, for the Requests panel's lists: an artist ask's albums (one row per album, its other editions folded under it, singles and EPs, live albums and compilations counted apart), and a show ask's seasons.
 
-import type { Ask } from '../core/types.ts';
 import type { SeasonInfo } from './inbox.ts';
+import type { Ask } from '../core/types.ts';
 
 /** An album as the artist answer lists it (a MusicBrainz release group). */
 export interface ArtistAlbum {
@@ -45,14 +42,14 @@ export interface AlbumGroup {
 	main: { mbid: string; name: string; year?: number; image: string; part_id?: number };
 	/** Every edition's id, the main one first. */
 	ids: string[];
-	/** The other editions (deluxe, remaster, anniversary…), oldest first. */
+	/** The other editions (deluxe, remaster, anniversary), oldest first. */
 	editions: { mbid: string; name: string; year?: number }[];
 }
 
 // Words that mark an edition of an album rather than a new album.
 const editionWords = /\b(deluxe|remaster(ed)?|anniversary|expanded|edition|version|explicit|clean|bonus|special|super|collector'?s?|reissue|mono|stereo|japan(ese)?|uk|us|international|tour|platinum|complete|legacy|redux|\d{1,2}(st|nd|rd|th))\b/i;
 
-/** baseName is an album's name without an edition tag: "Album (Deluxe Edition)" and "Album - 2011 Remaster" are "album". */
+/** An album's name without an edition tag: "Album (Deluxe Edition)" and "Album - 2011 Remaster" are "album". */
 export function baseName(name: string): string {
 	let s = name.trim();
 	for (;;) {
@@ -72,7 +69,7 @@ const liveName = /^live\s+(at|in|from|on)\b|[([]live[^)\]]*[)\]]/i;
 // Title words that mark a release as not a real album (MusicBrainz sometimes leaves these untyped).
 export const notAlbumName = /\b(demos?|bootlegs?|outtakes?|unreleased|rehearsals?|b-sides|leaked|snippets?|remix(es)?|remixed)\b/i;
 
-/** kindOf sorts an album into a counted kind, as the artist page's shelves do (a live name counts as live). */
+/** Sorts an album into a counted kind, as the artist page's shelves do (a live name counts as live). */
 export function kindOf(al: Pick<ArtistAlbum, 'type' | 'secondary_types' | 'shelf'> & { name?: string }): AlbumKind {
 	if (al.name && liveName.test(al.name) && (al.shelf === 'albums' || al.shelf === 'singles' || !al.shelf)) return 'live';
 	if (al.name && notAlbumName.test(al.name) && (al.shelf === 'albums' || !al.shelf)) return 'other';
@@ -85,7 +82,7 @@ export function kindOf(al: Pick<ArtistAlbum, 'type' | 'secondary_types' | 'shelf
 	return al.type === 'album' ? 'albums' : al.type === 'ep' || al.type === 'single' ? 'singles' : 'other';
 }
 
-/** keptByDefault says whether the whole-artist ask takes this album (the music add defaults). */
+/** Whether the whole-artist ask takes this album (the music add defaults). */
 export function keptByDefault(al: Pick<ArtistAlbum, 'type' | 'secondary_types' | 'upcoming'>, k: MusicKinds = musicDefaults): boolean {
 	if (al.upcoming) return false;
 	if (!k.album_types.includes(al.type)) return false;
@@ -93,11 +90,7 @@ export function keptByDefault(al: Pick<ArtistAlbum, 'type' | 'secondary_types' |
 	return sec.every((s) => k.secondary_types.includes(s));
 }
 
-/**
- * albumGroups folds an artist ask's albums into rows: editions of one album
- * (same name once the edition tag is dropped, same kind) share a row under
- * the oldest plain edition. Rows run by kind, then oldest first.
- */
+/** Folds an artist ask's albums into rows. Editions of one album (same name once the edition tag is dropped, same kind) share a row under the oldest plain edition. Rows run by kind, then oldest first. */
 export function albumGroups(list: (Pick<ArtistAlbum, 'mbid' | 'name' | 'type' | 'secondary_types' | 'release_date' | 'shelf' | 'image'> & { part_id?: number })[]): AlbumGroup[] {
 	const by = new Map<string, (typeof list)[number][]>();
 	for (const al of list) {
@@ -123,7 +116,7 @@ export function albumGroups(list: (Pick<ArtistAlbum, 'mbid' | 'name' | 'type' | 
 	return out.sort((x, y) => kindOrder.indexOf(x.kind) - kindOrder.indexOf(y.kind) || (x.main.year ?? 9999) - (y.main.year ?? 9999) || x.main.name.localeCompare(y.main.name));
 }
 
-/** albumCounts says "12 albums · 8 singles & EPs" over the rows (editions counted once). */
+/** "12 albums · 8 singles & EPs" over the rows (editions counted once). */
 export function albumCounts(groups: Pick<AlbumGroup, 'kind'>[]): string {
 	const n = new Map<AlbumKind, number>();
 	for (const g of groups) n.set(g.kind, (n.get(g.kind) ?? 0) + 1);
@@ -133,11 +126,7 @@ export function albumCounts(groups: Pick<AlbumGroup, 'kind'>[]): string {
 		.join(' · ');
 }
 
-/**
- * askAlbums is what an artist ask is for, as album rows: the albums it
- * names, or (a whole-artist ask) the artist's released albums the music
- * defaults take. Albums the artist answer does not list keep their name.
- */
+/** What an artist ask is for, as album rows: the albums it names, or (a whole-artist ask) the artist's released albums the music defaults take. Albums the artist answer does not list keep their name. */
 export function askAlbums(a: Pick<Ask, 'albums'>, artist: ArtistAlbum[] | null, kinds: MusicKinds = musicDefaults, cover: (mbid: string) => string = () => ''): ArtistAlbum[] {
 	if (a.albums?.length) {
 		return a.albums.map((w) => {
@@ -153,11 +142,11 @@ export interface SeasonRow {
 	number: number;
 	episodes: number;
 	year?: number;
-	/** The single episodes asked for; absent: the whole season. */
+	/** The single episodes asked for; absent means the whole season. */
 	asked?: number[];
 }
 
-/** askSeasons lists the seasons a show ask is for: the ones it names (whole, or with single episodes), or every regular season of a whole-show ask. */
+/** The seasons a show ask is for: the ones it names (whole, or with single episodes), or every regular season of a whole-show ask. */
 export function askSeasons(a: Pick<Ask, 'seasons' | 'future_only'> & Pick<Partial<Ask>, 'episodes'>, seasons: SeasonInfo[]): SeasonRow[] {
 	if (a.future_only) return [];
 	const regular = seasons.filter((s) => s.number > 0);
@@ -178,7 +167,7 @@ export type SeasonTick = 'all' | 'some' | 'none';
 /** One season as the approver sees it: its episodes, the ones asked for, and the ones ticked. */
 export interface SeasonPick {
 	number: number;
-	/** Every episode number of the season (from the list, else 1…count). */
+	/** Every episode number of the season (from the list, else 1 to count). */
 	all: number[];
 	/** The episodes the person asked for. */
 	asked: number[];
@@ -189,7 +178,7 @@ export interface SeasonPick {
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 
-/** seasonPick works out one season's ticks; `ticked` is the approver's own pick (undefined: as asked). */
+/** Works out one season's ticks; `ticked` is the approver's own pick (undefined means as asked). */
 export function seasonPick(row: SeasonRow, list: { number: number }[] | null, ticked?: number[]): SeasonPick {
 	const all = list?.length ? list.map((e) => e.number) : range(row.episodes);
 	const asked = row.asked ? row.asked : all;
@@ -199,7 +188,7 @@ export function seasonPick(row: SeasonRow, list: { number: number }[] | null, ti
 	return { number: row.number, all, asked, ticked: t, tick };
 }
 
-/** askedWords says what the person asked of a season: "all 8 episodes", "5 of 8 episodes". */
+/** What the person asked of a season: "all 8 episodes", "5 of 8 episodes". */
 export function askedWords(p: Pick<SeasonPick, 'all' | 'asked'>): string {
 	const n = p.all.length;
 	if (!n) return p.asked.length ? `${p.asked.length} episode${p.asked.length === 1 ? '' : 's'}` : 'episodes not listed yet';
@@ -207,7 +196,7 @@ export function askedWords(p: Pick<SeasonPick, 'all' | 'asked'>): string {
 	return `${p.asked.length} of ${n} episodes`;
 }
 
-/** picksHead sums the ticks: "All 3 seasons · 16 episodes", "2 of 3 seasons · 18 episodes", "2 seasons + 5 episodes · 21 episodes". */
+/** Sums the ticks: "All 3 seasons · 16 episodes", "2 of 3 seasons · 18 episodes", "2 seasons + 5 episodes · 21 episodes". */
 export function picksHead(picks: SeasonPick[]): string {
 	const whole = picks.filter((p) => p.tick === 'all');
 	const some = picks.filter((p) => p.tick === 'some');
@@ -219,10 +208,10 @@ export function picksHead(picks: SeasonPick[]): string {
 	return whole.length ? `${head} · ${total}` : `${head} from ${some.length === 1 ? `season ${some[0].number}` : `${some.length} seasons`}`;
 }
 
-/** picksChanged says whether the ticks differ from what was asked. */
+/** Whether the ticks differ from what was asked. */
 export const picksChanged = (picks: SeasonPick[]) => picks.some((p) => p.ticked.length !== p.asked.length || p.ticked.some((n) => !p.asked.includes(n)));
 
-/** keptWords says "3 of 4 seasons · 30 episodes" or "11 of 12 albums" after the approver left some out. */
+/** "3 of 4 seasons · 30 episodes" or "11 of 12 albums" after the approver left some out. */
 export function keptWords(kept: number, all: number, noun: string, extra = ''): string {
 	const many = all === 1 ? noun : `${noun}s`;
 	const head = kept === all ? (all === 1 ? `1 ${noun}` : `All ${all} ${many}`) : `${kept} of ${all} ${many}`;
@@ -231,19 +220,19 @@ export function keptWords(kept: number, all: number, noun: string, extra = ''): 
 
 /** What the approver keeps of a music or TV ask before approving. */
 export interface PartsPick {
-	/** Seasons kept (show asks), null when all are. */
+	/** Seasons kept (show asks); null when all are. */
 	seasons: number[] | null;
-	/** Single episodes kept in partly ticked seasons (show asks), null when none. */
+	/** Single episodes kept in partly ticked seasons (show asks); null when none. */
 	episodes?: { season: number; episodes: number[] }[] | null;
-	/** Songs kept in partly ticked albums (recording ids), null when none. */
+	/** Songs kept in partly ticked albums (recording ids); null when none. */
 	songs?: { album: string; recordings: string[] }[] | null;
-	/** Album ids kept, every edition of each kept album (artist asks), null when all are. */
+	/** Album ids kept, every edition of each kept album (artist asks); null when all are. */
 	albums: string[] | null;
 	/** Everything was unticked: nothing to approve. */
 	empty: boolean;
 }
 
-/** songsHead adds the song total to the album counts: "… · 112 songs", "… · 98 of 112 songs" (while lists load: the songs known so far). */
+/** Adds the song total to the album counts: "... · 112 songs", "... · 98 of 112 songs" (while lists load: the songs known so far). */
 export function songsHead(albums: string, rows: { all: number | null; ticked: number }[]): string {
 	const known = rows.filter((r) => r.all !== null && r.all > 0);
 	if (!known.length) return albums;

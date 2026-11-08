@@ -1,10 +1,9 @@
 <script lang="ts">
-	// A member asks for a show: all seasons, the seasons they pick, or the
-	// future seasons only (what airs from now on).
+	// A member asks for a show: all seasons, the seasons they pick, or the future seasons only (what airs from now on).
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { api, message, ApiError } from '../core/api.ts';
 	import { seasonName, seasonWords } from '../shows/index.ts';
+	import { api, message, ApiError } from '../core/api.ts';
 	import type { Ask } from '../core/types.ts';
 	import type { LookupShow } from '../core/types.ts';
 
@@ -18,7 +17,7 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
-	// Follow: put it on my calendar (ticked by default).
+	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
@@ -34,7 +33,7 @@
 
 	const seasons = $derived((picked?.seasons ?? []).map((s) => s.number).sort((a, b) => a - b));
 
-	/** open shows the dialog for one looked-up show. */
+	/** Shows the dialog for one looked-up show. */
 	export function open(s: LookupShow) {
 		follow = true;
 		picked = s;
@@ -191,7 +190,6 @@
 		border: 1px solid var(--line-strong);
 		border-radius: var(--r-btn);
 	}
-	/* Episodes: slim list rows under their season (one thin line between, no boxes). */
 	.row.sub { margin: calc(var(--s-2) * -1) 0 0 var(--s-4); min-height: 36px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
 	.row.sub .nm { font: var(--t-subhead); }
 	.row.sub.on { background: var(--accent-soft); border-color: var(--line); }

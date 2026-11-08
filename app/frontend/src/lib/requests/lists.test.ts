@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { every, listLink, listSeasons, titleKinds } from './lists.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('outside lists', () => {
 	it('links each list to its own site', () => {

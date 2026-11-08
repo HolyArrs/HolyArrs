@@ -1,9 +1,7 @@
-// What an ask is for, in the plain words a request list uses: "Seasons 1–2",
-// "Season 3", "All seasons"; "3 albums", "Currents", "All albums". A movie
-// needs no words beyond its type.
+// What an ask is for, in the plain words a request list uses: "Seasons 1–2", "Season 3", "All seasons"; "3 albums", "Currents", "All albums". A movie needs no words beyond its type.
 import type { Ask } from '../core/types.ts';
 
-/** runs joins numbers into ranges: [1, 2, 4] → "1–2, 4". */
+/** Joins numbers into ranges: [1, 2, 4] becomes "1–2, 4". */
 function runs(ns: number[]): string {
 	const out: string[] = [];
 	for (let i = 0; i < ns.length; i++) {
@@ -15,7 +13,7 @@ function runs(ns: number[]): string {
 	return out.join(', ');
 }
 
-/** askedFor says what an ask is for; `total` adds "All 4 seasons" or "All 9 albums" when known. */
+/** What an ask is for; `total` adds "All 4 seasons" or "All 9 albums" when known. */
 export function askedFor(a: Pick<Ask, 'kind' | 'seasons' | 'albums'>, total: { seasons?: number; albums?: number } = {}): string {
 	if (a.kind === 'show') {
 		const s = [...new Set(a.seasons ?? [])].sort((x, y) => x - y);

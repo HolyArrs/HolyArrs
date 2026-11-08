@@ -1,5 +1,4 @@
-// What an ask carries from the metadata answer (seasons, release dates, language),
-// the audio languages an approver can ask for, and who asked.
+// What an ask carries from the metadata answer (seasons, release dates, language), the audio languages an approver can ask for, and who asked.
 
 import type { Ask } from '../core/types.ts';
 
@@ -24,7 +23,7 @@ export interface AskInfo {
 	originalLanguage?: string;
 }
 
-/** readInfo picks the summary's parts out of a /metadata answer, tolerating missing fields. */
+/** Picks the summary's parts out of a /metadata answer, tolerating missing fields. */
 export function readInfo(raw: Record<string, unknown>): AskInfo {
 	const seasons = Array.isArray(raw.seasons)
 		? (raw.seasons as Record<string, unknown>[])
@@ -41,7 +40,7 @@ export function readInfo(raw: Record<string, unknown>): AskInfo {
 	};
 }
 
-/** runtimeShort says a runtime the compact way: "2h 10m", "48m", "2h". */
+/** A runtime the compact way: "2h 10m", "48m", "2h". */
 export function runtimeShort(min: number | undefined): string {
 	if (!min) return '';
 	const h = Math.floor(min / 60);
@@ -50,7 +49,7 @@ export function runtimeShort(min: number | undefined): string {
 }
 
 const day = (iso: string) => iso.slice(0, 10);
-/** whenDate says when something happened ("Mar 3") in the viewer's own time zone, never later than now. */
+/** When something happened ("Mar 3") in the viewer's own time zone, never later than now. */
 export function whenDate(iso: string, now = new Date()): string {
 	const t = new Date(iso);
 	if (Number.isNaN(t.getTime())) return '';
@@ -60,7 +59,7 @@ export function whenDate(iso: string, now = new Date()): string {
 	return d.toLocaleDateString('en-US', opts);
 }
 
-/** nextWhen says when something comes next, in the viewer's time zone: "tonight at 11:19 PM", "today at 2:00 PM", "tomorrow at 5:19 AM", else "Nov 6". A time already gone reads "soon". */
+/** When something comes next, in the viewer's time zone: "tonight at 11:19 PM", "today at 2:00 PM", "tomorrow at 5:19 AM", else "Nov 6". A time already gone reads "soon". */
 export function nextWhen(iso: string, now = new Date()): string {
 	const t = new Date(iso);
 	if (Number.isNaN(t.getTime())) return '';
@@ -74,7 +73,7 @@ export function nextWhen(iso: string, now = new Date()): string {
 	return t.toLocaleDateString('en-US', opts);
 }
 
-/** shortDate says "Mar 3", or "Mar 3, 2027" outside this year. */
+/** "Mar 3", or "Mar 3, 2027" outside this year. */
 export function shortDate(iso: string, now = new Date()): string {
 	const [y, m, d] = day(iso).split('-').map(Number);
 	if (!y || !m || !d) return '';
@@ -84,7 +83,7 @@ export function shortDate(iso: string, now = new Date()): string {
 	return t.toLocaleDateString('en-US', opts);
 }
 
-/** movieRelease says whether a movie is out: out now, in cinemas only, or not out yet (with the cinema date). */
+/** Whether a movie is out: out now, in cinemas only, or not out yet (with the cinema date). */
 export function movieRelease(info: Pick<AskInfo, 'dates' | 'status'> | null | undefined, now = new Date()): { words: string; notOut: string } {
 	if (!info) return { words: '', notOut: '' };
 	const today = now.toISOString().slice(0, 10);
@@ -115,13 +114,13 @@ export const audioLanguages: { code: string; name: string }[] = [
 	{ code: 'sv', name: 'Swedish' },
 	{ code: 'tr', name: 'Turkish' }
 ];
-/** languageName names a base code ("ko" is Korean); unknown codes read as themselves. */
+/** Names a base code ("ko" is Korean); unknown codes read as themselves. */
 export function languageName(code: string | undefined): string {
 	if (!code) return '';
 	return audioLanguages.find((l) => l.code === code)?.name ?? code;
 }
 
-/** askers lists the people with asks, by name, for the Asked by filter. */
+/** The people with asks, by name, for the Asked by filter. */
 export function askers(asks: Pick<Ask, 'asked_by' | 'people'>[]): { id: number; name: string; n: number }[] {
 	const by = new Map<number, { id: number; name: string; n: number }>();
 	for (const a of asks) {
@@ -133,7 +132,7 @@ export function askers(asks: Pick<Ask, 'asked_by' | 'people'>[]): { id: number; 
 	return [...by.values()].sort((x, y) => x.name.localeCompare(y.name));
 }
 
-/** askedByOne says whether someone is among the people who asked. */
+/** Whether someone is among the people who asked. */
 export function askedByOne(a: Pick<Ask, 'asked_by' | 'people'>, id: number): boolean {
 	return a.asked_by.id === id || a.people.some((p) => p.id === id);
 }

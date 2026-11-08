@@ -41,7 +41,7 @@ export interface AskSettings {
 	plex_watchlists?: boolean;
 }
 
-/** OutsideList is a TMDB or Trakt list whose movies are added on a schedule. */
+/** A TMDB or Trakt list whose movies are added on a schedule. */
 export interface OutsideList {
 	id: number;
 	name: string;
@@ -64,7 +64,7 @@ export interface OutsideList {
 	last_error: string;
 }
 
-/** NeverAddEntry is a title outside lists must never add. */
+/** A title outside lists must never add. */
 export interface NeverAddEntry {
 	id: number;
 	kind: string;

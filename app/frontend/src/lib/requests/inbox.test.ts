@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { askedByOne, askers, movieRelease, nextWhen, readInfo, runtimeShort } from './inbox.ts';
+import { describe, expect, it } from 'vitest';
 
 const now = new Date('2026-10-27T12:00:00Z');
 

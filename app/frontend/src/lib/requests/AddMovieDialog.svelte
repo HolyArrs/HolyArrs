@@ -1,18 +1,15 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import Button from '#lib/ui/Button.svelte';
+	import { MetadataNotice } from '#lib/metadata/index.ts';
+	import { loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults } from '../mediafiles/index.ts';
+	import type { TitleDefaults } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';
 	import { plainReason } from '../core/plain.ts';
-	import { loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults } from '../mediafiles/index.ts';
 	import type { LibraryFolder, LookupMovie, PickRulesView, TitleView } from '../core/types.ts';
-	import type { TitleDefaults } from '../mediafiles/index.ts';
 
-	// Add a movie to the Library: folder, Pick rules, Release gate, Keep up
-	// to date, Search when added and an optional second Version. Used by Search and
-	// the title detail page; open(movie) shows it. It starts from the Movies
-	// and TV defaults; only the Release gate is remembered from the last add.
+	// Adds a movie to the Library: folder, Pick rules, Release gate, Keep up to date, Search when added and an optional second Version. Used by Search and the title detail page; open(movie) shows it. It starts from the Movies and TV defaults.
 	let {
 		folders,
 		rules,
@@ -27,7 +24,7 @@
 
 	let addOpen = $state(false);
 	let picked = $state<LookupMovie | null>(null);
-	// Follow: put it on my calendar (ticked by default).
+	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
 	let folderId = $state(0);
 	let rulesId = $state(0);
@@ -41,7 +38,7 @@
 	let moreFolder = $state(0);
 	let adding = $state(false);
 	let addError = $state('');
-	// The saved defaults, once they are in; the sheet shows a placeholder until then.
+	// The saved defaults once they are in; the sheet shows a placeholder until then.
 	let titleDefaults = $state<TitleDefaults | null>(null);
 	let ready = $state(false);
 

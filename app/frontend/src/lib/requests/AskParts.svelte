@@ -1,17 +1,12 @@
 <script lang="ts">
-	// What a music or TV ask is made of, folded under one line that opens:
-	// an artist ask's albums ("12 albums · 8 singles & EPs", one row per
-	// album with its other editions under a small "3 editions" note), or a
-	// show ask's seasons (each opens to its episodes). While the ask waits,
-	// the approver can untick albums or seasons; `pick` says what is kept
-	// (null: all of it, as asked).
-	import { slide } from 'svelte/transition';
-	import { DUR, easeOut } from '../core/transitions.ts';
+	// What a music or TV ask is made of, folded under one line that opens: an artist ask's albums ("12 albums · 8 singles & EPs", one row per album with its other editions under a small "3 editions" note), or a show ask's seasons and episodes.
 	import Icon from '#lib/ui/Icon.svelte';
-	import { appPicture, coverFor } from '../music/index.ts';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
 	import type { BoardCtx } from './board.ts';
+	import { appPicture, coverFor } from '../music/index.ts';
+	import { slide } from 'svelte/transition';
+	import { DUR, easeOut } from '../core/transitions.ts';
 	import type { Ask } from '../core/types.ts';
 
 	let { ctx, a, editable = false, unfolded = false, layout = 'list', pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: BoardCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Requests Stage). */ unfolded?: boolean; /** Rows that open (list), or two panes that fill their box (split: the Requests sheet). */ layout?: 'list' | 'split'; pick?: PartsPick } = $props();
@@ -67,7 +62,7 @@
 		}
 	});
 
-	// The approver's song ticks, by album row (absent: every song); only albums in the Library have stored songs.
+	// The approver's song ticks, by album row (absent means every song); only albums in the Library have stored songs.
 	let songTicks = $state<Record<string, string[]>>({});
 	let openAlbum = $state('');
 	$effect(() => {
@@ -75,7 +70,7 @@
 		songTicks = {};
 	});
 	type AlbumPick = { row: (typeof rows)[number]; list: AlbumSong[] | null; ticked: string[]; tick: 'all' | 'some' | 'none' };
-	// The lists stored when the ask was made: opening a season or an album shows them at once.
+	// The lists stored when the ask was made, so opening a season or an album shows them at once.
 	const kept = $derived(storedParts(a));
 	const artistId = $derived(music ? artistIdOf(a) : '');
 	const albumPicks = $derived(
@@ -131,7 +126,7 @@
 		return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 	};
 
-	// The approver's episode ticks, by season (absent: as asked).
+	// The approver's episode ticks, by season (absent means as asked).
 	let ticks = $state<Record<number, number[]>>({});
 	$effect(() => {
 		void a.id;
@@ -156,7 +151,7 @@
 	$effect(() => {
 		if (!unfolded) return;
 		open = true;
-		// Opens on the first season that was asked for (a read-only list never opens on one left out).
+		// Opens on the first season that was asked for; a read-only list never opens on one left out.
 		if (!openSeason && seasons.length) openSeason = (seasons.find((x) => a.seasons?.includes(x.number)) ?? seasons[0]).number;
 	});
 	$effect(() => {
@@ -170,7 +165,7 @@
 		const d = new Date();
 		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 	})();
-	// A declined ask had nothing approved: its marks say what was asked for.
+	// A declined ask had nothing approved, so its marks say what was asked for.
 	const markOn = $derived(a.state === 'turned_down' ? 'Asked for' : 'Approved');
 	const markOff = $derived(a.state === 'turned_down' ? 'Not asked for' : 'Left out');
 	// Phones show the albums as a sideways strip: keep the open one in view.
@@ -198,7 +193,6 @@
 </script>
 
 {#if shown && layout === 'split'}
-	<!-- Two panes that fill their box: seasons or albums on the left, the open one's episodes or songs on the right. -->
 	<div class="split" data-testid="ask-parts">
 		<!-- A plain list: each row's tick sits beside a real button that opens that season or album. -->
 		<ul class="sp-left" aria-label={music ? 'Albums' : 'Seasons'} bind:this={strip}>
@@ -402,7 +396,7 @@
 {/if}
 
 <style>
-	/* Split: two panes that fill the box they are given; each scrolls on its own. */
+	/* Two panes that fill the box they are given; each scrolls on its own. */
 	.split { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); height: 100%; min-height: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
 	.sp-left, .sp-right { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 	.sp-left { padding: 6px; border-right: 1px solid var(--line); background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
@@ -413,11 +407,9 @@
 	.sp-row.on { background: var(--surface-1); color: var(--text); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgb(0 0 0 / 0.08); }
 	.sp-row:has(.sp-open:focus-visible) { box-shadow: var(--focus-ring); }
 	.sp-row .tick { width: 18px; height: 18px; margin: 0; }
-	/* The row's tick sits in its own box, finger-sized on touch screens. */
 	.sp-tk { flex: none; display: grid; place-items: center; align-self: stretch; min-width: 32px; padding-left: 4px; cursor: pointer; }
 	/* Touch: the label around the tick is the 44px target. */
 	@media (pointer: coarse) { .sp-tk { min-width: 44px; min-height: 44px; } }
-	/* The row's open button fills the rest of the row, so clicking anywhere past the tick opens it. */
 	.sp-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; align-self: stretch; padding: 4px 8px; border: 0; border-radius: inherit; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 	.sp-open:focus-visible { outline: none; }
 	.sp-row.off .sp-t { opacity: 0.5; }
@@ -495,7 +487,6 @@
 	.eps .t { white-space: normal; overflow-wrap: anywhere; }
 	.eps .later .t { color: var(--text-muted); }
 	.eps li { padding: 0; }
-	/* Songs and episodes: slim 28px lines, two columns when there is room, so a whole album fits at a glance. */
 	.ep { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; min-height: 28px; cursor: pointer; }
 	.eps { columns: 2 260px; column-gap: 24px; }
 	.eps li { break-inside: avoid; }

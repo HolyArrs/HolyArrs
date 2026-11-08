@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { episodeWord, factsLine, filterOf, hasFile, kindHint, kindIcon, kindLabel, partWords, quickReplies, listPath, partLine, reportBody, reportHref, reportKinds, searchBody, sortReports, stateCounts, titleLine, whoName } from './reports.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('reported problems', () => {
 	it('names the five problem kinds in order', () => {

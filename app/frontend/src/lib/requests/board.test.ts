@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { askHref, detailKey, kindWord, personGroups, runtimeLine, stepIndex } from './board.ts';
+import { describe, expect, it } from 'vitest';
 
 const who = (id: number, name: string) => ({ id, name });
 
@@ -10,7 +10,6 @@ describe('requests page', () => {
 		expect(askHref({ kind: 'show', tmdb_id: '119051' })).toBe('/title/show/119051');
 		expect(askHref({ kind: 'artist', tmdb_id: '', ref: 'mbid:63aa26c3' })).toBe('/music/artist/63aa26c3');
 		expect(askHref({ kind: 'artist', tmdb_id: '' })).toBe('');
-		// A pending approval's placeholder id is not a Library page.
 		expect(askHref({ kind: 'movie', tmdb_id: '1', title_id: -1 })).toBe('/title/movie/1');
 	});
 

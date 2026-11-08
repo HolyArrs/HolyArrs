@@ -1,18 +1,17 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '../core/paths.ts';
-	// The add-a-show dialog: Library folder, Pick rules, which seasons to
-	// keep up to date, new seasons, episode order and details source. It
-	// starts from the Movies and TV defaults and the show settings.
-	import { api, message } from '../core/api.ts';
+	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import { secondVersion, builtInDefaults, startChoices, savedDefaults } from '../mediafiles/index.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '../shows/index.ts';
-	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 	import type { ShowSettings } from '../shows/index.ts';
-	import type { LookupShow } from '../core/types.ts';
 	import type { TitleDefaults } from '../mediafiles/index.ts';
+	import { to } from '../core/paths.ts';
+	import { api, message } from '../core/api.ts';
+	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
+	import type { LookupShow } from '../core/types.ts';
+
+	// The add-a-show dialog: Library folder, Pick rules, which seasons to keep up to date, new seasons, episode order and details source. It starts from the Movies and TV defaults and the show settings.
 
 	let {
 		folders,
@@ -28,7 +27,7 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
-	// Follow: put it on my calendar (ticked by default).
+	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
 	let folderId = $state(0);
 	let rulesId = $state(0);
@@ -38,21 +37,21 @@
 	let source = $state('tmdb');
 	let keep = $state(true);
 	let searchOnAdd = $state(false);
-	// A second Version, such as 4K, next to the main one (4.8.11).
+	// A second Version, such as 4K, next to the main one.
 	let more = $state(false);
 	let moreLabel = $state('4K');
 	let moreRules = $state(0);
 	let moreFolder = $state(0);
 	let adding = $state(false);
 	let error = $state('');
-	// The saved defaults, once they are in; the sheet shows a placeholder until then.
+	// The saved defaults once they are in; the sheet shows a placeholder until then.
 	let titleDefaults = $state<TitleDefaults | null>(null);
 	let ready = $state(false);
 
 	const showFolders = $derived(folders.filter((f) => f.kind === 'show'));
 	const showRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('show')));
 
-	/** open shows the dialog for one looked-up show. */
+	/** Shows the dialog for one looked-up show. */
 	export async function open(s: LookupShow) {
 		follow = true;
 		picked = s;
@@ -85,7 +84,7 @@
 		rulesId = startChoices({ ...d, show: { ...d.show, library_folder_id: fid } }, folders, rules, 'show').rulesId;
 	}
 
-	/** idOf picks the id to add by: the source's own id first. */
+	/** Picks the id to add by: the source's own id first. */
 	function idOf(s: LookupShow): string {
 		for (const k of [s.source, 'tmdb', 'tvdb', 'tvmaze', 'imdb']) if (s.ids[k]) return `${k}:${s.ids[k]}`;
 		return '';

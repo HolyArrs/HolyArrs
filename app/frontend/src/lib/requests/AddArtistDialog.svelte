@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '../core/paths.ts';
-	// The add-an-artist dialog: Library folder, Pick rules, which albums to
-	// keep up to date, new albums, album kinds and Pressing statuses.
-	import { api, message } from '../core/api.ts';
+	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import { pickId } from '../mediafiles/index.ts';
 	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from '../music/index.ts';
-	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 	import type { LookupArtist, MusicSettings } from '../music/index.ts';
+	import { to } from '../core/paths.ts';
+	import { api, message } from '../core/api.ts';
+	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
+
+	// The add-an-artist dialog: Library folder, Pick rules, which albums to keep up to date, new albums, album kinds and Pressing statuses.
 
 	let {
 		folders,
@@ -25,7 +25,7 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupArtist | null>(null);
-	// Follow: put it on my calendar (ticked by default).
+	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
 	let folderId = $state(0);
 	let rulesId = $state(0);
@@ -41,7 +41,7 @@
 	const musicFolders = $derived(folders.filter((f) => f.kind === 'music'));
 	const musicRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('music')));
 
-	/** open shows the dialog for one looked-up artist. */
+	/** Shows the dialog for one looked-up artist. */
 	export function open(a: LookupArtist) {
 		follow = true;
 		picked = a;

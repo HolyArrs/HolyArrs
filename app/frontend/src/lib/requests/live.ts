@@ -1,10 +1,9 @@
-// Where an approved ask is in the pipeline right now, from the local searches
-// and downloads lists (no outside calls): one small entry per Library title.
+// Where an approved ask is in the pipeline right now, from the local searches and downloads lists (no outside calls): one small entry per Library title.
 import { notAlbumName } from './ask-parts.ts';
+import type { LifeFacts } from './lifecycle.ts';
 import type { AskStep } from '../core/types.ts';
 import type { SearchView } from '../core/types.ts';
 import type { DownloadRow } from '../core/types.ts';
-import type { LifeFacts } from './lifecycle.ts';
 
 export interface TitleLive {
 	searching?: boolean;
@@ -17,7 +16,7 @@ const FAILED = new Set(['failed', 'vanished']);
 // Downloaded, but the import is waiting on a person (Downloads > Needs a decision).
 const STUCK = new Set(['needs_a_decision', 'import_refused']);
 
-/** liveByTitle maps title id to what is running for it: running searches, and the freshest not-finished download. */
+/** Maps title id to what is running for it: running searches, and the freshest not-finished download. */
 export function liveByTitle(downloads: (Pick<DownloadRow, 'title_id' | 'phase' | 'progress' | 'replaced'> & { text?: string; id?: number })[], running: Pick<SearchView, 'title_id' | 'state' | 'kind'>[]): Map<number, TitleLive> {
 	const out = new Map<number, TitleLive>();
 	const at = (id: number) => out.get(id) ?? out.set(id, {}).get(id)!;
@@ -39,7 +38,7 @@ export function liveByTitle(downloads: (Pick<DownloadRow, 'title_id' | 'phase' |
 	return out;
 }
 
-/** liveFacts turns one title's entry into the lifecycle facts: the download's stage first, else searching. */
+/** Turns one title's entry into the lifecycle facts: the download's stage first, else searching. */
 export function liveFacts(t: TitleLive | undefined): LifeFacts {
 	if (t?.download && t.download.phase !== 'failed') return { phase: t.download.phase, progress: t.download.progress, downloadId: t.download.id };
 	if (t?.searching) return { phase: 'searching' };
@@ -47,10 +46,7 @@ export function liveFacts(t: TitleLive | undefined): LifeFacts {
 	return {};
 }
 
-/**
- * stepFacts reads the server's step for an approved ask: what the
- * page says when it has no live search or download of its own for it.
- */
+/** Reads the server's step for an approved ask: what the page says when it has no live search or download of its own for it. */
 export function stepFacts(step: AskStep | undefined): LifeFacts {
 	switch (step?.kind) {
 		case 'searching':
@@ -78,7 +74,7 @@ export function stepFacts(step: AskStep | undefined): LifeFacts {
 export interface PartCounts {
 	/** Season number or album mbid. */
 	key: string | number;
-	/** Whole part is in the Library. */
+	/** The whole part is in the Library. */
 	complete: boolean;
 	/** false: not counted in "n more available" (a single, remix, bootleg, or a season with nothing aired yet). */
 	real?: boolean;
@@ -97,18 +93,12 @@ export interface PartPick {
 // Title words that mark a release as not a real album (MusicBrainz sometimes leaves these untyped).
 const NOT_ALBUM = /\b(demos?|bootlegs?|outtakes?|unreleased|rehearsals?|b-sides|leaked|snippets?|remix(es)?|remixed)\b/i;
 
-/** realAlbum says an album is a studio album: type album, no secondary types (live, compilation, remix…), no bootleg words. */
+/** Whether an album is a studio album: type album, no secondary types (live, compilation, remix), no bootleg words. */
 export function realAlbum(a: { type?: string; secondary_types?: string[] | null; name?: string }): boolean {
 	return (a.type ?? '').toLowerCase() === 'album' && !(a.secondary_types ?? []).length && !notAlbumName.test(a.name ?? '');
 }
 
-/**
- * partialFacts counts the parts the ask covers that are fully in the Library.
- * `asked` is the ask's whole seasons or album ids (empty, with no picks:
- * everything). `picks` are parts asked only in part: one is in once its kept
- * episodes or songs are, and the ones left unticked are counted as `skipped`.
- * Parts the ask did not cover are counted as `more`.
- */
+/** Counts the parts the ask covers that are fully in the Library. `asked` is the ask's whole seasons or album ids (empty, with no picks, means everything). `picks` are parts asked only in part: one is in once its kept episodes or songs are. */
 export function partialFacts(unit: 'seasons' | 'albums', parts: PartCounts[], asked: (string | number)[], picks: PartPick[] = []): LifeFacts {
 	if (!parts.length) return {};
 	const pick = new Map(picks.filter((p) => !asked.includes(p.key)).map((p) => [p.key, p.count]));
@@ -126,10 +116,7 @@ export function partialFacts(unit: 'seasons' | 'albums', parts: PartCounts[], as
 		if (p.size > 0 && (p.have ?? 0) >= Math.min(n, p.size)) have++;
 	}
 	const out: LifeFacts = { partial: { have, total: want.length, unit }, more: parts.filter((p) => p.real !== false && !want.includes(p)).length };
-	// Only single episodes or songs asked (no whole season or album): count those,
-	// so one asked episode reads "Ready · 1 episode", not "1 season". What is on
-	// disk is counted per season or album (unpicked ones too), so how many of the
-	// picked are in is not known here: the ask's own state says Ready.
+	// Only single episodes or songs asked (no whole season or album): count those, so one asked episode reads "Ready · 1 episode", not "1 season". What is on disk is counted per season or album (unpicked ones too).
 	if (!asked.length && want.every((p) => pick.has(p.key) && p.size !== undefined)) {
 		let total = 0;
 		for (const p of want) total += Math.min(pick.get(p.key) ?? 0, p.size ?? 0);

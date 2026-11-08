@@ -2,10 +2,10 @@
 	// A member asks for an artist: the whole artist, or the albums they pick.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { api, message, ApiError } from '../core/api.ts';
 	import { albumKind, albumWords, albumYear } from '../music/index.ts';
-	import type { Ask } from '../core/types.ts';
 	import type { AskableAlbum, LookupArtist } from '../music/index.ts';
+	import { api, message, ApiError } from '../core/api.ts';
+	import type { Ask } from '../core/types.ts';
 
 	let {
 		onasked,
@@ -17,7 +17,7 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupArtist | null>(null);
-	// Follow: put it on my calendar (ticked by default).
+	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
 	let albums = $state<AskableAlbum[] | null>(null);
 	let whole = $state(true);
@@ -25,7 +25,7 @@
 	let busy = $state(false);
 	let error = $state('');
 
-	/** open shows the dialog for one artist and reads its albums; album (a release group) starts picked when given. */
+	/** Shows the dialog for one artist and reads its albums; `album` (a release group) starts picked when given. */
 	export async function open(a: LookupArtist, album?: string) {
 		follow = true;
 		picked = a;

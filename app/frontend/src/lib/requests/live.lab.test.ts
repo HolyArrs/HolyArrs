@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
 import { liveByTitle, liveFacts } from "./live.ts";
 import { lifecycle } from "./lifecycle.ts";
 import lab from "./testdata/live-steps.lab.json";
+import { describe, expect, it } from "vitest";
 import type { Ask } from "../core/types.ts";
 import type { SearchView } from "../core/types.ts";
 import type { DownloadRow } from "../core/types.ts";
@@ -13,8 +13,7 @@ type Snap = {
 };
 const snaps = lab as unknown as Snap[];
 
-// The responses TestLabAskLiveProgress (build tag lab) kept while an approved ask for Dune: Part Two ran through the lab:
-// GET /api/v1/searches and GET /api/v1/downloads/view, read as the Requests page reads them.
+// Responses kept from a lab run of an approved ask for Dune: Part Two: GET /api/v1/searches and GET /api/v1/downloads/view, read as the Requests page reads them.
 describe("Requests card during a real lab download (#139)", () => {
   const labels = snaps.map((s) => {
     const live = liveByTitle(s.downloads.downloads, s.searches.running ?? []);

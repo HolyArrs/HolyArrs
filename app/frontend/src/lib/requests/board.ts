@@ -1,15 +1,14 @@
-// Requests page: the context every Inbox arrangement (inbox.ts) and the
-// one-by-one review get from the page, and the small rules they share.
+// Requests page: the context every Inbox arrangement and the one-by-one review get from the page, and the small rules they share.
 
-import type { Ask } from '../core/types.ts';
 import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 import type { ApproverTab, AskTab } from './ask-words.ts';
-import type { TitleDetails } from '../metadata/index.ts';
-import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import type { AskInfo, EpisodeInfo } from './inbox.ts';
 import type { LifeFacts } from './lifecycle.ts';
+import type { TitleDetails } from '../metadata/index.ts';
+import type { Ask } from '../core/types.ts';
+import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 
-/** The approver's choices for one ask: Pick rules (0: the default), audio languages (empty: any), a note, and the seasons or albums kept (absent: all of the ask). */
+/** The approver's choices for one ask: Pick rules (0 is the default), audio languages (empty is any), a note, and the seasons or albums kept (absent means all of the ask). */
 export interface DecideOptions {
 	rulesId: number;
 	langs: string[];
@@ -23,7 +22,7 @@ export interface DecideOptions {
 }
 import { detailPath } from '../metadata/index.ts';
 
-/** askHref is where a title's name links: the Library page once added, else its title page or artist page. */
+/** Where a title's name links: the Library page once added, else its title page or artist page. */
 export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): string {
 	if (a.title_id && a.title_id > 0) return `/library/${a.title_id}`;
 	if (a.kind === 'artist') {
@@ -34,7 +33,7 @@ export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): 
 	return detailPath(a.kind === 'show' ? 'show' : 'movie', a.tmdb_id);
 }
 
-/** kindWord names an ask's kind for a small tag. */
+/** An ask's kind for a small tag. */
 export function kindWord(kind: string): string {
 	return kind === 'show' ? 'TV show' : kind === 'artist' ? 'Music' : 'Movie';
 }
@@ -56,7 +55,7 @@ export interface Member {
 	max_rating?: string;
 }
 
-/** personGroups puts asks under the first person who asked, biggest group first, then by name. */
+/** Puts asks under the first person who asked, biggest group first, then by name. */
 export function personGroups<T extends Pick<Ask, 'asked_by' | 'people'>>(asks: T[]): { id: number; name: string; asks: T[] }[] {
 	const by = new Map<number, { id: number; name: string; asks: T[] }>();
 	for (const a of asks) {
@@ -68,19 +67,19 @@ export function personGroups<T extends Pick<Ask, 'asked_by' | 'people'>>(asks: T
 	return [...by.values()].sort((x, y) => y.asks.length - x.asks.length || x.name.localeCompare(y.name));
 }
 
-/** stepIndex keeps a focus position inside a list of n after a move (wraps). */
+/** Keeps a focus position inside a list of n after a move (wraps). */
 export function stepIndex(i: number, step: number, n: number): number {
 	if (n <= 0) return 0;
 	return (((i + step) % n) + n) % n;
 }
 
-/** detailKey is the cache key for a title's details; '' when the ask has none to fetch (music, or no TMDB id). */
+/** The cache key for a title's details; '' when the ask has none to fetch (music, or no TMDB id). */
 export function detailKey(a: Pick<Ask, 'kind' | 'tmdb_id'>): string {
 	if (a.kind === 'artist' || !a.tmdb_id) return '';
 	return `${a.kind === 'show' ? 'show' : 'movie'}:${a.tmdb_id}`;
 }
 
-/** runtimeLine says a runtime in words: "1 h 52 min", "48 min". */
+/** A runtime in words: "1 h 52 min", "48 min". */
 export function runtimeLine(min: number | undefined): string {
 	if (!min) return '';
 	const h = Math.floor(min / 60);

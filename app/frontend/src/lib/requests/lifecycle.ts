@@ -1,15 +1,13 @@
-// An ask's life cycle as one slim line: how far it has come from asked to in
-// the Library. Each stage owns a weight; while an ask is being got, real
-// download progress (0..1) fills the span between getting and getting_end.
-import type { Ask } from '../core/types.ts';
+// An ask's life cycle as one slim line: how far it has come from asked to in the Library. Each stage owns a weight; while an ask is being got, real download progress (0 to 1) fills the span between getting and getting_end.
 import type { AskInfo } from './inbox.ts';
+import type { Ask } from '../core/types.ts';
 
 export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 92, ready: 100 } as const;
 
 export type Stage = 'asked' | 'upcoming' | 'searching' | 'downloading' | 'importing' | 'getting' | 'ready' | 'declined' | 'failed';
 export interface Life {
 	stage: Stage;
-	/** 0..100, how much of the line is filled. */
+	/** 0 to 100: how much of the line is filled. */
 	pct: number;
 	/** wait (amber), soon (muted), go (accent), ok (green), off (dim), bad (red). */
 	tone: 'wait' | 'soon' | 'go' | 'ok' | 'off' | 'bad';
@@ -28,16 +26,13 @@ export interface Life {
 export interface LifeFacts {
 	/** The download row behind it, for a link to Downloads. */
 	downloadId?: number;
-	/** The download's 0..1. */
+	/** The download's progress, 0 to 1. */
 	progress?: number;
 	/** What the pipeline is doing for it right now (from the live searches and downloads). */
 	phase?: 'searching' | 'downloading' | 'importing' | 'stuck' | 'failed' | 'waiting';
 	/** Not released yet: the short date it comes out ('' when the date is unknown). */
 	upcoming?: string;
-	/**
-	 * How many of the seasons or albums the ask covers (as approved, never the whole
-	 * catalogue) are in the Library. `unit` adds the word: "Processing · 1 season left".
-	 */
+	/** How many of the seasons or albums the ask covers (as approved, never the whole catalogue) are in the Library. `unit` adds the word: "Processing · 1 season left". */
 	partial?: { have: number; total: number; unit?: 'seasons' | 'albums' | 'episodes' | 'songs' };
 	/** Seasons or albums the title has beyond what was asked (shown once Ready). */
 	more?: number;
@@ -51,7 +46,7 @@ export interface LifeFacts {
 	nextSearch?: string;
 }
 
-/** lifecycle places an ask on its line; `facts` adds what is known beyond its state. */
+/** Places an ask on its line; `facts` adds what is known beyond its state. */
 export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts = {}): Life {
 	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Waiting' };
 	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Declined' };
@@ -66,7 +61,7 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	if (facts.phase === 'stuck') return { stage: 'getting', pct: hi - 3, tone: 'wait', label: 'Needs a decision' };
 	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', label: 'Importing' };
 	if (facts.phase === 'downloading') {
-		// The server's step knows a download runs, not how far: no made-up 0%.
+		// The server's step knows a download runs, not how far, so no made-up 0%.
 		if (facts.progress === undefined || !Number.isFinite(facts.progress)) return { stage: 'downloading', pct: lo + (hi - lo) * 0.15, tone: 'go', label: 'Downloading' };
 		const d = Math.min(Math.max(facts.progress, 0), 1);
 		return { stage: 'downloading', pct: lo + (hi - lo) * (0.15 + 0.75 * d), tone: 'go', label: `Downloading · ${Math.round(d * 100)}%` };
@@ -101,12 +96,11 @@ function failedLife(f: LifeFacts): Life {
 
 const word = (n: number, unit: string) => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
 
-/** Ready names what came in ("Ready · 2 albums") and what's left to request. */
+/** Ready names what came in ("Ready · 2 albums") and what is left to request. */
 function ready(f: LifeFacts): Life {
 	const part = f.partial;
 	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
-	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs.
-	// The unit stays when known: "2 more seasons available", "3 more episodes available".
+	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs. The unit stays when known: "2 more seasons available", "3 more episodes available".
 	const one = (n: number, unit: string) => (n === 1 ? unit.slice(0, -1) : unit);
 	// "More" counts whole seasons or albums, also when only episodes or songs were asked.
 	const whole = part?.unit === 'episodes' ? 'seasons' : part?.unit === 'songs' ? 'albums' : part?.unit;
@@ -118,13 +112,7 @@ function ready(f: LifeFacts): Life {
 
 const day = (iso: string) => iso.slice(0, 10);
 
-/**
- * upcoming says when an approved ask's title comes out, as an ISO day, when it
- * is not out yet: a movie with no release on or before today; a show whose
- * every asked season first airs after today (the whole show: its first air
- * day). '' when it is out, or when the dates aren't known (never guessed).
- * `firstAir` gives a season's first air day: null while unknown.
- */
+/** When an approved ask's title comes out, as an ISO day, when it is not out yet: a movie with no release on or before today; a show whose every asked season first airs after today. */
 export function upcoming(
 	a: Pick<Ask, 'kind' | 'seasons' | 'future_only'>,
 	info: Pick<AskInfo, 'dates' | 'status'> | null | undefined,
@@ -146,4 +134,3 @@ export function upcoming(
 	const ds = [info.dates.theaters, info.dates.digital, info.dates.physical].filter(Boolean);
 	return ds.length ? later(ds) : '';
 }
-

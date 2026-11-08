@@ -1,40 +1,35 @@
 <script lang="ts">
-	import { proxied } from '../core/tmdb-image.ts';
-	// One ask in the cards' window (RequestsBoard): the trailer as a big
-	// banner (Explore's Billboard; for music, the artist's video over the
-	// photo), type · year · what was asked, who asked and their note, then
-	// Decline / Approve. Approve (and the window opening) lifts the
-	// title into the corner and raises the What to add sheet inside the same
-	// frame: the two-pane picker (seasons and episodes, or albums and songs),
-	// the Pick rule, then Approve. The life-cycle line runs along the edge.
-	import { tick, untrack } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
 	import Billboard from '#lib/ui/Billboard.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
-	import { artistVideo, autoplayHere, loadUISettings } from '../core/trailer/autoplay.svelte.ts';
-	import { heroVideoStart, pickedSources, type HeroVideo } from '../core/trailer/hero-video.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import AskParts from './AskParts.svelte';
-	import { agoLong, dateTime } from '../core/format.ts';
-	import { to } from '../core/paths.ts';
-	import { session } from '../core/session.svelte.ts';
 	import type { BoardCtx } from './board.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
 	import { lifecycle, upcoming, type Life, type LifeFacts } from './lifecycle.ts';
 	import { partialFacts, realAlbum } from './live.ts';
-	import { api } from '../core/api.ts';
-	import type { AlbumSummary, TitleView } from '../core/types.ts';
 	import { nextWhen, shortDate, whenDate } from './inbox.ts';
 	import { askTab } from './ask-words.ts';
 	import { askHref } from './board.ts';
 	import { askedFor } from './asked-for.ts';
-	import { watchlistLine } from '../accounts/index.ts';
 	import type { PartsPick } from './ask-parts.ts';
+	import { watchlistLine } from '../accounts/index.ts';
+	import { tick, untrack } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+	import { proxied } from '../core/tmdb-image.ts';
+	import { artistVideo, autoplayHere, loadUISettings } from '../core/trailer/autoplay.svelte.ts';
+	import { heroVideoStart, pickedSources, type HeroVideo } from '../core/trailer/hero-video.ts';
+	import { agoLong, dateTime } from '../core/format.ts';
+	import { to } from '../core/paths.ts';
+	import { session } from '../core/session.svelte.ts';
+	import { api } from '../core/api.ts';
+	import type { AlbumSummary, TitleView } from '../core/types.ts';
 	import type { Ask } from '../core/types.ts';
+
+	// One ask in the cards' window (RequestsBoard): the trailer as a big banner (Explore's Billboard; for music, the artist's video over the photo), type · year · what was asked, who asked and their note, then Decline and Approve.
 
 	let { ctx, single, choose: startChoosing = false }: { ctx: BoardCtx; /** The ask this window shows. */ single: Ask; /** Open straight into What to get. */ choose?: boolean } = $props();
 
@@ -53,7 +48,7 @@
 	const pictures = $derived(music ? [] : d?.backdrop ? [to(d.backdrop)] : picked.poster ? [to(picked.poster)] : []);
 	// Music: the artist's music video plays muted over the photo, as on the artist page (same Autoplay setting).
 	let mvideo = $state<HeroVideo | null>(null);
-	// Keyed on the artist only, so a list refresh doesn't restart the playing video.
+	// Keyed on the artist only, so a list refresh does not restart the playing video.
 	const mvArtist = $derived(picked.kind === 'artist' ? artistIdOf(picked) : null);
 	$effect(() => {
 		const id = mvArtist;
@@ -72,7 +67,7 @@
 	const status = $derived(ctx.approver && picked.state !== 'asked');
 	// How much of what was asked is in the Library (this window only: one title read).
 	let partial = $state<{ id: number; facts: LifeFacts } | null>(null);
-	// Read again only when the ask, its title or its state changes (not on every list refresh).
+	// Read again only when the ask, its title or its state changes, not on every list refresh.
 	const partKey = $derived(`${picked.id}|${picked.title_id ?? 0}|${picked.state}`);
 	$effect(() => {
 		void partKey;
@@ -114,7 +109,7 @@
 	const failed = $derived(status && askTab(picked) === 'failed');
 	// An approved ask with a download in play links to its row on Downloads.
 	const dlId = $derived(status && picked.state === 'approved' && picked.title_id && session.can('manage_library') ? ctx.live(picked).downloadId : undefined);
-	// A declined ask had nothing approved: its list is what was asked for.
+	// A declined ask had nothing approved, so its list is what was asked for.
 	const listName = $derived(picked.state === 'turned_down' ? 'What was asked' : 'What was approved');
 	const sentence = $derived.by(() => {
 		const who = ctx.who(picked).name;
@@ -123,8 +118,7 @@
 			return `In the Library${at ? ` since ${whenDate(at)}` : ''}${life.more ? '' : '.'}`;
 		}
 		if (life.stage === 'declined') {
-			// Same rule as the card: a display name only, never a bare account name, and the
-			// status word isn't said twice.
+			// Same rule as the card: a display name only, never a bare account name, and the status word is not said twice.
 			const by = ctx.decided(picked).replace(/^Declined by\s*/, '').trim();
 			// Others who said no to the same title before, after this ask's own decider.
 			const also = ctx.alsoDeclined(picked);
@@ -153,7 +147,7 @@
 
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
 	let choosing = $state(false);
-	// Opened by the window itself on Processing/Done: everything is already in place (no lift, no rise, no fade).
+	// Opened by the window itself on Processing or Done: everything is already in place (no lift, no rise, no fade).
 	let instant = $state(false);
 	let frame = $state<HTMLElement>();
 	let lift = $state(0);
@@ -162,8 +156,7 @@
 	let pick = $state<PartsPick>({ seasons: null, albums: null, empty: false });
 	let rulesId = $state(0);
 	const rules = $derived(ctx.rulesFor(picked));
-	// Keyed on the id value only: a list refresh hands a new object for the same ask and
-	// must not throw away the ticks and the Quality pick.
+	// Keyed on the id value only: a list refresh hands a new object for the same ask and must not throw away the ticks and the Quality pick.
 	const pid = $derived(picked.id);
 	$effect(() => {
 		void pid;
@@ -179,10 +172,7 @@
 	});
 	async function choose(now = false) {
 		instant = now;
-		// Processing/Done windows change the banner's layout when the list opens, so measure
-		// the title in that layout (list open, no lift yet) rather than before it.
-		// Processing/Done: the title moves into the list's own header, so the list starts right
-		// under the window controls and never covers the title.
+		// Processing and Done windows change the banner's layout when the list opens, so measure the title in that layout (list open, no lift yet) rather than before it. The title moves into the list's own header.
 		if (status) {
 			lift = 0;
 			sheetTop = 72;
@@ -192,16 +182,13 @@
 			return;
 		}
 		const content = frame?.querySelector<HTMLElement>('.ui-billboard .content');
-		// How far the title travels: from where it sits to just under the tabs.
-		// Measured against the window itself, so it holds whatever the banner's own layout is
-		// (Processing/Done windows put the banner above the status strip).
-		// The window may still be zooming in from the card: divide by its current scale.
+		// How far the title travels: from where it sits to just under the tabs. Measured against the window itself, so it holds whatever the banner's own layout is.
 		const fr = frame?.getBoundingClientRect();
 		const k = fr && frame?.offsetWidth ? fr.width / frame.offsetWidth || 1 : 1;
 		const top = fr?.top ?? 0;
 		const box = content?.getBoundingClientRect();
 		lift = box ? Math.max((box.top - top) / k - 64, 0) : 0;
-		// The sheet starts 20 px under the lifted block's last line (the block keeps 72 % of its size).
+		// The sheet starts 20 px under the lifted block's last line (the block keeps 72% of its size).
 		const lines = content?.querySelectorAll<HTMLElement>('.meta > *, .facts, .asker, .said');
 		let bottom = content?.querySelector<HTMLElement>('.meta')?.getBoundingClientRect().bottom ?? 0;
 		for (const el of lines ?? []) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
@@ -216,7 +203,7 @@
 		const a = picked;
 		// Processing and Done open on what was approved (read only); a movie has nothing to list.
 		if (!startChoosing || autoFor === a.id || (!waiting(a) && !(status && a.kind !== 'movie'))) return;
-		// Processing and Done: already open on the first paint, nothing moves.
+		// Processing and Done are already open on the first paint, so nothing moves.
 		if (status) {
 			autoFor = a.id;
 			void choose(true);
@@ -246,8 +233,7 @@
 	// Closing the sheet hands focus back to the button that opens it (or the window).
 	function closeSheet() {
 		instant = false;
-		// Hide drops the ticks with the list, so the Quality pick goes with them: reopening
-		// always starts from what was asked, never half of an earlier choice.
+		// Hide drops the ticks with the list, so the Quality pick goes with them: reopening always starts from what was asked, never half of an earlier choice.
 		if (!status) {
 			pick = { seasons: null, albums: null, empty: false };
 			rulesId = 0;
@@ -261,8 +247,6 @@
 	}
 </script>
 
-
-<!-- The life-cycle line along the banner's bottom edge. -->
 {#snippet line(a: Ask, life: Life)}
 	<span class="life edge tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 {/snippet}
@@ -317,7 +301,6 @@
 				</Billboard>
 			</div>
 			{/key}
-			<!-- The title's own page: pinned to the banner's bottom-right corner, opposite the answer buttons. -->
 			{#if pageHref && !choosing}<a class="tl-link tl-float" class:tl-wait={!status && waiting(picked)} href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 			{#if status}
 				<section class="big" data-testid="ask-status" aria-label="Status">
@@ -378,23 +361,20 @@
 </div>
 
 <style>
-	/* The desk fills its window box. */
 	.desk { --h: 100%; display: grid; grid-template-columns: minmax(0, 1fr); height: 100%; }
 	.desk .frame { border-radius: 0; box-shadow: none; }
 	.desk .frame :global(.ui-billboard) { border-radius: 0; }
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	/* The frame: Billboard at a fixed height; nothing in it changes the frame's size. */
 	.frame { position: relative; height: var(--h); border-radius: 24px; overflow: hidden; isolation: isolate; box-shadow: 0 0 0 1px var(--line), 0 40px 80px -40px rgb(0 0 0 / 0.7); }
 	.frame :global(.ui-billboard) { height: 100%; min-height: 0; margin: 0; border-radius: 24px; }
-	/* Trailers ship letterboxed (wide films in a 16:9 file); the tall frame would show the bands, so zoom past them. */
+	/* Trailers ship letterboxed (wide films in a 16:9 file) and the tall frame would show the bands, so zoom past them. */
 	.frame :global(.ui-billboard .art video), .frame :global(.ui-billboard .art iframe) { scale: 1.34; }
 	.mv { position: absolute; inset: 0; }
 	.artist-bg { position: absolute; inset: 0; background-size: cover; background-position: center 25%; animation: drift 30s ease-in-out infinite alternate; }
 	@keyframes drift { to { transform: scale(1.08) translate(-1.5%, -1%); } }
 
-	/* The title block lifts and shrinks into the corner; the frame stays. */
 	.frame :global(.ui-billboard .content) { width: min(760px, 92%); transform-origin: left top; transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms var(--ease-out); }
 	.frame.choosing :global(.ui-billboard .content) { transform: translateY(calc(-1 * var(--lift))) scale(0.72); }
 	.frame.choosing :global(.ui-billboard .shade) { opacity: 1; background: linear-gradient(to bottom, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.35) 40%, rgb(0 0 0 / 0.75)); }
@@ -403,13 +383,11 @@
 	.state { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
 	.asker { flex-basis: 100%; display: inline-flex; align-items: center; gap: 8px; margin-top: 2px; color: rgb(255 255 255 / 0.82); font: 500 14px/1.3 var(--font-ui) !important; }
 	.asker b { color: #fff; font-weight: 700; }
-	/* The banner art is always dark: the Kid mark keeps a light ink in both themes. */
-	/* Over artwork: a solid dark chip with white text reads in both themes. */
+	/* The banner art is always dark, so the Kid mark keeps a light ink in both themes. */
 	.asker :global(.kid.kid) { color: #fff; background: rgb(0 0 0 / 0.55); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mark-ask) 70%, transparent); }
 	.said { flex-basis: 100%; max-width: 520px; padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.45); color: rgb(255 255 255 / 0.9); font: italic 400 15px/1.45 var(--font-ui) !important; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.sep { margin: 0 8px; opacity: 0.6; }
 
-	/* Answers on the art. */
 	.acts { display: flex; flex-wrap: wrap; gap: 10px; transition: opacity 220ms var(--ease-out), transform 300ms var(--ease-out); }
 	.acts.gone { opacity: 0; transform: translateY(8px); pointer-events: none; }
 	.act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 50px; padding: 0 22px; border: 0; border-radius: var(--r-pill); font: var(--t-headline); cursor: pointer; transition: transform 160ms var(--ease-out), background 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
@@ -423,7 +401,6 @@
 	.act.ghost { background: none; color: var(--text-muted); height: 44px; }
 	.act.ghost:hover { color: var(--text); background: var(--surface-2); }
 
-	/* The life-cycle line along the banner's bottom edge. */
 	.life { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgb(127 127 127 / 0.08); overflow: hidden; pointer-events: none; }
 	.life.edge { z-index: 3; height: 4px; background: rgb(255 255 255 / 0.12); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1), background 400ms var(--ease-out); }
@@ -434,7 +411,6 @@
 	.tone-bad .fill { background: var(--fail, #e5484d); }
 	@keyframes flow { to { background-position: -200% 0; } }
 
-	/* The sheet rises inside the frame. */
 	.sheet { position: absolute; left: 14px; right: 14px; top: var(--sheet-top, 180px); bottom: 14px; z-index: 4; display: flex; flex-direction: column; border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 16px; }
 	.sh-h h3 { font: var(--t-headline); }
@@ -447,7 +423,6 @@
 		.sh-h h3:has(.sh-title) { flex: 1 0 100%; flex-direction: column; align-items: flex-start; gap: 2px; }
 		.sh-h:has(.sh-title) .tl-sheet { margin-left: 0; }
 	}
-	/* The picker, slimmer inside the sheet: one hairline box, shorter rows, the sheet does the scrolling. */
 	.sheet :global(.parts) { background: none; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; }
 	.sheet :global(.head) { min-height: 38px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
 	.sheet :global(.line) { min-height: 36px; gap: 10px; }
@@ -462,7 +437,7 @@
 	.tl-link:hover { background: rgb(255 255 255 / 0.28); }
 	.tl-float { position: absolute; z-index: 3; right: 28px; bottom: 44px; margin: 0; }
 	.frame.status .tl-float { bottom: calc(var(--big-h) + 22px); }
-	/* On bright art the white glass alone is too faint: the same smoke as the window controls. */
+	/* On bright art the white glass alone is too faint: use the same smoke as the window controls. */
 	.tl-float { background: rgb(20 20 24 / 0.55); }
 	.tl-float:hover { background: rgb(20 20 24 / 0.7); }
 	/* Phones: the answer row spans the banner, so the link waits in the sheet header instead. */
@@ -472,7 +447,6 @@
 	.tl-link.tl-sheet:hover { background: var(--surface-3); }
 	.st-half { flex: 1 1 0; min-width: 0; }
 	.acts:has(.st-half) { flex-wrap: nowrap; width: min(420px, 100%); }
-	/* Processing and Done open already in place: the title doesn't travel, the picture holds still. */
 	.frame.instant :global(.ui-billboard .content) { transition: none; }
 	.frame.status :global(.ui-kb img), .frame.status :global(.ui-kb .frame), .frame.status .artist-bg { animation: none; transition: none; }
 	.sh-body { flex: 1; min-height: 0; overflow: hidden; padding: 0 16px 10px; display: flex; flex-direction: column; gap: 10px; }
@@ -496,7 +470,6 @@
 
 	.swap { position: absolute; inset: 0; }
 
-	/* Big status: the banner keeps the top, the status sits under it. */
 	.frame.status:not(.choosing) .swap { bottom: auto; height: calc(100% - var(--big-h)); }
 	.frame.status { --big-h: 132px; }
 	.frame.status :global(.ui-billboard .shade) { opacity: 1; }
@@ -512,7 +485,6 @@
 	.huge.tone-soon, .huge.tone-off { color: rgb(255 255 255 / 0.7); }
 	.sent { color: rgb(255 255 255 / 0.8); font: var(--t-callout); }
 	.more { color: rgb(255 255 255 / 0.5); }
-	/* The lifecycle line runs the full width along the seam between art and status. */
 	.life.inline { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgb(255 255 255 / 0.1); }
 	.big .acts { flex: none; }
 	.peek { flex: none; }
@@ -520,7 +492,6 @@
 		.frame.status { --big-h: 112px; }
 		.huge { font-size: 26px; }
 		.big { padding: 0 20px; gap: 12px; }
-		/* Phones: the status words get the full width; the buttons take a row of their own under them. */
 		.frame.status:has(.big .peek), .frame.status:has(.big .acts) { --big-h: 156px; }
 		.big { flex-wrap: wrap; align-content: center; row-gap: 12px; }
 		.says { flex: 1 0 100%; }
@@ -534,7 +505,6 @@
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
 		.act { height: 46px; padding: 0 18px; }
 		.tl-link { height: 44px; }
-		/* Phones: the Quality row scrolls sideways; the summary sits on its own line above the buttons. */
 		.rules { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; padding: 0 16px; }
 		.rules::-webkit-scrollbar { display: none; }
 		.rule, .rl { flex: none; white-space: nowrap; }
@@ -542,7 +512,6 @@
 		.sum { flex: 1 0 100%; }
 		.sh-f .act.ghost { margin-left: auto; }
 	}
-	/* Touch screens: every small control gets a full finger-sized target. */
 	@media (pointer: coarse) {
 		.rule { min-height: 44px; }
 		.st-hide, .tl-link { height: 44px; }

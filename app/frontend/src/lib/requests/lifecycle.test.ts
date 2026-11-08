@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { lifecycle, STAGE_WEIGHT, upcoming } from './lifecycle.ts';
+import { describe, expect, it } from 'vitest';
 
 const ask = (state: string, title_id?: number) => ({ state, title_id }) as Parameters<typeof lifecycle>[0];
 
@@ -70,7 +70,6 @@ describe('lifecycle', () => {
 		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 5 } })).toMatchObject({ stage: 'getting', tone: 'go', label: 'Processing · 3 left' });
 		expect(lifecycle(ask('approved', 7), { partial: { have: 1, total: 2, unit: 'seasons' } }).label).toBe('Processing · 1 season left');
 		expect(lifecycle(ask('approved', 7), { partial: { have: 3, total: 5, unit: 'albums' } }).label).toBe('Processing · 2 albums left');
-		// None in: the usual line. All asked for in: Ready.
 		expect(lifecycle(ask('approved', 7), { partial: { have: 0, total: 5 } }).label).toBe('Processing');
 		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 2 } })).toMatchObject({ stage: 'ready', tone: 'ok', label: 'Ready' });
 	});
@@ -114,7 +113,7 @@ describe('upcoming', () => {
 		const f = (s: number) => air[s] ?? null;
 		expect(upcoming({ kind: 'show', seasons: [3, 4] }, { dates: {} }, f, now)).toBe('2027-01-10');
 		expect(upcoming({ kind: 'show', seasons: [2, 3] }, { dates: {} }, f, now)).toBe('');
-		// A season with no known air day: not guessed.
+		// A season with no known air day is not guessed.
 		expect(upcoming({ kind: 'show', seasons: [3, 9] }, { dates: {} }, f, now)).toBe('');
 	});
 	it('the whole show reads its first air day', () => {

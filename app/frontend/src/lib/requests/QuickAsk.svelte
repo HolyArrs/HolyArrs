@@ -1,27 +1,24 @@
 <script lang="ts">
-	import { api, message, ApiError } from '../core/api.ts';
-	import { session } from '../core/session.svelte.ts';
-	import { toasts } from '../core/toasts.svelte.ts';
-	import { goto } from '$app/navigation';
-	import { to } from '../core/paths.ts';
-	import { refreshInbox } from '../core/inbox.svelte.ts';
-	import { loadDetails } from '../metadata/index.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from '#lib/ui/title-cards.ts';
-	import { seasonWords } from '../shows/index.ts';
-	import { savedDefaults } from '../mediafiles/index.ts';
-	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
-	import type { GateDefaults } from '../mediafiles/index.ts';
-	import type { ShowSettings } from '../shows/index.ts';
-	import type { LookupShow } from '../core/types.ts';
 	import AddMovieDialog from './AddMovieDialog.svelte';
 	import AddShowDialog from './AddShowDialog.svelte';
 	import AskShowDialog from './AskShowDialog.svelte';
 	import AskMovieDialog from './AskMovieDialog.svelte';
+	import { loadDetails } from '../metadata/index.ts';
+	import { seasonWords } from '../shows/index.ts';
+	import { savedDefaults } from '../mediafiles/index.ts';
+	import type { GateDefaults } from '../mediafiles/index.ts';
+	import type { ShowSettings } from '../shows/index.ts';
+	import { goto } from '$app/navigation';
+	import { api, message, ApiError } from '../core/api.ts';
+	import { session } from '../core/session.svelte.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { to } from '../core/paths.ts';
+	import { refreshInbox } from '../core/inbox.svelte.ts';
+	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
+	import type { LookupShow } from '../core/types.ts';
 
-	// The round + on a movie or show card, shared by every page with title cards:
-	// it never adds or asks in one click but opens a confirm sheet (seasons for
-	// shows; Library folder and Pick rules for people who manage). The card
-	// follows what happened here at once through live().
+	// The round + on a movie or show card, shared by every page with title cards. It never adds or asks in one click but opens a confirm sheet (seasons for shows; Library folder and Pick rules for people who manage).
 	let { onadded }: { onadded?: (t: TitleView) => void } = $props();
 
 	const manage = $derived(session.can('manage_library'));
@@ -81,7 +78,7 @@
 		}
 	}
 
-	/** askNow: one tap asks for the whole title (every season of a show) with no sheet; the card then reads as asked. */
+	/** One tap asks for the whole title (every season of a show) with no sheet; the card then reads as asked. */
 	export async function askNow(c: ExploreCard) {
 		const tmdb = cardTmdb(c);
 		if (!tmdb || asking || (c.kind !== 'movie' && c.kind !== 'show')) return;
@@ -112,7 +109,7 @@
 		void refreshInbox();
 	}
 
-	/** refused: the server says the title is in the Library already (409), so the card says so. */
+	/** The server says the title is in the Library already (409), so the card says so. */
 	function refused(body: Record<string, unknown>) {
 		if (current && typeof body.title_id === 'number') askedHere = new Map([...askedHere, [current.key, { titleId: body.title_id }]]);
 	}
@@ -129,7 +126,7 @@
 		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
 		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
-		// The add dialogs wait for the saved defaults; fetched once for this visit.
+		// The add dialogs wait for the saved defaults, fetched once per visit.
 		savedDefaults.forget();
 		void savedDefaults.load();
 	});
