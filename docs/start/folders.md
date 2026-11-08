@@ -11,7 +11,7 @@ Set up your folders once so finished downloads land in your Library instantly, w
 
 Put downloads and media under **one parent folder, on one disk**, and mount that parent into HolyArrs and your downloader **at the same path**.
 
-A hardlink is a second name for the same file. It takes no extra space and appears in a blink. It only works inside one filesystem, and Docker treats every mount as its own, so separate mounts force a full copy.
+A hardlink is a second name for the same file. It takes no extra space and is made instantly. It only works inside one filesystem, and Docker treats every mount as its own, so separate mounts force a full copy.
 
 ```
 /srv/data                  mounted as /data in HolyArrs and the downloader

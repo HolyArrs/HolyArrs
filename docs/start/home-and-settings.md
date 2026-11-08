@@ -5,7 +5,7 @@ level: Start
 sidebar: { order: 6 }
 ---
 
-Find your way around after setup: what Home tells you and where each setting lives.
+What Home tells you after setup, and where each setting lives.
 
 ## Home
 
