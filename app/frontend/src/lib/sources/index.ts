@@ -1,5 +1,6 @@
 export type * from './types.ts';
 export { barHeight } from './api.ts';
+export { default as ConnectBridge } from './ConnectBridge.svelte';
 export { default as SourceCheck } from './SourceCheck.svelte';
 export { emptyForm } from './api.ts';
 export { formBody } from './api.ts';

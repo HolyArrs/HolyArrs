@@ -7,7 +7,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import OwnTraits from './OwnTraits.svelte';
+	import { OwnTraits } from '#lib/downloads/index.ts';
 	import { kindChoices, usedWords } from '#lib/downloads/index.ts';
 	import type { PickRulesUse } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';

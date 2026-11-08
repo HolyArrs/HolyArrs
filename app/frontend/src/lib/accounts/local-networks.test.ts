@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../routes/settings/sign-in/+page.svelte', import.meta.url), 'utf8');
 
 describe('settings local networks', () => {
 	it('lists the networks under the skip switch and saves them', () => {

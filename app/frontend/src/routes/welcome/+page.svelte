@@ -11,7 +11,7 @@
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
+	import { ConnectBridge } from '#lib/sources/index.ts';
 	import MoveFlow from '../settings/move/+page.svelte';
 	import { refreshParts } from '#lib/mediafiles/index.ts';
 	import { applyParts } from '#lib/setup/index.ts';

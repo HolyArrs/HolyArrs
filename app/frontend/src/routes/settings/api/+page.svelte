@@ -8,8 +8,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
-	import SeerrCard from './SeerrCard.svelte';
-	import ApiKeysCard from './ApiKeysCard.svelte';
+	import { ApiKeysCard, SeerrCard } from '#lib/arrapi/index.ts';
 	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/arrapi/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';

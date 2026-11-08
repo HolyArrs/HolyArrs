@@ -118,6 +118,13 @@ export function filterSections(all: Section[], query: string): Section[] {
 	});
 }
 
+/** reachWords turns any "couldn't connect" answer into one plain line; other answers pass through. */
+export function reachWords(text: string): string {
+	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
+		? "Can't reach that address. Check it and that the app is running."
+		: text;
+}
+
 // Turns any error into a short sentence with a capital and an end mark.
 export function plainMessage(e: unknown): string {
 	const t = message(e).trim();

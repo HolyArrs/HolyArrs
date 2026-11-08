@@ -7,11 +7,7 @@
 		"lib/art-check.ts"
 	],
 	"routeTests": [
-		"routes/settings/alerts/hints.test.ts",
-		"routes/settings/alerts/kind.test.ts",
-		"routes/settings/sign-in/local-networks.test.ts",
-		"routes/settings/sign-in/plex-popup-opener.test.ts",
-		"routes/settings/tmdb/tmdb-privacy.test.ts"
+		"routes/settings/alerts/hints.test.ts"
 	],
 	"edges": [],
 	"pageEdges": [],

@@ -6,5 +6,6 @@ export { pageState } from './settings-status.ts';
 export { refreshSettingsStatus } from './settings-status.svelte.ts';
 export { settingsNow } from './settings-status.svelte.ts';
 export { stateWords } from './settings-status.ts';
+export { switchKind } from './kind.ts';
 export type { GroupState } from './settings-status.ts';
 export type { PinnedAlert } from './attention-alerts.ts';

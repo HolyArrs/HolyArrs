@@ -10,7 +10,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import ConnectBridge from './ConnectBridge.svelte';
+	import { ConnectBridge } from '#lib/sources/index.ts';
 	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources/index.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';

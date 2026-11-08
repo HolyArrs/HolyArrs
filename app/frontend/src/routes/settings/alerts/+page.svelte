@@ -8,7 +8,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { switchKind } from './kind.ts';
+	import { switchKind } from '#lib/alerts/index.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { session } from '#lib/core/session.svelte.ts';

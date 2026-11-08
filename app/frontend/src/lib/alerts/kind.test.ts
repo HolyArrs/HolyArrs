@@ -2,7 +2,7 @@ import { switchKind } from './kind.ts';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../routes/settings/alerts/+page.svelte', import.meta.url), 'utf8');
 
 describe('switchKind', () => {
 	const form = { kind: 'gotify', name: 'Phone', topic: 'holyarrs', app_token: ['AStandIn', 'GotifyKey'].join('.'), server_url: 'https://gotify.example.com', clear_app_token: false };

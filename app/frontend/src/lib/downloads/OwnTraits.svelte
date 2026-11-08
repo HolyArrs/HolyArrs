@@ -8,8 +8,8 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { checkOwnTrait, ownTerms } from '#lib/downloads/index.ts';
-	import type { OwnTrait } from '#lib/downloads/index.ts';
+	import { checkOwnTrait, ownTerms } from './pick-rules.ts';
+	import type { OwnTrait } from './types.ts';
 	import { onMount } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';

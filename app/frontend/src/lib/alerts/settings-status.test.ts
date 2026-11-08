@@ -136,7 +136,7 @@ describe('searchSettings', () => {
 
 describe('every setting a search finds is on its page', () => {
 	it('each anchor is an id in that page (or My account)', async () => {
-		const { readFileSync, readdirSync } = await import('node:fs');
+		const { existsSync, readFileSync, readdirSync } = await import('node:fs');
 		const { join, dirname } = await import('node:path');
 		const root = join(process.cwd(), 'src');
 		const missing: string[] = [];
@@ -145,7 +145,12 @@ describe('every setting a search finds is on its page', () => {
 			const file = e.href === '/settings/account' ? join(root, 'lib', 'accounts', 'Account.svelte') : join(root, 'routes', ...e.href.split('/').filter(Boolean), '+page.svelte');
 			// A page's own parts (other .svelte files beside it) count too; My account is split across its parts in lib/accounts.
 			const parts = readdirSync(dirname(file)).filter((f) => f.endsWith('.svelte') && f !== (e.href === '/settings/account' ? 'Account.svelte' : '+page.svelte'));
-			const text = [file, ...parts.map((f) => join(dirname(file), f))].map((f) => readFileSync(f, 'utf8')).join('\n');
+			// Parts the page takes from a module's index.ts count too.
+			const page = readFileSync(file, 'utf8');
+			const fromModules = [...page.matchAll(/import \{([^}]*)\} from '#lib\/([a-z]+)\/index\.ts'/g)].flatMap(([, names, m]) =>
+				names.split(',').map((n) => join(root, 'lib', m, n.trim() + '.svelte'))
+			);
+			const text = [file, ...parts.map((f) => join(dirname(file), f)), ...fromModules.filter((f) => existsSync(f))].map((f) => readFileSync(f, 'utf8')).join('\n');
 			const way = e.anchor.match(/^(plex|jellyfin|emby)-card$/);
 			const found = text.includes(`id="${e.anchor}"`) || text.includes(`id: '${e.anchor}'`) || (way && text.includes('id="{w}-card"'));
 			if (!found) missing.push(`${e.href}#${e.anchor}`);

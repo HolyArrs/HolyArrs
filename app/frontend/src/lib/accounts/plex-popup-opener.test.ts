@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../routes/settings/sign-in/+page.svelte', import.meta.url), 'utf8');
 
 describe('settings Plex link popup', () => {
 	it('cuts window.opener before sending the popup to Plex', () => {

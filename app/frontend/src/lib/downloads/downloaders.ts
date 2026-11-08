@@ -335,10 +335,3 @@ export function removeFilesWords(rows: Pick<DownloadRow, 'path' | 'downloader'>[
 	const rest = rows.length - Math.min(paths.length, 3);
 	return `Deletes ${shown}${rest ? ` and the files of ${rest} more` : ''} in ${clients}.`;
 }
-
-/** reachWords turns any "couldn't connect" answer into one plain line; other answers pass through. */
-export function reachWords(text: string): string {
-	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
-		? "Can't reach that address. Check it and that the app is running."
-		: text;
-}

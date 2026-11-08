@@ -9,10 +9,9 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
-	import { reachWords } from '#lib/downloads/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
-	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { plainMessage as message, reachWords } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { ago } from '#lib/core/format.ts';
