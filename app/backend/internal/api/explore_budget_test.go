@@ -110,7 +110,7 @@ func TestExploreBuildsInParallel(t *testing.T) {
 func TestKidRatingStored(t *testing.T) {
 	t.Parallel()
 	a, s, f := exploreRig(t)
-	ref := ratingRef{kind: "movie", tmdbID: "1234"}
+	ref := ratingRef{Kind: "movie", TMDBID: "1234"}
 	r, ok := a.lookupRating(context.Background(), ref)
 	if !ok {
 		t.Fatal("lookup failed")

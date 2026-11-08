@@ -204,8 +204,6 @@ type API struct {
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
-	// rated keeps TMDB ratings looked up for Kid limits.
-	rated ratingState
 	// status keeps the Settings status answer for 30 seconds.
 	status health.StatusCache
 	// serviceTop keeps the per-service top lists for 12 hours.
@@ -307,7 +305,8 @@ func New(s Server) *API {
 			}}
 	}
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
-	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, KidMax: a.kidMax}}
+	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, KidMax: a.kidMax, RouteUsable: routeUsable}}
+	a.mf.DetailsRating = a.detailsRating
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}

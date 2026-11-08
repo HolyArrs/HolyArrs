@@ -877,7 +877,7 @@ func exploreCollections(ctx context.Context, db *sql.DB) ([]engine.LibCollection
 func (a *API) kidAllow(ctx context.Context, max string) func(engine.Item) bool {
 	left := exploreKidLookups
 	return func(it engine.Item) bool {
-		ref := ratingRef{kind: it.Kind, tmdbID: it.TMDBID}
+		ref := ratingRef{Kind: it.Kind, TMDBID: it.TMDBID}
 		r, ok := a.knownRating(ctx, ref)
 		if !ok && left > 0 {
 			left--

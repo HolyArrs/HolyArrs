@@ -815,7 +815,7 @@ func TestKidRatingLookupsAtMostFour(t *testing.T) {
 	a := New(Server{Store: st, Metadata: slow, Version: "test"})
 	var refs []ratingRef
 	for i := range 12 {
-		refs = append(refs, ratingRef{kind: "movie", tmdbID: fmt.Sprint(7000 + i)})
+		refs = append(refs, ratingRef{Kind: "movie", TMDBID: fmt.Sprint(7000 + i)})
 	}
 	got := a.kidAllowed(context.Background(), "PG", refs, 0)
 	if len(got) != 12 || slices.Contains(got, false) {
@@ -830,8 +830,8 @@ func TestKidRatingLookupsAtMostFour(t *testing.T) {
 		t.Fatalf("%d details lookups for 12 titles asked twice", c)
 	}
 	// Stop early once enough are allowed.
-	more := []ratingRef{{kind: "show", tmdbID: "8001"}, {kind: "show", tmdbID: "8002"}, {kind: "show", tmdbID: "8003"}, {kind: "show", tmdbID: "8004"},
-		{kind: "show", tmdbID: "8005"}, {kind: "show", tmdbID: "8006"}, {kind: "show", tmdbID: "8007"}, {kind: "show", tmdbID: "8008"}}
+	more := []ratingRef{{Kind: "show", TMDBID: "8001"}, {Kind: "show", TMDBID: "8002"}, {Kind: "show", TMDBID: "8003"}, {Kind: "show", TMDBID: "8004"},
+		{Kind: "show", TMDBID: "8005"}, {Kind: "show", TMDBID: "8006"}, {Kind: "show", TMDBID: "8007"}, {Kind: "show", TMDBID: "8008"}}
 	if got := a.kidAllowed(context.Background(), "PG", more, 2); !got[0] || !got[1] || got[7] {
 		t.Fatalf("stop early: %v", got)
 	}
