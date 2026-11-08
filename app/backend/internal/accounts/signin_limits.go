@@ -100,6 +100,31 @@ func (a *Auth) clientKeys(r *http.Request) (ipKey, altKey string, sure bool) {
 	return addrKey(addr, unsure), altKey, !unsure
 }
 
+// signInKeys is clientKeys for password and code checks. Behind a private
+// proxy that is not trusted every visitor shares the proxy's address, so
+// there the address key is dropped (ipKey "") and only the account's own
+// wait counts: one person's typos cannot lock everyone out. The Settings
+// card already tells the owner to trust the proxy.
+func (a *Auth) signInKeys(r *http.Request) (ipKey, altKey string, sure bool) {
+	ipKey, altKey, sure = a.clientKeys(r)
+	if a.sharedProxy(r) {
+		return "", "", false
+	}
+	return ipKey, altKey, sure
+}
+
+// sharedProxy says whether the peer is the untrusted loopback or private
+// proxy the warning saw, and it sent forwarding headers. The headers alone
+// prove nothing, since any device can write them: a home device forging
+// X-Forwarded-For keeps its own per-address limit.
+func (a *Auth) sharedProxy(r *http.Request) bool {
+	if !anyForwardHeader(r) {
+		return false
+	}
+	ip := parseHostIP(r.RemoteAddr)
+	return ip != nil && (ip.IsLoopback() || ip.IsPrivate()) && !a.trustedProxy(ip) && a.seenProxy(ip)
+}
+
 // altWait is the address wait for altKey, if there is one; the caller holds a.mu.
 func (a *Auth) altWait(altKey string) time.Duration {
 	if altKey == "" {

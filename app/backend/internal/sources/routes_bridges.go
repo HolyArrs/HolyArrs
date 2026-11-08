@@ -3,9 +3,11 @@ package sources
 import (
 	"context"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -64,6 +66,14 @@ func (h *Handlers) bridgeView(ctx context.Context, b Bridge) BridgeView {
 }
 
 func bridgeFail(w http.ResponseWriter, status int, err error, field string) {
+	var be *BridgeError
+	if errors.As(err, &be) {
+		if be.Detail != "" {
+			log.Printf("sources: bridge: %s (%s)", be.Words, be.Detail)
+		}
+	} else if err != nil {
+		log.Printf("sources: bridge: %v", err)
+	}
 	body := map[string]string{"error": BridgeWords(err)}
 	if field != "" {
 		body["field"] = field
@@ -137,7 +147,52 @@ func localAddress() string {
 	return ""
 }
 
+// bridgeTries caps tests and searches per person: each one makes this
+// server call addresses on the home network.
+const bridgeTries = 10
+
+// bridgeLimiter counts each person's bridge tests and searches in the last minute.
+type bridgeLimiter struct {
+	mu   sync.Mutex
+	hits map[int64][]time.Time
+}
+
+// allow notes one try and says whether it is within the limit.
+func (l *bridgeLimiter) allow(user int64, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.hits == nil {
+		l.hits = map[int64][]time.Time{}
+	}
+	kept := l.hits[user][:0]
+	for _, t := range l.hits[user] {
+		if now.Sub(t) < time.Minute {
+			kept = append(kept, t)
+		}
+	}
+	if len(kept) >= bridgeTries {
+		l.hits[user] = kept
+		return false
+	}
+	l.hits[user] = append(kept, now)
+	return true
+}
+
+// bridgeAllowed writes 429 when the person has tried too often.
+func (h *Handlers) bridgeAllowed(w http.ResponseWriter, r *http.Request) bool {
+	who, _ := webserver.From(r.Context())
+	if h.bridgeLimit.allow(who.UserID, time.Now()) {
+		return true
+	}
+	w.Header().Set("Retry-After", "60")
+	webserver.WriteJSON(w, http.StatusTooManyRequests, map[string]string{"error": "Too many tries. Wait a minute and try again."})
+	return false
+}
+
 func (h *Handlers) findBridges(w http.ResponseWriter, r *http.Request) {
+	if !h.bridgeAllowed(w, r) {
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 6*time.Second)
 	defer cancel()
 	found := FindBridges(ctx)
@@ -169,6 +224,9 @@ func sideOf(kind string) string {
 
 // testBridge checks an address and key without saving anything.
 func (h *Handlers) testBridge(w http.ResponseWriter, r *http.Request) {
+	if !h.bridgeAllowed(w, r) {
+		return
+	}
 	var in bridgeBody
 	if !webserver.Decode(w, r, &in, bridgeHelp) || !cleanBridge(w, &in) {
 		return

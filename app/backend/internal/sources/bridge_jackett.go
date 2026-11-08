@@ -71,13 +71,13 @@ func (j *BridgeJackett) Sites(ctx context.Context) ([]BridgeSite, error) {
 		if status == http.StatusNotFound || status == http.StatusOK {
 			return nil, fail("That address answers, but not like Jackett. Check the address (and its base path, if Jackett has one).")
 		}
-		return nil, fail("Jackett answered with an error (%d).", status)
+		return nil, fail("Jackett answered with status %d.", status)
 	}
 	if l.XMLName.Local == "error" {
 		if l.Code == 100 {
 			return nil, fail("Jackett turned down the key. Copy it again from the top of Jackett's page.")
 		}
-		return nil, fail("Jackett answered with an error: %s", clip(strings.TrimSpace(l.Text), 200))
+		return nil, &BridgeError{Words: "Jackett answered with an error.", Detail: clip(strings.TrimSpace(l.Text), 200)}
 	}
 	if l.XMLName.Local != "indexers" {
 		return nil, fail("That address answers, but not like Jackett.")

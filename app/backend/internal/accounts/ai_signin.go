@@ -13,9 +13,11 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -116,6 +118,13 @@ func (a *Auth) aiClientFor(ctx context.Context, id string) (aiClient, bool) {
 
 // aiClientName is the name shown to the person and used as the key label.
 func aiClientName(n string) string {
+	// Control and bidi characters could make one name look like another.
+	n = strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || (r >= 0x202A && r <= 0x202E) || (r >= 0x2066 && r <= 0x2069) || r == 0x200E || r == 0x200F || r == 0x061C {
+			return ' '
+		}
+		return r
+	}, n)
 	n = strings.Join(strings.Fields(n), " ")
 	if n == "" {
 		return "AI app"
@@ -299,6 +308,19 @@ func oauthFail(w http.ResponseWriter, code int, kind, msg string) {
 }
 
 func (a *Auth) aiRegister(w http.ResponseWriter, r *http.Request) {
+	// Each address may register a few apps, then waits like a failed sign-in.
+	key := "aireg:" + a.clientKey(r)
+	a.mu.Lock()
+	wait := a.waitFor(key, freeTries)
+	if wait == 0 {
+		a.noteFail(key)
+	}
+	a.mu.Unlock()
+	if wait > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		oauthFail(w, http.StatusTooManyRequests, "temporarily_unavailable", "Too many new apps from this address. Try again in a few minutes.")
+		return
+	}
 	var in struct {
 		Name       string   `json:"client_name"`
 		Redirects  []string `json:"redirect_uris"`
@@ -427,13 +449,19 @@ func (a *Auth) aiConnectInfo(w http.ResponseWriter, r *http.Request) {
 		"client_name": req.client.Name,
 		"returns_to":  back,
 		"local":       local,
-		"enabled":     a.aiOn(r.Context()),
-		"deny_url":    backTo(req.redirect, url.Values{"error": {"access_denied"}, "state": {req.state}, "iss": {a.aiOrigin(r)}}),
+		// The name is whatever the app sent; only a return address on this computer is trusted.
+		"name_verified": local,
+		"enabled":       a.aiOn(r.Context()),
+		"deny_url":      backTo(req.redirect, url.Values{"error": {"access_denied"}, "state": {req.state}, "iss": {a.aiOrigin(r)}}),
 	})
 }
 
 // aiConnectAllow is the person allowing the app: it gets a one-time code.
 func (a *Auth) aiConnectAllow(w http.ResponseWriter, r *http.Request) {
+	if !a.aiOn(r.Context()) {
+		fail(w, http.StatusForbidden, "AI connections are off")
+		return
+	}
 	if !webserver.RequireStrong(w, r) {
 		return
 	}
@@ -470,6 +498,10 @@ func (a *Auth) aiConnectAllow(w http.ResponseWriter, r *http.Request) {
 
 // aiToken swaps a code for the app's own AI key.
 func (a *Auth) aiToken(w http.ResponseWriter, r *http.Request) {
+	if !a.aiOn(r.Context()) {
+		oauthFail(w, http.StatusForbidden, "access_denied", "AI connections are off")
+		return
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
 		oauthFail(w, http.StatusBadRequest, "invalid_request", "send a form")

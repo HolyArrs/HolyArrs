@@ -31,11 +31,19 @@ var metadataAddrs = []net.IP{net.ParseIP("fd00:ec2::254"), net.ParseIP("100.100.
 
 // NotMetadata allows the local network but never link-local addresses
 // (169.254.0.0/16, where cloud metadata services answer, and fe80::/10) or
-// the other metadata addresses. It is the policy for anything that may
-// reach the local network.
+// the other metadata addresses. It also refuses unspecified, multicast and
+// broadcast addresses, NAT64 and 6to4 ranges (which can carry a metadata address
+// inside) and 192.0.0.0/24. It is the policy for anything that may reach
+// the local network.
 func NotMetadata(ip net.IP) bool {
-	if ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+	if ip == nil || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
+		ip.IsUnspecified() || ip.IsMulticast() || ip.IsInterfaceLocalMulticast() || ip.Equal(net.IPv4bcast) {
 		return false
+	}
+	for _, n := range oddRanges {
+		if n.Contains(ip) {
+			return false
+		}
 	}
 	for _, m := range metadataAddrs {
 		if m.Equal(ip) {
@@ -44,6 +52,16 @@ func NotMetadata(ip net.IP) bool {
 	}
 	return true
 }
+
+// oddRanges are refused even where the local network is allowed.
+var oddRanges = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, c := range []string{"64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "192.0.0.0/24"} {
+		_, n, _ := net.ParseCIDR(c)
+		out = append(out, n)
+	}
+	return out
+}()
 
 // blocked are ranges refused besides the ones net.IP names: CGNAT (also
 // Tailscale), "this network", benchmarking, reserved, and the IPv6 ranges
@@ -63,7 +81,7 @@ var blocked = func() []*net.IPNet {
 // (HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL): local networks are allowed, but
 // never cloud metadata, unspecified, multicast or broadcast addresses.
 func MetadataServiceLocal(ip net.IP) bool {
-	return ip != nil && NotMetadata(ip) && !ip.IsUnspecified() && !ip.IsMulticast() && !ip.IsInterfaceLocalMulticast() && !ip.Equal(net.IPv4bcast)
+	return ip != nil && NotMetadata(ip)
 }
 
 // PublicOnly refuses addresses on this machine or a local network: loopback,

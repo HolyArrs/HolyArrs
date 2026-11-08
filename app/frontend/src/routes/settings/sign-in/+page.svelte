@@ -486,6 +486,7 @@
 				Devices on the networks below open HolyArrs as the owner, without a password. With family or friends on the same
 				network, leave this off: they would get the owner's rights too.
 			</p>
+			<p class="hint">Works only for direct visits. Using a proxy? Add it to trusted proxies.</p>
 			<p class="hint">Keys and passwords still need a sign-in</p>
 			<form class="nets" onsubmit={saveNets}>
 				<Field id="local-nets" label="Local networks, one per line" hint="e.g. 192.168.1.0/24 or 192.168.1.20. Up to 32.">

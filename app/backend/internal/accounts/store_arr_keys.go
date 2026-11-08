@@ -61,6 +61,15 @@ func (a *Auth) putArrKey(ctx context.Context, side string, ownerID int64, k stri
 	})
 }
 
+// deleteArrKeysOf removes the old-app API keys a person made. It returns how many went.
+func deleteArrKeysOf(ctx context.Context, tx *sql.Tx, userID int64) (int64, error) {
+	res, err := tx.ExecContext(ctx, "DELETE FROM compat_keys WHERE owner_user_id = ?", userID)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 // removeArrKey says how many keys it removed.
 func (a *Auth) removeArrKey(ctx context.Context, side string) (int64, error) {
 	var n int64

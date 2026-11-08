@@ -90,7 +90,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 			return
 		}
-		if a.skipLocal.Load() && a.hostAllowed(r) && a.localPeer(r) {
+		if a.strictLocal(r) {
 			if id, name, ok := a.owner(r.Context()); ok {
 				if unsafeMethod(r.Method) && a.refuse(w, r, true) {
 					return
@@ -160,6 +160,48 @@ func (a *Auth) trustedProxy(ip net.IP) bool {
 func (a *Auth) localPeer(r *http.Request) bool {
 	addr, ok := a.clientAddr(r)
 	return ok && a.isLocal(addr)
+}
+
+// strictLocal says whether the request may skip sign-in on the local
+// network: the skip is on, the Host is an IP address or a home-only name,
+// and the caller is on a listed local network. Forwarding headers count only
+// from a trusted proxy; from any other peer they end the skip. A proxy's own
+// address never skips: a proxy that drops the headers and sets Host to the
+// upstream IP (nginx's default) would otherwise pass every internet visitor
+// off as a home one. That covers trusted proxies and the untrusted one the
+// proxy warning saw; a proxy that never sends any forwarding header and is
+// not listed cannot be told apart from a home device, which is why the
+// Settings card asks the owner to list it.
+func (a *Auth) strictLocal(r *http.Request) bool {
+	if !a.skipLocal.Load() || !a.hostAllowed(r) {
+		return false
+	}
+	if h := normHost(r.Host); net.ParseIP(h) == nil && !homeName(h) {
+		return false
+	}
+	ip := parseHostIP(r.RemoteAddr)
+	if anyForwardHeader(r) {
+		if ip == nil || !a.trustedProxy(ip) {
+			a.warnUntrustedProxy(ip)
+			return false
+		}
+	} else if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
+		return false
+	}
+	return a.localPeer(r)
+}
+
+// anyForwardHeader says whether the request carries any proxy forwarding header.
+func anyForwardHeader(r *http.Request) bool {
+	if r.Header.Get("Forwarded") != "" || r.Header.Get("X-Real-IP") != "" {
+		return true
+	}
+	for k := range r.Header {
+		if strings.HasPrefix(k, "X-Forwarded-") {
+			return true
+		}
+	}
+	return false
 }
 
 // behindHTTPS believes X-Forwarded-Proto only from a trusted proxy.

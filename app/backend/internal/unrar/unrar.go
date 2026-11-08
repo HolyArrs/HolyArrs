@@ -246,6 +246,15 @@ func cleanName(raw string) (string, error) {
 // run walks every volume of the set. With a dest it also writes the files, and
 // it checks each file against the CRC in its header.
 func run(first, dest string) (entries []Entry, err error) {
+	// Writes go through os.Root so a folder that is a link cannot lead
+	// a file outside dest.
+	var root *os.Root
+	if dest != "" {
+		if root, err = os.OpenRoot(dest); err != nil {
+			return nil, err
+		}
+		defer root.Close()
+	}
 	var cur *current
 	defer func() {
 		if cur != nil && cur.out != nil {
@@ -270,11 +279,12 @@ func run(first, dest string) (entries []Entry, err error) {
 			}
 			cur = &current{e: Entry{Name: name, Link: p.link}, declared: p.unpacked, skip: p.dir || p.link, whole: crc32.NewIEEE()}
 			if dest != "" && !cur.skip && !p.compressed && !p.encrypted {
-				target := filepath.Join(dest, filepath.FromSlash(name))
-				if err := os.MkdirAll(filepath.Dir(target), 0o777); err != nil {
-					return err
+				if i := strings.LastIndex(name, "/"); i > 0 {
+					if err := root.MkdirAll(name[:i], 0o777); err != nil {
+						return err
+					}
 				}
-				if cur.out, err = os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o666); err != nil {
+				if cur.out, err = root.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o666); err != nil {
 					return err
 				}
 			}

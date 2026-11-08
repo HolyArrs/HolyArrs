@@ -2,11 +2,29 @@ package arrapi
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
+
+func TestInternalErrorHidesDetail(t *testing.T) {
+	w := httptest.NewRecorder()
+	internalError(w, errors.New("SQL logic error /config/x.db"))
+	if w.Code != 500 || strings.Contains(w.Body.String(), "SQL") || strings.Contains(w.Body.String(), "/config") {
+		t.Fatalf("got %d %q", w.Code, w.Body.String())
+	}
+	w = httptest.NewRecorder()
+	internalError(w, fmt.Errorf("title: %w", database.ErrNotFound))
+	if w.Code != 404 {
+		t.Fatalf("not found: got %d", w.Code)
+	}
+}
 
 // The words and formats the old apps use in their answers.
 func TestFormats_ManualWords(t *testing.T) {

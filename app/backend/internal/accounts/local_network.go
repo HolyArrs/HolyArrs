@@ -299,11 +299,36 @@ func (a *Auth) warnUntrustedProxy(peer net.IP) {
 	if a.now != nil {
 		now = a.now()
 	}
+	a.noteProxyPeer(peer, now)
 	last := a.proxyWarned.Load()
 	if last != 0 && now.Sub(time.Unix(0, last)) < MaxBackoff || !a.proxyWarned.CompareAndSwap(last, now.UnixNano()) {
 		return
 	}
 	log.Printf("auth: X-Forwarded-For from %s ignored; every visitor shares one sign-in limit. Set %s=%s", peer, EnvTrustedProxies, peer)
+}
+
+// noteProxyPeer remembers the private peer that sends forwarding headers
+// without being trusted: most likely the owner's reverse proxy. It sticks
+// while that peer keeps sending them, so another peer can only take its place
+// once it has been quiet for MaxBackoff; a visitor writing the headers once
+// cannot push the real proxy out.
+func (a *Auth) noteProxyPeer(peer net.IP, now time.Time) {
+	s := peer.String()
+	a.proxyMu.Lock()
+	defer a.proxyMu.Unlock()
+	if a.proxyPeer == "" || a.proxyPeer == s || now.Sub(a.proxyPeerAt) > MaxBackoff {
+		a.proxyPeer, a.proxyPeerAt = s, now
+	}
+}
+
+// seenProxy says whether ip is the untrusted proxy noteProxyPeer recorded.
+func (a *Auth) seenProxy(ip net.IP) bool {
+	if ip == nil {
+		return false
+	}
+	a.proxyMu.Lock()
+	defer a.proxyMu.Unlock()
+	return a.proxyPeer != "" && a.proxyPeer == ip.String()
 }
 
 // parseHostIP reads an address that may carry a port or brackets.

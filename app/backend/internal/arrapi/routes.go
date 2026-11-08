@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -284,13 +285,15 @@ func (h *handler) title(ctx context.Context, id int64, kind string) (mediafiles.
 	return t, nil
 }
 
-// internalError answers an unexpected failure.
+// internalError answers an unexpected failure. The detail goes to the log
+// only, so file paths and database text never reach the caller.
 func internalError(w http.ResponseWriter, err error) {
 	if errors.Is(err, database.ErrNotFound) {
 		notFound(w)
 		return
 	}
-	message(w, http.StatusInternalServerError, err.Error())
+	log.Printf("arrapi: %v", err)
+	message(w, http.StatusInternalServerError, "something went wrong")
 }
 
 func atoi64(s string) int64 {

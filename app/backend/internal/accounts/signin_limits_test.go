@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
@@ -342,5 +343,23 @@ func TestForgedForwardedForCannotLockOutOwnerAddress(t *testing.T) {
 		map[string]string{"X-Forwarded-For": owner})
 	if resp.StatusCode == http.StatusTooManyRequests {
 		t.Fatalf("owner's address held by forged forwarding: %d %s", resp.StatusCode, body)
+	}
+}
+
+// Only the proxy the warning saw shares its address budget. A home device
+// that writes its own X-Forwarded-For keeps the per-address limit.
+func TestForgedForwardKeepsAddressLimit(t *testing.T) {
+	a := setup(t, Options{}).a
+	req := func(peer, xff string) *http.Request {
+		r := httptest.NewRequest("POST", "/api/v1/auth/login", nil)
+		r.RemoteAddr = peer + ":5000"
+		r.Header.Set("X-Forwarded-For", xff)
+		return r
+	}
+	if ip, _, _ := a.signInKeys(req("172.17.0.1", "203.0.113.7")); ip != "" {
+		t.Fatalf("the seen proxy kept a shared address key %q", ip)
+	}
+	if ip, _, _ := a.signInKeys(req("192.168.1.50", "203.0.113.8")); ip != "ip:192.168.1.50" {
+		t.Fatalf("a home device forging X-Forwarded-For got key %q, want ip:192.168.1.50", ip)
 	}
 }

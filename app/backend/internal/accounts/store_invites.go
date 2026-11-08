@@ -45,6 +45,15 @@ func insertInvite(ctx context.Context, q conn, hash, now string, createdBy int64
 	return err
 }
 
+// deleteOpenInvites removes every unused invite. It returns how many went.
+func deleteOpenInvites(ctx context.Context, q conn) (int64, error) {
+	res, err := q.ExecContext(ctx, "DELETE FROM invites WHERE used_at IS NULL")
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 // deleteOpenInvite takes back an unused invite: any for the owner, else the
 // person's own. It returns how many went.
 func deleteOpenInvite(ctx context.Context, q conn, hash string, all bool, userID int64) (int64, error) {

@@ -31,8 +31,9 @@ type Handlers struct {
 	// PartOn says whether a part of the app (Shows, Movies) is switched on.
 	PartOn func(parts.Part) bool
 
-	bridgeOnce sync.Once
-	bridgeSvc  *BridgeService
+	bridgeOnce  sync.Once
+	bridgeSvc   *BridgeService
+	bridgeLimit bridgeLimiter
 }
 
 // Routes registers every route of this module.

@@ -239,7 +239,8 @@ test('an AI app signs in through the browser and gets its own key', async () => 
 	await page.goto('/oauth/authorize?' + q);
 	await expect(page).toHaveURL(/\/ai\?/);
 	const card = page.getByTestId('ai-connect');
-	await expect(card).toContainText('Test Agent wants to use HolyArrs');
+	await expect(card).toContainText('wants to use HolyArrs');
+	await expect(card).toContainText("Says it's Test Agent");
 	await card.getByRole('button', { name: 'Allow' }).click();
 	await expect.poll(() => back).toContain('code=');
 	const code = new URL(back).searchParams.get('code')!;
