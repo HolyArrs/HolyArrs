@@ -8,7 +8,6 @@
 </script>
 
 <span class="mop" class:warn={notes.length > 0 || dls.clients.some((c) => c.error)}><Popover label="More status" icon="more" placement="below" align="end" width={320}>{#snippet children()}
-	<!-- One card per Downloader (its state, its own numbers, its own control), then the totals as tiles. -->
 	<div class="mo" data-testid="sb-status">
 		{#each notes.filter((n) => !dls.clients.some((c) => n.startsWith(c.name))) as n (n)}<p class="mnote" data-testid="dl-note">{n}</p>{/each}
 		{#if !dls.clients.length}<p class="mnote">{dls.health}</p>{/if}
@@ -16,7 +15,7 @@
 			{@const s = c.status}
 			{@const usenet = c.protocol === 'usenet'}
 			{@const tone = c.error ? 'warn' : s?.connection === 'disconnected' ? 'bad' : s?.connection === 'firewalled' ? 'warn' : s?.paused ? 'held' : 'ok'}
-			<!-- The dot carries the state; a word appears only when something is off, so a card never says "Connected" while its neighbours seem not to. -->
+			<!-- The dot carries the state; a word shows only when something is off. -->
 			{@const word = c.error ? '' : s?.connection && s.connection !== 'connected' ? CONN_WORD[s.connection] : s?.paused ? 'Paused' : ''}
 			{@const hint = c.error ? 'Not answering' : s?.connection ? CONN_HINT[s.connection] : s?.paused ? 'Paused' : 'Answering'}
 			<div class="mc" class:warn={!!c.error} data-testid="sb-client">
@@ -50,7 +49,6 @@
 	.xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
-	/* The status popover: one card per Downloader, then the totals as tiles. */
 	.mo { margin: 0; padding: 6px; display: grid; gap: 8px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.mnote { margin: 0; padding: 0 4px; color: var(--text-muted); }
 	.mc { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
@@ -71,7 +69,6 @@
 	.mt b { font: 600 15px / 1.2 var(--font-ui); }
 	.slow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding-top: 6px; border-top: 1px solid var(--line); cursor: pointer; min-height: 28px; color: var(--text-muted); }
 	.slow input { width: 18px; height: 18px; accent-color: var(--accent); }
-	/* The status trigger carries an amber dot while there is a note to read. */
 	.mop { position: relative; display: inline-flex; }
 	.mop.warn::after { content: ''; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--wait); box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
 	.more { min-width: 36px; padding: 0 10px; }

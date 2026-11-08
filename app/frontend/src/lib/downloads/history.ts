@@ -1,5 +1,4 @@
-// History: the words and filters for the Event list (Downloads > History,
-// the movie page and Home).
+// The words and filters for the Event list (Downloads > History, the movie page and Home).
 import type { EventRecord } from '../core/types.ts';
 
 export interface KindGroup {
@@ -41,14 +40,14 @@ for (const g of kindGroups) {
 	}
 }
 
-/** groupLabel names the group an Event kind belongs to ("Other" when none). */
+/** The group an Event kind belongs to; "Other" when none. */
 export function groupLabel(kind: string): string {
 	if (exact[kind]) return exact[kind];
 	for (const [p, label] of prefixes) if (kind.startsWith(p)) return label;
 	return 'Other';
 }
 
-/** tone colours a row by what happened. */
+/** Colours a row by what happened. */
 export function kindTone(kind: string): 'ok' | 'fail' | 'wait' | '' {
 	if (kind === 'health_recovered' || kind === 'import_done' || kind === 'file_back' || kind === 'media_server_told' || kind === 'subtitle_saved' || kind === 'subtitle_upgraded') return 'ok';
 	if (/failed|rejected|vanished|missing|unreachable|broken|low|not_removed/.test(kind) || kind === 'needs_decision') return 'fail';
@@ -65,7 +64,7 @@ export interface HistoryFilter {
 	source?: number;
 	/** Show the routine feed checks (hidden by default). */
 	feed?: boolean;
-	/** Ask the server to hide feed checks unless `feed` is on (History's today look). */
+	/** Ask the server to hide feed checks unless `feed` is on. */
 	hideFeed?: boolean;
 	from?: string;
 	to?: string;
@@ -73,7 +72,7 @@ export interface HistoryFilter {
 	offset: number;
 }
 
-/** createLatestOnly lets an async caller ignore work superseded by a newer request. */
+/** Lets an async caller ignore work superseded by a newer request. */
 export function createLatestOnly(): () => () => boolean {
 	let latest = 0;
 	return () => {
@@ -82,12 +81,12 @@ export function createLatestOnly(): () => () => boolean {
 	};
 }
 
-/** dateRangeProblem explains an invalid inclusive date range. */
+/** Explains an invalid inclusive date range. */
 export function dateRangeProblem(f: Pick<HistoryFilter, 'from' | 'to'>): string {
 	return f.from && f.to && f.from > f.to ? 'From date must be on or before To date.' : '';
 }
 
-/** historyQuery turns the filters into the /events query string. */
+/** Turns the filters into the /events query string. */
 export function historyQuery(f: HistoryFilter): string {
 	const problem = dateRangeProblem(f);
 	if (problem) throw new Error(problem);
@@ -106,7 +105,7 @@ export function historyQuery(f: HistoryFilter): string {
 	return q.toString();
 }
 
-/** readFilter reads the filters from the page address (so a filtered view can be linked). */
+/** Reads the filters from the page address, so a filtered view can be linked. */
 export function readFilter(params: { get(name: string): string | null }, limit = 50): HistoryFilter {
 	const title = Number(params.get('title'));
 	const episode = Number(params.get('episode'));
@@ -126,7 +125,7 @@ export function readFilter(params: { get(name: string): string | null }, limit =
 		groups, from: day(params.get('from')), to: day(params.get('to')), limit, offset };
 }
 
-/** filterParams is the page address for the filters. */
+/** The page address for the filters. */
 export function filterParams(f: HistoryFilter): string {
 	const q = new URLSearchParams();
 	if (f.title) q.set('title', String(f.title));
@@ -154,7 +153,7 @@ const detailWords: [string, string][] = [
 	['error', 'Error']
 ];
 
-/** details lists the reasons and paths an Event carries, as label and text. */
+/** Lists the reasons and paths an Event carries, as label and text. */
 export function details(e: Pick<EventRecord, 'Data'>): [string, string][] {
 	const d = e.Data ?? {};
 	const out: [string, string][] = [];
@@ -172,7 +171,7 @@ export function details(e: Pick<EventRecord, 'Data'>): [string, string][] {
 	return out;
 }
 
-/** pageLine says which rows of how many are shown. */
+/** Which rows of how many are shown. */
 export function pageLine(total: number, offset: number, shown: number): string {
 	if (total === 0) return 'No Events';
 	return `${offset + 1} to ${offset + shown} of ${total}`;
@@ -187,25 +186,25 @@ export interface Step {
 	state: StepState;
 }
 
-/** A History row: one Event, or every step of one download folded together (newest first). */
+/** One Event, or every step of one download folded together (newest first). */
 export interface HistoryRow {
 	key: string;
 	/** The newest Event; its title, time and kind lead the row. */
 	head: EventRecord;
 	events: EventRecord[];
-	/** The step line of a download; empty for a single Event. */
+	/** A download's step line; empty for a single Event. */
 	steps: Step[];
 }
 
 const downloadGroups = new Set(['grab', 'download', 'fail', 'import']);
 const groupOfKind = (kind: string) => kindGroups.find((g) => g.kinds.includes(kind))?.key ?? '';
 
-/** isDownloadStep says whether an Event is a step of a download (sent, downloading, failed, imported). */
+/** Whether an Event is a step of a download (sent, downloading, failed, imported). */
 export function isDownloadStep(e: Pick<EventRecord, 'Kind' | 'DownloadID'>): boolean {
 	return !!e.DownloadID && downloadGroups.has(groupOfKind(e.Kind));
 }
 
-/** downloadSteps reads which of sent, downloaded and imported a download reached, and where it failed. */
+/** Which of sent, downloaded and imported a download reached, and where it failed. */
 export function downloadSteps(events: Pick<EventRecord, 'Kind'>[]): Step[] {
 	const kinds = new Set(events.map((e) => e.Kind));
 	const has = (...k: string[]) => k.some((x) => kinds.has(x));
@@ -222,14 +221,7 @@ export function downloadSteps(events: Pick<EventRecord, 'Kind'>[]): Step[] {
 	];
 }
 
-/**
- * groupDownloads folds the Events of one download (sent, downloading,
- * finished, imported or failed) into one row, placed where its newest Event
- * is. The pick that started it (release_chosen, matched by its release) and
- * a decision it is waiting on (needs_decision or stopped_looking, matched by
- * its download, or by its Slot when that download's import failed) fold in
- * too. Every other Event stays a row of its own. The order is kept.
- */
+/** Folds the Events of one download (sent, downloading, finished, imported or failed) into one row, placed where its newest Event is. The pick that started it and a decision waiting on it join the same row. */
 export function groupDownloads(events: EventRecord[]): HistoryRow[] {
 	const numOf = (v: unknown) => (typeof v === 'number' && v > 0 ? v : 0);
 	// Which download each release and each stuck Slot belongs to, read from the download's own steps.

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { paneExtras, rowItems } from './rowmenu.ts';
+import { describe, expect, it } from 'vitest';
 
 const torrent = { can_act: true, protocol: 'torrent', downloader_kind: 'qbittorrent', downloader_id: 1, hash: 'abc', phase: 'downloading', state: 'downloading' };
 const job = { can_act: true, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'SABnzbd_nzo_1', phase: 'downloading', state: 'downloading' };

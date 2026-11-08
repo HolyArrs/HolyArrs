@@ -1,6 +1,6 @@
+import { reviewCount, reviewWord, timeWords } from './status-views.ts';
 import { describe, expect, it } from 'vitest';
 import type { DownloadRow } from '#lib/core/types.ts';
-import { reviewCount, reviewWord, timeWords } from './status-views.ts';
 
 type Row = Pick<DownloadRow, 'phase' | 'state' | 'progress'>;
 const r = (phase: string, state = phase): Row => ({ phase, state, progress: 0 });

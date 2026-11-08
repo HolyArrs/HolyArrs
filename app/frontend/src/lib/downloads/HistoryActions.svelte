@@ -1,20 +1,18 @@
 <script lang="ts">
-	// A row's detail actions, in one row: "Find another" for rows about a
-	// release (blocks the release, then searches its Slot again), then the
-	// places to go (Import plan, the title, Downloads, Requests, Problems).
-	import { tick } from 'svelte';
+	// Detail actions for a history row: "Find another" for rows about a release (blocks it, then searches its Slot again), then links to the Import plan and the title.
 	import Button from '#lib/ui/Button.svelte';
-	import { toasts } from '../core/toasts.svelte.ts';
-	import { api, message } from '../core/api.ts';
-	import { to } from '../core/paths.ts';
 	import { titleHref } from './history-kinds.ts';
 	import { canFind, findTarget, qualityOf, rowLinks, rowStep } from './history-search.ts';
 	import type { HistoryRow } from './history.ts';
+	import { tick } from 'svelte';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { to } from '../core/paths.ts';
 	import type { TitleView } from '../core/types.ts';
 
 	let { row, titleById }: { row: HistoryRow; titleById: Map<number, TitleView> } = $props();
 	const find = $derived(canFind(row));
-	// On a download that failed it finds another; on one that came in it replaces it.
+	// On a failed download this finds another; on one that came in it replaces it.
 	const findWord = $derived(rowStep(row).failed ? 'Find another' : 'Replace');
 	const links = $derived(rowLinks(row, titleHref(row.head.TitleID, titleById)));
 

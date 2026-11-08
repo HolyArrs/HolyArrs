@@ -2,7 +2,6 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import type { Verb } from './history-kinds.ts';
 
-	// What happened, as a tinted icon and its word ("✓ Imported").
 	let { verb, size = 'md', bare = false }: { verb: Verb; size?: 'sm' | 'md'; bare?: boolean } = $props();
 </script>
 

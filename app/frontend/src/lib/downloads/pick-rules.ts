@@ -1,11 +1,9 @@
-// Words and checks for the Pick rules editor, kept apart from the pages so
-// they can be tested. The checks mirror the server's (domain.CheckPickRules)
-// so a mistake shows at once; the server still has the last word.
+// Words and checks for the Pick rules editor, kept apart from the pages so they can be tested. The checks mirror the server's so a mistake shows at once; the server still has the last word.
 import type { OwnTrait, PickRulesBody, PickRulesSize, PickRulesUse } from './types.ts';
 
 export type RulesKind = 'movie' | 'show' | 'music';
 
-/** videoLadder is the movie and show quality ladder, low to high. */
+/** The movie and show quality ladder, low to high. */
 export const videoLadder = [
 	'cam', 'telesync', 'sd_tv', 'sd_dvd',
 	'720p_tv', '720p_web', '720p_bluray',
@@ -13,15 +11,15 @@ export const videoLadder = [
 	'2160p_web', '2160p_bluray', '2160p_remux'
 ];
 
-/** musicLadder is the music quality ladder, low to high. */
+/** The music quality ladder, low to high. */
 export const musicLadder = ['lossy_low', 'lossy_mid', 'lossy_high', 'lossless', 'lossless_hires'];
 
 const videoTraits = ['hevc', 'ddp_audio', 'web_dl', 'upscaled', 'dubbed_only', 'hardcoded_subs', '3d', 'cam', 'telesync', 'remux', 'av1', 'dv', 'hdr10', 'hdr10plus', 'atmos'];
 const musicTraits = ['cd_source', 'web_source', 'vinyl_source', 'log_cue', 'hires', 'mp3', 'aac', 'opus', 'vorbis', 'flac', 'alac', 'single_image', 'lossy_transcode', 'deluxe'];
-/** safetyTraits can only be in Never. */
+/** Traits that can only be in Never. */
 export const safetyTraits = ['sample', 'executable', 'password_protected', 'disc_image'];
 
-/** languages HolyArrs can tell apart in a Release name. */
+/** Languages HolyArrs can tell apart in a Release name. */
 export const languages: [string, string][] = [
 	['en', 'English'],
 	['fr', 'French'],
@@ -117,48 +115,48 @@ const traits: Record<string, string> = {
 
 const plain = (v: string) => v.replaceAll('_', ' ');
 
-/** isMusic says the kinds are music (music stands alone). */
+/** Whether the kinds are music (music stands alone). */
 export function isMusic(kinds: string[]): boolean {
 	return kinds.includes('music');
 }
 
-/** ladderFor is the quality ladder for the kinds. */
+/** The quality ladder for the kinds. */
 export function ladderFor(kinds: string[]): string[] {
 	return isMusic(kinds) ? musicLadder : videoLadder;
 }
 
-/** stepLabel names a quality step in plain words. */
+/** A quality step in plain words. */
 export function stepLabel(q: string): string {
 	return steps[q] ?? plain(q);
 }
 
-/** isOwnTrait says a trait key names one of your own traits (own:<id>). */
+/** Whether a trait key names one of your own traits (own:<id>). */
 export function isOwnTrait(t: string): boolean {
 	return t.startsWith('own:');
 }
 
-/** traitLabel names a trait in plain words; mine names your own traits. */
+/** A trait in plain words; `mine` names your own traits. */
 export function traitLabel(t: string, mine: OwnTrait[] = []): string {
 	if (isOwnTrait(t)) return mine.find((o) => o.key === t)?.name ?? 'A trait of yours that was removed';
 	return traits[t] ?? plain(t);
 }
 
-/** traitsFor are the traits that can earn points or be a must-have for the kinds, your own last. */
+/** Traits that can earn points or be a must-have for the kinds, your own last. */
 export function traitsFor(kinds: string[], mine: OwnTrait[] = []): string[] {
 	return [...(isMusic(kinds) ? musicTraits : videoTraits), ...mine.map((o) => o.key)];
 }
 
-/** neverChoices are the traits Never may hold: the kind's own, yours and the safety ones. */
+/** Traits Never may hold: the kind's own, yours and the safety ones. */
 export function neverChoices(kinds: string[], mine: OwnTrait[] = []): string[] {
 	return [...traitsFor(kinds, mine), ...safetyTraits];
 }
 
-/** ownTerms reads the terms box of a trait: one term per line, blank lines dropped. */
+/** Reads a trait's terms box: one term per line, blank lines dropped. */
 export function ownTerms(text: string): string[] {
 	return text.split(/\r?\n/).map((t) => t.trim()).filter(Boolean);
 }
 
-/** checkOwnTrait finds what the server would refuse in a trait (domain.CheckOwnTrait), as field → words; patterns only the server checks. */
+/** Finds what the server would refuse in a trait, as field to words. Patterns are checked only by the server. */
 export function checkOwnTrait(name: string, terms: string[]): Record<string, string> {
 	const err: Record<string, string> = {};
 	const n = name.trim();
@@ -167,11 +165,11 @@ export function checkOwnTrait(name: string, terms: string[]): Record<string, str
 	if (terms.length === 0) err.terms = 'List at least one word or pattern.';
 	else if (terms.length > 50) err.terms = 'List at most 50 terms.';
 	else if (terms.some((t) => [...t].length > 200)) err.terms = 'Each term holds at most 200 characters.';
-	// Patterns are left to the server: its patterns differ from the browser's.
+	// Patterns are left to the server because its patterns differ from the browser's.
 	return err;
 }
 
-/** toggleKind turns one kind on or off; music cannot share with movies or TV shows. */
+/** Turns one kind on or off; music cannot share with movies or TV shows. */
 export function toggleKind(kinds: string[], kind: RulesKind, on: boolean): string[] {
 	if (!on) return kinds.filter((k) => k !== kind);
 	if (kind === 'music') return ['music'];
@@ -182,7 +180,7 @@ export function toggleKind(kinds: string[], kind: RulesKind, on: boolean): strin
 
 const gb = 2 ** 30;
 
-/** blankBody is where new Pick rules start: sensible steps, the safety Nevers, no traits. */
+/** Where new Pick rules start: sensible steps, the safety Nevers, no traits. */
 export function blankBody(kind: RulesKind): PickRulesBody {
 	const music = kind === 'music';
 	const on = music ? ['lossy_high', 'lossless', 'lossless_hires'] : ['720p_tv', '720p_web', '720p_bluray', '1080p_tv', '1080p_web', '1080p_bluray'];
@@ -215,7 +213,7 @@ function joinWords(parts: string[]): string {
 	return parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
 }
 
-/** usedWords says where Pick rules are used: the full counts from one rule, or the total from the list. */
+/** Where Pick rules are used: the full counts from one rule, or the total from the list. */
 export function usedWords(use: PickRulesUse | number | undefined): string {
 	if (use === undefined) return '';
 	if (typeof use === 'number') return use === 0 ? 'Not used yet' : `Used in ${use} ${use === 1 ? 'place' : 'places'}`;
@@ -235,7 +233,7 @@ function listProblem(values: string[], allowed: string[], what: string): string 
 	return isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
 }
 
-/** checkBody finds what the server would refuse, as field → words. Empty means it looks fine. */
+/** Finds what the server would refuse, as field to words. Empty means it looks fine. */
 export function checkBody(name: string, kinds: string[], body: PickRulesBody, mine: OwnTrait[] = []): Record<string, string> {
 	const err: Record<string, string> = {};
 	const n = name.trim();
@@ -299,7 +297,7 @@ const whole = (v: unknown): number => {
 	return Number.isFinite(n) ? Math.round(n) : 0;
 };
 
-/** tidyBody copies the body with every number box a whole number; an empty box is 0, and a 0 day limit is left out. */
+/** Copies the body with every number box a whole number; an empty box is 0, and a 0 day limit is left out. */
 export function tidyBody(body: PickRulesBody): PickRulesBody {
 	const b: PickRulesBody = JSON.parse(JSON.stringify(body));
 	b.traits = b.traits.map((t) => ({ trait: t.trait, points: whole(t.points) }));
@@ -317,12 +315,12 @@ export function tidyBody(body: PickRulesBody): PickRulesBody {
 /** The server's ceiling for a size; as the largest size it means no limit at the top. */
 const open = 2 ** 50;
 
-/** gbPerHour turns bytes per minute of runtime into GB per hour, to two places. */
+/** Bytes per minute of runtime as GB per hour, to two places. */
 export function gbPerHour(bytesPerMin: number): number {
 	return Math.round(((bytesPerMin * 60) / gb) * 100) / 100;
 }
 
-/** bytesPerMinute turns GB per hour into bytes per minute of runtime. */
+/** GB per hour as bytes per minute of runtime. */
 export function bytesPerMinute(gbHour: number): number {
 	return Math.round((gbHour * gb) / 60);
 }
@@ -332,14 +330,14 @@ export interface SizeFields {
 	max: number | '';
 }
 
-/** sizeFields shows the Every step limit as GB per hour; empty is no limit. */
+/** The Every step limit as GB per hour; empty is no limit. */
 export function sizeFields(limits: Record<string, PickRulesSize>): SizeFields {
 	const l = limits['*'];
 	if (!l || !l.per_minute) return { min: '', max: '' };
 	return { min: gbPerHour(l.min), max: l.max === 0 || l.max >= open ? '' : gbPerHour(l.max) };
 }
 
-/** applySize writes the Every step fields back into a copy of the body; untouched fields keep their exact bytes. */
+/** Writes the Every step fields back into a copy of the body; untouched fields keep their exact bytes. */
 export function applySize(body: PickRulesBody, fields: SizeFields, start: SizeFields): PickRulesBody {
 	const size_limits = { ...body.size_limits };
 	if (fields.min === start.min && fields.max === start.max) return { ...body, size_limits };
@@ -356,7 +354,7 @@ const nested: Record<string, string> = {
 	'proper_policy.max_age_days': 'max_age_days'
 };
 
-/** fieldKey maps the field a server error names (such as "body.steps[2].quality") to the field on the page. */
+/** Maps the field a server error names (such as "body.steps[2].quality") to the field on the page. */
 export function fieldKey(field: string): string {
 	const parts = field
 		.replace(/^body\./, '')
@@ -367,7 +365,7 @@ export function fieldKey(field: string): string {
 	return nested[`${parts[0]}.${parts[1]}`] ?? parts[0];
 }
 
-/** copyName names a copy, kept within the 200-character limit. */
+/** Names a copy, kept within the 200-character limit. */
 export function copyName(name: string): string {
 	const tail = ' copy';
 	return [...name].slice(0, 200 - tail.length).join('') + tail;

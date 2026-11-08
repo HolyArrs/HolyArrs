@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { Verb } from './history-kinds.ts';
 
-	// What happened as a coloured dot and its word, the same mark as a
-	// Downloads row's state.
+	// The Downloads row's state mark: a coloured dot and its word.
 	let { verb, detail = '' }: { verb: Verb; detail?: string } = $props();
 </script>
 

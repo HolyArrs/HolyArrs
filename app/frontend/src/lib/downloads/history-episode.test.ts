@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { filterParams, historyQuery, readFilter } from './history.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('history of one episode', () => {
 	it('asks for the episode and keeps it in the address', () => {

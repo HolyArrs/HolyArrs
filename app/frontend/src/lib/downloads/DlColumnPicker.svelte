@@ -48,7 +48,6 @@
 	.lk { min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.ghost, .picker { box-shadow: var(--shadow-lift); }
 	.picker::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
-	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
 	.picker::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
 	.picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 	.picker::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }

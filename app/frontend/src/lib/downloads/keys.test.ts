@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { escStep, reviewShown, searchShortcut } from './keys.ts';
+import { describe, expect, it } from 'vitest';
 
 const k = (key: string, mods: Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean }> = {}) => ({ key, ctrlKey: false, metaKey: false, altKey: false, ...mods });
 

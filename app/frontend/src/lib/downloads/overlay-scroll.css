@@ -1,9 +1,7 @@
-/* Overlay scrollbar (overlayScroll.ts): the list's own, made of the segment-pill material.
-   The thumb is a --seg-thumb pill with the pill ring; the lane shows only under the pointer.
-   It floats over the content, rests a little faint and wakes on scroll. */
+/* Overlay scrollbar for the list (see overlay-scroll.ts), drawn from the segment-pill material. It floats over the content and the lane shows only under the pointer. */
 .osb-on { scrollbar-width: none; }
 .osb-on::-webkit-scrollbar { display: none; }
-/* Only the thumb takes the pointer: the lane never blocks the rows' own buttons (the ⋯ menu sits at the right edge). */
+/* Only the thumb takes the pointer, so the lane never blocks the rows' buttons (the ⋯ menu sits at the right edge). */
 .osb-rail { position: absolute; z-index: 5; border-radius: var(--r-pill); opacity: .85; pointer-events: none;
 	transition: opacity var(--dur) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 /* Bounded by the list box: --osb-top (toolbar rows and the header above it), --osb-bottom (the pane below it). */
@@ -19,7 +17,6 @@
 .osb-v .osb-thumb { left: 3px; width: 8px; top: 0; height: var(--osb-len); transform: translateY(var(--osb-pos)); }
 .osb-h .osb-thumb { top: 3px; height: 8px; left: 0; width: var(--osb-len); transform: translateX(var(--osb-pos)); }
 [data-osb-active] .osb-rail, .osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { opacity: 1; }
-/* Under the pointer the lane shows, the same track the segment pills sit in. */
 .osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { background: var(--surface-3); }
 .osb-rail[data-drag] .osb-thumb { box-shadow: 0 0 0 1px var(--text-muted), 0 1px 2px rgb(0 0 0 / 0.12); }
 [data-osb-drag] { user-select: none; }

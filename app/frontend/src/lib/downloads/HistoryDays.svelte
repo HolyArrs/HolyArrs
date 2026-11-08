@@ -1,14 +1,5 @@
 <script lang="ts">
-	// History, day by day. Each day has a sticky header with what it held
-	// ("2 came in · 1 problem · 40 routine"); rows sit on a rail with their
-	// clock time, and runs of routine work fold into one quiet line that
-	// opens in place. On wide screens the picked row shows in a details
-	// panel on the right (the step, the title, a download's steps, one line
-	// of new facts, the facts and where to go); arrow keys or j and k
-	// move through the rows. The panel can be hidden; picking a row shows it
-	// again. Narrower screens open the row in a sheet instead.
-	import { onMount, tick, untrack, type Snippet } from 'svelte';
-	import { slide, fade, type TransitionConfig } from 'svelte/transition';
+	// History grouped by day. Each day has a sticky header with a tally, rows sit on a rail with their clock time, and runs of routine work fold into one line that opens in place. On wide screens the picked row shows in a details panel (arrow keys or j and k move); narrower screens open it in a sheet.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -18,16 +9,18 @@
 	import DenseRow from './HistoryCard.svelte';
 	import LookFrame from './HistoryFrame.svelte';
 	import { EventFeed } from './history-feed.svelte.ts';
-	import { to } from '../core/paths.ts';
-	import { toasts } from '../core/toasts.svelte.ts';
-	import { reducedMotion } from '../core/motion.ts';
-	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
 	import type { HistoryFilter, HistoryRow } from './history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier } from './history-kinds.ts';
 	import { byDay, dayItems, dayLine, type ArtSize } from './history-tabs.ts';
 	import { dropAiTwins, filterVerb } from './history-search.ts';
 	import { glue, panelView, pathBits } from './history-panel.ts';
 	import { rowText, type LineContext, type RowText } from './history-lines.ts';
+	import { onMount, tick, untrack, type Snippet } from 'svelte';
+	import { slide, fade, type TransitionConfig } from 'svelte/transition';
+	import { to } from '../core/paths.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { reducedMotion } from '../core/motion.ts';
+	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
 	import type { EventRecord, TitleView } from '../core/types.ts';
 
 	let {
@@ -55,20 +48,19 @@
 		size: ArtSize;
 		/** Wide enough for the details panel beside the days. */
 		wide: boolean;
-		/** The details panel is shown (wide screens). */
+		/** The details panel is shown. */
 		panel: boolean;
 		panelId: string;
-		/** With an episode filter: the episode, named by the server. */
+		/** With an episode filter, the episode name from the server. */
 		episodeName?: string;
 		/** Member names by id, for "Added to the Library by Maya". */
 		people?: Map<number, string>;
-		/** The signed-in member. */
 		me?: number;
-		/** Keeps only some Events (a filter the server does not do). */
+		/** Keeps only some Events, a filter the server does not do. */
 		keep?: (e: EventRecord) => boolean;
 		/** Extra buttons under a picked row's details. */
 		actions?: Snippet<[HistoryRow]>;
-		/** The Search looks' row: small poster, title and time, then the step and one extra piece. */
+		/** Compact rows: small poster, title and time, then the step and one extra piece. */
 		compact?: boolean;
 	} = $props();
 	const who = (e: EventRecord) => {
@@ -79,15 +71,13 @@
 	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 
 	const SIZE = 200;
-	// The first view fills the screen and no more: earlier Events load on their own, 50 at a time, until the rows reach
-	// the bottom of the window, and rows past it wait for Show more.
+	// The first view fills the screen and no more. Earlier Events load 50 at a time until the rows reach the bottom of the window; rows past it wait for Show more.
 	const FILL_STEP = 50;
 	const FILL_PAGES = 5;
 	const ROW = 42;
 	let fit = $state(14);
 	let capped = $state(true);
 	onMount(() => {
-		// Phones: 52px rows under the search, Filter and count, above the tab bar.
 		const size = () => (fit = window.innerWidth < 768 ? Math.max(5, Math.floor((window.innerHeight - 440) / 52)) : Math.max(6, Math.floor((window.innerHeight - 300) / ROW)));
 		size();
 		window.addEventListener('resize', size, { passive: true });
@@ -95,7 +85,7 @@
 	});
 	const feed = new EventFeed(SIZE);
 	const reload = () => feed.load(filter, kinds);
-	// Live news re-reads every page already on screen in one go, so the list never shrinks and grows back.
+	// One reload re-reads every page on screen, so the list never shrinks and grows back.
 	const refresh = () => feed.load(filter, kinds, 0, false, Math.min(Math.max(SIZE, feed.events.length), SIZE * FILL_PAGES));
 	$effect(() => {
 		void [filter, kinds];
@@ -103,8 +93,7 @@
 		untrack(reload);
 	});
 	onMount(() => feed.watch(refresh));
-	// A day header that is pinned under the page's top row gets a hairline and a soft shadow, so the list
-	// under it keeps a visible top edge instead of rows being cut off mid-row.
+	// A pinned day header gets a hairline and shadow so the rows under it keep a clean top edge.
 	onMount(() => {
 		let raf = 0;
 		const check = () => {
@@ -125,15 +114,14 @@
 		episodeName = feed.episode;
 	});
 
-	// A page of routine only (the Routine tab) is not folded: it is what was asked for.
+	// A page of routine work only (the Routine tab) is not folded, because that is what was asked for.
 	const days = $derived.by(() => {
 		const all = dropAiTwins(feed.events);
 		const list = byDay(keep ? all.filter(keep) : all);
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
 		return list.map((d) => ({ ...d, items: foldSame(allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows)) }));
 	});
-	// What shows: the days cut to the rows that fit the screen until Show more (or Show more already pressed).
-	// Each day header takes about one row's height, so it counts as one.
+	// The days cut to the rows that fit the screen, until Show more. A day header counts as one row.
 	const allRows = $derived(days.reduce((n, d) => n + d.items.length + 1, 0));
 	const visible = $derived.by(() => {
 		if (!capped || feed.manual || allRows <= fit) return days;
@@ -149,7 +137,7 @@
 		return out;
 	});
 	const held = $derived(visible !== days);
-	// Back-to-back repeats of the same single Event (12 sign-ins in a row) fold into one row with a count.
+	// Back-to-back repeats of one Event (12 sign-ins in a row) fold into one row with a count.
 	type Item = ReturnType<typeof dayItems>[number] | { type: 'same'; key: string; rows: HistoryRow[] };
 	const sameKey = (r: HistoryRow) => (r.steps.length || r.events.length > 1 ? '' : [r.head.Kind, r.head.TitleID ?? 0, r.head.Actor?.kind ?? '', r.head.Actor?.id ?? 0, rowText(r, ctx).line].join('|'));
 	function foldSame(items: ReturnType<typeof dayItems>): Item[] {
@@ -161,7 +149,7 @@
 			const k = sameKey(it.row);
 			if (k && last?.type === 'same' && sameKey(last.rows[0]) === k) {
 				last.rows.push(it.row);
-				// Named after its oldest row, so a new repeat on top keeps an open run open.
+				// Keyed by the oldest row, so a new repeat on top keeps an open run open.
 				last.key = `s${it.row.key}`;
 				continue;
 			}
@@ -173,7 +161,7 @@
 		}
 		return out;
 	}
-	// A day counted by the Filter's steps, one per row, with the same mark the row shows (so the counts match the list).
+	// Counts by the Filter's steps, with the mark each row shows, so counts match the list.
 	function tallyOf(rows: HistoryRow[]) {
 		const n = new Map<string, { verb: ReturnType<typeof filterVerb>; count: number }>();
 		let total = 0;
@@ -187,17 +175,15 @@
 		}
 		return { total, steps: [...n.values()].sort((a, b) => b.count - a.count) };
 	}
-	// The day header (compact): how many Events, then what needs a look ("6 Events · Failed 1").
 	function headLine(rows: HistoryRow[]): string {
 		const t = tallyOf(rows);
 		const bad = t.steps.filter((x) => x.verb.word === 'Needs you' || x.verb.word === 'Failed').map((x) => `${x.verb.word} ${x.count}`);
 		return [`${t.total} ${t.total === 1 ? 'Event' : 'Events'}`, ...bad].join(' · ');
 	}
-	// This day: the picked row's day.
 	const today = $derived.by(() => {
 		const d = days.find((x) => x.rows.some((r) => r.key === picked?.key));
 		if (!d) return null;
-		// The last day on the page may go on past it: "200+".
+		// The last day on the page may continue past it, shown as "200+".
 		const more = d === days[days.length - 1] && feed.events.length < feed.total;
 		return { key: d.key, more, ...tallyOf(d.rows) };
 	});
@@ -211,10 +197,10 @@
 	let sheet = $state<HistoryRow | null>(null);
 	const split = $derived(wide && panel);
 
-	// The rows a person can move through, in order: folded runs only once opened.
+	// Rows reachable by keyboard, in order; folded runs only once opened.
 	const shown = $derived(visible.flatMap((d) => d.items.flatMap((it) => (it.type === 'row' ? [it.row] : it.type === 'same' ? (open[it.key] || it.rows.some((r) => r.key === pickedKey && r !== it.rows[0]) ? it.rows : [it.rows[0]]) : open[it.key] ? it.rows : []))));
 	let pickedKey = $state('');
-	// The first row is picked until a person picks another (or it leaves the page).
+	// The first row is picked until the person picks another or it leaves the page.
 	const picked = $derived(shown.find((r) => r.key === pickedKey) ?? shown[0] ?? null);
 	let list = $state<HTMLElement>();
 
@@ -242,7 +228,6 @@
 		}
 	}
 
-	// The picked row's details, worked out once for the pane.
 	const view = $derived(picked && wide ? panelView(picked, { titles: titleById, people, me }) : null);
 	async function copy(path: string) {
 		try {
@@ -408,7 +393,6 @@
 {#if !wide}<EventSheet bind:row={sheet} {titleById} {people} {me} {actions} />{/if}
 
 <style>
-	/* Poster size: one set of measures per size, used by every row. */
 	.split { --clk: 64px; --art: 56px; --row: 96px; --pane: 0px; --gap: 0px; }
 	.size-s { --art: 26px; --row: 52px; }
 	.size-l { --art: 88px; --row: 140px; }
@@ -417,13 +401,12 @@
 
 	.days { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-inline: 0; padding: 10px 16px 8px; background: color-mix(in srgb, var(--bg) 55%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-radius: 12px; transition: top var(--bar-glide); }
-	/* The pinned header's background reaches 12px past the list each side (text unmoved), so the list's outline and shadow never peek out beside it. */
+	/* The pinned header background reaches 12px past the list on each side so the list outline never shows beside it. */
 	.dh::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-strong); box-shadow: 0 6px 16px 2px light-dark(rgb(20 24 40 / .10), rgb(0 0 0 / .55)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
 	.dh:global(.stuck)::after { opacity: 1; }
 	.dh h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.dl { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.rail { position: relative; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
-	/* The rail line runs through every dot. */
 	.rail::before { content: ''; position: absolute; top: 18px; bottom: 18px; left: calc(4px + 10px + var(--clk) + 10px + 5px); width: 2px; border-radius: 1px; background: var(--line); }
 	.item + .item { box-shadow: 0 -1px 0 var(--line); }
 	.hit { position: relative; width: 100%; display: grid; grid-template-columns: var(--clk) 12px var(--art) minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: var(--row); padding: 6px 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
@@ -441,7 +424,6 @@
 	.post.square { --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 4px; }
 	.sys { display: grid; place-items: center; width: var(--art); aspect-ratio: 2 / 3; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); }
-	/* Two lines at every size: what it is (with its tag), then what happened. */
 	.tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; grid-column: 4 / -1; }
 	.l1 { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); }
 	.what { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-callout); }
@@ -450,7 +432,6 @@
 	.l1 :global(.st) { flex: none; }
 	.l2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.quiet .nm { color: var(--text-muted); font-weight: 500; }
-	/* Medium and Large: roomier rows, bigger words. */
 	.size-m .hit, .size-l .hit { gap: 14px; padding: 8px 12px; }
 	.size-m .rail::before, .size-l .rail::before { left: calc(4px + 12px + var(--clk) + 14px + 5px); }
 	.size-m .post :global(.poster), .size-m .sys { border-radius: 6px; }
@@ -462,7 +443,6 @@
 	.size-l .what { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.size-l .l1 { font: var(--t-callout); }
 	.size-l .l2 { font: var(--t-body); }
-	/* A folded run: the count where the poster goes, the line, a chevron. */
 	.hit.q { min-height: var(--row); }
 	.hit.q .tx { grid-column: 4; }
 	.qn { display: grid; place-items: center; justify-self: center; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 6px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -471,13 +451,11 @@
 	.inner { margin: 0 0 4px; padding: 0; list-style: none; }
 	.inner .item { box-shadow: 0 -1px 0 var(--line); }
 
-	/* The details panel: slides out to the right edge when hidden. */
-	/* The panel's top lines up with the first row (under the day header, 45px), at rest and when pinned. */
+	/* The panel's top lines up with the first row, at rest and when pinned. */
 	.pane { position: sticky; top: calc(var(--topbar) + var(--pane-drop, 45px)); margin-top: var(--pane-drop, 45px); min-width: 0; max-height: calc(100dvh - var(--topbar) - 65px); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
 	.pane[hidden] { display: block; visibility: hidden; opacity: 0; translate: 24px 0; padding-inline: 0; overflow: hidden; transition: opacity var(--dur-fast) var(--ease-in), translate var(--dur-fast) var(--ease-in), padding var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-fast); }
 	.card { margin: 0; padding: 20px; border: 0; border-radius: 16px; background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.pin { display: flex; flex-direction: column; min-width: 0; }
-	/* This day: the picked row's day, counted by the Filter's steps. */
 	.dch { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	.dcn { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.tally { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
@@ -490,7 +468,6 @@
 	.tp.fail .td { background: var(--fail); }
 	.tp.fail { color: var(--fail-text); }
 	.h { font: var(--t-headline); }
-	/* The header: the art, then the step, the title and the meta, top aligned. */
 	.ph { display: flex; gap: 14px; align-items: start; min-width: 0; }
 	.part { flex: none; width: 64px; --poster-ratio: 2 / 3; }
 	.part.square { --poster-ratio: 1; }
@@ -498,7 +475,6 @@
 	.pw { flex: 1; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 	.pt { margin-top: 4px; color: var(--text); font: var(--t-title3); letter-spacing: var(--t-title3-track); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 	.psub { width: 100%; margin-top: 2px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	/* A download's steps: pips joined by a rule, flush to the card's left edge. */
 	.steps { display: flex; align-items: center; margin: 12px 0 0; padding: 0; list-style: none; font: var(--t-footnote); white-space: nowrap; }
 	.steps li { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
 	.steps li + li { flex: 1 1 auto; min-width: 0; }
@@ -512,7 +488,6 @@
 	.steps .needs .pip { background: var(--accent); box-shadow: none; }
 	.psum { margin-top: 12px; color: var(--text); font: var(--t-subhead); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 	.psum.long { -webkit-line-clamp: 3; line-clamp: 3; }
-	/* The facts: a flat list on the card, body font with even digits; mono only for releases and paths. */
 	.pf { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px 12px; margin: 20px 0 0; padding: 0; font: var(--t-footnote); }
 	.pf dt { color: var(--text-muted); }
 	.pf dd { margin: 0; min-width: 0; color: var(--text); font: var(--t-footnote); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -526,7 +501,6 @@
 	.cp:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pact { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 	.pact > :global(.ui-btn) { border-radius: var(--r-pill); }
-	/* Nothing on the page matches: the same card as an empty History. */
 	.none { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; text-align: center; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); }
 	.eic { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 12px; background: var(--surface-2); color: var(--text-muted); }
 	.et { font: var(--t-headline); }
@@ -535,7 +509,7 @@
 	.elink:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-	/* Under 1280 the list stays the wider column: a narrower panel, and the step marks show their icon only (the word is still read out). */
+	/* Under 1280px the list stays the wider column and step marks show only their icon (the word is still read out). */
 	@media (max-width: 1279px) {
 		.split.wide.on { --pane: 300px; }
 		.compact.on .days :global(.mark .w) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -553,13 +527,10 @@
 		.size-l .l2 { font: var(--t-callout); }
 	}
 
-	/* History's compact cards: the list is the sheet Home's tiles and the Requests cards are made of (lit from above,
-	   a hairline edge, one long soft shadow), with a 1px rail through the row dots; the details cards match. */
 	.compact { --sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a); --well: light-dark(rgb(20 24 40 / 4%), rgb(255 255 255 / 5%)); }
 	.compact .rail, .compact .card { outline: 0; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%)), 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
 	.compact .rail::before { top: 22px; bottom: 22px; left: calc(4px + 10px + 58px + 10px + 3px); width: 1px; border-radius: 0; }
 	.compact .inner { margin: 0; }
-	/* The details cards' top lines up with the list card's top edge (just under the day header). */
 	.compact { --pane-drop: 41px; }
 	@media (max-width: 767px) { .compact .rail::before { left: calc(4px + 8px + 56px + 8px + 3px); } }
 	@media (prefers-reduced-motion: reduce) {

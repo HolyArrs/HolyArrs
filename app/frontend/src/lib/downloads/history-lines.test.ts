@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { dayWord, episodeBits, eventText, fakeEpisodeName, plainWhy, resolutionOf, rowText } from './history-lines.ts';
 import { groupDownloads } from './history.ts';
+import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
 let id = 0;

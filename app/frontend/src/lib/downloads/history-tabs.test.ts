@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { ALL, byDay, dayItems, dayLine, historyTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf } from './history-tabs.ts';
 import { groupDownloads } from './history.ts';
+import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
 let id = 0;

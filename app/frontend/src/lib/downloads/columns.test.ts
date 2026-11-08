@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, ratioText, shortAge, swarmNum, toggle, visible } from './columns.ts';
 import { stepToward } from './sections.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('columns', () => {
 	it('defaults show seven columns in order', () => {

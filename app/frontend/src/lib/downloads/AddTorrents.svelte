@@ -1,12 +1,10 @@
 <script lang="ts">
-	// The Add sheet: paste magnet or .torrent links (one per line) or drop and
-	// pick .torrent files, then choose the Downloader, its category, a folder
-	// and whether to start paused. The torrents go straight to the client.
+	// Add sheet: magnet or .torrent links, or dropped .torrent files, sent straight to the chosen Downloader with its category, folder and paused choice.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import { addWords, isTorrentFile, splitLinks, type AddOutcome } from './manage.ts';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import { addWords, isTorrentFile, splitLinks, type AddOutcome } from './manage.ts';
 
 	type Client = { id: number; name: string; category: string };
 	let { open = $bindable(false), clients, ondone }: { open?: boolean; clients: Client[]; ondone?: () => void } = $props();
@@ -26,7 +24,7 @@
 	const count = $derived(parsed.links.length + files.length);
 	const client = $derived(clients.find((c) => c.id === clientId));
 
-	// Each time the sheet opens it starts clean, on the first Downloader and its category.
+	// Starts clean on the first Downloader each time the sheet opens.
 	let wasOpen = false;
 	$effect(() => {
 		if (open && !wasOpen) {

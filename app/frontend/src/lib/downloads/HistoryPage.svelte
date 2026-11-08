@@ -1,29 +1,25 @@
 <script lang="ts">
-	// History's bar and list: a search bar, a live dot and one glass Filter
-	// (steps, type, who, dates, Source). Each filter that is on shows as a
-	// removable chip under the bar. Routine work is left out; every filter
-	// lives in the address, so Back and links show the same list.
-	// Old ?look= and ?acts= links are simply ignored.
+	// History page: a search bar, a live dot and one Filter (steps, type, who, dates, Source). Active filters show as removable chips. Routine work is left out. Every filter lives in the address, so Back and links show the same list. Old ?look= and ?acts= links are ignored.
+	import Icon from '#lib/ui/Icon.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import LookDays from './HistoryDays.svelte';
+	import DetailActions from './HistoryActions.svelte';
+	import { dateRangeProblem, readFilter, type HistoryFilter } from './history.ts';
+	import { fineCheck } from './history-tabs.ts';
+	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepBreak, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whenFrom, whenOf, whenSpans, whoLabels, whoMatches, type MediaType, type Who } from './history-search.ts';
+	import { dlTop } from './dl-top.svelte.ts';
+	import { searchShortcut } from './keys.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import Icon from '#lib/ui/Icon.svelte';
-	import LookDays from './HistoryDays.svelte';
-	import DetailActions from './HistoryActions.svelte';
 	import { api } from '../core/api.ts';
 	import { live } from '../core/live.svelte.ts';
-	import { dateRangeProblem, readFilter, type HistoryFilter } from './history.ts';
 	import { reducedMotion } from '../core/motion.ts';
-	import { fineCheck } from './history-tabs.ts';
-	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepBreak, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whenFrom, whenOf, whenSpans, whoLabels, whoMatches, type MediaType, type Who } from './history-search.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { EventRecord, TitleView } from '../core/types.ts';
 	import { session } from '../core/session.svelte.ts';
-	import IconButton from '#lib/ui/IconButton.svelte';
-	import { dlTop } from './dl-top.svelte.ts';
-	import { searchShortcut } from './keys.ts';
 
 	let { titleById, people, me }: { titleById: Map<number, TitleView>; people: Map<number, string>; me?: number } = $props();
 
@@ -32,7 +28,7 @@
 	const srcId = $derived(Number(page.url.searchParams.get('source')) || undefined);
 	let sources = $state<{ id: number; name: string }[]>([]);
 	const srcName = $derived(sources.find((x) => x.id === srcId)?.name ?? 'One Source');
-	// Links from a title or an episode page keep the list to that title (?title=, ?episode=).
+	// Links from a title or episode page keep the list to that title (?title=, ?episode=).
 	const link = $derived(readFilter(page.url.searchParams));
 	let episodeName = $state('');
 	const chips = $derived([
@@ -42,7 +38,6 @@
 		...(srcId ? [{ key: 'source', label: srcName, change: { source: undefined } }] : [])
 	]);
 	const kinds = $derived(stepKinds(st.steps));
-	// Filter menu choices: Type as one segmented row, When as spans back from now (Custom opens From and To).
 	const typeOptions: { value: MediaType; label: string }[] = [{ value: '', label: 'All' }, ...(Object.entries(typeLabels) as [MediaType, string][]).map(([value, label]) => ({ value, label }))];
 	const when = $derived(whenOf(st.from, st.to));
 	let customOpen = $state(false);
@@ -51,7 +46,7 @@
 		customOpen = false;
 		set({ from: days ? whenFrom(days) : undefined, to: undefined });
 	}
-	// The server filters by title id: text that names one Library title exactly goes there.
+	// The server filters by title id, so text naming one Library title exactly is sent as that id.
 	const exact = $derived.by(() => {
 		const t = st.q.trim().toLowerCase();
 		if (!t) return undefined;
@@ -61,7 +56,7 @@
 	const filter = $derived<HistoryFilter>({ title: link.title ?? exact, episode: link.episode, from: st.from, to: st.to, source: srcId, hideFeed: true, groups: [], limit: 200, offset: 0 });
 	const keep = $derived.by(() => {
 		const { q, type, who } = st;
-		// "Failed" asks for every Library folder check; the ones that found the folder fine stay out.
+		// "Failed" asks for every Library folder check; checks that found the folder fine stay out.
 		const fails = st.steps.includes('failed');
 		if (!q.trim() && !type && !who && !fails) return undefined;
 		return (e: EventRecord) => !(fails && fineCheck(e)) && (exact && !link.title ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
@@ -85,7 +80,7 @@
 		void goto(page.url.pathname + dirQuery(page.url.searchParams, change), { replace: true, reset: false });
 	}
 
-	// The search box writes ?q= a moment after typing stops, and follows the address (Back, links).
+	// The search box writes ?q= shortly after typing stops, and follows the address (Back, links).
 	let text = $state(page.url.searchParams.get('q') ?? '');
 	$effect(() => {
 		const q = page.url.searchParams.get('q') ?? '';
@@ -97,13 +92,13 @@
 		clearTimeout(timer);
 		timer = setTimeout(() => set({ q: v.trim() || undefined }), 250);
 	}
-	// Ctrl K and / focus this page's own search (History has no shared top bar), as on Downloads and Library.
+	// Ctrl K and / focus this page's own search, as on Downloads and Library; History has no shared top bar.
 	let findEl = $state<HTMLInputElement>();
 	function findKey(e: KeyboardEvent) {
 		const t = e.target as HTMLElement | null;
 		const inField = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 		const inDialog = !!t?.closest?.('[role="dialog"], dialog, [popover]:popover-open') || !!document.querySelector('dialog[open]');
-		// In the Filter or a sheet the shortcut does nothing: it never leaves History for the app-wide search.
+		// In the Filter or a sheet the shortcut does nothing, so it never leaves History for the app-wide search.
 		if (inDialog && searchShortcut(e, inField, false)) {
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -115,7 +110,7 @@
 		findEl?.focus();
 		findEl?.select();
 	}
-	// The top row has no band of its own at rest (it sits on the page); once the list scrolls under it, it turns to frosted glass with a hairline.
+	// At rest the top row sits on the page; once the list scrolls under it, it gets a frosted background and a hairline.
 	let stuck = $state(false);
 	$effect(() => {
 		const on = () => (stuck = window.scrollY > 4);
@@ -161,7 +156,7 @@
 	function close(back = true) {
 		if (!open) return;
 		open = false;
-		// After the sheet's inert is lifted.
+		// Runs after the sheet's inert is lifted.
 		if (back) void tick().then(() => btn?.focus());
 	}
 	function keys(e: KeyboardEvent) {
@@ -170,7 +165,7 @@
 		e.stopPropagation();
 		close();
 	}
-	// The phone Filter sheet is modal: everything behind it (but its scrim) is inert while it is open.
+	// The phone Filter sheet is modal: everything behind it is inert while it is open.
 	$effect(() => {
 		if (!open || !phone || !pop) return;
 		const off: Element[] = [];
@@ -281,8 +276,6 @@
 </LookDays>
 
 <style>
-	/* The page's top row, in place of the shared top bar (as on Downloads and Library): the same 52px glass
-	   capsules, pinned at the top on one solid band, with the page's side margins. */
 	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; height: 72px; box-sizing: border-box; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 4px; padding: 10px var(--gutter, 0px); background: transparent; border-bottom: 1px solid transparent; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
 	.toolbar.stuck { background: color-mix(in srgb, var(--bg) 80%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); border-bottom-color: var(--line); }
 	.cap { display: flex; flex: none; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
@@ -310,13 +303,11 @@
 	.chip:hover { background: var(--surface-2); }
 	.all { height: 30px; padding: 0 10px; border: 0; background: none; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
 	.all:hover { color: var(--text); }
-	/* The menu is the sheet Home's tiles and the Requests cards are made of: lit from above, a hairline edge, one long soft shadow; 14px corners like the capsule it opens from. */
 	.menu, .sheet { --sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a); background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); }
 	.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 320px; max-height: min(600px, 78vh); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 14px; box-sizing: border-box; border: 0; border-radius: 14px; box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 7%)), 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 24px 48px -16px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
 	.menu:focus, .sheet:focus { outline: none; }
 	.fl { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 	.fh { color: var(--text-muted); font: 600 12px/1 var(--font-ui); }
-	/* The second block of steps (asks and the Library) starts on its own line, after a little air. */
 	.brk { flex-basis: 100%; height: 4px; }
 	.steps { display: flex; flex-wrap: wrap; gap: 5px; }
 	.step { height: 30px; padding: 0 11px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
@@ -337,7 +328,6 @@
 		.search input, .fc { font-size: 16px; }
 	}
 	@media (max-width: 767px) {
-		/* Phones: the row scrolls away with the page and wraps (search, then Filter). */
 		.toolbar { position: static; height: auto; flex-wrap: wrap; margin: 0 0 12px; padding: 0; background: none; }
 		.toolbar.stuck { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom-color: transparent; }
 		.search, .sf-btn { height: 44px; }

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import type { ImportRecord } from './types.ts';
 import { byDownload, failReason, folder, placed, statusDetail } from './imports.ts';
+import { describe, expect, it } from 'vitest';
 
 const im = (ID: number, DownloadID: number | null, State: string, more: Partial<ImportRecord> = {}): ImportRecord => ({ ID, DownloadID, State, CreatedAt: '2026-10-27T10:00:00Z', ...more });
 

@@ -1,15 +1,13 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { pageLine } from './history.ts';
 	import type { EventFeed } from './history-feed.svelte.ts';
+	import type { Snippet } from 'svelte';
 
-	// What every History look shows around its rows: a placeholder while the
-	// first page loads, the error, the empty tab (the same box as an empty
-	// Downloads tab), the count line, and "Show more" under the rows.
+	// What History shows around its rows: a placeholder while the first page loads, the error, the empty tab, the count line and Show more.
 	let {
 		feed,
 		empty,
@@ -24,18 +22,17 @@
 		empty: { title: string; text: string };
 		onretry: () => void;
 		onmore: () => void;
-		/** Shown on an empty, filtered list: clears the filters. */
+		/** Shown on an empty, filtered list; clears the filters. */
 		onall?: () => void;
-		/** The count line; hidden when a filter on the page leaves nothing to count. */
+		/** Hidden when a page filter leaves nothing to count. */
 		count?: boolean;
-		/** Rows already loaded but held back so the first view fits the screen: Show more shows them. */
+		/** Rows already loaded but held back so the first view fits the screen; Show more reveals them. */
 		held?: boolean;
 		children: Snippet;
 	} = $props();
 </script>
 
 {#if feed.error && !feed.events.length}
-	<!-- The same card as an empty History, so every state without rows looks alike. -->
 	<div class="empty" role="alert" data-testid="look-error">
 		<span class="eic fail"><Icon name="alert" size={22} stroke={2} /></span>
 		<p class="et">Could not load History.</p>

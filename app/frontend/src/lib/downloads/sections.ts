@@ -1,17 +1,15 @@
-// The Downloads page in two sections, Queue and History, with the header
-// strip's totals, the speed graph and the facts of a row's details panel.
-// Pure, so it can be tested.
-import type { DownloadRow } from '../core/types.ts';
+// The Downloads page in two sections, Queue and History, with the header strip's totals, the speed graph and the facts of a row's details panel. Pure, so it can be tested.
 import type { ImportRecord } from './types.ts';
 import { stageOf, statusWord } from './status-tabs.ts';
 import { failReason, statusDetail } from './imports.ts';
-import { dateTime } from '../core/format.ts';
 import { size, sizePair } from './size.ts';
 import { quality } from './columns.ts';
+import type { DownloadRow } from '../core/types.ts';
+import { dateTime } from '../core/format.ts';
 
 type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress'>;
 
-/** inHistory: done, seeding, failed and removed downloads; everything else is in the Queue. */
+/** Done, seeding, failed and removed downloads; everything else is in the Queue. */
 export function inHistory(r: Bits): boolean {
 	const s = stageOf(r);
 	return s === 'done' || s === 'seeding' || s === 'failed';
@@ -19,8 +17,7 @@ export function inHistory(r: Bits): boolean {
 
 export type BarTone = 'go' | 'queued' | 'held' | 'bad';
 
-/** barTone colours a Queue bar: green taking in data or importing, blue
- *  queued, amber paused or stalled, red a problem. */
+/** Colours a Queue bar: green taking in data or importing, blue queued, amber paused or stalled, red a problem. */
 export function barTone(r: Bits): BarTone {
 	switch (stageOf(r)) {
 		case 'queued':
@@ -35,13 +32,13 @@ export function barTone(r: Bits): BarTone {
 	return 'go';
 }
 
-/** sizeLine is a Queue row's size: "553 MB / 3 GB" (empty without a size). */
+/** A Queue row's size: "553 MB / 3 GB" (empty without a size). */
 export function sizeLine(r: Pick<DownloadRow, 'size' | 'progress'>): string {
 	if (!r.size) return '';
 	return sizePair(r.size * Math.max(0, Math.min(1, r.progress || 0)), r.size);
 }
 
-/** left is the bytes a download still has to fetch. */
+/** Bytes a download still has to fetch. */
 const left = (r: Pick<DownloadRow, 'size' | 'progress'>) => Math.max(0, (r.size || 0) * (1 - Math.max(0, Math.min(1, r.progress || 0))));
 
 export interface Totals {
@@ -49,19 +46,18 @@ export interface Totals {
 	speed: number;
 	/** Bytes per second sent out across every download. */
 	up: number;
-	/** Seconds until the whole Queue is in at today's speed (0: unknown). */
+	/** Seconds until the whole Queue is in at today's speed (0 means unknown). */
 	eta: number;
 	/** Bytes the Queue still has to fetch. */
 	left: number;
 }
 
-/** moving: a row taking in data right now. A queued, paused, stalled or
- *  finished row has no speed of its own, whatever the Downloader last said. */
+/** A row taking in data right now. A queued, paused, stalled or finished row has no speed of its own, whatever the Downloader last said. */
 export function moving(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'speed' | 'active'>): boolean {
 	return r.active && r.speed > 0 && stageOf(r) === 'downloading';
 }
 
-/** totals adds up the Queue for the header strip. */
+/** Adds up the Queue for the header strip. */
 export function totals(queue: Pick<DownloadRow, 'phase' | 'state' | 'size' | 'progress' | 'speed' | 'up_speed' | 'active'>[]): Totals {
 	const speed = queue.reduce((n, r) => n + (moving(r) ? r.speed : 0), 0);
 	const rest = queue.reduce((n, r) => n + left(r), 0);
@@ -69,7 +65,7 @@ export function totals(queue: Pick<DownloadRow, 'phase' | 'state' | 'size' | 'pr
 	return { speed, up, left: rest, eta: speed > 0 && rest > 0 ? Math.round(rest / speed) : 0 };
 }
 
-/** historyTotals: what finished today and this month, from the rows on the page. */
+/** What finished today and this month, from the rows on the page. */
 export function historyTotals(rows: Pick<DownloadRow, 'size' | 'finished_at' | 'updated_at' | 'phase' | 'state' | 'progress'>[], now = new Date()): { today: number; month: number } {
 	let today = 0;
 	let month = 0;
@@ -83,18 +79,17 @@ export function historyTotals(rows: Pick<DownloadRow, 'size' | 'finished_at' | '
 	return { today, month };
 }
 
-/** matches is the Downloads search: the title, the episode, the Release
- *  name, the Downloader and the quality read from the name. */
+/** The Downloads search: title, episode, Release name, Downloader and the quality read from the name. */
 export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'album' | 'downloader' | 'downloader_kind'>, q: string): boolean {
 	const s = q.trim().toLowerCase();
 	if (!s) return true;
 	return [r.title, r.name, r.covers, r.album, r.downloader, r.downloader_kind, quality(r.name)].some((v) => v?.toLowerCase().includes(s));
 }
 
-/** historyStatus is a History row's text and whether it reads as a failure. */
+/** A History row's text and whether it reads as a failure. */
 export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean } {
 	const s = stageOf(r);
-	// A client item has no import: its word is the client's own state.
+	// A client item has no import, so its word is the client's own state.
 	if (r.client_item) {
 		const why = s === 'failed' ? r.text?.trim() : '';
 		return { text: why ? `${statusWord(r)}: ${why}` : statusWord(r), bad: s === 'failed' };
@@ -112,7 +107,7 @@ export interface Fact {
 	value: string;
 }
 
-/** facts is the details panel: label/value pairs, only those with a value. */
+/** The details panel as label and value pairs, only those with a value. */
 export function facts(r: DownloadRow, im: ImportRecord | undefined): Fact[] {
 	const more = statusDetail(r, im);
 	const target = im?.Plan?.find((p) => p.target_path)?.target_path;
@@ -131,11 +126,10 @@ export function facts(r: DownloadRow, im: ImportRecord | undefined): Fact[] {
 	return out.filter((x): x is [string, string] => !!x[1]).map(([label, value]) => ({ label, value }));
 }
 
-/** SPAN is the speed graph's window: one reading a second for a minute. */
+/** The speed graph's window: one reading a second for a minute. */
 export const SPAN = 60;
 
-/** stepToward eases the graph's next one-second reading from the last one
- *  toward the newest poll, so a 2-second poll still draws a smooth line. */
+/** Eases the graph's next one-second reading from the last one toward the newest poll, so a 2-second poll still draws a smooth line. */
 export function stepToward(last: number, target: number): number {
 	const t = Math.max(0, target || 0);
 	const l = Math.max(0, last || 0);

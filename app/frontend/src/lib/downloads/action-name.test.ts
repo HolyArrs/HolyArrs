@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { actionName } from './action-name.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('actionName', () => {
 	it('is the label when there is no hint or the hint repeats it', () => {

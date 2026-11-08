@@ -1,12 +1,9 @@
-// History (Downloads > History): how much an Event matters, the verb and
-// icon it is shown with, its day and clock, and the one line a run of
-// routine Events folds into, so the few Events that matter are not lost
-// among thousands of scans.
+// History (Downloads > History): how much an Event matters, its verb and icon, its day and clock, and the line a run of routine Events folds into, so the few Events that matter are not lost among thousands.
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { historyQuery, kindGroups, type HistoryFilter, type HistoryRow } from './history.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
 
-/** How much an Event matters: a result to look at, a change, or routine upkeep. */
+/** A result to look at, a change, or routine upkeep. */
 export type Tier = 'important' | 'changes' | 'routine';
 
 const groupTier: Record<string, Tier> = {
@@ -16,13 +13,13 @@ const groupTier: Record<string, Tier> = {
 	search: 'routine', scan: 'routine'
 };
 
-/** Kinds no filter group names: a tier still finds them. */
+/** Kinds no filter group names; a tier still finds them. */
 const looseKinds: Record<string, Tier> = {
 	albums_changed: 'routine', album_changed: 'routine',
 	gate_opened: 'changes', season_changed: 'changes', title_edited: 'changes', secrets_imported: 'changes'
 };
 
-/** An upgrade is filed under Imported, but it is a change, not a result to look at. */
+/** An upgrade is filed under Imported but is a change, not a result to look at. */
 const UPGRADE = 'file_replaced';
 
 function groupOf(kind: string): string {
@@ -32,31 +29,26 @@ function groupOf(kind: string): string {
 	return '';
 }
 
-/** tierOf says how much an Event kind matters. */
+/** How much an Event kind matters. */
 export function tierOf(kind: string): Tier {
 	if (kind === UPGRADE) return 'changes';
 	return looseKinds[kind] ?? groupTier[groupOf(kind)] ?? 'changes';
 }
 
-/**
- * eventsQuery is the /events query for the page's filters, with the kinds
- * replaced when `kinds` is given (an empty list matches nothing, so callers
- * skip the call).
- */
+/** Builds the /events query for the page's filters. `kinds` replaces the kinds when given; an empty list matches nothing, so callers skip the call. */
 export function eventsQuery(f: HistoryFilter, opts: { kinds?: string[]; limit?: number; offset?: number } = {}): string {
 	const q = new URLSearchParams(historyQuery({ ...f, groups: opts.kinds ? [] : f.groups, limit: opts.limit ?? f.limit, offset: opts.offset ?? f.offset }));
 	if (opts.kinds) q.set('kind', opts.kinds.join(','));
 	return q.toString();
 }
 
-/** A verb, icon and tone an Event is shown with. */
 export interface Verb {
 	word: string;
 	icon: IconName;
 	tone: 'ok' | 'fail' | 'wait' | 'info' | 'idle';
 }
 
-/** verbOf names what happened in one word or two ("Imported", "Failed"). */
+/** Names what happened in a word or two ("Imported", "Failed"). */
 export function verbOf(kind: string): Verb {
 	switch (kind) {
 		case 'import_done': return { word: 'Imported', icon: 'check', tone: 'ok' };
@@ -109,7 +101,7 @@ export function verbOf(kind: string): Verb {
 	return { word: 'Other', icon: 'info', tone: 'idle' };
 }
 
-/** headVerb is the verb of a History row: a folded download says how far it got. */
+/** The verb of a History row; a folded download says how far it got. */
 export function headVerb(row: HistoryRow): Verb {
 	if (!row.steps.length) return verbOf(row.head.Kind);
 	const failed = row.steps.find((s) => s.state === 'failed');
@@ -120,7 +112,7 @@ export function headVerb(row: HistoryRow): Verb {
 	return verbOf(row.head.Kind);
 }
 
-/** rowTier is how much a row matters (a folded download by its worst or best step). */
+/** How much a row matters; a folded download counts by its worst or best step. */
 export function rowTier(row: HistoryRow): Tier {
 	let best: Tier = 'routine';
 	for (const e of row.events) {
@@ -131,7 +123,7 @@ export function rowTier(row: HistoryRow): Tier {
 	return best;
 }
 
-/** byWhom says who or what made an Event happen. */
+/** Who or what made an Event happen. */
 export function byWhom(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name'>): string {
 	const d = e.Data ?? {};
 	const name = (v: unknown) => (typeof v === 'string' ? v : Array.isArray(v) && typeof v[0] === 'string' ? v[0] : '');
@@ -148,13 +140,13 @@ export function byWhom(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name'>): s
 	return 'HolyArrs';
 }
 
-/** dayKey is the local day of a time (yyyy-mm-dd). */
+/** The local day of a time (yyyy-mm-dd). */
 export function dayKey(at: string): string {
 	const d = new Date(at);
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** dayLabel names a day: Today, Yesterday, or "Sat, Oct 25" (with the year when it is not this year). */
+/** Today, Yesterday, or "Sat, Oct 25" (with the year when it is not this year). */
 export function dayLabel(key: string, now = new Date()): string {
 	const today = dayKey(now.toISOString());
 	const y = new Date(now);
@@ -166,22 +158,19 @@ export function dayLabel(key: string, now = new Date()): string {
 	return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', ...(yy !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
 
-/** clock is the local time of day ("4:27 AM"). */
+/** The local time of day ("4:27 AM"). */
 export function clock(at: string): string {
 	return new Date(at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
-/** The source named at the end of a refresh ("… from MusicBrainz"). */
+/** The source named at the end of a refresh ("... from MusicBrainz"). */
 function refreshSource(summary: string): string {
 	return /\bfrom ([A-Za-z.]+)\s*$/.exec(summary)?.[1] ?? '';
 }
 
-/**
- * burstLine says in one line what a run of Events did ("Refreshed 24
- * artists from MusicBrainz · 3 searches for Slow Horses").
- */
+/** One line for what a run of Events did ("Refreshed 24 artists from MusicBrainz · 3 searches for Slow Horses"). */
 export function burstLine(events: EventRecord[], titles: Map<number, Pick<TitleView, 'kind'>>): string {
 	const parts: string[] = [];
 	const by = new Map<string, EventRecord[]>();
@@ -217,17 +206,17 @@ export function burstLine(events: EventRecord[], titles: Map<number, Pick<TitleV
 	return parts.join(' · ');
 }
 
-/** titleHref is the link to a title still in the Library (removed titles have none). */
+/** The link to a title still in the Library; removed titles have none. */
 export function titleHref(id: number | null | undefined, titles: Map<number, unknown>): string | undefined {
 	return id && titles.has(id) ? `/library/${id}` : undefined;
 }
 
-/** artOf is the poster (or the Event's own artwork) for an Event's title. */
+/** The poster, or the Event's own artwork, for an Event's title. */
 export function artOf(e: Pick<EventRecord, 'TitleID' | 'artwork'>, titles: Map<number, Pick<TitleView, 'artwork'>>): string | undefined {
 	return e.artwork ?? titles.get(e.TitleID ?? 0)?.artwork?.[0];
 }
 
-/** Debounce for live updates: a refresh run writes dozens of Events a minute. */
+/** Debounce for live updates, since a refresh run writes dozens of Events a minute. */
 export function settle(fn: () => void, ms = 1500): { poke: () => void; stop: () => void } {
 	let t: ReturnType<typeof setTimeout> | undefined;
 	return {

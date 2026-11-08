@@ -1,6 +1,4 @@
-// Overlay pill scrollbar: a Svelte action for one scroll box. Native scrolling
-// stays untouched; the rails only mirror scrollTop/Left and let you drag or page.
-// Mounted only for a fine pointer on wide screens; phones keep the native bar.
+// Overlay pill scrollbar: a Svelte action for one scroll box. Native scrolling stays untouched; the rails only mirror scrollTop and scrollLeft and let you drag or page. Mounted only for a fine pointer on wide screens; phones keep the native bar.
 import './overlay-scroll.css';
 
 export type OverlayScrollOpts = { header?: string };
@@ -16,7 +14,7 @@ export function thumb(track: number, client: number, total: number, at: number) 
 	return { hidden: false, len, pos };
 }
 
-/** Scroll value for a thumb dragged d pixels from where it started. */
+/** Scroll value for a thumb dragged `d` pixels from where it started. */
 export function dragTo(start: number, d: number, track: number, len: number, client: number, total: number) {
 	const free = track - len;
 	return free > 0 ? start + (d * (total - client)) / free : start;
@@ -52,10 +50,7 @@ export function overlayScroll(node: HTMLElement, opts: OverlayScrollOpts = {}) {
 	const draw = () => {
 		raf = 0;
 		if (!rails || !host) return;
-		// The rails are the list's, not the card's: they start below the toolbar rows and the header
-		// above the scroller, and end above whatever sits under it (the detail pane).
-		// All reads first, then the writes, and the offsets go on the rails themselves: nothing under
-		// the host is restyled on a frame, and the fold redraws every frame.
+		// The rails belong to the list, not the card: they start below the toolbar rows and header above the scroller and end above whatever sits under it (the detail pane). All reads come first, then the writes.
 		const hr = host.getBoundingClientRect(), nr = node.getBoundingClientRect();
 		const top = Math.max(0, Math.round(nr.top - hr.top)) + headH();
 		const below = Math.max(0, Math.round(hr.bottom - nr.bottom));
@@ -70,7 +65,7 @@ export function overlayScroll(node: HTMLElement, opts: OverlayScrollOpts = {}) {
 			th.style.setProperty('--osb-pos', `${t.pos}px`);
 		}
 		host.toggleAttribute('data-osb-both', !v.hidden && !h.hidden);
-		// The rail's own size moves when the other rail or the header offset changes: redraw once more.
+		// The rail's own size moves when the other rail or the header offset changes; redraw once more.
 		if (rails.v.clientHeight !== lastH) { lastH = rails.v.clientHeight; queue(); }
 	};
 	const queue = () => { if (!raf) raf = requestAnimationFrame(draw); };
@@ -130,7 +125,7 @@ export function overlayScroll(node: HTMLElement, opts: OverlayScrollOpts = {}) {
 		node.addEventListener('focusin', wake);
 		if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(bump); ro.observe(node); observe(); }
 		if (typeof MutationObserver === 'function') {
-			// The selbar and the table come and go as direct children; rows sit a level down.
+			// The selection bar and the table come and go as direct children; rows sit a level down.
 			mo = new MutationObserver(() => { observe(); bump(); });
 			mo.observe(node, { childList: true });
 			if (node.firstElementChild) mo.observe(node.firstElementChild, { childList: true });

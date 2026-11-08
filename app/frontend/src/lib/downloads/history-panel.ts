@@ -1,19 +1,16 @@
-// The History details panel's content, shared by the desktop pane
-// (LookDays) and the phone sheet (EventSheet): the step mark, the title,
-// a short meta line, the art, a download's steps, one line of new facts,
-// the facts themselves and where to go next. The views only lay it out.
+// Content of the History details panel, shared by the desktop pane and the phone sheet: the step mark, title, meta line, art, a download's steps, one line of new facts, the facts, and where to go.
 import { artOf, byWhom, clock, dayKey, titleHref, type Verb } from './history-kinds.ts';
 import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from './history-lines.ts';
-import { bytes } from '../core/format.ts';
 import { canFind, filterVerb, rowLinks, type GoLink } from './history-search.ts';
 import type { HistoryRow, StepKey } from './history.ts';
+import { bytes } from '../core/format.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
 
-/** One fact row: its label, its value and how the value is set. */
+/** One fact row: label, value and how the value is set. */
 export interface Fact {
 	label: 'When' | 'By' | 'Quality' | 'Size' | 'Source' | 'Downloader' | 'Release' | 'File' | 'From' | 'Folder' | 'Why';
 	value: string;
-	/** When: the muted relative part ("36 min ago"), same day only. */
+	/** The muted relative part of When ("36 min ago"), same day only. */
 	ago?: string;
 	/** The datetime for a When value. */
 	at?: string;
@@ -41,7 +38,7 @@ export interface PanelView {
 	facts: Fact[];
 	/** Find another (rows about a release). */
 	find: boolean;
-	/** The places to go, in order: Import plan, the title, Downloads, Requests or Problems. */
+	/** Where to go, in order: Import plan, the title, Downloads, Requests or Problems. */
 	actions: GoLink[];
 }
 
@@ -56,7 +53,7 @@ const count = (n: number) => n.toLocaleString('en-US');
 const plural = (n: number, one: string, many = one + 's') => `${count(n)} ${n === 1 ? one : many}`;
 const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
 
-/** whenText is a fact's time: "Today, 10:00 PM" with "36 min ago", "Yesterday, 4:50 PM", "Oct 21, 3:05 PM". */
+/** A fact's time: "Today, 10:00 PM" with "36 min ago", "Yesterday, 4:50 PM", "Oct 21, 3:05 PM". */
 export function whenText(at: string, now = new Date()): { text: string; ago: string } {
 	const t = new Date(at);
 	if (Number.isNaN(t.getTime())) return { text: '', ago: '' };
@@ -78,11 +75,7 @@ const absolute = (p: string) => /^([a-z]:[\\/]|[\\/])/i.test(p);
 const sep = (p: string) => (p.includes('\\') ? '\\' : '/');
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/**
- * shortPath shows a path from the Library folder down ("movies\Heat (1995)\Heat (1995).mkv"):
- * from the folder before the title's own folder when it is there, else a file with its folder,
- * or a folder on its own. A path the server already keeps relative stays as it is.
- */
+/** Shows a path from the Library folder down ("movies\Heat (1995)\Heat (1995).mkv"): from the folder before the title's own folder when present, else a file with its folder, or a folder alone. */
 export function shortPath(p: string, title = ''): string {
 	const s = p.trim();
 	if (!s || !absolute(s)) return s;
@@ -97,11 +90,7 @@ export function shortPath(p: string, title = ''): string {
 	return parts.slice(file ? -2 : -1).join(j);
 }
 
-/**
- * pathBits splits a shown path into pieces that each end at a separator, so the
- * view can break only there; a path longer than two lines' worth keeps its end
- * and starts with an ellipsis.
- */
+/** Splits a shown path into pieces that each end at a separator so the view breaks only there. A path longer than two lines keeps its end and starts with an ellipsis. */
 export function pathBits(p: string, max = 76): string[] {
 	const j = sep(p);
 	const bits = p.split(/(?<=[\\/])/);
@@ -109,11 +98,11 @@ export function pathBits(p: string, max = 76): string[] {
 	let i = bits.length;
 	while (i > 0 && len + bits[i - 1].length <= max) len += bits[--i].length;
 	if (i === bits.length) i--;
-	// The ellipsis stays on the line of the piece after it, never alone on a line.
+	// The ellipsis stays on the line of the piece after it, never alone.
 	return i > 0 ? [`…${j}${bits[i]}`, ...bits.slice(i + 1)] : bits;
 }
 
-/** glue keeps a path piece on one line: spaces and hyphens no longer break it (only the separators do). */
+/** Keeps a path piece on one line: only separators may break it. */
 export const glue = (bit: string) => bit.replace(/ /g, ' ').replace(/-/g, '‑');
 
 function first(row: HistoryRow, read: (d: Record<string, unknown>, e: EventRecord) => string): string {
@@ -125,7 +114,7 @@ function first(row: HistoryRow, read: (d: Record<string, unknown>, e: EventRecor
 }
 const pathsOf = (d: Record<string, unknown>) => (Array.isArray(d.paths) ? (d.paths as unknown[]).filter((p): p is Record<string, unknown> => !!p && typeof p === 'object') : []);
 
-/** Who did it: a person or an AI app ('' for HolyArrs, jobs and automatic actions). */
+/** A person or an AI app; '' for HolyArrs, jobs and automatic actions. */
 function person(e: EventRecord, ctx: PanelContext): string {
 	if (e.Actor?.kind === 'ai') return byWhom(e);
 	if (e.Actor?.kind !== 'user') return '';
@@ -138,7 +127,7 @@ function person(e: EventRecord, ctx: PanelContext): string {
 	return own || e.actor_name || (id != null ? ctx.people?.get(id) : '') || '';
 }
 
-/** The subject of an Event with no title: the folder, the person or the downloader it is about. */
+/** The subject of an Event with no title: the folder, person or downloader it is about. */
 function subject(e: EventRecord): string {
 	const d = e.Data ?? {};
 	const k = e.Kind;
@@ -149,7 +138,7 @@ function subject(e: EventRecord): string {
 		const msg = str(d.message) || e.Summary, sub = str(d.subject);
 		const i = sub ? msg.indexOf(sub) : -1;
 		if (i >= 0 && i <= 24) return msg.slice(0, i + sub.length).trim();
-		// A subject with a note after it ("Trailer reader, last good lookup …") keeps its name only.
+		// A subject followed by a note ("Trailer reader, last good lookup ...") keeps its name only.
 		return sub.split(', ')[0] || /^([^:]{1,60}):/.exec(msg)?.[1] || '';
 	}
 	if (k === 'health_recovered') return str(d.subject).split(', ')[0];
@@ -163,7 +152,7 @@ function subject(e: EventRecord): string {
 
 const SYSTEM_LINE: Record<string, string> = { signed_in: 'Signed in', signed_out: 'Signed out', sign_in_failed: 'Sign-in failed', api_key_created: 'Key made', api_key_deleted: 'Key deleted' };
 
-/** The facts each kind of row shows (When always comes first). */
+/** The facts each kind of row shows; When always comes first. */
 type Label = Fact['label'];
 const DOWNLOAD: Label[] = ['Quality', 'Size', 'Source', 'Downloader', 'Release'];
 function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
@@ -186,7 +175,7 @@ function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
 	return ['By', 'Downloader', 'Release', 'File', 'From', 'Folder', 'Why'];
 }
 
-/** The one line of new facts for a row (empty when the mark, title, meta and facts say it all). */
+/** One line of new facts, empty when the mark, title, meta and facts say it all. */
 function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fallback: string): { line: string; long: boolean } {
 	const e = row.head;
 	const d = e.Data ?? {};
@@ -206,12 +195,12 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 		}
 		case 'library_folder_unreachable': return { line: folderGone(e), long: false };
 		case 'health_broken': {
-			// The message without its subject: "Does not answer: …" under the title "Downloader NZBGet".
+			// The message without its subject: "Does not answer: ..." under the title "Downloader NZBGet".
 			const msg = plainWhy(str(d.message) || e.Summary);
 			const sub = subject(e);
 			if (!sub) return { line: '', long: false };
 			const rest = sub && msg.startsWith(sub) ? msg.slice(sub.length).replace(/^[\s:,-]+/, '') : msg;
-			// "is not answering (timed out after 30 s)": the part in brackets says what happened.
+			// The part in brackets says what happened.
 			const inner = /\(([^)]+)\)$/.exec(rest)?.[1];
 			return { line: cap(inner || rest || msg), long: false };
 		}
@@ -267,7 +256,7 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 	return { line: fallback, long: false };
 }
 
-/** sysSplit names a health or alert row the way title rows read: what it is about, then what happened ("Discord" · "401 Unauthorized"). */
+/** Names a health or alert row like title rows: what it is about, then what happened ("Discord" · "401 Unauthorized"). */
 const splitKinds = /^(health_broken|health_recovered|alert_failed|free_space_low|library_folder_unreachable)$/;
 export function sysSplit(row: HistoryRow, ctx: PanelContext): { name: string; line: string } | null {
 	const e = row.head;
@@ -277,7 +266,7 @@ export function sysSplit(row: HistoryRow, ctx: PanelContext): { name: string; li
 	return { name, line: lineOf(row, ctx, '', '').line };
 }
 
-/** panelView is everything the details panel shows for a row. */
+/** Everything the details panel shows for a row. */
 export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const e = row.head;
 	const now = ctx.now ?? new Date();
@@ -286,11 +275,11 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const kind = e.TitleID ? ctx.titles.get(e.TitleID)?.kind : undefined;
 	const d = e.Data ?? {};
 
-	// The title: the title's name, else what a system Event is about, else its own line.
+	// The title's name, else what a system Event is about, else its own line.
 	const own = e.title_name || (w.name !== 'HolyArrs' ? w.name : '') || subject(e);
 	const title = own || w.line;
 
-	// The meta: episode bits, a season, an album, or Artist and Album apart.
+	// Episode bits, a season, an album, or Artist and Album apart.
 	const eps = episodeBits(e.episode);
 	const season = /^Season (\d+):/.exec(e.Summary)?.[1];
 	const album = str(d.album) && !/^\d+$/.test(str(d.album)) ? str(d.album) : '';
@@ -302,7 +291,7 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const src = e.TitleID && e.title_name ? artOf(e, ctx.titles) : undefined;
 	const art = src && e.title_name ? { src, name: e.title_name, square: kind === 'artist' || kind === 'album' } : null;
 
-	// Steps: a download's three; a decision waiting on an import shows where it stopped.
+	// A download's three steps; a decision waiting on an import shows where it stopped.
 	const waits = row.events.some((x) => x.Kind === 'needs_decision');
 	let steps: PanelStep[] = row.steps.map((s) => (waits && s.state === 'failed' ? { key: s.key, label: 'Needs you', state: 'needs' } : { key: s.key, label: s.label, state: s.state }));
 	if (!steps.length && e.Kind === 'needs_decision' && /plac|import/i.test(str(d.reason)))
@@ -311,7 +300,7 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 
 	const { line, long } = lineOf(row, ctx, failedAt, own ? w.line : '');
 
-	// The facts, in one order, each only when the Events kept it.
+	// Each fact only when the Events kept it, in one fixed order.
 	const wants = new Set(factSet(row, failedAt));
 	const facts: Fact[] = [];
 	const when = whenText(e.At, now);
@@ -335,7 +324,7 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	path('From', isRename ? str(d.from) : fromFile || first(row, (x) => str(x.from)));
 	path('Folder', str(d.folder) || str(d.path) || str(d.save_path));
 	const why = str(d.reason) || str(d.error) || str(d.message);
-	// Reason once: no Why when the line or the title already says it.
+	// Say the reason once: no Why when the line or title already says it.
 	const wl = plainWhy(why).toLowerCase(), ll = line.toLowerCase();
 	if (why && !ll.includes(wl) && !(ll && wl.includes(ll)) && !title.toLowerCase().includes(wl)) add('Why', cap(plainWhy(why)));
 

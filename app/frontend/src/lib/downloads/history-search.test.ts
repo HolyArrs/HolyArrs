@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import { eventText } from './history-lines.ts';
 import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, filterVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './history-search.ts';
-import type { EventRecord } from '../core/types.ts';
 import { downloadSteps, type HistoryRow } from './history.ts';
+import { describe, expect, it } from 'vitest';
+import type { EventRecord } from '../core/types.ts';
 
 let id = 0;
 const ev = (Kind: string, extra: Partial<EventRecord> = {}): EventRecord => ({ ID: ++id, At: '2026-11-01T10:00:00Z', Kind, Summary: Kind, TitleID: null, ...extra });
@@ -23,10 +23,8 @@ describe('history filters', () => {
 
 	it('maps steps to kinds and leaves routine work out', () => {
 		expect(stepKinds(['asked', 'sent'])).toEqual(['release_chosen', 'release_chosen_by_hand', 'download_sent', 'download_queued', 'ask_made', 'ai_ask_made']);
-		// Needs you is its own step; Failed is what went wrong.
 		expect(stepKinds(['decide'])).toEqual(['needs_decision', 'stopped_looking']);
 		expect(stepKinds(['failed'])).not.toContain('needs_decision');
-		// Merged steps: old links pick the step they became.
 		expect(readSearch(new URLSearchParams('step=out,chosen,media,added')).steps).toEqual(['added', 'sent', 'imported']);
 		expect(stepKinds(['imported'])).toContain('media_server_told');
 		expect(stepKinds(['failed'])).toContain('download_failed');
@@ -34,7 +32,6 @@ describe('history filters', () => {
 		expect(all).toContain('import_done');
 		expect(all).not.toContain('search_done');
 		expect(all).not.toContain('library_scanned');
-		// The server takes at most 64 kinds in one list.
 		expect(all.length).toBeLessThanOrEqual(64);
 		for (const k of ['account_changed', 'secrets_imported', 'backup_used']) expect(stepKinds(['system'])).toContain(k);
 	});
@@ -225,7 +222,6 @@ describe('row step marks in the Filter words', () => {
 		expect(mark(one(ev('import_done')))).toBe('Imported');
 		expect(mark(one(ev('report_fixed')))).toBe('Reported');
 		expect(mark(one(ev('download_failed')))).toBe('Failed');
-		// A folder check that found the folder fine is not a failure.
 		expect(mark(one(ev('library_folder_health', { Data: { health: 'ok' } })))).not.toBe('Failed');
 	});
 	it('names a grouped download by its furthest step', () => {

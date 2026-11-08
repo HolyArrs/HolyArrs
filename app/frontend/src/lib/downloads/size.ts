@@ -2,7 +2,7 @@
 
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 
-/** size writes bytes as "553 MB", "1.7 GB", "18 GB" (one decimal under 10, none above). */
+/** Bytes as "553 MB", "1.7 GB", "18 GB" (one decimal under 10, none above). */
 export function size(n: number | null | undefined): string {
 	if (!n || n < 0 || !Number.isFinite(n)) return '0 B';
 	let v = n;
@@ -12,17 +12,17 @@ export function size(n: number | null | undefined): string {
 		i++;
 	}
 	const t = i === 0 || v >= 10 ? String(Math.round(v)) : String(Math.round(v * 10) / 10);
-	// Rounding 999.6 up gives 1000: step to the next unit.
+	// Rounding 999.6 up gives 1000, so step to the next unit.
 	if (t === '1000' && i < UNITS.length - 1) return `1 ${UNITS[i + 1]}`;
 	return `${t} ${UNITS[i]}`;
 }
 
-/** sizePair is a part of a whole: "553 MB / 3 GB". */
+/** A part of a whole: "553 MB / 3 GB". */
 export function sizePair(got: number, total: number): string {
 	return `${size(got)} / ${size(total)}`;
 }
 
-/** protocolOf names a Downloader's protocol from what the row carries. */
+/** A Downloader's protocol from what the row carries. */
 export function protocolOf(r: { protocol?: string; downloader_kind?: string }): 'torrent' | 'usenet' | '' {
 	const p = (r.protocol || '').toLowerCase();
 	if (p === 'torrent' || p === 'usenet') return p;
@@ -41,7 +41,7 @@ export const KIND_TABS: { key: KindKey; label: string }[] = [
 	{ key: 'artist', label: 'Music' }
 ];
 
-/** categoryWords names a client category in plain words: tv_shows reads TV show, movies reads Movie, anything else loses its underscores. */
+/** A client category in plain words: tv_shows reads TV show, movies reads Movie, anything else loses its underscores. */
 export function categoryWords(c: string | undefined): string {
 	const v = (c ?? '').trim();
 	if (!v) return '';

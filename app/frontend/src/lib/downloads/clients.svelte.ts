@@ -1,15 +1,15 @@
 import { api, message } from '../core/api.ts';
 import { toasts } from '../core/toasts.svelte.ts';
 
-// What each Downloader says about itself (speeds, free space, totals).
+// What each Downloader says about itself.
 export type ClientStatus = { paused: boolean; speed: number; up_speed: number; speed_limit?: number; up_limit?: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
 export type Client = { id: number; name: string; protocol?: string; status?: ClientStatus; error?: string };
 
-/** The Downloaders' own status for the pills, read every 5 seconds (managers only: watchers would get a 403 each time). */
+/** Polls the Downloaders' own status every 5 seconds. Managers only: watchers would get a 403 each time. */
 export class Downloaders {
 	clients = $state<Client[]>([]);
 	loaded = $state(false);
-	// Slow mode: a torrent Downloader's second, slower set of speed limits.
+	// Slow mode is a torrent Downloader's second, slower set of speed limits.
 	slowBusy = $state(0);
 
 	reporting = $derived(this.clients.filter((c) => c.status && !c.error));

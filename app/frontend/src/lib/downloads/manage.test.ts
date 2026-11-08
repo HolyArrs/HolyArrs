@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { addWords, isTorrentFile, splitLinks } from './manage.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('splitLinks', () => {
 	it('keeps magnets, http links and hashes, one per line', () => {

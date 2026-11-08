@@ -1,10 +1,9 @@
-// History: the address it reads, the "who did it" filter, a row's step and
-// extra piece, and the actions a row's details offer.
+// History: the address it reads, the "who did it" filter, a row's step and extra piece, and the actions a row's details offer.
 import { readFilter, type HistoryRow } from './history.ts';
 import { fineCheck, historyTabs, tabKinds } from './history-tabs.ts';
 import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from './history-lines.ts';
-import { bytes } from '../core/format.ts';
 import type { Verb } from './history-kinds.ts';
+import { bytes } from '../core/format.ts';
 import type { EventRecord } from '../core/types.ts';
 
 /** Who made an Event happen, as the Filter offers it. */
@@ -15,12 +14,12 @@ export function whoOf(v: string | null): Who {
 	return v === 'me' || v === 'people' || v === 'ai' || v === 'holyarrs' ? v : '';
 }
 
-/** whoMatches keeps an Event made by the picked kind of actor. */
+/** Keeps an Event made by the picked kind of actor. */
 export function whoMatches(e: Pick<EventRecord, 'Actor'>, who: Who, me?: number): boolean {
 	const user = e.Actor?.kind === 'user';
 	if (who === 'me') return user && e.Actor?.id != null && e.Actor.id === me;
 	if (who === 'people') return user;
-	// An AI app acts with a member's key: it is neither the member nor HolyArrs on its own.
+	// An AI app acts with a member's key, so it is neither the member nor HolyArrs on its own.
 	if (who === 'ai') return e.Actor?.kind === 'ai';
 	if (who === 'holyarrs') return !user && e.Actor?.kind !== 'ai';
 	return true;
@@ -28,7 +27,7 @@ export function whoMatches(e: Pick<EventRecord, 'Actor'>, who: Who, me?: number)
 
 type Params = { get(name: string): string | null; toString(): string };
 
-/** dirQuery is the address for a change, dropping empty values. */
+/** The address for a change, dropping empty values. */
 export function dirQuery(params: Params, change: Record<string, string | number | undefined>): string {
 	const q = new URLSearchParams(params.toString());
 	for (const [k, v] of Object.entries(change)) {
@@ -50,7 +49,7 @@ const first = (row: HistoryRow, read: (d: Record<string, unknown>) => string) =>
 	return '';
 };
 
-/** The table's cells for one row ('' when the Events did not keep it). */
+/** A table cell for one row; '' when the Events did not keep it. */
 export function releaseOf(row: HistoryRow): string {
 	return first(row, (d) => str(d.release));
 }
@@ -66,20 +65,17 @@ export function sizeOf(row: HistoryRow): number {
 	return 0;
 }
 export const sizeText = (row: HistoryRow) => (sizeOf(row) ? bytes(sizeOf(row)) : '');
-/** partOf is the episode ("S04 E12 Name", as the details show it) or album a row is about. */
+/** The episode ("S04 E12 Name", as the details show it) or album a row is about. */
 export function partOf(row: HistoryRow): string {
 	return episodeBits(row.head.episode).join(' · ') || first(row, (d) => str(d.album)) || '';
 }
 
-/* The search looks (?look=pill|plain): a search bar, a Filter with steps,
-   type, who and dates, and a chip per filter that is on. Routine work
-   (searches, refreshes, scans) is left out of them. */
+/* The Search view (?look=pill|plain): a search bar, a Filter with steps, type, who and dates, and a chip per active filter. Routine work (searches, refreshes, scans) is left out. */
 
-/** A step of a download's life, as the Filter offers it, and the Event kinds it means. */
-/** The problems that wait on a person: their own step (Needs you), so Failed is what actually went wrong. */
+/** A step of a download's life as the Filter offers it, with the Event kinds it covers. */
+/** Problems that wait on a person get their own step (Needs you), so Failed means what actually went wrong. */
 const decideKinds = ['needs_decision', 'stopped_looking'];
-/** The steps the Filter offers, one past-tense verb each: the download steps first, in the order
- *  Sonarr and Radarr's history shows them, then asks and the Library (stepBreak), System last. */
+/** The steps the Filter offers, one past-tense verb each: download steps first, in the order Sonarr and Radarr show them, then asks and the Library (stepBreak), System last. */
 export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'sent', label: 'Sent', kinds: ['release_chosen', 'release_chosen_by_hand', 'download_sent', 'download_queued'] },
 	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
@@ -97,15 +93,15 @@ export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'decide', label: 'Needs you', kinds: decideKinds },
 	{ key: 'system', label: 'System', kinds: tabKinds('changes', 'system') ?? [] }
 ];
-/** Where the second block of steps starts (asks and the Library). */
+/** Where the second block of steps (asks and the Library) starts. */
 export const stepBreak = searchSteps.findIndex((s) => s.key === 'asked');
-/** Steps that were merged into others: old links still pick the step they became. */
+/** Steps merged into others; old links still pick the step they became. */
 const mergedSteps: Record<string, string> = { out: 'added', chosen: 'sent', media: 'imported' };
 
-/** Every kind but routine work: what the search looks show with no step picked. */
+/** Every kind but routine work: what the search shows with no step picked. */
 export const nonRoutineKinds = historyTabs.filter((t) => t.key !== 'routine').flatMap((t) => t.subs.flatMap((s) => s.kinds));
 
-/** stepKinds is what the picked steps ask the server for (every kind but routine when none is picked). */
+/** What the picked steps ask the server for; every kind but routine when none is picked. */
 export function stepKinds(steps: string[]): string[] {
 	const picked = searchSteps.filter((s) => steps.includes(s.key));
 	return picked.length ? [...new Set(picked.flatMap((s) => s.kinds))] : [...nonRoutineKinds];
@@ -114,7 +110,7 @@ export function stepKinds(steps: string[]): string[] {
 export type MediaType = '' | 'movies' | 'shows' | 'music';
 export const typeLabels: Record<Exclude<MediaType, ''>, string> = { movies: 'Movies', shows: 'Shows', music: 'Music' };
 
-/** typeMatches keeps an Event about a title of the picked type (a title's kind: movie, show, artist or album). */
+/** Keeps an Event about a title of the picked type (movie, show, artist or album). */
 export function typeMatches(kind: string | undefined, type: MediaType): boolean {
 	if (!type) return true;
 	if (type === 'movies') return kind === 'movie';
@@ -122,7 +118,7 @@ export function typeMatches(kind: string | undefined, type: MediaType): boolean 
 	return kind === 'artist' || kind === 'album' || kind === 'music';
 }
 
-/** textMatches keeps an Event whose title, summary, episode, source, release or person holds the text. */
+/** Keeps an Event whose title, summary, episode, source, release or person holds the text. */
 export function textMatches(e: EventRecord, q: string, people?: Map<number, string>): boolean {
 	const t = q.trim().toLowerCase();
 	if (!t) return true;
@@ -131,7 +127,7 @@ export function textMatches(e: EventRecord, q: string, people?: Map<number, stri
 	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release), str(d.client)].some((v) => v?.toLowerCase().includes(t));
 }
 
-/** Everything a search look reads from the address. */
+/** Everything the Search view reads from the address. */
 export interface SearchState {
 	q: string;
 	steps: string[];
@@ -149,30 +145,30 @@ export function readSearch(params: Params): SearchState {
 	return { q: params.get('q') ?? '', steps, type, who: whoOf(params.get('who')), from: f.from, to: f.to };
 }
 
-/** toggleStep is the ?step= value with one step switched on or off. */
+/** The ?step= value with one step switched on or off. */
 export function toggleStep(steps: string[], key: string): string {
 	return (steps.includes(key) ? steps.filter((s) => s !== key) : [...steps, key]).join(',');
 }
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
-/** The When choices: a span back from now ('' is All time), or Custom (From and To). */
+/** A span back from now ('' is All time), or Custom (From and To). */
 export const whenSpans: { days: number; label: string }[] = [
 	{ days: 0, label: 'All time' },
 	{ days: 1, label: '24 hours' },
 	{ days: 7, label: '7 days' },
 	{ days: 30, label: '30 days' }
 ];
-/** whenFrom is the From date for a span back from now. */
+/** The From date for a span back from now. */
 export const whenFrom = (days: number, now = new Date()) => day(new Date(now.getTime() - days * 86400000));
-/** whenOf is the When choice the address holds: a span's days, 0 for All time, or 'custom'. */
+/** The When choice the address holds: a span's days, 0 for All time, or 'custom'. */
 export function whenOf(from?: string, to?: string, now = new Date()): number | 'custom' {
 	if (!from && !to) return 0;
 	if (from && !to) for (const w of whenSpans) if (w.days && from === whenFrom(w.days, now)) return w.days;
 	return 'custom';
 }
 
-/** dateLabel names a date range ("7 days" when it runs from 7 days ago to now). */
+/** Names a date range ("7 days" when it runs from 7 days ago to now). */
 export function dateLabel(from?: string, to?: string, now = new Date()): string {
 	if (from && !to) {
 		for (const n of [1, 7, 30, 90]) {
@@ -184,14 +180,14 @@ export function dateLabel(from?: string, to?: string, now = new Date()): string 
 	return to ? `Until ${to}` : '';
 }
 
-/** One removable chip under the bar: its label and the address change that clears it. */
+/** One removable chip: its label and the address change that clears it. */
 export interface Chip {
 	key: string;
 	label: string;
 	change: Record<string, string | undefined>;
 }
 
-/** searchChips is a chip per filter that is on (the search text has its own box). */
+/** A chip per active filter; the search text has its own box. */
 export function searchChips(s: SearchState, now = new Date()): Chip[] {
 	const out: Chip[] = [];
 	for (const st of searchSteps) if (s.steps.includes(st.key)) out.push({ key: 'step.' + st.key, label: st.label, change: { step: toggleStep(s.steps, st.key) } });
@@ -201,19 +197,18 @@ export function searchChips(s: SearchState, now = new Date()): Chip[] {
 	return out;
 }
 
-/** The address change that clears every chip. */
 export const clearChips = { step: undefined, type: undefined, who: undefined, from: undefined, to: undefined, source: undefined };
 
-/* The Search looks' row: the step in plain words, then at most one extra piece. */
+/* The Search row: the step in plain words, then at most one extra piece. */
 
-/** What a row's step is: its word, its icon and whether it went wrong. */
+/** What a row's step is: its word, icon and whether it went wrong. */
 export interface RowStep {
 	label: string;
 	icon: 'wish' | 'check' | 'declined' | 'plus' | 'calendarDay' | 'search' | 'upload' | 'download' | 'folder' | 'copy' | 'subtitle' | 'tv' | 'sparkle' | 'trash' | 'x' | 'alert' | 'info';
 	failed: boolean;
 }
 const problemKinds = new Set(tabKinds('problems') ?? []);
-/** isProblem says whether a kind is one of the Problems tab's kinds. */
+/** Whether a kind is one of the Problems tab's kinds. */
 export function isProblem(kind: string): boolean {
 	return problemKinds.has(kind) || [...problemKinds].some((k) => k.endsWith('*') && kind.startsWith(k.slice(0, -1)));
 }
@@ -237,52 +232,45 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }],
 	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed|backup_used)$/, { label: 'System', icon: 'info' }]
 ];
-/** rowStep names what a row's newest step is; a folded download reads its furthest step. */
+/** Names a row's newest step; a folded download reads its furthest step. */
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 	const kinds = row.events.map((e) => e.Kind);
 	const bad = row.events.find((e) => isProblem(e.Kind) && !fineCheck(e))?.Kind;
-	// Low space and a check's warning are warnings: still the Filter's Failed, never the fail tone.
+	// Low space and a check's warning stay under the Filter's Failed but never take the fail tone.
 	if (bad && row.steps.length === 0 && (bad === 'free_space_low' || (bad === 'health_broken' && row.head.Data?.state === 'warning'))) return { label: 'Failed', icon: 'alert', failed: false };
 	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? 'Needs you' : 'Failed', icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
 	const pick = row.steps.length ? (kinds.includes('file_replaced') ? 'file_replaced' : kinds.find((k) => /^import_/.test(k)) ?? kinds.find((k) => /^download_(finished|seeding)$/.test(k)) ?? row.head.Kind) : row.head.Kind;
 	const hit = kindStep.find(([re]) => re.test(pick));
 	return hit ? { ...hit[1], failed: false } : { label: fallback || 'Changed', icon: 'info', failed: false };
 }
-/**
- * rowExtra is the one extra piece a row shows after its step: who for asks
- * and adds, quality when chosen or sent, size when imported, quality when
- * upgraded (old → new when both were kept), language for subtitles, the
- * reason for a failure. A row with no title (sign-ins, settings,
- * Downloaders) falls back to its own line, so it never reads as just "System".
- */
+/** The extra piece after a row's step: who for asks and adds, quality when chosen or sent, size when imported, old → new quality when upgraded, language for subtitles, otherwise the reason. */
 export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => '', line = ''): string {
 	return extraOf(row, step, who) || (row.head.TitleID ? '' : line);
 }
-/** stepVerb is a row's step as the mark its details show, so a row and its details name the same step. */
+/** A row's step as the mark its details show, so both name the same step. */
 export function stepVerb(row: HistoryRow, tag: Verb): Verb {
 	const s = rowStep(row, tag.word);
 	return { word: s.label, icon: s.icon, tone: s.failed ? 'fail' : tag.tone };
 }
-/** eventStep is one Event's step, for the details' list of every step. */
+/** One Event's step, for the details list of every step. */
 export const eventStep = (e: EventRecord, tag: Verb): Verb => stepVerb({ key: String(e.ID), head: e, events: [e], steps: [] }, tag);
 
-/** filterStep is the Filter's step a kind belongs to (its key and word), or undefined for routine work. */
+/** The Filter's step a kind belongs to (key and word), or undefined for routine work. */
 export function filterStep(kind: string): { key: string; label: string } | undefined {
 	return searchSteps.find((st) => st.kinds.some((k) => (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind)));
 }
 
-/** The row words that only repeat the Filter's mark ("Subtitles" under Subtitled): a row never shows them twice. */
+/** Row words that only repeat the Filter's mark ("Subtitles" under Subtitled); a row never shows them twice. */
 export const sameWords = new Set(['Chosen', 'Subtitles', 'In media server', 'Reported problems']);
-/** The row words that the Filter calls by another name (merged steps). */
+/** Row words the Filter calls by another name (merged steps). */
 const filterWord: Record<string, string> = { 'Out now': 'Added', Chosen: 'Sent', Subtitles: 'Subtitled', 'In media server': 'Imported', 'Reported problems': 'Reported' };
-/** filterVerb is a row's step mark in the Filter's words: the step the row already shows (its furthest step,
- *  Failed when any step failed), renamed where the Filter merged it ("Out now" is Added). */
+/** A row's step mark in the Filter's words: its furthest step, Failed when any step failed, renamed where the Filter merged it ("Out now" is Added). */
 export function filterVerb(row: HistoryRow, tag: Verb): Verb {
 	const v = stepVerb(row, tag);
 	if (v.tone === 'fail') return v;
 	const word = filterWord[v.word] ?? v.word;
 	if (searchSteps.some((st) => st.label === word)) return { ...v, word };
-	// A row word the Filter has no step for ("Fixed" on a report): the Filter step its Event belongs to, when not a failure.
+	// A row word the Filter has no step for ("Fixed" on a report) takes the step its Event belongs to, unless it is a failure.
 	const st = filterStep(row.head.Kind);
 	return { ...v, word: st && st.key !== 'failed' ? st.label : word };
 }
@@ -316,7 +304,7 @@ function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string
 			const now = first(row, (d) => str(d.new_quality));
 			return was && now ? `${was} → ${now}` : qualityOf(row);
 		}
-		// Found on disk keeps no size: what was found instead ("45 tracks · 4 albums").
+		// Found on disk keeps no size; show what was found instead ("45 tracks · 4 albums").
 		case 'Imported': {
 			if (sizeText(row)) return sizeText(row);
 			const d = row.head.Data ?? {};
@@ -328,7 +316,7 @@ function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string
 	}
 	return '';
 }
-/** agoShort is a short relative time: "now", "2m", "3h", "Yesterday", then the date. */
+/** Short relative time: "now", "2m", "3h", "Yesterday", then the date. */
 export function agoShort(at: string, now = new Date()): string {
 	const t = new Date(at);
 	const s = Math.max(0, (now.getTime() - t.getTime()) / 1000);
@@ -342,17 +330,13 @@ export function agoShort(at: string, now = new Date()): string {
 }
 
 const routineKinds = new Set(tabKinds('routine') ?? []);
-/** isRoutine says whether a kind is background routine work (feed checks, searches, refreshes, scans). */
+/** Whether a kind is background routine work (feed checks, searches, refreshes, scans). */
 export function isRoutine(kind: string): boolean {
 	return routineKinds.has(kind) || [...routineKinds].some((k) => k.endsWith('*') && kind.startsWith(k.slice(0, -1)));
 }
 
 const findKind = /^(release_chosen(_by_hand)?|download_\w+|import_\w+|file_replaced)$/;
-/**
- * dropAiTwins leaves out the member's ask row an AI app's action also wrote
- * (ask_made next to ai_ask_made for the same ask), so one AI ask is one row,
- * credited to the AI app and not to the member.
- */
+/** Drops the member's ask row that an AI app's action also wrote (ask_made beside ai_ask_made for the same ask), so one AI ask is one row credited to the app. */
 export function dropAiTwins(events: EventRecord[]): EventRecord[] {
 	const twins = new Set<string>();
 	for (const e of events) {
@@ -363,7 +347,7 @@ export function dropAiTwins(events: EventRecord[]): EventRecord[] {
 	return events.filter((e) => !(e.Actor?.kind === 'user' && typeof e.Data?.ask_id === 'number' && twins.has(`${e.Kind}:${e.Data.ask_id}`)));
 }
 
-/** canFind: the row is about an actual release (a release name or a download id), so another one can be looked for. */
+/** The row is about an actual release (a release name or a download id), so another one can be looked for. */
 export function canFind(row: HistoryRow): boolean {
 	return row.events.some((e) => {
 		if (!findKind.test(e.Kind)) return false;
@@ -372,7 +356,7 @@ export function canFind(row: HistoryRow): boolean {
 	});
 }
 
-/** findTarget: the release to block, its Slot and its title for "Find another", or null when the Events did not keep them. */
+/** The release to block, its Slot and its title for "Find another"; null when the Events did not keep them. */
 export function findTarget(row: HistoryRow): { releaseId: number; slotId: number; titleId: number } | null {
 	for (const e of row.events) {
 		if (!findKind.test(e.Kind)) continue;
@@ -389,7 +373,7 @@ export interface GoLink {
 	label: string;
 	href: string;
 }
-/** rowLinks: the import plan for a decision, the title page, Downloads for releases and downloads (opening the download if known), Requests for asks and Problems for reports. */
+/** The import plan for a decision, the title page, Downloads for releases and downloads (opening the download if known), Requests for asks and Problems for reports. */
 export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	const out: GoLink[] = [];
 	const decide = row.events.find((e) => e.Kind === 'needs_decision');
@@ -400,7 +384,7 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	}
 	if (titleHref) out.push({ key: 'title', label: 'Title page', href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
-	// Only rows about a release or a download lead to Downloads (a sign-in does not).
+	// Only rows about a release or a download lead to Downloads; a sign-in does not.
 	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });

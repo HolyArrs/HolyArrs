@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
 	applySize,
 	blankBody,
@@ -23,6 +22,7 @@ import {
 	videoLadder
 } from './pick-rules.ts';
 import type { OwnTrait, PickRulesBody } from './types.ts';
+import { describe, expect, it } from 'vitest';
 
 const gb = 2 ** 30;
 
@@ -221,19 +221,14 @@ describe('sizes', () => {
 	it('writes Every step back, keeping untouched values and the other steps as they were', () => {
 		const start = { '*': { min: 8947848, max: 107374182, per_minute: true }, lossless: { min: 1, max: 2, per_minute: true } };
 		const body = { size_limits: start } as unknown as PickRulesBody;
-		// Unchanged: the exact bytes stay.
 		expect(applySize(body, { min: 0.5, max: 6 }, { min: 0.5, max: 6 }).size_limits).toEqual(start);
-		// Changed: converted, the other step untouched.
 		expect(applySize(body, { min: 1, max: 8 }, { min: 0.5, max: 6 }).size_limits).toEqual({
 			'*': { min: bytesPerMinute(1), max: bytesPerMinute(8), per_minute: true },
 			lossless: { min: 1, max: 2, per_minute: true }
 		});
-		// Both empty: no limit for every step.
 		expect(applySize(body, { min: '', max: '' }, { min: 0.5, max: 6 }).size_limits).toEqual({ lossless: { min: 1, max: 2, per_minute: true } });
-		// A smallest size and no largest: open at the top.
 		expect(applySize(body, { min: 1, max: '' }, { min: 0.5, max: 6 }).size_limits['*']).toEqual({ min: bytesPerMinute(1), max: 2 ** 50, per_minute: true });
 		expect(applySize(body, { min: '', max: 3 }, { min: 0.5, max: 6 }).size_limits['*']).toEqual({ min: 0, max: bytesPerMinute(3), per_minute: true });
-		// The body passed in is not changed.
 		expect(body.size_limits).toEqual(start);
 	});
 });
@@ -256,7 +251,6 @@ describe('tidyBody', () => {
 		expect('max_age_days' in t.proper_policy).toBe(false);
 		b.proper_policy.max_age_days = 14;
 		expect(tidyBody(b).proper_policy.max_age_days).toBe(14);
-		// The body passed in is not changed.
 		expect(b.min_points).toBe('');
 	});
 });

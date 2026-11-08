@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { summarise } from './active.svelte.ts';
 import { split } from './downloaders.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('summarise', () => {
 	it('is empty when nothing downloads', () => {

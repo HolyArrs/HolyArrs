@@ -1,13 +1,11 @@
-// Phone helpers for the Downloads list: the second line under a row's title,
-// and the long press that starts picking rows.
+// Phone helpers for the Downloads list: the second line under a row's title and the long press that starts picking rows.
 import type { DownloadRow, EpisodeLine } from '../core/types.ts';
 
 type SubRow = Pick<DownloadRow, 'kind' | 'year' | 'covers' | 'album' | 'title' | 'name'> & { episodes?: Pick<EpisodeLine, 'season' | 'episode' | 'label' | 'name'>[] };
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** subLine is what a phone row shows under its title: the episode ("S04E01 · Name"),
- *  the season for a pack ("Season 3"), the album for music, the year for a movie. */
+/** What a phone row shows under its title: the episode ("S04E01 · Name"), the season for a pack ("Season 3"), the album for music, the year for a movie. */
 export function subLine(r: SubRow): string {
 	if (r.kind === 'show') {
 		const eps = r.episodes ?? [];
@@ -28,7 +26,7 @@ export function subLine(r: SubRow): string {
 	return '';
 }
 
-/** phoneTitle is the row title without the year, which the line under it carries. */
+/** The row title without the year, which the line under it carries. */
 export function phoneTitle(r: Pick<DownloadRow, 'title' | 'name' | 'kind'>): string {
 	return r.title || r.name;
 }
@@ -36,7 +34,7 @@ export function phoneTitle(r: Pick<DownloadRow, 'title' | 'name' | 'kind'>): str
 export const HOLD_MS = 450;
 const SLOP = 10;
 
-/** pressTimer is the long-press state machine, kept apart from the DOM so it can be tested. */
+/** The long-press state machine, kept apart from the DOM so it can be tested. */
 export function pressTimer(onlong: () => void, ms = HOLD_MS, timers: { set: (f: () => void, ms: number) => ReturnType<typeof setTimeout>; clear: (t: ReturnType<typeof setTimeout> | undefined) => void } = { set: (f, ms) => setTimeout(f, ms), clear: (t) => clearTimeout(t) }) {
 	let t: ReturnType<typeof setTimeout> | undefined;
 	let x = 0;
@@ -61,7 +59,7 @@ export function pressTimer(onlong: () => void, ms = HOLD_MS, timers: { set: (f: 
 			timers.clear(t);
 			t = undefined;
 		},
-		/** True once after a press that fired: the click that follows is swallowed. */
+		/** True once after a press that fired, so the click that follows is swallowed. */
 		takeFired() {
 			const f = fired;
 			fired = false;
@@ -73,8 +71,7 @@ export function pressTimer(onlong: () => void, ms = HOLD_MS, timers: { set: (f: 
 	};
 }
 
-/** longPress is a Svelte action: holding a row (touch or pen) for HOLD_MS calls onlong,
- *  marks the row with data-pressing while held, and swallows the click after it. */
+/** Svelte action: holding a row (touch or pen) for HOLD_MS calls onlong, marks the row with data-pressing while held, and swallows the click after it. */
 export function longPress(node: HTMLElement, onlong: () => void) {
 	let cb = onlong;
 	let touched = false;

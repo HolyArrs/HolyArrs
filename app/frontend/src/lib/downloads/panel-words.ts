@@ -1,6 +1,6 @@
 import { size as bytes } from './size.ts';
-import { duration, percent } from '../core/format.ts';
 import { STEP_WORD } from './usenet.ts';
+import { duration, percent } from '../core/format.ts';
 
 /** What the health line needs from a row and the client's detail. */
 export type HealthIn = {
@@ -22,7 +22,7 @@ export function healthLine(h: HealthIn, now = Date.now()): string {
 	if (h.client_hint === 'missing') return `Files missing · ${pc}`;
 	if (h.client_hint === 'checking') return `Checking · ${pc}`;
 	if (h.client_hint === 'moving') return `Moving · ${pc}`;
-	// A Usenet job past its download: verifying, repairing, unpacking…
+	// A Usenet job past its download: verifying, repairing, unpacking.
 	if (h.client_hint && STEP_WORD[h.client_hint]) return STEP_WORD[h.client_hint];
 	const ratio = h.ratio != null ? `ratio ${h.ratio.toFixed(2)}` : '';
 	if (h.phase === 'done') {
@@ -83,7 +83,7 @@ export function logDays(log: LogLine[], now = new Date()): { day: string; lines:
 /** Bad lines get the warning dot. */
 export const badKind = (kind: string) => /fail|error|stall|vanish|missing|errored/i.test(kind);
 
-/** Our own small mark for a Downloader kind: short letters and a tone. */
+/** Short letters and a tone for a Downloader kind. */
 export function clientMark(kind: string | undefined): { mark: string; tone: string } {
 	switch (kind) {
 		case 'qbittorrent': return { mark: 'qB', tone: 'qb' };
@@ -95,12 +95,12 @@ export function clientMark(kind: string | undefined): { mark: string; tone: stri
 	return { mark: '', tone: '' };
 }
 
-/** swarmTotal is the whole-swarm count worth showing beside the connected one: none when it is 0 or below what is connected. */
+/** The whole-swarm count worth showing beside the connected one; none when it is 0 or below what is connected. */
 export function swarmTotal(connected: number | undefined, total: number | undefined): number {
 	return total && total >= (connected ?? 0) ? total : 0;
 }
 
-/** swarmLine is "3 of 40", or just "3" when the swarm count is missing or smaller. */
+/** "3 of 40", or just "3" when the swarm count is missing or smaller. */
 export function swarmLine(connected: number, total: number): string {
 	const t = swarmTotal(connected, total);
 	return t ? `${connected} of ${t}` : `${connected}`;

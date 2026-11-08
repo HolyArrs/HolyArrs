@@ -1,15 +1,13 @@
 import { size as bytes, protocolOf } from './size.ts';
-import { ago, dateTime, duration, percent } from '../core/format.ts';
 import { swarmLine } from './panel-words.ts';
 import { shortAge } from './columns.ts';
 import { limitsWords } from './manage.ts';
-import type { DownloadRow } from '../core/types.ts';
 import type { ImportRecord } from './types.ts';
 import type { UsenetView } from './usenet.ts';
+import { ago, dateTime, duration, percent } from '../core/format.ts';
+import type { DownloadRow } from '../core/types.ts';
 
-// The detail tabs follow the download's kind: a torrent has peers and
-// trackers, a Usenet job its servers.
-// steps sit at the top of its Log, where they land when they happen.
+// The detail tabs follow the download's kind: a torrent has peers and trackers, a Usenet job its servers. Usenet steps sit at the top of its Log.
 export const TORRENT_TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
 export const USENET_TABS = ['Info', 'Servers', 'Log'] as const;
 export type PaneTab = (typeof TORRENT_TABS)[number] | (typeof USENET_TABS)[number];
@@ -28,7 +26,7 @@ export type TFile = { index: number; name: string; size: number; progress: numbe
 export type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
 export type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
 export type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string; usenet?: UsenetView; usenetErr?: string };
-// Panel reads never show the server's own words; a calm line and Retry instead.
+// Panel reads never show the server's own words, only a calm line and Retry.
 export const CALM_ERR = "Couldn't read this from the Downloader just now.";
 export type Fact = { k: string; v: string; tid?: string; path?: boolean };
 export function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string; rows: Fact[] }[] {
@@ -57,7 +55,7 @@ export function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string
 		f('Done', dateTime(t?.done_at ?? r.finished_at)),
 		f('Time active', t?.time_active ? duration(t.time_active) : ''),
 		seeding ? null : seedTime,
-		// The release name: the row shows a show's episodes instead, and a tooltip is out of reach on touch.
+		// The row shows a show's episodes instead of the release name, and a tooltip is out of reach on touch.
 		f('Release', r.name, 'dl-info-release', true),
 		f('Save path', t?.save_path, undefined, true),
 		f('Downloader', d?.downloader || r.downloader),
@@ -73,7 +71,7 @@ export function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string
 		{ cap: 'Rules', rows: keep(rules) }
 	].filter((g) => g.rows.length);
 }
-// A Usenet job's Info in the same shape as a torrent's: what moved, when, and where it sits.
+// A Usenet job's Info in the same shape as a torrent's: what moved, when and where it sits.
 export function usenetGroups(r: DownloadRow, d: Detail | undefined, im: ImportRecord | undefined): { cap: string; rows: Fact[] }[] {
 	const f = (k: string, v: string | false | undefined | null, tid?: string, path?: boolean): Fact | null => (v ? { k, v, tid, path } : null);
 	const done = r.progress >= 1;

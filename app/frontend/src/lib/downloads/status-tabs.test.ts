@@ -1,11 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import { ALL, ALL_HINT, TABS, counts, emptyOf, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+import { describe, expect, it } from 'vitest';
 
 type R = { id: number; phase: string; state: string; progress: number; label: string };
 const r = (id: number, phase: string, state = phase, progress = 0): R => ({ id, phase, state, progress, label: phase });
 
-// One row of every phase the app knows, plus a Usenet job being unpacked
-// (downloading at full progress) and a seeding torrent.
+// One row of every phase the app knows, plus a Usenet job being unpacked (downloading at full progress) and a seeding torrent.
 const rows: R[] = [
 	r(1, 'waiting', 'queued'),
 	r(2, 'downloading', 'downloading', 0.4),
@@ -37,7 +36,7 @@ describe('the tabs', () => {
 		const c = counts(rows, tabs);
 		expect(c.map((x) => `${x.label} ${x.count}`)).toEqual(['All 14', 'Waiting 2', 'In progress 5', 'Problems 4', 'Done 3']);
 		expect(sorted(ids(pick(rows, tabs, 'active')))).toEqual(sorted(ids(rows)));
-		// Only seeding torrents: All counts them, it is never 0.
+		// Only seeding torrents: All counts them, so it is never 0.
 		const seeding = [r(1, 'done', 'seeding', 1), r(2, 'done', 'seeding', 1)];
 		expect(counts(seeding, tabs)[0].count).toBe(2);
 		expect(c.some((x) => x.label === 'Active')).toBe(false);
@@ -72,7 +71,7 @@ describe('the tabs', () => {
 		]);
 		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('Stalled');
 		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('Seeding');
-		// The parent pill itself means all of its parts, so there is no "All" sub-option.
+		// The parent pill means all of its parts, so there is no "All" sub-option.
 		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('All');
 		expect(pick(rows, tabs, 'waiting')).toEqual(pick(rows, tabs, 'waiting', ''));
 	});
@@ -80,7 +79,7 @@ describe('the tabs', () => {
 		expect(ALL_HINT).toMatch(/^[A-Z].+\.$/);
 		for (const t of TABS) {
 			expect(t.hint).toMatch(/^[A-Z].{8,90}\.$/);
-			expect(t.empty).toMatch(/^[A-Z][^.]{4,40}$/); // a short heading, no full stop
+			expect(t.empty).toMatch(/^[A-Z][^.]{4,40}$/); // A short heading with no full stop.
 		}
 		for (const s of TABS.flatMap((t) => t.subs)) {
 			expect(s.hint).toMatch(/^[A-Z].{8,90}\.$/);

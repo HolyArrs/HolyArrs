@@ -1,15 +1,14 @@
-// problem picks the few words the Status cell shows after the status word
-// when a download is at risk; the tooltip keeps the full line.
-import type { DownloadRow } from '../core/types.ts';
+// Picks the few words the Status cell shows after the status word when a download is at risk; the tooltip keeps the full line.
 import { protocolOf } from './size.ts';
 import { stageOf } from './status-tabs.ts';
+import type { DownloadRow } from '../core/types.ts';
 
 export type Problem = { text: string; tone: 'fail' | 'wait' };
 
 type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'text'> &
 	Partial<Pick<DownloadRow, 'protocol' | 'downloader_kind' | 'tracker_problem' | 'availability' | 'seeds' | 'peers' | 'client_hint' | 'replaced'>>;
 
-/** problem is the row's visible reason, or null when nothing is wrong. */
+/** The row's visible reason, or null when nothing is wrong. */
 export function problem(r: Bits): Problem | null {
 	const stage = stageOf(r);
 	if (stage === 'done' || stage === 'paused') return null;
@@ -18,7 +17,7 @@ export function problem(r: Bits): Problem | null {
 		// SABnzbd and NZBGet fail or warning lines, already in plain words.
 		const t = r.text ?? '';
 		if (/article|missing|incomplete/i.test(t)) return { text: 'missing articles', tone: failed ? 'fail' : 'wait' };
-		// A healthy job says Verifying or Repairing too; only a failed or failing line counts.
+		// A healthy job also says Verifying or Repairing; only a failed or failing line counts.
 		if ((failed || /fail|error|need|unable|cannot/i.test(t)) && /repair|par2?\b|verif/i.test(t)) return { text: 'repair needed', tone: failed ? 'fail' : 'wait' };
 		if (r.client_hint === 'repairing') return { text: 'repairing', tone: 'wait' };
 	}

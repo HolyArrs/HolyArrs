@@ -1,23 +1,19 @@
 <script lang="ts">
-	// The choices for a download that needs a decision, about two lines when
-	// closed: one reason line, one primary fix (Set edition, Search again or
-	// Choose a release by hand), every other choice under More, and the plan
-	// behind Why?. A season pack or album gets the same shape for the whole
-	// pack, with each stuck episode or track below it.
+	// Choices for a download that needs a decision: one reason, one primary fix, the rest under More, and the plan behind Why. A season pack or album gets the same shape for the whole pack.
+	import Button from '#lib/ui/Button.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from './downloaders.ts';
+	import { refreshDecisions } from './decisions.svelte.ts';
+	import { editionDecisionBody } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { ago } from '../core/format.ts';
-	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from './downloaders.ts';
 	import { type Decision } from '../core/types.ts';
-	import { refreshDecisions } from './decisions.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { plainReason } from '../core/plain.ts';
-	import { editionDecisionBody } from '../mediafiles/index.ts';
-	import Button from '#lib/ui/Button.svelte';
-	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 
-	// `compact`: in the Download details the title is already in the header.
+	// `compact` hides the title, which the Download details header already shows.
 	let { items, ondone, compact = false }: { items: Decision[]; ondone?: () => void; compact?: boolean } = $props();
 	const groups = $derived(groupDecisions(items));
 	const admin = $derived(session.can('settings'));
@@ -91,7 +87,7 @@
 	let edition = $state<Record<string, string>>({});
 	let edError = $state<Record<string, string>>({});
 	let done = $state<Record<string, string>>({});
-	// Saving is the confirmation. The server has no undo for an edition, so only the status shows.
+	// The server has no undo for an edition, so the status line is the only confirmation.
 	async function saveEdition(e: SubmitEvent, d: Decision, key: string) {
 		e.preventDefault();
 		const v = edition[key]?.trim();

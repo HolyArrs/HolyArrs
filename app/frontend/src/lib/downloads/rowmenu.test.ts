@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { rowItems } from './rowmenu.ts';
+import { describe, expect, it } from 'vitest';
 
 const tor = { can_act: true, protocol: 'torrent', downloader_kind: 'qbittorrent', downloader_id: 1, hash: 'h', phase: 'downloading', state: 'downloading' };
 

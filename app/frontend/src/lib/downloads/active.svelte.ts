@@ -1,14 +1,12 @@
-// Active downloads for the sidebar: how many are moving and their average
-// progress. Same source as the Downloads page (/downloads/view).
+// Active downloads for the sidebar: how many are moving and their average progress, from the same source as the Downloads page.
 
-import { api } from '../core/api.ts';
 import { nowPhases } from './downloaders.ts';
+import { api } from '../core/api.ts';
 import { type DownloadRow } from '../core/types.ts';
 
 export const activeDownloads = $state<{ count: number; percent: number }>({ count: 0, percent: 0 });
 
-
-/** summarise counts the rows on the Downloads page's "Now" list and averages their progress as a whole percent. */
+/** Counts the rows on the "Now" list and averages their progress as a whole percent. */
 export function summarise(rows: Pick<DownloadRow, 'phase' | 'progress'>[]): { count: number; percent: number } {
 	const now = rows.filter((r) => nowPhases.has(r.phase));
 	if (now.length === 0) return { count: 0, percent: 0 };
@@ -16,7 +14,7 @@ export function summarise(rows: Pick<DownloadRow, 'phase' | 'progress'>[]): { co
 	return { count: now.length, percent: Math.floor((sum / now.length) * 100) };
 }
 
-/** refreshActiveDownloads reads the list; errors leave the last answer. */
+/** Errors leave the last answer. */
 export async function refreshActiveDownloads(): Promise<void> {
 	try {
 		const r = await api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100');
@@ -24,11 +22,11 @@ export async function refreshActiveDownloads(): Promise<void> {
 		activeDownloads.count = s.count;
 		activeDownloads.percent = s.percent;
 	} catch {
-		// keep the last answer
+		// Keep the last answer.
 	}
 }
 
-/** resetActiveDownloads clears the answer (signed out, or not allowed). */
+/** Clears the answer when signed out or not allowed. */
 export function resetActiveDownloads(): void {
 	activeDownloads.count = 0;
 	activeDownloads.percent = 0;

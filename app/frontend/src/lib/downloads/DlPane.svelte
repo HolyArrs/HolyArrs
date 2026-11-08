@@ -1,16 +1,13 @@
 <script lang="ts">
-	import { tick } from 'svelte';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
-	import { to } from '../core/paths.ts';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlTabsView from './DlTabsView.svelte';
 	import { tabsOf } from './pane-facts.ts';
-	import { percent } from '../core/format.ts';
 	import { healthLine } from './panel-words.ts';
 	import { size as bytes, protocolOf } from './size.ts';
-	import { sheetIn, sheetOut } from '../core/transitions.ts';
 	import { statusWord } from './status-tabs.ts';
 	import { pausable, retryable } from './usenet.ts';
 	import { poster, who } from './row-art.ts';
@@ -18,8 +15,11 @@
 	import { barTone } from './sections.ts';
 	import type { PaneDetail } from './pane-detail.svelte.ts';
 	import type { PaneTab } from './pane-facts.ts';
-	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import type { ImportRecord } from './types.ts';
+	import { tick } from 'svelte';
+	import { to } from '../core/paths.ts';
+	import { percent } from '../core/format.ts';
+	import { sheetIn, sheetOut } from '../core/transitions.ts';
 	import type { Decision, DownloadRow, TitleView } from '../core/types.ts';
 
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
@@ -47,11 +47,10 @@
 	};
 	let { r, paneOpen = $bindable(), openId = $bindable(), tab, ontab, pane, importOf, titles, titlesReady, watch, busy, decisionsOf, ondone, onact, onretry, onremove, mayEdit, paneMenu, maxPane }: Props = $props();
 
-	// The detail pane under the list: its height is kept in this browser.
+	// The pane height is kept per browser.
 	const PANE_KEY = 'holyarrs.downloads.pane';
 	let paneH = $state(260);
-	// The pane takes the height its content needs (capped so the list keeps rows); a drag on the
-	// divider sets a height by hand, a double-click goes back to fitting.
+	// The pane fits its content, capped so the list keeps rows. Dragging the divider sets a height; a double-click goes back to fitting.
 	let paneFit = $state(true);
 	let grabY: number | null = null;
 	try {
@@ -59,13 +58,13 @@
 		if (v && Number.isFinite(v)) paneH = Math.max(120, Math.min(900, Math.round(v)));
 		else if (typeof innerHeight !== 'undefined') paneH = Math.max(150, Math.round(innerHeight * 0.3));
 	} catch {
-		/* private window: the default height */
+		/* Private window: the default height applies. */
 	}
 	function savePane() {
 		try {
 			localStorage.setItem(PANE_KEY, String(Math.round(paneH)));
 		} catch {
-			/* private window: the height lasts for this visit */
+			/* Private window: the height lasts for this visit. */
 		}
 	}
 	function dragDown(e: PointerEvent) {
@@ -99,7 +98,7 @@
 		paneH = Math.max(120, Math.min(maxPane(), h0 + (e.key === 'ArrowUp' ? 24 : -24)));
 		savePane();
 	}
-	// The underline under the picked panel tab: measured once per change, moved with transform only.
+	// Moves the tab underline with transform only.
 	function ink(node: HTMLElement, _key: string) {
 		const set = () => {
 			const a = node.querySelector<HTMLElement>('[aria-selected="true"]');
@@ -112,7 +111,7 @@
 		ro?.observe(node);
 		return { update: () => requestAnimationFrame(set), destroy: () => ro?.disconnect() };
 	}
-	// The pane's tabs work like the status tabs: one Tab stop, Left and Right (Home, End) switch.
+	// Same keys as the status tabs: one Tab stop, arrows, Home and End.
 	function paneTabKey(e: KeyboardEvent, r: DownloadRow) {
 		const tabs = [...(e.currentTarget as HTMLElement).parentElement!.querySelectorAll<HTMLElement>('[role="tab"]')];
 		const i = tabs.indexOf(e.currentTarget as HTMLElement);
@@ -183,8 +182,6 @@
 <style>
 	.types { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 12px; border-radius: var(--r-btn); background: var(--surface-2); }
 	:global(.post).square { height: var(--pi, 26px); --poster-ratio: 1; }
-	/* The panel starts at the Title column: ▾ + poster + two gaps. */
-	/* Details: the grown poster under the ▾ and poster columns, the facts to its right. */
 	.xb { min-width: 0; }
 	.big { width: 72px; height: 108px; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); --poster-ratio: 2 / 3; }
 	.big.square { height: 72px; --poster-ratio: 1; }
@@ -202,7 +199,6 @@
 	.dv i { position: absolute; left: 50%; top: 3px; width: 38px; height: 3px; margin-left: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0.6; }
 	.dv:hover i, .dv:focus-visible i { opacity: 1; }
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* The divider and the pane rise and fold away together (sheetIn / sheetOut). */
 	.sheet { flex: none; display: flex; flex-direction: column; min-height: 0; }
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
@@ -230,7 +226,6 @@
 	.dv:active i { opacity: 1; }
 	.tab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out); }
 	.tab:hover { color: var(--text); }
-	/* A tab with nothing in it reads its 0; it is not dimmed, so its label keeps readable contrast. */
 	.tab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more { min-width: 36px; padding: 0 10px; }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -240,12 +235,10 @@
 	.big, .big :global(.poster) { border-radius: var(--r-poster); }
 	.big { box-shadow: var(--shadow-card); }
 	.pcl { border-radius: var(--r-sm); }
-	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
 	.dv { height: 12px; border-top: 1px solid var(--line); }
 	.dv i { top: 4px; width: 36px; margin-left: -18px; border-radius: var(--r-pill); transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.dv:not(.fixed):hover i, .dv:focus-visible i { transform: scaleX(1.5); opacity: 1; }
 	.dv:not(.fixed):active i { transform: scaleX(1.8) scaleY(1.3); background: var(--text-muted); }
-	/* Panel header: title, underline tabs with a sliding ink, collapse. */
 	.phd { position: relative; min-height: 48px; padding: 0 var(--dl-gutter); gap: 0 16px; }
 	.phd .xtabs { position: relative; align-self: stretch; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 	.phd .xtabs::-webkit-scrollbar { display: none; }
@@ -255,10 +248,8 @@
 	.phd .xtab:focus-visible { box-shadow: inset var(--focus-ring); border-radius: var(--r-sm); }
 	.ink { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left; transform: translateX(var(--ix, 0)) scaleX(var(--iw, 0)); transition: transform var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
 	.ink.gone { opacity: 0; }
-	/* Panel body: tab content crossfades in; the footer holds every action. */
 	.pb { padding: 12px var(--dl-gutter); gap: 16px; animation: fadein var(--dur) var(--ease-out); }
 	.tview { animation: tabin var(--dur) var(--ease-out); }
-	/* Actions sit in the panel header, right side, next to the chevron. */
 	.pact { position: relative; flex: none; margin-left: auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
 	.phd .pcl { margin-left: 0; }
 	.pact .xbt { margin: 0; gap: 6px; flex-wrap: nowrap; }
@@ -270,19 +261,16 @@
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	a.xbn { display: inline-flex; align-items: center; text-decoration: none; }
 	.pt span { font-variant-numeric: tabular-nums; }
-	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
 	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
 	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
 	.pb .big :global(.poster) { border-radius: var(--r-card); }
 	.pb .big.square { height: 160px; }
 	.pb::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
-	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
 	.pb::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
 	.pb::-webkit-scrollbar-corner { background: transparent; }
 	.pb::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 	.pb::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
 	.pb::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
-	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
 	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
 	.hdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 	.hdot:global(.paused) { background: var(--text-muted); }
@@ -358,11 +346,11 @@
 	}
 	@media (min-width: 641px) {
 		.dv { background: var(--surface-2); }
-		/* The pane is part of the table's slab: same surface, same edges, no frame of its own; the divider's hairline and grip are the seam. */
+		/* The pane shares the table's surface; the divider is the only seam. */
 	.dpane { margin: 0; border-radius: 0; background: var(--surface-2); overflow: hidden; }
 		.dpane .phd { padding: 8px var(--dl-gutter); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
 		.pb { padding: 12px var(--dl-gutter) 16px; background: transparent; }
-		/* The title takes the room it needs (up to 42% of the header) and the tabs centre in what is left. */
+		/* The title takes the room it needs, up to 42% of the header. */
 	.dpane .pt { flex: 0 1 auto; min-width: 0; max-width: 42%; }
 		.dpane .phd .xtabs { margin-inline: auto; }
 	}
@@ -376,4 +364,3 @@
 		.tab::after { content: ''; position: absolute; inset: -10px 0; }
 	}
 </style>
-

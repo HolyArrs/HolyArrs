@@ -16,7 +16,7 @@ export type Priority = (typeof PRIORITIES)[number]['key'];
 // A Usenet job still in a SABnzbd or NZBGet queue takes order and priority.
 const QUEUED = new Set(['waiting', 'downloading', 'paused', 'stalled']);
 
-/** usenetQueued says a row is a Usenet job still in its client's queue. */
+/** Whether a row is a Usenet job still in its client's queue. */
 export function usenetQueued(r: { protocol?: string; downloader_kind?: string; phase?: string; downloader_id?: number; hash?: string }): boolean {
 	return r.protocol === 'usenet' && (r.downloader_kind === 'sabnzbd' || r.downloader_kind === 'nzbget') && !!r.downloader_id && !!r.hash && QUEUED.has(r.phase ?? '');
 }
@@ -36,12 +36,8 @@ type RowBits = Parameters<typeof retryable>[0] & {
 	outside?: boolean;
 };
 
-/** rowItems lists what a row's ⋯ menu offers, in order. A read-only row
- *  (can_act false) gets only Open in Library: nothing that changes the client.
- *  Queue moves are qBittorrent torrents (the client bulk call) and SABnzbd
- *  or NZBGet jobs still queued (one call per job), which also take a
- *  priority. */
-/** clientOk: HolyArrs may change this row in its Downloader (not only its own records). */
+/** Lists what a row's ⋯ menu offers, in order. A read-only row (can_act false) gets only Open in Library. Queue moves are qBittorrent torrents (the client bulk call) and SABnzbd or NZBGet jobs. */
+/** HolyArrs may change this row in its Downloader, not only its own records. */
 export const clientOk = (r: { can_act?: boolean; client_locked?: boolean }) => !!r.can_act && !r.client_locked;
 
 export function rowItems(r: RowBits): RowItem[] {
@@ -61,16 +57,14 @@ export function rowItems(r: RowBits): RowItem[] {
 /** What the details pane's ⋯ adds beyond the row's list. */
 export type PaneExtra = 'recheck' | 'reannounce' | 'force' | 'steer' | 'fail';
 
-/** paneExtras: a torrent's checks (Check again, Ask trackers again), force
- *  start and its sheets when the page can steer it, and Mark failed when the
- *  page allows it. A read-only row gets none. */
+/** A torrent's checks (Check again, Ask trackers again), force start and its sheets when the page can steer it, and Mark failed when the page allows it. A read-only row gets none. */
 export function paneExtras(r: RowBits, opts: { steer: boolean; fail: boolean }): PaneExtra[] {
 	if (!r.can_act) return [];
 	const out: PaneExtra[] = [];
 	const torrent = protocolOf(r) === 'torrent';
 	const client = clientOk(r);
 	if (client && torrent && controllable(r.downloader_kind)) out.push('recheck', 'reannounce');
-	// Force start and the sheets are qBittorrent calls: Transmission and Deluge refuse them.
+	// Force start and the sheets are qBittorrent calls; Transmission and Deluge refuse them.
 	if (client && torrent && controllable(r.downloader_kind) && opts.steer && !!r.downloader_id && !!r.hash) out.push('force', 'steer');
 	if (opts.fail) out.push('fail');
 	return out;

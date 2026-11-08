@@ -1,8 +1,7 @@
-// Downloads has no top bar: its toolbar row carries the sidebar button and its own search.
-// The layout shares the sidebar state and the shortcut label here.
+// Downloads has no top bar: its toolbar row carries the sidebar button and the search. The layout shares the sidebar state and shortcut label here.
 
 export const dlTop = $state({
-	/** The sidebar is folded, so a "Show sidebar" button belongs in the row (as in the top bar). */
+	/** The sidebar is folded, so the row needs a "Show sidebar" button. */
 	collapsed: false,
 	/** The shortcut shown in the field (⌘K or Ctrl K). */
 	searchKey: 'Ctrl K',

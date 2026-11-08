@@ -1,15 +1,15 @@
-import { untrack } from 'svelte';
-import { api, message, ApiError } from '../core/api.ts';
-import { toasts } from '../core/toasts.svelte.ts';
 import { mergeDetail } from './detail-merge.ts';
 import { protocolOf } from './size.ts';
 import { rowPath } from './downloaders.ts';
 import { splitTrackers } from './manage.ts';
 import { CALM_ERR, type Det, type Detail, type Peer, type TFile, type Tracker } from './pane-facts.ts';
 import type { UsenetView } from './usenet.ts';
+import { untrack } from 'svelte';
+import { api, message, ApiError } from '../core/api.ts';
+import { toasts } from '../core/toasts.svelte.ts';
 import type { DownloadRow } from '../core/types.ts';
 
-/** What the open download's pane needs to know from the page that owns it. */
+/** What the open download's pane needs from the page that owns it. */
 export type PaneContext = {
 	openId: () => number;
 	openTab: () => string;
@@ -18,35 +18,25 @@ export type PaneContext = {
 	watch: () => boolean;
 };
 
-// The client is read live for as long as it may hold the torrent: while
-// it downloads, and when it is finished or seeding too.
+// The client is read live while it may hold the torrent: downloading, finished or seeding.
 export const live = (r: DownloadRow) => !!r.client_item || (r.phase !== 'removed' && r.phase !== 'vanished');
 
 const trPath = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${r.hash}/trackers`;
 
-/**
- * The open download's real detail, read from the server (and through it from
- * the torrent client) while its pane is open. Nothing is made up: what is not
- * reported shows as a dash or an empty table. Also holds the Files and
- * Trackers tab state, so it lives as long as the page does.
- */
+/** The open download's real detail, read from the server (and through it from the torrent client) while its pane is open. Nothing is made up: what is not reported shows as a dash or an empty table. Also holds the state of the Files and Trackers tabs. */
 export class PaneDetail {
 	det = $state.raw<Det>({ id: 0 });
 	// Selection and folder state for the Files, Peers and Trackers tables.
 	sel = $state<Record<string, string>>({});
 	closed = $state<Record<string, boolean>>({});
-	// The Files tab: a filter box (Ctrl+F while the tab shows, Esc clears) and
-	// a selection of files and folders (Ctrl or Cmd click, Shift range) that
-	// gets one priority at once.
+	// Files tab: a filter box (Ctrl+F while the tab shows, Esc clears) and a selection of files and folders (Ctrl or Cmd click, Shift range) that gets one priority at once.
 	fq = $state('');
 	fsel = $state<Set<string>>(new Set());
 	fqEl = $state<HTMLInputElement>();
 	filesBusy = $state(false);
-	// A priority change is a control route: an old sign-in is asked for the
-	// password first (inline, in the Files tab), then the change is sent again.
+	// A priority change is a control route: an old sign-in is asked for the password inline, then the change is sent again.
 	prioWait = $state<{ r: DownloadRow; indexes: number[]; priority: number } | null>(null);
-	// Tracker editing in the Trackers tab: a picked tracker can get a new
-	// address or tier, or go; new ones are added one per line.
+	// Tracker editing: a picked tracker can get a new address or tier, or go; new ones are added one per line.
 	trUrl = $state('');
 	trTier = $state(0);
 	trAdd = $state('');
@@ -75,10 +65,7 @@ export class PaneDetail {
 			void ctx.openTab();
 			untrack(() => (this.prioWait = null));
 		});
-		// Read the open download's detail now and every 3 seconds while it shows.
-		// The effect depends only on which row, which tab and whether the pane shows:
-		// not on the row object (replaced on every list refresh) nor on det (which
-		// readDetail writes), so it never restarts itself.
+		// Reads the open download's detail now and every 3 seconds while it shows. The effect depends only on the row id, the tab and whether the pane shows, not on the row object (replaced on every list refresh) nor on det.
 		$effect(() => {
 			const id = ctx.openId();
 			const tab = ctx.openTab();
@@ -136,7 +123,7 @@ export class PaneDetail {
 					next.files = (await api.get<{ files: TFile[] }>(`${path}/files`)).files ?? [];
 					next.filesErr = undefined;
 				} catch {
-					// A failed refresh keeps the last list; the calm note shows only with none.
+					// A failed refresh keeps the last list; the calm note shows only when there is none.
 					next.filesErr = CALM_ERR;
 				}
 			}

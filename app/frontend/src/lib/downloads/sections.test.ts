@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
+import { describe, expect, it } from 'vitest';
 import type { DownloadRow } from '../core/types.ts';
 
 const row = (o: Partial<DownloadRow>): DownloadRow => ({

@@ -1,16 +1,14 @@
 <script lang="ts">
-	// History's row (the compact cards look): the time, a dot on the thin rail, a small poster,
-	// the title with its part and, only when it says something new, one quiet line; the step
-	// mark (the Filter's word) on the right. Back-to-back repeats come in with a count.
+	// One History row: time, a dot on the rail, a small poster, the title with its part, and one line only when it adds something. Ends in the step mark.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import VerbMark from './HistoryVerb.svelte';
-	import { dateTime } from '../core/format.ts';
 	import { artOf, clock } from './history-kinds.ts';
 	import { filterVerb, partOf, rowExtra, rowStep, sameWords } from './history-search.ts';
 	import { sysSplit } from './history-panel.ts';
 	import { rowText, type LineContext } from './history-lines.ts';
 	import type { HistoryRow } from './history.ts';
+	import { dateTime } from '../core/format.ts';
 	import type { EventRecord, TitleView } from '../core/types.ts';
 
 	let {
@@ -34,37 +32,35 @@
 		who?: (e: EventRecord) => string;
 		on?: boolean;
 		controls?: string;
-		/** A folded run of the same Event: how many, shown as a count after the name. */
+		/** Count of a folded run of the same Event, shown after the name. */
 		count?: number;
-		/** A folded run: whether its times are shown under it. */
+		/** Whether a folded run shows its times. */
 		expanded?: boolean;
-		/** A folded run of routine work: its own name and line instead of the head row's. */
+		/** Name for a folded run of routine work, instead of the head row's. */
 		label?: string;
 		note?: string;
-		/** The row carries its row key (for moving with the arrow keys); a routine run's toggle does not. */
+		/** Carries the row key for arrow-key moves; a routine run's toggle has none. */
 		keyed?: boolean;
-		/** Wide screens: only the picked row is a Tab stop (the arrow keys move between rows). */
+		/** Only the picked row is a Tab stop on wide screens. */
 		tabindex?: number;
 		onclick: () => void;
 	} = $props();
 
 	const e = $derived(row.head);
 	const w = $derived(rowText(row, ctx));
-	// An ask with no title id yet: the Library title of the same name, once it was added, lends its poster.
+	// An ask with no title id yet borrows the poster of the Library title with the same name.
 	const t = $derived(titleById.get(e.TitleID ?? 0) ?? (!e.TitleID && /ask_/.test(e.Kind) ? [...titleById.values()].find((x) => x.name === w.name) : undefined));
 	const s = $derived(rowStep(row, w.tag.word));
-	// A routine run is neutral: its own icon, no step word, whatever its first row was.
+	// A routine run is neutral: its own icon and no step word.
 	const verb = $derived(label !== undefined ? { word: '', icon: 'settings' as const, tone: 'idle' as const } : filterVerb(row, w.tag));
 	const extra = $derived(rowExtra(row, s, who, w.line));
 	const part = $derived(partOf(row));
 	const version = $derived(w.bits.find((b) => b.kind === 'version')?.text ?? '');
-	// No title (sign-ins, health, backups): the line itself is the name, with a small icon instead of a poster.
-	// An ask keeps its title even when the title is not in the Library yet (read from the ask).
+	// Rows with no title (sign-ins, health, backups) use the line as the name, with an icon instead of a poster. An ask keeps its title even when it is not in the Library yet.
 	const bare = $derived(label !== undefined || (!e.title_name && w.name === 'HolyArrs'));
-	// Health and alert rows read like title rows: what it is about, then what happened.
 	const split = $derived(bare && label === undefined ? sysSplit(row, { ...ctx, titles: titleById }) : null);
 	const name = $derived(label ?? (bare ? split?.name || w.line || extra || w.name : w.name));
-	// The second line only when it adds something: the row's own step word when the Filter's differs ("Out now"), then the extra.
+	// The second line shows the Filter's step word when it differs, then the extra.
 	const second = $derived.by(() => {
 		if (note !== undefined) return note;
 		if (bare) return split?.line ?? '';
@@ -82,19 +78,16 @@
 		{#if second || (!bare && part)}<span class="l2" class:ponly={!second}>{#if !bare && part}<span class="pp">{part}{second ? ' · ' : ''}</span>{/if}{second}</span>{/if}
 	</span>
 	<span class="mark">{#if verb.word}<VerbMark {verb} size="sm" />{/if}</span>
-	<!-- Every row keeps the chevron's slot, so the step marks share one right edge. -->
+	<!-- Every row keeps the chevron's slot so step marks share a right edge. -->
 	<span class="chev" class:open={expanded} aria-hidden="true">{#if expanded !== undefined}<Icon name="chevronDown" size={14} />{/if}</span>
 </button>
 
 <style>
-	/* One 42px line per Event (52px on phones); the second line only when it says something new. */
 	.hit { --clk: 58px; --art: 32px; position: relative; width: 100%; height: 42px; display: grid; grid-template-columns: var(--clk) 7px var(--art) minmax(0, 1fr) auto 14px; align-items: center; column-gap: 10px; padding: 0 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
 	.hit:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* The picked row: a neutral lift with a hairline, never the red of a failure. */
 	.hit.on { background: color-mix(in srgb, var(--text) 9%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
 	.hit.on:focus-visible { box-shadow: inset 0 0 0 1px var(--line), var(--focus-ring); }
-	/* Muted words stay readable on the tinted picked and hovered rows (contrast in light). */
 	.hit.on :is(.clk, .sub, .l2, .cnt), .hit:hover :is(.clk, .sub, .l2, .cnt) { color: color-mix(in srgb, var(--text) 35%, var(--text-muted)); }
 	.fail.hit.on .l2, .fail.hit:hover .l2 { color: var(--fail-text); }
 	.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -122,7 +115,6 @@
 	.chev { display: grid; width: 14px; margin-left: -4px; color: var(--text-faint); transition: transform var(--dur) var(--ease-out); }
 	.chev.open { transform: rotate(180deg); }
 	@media (max-width: 1279px) { .mark { min-width: 0; } }
-	/* The part on the second line is for phones only (desktops show it after the name). */
 	.pp { display: none; }
 	.l2.ponly { display: none; }
 	@media (max-width: 767px) {

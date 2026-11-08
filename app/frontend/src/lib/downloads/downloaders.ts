@@ -25,7 +25,7 @@ export interface DownloaderView {
 	priority: number;
 	path_map: PathMap[];
 	allow_local_network: boolean;
-	/** "HolyArrs can change this Downloader"; off, HolyArrs only reads it. */
+	/** True when HolyArrs can change this Downloader; false means it only reads. */
 	writable: boolean;
 	/** HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch says. */
 	writable_locked: boolean;
@@ -47,12 +47,11 @@ export interface DownloaderSettings {
 	remove_delete_files: boolean;
 	remove_turn_down: boolean;
 	remove_search_again: boolean;
-	/** Add a matched outside item's movie or show to the Library (no search). Off by default. */
+	/** Add the movie or show of a matched outside item to the Library, without a search. Off by default. */
 	downloads_auto_add?: boolean;
 }
 
-/** DownloaderAttempt is the public recovery record for one uncertain send.
- * It intentionally has no Downloader address, request marker or error text. */
+/** The public recovery record for one uncertain send. It has no Downloader address, request marker or error text on purpose. */
 export interface DownloaderAttempt {
 	id: number;
 	downloader_id: number;
@@ -63,7 +62,7 @@ export interface DownloaderAttempt {
 	updated_at: string;
 }
 
-/** pendingAttempts returns only sends that still need the owner's decision. */
+/** Only sends that still need the owner's decision. */
 export function pendingAttempts(attempts: DownloaderAttempt[] | undefined): DownloaderAttempt[] {
 	return (attempts ?? []).filter((attempt) => attempt.state === 'pending');
 }
@@ -78,7 +77,7 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	deluge: 'Deluge'
 };
 
-/** healthTone colours a Downloader's health chip. */
+/** Colours a Downloader's health chip. */
 export function healthTone(state: DownloaderHealth['state']): Tone {
 	if (state === 'working') return 'ok';
 	if (state === 'paused') return 'idle';
@@ -86,7 +85,7 @@ export function healthTone(state: DownloaderHealth['state']): Tone {
 	return 'fail';
 }
 
-/** downloadTone colours a Download's state chip. */
+/** Colours a Download's state chip. */
 export function downloadTone(state: string): Tone {
 	if (state === 'finished' || state === 'seeding') return 'ok';
 	if (state === 'failed' || state === 'stalled' || state === 'vanished') return 'fail';
@@ -94,12 +93,12 @@ export function downloadTone(state: string): Tone {
 	return 'wait';
 }
 
-/** percent says progress as a whole percent. */
+/** Progress as a whole percent. */
 export function percent(p: number): string {
 	return `${Math.floor(Math.min(Math.max(p, 0), 1) * 100)}%`;
 }
 
-/** timeLeft says seconds left in words. */
+/** Seconds left, in words. */
 export function timeLeft(s?: number): string {
 	if (!s || s <= 0) return '';
 	if (s < 60) return 'under a minute left';
@@ -123,8 +122,7 @@ export interface DownloaderForm {
 	tags: string[];
 }
 
-/** emptyForm starts a new Downloader. Downloaders usually run at home, so
- * the local-network switch starts on (decision log 4.0.2). */
+/** Starts a new Downloader. Downloaders usually run at home, so the local-network switch starts on. */
 export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): DownloaderForm {
 	return {
 		name: kindWords[kind],
@@ -141,7 +139,7 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 	};
 }
 
-/** formFrom fills the form from a saved Downloader; the secret stays masked. */
+/** Fills the form from a saved Downloader; the secret stays masked. */
 export function formFrom(d: DownloaderView): DownloaderForm {
 	return {
 		name: d.name,
@@ -158,7 +156,7 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 	};
 }
 
-/** formBody turns the form into the API body. Empty path map rows are dropped. */
+/** Turns the form into the API body; empty path map rows are dropped. */
 export function formBody(f: DownloaderForm): Record<string, unknown> {
 	return {
 		name: f.name.trim(),
@@ -175,25 +173,24 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 	};
 }
 
-/** rowPath is the API path of a row's client controls: a HolyArrs download by its id, a client item by Downloader and hash. */
+/** API path of a row's client controls: a HolyArrs download by id, a client item by Downloader and hash. */
 export function rowPath(r: Pick<DownloadRow, 'id' | 'client_item' | 'downloader_id' | 'hash'>): string {
 	return r.client_item && r.hash ? `/downloaders/${r.downloader_id}/items/${r.hash}` : `/downloads/${r.id}`;
 }
 
-/** kindOf is a row's library type; a client item HolyArrs does not know has none. */
+/** A row's library type; a client item HolyArrs does not know has none. */
 export function kindOf(r: Pick<DownloadRow, 'kind' | 'client_item'>): 'movie' | 'show' | 'artist' | '' {
 	return r.kind || (r.client_item ? '' : 'movie');
 }
 
-/** manyWords says whether a download fills many Slots of one Title (a show's
- *  episodes or an album's tracks), and the plain words for them. */
+/** Whether a download fills many Slots of one Title (a show's episodes or an album's tracks), and plain words for them. */
 export function manyWords(kind: string | undefined): { one: string; many: string; pack: string } | null {
 	if (kind === 'show') return { one: 'episode', many: 'episodes', pack: 'season pack' };
 	if (kind === 'artist') return { one: 'track', many: 'tracks', pack: 'album' };
 	return null;
 }
 
-/** episodeStateWords says where one episode of a download is. */
+/** Where one episode of a download is. */
 export function episodeStateWords(state: string): { text: string; tone: Tone } {
 	switch (state) {
 		case 'in_library':

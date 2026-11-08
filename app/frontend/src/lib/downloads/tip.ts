@@ -1,6 +1,4 @@
-// A tooltip in the browser's top layer (the Popover API), so no list, frame or
-// scroll box can hide it. One shared element; it is placed from the target's
-// box and kept inside the viewport. Same look as the app's other tooltips.
+// A tooltip in the browser's top layer (Popover API), so no list, frame or scroll box can hide it. One shared element, placed from the target's box and kept inside the viewport, styled like the app's other tooltips.
 let el: HTMLElement | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -21,7 +19,7 @@ function ensure(): HTMLElement {
 
 export type TipSide = 'below' | 'right';
 
-/** place puts the tip beside `target`, below it (or right of it), flipped and clamped to stay on screen. */
+/** Puts the tip beside `target`, below it or right of it, flipped and clamped to stay on screen. */
 export function place(tip: HTMLElement, target: DOMRect, side: TipSide) {
 	const pad = 8;
 	const vw = document.documentElement.clientWidth;
@@ -49,11 +47,11 @@ export function hideTip() {
 	try {
 		el?.hidePopover();
 	} catch {
-		/* not shown */
+		/* Not shown. */
 	}
 }
 
-/** tip shows `text` in the top layer on hover (after a short wait) and on keyboard focus. */
+/** Shows `text` in the top layer on hover (after a short wait) and on keyboard focus. */
 export function tip(node: HTMLElement, opts: string | { text: string; side?: TipSide }) {
 	let o = typeof opts === 'string' ? { text: opts, side: 'below' as TipSide } : { side: 'below' as TipSide, ...opts };
 	const show = () => {

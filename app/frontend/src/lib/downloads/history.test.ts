@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { createLatestOnly, dateRangeProblem, details, downloadSteps, filterParams, groupDownloads, groupLabel, historyQuery, isDownloadStep, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
+import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
 describe('history', () => {
@@ -139,7 +139,6 @@ describe('history download rows', () => {
 	it('marks where a download failed', () => {
 		expect(downloadSteps([ev(2, 'download_failed', 1), ev(1, 'download_sent', 1)]).map((s) => s.state)).toEqual(['done', 'failed', 'waiting']);
 		expect(downloadSteps([ev(3, 'import_rejected', 1), ev(2, 'download_finished', 1)]).map((s) => s.state)).toEqual(['done', 'done', 'failed']);
-		// A later import that worked wins over an earlier failed try.
 		expect(downloadSteps([ev(4, 'import_done', 1), ev(3, 'import_failed', 1)]).map((s) => s.state)).toEqual(['done', 'done', 'done']);
 	});
 

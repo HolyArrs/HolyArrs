@@ -1,5 +1,5 @@
-import { tick } from 'svelte';
 import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
+import { tick } from 'svelte';
 import type { DownloadRow } from '../core/types.ts';
 
 /** What the column grid needs from the page that owns it. */
@@ -8,23 +8,16 @@ export type ColumnsContext = {
 	list: () => DownloadRow[];
 };
 
-/** The column layout, the list's sizing and scrolling window, and the column picker. */
 export function createColumns(ctx: ColumnsContext) {
 	const isDone = $derived(ctx.isDone());
 	const list = $derived(ctx.list());
-	// Columns: which ones show, their order and their widths are each person's
-	// own, kept in this browser (columns.ts). Every row of both sections shares
-	// one grid: ▾ · poster · the shown columns in order · spare room · bin.
-	// Dragging a column's right edge changes that column only; dragging its name
-	// moves it; right-click a name, or ⋯ → Columns, opens the picker.
+	// Shown columns, their order and widths belong to each person and are kept in this browser. Every row of both sections shares one grid: ▾, poster, the shown columns, spare room, bin.
 	let grid = $state<HTMLElement>();
 	let appEl = $state<HTMLElement>();
 	let listEl = $state<HTMLElement>();
 	let appH = $state(0);
 	let phone = $state(false);
-	// A long list (over 100 rows) draws only the rows on screen plus 10 on each
-	// side; the list keeps its full height with padding above and below, so
-	// the scroll bar, sticky header and column widths stay as they are.
+	// A list over 100 rows draws only the rows on screen plus 10 on each side. Padding keeps the full height, so the scroll bar, sticky header and column widths stay as they are.
 	const WINDOW_FROM = 100;
 	const OVERSCAN = 10;
 	let ulEl = $state<HTMLElement>();
@@ -68,8 +61,7 @@ export function createColumns(ctx: ColumnsContext) {
 			ro.disconnect();
 		};
 	});
-	// The details below the list fit their content, so the list can get shorter
-	// after a row was scrolled into view (its details arrive): keep the focused row on screen.
+	// The details below the list fit their content, so the list can shrink after a row was scrolled into view. Keep the focused row on screen.
 	$effect(() => {
 		const el = listEl;
 		if (!el || typeof ResizeObserver === 'undefined') return;
@@ -83,7 +75,7 @@ export function createColumns(ctx: ColumnsContext) {
 		ro.observe(el);
 		return () => ro.disconnect();
 	});
-	// The real row height (desktop and phone rows differ), read from a drawn row.
+	// Desktop and phone rows differ in height, so read it from a drawn row.
 	$effect(() => {
 		void shownRows;
 		void phone;
@@ -93,7 +85,7 @@ export function createColumns(ctx: ColumnsContext) {
 			if (h && h !== rowH) rowH = h;
 		});
 	});
-	/** reveal scrolls a row that is not drawn into the window, so it can be focused. */
+	/** Scrolls a row that is not drawn into the window, so it can be focused. */
 	function reveal(i: number) {
 		if (!windowed || !listEl || (i >= span.a && i < span.b)) return;
 		measure();
@@ -113,14 +105,12 @@ export function createColumns(ctx: ColumnsContext) {
 		try {
 			localStorage.setItem(KEY, dump(layout));
 		} catch {
-			/* private window: the layout lasts for this visit */
+			/* Private window: the layout lasts for this visit. */
 		}
 	}
-	// A layout nobody has changed shows more columns when the screen is wide (they drop out again when it is not).
 	const customised = $derived(layout.hidden.length !== COLUMNS.filter((c) => !c.on).length || COLUMNS.some((c) => !c.on && !layout.hidden.includes(c.id)) || layout.order.some((id, i) => id !== IDS[i]));
-	// One layout everywhere: wide screens no longer add columns by themselves.
 	const WIDE: ColId[] = [];
-	// Done has its own default columns: finished rows have no speed, but a date.
+	// Finished rows have no speed but a date.
 	const DONE_SET: ColId[] = ['poster', 'title', 'proto', 'status', 'size', 'added', 'requested'];
 	const visAll = $derived.by(() => {
 		if (isDone && !customised) return DONE_SET.filter((id) => !COL[id].missing);
@@ -130,19 +120,19 @@ export function createColumns(ctx: ColumnsContext) {
 	/** The least width each number column needs to show its text whole. */
 	const MINW: Partial<Record<ColId, number>> = { poster: 32, kind: 24, proto: 24, progress: 130, size: 56, swarm: 132, added: 70, status: 100 };
 	const TITLE_MIN = 220;
-	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
+	// A saved width never draws narrower than the column's own name.
 	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : COL[id].fixed ? COL[id].width : Math.max(layout.widths[id], heads[id] ?? 0));
-	/** heads holds each header's name width, measured after layout and after each sort. */
+	/** Each header's name width, measured after layout and after each sort. */
 	let heads = $state<Partial<Record<ColId, number>>>({});
-	// The Source column hugs the client's logo; its header is an icon (wider only while a sort arrow shows).
+	// The Source column hugs the client logo; its header is an icon.
 	const SRC_W = 24;
-	/** kindIcon turns a type word (matched, or read from the client's category) into its icon; anything else has none. */
+	/** Turns a type word into its icon; anything else has none. */
 	const kindIcon = (w: string) => (w === 'Movie' ? 'film' : w === 'TV show' ? 'tv' : /music|audio|lidarr/i.test(w) ? 'music' : null);
-	// Posters come in three sizes (small, medium, large); dragging the Poster edge snaps between them and the rows grow to fit.
+	// Three poster sizes; dragging the Poster edge snaps between them.
 	const POSTER_W = [32, 46, 62];
-	// Type has two sizes: an icon, or (dragged wider) a coloured word.
+	// Type is an icon, or a coloured word when dragged wider.
 	const KIND_W = [24, 60];
-	// Source has three sizes: small logo, bigger logo, and logo with the client's name.
+	// Source is a small logo, a bigger logo, or the logo with the client's name.
 	const SRC_SIZES = [24, 30, 92];
 	const srcW = $derived(SRC_SIZES.includes(layout.widths.proto) ? layout.widths.proto : SRC_SIZES[0]);
 	const srcBig = $derived(srcW > SRC_SIZES[0]);
@@ -151,17 +141,15 @@ export function createColumns(ctx: ColumnsContext) {
 	const kindWide = $derived(kindW > KIND_W[0]);
 	const posterW = $derived(POSTER_W.includes(layout.widths.poster) ? layout.widths.poster : POSTER_W[0]);
 	const near = (set: number[], w: number) => set.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
-	// Every picked column shows; when they are wider than the view the list scrolls sideways.
 	const vis = $derived(visAll);
 	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
 	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
-	// A heading's accessible name: its column and how the list is sorted by it.
+	// A heading's accessible name: its column and the sort on it.
 	function headName(id: ColId, so: { desc: boolean } | undefined): string {
 		const label = id === 'proto' ? 'Downloader' : id === 'poster' ? 'Poster' : id === 'kind' ? 'Type' : id === 'swarm' ? 'Seeds, peers and ratio' : COL[id].label;
 		return so ? `${label}, sorted ${so.desc ? 'high to low' : 'low to high'}` : label;
 	}
-	// Column headings take one Tab stop: Left and Right move between them, Enter or Space sorts.
-	// A screen reader's click (no pointer, detail 0) sorts too.
+	// Headings take one Tab stop. Left and Right move between them; Enter or Space sorts. A screen reader click (detail 0) sorts too.
 	function headKey(e: KeyboardEvent, id: ColId) {
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
@@ -180,42 +168,41 @@ export function createColumns(ctx: ColumnsContext) {
 		layout.sort = nextSort(layout.sort, id, facet);
 		save();
 	}
-	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
+	/** A phone shows a fixed card whatever is picked. */
 	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'size'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
 	const FIXED = 20 + 32;
 	let room = $state(0);
 	let titleMin = $state(MIN_W);
-	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
+	/** A column's width on screen; an unset Title gives way when room is short. */
 	const tW = $derived.by(() => {
 		if (!vis.includes('title')) return 0;
 		if (room <= 0 || layout.titleSet) return wMin('title');
-		// A Title nobody has sized takes what is left (with a little slack); a sized one only gives way when the room is short.
 		const rest = vis.reduce((n, id) => (id === 'title' ? n : n + wMin(id)), (layout.titleSet ? 0 : 48) + FIXED + (vis.length + 3) * gap);
 		return Math.max(TITLE_MIN, Math.min(layout.widths.title, Math.floor(room - rest)));
 	});
 	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
-	// Until a person sets the Title width, it flexes and takes whatever room is left.
+	// Until a person sets the Title width, it flexes into the leftover room.
 	const tpl = $derived(`20px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
-	/** inner is the full width of the columns; the table box is at least this wide. */
+	/** Full width of the columns; the table box is at least this wide. */
 	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
 	const textW = (n: Node) => {
 		const r = document.createRange();
 		r.selectNodeContents(n);
 		return r.getBoundingClientRect().width;
 	};
-	/** minOf is a column's header label plus padding: any column shrinks to its own name. */
+	/** A column's header label plus padding, so any column shrinks to its own name. */
 	function minOf(id: ColId): number {
 		const l = grid?.querySelector<HTMLElement>(`.chead [data-col="${id}"] .lbl`);
 		const w = l ? textW(l) : 0;
 		return w > 0 ? Math.ceil(w) + 2 : MIN_W;
 	}
-	// Dragging stops at the column's own name; MINW only sets how narrow double-click fit goes.
+	// Dragging stops at the column's own name; MINW only limits how narrow double-click fit goes.
 	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), Math.min(MAX_W, v)));
-	/** fitOf is the widest cell of a column (the header label too) plus padding. */
+	/** The widest cell of a column, header label included, plus padding. */
 	function fitOf(id: ColId): number {
 		if (!grid) return COL[id].width;
-		if (id === 'progress') return clamp(id, COL.progress.width); // a bar has no content width of its own
+		if (id === 'progress') return clamp(id, COL.progress.width); // A bar has no content width of its own.
 		let w = 0;
 		for (const el of grid.querySelectorAll<HTMLElement>(`.dline [data-col="${id}"]`)) {
 			if (id === 'title' && !el.classList.contains('ch')) {
@@ -232,7 +219,7 @@ export function createColumns(ctx: ColumnsContext) {
 		for (const id of vis) if (grid?.querySelector(`.chead [data-col="${id}"] .lbl`)) m[id] = minOf(id);
 		heads = m;
 	}
-	// A new sort arrow or column set changes the header widths, so measure again once it has drawn.
+	// A new sort arrow or column set changes header widths, so measure again once drawn.
 	$effect(() => {
 		void layout.sort;
 		void vis;
@@ -270,7 +257,7 @@ export function createColumns(ctx: ColumnsContext) {
 			window.removeEventListener('resize', fit);
 		};
 	});
-	// Every table box scrolls sideways together, so the columns stay lined up.
+	// Every table box scrolls sideways together to keep columns lined up.
 	function sync(e: Event) {
 		const x = (e.currentTarget as HTMLElement).scrollLeft;
 		for (const t of grid?.querySelectorAll<HTMLElement>('.tw') ?? []) if (t.scrollLeft !== x) t.scrollLeft = x;
@@ -285,7 +272,7 @@ export function createColumns(ctx: ColumnsContext) {
 		e.stopPropagation();
 		const x0 = e.clientX;
 		const el = e.currentTarget as HTMLElement;
-		// Start from the width on screen (a flexing Title is wider than its saved width), so the edge stays under the pointer.
+		// Start from the width on screen (a flexing Title is wider than its saved width) so the edge stays under the pointer.
 		const w0 = Math.round(el.parentElement?.getBoundingClientRect().width ?? wOf(id));
 		el.setPointerCapture(e.pointerId);
 		el.classList.add('drag');
@@ -310,10 +297,10 @@ export function createColumns(ctx: ColumnsContext) {
 		resize(id, Math.round((e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect().width ?? wOf(id)), d * (e.shiftKey ? 40 : 10));
 		save();
 	}
-	// Double-click auto-fits that column, as in a spreadsheet.
+	// Double-click auto-fits the column.
 	function fitOne(id: ColId) {
 		if (id === 'title') layout.titleSet = true;
-		// Double-click on Poster steps to the next size (large goes back to small); on Type it flips icon and word.
+		// Double-click on Poster steps to the next size; on Type it flips between icon and word.
 		layout.widths[id] = id === 'poster' ? POSTER_W[(POSTER_W.indexOf(posterW) + 1) % POSTER_W.length] : id === 'kind' ? (kindWide ? KIND_W[0] : KIND_W[1]) : id === 'proto' ? SRC_SIZES[(SRC_SIZES.indexOf(srcW) + 1) % SRC_SIZES.length] : fitOf(id);
 		save();
 	}
@@ -322,13 +309,12 @@ export function createColumns(ctx: ColumnsContext) {
 			localStorage.removeItem(KEY);
 			localStorage.removeItem(OLD_KEY);
 		} catch {
-			/* nothing saved */
+			/* Nothing saved. */
 		}
 		layout = defaults();
 	}
 
-	// Dragging a column's name left or right moves it: a ghost follows the
-	// pointer and a line shows where it will land.
+	// Dragging a column name moves it: a ghost follows the pointer and a line shows where it will land.
 	let ghost = $state<{ id: ColId; x: number; y: number } | null>(null);
 	let lineX = $state<number | null>(null);
 	let slot = 0;
@@ -381,7 +367,6 @@ export function createColumns(ctx: ColumnsContext) {
 		el.addEventListener('pointercancel', stop);
 	}
 
-	// The column picker: every column with a tick and a handle to reorder.
 	let pop = $state<{ x: number; y: number } | null>(null);
 	let pickEl = $state<HTMLElement>();
 	let held = $state<ColId | null>(null);
@@ -392,8 +377,7 @@ export function createColumns(ctx: ColumnsContext) {
 		pop = { x: Math.max(8, Math.min(x, innerWidth - w - 8)), y: Math.max(8, Math.min(y, innerHeight - 440)) };
 		held = null;
 		tick().then(() => {
-			// Keep the whole list on screen: move it up by however much its
-			// bottom passes the screen edge (it scrolls inside past that).
+			// Keeps the whole list on screen by moving it up as far as its bottom passes the screen edge.
 			const r = pickEl?.getBoundingClientRect();
 			if (r && pop && r.bottom > innerHeight - 8) pop = { x: pop.x, y: Math.max(8, pop.y - (r.bottom - (innerHeight - 8))) };
 			pickEl?.querySelector<HTMLElement>('input, button')?.focus();
@@ -602,5 +586,4 @@ export function createColumns(ctx: ColumnsContext) {
 	};
 }
 
-/** The column grid's state, as the parts that draw it receive it. */
 export type Columns = ReturnType<typeof createColumns>;

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { burstLine, byWhom, dayLabel, eventsQuery, headVerb, tierOf, titleHref, verbOf } from './history-kinds.ts';
 import { groupDownloads } from './history.ts';
+import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
 let id = 0;

@@ -1,6 +1,6 @@
+import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type DlHealth, type DlPatch } from './dl-store.ts';
 import { describe, expect, it } from 'vitest';
 import type { DownloadRow } from '../core/types.ts';
-import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type DlHealth, type DlPatch } from './dl-store.ts';
 
 const row = (over: Partial<DownloadRow>): DownloadRow =>
 	({ id: 1, phase: 'downloading', state: 'downloading', label: '', text: '', progress: 0, speed: 0, active: true, name: 'x', title: '', version: '', downloader: 'Q', size: 1, updated_at: '', can_act: true, ...over }) as DownloadRow;

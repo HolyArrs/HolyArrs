@@ -7,11 +7,7 @@ export interface KeyBits {
 	altKey: boolean;
 }
 
-/**
- * searchShortcut says whether a key press should focus the Downloads search.
- * `inField`: the press came from a text field ("/" types there instead).
- * `inDialog`: focus sits in, or a modal shows, a dialog, sheet or popover (it keeps its focus).
- */
+/** Whether a key press should focus the Downloads search. `inField`: the press came from a text field, where "/" types instead. `inDialog`: focus sits in a dialog, sheet or popover, or a modal shows. */
 export function searchShortcut(e: KeyBits, inField: boolean, inDialog: boolean): boolean {
 	if (inDialog) return false;
 	const mod = e.ctrlKey || e.metaKey;
@@ -19,17 +15,17 @@ export function searchShortcut(e: KeyBits, inField: boolean, inDialog: boolean):
 	return e.key === '/' && !mod && !e.altKey && !inField;
 }
 
-/** reviewShown is the "N to review" count the status shows: watchers never get the call. */
+/** The "N to review" count in the status; watchers never get the call. */
 export function reviewShown(watch: boolean, toReview: number): number {
 	return watch ? 0 : toReview;
 }
 
-/** escStep is what Esc does in the Downloads search: clear the words first, then leave the field. */
+/** Esc in the search: clear the words first, then leave the field. */
 export function escStep(term: string): 'clear' | 'blur' {
 	return term ? 'clear' : 'blur';
 }
 
-/** listEsc is what Esc does on the Downloads list: clear a selection first, then close the open panel. */
+/** Esc on the list: clear a selection first, then close the open panel. */
 export function listEsc(picked: number, open: boolean): 'clear' | 'close' | 'none' {
 	if (picked > 0) return 'clear';
 	return open ? 'close' : 'none';

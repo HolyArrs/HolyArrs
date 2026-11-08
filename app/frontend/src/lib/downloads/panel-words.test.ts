@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { healthLine, logDays, quietPeers, daysWord } from './panel-words.ts';
+import { describe, expect, it } from 'vitest';
 
 const now = new Date('2026-10-30T12:00:00Z').getTime();
 

@@ -1,19 +1,15 @@
 <script lang="ts">
-	import { quality, ratioText, swarmNum, type ColId } from './columns.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import { quality, ratioText, swarmNum, type ColId } from './columns.ts';
 	import { rowItems } from './rowmenu.ts';
-	import { to } from '../core/paths.ts';
 	import { tip } from './tip.ts';
-	import { ago, duration, percent } from '../core/format.ts';
-	import { session } from '../core/session.svelte.ts';
 	import { clientMark, swarmTotal } from './panel-words.ts';
 	import { size as bytes, categoryWords, protocolOf, KIND_WORD } from './size.ts';
 	import { kindOf, kindWords, manyWords, rowName } from './downloaders.ts';
 	import type { ImportRecord } from './types.ts';
-	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import type { DownloadRow, TitleView } from '../core/types.ts';
 	import { shortReason, stageOf, statusHint, statusWord, stepLine } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './row-art.ts';
@@ -21,6 +17,10 @@
 	import { problem } from './problem.ts';
 	import { barTone, historyStatus, moving } from './sections.ts';
 	import type { Columns } from './columns-grid.svelte.ts';
+	import { to } from '../core/paths.ts';
+	import { ago, duration, percent } from '../core/format.ts';
+	import { session } from '../core/session.svelte.ts';
+	import type { DownloadRow, TitleView } from '../core/types.ts';
 
 	type Props = {
 		r: DownloadRow;
@@ -43,10 +43,9 @@
 	};
 	let { r, hist, cols, watch, picked, choosing, openId, tabRow, importOf, titles, titlesReady, rowMenu, onpickone, onpickto, onrowclick, onrowkey, onrowfocus }: Props = $props();
 
-	// Each client's own app icon (design/assets/clients, licenses in its README).
+	// Downloaders with a bundled app icon.
 	const CLIENT_ICONS = new Set(['qbittorrent', 'transmission', 'deluge', 'sabnzbd', 'nzbget']);
 	const dash = '—';
-	/** The Downloader's own configured name (as in the details); its kind goes in the tooltip. */
 	const dlName = (r: DownloadRow) => r.downloader || (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || dash;
 	const dlKind = (r: DownloadRow) => (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || '';
 	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
@@ -71,7 +70,7 @@
 			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
 		</span>
 	{:else if id === 'progress'}
-			<!-- One bar on every row, 0 to 100: a finished row is full, never a tick in the bar's place, and nothing holds at 99. -->
+			<!-- A finished row shows a full bar; nothing stops at 99. -->
 			{@const hs = hist && stageOf(r) !== 'failed' ? historyStatus(r, importOf.get(r.id)) : null}
 			{@const raw = percent(r.progress)}
 			{@const pct = hs && !hs.bad ? 100 : raw}
@@ -79,7 +78,6 @@
 			{@const dn = (r.speed ?? 0) >= 1024}
 			{@const upOn = (r.up_speed ?? 0) >= 1024}
 			{@const eta = r.active && r.eta ? duration(r.eta) : ''}
-			<!-- Speed and time left sit under the bar: one line of "how it is going" for the moving rows, nothing for the rest. -->
 			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn || eta)}<span class="spd" data-testid="dl-row-speed">{[dn ? `↓ ${bytes(r.speed)}/s` : '', upOn ? `↑ ${bytes(r.up_speed)}/s` : '', eta ? `${eta} left` : ''].filter(Boolean).join(' · ')}</span>{/if}</span>
 	{:else if id === 'status'}
 		{#if hist}
@@ -92,8 +90,7 @@
 			{@const detail = statusDetail(r, importOf.get(r.id))}
 			{@const more = detail || statusHint(r)}
 			{@const why = problem(r)}
-			<!-- The word on its own line, a short line under it: the dot and the word carry the tone, the line stays quiet. -->
-			<!-- The line is the problem, else a waiting row's place in the Downloader's line, else the step it is at (or why it failed, or a seeding ratio). -->
+			<!-- The line shows the problem, else the queue place, else the current step. -->
 			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${cols.ordinal(r.queue_pos)} in line`) : stepLine(r, detail)}
 			{@const under = why?.text || line}
 			<span class="st {t}" class:ph class:two={!!under} data-col="status" title={[statusWord(r), under, more.toLowerCase() === under.toLowerCase() ? '' : more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid={stageOf(r) === 'queued' ? 'dl-in-line' : 'dl-step'}>{line}</span>{/if}</span></span>
@@ -105,19 +102,18 @@
 	{:else if id === 'added'}
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
 	{:else if id === 'swarm'}
-		<!-- Connected seeds and peers, named; the swarm's totals stay in the tooltip; the ratio on its own line. -->
 		{#if r.protocol !== 'torrent'}<span class="num" class:ph data-col="swarm">{dash}</span>
 		{:else}
 			{@const st = swarmTotal(r.seeds, r.seeds_total)}
 			{@const pt = swarmTotal(r.peers, r.peers_total)}
 			{@const tip = [st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}
-			<!-- One compact line on the header's three tracks: a green mark with the seeds, a blue mark with the peers, the ratio as a pill (green from 1.0). -->
+			<!-- Seeds, peers and ratio on one line; the ratio turns green from 1.0. -->
 			<span class="sw1" class:ph data-col="swarm" title="{tip} · ratio {r.ratio != null ? r.ratio.toFixed(2) : '–'}"><span class="n"><i class="dot s" aria-hidden="true"></i>{swarmNum(r.seeds)}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{swarmNum(r.peers)}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{ratioText(r.ratio)}</b>{/if}</span>
 		{/if}
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
 	{:else if id === 'requested'}
-		<!-- Who asked: a person, HolyArrs itself (a wanted title it grabbed on its own), or Outside (added straight in the client). -->
+		<!-- A person, HolyArrs itself (a title it grabbed on its own), or Outside (added in the client). -->
 		{@const person = !r.outside && r.requested_by ? r.requested_by : ''}
 		{@const who = r.outside ? 'Outside' : person || (session.can('manage_library') ? 'HolyArrs' : '')}
 		<span class="txt rq" class:ph class:soft={!person} data-col="requested" title={who}>{#if person}<i class="av" aria-hidden="true">{person.slice(0, 1).toUpperCase()}</i>{/if}{who || dash}</span>
@@ -154,7 +150,6 @@
 <style>
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; flex: none; width: var(--lg, 18px); height: var(--lg, 18px); object-fit: contain; }
-	/* Large Source: the logo, then the client's own name, starting after the divider. */
 	.pcell.named { justify-content: flex-start; gap: 6px; }
 	.pcell.named > .pm { flex: none; }
 	.pnm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
@@ -172,14 +167,12 @@
 	.drow > .dline:hover { background: var(--surface-2); }
 	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 	.bin:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
 	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
 	.post.square { height: var(--pi, 26px); --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 3px; }
 	.nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 	.tt, .rel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tt { font: var(--t-callout); font-weight: 500; display: flex; align-items: center; min-width: 0; }
-	/* The name shrinks with an ellipsis; the badges never do. */
 	.tt .tn, .tt .tphone { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.tt .ver { flex: none; }
 	.rel { color: var(--text-muted); font: var(--t-caption); }
@@ -188,7 +181,6 @@
 	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
 	.prg.queued i { background: var(--info); }
 	.prg:global(.held) i { background: var(--wait); }
-	/* A failed row's bar stays neutral: the dot and the status words carry the red, not three things at once. */
 	.prg.bad i { background: var(--text-muted); opacity: 0.3; }
 	.bl { position: relative; overflow: hidden; text-overflow: ellipsis; }
 	.bl { font-weight: 600; text-shadow: 0 0 3px var(--surface-1); }
@@ -196,10 +188,8 @@
 	.st .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st .sw, .st .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.st .why { color: var(--text-muted); font: var(--t-caption); }
-	/* Two lines: the dot sits on the first. */
 	.st.two { align-items: flex-start; }
 	.st.two .dot { margin-top: 4px; }
-	/* Requested by: a person with their initial; HolyArrs itself and Outside stay quiet. */
 	.rq { display: flex; align-items: center; gap: 6px; }
 	.rq.soft { color: var(--text-muted); }
 	.rq .av { display: grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--text); color: var(--bg); font: 600 10px / 1 var(--font-ui); font-style: normal; }
@@ -226,9 +216,7 @@
 	.pt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
 	.kcell .kt.none { color: var(--text-muted); }
-	/* Wide, the pill starts right after the divider like every other column's text. */
 	.kcell .kt.wide { justify-content: flex-start; }
-	/* The wide Type: a small pill in the type's own colour (film orange, TV blue, music green, anything else grey). */
 	.kp { padding: 1px 7px; border-radius: 999px; font: var(--t-caption); font-weight: 600; color: color-mix(in srgb, var(--kc) 70%, var(--text)); background: color-mix(in srgb, var(--kc) 16%, transparent); overflow: hidden; text-overflow: ellipsis; }
 	.kp[data-k='film'] { --kc: var(--wait); }
 	.kp[data-k='tv'] { --kc: var(--info); }
@@ -248,13 +236,11 @@
 	.drow.sel > .dline { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
 	.drow.sel > .dline:hover { background: var(--surface-1); }
 	.drow { animation: rowin var(--dur) var(--ease-out) backwards; }
-	/* Rows drawn while scrolling a long list appear at once. */
 	:global(.dlrows):global(.vw) .drow { animation: none; }
 	.st { gap: 8px; }
 	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }
 	.bin { border-radius: var(--r-sm); }
 	.pt span { font-variant-numeric: tabular-nums; }
-	/* Our own Downloader marks: short letters on a tinted rounded badge. */
 	.pm.cmk { display: inline-grid; place-items: center; width: auto; min-width: 22px; height: 22px; padding: 0 3px; border-radius: 5px; font: 700 9px/1 var(--font-ui); letter-spacing: 0.02em; color: var(--cm); background: color-mix(in srgb, var(--cm) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cm) 40%, transparent); }
 	.pm[data-tone='qb'] { --cm: #2f6fd6; }
 	.pm[data-tone='tr'] { --cm: #d23c3c; }
@@ -266,7 +252,6 @@
 	:global([data-theme='dark']) .pm[data-tone='de'] { --cm: #9db3c6; }
 	:global([data-theme='dark']) .pm[data-tone='sab'] { --cm: #f0c84a; }
 	:global([data-theme='dark']) .pm[data-tone='nzb'] { --cm: #6cd08c; }
-	/* Swarm: one line, two marks and a ratio pill, on the same three tracks as the header's facet words so each number sits under its word; a four-digit count or a 99.0 ratio still fits the fixed width. */
 	.sw1 { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
 	.sw1 { min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.sw1 .n { display: inline-flex; align-items: center; gap: 4px; }
@@ -282,12 +267,9 @@
 		:global(.dlrows) .drow > .dline:hover { background: var(--surface-3); box-shadow: 0 2px 8px -4px rgb(0 0 0 / 0.25); }
 		:global(.dlrows) .drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, var(--surface-2)); }
 		:global(.dlrows) .drow.sel > .dline, :global(.dlrows) .drow.sel > .dline:hover { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
-		/* The header and row checkboxes sit centred in the same 28px lane. */
 	.tg:has(> .pk) { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
 		.tg > .pk { margin: 0; translate: none; transform: none; }
-		/* With its centring margin gone, the box is centred by its top. */
 	.tg > .pk { left: 6px; top: calc(50% - 8px); }
-		/* The poster column starts under the checkbox lane's divider: centre its icon and posters between that line and the next. */
 	.dline > .post { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
 	@media (hover: none) {
@@ -300,7 +282,6 @@
 		.prg i, .tg :global(svg), .bin, .post { transition: none; }
 	}
 	@media (max-width: 640px) {
-		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
 	.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
 		.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 10%, transparent); }
@@ -316,9 +297,7 @@
 		.dline > [data-col='title'] .tphone { display: inline; }
 		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
-		/* The row's ⋯ menu sits at the card's right edge, beside both lines. */
 	.dline > [data-col='bin'] { display: flex; grid-area: mn; align-self: center; justify-content: center; }
-		/* Not picking: the box stays for screen readers, out of sight and out of the way. */
 	.tg .pk:not(.any) { width: 1px; height: 1px; margin: 0; opacity: 0; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
 		.dline > [data-col='title'] .rel { display: none; }

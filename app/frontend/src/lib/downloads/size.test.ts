@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { protocolOf, size, sizePair } from './size.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('size', () => {
 	it('uses 1000-based steps', () => {

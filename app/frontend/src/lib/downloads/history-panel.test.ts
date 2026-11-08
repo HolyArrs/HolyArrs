@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { panelView, pathBits, shortPath, whenText, type PanelContext } from './history-panel.ts';
 import { groupDownloads, type HistoryRow } from './history.ts';
+import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
 let id = 0;

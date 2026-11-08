@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dragTo, overlayScroll, thumb } from './overlay-scroll.ts';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// No DOM library in this repo's tests: a tiny fake element is enough for mount/unmount.
+// No DOM library in this repo's tests; a tiny fake element is enough for mount and unmount.
 class El {
 	children: El[] = [];
 	parentElement: El | null = null;

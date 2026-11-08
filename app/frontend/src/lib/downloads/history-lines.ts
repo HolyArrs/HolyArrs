@@ -1,22 +1,18 @@
-// History's words for a row: line 1 says what it is (the title, the
-// episode or what kind of title), a status tag says what kind of thing
-// happened, and line 2 says what happened, in plain words and never
-// repeating the title or the step. The details panel and the phone
-// sheet use the same words.
+// The words for a History row. Line 1 says what it is (the title, the episode or the kind of title), a status tag says what kind of thing happened, and line 2 says what happened in plain words, never repeating the title.
 import type { IconName } from '#lib/ui/Icon.svelte';
-import { bytes } from '../core/format.ts';
 import { dayKey } from './history-kinds.ts';
 import type { HistoryRow } from './history.ts';
+import { bytes } from '../core/format.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
 
-/** A status tag: a dot and a word. */
+/** A dot and a word. */
 export interface Tag {
 	word: string;
 	icon: IconName;
 	tone: 'ok' | 'fail' | 'wait' | 'info' | 'idle';
 }
 
-/** What a row's words need besides the Event: titles, people, today. */
+/** What a row's words need besides the Event. */
 export interface LineContext {
 	titles?: Map<number, Pick<TitleView, 'kind'>>;
 	/** Member names by id, for "Added to the Library by Maya". */
@@ -26,13 +22,11 @@ export interface LineContext {
 	now?: Date;
 }
 
-/** One piece of line 1 after the name. */
 export interface Bit {
 	text: string;
 	kind: 'episode' | 'what' | 'version';
 }
 
-/** The words of one row (or one Event). */
 export interface RowText {
 	name: string;
 	/** What it is, after the name: "S39 E192", "Pastry Week", "Movie", "4K". */
@@ -69,9 +63,8 @@ const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? o
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
-/** cap starts a line with a capital, leaving names like "qBittorrent" and "iPhone" as they are. */
+/** Capitalises the first letter but leaves names like "qBittorrent" and "iPhone" alone. */
 export const cap = (s: string) => (s && !/^[a-z][A-Z]/.test(s) ? s[0].toUpperCase() + s.slice(1) : s);
-/** The words for a reported problem's kind. */
 const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
 const problem = (v: unknown) => problemWords[str(v)] ?? str(v);
 
@@ -81,7 +74,7 @@ export function fakeEpisodeName(name: string): boolean {
 	return !s || /^episode\s*#?\d+$/i.test(s) || /^(tba|tbd|untitled)$/i.test(s) || /^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/.test(s) || /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
-/** episodeBits splits "S39E192 Episode 8827" into ["S39 E192"], keeping a real name. */
+/** Splits "S39E192 Episode 8827" into ["S39 E192"], keeping a real name. */
 export function episodeBits(ep: string | undefined): string[] {
 	const s = (ep ?? '').trim();
 	if (!s) return [];
@@ -95,7 +88,7 @@ export function episodeBits(ep: string | undefined): string[] {
 
 const kindWord: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
 
-/** dayWord says when, in a sentence: "today", "yesterday", "on Oct 25". */
+/** When, in a sentence: "today", "yesterday", "on Oct 25". */
 export function dayWord(at: string, now = new Date()): string {
 	const k = dayKey(at);
 	if (k === dayKey(now.toISOString())) return 'today';
@@ -131,7 +124,6 @@ function releaseOf(events: EventRecord[]): string {
 	return '';
 }
 
-/** A reason in plain words. */
 export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
 	const dl = /^the downloader says (.+)$/i.exec(s);
@@ -151,7 +143,7 @@ function who(e: EventRecord, ctx: LineContext): string {
 	return '';
 }
 
-/** Takes the title off the front of a summary ("Dune: approved by Maya" → "approved by Maya"). */
+/** Takes the title off the front of a summary ("Dune: approved by Maya" becomes "approved by Maya"). */
 function withoutTitle(summary: string, name: string): string {
 	let s = summary.trim();
 	if (name) {
@@ -162,7 +154,7 @@ function withoutTitle(summary: string, name: string): string {
 	return cap(s);
 }
 
-/** Line 2 never says the title again: a leftover mention becomes "it". */
+/** Line 2 never repeats the title; a leftover mention becomes "it". */
 function scrub(line: string, name: string): string {
 	if (!name || name === 'HolyArrs') return cap(line);
 	const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -183,14 +175,14 @@ export function folderGone(e: EventRecord): string {
 	return lost;
 }
 
-/** missingLine names a missing file by its name: "03 - One for the Road · Missing". */
+/** Names a missing file: "03 - One for the Road · Missing". */
 export function missingLine(e: Pick<EventRecord, 'Data'>): string {
 	const d = e.Data ?? {};
 	const name = (str(d.path) || str(d.to) || str(d.file)).split(/[\\/]/).pop()?.replace(/\.[a-z0-9]{2,4}$/i, '') ?? '';
 	return name ? `${name} · Missing` : 'File missing';
 }
 
-/** The Library folder an Event is about ("Music folder"), from its summary. */
+/** The Library folder an Event is about ("Music folder"), read from its summary. */
 export function folderName(e: EventRecord): string {
 	const n = /^Library folder (.+?):/.exec(e.Summary)?.[1];
 	return n ? `${n} folder` : '';
@@ -209,7 +201,7 @@ function askedName(e: EventRecord): string | undefined {
 	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
 }
 
-/** eventText is the words of one Event. */
+/** The words of one Event. */
 export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 	const name = e.title_name ?? askedName(e) ?? 'HolyArrs';
 	const d = e.Data ?? {};
@@ -321,14 +313,14 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'stopped_looking': return t(TAG.changed, join('Stopped looking for it', plainWhy(str(d.reason))));
 		case 'health_broken': return t(str(d.state) === 'warning' ? TAG.warning : TAG.failed, plainWhy(str(d.message) || withoutTitle(e.Summary, name)));
 		case 'health_recovered': return t(TAG.fixed, join('Working again', str(d.subject)));
-		// The tag says the step; the line keeps only who and what ("Maya · Every album"), names kept as they are.
+		// The tag says the step; the line keeps only who and what ("Maya · Every album").
 		case 'ask_made': return named(TAG.asked, who(e, ctx) || str(d.asked_by) || 'a member', cap(str(d.albums) || str(d.seasons)));
 		case 'ask_approved': return d.auto === true ? t(TAG.approved, join('Automatic', str(d.note))) : named(TAG.approved, str(d.approved_by) || who(e, ctx), str(d.note));
 		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
 		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
 		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
 		case 'report_reopened': return t(TAG.reopened, join(problem(d.kind), str(d.note)));
-		// Sign-ins: the username as it is, never capitalised.
+		// Sign-in names show as they are, never capitalised.
 		case 'signed_in':
 		case 'signed_out':
 		case 'sign_in_failed': {
@@ -356,7 +348,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 	return t(TAG.changed, plainWhy(withoutTitle(e.Summary, name)) || 'Something changed');
 }
 
-/** rowText is the words of a History row: a folded download says how far it got. */
+/** The words of a History row; a folded download says how far it got. */
 export function rowText(row: HistoryRow, ctx: LineContext = {}): RowText {
 	const head = eventText(row.head, ctx);
 	if (!row.steps.length) return head;

@@ -1,13 +1,12 @@
 <script lang="ts">
-	// History's compact row: small poster, title and time, then the step and
-	// one extra piece. Used by History's Search looks and the title pages.
+	// Compact History row: small poster, title and time, then the step and one extra piece. Used by the Search view and the title pages.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { dateTime } from '../core/format.ts';
 	import { artOf } from './history-kinds.ts';
 	import { agoShort, partOf, rowExtra, rowStep } from './history-search.ts';
 	import { rowText, type LineContext } from './history-lines.ts';
 	import type { HistoryRow } from './history.ts';
+	import { dateTime } from '../core/format.ts';
 	import type { EventRecord, TitleView } from '../core/types.ts';
 
 	let {
@@ -26,7 +25,7 @@
 		who?: (e: EventRecord) => string;
 		on?: boolean;
 		controls?: string;
-		/** The row's time: short and relative by default; History's day groups pass the clock time. */
+		/** Short and relative by default; day groups pass the clock time. */
 		time?: (at: string) => string;
 		onclick: () => void;
 	} = $props();
@@ -37,7 +36,7 @@
 	const s = $derived(rowStep(row, w.tag.word));
 	const x = $derived(rowExtra(row, s, who, w.line));
 	const part = $derived(partOf(row));
-	// The Version (HD, 4K) when the title has more than one, so its rows tell them apart.
+	// Shows the Version (HD, 4K) when the title has more than one, so its rows tell them apart.
 	const version = $derived(w.bits.find((b) => b.kind === 'version')?.text ?? '');
 </script>
 
@@ -48,7 +47,6 @@
 </button>
 
 <style>
-	/* One frame for every Event, two lines at most. */
 	.hit { position: relative; width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; column-gap: 12px; row-gap: 2px; min-height: 56px; padding: 8px 12px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
 	.hit:hover { background: var(--surface-2); }
 	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -68,7 +66,6 @@
 	.hit.bad .stp, .hit.bad .ex { color: var(--fail-text); }
 	.hit.bad .stp :global(svg) { color: var(--fail); }
 	.hit.bad:focus-visible { box-shadow: inset 2px 0 0 var(--fail), var(--focus-ring); }
-	/* The picked row: a neutral lift, never the red of a failure. */
 	.hit.on { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
 	.hit.bad.on { box-shadow: inset 2px 0 0 var(--fail), inset 0 0 0 1px var(--line-strong); }
 	.hit.on:focus-visible { box-shadow: inset 0 0 0 1px var(--line-strong), var(--focus-ring); }

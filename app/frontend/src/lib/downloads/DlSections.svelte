@@ -1,21 +1,10 @@
 <script lang="ts">
-	// The Downloads page body, laid out like a Downloader's own web page: a
-	// header strip (speed with a small graph, time left), the status tabs
-	// (Active · Waiting · In progress · Problems · Done, with sub-tabs; see
-	// status-tabs.ts), then one list filtered by them. Every row shares one
-	// column grid: ▾ · poster · the picked columns · bin (columns.ts
-	// holds which columns exist and the saved layout). ▾ opens a row's details in place; the bin removes it
-	// (through the page's Remove dialog).
-	import { tick, untrack } from 'svelte';
-	import { page } from '$app/state';
-	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
-	import { goto, replaceState } from '$app/navigation';
-	import { slide, fade, type TransitionConfig } from 'svelte/transition';
+	// Downloads page body: a header strip with speed and time left, status tabs with sub-options, the list, the detail pane and the selection bars.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
 	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
-	import { to } from '../core/paths.ts';
 	import DlBar from './DlBar.svelte';
 	import DlStatus from './DlStatus.svelte';
 	import DlMorePop from './DlMorePop.svelte';
@@ -30,18 +19,9 @@
 	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import { overlayScroll } from './overlay-scroll.ts';
-	import { dlScope } from '../core/search-field.svelte.ts';
 	import { dlTop } from './dl-top.svelte.ts';
-	import { toasts } from '../core/toasts.svelte.ts';
-	import { api, message } from '../core/api.ts';
-	import { duration } from '../core/format.ts';
-	import { session } from '../core/session.svelte.ts';
 	import { size as bytes, categoryWords, protocolOf, type KindKey } from './size.ts';
-	import { reducedMotion } from '../core/motion.ts';
-	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
 	import { kindOf, rowName } from './downloaders.ts';
-	import { type Decision, type DownloadRow } from '../core/types.ts';
-	import type { TitleView } from '../core/types.ts';
 	import type { ImportRecord } from './types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { controllable, pausable, retryable } from './usenet.ts';
@@ -49,6 +29,20 @@
 	import { byTracker, countLabel, pickRange, problemWords, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { problem } from './problem.ts';
 	import { historyTotals, inHistory, matches, moving, totals } from './sections.ts';
+	import { tick, untrack } from 'svelte';
+	import { page } from '$app/state';
+	import { goto, replaceState } from '$app/navigation';
+	import { slide, fade, type TransitionConfig } from 'svelte/transition';
+	import { to } from '../core/paths.ts';
+	import { dlScope } from '../core/search-field.svelte.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { api, message } from '../core/api.ts';
+	import { duration } from '../core/format.ts';
+	import { session } from '../core/session.svelte.ts';
+	import { reducedMotion } from '../core/motion.ts';
+	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
+	import { type Decision, type DownloadRow } from '../core/types.ts';
+	import type { TitleView } from '../core/types.ts';
 
 	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
 	let {
@@ -78,58 +72,46 @@
 		upTotal
 	}: {
 		rows: DownloadRow[];
-		/** Calm notes from the page (a Downloader not answering, a side read that failed): shown in the status popover, with a dot on its trigger. */
+		/** Notes from the page, such as a Downloader not answering, shown in the status popover. */
 		notes?: string[];
 		importOf: Map<number, ImportRecord>;
 		titles: Map<number, TitleView>;
-		/** False while the Library titles (the posters) are still on their way: posters show a plain tile, not initials. */
+		/** False while Library titles are still loading, so posters show a plain tile. */
 		titlesReady?: boolean;
 		busy: number;
-		/** A torrent Downloader brings the Seeding sub-tab under Done. */
+		/** A torrent Downloader adds the Seeding sub-tab under Done. */
 		torrent?: boolean;
 		decisionsOf: (r: DownloadRow) => Decision[];
-		/** The row whose details are open (0: none). */
+		/** Row whose details are open (0 for none). */
 		openId?: number;
 		onfail: (r: DownloadRow) => void;
 		onremove: (r: DownloadRow, withFiles?: boolean) => void;
 		ondone: () => void;
-		/** A client action on one download; the new state comes back from the client. */
 		onact?: (r: DownloadRow, action: ClientAction) => void;
-		/** Pause (true) or resume (false) everything in every client. */
 		onall?: (pause: boolean) => void;
-		/** Opens the speed limit. */
 		onlimit?: () => void;
-		/** Opens the Add sheet (managers with a torrent Downloader only). */
 		onadd?: () => void;
-		/** Opens the Remove dialog for the selected rows. */
 		onremovemany?: (rows: DownloadRow[], withFiles?: boolean) => void;
-		/** Try again for failed Usenet jobs. */
 		onretry?: (rows: DownloadRow[]) => void;
-		/** One action on the selected rows (batched per Downloader by the page). */
 		onbulk?: (rows: DownloadRow[], action: BulkAction) => void;
-		/** Opens the steering sheet (seeding rules and more) for these torrents. */
 		onsteer?: (rows: DownloadRow[], mode: SteerMode) => void;
-		/** The settings permission: changes to torrents HolyArrs did not send need it (the server refuses them otherwise). */
+		/** Changes to torrents HolyArrs did not send need the settings permission; the server refuses them otherwise. */
 		changeOutside?: boolean;
-		/** A selection action is on its way: the selection bars wait for it. */
+		/** A selection action is in flight; the selection bars wait for it. */
 		batchBusy?: boolean;
-		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
+		/** Someone who may not manage the Library sees only their own downloads, with no actions. */
 		watch?: boolean;
-		/** Upload speed the server added up over every sending row (seeding too, and rows past the page); else the rows on hand. */
+		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
 	} = $props();
 
-	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
-	// The search narrows every tab too, so the tab counts follow it.
-	// The search is the Downloads search field (DlFind), scoped to this page (search-field.svelte.ts).
+	// The Downloads search narrows every tab, so the tab counts follow it.
 	const q = $derived(dlScope.term);
 	const searched = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
-	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
 	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
 	const bySource = $derived(srcOn ? searched.filter((r) => protocolOf(r) === srcOn) : searched);
-	// The tracker filter: one tracker host, or a tracker problem; counts follow the other filters.
 	let trackOn = $state('');
 	const trackOpts = $derived(trackerOptions(bySource));
 	const trackHosts = $derived(trackOpts.filter((o) => o.key.startsWith('host:')));
@@ -139,7 +121,7 @@
 	const kindCount = (k: string) => everyRow.filter((r) => kindOf(r) === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 
-	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
+	// The picked tab and sub-tab live in the address as show=tab or tab.sub.
 
 	const dls = new Downloaders(() => watch);
 	const tabNow = (r: DownloadRow): PaneTab => {
@@ -158,7 +140,7 @@
 			else u.searchParams.set('show', sub ? `${show}.${sub}` : show);
 			if (u.href !== location.href) replaceState(u, page.state);
 		} catch {
-			/* the router is not ready yet; the next pick writes it */
+			/* The router is not ready yet; the next pick writes the address. */
 		}
 	}
 	const tabs = $derived(tabsFor(rows, torrent));
@@ -172,22 +154,18 @@
 		show = k;
 		sub = '';
 		remember();
-		// On a narrow row the picked pill, once open, is scrolled into view inside the row.
 		setTimeout(() => document.querySelector('.pw.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }), 220);
 	}
-	// A sub-tab is a toggle: a second click clears it.
 	function chooseSub(k: string) {
 		sub = sub === k ? '' : k;
 		remember();
 	}
 
-	// The header strip counts the whole Queue, whatever tab is picked.
 	const allQueue = $derived(typed.filter((r) => !inHistory(r)));
-	// One list, filtered by the tabs. Done reads newest first and can be searched.
 	const isDone = $derived(on === 'done');
 	const newest = (a: DownloadRow, b: DownloadRow) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at);
 	const tabOrder = $derived(isDone ? [...shown].sort(newest) : shown);
-	// A sorted column (kept with the column layout) overrides the tab's own order.
+	// A sorted column overrides the tab's own order.
 	const time = (v: string | undefined) => (v ? Date.parse(v) : undefined);
 	const list = $derived.by(() => {
 		const so = cols.layout.sort;
@@ -204,7 +182,7 @@
 			case 'size': return r.size || undefined;
 			case 'quality': return quality(r.name);
 			case 'added': return time(r.started_at);
-			// Swarm sorts by the facet picked in its header: seeds, peers or ratio.
+			// Swarm sorts by the facet picked in its header.
 			case 'swarm': {
 				if (!tor) return undefined;
 				const f = cols.layout.sort?.facet ?? 'seeds';
@@ -218,18 +196,16 @@
 		return undefined;
 	}
 	const sum = $derived(totals(allQueue));
-	// Upload comes from the Downloaders themselves once they report: seeding uploads without any downloading row.
+	// Falls back to the Downloaders' own reports, which cover seeding with no downloading row.
 	const upSum = $derived(dls.reporting.length ? dls.sumOf('up_speed') : (upTotal ?? sum.up));
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
-	// The Downloaders' own caps: the tightest one is the Speed limit button's word.
+	// The tightest cap names the Speed limit button.
 	const capNow = $derived(Math.min(...dls.reporting.map((c) => c.status?.speed_limit ?? 0).filter((n) => n > 0)));
 	const toReview = $derived(reviewCount(allQueue));
-	// Time left: the longest of the rows' own estimates and a Usenet queue's.
 	const etaAll = $derived(Math.max(sum.eta || 0, ...dls.clients.map((c) => (c.error ? 0 : (c.status?.time_left ?? 0)))));
 	const etaWords = $derived(etaAll ? duration(etaAll) : '');
-	// Usenet has no upload: with only Usenet Downloaders the Up pill goes.
+	// Usenet has no upload, so the Up pill goes when only Usenet Downloaders exist.
 	const noUp = $derived(dls.loaded && dls.clients.length > 0 && !dls.clients.some((c) => c.protocol === 'torrent'));
-	/** The review call opens Problems › Review. */
 	function openReview() {
 		choose('problems');
 		sub = 'decide';
@@ -241,22 +217,18 @@
 		openId = id;
 		paneOpen = true;
 	}
-	// The selection: Ctrl or Cmd click toggles a row, Shift click picks a range
-	// from the last picked one, Ctrl+A picks every row in the list.
+	// Ctrl or Cmd click toggles a row, Shift click picks a range, Ctrl+A picks every row.
 	let picked = $state<Set<number>>(new Set());
-	// Phones: "Select" in the All downloads menu starts picking before any row is picked.
 	let selecting = $state(false);
 	const choosing = $derived(picked.size > 0 || selecting);
 	let anchor = 0;
 	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
-	// The toolbar's Start, Pause and Remove mean the ticked rows, else the open row.
-	// Start and Pause follow pausable, as the pane's own button does (NZBGet takes those two).
+	// Toolbar actions apply to the ticked rows, else the open row. Start and Pause follow pausable, as the pane's own button does (NZBGet takes only those two).
 	const able = (r: DownloadRow) => pausable(r) && !r.client_locked && busy !== r.id;
 	const startT = $derived(toolbarTargets(pickedRows, openRow, 'paused', able));
 	const pauseT = $derived(toolbarTargets(pickedRows, openRow, 'running', able));
 	const removeT = $derived(toolbarTargets(pickedRows, openRow, 'any', (r) => busy !== r.id));
 	$effect(() => {
-		// Rows that left the list leave the selection.
 		const ids = new Set(list.map((r) => r.id));
 		if ([...picked].some((id) => !ids.has(id))) picked = new Set([...picked].filter((id) => ids.has(id)));
 	});
@@ -274,10 +246,9 @@
 		picked = new Set();
 		selecting = false;
 	};
-	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
-	// The row ⋯ menu: one place for a row's actions, the same items on desktop and phone.
+	// Torrents a torrent Downloader can steer by hash.
 	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Start', retry: 'Download again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', priority: 'Priority', library: 'Open in Library', remove: 'Remove' };
-	// Usenet jobs move and take a priority one job at a time (no bulk call).
+	// Usenet jobs move and take a priority one at a time; there is no bulk call.
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
 	const MOVED: Record<string, string> = { up: 'Moved up', down: 'Moved down', top: 'Moved to top', bottom: 'Moved to bottom' };
 	let queueBusy = $state(0);
@@ -294,7 +265,7 @@
 	}
 	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? 'Moved');
 	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), `Priority set to ${label}`);
-	// menuItems turns row keys into menu entries; the row ⋯ and the pane ⋯ share it.
+	// Shared by the row menu and the pane menu.
 	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
 		return keys.flatMap((k): MenuItem | MenuItem[] => {
@@ -313,12 +284,9 @@
 		if (!r.can_act) items.unshift({ kind: 'heading', label: 'HolyArrs cannot change this one' });
 		return items;
 	}
-	// The pane's ⋯: the row's own list minus what the pane shows as buttons
-	// (pause, try again, open, remove), plus a torrent's checks, force start and
-	// sheets, and Mark failed last as the one destructive choice.
+	// The pane menu is the row's list minus what the pane shows as buttons, plus a torrent's checks, force start, sheets and Mark failed.
 	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'library', 'remove']);
 	function paneMenu(r: DownloadRow): MenuItem[] {
-		// A read-only row has nothing to offer here; the Remove button's title already says so.
 		if (!r.can_act) return [];
 		const off = busy === r.id || queueBusy === r.id;
 		const items = menuItems(r, rowItems(r).filter((k) => !PANE_BUTTONS.has(k)));
@@ -335,25 +303,20 @@
 		}
 		return items;
 	}
-	// Only qBittorrent takes location, speed and seeding changes; read-only rows never do.
+	// Only qBittorrent takes location, speed and seeding changes.
 	const steerable = (r: DownloadRow) => !!onsteer && mayEdit(r) && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
-	// Location, speed and seeding sheets, file priority, tracker edits and Download again on a torrent
-	// HolyArrs did not send need the settings permission, as on the server.
+	// Location, speed and seeding sheets, file priority, tracker edits and Download again on a torrent HolyArrs did not send need the settings permission, as on the server.
 	const mayEdit = (r: DownloadRow) => clientOk(r) && (!r.outside || changeOutside);
-	// The selection bars send only rows HolyArrs may change, so one read-only row cannot fail the rest.
+	// Bulk calls skip read-only rows so one of them cannot fail the rest.
 	const actable = (rows: DownloadRow[]) => rows.filter(clientOk);
-	// The selection bar's checks and queue moves are torrent calls: only shown when a ticked torrent takes them.
 	const bulkRows = $derived(actable(pickedRows).filter((r) => protocolOf(r) === 'torrent' && controllable(r.downloader_kind) && !!r.downloader_id && !!r.hash));
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
 		{ mode: 'location', label: 'Set location…', short: 'Set location' },
 		{ mode: 'speed', label: 'Speed limits…', short: 'Speed limits' },
 		{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }
 	];
-	// The phone selection bar: the few actions that fit a thumb.
 	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
-	// The phone bar's "All downloads" menu, through the same handlers as the toolbar's menus.
 	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }, { label: 'Held files', onselect: () => void goto(to('/library/held')) }]);
-	// The desktop selection bar: what the toolbar's Start, Pause and Remove do not cover.
 	const BULK: { action: BulkAction; label: string }[] = [
 		{ action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
 		{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
@@ -363,11 +326,9 @@
 	const pane = new PaneDetail({ openId: () => openId, openTab: () => openTab, paneOpen: () => paneOpen, rows: () => everyRow, watch: () => watch });
 	let colEl = $state<HTMLElement>();
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
-	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
-	// Several torrents go through one bulk call; a single torrent and every Usenet job (which the
-	// bulk call cannot address) go through their own call, so none is dropped.
+	// Several torrents use one bulk call; a single torrent and every Usenet job (which the bulk call cannot address) use their own call, so none is dropped.
 	const runOn = (t: { rows: DownloadRow[] }, one: 'resume' | 'pause', many: BulkAction) => {
 		const tor = t.rows.filter((r) => protocolOf(r) === 'torrent' && !!r.downloader_id && !!r.hash);
 		if (tor.length > 1) onbulk?.(tor, many);
@@ -379,18 +340,14 @@
 		{ key: 'pause', icon: 'pause' as const, label: countLabel('Pause', pauseT.rows.length), hint: pauseT.why ? `Pause (${pauseT.why})` : countLabel('Pause', pauseT.rows.length), disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }] },
 		{ key: 'remove', icon: 'trash' as const, label: countLabel('Remove', removeT.rows.length), hint: removeT.why ? `Remove (${removeT.why})` : countLabel('Remove', removeT.rows.length), disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
 	]);
-	/** Up and Down move the selected row; the pane follows. Escape clears it. */
-	/** The row that has the focus (or holds it inside), if any. */
 	const focusedRow = () => {
 		const el = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('[data-dl-id]');
 		return el ? everyRow.find((r) => r.id === Number(el.dataset.dlId)) : undefined;
 	};
 	let rowFocus = $state(0);
-	/** One tab stop for the whole list: the row that was focused last, else the open one, else the first. */
+	/** One Tab stop for the list: the last focused row, else the open one, else the first. */
 	const tabRow = $derived(list.some((r) => r.id === rowFocus) ? rowFocus : list.some((r) => r.id === openId) ? openId : (list[0]?.id ?? 0));
-	/** Left and Right move across the pills and the sub-options that are open, and pick as they go. */
 	function navKey(e: KeyboardEvent) {
-		// Escape clears a picked sub-option back to its parent pill.
 		if (e.key === 'Escape' && subOn) {
 			e.preventDefault();
 			chooseSub(subOn);
@@ -398,7 +355,7 @@
 			return;
 		}
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-		// Only the pills themselves move with the arrows; the Review button and the status popover keep theirs.
+		// Only the pills take the arrows; the Review button and status popover keep theirs.
 		if (!(e.target as HTMLElement | null)?.closest('[data-nav]')) return;
 		const root = e.currentTarget as HTMLElement;
 		const list = [...root.querySelectorAll<HTMLElement>('[data-nav]')].filter((el) => !el.closest('[inert]'));
@@ -413,7 +370,7 @@
 	function slashKey(e: KeyboardEvent) {
 		const t = e.target as HTMLElement | null;
 		const inField = !t || !!t.closest('input, textarea, select, [contenteditable="true"]');
-		// A dialog, sheet or open popover keeps its focus: no stealing it for the search.
+		// Do not steal focus from a dialog, sheet or open popover.
 		const box = '[role="dialog"], dialog, [popover]:popover-open';
 		const inDialog = !!t?.closest?.(box) || !!(document.activeElement as HTMLElement | null)?.closest?.(box) || !!document.querySelector('dialog[open]');
 		if (!searchShortcut(e, inField, inDialog)) return;
@@ -433,9 +390,9 @@
 		return () => window.removeEventListener('keydown', slashKey, true);
 	});
 	function listKey(e: KeyboardEvent) {
-		// A menu or sheet already handled this key: the list behind it stays put.
+		// A menu or sheet already handled this key.
 		if (e.defaultPrevented) return;
-		// Ctrl+F jumps to the files filter only from inside the pane; elsewhere the browser's Find stays.
+		// Ctrl+F jumps to the files filter only inside the pane; elsewhere the browser's Find stays.
 		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && pane.fqEl && openRow && paneOpen && tabNow(openRow) === 'Files' && (e.target as HTMLElement | null)?.closest('.dpane')) {
 			e.preventDefault();
 			pane.fqEl.focus();
@@ -460,7 +417,7 @@
 		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], dialog, [role="dialog"], [role="menu"], [popover]')) return;
 		if (e.key === 'Escape') {
 			if (listEsc(picked.size, !!openId) === 'close') {
-				// Escape from inside the pane: the focus goes back to the row the pane was about, never to nowhere.
+				// Focus goes back to the pane's row, never to nowhere.
 				const line = t.closest('.dpane') ? cols.listEl?.querySelector<HTMLElement>(`[data-dl-id="${openId}"] .dline`) : null;
 				openId = 0;
 				e.preventDefault();
@@ -500,8 +457,7 @@
 	function xIn(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.base, easing: easeOut });
 	}
-	// The open row's poster grows from the row's small one into the details
-	// (FLIP: start at the small poster's box, end at its own).
+	// The open row's poster grows from the row's small one into the details (FLIP).
 	function grow(node: Element, opts: { from: () => Element | null | undefined; dur: number; ease: (t: number) => number }): TransitionConfig {
 		const a = opts.from()?.getBoundingClientRect();
 		const b = node.getBoundingClientRect();
@@ -521,8 +477,7 @@
 		if ((wasPhone && !p) || watch) untrack(() => (selecting = false));
 		wasPhone = p;
 	});
-	// A click anywhere on a row opens or closes its details, as the ▾ does;
-	// not on the bin, a link, a control, or while selecting text.
+	// A click on a row toggles its details, except on the bin, a link, a control, or while selecting text.
 	function rowClick(e: MouseEvent, id: number) {
 		const t = e.target as HTMLElement;
 		if (t.closest('button, a, input, label, .grip, [data-col="bin"]')) return;
@@ -537,7 +492,6 @@
 			pickTo(id);
 			return;
 		}
-		// Phones: once a long press started picking, a tap picks or unpicks a row.
 		if (!watch && cols.phone && choosing) {
 			pickOne(id);
 			return;
@@ -549,7 +503,6 @@
 	function rowKey(e: KeyboardEvent, id: number) {
 		if (e.target !== e.currentTarget) return;
 		if (e.key === ' ') {
-			// Space ticks the row for the toolbar and selection bar (Shift+Space ticks up to it); Enter opens it.
 			e.preventDefault();
 			if (watch) return;
 			if (e.shiftKey) pickTo(id);
@@ -566,7 +519,6 @@
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={cols.headMenu}>
-		<!-- Select all: ticked when every row is picked, half-ticked when some are. -->
 		<span class="hk">{#if !watch}<input type="checkbox" class="hpk" checked={list.length > 0 && picked.size === list.length} indeterminate={picked.size > 0 && picked.size < list.length} aria-label="Select all downloads" title="Select all" onchange={() => (picked.size === list.length ? clearPicked() : (picked = new Set(list.map((r) => r.id))))} data-testid="dl-head-pick" />{/if}</span>
 		{#each cols.vis as id (id)}
 			{@const c = COL[id]}
@@ -580,8 +532,6 @@
 		{#if cols.lineX !== null}<span class="ins" style="left: {cols.lineX}px" data-testid="dl-insert" aria-hidden="true"></span>{/if}
 	</div>
 {/snippet}
-
-
 
 {#snippet pills()}
 	{#each tally as c (c.key)}
@@ -602,7 +552,6 @@
 		</div>
 	{/each}
 {/snippet}
-
 
 <svelte:window onpointerdown={cols.outside} onkeydown={listKey} />
 
@@ -667,7 +616,6 @@
 {/if}
 </div>
 </div>
-<!-- Connection health stays readable for screen readers and tests. -->
 {#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
@@ -677,11 +625,9 @@
 </div>
 
 <style>
-	/* Source hugs the logo, so its header icon sits centred over the logos. */
 	.ch[data-col='proto']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='kind']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='proto'] .lbl, .ch[data-col='kind'] .lbl { display: flex; }
-	/* The next divider sits a gap after the column, so the logo and icon shift half a gap to sit centred between the two lines. */
 	.ch[data-col='poster'] { justify-content: center; }
 	.ch[data-col='poster'] .lbl { display: flex; }
 	@media (min-width: 641px) {
@@ -690,13 +636,11 @@
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.strip b { font-weight: 600; }
-	/* One column grid for every row of both sections. */
 	.dlgrid { --gap: 6px; min-width: 0; }
 	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
-	/* Muted text in the list is mixed from the text colour, so it stays readable (4.5:1+) on the card's tinted rows. */
+	/* Muted text is mixed from the text colour to stay readable (4.5:1) on tinted rows. */
 	.tin { min-width: var(--c-in); --text-muted: color-mix(in srgb, var(--text) 66%, var(--surface-2)); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-	/* The row checkbox has its own slim column at the left, so it never covers the poster. */
 	.hk { position: relative; align-self: stretch; display: flex; align-items: center; }
 	.hk::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.hpk { width: 16px; height: 16px; margin: 0 0 0 4px; accent-color: var(--accent); cursor: pointer; }
@@ -710,34 +654,27 @@
 		.psel { animation: none; }
 	}
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: max(44px, calc(var(--pi, 26px) * 1.5 + 6px)); }
-	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
-	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */
 	@media (min-width: 641px) {
 		.dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; }
 	}
 	:global(html.col-resizing), :global(html.col-resizing *) { cursor: col-resize !important; user-select: none !important; }
-	/* The header row is exactly 28px (the ⋯ button may be taller), so every divider line stays inside it, clear of the border below. */
+	/* The header row is exactly 28px so every divider stays inside it. */
 	.chead { grid-template-rows: minmax(0, 1fr); position: relative; height: 28px; border-bottom: 1px solid var(--line); color: color-mix(in srgb, var(--text) 78%, transparent); font: var(--t-caption); font-weight: 600; }
 	.chead + .dlrows { border-top: 0; }
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
-	/* Number columns: the heading sits over its right-aligned values. */
 	.ch.end { justify-content: flex-end; }
-	/* Every column name starts right after the divider line, as in qBittorrent; numbers below stay right-aligned. */
 	.ch { cursor: grab; user-select: none; touch-action: none; }
 	.ch.moving { opacity: 0.4; }
 	.ins { position: absolute; top: 2px; bottom: 2px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; z-index: 4; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-	/* Sorting shows as a line under the column name (blue going up, red going down), so it takes no width. */
 	.sbar { position: absolute; left: 0; right: calc(4px - var(--gap)); bottom: 0; height: 2px; border-radius: 1px; background: var(--info); }
 	.sbar.desc { background: var(--fail); }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	/* Divider lines run the full height of the header, from its top to the border below, like a table. */
 	.grip { position: absolute; top: 0; bottom: 0; right: calc(-1 * var(--gap) - 3px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
-	/* A fixed-width column has no grip but keeps the divider, at the same spot a grip draws it. */
 	.ch.fixed::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
@@ -762,7 +699,6 @@
 	.psb:hover, .psx:hover { background: var(--surface-3); }
 	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.psearch input { width: 150px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); }
-	/* The status pills: the picked pill carries its own background and opens to hold its sub-options. */
 	.tabrow { display: flex; flex: none; align-items: center; height: 44px; min-width: 0; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.tabrow::-webkit-scrollbar { display: none; }
 	.tabrow { container: tr / inline-size; }
@@ -774,7 +710,6 @@
 	.tab .n { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tab:hover { color: var(--text); }
 	.pw.on .tab { color: var(--hl-fg); }
-	/* A tab with nothing in it reads its 0; it is not dimmed, so its label keeps readable contrast. */
 	.tab:focus-visible, .stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.subwrap { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 200ms var(--ease-out), opacity 200ms var(--ease-out); }
 	.pw.open .subwrap { grid-template-columns: 1fr; opacity: 1; }
@@ -784,11 +719,9 @@
 	.stab b { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.stab:hover { color: var(--hl-fg); }
 	.stab.on { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); }
-	/* No sub-option picked: the parent itself carries the red inner highlight. */
 	.pw.leaf .tab { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); box-shadow: inset 0 0 0 2px var(--hl-bg); }
-	/* The picked pill is raised on the track like a segmented control; its picked sub-option is tinted red. */
 	.tabs { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); --hl-line: var(--line-strong); --hl-sub: color-mix(in srgb, var(--text) 86%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
-	/* Dark: the red words are lightened so they read on the grey pill (4.5:1 or more). */
+	/* Dark theme lightens the red words so they read on the grey pill. */
 	:global(:root[data-theme='dark']) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
 	@media (prefers-color-scheme: dark) {
 		:global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
@@ -799,18 +732,14 @@
 	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xbn:hover:not(:disabled) { background: var(--surface-3); }
 	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
-	/* Polish pass: one radius scale (--r-sm 6, --r-btn 10, --r-card 12, --r-panel 16, pill),
-	   one depth scale (--shadow-card, --shadow-lift, --shadow-modal), a 4/8 spacing grid. */
 	.app { --r-poster: 4px; }
 	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
 	@keyframes tabin { from { opacity: 0; transform: translateY(4px); } }
 	@keyframes fadein { from { opacity: 0; } }
-	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
 		.dlgrid { --gap: 8px; --pi: 26px !important; }
 		.chead { display: none; }
 		.tin { min-width: 0; }
-		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
 	.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
 		.dline > [data-col] { display: none; }
@@ -821,25 +750,21 @@
 		.dline > [data-col='time'] { display: block; grid-area: time; }
 		.dline > [data-col='title'] { flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
-		/* The row's ⋯ menu sits at the card's right edge, beside both lines. */
 	.dline > [data-col='bin'] { display: flex; grid-area: mn; align-self: center; justify-content: center; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
 		.dline > [data-col='status'] { font: 400 12px/16px var(--font-ui); }
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
-		/* The status line: full width for the tabs, with speed and free space as a quiet line under it. */
 	.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
 		.tabrow :global([data-testid='dl-stat']) { display: none; }
 		.qline { display: flex; align-items: center; gap: 6px; min-height: 24px; margin: 0; padding: 2px var(--dl-gutter) 4px; color: var(--text-muted); font: 400 12px/16px var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 		.qline .qd { color: color-mix(in srgb, var(--ok) 45%, var(--text-muted)); font-weight: 600; }
-		/* The speed on the phone's status line opens the speed limit, as the Speed pills do on wider screens; a taller hit area keeps the line itself low. */
+		/* The speed on the phone status line opens the speed limit; the taller hit area keeps the line low. */
 	.qbtn { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
-		/* 44px tall on its own; the line grows to hold it, starting below the tabs' tap area (their ::after reaches 10px under them). */
 	.qbtn::after { content: ''; position: absolute; inset: 0 -8px; }
 		.qline:has(.qbtn) { min-height: 48px; padding-top: 4px; padding-bottom: 0; }
 		.qbtn:focus-visible { outline: none; border-radius: 6px; box-shadow: var(--focus-ring); }
 		.qcap { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-weight: 400; }
 		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); }
-		/* The selection bar sits over the tab bar, thumb-sized. */
 	.selbar { display: none; }
 		.psel { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 8px); z-index: 45; display: grid; gap: 4px; padding: 6px 8px 8px; border: 1px solid var(--line-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface-1) 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: var(--shadow-modal); animation: pselIn 220ms var(--ease-out); }
 		.pst { display: flex; align-items: center; gap: 4px; }
@@ -855,66 +780,50 @@
 		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
-		/* Phones: a search icon that opens into the field. */
 	.strip { gap: 4px 14px; }
 	}
 	@media (max-width: 640px) {
 		.psearch { display: flex; flex: none; align-items: center; gap: 2px; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
 	}
-	/* Phones: a bottom sheet at about 60% that leaves at least three rows of the list in view. */
-	/* The main list in the same family: raised surface, tinted header band, zebra rows, a lift on hover. */
 	@media (min-width: 641px) {
 		.tin { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: clip; }
 		.tin .chead { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
 		.listbox :global(.tin .chead) { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); }
 	}
-	/* Swarm: one line, two marks and a ratio pill, on the same three tracks as the header's facet words so each number sits under its word; a four-digit count or a 99.0 ratio still fits the fixed width. */
 	.facets { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
-	/* The header's three facets: the picked one is bold and carries the sort line. */
 	.fc { position: relative; justify-self: start; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
 	.fc.on { color: var(--text); font-weight: 600; }
 	.fc:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
 	.fc .sbar { right: 0; bottom: -7px; }
-	/* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
-	/* Chrome drops the ::-webkit rules below (and draws its own bar with arrows) once scrollbar-width/-color are set, so those are Firefox only. */
+	/* Chrome drops its ::-webkit scrollbar rules once scrollbar-width or scrollbar-color is set, so those two are Firefox only. */
 	@supports not selector(::-webkit-scrollbar) {
 		.tw { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
 		.tw:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
 	}
 	.tw::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
-	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
 	.tw::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
 	.tw::-webkit-scrollbar-corner { background: transparent; }
 	.tw::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 	.tw::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
-	/* Desktop: the table is a card set in like the toolbar above it (14px from the side menu). */
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
-		/* The toolbar and the pill row are cards on the page: no page-wide rules under them (they ran off the cards' edges). */
 	.hdr, .tabrow { border-bottom: 0; }
-		/* The list, the divider and the pane are one slab of the table's surface; only its four outer corners are rounded. */
 	.col { overflow: clip; border-radius: var(--r-card); }
 		.col > .listbox { background: var(--surface-2); border-radius: var(--r-card) var(--r-card) 0 0; }
-		/* The table's own frame drew a second line inside the card: the rows' lines are enough. */
 	.col .tin { border-color: transparent; box-shadow: none; }
-		/* The header and row checkboxes sit centred in the same 28px lane. */
 	.hk { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
 		.hk .hpk { margin: 0; translate: none; transform: none; }
-		/* The poster column starts under the checkbox lane's divider: centre its icon and posters between that line and the next. */
 	.ch[data-col='poster'] .lbl { transform: translateX(calc(var(--gap) / 2 + 0.5px)); }
 	}
 	.tw::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	@media (min-width: 641px) {
-		/* The pane is part of the table's slab: same surface, same edges, no frame of its own; the divider's hairline and grip are the seam. */
 	}
-	/* Phones: every control a thumb can hit is at least 32px tall. */
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
 		.trchip, .qrv, .xbn { min-height: 32px; }
 	}
-	/* Touch phones: every control a finger hits gets a 44px target; the
-	   hit area grows with an invisible ::after, so nothing moves and desktop is unchanged. */
+	/* Touch phones get 44px targets; the hit area grows with an invisible ::after so nothing moves. */
 	@media (max-width: 767px) and (pointer: coarse) {
 		.tab, .stab, .trchip { position: relative; }
 		.tab::after, .stab::after, .trchip::after { content: ''; position: absolute; inset: -10px 0; }
@@ -927,5 +836,5 @@
 		.psearch:not(.open) .psb::after { right: -6px; }
 		.psx::after { content: ''; position: absolute; inset: -6px -6px -6px 0; }
 	}
-	/* A disabled bin is only a stand-in: a tap on it goes to the row underneath. */
+	/* A disabled bin is a stand-in; a tap goes to the row underneath. */
 </style>

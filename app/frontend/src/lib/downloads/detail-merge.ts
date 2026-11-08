@@ -1,7 +1,4 @@
-// Merges a fresh read of the open download's detail into the last one. Fields
-// whose content did not change keep their old value (same reference), and when
-// nothing changed the old object itself comes back, so the caller can skip the
-// state write and the panel does not re-render on every poll.
+// Merges a fresh read of the open download's detail into the last one. Fields whose content did not change keep their old reference, and when nothing changed the old object comes back, so the caller can skip the state write and the panel does not re-render on every poll.
 export function mergeDetail<T extends { id: number }>(prev: T, patch: Partial<T> & { id: number }): T {
 	if (prev.id !== patch.id) return { ...patch } as T;
 	let next: T | null = null;

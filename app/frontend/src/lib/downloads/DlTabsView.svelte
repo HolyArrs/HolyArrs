@@ -1,8 +1,7 @@
 <script lang="ts">
-	import GhostEmpty from './GhostEmpty.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
-	import { to } from '../core/paths.ts';
+	import GhostEmpty from './GhostEmpty.svelte';
 	import { size as bytes, protocolOf } from './size.ts';
 	import { fileTree } from './filetree.ts';
 	import { filterFiles, indexesUnder } from './manage.ts';
@@ -12,8 +11,9 @@
 	import { repairSteps, serverRows } from './usenet.ts';
 	import { live, type PaneDetail } from './pane-detail.svelte.ts';
 	import { CALM_ERR, PRIOS, TRACKER_WORD, fileIndexes, flagsOf, infoGroups, mmss, usenetGroups, type PaneTab } from './pane-facts.ts';
-	import type { DownloadRow } from '../core/types.ts';
 	import type { ImportRecord } from './types.ts';
+	import { to } from '../core/paths.ts';
+	import type { DownloadRow } from '../core/types.ts';
 
 	let { r, tab, pane, importOf, watch, mayEdit }: { r: DownloadRow; tab: PaneTab; pane: PaneDetail; importOf: Map<number, ImportRecord>; watch: boolean; mayEdit: (r: DownloadRow) => boolean } = $props();
 
@@ -40,7 +40,6 @@
 		<p class="calm wait" aria-live="polite" data-testid="dl-panel-wait">Reading from the Downloader…</p>
 	{/if}
 {/snippet}
-
 
 	{#if tab === 'Info'}
 		{@const shown = tor ? infoGroups(r, d) : usenetGroups(r, d, importOf.get(r.id))}
@@ -277,7 +276,6 @@
 	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
 	.pick, .fold { border-radius: var(--r-sm); }
 	.tfld { border-radius: var(--r-btn); }
-	/* Files, Peers, Trackers: full width, a sticky header that matches the main list, hairline rows. */
 	:global(.pb) .tblw { margin-top: 0; max-height: max(160px, calc(var(--ph, 260px) - 150px)); overflow: auto; border-radius: var(--r-card); background: var(--surface-1); }
 	.t2 { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
 	:global(.pb) .t2 th { position: sticky; top: 0; z-index: 1; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; white-space: nowrap; }
@@ -296,7 +294,6 @@
 	.t2 tbody tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 	.t2 tbody tr:focus-visible td { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
 	.t2 tbody tr.off td { color: var(--text-muted); }
-	/* Depth for Files, Peers and Trackers: a raised surface, a tinted header band, hairline zebra rows and a lift on hover. */
 	:global(.pb) .tblw { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); }
 	:global(.pb) .t2 th { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
 	:global(.pb) .t2 td { border-bottom-color: var(--line); }
@@ -319,7 +316,6 @@
 	.pbar i { border-radius: inherit; transition: width var(--dur-slow) var(--ease-out); }
 	.pv { min-width: 36px; margin-left: 8px; color: var(--text-muted); }
 	.fbar { padding: 0 0 8px; gap: 8px; }
-	/* Log: a quiet timeline; time column, a dot on a thin line, the event. */
 	:global(.pb) .lg { gap: 0; max-height: none; font: var(--t-callout); }
 	.lg li { display: grid; grid-template-columns: max-content 16px minmax(0, 1fr); column-gap: 8px; align-items: start; padding: 4px 0; }
 	.lg time { margin: 0; white-space: nowrap; }
@@ -331,12 +327,10 @@
 	.lg li:only-child .lgd::before { display: none; }
 	.lg .bad .lgd::after { background: var(--fail); box-shadow: none; }
 	.lgt { overflow-wrap: anywhere; }
-	/* Info cards share the Files table's depth: raised surface, tinted title band, full-width hairline rows, zebra. */
 	.quiet0 { margin: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.lgw { display: grid; gap: 4px; }
 	.lgday { margin: 6px 0 0; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.lgday:first-child { margin-top: 0; }
-	/* Log: one raised card like the Files table, each day a tinted band, rows split by hairlines. */
 	.lgw { gap: 0; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); overflow: hidden; min-width: 0; }
 	.lgday { margin: 0; padding: 8px 14px; background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-1)); border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 	.lgday:not(:first-child) { border-top: 1px solid var(--line); }
@@ -344,7 +338,6 @@
 	.lgw .lg li { padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
 	.lgw .lg li:last-child { border-bottom: 0; }
 	.lgw .lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	/* Files filter: the same surface and edge as the table under it. */
 	.fbar .tfld { min-height: 34px; padding: 7px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.05); transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
 	.fbar .tfld:hover { border-color: var(--line-strong); }
 	.fbar .tfld:focus-visible { border-color: var(--line-strong); box-shadow: var(--focus-ring); }
@@ -365,18 +358,15 @@
 	.calm.slim { margin: 4px 8px 4px; padding: 4px 4px 4px 10px; gap: 8px; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 50%, var(--surface-2)); font: var(--t-caption); }
 	.calm.slim .xbn { min-height: 24px; }
 	.tblw::-webkit-scrollbar, .lg::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
-	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
 	.tblw::-webkit-scrollbar-track, .lg::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
 	.tblw::-webkit-scrollbar-corner { background: transparent; }
 	.tblw::-webkit-scrollbar-button, .lg::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 	.tblw::-webkit-scrollbar-thumb, .lg::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
 	.tblw::-webkit-scrollbar-thumb:hover, .lg::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	.facts { width: auto; justify-self: stretch; padding: 2px 0; border-color: var(--line); border-radius: var(--r-card); background: color-mix(in srgb, var(--surface-1) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	/* Each column is its own height, so a divider ends at its content instead of running on into empty space. */
 	.fcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); align-items: start; overflow: hidden; }
 	.fcol + .fcol { border-left: 0; }
 	.fcol { border-right: 1px solid var(--line); margin-right: -1px; }
-	/* Sentence case, like the column headings: one voice on the page. */
 	.fcap { padding: 12px 16px 4px; letter-spacing: 0; text-transform: none; }
 	:global(.pb) .t2 th, .lgday { letter-spacing: 0; text-transform: none; }
 	.hlink { margin: 10px 16px 2px; font-weight: 600; }
@@ -413,7 +403,6 @@
 		.tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
 	}
 	@media (min-width: 641px) {
-		/* The facts sit on the slab with their column hairlines only: no second frame inside the pane. */
 	:global(.dpane) .facts { background: transparent; box-shadow: none; border-color: transparent; }
 	}
 </style>

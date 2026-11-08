@@ -3,21 +3,21 @@ import type { PickRulesStep } from '../core/types.ts';
 export interface ImportRecord {
 	ID: number;
 	State: string;
-	/** The download it imported (none for a by-hand import of a folder). */
+	/** The download it imported; none for a by-hand import of a folder. */
 	DownloadID?: number | null;
 	CreatedAt: string;
 	Plan?: { source_file: string; target_path?: string; confidence?: number }[] | null;
 	Result?: { source_file: string; outcome: string; placed_by?: string; error?: string }[] | null;
 }
 
-/** PickRulesSize bounds a Release's size in bytes; with per_minute, per minute of runtime. */
+/** Bounds a Release's size in bytes; with per_minute, per minute of runtime. */
 export interface PickRulesSize {
 	min: number;
 	max: number;
 	per_minute: boolean;
 }
 
-/** PickRulesBody is what a set of Pick rules takes (internal/domain/pickrules.go). */
+/** What a set of Pick rules takes. */
 export interface PickRulesBody {
 	steps: PickRulesStep[];
 	good_enough_at: string;
@@ -35,7 +35,7 @@ export interface PickRulesBody {
 	proper_policy: { mode: 'take_any' | 'same_group_only' | 'prefer_only' | 'ignore'; max_age_days?: number };
 }
 
-/** OwnTrait is one of your own traits: a test on the Release name or its release group; Pick rules name it by key (own:<id>). */
+/** One of your own traits: a test on the Release name or release group, named by key in Pick rules (own:<id>). */
 export interface OwnTrait {
 	id: number;
 	key: string;
@@ -45,7 +45,7 @@ export interface OwnTrait {
 	terms: string[];
 }
 
-/** PickRulesUse counts what uses one set of Pick rules. */
+/** Counts what uses one set of Pick rules. */
 export interface PickRulesUse {
 	versions: number;
 	library_folders: number;
@@ -54,7 +54,7 @@ export interface PickRulesUse {
 	title_defaults: number;
 }
 
-/** PickRulesDetail is one set of Pick rules with its body and where it is used. */
+/** One set of Pick rules with its body and where it is used. */
 export interface PickRulesDetail {
 	id: number;
 	name: string;

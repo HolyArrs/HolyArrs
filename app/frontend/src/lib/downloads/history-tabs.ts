@@ -1,9 +1,4 @@
-// History (Downloads > History): the status tabs the page shares with the
-// Downloads table. Five big tabs answer what a person opens History for
-// (what came in, what went wrong, what changed, what ran in the background);
-// each has small toggle sub-tabs. The kinds a tab asks the server for come
-// from here, and so do the day folds the timeline lays its rows out with,
-// and the remembered poster size and details panel.
+// History tabs shared with the Downloads table. Five big tabs answer what a person opens History for: what came in, what went wrong, what changed, what ran in the background.
 import { details, groupDownloads, type HistoryRow } from './history.ts';
 import { clock, dayKey, dayLabel, rowTier, type Tier } from './history-kinds.ts';
 import type { EventRecord } from '../core/types.ts';
@@ -84,7 +79,7 @@ export const historyTabs: HistoryTab[] = [
 	}
 ];
 
-/** tabKinds is what a tab (and sub-tab) asks the server for; undefined is every Event. */
+/** What a tab (and sub-tab) asks the server for; undefined means every Event. */
 export function tabKinds(tab: string, sub = ''): string[] | undefined {
 	const t = historyTabs.find((x) => x.key === tab);
 	if (!t || t.key === ALL) return undefined;
@@ -92,7 +87,7 @@ export function tabKinds(tab: string, sub = ''): string[] | undefined {
 	return s ? [...s.kinds] : t.subs.flatMap((x) => x.kinds);
 }
 
-/** showOf reads &show=tab or tab.sub (unknown parts fall back to All and no sub-tab). */
+/** Reads &show=tab or tab.sub; unknown parts fall back to All with no sub-tab. */
 export function showOf(v: string | null): { show: string; sub: string } {
 	const [tab = '', sub = ''] = (v ?? '').split('.');
 	const t = historyTabs.find((x) => x.key === tab);
@@ -100,7 +95,7 @@ export function showOf(v: string | null): { show: string; sub: string } {
 	return { show: t.key, sub: t.subs.some((s) => s.key === sub) ? sub : '' };
 }
 
-/** showParam is the &show= value for a tab and sub-tab ('' for All). */
+/** The &show= value for a tab and sub-tab ('' for All). */
 export function showParam(show: string, sub: string): string {
 	if (show === ALL || !historyTabs.some((t) => t.key === show)) return '';
 	return sub ? `${show}.${sub}` : show;
@@ -108,13 +103,13 @@ export function showParam(show: string, sub: string): string {
 
 const matches = (kind: string, list: string[]) => list.some((k) => (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind));
 
-/** tabOf names the big tab an Event kind is counted under ('' when only All has it). */
+/** The big tab an Event kind is counted under; '' when only All has it. */
 export function tabOf(kind: string): string {
 	for (const t of historyTabs) for (const s of t.subs) if (matches(kind, s.kinds)) return t.key;
 	return '';
 }
 
-/** One day of rows: its key, label and a count of what mattered. */
+/** One day of rows: key, label and a count of what mattered. */
 export interface DayGroup {
 	key: string;
 	rows: HistoryRow[];
@@ -122,7 +117,7 @@ export interface DayGroup {
 	tally: Record<string, number>;
 }
 
-/** byDay folds a page of Events into download rows, then into local days (newest first, order kept). */
+/** Folds a page of Events into download rows, then into local days (newest first, order kept). */
 export function byDay(events: EventRecord[]): DayGroup[] {
 	const out: DayGroup[] = [];
 	for (const row of groupDownloads(events)) {
@@ -139,10 +134,10 @@ export function byDay(events: EventRecord[]): DayGroup[] {
 	return out;
 }
 
-/** fineCheck: a Library folder check that found the folder fine is news, not a problem. */
+/** A Library folder check that found the folder fine is news, not a problem. */
 export const fineCheck = (e: Pick<EventRecord, 'Kind' | 'Data'>) => e.Kind === 'library_folder_health' && e.Data?.health === 'ok';
 
-/** rowTab is the tab a row counts under: a folded download by how far it got. */
+/** The tab a row counts under; a folded download by how far it got. */
 export function rowTab(row: HistoryRow): string {
 	if (fineCheck(row.head)) return 'changes';
 	if (row.steps.some((s) => s.state === 'failed')) return 'problems';
@@ -151,7 +146,7 @@ export function rowTab(row: HistoryRow): string {
 	return tabOf(row.head.Kind) || 'changes';
 }
 
-/** dayLine says what a day held, important first ("2 came in · 1 problem · 40 routine"). */
+/** What a day held, important first ("2 came in · 1 problem · 40 routine"). */
 export function dayLine(tally: Record<string, number>): string {
 	const parts: string[] = [];
 	const n = (k: string) => tally[k] ?? 0;
@@ -162,10 +157,10 @@ export function dayLine(tally: Record<string, number>): string {
 	return parts.join(' · ');
 }
 
-/** A run of rows on a day: one row that matters, or a fold of quiet routine rows next to each other. */
+/** One row that matters, or a fold of routine rows next to each other. */
 export type DayItem = { type: 'row'; key: string; row: HistoryRow; tier: Tier } | { type: 'quiet'; key: string; rows: HistoryRow[] };
 
-/** dayItems folds two or more routine rows in a row into one quiet line. */
+/** Folds two or more adjacent routine rows into one quiet line. */
 export function dayItems(rows: HistoryRow[]): DayItem[] {
 	const out: DayItem[] = [];
 	let run: HistoryRow[] = [];
@@ -189,7 +184,7 @@ export function dayItems(rows: HistoryRow[]): DayItem[] {
 
 const WHY = new Set(['Why', 'Error', 'Message']);
 
-/** rowWhy is the one line a row is explained by: a reason or error first, then a path. */
+/** The one line that explains a row: a reason or error first, then a path. */
 export function rowWhy(row: HistoryRow): string {
 	let first = '';
 	for (const e of row.events) {
@@ -201,7 +196,7 @@ export function rowWhy(row: HistoryRow): string {
 	return first;
 }
 
-/** whenShort is a row's time: the clock today, the day and clock before. */
+/** A row's time: the clock today, the day and clock before. */
 export function whenShort(at: string, now = new Date()): string {
 	const k = dayKey(at);
 	return k === dayKey(now.toISOString()) ? clock(at) : `${dayLabel(k, now)}, ${clock(at)}`;

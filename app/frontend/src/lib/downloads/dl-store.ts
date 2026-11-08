@@ -1,10 +1,4 @@
-// Push updates for the Downloads page (setting downloads.sync = on).
-// The page reads a snapshot over REST (rows plus each client's rev and the
-// server's boot id) and then applies keyed row patches from /live topic
-// "dl". Each client's rev is its own sequence: a patch from fromRev to
-// toRev applies only on top of exactly fromRev. Older patches are already
-// in the snapshot and are dropped; a patch past the rev the page holds
-// means messages were missed, so the page reads its snapshot again.
+// Push updates for the Downloads page (setting downloads.sync = on). The page reads a snapshot over REST (rows, each client's rev and the server's boot id), then applies keyed row patches from the live topic "dl". Each client's rev is its own sequence: a patch from fromRev to toRev applies only on exactly fromRev. Older patches are already in the snapshot and are dropped; a patch past the held rev means messages were missed, so the page reads its snapshot again.
 import type { DownloadRow } from '../core/types.ts';
 
 export type DlPatch = {
@@ -30,10 +24,10 @@ export type DlHealth = {
 
 export type DlMessage = DlPatch | DlHealth;
 
-/** Sync is what the page knows of the server's snapshot. */
+/** What the page knows of the server's snapshot. */
 export type Sync = { boot: string; revs: Record<string, number> };
 
-/** fromAnswer reads the push state from a view answer; null when the server does not push (its reader is not running). */
+/** Reads the push state from a view answer; null when the server does not push. */
 export function fromAnswer(a: { boot?: string; revs?: Record<string, number> }): Sync | null {
 	if (!a.revs) return null;
 	return { boot: a.boot ?? '', revs: { ...a.revs } };
@@ -44,12 +38,7 @@ export type Outcome =
 	| { kind: 'dropped' }
 	| { kind: 'reread'; client?: number };
 
-/**
- * applyPatch puts one patch on the rows. A row a patch names but the page
- * does not hold is added only when the patch carries a whole row (a new
- * client torrent); HolyArrs' own rows come and go with page reads.
- * withId gives a new client row its stand-in id.
- */
+/** Applies one patch to the rows. A row the patch names but the page does not hold is added only when the patch carries a whole row (a new client torrent); HolyArrs' own rows come and go with page reads. withId gives a new client row its stand-in id. */
 export function applyPatch(rows: DownloadRow[], sync: Sync, p: DlPatch, withId: (r: DownloadRow) => DownloadRow = (r) => r): Outcome {
 	if (p.boot && sync.boot && p.boot !== sync.boot) return { kind: 'reread' };
 	const have = sync.revs[String(p.client)] ?? 0;
@@ -75,7 +64,7 @@ export function applyPatch(rows: DownloadRow[], sync: Sync, p: DlPatch, withId: 
 	return { kind: 'applied', rows: out, sync: { boot: sync.boot, revs: { ...sync.revs, [String(p.client)]: p.toRev } }, upTotal: p.totals?.up_speed };
 }
 
-/** merge sets each field the patch names; null clears it. */
+/** Sets each field the patch names; null clears it. */
 function merge(r: DownloadRow, u: Record<string, unknown>): DownloadRow {
 	const next: Record<string, unknown> = { ...r };
 	for (const [f, v] of Object.entries(u)) {
@@ -87,17 +76,13 @@ function merge(r: DownloadRow, u: Record<string, unknown>): DownloadRow {
 	return next as unknown as DownloadRow;
 }
 
-/** isDl says a live message is a dl patch or health event. */
+/** Whether a live message is a dl patch or health event. */
 export function isDl(x: unknown): x is DlMessage {
 	const m = x as DlMessage | null;
 	return !!m && typeof m === 'object' && (m.kind === 'patch' || m.kind === 'health') && typeof m.client === 'number';
 }
 
-/**
- * mergeClient puts one client's page (a view read with ?client=) in place of
- * that client's rows: the other clients' rows and revs stay as they are, so
- * a gap on one client never rereads the whole list.
- */
+/** Replaces one client's rows with a page read by ?client=. Other clients' rows and revs stay, so a gap on one client never rereads the whole list. */
 export function mergeClient(rows: DownloadRow[], sync: Sync, client: number, page: DownloadRow[], revs: Record<string, number> | undefined): { rows: DownloadRow[]; sync: Sync } {
 	const kept = rows.filter((r) => r.downloader_id !== client);
 	const rev = revs?.[String(client)] ?? sync.revs[String(client)] ?? 0;
@@ -108,11 +93,7 @@ export function mergeClient(rows: DownloadRow[], sync: Sync, client: number, pag
 	return { rows: [...own, ...outside], sync: { boot: sync.boot, revs: { ...sync.revs, [String(client)]: rev } } };
 }
 
-/**
- * wentStale says a health event turned a client stale: its rows' speeds and
- * the upload total on the page are no longer current, so the page reads
- * its snapshot again (the server zeroes stale speeds there).
- */
+/** A health event turned a client stale, so its speeds and the upload total are out of date. The page reads its snapshot again; the server zeroes stale speeds there. */
 export function wentStale(before: { stale?: boolean } | undefined, h: DlHealth): boolean {
 	return !!h.stale && !before?.stale;
 }
