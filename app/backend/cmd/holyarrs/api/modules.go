@@ -148,7 +148,7 @@ func (a *API) oldAppPicture(w http.ResponseWriter, r *http.Request, src string, 
 	}
 	if px > 0 {
 		if n, sp, err := c.Smaller(name, px); err == nil && n != name {
-			serveArtworkCached(w, r, n, sp, "private, max-age=86400")
+			library.ServeArtworkCached(w, r, n, sp, "private, max-age=86400")
 			return
 		}
 	}
@@ -160,10 +160,10 @@ func (a *API) oldAppPicture(w http.ResponseWriter, r *http.Request, src string, 
 // never kept a year as the web app's own picture addresses are.
 func serveCover(w http.ResponseWriter, r *http.Request, name, p string) {
 	if library.StableFile(p) {
-		serveArtwork(w, r, name, p) // already a day, named by the file's time
+		library.ServeArtwork(w, r, name, p) // already a day, named by the file's time
 		return
 	}
-	serveArtworkCached(w, r, name, p, "private, max-age=86400")
+	library.ServeArtworkCached(w, r, name, p, "private, max-age=86400")
 }
 
 func (a *API) migrateHandlers() *migrate.Handlers {

@@ -328,3 +328,17 @@ func (h *Handlers) TitleID(w http.ResponseWriter, r *http.Request) (mediafiles.T
 	}
 	return t, true
 }
+
+// PublishTitle sends title id's fresh view to live pages.
+func (h *Handlers) PublishTitle(ctx context.Context, id int64) {
+	if h.Live == nil {
+		return
+	}
+	var t mediafiles.Title
+	if database.Get(ctx, h.Store.Read(), "titles", id, &t) != nil {
+		return
+	}
+	if v, err := h.View(ctx, t); err == nil {
+		h.PublishView(v)
+	}
+}

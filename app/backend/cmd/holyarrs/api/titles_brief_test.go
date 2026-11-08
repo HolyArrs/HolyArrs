@@ -6,6 +6,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // route: GET /api/v1/titles
@@ -19,7 +21,7 @@ func TestTitlesBriefMatchesFull(t *testing.T) {
 		Titles []TitleView `json:"titles"`
 	}
 	var brief struct {
-		Titles []titleBrief `json:"titles"`
+		Titles []mediafiles.TitleBrief `json:"titles"`
 	}
 	fullRaw := do(t, "GET", srv.URL+"/api/v1/titles", "", 200)
 	briefRaw := do(t, "GET", srv.URL+"/api/v1/titles?brief=1", "", 200)

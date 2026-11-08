@@ -67,9 +67,9 @@ func addMovie(t *testing.T, base, body string) addAnswer {
 	_ = json.Unmarshal(do(t, "POST", base+"/api/v1/titles", body, 201), &a)
 	return a
 }
-func folder(t *testing.T, base, kind string) api.FolderView {
+func folder(t *testing.T, base, kind string) library.FolderView {
 	t.Helper()
-	var lf api.FolderView
+	var lf library.FolderView
 	_ = json.Unmarshal(do(t, "POST", base+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":%q,"label":%q}`, t.TempDir(), kind, kind+t.Name()), 201), &lf)
 	return lf
 }

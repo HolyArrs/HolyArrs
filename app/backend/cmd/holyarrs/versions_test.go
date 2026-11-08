@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // route: POST /api/v1/titles/{id}/versions
@@ -16,7 +17,7 @@ import (
 func TestVersionsAPI(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := lbLibSetup(t)
-	var hd, uhd api.FolderView
+	var hd, uhd library.FolderView
 	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"HD"}`, t.TempDir()), 201), &hd)
 	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"4K"}`, t.TempDir()), 201), &uhd)
 	var rules struct {

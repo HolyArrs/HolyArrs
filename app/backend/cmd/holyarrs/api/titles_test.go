@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -64,7 +65,7 @@ func TestLibraryFoldersAPI(t *testing.T) {
 	dir := t.TempDir()
 	do(t, "POST", srv.URL+"/api/v1/library-folders", `{"path":"movies","kind":"movie"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, filepath.Join(dir, "nope")), 400)
-	var lf FolderView
+	var lf library.FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies"}`, dir), 201), &lf)
 	if lf.ID == 0 || lf.Health != "ok" || lf.Label != "Movies" {
 		t.Fatalf("folder %+v", lf)
@@ -98,7 +99,7 @@ func TestAddTitleAPI(t *testing.T) {
 	srv, s, searched := libSetup(t)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 409) // no folder yet
 	dir := t.TempDir()
-	var lf FolderView
+	var lf library.FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, dir), 201), &lf)
 
 	// Add with search on add: refresh, then scan, then search, in that order.
@@ -136,7 +137,7 @@ func TestAddTitleAPI(t *testing.T) {
 		t.Fatalf("never-add %s", b)
 	}
 	var na struct {
-		NeverAdd []NeverAddView `json:"never_add"`
+		NeverAdd []library.NeverAddView `json:"never_add"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/never-add", "", 200), &na)
 	do(t, "DELETE", srv.URL+"/api/v1/never-add/"+itoa(na.NeverAdd[0].ID), "", 204)
@@ -290,7 +291,7 @@ func TestPickRulesListAPI(t *testing.T) {
 func TestTitleViewGateAndVersion(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := libSetup(t)
-	var lf FolderView
+	var lf library.FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies"}`, t.TempDir()), 201), &lf)
 	var future, out struct {
 		Title TitleView `json:"title"`

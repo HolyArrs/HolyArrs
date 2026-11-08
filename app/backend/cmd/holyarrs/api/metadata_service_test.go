@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
@@ -339,7 +340,7 @@ func TestMetadataServiceAuthenticatedAppPersistsProviderIdentities(t *testing.T)
 	r := newMetadataAppRig(t, svc)
 
 	var movies struct {
-		Movies []LookupView `json:"movies"`
+		Movies []discover.LookupView `json:"movies"`
 	}
 	if err := json.Unmarshal(r.member.call("GET", "/api/v1/titles/lookup?term=synthetic", "", http.StatusOK), &movies); err != nil {
 		t.Fatal(err)
@@ -480,7 +481,7 @@ func TestMetadataServiceErrorsAreSafeForTheAPI(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			wrapped := fmt.Errorf("transport included %s: %w", secret, tc.err)
-			if !metadataServiceError(w, wrapped) {
+			if !library.ServiceError(w, wrapped) {
 				t.Fatal("service error was not handled")
 			}
 			if w.Code != tc.status || strings.Contains(w.Body.String(), secret) || !strings.Contains(w.Body.String(), tc.err.Error()) {
@@ -489,7 +490,7 @@ func TestMetadataServiceErrorsAreSafeForTheAPI(t *testing.T) {
 		})
 	}
 	w := httptest.NewRecorder()
-	if metadataServiceError(w, errors.New("direct provider error")) || w.Body.Len() != 0 {
+	if library.ServiceError(w, errors.New("direct provider error")) || w.Body.Len() != 0 {
 		t.Fatalf("direct error was intercepted: status=%d body=%q", w.Code, w.Body.String())
 	}
 }
@@ -511,7 +512,7 @@ func TestMetadataServicePrivateBuild7AuthenticatedApp(t *testing.T) {
 	r := newMetadataAppRig(t, svc, acceptanceDirectMusic())
 
 	var movies struct {
-		Movies []LookupView `json:"movies"`
+		Movies []discover.LookupView `json:"movies"`
 	}
 	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/titles/lookup?term=synthetic", "", http.StatusOK), &movies); err != nil {
 		t.Fatal(err)

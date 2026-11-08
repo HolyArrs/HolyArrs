@@ -28,11 +28,11 @@ func (a *API) mh() *music.Handlers {
 			},
 
 			ArtistVideosOn: a.artistVideosOn, MusicFresh: a.musicFresh, ExploreCaching: a.exploreCaching,
-			TitleID: a.titleID, LibraryError: libraryError,
+			TitleID: a.titleID, LibraryError: library.WriteError,
 			TitleView: func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) },
 			PublishTitleView: func(v any) {
 				if tv, ok := v.(TitleView); ok {
-					a.publishTitleView(tv)
+					a.tv().PublishView(tv)
 				}
 			},
 			Limit: func(userID int64, now time.Time) bool { return a.discover.Allow(userID, now) },
@@ -74,8 +74,8 @@ func (a *API) partLabel(ctx context.Context, partID int64) (titleID int64, title
 }
 
 // musicError answers music refusals with a status and a reason; anything
-// else goes to libraryError.
-func musicError(w http.ResponseWriter, err error) { music.Error(w, err, libraryError) }
+// else goes to library.WriteError.
+func musicError(w http.ResponseWriter, err error) { music.Error(w, err, library.WriteError) }
 
 // MusicLoops are Music's background loops (main adds them to the parts).
 func (a *API) MusicLoops() []jobs.Loop { return a.mh().MusicLoops() }

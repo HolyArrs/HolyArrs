@@ -8,8 +8,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-type titleBrief = mediafiles.TitleBrief
-
 // listTitlesBrief writes GET /api/v1/titles?brief=1 (mediafiles.ListTitlesBrief).
 func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []mediafiles.Title) {
 	mediafiles.ListTitlesBrief(w, r, a.s.Store, ts, func(t mediafiles.Title) bool {

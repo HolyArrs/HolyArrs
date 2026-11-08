@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -166,7 +168,7 @@ func TestPickRulesInUseCountsEveryReference(t *testing.T) {
 	srv, st, _ := libSetup(t)
 	var p pickRulesDetail
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, mediafiles.GoodEveryday()), 201), &p)
-	var lf FolderView
+	var lf library.FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies","default_pick_rules_id":%d}`, t.TempDir(), p.ID), 201), &lf)
 	do(t, "POST", srv.URL+"/api/v1/titles", fmt.Sprintf(`{"id":"tmdb:693134","pick_rules_id":%d}`, p.ID), 201)
 	do(t, "PUT", srv.URL+"/api/v1/settings/asks", fmt.Sprintf(`{"pick_rules_id":%d,"show_pick_rules_id":%d}`, p.ID, p.ID), 200)

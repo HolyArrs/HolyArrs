@@ -11,6 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/cmd/holyarrs/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -26,7 +27,7 @@ func TestShowVersionsAPI(t *testing.T) {
 	t.Parallel()
 	srv, s, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
-	var movies api.FolderView
+	var movies library.FolderView
 	_ = json.Unmarshal(do(t, "POST", u+"/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies"}`, t.TempDir()), 201), &movies)
 	do(t, "POST", u+"/shows", `{"id":"tmdb:100","more_versions":[{"label":""}]}`, 400)
 	do(t, "POST", u+"/shows", fmt.Sprintf(`{"id":"tmdb:100","more_versions":[{"label":"4K","library_folder_id":%d}]}`, movies.ID), 400)
