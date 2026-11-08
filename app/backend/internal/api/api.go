@@ -327,10 +327,7 @@ func WireUpdateChecks(he *health.Engine, uc *updates.Checker) {
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.
 func actor(r *http.Request) domain.Actor {
-	if _, ok := webserver.From(r.Context()); ok {
-		return webserver.Actor(r.Context())
-	}
-	return domain.Actor{Kind: "user", ID: 1}
+	return webserver.ActorOr(r, domain.Actor{Kind: "user", ID: 1})
 }
 
 // Routes registers every route on rt. Modules that have left this package

@@ -112,13 +112,7 @@ func (a *API) kidLimited(w http.ResponseWriter, r *http.Request) bool {
 // sign-in, and a Kid's is never reused without asking again. Others get
 // cache ("" for none).
 func (a *API) exploreCaching(w http.ResponseWriter, r *http.Request, cache string) {
-	w.Header().Set("Vary", "Cookie, Authorization")
-	if a.kidMax(r) != "" {
-		cache = "private, no-cache"
-	}
-	if cache != "" {
-		w.Header().Set("Cache-Control", cache)
-	}
+	webserver.CacheHeaders(w, cache, a.kidMax(r) != "")
 }
 
 // discoverItemView is one discover item with what the Library knows of it.
