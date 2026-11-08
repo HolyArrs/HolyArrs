@@ -484,6 +484,7 @@ func (c plexContainer) entries() []watchEntry {
 // flexText takes a JSON string or number as text.
 type flexText string
 
+// UnmarshalJSON accepts both forms because the list feed mixes them for ids.
 func (f *flexText) UnmarshalJSON(b []byte) error {
 	var s string
 	if json.Unmarshal(b, &s) == nil {

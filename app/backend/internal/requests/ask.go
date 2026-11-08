@@ -42,6 +42,7 @@ type InLibraryError struct {
 	Music   bool // an artist (every track of the albums asked for)
 }
 
+// Error says in plain words what is already in the Library.
 func (e *InLibraryError) Error() string {
 	what := "this movie is"
 	if e.Show {
@@ -89,6 +90,7 @@ type LimitError struct {
 	now     time.Time
 }
 
+// Error says which ask limit was hit and when the next ask is allowed.
 func (e *LimitError) Error() string {
 	limit := strings.TrimSuffix(kindWord(e.Kind, 1), " ask")
 	return fmt.Sprintf("you have asked for %d %s in the last 7 days, which is your %s limit; try again in %s",
@@ -174,6 +176,7 @@ type Person struct {
 // limit; the error itself says why in plain words.
 var ErrAboveLimit = errors.New("above the age-rating limit")
 
+// limitRefusal carries the plain reason while still matching ErrAboveLimit.
 type limitRefusal string
 
 func (e limitRefusal) Error() string { return string(e) }
