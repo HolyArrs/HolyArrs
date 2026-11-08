@@ -517,13 +517,13 @@ func TestControlsNeedRoleAndScope(t *testing.T) {
 }
 
 // TestEveryRouteHasAPart reads every route the program registers (this
-// package, auth and backup) and checks the parts table gives it an owner:
+// package, accounts and backup) and checks the parts table gives it an owner:
 // a part, the media parts together, the title's kind, or the core. A row
 // for a route that is gone fails too.
 func TestEveryRouteHasAPart(t *testing.T) {
 	re := regexp.MustCompile(`m(?:ux)?\.Handle(?:Func)?\("([A-Z]+ [^"]*)"`)
 	seen := map[string]bool{}
-	for _, dir := range []string{".", "../auth", "../backup"} {
+	for _, dir := range []string{".", "../accounts", "../backup"} {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
 			if strings.HasSuffix(f, "_test.go") {
