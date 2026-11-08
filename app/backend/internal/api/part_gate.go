@@ -131,3 +131,9 @@ func (a *API) reportTitleGate(w http.ResponseWriter, r *http.Request, id int64) 
 	}
 	return true
 }
+
+// followsChanged drops a person's music rows built from their follows.
+func (a *API) followsChanged(userID int64) {
+	a.musicv2.days.Invalidate(userID)
+	a.forgetMusicV7Snaps(userID)
+}
