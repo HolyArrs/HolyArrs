@@ -216,12 +216,12 @@ type API struct {
 	// watchOn keeps each title's TMDB watch providers per region a day.
 	watchOn watchOnCache
 	// music keeps the music trending lists for an hour.
-	music musicTrendCache
-	// side keeps music page side data, also in lookup_cache (musicside.go).
-	side   sideStore
+	music  musicTrendCache
 	rising risingCache
-	// pics are the metadata server's music picture records (musicpictures.go).
-	pics picRecords
+	// mus serves the moved Music code (internal/music); built on first use
+	// by mh() so a bare &API{} in tests works too.
+	mus     *music.Handlers
+	musOnce sync.Once
 	// musicx keeps artist genres and similar artists for Explore → Music.
 	musicx musicExplore
 	// musicAns keeps each member's Explore → Music answers a minute.
@@ -247,8 +247,7 @@ type API struct {
 	// warm fills listed titles' details, extras and trailers ahead.
 	warm titleWarmer
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
-	ahead   musicAhead
-	artWarm artWarmer
+	ahead musicAhead
 	// musicPre stores every engine page's covers ahead (musicpreload.go).
 	musicPre musicPreload
 	ctl      musicControl
@@ -448,7 +447,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("PUT /api/v1/settings/release-gate", a.putGateDefaults)
 	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, Actor: actor, LibraryError: libraryError}
 	lists.Routes(m)
-	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.searchArtist}).Routes(m)
+	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.mh().SearchArtist}).Routes(m)
 	m.HandleFunc("GET /api/v1/downloads", a.listDownloads)
 	m.HandleFunc("GET /api/v1/imports", a.listImports)
 	m.HandleFunc("GET /api/v1/events", a.listEvents)
@@ -917,7 +916,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if v.Artist != nil {
-			v.Artist.Bio = mediafiles.KeptArtistBio(r.Context(), v.Artist.MBID, t.Name, a.sideKept)
+			v.Artist.Bio = mediafiles.KeptArtistBio(r.Context(), v.Artist.MBID, t.Name, a.mh().SideKept)
 		}
 		if !manage {
 			v.Copy = nil

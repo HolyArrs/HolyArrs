@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -20,14 +20,14 @@ import (
 // Album search (stage 3.3): an album, a track's album or every album with a
 // track looking, by hand.
 
-// searchArtist queues the album searches a person asked for on an artist
+// SearchArtist queues the album searches a person asked for on an artist
 // page: one album (album_id), the album of a track (item_id) or of a track
 // Slot (slot_id) or, with none of them, every album with a track kept up to
 // date and looking. version_id narrows to one Version. choose false only
 // lists the Releases, and needs an album.
-func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in sources.TitleSearchIn) {
+func (h *Handlers) SearchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in sources.TitleSearchIn) {
 	ctx := r.Context()
-	db := a.s.Store.Read()
+	db := h.Store.Read()
 	if in.Season != nil {
 		webserver.Fail(w, http.StatusBadRequest, "season is for shows; say album_id for an artist")
 		return
@@ -35,7 +35,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	listOnly := in.Choose != nil && !*in.Choose
 	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "music", err)
 		return
 	}
 	if in.VersionID != nil {
@@ -51,14 +51,14 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		album = *in.AlbumID
 	case in.SlotID != nil:
 		var sl mediafiles.Slot
-		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.shows.SlotOfTitle(ctx, sl.ItemID, t.ID) {
+		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !h.SlotOfTitle(ctx, sl.ItemID, t.ID) {
 			webserver.Fail(w, http.StatusNotFound, "no such Slot on this artist")
 			return
 		}
 		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != sl.VersionID })
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(part_id, 0) FROM items WHERE id = ?", sl.ItemID).Scan(&album)
 	case in.ItemID != nil:
-		if !a.shows.SlotOfTitle(ctx, *in.ItemID, t.ID) {
+		if !h.SlotOfTitle(ctx, *in.ItemID, t.ID) {
 			webserver.Fail(w, http.StatusNotFound, "no such track on this artist")
 			return
 		}
@@ -75,7 +75,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		webserver.Fail(w, http.StatusBadRequest, "say which album (album_id) to list Releases for")
 		return
 	}
-	by := actor(r)
+	by := webserver.ActorOr(r, domain.Actor{Kind: "user", ID: 1})
 	ids := []int64{}
 	var runAfter time.Time // zero: run now
 	queue := func(partID, versionID int64, keptOnly bool) error {
@@ -88,7 +88,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 			params["choose"] = false
 			key = fmt.Sprintf("show_album:%d:%d", partID, versionID)
 		}
-		id, created, err := a.s.Queue.EnqueueAt(ctx, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, params, key, by, runAfter)
+		id, created, err := h.Queue.EnqueueAt(ctx, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, params, key, by, runAfter)
 		if err == nil {
 			ids = append(ids, id)
 			if created && !runAfter.IsZero() {
@@ -100,7 +100,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	if album != 0 {
 		for _, v := range vs {
 			if err := queue(album, v.ID, false); err != nil {
-				webserver.Internal(w, "api", err)
+				webserver.Internal(w, "music", err)
 				return
 			}
 		}
@@ -116,7 +116,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		AND p.dropped_at IS NULL AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL
 		AND s.state IN ('wanted', 'better_wanted', 'failed', 'rejected', 'stalled') ORDER BY p.release_date, p.id, s.version_id`, t.ID)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "music", err)
 		return
 	}
 	type pv struct{ part, ver int64 }
@@ -126,7 +126,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		var d any
 		if err := rows.Scan(&x.part, &x.ver, &d); err != nil {
 			rows.Close()
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "music", err)
 			return
 		}
 		list = append(list, x)
@@ -144,20 +144,20 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	runAfter = time.Now().UTC()
 	for _, x := range list {
 		if err := queue(x.part, x.ver, true); err != nil {
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "music", err)
 			return
 		}
 	}
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids, "left_out": left})
 }
 
-// albumLabels names the albums of track Slots ("Low Tide Atlas"); "" when
+// AlbumLabels names the albums of track Slots ("Low Tide Atlas"); "" when
 // none is a track.
-func (a *API) albumLabels(ctx context.Context, slotIDs []int64) string {
+func (h *Handlers) AlbumLabels(ctx context.Context, slotIDs []int64) string {
 	var names []string
 	for _, id := range slotIDs {
 		var name string
-		if a.s.Store.Read().QueryRowContext(ctx, `SELECT p.name FROM slots s JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id
+		if h.Store.Read().QueryRowContext(ctx, `SELECT p.name FROM slots s JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id
 			WHERE s.id = ? AND i.kind = 'track'`, id).Scan(&name) == nil && !slices.Contains(names, name) {
 			names = append(names, name)
 		}
@@ -165,15 +165,15 @@ func (a *API) albumLabels(ctx context.Context, slotIDs []int64) string {
 	return strings.Join(names, ", ")
 }
 
-// partLabel names a part Job's subject: the show and "S01", or the artist
+// PartLabel names a part Job's subject: the show and "S01", or the artist
 // and the album.
-func (a *API) partLabel(ctx context.Context, partID int64) (titleID int64, title, season, album string) {
+func (h *Handlers) PartLabel(ctx context.Context, partID int64) (titleID int64, title, season, album string) {
 	var kind string
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT kind, name FROM parts WHERE id = ?", partID).Scan(&kind, &album)
+	_ = h.Store.Read().QueryRowContext(ctx, "SELECT kind, name FROM parts WHERE id = ?", partID).Scan(&kind, &album)
 	if kind == "album" {
-		_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT t.id, t.name FROM parts p JOIN titles t ON t.id = p.title_id WHERE p.id = ?", partID).Scan(&titleID, &title)
+		_ = h.Store.Read().QueryRowContext(ctx, "SELECT t.id, t.name FROM parts p JOIN titles t ON t.id = p.title_id WHERE p.id = ?", partID).Scan(&titleID, &title)
 		return titleID, title, "", album
 	}
-	titleID, title, season = a.shows.SeasonLabel(ctx, partID)
+	titleID, title, season = h.SeasonLabel(ctx, partID)
 	return titleID, title, season, ""
 }

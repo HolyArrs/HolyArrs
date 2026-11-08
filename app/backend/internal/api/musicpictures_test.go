@@ -201,12 +201,12 @@ func TestWarmAsksRecordsOncePerRow(t *testing.T) {
 	var mu sync.Mutex
 	var seen []string
 	done := make(chan struct{}, 3)
-	a.artWarm.do = func(_ context.Context, k artWarmKey) {
+	a.mh().SetArtWarmDo(func(_ context.Context, k artWarmKey) {
 		mu.Lock()
-		seen = append(seen, k.mbid+"="+a.pictureVersion("album", k.mbid))
+		seen = append(seen, k.MBID+"="+a.pictureVersion("album", k.MBID))
 		mu.Unlock()
 		done <- struct{}{}
-	}
+	})
 	a.warmArtItems([]nameKey{{kind: "album", mbid: picAlbum}, {kind: "album", mbid: picAlbum2}, {kind: "artist", mbid: picArtist}})
 	close(release)
 	for range 3 {

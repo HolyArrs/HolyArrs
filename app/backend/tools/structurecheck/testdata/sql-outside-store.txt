@@ -25,7 +25,6 @@ app/backend/internal/api/fresh.go
 app/backend/internal/api/home.go
 app/backend/internal/api/music.go
 app/backend/internal/api/musicpages.go
-app/backend/internal/api/musicsearch.go
 app/backend/internal/api/owned.go
 app/backend/internal/api/people.go
 app/backend/internal/api/people_shelves.go
@@ -113,6 +112,7 @@ app/backend/internal/migrate/backup_files.go
 app/backend/internal/migrate/moves.go
 app/backend/internal/movies/collections.go
 app/backend/internal/movies/collections_metadata.go
+app/backend/internal/music/search.go
 app/backend/internal/parts/control.go
 app/backend/internal/requests/store_ask.go
 app/backend/internal/requests/store_ask_episodes.go

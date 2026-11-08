@@ -68,7 +68,7 @@ func TestMusicPagesUsePackagePictures(t *testing.T) {
 		t.Fatalf("cover version %q", v)
 	}
 	got := a.pictureRecords(context.Background(), []string{syncArtist}, []string{syncAlbum}, time.Second)
-	if got["album|"+syncAlbum].album.Cover == nil || got["artist|"+syncArtist].artist.Photo == nil {
+	if got["album|"+syncAlbum].Album.Cover == nil || got["artist|"+syncArtist].Artist.Photo == nil {
 		t.Fatalf("records %+v", got)
 	}
 

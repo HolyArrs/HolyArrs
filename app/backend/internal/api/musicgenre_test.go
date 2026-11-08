@@ -136,11 +136,11 @@ func TestMusicGenrePageWarmsArt(t *testing.T) {
 	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
 	var mu sync.Mutex
 	warmed := map[artWarmKey]bool{}
-	r.api.artWarm.do = func(_ context.Context, k artWarmKey) {
+	r.api.mh().SetArtWarmDo(func(_ context.Context, k artWarmKey) {
 		mu.Lock()
 		warmed[k] = true
 		mu.Unlock()
-	}
+	})
 	var m musicRowsAnswer
 	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/music/genre/pop?region=US", "", 200), &m); err != nil {
 		t.Fatal(err)
@@ -149,7 +149,7 @@ func TestMusicGenrePageWarmsArt(t *testing.T) {
 	for _, row := range m.Rows {
 		for _, c := range row.Items {
 			if c.ArtistMBID != "" {
-				want[artWarmKey{"artist", c.ArtistMBID}] = true
+				want[artWarmKey{Kind: "artist", MBID: c.ArtistMBID}] = true
 			}
 		}
 	}

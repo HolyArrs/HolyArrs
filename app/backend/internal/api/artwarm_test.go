@@ -7,19 +7,21 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 func warmID(n int) string { return fmt.Sprintf("00000000-0000-4000-8000-%012d", n) }
 
 func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
-	old := artWarmGap
-	artWarmGap = time.Millisecond
-	defer func() { artWarmGap = old }()
+	old := music.ArtWarmGap
+	music.ArtWarmGap = time.Millisecond
+	defer func() { music.ArtWarmGap = old }()
 	a := &API{}
 	var mu sync.Mutex
 	seen := map[artWarmKey]int{}
 	var cur, peak atomic.Int32
-	a.artWarm.do = func(_ context.Context, k artWarmKey) {
+	a.mh().SetArtWarmDo(func(_ context.Context, k artWarmKey) {
 		n := cur.Add(1)
 		for p := peak.Load(); n > p && !peak.CompareAndSwap(p, n); p = peak.Load() {
 		}
@@ -28,7 +30,7 @@ func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
 		mu.Lock()
 		seen[k]++
 		mu.Unlock()
-	}
+	})
 	var list []nameKey
 	for i := 0; i < 30; i++ {
 		list = append(list, nameKey{kind: "artist", mbid: warmID(i)}, nameKey{kind: "artist", mbid: warmID(i)}, nameKey{kind: "song", mbid: warmID(i)}, nameKey{kind: "album", mbid: "nope"})
@@ -37,10 +39,7 @@ func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
 	a.rememberMusicNames(list[:10]) // listed again while queued or done
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		a.artWarm.mu.Lock()
-		idle := a.artWarm.workers == 0 && len(a.artWarm.pending) == 0
-		a.artWarm.mu.Unlock()
-		if idle {
+		if a.mh().ArtWarmIdle() {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -55,12 +54,12 @@ func TestArtWarmDedupesAndCapsConcurrency(t *testing.T) {
 			t.Fatalf("%v warmed %d times", k, n)
 		}
 	}
-	if p := peak.Load(); p > artWarmWorkers || p < 2 {
+	if p := peak.Load(); p > music.ArtWarmWorkers || p < 2 {
 		t.Fatalf("peak concurrency %d", p)
 	}
 	// A fresh item is not queued again.
 	a.warmArtItems(list[:2])
-	if len(a.artWarm.pending) != 0 || a.artWarm.workers != 0 {
+	if !a.mh().ArtWarmIdle() {
 		t.Fatal("fresh item queued again")
 	}
 }

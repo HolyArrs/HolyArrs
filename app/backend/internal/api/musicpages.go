@@ -19,6 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -863,7 +864,7 @@ func (a *API) prefetchTracklists(ctx context.Context, ids []string) {
 				fl := pageFlight(a, base, "pressings:"+id, func(ctx context.Context) ([]metadata.Pressing, error) {
 					return a.s.Library.Artists.Pressings(ctx, id)
 				})
-				<-fl.done
+				<-fl.Done()
 			}()
 		}
 		wg.Wait()
@@ -876,7 +877,7 @@ const (
 	musicSideWait = 800 * time.Millisecond
 	// musicLookupMax bounds a lookup that goes on after the page answered
 	// (pageFlight).
-	musicLookupMax = time.Minute
+	musicLookupMax = music.MusicLookupMax
 )
 
 // musicPageWait caps the essential lookup of an artist or album page: past
