@@ -22,20 +22,7 @@ type askBrief = requests.AskBrief
 // person is the signed-in person as Requests sees them. Without
 // sign-in (tests) it is user 1 with every right.
 func (a *API) person(r *http.Request) requests.Person {
-	return requests.PersonOf(r, a.kidMax, a.ownerName)
-}
-
-// ownerName is user 1's name (the stand-in person without sign-in).
-func (a *API) ownerName(ctx context.Context) string {
-	var name string
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT name FROM users WHERE id = 1").Scan(&name)
-	return name
-}
-
-// mayApprove says whether the signed-in person decides asks.
-func mayApprove(r *http.Request) bool {
-	who, ok := webserver.From(r.Context())
-	return !ok || who.Has(webserver.PermApprove)
+	return requests.PersonOf(r, a.kidMax, func(ctx context.Context) string { return requests.OwnerName(ctx, a.s.Store.Read()) })
 }
 
 func (a *API) askHandlers() *requests.AskHandlers {
@@ -71,27 +58,9 @@ func (a *API) openShowAsk(ctx context.Context, ids map[string]string, me int64) 
 	return requests.OpenShowAsk(ctx, a.s.Store.Read(), ids, me)
 }
 
-func (a *API) openArtistAsks(ctx context.Context, mbid string, me int64) ([]askBrief, error) {
-	return requests.OpenArtistAsks(ctx, a.s.Store.Read(), mbid, me)
-}
-
-// decodeKeys is decode that also answers which top-level keys the body
-// holds, so a left-out field can take a saved default.
-func decodeKeys(w http.ResponseWriter, r *http.Request, v any, help string) (map[string]json.RawMessage, bool) {
-	return webserver.DecodeKeys(w, r, v, help)
-}
-
 // kindDefaultsFor fills an add's left-out fields from the saved defaults
 // (requests.KindDefaultsFor).
 func (a *API) kindDefaultsFor(ctx context.Context, kind string, sent map[string]json.RawMessage,
 	folder, rules *int64, keep **bool, search *bool) error {
 	return requests.KindDefaultsFor(ctx, a.s.Store.Read(), kind, sent, folder, rules, keep, search)
-}
-
-// whoName names the person for an Event summary.
-func whoName(r *http.Request) string {
-	if who, ok := webserver.From(r.Context()); ok && who.Name != "" {
-		return who.Name
-	}
-	return "The owner"
 }
